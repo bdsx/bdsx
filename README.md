@@ -3,8 +3,8 @@
 It needs [ken](https://github.com/karikera/ken) project on same directory to build.  
   
 **[parent directory]**  
-¦§ken(https://github.com/karikera/ken)<br>
-¦¦rechakra(https://github.com/karikera/rechakra)
+â”œken(https://github.com/karikera/ken)  
+â””rechakra(https://github.com/karikera/rechakra)  
   
 Outputs are `injector.exe` and `rechakra.dll`.  others are useless in this project.  
 
