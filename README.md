@@ -1,7 +1,8 @@
 
 ## About This
+![image](readme_image/image.png)  
 It makes more javascript functions to bedrock_server.exe to inject DLL  
-This project is working in progress  
+This project is **working in progress**
 
 ## Build
 It needs [ken](https://github.com/karikera/ken) project on same directory to build.  
