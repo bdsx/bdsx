@@ -6,6 +6,8 @@
 class NativePointer:public kr::JsObjectT<NativePointer>
 {
 public:
+	static constexpr char16_t className[] = u"NativePointer";
+	static constexpr bool global = false;
 
 	NativePointer(const kr::JsArguments& args) noexcept;
 
@@ -26,9 +28,7 @@ public:
 	T readas() noexcept;
 
 	static void initMethods(kr::JsClassT<NativePointer>* cls) noexcept;
-
-	static kr::Text16 getClassName() noexcept;
-
+	
 private:
 	uint8_t* m_address;
 

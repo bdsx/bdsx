@@ -1,5 +1,4 @@
 
-
 #include <KR3/main.h>
 #include <KR3/initializer.h>
 #include <KR3/js/js.h>
@@ -9,6 +8,8 @@ using namespace kr;
 class Test:public JsObjectT<Test>
 {
 public:
+	static constexpr Text16 className = u"Test";
+
 	Test(const JsArguments & args) noexcept
 		:JsObjectT(args)
 	{
@@ -20,10 +21,6 @@ public:
 		return 12;
 	}
 
-	static Text16 getClassName() noexcept
-	{
-		return u"Test";
-	}
 	static void initMethods(JsClassT<Test>* cls) noexcept
 	{
 		cls->setMethod(u"test", &Test::test);
@@ -31,11 +28,16 @@ public:
 };
 
 
+#include <KR3/wl/windows.h>
+
+struct TestState:OVERLAPPED
+{
+};
 
 int main()
 {
 	setlocale(LC_ALL, "");
-
+	
 	Initializer<JsRuntime> __init;
 	JsContext ctx;
 	ctx.enter();

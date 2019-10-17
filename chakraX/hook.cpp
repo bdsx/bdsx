@@ -9,6 +9,9 @@
 #include <KR3/js/js.h>
 #include <KR3/data/binarray.h>
 
+#include "nativepointer.h"
+#include "fs.h"
+
 // #include "ChakraDebugService.h"
 
  #define USE_EDGEMODE_JSRT
@@ -80,10 +83,14 @@ JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* 
 		chakraX.setMethod(u"log", [](Text16 message) {
 			ucout << message << endl;
 		});
+		chakraX.setMethod(u"update", [] {
+			SleepEx(0, true);
+		});
 		chakraX.set(u"fs", createFsModule());
+		chakraX.set(u"NativePointer", NativePointer::classObject);
+		chakraX.set(u"NativeFile", NativeFile::classObject);
 
 		JsRuntime::global().set(u"chakraX", chakraX);
-
 
 		s_ctx->exit();
 	}
@@ -176,7 +183,7 @@ BOOL WINAPI DllMain(
 		
 		PdbReader reader;
 		byte* packetlize = (byte*)reader.getFunctionAddress("NetworkHandler::_sortAndPacketizeEvents");
-
+		
 		try
 		{
 			hookOnPacketRead(packetlize, [](byte * rbp, PacketReadResult res){
@@ -218,8 +225,6 @@ BOOL WINAPI DllMain(
 			//	//}
 			//	//int a = 0;	
 			//});
-
-
 		}
 		catch (int)
 		{

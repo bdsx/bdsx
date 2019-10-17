@@ -30,11 +30,6 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 	cls->setMethod(u"readBuffer", &NativePointer::readBuffer);
 }
 
-Text16 NativePointer::getClassName() noexcept
-{
-	return u"NativePointer";
-}
-
 uint8_t NativePointer::readUint8() noexcept
 {
 	return *m_address++;
@@ -78,7 +73,7 @@ AText16 NativePointer::readUtf8(size_t bytes) noexcept
 }
 kr::JsValue NativePointer::readBuffer(size_t bytes) noexcept
 {
-	JsValue value(JsNewTypedArray(JsTypedArrayType::Uint8, bytes));
+	JsValue value = JsNewTypedArray(JsTypedArrayType::Uint8, bytes);
 	value.getBuffer().subcopy(Buffer(m_address, bytes));
 	m_address += bytes;
 	return value;
