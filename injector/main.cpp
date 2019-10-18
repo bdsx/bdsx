@@ -9,60 +9,70 @@
 #include <KR3/js/js.h>
 #include <KRWin/handle.h>
 
+#include <io.h>
+#include <fcntl.h>
+
 using namespace kr;
 
 Text16 readArgument(Text16 & line) noexcept
 {
 	if (line.empty()) return u"";
-
-	Text16 start = line;
-	if (line.read() == '"')
+	if (*line == '"')
 	{
-		line.readto('"');
-		Text16 out = (start+1).cut(line);
 		line++;
+		Text16 out = line.readwith_e('"');
 		line.skipspace();
 		return out;
 	}
 	else
 	{
-		line.readto(' ');
-		if (line == nullptr) return u"";
-		Text16 out = start.cut(line);
-		line++;
+		Text16 out = line.readwith_e(' ');
 		line.skipspace();
 		return out;
 	}
 }
 
-int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR commandLineSz, int)
+#pragma warning(disable:4996)
+int main()
 {
-	Text16 commandLine = (Text16)unwide(commandLineSz);
+	Text16 commandLine = (Text16)unwide(GetCommandLineW());
+	Text16 injectorPath = readArgument(commandLine);
 	Text16 exePath = readArgument(commandLine);
 	Text16 dllPath = readArgument(commandLine);
 	if (exePath.empty() || dllPath.empty())
 	{
-		errorBox(u"it needs exe and dll path");
+		cerr << "injector.exe> it needs exe and dll path" << endl;
 		return EINVAL;
 	}
 
+	setlocale(LC_ALL, nullptr);
+
 	win::Module* module = win::Module::getModule(nullptr);
 
-	auto [proc, thread] = win::Process::execute(TSZ16() << exePath, nullptr,
+	SetDllDirectoryW(wide(TSZ16() << path16.dirname(dllPath)));
+
+	auto [proc, thread] = win::Process::execute(TSZ16() << exePath, TSZ16() << path16.dirname(exePath),
 		win::ProcessOptions()
 		.console(true)
 		.suspended(true));
+	if (!proc)
+	{
+		ucerr << u"injector.exe> Failed to run: " << exePath << endl;
+		return ENOENT;
+	}
 
-	Text16 dllBaseName = path16.basename(dllPath);
-	Installer::copy(
-		(TSZ16() << path16.dirname(exePath) << dllBaseName).c_str(),
-		TSZ16() << dllPath, 
-		u"");
 	//Installer::copy(
 	//	(TSZ16() << path16.dirname((Text16)path) << u"\\ChakraCore.Debugger.dll").c_str(),
 	//	u"ChakraCore.Debugger.dll",
 	//	u"ChakraCore.Debugger.dll copied");
-	proc->injectDll(TSZ16() << dllBaseName);
+	win::Module * injected = proc->injectDll(TSZ16() << path16.basename(dllPath));
+	if (!injected)
+	{
+		ucerr << u"injector.exe> Failed to inject: " << dllPath << endl;
+		proc->terminate();
+		thread->detach();
+		return EFAULT;
+	}
 
 	thread->resume();
 	thread->detach();

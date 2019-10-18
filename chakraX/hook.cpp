@@ -11,6 +11,7 @@
 
 #include "nativepointer.h"
 #include "fs.h"
+#include "console.h"
 
 // #include "ChakraDebugService.h"
 
@@ -80,11 +81,9 @@ JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* 
 		s_ctx->enter();
 
 		JsValue chakraX = JsNewObject;
-		chakraX.setMethod(u"log", [](Text16 message) {
-			ucout << message << endl;
-		});
+		chakraX.set(u"console", createConsoleModule());
 		chakraX.setMethod(u"update", [] {
-			SleepEx(0, true);
+			SleepEx(0, false);
 		});
 		chakraX.set(u"fs", createFsModule());
 		chakraX.set(u"NativePointer", NativePointer::classObject);
@@ -173,7 +172,8 @@ BOOL WINAPI DllMain(
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-		requestDebugger();
+		ondebug(requestDebugger());
+		ucout << u"ChakraX Attached" << endl;
 				
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
@@ -183,52 +183,54 @@ BOOL WINAPI DllMain(
 		
 		PdbReader reader;
 		byte* packetlize = (byte*)reader.getFunctionAddress("NetworkHandler::_sortAndPacketizeEvents");
-		
-		try
+		if (packetlize)
 		{
-			hookOnPacketRead(packetlize, [](byte * rbp, PacketReadResult res){
-				byte packetId = rbp[0x88];
-				void* packetInstance = *(void**)(rbp + 0x90);
+			try
+			{
+				hookOnPacketRead(packetlize, [](byte* rbp, PacketReadResult res) {
+					byte packetId = rbp[0x88];
+					void* packetInstance = *(void**)(rbp + 0x90);
 
-				JsPersistent& callback = s_callbacks[packetId];
-				if (!callback.isEmpty())
-				{
-					s_ctx->enter();
-					NativePointer* natptr = NativePointer::newInstance();
-					natptr->setAddressRaw(packetInstance);
-					((JsValue)callback).call(undefined, { packetId, natptr });
-					s_ctx->exit();
-				}
+					JsPersistent& callback = s_callbacks[packetId];
+					if (!callback.isEmpty())
+					{
+						s_ctx->enter();
+						NativePointer* natptr = NativePointer::newInstance();
+						natptr->setAddressRaw(packetInstance);
+						((JsValue)callback).call(undefined, { packetId, natptr });
+						s_ctx->exit();
+					}
 
-				switch (packetId)
-				{
-				case 0x4d:
-					cout << "CommandRequest" << endl;
-					break;
-				}
-				cout << "onReadPacket" << endl;
-				return res;
-			});
+					switch (packetId)
+					{
+					case 0x4d:
+						cout << "CommandRequest" << endl;
+						break;
+					}
+					cout << "onReadPacket" << endl;
+					return res;
+					});
 
-			//hookOnPacket(reader, packetlize, [](byte * rbp){
-			//	//cout << "onPacket" << endl;
+				//hookOnPacket(reader, packetlize, [](byte * rbp){
+				//	//cout << "onPacket" << endl;
 
-			//	//NativePointer* rbpptr = NativePointer::newInstance();
-			//	//rbpptr->setAddressRaw(rbp);
+				//	//NativePointer* rbpptr = NativePointer::newInstance();
+				//	//rbpptr->setAddressRaw(rbp);
 
-			//	//byte packetId = rbp[0x88];
-			//	//ReadOnlyBinaryStream* is = (ReadOnlyBinaryStream*)(rbp + 0xa0);
-			//	//Text data = is->getData();
+				//	//byte packetId = rbp[0x88];
+				//	//ReadOnlyBinaryStream* is = (ReadOnlyBinaryStream*)(rbp + 0xa0);
+				//	//Text data = is->getData();
 
-			//	//if (s_packetFilter.get(packetId))
-			//	//{
-			//	//}
-			//	//int a = 0;	
-			//});
-		}
-		catch (int)
-		{
-			return false;
+				//	//if (s_packetFilter.get(packetId))
+				//	//{
+				//	//}
+				//	//int a = 0;	
+				//});
+			}
+			catch (int)
+			{
+				return false;
+			}
 		}
 	}
 	return true;

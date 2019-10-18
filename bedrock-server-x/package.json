@@ -1,0 +1,31 @@
+{
+  "name": "bedrock-server-x",
+  "version": "1.0.1",
+  "description": "Add Extra JS API to bedrock_server.exe",
+  "bin": "bin/launcher/bin.js",
+  "main": "bin/library/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/karikera/rechakra"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mcbe/dummy-console": "^1.0.4",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.1.6-alpha.5",
+    "unzipper": "^0.10.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.1",
+    "@types/express-fileupload": "^1.1.0",
+    "@types/node": "^12.11.1",
+    "@types/unzipper": "^0.10.0",
+    "typescript": "^3.6.4"
+  }
+}

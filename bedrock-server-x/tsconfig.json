@@ -1,0 +1,15 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "declaration": true,
+    "sourceMap": true,
+    "target": "es5",
+    "module": "commonjs",
+    "lib": [ "es5" ],
+    "outDir": "bin"
+  },
+  "include": [ "src" ]
+}

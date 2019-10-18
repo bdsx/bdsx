@@ -1,0 +1,4 @@
+/src
+/bin/**/*.js.map
+/bin/launcher/**/*.d.ts
+/tsconfig.json

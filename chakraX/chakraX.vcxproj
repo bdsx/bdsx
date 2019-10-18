@@ -101,10 +101,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
-    <PostBuildEvent>
-      <Command>kcopy $(BaseOutDir)\ChakraCore.Debugger.dll $(OutDir)ChakraCore.Debugger.dll
-kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -117,10 +114,7 @@ kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
-    <PostBuildEvent>
-      <Command>kcopy $(BaseOutDir)\ChakraCore.Debugger.dll $(OutDir)ChakraCore.Debugger.dll
-kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -138,8 +132,8 @@ kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>kcopy $(BaseOutDir)\ChakraCore.Debugger.dll $(OutDir)ChakraCore.Debugger.dll
-kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
+      <Command>call ksign "ChakraX" "$(TargetPath)"
+kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,11 +152,12 @@ kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>kcopy $(BaseOutDir)\ChakraCore.Debugger.dll $(OutDir)ChakraCore.Debugger.dll
-kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
+      <Command>call ksign "ChakraX" "$(TargetPath)"
+kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="console.cpp" />
     <ClCompile Include="fs.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="nativepointer.cpp" />
@@ -170,10 +165,12 @@ kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
     <ClCompile Include="reversed.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="console.h" />
     <ClInclude Include="fs.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="nativepointer.h" />
     <ClInclude Include="pdb.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="reversed.h" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +183,9 @@ kcopy $(BaseOutDir)\ChakraCore.dll $(OutDir)ChakraCore.dll</Command>
     <ProjectReference Include="..\..\ken\KRWin\KRWin.vcxproj">
       <Project>{432cc3c8-34b1-405d-9675-36fdf25289c7}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="chakraX.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
