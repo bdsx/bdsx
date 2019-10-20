@@ -81,6 +81,7 @@ void NativeFile::read(double offset, int size, JsValue callback, bool isBuffer) 
 		state->callback = callback;
 		if (!ReadFileEx(m_file, buffer.getTypedArrayBuffer().data(), size, state, readBufferFileCompletion))
 		{
+			delete state;
 			throw JsException((Text16)(TSZ16() << GetLastError()));
 		}
 	}
@@ -92,6 +93,7 @@ void NativeFile::read(double offset, int size, JsValue callback, bool isBuffer) 
 		state->buffer.resize(size);
 		if (!ReadFileEx(m_file, state->buffer.data(), size, state, readTextFileCompletion))
 		{
+			delete state;
 			throw JsException((Text16)(TSZ16() << GetLastError()));
 		}
 	}
@@ -116,6 +118,7 @@ void NativeFile::write(double offset, JsValue text, JsValue callback) throws(JsE
 	}
 	if (!WriteFileEx(m_file, state->buffer.data(), intact<DWORD>(state->buffer.size()), state, writeFileCompletion))
 	{
+		delete state;
 		throw JsException((Text16)(TSZ16() << GetLastError()));
 	}
 }

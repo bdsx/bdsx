@@ -12,20 +12,22 @@ public:
 	NativePointer(const kr::JsArguments& args) noexcept;
 
 	void setAddress(int32_t lowBits, int32_t highBits) noexcept;
+	void move(int32_t lowBits, int32_t highBits) noexcept;
 	void setAddressRaw(void * ptr) noexcept;
 
-	uint8_t readUint8() noexcept;
-	uint16_t readUint16() noexcept;
-	uint32_t readUint32() noexcept;
-	int8_t readInt8() noexcept;
-	int16_t readInt16() noexcept;
-	int32_t readInt32() noexcept;
-	NativePointer* readPointer() noexcept;
-	kr::AText16 readUtf8(size_t bytes) noexcept;
-	kr::JsValue readBuffer(size_t bytes) noexcept;
+	uint8_t readUint8() throws(kr::JsException);
+	uint16_t readUint16() throws(kr::JsException);
+	uint32_t readUint32() throws(kr::JsException);
+	int8_t readInt8() throws(kr::JsException);
+	int16_t readInt16() throws(kr::JsException);
+	int32_t readInt32() throws(kr::JsException);
+	NativePointer* readPointer() throws(kr::JsException);
+	kr::AText16 readUtf8(JsValue bytes) throws(kr::JsException);
+	kr::JsValue readBuffer(int bytes) throws(kr::JsException);
+	kr::TText16 toString() noexcept;
 
 	template <typename T>
-	T readas() noexcept;
+	T readas() throws(kr::JsException);
 
 	static void initMethods(kr::JsClassT<NativePointer>* cls) noexcept;
 	
@@ -35,10 +37,17 @@ private:
 };
 
 template <typename T>
-T NativePointer::readas() noexcept
+T NativePointer::readas() throws(kr::JsException)
 {
-	T value = *(kr::Unaligned<T>*)m_address;
-	m_address += sizeof(T);
-	return value;
+	try
+	{
+		T value = *(kr::Unaligned<T>*)m_address;
+		m_address += sizeof(T);
+		return value;
+	}
+	catch (...)
+	{
+		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+	}
 }
 

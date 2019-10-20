@@ -1,0 +1,1 @@
+@chakraX\\injector.exe .\\bedrock_server.exe chakraX\\chakraX.dll

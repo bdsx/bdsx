@@ -160,7 +160,9 @@ kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileN
     <ClCompile Include="console.cpp" />
     <ClCompile Include="fs.cpp" />
     <ClCompile Include="hook.cpp" />
+    <ClCompile Include="jsctx.cpp" />
     <ClCompile Include="nativepointer.cpp" />
+    <ClCompile Include="nethook.cpp" />
     <ClCompile Include="pdb.cpp" />
     <ClCompile Include="reversed.cpp" />
   </ItemGroup>
@@ -168,7 +170,9 @@ kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileN
     <ClInclude Include="console.h" />
     <ClInclude Include="fs.h" />
     <ClInclude Include="functions.h" />
+    <ClInclude Include="jsctx.h" />
     <ClInclude Include="nativepointer.h" />
+    <ClInclude Include="nethook.h" />
     <ClInclude Include="pdb.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="reversed.h" />
@@ -186,6 +190,9 @@ kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileN
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="chakraX.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bedrock-server-x.bat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

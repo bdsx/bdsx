@@ -1,16 +1,27 @@
 
-## About This
+## Bedrock Server X: The Server Modding Project!  
 **Windows Only**  
 It makes more javascript functions to bedrock_server.exe by injecting DLL  
 
-## How to Use
+## How to Apply to server
 It needs [NodeJS](https://nodejs.org/)  
-Install it with NPM and run on bedrock_server directory  
-Run belows with Command Prompt(You can open Command Prompt with `Windows Key -> cmd -> Enter`)  
+Run belows with Command Prompt (You can open Command Prompt with `Windows Key -> cmd -> Enter`)  
 ```sh
-npm i -g bedrock-server-x
-cd path/to/bedrock_server
-bedrock-server-x
+npm i -g bedrock-server-x # install bedrock-server-x
+cd path/to/bedrock_server # move to bedrock dedicated server directory
+bedrock-server-x # run bedrock-server-x
+```
+
+## How to Use it on Addon
+If it installed correctly, It will print `ChakraX Attached` at first line in console  
+And then You can access `chakraX` global variable in Javascript  
+
+* Use it with Webpack  
+I recomment to use it with Webpack  
+[My project starter](https://www.npmjs.com/package/mcaddon-start) can make webpack project easily  
+You can import it with webpack from `bedrock-server-x` package  
+```ts
+import {chakraX} from require('bedrock-server-x');
 ```
 
 ## JS API Reference
@@ -23,7 +34,7 @@ namespace chakraX
      * It process I/O completion from File Writing/Reading
      */
     function update():void;
-    
+
     /**
      * Native console object
      */
@@ -56,6 +67,7 @@ namespace chakraX
          * @param creation NativeFile.CREATE_NEW or NativeFile.CREATE_ALWAYS or NativeFile.OPEN_EXISTING or NativFile.OPEN_ALWAYS
          */
         constructor(path:string, access:number, creation:number);
+
         /**
          * Read as buffer
          * @param offset position from begin of file
@@ -88,11 +100,36 @@ namespace chakraX
         static readonly OPEN_EXISTING:number;
         static readonly OPEN_ALWAYS:number;
     }
+
+    /**
+     * for packet listening
+     */
+    const nethook: {
+        setListener(packetId: number, listener: (ptr: NativePointer, packetId: number)=>void):void;
+    };
+
+    /**
+     * for access native pointer
+     */
+    class NativePointer
+    {
+        setAddress(lowBits:number, highBits:number):void;
+        move(lowBits: number, highBits?: number): void;
+        readUint8():number;
+        readUint16():number;
+        readUint32():number;
+        readInt8():number;
+        readInt16():number;
+        readInt32():number;
+        readPointer():NativePointer;
+
+        /**
+         * @param bytes if it's not provided, It will read until reach null character
+         */
+        readUtf8(bytes?:number):string;
+        readBuffer(bytes:number):Uint8Array;
+    }
+
 }
 
 ```
-
-
-## ETC
-  
-I will wrap this project with npm

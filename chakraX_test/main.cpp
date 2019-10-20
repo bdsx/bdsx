@@ -30,10 +30,6 @@ public:
 
 #include <KR3/wl/windows.h>
 
-struct TestState:OVERLAPPED
-{
-};
-
 int main()
 {
 	setlocale(LC_ALL, "");

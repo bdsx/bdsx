@@ -83,6 +83,41 @@ declare global
             static readonly OPEN_EXISTING:number;
             static readonly OPEN_ALWAYS:number;
         }
+        
+        /**
+         * for packet listening
+         */
+        const nethook: {
+            /**
+             * @param packetId Listening packetId, I refer to this document: https://github.com/NiclasOlofsson/MiNET/blob/master/src/MiNET/MiNET/Net/MCPE%20Protocol%20Documentation.md
+             * @param listener Callback function, ptr is native pointer of a parsed packet, 
+             * Maybe you cannot find any document about the parsed packet structure
+             * Just Read It and Print It!
+             */
+            setListener(packetId: number, listener: (ptr: NativePointer, packetId: number)=>void):void;
+        };
+
+        /**
+         * for access native pointer
+         */
+        class NativePointer
+        {
+	        setAddress(lowBits:number, highBits:number):void;
+            move(lowBits: number, highBits?: number): void;
+            readUint8():number;
+            readUint16():number;
+            readUint32():number;
+            readInt8():number;
+            readInt16():number;
+            readInt32():number;
+            readPointer():NativePointer;
+
+            /**
+             * @param bytes if it's not provided, It will read until reach null character
+             */
+            readUtf8(bytes?:number):string;
+            readBuffer(bytes:number):Uint8Array;
+        }
     }
 }
 
