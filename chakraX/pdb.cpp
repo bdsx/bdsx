@@ -12,7 +12,7 @@
 
 using namespace kr;
 
-Text16 tagToString(ULONG tag) noexcept
+inline Text16 tagToString(ULONG tag) noexcept
 {
 	switch (tag)
 	{
@@ -50,7 +50,7 @@ Text16 tagToString(ULONG tag) noexcept
 	default: return u"Unknown";
 	}
 }
-Text16 symToString(ULONG sym) noexcept
+inline Text16 symToString(ULONG sym) noexcept
 {
 	switch (sym)
 	{
@@ -65,51 +65,6 @@ Text16 symToString(ULONG sym) noexcept
 	case SymDeferred: return u"Deferred";
 	default: return u"Unknown";
 	}
-}
-
-void ShowSymbolInfo(DWORD64 ModBase) noexcept
-{
-	IMAGEHLP_MODULEW64 ModuleInfo;
-	memset(&ModuleInfo, 0, sizeof(ModuleInfo));
-	ModuleInfo.SizeOfStruct = sizeof(ModuleInfo);
-
-	if (!SymGetModuleInfoW64(GetCurrentProcess(), ModBase, &ModuleInfo))
-	{
-		ucout << u"Error: SymGetModuleInfo64() failed. Error code: " << GetLastError() << u" \n";
-		return;
-	}
-
-	// Display information about symbols 
-	ucout << u"Loaded symbols:" << symToString(ModuleInfo.SymType) << endl;
-
-	Text16 imageName = (Text16)unwide(ModuleInfo.ImageName);
-	Text16 loadedImageName = (Text16)unwide(ModuleInfo.LoadedImageName);
-	Text16 loadedPdbName = (Text16)unwide(ModuleInfo.LoadedPdbName);
-
-	// Image name 
-	if (!imageName.empty()) ucout << u"Image name: " << imageName << endl;
-
-	// Loaded image name 
-	if (!loadedImageName.empty()) ucout << u"Loaded image name: " << loadedImageName << endl;
-
-	// Loaded PDB name 
-	if (!loadedPdbName.empty()) ucout << u"Loaded image name: " << loadedPdbName << endl;
-
-	// Is debug information unmatched ? 
-	// (It can only happen if the debug information is contained 
-	// in a separate file (.DBG or .PDB) 
-
-	if (ModuleInfo.PdbUnmatched || ModuleInfo.DbgUnmatched)
-	{
-		wprintf(L"Warning: Unmatched symbols. \n");
-	}
-
-	// Contents 
-	ucout << u"Line numbers: " << (ModuleInfo.LineNumbers ? u"Available" : u"Not available") << endl;
-	ucout << u"Global symbols: " << (ModuleInfo.GlobalSymbols ? u"Available" : u"Not available") << endl;
-	ucout << u"Type information: " << (ModuleInfo.TypeInfo ? u"Available" : u"Not available") << endl;
-	ucout << u"Source indexing: " << (ModuleInfo.SourceIndexed ? u"Yes" : u"No") << endl;
-	ucout << u"Public symbols: " << (ModuleInfo.Publics ? u"Available" : u"Not available") << endl;
 }
 
 PdbReader::PdbReader() noexcept
@@ -140,8 +95,6 @@ PdbReader::PdbReader() noexcept
 		0
 	);
 
-	ShowSymbolInfo(m_base);
-
 	// Unload symbols for the module 
 }
 PdbReader::~PdbReader() noexcept
@@ -149,18 +102,79 @@ PdbReader::~PdbReader() noexcept
 	::SymUnloadModule64(m_process, m_base);
 }
 
-void* PdbReader::getFunctionAddress(const char* name) noexcept
+void* PdbReader::base() noexcept
 {
-	void* out = nullptr;
+	return (void*)m_base;
+}
+void PdbReader::showInfo() noexcept
+{
+	IMAGEHLP_MODULEW64 ModuleInfo;
+	memset(&ModuleInfo, 0, sizeof(ModuleInfo));
+	ModuleInfo.SizeOfStruct = sizeof(ModuleInfo);
+
+	if (!SymGetModuleInfoW64(GetCurrentProcess(), m_base, &ModuleInfo))
+	{
+		cout << "Error: SymGetModuleInfo64() failed. Error code: " << GetLastError() << endl;
+		return;
+	}
+
+	// Display information about symbols 
+	ucout << u"Loaded symbols:" << symToString(ModuleInfo.SymType) << endl;
+
+	Text16 imageName = (Text16)unwide(ModuleInfo.ImageName);
+	Text16 loadedImageName = (Text16)unwide(ModuleInfo.LoadedImageName);
+	Text16 loadedPdbName = (Text16)unwide(ModuleInfo.LoadedPdbName);
+
+	// Image name 
+	if (!imageName.empty()) ucout << u"Image name: " << imageName << endl;
+
+	// Loaded image name 
+	if (!loadedImageName.empty()) ucout << u"Loaded image name: " << loadedImageName << endl;
+
+	// Loaded PDB name 
+	if (!loadedPdbName.empty()) ucout << u"Loaded image name: " << loadedPdbName << endl;
+
+	// Is debug information unmatched ? 
+	// (It can only happen if the debug information is contained 
+	// in a separate file (.DBG or .PDB) 
+
+	if (ModuleInfo.PdbUnmatched || ModuleInfo.DbgUnmatched)
+	{
+		wprintf(L"Warning: Unmatched symbols. \n");
+	}
+
+	// Contents 
+	//ucout << u"Line numbers: " << (ModuleInfo.LineNumbers ? u"Available" : u"Not available") << endl;
+	//ucout << u"Global symbols: " << (ModuleInfo.GlobalSymbols ? u"Available" : u"Not available") << endl;
+	//ucout << u"Type information: " << (ModuleInfo.TypeInfo ? u"Available" : u"Not available") << endl;
+	//ucout << u"Source indexing: " << (ModuleInfo.SourceIndexed ? u"Yes" : u"No") << endl;
+	//ucout << u"Public symbols: " << (ModuleInfo.Publics ? u"Available" : u"Not available") << endl;
+}
+void PdbReader::search(const char* filter, Callback callback) noexcept
+{
 	SymEnumSymbols(
 		m_process,
 		m_base,
-		name,
-		[](SYMBOL_INFO* symInfo, ULONG SymbolSize, void* pout)->BOOL {
-			*(void**)pout = (void*)symInfo->Address;
-			return true;
+		filter,
+		[](SYMBOL_INFO* symInfo, ULONG SymbolSize, void* callback)->BOOL {
+			if (symInfo->Tag != SymTagFunction && symInfo->Tag != SymTagPublicSymbol)
+			{
+				return true;
+			}
+			return (*(Callback*)callback)(Text(symInfo->Name, symInfo->NameLen), (kr::autoptr)symInfo->Address);
 		},
-		&out);
-	return out;
+		(PVOID)&callback);
+}
+kr::autoptr PdbReader::getFunctionAddress(const char* name) noexcept
+{
+	byte buffer[sizeof(IMAGEHLP_SYMBOL64) + MAX_SYM_NAME];
+	IMAGEHLP_SYMBOL64& sym = *(IMAGEHLP_SYMBOL64*)buffer;
+	sym.SizeOfStruct = sizeof(sym);
+	sym.MaxNameLength = MAX_SYM_NAME;
+	if (!SymGetSymFromName64(m_process, name, &sym))
+	{
+		return nullptr;
+	}
+	return (autoptr)sym.Address;
 }
 

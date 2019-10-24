@@ -26,7 +26,6 @@
     <None Include="bin\launcher\bin.d.ts" />
     <None Include="bin\launcher\properties.d.ts" />
     <None Include="bin\launcher\web.d.ts" />
-    <None Include="bin\library\chakraX.d.ts" />
     <None Include="bin\library\index.d.ts" />
     <None Include="src\launcher\bin.ts" />
     <None Include="src\launcher\properties.ts" />
@@ -41,6 +40,11 @@
     <Folder Include="src" />
     <Folder Include="src\launcher" />
     <Folder Include="src\library" />
+  </ItemGroup>
+  <ItemGroup>
+    <TypeScriptCompile Include="src\library\fs.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />

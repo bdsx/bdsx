@@ -115,7 +115,8 @@
     </Link>
     <PostBuildEvent>
       <Command>call ksign "DLL Injector" "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileName)"</Command>
+kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileName)"
+kcopy "$(TargetPath)" "$(SolutionDir)release\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,7 +136,8 @@ kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileN
     </Link>
     <PostBuildEvent>
       <Command>call ksign "DLL Injector" "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileName)"</Command>
+kcopy "$(TargetPath)" "$(SolutionDir)bedrock-server-x\bin\launcher\$(TargetFileName)"
+kcopy "$(TargetPath)" "$(SolutionDir)release\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

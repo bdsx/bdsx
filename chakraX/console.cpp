@@ -1,4 +1,5 @@
 #include "console.h"
+#include "jsctx.h"
 
 #include <KR3/wl/windows.h>
 
@@ -6,29 +7,41 @@ using namespace kr;
 namespace
 {
 	int s_consoleColor;
+	static const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);  // Get handle to standard output
+	staticCode
+	{
+		CONSOLE_SCREEN_BUFFER_INFO info;
+		if (!GetConsoleScreenBufferInfo(output, &info)) return;
+		s_consoleColor = info.wAttributes;
+	};
+}
+
+
+int getConsoleColor() noexcept
+{
+	return s_consoleColor;
+}
+void setConsoleColor(int color) noexcept
+{
+	SetConsoleTextAttribute(output, color);
+	s_consoleColor = color;
 }
 
 JsValue createConsoleModule() noexcept
 {
-	static const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);  // Get handle to standard output
-
-	{
-		CONSOLE_SCREEN_BUFFER_INFO info;
-		if (!GetConsoleScreenBufferInfo(output, &info))
-			return false;
-		s_consoleColor = info.wAttributes;
-	}
-
 	JsValue console = JsNewObject;
 
 	console.setMethod(u"log", [](Text16 message) {
-		ucout << message << endl;
+		checkCurrentThread();
+		cout << toAcp(message) << endl;
 	});
 	console.setMethod(u"setTextAttribute", [](int color) {
+		checkCurrentThread();
 		SetConsoleTextAttribute(output, color);
 		s_consoleColor = color;
 	});
 	console.setMethod(u"getTextAttribute", []() {
+		checkCurrentThread();
 		return s_consoleColor;
 	});
 
@@ -42,3 +55,14 @@ JsValue createConsoleModule() noexcept
 	console.set(u"BACKGROUND_INTENSITY", BACKGROUND_INTENSITY);
 	return console;
 }
+
+ConsoleColorScope::ConsoleColorScope(int color) noexcept
+	:m_old(getConsoleColor())
+{
+	setConsoleColor(color);
+}
+ConsoleColorScope::~ConsoleColorScope() noexcept
+{
+	setConsoleColor(m_old);
+}
+

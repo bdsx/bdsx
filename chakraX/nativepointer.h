@@ -11,6 +11,9 @@ public:
 
 	NativePointer(const kr::JsArguments& args) noexcept;
 
+	int32_t getAddressLow() noexcept;
+	int32_t getAddressHigh() noexcept;
+	void* getAddressRaw() noexcept;
 	void setAddress(int32_t lowBits, int32_t highBits) noexcept;
 	void move(int32_t lowBits, int32_t highBits) noexcept;
 	void setAddressRaw(void * ptr) noexcept;
@@ -22,7 +25,9 @@ public:
 	int16_t readInt16() throws(kr::JsException);
 	int32_t readInt32() throws(kr::JsException);
 	NativePointer* readPointer() throws(kr::JsException);
-	kr::AText16 readUtf8(JsValue bytes) throws(kr::JsException);
+	kr::TText16 readCxxString() throws(kr::JsException);
+	kr::Text16 readUtf16(JsValue bytes) throws(kr::JsException);
+	kr::TText16 readUtf8(JsValue bytes) throws(kr::JsException);
 	kr::JsValue readBuffer(int bytes) throws(kr::JsException);
 	kr::TText16 toString() noexcept;
 

@@ -12,10 +12,19 @@ namespace
 		T buffer;
 	};
 
+	JsValue getErrorMessage(int errcode) noexcept
+	{
+		if (errcode == 0) return nullptr;
+		TSZ16 msg = ErrorCode(errcode).getMessage<char16>();
+		msg << u" (" << errcode << u")";
+		JsException error((Text16)msg);
+		return error.getValue();
+	}
+
 	void writeFileCompletion(DWORD dwErrorCode, DWORD dwBytesTransferred, LPOVERLAPPED lpOverlapped) noexcept{
 		auto* state = (FileCallbackState<ABuffer>*)lpOverlapped;
 		JsValue value = state->callback;
-		value.call(undefined, { (int)dwErrorCode, (int)dwBytesTransferred });
+		value.call(undefined, { getErrorMessage(dwErrorCode), (int)dwBytesTransferred });
 		delete state;
 	}
 
@@ -24,8 +33,16 @@ namespace
 		auto* state = (FileCallbackState<JsPersistent>*)lpOverlapped;
 		JsValue value = state->callback;
 		JsValue ab = state->buffer;
-		JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, dwBytesTransferred);
-		value.call(undefined, { (int)dwErrorCode, buffer });
+		if (dwErrorCode == ERROR_HANDLE_EOF)
+		{
+			JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, 0);
+			value.call(undefined, { nullptr, buffer });
+		}
+		else
+		{
+			JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, dwBytesTransferred);
+			value.call(undefined, { getErrorMessage(dwErrorCode), buffer });
+		}
 		delete state;
 	}
 
@@ -33,9 +50,16 @@ namespace
 	{
 		auto* state = (FileCallbackState<AText>*)lpOverlapped;
 		JsValue value = state->callback;
-		TText16 text16;
-		text16 << utf8ToUtf16(state->buffer);
-		value.call(undefined, { (int)dwErrorCode, (Text16)text16 });
+		if (dwErrorCode == ERROR_HANDLE_EOF)
+		{
+			value.call(undefined, { nullptr, u""_tx });
+		}
+		else
+		{
+			TText16 text16;
+			text16 << utf8ToUtf16(state->buffer.cut(dwBytesTransferred));
+			value.call(undefined, { getErrorMessage(dwErrorCode), (Text16)text16 });
+		}
 		delete state;
 	}
 }
@@ -46,6 +70,14 @@ JsValue createFsModule() noexcept
 	return fs;
 }
 
+ATTR_NORETURN void throwLastError() throws(JsException)
+{
+	int errcode = GetLastError();
+	TSZ16 msg = ErrorCode(errcode).getMessage<char16>();
+	msg << u" (" << errcode << u")";
+	throw JsException((Text16)msg);
+}
+
 NativeFile::NativeFile(const JsArguments& args) throws(JsException)
 	:JsObjectT<NativeFile>(args)
 {
@@ -54,10 +86,7 @@ NativeFile::NativeFile(const JsArguments& args) throws(JsException)
 
 	m_file = CreateFileW(wide((TSZ16() << args[0].cast<Text16>()).c_str()),
 		access, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, creation, FILE_FLAG_OVERLAPPED, nullptr);
-	if (m_file == INVALID_HANDLE_VALUE)
-	{
-		throw JsException((Text16)(TSZ16() << GetLastError()));
-	}
+	if (m_file == INVALID_HANDLE_VALUE) throwLastError();
 }
 bool NativeFile::close() noexcept
 {
@@ -82,7 +111,7 @@ void NativeFile::read(double offset, int size, JsValue callback, bool isBuffer) 
 		if (!ReadFileEx(m_file, buffer.getTypedArrayBuffer().data(), size, state, readBufferFileCompletion))
 		{
 			delete state;
-			throw JsException((Text16)(TSZ16() << GetLastError()));
+			throwLastError();
 		}
 	}
 	else
@@ -94,7 +123,7 @@ void NativeFile::read(double offset, int size, JsValue callback, bool isBuffer) 
 		if (!ReadFileEx(m_file, state->buffer.data(), size, state, readTextFileCompletion))
 		{
 			delete state;
-			throw JsException((Text16)(TSZ16() << GetLastError()));
+			throwLastError();
 		}
 	}
 }
@@ -119,8 +148,17 @@ void NativeFile::write(double offset, JsValue text, JsValue callback) throws(JsE
 	if (!WriteFileEx(m_file, state->buffer.data(), intact<DWORD>(state->buffer.size()), state, writeFileCompletion))
 	{
 		delete state;
-		throw JsException((Text16)(TSZ16() << GetLastError()));
+		throwLastError();
 	}
+}
+double NativeFile::size() throws(JsException)
+{
+	LARGE_INTEGER size;
+	if (!GetFileSizeEx(m_file, &size))
+	{
+		throwLastError();
+	}
+	return (double)size.QuadPart;
 }
 void NativeFile::initMethods(kr::JsClassT<NativeFile>* cls) noexcept
 {

@@ -1,151 +1,154 @@
 #include "nethook.h"
+#include "console.h"
 
-#include <KRWin/hook.h>
-#include <KRWin/handle.h>
 #include <KR3/data/binarray.h>
+#include <KR3/wl/windows.h>
 
 #include "jsctx.h"
-#include "pdb.h"
-#include "reversed.h"
+#include "reverse.h"
 #include "nativepointer.h"
+
+//LoopbackPacketSender::sendToClient(NetworkIdentifier&, Packet&, byte)
+//LoopbackPacketSender::flush(NetworkIdentifier&)
+//Certificate* : LoginPacket + 0x28
 
 
 using namespace kr;
 
 namespace
 {
-	JsPersistent s_listeners[0x100];
-}
-
-template <size_t size>
-void mustMatch(const byte* code, const byte(&buffer)[size]) throws(int)
-{
-	if (memcmp(code, buffer, size) != 0)
-	{
-		cerr << "chakraX: junction point code unmatch" << endl;
-		throw 0;
-	}
-}
-void hookOnPacket(PdbReader& reader, byte* packetlize, void(*onPacket)(byte* rbp)) noexcept
-{
-	using namespace hook;
-	ExecutableAllocator* alloc = ExecutableAllocator::getInstance();
-
-	void* jumpTo = reader.getFunctionAddress("MinecraftPackets::createPacket");
-
-	byte* junctionPoint = packetlize + 0x2b4;
-	static const byte ORIGINAL_CODE[] = {
-		0xE8, 0x87, 0xC5, 0x01, 0x00, // call MinecraftPackets::createPacket
-		0x90, // nop
-		0x48, 0x83, 0xBD, 0x90, 0x00, 0x00, 0x00, 0x00, // cmp qword ptr ss:[rbp+90],0
-	};
-	void* fncode = alloc->alloc(64);
-	memset(fncode, 0xcc, 64);
-	CodeWriter junction(fncode, 64);
-	junction.sub(RSP, 0x28);
-	junction.call(jumpTo);
-	junction.mov(RCX, RBP);
-	junction.call(onPacket);
-	junction.add(RSP, 0x28);
-	junction.write(ORIGINAL_CODE + 6, 8);
-	junction.ret();
-
-	Unprotector unpro(junctionPoint, sizeof(ORIGINAL_CODE));
-	mustMatch(unpro, ORIGINAL_CODE);
-	CodeWriter writer((void*)unpro, sizeof(ORIGINAL_CODE));
-	writer.call(fncode);
-	writer.fillNop();
-}
-void hookOnPacketRead(byte* packetlize, PacketReadResult(*onPacketRead)(byte*, PacketReadResult)) noexcept
-{
-	using namespace hook;
-	ExecutableAllocator* alloc = ExecutableAllocator::getInstance();
-
-	byte* junctionPoint = packetlize + 0x30e;
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-		0x48, 0x8D, 0x95, 0xA0, 0x00, 0x00, 0x00, // lea rdx,qword ptr ss:[rbp+A0]
-		0xFF, 0x50, 0x20, // call qword ptr ds:[rax+20] (Packet::read)
-	};
-	void* fncode = alloc->alloc(64);
-	memset(fncode, 0xcc, 64);
-	CodeWriter junction(fncode, 64);
-	junction.sub(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
-	junction.mov(RDX, RAX);
-	junction.mov(RCX, RBP);
-	junction.call(onPacketRead);
-	junction.add(RSP, 0x28);
-	junction.ret();
-
-	Unprotector unpro(junctionPoint, sizeof(ORIGINAL_CODE));
-	mustMatch(unpro, ORIGINAL_CODE);
-	CodeWriter writer((void*)unpro, sizeof(ORIGINAL_CODE));
-	writer.call(fncode);
-	writer.fillNop();
+	JsPersistent s_onPacketRead[0x100];
+	JsPersistent s_onPacketAfter[0x100];
+	JsPersistent s_onConnectionClosed;
 }
 
 JsValue createNetHookModule() noexcept
 {
 	using namespace hook;
 
-	PdbReader reader;
-	byte* packetlize = (byte*)reader.getFunctionAddress("NetworkHandler::_sortAndPacketizeEvents");
-	if (!packetlize) return nullptr;
-	
-	try
-	{
-		JsValue nethook = JsNewObject;
-		nethook.setMethod(u"setListener", [](int id, JsValue func){
-			if (func.getType() != JsType::Function)
+	JsValue nethook = JsNewObject;
+	nethook.setMethod(u"setOnPacketReadListener", [](int id, JsValue func){
+		checkCurrentThread();
+		if (func.getType() != JsType::Function) throw JsException(u"2nd argument must be function");
+		s_onPacketRead[id] = func;
+	});
+	nethook.setMethod(u"setOnPacketAfterListener", [](int id, JsValue func) {
+		if (func.getType() != JsType::Function) throw JsException(u"2nd argument must be function");
+		s_onPacketAfter[id] = func;
+	});
+	nethook.setMethod(u"setOnConnectionClosedListener", [](JsValue func) {
+		if (func.getType() != JsType::Function) throw JsException(u"argument must be function");
+		s_onConnectionClosed = func;
+	});
+		
+	hookOnUpdate([] {
+		JsScope scope;
+		while (SleepEx(0, true) == WAIT_IO_COMPLETION) {}
+	});
+	hookOnPacketRead([](byte* rbp, PacketReadResult res, const NetworkIdentifier& ni) {
+		checkCurrentThread();
+		if (res == PacketReadError) return res;
+
+		MinecraftPacketIds packetId = (MinecraftPacketIds)*(dword*)(rbp + 0x8C);
+
+		JsPersistent& listener = s_onPacketRead[packetId];
+		if (listener.isEmpty()) return res;
+
+		Packet* packet = *(Packet**)(rbp + 0x90);
+		NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
+
+		JsScope scope;
+		NativePointer* packetptr = NativePointer::newInstance();
+		packetptr->setAddressRaw(packet);
+
+		try
+		{
+			JsValue ret = ((JsValue)listener).call(undefined, { packetptr, ni.toString(), packetId });
+			return ret == false ? PacketReadError : res;
+		}
+		catch (JsException& err)
+		{
+			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			cerr << toAcp(err.toString()) << endl;
+			return PacketReadError;
+		}
+	});
+	hookOnPacketAfter([](byte * rbp, ServerNetworkHandler * server, const NetworkIdentifier& ni){
+		MinecraftPacketIds packetId = (MinecraftPacketIds)*(dword*)(rbp + 0x8C);
+
+		JsPersistent& listener = s_onPacketAfter[packetId];
+		if (listener.isEmpty()) return;
+
+		NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
+		Packet* packet = *(Packet**)(rbp + 0x90);
+
+		JsScope scope;
+		NativePointer* packetptr = NativePointer::newInstance();
+		packetptr->setAddressRaw(packet);
+
+		try
+		{
+			if (packetId == 1)
 			{
-				throw JsException(u"2nd argument must be function");
+				JsValue logininfo = JsNewObject;
+
+				try
+				{
+					LoginPacket* login = static_cast<LoginPacket*>(packet);
+					Certificate* cert = login->connreq->cert;
+					if (cert)
+					{
+						String xuid = cert->getXuid();
+						logininfo.set(u"xuid", xuid.text());
+						xuid.deallocate();
+
+						String id = cert->getId();
+						logininfo.set(u"id", id.text());
+						id.deallocate();
+					}
+					Connection* conn = handler->getConnectionFromId(ni);
+					EncryptedNetworkPeer* epeer = conn->epeer;
+					RaknetNetworkPeer* rpeer = epeer->peer;
+					RakPeer* peer = rpeer->peer;
+					TmpArray<SystemAddress> connections = peer->getConnections();
+					for (SystemAddress& addr : connections)
+					{
+						logininfo.set(u"ip", addr.toString());
+						break;
+					}
+				}
+				catch (...)
+				{
+				}
+				((JsValue)listener).call(undefined, { packetptr, ni.toString(), packetId, logininfo });
 			}
-			s_listeners[id] = func;
-		});
-
-		hookOnPacketRead(packetlize, [](byte* rbp, PacketReadResult res) {
-			byte packetId = rbp[0x88];
-			void* packetInstance = *(void**)(rbp + 0x90);
-
-			JsPersistent& listener = s_listeners[packetId];
-			if (!listener.isEmpty())
+			else
 			{
-				JsScope scope;
-				NativePointer* natptr = NativePointer::newInstance();
-				natptr->setAddressRaw(packetInstance);
-				JsValue a = natptr;
-				((JsValue)listener).call(undefined, { natptr, packetId });
+				((JsValue)listener).call(undefined, { packetptr, ni.toString(), packetId });
 			}
-			return res;
-		});
+		}
+		catch (JsException& err)
+		{
+			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			cerr << toAcp(err.toString()) << endl;
+		}
+	});
+	hookOnConnectionClosed([](const NetworkIdentifier& ni) {
+		if (s_onConnectionClosed.isEmpty()) return;
+		JsScope scope;
+		JsValue onClosed = s_onConnectionClosed;
+		onClosed.call(undefined, { ni.toString() });
+	});
 
-		//hookOnPacket(reader, packetlize, [](byte * rbp){
-		//	//cout << "onPacket" << endl;
-
-		//	//NativePointer* rbpptr = NativePointer::newInstance();
-		//	//rbpptr->setAddressRaw(rbp);
-
-		//	//byte packetId = rbp[0x88];
-		//	//ReadOnlyBinaryStream* is = (ReadOnlyBinaryStream*)(rbp + 0xa0);
-		//	//Text data = is->getData();
-
-		//	//if (s_packetFilter.get(packetId))
-		//	//{
-		//	//}
-		//	//int a = 0;	
-		//});
-
-		return nethook;
-	}
-	catch (int)
-	{
-		return nullptr;
-	}
+	return nethook;
 }
 void destroyNetHookModule() noexcept
 {
-	for (auto& persistent : s_listeners)
+	for (auto& persistent : s_onPacketRead)
+	{
+		persistent = JsPersistent();
+	}
+	for (auto& persistent : s_onPacketAfter)
 	{
 		persistent = JsPersistent();
 	}

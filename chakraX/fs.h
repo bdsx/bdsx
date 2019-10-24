@@ -15,6 +15,7 @@ public:
 	bool close() noexcept;
 	void write(double offset, kr::JsValue text, kr::JsValue callback) throws(kr::JsException);
 	void read(double offset, int size, kr::JsValue callback, bool isBuffer) throws(kr::JsException);
+	double size() throws(JsException);
 
 	static void initMethods(kr::JsClassT<NativeFile>* cls) noexcept;
 

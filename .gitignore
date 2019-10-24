@@ -1,3 +1,4 @@
 /.vs
 bin
 *.user
+/release

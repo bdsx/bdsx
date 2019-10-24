@@ -1,6 +1,6 @@
 {
   "name": "bedrock-server-x",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "Add Extra JS API to bedrock_server.exe",
   "bin": "bin/launcher/bin.js",
   "main": "bin/library/index.js",

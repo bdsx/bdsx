@@ -33,16 +33,18 @@ public:
 int main()
 {
 	setlocale(LC_ALL, "");
-	
+
 	Initializer<JsRuntime> __init;
 	JsContext ctx;
 	ctx.enter();
 	try
 	{
-		JsRuntime::global().set(u"test", JsFunction::makeT([](AText16 text){
+		JsValue test;
+		JsValue func = JsFunction::makeT([](AText16 text) {
 			ucout << text << endl;
-		}));
-		JsRuntime::run(u"test(new Test().test())");
+		});
+		JsRuntime::global().set(u"test", func);
+		JsRuntime::run(u"let a = {...{}}; test(new Test().test())");
 	}
 	catch (JsException &err)
 	{
