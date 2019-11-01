@@ -163,6 +163,7 @@ kcopy "$(ProjectDir)bedrock-server-x.bat" "$(SolutionDir)release\bedrock-server-
   <ItemGroup>
     <ClCompile Include="console.cpp" />
     <ClCompile Include="fs.cpp" />
+    <ClCompile Include="funchook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsctx.cpp" />
     <ClCompile Include="nativepointer.cpp" />
@@ -173,6 +174,7 @@ kcopy "$(ProjectDir)bedrock-server-x.bat" "$(SolutionDir)release\bedrock-server-
   <ItemGroup>
     <ClInclude Include="console.h" />
     <ClInclude Include="fs.h" />
+    <ClInclude Include="funchook.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="jsctx.h" />
     <ClInclude Include="nativepointer.h" />
@@ -184,9 +186,6 @@ kcopy "$(ProjectDir)bedrock-server-x.bat" "$(SolutionDir)release\bedrock-server-
   <ItemGroup>
     <ProjectReference Include="..\..\ken\KR3\KR3.vcxproj">
       <Project>{f5212e7b-4791-4488-a23a-57af3023e7d3}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ken\KRMessage\KRMessage.vcxproj">
-      <Project>{93820a74-de22-4f69-83a8-0b848f7d798f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\ken\KRWin\KRWin.vcxproj">
       <Project>{432cc3c8-34b1-405d-9675-36fdf25289c7}</Project>

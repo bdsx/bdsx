@@ -6,19 +6,19 @@ declare global
         };
 
         /**
-            * Catch global errors
-            * default error printing is disabled if cb returns false
-            */
+         * Catch global errors
+         * default error printing is disabled if cb returns false
+         */
         function setOnErrorListener(cb: (err: Error) => void | boolean): void;
 
         /**
-            * Request native debugger
-            */
+         * Request native debugger
+         */
         function debug(): void;
 
         /**
-            * Native console object
-            */
+         * Native console object
+         */
         const console: {
             /**
                 * print message to console

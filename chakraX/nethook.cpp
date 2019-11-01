@@ -6,6 +6,7 @@
 
 #include "jsctx.h"
 #include "reverse.h"
+#include "funchook.h"
 #include "nativepointer.h"
 
 //LoopbackPacketSender::sendToClient(NetworkIdentifier&, Packet&, byte)
@@ -24,8 +25,6 @@ namespace
 
 JsValue createNetHookModule() noexcept
 {
-	using namespace hook;
-
 	JsValue nethook = JsNewObject;
 	nethook.setMethod(u"setOnPacketReadListener", [](int id, JsValue func){
 		checkCurrentThread();
@@ -41,11 +40,11 @@ JsValue createNetHookModule() noexcept
 		s_onConnectionClosed = func;
 	});
 		
-	hookOnUpdate([] {
+	g_hookf->hookOnUpdate([] {
 		JsScope scope;
 		while (SleepEx(0, true) == WAIT_IO_COMPLETION) {}
 	});
-	hookOnPacketRead([](byte* rbp, PacketReadResult res, const NetworkIdentifier& ni) {
+	g_hookf->hookOnPacketRead([](byte* rbp, PacketReadResult res, const NetworkIdentifier& ni) {
 		checkCurrentThread();
 		if (res == PacketReadError) return res;
 
@@ -73,7 +72,7 @@ JsValue createNetHookModule() noexcept
 			return PacketReadError;
 		}
 	});
-	hookOnPacketAfter([](byte * rbp, ServerNetworkHandler * server, const NetworkIdentifier& ni){
+	g_hookf->hookOnPacketAfter([](byte * rbp, ServerNetworkHandler * server, const NetworkIdentifier& ni){
 		MinecraftPacketIds packetId = (MinecraftPacketIds)*(dword*)(rbp + 0x8C);
 
 		JsPersistent& listener = s_onPacketAfter[packetId];
@@ -133,7 +132,7 @@ JsValue createNetHookModule() noexcept
 			cerr << toAcp(err.toString()) << endl;
 		}
 	});
-	hookOnConnectionClosed([](const NetworkIdentifier& ni) {
+	g_hookf->hookOnConnectionClosed([](const NetworkIdentifier& ni) {
 		if (s_onConnectionClosed.isEmpty()) return;
 		JsScope scope;
 		JsValue onClosed = s_onConnectionClosed;

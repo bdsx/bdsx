@@ -4,7 +4,6 @@
 #include <chrono>
 
 #include <KR3/wl/windows.h>
-#include <KRWin/hook.h>
 #include <WinSock2.h>
 
 struct ReadOnlyBinaryStream;
@@ -16,6 +15,17 @@ struct AddPlatform_win32;
 struct ServerInstance;
 struct NetworkHandler;
 struct DedicatedServer;
+struct ScriptEngine;
+struct AppPlatform_win32;
+struct LoopbackPacketSender;
+struct EducationOptions;
+struct DBStorage;
+struct MinecraftServerScriptEngine;
+struct IMinecraftApp;
+struct ServerInstanceEventCoordinator;
+
+
+#define OFFSETFIELD(type, name, offset) type &name() noexcept { return *(type*)((byte*)this + offset); };
 
 template <typename KEY, typename VALUE>
 struct UMap;
@@ -275,47 +285,75 @@ struct LoginPacket:Packet
 	ConnectionReqeust* connreq; // 28
 };
 
+struct MinecraftEventing;
+struct ResourcePackManager;
+struct VanilaGameModuleServer;
+struct Whitelist;
+struct PrivateKeyManager;
+struct ServerMetrics
+{
+	ServerMetrics() = delete;
+};
+struct ServerMetricsImpl :ServerMetrics
+{
+};
+
 struct Minecraft
 {
 	Minecraft() = delete;
 	void* vtable;
 	ServerInstance* serverInstance;
-	void* vtable2;
-	void* minecraftEventing;
-	void* resourcePackManager;
+	MinecraftEventing* minecraftEventing;
+	ResourcePackManager* resourcePackManager;
 	void* u1;
-	void* vanillaGameModuleServer;
-	void* whitelist;
-	void* permissionsJsonFileName;
-	void* privateKeyManager;
+	VanilaGameModuleServer* vanillaGameModuleServer;
+	void* gameModuleServerRefCount;
+	Whitelist* whitelist;
+	String* permissionsJsonFileName;
+	PrivateKeyManager* privateKeyManager;
 	void* u2;
 	void* u3;
 	void* u4;
 	void* u5;
-	void* commandsKickSuccessReason;
 	void* u6;
+	ServerMetrics* serverMetrics;
 	void* u7;
 	void* u8;
-	void* u9; // 407D99D5318ABC87  000001C96691DC08  0000000000000708  
-	void* u10; // 000001C96694EA80  
-	void* u11; // 000001C9693B6420  
-	void* u12; // 000001C96691C2A0  
-	void* u13; // 000001C96691C340  
+	void* u9;
+	void* u10; // 407D99D5318ABC87  000001C96691DC08  0000000000000708  
+	void* u11; // 000001C96694EA80  
+	void* u12; // 000001C9693B6420  
+	void* u13; // 000001C96691C2A0  
+	void* u14; // 000001C96691C340  
 	NetworkHandler* network;
-	void* LoopbackPacketSender;
+	LoopbackPacketSender* LoopbackPacketSender;
 	DedicatedServer* server;
-	void* u14; // 0000000000000000  
-	void* u15; // 000001C96691DCA0  
-	void* u16; // 000001C96691DC90  .&const std::_Ref_count_obj<class EntityRegistryOwned>::`vftable'; 
+	void* u15; // 0000000000000000  
+	void* u16; // 000001C96691DCA0  
+	void* u17; // 000001C96691DC90  .&const std::_Ref_count_obj<class EntityRegistryOwned>::`vftable'; 
 
+};
+
+struct VanillaAppConfigs;
+struct VanillaGameModuleDedicatedServer;
+
+struct AppPlatform_win32
+{
 };
 
 struct DedicatedServer
 {
 	DedicatedServer() = delete;
 	void* vtable;
+	void* vtable2;
 	AddPlatform_win32 * platform;
-	Minecraft * mimecraft;
+	Minecraft* minecraft;
+	void* automationClient;
+	void* u1;
+	void* u2;
+	void* u3;
+	VanillaAppConfigs * configs;
+	VanillaGameModuleDedicatedServer * module;
 };
 
 struct SystemAddress
@@ -401,8 +439,15 @@ struct NetworkHandler
 	EncryptedNetworkPeer * getEncryptedPeerForUser(const NetworkIdentifier& ni) noexcept;
 };
 
-struct ScriptEngine;
-struct AppPlatform_win32;
+
+struct ChakraInterface
+{
+	ChakraInterface() = delete;
+	void* vtable;
+	void* u1;
+	uint32_t scriptCounter;
+};
+
 
 struct ServerInstance
 {
@@ -411,45 +456,29 @@ struct ServerInstance
 	AppPlatform_win32* platform;
 	void* vtable2;
 	DedicatedServer* server;
+	Minecraft* minecraft;
+	NetworkHandler* networkHandler;
+	LoopbackPacketSender * sender;
+	void* u1;
+	void* u2;
+	void* u3;
+	EducationOptions* educationOptions;
+	DBStorage* storage;
+	void* us[37];
+	MinecraftServerScriptEngine* scriptEngine;
+	void* us2[10];
 };
 
-struct IMinecraftApp;
-struct ServerInstanceEventCoordinator;
-
-extern ServerInstance* g_server;
-
-struct MinecraftFunctionTable
+struct ScriptEngine
 {
-	void loadFromPdb() noexcept;
-	void load_1_12_0_28() noexcept;
-	bool (* NetworkHandler$_sortAndPacketizeEvents)(NetworkHandler *_this, Connection&, std::chrono::nanoseconds);
-	std::shared_ptr<Packet> (* MinecraftPackets$createPacket)(MinecraftPacketIds);
-	ServerPlayer* (* ServerNetworkHandler$_getServerPlayer)(ServerNetworkHandler* _this, const NetworkIdentifier&, byte data);
-	EncryptedNetworkPeer* (*NetworkHandler$getEncryptedPeerForUser)(NetworkHandler* _this, const NetworkIdentifier&);
-	Connection * (*NetworkHandler$_getConnectionFromId)(NetworkHandler * handler, const NetworkIdentifier&);
-	void (*ExtendedCertificate$getXuid)(String * out, const Certificate&);
-	void (*ExtendedCertificate$getIdentityName)(String* out, const Certificate&);
-	void (*RakNet$SystemAddress$ToString)(SystemAddress * addr, bool writePort, char* dest, char portDelineator);
-	void (*RakNet$RakPeer$GetConnectionList)(RakPeer* peer, SystemAddress* dest, uint16_t * size);
-	void (*ScriptEngine$_processSystemUpdate)(ScriptEngine * );
-	void (*string$_Tidy_deallocate)(String * str);
-	void (*NetworkHandler$onConnectionClosed)(NetworkHandler*, const NetworkIdentifier&, bool);
-	void (*ServerInstance$ServerInstance)(ServerInstance* server, IMinecraftApp*, ServerInstanceEventCoordinator&);
-	void (*DedicatedServer$start)(String * str);
-	
-	// ?lower_bound@?$_Hash@V?$_Umap_traits@VNetworkIdentifier@@V?$unique_ptr@VClient@ServerNetworkHandler@@U?$default_delete@VClient@ServerNetworkHandler@@@std@@@std@@V?$_Uhash_compare@VNetworkIdentifier@@U?$hash@VNetworkIdentifier@@@std@@U?$equal_to@VNetworkIdentifier@@@3@@3@V?$allocator@U?$pair@$$CBVNetworkIdentifier@@V?$unique_ptr@VClient@ServerNetworkHandler@@U?$default_delete@VClient@ServerNetworkHandler@@@std@@@std@@@std@@@3@$0A@@std@@@std@@QEAA?AV?$_List_iterator@V?$_List_val@U?$_List_simple_types@U?$pair@$$CBVNetworkIdentifier@@V?$unique_ptr@VClient@ServerNetworkHandler@@U?$default_delete@VClient@ServerNetworkHandler@@@std@@@std@@@std@@@std@@@std@@@2@AEBVNetworkIdentifier@@@Z
-	// class std::_List_iterator<class std::_List_val<struct std::_List_simple_types<struct std::pair<class NetworkIdentifier const ,class std::unique_ptr<class ServerNetworkHandler::Client,struct std::default_delete<class ServerNetworkHandler::Client> 
-	// 
+	ScriptEngine() = delete;
+	void* vtable;
+	ChakraInterface* chakra;
 };
 
-extern MinecraftFunctionTable g_minecraftFunctionTable;
+struct MinecraftServerScriptEngine:public ScriptEngine
+{
+};
 
-void binpatch(void* junctionPoint, kr::Buffer originalCode, void* injectfn, kr::hook::Register tempregister, bool jump) noexcept;
-void hookOnUpdate(void (*update)()) noexcept;
-void hookOnPacket(void(*onPacket)(byte* rbp)) noexcept;
-void hookOnPacketRead(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, const NetworkIdentifier&)) noexcept;
-void hookOnPacketAfter(void(*onPacketAfter)(byte*, ServerNetworkHandler*, const NetworkIdentifier&)) noexcept;
-void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept;
-void hookOnStart(void(*callback)(ServerInstance* server)) noexcept;
-void hookOnLoopStart(void(*callback)(byte* rbp)) noexcept;
-
+extern DedicatedServer* g_server;
+extern ServerInstance* g_serverInstance;

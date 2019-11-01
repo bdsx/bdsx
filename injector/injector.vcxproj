@@ -147,6 +147,9 @@ kcopy "$(TargetPath)" "$(SolutionDir)release\$(TargetFileName)"</Command>
     <ProjectReference Include="..\..\ken\KR3\KR3.vcxproj">
       <Project>{f5212e7b-4791-4488-a23a-57af3023e7d3}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\ken\KRHttp\KRHttp.vcxproj">
+      <Project>{d7aa1504-0276-4ef1-9647-753c57ad3df3}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\ken\KRWin\KRWin.vcxproj">
       <Project>{432cc3c8-34b1-405d-9675-36fdf25289c7}</Project>
     </ProjectReference>

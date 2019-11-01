@@ -24,12 +24,8 @@
     <None Include="tsconfig.json" />
     <Content Include="README.md" />
     <None Include="bin\launcher\bin.d.ts" />
-    <None Include="bin\launcher\properties.d.ts" />
-    <None Include="bin\launcher\web.d.ts" />
     <None Include="bin\library\index.d.ts" />
     <None Include="src\launcher\bin.ts" />
-    <None Include="src\launcher\properties.ts" />
-    <None Include="src\launcher\web.ts" />
     <None Include="src\library\chakraX.ts" />
     <None Include="src\library\index.ts" />
   </ItemGroup>
