@@ -1,13 +1,13 @@
 {
   "name": "bdsx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Javascript API for BDSX",
   "main": "index",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w"
   },
-  "keywords": [],
+  "keywords": ["minecraft"],
   "author": "karikera",
   "dependencies": {
     "@mcbe/dummy-console": "^1.0.4"
@@ -15,5 +15,9 @@
   "devDependencies": {
     "@types/node": "^12.12.5",
     "typescript": "^3.6.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/karikera/bdsx"
   }
 }

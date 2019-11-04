@@ -11,6 +11,7 @@
   "keywords": [],
   "author": "YOU",
   "dependencies": {
+    "bdsx": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^12.12.5",

@@ -26,6 +26,7 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="package-lock.json" />
+    <Content Include="README.md" />
     <None Include="tsconfig.json" />
   </ItemGroup>
   <ItemGroup>
