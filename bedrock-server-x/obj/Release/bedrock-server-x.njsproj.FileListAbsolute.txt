@@ -1,2 +1,0 @@
-D:\Downloads\ME\complex\chakraX\bedrock-server-x\obj\Release\bedrock-server-x.njsprojAssemblyReference.cache
-D:\Downloads\ME\complex\chakraX\bedrock-server-x\bin\Microsoft.NodejsTools.WebRole.dll

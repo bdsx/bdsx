@@ -2,3 +2,7 @@
 bin
 *.user
 /release
+/PACKAGING/bdsx/node_modules
+/PACKAGING/bdsx/*.d.ts
+/PACKAGING/bdsx/*.js
+/PACKAGING/bdsx/*.js.map

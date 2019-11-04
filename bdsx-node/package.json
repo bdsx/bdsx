@@ -1,0 +1,19 @@
+{
+  "name": "bdsx",
+  "version": "1.0.1",
+  "description": "Javascript API for BDSX",
+  "main": "index",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "keywords": [],
+  "author": "karikera",
+  "dependencies": {
+    "@mcbe/dummy-console": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.5",
+    "typescript": "^3.6.4"
+  }
+}

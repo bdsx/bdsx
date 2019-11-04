@@ -1,0 +1,6 @@
+/tsconfig.json
+/bin
+/obj
+*.ts
+!*.d.ts
+*.js.map

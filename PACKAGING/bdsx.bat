@@ -1,0 +1,1 @@
+@.\bdsx\injector.exe .\server\bedrock_server.exe .\bdsx\bdsx.dll

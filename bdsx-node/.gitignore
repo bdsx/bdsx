@@ -1,0 +1,6 @@
+/node_modules
+/bin
+/obj
+*.d.ts
+*.js
+*.js.map
