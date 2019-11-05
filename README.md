@@ -2,6 +2,7 @@
 ## BDSX: The Server Modding Project!  
 ![image](image.png)  
 **Windows Only**  
+Download: [bdsx.zip](https://github.com/karikera/bdsx/releases)  
 * It's standalone!
 * It will run `bdsx/index.js` as server script without any settings (Even without experimental play!)
 * It has `require` function likes NodeJS!
@@ -11,25 +12,28 @@
 It makes more javascript functions to bedrock_server.exe by injecting DLL  
 It's very mutable now, I will remove or change API names frequently  
 
-## Install
-1. Download [bdsx.zip](https://github.com/karikera/bdsx/releases)
-2. Unzip it
-3. run `bdsx.bat`
+## Files
+├ bdsx/ - Project folder  
+│  ├ index.js - Javascript File  
+│  ├ index.ts - Typescript File, You can delete it If you don't use Typescript  
+│  ├ package-lock.json - Installed packages informtaion  
+│  ├ package.json - Meta datas for the project  
+│  └ tsconfig.json - Compile options for Typescript, You can delete it If you don't use Typescript  
+├ server/ - [Bedrock Dedicated Server](https://www.minecraft.net/en-us/download/server/bedrock/)  
+├ bin/ - Injector.exe & Injected DLL  
+└ bdsx.bat - Launcher  
 
-## Example
-```ts
-// import { nethook, NativeFile } from "bdsx"; // typescript
-const { nethook, NativeFile } = require("bdsx"); // javascript
+## How to Build Typescript? (Watch Mode)
+You need to install [NodeJS](https://nodejs.org/en/) before use Typescript
 
-nethook.setOnPacketAfterListener(1, (ptr, networkIdentifier, packetId, info)=>{
-    console.log(`${info.id}> Logined`);
-    console.log(`${info.id}> XUID = ${info.xuid}`);
-    console.log(`${info.id}> IP = ${info.ip}`);
-    const file = new NativeFile('loginlog.txt', NativeFile.WRITE, NativeFile.OPEN_ALWAYS);
-    file.write(-1, `${new Date}> ${info.id} logined (IP=${info.ip})`, err => {});
-    file.close();
-});
-```
+* Build with VSCode
+1. Open `bdsx/` with VSCode
+2. Ctrl + Shift + B
+3. Select `tsc: watch`
+
+* Build with Command Line
+1. Open `bdsx/` with Prompt
+2. run `npm watch`
 
 ## JS API Reference
 ```ts
@@ -162,5 +166,5 @@ It needs [ken](https://github.com/karikera/ken) project on same directory to bui
 ├ken(https://github.com/karikera/ken)  
 └bdsx(https://github.com/karikera/bdsx)  
   
-If you build it with `release` configuration, It will make `release.zip` in solution directory.  
-that `release.zip` is standalone server files.
+If you build it with `Release` configuration, It will make `bdsx.zip` in solution directory.  
+that `bdsx.zip` is standalone server files.

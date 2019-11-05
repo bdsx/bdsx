@@ -6,6 +6,6 @@
     "alwaysStrict": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
-    "sourceMap": true
+    "inlineSourceMap": true
   }
 }

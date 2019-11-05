@@ -2,7 +2,7 @@
 bin
 *.user
 /release
-/release.zip
+/bdsx.zip
 /server.zip
 /PACKAGING/bdsx/node_modules
 /PACKAGING/bdsx/*.d.ts
