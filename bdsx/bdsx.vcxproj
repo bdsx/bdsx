@@ -131,9 +131,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "BDSX" "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
+      <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
+kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,9 +152,10 @@ kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "BDSX" "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
+      <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
+kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -162,9 +164,11 @@ kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
     <ClCompile Include="funchook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsctx.cpp" />
+    <ClCompile Include="native.cpp" />
     <ClCompile Include="nativepointer.cpp" />
     <ClCompile Include="nethook.cpp" />
     <ClCompile Include="pdb.cpp" />
+    <ClCompile Include="require.cpp" />
     <ClCompile Include="reverse.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -173,9 +177,11 @@ kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
     <ClInclude Include="funchook.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="jsctx.h" />
+    <ClInclude Include="native.h" />
     <ClInclude Include="nativepointer.h" />
     <ClInclude Include="nethook.h" />
     <ClInclude Include="pdb.h" />
+    <ClInclude Include="require.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="reverse.h" />
   </ItemGroup>

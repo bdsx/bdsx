@@ -1,1 +1,1 @@
-@.\bdsx\injector.exe .\server\bedrock_server.exe .\bdsx\bdsx.dll
+@.\bin\injector.exe .\server\bedrock_server.exe .\bin\bdsx.dll -M ..\bdsx

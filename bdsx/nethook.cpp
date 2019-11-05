@@ -68,7 +68,7 @@ JsValue createNetHookModule() noexcept
 		catch (JsException& err)
 		{
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			ucerr << err.toString() << endl;
+			ucerr << err.getValue().getProperty(u"stack").toString().as<Text16>() << endl;
 			return PacketReadError;
 		}
 	});
@@ -129,7 +129,7 @@ JsValue createNetHookModule() noexcept
 		catch (JsException& err)
 		{
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			ucerr << err.toString() << endl;
+			ucerr << err.getValue().getProperty(u"stack").toString().as<Text16>() << endl;
 		}
 	});
 	g_hookf->hookOnConnectionClosed([](const NetworkIdentifier& ni) {

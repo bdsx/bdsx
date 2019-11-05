@@ -113,9 +113,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "DLL Injector" "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
+      <Command>call ksign "DLL Injector" "$(OutDir)injector.exe"
+kcopy "$(OutDir)injector.exe" "$(SolutionDir)release\bin\injector.exe"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,9 +134,10 @@ kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "DLL Injector" "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
+      <Command>call ksign "DLL Injector" "$(OutDir)injector.exe"
+kcopy "$(OutDir)injector.exe" "$(SolutionDir)release\bin\injector.exe"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -144,9 +146,6 @@ kcopy "$(TargetPath)" "$(SolutionDir)release\bdsx\$(TargetFileName)"</Command>
   <ItemGroup>
     <ProjectReference Include="..\..\ken\KR3\KR3.vcxproj">
       <Project>{f5212e7b-4791-4488-a23a-57af3023e7d3}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ken\KRHttp\KRHttp.vcxproj">
-      <Project>{d7aa1504-0276-4ef1-9647-753c57ad3df3}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\ken\KRWin\KRWin.vcxproj">
       <Project>{432cc3c8-34b1-405d-9675-36fdf25289c7}</Project>

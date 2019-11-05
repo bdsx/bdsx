@@ -6,14 +6,8 @@
 using namespace kr;
 namespace
 {
-	int s_consoleColor;
+	int s_consoleColor = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_BLUE;
 	static const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);  // Get handle to standard output
-	staticCode
-	{
-		CONSOLE_SCREEN_BUFFER_INFO info;
-		if (!GetConsoleScreenBufferInfo(output, &info)) return;
-		s_consoleColor = info.wAttributes;
-	};
 }
 
 

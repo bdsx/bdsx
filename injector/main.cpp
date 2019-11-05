@@ -4,34 +4,17 @@
 #include <KR3/wl/windows.h>
 #include <KR3/initializer.h>
 #include <KR3/util/path.h>
+#include <KR3/util/parameter.h>
 #include <KR3/fs/file.h>
 #include <KR3/fs/installer.h>
 #include <KR3/js/js.h>
 #include <KRWin/handle.h>
 
-#include <KRHttp/httpd.h>
+#include <KR3/http/httpd.h>
 #include <KR3/msg/promise.h>
 #include <KR3/fs/watcher.h>
 
 using namespace kr;
-
-Text16 readArgument(Text16 & line) noexcept
-{
-	if (line.empty()) return u"";
-	if (*line == '"')
-	{
-		line++;
-		Text16 out = line.readwith_e('"');
-		line.skipspace();
-		return out;
-	}
-	else
-	{
-		Text16 out = line.readwith_e(' ');
-		line.skipspace();
-		return out;
-	}
-}
 
 int main()
 {
@@ -66,7 +49,7 @@ int main()
 
 	win::Module* module = win::Module::getModule(nullptr);
 
-	SetDllDirectoryW(wide(TSZ16() << path16.dirname(dllPath)));
+	SetDllDirectoryW(wide(path16.resolve(path16.dirname(dllPath))));
 
 	auto [proc, thread] = win::Process::execute(TSZ16() << exePath, TSZ16() << commandLine, TSZ16() << path16.dirname(exePath),
 		win::ProcessOptions()
@@ -89,6 +72,5 @@ int main()
 	thread->resume();
 	thread->detach();
 	delete proc;
-
 	return 0;
 }

@@ -11,6 +11,17 @@ using namespace hook;
 MinecraftFunctionTable g_mcf;
 const HookFunctionTable* g_hookf;
 
+bool checkCode(void * code, Buffer originalCode, Text name) noexcept
+{
+	if (memcmp(code, originalCode.data(), originalCode.size()) != 0)
+	{
+		ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+		cerr << "chakraX: " << name << " - function hooking failed" << endl;
+		return false;
+	}
+	return true;
+}
+
 class Code :public CodeWriter
 {
 private:
@@ -27,12 +38,7 @@ public:
 	{
 		size_t size = originalCode.size();
 		Unprotector unpro(junctionPoint, size);
-		if (memcmp(junctionPoint, originalCode.data(), size) != 0)
-		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << "chakraX: " << name << " - function hooking failed" << endl;
-			return;
-		}
+		if (!checkCode(junctionPoint, originalCode, name)) return;
 
 		CodeWriter writer((void*)unpro, size);
 		if (jump) writer.jump(m_codeptr, tempregister);
@@ -252,10 +258,21 @@ int makeScriptId_1_12() noexcept
 {
 	return 0;
 }
-
 int makeScriptId_1_13() noexcept
 {
 	return ++(g_serverInstance->scriptEngine->chakra->scriptCounter);
+}
+void removeScriptExperientalCheck() noexcept
+{
+	static const byte ORIGINAL_CODE[] = {
+		0x48, 0x8B, 0xCE, // mov rcx,rsi
+		0xE8, 0xAC, 0x44, 0x56, 0x00, // call < bedrock_server.public: bool __cde
+		0x84, 0xC0, // test al,al
+		0x0F, 0x84, 0x3C, 0x01, 0x00, 0x00, // je bedrock_server.7FF6FCB29198
+	};
+	Unprotector unpro((byte*)g_mcf.MinecraftServerScriptEngine$onServerThreadStarted + 0x4c, sizeof(ORIGINAL_CODE));
+	if (!checkCode(unpro, ORIGINAL_CODE, "removeScriptExperientalCheck")) return;
+	memset(unpro, 0x90, sizeof(ORIGINAL_CODE));
 }
 
 static const HookFunctionTable s_hookf_1_12 = {
@@ -298,6 +315,7 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"DedicatedServer::start", &DedicatedServer$start},
 		{"ScriptEngine::startScriptLoading", &ScriptEngine$startScriptLoading},
 		{STRING "::_Tidy_deallocate", &string$_Tidy_deallocate},
+		{"MinecraftServerScriptEngine::onServerThreadStarted", &MinecraftServerScriptEngine$onServerThreadStarted},
 	};
 
 	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Construct<unsigned char const * __ptr64>
@@ -370,6 +388,7 @@ void MinecraftFunctionTable::load_1_13_0_34() noexcept
 		return (byte*)currentModule + offset;
 	};
 	RakNet$RakPeer$GetConnectionList = ptr(0xA34E0);
+	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x409000);
 	NetworkHandler$_getConnectionFromId = ptr(0x289EA0);
 	ServerNetworkHandler$_getServerPlayer = ptr(0x2F5CE0);
 	NetworkHandler$onConnectionClosed = ptr(0x28A7A0);
@@ -385,4 +404,6 @@ void MinecraftFunctionTable::load_1_13_0_34() noexcept
 	MinecraftPackets$createPacket = ptr(0x28F840);
 	ScriptEngine$_processSystemUpdate = ptr(0x34FF20);
 	g_hookf = &s_hookf_1_13;
+
+	removeScriptExperientalCheck();
 }

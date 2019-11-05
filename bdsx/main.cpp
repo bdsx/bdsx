@@ -1,16 +1,17 @@
 
 
 #include <KR3/main.h>
-#include <KR3/wl/windows.h>
+#include <KR3/data/crypt.h>
 #include <KR3/js/js.h>
 #include <KR3/fs/file.h>
 #include <KR3/util/path.h>
+#include <KR3/util/parameter.h>
 #include <KR3/parser/jsonparser.h>
 #include <KR3/data/map.h>
 #include <KR3/data/set.h>
 #include <KR3/io/selfbufferedstream.h>
-#include <KR3/data/crypt.h>
 #include <KR3/net/ipaddr.h>
+#include <KR3/wl/windows.h>
 #include <KRWin/handle.h>
 #include <KRWin/hook.h>
 
@@ -28,14 +29,10 @@
 #include "fs.h"
 #include "nethook.h"
 #include "funchook.h"
+#include "require.h"
+#include "native.h"
 
 #pragma comment(lib, "chakrart.lib")
-
-#ifdef WIN32
-#define SEP u"\\"
-#else
-#define SEP u"/"
-#endif
 
 
 using namespace kr;
@@ -47,13 +44,7 @@ namespace
 	win::Module* s_module = win::Module::getModule(nullptr);
 	hook::IATHookerList s_iatChakra(s_module, "chakra.dll");
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
-	JsPersistent s_onError;
 	Map<Text, AText> s_uuidToPackPath;
-	Set<Ipv4Address> s_banlist;
-	Map<Text16, JsPersistent> s_modules;
-	JsPersistent s_nativeModule;
-	AText s_jsmain;
-	AText16 s_moduleRoot;
 }
 
 struct ConnectionInfo
@@ -75,248 +66,38 @@ struct ConnectionInfo
 	}
 };
 
-void loadPackageJson() noexcept
-{
-	try
-	{
-		s_moduleRoot = path16.resolve(u"bdsx");
-		Must<File> file = File::open(u"bdsx/package.json");
-		JsonParser parse((File*)file);
-		parse.fields([&](JsonField& field) {
-			field("main", &s_jsmain);
-		});
-	}
-	catch (Error&)
-	{
-		ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-		cerr << "BDSX: failed to load package.json" << endl;
-	}
-}
 void catchException() noexcept
 {
 	JsValueRef exception;
 	if (JsGetAndClearException(&exception) == JsNoError)
 	{
 		JsScope scope;
-
 		JsRawData exceptionobj = (JsRawData)exception;
-		JsValue onError = s_onError;
-		if (onError.isEmpty() || onError.call(undefined, { exceptionobj }) != false)
+		if (!NativeModule::instance->fireError(exceptionobj))
 		{
-			TText16 message = exceptionobj.getProperty(u"stack").as<Text16>();
-			JsRelease(exception, nullptr);
-			
+			Text16 message = exceptionobj.getProperty(u"stack").as<Text16>();
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << toAnsi(message) << endl;
+			ucerr << message << endl;
+			JsRelease(exception, nullptr);
 		}
 	}
 }
 
-JsValue getNativeModule() throws(JsException)
+int CALLBACK recvfromHook(
+	SOCKET s, char* buf, int len, int flags,
+	sockaddr* from, int* fromlen
+)
 {
-	static JsValue(* const make)() = []{
-		JsValue native = JsNewObject;
-		native.set(u"console", createConsoleModule());
-		native.setMethod(u"setOnErrorListener", [](JsValue listener) {
-			if (listener.getType() != JsType::Function) throw JsException(u"argument must be function");
-			s_onError = listener;
-			});
-		native.setMethod(u"execSync", [](Text16 path, JsValue curdir) {
-			return (AText)shell(path, curdir != undefined ? curdir.toString().as<Text16>().data() : nullptr);
-			});
-		native.setMethod(u"debug", [] {
-			requestDebugger();
-			debug();
-			});
-		native.set(u"fs", createFsModule());
-		native.set(u"NativePointer", NativePointer::classObject);
-		native.set(u"NativeFile", NativeFile::classObject);
-		native.set(u"nethook", createNetHookModule());
+	int res = recvfrom(s, buf, len, flags, from, fromlen);
 
-		{
-			JsValue ipban = JsNewObject;
-			ipban.setMethod(u"add", [](Text16 ipport) {
-				Text16 iptext = ipport.readwith_e('|');
-				if (iptext.empty()) return;
-				s_banlist.insert(Ipv4Address(TSZ() << toNone(iptext)));
-				});
-			ipban.setMethod(u"remove", [](Text16 ipport) {
-				Text16 iptext = ipport.readwith_e('|');
-				if (iptext.empty()) return;
-				s_banlist.erase(Ipv4Address(TSZ() << toNone(iptext)));
-				});
-			native.set(u"ipban", ipban);
-		}
-		return native;
-	};
-
-	if (!s_nativeModule.isEmpty()) return s_nativeModule;
-	JsValue module = make();
-	s_nativeModule = module;
-	return module;
+	if (NativeModule::instance->isBanned(((Ipv4Address&)((sockaddr_in*)from)->sin_addr)))
+	{
+		*fromlen = 0;
+		WSASetLastError(WSAECONNREFUSED);
+		return -1;
+	}
+	return res;
 }
-
-class Require
-{
-private:
-	AText16 m_dirname;
-
-public:
-	Require(AText16 dirname) noexcept
-		:m_dirname(move(dirname))
-	{
-	}
-
-	Require(Require&& _move) noexcept
-		:m_dirname(move(_move.m_dirname))
-	{
-	}
-
-	~Require() noexcept
-	{
-	}
-
-	JsValue operator ()(Text16 modulename) const throws(JsException)
-	{
-		static AText16 (*const findMain)(Text16, Text16) = [](Text16 jsonpath, Text16 modulename)->AText16{
-			AText16 entry;
-			Must<File> file = File::open(jsonpath.data());
-			try
-			{
-				JsonParser parse((File*)file);
-				parse.object([&](Text key) {
-					if (key == "main")
-					{
-						entry = (Utf8ToUtf16)parse.ttext();
-					}
-					else
-					{
-						parse.skipValue();
-					}
-					});
-			}
-			catch (...)
-			{
-				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				throw JsException(TSZ16() << u"failed to load package.json: " << modulename);
-			}
-			if (entry == nullptr)
-			{
-				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				throw JsException(TSZ16() << u"main not found from package.json: " << modulename);
-			}
-			AText16 newfilepath;
-			path16.joinEx(&newfilepath, { path16.dirname(jsonpath), entry }, true, '/');
-			return newfilepath;
-		};
-
-		AText16 filepath;
-
-		TSZ16 normed = path16.join(modulename, '/');
-		if (normed.startsWith(u"..") || path16.getProtocolInfo(normed).isAbsolute)
-		{
-			throw JsException(TSZ16() << u"Module path denided: " << modulename);
-		}
-
-		if (!modulename.startsWith(u'.'))
-		{
-			Text16 dirname = m_dirname;
-			for (;;)
-			{
-				try
-				{
-					filepath = findMain(path16.join({ dirname, u"node_modules", normed, u"package.json" }) << nullterm, modulename);
-					break;
-				}
-				catch (Error&)
-				{
-				}
-				if (dirname.size() <= s_moduleRoot.size())
-				{
-					if (normed == u"bdsx" SEP u"native")
-					{
-						return getNativeModule();
-					}
-
-					throw JsException(TSZ16() << u"module not found: " << modulename);
-				}
-				dirname.cut_self(dirname.find_r(path16.sep));
-			}
-		}
-		else
-		{
-			path16.joinEx(&filepath, { m_dirname, normed }, true);
-		}
-
-		Text16 importName = filepath;
-		if (importName.endsWith(SEP u"index"))
-		{
-			importName.cut_self(importName.end() - 6);
-		}
-		auto res = s_modules.insert(importName, JsPersistent());
-		if (!res.second)
-		{
-			return res.first->second;
-		}
-
-
-		TSZ16 filename;
-		AText source;
-		try
-		{
-			filename << filepath << nullterm;
-			source = File::openAsArray<char>(filename.data());
-			goto _finish;
-		}
-		catch (Error&)
-		{
-		}
-
-		try
-		{
-			filename << u".js" << nullterm;
-			source = File::openAsArray<char>(filename.data());
-			goto _finish;
-		}
-		catch (Error&)
-		{
-		}
-
-		try
-		{
-			filename.cut(filename.end()-3);
-			filename << path16.sep << u"index.js" << nullterm;
-			source = File::openAsArray<char>(filename.data());
-			goto _finish;
-		}
-		catch (Error&)
-		{
-		}
-
-		if (filepath.endsWith(SEP u"node_modules" SEP u"bdsx" SEP u"native"))
-		{
-			JsValue native = getNativeModule();
-			res.first->second = native;
-			return native;
-		}
-
-		s_modules.erase(res.first);
-		throw JsException(TSZ16() << u"module not found: " << modulename);
-	_finish:
-		JsValue exports = JsNewObject;
-		AText16 newdirname;
-		path16.joinEx(&newdirname, { path16.dirname(filename) }, true);
-		reline_new((void**)newdirname.data()-1);
-
-		JsValue require = JsFunction::makeT(Require(move(newdirname)));
-		JsValue func = JsRuntime::run(filename, TSZ16() << u"(exports, __dirname, require)=>{" << utf8ToUtf16(source) << u"\n}", g_hookf->makeScriptId());
-		func.call(undefined, { exports, m_dirname, require });
-
-		res.first->second = exports;
-		return exports;
-	}
-};
-
 JsErrorCode CALLBACK JsCreateRuntimeHook(
 	JsRuntimeAttributes attributes,
 	JsThreadServiceCallback threadService,
@@ -352,11 +133,9 @@ JsErrorCode CALLBACK JsCreateRuntimeHook(
 }
 JsErrorCode CALLBACK JsDisposeRuntimeHook(JsRuntimeHandle runtime) noexcept
 {
-	destroyNetHookModule();
-	s_onError = JsPersistent();
+	NativeModule::instance.remove();
+	Require::clear();
 	destroyJsContext();
-	s_modules.clear();
-	s_nativeModule = JsPersistent();
 	return JsDisposeRuntime(runtime);
 }
 JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* newContext) noexcept
@@ -366,7 +145,9 @@ JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* 
 	{
 		createJsContext(*newContext);
 		g_ctx->enter();
+		NativeModule::instance.create();
 		g_ctx->exit();
+		s_iatWS2_32.hooking(17, recvfromHook); // recvfrom
 	}
 	return err;
 }
@@ -408,21 +189,6 @@ JsErrorCode CALLBACK JsCallFunctionHook(
 	JsErrorCode err = JsCallFunction(function, arguments, argumentCount, result);
 	if (err != JsNoError) catchException();
 	return err;
-}
-
-int CALLBACK recvfromHook(
-	SOCKET s, char* buf, int len, int flags, 
-	sockaddr* from, int* fromlen
-)
-{
-	int res = recvfrom(s, buf, len, flags, from, fromlen);
-	if (s_banlist.find(((Ipv4Address&)((sockaddr_in*)from)->sin_addr)) != s_banlist.end())
-	{
-		*fromlen = 0;
-		WSASetLastError(WSAECONNREFUSED);
-		return -1;
-	}
-	return res;
 }
 
 BOOL WINAPI DllMain(
@@ -475,7 +241,16 @@ BOOL WINAPI DllMain(
 			}
 		}
 
-		loadPackageJson();
+		Text16 commandLine = (Text16)unwide(GetCommandLineW());
+		while (!commandLine.empty())
+		{
+			Text16 option = readArgument(commandLine);
+			if (option == u"-M")
+			{
+				Text16 modulePath = readArgument(commandLine);
+				Require::init(modulePath);
+			}
+		}
 
 		g_hookf->hookOnLoopStart([](DedicatedServer* server, ServerInstance * instance) {
 			g_server = server;
@@ -483,39 +258,13 @@ BOOL WINAPI DllMain(
 		});
 		g_hookf->hookOnScriptLoading([]{
 			// create require
-			if (s_jsmain != nullptr)
-			{
-				TSZ16 maindir;
-				maindir << u"bdsx/" << (Utf8ToUtf16)path.dirname(s_jsmain);
-
-				AText16 dirname;
-				path16.joinEx(&dirname, { maindir }, true);
-
-				JsScope _scope;
-				Require require(move(dirname));
-				try
-				{
-					require(u"bdsx");
-
-					TSZ16 main16;
-					main16 << u"./";
-					main16 << (Utf8ToUtf16)path.basename(s_jsmain);
-					s_jsmain = nullptr;
-					require(main16);
-				}
-				catch (JsException& err)
-				{
-					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-					ucerr << err.toString() << endl;
-				}
-			}
+			Require::start();
 		});
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);
 		s_iatChakra.hooking("JsRunScript", JsRunScriptHook);
 		s_iatChakra.hooking("JsCallFunction", JsCallFunctionHook);
-		s_iatWS2_32.hooking(17, recvfromHook); // recvfrom
 	}
 	return true;
 }

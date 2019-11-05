@@ -23,6 +23,7 @@ struct MinecraftFunctionTable
 	void (*ServerInstance$ServerInstance)(ServerInstance* server, IMinecraftApp*, ServerInstanceEventCoordinator&);
 	void (*DedicatedServer$start)(String* str);
 	void (*ScriptEngine$startScriptLoading)(ScriptEngine*);
+	void (*MinecraftServerScriptEngine$onServerThreadStarted)(MinecraftServerScriptEngine*);
 
 	// ?lower_bound@?$_Hash@V?$_Umap_traits@VNetworkIdentifier@@V?$unique_ptr@VClient@ServerNetworkHandler@@U?$default_delete@VClient@ServerNetworkHandler@@@std@@@std@@V?$_Uhash_compare@VNetworkIdentifier@@U?$hash@VNetworkIdentifier@@@std@@U?$equal_to@VNetworkIdentifier@@@3@@3@V?$allocator@U?$pair@$$CBVNetworkIdentifier@@V?$unique_ptr@VClient@ServerNetworkHandler@@U?$default_delete@VClient@ServerNetworkHandler@@@std@@@std@@@std@@@3@$0A@@std@@@std@@QEAA?AV?$_List_iterator@V?$_List_val@U?$_List_simple_types@U?$pair@$$CBVNetworkIdentifier@@V?$unique_ptr@VClient@ServerNetworkHandler@@U?$default_delete@VClient@ServerNetworkHandler@@@std@@@std@@@std@@@std@@@std@@@2@AEBVNetworkIdentifier@@@Z
 	// class std::_List_iterator<class std::_List_val<struct std::_List_simple_types<struct std::pair<class NetworkIdentifier const ,class std::unique_ptr<class ServerNetworkHandler::Client,struct std::default_delete<class ServerNetworkHandler::Client> 

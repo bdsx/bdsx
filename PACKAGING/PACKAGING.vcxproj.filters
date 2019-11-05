@@ -18,12 +18,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tsconfig.json" />
-    <None Include="script\index.ts" />
     <None Include=".vscode\tasks.json" />
-    <None Include="bdsx\package.json" />
+    <None Include="bdsx\index.ts" />
     <None Include="bdsx.bat">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="bdsx\tsconfig.json" />
+    <CustomBuild Include="bdsx\package.json" />
   </ItemGroup>
 </Project>
