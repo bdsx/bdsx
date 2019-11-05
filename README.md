@@ -1,5 +1,5 @@
 
-## BDSX: The Server Modding Project!  
+## BDSX: The Hacked-BDS!
 ![image](image.png)  
 **Windows Only**  
 Download: [bdsx.zip](https://github.com/karikera/bdsx/releases)  
@@ -16,7 +16,7 @@ It's very mutable now, I will remove or change API names frequently
 ├ bdsx/ - Project folder  
 │  ├ index.js - Javascript File  
 │  ├ index.ts - Typescript File, You can delete it If you don't use Typescript  
-│  ├ package-lock.json - Installed packages informtaion  
+│  ├ package-lock.json - Installed packages information  
 │  ├ package.json - Meta datas for the project  
 │  └ tsconfig.json - Compile options for Typescript, You can delete it If you don't use Typescript  
 ├ server/ - [Bedrock Dedicated Server](https://www.minecraft.net/en-us/download/server/bedrock/)  
