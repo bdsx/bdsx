@@ -90,7 +90,10 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>kcopy bdsx "$(SolutionDir)release\bdsx"</Command>
+      <Command>kcopy bdsx "$(SolutionDir)release\bdsx"
+rd /s /q "$(SolutionDir)release\server\worlds\Bedrock level"
+del "$(SolutionDir)release.zip"
+zip "$(SolutionDir)release" "$(SolutionDir)release.zip"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -131,7 +134,10 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>kcopy bdsx "$(SolutionDir)release\bdsx"</Command>
+      <Command>kcopy bdsx "$(SolutionDir)release\bdsx"
+rd /s /q "$(SolutionDir)release\server\worlds\Bedrock level"
+del "$(SolutionDir)release.zip"
+zip "$(SolutionDir)release" "$(SolutionDir)release.zip"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
