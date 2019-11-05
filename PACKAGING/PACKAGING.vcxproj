@@ -89,12 +89,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>kcopy bdsx "$(SolutionDir)release\bdsx"
-rd /s /q "$(SolutionDir)release\server\worlds\Bedrock level"
-del "$(SolutionDir)release.zip"
-zip "$(SolutionDir)release" "$(SolutionDir)release.zip"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -133,12 +128,7 @@ zip "$(SolutionDir)release" "$(SolutionDir)release.zip"</Command>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>kcopy bdsx "$(SolutionDir)release\bdsx"
-rd /s /q "$(SolutionDir)release\server\worlds\Bedrock level"
-del "$(SolutionDir)release.zip"
-zip "$(SolutionDir)release" "$(SolutionDir)release.zip"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include=".vscode\tasks.json" />
@@ -209,6 +199,23 @@ cd ..</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">tsc</Message>
+    </CustomBuild>
+    <CustomBuild Include="packaging.bat">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">call %(Identity) "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call %(Identity) "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call %(Identity) "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call %(Identity) "$(SolutionDir)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">packaging.bat</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)release.zip</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">packaging.bat</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release.zip</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">packaging.bat</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)release.zip</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">packaging.bat</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release.zip</Outputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

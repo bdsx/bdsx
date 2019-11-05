@@ -23,6 +23,9 @@
     <None Include="bdsx.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="packaging.bat">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="bdsx\tsconfig.json" />
