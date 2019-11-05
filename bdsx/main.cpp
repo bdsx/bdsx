@@ -72,14 +72,8 @@ void catchException() noexcept
 	if (JsGetAndClearException(&exception) == JsNoError)
 	{
 		JsScope scope;
-		JsRawData exceptionobj = (JsRawData)exception;
-		if (!NativeModule::instance->fireError(exceptionobj))
-		{
-			Text16 message = exceptionobj.getProperty(u"stack").as<Text16>();
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			ucerr << message << endl;
-			JsRelease(exception, nullptr);
-		}
+		NativeModule::instance->fireError((JsRawData)exception);
+		JsRelease(exception, nullptr);
 	}
 }
 

@@ -2,6 +2,7 @@
 #include <KR3/wl/windows.h>
 #include <KR3/fs/file.h>
 #include <KR3/fs/watcher.h>
+#include <KR3/util/path.h>
 
 using namespace kr;
 
@@ -177,6 +178,12 @@ JsValue createFsModule() noexcept
 		{
 			throw JsException(err.getMessage<char16>() << u": " << filename);
 		}
+	});
+	fs.setMethod(u"cwd", [](){
+		return move(TText16() << currentDirectory);
+	});
+	fs.setMethod(u"chdir", [](TText16 dir) {
+		SetCurrentDirectoryW(szlize(dir, &TText16()));
 	});
 	return fs;
 }

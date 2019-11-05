@@ -280,9 +280,10 @@ struct ConnectionReqeust
 
 struct LoginPacket:Packet
 {
-	void* u3; // 18
-	void* u4; // 20
-	ConnectionReqeust* connreq; // 28
+	void* u3;
+	void* u4;
+	uint32_t u5; //0x184
+	ConnectionReqeust* connreq;
 };
 
 struct MinecraftEventing;
@@ -388,6 +389,8 @@ struct RaknetNetworkPeer
 {
 	RaknetNetworkPeer() = delete;
 	void* vtable;
+	void* u1; // null
+	void* u2; // null
 	RakPeer* peer;
 };
 
@@ -419,7 +422,7 @@ struct Connection
 	Connection() = delete;
 	byte unknown[0xb0];
 	EncryptedNetworkPeer* epeer;
-	CompressedNetworkPeer* cpeer;
+	CompressedNetworkPeer* epeer2;
 	BatchedNetworkPeer* bpeer;
 	BatchedNetworkPeer* bpeer2;
 	byte u1;

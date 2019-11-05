@@ -187,7 +187,7 @@ void hookOnConnectionClosed_1_13(void(*onclose)(const NetworkIdentifier&)) noexc
 	junction.call(onclose, RAX);
 	junction.add(RSP, 0x28);
 	junction.mov(RDX, RDI);
-	junction.mov(RCX, QwordPtr, RBP, 250);
+	junction.mov(RCX, QwordPtr, RBP, 0x250);
 	junction.ret();
 	junction.patchTo((byte*)g_mcf.NetworkHandler$onConnectionClosed + 0x1D,
 		ORIGINAL_CODE, RAX, false, "onConnectionClosed");

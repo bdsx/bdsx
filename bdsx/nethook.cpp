@@ -8,6 +8,7 @@
 #include "reverse.h"
 #include "funchook.h"
 #include "nativepointer.h"
+#include "native.h"
 
 //LoopbackPacketSender::sendToClient(NetworkIdentifier&, Packet&, byte)
 //LoopbackPacketSender::flush(NetworkIdentifier&)
@@ -67,8 +68,7 @@ JsValue createNetHookModule() noexcept
 		}
 		catch (JsException& err)
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			ucerr << err.getValue().getProperty(u"stack").toString().as<Text16>() << endl;
+			NativeModule::instance->fireError(err.getValue());
 			return PacketReadError;
 		}
 	});
@@ -128,8 +128,7 @@ JsValue createNetHookModule() noexcept
 		}
 		catch (JsException& err)
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			ucerr << err.getValue().getProperty(u"stack").toString().as<Text16>() << endl;
+			NativeModule::instance->fireError(err.getValue());
 		}
 	});
 	g_hookf->hookOnConnectionClosed([](const NetworkIdentifier& ni) {
@@ -151,4 +150,5 @@ void destroyNetHookModule() noexcept
 	{
 		persistent = JsPersistent();
 	}
+	s_onConnectionClosed = JsPersistent();
 }

@@ -5,6 +5,8 @@ import NativeFile = native.NativeFile;
 
 export const readFileSync = native.fs.readUtf8FileSync;
 export const writeFileSync = native.fs.writeUtf8FileSync;
+export const cwd = native.fs.cwd;
+export const chdir = native.fs.chdir;
 
 export function writeFile(path: string, content: string): Promise<void> {
     return new Promise((resolve, reject) => {

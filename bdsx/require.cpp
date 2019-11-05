@@ -112,8 +112,8 @@ void Require::start() noexcept
 		}
 		catch (JsException & err)
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			ucerr << err.getValue().getProperty(u"stack").toString().as<Text16>() << endl;
+			JsValue exceptionobj = err.getValue();
+			NativeModule::instance->fireError(exceptionobj);
 		}
 	}
 }

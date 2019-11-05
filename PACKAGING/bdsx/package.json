@@ -11,7 +11,8 @@
   "keywords": [],
   "author": "YOU",
   "dependencies": {
-    "bdsx": "^1.0.2"
+    "bdsx": "^1.0.7",
+    "minecraft-scripting-types-server": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^12.12.5",

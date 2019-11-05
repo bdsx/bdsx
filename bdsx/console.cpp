@@ -6,7 +6,7 @@
 using namespace kr;
 namespace
 {
-	int s_consoleColor = FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_BLUE;
+	int s_consoleColor = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 	static const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);  // Get handle to standard output
 }
 

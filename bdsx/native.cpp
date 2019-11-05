@@ -5,6 +5,7 @@
 #include "nethook.h"
 
 #include <KR3/util/process.h>
+#include <KR3/wl/windows.h>
 
 using namespace kr;
 
@@ -64,6 +65,15 @@ bool NativeModule::isBanned(Ipv4Address ip) noexcept
 bool NativeModule::fireError(const JsRawData& err) noexcept
 {
 	JsValue onError = m_onError;
-	if (onError.isEmpty()) return false;
-	return onError.call(undefined, { err }) == false;
+	if (!onError.isEmpty())
+	{
+		if (onError.call(undefined, { err }) == false)
+		{
+			return true;
+		}
+	}
+
+	ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+	ucerr << err.getProperty(u"stack").toString().as<Text16>() << endl;
+	return false;
 }
