@@ -16,8 +16,17 @@ NativeModule::NativeModule() noexcept
 	JsValue native = JsNewObject;
 	native.set(u"console", createConsoleModule());
 	native.setMethod(u"setOnErrorListener", [](JsValue listener) {
-		if (listener.getType() != JsType::Function) throw JsException(u"argument must be function");
-		instance->m_onError = listener;
+		switch (listener.getType())
+		{
+		case JsType::Null:
+			instance->m_onError = JsPersistent();
+			break;
+		case JsType::Function:
+			instance->m_onError = listener;
+			break;
+		default:
+			throw JsException(u"argument must be function or null");
+		}
 		});
 	native.setMethod(u"execSync", [](Text16 path, JsValue curdir) {
 		return (AText)shell(path, curdir != undefined ? curdir.toString().as<Text16>().data() : nullptr);

@@ -37,7 +37,9 @@ ATTR_NORETURN void throwLastError(Text16 extra_msg) throws(JsException)
 class Watcher : public JsObjectT<Watcher>
 {
 public:
-	static constexpr char16_t className[] = u"NativeFile";
+	static constexpr char16_t className[] = u"Watcher";
+	static constexpr bool global = false;
+
 	class Impl :public DirectoryWatcher
 	{
 	public:

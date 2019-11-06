@@ -20,15 +20,17 @@
   <ItemGroup>
     <None Include=".vscode\tasks.json" />
     <None Include="bdsx\index.ts" />
-    <None Include="bdsx.bat">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="packaging.bat">
-      <Filter>Source Files</Filter>
-    </None>
+    <None Include="bdsx\package-lock.json" />
+    <None Include="bdsx\index.js" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="bdsx\tsconfig.json" />
     <CustomBuild Include="bdsx\package.json" />
+    <CustomBuild Include="bdsx.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="packaging.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

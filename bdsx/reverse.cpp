@@ -89,7 +89,19 @@ Text String::text() noexcept
 	const char * d = data();
 	return Text(d, size);
 }
-void String::deallocate() noexcept
+void String::construct() noexcept
 {
-	g_mcf.string$_Tidy_deallocate(this);
+	return g_mcf.std$string$string(this);
+}
+void String::destruct() noexcept
+{
+	return g_mcf.std$string$_Tidy_deallocate(this);
+}
+String* String::assign(const char* str, size_t size) noexcept
+{
+	return g_mcf.std$string$assign(this, str, size);
+}
+String* String::append(const char* str, size_t size) noexcept
+{
+	return g_mcf.std$string$assign(this, str, size);
 }

@@ -1,16 +1,39 @@
 
-## BDSX: The Hacked-BDS!
+## BDSX: The Modded-BDS!
 ![image](image.png)  
-**Windows Only**  
 Download: [bdsx.zip](https://github.com/karikera/bdsx/releases)  
-* It's standalone!
-* It will run `bdsx/index.js` as server script without any settings (Even without experimental play!)
-* It has `require` function likes NodeJS!
-* It can access file!
-* It can write text to console!  
+* **Windows Only!**
+* Supports all BDS features!
+* Run scripts without any addons or experimental play!
+* `require` function supports likes NodeJS!
+* Write to console!
+```ts
+console.log("Hello, World!");
+```
+* File IO!
+```ts
+import { fs } from 'bsx';
+console.log('Current Directory: '+fs.cwd());
+fs.writeFile("textfile.txt", "Hello, World!");
+```
+* Hijack chatting!
+```ts
+import { chat } from 'bdsx';
+chat.on(ev=>{
+    ev.setMessage(ev.message.toUpperCase()+" YEY!");
+});
+```
+* Hijack network packet!
+```ts
+import { netevent, PacketId } from "bdsx";
+netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId, loginInfo)=>{
+    // networkIdentifier has non-printable character, It will breaks standard output
+    console.log(`${loginInfo.id}> IP=${loginInfo.ip}, XUID=${loginInfo.xuid}`);
+})
+```
   
-It makes more javascript functions to bedrock_server.exe by injecting DLL  
-It's very mutable now, I will remove or change API names frequently  
+It will run `bdsx/index.js` as server script!  
+It's very mutable now, I will remove or change API names frequently!  
 
 ## Files
 ├ bdsx/ - Project folder  

@@ -9,7 +9,6 @@ using namespace kr;
 using namespace hook;
 
 MinecraftFunctionTable g_mcf;
-const HookFunctionTable* g_hookf;
 
 bool checkCode(void * code, Buffer originalCode, Text name) noexcept
 {
@@ -60,7 +59,7 @@ struct FunctionTarget
 
 };
 
-void hookOnUpdate(void (*update)()) noexcept
+void hookOnUpdate(void(*update)()) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x48, 0x89, 0x45, 0xF8, // mov qword ptr[rbp - 8],rax
@@ -119,25 +118,6 @@ void hookOnPacketAfter(void(*onPacketAfter)(byte*, ServerNetworkHandler*, const 
 	static const byte ORIGINAL_CODE[] = {
 		0x49, 0x8B, 0xD5, // mov rdx,r13
 		0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
-		0x41, 0x80, 0xBD, 0xE0, 0x00, 0x00, 0x00, 0x00, // cmp byte ptr ds:[r13+E0],0
-	};
-	Code junction(64);
-	junction.sub(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
-	junction.mov(RCX, RBP); // rbp
-	junction.mov(RDX, RSI); // ServerNetworkHandler
-	junction.mov(R8, R13); // NetworkIdentifier
-	junction.call(onPacketAfter, RAX);
-	junction.add(RSP, 0x28);
-	junction.ret();
-	junction.patchTo((byte*)g_mcf.NetworkHandler$_sortAndPacketizeEvents + 0x405,
-		ORIGINAL_CODE, RDX, false, "onPacketAfter");
-}
-void hookOnPacketAfter_1_13(void(*onPacketAfter)(byte*, ServerNetworkHandler*, const NetworkIdentifier&)) noexcept
-{
-	static const byte ORIGINAL_CODE[] = {
-		0x49, 0x8B, 0xD5, // mov rdx,r13
-		0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
 		0x41, 0x80, 0xBD, 0xF0, 0x00, 0x00, 0x00, 0x00, // cmp byte ptr ds:[r13+F0],0
 	};
 	Code junction(64);
@@ -152,27 +132,38 @@ void hookOnPacketAfter_1_13(void(*onPacketAfter)(byte*, ServerNetworkHandler*, c
 	junction.patchTo((byte*)g_mcf.NetworkHandler$_sortAndPacketizeEvents + 0x405,
 		ORIGINAL_CODE, RDX, false, "onPacketAfter");
 }
-void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept
+void hookOnScriptLoading(void(*callback)()) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0x89, 0x00, 0x02, 0x00, 0x00, // mov rcx,qword ptr ds:[rcx+200]
-		0x4D, 0x8B, 0xF8, // mov r15,r8
-		0x4C, 0x8B, 0xF2, // mov r14,rdx
+		0xBF, 0x04, 0x00, 0x00, 0x00, // mov edi,4
+		0x65, 0x48, 0x8B, 0x04, 0x25, 0x58, 0x00, 0x00, 0x00, // mov rax,qword ptr gs:[58]
 	};
 	Code junction(64);
+	junction.sub(RSP, 0x28);
+	junction.call(callback, RAX);
+	junction.add(RSP, 0x28);
 	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
-	junction.push(RCX);
-	junction.sub(RSP, 0x20);
-	junction.mov(RCX, RDX);
-	junction.call(onclose, RAX);
-	junction.add(RSP, 0x20);
-	junction.pop(RCX);
-	junction.mov(RDX, R14);
 	junction.ret();
-	junction.patchTo((byte*)g_mcf.NetworkHandler$onConnectionClosed + 0x24,
-		ORIGINAL_CODE, RAX, false, "onConnectionClosed");
+	junction.patchTo((byte*)g_mcf.ScriptEngine$startScriptLoading + 28,
+		ORIGINAL_CODE, RAX, false, "scriptLoading");
 }
-void hookOnConnectionClosed_1_13(void(*onclose)(const NetworkIdentifier&)) noexcept
+int makeScriptId() noexcept
+{
+	return ++(g_serverInstance->scriptEngine->chakra->scriptCounter);
+}
+void removeScriptExperientalCheck() noexcept
+{
+	static const byte ORIGINAL_CODE[] = {
+		0x48, 0x8B, 0xCE, // mov rcx,rsi
+		0xE8, 0xAC, 0x44, 0x56, 0x00, // call < bedrock_server.public: bool __cde
+		0x84, 0xC0, // test al,al
+		0x0F, 0x84, 0x3C, 0x01, 0x00, 0x00, // je bedrock_server.7FF6FCB29198
+	};
+	Unprotector unpro((byte*)g_mcf.MinecraftServerScriptEngine$onServerThreadStarted + 0x4c, sizeof(ORIGINAL_CODE));
+	if (!checkCode(unpro, ORIGINAL_CODE, "removeScriptExperientalCheck")) return;
+	memset(unpro, 0x90, sizeof(ORIGINAL_CODE));
+}
+void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x48, 0x8B, 0xFA, // mov rdi,rdx
@@ -194,7 +185,7 @@ void hookOnConnectionClosed_1_13(void(*onclose)(const NetworkIdentifier&)) noexc
 }
 void hookOnLoopStart_1_13(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept
 {
-	void(*caller)(byte*, void(*callback)(DedicatedServer * server, ServerInstance * instance)) = 
+	void(*caller)(byte*, void(*callback)(DedicatedServer * server, ServerInstance * instance)) =
 		[](byte* rbp, void(*callback)(DedicatedServer* server, ServerInstance* instance)) {
 		callback(*(DedicatedServer**)(rbp + 0x98), (ServerInstance*)(rbp + 0x2170));
 	};
@@ -215,16 +206,15 @@ void hookOnLoopStart_1_13(void(*callback)(DedicatedServer* server, ServerInstanc
 	junction.patchTo((byte*)g_mcf.DedicatedServer$start + 0x23F2,
 		ORIGINAL_CODE, RAX, false, "serverStart");
 }
-void hookOnLoopStart_1_12(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept
+void hookOnLoopStart(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept
 {
 	void(*caller)(byte*, void(*callback)(DedicatedServer * server, ServerInstance * instance)) =
-		[] (byte * rbp, void(*callback)(DedicatedServer* server, ServerInstance* instance)){
-		debug(); // TODO: get instance from rbp
-		callback(nullptr, nullptr);
+		[](byte* rbp, void(*callback)(DedicatedServer* server, ServerInstance* instance)) {
+		callback(*(DedicatedServer**)(rbp + 0x98), (ServerInstance*)(rbp + 0x2170));
 	};
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0x7D, 0x28, // mov rdi,qword ptr ss:[rbp+28]
-		0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00, // nop word ptr ds:[rax+rax],ax
+		0x48, 0x8B, 0x9D, 0xB8, 0x00, 0x00, 0x00, // mov rbx,qword ptr ss:[rbp+B8]
+		0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00, // nop dword ptr ds:[rax],eax
 	};
 	Code junction(64);
 	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
@@ -236,68 +226,13 @@ void hookOnLoopStart_1_12(void(*callback)(DedicatedServer* server, ServerInstanc
 	junction.add(RSP, 0x20);
 	junction.pop(RCX);
 	junction.ret();
-	junction.patchTo((byte*)g_mcf.DedicatedServer$start + 0x1F13,
+	junction.patchTo((byte*)g_mcf.DedicatedServer$start + 0x23F2,
 		ORIGINAL_CODE, RAX, false, "serverStart");
 }
-void hookOnScriptLoading(void(*callback)()) noexcept
-{
-	static const byte ORIGINAL_CODE[] = {
-		0xBF, 0x04, 0x00, 0x00, 0x00, // mov edi,4
-		0x65, 0x48, 0x8B, 0x04, 0x25, 0x58, 0x00, 0x00, 0x00, // mov rax,qword ptr gs:[58]
-	};
-	Code junction(64);
-	junction.sub(RSP, 0x28);
-	junction.call(callback, RAX);
-	junction.add(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
-	junction.ret();
-	junction.patchTo((byte*)g_mcf.ScriptEngine$startScriptLoading + 28,
-		ORIGINAL_CODE, RAX, false, "scriptLoading");
-}
-int makeScriptId_1_12() noexcept
-{
-	return 0;
-}
-int makeScriptId_1_13() noexcept
-{
-	return ++(g_serverInstance->scriptEngine->chakra->scriptCounter);
-}
-void removeScriptExperientalCheck() noexcept
-{
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0xCE, // mov rcx,rsi
-		0xE8, 0xAC, 0x44, 0x56, 0x00, // call < bedrock_server.public: bool __cde
-		0x84, 0xC0, // test al,al
-		0x0F, 0x84, 0x3C, 0x01, 0x00, 0x00, // je bedrock_server.7FF6FCB29198
-	};
-	Unprotector unpro((byte*)g_mcf.MinecraftServerScriptEngine$onServerThreadStarted + 0x4c, sizeof(ORIGINAL_CODE));
-	if (!checkCode(unpro, ORIGINAL_CODE, "removeScriptExperientalCheck")) return;
-	memset(unpro, 0x90, sizeof(ORIGINAL_CODE));
-}
 
-static const HookFunctionTable s_hookf_1_12 = {
-	hookOnUpdate,
-	hookOnPacket,
-	hookOnPacketRead,
-	hookOnPacketAfter,
-	hookOnConnectionClosed,
-	hookOnLoopStart_1_12,
-	hookOnScriptLoading,
-	makeScriptId_1_12,
-};
-static const HookFunctionTable s_hookf_1_13 = {
-	hookOnUpdate,
-	hookOnPacket,
-	hookOnPacketRead,
-	hookOnPacketAfter_1_13,
-	hookOnConnectionClosed_1_13,
-	hookOnLoopStart_1_13,
-	hookOnScriptLoading,
-	makeScriptId_1_13,
-};
 void MinecraftFunctionTable::loadFromPdb() noexcept
 {
-#define STRING "std::basic_string<char,std::char_traits<char>,std::allocator<char> >"
+#define STRING "basic_string<char,std::char_traits<char>,std::allocator<char> >"
 
 	Map<Text, FunctionTarget> dests = {
 		{"NetworkHandler::_sortAndPacketizeEvents", &NetworkHandler$_sortAndPacketizeEvents},
@@ -314,8 +249,11 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"ServerInstance::ServerInstance", &ServerInstance$ServerInstance},
 		{"DedicatedServer::start", &DedicatedServer$start},
 		{"ScriptEngine::startScriptLoading", &ScriptEngine$startScriptLoading},
-		{STRING "::_Tidy_deallocate", &string$_Tidy_deallocate},
 		{"MinecraftServerScriptEngine::onServerThreadStarted", &MinecraftServerScriptEngine$onServerThreadStarted},
+		{"std::" STRING "::_Tidy_deallocate", &std$string$_Tidy_deallocate},
+		{"std::" STRING "::assign", &std$string$assign},
+		{"std::" STRING "::append", {&std$string$append, 1}},
+		{"std::" STRING "::" STRING, {&std$string$string, 1}},
 	};
 
 	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Construct<unsigned char const * __ptr64>
@@ -324,6 +262,12 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::assign
 	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::append<unsigned char * __ptr64,void>
 	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::operator=
+
+	static void (* const printFuncName)(Text) = [](Text name){
+		TText temp;
+		name.replace(&temp, STRING, "string");
+		temp.replace(&kr::cout, "::", "$");
+	};
 
 	PdbReader reader;
 	reader.showInfo();
@@ -340,9 +284,7 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		}
 		*iter->second.dest = address;
 		dests.erase(iter);
-		TText temp;
-		name.replace(&temp, STRING, "string");
-		temp.replace(&cout, "::", "$");
+		printFuncName(name);
 		cout << " = ptr(0x" << hexf((byte*)address - (byte*)reader.base()) << ");" << endl;
 		if (dests.empty()) return false;
 		return true;
@@ -353,33 +295,11 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 		for (auto& item : dests)
 		{
-			cerr << item.first.cast<char>() << " = ?;" << endl;
+			printFuncName(item.first.cast<char>());
+			cout << " = ?;" << endl;
 		}
 	}
 #undef STRING
-}
-void MinecraftFunctionTable::load_1_12_0_28() noexcept
-{
-	HANDLE currentModule = GetModuleHandleW(nullptr);
-	auto ptr = [&](intptr_t offset)->autoptr {
-		return (byte*)currentModule + offset;
-	};
-	RakNet$RakPeer$GetConnectionList = ptr(0x9F810);
-	NetworkHandler$_getConnectionFromId = ptr(0x1ED870);
-	ServerNetworkHandler$_getServerPlayer = ptr(0x251DF0);
-	NetworkHandler$onConnectionClosed = ptr(0x1EE220);
-	ExtendedCertificate$getXuid = ptr(0x48FC0);
-	NetworkHandler$_sortAndPacketizeEvents = ptr(0x1EDBC0);
-	NetworkHandler$getEncryptedPeerForUser = ptr(0x1EEAF0);
-	ServerInstance$ServerInstance = ptr(0x372590);
-	ExtendedCertificate$getIdentityName = ptr(0x244360);
-	ScriptEngine$startScriptLoading = ptr(0x2B0970);
-	DedicatedServer$start = ptr(0x502E0);
-	RakNet$SystemAddress$ToString = ptr(0x9BEA0);
-	string$_Tidy_deallocate = ptr(0x47D00);
-	MinecraftPackets$createPacket = ptr(0x20A400);
-	ScriptEngine$_processSystemUpdate = ptr(0x2AE740);
-	g_hookf = &s_hookf_1_12;
 }
 void MinecraftFunctionTable::load_1_13_0_34() noexcept
 {
@@ -387,9 +307,11 @@ void MinecraftFunctionTable::load_1_13_0_34() noexcept
 	auto ptr = [&](intptr_t offset)->autoptr {
 		return (byte*)currentModule + offset;
 	};
+
 	RakNet$RakPeer$GetConnectionList = ptr(0xA34E0);
 	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x409000);
 	NetworkHandler$_getConnectionFromId = ptr(0x289EA0);
+	std$string$assign = ptr(0x4E590);
 	ServerNetworkHandler$_getServerPlayer = ptr(0x2F5CE0);
 	NetworkHandler$onConnectionClosed = ptr(0x28A7A0);
 	ExtendedCertificate$getXuid = ptr(0x600B0);
@@ -398,12 +320,26 @@ void MinecraftFunctionTable::load_1_13_0_34() noexcept
 	ExtendedCertificate$getIdentityName = ptr(0x2E6970);
 	NetworkHandler$getEncryptedPeerForUser = ptr(0x28B1A0);
 	ScriptEngine$startScriptLoading = ptr(0x352270);
+	std$string$string = ptr(0x542A0);
+	std$string$append = ptr(0x5C9D0);
 	DedicatedServer$start = ptr(0x561E0);
 	RakNet$SystemAddress$ToString = ptr(0xA0000);
-	string$_Tidy_deallocate = ptr(0x4E3F0);
+	std$string$_Tidy_deallocate = ptr(0x4E3F0);
 	MinecraftPackets$createPacket = ptr(0x28F840);
 	ScriptEngine$_processSystemUpdate = ptr(0x34FF20);
-	g_hookf = &s_hookf_1_13;
+
+#ifndef NDEBUG
+	void** iter = (void**)(this);
+	void** end = (void**)(this + 1);
+	for (; iter != end; iter++)
+	{
+		if (*iter == nullptr)
+		{
+			loadFromPdb();
+			break;
+		}
+	}
+#endif
 
 	removeScriptExperientalCheck();
 }

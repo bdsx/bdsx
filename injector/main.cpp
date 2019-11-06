@@ -42,6 +42,9 @@ int main()
 	if (exePath.empty() || dllPath.empty())
 	{
 		cerr << "injector.exe> It needs exe and dll path" << endl;
+#ifndef NDEBUG
+		MessageBoxW(nullptr, L"It needs exe and dll path", nullptr, MB_OK | MB_ICONERROR);
+#endif
 		return EINVAL;
 	}
 
@@ -57,6 +60,9 @@ int main()
 		.console(true));
 	if (!proc)
 	{
+#ifndef NDEBUG
+		MessageBoxW(nullptr, wide(TSZ16() << u"Failed to run: " << exePath), nullptr, MB_OK | MB_ICONERROR);
+#endif
 		ucerr << u"injector.exe> Failed to run: " << exePath << endl;
 		return ENOENT;
 	}
@@ -64,6 +70,9 @@ int main()
 	win::Module * injected = proc->injectDll(TSZ16() << path16.basename(dllPath));
 	if (!injected)
 	{
+#ifndef NDEBUG
+		MessageBoxW(nullptr, wide(TSZ16() << u"Failed to inject: " << dllPath), nullptr, MB_OK | MB_ICONERROR);
+#endif
 		ucerr << u"injector.exe> Failed to inject: " << dllPath << endl;
 		proc->terminate();
 		thread->detach();

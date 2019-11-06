@@ -16,6 +16,7 @@ namespace
 	Map<Text16, JsPersistent> s_modules;
 	AText16 s_moduleRoot;
 	AText s_jsmain;
+	JsPropertyId s_exports;
 }
 
 char16 jsIdentifierFilter(char16 chr) noexcept
@@ -80,7 +81,12 @@ void Require::init(Text16 root) noexcept
 		JsonParser parse((File*)file);
 		parse.fields([&](JsonField& field) {
 			field("main", &s_jsmain);
-			});
+		});
+		if (s_jsmain == nullptr)
+		{
+			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			cerr << "BDSX: main not found in package.json" << endl;
+		}
 	}
 	catch (Error&)
 	{
@@ -90,6 +96,8 @@ void Require::init(Text16 root) noexcept
 }
 void Require::start() noexcept
 {
+	s_exports = JsPropertyId(u"exports");
+
 	if (s_jsmain != nullptr)
 	{
 		TSZ16 maindir;
@@ -120,6 +128,7 @@ void Require::start() noexcept
 void Require::clear() noexcept
 {
 	s_modules.clear();
+	s_exports = JsPropertyId();
 }
 
 JsValue Require::operator()(Text16 modulename) const throws(JsException)
@@ -249,7 +258,9 @@ JsValue Require::operator()(Text16 modulename) const throws(JsException)
 	s_modules.erase(res.first);
 	throw JsException(TSZ16() << u"module not found: " << modulename);
 _finish:
+	JsValue module = JsNewObject;
 	JsValue exports = JsNewObject;
+	module.setProperty(u"exports", exports);
 	AText16 newdirname;
 	path16.joinEx(&newdirname, { path16.dirname(filename) }, true);
 	reline_new((void**)newdirname.data() - 1);
@@ -258,10 +269,11 @@ _finish:
 
 	JsValue require = JsFunction::makeT(Require(move(newdirname)));
 	{
-		JsValue func = JsRuntime::run(filename, TSZ16() << u"(function " << moduleName.filter(jsIdentifierFilter) << u"(exports, __dirname, require){" << utf8ToUtf16(source) << u"\n})", g_hookf->makeScriptId());
-		func.call(undefined, { exports, m_dirname, require });
+		JsValue func = JsRuntime::run(filename, TSZ16() << u"(function " << moduleName.filter(jsIdentifierFilter) << u"(module, exports, __dirname, require){" << utf8ToUtf16(source) << u"\n})", makeScriptId());
+		func.call(undefined, { module, exports, m_dirname, require });
 	}
 
+	exports = module.getProperty(u"exports");
 	res.first->second = exports;
 	return exports;
 }

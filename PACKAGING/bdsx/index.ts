@@ -25,10 +25,16 @@ file.writeUtf8(-1, `${new Date}> Server Started\n`, () => { });
 file.close();
 
 
+// Chat Listenning
+import { chat } from 'bdsx';
+chat.on(ev => {
+    ev.setMessage(ev.message.toUpperCase() + " YEY!");
+});
+
 // Network Hooking: Get login IP and XUID
-import { nethook, PacketId } from "bdsx";
+import { netevent, PacketId } from "bdsx";
 const connectionList = new Map<string, string>();
-nethook.setOnPacketAfterListener(PacketId.Login, (ptr, networkIdentifier, packetId, loginInfo) => {
+netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId, loginInfo) => {
     // networkIdentifier has non-printable character, It will breaks standard output
     console.log(`${loginInfo.id}> IP=${loginInfo.ip}, XUID=${loginInfo.xuid}`);
     connectionList.set(networkIdentifier, loginInfo.id);
@@ -39,14 +45,14 @@ nethook.setOnPacketAfterListener(PacketId.Login, (ptr, networkIdentifier, packet
 for (let i = 2; i <= 136; i++) {
     if (i === PacketId.ClientCacheBlobStatus) continue; // too loud
     if (i === PacketId.NetworkStackLatencyPacket) continue; // too loud
-    nethook.setOnPacketReadListener(i, (ptr, networkIdentifier, packetId) => {
+    netevent.after(i).on((ptr, networkIdentifier, packetId) => {
         console.log(PacketId[packetId]);
     });
 }
 
 
 // Network Hooking: disconnected
-nethook.setOnConnectionClosedListener(networkIdentifier => {
+netevent.close.on(networkIdentifier => {
     const id = connectionList.get(networkIdentifier);
     connectionList.delete(networkIdentifier);
     console.log(`${id}> disconnected`);
@@ -56,7 +62,8 @@ nethook.setOnConnectionClosedListener(networkIdentifier => {
 // Global error listener
 import { setOnErrorListener } from "bdsx";
 setOnErrorListener(err => {
-    console.log('ERRMSG Example> '+ err.message);
+    console.log('ERRMSG Example> ' + err.message);
     // return false; // Suppress default error output
 });
 console.log(eval("undefined_identifier")); // Error example
+

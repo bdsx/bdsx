@@ -209,7 +209,6 @@ BOOL WINAPI DllMain(
 					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 					cerr << "BDSX: Not Supported";
 				}
-				g_mcf.load_1_12_0_28();
 			}
 			else if (hash == "91B89F3745A2F64139FC6A955EFAD225")
 			{
@@ -218,7 +217,6 @@ BOOL WINAPI DllMain(
 					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 					cerr << "BDSX: Not Supported";
 				}
-				g_mcf.load_1_12_0_28();
 			}
 			else if (hash == "BF16F04AD1783591BC80D1D3E54625E7")
 			{
@@ -236,21 +234,37 @@ BOOL WINAPI DllMain(
 		}
 
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
+		bool modulePathSetted = false;
 		while (!commandLine.empty())
 		{
 			Text16 option = readArgument(commandLine);
 			if (option == u"-M")
 			{
 				Text16 modulePath = readArgument(commandLine);
+
+				if (modulePathSetted)
+				{
+					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					cerr << "BDSX: multiple modules are not supported" << endl;
+					continue;
+				}
+				modulePathSetted = true;
+
 				Require::init(modulePath);
 			}
 		}
 
-		g_hookf->hookOnLoopStart([](DedicatedServer* server, ServerInstance * instance) {
+		if (!modulePathSetted)
+		{
+			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			cerr << "BDSX: Module is not defined // -M [module path]" << endl;
+		}
+
+		hookOnLoopStart([](DedicatedServer* server, ServerInstance * instance) {
 			g_server = server;
 			g_serverInstance = instance;
 		});
-		g_hookf->hookOnScriptLoading([]{
+		hookOnScriptLoading([]{
 			// create require
 			Require::start();
 		});

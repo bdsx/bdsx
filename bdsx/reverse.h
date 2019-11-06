@@ -23,6 +23,7 @@ struct DBStorage;
 struct MinecraftServerScriptEngine;
 struct IMinecraftApp;
 struct ServerInstanceEventCoordinator;
+struct ConnectionReqeust;
 
 
 #define OFFSETFIELD(type, name, offset) type &name() noexcept { return *(type*)((byte*)this + offset); };
@@ -57,7 +58,10 @@ struct String
 
 	const char* data() noexcept;
 	kr::Text text() noexcept;
-	void deallocate() noexcept;
+	void construct() noexcept;
+	void destruct() noexcept;
+	String* assign(const char * str, size_t size) noexcept;
+	String* append(const char* str, size_t size) noexcept;
 };
 
 struct Packet
@@ -67,7 +71,24 @@ struct Packet
 	uint32_t u1; // 2
 	uint32_t u2; // 1
 	uint8_t data;
+	void* u3;
+	void* u4;
+};
 
+struct LoginPacket :Packet
+{
+	uint32_t u5; //0x184
+	ConnectionReqeust* connreq;
+};
+
+struct ChatPacket :Packet
+{
+	uint8_t u5; // ?
+	void* u6; // player
+	void* u7; // 0
+	void* u8; // 0
+	int64_t u9; // 0xf
+	String message;
 };
 
 struct ReadOnlyBinaryStreamVTable
@@ -276,14 +297,6 @@ struct ConnectionReqeust
 	ConnectionReqeust() = delete;
 	void* u1;
 	Certificate* cert;
-};
-
-struct LoginPacket:Packet
-{
-	void* u3;
-	void* u4;
-	uint32_t u5; //0x184
-	ConnectionReqeust* connreq;
 };
 
 struct MinecraftEventing;

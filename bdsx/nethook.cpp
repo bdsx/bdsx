@@ -29,23 +29,50 @@ JsValue createNetHookModule() noexcept
 	JsValue nethook = JsNewObject;
 	nethook.setMethod(u"setOnPacketReadListener", [](int id, JsValue func){
 		checkCurrentThread();
-		if (func.getType() != JsType::Function) throw JsException(u"2nd argument must be function");
-		s_onPacketRead[id] = func;
+		switch (func.getType())
+		{
+		case JsType::Null:
+			s_onPacketRead[id] = JsPersistent();
+			break;
+		case JsType::Function:
+			s_onPacketRead[id] = func;
+			break;
+		default:
+			throw JsException(u"2nd argument must be function or null");
+		}
 	});
 	nethook.setMethod(u"setOnPacketAfterListener", [](int id, JsValue func) {
-		if (func.getType() != JsType::Function) throw JsException(u"2nd argument must be function");
-		s_onPacketAfter[id] = func;
+		switch (func.getType())
+		{
+		case JsType::Null:
+			s_onPacketAfter[id] = JsPersistent();
+			break;
+		case JsType::Function:
+			s_onPacketAfter[id] = func;
+			break;
+		default:
+			throw JsException(u"2nd argument must be function or null");
+		}
 	});
 	nethook.setMethod(u"setOnConnectionClosedListener", [](JsValue func) {
-		if (func.getType() != JsType::Function) throw JsException(u"argument must be function");
-		s_onConnectionClosed = func;
+		switch (func.getType())
+		{
+		case JsType::Null:
+			s_onConnectionClosed = JsPersistent();
+			break;
+		case JsType::Function:
+			s_onConnectionClosed = func;
+			break;
+		default:
+			throw JsException(u"argument must be function or null");
+		}
 	});
 		
-	g_hookf->hookOnUpdate([] {
+	hookOnUpdate([] {
 		JsScope scope;
 		while (SleepEx(0, true) == WAIT_IO_COMPLETION) {}
 	});
-	g_hookf->hookOnPacketRead([](byte* rbp, PacketReadResult res, const NetworkIdentifier& ni) {
+	hookOnPacketRead([](byte* rbp, PacketReadResult res, const NetworkIdentifier& ni) {
 		checkCurrentThread();
 		if (res == PacketReadError) return res;
 
@@ -72,7 +99,7 @@ JsValue createNetHookModule() noexcept
 			return PacketReadError;
 		}
 	});
-	g_hookf->hookOnPacketAfter([](byte * rbp, ServerNetworkHandler * server, const NetworkIdentifier& ni){
+	hookOnPacketAfter([](byte * rbp, ServerNetworkHandler * server, const NetworkIdentifier& ni){
 		MinecraftPacketIds packetId = (MinecraftPacketIds)*(dword*)(rbp + 0x8C);
 
 		JsPersistent& listener = s_onPacketAfter[packetId];
@@ -99,11 +126,11 @@ JsValue createNetHookModule() noexcept
 					{
 						String xuid = cert->getXuid();
 						logininfo.set(u"xuid", xuid.text());
-						xuid.deallocate();
+						xuid.destruct();
 
 						String id = cert->getId();
 						logininfo.set(u"id", id.text());
-						id.deallocate();
+						id.destruct();
 					}
 					Connection* conn = handler->getConnectionFromId(ni);
 					EncryptedNetworkPeer* epeer = conn->epeer;
@@ -131,7 +158,7 @@ JsValue createNetHookModule() noexcept
 			NativeModule::instance->fireError(err.getValue());
 		}
 	});
-	g_hookf->hookOnConnectionClosed([](const NetworkIdentifier& ni) {
+	hookOnConnectionClosed([](const NetworkIdentifier& ni) {
 		if (s_onConnectionClosed.isEmpty()) return;
 		JsScope scope;
 		JsValue onClosed = s_onConnectionClosed;

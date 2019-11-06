@@ -1,16 +1,19 @@
 {
   "name": "bdsx",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "Javascript API for BDSX",
   "main": "index",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w"
   },
-  "keywords": ["minecraft"],
+  "keywords": [
+    "minecraft"
+  ],
   "author": "karikera",
   "dependencies": {
-    "@mcbe/dummy-console": "^1.0.4"
+    "@mcbe/dummy-console": "^1.0.4",
+    "krevent": "^1.1.3"
   },
   "devDependencies": {
     "@types/node": "^12.12.5",

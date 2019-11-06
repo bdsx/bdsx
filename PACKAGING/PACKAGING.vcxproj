@@ -90,6 +90,11 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />
+    <CustomBuild>
+      <Message>copy %(Identity)</Message>
+      <Command>kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
+      <Outputs>$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -129,6 +134,11 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />
+    <CustomBuild>
+      <Message>copy %(Identity)</Message>
+      <Command>kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
+      <Outputs>$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include=".vscode\tasks.json" />
@@ -146,21 +156,37 @@
     <CustomBuild Include="bdsx\package.json">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd %(RelativeDir)
-npm install</Command>
+del package-lock.json
+call npm install
+cd "$(ProjectDir)"
+kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd %(RelativeDir)
-npm install</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)package-lock.json</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)package-lock.json</Outputs>
+del package-lock.json
+call npm install
+cd "$(ProjectDir)"
+kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RelativeDir)
-npm install</Command>
+del package-lock.json
+call npm install
+cd "$(ProjectDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RelativeDir)
-npm install</Command>
+del package-lock.json
+call npm install
+cd "$(ProjectDir)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)package-lock.json</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)package-lock.json</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">npm install</Message>
+    </CustomBuild>
+    <CustomBuild Include="bdsx\index.js">
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)index.ts</AdditionalInputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CustomBuild>
     <None Include="bdsx\index.ts">
       <FileType>Document</FileType>
@@ -175,22 +201,24 @@ npm install</Command>
     </None>
     <CustomBuild Include="bdsx\tsconfig.json">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd bdsx
-tsc
-cd ..</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd bdsx
-tsc
-cd ..</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd bdsx
-tsc
-cd ..</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd bdsx
-tsc
-cd ..</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RelativeDir)
+call tsc</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd %(RelativeDir)
+call tsc
+cd "$(ProjectDir)"
+kcopy "%(RelativeDir)index.ts" "$(SolutionDir)release\%(RelativeDir)index.ts"
+kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RelativeDir)
+call tsc</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd %(RelativeDir)
+call tsc
+cd "$(ProjectDir)"
+kcopy "%(RelativeDir)index.ts" "$(SolutionDir)release\%(RelativeDir)index.ts"
+kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)index.js</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.js</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release\%(RelativeDir)index.js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)index.js</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)index.js</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(RelativeDir)index.js</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)index.ts</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
@@ -216,6 +244,15 @@ cd ..</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)release.zip</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">packaging.bat</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release.zip</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include="bdsx\package-lock.json">
+      <FileType>Document</FileType>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)package.json</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)package.json</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
