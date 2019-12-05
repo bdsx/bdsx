@@ -38,16 +38,16 @@ It will run `bdsx/index.js` as server script!
 It's very mutable now, I will remove or change API names frequently!  
 
 ## Files
-├ <img src="icon/folder.svg" style="width:16px;height:16px;vertical-align:middle"> bdsx - Project folder  
-│  ├ <img src="icon/folder.svg" style="width:16px;height:16px;vertical-align:middle"> node_modules - JS Modules   
-│  ├ <img src="icon/js.svg" style="width:20px;height:20px;vertical-align:middle">index.js - Javascript File  
-│  ├ <img src="icon/ts.svg" style="width:20px;height:20px;vertical-align:middle">index.ts - *(TS)* Typescript File  
-│  ├ <img src="icon/json.svg" style="width:20px;height:20px;vertical-align:middle">package-lock.json - JS Modules information  
-│  ├ <img src="icon/json.svg" style="width:20px;height:20px;vertical-align:middle">package.json - Meta datas for the project  
-│  └ <img src="icon/json.svg" style="width:20px;height:20px;vertical-align:middle">tsconfig.json - *(TS)* Compiler options for Typescript  
-├ <img src="icon/folder.svg" style="width:16px;height:16px;vertical-align:middle"> server - [Bedrock Dedicated Server](https://www.minecraft.net/en-us/download/server/bedrock/)  
-├ <img src="icon/folder.svg" style="width:16px;height:16px;vertical-align:middle"> bin - Injector.exe & bdsx.dll  
-└ <img src="icon/win.svg" style="width:20px;height:20px;vertical-align:middle">bdsx.bat - Launcher    
+├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> bdsx - Project folder  
+│  ├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> node_modules - JS Modules   
+│  ├ <img src="icon/js.svg" width="20" height="20" style="vertical-align:middle">index.js - Javascript File  
+│  ├ <img src="icon/ts.svg" width="20" height="20" style="vertical-align:middle">index.ts - *(TS)* Typescript File  
+│  ├ <img src="icon/json.svg" width="20" height="20" style="vertical-align:middle">package-lock.json - JS Modules information  
+│  ├ <img src="icon/json.svg" width="20" height="20" style="vertical-align:middle">package.json - Meta datas for the project  
+│  └ <img src="icon/json.svg" width="20" height="20" style="vertical-align:middle">tsconfig.json - *(TS)* Compiler options for Typescript  
+├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> server - [Bedrock Dedicated Server](https://www.minecraft.net/en-us/download/server/bedrock/)  
+├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> bin - Injector.exe & bdsx.dll  
+└ <img src="icon/win.svg" width="20" height="20" style="vertical-align:middle">bdsx.bat - Launcher    
 *(TS)*: You can delete it If you don't want to use Typescript
 
 ## Build Typescript (Watch Mode)
