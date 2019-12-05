@@ -38,7 +38,7 @@ It will run `bdsx/index.js` as server script!
 It's very mutable now, I will remove or change API names frequently!  
 
 ## Files
-├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> bdsx - Project folder  
+> ├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> bdsx - Project folder  
 │  ├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> node_modules - JS Modules   
 │  ├ <img src="icon/js.svg" width="20" height="20" style="vertical-align:middle">index.js - Javascript File  
 │  ├ <img src="icon/ts.svg" width="20" height="20" style="vertical-align:middle">index.ts - *(TS)* Typescript File  
