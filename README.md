@@ -46,7 +46,7 @@ It's very mutable now, I will remove or change API names frequently!
 │  ├ <img src="icon/json.svg" width="20" height="20" style="vertical-align:middle">package.json - Meta datas for the project  
 │  └ <img src="icon/json.svg" width="20" height="20" style="vertical-align:middle">tsconfig.json - *(TS)* Compiler options for Typescript  
 ├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> server - [Bedrock Dedicated Server](https://www.minecraft.net/en-us/download/server/bedrock/)  
-├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> bin - Injector.exe & bdsx.dll  
+├ <img src="icon/folder.svg" width="16" height="16" style="vertical-align:middle"> bin - Injector.exe & bdsx.dll & libmariadb.dll  
 └ <img src="icon/win.svg" width="20" height="20" style="vertical-align:middle">bdsx.bat - Launcher    
 *(TS)*: You can delete it If you don't want to use Typescript
 
