@@ -2,108 +2,166 @@
 #include "console.h"
 
 #include <KR3/data/binarray.h>
+#include <KR3/data/map.h>
 #include <KR3/wl/windows.h>
 
 #include "jsctx.h"
 #include "reverse.h"
-#include "funchook.h"
+#include "mcf.h"
 #include "nativepointer.h"
+#include "networkidentifier.h"
+#include "sharedptr.h"
 #include "native.h"
-
-//LoopbackPacketSender::sendToClient(NetworkIdentifier&, Packet&, byte)
-//LoopbackPacketSender::flush(NetworkIdentifier&)
-//Certificate* : LoginPacket + 0x28
-
 
 using namespace kr;
 
 namespace
 {
-	JsPersistent s_onPacketRead[0x100];
-	JsPersistent s_onPacketAfter[0x100];
-	JsPersistent s_onConnectionClosed;
+
+	constexpr uint MAX_PACKET_ID = 0x100;
 }
 
-JsValue createNetHookModule() noexcept
+
+uint NetHookModule::getPacketId(EventType type, MinecraftPacketIds id) noexcept
+{
+	return (int)type * (int)MAX_PACKET_ID + (uint)id;
+}
+void NetHookModule::setCallback(EventType type, MinecraftPacketIds packetId, JsValue func) throws(JsException)
+{
+	if ((uint)packetId >= MAX_PACKET_ID) throw JsException(TSZ16() << u"Out of range: packetId < 0x100 (packetId=" << (int)packetId << u")");
+	uint id = getPacketId(type, packetId);
+	switch (func.getType())
+	{
+	case JsType::Null:
+		m_callbacks.erase(id);
+		break;
+	case JsType::Function:
+		m_callbacks[id] = func;
+		break;
+	default:
+		throw JsException(u"2nd argument must be function or null");
+	}
+}
+
+NetHookModule::NetHookModule() noexcept
+{
+
+}
+NetHookModule::~NetHookModule() noexcept
+{
+}
+
+kr::JsValue NetHookModule::create() noexcept
 {
 	JsValue nethook = JsNewObject;
-	nethook.setMethod(u"setOnPacketReadListener", [](int id, JsValue func){
-		checkCurrentThread();
-		switch (func.getType())
-		{
-		case JsType::Null:
-			s_onPacketRead[id] = JsPersistent();
-			break;
-		case JsType::Function:
-			s_onPacketRead[id] = func;
-			break;
-		default:
-			throw JsException(u"2nd argument must be function or null");
-		}
-	});
+	nethook.setMethod(u"setOnPacketRawListener", [](int id, JsValue func) {
+		g_native->nethook.setCallback(EventType::Raw, (MinecraftPacketIds)id, func);
+		});
+	nethook.setMethod(u"setOnPacketBeforeListener", [](int id, JsValue func) {
+		g_native->nethook.setCallback(EventType::Before, (MinecraftPacketIds)id, func);
+		});
 	nethook.setMethod(u"setOnPacketAfterListener", [](int id, JsValue func) {
-		switch (func.getType())
-		{
-		case JsType::Null:
-			s_onPacketAfter[id] = JsPersistent();
-			break;
-		case JsType::Function:
-			s_onPacketAfter[id] = func;
-			break;
-		default:
-			throw JsException(u"2nd argument must be function or null");
-		}
-	});
+		g_native->nethook.setCallback(EventType::After, (MinecraftPacketIds)id, func);
+		});
+	nethook.setMethod(u"setOnPacketSendListener", [](int id, JsValue func) {
+		g_native->nethook.setCallback(EventType::Send, (MinecraftPacketIds)id, func);
+		});
 	nethook.setMethod(u"setOnConnectionClosedListener", [](JsValue func) {
-		switch (func.getType())
-		{
-		case JsType::Null:
-			s_onConnectionClosed = JsPersistent();
-			break;
-		case JsType::Function:
-			s_onConnectionClosed = func;
-			break;
-		default:
-			throw JsException(u"argument must be function or null");
-		}
-	});
-		
-	hookOnUpdate([] {
+		NetHookModule * _this = &g_native->nethook;
+		storeListener(&_this->m_onConnectionClosed, func);
+		});
+	nethook.setMethod(u"createPacket", [](int packetId) {
+		JsValue p = SharedPointer::newInstanceRaw({});
+		SharedPtr<Packet> packet = Dirty;
+		g_mcf.MinecraftPackets$createPacket(&packet, (MinecraftPacketIds)packetId);
+		p.getNativeObject<SharedPointer>()->setRaw(move(packet));
+		return p;
+		});
+	nethook.setMethod(u"sendPacket", [](JsNetworkIdentifier* ni, StaticPointer* packet, int whatIsThis) {
+		if (ni == nullptr) throw JsException(u"1st argument must be NetworkIdentifier");
+		if (packet == nullptr) throw JsException(u"2nd argument must be *Pointer");
+		g_server->networkHandler->send(ni->identifier, (Packet*)packet->getAddressRaw(), whatIsThis);
+		});
+	return nethook;
+}
+void NetHookModule::reset() noexcept
+{
+	lastSender = nullptr;
+	m_callbacks.clear();
+	m_onConnectionClosed = nullptr;
+}
+
+void NetHookModule::hook() noexcept
+{
+	g_mcf.hookOnPacketRaw([](byte* rbp, MinecraftPacketIds packetId, Connection* conn)->SharedPtr<Packet>*{
+
+		NetHookModule* _this = &g_native->nethook;
+
 		JsScope scope;
-		while (SleepEx(0, true) == WAIT_IO_COMPLETION) {}
-	});
-	hookOnPacketRead([](byte* rbp, PacketReadResult res, const NetworkIdentifier& ni) {
+		JsValue jsni = JsNetworkIdentifier::fromRaw(conn->ni);
+		_this->lastSender = jsni;
+
+		SharedPtr<Packet>* packet_dest = (SharedPtr<Packet>*)(rbp + 0x90);
+
+		auto iter = _this->m_callbacks.find(getPacketId(EventType::Before, packetId));
+		if (iter != _this->m_callbacks.end())
+		{
+			ReadOnlyBinaryStream* s = (ReadOnlyBinaryStream*)(rbp + 0xA0);
+			Text data = s->getData();
+
+			NativePointer * rawpacketptr = NativePointer::newInstance();
+			rawpacketptr->setAddressRaw(data.data());
+
+			try
+			{
+				JsValue ret = ((JsValue)iter->second)(rawpacketptr, (int)data.size(), jsni, (int)packetId);
+				if (ret == false) return nullptr;
+			}
+			catch (JsException & err)
+			{
+				g_native->fireError(err.getValue());
+			}
+		}
+		return g_mcf.MinecraftPackets$createPacket(packet_dest, packetId);
+		});
+	g_mcf.hookOnPacketBefore([](byte* rbp, PacketReadResult res, Connection* conn) {
 		checkCurrentThread();
+
 		if (res == PacketReadError) return res;
 
-		MinecraftPacketIds packetId = (MinecraftPacketIds)*(dword*)(rbp + 0x8C);
+		NetHookModule* _this = &g_native->nethook;
 
-		JsPersistent& listener = s_onPacketRead[packetId];
-		if (listener.isEmpty()) return res;
+		dword packetIdCombined = *(dword*)(rbp + 0x8C);
+		MinecraftPacketIds packetId = (MinecraftPacketIds)(packetIdCombined & 0x3ff);
+		//dword serverIndex = ((packetIdCombined >> 10) & 3);
+		//NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
+		//ServerNetworkHandler** shandler = handler->getServer(serverIndex);
 
-		Packet* packet = *(Packet**)(rbp + 0x90);
-		NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
+		auto iter = _this->m_callbacks.find(getPacketId(EventType::Before, packetId));
+		if (iter == _this->m_callbacks.end()) return res;
 
 		JsScope scope;
+		SharedPtr<Packet>* packet = (SharedPtr<Packet>*)(rbp + 0x90);
 		NativePointer* packetptr = NativePointer::newInstance();
-		packetptr->setAddressRaw(packet);
+		packetptr->setAddressRaw(packet->pointer());
 
 		try
 		{
-			JsValue ret = ((JsValue)listener).call(undefined, { packetptr, ni.toString(), packetId });
+			JsValue ret = ((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId);
 			return ret == false ? PacketReadError : res;
 		}
-		catch (JsException& err)
+		catch (JsException & err)
 		{
-			NativeModule::instance->fireError(err.getValue());
+			g_native->fireError(err.getValue());
 			return PacketReadError;
 		}
-	});
-	hookOnPacketAfter([](byte * rbp, ServerNetworkHandler * server, const NetworkIdentifier& ni){
-		MinecraftPacketIds packetId = (MinecraftPacketIds)*(dword*)(rbp + 0x8C);
+		});
+	g_mcf.hookOnPacketAfter([](byte* rbp, ServerNetworkHandler* server, Connection* conn) {
+		MinecraftPacketIds packetId = (MinecraftPacketIds)(*(dword*)(rbp + 0x8C) & 0x3ff);
 
-		JsPersistent& listener = s_onPacketAfter[packetId];
-		if (listener.isEmpty()) return;
+		NetHookModule* _this = &g_native->nethook;
+		auto iter = _this->m_callbacks.find(_this->getPacketId(EventType::After, packetId));
+		if (iter == _this->m_callbacks.end()) return;
 
 		NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
 		Packet* packet = *(Packet**)(rbp + 0x90);
@@ -114,68 +172,64 @@ JsValue createNetHookModule() noexcept
 
 		try
 		{
-			if (packetId == 1)
+
+			if (packetId == MinecraftPacketIds::Login)
 			{
 				JsValue logininfo = JsNewObject;
-
-				try
+				LoginPacket* login = static_cast<LoginPacket*>(packet);
+				Certificate* cert = login->connreq->cert;
+				if (cert)
 				{
-					LoginPacket* login = static_cast<LoginPacket*>(packet);
-					Certificate* cert = login->connreq->cert;
-					if (cert)
-					{
-						String xuid = cert->getXuid();
-						logininfo.set(u"xuid", xuid.text());
-						xuid.destruct();
-
-						String id = cert->getId();
-						logininfo.set(u"id", id.text());
-						id.destruct();
-					}
-					Connection* conn = handler->getConnectionFromId(ni);
-					EncryptedNetworkPeer* epeer = conn->epeer;
-					RaknetNetworkPeer* rpeer = epeer->peer;
-					RakPeer* peer = rpeer->peer;
-					TmpArray<SystemAddress> connections = peer->getConnections();
-					for (SystemAddress& addr : connections)
-					{
-						logininfo.set(u"ip", addr.toString());
-						break;
-					}
+					logininfo.set(u"xuid", cert->getXuid().text());
+					logininfo.set(u"id", cert->getId().text());
 				}
-				catch (...)
-				{
-				}
-				((JsValue)listener).call(undefined, { packetptr, ni.toString(), packetId, logininfo });
+				((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId, logininfo);
 			}
 			else
 			{
-				((JsValue)listener).call(undefined, { packetptr, ni.toString(), packetId });
+				((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId);
 			}
 		}
-		catch (JsException& err)
+		catch (JsException & err)
 		{
-			NativeModule::instance->fireError(err.getValue());
+			g_native->fireError(err.getValue());
 		}
-	});
-	hookOnConnectionClosed([](const NetworkIdentifier& ni) {
-		if (s_onConnectionClosed.isEmpty()) return;
-		JsScope scope;
-		JsValue onClosed = s_onConnectionClosed;
-		onClosed.call(undefined, { ni.toString() });
-	});
+		});
+	g_mcf.hookOnPacketSendInternal([](NetworkHandler* handler, const NetworkIdentifier& ni, Packet* packet, String* data)->Connection* {
 
-	return nethook;
-}
-void destroyNetHookModule() noexcept
-{
-	for (auto& persistent : s_onPacketRead)
-	{
-		persistent = JsPersistent();
-	}
-	for (auto& persistent : s_onPacketAfter)
-	{
-		persistent = JsPersistent();
-	}
-	s_onConnectionClosed = JsPersistent();
+		MinecraftPacketIds packetId = packet->getId();
+
+		NetHookModule* _this = &g_native->nethook;
+		auto iter = _this->m_callbacks.find(_this->getPacketId(EventType::Send, packetId));
+		if (iter != _this->m_callbacks.end())
+		{
+			JsScope scope;
+			NativePointer* packetptr = NativePointer::newInstance();
+			packetptr->setAddressRaw(packet);
+
+			JsValue jsni = JsNetworkIdentifier::fromRaw(ni);
+
+			try
+			{
+				if (((JsValue)iter->second)(packetptr, jsni, (int)packetId, data->text()) == false)
+				{
+					return nullptr;
+				}
+			}
+			catch (JsException & err)
+			{
+				g_native->fireError(err.getValue());
+			}
+		}
+		return handler->getConnectionFromId(ni);
+		});
+
+	g_mcf.hookOnConnectionClosed([](const NetworkIdentifier& ni) {
+		NetHookModule* _this = &g_native->nethook;
+		if (_this->m_onConnectionClosed.isEmpty()) return;
+		JsScope scope;
+		JsValue onClosed = _this->m_onConnectionClosed;
+		onClosed(JsNetworkIdentifier::fromRaw(ni));
+		JsNetworkIdentifier::dispose(ni);
+		});
 }

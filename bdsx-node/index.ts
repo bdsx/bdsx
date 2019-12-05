@@ -1,3 +1,6 @@
+/// <reference types="minecraft-scripting-types-server" />
+
+Promise.resolve('test').then(()=>{});
 
 import "@mcbe/dummy-console";
 import native = require("./native");
@@ -5,21 +8,115 @@ import fs = require("./fs");
 import PacketId = require('./packetId');
 import netevent = require('./netevent');
 import chat = require('./chat');
-import NativeFile = native.NativeFile;
+import command = require('./command');
+import nativetype = require('./nativetype');
+import packettype = require('./packettype');
+import { CANCEL } from './common';
+import NetworkIdentifier = native.NetworkIdentifier;
+import StaticPointer = native.StaticPointer;
 import NativePointer = native.NativePointer;
+import Actor = native.Actor;
 import consoleX = native.console;
 import nethook = native.nethook;
-import debug = native.debug;
+import serverControl = native.serverControl;
 import setOnErrorListener = native.setOnErrorListener;
+import NativeModule = native.NativeModule;
 import fsx = native.fs;
+import File = fs.File;
+import Watcher = fsx.Watcher;
+import createPacket = nethook.createPacket;
+import sendPacket = nethook.sendPacket;
+import execSync = native.execSync;
+import ipfilter = native.ipfilter;
+import MariaDB = native.MariaDB;
+
+declare global
+{
+    interface IEntity
+    {
+        __unique_id__:{
+            "64bit_low":number;
+            "64bit_high":number;
+        };
+    }
+}
 
 declare module "./native"
 {
+    interface MariaDB
+    {
+        _query(query:string, callback:(error:string|null, res:MariaDB.Result)=>void):void;
+        query(query:string, callback?:(error:string|null, res:MariaDB.Result)=>void):Promise<MariaDB.Result>;
+    }
+
+    namespace MariaDB
+    {
+        interface Result
+        {
+            _fetch(callback:(row:string[]|null)=>void):void;
+            fetch(callback?:(row:string[]|null)=>void):Promise<string[]|null>;
+        }
+    }
+
     interface NativePointer
     {
         readHex(size:number):string;
+        analyze():void;
+    }
+    namespace Actor
+    {
+        function fromEntity(entity:IEntity):Actor;
+    }
+    interface Actor
+    {
+        getEntity():IEntity;
     }
 }
+
+if (!MariaDB.prototype._query) MariaDB.prototype._query = MariaDB.prototype.query;
+if (!MariaDB.Result.prototype._fetch) MariaDB.Result.prototype._fetch = MariaDB.Result.prototype.fetch;
+MariaDB.prototype.query = function(query:string, callback?:(error:string|null, res:MariaDB.Result)=>void):Promise<MariaDB.Result>
+{
+    return new Promise((resolve, reject)=>{
+        this._query(query, (error, res)=>{
+            if (callback) callback(error, res);
+            if (error) reject(Error(error));
+            else resolve(res);
+        });
+    });
+};
+MariaDB.Result.prototype.fetch = function(callback?:(row:string[]|null)=>void):Promise<string[]|null>
+{
+    return new Promise(resolve=>{
+        this._fetch(row=>{
+            if (callback) callback(row);
+            resolve(row);
+        });
+    });
+};
+
+Actor.fromEntity = function(entity){
+    const u = entity.__unique_id__;
+    return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
+};
+Actor.prototype.getEntity = function(){
+    let entity:IEntity = (this as any).entity;
+    if (entity) return entity;
+    entity = {
+        __unique_id__:{
+            "64bit_low": this.getUniqueIdLow(),
+            "64bit_high": this.getUniqueIdHigh()
+        },
+        __identifier__:this.getIdentifier(),
+        __type__:(this.getTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
+        id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
+    };
+    return (this as any).entity = entity;
+};
+
+NetworkIdentifier.prototype.toString = function(){
+    return this.getAddress()[0] || '[invalid IP]';
+};
 
 NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16){
     let out = '';
@@ -38,19 +135,116 @@ NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16)
     return out.substr(0, out.length-1);
 };
 
+let analyzeMap:Map<string, string>|undefined;
+
+export function loadMap():void
+{
+    if (analyzeMap) return;
+    analyzeMap = new Map<string, string>();
+    const pdb = native.loadPdb();
+    for (const name in pdb)
+    {
+        analyzeMap.set(pdb[name].toString(), name);
+    }
+}
+
+NativePointer.prototype.analyze = function(){
+    loadMap();
+    console.log(`[analyze: ${this}]`);
+    try
+    {
+        for (let i=0;i<32;i++)
+        {
+            let offset = (i*8).toString(16);
+            offset = '0'.repeat(Math.max(3-offset.length, 0)) + offset;
+            
+            const addr = this.readPointer();
+            const addrstr = addr.toString();
+            
+            const addrname = analyzeMap!.get(addrstr);
+            if (addrname)
+            {
+                console.log(`${offset}: ${addrname}(${addrstr})`);
+                continue;
+            }
+
+            try
+            {
+                const addr2 = addr.getPointer();
+                const addr2str = addr2.toString();
+                const addr2name = analyzeMap!.get(addr2str);
+                if (addr2name)
+                {
+                    console.log(`${offset}: ${addrstr}: ${addr2name}(${addr2str})`);
+                }
+                else
+                {
+                    console.log(`${offset}: ${addrstr}: ${addr2str}`);
+                }
+            }
+            catch (err)
+            {
+                let nums:number[] = [];
+                for (let i=0;i<addrstr.length; i+= 2)
+                {
+                    nums.push(parseInt(addrstr.substr(i, 2), 16));
+                }
+                if (nums.every(n=>n<0x7f))
+                {
+                    const text = String.fromCharCode(...nums.map(n=>n<0x20 ? 0x20 : n));
+                    console.log(`${offset}: ${addrstr} ${text}`);
+                }
+                else
+                {
+                    console.log(`${offset}: ${addrstr}`);
+                }
+            }
+        }
+    }
+    catch(err)
+    {
+        console.log('[VA]');
+    }
+};
+
 export { 
     fs, 
-    fsx, 
-    NativeFile,
+    fsx,
+    File,
+    File as NativeFile,
+    NetworkIdentifier,
+    Actor,
+    Actor as Entity,
+    Watcher,
+    StaticPointer,
     NativePointer, 
     consoleX, 
     nethook, 
-    debug, 
     setOnErrorListener,
     PacketId,
     netevent,
     chat,
+    command,
+    serverControl,
+    CANCEL,
+    createPacket,
+    sendPacket,
+    nativetype,
+    packettype,
+    NativeModule,
+    execSync,
+    ipfilter,
+    MariaDB,
 };
+
+export function wget(url:string):Promise<string>
+{
+    return new Promise(resolve=>{
+        native.wget(url, text=>{
+            resolve(text);
+        });
+    });
+}
 
 console.log = (msg:any, ...params:any[])=>{
     if (params.length !== 0)

@@ -1,4 +1,7 @@
 
+/**
+ * I refer to this document: https://github.com/NiclasOlofsson/MiNET/blob/master/src/MiNET/MiNET/Net/MCPE%20Protocol%20Documentation.md
+ */
 enum PacketId
 {
     Login=0x01,

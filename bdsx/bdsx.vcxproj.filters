@@ -3,29 +3,52 @@
   <ItemGroup>
     <ClCompile Include="console.cpp" />
     <ClCompile Include="fs.cpp" />
-    <ClCompile Include="funchook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsctx.cpp" />
     <ClCompile Include="nativepointer.cpp" />
     <ClCompile Include="nethook.cpp" />
     <ClCompile Include="pdb.cpp" />
-    <ClCompile Include="reverse.cpp" />
     <ClCompile Include="require.cpp" />
     <ClCompile Include="native.cpp" />
+    <ClCompile Include="watcher.cpp" />
+    <ClCompile Include="nativefile.cpp" />
+    <ClCompile Include="sharedptr.cpp" />
+    <ClCompile Include="networkidentifier.cpp" />
+    <ClCompile Include="actor.cpp" />
+    <ClCompile Include="staticpointer.cpp" />
+    <ClCompile Include="nativemodule.cpp" />
+    <ClCompile Include="nativetype.cpp" />
+    <ClCompile Include="mcf.cpp" />
+    <ClCompile Include="codewrite.cpp" />
+    <ClCompile Include="reverse.cpp" />
+    <ClCompile Include="nativecall.cpp" />
+    <ClCompile Include="mariadb.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h" />
     <ClInclude Include="fs.h" />
-    <ClInclude Include="funchook.h" />
-    <ClInclude Include="functions.h" />
     <ClInclude Include="jsctx.h" />
     <ClInclude Include="nativepointer.h" />
     <ClInclude Include="nethook.h" />
     <ClInclude Include="pdb.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="reverse.h" />
     <ClInclude Include="require.h" />
     <ClInclude Include="native.h" />
+    <ClInclude Include="watcher.h" />
+    <ClInclude Include="nativefile.h" />
+    <ClInclude Include="sharedptr.h" />
+    <ClInclude Include="networkidentifier.h" />
+    <ClInclude Include="actor.h" />
+    <ClInclude Include="staticpointer.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="nativemodule.h" />
+    <ClInclude Include="nativetype.h" />
+    <ClInclude Include="mcf.h" />
+    <ClInclude Include="codewrite.h" />
+    <ClInclude Include="reverse.h" />
+    <ClInclude Include="nativecall.h" />
+    <ClInclude Include="clear_regs.h" />
+    <ClInclude Include="mariadb.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -37,5 +60,8 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="bdsx.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="clear_regs.asm" />
   </ItemGroup>
 </Project>

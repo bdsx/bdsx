@@ -6,69 +6,71 @@
 #include <DbgHelp.h>
 
 #include <KR3/fs/file.h>
+#include <KR3/data/map.h>
 
 #pragma comment(lib, "dbghelp.lib")
 
 
 using namespace kr;
 
-inline Text16 tagToString(ULONG tag) noexcept
+inline Text tagToString(ULONG tag) noexcept
 {
 	switch (tag)
 	{
-	case SymTagNull: return u"Null";
-	case SymTagExe: return u"Exe";
-	case SymTagCompiland: return u"Compiland";
-	case SymTagCompilandDetails: return u"CompilandDetails";
-	case SymTagCompilandEnv: return u"CompilandEnv";
-	case SymTagFunction: return u"Function";
-	case SymTagBlock: return u"Block";
-	case SymTagData: return u"Data";
-	case SymTagAnnotation: return u"Annotation";
-	case SymTagLabel: return u"Label";
-	case SymTagPublicSymbol: return u"PublicSymbol";
-	case SymTagUDT: return u"UDT";
-	case SymTagEnum: return u"Enum";
-	case SymTagFunctionType: return u"FunctionType";
-	case SymTagPointerType: return u"PointerType";
-	case SymTagArrayType: return u"ArrayType";
-	case SymTagBaseType: return u"BaseType";
-	case SymTagTypedef: return u"Typedef";
-	case SymTagBaseClass: return u"BaseClass";
-	case SymTagFriend: return u"Friend";
-	case SymTagFunctionArgType: return u"FunctionArgType";
-	case SymTagFuncDebugStart: return u"FuncDebugStart";
-	case SymTagFuncDebugEnd: return u"FuncDebugEnd";
-	case SymTagUsingNamespace: return u"UsingNamespace";
-	case SymTagVTableShape: return u"VTableShape";
-	case SymTagVTable: return u"VTable";
-	case SymTagCustom: return u"Custom";
-	case SymTagThunk: return u"Thunk";
-	case SymTagCustomType: return u"CustomType";
-	case SymTagManagedType: return u"ManagedType";
-	case SymTagDimension: return u"Dimension";
-	default: return u"Unknown";
+	case SymTagNull: return "Null";
+	case SymTagExe: return "Exe";
+	case SymTagCompiland: return "Compiland";
+	case SymTagCompilandDetails: return "CompilandDetails";
+	case SymTagCompilandEnv: return "CompilandEnv";
+	case SymTagFunction: return "Function";
+	case SymTagBlock: return "Block";
+	case SymTagData: return "Data";
+	case SymTagAnnotation: return "Annotation";
+	case SymTagLabel: return "Label";
+	case SymTagPublicSymbol: return "PublicSymbol";
+	case SymTagUDT: return "UDT";
+	case SymTagEnum: return "Enum";
+	case SymTagFunctionType: return "FunctionType";
+	case SymTagPointerType: return "PointerType";
+	case SymTagArrayType: return "ArrayType";
+	case SymTagBaseType: return "BaseType";
+	case SymTagTypedef: return "Typedef";
+	case SymTagBaseClass: return "BaseClass";
+	case SymTagFriend: return "Friend";
+	case SymTagFunctionArgType: return "FunctionArgType";
+	case SymTagFuncDebugStart: return "FuncDebugStart";
+	case SymTagFuncDebugEnd: return "FuncDebugEnd";
+	case SymTagUsingNamespace: return "UsingNamespace";
+	case SymTagVTableShape: return "VTableShape";
+	case SymTagVTable: return "VTable";
+	case SymTagCustom: return "Custom";
+	case SymTagThunk: return "Thunk";
+	case SymTagCustomType: return "CustomType";
+	case SymTagManagedType: return "ManagedType";
+	case SymTagDimension: return "Dimension";
+	default: return "Unknown";
 	}
 }
-inline Text16 symToString(ULONG sym) noexcept
+inline Text symToString(ULONG sym) noexcept
 {
 	switch (sym)
 	{
-	case SymNone: return u"None";
-	case SymExport: return u"Exports";
-	case SymCoff: return u"COFF";
-	case SymCv: return u"CodeView";
-	case SymSym: return u"SYM";
-	case SymVirtual: return u"Virtual";
-	case SymPdb: return u"PDB";
-	case SymDia: return u"DIA";
-	case SymDeferred: return u"Deferred";
-	default: return u"Unknown";
+	case SymNone: return "None";
+	case SymExport: return "Exports";
+	case SymCoff: return "COFF";
+	case SymCv: return "CodeView";
+	case SymSym: return "SYM";
+	case SymVirtual: return "Virtual";
+	case SymPdb: return "PDB";
+	case SymDia: return "DIA";
+	case SymDeferred: return "Deferred";
+	default: return "Unknown";
 	}
 }
 
 PdbReader::PdbReader() noexcept
 {
+	cout << "PdbReader: Load Symbols..." << endl;
 	::SymInitialize(
 		GetCurrentProcess(),  // Process handle of the current process 
 		NULL,                 // No user-defined search path -> use default 
@@ -114,25 +116,25 @@ void PdbReader::showInfo() noexcept
 
 	if (!SymGetModuleInfoW64(GetCurrentProcess(), m_base, &ModuleInfo))
 	{
-		cout << "Error: SymGetModuleInfo64() failed. Error code: " << GetLastError() << endl;
+		cout << "PdbReader: Error: SymGetModuleInfo64() failed. Error code: " << GetLastError() << endl;
 		return;
 	}
 
 	// Display information about symbols 
-	ucout << u"Loaded symbols:" << symToString(ModuleInfo.SymType) << endl;
+	cout << "PdbReader: Loaded symbols:" << symToString(ModuleInfo.SymType) << endl;
 
 	Text16 imageName = (Text16)unwide(ModuleInfo.ImageName);
 	Text16 loadedImageName = (Text16)unwide(ModuleInfo.LoadedImageName);
 	Text16 loadedPdbName = (Text16)unwide(ModuleInfo.LoadedPdbName);
 
 	// Image name 
-	if (!imageName.empty()) ucout << u"Image name: " << imageName << endl;
+	if (!imageName.empty()) cout << "PdbReader: Image name: " << toAnsi(imageName) << endl;
 
 	// Loaded image name 
-	if (!loadedImageName.empty()) ucout << u"Loaded image name: " << loadedImageName << endl;
+	if (!loadedImageName.empty()) cout << "PdbReader: Loaded image name: " << toAnsi(loadedImageName) << endl;
 
 	// Loaded PDB name 
-	if (!loadedPdbName.empty()) ucout << u"Loaded image name: " << loadedPdbName << endl;
+	if (!loadedPdbName.empty()) cout << "PdbReader: Loaded image name: " << toAnsi(loadedPdbName) << endl;
 
 	// Is debug information unmatched ? 
 	// (It can only happen if the debug information is contained 
@@ -140,15 +142,50 @@ void PdbReader::showInfo() noexcept
 
 	if (ModuleInfo.PdbUnmatched || ModuleInfo.DbgUnmatched)
 	{
-		wprintf(L"Warning: Unmatched symbols. \n");
+		cout << "PdbReader: Warning: Unmatched symbols." << endl;
 	}
 
 	// Contents 
-	//ucout << u"Line numbers: " << (ModuleInfo.LineNumbers ? u"Available" : u"Not available") << endl;
-	//ucout << u"Global symbols: " << (ModuleInfo.GlobalSymbols ? u"Available" : u"Not available") << endl;
-	//ucout << u"Type information: " << (ModuleInfo.TypeInfo ? u"Available" : u"Not available") << endl;
-	//ucout << u"Source indexing: " << (ModuleInfo.SourceIndexed ? u"Yes" : u"No") << endl;
-	//ucout << u"Public symbols: " << (ModuleInfo.Publics ? u"Available" : u"Not available") << endl;
+	//cout << "PdbReader: Line numbers: " << (ModuleInfo.LineNumbers ? "Available" : "Not available") << endl;
+	//cout << "PdbReader: Global symbols: " << (ModuleInfo.GlobalSymbols ? "Available" : "Not available") << endl;
+	//cout << "PdbReader: Type information: " << (ModuleInfo.TypeInfo ? "Available" : "Not available") << endl;
+	//cout << "PdbReader: Source indexing: " << (ModuleInfo.SourceIndexed ? "Yes" : "No") << endl;
+	//cout << "PdbReader: Public symbols: " << (ModuleInfo.Publics ? "Available" : "Not available") << endl;
+}
+AText PdbReader::getTypeName(uint32_t typeId) noexcept
+{
+	//switch (typeId)
+	//{
+	//case 0: return "[no type]";
+	//case 1: return "void";
+	//case 2: return "char";
+	//case 3: return "wchar_t";
+	//case 6: return "int";
+	//case 7: return "unsigned int";
+	//case 8: return "float";
+	//case 9: return "[bdc]";
+	//case 10: return "bool";
+	//case 13: return "long";
+	//case 14: return "unsigned long";
+	//case 25: return "[currency]";
+	//case 26: return "[date]";
+	//case 27: return "[variant]";
+	//case 28: return "[complex]";
+	//case 29: return "[bit]";
+	//case 30: return "[BSTR]";
+	//case 31: return "[HRESULT]";
+	//};
+
+	WCHAR* name = nullptr;
+	if (!SymGetTypeInfo(m_process, m_base, typeId, TI_GET_SYMNAME, &name))
+	{
+		return AText() << "[invalid " << typeId << ']';
+	}
+	_assert(name != nullptr);
+	AText out = (Utf16ToUtf8)(Text16)unwide(name);
+	LocalFree(name);
+
+	return out;
 }
 void PdbReader::search(const char* filter, Callback callback) noexcept
 {
@@ -161,11 +198,250 @@ void PdbReader::search(const char* filter, Callback callback) noexcept
 			{
 				return true;
 			}
-			return (*(Callback*)callback)(Text(symInfo->Name, symInfo->NameLen), (kr::autoptr)symInfo->Address);
+			"std::basic_string<char,std::char_traits<char>,std::allocator<char> >";
+			return (*(Callback*)callback)(Text(symInfo->Name, symInfo->NameLen), (autoptr)symInfo->Address, symInfo->TypeIndex);
 		},
 		(PVOID)&callback);
 }
-kr::autoptr PdbReader::getFunctionAddress(const char* name) noexcept
+
+class TemplateParser
+{
+private:
+	static Map<Text, size_t> s_lambdas;
+
+public:
+
+	Text name;
+	AText out;
+
+	void writeLambda(Text lambda) noexcept
+	{
+		auto res = s_lambdas.insert(lambda, s_lambdas.size());
+		out << "LAMBDA_" << res.first->second;
+	}
+
+	void parseTemplateParameters(Text ns, Text tname) throws(EofException)
+	{
+		if (ns == "std::")
+		{
+			if (tname == "basic_string")
+			{
+				size_t before_tname = out.size();
+				out << tname;
+				out << '<';
+				size_t before_param = out.size();
+				parse();
+				Text param = out.subarr(before_param);
+				if (param == "char")
+				{
+					out.cut_self(before_tname);
+					out << "string";
+				}
+				else
+				{
+					out << param;
+					out << '>';
+				}
+				leave();
+				return;
+			}
+			else if (tname == "vector" || tname == "unique_ptr")
+			{
+				out << tname;
+				out << '<';
+				parse();
+				out << '>';
+				leave();
+				return;
+			}
+			else if (tname == "_Umap_traits")
+			{
+				out << "UMapTraits";
+				out << '<';
+				parse();
+				name.must(',');
+				out << ',';
+				parse();
+				out << '>';
+				leave();
+				return;
+			}
+		}
+		else if (ns == "JsonUtil::")
+		{
+			if (tname == "JsonSchemaNodeChildSchemaOptions")
+			{
+				out << "[SchemaOptions]";
+				leave();
+				return;
+			}
+			else if (tname == "JsonSchemaChildOptionBase")
+			{
+				out << "[OptionsBase]";
+				leave();
+				return;
+			}
+			else if (tname == "JsonParseState")
+			{
+				out << "[ParseState]";
+				leave();
+				return;
+			}
+		}
+
+		out << tname;
+		out << '<';
+		for (;;)
+		{
+			parse();
+			switch (name.peek())
+			{
+			case '>':
+				out << name.read();
+				if (name.empty()) return;
+				if (name.peek() == ' ') name.read();
+				return;
+			case ',':
+				out << name.read();
+				break;
+			case '\'':
+				throw InvalidSourceException();
+			}
+		}
+	}
+
+	void leave() throws(EofException)
+	{
+		int level = 1;
+		for (;;)
+		{
+			if (name.readto_y("<>") == nullptr) throw EofException();
+			switch (name.read())
+			{
+			case '>': level--; break;
+			case '<': level++; break;
+			}
+			if (level == 0)
+			{
+				if (name.empty()) break;
+				break;
+			}
+		}
+	}
+	Text parse() throws(EofException)
+	{
+		while (name.readIf(' ')) {}
+
+		size_t nameStart = out.size();
+		for (;;)
+		{
+			if (name.readIf('`'))
+			{
+				size_t open_idx = out.size();
+				out << '`';
+				Text method = parse();
+				name.must('\'');
+				if (method == "dynamic initializer for " || method == "dynamic atexit destructor for ")
+				{
+					out[open_idx] = '[';
+					Text nameend = name.readto('\'');
+					if (nameend == nullptr) throw InvalidSourceException();
+					name.must('\'');
+
+					// out << '\'';
+					out << nameend;
+					// out << '\'';
+					out << ']';
+					name.must('\'');
+					break;
+				}
+				out << '\'';
+			}
+			else if (name.readIf('<'))
+			{
+				parse();
+				name.must('>');
+			}
+			else
+			{
+				Text tname = name.readto_y("<>,:' ");
+				if (tname == nullptr)
+				{
+					out << name.readAll();
+					break;
+				}
+				if (name.readIf('<'))
+				{
+					Text ns = out.subarr(nameStart);
+					parseTemplateParameters(ns, tname);
+				}
+				else
+				{
+					if (tname.startsWith("lambda_"))
+					{
+						writeLambda(tname);
+					}
+					else
+					{
+						out << tname;
+					}
+				}
+			}
+			if (name.empty()) break;
+			if (name.readIf(' ')) continue;
+			if (name.readIf(':'))
+			{
+				out << "::";
+				name.must(':');
+			}
+			else // , > '
+			{
+				break;
+			}
+		}
+		return out.subarr(nameStart);
+	}
+};
+Map<Text, size_t> TemplateParser::s_lambdas;
+
+void PdbReader::getAll(GetAllCallback callback) noexcept
+{
+	callback.reader = this;
+
+	SymEnumSymbols(
+		m_process,
+		m_base,
+		nullptr,
+		[](SYMBOL_INFO* symInfo, ULONG SymbolSize, void* callback)->BOOL {
+			if (symInfo->Tag != SymTagFunction && symInfo->Tag != SymTagPublicSymbol)
+			{
+				return true;
+			}
+			
+			GetAllCallback* cb = (GetAllCallback*)callback;
+
+			TemplateParser parser;
+			parser.name = Text(symInfo->Name, symInfo->NameLen);
+			try
+			{
+				parser.parse();
+			}
+			catch (InvalidSourceException&)
+			{
+				parser.out << "..[err]";
+			}
+			catch (EofException&)
+			{
+				parser.out << "..[eof]";
+			}
+			//out << cb->reader->getTypeName(symInfo->TypeIndex);
+			//out << ' ';
+
+			return (*cb)(parser.out, (autoptr)symInfo->Address);
+		},
+		(PVOID)&callback);
+}
+autoptr PdbReader::getFunctionAddress(const char* name) noexcept
 {
 	byte buffer[sizeof(IMAGEHLP_SYMBOL64) + MAX_SYM_NAME];
 	IMAGEHLP_SYMBOL64& sym = *(IMAGEHLP_SYMBOL64*)buffer;

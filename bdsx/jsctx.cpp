@@ -1,4 +1,6 @@
 #include "jsctx.h"
+#include "native.h"
+#include "require.h"
 #include <KR3/wl/windows.h>
 
 using namespace kr;
@@ -10,7 +12,7 @@ namespace
 	JsPersistent s_callbacks[0x100];
 
 	bool s_ctxCreated = false;
-	HANDLE thread;
+	DWORD contextThreadId;
 }
 
 void createJsContext(kr::JsRawContext newContext) noexcept
@@ -18,18 +20,43 @@ void createJsContext(kr::JsRawContext newContext) noexcept
 	if (s_ctxCreated) g_ctx.remove();
 	g_ctx.create(newContext);
 	s_ctxCreated = true;
-	thread = GetCurrentThread();
+	contextThreadId = GetCurrentThreadId();
+
+	g_ctx->enter();
+	try
+	{
+		kr::JsRuntime::run(u"Promise.resolve('test').then(()=>{})");
+	}
+	catch (JsException&)
+	{
+		int a = 0;
+	}
+
+	g_native.create();
+
+	g_ctx->exit();
 }
 void destroyJsContext() noexcept
 {
-	if (s_ctxCreated)
-	{
-		g_ctx.remove();
-		s_ctxCreated = false;
-	}
+	if (!s_ctxCreated) return;
+	JsContext::_exit();
+	g_ctx->enter();
+	g_native.remove();
+	Require::clear();
+	g_ctx->exit();
+	g_ctx.remove();
+	s_ctxCreated = false;
+}
+bool isContextExisted() noexcept
+{
+	return s_ctxCreated;
 }
 void checkCurrentThread() noexcept
 {
-	_assert(GetCurrentThread() == thread);
+	_assert(isContextThread());
+}
+bool isContextThread() noexcept
+{
+	return GetCurrentThreadId() == contextThreadId;
 }
 

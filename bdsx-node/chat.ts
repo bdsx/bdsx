@@ -1,15 +1,16 @@
 
 import { EventEx, CapsuledEvent } from 'krevent';
 import netevent = require('./netevent');
-import { NativePointer } from './native';
+import { NativePointer, NetworkIdentifier } from './native';
 import PacketId = require('./packetId');
+import { CANCEL } from './common';
 
 
 interface ChatEvent
 {
     readonly name:string;
     readonly message:string;
-    readonly networkIdentifier:string;
+    readonly networkIdentifier:NetworkIdentifier;
 
     setName(name:string):void;
     setMessage(message:string):void;
@@ -22,7 +23,7 @@ class ChatEventImpl implements ChatEvent
     constructor(
         public name:string, 
         public message:string,
-        public networkIdentifier:string
+        public networkIdentifier:NetworkIdentifier
     )
     {
     }
@@ -38,21 +39,19 @@ class ChatEventImpl implements ChatEvent
         this.message = message;
     }
 }
-type ChatListener = (ev:ChatEvent)=>void;
+type ChatListener = (ev:ChatEvent)=>CANCEL|void;
 
 class ChatManager extends EventEx<ChatListener>
 {
-    private readonly chatlistener = (ptr:NativePointer, networkIdentifier:string, packetId:PacketId)=>{
-        ptr.move(0x30);
-        const name = ptr.readCxxString();
-        const message = ptr.readCxxString();
+    private readonly chatlistener = (ptr:NativePointer, networkIdentifier:NetworkIdentifier, packetId:PacketId)=>{
+        const name = ptr.getCxxString(0x30);
+        const message = ptr.getCxxString(0x50);
         const ev = new ChatEventImpl(name, message, networkIdentifier);
-        this.fire(ev);
+        if (this.fire(ev) === CANCEL) return CANCEL;
         if (ev.isModified)
         {
-            ptr.move(-0x40);
-            ptr.writeCxxString(ev.name);
-            ptr.writeCxxString(ev.message);
+            ptr.setCxxString(ev.name, 0x30);
+            ptr.setCxxString(ev.message, 0x50);
         }
     };
 

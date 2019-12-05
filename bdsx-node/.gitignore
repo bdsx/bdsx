@@ -4,3 +4,4 @@
 *.d.ts
 *.js
 *.js.map
+!/native.d.ts

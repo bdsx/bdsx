@@ -1,66 +1,19 @@
 #include "nativepointer.h"
 #include "reverse.h"
+#include "sharedptr.h"
+#include "common.h"
+
+#include <KR3/util/unaligned.h>
 
 using namespace kr;
 
-//
-//class SEHException {};
-//class SEHCatcher
-//{
-//private:
-//	_se_translator_function m_func;
-//
-//public:
-//	SEHCatcher() noexcept
-//	{
-//		m_func = _set_se_translator([](unsigned int, EXCEPTION_POINTERS*){ throw SEHException(); });
-//	}
-//	~SEHCatcher() noexcept
-//	{
-//		_set_se_translator(m_func);
-//	}
-//};
-
 NativePointer::NativePointer(const JsArguments& args) noexcept
-	:JsObjectT<NativePointer>(args)
+	:JsObjectT(args)
 {
 }
 
-int32_t NativePointer::getAddressLow() noexcept
-{
-	return (int32_t)(intptr_t)m_address;
-}
-int32_t NativePointer::getAddressHigh() noexcept
-{
-	return (int32_t)((intptr_t)m_address >> 32);
-}
-void* NativePointer::getAddressRaw() noexcept
-{
-	return m_address;
-}
-void NativePointer::setAddress(int32_t lowBits, int32_t highBits) noexcept
-{
-	m_address = (uint8_t*)(((uintptr_t)(uint32_t)highBits << 32) | (uintptr_t)((uint32_t)lowBits));
-}
-void NativePointer::setAddressRaw(void* ptr) noexcept
-{
-	m_address = (uint8_t*)ptr;
-}
-NativePointer* NativePointer::clone() noexcept
-{
-	NativePointer * ptr = NativePointer::newInstance();
-	ptr->m_address = m_address;
-	return ptr;
-}
-void NativePointer::move(int32_t lowBits, int32_t highBits) noexcept
-{
-	m_address += ((intptr_t)highBits << 32) | (intptr_t)(lowBits);
-}
 void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 {
-	cls->setMethod(u"getAddressHigh", &NativePointer::getAddressHigh);
-	cls->setMethod(u"getAddressLow", &NativePointer::getAddressLow);
-	cls->setMethod(u"setAddress", &NativePointer::setAddress);
 	cls->setMethod(u"move", &NativePointer::move);
 
 	cls->setMethod(u"readUint8", &NativePointer::readUint8);
@@ -69,6 +22,8 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 	cls->setMethod(u"readInt8", &NativePointer::readInt8);
 	cls->setMethod(u"readInt16", &NativePointer::readInt16);
 	cls->setMethod(u"readInt32", &NativePointer::readInt32);
+	cls->setMethod(u"readFloat32", &NativePointer::readFloat32);
+	cls->setMethod(u"readFloat64", &NativePointer::readFloat64);
 	cls->setMethod(u"readPointer", &NativePointer::readPointer);
 	cls->setMethod(u"readUtf8", &NativePointer::readUtf8);
 	cls->setMethod(u"readUtf16", &NativePointer::readUtf16);
@@ -81,13 +36,18 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 	cls->setMethod(u"writeInt8", &NativePointer::writeInt8);
 	cls->setMethod(u"writeInt16", &NativePointer::writeInt16);
 	cls->setMethod(u"writeInt32", &NativePointer::writeInt32);
+	cls->setMethod(u"writeFloat32", &NativePointer::writeFloat32);
+	cls->setMethod(u"writeFloat64", &NativePointer::writeFloat64);
 	cls->setMethod(u"writePointer", &NativePointer::writePointer);
 	cls->setMethod(u"writeUtf8", &NativePointer::writeUtf8);
 	cls->setMethod(u"writeUtf16", &NativePointer::writeUtf16);
 	cls->setMethod(u"writeBuffer", &NativePointer::writeBuffer);
 	cls->setMethod(u"writeCxxString", &NativePointer::writeCxxString);
+}
 
-	cls->setMethod(u"toString", &NativePointer::toString);
+void NativePointer::move(int32_t lowBits, int32_t highBits) noexcept
+{
+	m_address += (intptr_t)makeqword(lowBits, highBits);
 }
 
 uint8_t NativePointer::readUint8() throws(kr::JsException)
@@ -114,6 +74,14 @@ int32_t NativePointer::readInt32() throws(kr::JsException)
 {
 	return _readas<int32_t>();
 }
+float NativePointer::readFloat32() throws(kr::JsException)
+{
+	return _readas<float>();
+}
+double NativePointer::readFloat64() throws(kr::JsException)
+{
+	return _readas<double>();
+}
 NativePointer* NativePointer::readPointer() throws(kr::JsException)
 {
 	NativePointer* pointer = NativePointer::newInstance();
@@ -125,7 +93,6 @@ Text16 NativePointer::readUtf16(JsValue bytes) throws(kr::JsException)
 	Text16 text;
 	try
 	{
-		// SEHCatcher catcher;
 		if (bytes == undefined)
 		{
 			char16* end = mem16::find((char16*)m_address, '\0');
@@ -140,7 +107,7 @@ Text16 NativePointer::readUtf16(JsValue bytes) throws(kr::JsException)
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 	return text;
 }
@@ -149,7 +116,6 @@ TText16 NativePointer::readUtf8(JsValue bytes) throws(kr::JsException)
 	TText16 text;
 	try
 	{
-		// SEHCatcher catcher;
 		Text src;
 		if (bytes == undefined)
 		{
@@ -159,14 +125,14 @@ TText16 NativePointer::readUtf8(JsValue bytes) throws(kr::JsException)
 		else
 		{
 			src = Text((char*)m_address, bytes.cast<int>());
-			m_address = (byte*)src.end();
 		}
+		m_address = (byte*)src.end();
 		text << (Utf8ToUtf16)src;
 		return text;
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
 JsValue NativePointer::readBuffer(int bytes) throws(kr::JsException)
@@ -174,13 +140,12 @@ JsValue NativePointer::readBuffer(int bytes) throws(kr::JsException)
 	JsValue value = JsNewTypedArray(JsTypedArrayType::Uint8, bytes);
 	try
 	{
-		// SEHCatcher catcher;
 		value.getBuffer().subcopy(Buffer(m_address, bytes));
 		m_address += bytes;
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 	return value;
 }
@@ -189,7 +154,6 @@ TText16 NativePointer::readCxxString() throws(kr::JsException)
 	TText16 text;
 	try
 	{
-		// SEHCatcher catcher;
 		String* str = (String*)m_address;
 		m_address += sizeof(String);
 
@@ -198,7 +162,7 @@ TText16 NativePointer::readCxxString() throws(kr::JsException)
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
 
@@ -226,22 +190,30 @@ void NativePointer::writeInt32(int32_t v) throws(kr::JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writePointer(NativePointer* v) throws(kr::JsException)
+void NativePointer::writeFloat32(float v) throws(kr::JsException)
 {
+	_writeas(v);
+}
+void NativePointer::writeFloat64(double v) throws(kr::JsException)
+{
+	_writeas(v);
+}
+void NativePointer::writePointer(StaticPointer* v) throws(kr::JsException)
+{
+	if (v == nullptr) throw JsException(u"argument must be *Pointer");
 	_writeas(v->getAddressRaw());
 }
 void NativePointer::writeUtf16(kr::Text16 text) throws(kr::JsException)
 {
 	try
 	{
-		// SEHCatcher catcher;
 		size_t size = text.size();
 		memcpy(m_address, text.data(), size);
 		m_address += size * sizeof(char16);
 	}
-	catch(...)
+	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
 void NativePointer::writeUtf8(kr::Text16 text) throws(kr::JsException)
@@ -257,14 +229,13 @@ void NativePointer::writeUtf8(kr::Text16 text) throws(kr::JsException)
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
 void NativePointer::writeBuffer(kr::JsValue buffer) throws(kr::JsException)
 {
 	try
 	{
-		// SEHCatcher catcher;
 		Buffer buf = buffer.getBuffer();
 		if (buf == nullptr) throw kr::JsException(u"argument must be buffer");
 		size_t size = buf.size();
@@ -273,7 +244,7 @@ void NativePointer::writeBuffer(kr::JsValue buffer) throws(kr::JsException)
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
 void NativePointer::writeCxxString(kr::Text16 text) throws(kr::JsException)
@@ -281,7 +252,6 @@ void NativePointer::writeCxxString(kr::Text16 text) throws(kr::JsException)
 	TSZ utf8;
 	try
 	{
-		// SEHCatcher catcher;
 		String* str = (String*)m_address;
 		utf8 << toUtf8(text);
 		str->assign(utf8.data(), utf8.size());
@@ -289,44 +259,33 @@ void NativePointer::writeCxxString(kr::Text16 text) throws(kr::JsException)
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
-
-TText16 NativePointer::toString() noexcept
-{
-	TText16 out;
-	out << (void*)m_address;
-	return out;
-}
-
 template <typename T>
 T NativePointer::_readas() throws(kr::JsException)
 {
 	try
 	{
-		// SEHCatcher catcher;
 		T value = *(kr::Unaligned<T>*)m_address;
 		m_address += sizeof(T);
 		return value;
 	}
-	catch(...)
+	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }
-
 template <typename T>
 void NativePointer::_writeas(T value) throws(kr::JsException)
 {
 	try
 	{
-		// SEHCatcher catcher;
 		*(kr::Unaligned<T>*)m_address = value;
 		m_address += sizeof(T);
 	}
 	catch (...)
 	{
-		throw kr::JsException((kr::Text16)(kr::TSZ16() << u"Failed to read " << (void*)m_address));
+		accessViolation(m_address);
 	}
 }

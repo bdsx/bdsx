@@ -9,12 +9,8 @@
 #define SEP u"/"
 #endif
 
-
 class Require
 {
-private:
-	kr::AText16 m_dirname;
-
 public:
 	Require(kr::AText16 dirname) noexcept;
 
@@ -27,4 +23,8 @@ public:
 	static void clear() noexcept;
 
 	kr::JsValue operator ()(kr::Text16 modulename) const throws(JsException);
+
+private:
+	kr::AText16 m_dirname;
+	static void _loadPackageJson() noexcept;
 };

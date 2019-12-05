@@ -91,7 +91,7 @@
     <PostBuildEvent />
     <PostBuildEvent />
     <CustomBuild>
-      <Message>copy %(Identity)</Message>
+      <Message>%(Identity)</Message>
       <Command>kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
       <Outputs>$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
     </CustomBuild>
@@ -106,6 +106,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <CustomBuild>
+      <Message>%(Identity)</Message>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -117,6 +120,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <CustomBuild>
+      <Message>%(Identity)</Message>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -135,7 +141,7 @@
     <PostBuildEvent />
     <PostBuildEvent />
     <CustomBuild>
-      <Message>copy %(Identity)</Message>
+      <Message>%(Identity)</Message>
       <Command>kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
       <Outputs>$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
     </CustomBuild>
@@ -236,23 +242,42 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call %(Identity) "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call %(Identity) "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call %(Identity) "$(SolutionDir)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">packaging.bat</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)release.zip</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">packaging.bat</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release.zip</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">packaging.bat</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)release.zip</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">packaging.bat</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release.zip</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/index.js bdsx/index.ts bdsx/package.json bdsx/package-lock.json tsconfig.json</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)bdsx.zip</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)bdsx.zip</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bdsx.zip</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)bdsx.zip</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="bdsx\package-lock.json">
       <FileType>Document</FileType>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)package.json</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)package.json</AdditionalInputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </CustomBuild>
+    <CustomBuild Include="READMD.md">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </CustomBuild>
+    <None Include="common.bat" />
+    <CustomBuild Include="download.bat">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">call "%(Identity)" "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call "%(Identity)" "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call "%(Identity)" "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call "%(Identity)" "$(SolutionDir)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bin\bds.unziptime</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bin\bds.unziptime</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bin\bds.unziptime</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bin\bds.unziptime</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">common.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">common.bat</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

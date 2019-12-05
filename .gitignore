@@ -3,7 +3,7 @@ bin
 *.user
 /release
 /bdsx.zip
-/server.zip
+/downloaded-bds
 /PACKAGING/bdsx/node_modules
 /PACKAGING/bdsx/*.d.ts
 /PACKAGING/bdsx/*.js

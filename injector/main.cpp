@@ -1,5 +1,4 @@
 
-
 #include <KR3/main.h>
 #include <KR3/wl/windows.h>
 #include <KR3/initializer.h>
@@ -7,12 +6,7 @@
 #include <KR3/util/parameter.h>
 #include <KR3/fs/file.h>
 #include <KR3/fs/installer.h>
-#include <KR3/js/js.h>
 #include <KRWin/handle.h>
-
-#include <KR3/http/httpd.h>
-#include <KR3/msg/promise.h>
-#include <KR3/fs/watcher.h>
 
 using namespace kr;
 

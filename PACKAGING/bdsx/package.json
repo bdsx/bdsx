@@ -12,11 +12,10 @@
   "keywords": [],
   "author": "YOU",
   "dependencies": {
-    "bdsx": "^1.0.9",
-    "minecraft-scripting-types-server": "^1.0.0"
+    "bdsx": "^1.1.5"
   },
   "devDependencies": {
-    "@types/node": "^12.12.5",
-    "typescript": "^3.6.4"
+    "minecraft-scripting-types-server": "^1.0.0",
+    "typescript": "^3.7.3"
   }
 }

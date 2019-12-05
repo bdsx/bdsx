@@ -1,6 +1,6 @@
 {
   "name": "bdsx",
-  "version": "1.0.9",
+  "version": "1.1.5",
   "description": "Javascript API for BDSX",
   "main": "index",
   "scripts": {
@@ -13,11 +13,10 @@
   "author": "karikera",
   "dependencies": {
     "@mcbe/dummy-console": "^1.0.4",
-    "krevent": "^1.1.3"
+    "krevent": "^2.0.1"
   },
   "devDependencies": {
-    "@types/node": "^12.12.5",
-    "typescript": "^3.6.4"
+    "minecraft-scripting-types-server": "^1.0.0"
   },
   "repository": {
     "type": "git",
