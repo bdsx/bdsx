@@ -29,6 +29,7 @@ import sendPacket = nethook.sendPacket;
 import execSync = native.execSync;
 import ipfilter = native.ipfilter;
 import MariaDB = native.MariaDB;
+import shellVoid = native.shell;
 
 declare global
 {
@@ -63,10 +64,12 @@ declare module "./native"
         readHex(size:number):string;
         analyze():void;
     }
+
     namespace Actor
     {
         function fromEntity(entity:IEntity):Actor;
     }
+
     interface Actor
     {
         getEntity():IEntity;
@@ -235,6 +238,7 @@ export {
     execSync,
     ipfilter,
     MariaDB,
+    shellVoid,
 };
 
 export function wget(url:string):Promise<string>
@@ -244,6 +248,18 @@ export function wget(url:string):Promise<string>
             resolve(text);
         });
     });
+}
+
+export function exec(command:string, cwd?:string):Promise<string>
+{
+    return new Promise(resolve=>{
+        native.exec(command, cwd, resolve);
+    });
+}
+
+export function execVoid(command:string, cwd?:string):void
+{
+    native.exec(command, cwd);
 }
 
 console.log = (msg:any, ...params:any[])=>{

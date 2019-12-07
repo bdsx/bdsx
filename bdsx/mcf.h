@@ -15,6 +15,7 @@ struct MinecraftFunctionTable
 
 	void stopServer() noexcept;
 
+	// skip when return true
 	void hookOnUpdate(void(*update)()) noexcept;
 	void hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, Connection* conn)) noexcept;
 	void hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, Connection* conn)) noexcept;
@@ -25,6 +26,7 @@ struct MinecraftFunctionTable
 	void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept;
 	void hookOnLoopStart(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept;
 	void hookOnRuntimeError(void(*callback)(void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr)) noexcept;
+	// return error code
 	void hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept;
 	void hookOnActorRelease(void(*callback)(Actor* actor)) noexcept;
 	void hookOnActorDestructor(void(*callback)(Actor* actor)) noexcept;
@@ -38,7 +40,8 @@ struct MinecraftFunctionTable
 	String* (*ExtendedCertificate$getIdentityName)(String* out, const Certificate&);
 	void (*RakNet$SystemAddress$ToString)(SystemAddress* addr, bool writePort, char* dest, char portDelineator);
 	void (*RakNet$RakPeer$GetConnectionList)(RakPeer* peer, SystemAddress* dest, uint16_t* size);
-	void (*ScriptEngine$_processSystemUpdate)(ScriptEngine*);
+	void (*ServerInstance$_update)(ServerInstance*);
+	void (*Minecraft$update)(Minecraft*);
 	void (*NetworkHandler$onConnectionClosed)(NetworkHandler*, const NetworkIdentifier&, bool);
 	void (*ServerInstance$ServerInstance)(ServerInstance* server, IMinecraftApp*, ServerInstanceEventCoordinator&);
 	void (*DedicatedServer$start)(String* str);

@@ -109,6 +109,7 @@ export namespace serverControl
 {
     /**
      * stop the BDS
+     * It will stop next tick
      */
     export function stop():void;
     
@@ -123,6 +124,16 @@ export namespace serverControl
     * Request native debugger (not for Javascript)
     */
     export function debug(): void;
+    
+    /**
+     * spawn bdsx with same arguments
+     * for restarting when it's dying
+     */
+    export function fork():void;
+    /**
+     * shutdown server and restart
+     */
+    export function restart():void;
 }
 
 /**
@@ -478,6 +489,10 @@ export function free(ptr:StaticPointer):void;
 export function getHashFromCxxString(ptr:StaticPointer):NativePointer;
 
 export function execSync(command:string, cwd?:string):string;
+
+export function exec(command:string, cwd?:string, callback?:(output:string)=>void):void;
+
+export function shell(program:string, command:string, cwd?:string):string;
 
 export function wget(url:string, callback:(callback:string)=>void):void;
 

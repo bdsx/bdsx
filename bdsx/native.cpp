@@ -36,15 +36,48 @@ void cleanAllResource() noexcept
 	JsRuntime::dispose();
 	StackAllocator::getInstance()->terminate();
 }
+void fork() throws(JsException)
+{
+	TText16 cwd = currentDirectory;
+	cwd << nullterm;
 
+	TText16 bdsxPath = ModuleName(u"bdsx.dll");
+
+	TText16 cmdline;
+	cmdline << u'\"';
+	cmdline << bdsxPath.cut(bdsxPath.find_r('\\') + 1);
+	cmdline << u"injector.exe\" \"";
+	cmdline << bdsxPath;
+	cmdline << u"\" ";
+	cmdline << (Text16)unwide(GetCommandLineW());
+	cmdline << nullterm;
+
+	auto [process, thread] = win::Process::execute(cmdline.data(), cwd.data(),
+		win::ProcessOptions().console(true));
+	if (process == nullptr)
+	{
+		throw JsException(TSZ16() << u"Cannot run injector.exe");
+	}
+	delete process;
+	thread->detach();
+}
 JsValue createServerControlModule() noexcept
 {
 	JsValue module = JsNewObject;
-	module.setMethod(u"stop", [] { g_mcf.stopServer(); });
+	module.setMethod(u"stop", [] { 
+		EventPump::getInstance()->post([] { throw QuitException(0); });
+		});
 	module.setMethod(u"reset", []() { g_native->reset(); });
 	module.setMethod(u"debug", [] {
 		requestDebugger();
 		debug();
+		});
+	module.setMethod(u"fork", fork);
+	module.setMethod(u"restart", [] {
+		EventPump::getInstance()->post([] {
+			fork();
+			throw QuitException(0); 
+			});
 		});
 	return module;
 }
@@ -256,10 +289,41 @@ void Native::_createNativeModule() noexcept
 		storeListener(&g_native->m_onRuntimeError, listener);
 		});
 	native.setMethod(u"execSync", [](Text16 path, JsValue curdir) {
-		return (AText)shell(path, curdir != undefined ? curdir.toString().as<Text16>().data() : nullptr);
+		return (AText)shell(path, curdir != undefined ? curdir.cast<Text16>().data() : nullptr);
 		});
-	native.setMethod(u"createFunctionFromPointer", [](Text16 path, JsValue curdir) {
-		return (AText)shell(path, curdir != undefined ? curdir.toString().as<Text16>().data() : nullptr);
+	native.setMethod(u"exec", [](Text16 path, JsValue curdir, JsValue cb) {
+		if (cb == undefined)
+		{
+			Process process;
+			process.shell(path, curdir == undefined ? nullptr : curdir.cast<Text16>().data());
+			return;
+		}
+		if (cb.getType() != JsType::Function) throw JsException(u"argument must be function");
+		
+		AText16 curdir_a;
+		if (curdir != undefined)
+		{
+			curdir_a = curdir.cast<Text16>();
+			curdir_a.c_str();
+		}
+		
+		AText16 path_a = AText16::concat(u"/c ", path);
+
+		threading([path = move(path_a), curdir = move(curdir_a)]{
+			Process process;
+			process.shell(path, curdir == nullptr ? nullptr : curdir.data());
+			process.wait();
+			TText res = StreamBuffer<char, Process>(move(process));
+			AText16 out;
+			out << (AnsiToUtf16)res;
+			return out;
+			})->then([cb = (JsPersistent)cb](Text16 data){
+			((JsValue)cb)(data);
+			});
+		});
+	native.setMethod(u"spawn", [](Text16 path, Text16 param, JsValue curdir) {
+		Process proc;
+		proc.exec(path.data(), TSZ16() << param, curdir != undefined ? curdir.cast<Text16>().data() : nullptr);
 		});
 	native.setMethod(u"wget", [](Text16 url, JsValue callback){
 		if (callback.getType() != JsType::Function) throw JsException(u"argument must be function");

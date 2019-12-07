@@ -34,10 +34,38 @@
 
 #pragma comment(lib, "chakrart.lib")
 
-
-// TODO: Ä¿½ºÅÒ ÀÎÇ² Ä¿¸Çµå
-
 using namespace kr;
+
+class SingleInstanceLimiter
+{
+private:
+	HANDLE m_mutex;
+
+public:
+	SingleInstanceLimiter() noexcept
+	{
+	}
+	~SingleInstanceLimiter() noexcept
+	{
+		ReleaseSemaphore(m_mutex, 1, nullptr);
+	}
+	void create(pcstr16 name) noexcept
+	{
+		m_mutex = CreateSemaphoreW(nullptr, 1, 1, wide(name));
+		int err = GetLastError();
+		if (ERROR_ALREADY_EXISTS == err)
+		{
+			cout << "BDSX: (id=" << (Utf16ToAnsi)(Text16)name << ") is Already executing" << endl;
+			cout << "BDSX: Wait the process terminating..." << endl;
+			WaitForSingleObject(m_mutex, INFINITE);
+			cout << "BDSX: Previous process terminated" << endl;
+		}
+		else
+		{
+			WaitForSingleObject(m_mutex, INFINITE);
+		}
+	}
+};
 
 namespace
 {
@@ -48,26 +76,8 @@ namespace
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
 	Map<Text, AText> s_uuidToPackPath;
+	SingleInstanceLimiter s_singleInstance;
 }
-
-struct ConnectionInfo
-{
-	void draw() noexcept
-	{
-		//const data = conninfo.data[this.address];
-		//if (data)
-		//{
-		//	if (data.packetsPerSecMax < 10)
-		//	{
-		//		delete conninfo.data[this.address];
-		//	}
-		//	else
-		//	{
-		//		delete data.packetsPerSec;
-		//	}
-		//}
-	}
-};
 
 void catchException() noexcept
 {
@@ -80,6 +90,34 @@ void catchException() noexcept
 	}
 }
 
+// It cannot use, minecraft trys to open with several ports
+int CALLBACK bindHook(
+	SOCKET s,
+	const sockaddr* name,
+	int namelen
+)
+{
+	int res = bind(s, name, namelen);
+	if (res == -1)
+	{
+		int err = WSAGetLastError();
+		if (err == WSAEADDRINUSE)
+		{
+			int port = ((sockaddr_in*)name)->sin_port;
+			cout << "BDSX: Network port occupied, wait for closing." << endl;
+			for (;;)
+			{
+				int res = bind(s, name, namelen);
+				if (res != -1) break;
+				int err = WSAGetLastError();
+				if (err != WSAEADDRINUSE) break;
+				Sleep(100);
+			}
+			return res;
+		}
+	}
+	return res;
+}
 int CALLBACK recvfromHook(
 	SOCKET s, char* buf, int len, int flags,
 	sockaddr* from, int* fromlen
@@ -109,11 +147,17 @@ JsErrorCode CALLBACK JsCreateRuntimeHook(
 
 		g_mcf.hookOnUpdate([] {
 			JsScope scope;
-			pump->processOnce();
+			try
+			{
+				pump->processOnce();
+			}
+			catch (QuitException&)
+			{
+				g_mcf.stopServer();
+			}
 			});
 
 		JsonParser parser(File::open(u"valid_known_packs.json"));
-
 		parser.array([&](size_t idx){
 			AText uuid;
 			AText path;
@@ -146,7 +190,9 @@ JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* 
 	if (err == JsNoError)
 	{
 		createJsContext(*newContext);
-		s_iatWS2_32.hooking(17, recvfromHook); // recvfrom
+
+		s_iatWS2_32.hooking(17, recvfromHook);
+		// It cannot access recvfrom before context creating
 	}
 	return err;
 }
@@ -207,11 +253,12 @@ BOOL WINAPI DllMain(
 		ondebug(requestDebugger());
 		
 		cout << "BDSX: Attached" << endl;
-		
+
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
 		g_mcf.load();
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
+		readArgument(commandLine); // exepath
 		bool modulePathSetted = false;
 		while (!commandLine.empty())
 		{
@@ -230,6 +277,11 @@ BOOL WINAPI DllMain(
 
 				Require::init(modulePath);
 			}
+			else if (option == u"--mutex")
+			{
+				Text16 name = readArgument(commandLine);
+				s_singleInstance.create(TSZ16() << u"BDSX_" << name);
+			}
 		}
 
 		if (!modulePathSetted)
@@ -245,6 +297,7 @@ BOOL WINAPI DllMain(
 			// create require
 			Require::start();
 		});
+		// s_iatWS2_32.hooking(2, bindHook);
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);

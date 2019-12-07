@@ -131,7 +131,7 @@ kcopy "$(OutDir)injector.exe" "$(SolutionDir)release\bin\injector.exe"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="injector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ken\KR3\KR3.vcxproj">

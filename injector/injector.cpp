@@ -31,9 +31,8 @@ int main()
 
 	Text16 commandLine = (Text16)unwide(GetCommandLineW());
 	Text16 injectorPath = readArgument(commandLine);
-	Text16 exePath = readArgument(commandLine);
 	Text16 dllPath = readArgument(commandLine);
-	if (exePath.empty() || dllPath.empty())
+	if (commandLine.empty() || dllPath.empty())
 	{
 		cerr << "injector.exe> It needs exe and dll path" << endl;
 #ifndef NDEBUG
@@ -48,16 +47,16 @@ int main()
 
 	SetDllDirectoryW(wide(path16.resolve(path16.dirname(dllPath))));
 
-	auto [proc, thread] = win::Process::execute(TSZ16() << exePath, TSZ16() << commandLine, TSZ16() << path16.dirname(exePath),
+	auto [proc, thread] = win::Process::execute((pstr16)commandLine.data(), nullptr,
 		win::ProcessOptions()
 		.suspended(true)
 		.console(true));
 	if (!proc)
 	{
 #ifndef NDEBUG
-		MessageBoxW(nullptr, wide(TSZ16() << u"Failed to run: " << exePath), nullptr, MB_OK | MB_ICONERROR);
+		MessageBoxW(nullptr, wide(TSZ16() << u"Failed to run: " << commandLine), nullptr, MB_OK | MB_ICONERROR);
 #endif
-		ucerr << u"injector.exe> Failed to run: " << exePath << endl;
+		ucerr << u"injector.exe> Failed to run: " << commandLine << endl;
 		return ENOENT;
 	}
 

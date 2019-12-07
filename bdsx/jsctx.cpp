@@ -2,6 +2,7 @@
 #include "native.h"
 #include "require.h"
 #include <KR3/wl/windows.h>
+#include <KR3/msg/pump.h>
 
 using namespace kr;
 
@@ -41,6 +42,7 @@ void destroyJsContext() noexcept
 	if (!s_ctxCreated) return;
 	JsContext::_exit();
 	g_ctx->enter();
+	EventPump::getInstance()->waitAll();
 	g_native.remove();
 	Require::clear();
 	g_ctx->exit();

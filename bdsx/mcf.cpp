@@ -146,9 +146,11 @@ void MinecraftFunctionTable::loadFromPredefined() noexcept
 	StopCommand$mServer = ptr(0x13962F0);
 	MinecraftPackets$createPacket = ptr(0x2926E0);
 	Level$createDimension = ptr(0x9662C0);
-	ScriptEngine$_processSystemUpdate = ptr(0x353080);
+	// ScriptEngine$_processSystemUpdate = ptr(0x353080);
 	DedicatedServer$stop = ptr(0x55BB0);
 	LoopbackPacketSender$sendToClients = ptr(0x28ABA0);
+	ServerInstance$_update = ptr(0x424D20);
+	Minecraft$update = ptr(0xA7C050);
 }
 void MinecraftFunctionTable::loadFromPdb() noexcept
 {
@@ -164,7 +166,9 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"ExtendedCertificate::getIdentityName", &ExtendedCertificate$getIdentityName},
 		{"RakNet::SystemAddress::ToString", &RakNet$SystemAddress$ToString},
 		{"RakNet::RakPeer::GetConnectionList", &RakNet$RakPeer$GetConnectionList},
-		{"ScriptEngine::_processSystemUpdate", &ScriptEngine$_processSystemUpdate},
+		// {"ScriptEngine::_processSystemUpdate", &ScriptEngine$_processSystemUpdate},
+		{"ServerInstance::_update", &ServerInstance$_update},
+		{"Minecraft::update", &Minecraft$update},
 		{"NetworkHandler::onConnectionClosed", {&NetworkHandler$onConnectionClosed, 1}},
 		{"ServerInstance::ServerInstance", &ServerInstance$ServerInstance},
 		{"DedicatedServer::start", &DedicatedServer$start},
@@ -274,25 +278,24 @@ void MinecraftFunctionTable::checkUnloaded() noexcept
 }
 void MinecraftFunctionTable::stopServer() noexcept
 {
-	g_mcf.DedicatedServer$stop((byte*)g_server + 8);
+	g_mcf.DedicatedServer$stop((byte*)g_server->server + 8);
 }
 
 void MinecraftFunctionTable::hookOnUpdate(void(*update)()) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x89, 0x45, 0xF8, // mov qword ptr[rbp - 8],rax
-		0x48, 0x8B, 0xF1, // mov rsi,rcx
-		0xB9, 0x04, 0x00, 0x00, 0x00, // mov ecx,4
+		0xE8, 0xBD, 0x71, 0x65, 0x00,				// call Minecraft::update
+		0x41, 0x8B, 0x87, 0x88, 0x00, 0x00, 0x00,   // mov eax,dword ptr ds:[r15+88]
 	};
 	Code junction(64);
-	junction.write(ORIGINAL_CODE, 7);
 	junction.sub(RSP, 0x28);
+	junction.call(Minecraft$update, RAX);
 	junction.call(update, RAX);
 	junction.add(RSP, 0x28);
-	junction.write(ORIGINAL_CODE + 7, 5);
+	junction.write(ORIGINAL_CODE + 5, 7);
 	junction.ret();
-	junction.patchTo((byte*)ScriptEngine$_processSystemUpdate + 0x28
-		, ORIGINAL_CODE, RDX, false, "internalUpdate");
+	junction.patchTo((byte*)ServerInstance$_update + 0x16E
+		, ORIGINAL_CODE, RAX, false, "internalUpdate");
 };
 void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, Connection* conn)) noexcept
 {
