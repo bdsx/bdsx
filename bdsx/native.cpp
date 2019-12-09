@@ -28,9 +28,27 @@
 using namespace kr;
 
 kr::Manual<Native> g_native;
+namespace
+{
+	kr::Set<SOCKET> s_binds;
+}
+
+void addBindList(SOCKET socket) noexcept
+{
+	s_binds.insert(socket);
+}
+void removeBindList(SOCKET socket) noexcept
+{
+	s_binds.erase(socket);
+}
 
 void cleanAllResource() noexcept
 {
+	for (SOCKET sock : s_binds)
+	{
+		closesocket(sock);
+	}
+	s_binds.clear();
 	destroyJsContext();
 	JsContext::_cleanForce();
 	JsRuntime::dispose();

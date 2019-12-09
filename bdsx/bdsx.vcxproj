@@ -126,7 +126,8 @@
     <PostBuildEvent>
       <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
 kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
-kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"</Command>
+kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
+kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -145,7 +146,8 @@ kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"</Comm
     <PostBuildEvent>
       <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
 kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
-kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"</Command>
+kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
+kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -31,6 +31,8 @@ private:
 	kr::Set<kr::Ipv4Address> m_ipfilter;
 };
 
+void addBindList(SOCKET socket) noexcept;
+void removeBindList(SOCKET socket) noexcept;
 void storeListener(kr::JsPersistent * persistent, const kr::JsValue & move) throws(kr::JsException);
 
 extern kr::Manual<Native> g_native;

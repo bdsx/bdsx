@@ -90,6 +90,12 @@ void catchException() noexcept
 	}
 }
 
+int WSAAPI closesocketHook(SOCKET s) noexcept
+{
+	removeBindList(s);
+	return closesocket(s);
+}
+
 // It cannot use, minecraft trys to open with several ports
 int CALLBACK bindHook(
 	SOCKET s,
@@ -98,24 +104,7 @@ int CALLBACK bindHook(
 )
 {
 	int res = bind(s, name, namelen);
-	if (res == -1)
-	{
-		int err = WSAGetLastError();
-		if (err == WSAEADDRINUSE)
-		{
-			int port = ((sockaddr_in*)name)->sin_port;
-			cout << "BDSX: Network port occupied, wait for closing." << endl;
-			for (;;)
-			{
-				int res = bind(s, name, namelen);
-				if (res != -1) break;
-				int err = WSAGetLastError();
-				if (err != WSAEADDRINUSE) break;
-				Sleep(100);
-			}
-			return res;
-		}
-	}
+	if (res == 0) addBindList(s);
 	return res;
 }
 int CALLBACK recvfromHook(
@@ -297,7 +286,8 @@ BOOL WINAPI DllMain(
 			// create require
 			Require::start();
 		});
-		// s_iatWS2_32.hooking(2, bindHook);
+		s_iatWS2_32.hooking(2, bindHook);
+		s_iatWS2_32.hooking(3, closesocketHook);
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);

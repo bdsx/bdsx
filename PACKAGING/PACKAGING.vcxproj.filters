@@ -35,9 +35,9 @@
     </CustomBuild>
     <CustomBuild Include="bdsx\index.js" />
     <CustomBuild Include="bdsx\package-lock.json" />
-    <CustomBuild Include="READMD.md" />
     <CustomBuild Include="download.bat">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="README.md" />
   </ItemGroup>
 </Project>

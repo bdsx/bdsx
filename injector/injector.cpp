@@ -53,20 +53,24 @@ int main()
 		.console(true));
 	if (!proc)
 	{
+		ErrorCode last = ErrorCode::getLast();
 #ifndef NDEBUG
 		MessageBoxW(nullptr, wide(TSZ16() << u"Failed to run: " << commandLine), nullptr, MB_OK | MB_ICONERROR);
 #endif
 		ucerr << u"injector.exe> Failed to run: " << commandLine << endl;
+		ucerr << last.getMessage<char16>() << endl;
 		return ENOENT;
 	}
 
 	win::Module * injected = proc->injectDll(TSZ16() << path16.basename(dllPath));
 	if (!injected)
 	{
+		ErrorCode last = ErrorCode::getLast();
 #ifndef NDEBUG
 		MessageBoxW(nullptr, wide(TSZ16() << u"Failed to inject: " << dllPath), nullptr, MB_OK | MB_ICONERROR);
 #endif
 		ucerr << u"injector.exe> Failed to inject: " << dllPath << endl;
+		ucerr << last.getMessage<char16>() << endl;
 		proc->terminate();
 		thread->detach();
 		return EFAULT;

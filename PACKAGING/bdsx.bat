@@ -13,3 +13,4 @@ REM
 
 cd server
 ..\bin\injector.exe ..\bin\bdsx.dll bedrock_server.exe -M ..\bdsx --mutex main
+if %errorlevel% NEQ 0 ( pause )

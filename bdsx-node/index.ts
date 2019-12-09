@@ -20,6 +20,7 @@ import consoleX = native.console;
 import nethook = native.nethook;
 import serverControl = native.serverControl;
 import setOnErrorListener = native.setOnErrorListener;
+import setOnRuntimeErrorListener = native.setOnRuntimeErrorListener;
 import NativeModule = native.NativeModule;
 import fsx = native.fs;
 import File = fs.File;
@@ -224,6 +225,7 @@ export {
     consoleX, 
     nethook, 
     setOnErrorListener,
+    setOnRuntimeErrorListener,
     PacketId,
     netevent,
     chat,
