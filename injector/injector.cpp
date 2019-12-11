@@ -40,14 +40,12 @@ int main()
 #endif
 		return EINVAL;
 	}
-
 	setlocale(LC_ALL, nullptr);
-
 	win::Module* module = win::Module::getModule(nullptr);
 
 	SetDllDirectoryW(wide(path16.resolve(path16.dirname(dllPath))));
 
-	auto [proc, thread] = win::Process::execute((pstr16)commandLine.data(), nullptr,
+	auto [proc, thread] = win::Process::execute((pstr16)commandLine.data(), TSZ16() << currentDirectory,
 		win::ProcessOptions()
 		.suspended(true)
 		.console(true));

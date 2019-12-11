@@ -127,7 +127,8 @@
       <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
 kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
 kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
-kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"</Command>
+kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
+kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,7 +148,8 @@ kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"</Command>
       <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
 kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
 kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
-kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"</Command>
+kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
+kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
