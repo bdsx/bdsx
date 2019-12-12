@@ -72,6 +72,7 @@ https://github.com/karikera/bdsx/issues
 https://discordapp.com/channels/646456965983240212/646456965983240218
 
 ## Build It Self
+It needs to install [MariaDB](https://mariadb.org/download/).  
 It needs [ken](https://github.com/karikera/ken) project on same directory to build.  
   
 **[parent directory]**  

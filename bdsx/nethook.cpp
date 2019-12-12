@@ -177,11 +177,15 @@ void NetHookModule::hook() noexcept
 			{
 				JsValue logininfo = JsNewObject;
 				LoginPacket* login = static_cast<LoginPacket*>(packet);
-				Certificate* cert = login->connreq->cert;
-				if (cert)
+				ConnectionReqeust* conn = login->connreq;
+				if (conn != nullptr)
 				{
-					logininfo.set(u"xuid", cert->getXuid().text());
-					logininfo.set(u"id", cert->getId().text());
+					Certificate* cert = login->connreq->cert;
+					if (cert != nullptr)
+					{
+						logininfo.set(u"xuid", cert->getXuid().text());
+						logininfo.set(u"id", cert->getId().text());
+					}
 				}
 				((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId, logininfo);
 			}
@@ -193,6 +197,10 @@ void NetHookModule::hook() noexcept
 		catch (JsException & err)
 		{
 			g_native->fireError(err.getValue());
+		}
+		catch (...)
+		{
+			cerr << "SEH error" << endl;
 		}
 		});
 	g_mcf.hookOnPacketSendInternal([](NetworkHandler* handler, const NetworkIdentifier& ni, Packet* packet, String* data)->Connection* {
@@ -219,6 +227,10 @@ void NetHookModule::hook() noexcept
 			catch (JsException & err)
 			{
 				g_native->fireError(err.getValue());
+			}
+			catch (...)
+			{
+				cerr << "SEH error" << endl;
 			}
 		}
 		return handler->getConnectionFromId(ni);
