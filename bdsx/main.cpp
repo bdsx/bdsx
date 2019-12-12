@@ -113,8 +113,13 @@ int CALLBACK recvfromHook(
 )
 {
 	int res = recvfrom(s, buf, len, flags, from, fromlen);
+	if (res == SOCKET_ERROR) return SOCKET_ERROR;
+	if (!isContextExisted()) return res;
 
-	if (g_native->isFilted(((Ipv4Address&)((sockaddr_in*)from)->sin_addr)))
+	Ipv4Address& ip = (Ipv4Address&)((sockaddr_in*)from)->sin_addr;
+
+	addTraffic(ip, res);
+	if (g_native->isFilted(ip))
 	{
 		*fromlen = 0;
 		WSASetLastError(WSAECONNREFUSED);
@@ -179,9 +184,6 @@ JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* 
 	if (err == JsNoError)
 	{
 		createJsContext(*newContext);
-
-		s_iatWS2_32.hooking(17, recvfromHook);
-		// It cannot access recvfrom before context creating
 	}
 	return err;
 }
@@ -288,6 +290,7 @@ BOOL WINAPI DllMain(
 		});
 		s_iatWS2_32.hooking(2, bindHook);
 		s_iatWS2_32.hooking(3, closesocketHook);
+		s_iatWS2_32.hooking(17, recvfromHook);
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);

@@ -343,7 +343,8 @@ _finish:
 
 	JsValue require = JsFunction::makeT(Require(path16.dirname(filename)));
 	{
-		JsValue func = JsRuntime::run(filename, TSZ16() << u"(function " << moduleName.filter(jsIdentifierFilter) << u"_js(module, exports, __dirname, require){" << utf8ToUtf16(source) << u"\n})", g_server->makeScriptId());
+		uintptr_t contextId = g_server == nullptr ? 0 : g_server->makeScriptId();
+		JsValue func = JsRuntime::run(filename, TSZ16() << u"(function " << moduleName.filter(jsIdentifierFilter) << u"_js(module, exports, __dirname, require){" << utf8ToUtf16(source) << u"\n})", contextId);
 		func(module, exports, m_dirname, require);
 	}
 	

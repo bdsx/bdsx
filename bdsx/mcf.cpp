@@ -14,18 +14,13 @@ using namespace hook;
 MinecraftFunctionTable g_mcf;
 ServerInstance* g_server;
 
-bool checkCode(void * code, Buffer originalCode, Text name) noexcept
-{
-	if (memcmp(code, originalCode.data(), originalCode.size()) != 0)
-	{
-		ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-		cerr << "BDSX: " << name << " - function hooking failed" << endl;
-		return false;
-	}
-	return true;
-}
 bool checkCode(void* code, Buffer originalCode, Text name, View<pair<size_t, size_t>> skip) noexcept
 {
+	if (skip == nullptr)
+	{
+		if (memcmp(code, originalCode.data(), originalCode.size()) != 0) goto _fail;
+	}
+	else
 	{
 		size_t prev = 0;
 		for (const pair<size_t, size_t>& sz : skip)
@@ -91,9 +86,9 @@ void MinecraftFunctionTable::load() noexcept
 	BText<32> hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
 	cout << "BDSX: bedrock_server.exe MD5 = " << hash << endl;
 
-	if (hash == "06123E1433AA100ED5913D379D317460")
+	if (hash == "23FA166BABC11A43D06629C6148F41D0")
 	{
-		cout << "MD5 Hash Matched(Version == 1.13.3.0)" << endl;
+		cout << "MD5 Hash Matched(Version == 1.14.0.9)" << endl;
 		loadFromPredefined();
 #ifndef NDEBUG
 		checkUnloaded();
@@ -111,46 +106,44 @@ void MinecraftFunctionTable::load() noexcept
 }
 void MinecraftFunctionTable::loadFromPredefined() noexcept
 {
-	ModuleInfo ptr;
-	RakNet$RakPeer$GetConnectionList = ptr(0xA35F0);
-	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x40C220);
-	NetworkIdentifier$getAddress = ptr(0x2902F0);
-	Level$fetchEntity = ptr(0x96BA80);
-	NetworkHandler$_getConnectionFromId = ptr(0x28CD40);
-	std$string$assign = ptr(0x4E590);
-	ServerNetworkHandler$_getServerPlayer = ptr(0x2F8AA0);
-	NetworkHandler$onConnectionClosed = ptr(0x28D640);
-	ExtendedCertificate$getXuid = ptr(0x600B0);
-	NetworkHandler$_sortAndPacketizeEvents = ptr(0x28CFE0);
-	MinecraftCommands$executeCommand = ptr(0x39C6B0);
-	NetworkIdentifier$getHash = ptr(0x2900E0);
-	ServerPlayer$sendNetworkPacket = ptr(0x42BA90);
-	ServerInstance$ServerInstance = ptr(0x422860);
-	ExtendedCertificate$getIdentityName = ptr(0x2E9790);
-	NetworkHandler$getEncryptedPeerForUser = ptr(0x28E040);
-	Actor$_Actor = ptr(0x483280);
-	ScriptEngine$startScriptLoading = ptr(0x3553D0);
-	ServerPlayer$_vftable_ = ptr(0xD42D28);
-	std$string$append = ptr(0x5C9D0);
-	std$_Allocate$16 = ptr(0x4E4A0);
-	NetworkIdentifier$equalsTypeData = ptr(0x290480);
-	Level$removeEntityReferences = ptr(0x96BD90);
-	DedicatedServer$start = ptr(0x561E0);
-	Crypto$Random$generateUUID = ptr(0x12A700);
-	BaseAttributeMap$getMutableInstance = ptr(0x696EB0);
-	google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread = ptr(0xBB5DC0);
-	NetworkHandler$_sendInternal = ptr(0x28E2E0);
-	NetworkHandler$send = ptr(0x28E220);
-	RakNet$SystemAddress$ToString = ptr(0xA0110);
-	std$string$_Tidy_deallocate = ptr(0x4E3F0);
-	StopCommand$mServer = ptr(0x13962F0);
-	MinecraftPackets$createPacket = ptr(0x2926E0);
-	Level$createDimension = ptr(0x9662C0);
-	// ScriptEngine$_processSystemUpdate = ptr(0x353080);
-	DedicatedServer$stop = ptr(0x55BB0);
-	LoopbackPacketSender$sendToClients = ptr(0x28ABA0);
-	ServerInstance$_update = ptr(0x424D20);
-	Minecraft$update = ptr(0xA7C050);
+	ModuleInfo ptr; RakNet$RakPeer$GetConnectionList = ptr(0xA2A00);
+	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x411AD0);
+	NetworkIdentifier$getAddress = ptr(0x294FD0);
+	Level$fetchEntity = ptr(0x9857D0);
+	NetworkHandler$_getConnectionFromId = ptr(0x291BE0);
+	std$string$assign = ptr(0x4DC90);
+	ServerInstance$_update = ptr(0x42A640);
+	ServerNetworkHandler$_getServerPlayer = ptr(0x2FD430);
+	NetworkHandler$onConnectionClosed = ptr(0x292510);
+	ExtendedCertificate$getXuid = ptr(0x5F810);
+	NetworkHandler$_sortAndPacketizeEvents = ptr(0x291EB0);
+	MinecraftCommands$executeCommand = ptr(0x3A1FE0);
+	NetworkIdentifier$getHash = ptr(0x294DC0);
+	ServerPlayer$sendNetworkPacket = ptr(0x431580);
+	ServerInstance$ServerInstance = ptr(0x428110);
+	ExtendedCertificate$getIdentityName = ptr(0x2EE320);
+	NetworkHandler$getEncryptedPeerForUser = ptr(0x292EC0);
+	Actor$_Actor = ptr(0x4897F0);
+	ScriptEngine$startScriptLoading = ptr(0x35A990);
+	ServerPlayer$_vftable_ = ptr(0xD5CA98);
+	std$string$append = ptr(0x5C1D0);
+	std$_Allocate$16 = ptr(0x4DBA0);
+	Level$removeEntityReferences = ptr(0x985AE0);
+	DedicatedServer$start = ptr(0x558D0);
+	Crypto$Random$generateUUID = ptr(0x129D30);
+	BaseAttributeMap$getMutableInstance = ptr(0x6A45C0);
+	google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread = ptr(0xBCCC30);
+	NetworkHandler$_sendInternal = ptr(0x293160);
+	Minecraft$update = ptr(0xA94B80);
+	NetworkHandler$send = ptr(0x2930A0);
+	RakNet$SystemAddress$ToString = ptr(0x9F520);
+	std$string$_Tidy_deallocate = ptr(0x4DAF0);
+	StopCommand$mServer = ptr(0x13BF930);
+	MinecraftPackets$createPacket = ptr(0x297350);
+	Level$createDimension = ptr(0x97FFF0);
+	DedicatedServer$stop = ptr(0x552A0);
+	LoopbackPacketSender$sendToClients = ptr(0x28F940);
+	NetworkIdentifier$equals = ptr(0x5F7A0);
 }
 void MinecraftFunctionTable::loadFromPdb() noexcept
 {
@@ -184,7 +177,7 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread", &google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread},
 		{"NetworkIdentifier::getAddress", &NetworkIdentifier$getAddress},
 		{"NetworkIdentifier::getHash", &NetworkIdentifier$getHash},
-		{"NetworkIdentifier::equalsTypeData", &NetworkIdentifier$equalsTypeData},
+		{"NetworkIdentifier::operator==", &NetworkIdentifier$equals},
 		{"Crypto::Random::generateUUID", &Crypto$Random$generateUUID},
 		{"BaseAttributeMap::getMutableInstance", &BaseAttributeMap$getMutableInstance},
 		{"Level::createDimension", &Level$createDimension},
@@ -197,21 +190,17 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"LoopbackPacketSender::sendToClients", &LoopbackPacketSender$sendToClients},
 		{"Level::removeEntityReferences", &Level$removeEntityReferences},
 	};
-
-	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Construct<unsigned char const * __ptr64>
-	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_init
-	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::basic_string<char,std::char_traits<char>,std::allocator<char> >
-	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::assign
-	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::append<unsigned char * __ptr64,void>
-	// std::basic_string<char,std::char_traits<char>,std::allocator<char> >::operator=
-
+	
 	static void (* const printFuncName)(Text) = [](Text name){
 		TText temp;
 		name.replace(&temp, STRING, "string");
-		temp.change('~', '_');
-		temp.change('`', '_');
-		temp.change('\'', '_');
-		temp.replace(&kr::cout, "::", "$");
+		TText temp2;
+		temp.replace(&temp2, "operator==", "equals");
+
+		temp2.change('~', '_');
+		temp2.change('`', '_');
+		temp2.change('\'', '_');
+		temp2.replace(&kr::cout, "::", "$");
 	};
 
 	{
@@ -284,7 +273,7 @@ void MinecraftFunctionTable::stopServer() noexcept
 void MinecraftFunctionTable::hookOnUpdate(void(*update)()) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
-		0xE8, 0xBD, 0x71, 0x65, 0x00,				// call Minecraft::update
+		0xE8, 0xFF, 0xFF, 0xFF, 0xFF,				// call Minecraft::update
 		0x41, 0x8B, 0x87, 0x88, 0x00, 0x00, 0x00,   // mov eax,dword ptr ds:[r15+88]
 	};
 	Code junction(64);
@@ -295,14 +284,14 @@ void MinecraftFunctionTable::hookOnUpdate(void(*update)()) noexcept
 	junction.write(ORIGINAL_CODE + 5, 7);
 	junction.ret();
 	junction.patchTo((byte*)ServerInstance$_update + 0x16E
-		, ORIGINAL_CODE, RAX, false, "internalUpdate");
+		, ORIGINAL_CODE, RAX, false, "internalUpdate", { {1, 5} });
 };
 void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, Connection* conn)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x8B, 0xD7, // mov edx,edi
 		0x48, 0x8D, 0x8D, 0x90, 0x00, 0x00, 0x00, // lea rcx,qword ptr ss:[rbp+90]
-		0xE8, 0x47, 0x54, 0x00, 0x00, // call MinecraftPackets::createPacket
+		0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call MinecraftPackets::createPacket
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
@@ -313,7 +302,7 @@ void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte
 	junction.add(RSP, 0x28);
 	junction.ret();
 	junction.patchTo((byte*)NetworkHandler$_sortAndPacketizeEvents + 0x2ab,
-		ORIGINAL_CODE, RAX, false, "onPacketRaw");
+		ORIGINAL_CODE, RAX, false, "onPacketRaw", { {10, 14} });
 };
 void MinecraftFunctionTable::hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, Connection* conn)) noexcept
 {
@@ -324,7 +313,7 @@ void MinecraftFunctionTable::hookOnPacketBefore(PacketReadResult(*onPacketRead)(
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
+	junction.write(ORIGINAL_CODE);
 	junction.mov(RDX, RAX); // PacketReadResult
 	junction.mov(RCX, RBP); // rbp
 	junction.mov(R8, R13); // Connection
@@ -343,7 +332,7 @@ void MinecraftFunctionTable::hookOnPacketAfter(void(*onPacketAfter)(byte*, Serve
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
+	junction.write(ORIGINAL_CODE);
 	junction.mov(RCX, RBP); // rbp
 	junction.mov(RDX, RSI); // ServerNetworkHandler
 	junction.mov(R8, R13); // Connection
@@ -370,7 +359,7 @@ void MinecraftFunctionTable::hookOnPacketSend(void(*callback)(NetworkHandler*, c
 	junction.mov(RAX, QwordPtr, RBX, 0x248);
 	junction.mov(R8, RDI);
 	junction.ret();
-	junction.patchTo((byte*)NetworkHandler$send + 26,
+	junction.patchTo((byte*)NetworkHandler$send + 0x1A,
 		ORIGINAL_CODE, RAX, false, "sendPacket");
 };
 void MinecraftFunctionTable::hookOnPacketSendInternal(Connection* (*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, String*)) noexcept
@@ -379,9 +368,8 @@ void MinecraftFunctionTable::hookOnPacketSendInternal(Connection* (*callback)(Ne
 		0x49, 0x8B, 0xF8, // mov rdi,r8
 		0x4C, 0x8B, 0xF2, // mov r14,rdx
 		0x48, 0x8B, 0xF1, // mov rsi,rcx
-		0xE8, 0x45, 0xEA, 0xFF, 0xFF, // | call NetworkHandler$_getConnectionFromId
+		0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call NetworkHandler$_getConnectionFromId
 	};
-	// NetworkHandler$_getConnectionFromId
 	Code junction(64);
 	junction.mov(RDI, R8);
 	junction.mov(R14, RDX);
@@ -391,7 +379,7 @@ void MinecraftFunctionTable::hookOnPacketSendInternal(Connection* (*callback)(Ne
 	junction.add(RSP, 0x28);
 	junction.ret();
 	junction.patchTo((byte*)NetworkHandler$_sendInternal + 13,
-		ORIGINAL_CODE, RAX, false, "sendPacket");
+		ORIGINAL_CODE, RAX, false, "sendPacketInternal", { {10, 14} });
 };
 void MinecraftFunctionTable::hookOnScriptLoading(void(*callback)()) noexcept
 {
@@ -403,7 +391,7 @@ void MinecraftFunctionTable::hookOnScriptLoading(void(*callback)()) noexcept
 	junction.sub(RSP, 0x28);
 	junction.call(callback, RAX);
 	junction.add(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
+	junction.write(ORIGINAL_CODE);
 	junction.ret();
 	junction.patchTo((byte*)ScriptEngine$startScriptLoading + 28,
 		ORIGINAL_CODE, RAX, false, "scriptLoading");
@@ -411,21 +399,20 @@ void MinecraftFunctionTable::hookOnScriptLoading(void(*callback)()) noexcept
 void MinecraftFunctionTable::hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0xFA, // mov rdi,rdx
-		0x48, 0x8B, 0xE9, // mov rbp,rcx
-		0x48, 0x8B, 0x89, 0x50, 0x02, 0x00, 0x00, // mov rcx,qword ptr ds:[rcx+250]
+		0x45, 0x0F, 0xB6, 0xF9, // movzx r15d,r9b
+		0x49, 0x8B, 0xF8, // mov rdi,r8
+		0x48, 0x8B, 0xEA, // mov rbp,rdx
+		0x48, 0x8B, 0xF1, // mov rsi,rcx
 	};
 	Code junction(64);
-	junction.mov(RDI, RDX);
-	junction.mov(RBP, RCX);
-	junction.mov(RCX, RDX);
-	junction.sub(RSP, 0x28);
+	junction.write(ORIGINAL_CODE);
+	junction.push(RCX);
+	junction.sub(RSP, 0x20);
 	junction.call(onclose, RAX);
-	junction.add(RSP, 0x28);
-	junction.mov(RDX, RDI);
-	junction.mov(RCX, QwordPtr, RBP, 0x250);
+	junction.add(RSP, 0x20);
+	junction.pop(RCX);
 	junction.ret();
-	junction.patchTo((byte*)NetworkHandler$onConnectionClosed + 0x1D,
+	junction.patchTo((byte*)NetworkHandler$onConnectionClosed + 0x16,
 		ORIGINAL_CODE, RAX, false, "onConnectionClosed");
 };
 void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept
@@ -435,21 +422,25 @@ void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(DedicatedServer* se
 		callback(*(DedicatedServer**)(rbp + 0x98), (ServerInstance*)(rbp + 0x2170));
 	};
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0x9D, 0xB8, 0x00, 0x00, 0x00, // mov rbx,qword ptr ss:[rbp+B8]
-		0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00, // nop dword ptr ds:[rax],eax
+		0x48, 0x89, 0x45, 0x28, // mov qword ptr ss:[rbp+28],rax
+		0x4C, 0x8B, 0x6D, 0xA0, // mov r13,qword ptr ss:[rbp-60]
+		0x4D, 0x85, 0xED, // test r13,r13
+		0x0F, 0x95, 0x45, 0x82, // setne byte ptr ss:[rbp-7E]
 	};
 	Code junction(64);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
+	junction.write(ORIGINAL_CODE);
+	junction.push(RAX);
 	junction.push(RCX);
-	junction.sub(RSP, 0x20);
+	junction.sub(RSP, 0x28);
 	junction.mov(RDX, (uintptr_t)callback);
 	junction.mov(RCX, RBP);
 	junction.call(caller, RAX);
-	junction.add(RSP, 0x20);
+	junction.add(RSP, 0x28);
 	junction.pop(RCX);
+	junction.pop(RAX);
 	junction.ret();
-	junction.patchTo((byte*)DedicatedServer$start + 0x23F2,
-		ORIGINAL_CODE, RAX, false, "serverStart");
+	junction.patchTo((byte*)DedicatedServer$start + 0x23df,
+		ORIGINAL_CODE, RDX, false, "serverStart");
 };
 void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr)) noexcept
 {
@@ -473,7 +464,7 @@ void MinecraftFunctionTable::hookOnCommand(intptr_t(*callback)(MCRESULT* res, Co
 
 	Code junction(96);
 	junction.sub(RSP, 0x28);
-	junction.write(ORIGINAL_CODE, sizeof(ORIGINAL_CODE));
+	junction.write(ORIGINAL_CODE);
 	junction.mov(RCX, R14);
 	junction.mov(RAX, QwordPtr, RBP, -0x50);
 	junction.mov(RDX, QwordPtr, RAX);

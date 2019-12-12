@@ -20,6 +20,7 @@
 #include <KR3/wl/windows.h>
 #include <KR3/data/crypt.h>
 #include <KR3/http/fetch.h>
+#include <KR3/mt/criticalsection.h>
 #include <KRWin/handle.h>
 
 #include "pdb.h"
@@ -27,28 +28,148 @@
 
 using namespace kr;
 
-kr::Manual<Native> g_native;
+Manual<Native> g_native;
 namespace
 {
-	kr::Set<SOCKET> s_binds;
+	Set<SOCKET> s_binds;
+	CriticalSection s_csBinds;
+	Set<Ipv4Address> s_ipfilter;
+	RWLock s_ipfilterLock;
 }
 
+class TrafficLogger
+{
+	friend void addTraffic(Ipv4Address ip, uint64_t value) noexcept;
+
+private:
+	static inline RWLock s_trafficLock;
+	static inline atomic<size_t> s_trafficCount = 0;
+	static inline Cond s_trafficDeleting;
+	static inline TrafficLogger* s_current = nullptr;
+
+	AText16 m_logPath;
+	timepoint m_trafficTime = timepoint::now();
+	Map<Ipv4Address, uint64_t> m_back;
+	Map<Ipv4Address, uint64_t> m_current;
+	atomic<size_t> m_ref;
+
+	~TrafficLogger() noexcept
+	{
+	}
+
+public:
+	TrafficLogger(AText16 path) noexcept
+		:m_logPath(move(path)), m_ref(1)
+	{
+		m_logPath.c_str();
+		s_trafficCount++;
+	}
+
+	void addRef() noexcept
+	{
+		m_ref++;
+	}
+
+	void release() noexcept
+	{
+		if (m_ref-- == 1)
+		{
+			delete this;
+			s_trafficCount--;
+			s_trafficDeleting.set();
+		}
+	}
+
+	void addTraffic(Ipv4Address ip, uint64_t value) noexcept
+	{
+		timepoint now = timepoint::now();
+		if (now - m_trafficTime >= 1_s)
+		{
+			m_trafficTime = now;
+			Map<Ipv4Address, uint64_t> back = move(m_back);
+			m_back = move(m_current);
+			m_current = move(back);
+			m_current.clear();
+			m_ref++;
+			threadingVoid([this] {
+				s_trafficLock.enterRead();
+				io::FOStream<char> file = File::openAndWrite(m_logPath.data());
+				file.base()->toEnd();
+				for (auto [key, value] : m_back)
+				{
+					file << key << ": " << value << "\r\n";
+				}
+				file << "\r\n";
+				s_trafficLock.leaveRead();
+				release();
+				s_trafficDeleting.set();
+				});
+		}
+		auto res = m_current.insert({ ip, uint64_t() });
+		if (res.second)
+		{
+			res.first->second = value;
+			return;
+		}
+		res.first->second += value;
+	}
+
+	static void newInstance(AText16 path) noexcept
+	{
+		TrafficLogger* trafficLogger = _new TrafficLogger(move(path));
+		s_trafficLock.enterWrite();
+		TrafficLogger* old = s_current;
+		s_current = trafficLogger;
+		s_trafficLock.leaveWrite();
+
+		if (old) old->release();
+	}
+	static void clear() noexcept
+	{
+		s_trafficLock.enterWrite();
+		TrafficLogger* old = s_current;
+		s_current = nullptr;
+		s_trafficLock.leaveWrite();
+		if (old) old->release();
+	}
+	static void clearWait() noexcept
+	{
+		clear();
+		while (s_trafficCount != 0)
+		{
+			s_trafficDeleting.wait();
+		}
+	}
+};
+
+void addTraffic(Ipv4Address ip, uint64_t value) noexcept
+{
+	TrafficLogger::s_trafficLock.enterWrite();
+	TrafficLogger * logger = TrafficLogger::s_current;
+	if (logger) logger->addTraffic(ip, value);
+	TrafficLogger::s_trafficLock.leaveWrite();
+}
 void addBindList(SOCKET socket) noexcept
 {
+	CsLock _lock = s_csBinds;
 	s_binds.insert(socket);
 }
 void removeBindList(SOCKET socket) noexcept
 {
+	CsLock _lock = s_csBinds;
 	s_binds.erase(socket);
 }
 
 void cleanAllResource() noexcept
 {
-	for (SOCKET sock : s_binds)
 	{
-		closesocket(sock);
+		CsLock _lock = s_csBinds;
+		for (SOCKET sock : s_binds)
+		{
+			closesocket(sock);
+		}
+		s_binds.clear();
 	}
-	s_binds.clear();
 	destroyJsContext();
 	JsContext::_cleanForce();
 	JsRuntime::dispose();
@@ -107,6 +228,8 @@ Native::Native() noexcept
 }
 Native::~Native() noexcept
 {
+	TrafficLogger::clearWait();
+	Require::clear();
 }
 JsValue Native::getModule() noexcept
 {
@@ -114,7 +237,22 @@ JsValue Native::getModule() noexcept
 }
 bool Native::isFilted(Ipv4Address ip) noexcept
 {
-	return m_ipfilter.has(ip);
+	s_ipfilterLock.enterRead();
+	bool res = s_ipfilter.has(ip);
+	s_ipfilterLock.leaveRead();
+	return res;
+}
+void Native::addFilter(kr::Ipv4Address ip) noexcept
+{
+	s_ipfilterLock.enterWrite();
+	s_ipfilter.insert(ip);
+	s_ipfilterLock.leaveWrite();
+}
+void Native::removeFilter(kr::Ipv4Address ip) noexcept
+{
+	s_ipfilterLock.enterWrite();
+	s_ipfilter.erase(ip);
+	s_ipfilterLock.leaveWrite();
 }
 bool Native::fireError(const JsRawData& err) noexcept
 {
@@ -142,11 +280,12 @@ void Native::reset() noexcept
 	Watcher::reset();
 	MariaDB::reset();
 
+	TrafficLogger::clearWait();
 	m_module = nullptr;
 	m_onError = nullptr;
 	m_onCommand = nullptr;
 	m_onRuntimeError = nullptr;
-	m_ipfilter.clear();
+	s_ipfilter.clear();
 
 	Require::clear();
 	_createNativeModule();
@@ -376,12 +515,22 @@ void Native::_createNativeModule() noexcept
 		ipfilter.setMethod(u"add", [](Text16 ipport) {
 			Text16 iptext = ipport.readwith_e('|');
 			if (iptext.empty()) return;
-			g_native->m_ipfilter.insert(Ipv4Address(TSZ() << toNone(iptext)));
+			g_native->addFilter(Ipv4Address(TSZ() << toNone(iptext)));
 			});
 		ipfilter.setMethod(u"remove", [](Text16 ipport) {
 			Text16 iptext = ipport.readwith_e('|');
 			if (iptext.empty()) return;
-			g_native->m_ipfilter.erase(Ipv4Address(TSZ() << toNone(iptext)));
+			g_native->removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
+			});
+		ipfilter.setMethod(u"logTraffic", [](JsValue path){
+			if (path.cast<bool>())
+			{
+				TrafficLogger::newInstance(path.cast<AText16>());
+			}
+			else
+			{
+				TrafficLogger::clear();
+			}
 			});
 		native.set(u"ipfilter", ipfilter);
 	}

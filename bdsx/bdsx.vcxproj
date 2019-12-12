@@ -126,6 +126,7 @@
     <PostBuildEvent>
       <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
 kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
+kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
 kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
 kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
 kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
@@ -147,6 +148,7 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     <PostBuildEvent>
       <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
 kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
+kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
 kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
 kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
 kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>

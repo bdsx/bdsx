@@ -50,11 +50,11 @@ kr::TText SystemAddress::toString(bool writePort, char portDelineator) noexcept
 
 bool NetworkIdentifier::operator ==(const NetworkIdentifier& ni) const noexcept
 {
-	return g_mcf.NetworkIdentifier$equalsTypeData(this, &ni);
+	return g_mcf.NetworkIdentifier$equals(this, &ni);
 }
 bool NetworkIdentifier::operator !=(const NetworkIdentifier& ni) const noexcept
 {
-	return !g_mcf.NetworkIdentifier$equalsTypeData(this, &ni);
+	return !g_mcf.NetworkIdentifier$equals(this, &ni);
 }
 size_t NetworkIdentifier::getHash() const noexcept
 {

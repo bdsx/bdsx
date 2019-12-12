@@ -44,7 +44,6 @@ void destroyJsContext() noexcept
 	g_ctx->enter();
 	EventPump::getInstance()->waitAll();
 	g_native.remove();
-	Require::clear();
 	g_ctx->exit();
 	g_ctx.remove();
 	s_ctxCreated = false;

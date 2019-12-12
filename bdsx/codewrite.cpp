@@ -9,11 +9,11 @@ Code::Code(size_t size) noexcept
 	m_codeptr = end();
 	memset(m_codeptr, 0xcc, 64);
 }
-void Code::patchTo(void* junctionPoint, Buffer originalCode, kr::hook::Register tempregister, bool jump, Text name) noexcept
+void Code::patchTo(void* junctionPoint, Buffer originalCode, kr::hook::Register tempregister, bool jump, Text name, View<pair<size_t, size_t>> skip) noexcept
 {
 	size_t size = originalCode.size();
 	Unprotector unpro(junctionPoint, size);
-	if (!checkCode(junctionPoint, originalCode, name)) return;
+	if (!checkCode(junctionPoint, originalCode, name, skip)) return;
 
 	CodeWriter writer((void*)unpro, size);
 	if (jump) writer.jump(m_codeptr, tempregister);

@@ -53,7 +53,7 @@ struct MinecraftFunctionTable
 	void (*NetworkHandler$_sendInternal)(const NetworkIdentifier*, Packet*, const String*);
 	String* (*NetworkIdentifier$getAddress)(const NetworkIdentifier*, String *);
 	size_t (*NetworkIdentifier$getHash)(const NetworkIdentifier*);
-	bool (*NetworkIdentifier$equalsTypeData)(const NetworkIdentifier* a, const NetworkIdentifier* b);
+	bool (*NetworkIdentifier$equals)(const NetworkIdentifier* a, const NetworkIdentifier* b);
 	mce::UUID* (*Crypto$Random$generateUUID)(mce::UUID* dest);
 	void (*Actor$_Actor)(Actor*);
 	SharedPtr<Packet>* (*MinecraftPackets$createPacket)(SharedPtr<Packet>* dest, MinecraftPacketIds);

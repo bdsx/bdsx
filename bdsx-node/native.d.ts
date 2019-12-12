@@ -91,7 +91,7 @@ export namespace fs {
 * default error printing is disabled if cb returns false
 */
 export function setOnErrorListener(cb: ((err: Error) => void | boolean)|null): void;
-export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string) => void | boolean)|null): void;
+export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string, lastSender:NetworkIdentifier) => void | boolean)|null): void;
 
 /**
  * command listener
@@ -103,6 +103,7 @@ export namespace ipfilter
 {
     export function add(ip:string):void;
     export function remove(ip:string):void;
+    export function logTraffic(path:string|null):void;
 }
 
 export namespace serverControl
