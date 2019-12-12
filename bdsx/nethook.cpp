@@ -103,7 +103,7 @@ void NetHookModule::hook() noexcept
 
 		SharedPtr<Packet>* packet_dest = (SharedPtr<Packet>*)(rbp + 0x90);
 
-		auto iter = _this->m_callbacks.find(getPacketId(EventType::Before, packetId));
+		auto iter = _this->m_callbacks.find(getPacketId(EventType::Raw, packetId));
 		if (iter != _this->m_callbacks.end())
 		{
 			ReadOnlyBinaryStream* s = (ReadOnlyBinaryStream*)(rbp + 0xA0);

@@ -1,5 +1,4 @@
 /// <reference types="minecraft-scripting-types-server" />
-
 Promise.resolve('test').then(()=>{});
 
 import "@mcbe/dummy-console";
@@ -41,6 +40,13 @@ declare global
             "64bit_high":number;
         };
     }
+
+    interface NodeRequireFunction {
+        (id: string): any;
+    }
+    interface NodeRequire extends NodeRequireFunction {
+    }
+    var require: NodeRequire;    
 }
 
 declare module "./native"

@@ -92,17 +92,36 @@ public:
 			m_current.clear();
 			m_ref++;
 			threadingVoid([this] {
-				s_trafficLock.enterRead();
-				io::FOStream<char> file = File::openAndWrite(m_logPath.data());
-				file.base()->toEnd();
-				for (auto [key, value] : m_back)
+				for (;;)
 				{
-					file << key << ": " << value << "\r\n";
+					try
+					{
+						io::FOStream<char> file = File::openAndWrite(m_logPath.data());
+						file.base()->toEnd();
+
+						{
+							s_trafficLock.enterRead();
+							finally {
+								s_trafficLock.leaveRead();
+							};
+
+							for (auto [key, value] : m_back)
+							{
+								file << key << ": " << value << "\r\n";
+							}
+							file << "\r\n";
+						}
+
+						release();
+						s_trafficDeleting.set();
+						return;
+					}
+					catch (...)
+					{
+						cerr << "traffic write failed" << endl;
+						Sleep(500);
+					}
 				}
-				file << "\r\n";
-				s_trafficLock.leaveRead();
-				release();
-				s_trafficDeleting.set();
 				});
 		}
 		auto res = m_current.insert({ ip, uint64_t() });

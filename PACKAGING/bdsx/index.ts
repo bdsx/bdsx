@@ -102,6 +102,9 @@ console.log('\nexec dir result>');
 import { execSync } from "bdsx/native";
 console.log(execSync('dir'));
 
+// call test
+import './test';
+
 // Global Error Listener
 import { setOnErrorListener } from "bdsx";
 import { NetworkIdentifier } from "bdsx/native";
@@ -109,6 +112,6 @@ import { DimensionId, AttributeId } from "bdsx/common";
 console.log('\nerror test result>');
 setOnErrorListener(err => {
     console.log('ERRMSG Example> ' + err.message);
-    // return false; // Suppress default error output
+    // return false; // Suppress default error outputs
 });
-console.log(eval("undefined_identifier")); // Error example
+console.log(eval("undefined_identifier")); // Make the error for this example
