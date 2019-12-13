@@ -162,25 +162,19 @@
     <CustomBuild Include="bdsx\package.json">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd %(RelativeDir)
-del package-lock.json
 call npm install
-cd "$(ProjectDir)"
-kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
+cd ..</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd %(RelativeDir)
-del package-lock.json
 call npm install
-cd "$(ProjectDir)"
-kcopy "%(Identity)" "$(SolutionDir)release\%(RelativeDir)%(Filename)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(RelativeDir)%(Filename)</Outputs>
+cd ..</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release\%(Identity)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(Identity)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RelativeDir)
-del package-lock.json
 call npm install
-cd "$(ProjectDir)"</Command>
+cd ..</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RelativeDir)
-del package-lock.json
 call npm install
-cd "$(ProjectDir)"</Command>
+cd ..</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)package-lock.json</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)package-lock.json</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">npm install</Message>
@@ -241,10 +235,10 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)bdsx.zip</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bdsx.zip</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)bdsx.zip</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="bdsx\package-lock.json">
       <FileType>Document</FileType>
