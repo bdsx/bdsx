@@ -23,6 +23,8 @@
     <None Include="common.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="bdsx\examples.ts" />
+    <None Include="bdsx\test.ts" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="bdsx\tsconfig.json" />
@@ -33,7 +35,6 @@
     <CustomBuild Include="packaging.bat">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="bdsx\index.js" />
     <CustomBuild Include="bdsx\package-lock.json" />
     <CustomBuild Include="download.bat">
       <Filter>Source Files</Filter>

@@ -408,6 +408,7 @@ void MinecraftFunctionTable::hookOnConnectionClosed(void(*onclose)(const Network
 	junction.write(ORIGINAL_CODE);
 	junction.push(RCX);
 	junction.sub(RSP, 0x20);
+	junction.mov(RCX, RDX);
 	junction.call(onclose, RAX);
 	junction.add(RSP, 0x20);
 	junction.pop(RCX);

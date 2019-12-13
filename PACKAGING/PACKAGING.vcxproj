@@ -188,12 +188,7 @@ cd "$(ProjectDir)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">npm install</Message>
     </CustomBuild>
-    <CustomBuild Include="bdsx\index.js">
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)index.ts</AdditionalInputs>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
+    <None Include="bdsx\examples.ts" />
     <None Include="bdsx\index.ts">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">tsc %(Identity)</Command>
@@ -227,8 +222,8 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(RelativeDir)index.js</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)index.ts</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)index.ts</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.ts;%(RelativeDir)test.ts;%(RelativeDir)examples.ts</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)index.ts;%(RelativeDir)test.ts;%(RelativeDir)examples.ts</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">tsc</Message>
@@ -247,9 +242,9 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bdsx.zip</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)bdsx.zip</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/index.js;bdsx/index.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="bdsx\package-lock.json">
       <FileType>Document</FileType>
@@ -263,6 +258,7 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CustomBuild>
+    <None Include="bdsx\test.ts" />
     <None Include="common.bat" />
     <CustomBuild Include="download.bat">
       <FileType>Document</FileType>

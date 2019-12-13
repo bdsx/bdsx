@@ -1,4 +1,5 @@
-import { netevent, PacketId } from "bdsx";
+import { netevent, PacketId, NetworkIdentifier } from "bdsx";
+import { close } from "bdsx/netevent";
 
 const packetOrders = [1, 4, 129, 8, 8, 69, 23, 115];
 
@@ -20,3 +21,12 @@ for (let i=0;i<255;i++)
         console.assert(packetOrders[beforei++] === packetId, `order unmatch ${PacketId[packetId]}`);
     });
 }
+
+let conns = new Set<NetworkIdentifier>();
+netevent.after(PacketId.Login).on((ptr, ni)=>{
+    console.assert(!conns.has(ni));
+    conns.add(ni);
+});
+close.on(ni=>{
+    console.assert(conns.delete(ni));
+});
