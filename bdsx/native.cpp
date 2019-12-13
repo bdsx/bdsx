@@ -31,6 +31,7 @@ using namespace kr;
 Manual<Native> g_native;
 namespace
 {
+	// NetFilter
 	Set<SOCKET> s_binds;
 	CriticalSection s_csBinds;
 	Set<Ipv4Address> s_ipfilter;
@@ -39,7 +40,7 @@ namespace
 
 class TrafficLogger
 {
-	friend void addTraffic(Ipv4Address ip, uint64_t value) noexcept;
+	friend NetFilter;
 
 private:
 	static inline RWLock s_trafficLock;
@@ -161,22 +162,42 @@ public:
 	}
 };
 
-void addTraffic(Ipv4Address ip, uint64_t value) noexcept
+void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 {
 	TrafficLogger::s_trafficLock.enterWrite();
 	TrafficLogger * logger = TrafficLogger::s_current;
 	if (logger) logger->addTraffic(ip, value);
 	TrafficLogger::s_trafficLock.leaveWrite();
 }
-void addBindList(SOCKET socket) noexcept
+void NetFilter::addBindList(SOCKET socket) noexcept
 {
 	CsLock _lock = s_csBinds;
 	s_binds.insert(socket);
 }
-void removeBindList(SOCKET socket) noexcept
+void NetFilter::removeBindList(SOCKET socket) noexcept
 {
 	CsLock _lock = s_csBinds;
 	s_binds.erase(socket);
+}
+
+bool NetFilter::isFilted(Ipv4Address ip) noexcept
+{
+	s_ipfilterLock.enterRead();
+	bool res = s_ipfilter.has(ip);
+	s_ipfilterLock.leaveRead();
+	return res;
+}
+void NetFilter::addFilter(kr::Ipv4Address ip) noexcept
+{
+	s_ipfilterLock.enterWrite();
+	s_ipfilter.insert(ip);
+	s_ipfilterLock.leaveWrite();
+}
+void NetFilter::removeFilter(kr::Ipv4Address ip) noexcept
+{
+	s_ipfilterLock.enterWrite();
+	s_ipfilter.erase(ip);
+	s_ipfilterLock.leaveWrite();
 }
 
 void cleanAllResource() noexcept
@@ -253,25 +274,6 @@ Native::~Native() noexcept
 JsValue Native::getModule() noexcept
 {
 	return m_module;
-}
-bool Native::isFilted(Ipv4Address ip) noexcept
-{
-	s_ipfilterLock.enterRead();
-	bool res = s_ipfilter.has(ip);
-	s_ipfilterLock.leaveRead();
-	return res;
-}
-void Native::addFilter(kr::Ipv4Address ip) noexcept
-{
-	s_ipfilterLock.enterWrite();
-	s_ipfilter.insert(ip);
-	s_ipfilterLock.leaveWrite();
-}
-void Native::removeFilter(kr::Ipv4Address ip) noexcept
-{
-	s_ipfilterLock.enterWrite();
-	s_ipfilter.erase(ip);
-	s_ipfilterLock.leaveWrite();
 }
 bool Native::fireError(const JsRawData& err) noexcept
 {
@@ -534,12 +536,12 @@ void Native::_createNativeModule() noexcept
 		ipfilter.setMethod(u"add", [](Text16 ipport) {
 			Text16 iptext = ipport.readwith_e('|');
 			if (iptext.empty()) return;
-			g_native->addFilter(Ipv4Address(TSZ() << toNone(iptext)));
+			NetFilter::addFilter(Ipv4Address(TSZ() << toNone(iptext)));
 			});
 		ipfilter.setMethod(u"remove", [](Text16 ipport) {
 			Text16 iptext = ipport.readwith_e('|');
 			if (iptext.empty()) return;
-			g_native->removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
+			NetFilter::removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
 			});
 		ipfilter.setMethod(u"logTraffic", [](JsValue path){
 			if (path.cast<bool>())

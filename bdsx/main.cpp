@@ -92,7 +92,7 @@ void catchException() noexcept
 
 int WSAAPI closesocketHook(SOCKET s) noexcept
 {
-	removeBindList(s);
+	NetFilter::removeBindList(s);
 	return closesocket(s);
 }
 
@@ -104,7 +104,7 @@ int CALLBACK bindHook(
 )
 {
 	int res = bind(s, name, namelen);
-	if (res == 0) addBindList(s);
+	if (res == 0) NetFilter::addBindList(s);
 	return res;
 }
 int CALLBACK recvfromHook(
@@ -118,8 +118,8 @@ int CALLBACK recvfromHook(
 
 	Ipv4Address& ip = (Ipv4Address&)((sockaddr_in*)from)->sin_addr;
 
-	addTraffic(ip, res);
-	if (g_native->isFilted(ip))
+	NetFilter::addTraffic(ip, res);
+	if (NetFilter::isFilted(ip))
 	{
 		*fromlen = 0;
 		WSASetLastError(WSAECONNREFUSED);
