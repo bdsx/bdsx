@@ -266,7 +266,7 @@ void StaticPointer::setBuffer(JsValue buffer, int offset) throws(JsException)
 }
 void StaticPointer::setCxxString(Text16 text, int offset) throws(JsException)
 {
-	String* str = (String*)m_address + offset;
+	String* str = (String*)(m_address + offset);
 	TSZ utf8;
 	try
 	{
