@@ -72,8 +72,11 @@ https://github.com/karikera/bdsx/issues
 https://discordapp.com/channels/646456965983240212/646456965983240218
 
 ## Build It Self
-It needs [ken](https://github.com/karikera/ken) project on same directory to build.  
-  
+* Requirement  
+Install [MariaDB](https://mariadb.org/download/).  
+[ken](https://github.com/karikera/ken) project on same directory to build.  
+set `MYSQL_C_DIR` Enviromental variable to the root of MariaDB.  
+
 **[parent directory]**  
 ├ ken (https://github.com/karikera/ken)  
 └ bdsx (https://github.com/karikera/bdsx)  

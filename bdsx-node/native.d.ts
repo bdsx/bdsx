@@ -165,7 +165,7 @@ export const console: {
 };
 
 type AfterPacketExtra<ID extends number> = ID extends 1 ? 
-    { id: string; xuid: string; }:
+    { id?: string; xuid?: string; }:
     undefined;
 
 /**
