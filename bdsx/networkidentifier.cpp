@@ -12,22 +12,7 @@ JsNetworkIdentifier::JsNetworkIdentifier(const JsArguments& args) noexcept
 }
 JsValue JsNetworkIdentifier::getAddress() noexcept
 {
-	Connection* conn = g_server->networkHandler->getConnectionFromId(identifier);
-	if (conn == nullptr) return JsNewArray(0);
-	EncryptedNetworkPeer* epeer = conn->epeer;
-	if (epeer == nullptr) return JsNewArray(0);
-	RaknetNetworkPeer* netpeer = epeer->peer;
-	if (netpeer == nullptr) return JsNewArray(0);
-	RakPeer* rakpeer = netpeer->peer;
-	if (rakpeer == nullptr) return JsNewArray(0);
-	TmpArray<SystemAddress> arr = rakpeer->getConnections();
-	JsValue out = JsNewArray(arr.size());
-	int idx = 0;
-	for (SystemAddress& addr : arr)
-	{
-		out.set(idx++, addr.toString());
-	}
-	return out;
+	return (TText16)(NoneToUtf16)identifier.getAddress();
 }
 kr::JsValue JsNetworkIdentifier::getActor() noexcept
 {

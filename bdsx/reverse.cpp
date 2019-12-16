@@ -39,14 +39,15 @@ mce::UUID mce::UUID::generate() noexcept
 	g_mcf.Crypto$Random$generateUUID(&out);
 	return out;
 }
-
-kr::TText SystemAddress::toString(bool writePort, char portDelineator) noexcept
-{
-	kr::TText out(46_sz);
-	g_mcf.RakNet$SystemAddress$ToString(this, writePort, out.data(), portDelineator);
-	out.resize(strlen(out.data()));
-	return out;
-}
+//
+//kr::TText SystemAddress::toString(bool writePort, char portDelineator) noexcept
+//{
+//	kr::TText out(46_sz);
+//	g_mcf.RakNet$SystemAddress$ToString(this, writePort, out.data(), portDelineator);
+//	out.resize(strlen(out.data()));
+//	return out;
+//}
+// const SystemAddress UNASSIGNED_SYSTEM_ADDRESS;
 
 bool NetworkIdentifier::operator ==(const NetworkIdentifier& ni) const noexcept
 {
@@ -60,17 +61,17 @@ size_t NetworkIdentifier::getHash() const noexcept
 {
 	return g_mcf.NetworkIdentifier$getHash(this);
 }
-String NetworkIdentifier::getAddress() const noexcept
+Text NetworkIdentifier::getAddress() const noexcept
 {
-	String out;
-	g_mcf.NetworkIdentifier$getAddress(this, &out);
-	return out;
+	RakNet::SystemIndex idx = address.GetSystemIndex();
+	RakNet::RakPeer* rakpeer = g_server->networkHandler->instance->peer();
+	RakNet::SystemAddress addr = rakpeer->GetSystemAddressFromIndex(idx);
+	return (Text)addr.ToString();
 }
 size_t std::hash<NetworkIdentifier>::operator ()(const NetworkIdentifier& ni) const noexcept
 {
 	return ni.getHash();
 }
-
 
 VectorData::VectorData() noexcept
 {
@@ -212,7 +213,7 @@ void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned 
 {
 	return g_mcf.NetworkHandler$send(this, &ni, packet, u);
 }
-Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni) noexcept
+NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni) noexcept
 {
 	return g_mcf.NetworkHandler$_getConnectionFromId(this, ni);
 }
@@ -261,17 +262,6 @@ MCRESULT MinecraftCommands::executeCommand(SharedPtr<CommandContext>&ctx, bool b
 	MCRESULT out;
 	g_mcf.MinecraftCommands$executeCommand(this, &out, ctx, b);
 	return out;
-}
-
-TmpArray<SystemAddress> RakPeer::getConnections() noexcept
-{
-	TmpArray<SystemAddress> list;
-	uint16_t size;
-	g_mcf.RakNet$RakPeer$GetConnectionList(this, nullptr, &size);
-	if (size == 0) return list;
-	list.resize(size);
-	g_mcf.RakNet$RakPeer$GetConnectionList(this, list.data(), &size);
-	return list;
 }
 
 MinecraftPacketIds Packet::getId() noexcept

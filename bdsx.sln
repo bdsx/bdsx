@@ -68,6 +68,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "..\ken\test\test.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KRMySQL", "..\ken\KRMySQL\KRMySQL.vcxproj", "{E25F0C5A-72CE-481E-8F08-C36AC5AD9666}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LibStatic", "RakNetProject\LibStatic_vc9.vcxproj", "{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -228,6 +230,14 @@ Global
 		{E25F0C5A-72CE-481E-8F08-C36AC5AD9666}.Release|x64.Build.0 = Release|x64
 		{E25F0C5A-72CE-481E-8F08-C36AC5AD9666}.Release|x86.ActiveCfg = Release|Win32
 		{E25F0C5A-72CE-481E-8F08-C36AC5AD9666}.Release|x86.Build.0 = Release|Win32
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Debug|x64.ActiveCfg = Debug|x64
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Debug|x64.Build.0 = Debug|x64
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Debug|x86.ActiveCfg = Debug|Win32
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Debug|x86.Build.0 = Debug|Win32
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Release|x64.ActiveCfg = Release|x64
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Release|x64.Build.0 = Release|x64
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Release|x86.ActiveCfg = Release|Win32
+		{6533BDAE-0F0C-45E4-8FE7-ADD0F37FE063}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

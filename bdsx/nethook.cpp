@@ -93,7 +93,7 @@ void NetHookModule::reset() noexcept
 
 void NetHookModule::hook() noexcept
 {
-	g_mcf.hookOnPacketRaw([](byte* rbp, MinecraftPacketIds packetId, Connection* conn)->SharedPtr<Packet>*{
+	g_mcf.hookOnPacketRaw([](byte* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn)->SharedPtr<Packet>*{
 
 		NetHookModule* _this = &g_native->nethook;
 
@@ -124,7 +124,7 @@ void NetHookModule::hook() noexcept
 		}
 		return g_mcf.MinecraftPackets$createPacket(packet_dest, packetId);
 		});
-	g_mcf.hookOnPacketBefore([](byte* rbp, PacketReadResult res, Connection* conn) {
+	g_mcf.hookOnPacketBefore([](byte* rbp, PacketReadResult res, NetworkHandler::Connection* conn) {
 		checkCurrentThread();
 
 		if (res == PacketReadError) return res;
@@ -156,7 +156,7 @@ void NetHookModule::hook() noexcept
 			return PacketReadError;
 		}
 		});
-	g_mcf.hookOnPacketAfter([](byte* rbp, ServerNetworkHandler* server, Connection* conn) {
+	g_mcf.hookOnPacketAfter([](byte* rbp, ServerNetworkHandler* server, NetworkHandler::Connection* conn) {
 		MinecraftPacketIds packetId = (MinecraftPacketIds)(*(dword*)(rbp + 0x8C) & 0x3ff);
 
 		NetHookModule* _this = &g_native->nethook;
@@ -203,7 +203,7 @@ void NetHookModule::hook() noexcept
 			cerr << "SEH error" << endl;
 		}
 		});
-	g_mcf.hookOnPacketSendInternal([](NetworkHandler* handler, const NetworkIdentifier& ni, Packet* packet, String* data)->Connection* {
+	g_mcf.hookOnPacketSendInternal([](NetworkHandler* handler, const NetworkIdentifier& ni, Packet* packet, String* data)->NetworkHandler::Connection* {
 
 		MinecraftPacketIds packetId = packet->getId();
 
@@ -242,6 +242,8 @@ void NetHookModule::hook() noexcept
 		JsScope scope;
 		JsValue onClosed = _this->m_onConnectionClosed;
 		onClosed(JsNetworkIdentifier::fromRaw(ni));
+		});
+	g_mcf.hookOnConnectionClosedAfter([](const NetworkIdentifier& ni) {
 		JsNetworkIdentifier::dispose(ni);
 		});
 }

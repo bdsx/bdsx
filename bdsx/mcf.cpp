@@ -106,9 +106,8 @@ void MinecraftFunctionTable::load() noexcept
 }
 void MinecraftFunctionTable::loadFromPredefined() noexcept
 {
-	ModuleInfo ptr; RakNet$RakPeer$GetConnectionList = ptr(0xA2A00);
+	ModuleInfo ptr;
 	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x411AD0);
-	NetworkIdentifier$getAddress = ptr(0x294FD0);
 	Level$fetchEntity = ptr(0x9857D0);
 	NetworkHandler$_getConnectionFromId = ptr(0x291BE0);
 	std$string$assign = ptr(0x4DC90);
@@ -136,7 +135,6 @@ void MinecraftFunctionTable::loadFromPredefined() noexcept
 	NetworkHandler$_sendInternal = ptr(0x293160);
 	Minecraft$update = ptr(0xA94B80);
 	NetworkHandler$send = ptr(0x2930A0);
-	RakNet$SystemAddress$ToString = ptr(0x9F520);
 	std$string$_Tidy_deallocate = ptr(0x4DAF0);
 	StopCommand$mServer = ptr(0x13BF930);
 	MinecraftPackets$createPacket = ptr(0x297350);
@@ -157,8 +155,6 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"NetworkHandler::_getConnectionFromId", &NetworkHandler$_getConnectionFromId},
 		{"ExtendedCertificate::getXuid", &ExtendedCertificate$getXuid},
 		{"ExtendedCertificate::getIdentityName", &ExtendedCertificate$getIdentityName},
-		{"RakNet::SystemAddress::ToString", &RakNet$SystemAddress$ToString},
-		{"RakNet::RakPeer::GetConnectionList", &RakNet$RakPeer$GetConnectionList},
 		// {"ScriptEngine::_processSystemUpdate", &ScriptEngine$_processSystemUpdate},
 		{"ServerInstance::_update", &ServerInstance$_update},
 		{"Minecraft::update", &Minecraft$update},
@@ -175,7 +171,6 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"StopCommand::mServer", &StopCommand$mServer},
 		{"NetworkHandler::send", &NetworkHandler$send},
 		{"google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread", &google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread},
-		{"NetworkIdentifier::getAddress", &NetworkIdentifier$getAddress},
 		{"NetworkIdentifier::getHash", &NetworkIdentifier$getHash},
 		{"NetworkIdentifier::operator==", &NetworkIdentifier$equals},
 		{"Crypto::Random::generateUUID", &Crypto$Random$generateUUID},
@@ -286,7 +281,7 @@ void MinecraftFunctionTable::hookOnUpdate(void(*update)()) noexcept
 	junction.patchTo((byte*)ServerInstance$_update + 0x16E
 		, ORIGINAL_CODE, RAX, false, "internalUpdate", { {1, 5} });
 };
-void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, Connection* conn)) noexcept
+void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x8B, 0xD7, // mov edx,edi
@@ -304,7 +299,7 @@ void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte
 	junction.patchTo((byte*)NetworkHandler$_sortAndPacketizeEvents + 0x2ab,
 		ORIGINAL_CODE, RAX, false, "onPacketRaw", { {10, 14} });
 };
-void MinecraftFunctionTable::hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, Connection* conn)) noexcept
+void MinecraftFunctionTable::hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, NetworkHandler::Connection* conn)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
@@ -323,7 +318,7 @@ void MinecraftFunctionTable::hookOnPacketBefore(PacketReadResult(*onPacketRead)(
 	junction.patchTo((byte*)NetworkHandler$_sortAndPacketizeEvents + 0x30e
 		, ORIGINAL_CODE, RAX, false, "onPacketBefore");
 };
-void MinecraftFunctionTable::hookOnPacketAfter(void(*onPacketAfter)(byte*, ServerNetworkHandler*, Connection* conn)) noexcept
+void MinecraftFunctionTable::hookOnPacketAfter(void(*onPacketAfter)(byte*, ServerNetworkHandler*, NetworkHandler::Connection* conn)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x49, 0x8B, 0xD5, // mov rdx,r13
@@ -362,7 +357,7 @@ void MinecraftFunctionTable::hookOnPacketSend(void(*callback)(NetworkHandler*, c
 	junction.patchTo((byte*)NetworkHandler$send + 0x1A,
 		ORIGINAL_CODE, RAX, false, "sendPacket");
 };
-void MinecraftFunctionTable::hookOnPacketSendInternal(Connection* (*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, String*)) noexcept
+void MinecraftFunctionTable::hookOnPacketSendInternal(NetworkHandler::Connection* (*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, String*)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x49, 0x8B, 0xF8, // mov rdi,r8
@@ -416,6 +411,31 @@ void MinecraftFunctionTable::hookOnConnectionClosed(void(*onclose)(const Network
 	junction.patchTo((byte*)NetworkHandler$onConnectionClosed + 0x16,
 		ORIGINAL_CODE, RAX, false, "onConnectionClosed");
 };
+void MinecraftFunctionTable::hookOnConnectionClosedAfter(void(*onclose)(const NetworkIdentifier&)) noexcept
+{
+	static const byte ORIGINAL_CODE[] = {
+		0x5D, // pop rbp
+		0x5B, // pop rbx
+		0xc3, // ret
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+		0xCC, // int 3
+	};
+	Code junction(64);
+	junction.mov(RCX, RBP);
+	junction.pop(RBP);
+	junction.pop(RBX);
+	junction.jump(onclose, RAX);
+	junction.patchTo((byte*)NetworkHandler$onConnectionClosed + 0xE3,
+		ORIGINAL_CODE, RAX, true, "onConnectionClosedAfter");
+}
 void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept
 {
 	void(*caller)(byte*, void(*callback)(DedicatedServer * server, ServerInstance * instance)) =

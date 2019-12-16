@@ -381,7 +381,7 @@ void Native::_hook() noexcept
 			if (lastni)
 			{
 				cerr << "Last Sender IP: ";
-				cerr << lastni->identifier.getAddress().text();
+				cerr << lastni->identifier.getAddress();
 			}
 			cerr << endl;
 			cerr << "[ JS Stack ]" << endl;

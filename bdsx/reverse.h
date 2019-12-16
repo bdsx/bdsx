@@ -6,7 +6,11 @@
 #include <WinSock2.h>
 #include <ws2ipdef.h>
 
-struct SystemAddress;
+#define RAKNET_SUPPORT_IPV6 1
+
+#include <RakPeer.h>
+#include <RakNetTypes.h>
+
 struct ReadOnlyBinaryStream;
 struct Player;
 struct ServerPlayer;
@@ -45,7 +49,6 @@ struct BinaryStream;
 struct EntityRegistryOwned;
 struct VanillaAppConfigs;
 struct VanillaGameModuleDedicatedServer;
-struct Connection;
 struct NetworkIdentifier;
 struct EncryptedNetworkPeer;
 struct String;
@@ -54,7 +57,6 @@ struct CommandContext;
 struct Packet;
 struct Dimension;
 struct Level;
-struct RakPeer;
 struct MCRESULT;
 struct NetworkIdentifierWithSubId;
 struct Actor$VFTable;
@@ -135,48 +137,26 @@ public:
 
 };
 
-struct SystemAddress
-{
-	union// In6OrIn4
-	{
-		struct sockaddr_storage sa_stor;
-		sockaddr_in6 addr6;
-
-		sockaddr_in addr4;
-	} address;
-
-	kr::TText toString(bool writePort = true, char portDelineator = ':') noexcept;
-};
-
 struct NetworkIdentifier
 {
-	enum class NetworkType
-	{
-		_0_8,
-		_12_18,
-		_12_28,
-	};
-
-	uint64_t key;
-	uint64_t unknown;
-	SystemAddress address;
-	NetworkType type; // 0x90
+	static constexpr size_t size = sizeof(RakNet::AddressOrGUID);
+	RakNet::AddressOrGUID address;
 
 	bool operator ==(const NetworkIdentifier& ni) const noexcept;
 	bool operator !=(const NetworkIdentifier& ni) const noexcept;
 	size_t getHash() const noexcept;
-	String getAddress() const noexcept;
-};
-
-struct MCRESULT
-{
-	uint32_t result;
+	kr::Text getAddress() const noexcept;
 };
 
 template <>
 struct std::hash<NetworkIdentifier>
 {
 	size_t operator ()(const NetworkIdentifier& ni) const noexcept;
+};
+
+struct MCRESULT
+{
+	uint32_t result;
 };
 
 struct SharedPtrData
@@ -1109,14 +1089,6 @@ struct MinecraftCommands
 	MCRESULT executeCommand(SharedPtr<CommandContext>&, bool);
 };
 
-struct RakPeer
-{
-	RakPeer() = delete;
-	void* vftable;
-
-	kr::TmpArray<SystemAddress> getConnections() noexcept;
-};
-
 struct BinaryStream
 {
 	BinaryStream() = delete;
@@ -1128,14 +1100,15 @@ struct RaknetNetworkPeer
 	void* vftable;
 	void* u1; // null
 	void* u2; // null
-	RakPeer* peer;
+	RakNet::RakPeer* peer;
+	RakNet::AddressOrGUID addr;
 };
 
 struct EncryptedNetworkPeer
 {
 	EncryptedNetworkPeer() = delete;
 	void* vftable;
-	RaknetNetworkPeer* peer;
+	SharedPtr<RaknetNetworkPeer> peer;
 };
 
 struct CompressedNetworkPeer
@@ -1154,25 +1127,38 @@ struct BatchedNetworkPeer
 	BinaryStream stream;
 };
 
-struct Connection
+struct RakNetInstance
 {
-	Connection() = delete;
-	NetworkIdentifier ni;
-	byte unknown[0x18];
-	EncryptedNetworkPeer* epeer;
-	CompressedNetworkPeer* cpeer;
-	BatchedNetworkPeer* bpeer;
-	BatchedNetworkPeer* bpeer2;
-	byte u1;
+	void* vftable;
+	NetworkHandler* handler;
+	OFFSETFIELD(RakNet::RakPeer*, peer, 0x1b0);
 };
+
+struct LocalConnector;
+struct RakNetServerLocator;
 
 struct NetworkHandler
 {
+	struct Connection
+	{
+		Connection() = delete;
+		NetworkIdentifier ni;
+		void* u1; // null
+		void* u2; // null
+		void* u3; // null
+		SharedPtr<EncryptedNetworkPeer> epeer;
+		SharedPtr<BatchedNetworkPeer> bpeer;
+		SharedPtr<BatchedNetworkPeer> bpeer2;
+		uint8_t u4;
+	};
+
 	NetworkHandler() = delete;
 	void* vftable; // 0x0
 	void* vtable2; // 0x8
 	void* vtable3; // 0x10
-	byte unknown[0x1f0]; // 18
+	RakNetInstance* instance;
+	LocalConnector* local;
+	RakNetServerLocator* locator;
 	OFFSETFIELD(ServerNetworkHandler**, serversBegin, 0x258);
 	OFFSETFIELD(BatchedNetworkPeer*, bpeer, 0xd0);
 

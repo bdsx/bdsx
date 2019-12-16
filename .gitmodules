@@ -1,0 +1,3 @@
+[submodule "RakNet"]
+	path = RakNet
+	url = https://github.com/facebookarchive/RakNet.git
