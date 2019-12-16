@@ -96,6 +96,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBCD.lib LIBCMTD.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -119,6 +120,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBCD.lib LIBCMTD.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -136,6 +138,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBC.lib LIBCMT.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -156,6 +159,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBC.lib LIBCMT.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
