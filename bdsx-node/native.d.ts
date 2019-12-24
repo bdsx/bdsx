@@ -461,17 +461,10 @@ export class MariaDB
     ready():void;
     rollback():void;
     commit():void;
-    query(query:string, callback:(error:string|null, res:MariaDB.Result)=>void):void;
-}
-
-export namespace MariaDB
-{
-    class Result
-    {
-        fetch(callback:(row:string[]|null)=>void):void;
-        isClosed():boolean;
-        close():void;
-    }
+    query(query:string, callback?:(error:string|null, fieldCount:number)=>void):void;
+    fetch(callback:(row:string[]|null)=>void):void;
+    close():void;
+    closeResult():void;
 }
 
 /**

@@ -44,10 +44,10 @@ class MariaDBInternal
 public:
 	MariaDBInternal(AText host, AText id, AText password, AText db, int port) noexcept;
 	~MariaDBInternal() noexcept;
+	void fetch(JsValue callback) throws(JsException);
 	void close() noexcept;
 
 	Manual<sql::MySQL> m_sql;
-	kr::LinkedList<MariaDBResult> m_results;
 	AText m_host;
 	AText m_id;
 	AText m_password;
@@ -55,100 +55,11 @@ public:
 	int m_port;
 	TaskThread m_thread;
 	bool m_closed;
+
+	kr::sql::Result m_res;
+	kr::uint m_fieldCount;
 };
 
-MariaDBResult::MariaDBResult(const JsArguments& args) noexcept
-	:JsObjectT(args)
-{
-	m_fieldCount = 0;
-	m_db = nullptr;
-}
-MariaDBResult::~MariaDBResult() noexcept
-{
-	close();
-}
-int MariaDBResult::getFieldCount() noexcept
-{
-	return m_fieldCount;
-}
-void MariaDBResult::fetch(JsValue callback) throws(JsException)
-{
-	if (m_res.isEmpty()) return throw JsException(u"Result already closed");
-	
-	EventPump* oripump = EventPump::getInstance();
-	JsPersistent* cbptr = _new JsPersistent(callback);
-
-	m_db->m_thread.post([res = m_res, fieldCount = m_fieldCount, oripump, cbptr] {
-		MYSQL_ROW row = res.fetch();
-		if (row == nullptr)
-		{
-			oripump->post([cbptr]{
-				JsValue cb = *cbptr;
-				delete cbptr;
-				try
-				{
-					cb(nullptr);
-				}
-				catch (JsException & err)
-				{
-					g_native->fireError(err.getValue());
-				}
-				});
-			return;
-		}
-		Array<AText16> array;
-		array.reserve(fieldCount);
-		for (const char* column : View<const char*>(row, fieldCount))
-		{
-			array.push((AText16)(Utf8ToUtf16)(Text)column);
-		}
-		oripump->post([array = move(array), fieldCount, cbptr]{
-			JsValue jsarray = JsNewArray(fieldCount);
-			for (uint i = 0; i < fieldCount; i++)
-			{
-				jsarray.set(i, array[i]);
-			}
-
-			JsValue cb = *cbptr;
-			delete cbptr;
-			try
-			{
-				cb(jsarray);
-			}
-			catch (JsException & err)
-			{
-				g_native->fireError(err.getValue());
-			}
-			});
-		});
-}
-bool MariaDBResult::isClosed() noexcept
-{
-	return m_res.isEmpty();
-}
-void MariaDBResult::close() throws(JsException)
-{
-	if (m_res.isEmpty()) return;
-	JsScope _scope;
-	JsValue jsthis = *this;
-	m_db->m_thread.post([res = m_res] {
-		res.close();
-		});
-	m_res = nullptr;
-
-	m_db->m_results.detach(this);
-	m_db = nullptr;
-}
-void MariaDBResult::initMethods(JsClassT<MariaDBResult>* cls) noexcept
-{
-	cls->setMethod(u"getFieldCount", &MariaDBResult::getFieldCount);
-	cls->setMethod(u"fetch", &MariaDBResult::fetch);
-	cls->setMethod(u"isClosed", &MariaDBResult::isClosed);
-	cls->setMethod(u"close", &MariaDBResult::close);
-}
-void MariaDBResult::clearMethods() noexcept
-{
-}
 
 MariaDBStatement::MariaDBStatement(const JsArguments& args) noexcept
 	:JsObjectT(args)
@@ -183,25 +94,72 @@ MariaDBInternal::~MariaDBInternal() noexcept
 	s_db_ref--;
 	s_db_removed->set();
 }
+void MariaDBInternal::fetch(JsValue callback) throws(JsException)
+{
+	EventPump* oripump = EventPump::getInstance();
+
+	JsPersistent* cbptr;
+	if (callback.getType() == JsType::Function)
+	{
+		cbptr = _new JsPersistent(callback);
+	}
+	else
+	{
+		return;
+	}
+
+	m_thread.post([this, oripump, cbptr] {
+		MYSQL_ROW row;
+
+		if (m_res.isEmpty() || (row = m_res.fetch()) == nullptr)
+		{
+			oripump->post([cbptr] {
+				JsValue cb = *cbptr;
+				delete cbptr;
+				try
+				{
+					cb(nullptr);
+				}
+				catch (JsException & err)
+				{
+					g_native->fireError(err.getValue());
+				}
+				});
+			return;
+		}
+		Array<AText16> array;
+		array.reserve(m_fieldCount);
+		for (const char* column : View<const char*>(row, m_fieldCount))
+		{
+			array.push((AText16)(Utf8ToUtf16)(Text)column);
+		}
+		oripump->post([this, array = move(array), cbptr]{
+			size_t size = array.size();
+			JsValue jsarray = JsNewArray(size);
+			for (uint i = 0; i < size; i++)
+			{
+				jsarray.set(i, array[i]);
+			}
+
+			JsValue cb = *cbptr;
+			delete cbptr;
+			try
+			{
+				cb(jsarray);
+			}
+			catch (JsException & err)
+			{
+				g_native->fireError(err.getValue());
+			}
+			});
+		});
+}
 void MariaDBInternal::close() noexcept
 {
 	if (m_closed) return;
 	m_closed = true;
-	m_results.size();
-	Array<sql::Result> results;
-	results.reserve(m_results.size());
-	for (MariaDBResult& res : m_results)
-	{
-		results.push(res.m_res);
-		res.m_res = nullptr;
-		res.m_db = nullptr;
-	}
-	m_results.clear();
-	m_thread.post([this, results = move(results)] {
-		for (const sql::Result& res : results)
-		{
-			res.close();
-		}
+	m_thread.post([this] {
+		m_res.close();
 		m_sql.remove();
 		if ((--s_serverInitCounter) == 0)
 		{
@@ -213,7 +171,7 @@ void MariaDBInternal::close() noexcept
 	EventDispatcher::registThreaded(ev,
 		[this](DispatchedEvent* dispatched) {
 			delete this;
-			dispatched->detach(); // 람다를 지워 this가 사라지게 된다
+			dispatched->detach(); // 람다를 지워 this참조가 지워지게 된다
 		});
 }
 
@@ -277,43 +235,35 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		JsPersistent callback;
 	};
 
-	PersistentData* data = _new PersistentData;
-	data->callback = callback;
+	PersistentData* data;
+	
+	if (callback.getType() == JsType::Function)
+	{
+		data = _new PersistentData;
+		data->callback = callback;
+	}
+	else
+	{
+		data = nullptr;
+	}
 
-	sql->m_thread.post([sql, oripump, data, query=(AText)(Utf16ToUtf8)text] {
+	sql->m_thread.post([sql, oripump, data, query = (AText)(Utf16ToUtf8)text]{
+		sql->m_res.close();
+		sql->m_res = nullptr;
+
 		try
 		{
-			for (;;)
-			{
-				try
-				{
-					sql->m_sql->query(query);
-					break;
-				}
-				catch (ThrowRetry&)
-				{
-					sql->m_sql->reconnect();
-				}
-			}
-			oripump->post([
-				sql,
-				res = sql->m_sql->useResult(), 
-				fieldCount = sql->m_sql->fieldCount(), 
-					data](){
-				MariaDBResult * jsres = MariaDBResult::newInstance();
-				if (!res.isEmpty())
-				{
-					jsres->m_res = res;
-					jsres->m_fieldCount = fieldCount;
-					jsres->m_db = sql;
-					sql->m_results.attach(jsres);
-				}
-
+			sql->m_sql->query(*sql->m_sql, query);
+			sql->m_res = sql->m_sql->useResult();
+			if (data == nullptr) return;
+			int fieldCount = sql->m_sql->fieldCount(); 
+			sql->m_fieldCount = fieldCount;
+			oripump->post([sql, data, fieldCount](){
 				JsValue callback = data->callback;
 				delete data;
 				try
 				{
-					callback(nullptr, jsres);
+					callback(nullptr, fieldCount);
 				}
 				catch (JsException & err)
 				{
@@ -328,6 +278,7 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		catch (ThrowRetry&)
 		{
 		}
+		if (data == nullptr) return;
 
 		oripump->post([
 			message = (AText16)(Utf8ToUtf16)(Text)sql->m_sql->getErrorMessage(), 
@@ -344,6 +295,21 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 			});
 		});
 }
+void MariaDB::fetch(kr::JsValue callback) throws(kr::JsException)
+{
+	MariaDBInternal* sql = m_sql;
+	if (sql == nullptr) throw JsException(u"DB already closed");
+	sql->fetch(callback);
+}
+void MariaDB::closeResult() throws(kr::JsException)
+{
+	MariaDBInternal* sql = m_sql;
+	if (sql == nullptr) throw JsException(u"DB already closed");
+	sql->m_thread.post([sql] {
+		sql->m_res.close();
+		sql->m_res = nullptr;
+		});
+}
 MariaDBStatement* MariaDB::createStatement(Text16 text) noexcept
 {
 	return nullptr;
@@ -356,7 +322,10 @@ void MariaDB::initMethods(JsClassT<MariaDB>* cls) noexcept
 	cls->setMethod(u"rollback", &MariaDB::rollback);
 	cls->setMethod(u"commit", &MariaDB::commit);
 	cls->setMethod(u"query", &MariaDB::query);
-	cls->set(u"Result", MariaDBResult::classObject);
+	cls->setMethod(u"fetch", &MariaDB::fetch);
+	cls->setMethod(u"close", &MariaDB::close);
+	cls->setMethod(u"closeResult", &MariaDB::closeResult);
+
 	// cls->set(u"Statement", MariaDBStatement::classObject);
 }
 void MariaDB::clearMethods() noexcept

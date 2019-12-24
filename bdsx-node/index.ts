@@ -1,5 +1,4 @@
 /// <reference types="minecraft-scripting-types-server" />
-Promise.resolve('test').then(()=>{});
 
 import "@mcbe/dummy-console";
 import native = require("./native");
@@ -28,8 +27,9 @@ import createPacket = nethook.createPacket;
 import sendPacket = nethook.sendPacket;
 import execSync = native.execSync;
 import ipfilter = native.ipfilter;
-import MariaDB = native.MariaDB;
+
 import shellVoid = native.shell;
+import { MariaDB } from "./db";
 
 declare global
 {
@@ -51,21 +51,6 @@ declare global
 
 declare module "./native"
 {
-    interface MariaDB
-    {
-        _query(query:string, callback:(error:string|null, res:MariaDB.Result)=>void):void;
-        query(query:string, callback?:(error:string|null, res:MariaDB.Result)=>void):Promise<MariaDB.Result>;
-    }
-
-    namespace MariaDB
-    {
-        interface Result
-        {
-            _fetch(callback:(row:string[]|null)=>void):void;
-            fetch(callback?:(row:string[]|null)=>void):Promise<string[]|null>;
-        }
-    }
-
     interface NativePointer
     {
         readHex(size:number):string;
@@ -82,28 +67,6 @@ declare module "./native"
         getEntity():IEntity;
     }
 }
-
-if (!MariaDB.prototype._query) MariaDB.prototype._query = MariaDB.prototype.query;
-if (!MariaDB.Result.prototype._fetch) MariaDB.Result.prototype._fetch = MariaDB.Result.prototype.fetch;
-MariaDB.prototype.query = function(query:string, callback?:(error:string|null, res:MariaDB.Result)=>void):Promise<MariaDB.Result>
-{
-    return new Promise((resolve, reject)=>{
-        this._query(query, (error, res)=>{
-            if (callback) callback(error, res);
-            if (error) reject(Error(error));
-            else resolve(res);
-        });
-    });
-};
-MariaDB.Result.prototype.fetch = function(callback?:(row:string[]|null)=>void):Promise<string[]|null>
-{
-    return new Promise(resolve=>{
-        this._fetch(row=>{
-            if (callback) callback(row);
-            resolve(row);
-        });
-    });
-};
 
 Actor.fromEntity = function(entity){
     const u = entity.__unique_id__;
@@ -243,9 +206,10 @@ export {
     NativeModule,
     execSync,
     ipfilter,
-    MariaDB,
     shellVoid,
+    MariaDB,
 };
+
 
 export function wget(url:string):Promise<string>
 {
