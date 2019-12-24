@@ -42,7 +42,7 @@ namespace
 class MariaDBInternal
 {
 public:
-	MariaDBInternal(AText host, AText id, AText password, AText db, int port) noexcept;
+	MariaDBInternal(AText host, AText id, AText password, AText db, int port, JsValue cb) noexcept;
 	~MariaDBInternal() noexcept;
 	void fetch(JsValue callback) throws(JsException);
 	void close() noexcept;
@@ -178,12 +178,15 @@ void MariaDBInternal::close() noexcept
 MariaDB::MariaDB(const JsArguments& args) throws(JsException)
 	:JsObjectT(args)
 {
+	JsValue cb = args.at<JsValue>(5);
 	m_sql = _new MariaDBInternal(
 		argstring(args, 0), 
 		argstring(args, 1),
 		argstring(args, 2),
 		argstring(args, 3),
-		args.at<int>(4));
+		args.at<int>(4),
+		cb
+		);
 	s_conns.attach(this);
 }
 MariaDB::~MariaDB() noexcept
@@ -253,7 +256,18 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 
 		try
 		{
-			sql->m_sql->query(*sql->m_sql, query);
+			for (;;)
+			{
+				try
+				{
+					sql->m_sql->query(query);
+					break;
+				}
+				catch (ThrowRetry&)
+				{
+					sql->m_sql->connect();
+				}
+			}
 			sql->m_res = sql->m_sql->useResult();
 			if (data == nullptr) return;
 			int fieldCount = sql->m_sql->fieldCount(); 
