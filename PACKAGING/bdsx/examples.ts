@@ -59,7 +59,7 @@ const connectionList = new Map<NetworkIdentifier, string>();
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId, loginInfo) => {
     const ip = networkIdentifier.getAddress();
     console.log(`${loginInfo.id}> IP=${ip}, XUID=${loginInfo.xuid}`);
-    connectionList.set(networkIdentifier, loginInfo.id)
+    if (loginInfo.id) connectionList.set(networkIdentifier, loginInfo.id);
 });
 
 // Network Hooking: Print all packets

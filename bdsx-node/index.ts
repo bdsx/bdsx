@@ -124,9 +124,7 @@ Actor.prototype.getEntity = function(){
     return (this as any).entity = entity;
 };
 
-NetworkIdentifier.prototype.toString = function(){
-    return this.getAddress()[0] || '[invalid IP]';
-};
+NetworkIdentifier.prototype.toString = NetworkIdentifier.prototype.getAddress;
 
 NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16){
     let out = '';

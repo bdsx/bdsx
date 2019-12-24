@@ -213,7 +213,7 @@ export class NetworkIdentifier
     /**
      * get IP address
      */
-    getAddress():string[];
+    getAddress():string;
     assignTo(ptr:StaticPointer):void;
     getActor():Actor|null;
     

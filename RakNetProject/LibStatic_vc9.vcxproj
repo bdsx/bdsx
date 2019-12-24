@@ -66,19 +66,19 @@
     <_ProjectFileVersion>16.0.29511.113</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Confirugation)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>bin\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Confirugation)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>bin\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Confirugation)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>bin\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Confirugation)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>bin\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -96,7 +96,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819;4310</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBCD.lib LIBCMTD.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -120,7 +120,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819;4310</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBCD.lib LIBCMTD.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -138,7 +138,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819;4310</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBC.lib LIBCMT.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -159,7 +159,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4267;4477;4244;4458;4018;4996;4100;4457;4819;4310</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
       <IgnoreSpecificDefaultLibraries>LIBC.lib LIBCMT.lib MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
