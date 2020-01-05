@@ -12,7 +12,7 @@ console.log("Hello, World!");
 ```
 * File IO!
 ```ts
-import { fs } from 'bsx';
+import { fs } from 'bdsx';
 console.log('Current Directory: '+fs.cwd());
 fs.writeFile("textfile.txt", "Hello, World!");
 ```
