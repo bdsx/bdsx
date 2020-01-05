@@ -48,8 +48,8 @@ namespace NativeCaller
 			if (netid) return (intptr_t)&netid->identifier;
 			NativeActor* actor = value.getNativeObject<NativeActor>();
 			if (actor) return (intptr_t)actor->ptr();
-			NativeModule* module = value.getNativeObject<NativeModule>();
-			if (module) return (intptr_t)module->module();
+			NativeModule* winmodule = value.getNativeObject<NativeModule>();
+			if (winmodule) return (intptr_t)winmodule->getModule();
 			throw JsException(TSZ16() << u"non-supported type: object, " << JsValue(value.toString()).cast<Text16>());
 		}
 		case JsType::ArrayBuffer:
@@ -142,7 +142,7 @@ JsValue NativeModule::get(Text16 name) noexcept
 	if (fn == nullptr) return nullptr;
 	return createFunctionFromPointer(fn);
 }
-Module* NativeModule::module() noexcept
+Module* NativeModule::getModule() noexcept
 {
 	return m_module;
 }

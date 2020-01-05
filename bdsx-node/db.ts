@@ -2,13 +2,51 @@
 import native = require('./native');
 import Super = native.MariaDB;
 
-export class MariaDB extends native.MariaDB
+class SqlError extends Error
 {
-    private worker:Promise<any> = Promise.resolve();
+    constructor(message:string, public readonly errno:number)
+    {
+        super(message);
+    }
+}
+
+export class MariaDB extends native.MariaDB implements Promise<void>
+{
+    private worker:Promise<any>;
 
     constructor(host?:string, username?:string, password?:string, db?:string, port?:number)
     {
-        super(host, username, password, db, port);
+        super((error, errno)=>{
+            if (error)
+            {
+                reject(new SqlError(error, errno!));
+            }
+            else
+            {
+                resolve();
+            }
+        }, host, username, password, db, port);
+        var resolve:()=>void;
+        var reject:(err:Error)=>void;
+        this.worker = new Promise((_resolve, _reject)=>{
+            resolve = _resolve;
+            reject = _reject;
+        });
+    }
+
+    get [Symbol.toStringTag]():string
+    {
+        return 'MariaDB';
+    }
+
+    then<TResult1 = void, TResult2 = never>(onfulfilled?: ((value:void) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>
+    {
+        return this.worker.then(onfulfilled, onrejected);
+    }
+
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<void | TResult>
+    {
+        return this.worker.catch(onrejected);
     }
 
     transaction<T>(func:()=>Promise<T>):Promise<T>
@@ -24,10 +62,10 @@ export class MariaDB extends native.MariaDB
         return ret;
     }
 
-    execute(query:string):Promise<string[][]|null>
+    execute(query:string):Promise<string[][]>
     {
         return this.transaction(async()=>{
-            Super.prototype.query.apply(this, query);
+            Super.prototype.query.call(this, query);
             const out:string[][] = [];
 
             let res:string[]|null;
@@ -36,14 +74,14 @@ export class MariaDB extends native.MariaDB
                 out.push(res);
             }
             this.closeResult();
-            return res;
+            return out;
         });
     }
 
     query(query:string):Promise<number>
     {
         return new Promise((resolve, reject)=>{
-            Super.prototype.query.apply(this, (error:string, fieldCount:number)=>{
+            Super.prototype.query.call(this, query, (error:string, fieldCount:number)=>{
                 if (error) reject(Error(error));
                 else resolve(fieldCount);
             });
@@ -53,7 +91,7 @@ export class MariaDB extends native.MariaDB
     fetch():Promise<string[]|null>
     {
         return new Promise(resolve=>{
-            Super.prototype.fetch.apply(this, (row:string[]|null)=>{
+            Super.prototype.fetch.call(this, (row:string[]|null)=>{
                 resolve(row);
             });
         });

@@ -456,7 +456,7 @@ export class NativeModule
  */
 export class MariaDB
 {
-    constructor(host?:string|null, username?:string|null, password?:string|null, db?:string|null, port?:number);
+    constructor(cb?:(error?:string, errno?:number)=>void, host?:string|null, username?:string|null, password?:string|null, db?:string|null, port?:number);
     close():void;
     ready():void;
     rollback():void;

@@ -25,7 +25,7 @@ struct MinecraftFunctionTable
 	void hookOnScriptLoading(void(*callback)()) noexcept;
 	void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept;
 	void hookOnConnectionClosedAfter(void(*onclose)(const NetworkIdentifier&)) noexcept;
-	void hookOnLoopStart(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept;
+	void hookOnLoopStart(void(*callback)(ServerInstance* instance)) noexcept;
 	void hookOnRuntimeError(void(*callback)(void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr)) noexcept;
 	// return error code
 	void hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept;

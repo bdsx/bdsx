@@ -242,23 +242,23 @@ void fork() throws(JsException)
 }
 JsValue createServerControlModule() noexcept
 {
-	JsValue module = JsNewObject;
-	module.setMethod(u"stop", [] { 
+	JsValue winmodule = JsNewObject;
+	winmodule.setMethod(u"stop", [] {
 		EventPump::getInstance()->post([] { throw QuitException(0); });
 		});
-	module.setMethod(u"reset", []() { g_native->reset(); });
-	module.setMethod(u"debug", [] {
+	winmodule.setMethod(u"reset", []() { g_native->reset(); });
+	winmodule.setMethod(u"debug", [] {
 		requestDebugger();
 		debug();
 		});
-	module.setMethod(u"fork", fork);
-	module.setMethod(u"restart", [] {
+	winmodule.setMethod(u"fork", fork);
+	winmodule.setMethod(u"restart", [] {
 		EventPump::getInstance()->post([] {
 			fork();
-			throw QuitException(0); 
+			throw QuitException(0);
 			});
 		});
-	return module;
+	return winmodule;
 }
 
 Native::Native() noexcept

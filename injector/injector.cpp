@@ -41,7 +41,7 @@ int main()
 		return EINVAL;
 	}
 	setlocale(LC_ALL, nullptr);
-	win::Module* module = win::Module::getModule(nullptr);
+	win::Module* winmodule = win::Module::getModule(nullptr);
 
 	SetDllDirectoryW(wide(path16.resolve(path16.dirname(dllPath))));
 

@@ -42,7 +42,7 @@ namespace
 class MariaDBInternal
 {
 public:
-	MariaDBInternal(AText host, AText id, AText password, AText db, int port, JsValue cb) noexcept;
+	MariaDBInternal(JsValue cb, AText host, AText id, AText password, AText db, int port) noexcept;
 	~MariaDBInternal() noexcept;
 	void fetch(JsValue callback) throws(JsException);
 	void close() noexcept;
@@ -69,7 +69,7 @@ void MariaDBStatement::initMethods(JsClassT<MariaDBStatement>* cls) noexcept
 {
 }
 
-MariaDBInternal::MariaDBInternal(AText host, AText id, AText password, AText db, int port) noexcept
+MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText password, AText db, int port) noexcept
 	:m_host(move(host)),
 	m_id(move(id)),
 	m_password(move(password)),
@@ -79,13 +79,34 @@ MariaDBInternal::MariaDBInternal(AText host, AText id, AText password, AText db,
 	s_db_ref++;
 	m_closed = false;
 
-	m_thread.post([this] {
+	EventPump* pump = EventPump::getInstance();
+	JsPersistent * cbptr = _new JsPersistent(cb);
+	m_thread.post([this, cbptr, pump] {
 		if (s_serverInitCounter++ == 0)
 		{
 			s_mysqlServer.create();
 		}
-
 		m_sql.create(argtext(m_host), argtext(m_id), argtext(m_password), argtext(m_db), "UTF8", m_port);
+		try
+		{
+			m_sql->connect();
+			pump->post([cbptr]() {
+				JsValue cb = *cbptr;
+				delete cbptr;
+				if (cb.getType() == JsType::Function) cb();
+				});
+		}
+		catch (SqlException &)
+		{
+			int no = m_sql->getErrorNumber();
+			const char * errstr = m_sql->getErrorMessage();
+
+			pump->post([cbptr, no, errstr = (AText16)(Utf8ToUtf16)(Text)errstr]() {
+				JsValue cb = *cbptr;
+				delete cbptr;
+				if (cb.getType() == JsType::Function) cb(errstr, no);
+				});
+		}
 		});
 
 }
@@ -178,14 +199,13 @@ void MariaDBInternal::close() noexcept
 MariaDB::MariaDB(const JsArguments& args) throws(JsException)
 	:JsObjectT(args)
 {
-	JsValue cb = args.at<JsValue>(5);
 	m_sql = _new MariaDBInternal(
-		argstring(args, 0), 
-		argstring(args, 1),
+		args.at<JsValue>(0),
+		argstring(args, 1), 
 		argstring(args, 2),
 		argstring(args, 3),
-		args.at<int>(4),
-		cb
+		argstring(args, 4),
+		args.at<int>(5)
 		);
 	s_conns.attach(this);
 }
@@ -269,9 +289,9 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 				}
 			}
 			sql->m_res = sql->m_sql->useResult();
-			if (data == nullptr) return;
-			int fieldCount = sql->m_sql->fieldCount(); 
+			int fieldCount = sql->m_sql->fieldCount();
 			sql->m_fieldCount = fieldCount;
+			if (data == nullptr) return;
 			oripump->post([sql, data, fieldCount](){
 				JsValue callback = data->callback;
 				delete data;

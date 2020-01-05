@@ -5,6 +5,14 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseTest|Win32">
+      <Configuration>ReleaseTest</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseTest|x64">
+      <Configuration>ReleaseTest</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -31,6 +39,12 @@
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -39,6 +53,12 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -60,11 +80,19 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\ken\KR.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\ken\KR.props" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\ken\KR.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\ken\KR.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\ken\KR.props" />
   </ImportGroup>
@@ -110,7 +138,35 @@
       <Message>%(Identity)</Message>
     </CustomBuild>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuild>
+      <Message>%(Identity)</Message>
+    </CustomBuild>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuild>
+      <Message>%(Identity)</Message>
+    </CustomBuild>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -157,7 +213,9 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx.bat</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(Filename)%(Extension)</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">true</ExcludedFromBuild>
     </CustomBuild>
     <CustomBuild Include="bdsx\package.json">
       <FileType>Document</FileType>
@@ -172,31 +230,47 @@ cd ..</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RelativeDir)
 call npm install
 cd ..</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">cd %(RelativeDir)
+call npm install
+cd ..</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RelativeDir)
 call npm install
 cd ..</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">cd %(RelativeDir)
+call npm install
+cd ..</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)package-lock.json</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">%(RelativeDir)package-lock.json</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)package-lock.json</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">%(RelativeDir)package-lock.json</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">npm install</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">npm install</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">npm install</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">npm install</Message>
     </CustomBuild>
     <None Include="bdsx\examples.ts" />
     <None Include="bdsx\index.ts">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">tsc %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">tsc %(Identity)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">tsc %(Identity)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">tsc %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">tsc %(Identity)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">tsc %(Identity)</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">tsc %(RelativeDir)%(Filename).js</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">tsc %(RelativeDir)%(Filename).js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">tsc %(RelativeDir)%(Filename).js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">tsc %(RelativeDir)%(Filename).js</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">tsc %(RelativeDir)%(Filename).js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">tsc %(RelativeDir)%(Filename).js</Outputs>
     </None>
     <CustomBuild Include="bdsx\tsconfig.json">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RelativeDir)
+call tsc</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">cd %(RelativeDir)
 call tsc</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd %(RelativeDir)
 call tsc
@@ -205,39 +279,55 @@ kcopy "%(RelativeDir)index.ts" "$(SolutionDir)release\%(RelativeDir)index.ts"
 kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RelativeDir)
 call tsc</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">cd %(RelativeDir)
+call tsc</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd %(RelativeDir)
 call tsc
 cd "$(ProjectDir)"
 kcopy "%(RelativeDir)index.ts" "$(SolutionDir)release\%(RelativeDir)index.ts"
 kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)index.js</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">%(RelativeDir)index.js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)release\%(RelativeDir)index.js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)index.js</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">%(RelativeDir)index.js</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)release\%(RelativeDir)index.js</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">%(RelativeDir)index.ts</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)index.ts</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">%(RelativeDir)index.ts</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)index.ts;%(RelativeDir)test.ts;%(RelativeDir)examples.ts</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)index.ts;%(RelativeDir)test.ts;%(RelativeDir)examples.ts</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">tsc</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">tsc</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">tsc</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">tsc</Message>
     </CustomBuild>
     <CustomBuild Include="packaging.bat">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">call %(Identity) "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">call %(Identity) "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call %(Identity) "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call %(Identity) "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">call %(Identity) "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call %(Identity) "$(SolutionDir)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)bdsx.zip</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">$(SolutionDir)bdsx.zip</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)bdsx.zip</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bdsx.zip</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">$(SolutionDir)bdsx.zip</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)bdsx.zip</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="bdsx\package-lock.json">
@@ -245,28 +335,38 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)package.json</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)package.json</AdditionalInputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">true</ExcludedFromBuild>
     </CustomBuild>
     <CustomBuild Include="README.md">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">true</ExcludedFromBuild>
     </CustomBuild>
     <None Include="bdsx\test.ts" />
     <None Include="common.bat" />
     <CustomBuild Include="download.bat">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">call "%(Identity)" "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">call "%(Identity)" "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call "%(Identity)" "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call "%(Identity)" "$(SolutionDir)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">call "%(Identity)" "$(SolutionDir)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call "%(Identity)" "$(SolutionDir)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bin\bds.unziptime</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">bin\bds.unziptime</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bin\bds.unziptime</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bin\bds.unziptime</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">bin\bds.unziptime</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bin\bds.unziptime</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">common.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">common.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">common.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">common.bat</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>

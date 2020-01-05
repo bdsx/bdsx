@@ -964,7 +964,7 @@ struct DedicatedServer :ScriptCommandOrigin
 	void* offset_30;
 	void* offset_38;
 	VanillaAppConfigs* configs;
-	VanillaGameModuleDedicatedServer* module;
+	VanillaGameModuleDedicatedServer* gameModule;
 	// end expected
 };
 

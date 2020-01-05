@@ -335,9 +335,9 @@ _done:
 #endif
 	throw JsException(TSZ16() << u"module not found: " << modulename);
 _finish:
-	JsValue module = JsNewObject;
+	JsValue winmodule = JsNewObject;
 	JsValue exports = JsNewObject;
-	module.set(s_exports, exports);
+	winmodule.set(s_exports, exports);
 
 	Text16 moduleName = path16.basename(importName);
 
@@ -345,10 +345,10 @@ _finish:
 	{
 		uintptr_t contextId = g_server == nullptr ? 0 : g_server->makeScriptId();
 		JsValue func = JsRuntime::run(filename, TSZ16() << u"(function " << moduleName.filter(jsIdentifierFilter) << u"_js(module, exports, __dirname, require){" << utf8ToUtf16(source) << u"\n})", contextId);
-		func(module, exports, m_dirname, require);
+		func(winmodule, exports, m_dirname, require);
 	}
 	
-	exports = module.get(s_exports);
+	exports = winmodule.get(s_exports);
 	res.first->second = exports;
 	return exports;
 }

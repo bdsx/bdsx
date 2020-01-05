@@ -241,7 +241,9 @@ BOOL WINAPI DllMain(
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
+#ifndef RELEASE_TEST
 		ondebug(requestDebugger());
+#endif
 		
 		cout << "BDSX: Attached" << endl;
 
@@ -281,7 +283,7 @@ BOOL WINAPI DllMain(
 			cerr << "BDSX: Module is not defined // -M [module path]" << endl;
 		}
 
-		g_mcf.hookOnLoopStart([](DedicatedServer* server, ServerInstance * instance) {
+		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
 			g_server = instance;
 		});
 		g_mcf.hookOnScriptLoading([]{

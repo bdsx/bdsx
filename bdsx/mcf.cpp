@@ -82,13 +82,14 @@ struct FunctionTarget
 
 void MinecraftFunctionTable::load() noexcept
 {
+#define MC_VERSION "1.14.1.4"
 	TText16 moduleName = ModuleName<char16>();
 	BText<32> hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
 	cout << "BDSX: bedrock_server.exe MD5 = " << hash << endl;
 
-	if (hash == "23FA166BABC11A43D06629C6148F41D0")
+	if (hash == "B620DAF51666A7DD19CF3982752B2BE1")
 	{
-		cout << "MD5 Hash Matched(Version == 1.14.0.9)" << endl;
+		cout << "MD5 Hash Matched(Version == " MC_VERSION ")" << endl;
 		loadFromPredefined();
 #ifndef NDEBUG
 		checkUnloaded();
@@ -98,7 +99,7 @@ void MinecraftFunctionTable::load() noexcept
 	{
 		{
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << "MD5 Hash Not Matched(Version != 1.13.3.0)" << endl;
+			cerr << "MD5 Hash Not Matched(Version != " MC_VERSION ")" << endl;
 		}
 		loadFromPdb();
 	}
@@ -106,42 +107,41 @@ void MinecraftFunctionTable::load() noexcept
 }
 void MinecraftFunctionTable::loadFromPredefined() noexcept
 {
-	ModuleInfo ptr;
-	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x411AD0);
-	Level$fetchEntity = ptr(0x9857D0);
-	NetworkHandler$_getConnectionFromId = ptr(0x291BE0);
-	std$string$assign = ptr(0x4DC90);
-	ServerInstance$_update = ptr(0x42A640);
-	ServerNetworkHandler$_getServerPlayer = ptr(0x2FD430);
-	NetworkHandler$onConnectionClosed = ptr(0x292510);
-	ExtendedCertificate$getXuid = ptr(0x5F810);
-	NetworkHandler$_sortAndPacketizeEvents = ptr(0x291EB0);
-	MinecraftCommands$executeCommand = ptr(0x3A1FE0);
-	NetworkIdentifier$getHash = ptr(0x294DC0);
-	ServerPlayer$sendNetworkPacket = ptr(0x431580);
-	ServerInstance$ServerInstance = ptr(0x428110);
-	ExtendedCertificate$getIdentityName = ptr(0x2EE320);
-	NetworkHandler$getEncryptedPeerForUser = ptr(0x292EC0);
-	Actor$_Actor = ptr(0x4897F0);
-	ScriptEngine$startScriptLoading = ptr(0x35A990);
-	ServerPlayer$_vftable_ = ptr(0xD5CA98);
-	std$string$append = ptr(0x5C1D0);
-	std$_Allocate$16 = ptr(0x4DBA0);
-	Level$removeEntityReferences = ptr(0x985AE0);
-	DedicatedServer$start = ptr(0x558D0);
-	Crypto$Random$generateUUID = ptr(0x129D30);
-	BaseAttributeMap$getMutableInstance = ptr(0x6A45C0);
-	google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread = ptr(0xBCCC30);
-	NetworkHandler$_sendInternal = ptr(0x293160);
-	Minecraft$update = ptr(0xA94B80);
-	NetworkHandler$send = ptr(0x2930A0);
-	std$string$_Tidy_deallocate = ptr(0x4DAF0);
-	StopCommand$mServer = ptr(0x13BF930);
-	MinecraftPackets$createPacket = ptr(0x297350);
-	Level$createDimension = ptr(0x97FFF0);
-	DedicatedServer$stop = ptr(0x552A0);
-	LoopbackPacketSender$sendToClients = ptr(0x28F940);
-	NetworkIdentifier$equals = ptr(0x5F7A0);
+	ModuleInfo ptr; MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x417BE0);
+	Level$fetchEntity = ptr(0x98C9A0);
+	NetworkHandler$_getConnectionFromId = ptr(0x295C40);
+	std$string$assign = ptr(0x4DCE0);
+	ServerInstance$_update = ptr(0x430750);
+	ServerNetworkHandler$_getServerPlayer = ptr(0x301570);
+	NetworkHandler$onConnectionClosed = ptr(0x296570);
+	ExtendedCertificate$getXuid = ptr(0x5FB80);
+	NetworkHandler$_sortAndPacketizeEvents = ptr(0x295F10);
+	MinecraftCommands$executeCommand = ptr(0x3A80D0);
+	NetworkIdentifier$getHash = ptr(0x298E20);
+	ServerPlayer$sendNetworkPacket = ptr(0x437850);
+	ServerInstance$ServerInstance = ptr(0x42E230);
+	ExtendedCertificate$getIdentityName = ptr(0x2F2460);
+	NetworkHandler$getEncryptedPeerForUser = ptr(0x296F20);
+	Actor$_Actor = ptr(0x48FF50);
+	ScriptEngine$startScriptLoading = ptr(0x360AE0);
+	ServerPlayer$_vftable_ = ptr(0xD64AB0);
+	std$string$append = ptr(0x5C530);
+	std$_Allocate$16 = ptr(0x4DBF0);
+	Level$removeEntityReferences = ptr(0x98CCB0);
+	DedicatedServer$start = ptr(0x55980);
+	Crypto$Random$generateUUID = ptr(0x12BFC0);
+	BaseAttributeMap$getMutableInstance = ptr(0x6AA8B0);
+	google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread = ptr(0xBD4BE0);
+	NetworkHandler$_sendInternal = ptr(0x2971C0);
+	Minecraft$update = ptr(0xA9C440);
+	NetworkIdentifier$equals = ptr(0x5FB10);
+	NetworkHandler$send = ptr(0x297100);
+	std$string$_Tidy_deallocate = ptr(0x4DB40);
+	StopCommand$mServer = ptr(0x13CEEB0);
+	MinecraftPackets$createPacket = ptr(0x29B3B0);
+	Level$createDimension = ptr(0x9871C0);
+	DedicatedServer$stop = ptr(0x55330);
+	LoopbackPacketSender$sendToClients = ptr(0x2939A0);
 }
 void MinecraftFunctionTable::loadFromPdb() noexcept
 {
@@ -436,15 +436,15 @@ void MinecraftFunctionTable::hookOnConnectionClosedAfter(void(*onclose)(const Ne
 	junction.patchTo((byte*)NetworkHandler$onConnectionClosed + 0xE3,
 		ORIGINAL_CODE, RAX, true, "onConnectionClosedAfter");
 }
-void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(DedicatedServer* server, ServerInstance* instance)) noexcept
+void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(ServerInstance* instance)) noexcept
 {
-	void(*caller)(byte*, void(*callback)(DedicatedServer * server, ServerInstance * instance)) =
-		[](byte* rbp, void(*callback)(DedicatedServer* server, ServerInstance* instance)) {
-		callback(*(DedicatedServer**)(rbp + 0x98), (ServerInstance*)(rbp + 0x2170));
+	void(*caller)(byte*, void(*callback)(ServerInstance * instance)) =
+		[](byte* rbp, void(*callback)(ServerInstance* instance)) {
+		callback((ServerInstance*)(rbp + 0x2100));
 	};
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x89, 0x45, 0x28, // mov qword ptr ss:[rbp+28],rax
-		0x4C, 0x8B, 0x6D, 0xA0, // mov r13,qword ptr ss:[rbp-60]
+		0x48, 0x89, 0x45, 0x00, // mov qword ptr ss:[rbp],rax
+		0x4C, 0x8B, 0x6D, 0xF0, // mov r13,qword ptr ss:[rbp-10]
 		0x4D, 0x85, 0xED, // test r13,r13
 		0x0F, 0x95, 0x45, 0x82, // setne byte ptr ss:[rbp-7E]
 	};
@@ -460,7 +460,7 @@ void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(DedicatedServer* se
 	junction.pop(RCX);
 	junction.pop(RAX);
 	junction.ret();
-	junction.patchTo((byte*)DedicatedServer$start + 0x23df,
+	junction.patchTo((byte*)DedicatedServer$start + 0x22c6,
 		ORIGINAL_CODE, RDX, false, "serverStart");
 };
 void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr)) noexcept

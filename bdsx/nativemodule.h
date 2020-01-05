@@ -13,7 +13,7 @@ public:
 
 	NativeModule(const kr::JsArguments& args) throws(kr::JsException);
 	kr::JsValue get(kr::Text16 name) noexcept;
-	kr::win::Module* module() noexcept;
+	kr::win::Module* getModule() noexcept;
 
 	static kr::JsValue createFunctionFromJsPointer(StaticPointer* pointer) throws(kr::JsException);
 	static kr::JsValue createFunctionFromPointer(void* fn) noexcept;
