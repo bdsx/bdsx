@@ -9,7 +9,27 @@ class SqlError extends Error
         super(message);
     }
 }
+declare global
+{
+    // Redeclaration for under es2015
+    interface Promise<T>
+    {
+        finally(onfinally?: (() => void) | undefined | null): Promise<T>
+    }
+}
 
+if (!Promise.prototype.finally)
+{
+	Promise.prototype.finally = function<T>(this:Promise<T>, onfinally?: (() => void) | undefined | null) {
+        async function voiding(value:any):Promise<any> {
+            if (!onfinally) return;
+            onfinally();
+            return value;
+        }
+		return this.then(voiding, voiding);
+    };
+}
+    
 export class MariaDB extends native.MariaDB implements Promise<void>
 {
     private worker:Promise<any>;
@@ -47,6 +67,11 @@ export class MariaDB extends native.MariaDB implements Promise<void>
     catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<void | TResult>
     {
         return this.worker.catch(onrejected);
+    }
+    
+    finally(onfinally?: (() => void) | undefined | null): Promise<void>
+    {
+        return this.worker.finally(onfinally);
     }
 
     transaction<T>(func:()=>Promise<T>):Promise<T>
