@@ -376,7 +376,7 @@ void Native::_hook() noexcept
 				JsValue onError = g_native->m_onRuntimeError;
 				try
 				{
-					if (onError(stack, nativestack, lastsender) == false) return;
+					if (onError(stack, nativestack, lastsender.isEmpty() ? undefined : lastsender) == false) return;
 				}
 				catch (JsException& err)
 				{
