@@ -241,9 +241,7 @@ BOOL WINAPI DllMain(
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-#ifndef RELEASE_TEST
 		ondebug(requestDebugger());
-#endif
 		
 		cout << "BDSX: Attached" << endl;
 

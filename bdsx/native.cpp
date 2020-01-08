@@ -244,7 +244,9 @@ JsValue createServerControlModule() noexcept
 {
 	JsValue winmodule = JsNewObject;
 	winmodule.setMethod(u"stop", [] {
-		EventPump::getInstance()->post([] { throw QuitException(0); });
+		EventPump::getInstance()->post([] { 
+			throw QuitException(0);
+			});
 		});
 	winmodule.setMethod(u"reset", []() { g_native->reset(); });
 	winmodule.setMethod(u"debug", [] {
@@ -332,6 +334,7 @@ void Native::_hook() noexcept
 		return 1;
 		});
 	g_mcf.hookOnRuntimeError([](void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr) {
+		ondebug(requestDebugger());
 		if (!isContextExisted())
 		{
 			cerr << "[ Native Stack ]" << endl;
@@ -371,17 +374,31 @@ void Native::_hook() noexcept
 			if (!g_native->m_onRuntimeError.isEmpty())
 			{
 				JsValue onError = g_native->m_onRuntimeError;
-				if (onError(stack, nativestack, lastsender) == false) return;
+				try
+				{
+					if (onError(stack, nativestack, lastsender) == false) return;
+				}
+				catch (JsException& err)
+				{
+					Text16 errstr = err.getValue().toString().as<Text16>();
+
+					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					cerr << "[onRuntimeError callback has error]" << endl;
+					cerr << toAnsi(errstr) << endl;
+				}
 			}
 			{
 				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 				cerr << "[ Runtime Error ]" << endl;
 			}
-			JsNetworkIdentifier* lastni = lastsender.getNativeObject<JsNetworkIdentifier>();
-			if (lastni)
+			if (!lastsender.isEmpty())
 			{
-				cerr << "Last Sender IP: ";
-				cerr << lastni->identifier.getAddress();
+				JsNetworkIdentifier* lastni = lastsender.getNativeObject<JsNetworkIdentifier>();
+				if (lastni)
+				{
+					cerr << "Last Sender IP: ";
+					cerr << lastni->identifier.getAddress();
+				}
 			}
 			cerr << endl;
 			cerr << "[ JS Stack ]" << endl;

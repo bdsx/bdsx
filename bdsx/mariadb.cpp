@@ -1,5 +1,6 @@
 #include "mariadb.h"
 #include "native.h"
+#include "jsctx.h"
 #include <KRMySQL/db.h>
 #include <KRMySQL/statement.h>
 #include <KR3/msg/eventdispatcher.h>
@@ -81,7 +82,7 @@ MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText passwor
 
 	EventPump* pump = EventPump::getInstance();
 	JsPersistent * cbptr = _new JsPersistent(cb);
-	m_thread.post([this, cbptr, pump] {
+	m_thread.post([this, cbptr, pump = (Must<EventPump>)pump] {
 		if (s_serverInitCounter++ == 0)
 		{
 			s_mysqlServer.create();
@@ -117,7 +118,7 @@ MariaDBInternal::~MariaDBInternal() noexcept
 }
 void MariaDBInternal::fetch(JsValue callback) throws(JsException)
 {
-	EventPump* oripump = EventPump::getInstance();
+	EventPump* pump = EventPump::getInstance();
 
 	JsPersistent* cbptr;
 	if (callback.getType() == JsType::Function)
@@ -129,12 +130,12 @@ void MariaDBInternal::fetch(JsValue callback) throws(JsException)
 		return;
 	}
 
-	m_thread.post([this, oripump, cbptr] {
+	m_thread.post([this, pump = (Must<EventPump>)pump, cbptr] {
 		MYSQL_ROW row;
 
 		if (m_res.isEmpty() || (row = m_res.fetch()) == nullptr)
 		{
-			oripump->post([cbptr] {
+			pump->post([cbptr] {
 				JsValue cb = *cbptr;
 				delete cbptr;
 				try
@@ -154,7 +155,7 @@ void MariaDBInternal::fetch(JsValue callback) throws(JsException)
 		{
 			array.push((AText16)(Utf8ToUtf16)(Text)column);
 		}
-		oripump->post([this, array = move(array), cbptr]{
+		pump->post([this, array = move(array), cbptr]{
 			size_t size = array.size();
 			JsValue jsarray = JsNewArray(size);
 			for (uint i = 0; i < size; i++)
@@ -252,7 +253,7 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 	MariaDBInternal* sql = m_sql;
 	if (sql == nullptr) throw JsException(u"DB already closed");
 
-	EventPump* oripump = EventPump::getInstance();
+	EventPump* pump = EventPump::getInstance();
 	struct PersistentData
 	{
 		JsPersistent callback;
@@ -270,7 +271,7 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		data = nullptr;
 	}
 
-	sql->m_thread.post([sql, oripump, data, query = (AText)(Utf16ToUtf8)text]{
+	sql->m_thread.post([sql, pump = (Must<EventPump>)pump, data, query = (AText)(Utf16ToUtf8)text]{
 		sql->m_res.close();
 		sql->m_res = nullptr;
 
@@ -292,7 +293,12 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 			int fieldCount = sql->m_sql->fieldCount();
 			sql->m_fieldCount = fieldCount;
 			if (data == nullptr) return;
-			oripump->post([sql, data, fieldCount](){
+			pump->post([sql, data, fieldCount](){
+				if (!isContextExisted())
+				{
+					delete data;
+					return;
+				}
 				JsValue callback = data->callback;
 				delete data;
 				try
@@ -314,9 +320,13 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		}
 		if (data == nullptr) return;
 
-		oripump->post([
-			message = (AText16)(Utf8ToUtf16)(Text)sql->m_sql->getErrorMessage(), 
-				data]{
+		pump->post([
+			message = (AText16)(Utf8ToUtf16)(Text)sql->m_sql->getErrorMessage(), data]{
+			if (!isContextExisted())
+			{
+				delete data;
+				return;
+			}
 			JsValue callback = data->callback;
 			delete data;
 			try{

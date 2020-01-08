@@ -40,13 +40,19 @@ void createJsContext(kr::JsRawContext newContext) noexcept
 void destroyJsContext() noexcept
 {
 	if (!s_ctxCreated) return;
+	s_ctxCreated = false;
 	JsContext::_exit();
 	g_ctx->enter();
-	EventPump::getInstance()->waitAll();
+	try
+	{
+		EventPump::getInstance()->waitAll();
+	}
+	catch (QuitException&)
+	{
+	}
 	g_native.remove();
 	g_ctx->exit();
 	g_ctx.remove();
-	s_ctxCreated = false;
 }
 bool isContextExisted() noexcept
 {
