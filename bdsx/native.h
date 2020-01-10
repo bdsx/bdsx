@@ -40,6 +40,21 @@ private:
 	kr::JsPersistent m_onRuntimeError;
 };
 
+
+class SingleInstanceLimiter
+{
+public:
+	SingleInstanceLimiter() noexcept;
+	~SingleInstanceLimiter() noexcept;
+	void release() noexcept;
+	void create(kr::pcstr16 name) noexcept;
+
+private:
+	void* m_mutex;
+
+};
 void storeListener(kr::JsPersistent * persistent, const kr::JsValue & move) throws(kr::JsException);
+void cleanAllResource() noexcept;
 
 extern kr::Manual<Native> g_native;
+extern SingleInstanceLimiter g_singleInstanceLimiter;

@@ -82,7 +82,7 @@ MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText passwor
 
 	EventPump* pump = EventPump::getInstance();
 	JsPersistent * cbptr = _new JsPersistent(cb);
-	m_thread.post([this, cbptr, pump = (Must<EventPump>)pump] {
+	m_thread.post([this, cbptr, pump = (Keep<EventPump>)pump] {
 		if (s_serverInitCounter++ == 0)
 		{
 			s_mysqlServer.create();
@@ -130,7 +130,7 @@ void MariaDBInternal::fetch(JsValue callback) throws(JsException)
 		return;
 	}
 
-	m_thread.post([this, pump = (Must<EventPump>)pump, cbptr] {
+	m_thread.post([this, pump = (Keep<EventPump>)pump, cbptr] {
 		MYSQL_ROW row;
 
 		if (m_res.isEmpty() || (row = m_res.fetch()) == nullptr)
@@ -271,7 +271,7 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		data = nullptr;
 	}
 
-	sql->m_thread.post([sql, pump = (Must<EventPump>)pump, data, query = (AText)(Utf16ToUtf8)text]{
+	sql->m_thread.post([sql, pump = (Keep<EventPump>)pump, data, query = (AText)(Utf16ToUtf8)text]{
 		sql->m_res.close();
 		sql->m_res = nullptr;
 

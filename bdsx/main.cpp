@@ -36,37 +36,6 @@
 
 using namespace kr;
 
-class SingleInstanceLimiter
-{
-private:
-	HANDLE m_mutex;
-
-public:
-	SingleInstanceLimiter() noexcept
-	{
-	}
-	~SingleInstanceLimiter() noexcept
-	{
-		ReleaseSemaphore(m_mutex, 1, nullptr);
-	}
-	void create(pcstr16 name) noexcept
-	{
-		m_mutex = CreateSemaphoreW(nullptr, 1, 1, wide(name));
-		int err = GetLastError();
-		if (ERROR_ALREADY_EXISTS == err)
-		{
-			cout << "BDSX: (id=" << (Utf16ToAnsi)(Text16)name << ") is Already executing" << endl;
-			cout << "BDSX: Wait the process terminating..." << endl;
-			WaitForSingleObject(m_mutex, INFINITE);
-			cout << "BDSX: Previous process terminated" << endl;
-		}
-		else
-		{
-			WaitForSingleObject(m_mutex, INFINITE);
-		}
-	}
-};
-
 namespace
 {
 	//JsDebugService s_debug;
@@ -76,7 +45,7 @@ namespace
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
 	Map<Text, AText> s_uuidToPackPath;
-	SingleInstanceLimiter s_singleInstance;
+	EventPump* s_mainPump;
 }
 
 void catchException() noexcept
@@ -107,6 +76,25 @@ int CALLBACK bindHook(
 	if (res == 0) NetFilter::addBindList(s);
 	return res;
 }
+int CALLBACK sendtoHook(
+	SOCKET s, const char FAR* buf, int len, int flags, 
+	const struct sockaddr FAR* to, int tolen)
+{
+	int res = sendto(s, buf, len, flags, to, tolen);
+	if (res == SOCKET_ERROR) return SOCKET_ERROR;
+	if (!isContextExisted()) return res;
+
+	Ipv4Address& ip = (Ipv4Address&)((sockaddr_in*)to)->sin_addr;
+
+	NetFilter::addTraffic(ip, res);
+	if (NetFilter::isFilted(ip))
+	{
+		WSASetLastError(WSAECONNREFUSED);
+		return -1;
+	}
+	return res;
+}
+
 int CALLBACK recvfromHook(
 	SOCKET s, char* buf, int len, int flags,
 	sockaddr* from, int* fromlen
@@ -136,14 +124,13 @@ JsErrorCode CALLBACK JsCreateRuntimeHook(
 	if (err == JsNoError)
 	{
 		JsRuntime::setRuntime(*runtime);
-		static EventPump* pump;
-		pump = EventPump::getInstance();
+		s_mainPump = EventPump::getInstance();
 
 		g_mcf.hookOnUpdate([] {
 			JsScope scope;
 			try
 			{
-				pump->processOnce();
+				s_mainPump->processOnce();
 			}
 			catch (QuitException&)
 			{
@@ -233,6 +220,22 @@ JsErrorCode CALLBACK JsSetPromiseContinuationCallbackHook(
 	return JsSetPromiseContinuationCallback(promiseContinuationCallback, callbackState);
 }
 
+BOOL CALLBACK handleConsoleEvent(DWORD CtrlType)
+{
+	switch (CtrlType)
+	{
+	case CTRL_CLOSE_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+		s_mainPump->post([] {
+			throw QuitException(0);
+		});
+		ThreadHandle::getCurrent()->terminate();
+		return true;
+	}
+	return false;
+}
+
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
 	_In_ DWORD     fdwReason,
@@ -242,12 +245,14 @@ BOOL WINAPI DllMain(
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
 		ondebug(requestDebugger());
-		
+				
 		cout << "BDSX: Attached" << endl;
 
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
 		g_mcf.load();
+		// g_mcf.hookOnShutdownToFreeLibrary(hinstDLL);
+
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
 		readArgument(commandLine); // exepath
 		bool modulePathSetted = false;
@@ -271,7 +276,7 @@ BOOL WINAPI DllMain(
 			else if (option == u"--mutex")
 			{
 				Text16 name = readArgument(commandLine);
-				s_singleInstance.create(TSZ16() << u"BDSX_" << name);
+				g_singleInstanceLimiter.create(TSZ16() << u"BDSX_" << name);
 			}
 		}
 
@@ -283,14 +288,17 @@ BOOL WINAPI DllMain(
 
 		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
 			g_server = instance;
+			SetConsoleCtrlHandler(handleConsoleEvent, true);
 		});
 		g_mcf.hookOnScriptLoading([]{
+			EventPump::getInstance();
 			// create require
 			Require::start();
 		});
 		s_iatWS2_32.hooking(2, bindHook);
 		s_iatWS2_32.hooking(3, closesocketHook);
 		s_iatWS2_32.hooking(17, recvfromHook);
+		s_iatWS2_32.hooking(20, sendtoHook);
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);

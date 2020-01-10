@@ -29,6 +29,8 @@
 using namespace kr;
 
 Manual<Native> g_native;
+SingleInstanceLimiter g_singleInstanceLimiter;
+
 namespace
 {
 	// NetFilter
@@ -162,6 +164,39 @@ public:
 	}
 };
 
+
+SingleInstanceLimiter::SingleInstanceLimiter() noexcept
+{
+	m_mutex = nullptr;
+}
+SingleInstanceLimiter::~SingleInstanceLimiter() noexcept
+{
+	release();
+}
+void SingleInstanceLimiter::release() noexcept
+{
+	if (m_mutex == nullptr) return;
+	ReleaseSemaphore(m_mutex, 1, nullptr);
+	m_mutex = nullptr;
+}
+void SingleInstanceLimiter::create(pcstr16 name) noexcept
+{
+	m_mutex = CreateSemaphoreW(nullptr, 1, 1, wide(name));
+	int err = GetLastError();
+	if (ERROR_ALREADY_EXISTS == err)
+	{
+		cout << "BDSX: (id=" << (Utf16ToAnsi)(Text16)name << ") is Already executing" << endl;
+		cout << "BDSX: Wait the process terminating..." << endl;
+		WaitForSingleObject(m_mutex, INFINITE);
+		cout << "BDSX: Previous process terminated" << endl;
+	}
+	else
+	{
+		WaitForSingleObject(m_mutex, INFINITE);
+	}
+}
+
+
 void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 {
 	TrafficLogger::s_trafficLock.enterWrite();
@@ -210,6 +245,7 @@ void cleanAllResource() noexcept
 		}
 		s_binds.clear();
 	}
+	g_singleInstanceLimiter.release();
 	destroyJsContext();
 	JsContext::_cleanForce();
 	JsRuntime::dispose();
