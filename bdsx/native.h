@@ -4,6 +4,7 @@
 #include <KR3/js/js.h>
 #include <KR3/data/set.h>
 #include <KR3/net/ipaddr.h>
+#include <KR3/msg/pump.h>
 
 #include "nethook.h"
 #include "actor.h"
@@ -17,6 +18,7 @@ public:
 	static bool isFilted(kr::Ipv4Address ip) noexcept;
 	static void addFilter(kr::Ipv4Address ip) noexcept;
 	static void removeFilter(kr::Ipv4Address ip) noexcept;
+	static void setTrafficLimit(uint64_t limit) noexcept;
 };
 
 class Native
@@ -33,6 +35,7 @@ public:
 private:
 	void _hook() noexcept;
 	void _createNativeModule() noexcept;
+	void _onRuntimeError(EXCEPTION_POINTERS* ptr, uint32_t threadId) noexcept;
 
 	kr::JsPersistent m_module;
 	kr::JsPersistent m_onError;
@@ -58,3 +61,4 @@ void cleanAllResource() noexcept;
 
 extern kr::Manual<Native> g_native;
 extern SingleInstanceLimiter g_singleInstanceLimiter;
+extern kr::EventPump* g_mainPump;

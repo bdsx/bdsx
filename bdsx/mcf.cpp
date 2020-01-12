@@ -131,7 +131,6 @@ void MinecraftFunctionTable::loadFromPredefined() noexcept
 	DedicatedServer$start = ptr(0x55980);
 	Crypto$Random$generateUUID = ptr(0x12BFC0);
 	BaseAttributeMap$getMutableInstance = ptr(0x6AA8B0);
-	google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread = ptr(0xBD4BE0);
 	NetworkHandler$_sendInternal = ptr(0x2971C0);
 	Minecraft$update = ptr(0xA9C440);
 	NetworkIdentifier$equals = ptr(0x5FB10);
@@ -142,6 +141,7 @@ void MinecraftFunctionTable::loadFromPredefined() noexcept
 	Level$createDimension = ptr(0x9871C0);
 	DedicatedServer$stop = ptr(0x55330);
 	LoopbackPacketSender$sendToClients = ptr(0x2939A0);
+	google_breakpad$ExceptionHandler$HandleException = ptr(0xBD3DA0);
 }
 void MinecraftFunctionTable::loadFromPdb() noexcept
 {
@@ -170,7 +170,6 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"DedicatedServer::stop", &DedicatedServer$stop},
 		{"StopCommand::mServer", &StopCommand$mServer},
 		{"NetworkHandler::send", &NetworkHandler$send},
-		{"google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread", &google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread},
 		{"NetworkIdentifier::getHash", &NetworkIdentifier$getHash},
 		{"NetworkIdentifier::operator==", &NetworkIdentifier$equals},
 		{"Crypto::Random::generateUUID", &Crypto$Random$generateUUID},
@@ -184,6 +183,7 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		{"ServerPlayer::sendNetworkPacket", &ServerPlayer$sendNetworkPacket},
 		{"LoopbackPacketSender::sendToClients", &LoopbackPacketSender$sendToClients},
 		{"Level::removeEntityReferences", &Level$removeEntityReferences},
+		{"google_breakpad::ExceptionHandler::HandleException", &google_breakpad$ExceptionHandler$HandleException},
 	};
 	
 	static void (* const printFuncName)(Text) = [](Text name){
@@ -195,6 +195,7 @@ void MinecraftFunctionTable::loadFromPdb() noexcept
 		temp2.change('~', '_');
 		temp2.change('`', '_');
 		temp2.change('\'', '_');
+		temp2.change(' ', '_');
 		temp2.replace(&kr::cout, "::", "$");
 	};
 
@@ -463,10 +464,15 @@ void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(ServerInstance* ins
 	junction.patchTo((byte*)DedicatedServer$start + 0x22c6,
 		ORIGINAL_CODE, RDX, false, "serverStart");
 };
-void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr)) noexcept
+void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept
 {
-	void* target = google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread;
-	Unprotector unpro(target, 12);
+	static const byte ORIGINAL_CODE[] = {
+		0x41, 0xFF, 0xD2,	// call r10
+		0x48, 0x8B, 0x8B, 0x20, 0x01, 0x00, 0x00, // mov rcx,qword ptr[rbx + 120h]
+		0x45, 0x33, 0xC0,	// xor r8d,r8d
+	};
+	void* target = (byte*)google_breakpad$ExceptionHandler$HandleException;
+	Unprotector unpro(target, 12); 
 	CodeWriter code(target, 12);
 	code.jump(callback, RAX);
 };

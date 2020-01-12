@@ -30,6 +30,7 @@ using namespace kr;
 
 Manual<Native> g_native;
 SingleInstanceLimiter g_singleInstanceLimiter;
+EventPump* g_mainPump;
 
 namespace
 {
@@ -38,6 +39,8 @@ namespace
 	CriticalSection s_csBinds;
 	Set<Ipv4Address> s_ipfilter;
 	RWLock s_ipfilterLock;
+	uint64_t s_trafficLimit = (uint64_t)-1;
+
 }
 
 class TrafficLogger
@@ -83,7 +86,7 @@ public:
 		}
 	}
 
-	void addTraffic(Ipv4Address ip, uint64_t value) noexcept
+	uint64_t addTraffic(Ipv4Address ip, uint64_t value) noexcept
 	{
 		timepoint now = timepoint::now();
 		if (now - m_trafficTime >= 1_s)
@@ -130,10 +133,9 @@ public:
 		auto res = m_current.insert({ ip, uint64_t() });
 		if (res.second)
 		{
-			res.first->second = value;
-			return;
+			return res.first->second = value;
 		}
-		res.first->second += value;
+		return res.first->second += value;
 	}
 
 	static void newInstance(AText16 path) noexcept
@@ -201,8 +203,16 @@ void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 {
 	TrafficLogger::s_trafficLock.enterWrite();
 	TrafficLogger * logger = TrafficLogger::s_current;
-	if (logger) logger->addTraffic(ip, value);
+	if (logger)
+	{
+		value = logger->addTraffic(ip, value);
+	}
 	TrafficLogger::s_trafficLock.leaveWrite();
+
+	if (value >= s_trafficLimit)
+	{
+		addFilter(ip);
+	}
 }
 void NetFilter::addBindList(SOCKET socket) noexcept
 {
@@ -233,6 +243,10 @@ void NetFilter::removeFilter(kr::Ipv4Address ip) noexcept
 	s_ipfilterLock.enterWrite();
 	s_ipfilter.erase(ip);
 	s_ipfilterLock.leaveWrite();
+}
+void NetFilter::setTrafficLimit(uint64_t limit) noexcept
+{
+	s_trafficLimit = limit;
 }
 
 void cleanAllResource() noexcept
@@ -369,7 +383,7 @@ void Native::_hook() noexcept
 		}
 		return 1;
 		});
-	g_mcf.hookOnRuntimeError([](void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr) {
+	g_mcf.hookOnRuntimeError([](EXCEPTION_POINTERS* ptr) {
 		ondebug(requestDebugger());
 		if (!isContextExisted())
 		{
@@ -385,67 +399,19 @@ void Native::_hook() noexcept
 			terminate(-1);
 			return;
 		}
+		;
+		uint32_t threadId = GetCurrentThreadId();
+		if (threadId != getContextThreadId())
 		{
-			JsScope _scope;
-			Text16 stack;
-			AText16 nativestack;
-			try
-			{
-				JsRuntime::run(u"[error]", u"throw Error('Runtime Error')");
-			}
-			catch (JsException & err)
-			{
-				stack = err.getValue().get(u"stack").toString().as<Text16>();
-				stack.readwith_e('\n');
-				stack.readwith_e('\n');
-			}
-
-			{
-				StackWriter writer(ptr->ContextRecord);
-				nativestack << writer;
-			}
-
-			JsValue lastsender = g_native->nethook.lastSender;
-
-			if (!g_native->m_onRuntimeError.isEmpty())
-			{
-				JsValue onError = g_native->m_onRuntimeError;
-				try
-				{
-					if (onError(stack, nativestack, lastsender.isEmpty() ? undefined : lastsender) == false) return;
-				}
-				catch (JsException& err)
-				{
-					Text16 errstr = err.getValue().toString().as<Text16>();
-
-					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-					cerr << "[onRuntimeError callback has error]" << endl;
-					cerr << toAnsi(errstr) << endl;
-				}
-			}
-			{
-				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				cerr << "[ Runtime Error ]" << endl;
-			}
-			if (!lastsender.isEmpty())
-			{
-				JsNetworkIdentifier* lastni = lastsender.getNativeObject<JsNetworkIdentifier>();
-				if (lastni)
-				{
-					cerr << "Last Sender IP: ";
-					cerr << lastni->identifier.getAddress();
-				}
-			}
-			cerr << endl;
-			cerr << "[ JS Stack ]" << endl;
-			cerr << toAnsi(stack) << endl;
-			cerr << "[ Native Stack ]" << endl;
-			cerr << toAnsi(nativestack) << endl;
+			g_mainPump->post([ptr, threadId] {
+				g_native->_onRuntimeError(ptr, threadId);
+				});
+			Sleep(INFINITE);
 		}
-
-		cleanAllResource();
-		_getch();
-		terminate(-1);
+		else
+		{
+			g_native->_onRuntimeError(ptr, threadId);
+		}
 		});
 
 	nethook.hook();
@@ -596,6 +562,14 @@ void Native::_createNativeModule() noexcept
 			if (iptext.empty()) return;
 			NetFilter::removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
 			});
+		ipfilter.setMethod(u"has", [](Text16 ipport) {
+			Text16 iptext = ipport.readwith_e('|');
+			if (iptext.empty()) return false;
+			return NetFilter::isFilted(Ipv4Address(TSZ() << toNone(iptext)));
+			});
+		ipfilter.setMethod(u"setTrafficLimit", [](double limit) {
+			return NetFilter::setTrafficLimit((uint64_t)limit);
+			});
 		ipfilter.setMethod(u"logTraffic", [](JsValue path){
 			if (path.cast<bool>())
 			{
@@ -609,6 +583,75 @@ void Native::_createNativeModule() noexcept
 		native.set(u"ipfilter", ipfilter);
 	}
 	m_module = native;
+}
+void Native::_onRuntimeError(EXCEPTION_POINTERS* ptr, uint32_t threadId) noexcept
+{
+	{
+		JsScope _scope;
+		Text16 stack;
+		AText16 nativestack;
+		try
+		{
+			JsRuntime::run(u"[error]", u"throw Error('Runtime Error')");
+		}
+		catch (JsException & err)
+		{
+			stack = err.getValue().get(u"stack").toString().as<Text16>();
+			stack.readwith_e('\n');
+			stack.readwith_e('\n');
+		}
+
+		{
+			StackWriter writer(ptr->ContextRecord);
+			nativestack << writer;
+		}
+
+		JsValue lastsender = nethook.lastSender;
+
+		if (!m_onRuntimeError.isEmpty())
+		{
+			JsValue onError = m_onRuntimeError;
+			try
+			{
+				if (onError(stack, nativestack, lastsender.isEmpty() ? undefined : lastsender) == false)
+				{
+					cleanAllResource();
+					terminate(-1);
+					return;
+				}
+			}
+			catch (JsException & err)
+			{
+				Text16 errstr = err.getValue().toString().as<Text16>();
+
+				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				cerr << "[onRuntimeError callback has error]" << endl;
+				cerr << toAnsi(errstr) << endl;
+			}
+		}
+		{
+			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			cerr << "[ Runtime Error ]" << endl;
+		}
+		if (!lastsender.isEmpty())
+		{
+			JsNetworkIdentifier* lastni = lastsender.getNativeObject<JsNetworkIdentifier>();
+			if (lastni)
+			{
+				cerr << "Last Sender IP: ";
+				cerr << lastni->identifier.getAddress();
+			}
+		}
+		cerr << endl;
+		cerr << "[ JS Stack ]" << endl;
+		cerr << toAnsi(stack) << endl;
+		cerr << "[ Native Stack ]" << endl;
+		cerr << toAnsi(nativestack) << endl;
+	}
+
+	cleanAllResource();
+	_getch();
+	terminate(-1);
 }
 
 void storeListener(JsPersistent* persistent, const JsValue& listener) throws(JsException)

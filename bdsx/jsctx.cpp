@@ -66,4 +66,8 @@ bool isContextThread() noexcept
 {
 	return GetCurrentThreadId() == contextThreadId;
 }
+uint32_t getContextThreadId() noexcept
+{
+	return contextThreadId;
+}
 

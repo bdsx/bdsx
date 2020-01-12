@@ -26,7 +26,7 @@ struct MinecraftFunctionTable
 	void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept;
 	void hookOnConnectionClosedAfter(void(*onclose)(const NetworkIdentifier&)) noexcept;
 	void hookOnLoopStart(void(*callback)(ServerInstance* instance)) noexcept;
-	void hookOnRuntimeError(void(*callback)(void* google_breakpad$ExceptionHandler, EXCEPTION_POINTERS* ptr)) noexcept;
+	void hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept;
 	// return error code
 	void hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept;
 	void hookOnActorRelease(void(*callback)(Actor* actor)) noexcept;
@@ -63,13 +63,14 @@ struct MinecraftFunctionTable
 	void (*ServerPlayer$sendNetworkPacket)(ServerPlayer*, Packet*);
 	void (*Level$removeEntityReferences)(Actor*, bool);
 
+
 	void (*std$string$_Tidy_deallocate)(String* str);
 	String* (*std$string$assign)(String* _this, const char* str, size_t size);
 	String* (*std$string$append)(String* _this, const char* str, size_t size);
 	void (*free)(void*);
 	void* (*malloc)(size_t size);
 
-	void* google_breakpad$ExceptionHandler$WriteMinidumpOnHandlerThread;
+	void (*google_breakpad$ExceptionHandler$HandleException)();
 	DedicatedServer** StopCommand$mServer;
 	const Actor$VFTable* ServerPlayer$_vftable_;
 };

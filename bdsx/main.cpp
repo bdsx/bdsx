@@ -45,7 +45,6 @@ namespace
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
 	Map<Text, AText> s_uuidToPackPath;
-	EventPump* s_mainPump;
 }
 
 void catchException() noexcept
@@ -124,13 +123,13 @@ JsErrorCode CALLBACK JsCreateRuntimeHook(
 	if (err == JsNoError)
 	{
 		JsRuntime::setRuntime(*runtime);
-		s_mainPump = EventPump::getInstance();
+		g_mainPump = EventPump::getInstance();
 
 		g_mcf.hookOnUpdate([] {
 			JsScope scope;
 			try
 			{
-				s_mainPump->processOnce();
+				g_mainPump->processOnce();
 			}
 			catch (QuitException&)
 			{
@@ -213,12 +212,6 @@ JsErrorCode CALLBACK JsCallFunctionHook(
 	if (err != JsNoError) catchException();
 	return err;
 }
-JsErrorCode CALLBACK JsSetPromiseContinuationCallbackHook(
-	JsPromiseContinuationCallback promiseContinuationCallback, 
-	void* callbackState)
-{
-	return JsSetPromiseContinuationCallback(promiseContinuationCallback, callbackState);
-}
 
 BOOL CALLBACK handleConsoleEvent(DWORD CtrlType)
 {
@@ -227,7 +220,7 @@ BOOL CALLBACK handleConsoleEvent(DWORD CtrlType)
 	case CTRL_CLOSE_EVENT:
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
-		s_mainPump->post([] {
+		g_mainPump->post([] {
 			throw QuitException(0);
 		});
 		ThreadHandle::getCurrent()->terminate();
@@ -291,7 +284,6 @@ BOOL WINAPI DllMain(
 			SetConsoleCtrlHandler(handleConsoleEvent, true);
 		});
 		g_mcf.hookOnScriptLoading([]{
-			EventPump::getInstance();
 			// create require
 			Require::start();
 		});
@@ -304,7 +296,6 @@ BOOL WINAPI DllMain(
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);
 		s_iatChakra.hooking("JsRunScript", JsRunScriptHook);
 		s_iatChakra.hooking("JsCallFunction", JsCallFunctionHook);
-		// s_iatChakra.hooking("JsSetPromiseContinuationCallback", JsSetPromiseContinuationCallbackHook);
 	}
 	return true;
 }
