@@ -50,7 +50,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -70,7 +70,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -160,14 +160,7 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
-kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
-kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
-kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
-kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
-kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile />
@@ -192,14 +185,7 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
-kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
-kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
-kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
-kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
-kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="codewrite.cpp" />
