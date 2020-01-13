@@ -1,6 +1,5 @@
 
 import native = require('./native');
-import Super = native.MariaDB;
 
 class SqlError extends Error
 {
@@ -29,14 +28,50 @@ if (!Promise.prototype.finally)
 		return this.then(voiding, voiding);
     };
 }
+
+export class MariaDBTransaction
+{
+    constructor(private readonly db:native.MariaDB)
+    {
+    }
+
+
+    query(query:string):Promise<number>
+    {
+        return new Promise((resolve, reject)=>{
+            this.db.query(query, (error:string, fieldCount:number)=>{
+                if (error) reject(Error(error));
+                else resolve(fieldCount);
+            });
+        });
+    }
+
+    fetch():Promise<(string|null)[]|null>
+    {
+        return new Promise(resolve=>{
+            this.db.fetch((row:(string|null)[]|null)=>{
+                resolve(row);
+            });
+        });
+    }
+
+}
     
-export class MariaDB extends native.MariaDB implements Promise<void>
+export class MariaDB
 {
     private worker:Promise<any>;
+    private readonly db:native.MariaDB;
+    private readonly tran:MariaDBTransaction;
 
     constructor(host?:string, username?:string, password?:string, db?:string, port?:number)
     {
-        super((error, errno)=>{
+        var resolve:()=>void;
+        var reject:(err:Error)=>void;
+        this.worker = new Promise((_resolve, _reject)=>{
+            resolve = _resolve;
+            reject = _reject;
+        });
+        this.db = new native.MariaDB((error, errno)=>{
             if (error)
             {
                 reject(new SqlError(error, errno!));
@@ -46,12 +81,7 @@ export class MariaDB extends native.MariaDB implements Promise<void>
                 resolve();
             }
         }, host, username, password, db, port);
-        var resolve:()=>void;
-        var reject:(err:Error)=>void;
-        this.worker = new Promise((_resolve, _reject)=>{
-            resolve = _resolve;
-            reject = _reject;
-        });
+        this.tran = new MariaDBTransaction(this.db);
     }
 
     get [Symbol.toStringTag]():string
@@ -59,66 +89,39 @@ export class MariaDB extends native.MariaDB implements Promise<void>
         return 'MariaDB';
     }
 
-    then<TResult1 = void, TResult2 = never>(onfulfilled?: ((value:void) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>
-    {
-        return this.worker.then(onfulfilled, onrejected);
-    }
-
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<void | TResult>
-    {
-        return this.worker.catch(onrejected);
-    }
-    
-    finally(onfinally?: (() => void) | undefined | null): Promise<void>
-    {
-        return this.worker.finally(onfinally);
-    }
-
-    transaction<T>(func:()=>Promise<T>):Promise<T>
+    transaction<T>(func:(tran:MariaDBTransaction)=>Promise<T>):Promise<T>
     {
         const ret = this.worker.then(()=>{
-            this.ready();
-        }).then(func);
+            this.db.ready();
+        }).then(()=>func(this.tran));
         this.worker = ret.then(()=>{
-            this.commit();
+            this.db.commit();
         }, ()=>{
-            this.rollback();
+            this.db.rollback();
         });
         return ret;
     }
 
-    execute(query:string):Promise<string[][]>
+    query(query:string):void
+    {
+        this.worker.then(()=>{
+            this.db.query(query);
+        });
+    }
+
+    execute(query:string):Promise<(string|null)[][]>
     {
         return this.transaction(async()=>{
-            Super.prototype.query.call(this, query);
-            const out:string[][] = [];
+            this.db.query(query);
+            const out:(string|null)[][] = [];
 
-            let res:string[]|null;
-            while (res = await this.fetch())
+            let res:(string|null)[]|null;
+            while (res = await this.tran.fetch())
             {
                 out.push(res);
             }
-            this.closeResult();
+            this.db.closeResult();
             return out;
-        });
-    }
-
-    query(query:string):Promise<number>
-    {
-        return new Promise((resolve, reject)=>{
-            Super.prototype.query.call(this, query, (error:string, fieldCount:number)=>{
-                if (error) reject(Error(error));
-                else resolve(fieldCount);
-            });
-        });
-    }
-
-    fetch():Promise<string[]|null>
-    {
-        return new Promise(resolve=>{
-            Super.prototype.fetch.call(this, (row:string[]|null)=>{
-                resolve(row);
-            });
         });
     }
 }

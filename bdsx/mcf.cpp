@@ -89,7 +89,7 @@ void MinecraftFunctionTable::load() noexcept
 
 	if (hash == "B620DAF51666A7DD19CF3982752B2BE1")
 	{
-		cout << "MD5 Hash Matched(Version == " MC_VERSION ")" << endl;
+		cout << "BDSX: MD5 Hash Matched(Version == " MC_VERSION ")" << endl;
 		loadFromPredefined();
 #ifndef NDEBUG
 		checkUnloaded();
@@ -99,7 +99,7 @@ void MinecraftFunctionTable::load() noexcept
 	{
 		{
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << "MD5 Hash Not Matched(Version != " MC_VERSION ")" << endl;
+			cerr << "BDSX: MD5 Hash Not Matched(Version != " MC_VERSION ")" << endl;
 		}
 		loadFromPdb();
 	}

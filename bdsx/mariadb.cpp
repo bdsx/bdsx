@@ -153,14 +153,29 @@ void MariaDBInternal::fetch(JsValue callback) throws(JsException)
 		array.reserve(m_fieldCount);
 		for (const char* column : View<const char*>(row, m_fieldCount))
 		{
-			array.push((AText16)(Utf8ToUtf16)(Text)column);
+			if (column == nullptr)
+			{
+				array.push(nullptr);
+			}
+			else
+			{
+				array.push((AText16)(Utf8ToUtf16)(Text)column);
+			}
 		}
 		pump->post([this, array = move(array), cbptr]{
 			size_t size = array.size();
 			JsValue jsarray = JsNewArray(size);
 			for (uint i = 0; i < size; i++)
 			{
-				jsarray.set(i, array[i]);
+				const AText16 &text = array[i];
+				if (text == nullptr)
+				{
+					jsarray.set(i, nullptr);
+				}
+				else
+				{
+					jsarray.set(i, text);
+				}
 			}
 
 			JsValue cb = *cbptr;
@@ -369,8 +384,6 @@ void MariaDB::initMethods(JsClassT<MariaDB>* cls) noexcept
 	cls->setMethod(u"fetch", &MariaDB::fetch);
 	cls->setMethod(u"close", &MariaDB::close);
 	cls->setMethod(u"closeResult", &MariaDB::closeResult);
-
-	// cls->set(u"Statement", MariaDBStatement::classObject);
 }
 void MariaDB::clearMethods() noexcept
 {
