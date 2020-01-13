@@ -244,7 +244,6 @@ BOOL WINAPI DllMain(
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
 		g_mcf.load();
-		// g_mcf.hookOnShutdownToFreeLibrary(hinstDLL);
 
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
 		readArgument(commandLine); // exepath
