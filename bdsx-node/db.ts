@@ -46,10 +46,10 @@ export class MariaDBTransaction
         });
     }
 
-    fetch():Promise<string[]|null>
+    fetch():Promise<(string|null)[]|null>
     {
         return new Promise(resolve=>{
-            this.db.fetch((row:string[]|null)=>{
+            this.db.fetch((row:(string|null)[]|null)=>{
                 resolve(row);
             });
         });
@@ -109,13 +109,13 @@ export class MariaDB
         });
     }
 
-    execute(query:string):Promise<string[][]>
+    execute(query:string):Promise<(string|null)[][]>
     {
         return this.transaction(async()=>{
             this.db.query(query);
-            const out:string[][] = [];
+            const out:(string|null)[][] = [];
 
-            let res:string[]|null;
+            let res:(string|null)[]|null;
             while (res = await this.tran.fetch())
             {
                 out.push(res);

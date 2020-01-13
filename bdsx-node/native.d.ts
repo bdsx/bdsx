@@ -464,7 +464,7 @@ export class MariaDB
     rollback():void;
     commit():void;
     query(query:string, callback?:(error:string|null, fieldCount:number)=>void):void;
-    fetch(callback:(row:string[]|null)=>void):void;
+    fetch(callback:(row:(string|null)[]|null)=>void):void;
     close():void;
     closeResult():void;
 }
