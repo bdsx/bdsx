@@ -211,7 +211,10 @@ void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 
 	if (value >= s_trafficLimit)
 	{
-		addFilter(ip);
+		if (addFilter(ip))
+		{
+			cout << "traffic overed: " << ip << endl;
+		}
 	}
 }
 void NetFilter::addBindList(SOCKET socket) noexcept
@@ -232,11 +235,13 @@ bool NetFilter::isFilted(Ipv4Address ip) noexcept
 	s_ipfilterLock.leaveRead();
 	return res;
 }
-void NetFilter::addFilter(kr::Ipv4Address ip) noexcept
+bool NetFilter::addFilter(kr::Ipv4Address ip) noexcept
 {
+	
 	s_ipfilterLock.enterWrite();
-	s_ipfilter.insert(ip);
+	auto res = s_ipfilter.insert(ip);
 	s_ipfilterLock.leaveWrite();
+	return res.second;
 }
 void NetFilter::removeFilter(kr::Ipv4Address ip) noexcept
 {

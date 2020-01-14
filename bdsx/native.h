@@ -16,7 +16,7 @@ public:
 	static void addBindList(SOCKET socket) noexcept;
 	static void removeBindList(SOCKET socket) noexcept;
 	static bool isFilted(kr::Ipv4Address ip) noexcept;
-	static void addFilter(kr::Ipv4Address ip) noexcept;
+	static bool addFilter(kr::Ipv4Address ip) noexcept;
 	static void removeFilter(kr::Ipv4Address ip) noexcept;
 	static void setTrafficLimit(uint64_t limit) noexcept;
 };
