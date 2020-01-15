@@ -75,7 +75,6 @@ public:
 	{
 		m_ref++;
 	}
-
 	void release() noexcept
 	{
 		if (m_ref-- == 1)
@@ -166,7 +165,6 @@ public:
 	}
 };
 
-
 SingleInstanceLimiter::SingleInstanceLimiter() noexcept
 {
 	m_mutex = nullptr;
@@ -197,7 +195,6 @@ void SingleInstanceLimiter::create(pcstr16 name) noexcept
 		WaitForSingleObject(m_mutex, INFINITE);
 	}
 }
-
 
 void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 {
@@ -247,6 +244,12 @@ void NetFilter::removeFilter(kr::Ipv4Address ip) noexcept
 {
 	s_ipfilterLock.enterWrite();
 	s_ipfilter.erase(ip);
+	s_ipfilterLock.leaveWrite();
+}
+void NetFilter::clearFilter() noexcept
+{
+	s_ipfilterLock.enterWrite();
+	s_ipfilter.clear();
 	s_ipfilterLock.leaveWrite();
 }
 void NetFilter::setTrafficLimit(uint64_t limit) noexcept
@@ -404,18 +407,17 @@ void Native::_hook() noexcept
 			terminate(-1);
 			return;
 		}
-		;
 		uint32_t threadId = GetCurrentThreadId();
 		if (threadId != getContextThreadId())
 		{
 			g_mainPump->post([ptr, threadId] {
-				g_native->_onRuntimeError(ptr, threadId);
+				g_native->onRuntimeError(ptr);
 				});
 			Sleep(INFINITE);
 		}
 		else
 		{
-			g_native->_onRuntimeError(ptr, threadId);
+			g_native->onRuntimeError(ptr);
 		}
 		});
 
@@ -567,6 +569,9 @@ void Native::_createNativeModule() noexcept
 			if (iptext.empty()) return;
 			NetFilter::removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
 			});
+		ipfilter.setMethod(u"clear", []() {
+			NetFilter::clearFilter();
+			});
 		ipfilter.setMethod(u"has", [](Text16 ipport) {
 			Text16 iptext = ipport.readwith_e('|');
 			if (iptext.empty()) return false;
@@ -589,7 +594,7 @@ void Native::_createNativeModule() noexcept
 	}
 	m_module = native;
 }
-void Native::_onRuntimeError(EXCEPTION_POINTERS* ptr, uint32_t threadId) noexcept
+void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 {
 	{
 		JsScope _scope;

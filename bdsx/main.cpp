@@ -125,15 +125,21 @@ JsErrorCode CALLBACK JsCreateRuntimeHook(
 		JsRuntime::setRuntime(*runtime);
 		g_mainPump = EventPump::getInstance();
 
-		g_mcf.hookOnUpdate([] {
-			JsScope scope;
+		g_mcf.hookOnUpdate([](Minecraft* mc){
+			SEHCatcher _catcher;
 			try
 			{
+				g_mcf.Minecraft$update(mc);
+				JsScope scope;
 				g_mainPump->processOnce();
 			}
 			catch (QuitException&)
 			{
 				g_mcf.stopServer();
+			}
+			catch (SEHException& e)
+			{
+				g_native->onRuntimeError(e.exception);
 			}
 			});
 

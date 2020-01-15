@@ -18,6 +18,7 @@ public:
 	static bool isFilted(kr::Ipv4Address ip) noexcept;
 	static bool addFilter(kr::Ipv4Address ip) noexcept;
 	static void removeFilter(kr::Ipv4Address ip) noexcept;
+	static void clearFilter() noexcept;
 	static void setTrafficLimit(uint64_t limit) noexcept;
 };
 
@@ -31,11 +32,11 @@ public:
 	void reset() noexcept;
 
 	NetHookModule nethook;
+	void onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept;
 
 private:
 	void _hook() noexcept;
 	void _createNativeModule() noexcept;
-	void _onRuntimeError(EXCEPTION_POINTERS* ptr, uint32_t threadId) noexcept;
 
 	kr::JsPersistent m_module;
 	kr::JsPersistent m_onError;

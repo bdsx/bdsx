@@ -266,7 +266,7 @@ void MinecraftFunctionTable::stopServer() noexcept
 	g_mcf.DedicatedServer$stop((byte*)g_server->server + 8);
 }
 
-void MinecraftFunctionTable::hookOnUpdate(void(*update)()) noexcept
+void MinecraftFunctionTable::hookOnUpdate(void(*update)(Minecraft* mc)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0xE8, 0xFF, 0xFF, 0xFF, 0xFF,				// call Minecraft::update
@@ -274,7 +274,6 @@ void MinecraftFunctionTable::hookOnUpdate(void(*update)()) noexcept
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
-	junction.call(Minecraft$update, RAX);
 	junction.call(update, RAX);
 	junction.add(RSP, 0x28);
 	junction.write(ORIGINAL_CODE + 5, 7);

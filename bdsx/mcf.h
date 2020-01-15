@@ -16,7 +16,7 @@ struct MinecraftFunctionTable
 	void stopServer() noexcept;
 
 	// skip when return true
-	void hookOnUpdate(void(*update)()) noexcept;
+	void hookOnUpdate(void(*update)(Minecraft* mc)) noexcept;
 	void hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept;
 	void hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, NetworkHandler::Connection* conn)) noexcept;
 	void hookOnPacketAfter(void(*onPacketAfter)(byte*, ServerNetworkHandler*, NetworkHandler::Connection* conn)) noexcept;
