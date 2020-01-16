@@ -88,10 +88,14 @@ int main()
 		}
 		thread->resume();
 		thread->detach();
+		if (!resurrection)
+		{
+			delete proc;
+			break;
+		}
 		proc->wait();
 		delete proc;
 
-		if (!resurrection) break;
 	}
 	return 0;
 }

@@ -79,18 +79,19 @@ int CALLBACK sendtoHook(
 	SOCKET s, const char FAR* buf, int len, int flags, 
 	const struct sockaddr FAR* to, int tolen)
 {
+	bool ctxexists = isContextExisted();
+	Ipv4Address& ip = (Ipv4Address&)((sockaddr_in*)to)->sin_addr;
+	if (ctxexists)
+	{
+		if (NetFilter::isFilted(ip))
+		{
+			WSASetLastError(WSAECONNREFUSED);
+			return SOCKET_ERROR;
+		}
+	}
 	int res = sendto(s, buf, len, flags, to, tolen);
 	if (res == SOCKET_ERROR) return SOCKET_ERROR;
-	if (!isContextExisted()) return res;
-
-	Ipv4Address& ip = (Ipv4Address&)((sockaddr_in*)to)->sin_addr;
-
-	NetFilter::addTraffic(ip, res);
-	if (NetFilter::isFilted(ip))
-	{
-		WSASetLastError(WSAECONNREFUSED);
-		return -1;
-	}
+	if (ctxexists) NetFilter::addTraffic(ip, res);
 	return res;
 }
 
@@ -110,7 +111,7 @@ int CALLBACK recvfromHook(
 	{
 		*fromlen = 0;
 		WSASetLastError(WSAECONNREFUSED);
-		return -1;
+		return SOCKET_ERROR;
 	}
 	return res;
 }
