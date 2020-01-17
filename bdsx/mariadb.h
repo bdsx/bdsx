@@ -30,7 +30,7 @@ public:
 	MariaDB(const kr::JsArguments& args) throws(kr::JsException);
 	~MariaDB() noexcept;
 	void close() noexcept;
-	void ready() noexcept;
+	void autocommit(bool enabled) noexcept;
 	void rollback() noexcept;
 	void commit() noexcept;
 	void query(kr::Text16 text, kr::JsValue callback) throws(kr::JsException);

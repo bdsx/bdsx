@@ -60,6 +60,7 @@ export class MariaDBTransaction
 export class MariaDB
 {
     private worker:Promise<any>;
+    private acEnabled:boolean = false;
     private readonly db:native.MariaDB;
     private readonly tran:MariaDBTransaction;
 
@@ -89,10 +90,17 @@ export class MariaDB
         return 'MariaDB';
     }
 
+    private _autocommit(enabled:boolean)
+    {
+        if (this.acEnabled === enabled) return;
+        this.acEnabled = enabled;
+        this._autocommit(enabled);
+    }
+
     transaction<T>(func:(tran:MariaDBTransaction)=>Promise<T>):Promise<T>
     {
         const ret = this.worker.then(()=>{
-            this.db.ready();
+            this._autocommit(true);
         }).then(()=>func(this.tran));
         this.worker = ret.then(()=>{
             this.db.commit();
@@ -105,6 +113,7 @@ export class MariaDB
     query(query:string):void
     {
         this.worker.then(()=>{
+            this._autocommit(false);
             this.db.query(query);
         });
     }

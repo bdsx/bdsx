@@ -462,7 +462,7 @@ export class MariaDB
 {
     constructor(cb?:(error?:string, errno?:number)=>void, host?:string|null, username?:string|null, password?:string|null, db?:string|null, port?:number);
     close():void;
-    ready():void;
+    autocommit(enabled:boolean):void;
     rollback():void;
     commit():void;
     query(query:string, callback?:(error:string|null, fieldCount:number)=>void):void;

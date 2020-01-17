@@ -239,12 +239,12 @@ void MariaDB::close() noexcept
 
 	sql->close();
 }
-void MariaDB::ready() noexcept
+void MariaDB::autocommit(bool enabled) noexcept
 {
 	MariaDBInternal* sql = m_sql;
 	if (sql == nullptr) return;
-	sql->m_thread.post([sql] {
-		sql->m_sql->ready();
+	sql->m_thread.post([sql, enabled] {
+		sql->m_sql->autocommit(enabled);
 		});
 }
 void MariaDB::rollback() noexcept
@@ -377,7 +377,7 @@ MariaDBStatement* MariaDB::createStatement(Text16 text) noexcept
 void MariaDB::initMethods(JsClassT<MariaDB>* cls) noexcept
 {
 	cls->setMethod(u"close", &MariaDB::close);
-	cls->setMethod(u"ready", &MariaDB::ready);
+	cls->setMethod(u"autocommit", &MariaDB::autocommit);
 	cls->setMethod(u"rollback", &MariaDB::rollback);
 	cls->setMethod(u"commit", &MariaDB::commit);
 	cls->setMethod(u"query", &MariaDB::query);
