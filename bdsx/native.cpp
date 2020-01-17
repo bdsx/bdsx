@@ -311,8 +311,12 @@ JsValue createServerControlModule() noexcept
 		requestDebugger();
 		debug();
 		});
-	winmodule.setMethod(u"fork", fork);
-	winmodule.setMethod(u"restart", [] {
+	winmodule.setMethod(u"restart", [](bool force){
+		if (force)
+		{
+			fork();
+			terminate();
+		}
 		EventPump::getInstance()->post([] {
 			fork();
 			throw QuitException(0);

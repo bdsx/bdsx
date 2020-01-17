@@ -1,6 +1,8 @@
 import { AttributeId, DimensionId, Bufferable } from "./common";
 
 export namespace fs {
+    export function appendUtf8FileSync(path: string, content: string): void;
+    export function appendBufferFileSync(path: string, content: Bufferable): void;
     export function writeUtf8FileSync(path: string, content: string): void;
     export function writeBufferFileSync(path: string, content: Bufferable): void;
     export function readUtf8FileSync(path: string): string;
@@ -129,14 +131,14 @@ export namespace serverControl
     export function debug(): void;
     
     /**
-     * spawn bdsx with same arguments
-     * for restarting when it's dying
+     * shutdown server and restart
      */
-    export function fork():void;
+    export function restart(forceTerminate?:false):void;
+    
     /**
      * shutdown server and restart
      */
-    export function restart():void;
+    export function restart(forceTerminate:true):never;
 }
 
 /**

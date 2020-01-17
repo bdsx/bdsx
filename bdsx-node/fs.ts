@@ -106,6 +106,7 @@ File.prototype.writeBuffer = function(offset: number, buffer: Bufferable, callba
 export { File, File as NativeFile };
 export const readFileSync = fs.readUtf8FileSync;
 export const writeFileSync = fs.writeUtf8FileSync;
+export const appendFileSync = fs.appendUtf8FileSync;
 export const cwd = fs.cwd;
 export const chdir = fs.chdir;
 
@@ -113,6 +114,17 @@ export function writeFile(path: string, content: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const file = new File(path, File.WRITE, File.CREATE_ALWAYS);
         file.writeUtf8(0, content, err => {
+            if (err) reject(Error(err));
+            else resolve();
+        });
+        file.close();
+    });
+}
+
+export function appendFile(path: string, content: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const file = new File(path, File.WRITE, File.OPEN_ALWAYS);
+        file.writeUtf8(-1, content, err => {
             if (err) reject(Error(err));
             else resolve();
         });
