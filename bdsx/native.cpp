@@ -600,6 +600,7 @@ void Native::_createNativeModule() noexcept
 }
 void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 {
+	ondebug(requestDebugger());
 	{
 		JsScope _scope;
 		Text16 stack;
