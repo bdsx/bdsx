@@ -60,7 +60,7 @@ export class MariaDBTransaction
 export class MariaDB
 {
     private worker:Promise<any>;
-    private acEnabled:boolean = false;
+    private acEnabled:boolean = true;
     private readonly db:native.MariaDB;
     private readonly tran:MariaDBTransaction;
 
