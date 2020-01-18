@@ -12,7 +12,7 @@
   "keywords": [],
   "author": "YOU",
   "dependencies": {
-    "bdsx": "^1.1.25"
+    "bdsx": "^1.1.26"
   },
   "devDependencies": {
     "minecraft-scripting-types-server": "^1.0.0",

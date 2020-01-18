@@ -94,7 +94,7 @@ export class MariaDB
     {
         if (this.acEnabled === enabled) return;
         this.acEnabled = enabled;
-        this._autocommit(enabled);
+        this.db.autocommit(enabled);
     }
 
     transaction<T>(func:(tran:MariaDBTransaction)=>Promise<T>):Promise<T>
