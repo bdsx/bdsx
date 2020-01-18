@@ -100,7 +100,7 @@ export class MariaDB
     transaction<T>(func:(tran:MariaDBTransaction)=>Promise<T>):Promise<T>
     {
         const ret = this.worker.then(()=>{
-            this._autocommit(true);
+            this._autocommit(false);
         }).then(()=>func(this.tran));
         this.worker = ret.then(()=>{
             this.db.commit();
@@ -113,7 +113,7 @@ export class MariaDB
     query(query:string):void
     {
         this.worker.then(()=>{
-            this._autocommit(false);
+            this._autocommit(true);
             this.db.query(query);
         });
     }
