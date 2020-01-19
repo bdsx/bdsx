@@ -107,7 +107,8 @@ export namespace ipfilter
     export function remove(ip:string):void;
     export function has(ip:string):boolean;
     export function logTraffic(path:string|null):void;
-    export function setTrafficLimit(limit:number):void;
+    export function setTrafficLimit(bytes:number):void;
+    export function setTrafficLimitPeriod(seconds:number):void;
 }
 
 export namespace serverControl
