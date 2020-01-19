@@ -103,7 +103,7 @@ export function setOnCommandListener(cb: ((command:string, originName:string)=>v
 
 export namespace ipfilter
 {
-    export function add(ip:string):void;
+    export function add(ip:string, periodSeconds?:number):void;
     export function remove(ip:string):void;
     export function has(ip:string):boolean;
     export function logTraffic(path:string|null):void;
