@@ -325,6 +325,7 @@ JsValue createServerControlModule() noexcept
 		if (force)
 		{
 			fork();
+			cleanAllResource();
 			terminate();
 		}
 		EventPump::getInstance()->post([] {
