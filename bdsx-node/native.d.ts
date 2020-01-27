@@ -466,7 +466,11 @@ export class MariaDB
     autocommit(enabled:boolean):void;
     rollback():void;
     commit():void;
-    query(query:string, callback?:(error:string|null, fieldCount:number)=>void):void;
+
+    /**
+     * @param callbackOrLogError false: suppress error
+     */
+    query(query:string, callbackOrLogError?:((error:string|null, fieldCount:number)=>void)|boolean):void;
     fetch(callback:(row:(string|null)[]|null)=>void):void;
     close():void;
     closeResult():void;

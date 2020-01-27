@@ -269,6 +269,8 @@ void NetFilter::setTrafficLimitPeriod(int seconds) noexcept
 
 void cleanAllResource() noexcept
 {
+	destroyJsContext();
+	JsRuntime::dispose();
 	{
 		CsLock _lock = s_csBinds;
 		for (SOCKET sock : s_binds)
@@ -278,9 +280,6 @@ void cleanAllResource() noexcept
 		s_binds.clear();
 	}
 	g_singleInstanceLimiter.release();
-	destroyJsContext();
-	JsContext::_cleanForce();
-	JsRuntime::dispose();
 	StackAllocator::getInstance()->terminate();
 }
 void fork() throws(JsException)
@@ -350,7 +349,7 @@ JsValue Native::getModule() noexcept
 {
 	return m_module;
 }
-bool Native::fireError(const JsRawData& err) noexcept
+bool Native::fireError(JsRawData err) noexcept
 {
 	JsValue onError = m_onError;
 	if (!onError.isEmpty())
@@ -365,6 +364,7 @@ bool Native::fireError(const JsRawData& err) noexcept
 	
 	JsValue stack = err.getByProperty(u"stack");
 	if (stack == undefined) stack = err.toString();
+	cerr << "[ JS Stack ]" << endl;
 	cerr << toAnsi(stack.cast<Text16>()) << endl;
 	return false;
 }

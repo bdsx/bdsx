@@ -54,7 +54,6 @@ void catchException() noexcept
 	{
 		JsScope scope;
 		g_native->fireError((JsRawData)exception);
-		JsRelease(exception, nullptr);
 	}
 }
 

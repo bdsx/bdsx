@@ -110,14 +110,13 @@ export class MariaDB
         return ret;
     }
 
-    query(query:string):void
+    query(query:string, suppressError?:boolean):void
     {
         this.worker.then(()=>{
             this._autocommit(true);
-            this.db.query(query);
+            this.db.query(query, !suppressError);
         });
     }
-
     execute(query:string):Promise<(string|null)[][]>
     {
         return this.transaction(async()=>{

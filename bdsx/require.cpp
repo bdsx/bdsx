@@ -124,8 +124,7 @@ void Require::_loadPackageJson() noexcept
 	}
 	catch (JsException & err)
 	{
-		JsValue exceptionobj = err.getValue();
-		g_native->fireError(exceptionobj);
+		g_native->fireError(err.getValue());
 	}
 	JsRuntime::global().set(u"require", JsFunction::makeT(move(require)));
 }

@@ -111,7 +111,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">
     <ClCompile />
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -123,7 +123,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">
     <ClCompile />
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -138,6 +138,9 @@
       <Command>call ksign "DLL Injector" "$(OutDir)injector.exe"
 kcopy "$(OutDir)injector.exe" "$(SolutionDir)release\bin\injector.exe"</Command>
     </PostBuildEvent>
+    <ClCompile>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile />
@@ -151,6 +154,9 @@ kcopy "$(OutDir)injector.exe" "$(SolutionDir)release\bin\injector.exe"</Command>
       <Command>call ksign "DLL Injector" "$(OutDir)injector.exe"
 kcopy "$(OutDir)injector.exe" "$(SolutionDir)release\bin\injector.exe"</Command>
     </PostBuildEvent>
+    <ClCompile>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="injector.cpp" />
