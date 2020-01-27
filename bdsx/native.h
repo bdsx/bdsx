@@ -29,7 +29,7 @@ public:
 	Native() noexcept;
 	~Native() noexcept;
 	kr::JsValue getModule() noexcept;
-	bool fireError(const kr::JsRawData &err) noexcept;
+	bool fireError(kr::JsRawData err) noexcept;
 	void reset() noexcept;
 
 	NetHookModule nethook;

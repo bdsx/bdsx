@@ -1,6 +1,7 @@
 #include "mariadb.h"
 #include "native.h"
 #include "jsctx.h"
+#include "console.h"
 #include <KRMySQL/db.h>
 #include <KRMySQL/statement.h>
 #include <KR3/msg/eventdispatcher.h>
@@ -275,18 +276,21 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 	};
 
 	PersistentData* data;
+	bool logError;
 	
 	if (callback.getType() == JsType::Function)
 	{
 		data = _new PersistentData;
 		data->callback = callback;
+		logError = false;
 	}
 	else
 	{
 		data = nullptr;
+		logError = callback != false;
 	}
 
-	sql->m_thread.post([sql, pump = (Keep<EventPump>)pump, data, query = (AText)(Utf16ToUtf8)text]{
+	sql->m_thread.post([sql, pump = (Keep<EventPump>)pump, data, query = (AText)(Utf16ToUtf8)text, logError]{
 		sql->m_res.close();
 		sql->m_res = nullptr;
 
@@ -329,9 +333,16 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		}
 		catch (SqlException&)
 		{
+			if (logError)
+			{
+				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				cerr << "MariaDB Error " << sql->m_sql->getErrorNumber() << ": " << sql->m_sql->getErrorMessage() << endl;
+			}
 		}
 		catch (ThrowRetry&)
 		{
+			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			cerr << "MariaDB disconnected?" << endl;
 		}
 		if (data == nullptr) return;
 
