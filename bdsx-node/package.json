@@ -1,6 +1,6 @@
 {
   "name": "bdsx",
-  "version": "1.1.29",
+  "version": "1.1.30",
   "description": "Javascript API for BDSX",
   "main": "index",
   "scripts": {
