@@ -17,7 +17,6 @@ using namespace kr;
 
 namespace
 {
-
 	constexpr uint MAX_PACKET_ID = 0x100;
 }
 
@@ -82,6 +81,25 @@ kr::JsValue NetHookModule::create() noexcept
 		if (packet == nullptr) throw JsException(u"2nd argument must be *Pointer");
 		g_server->networkHandler->send(ni->identifier, (Packet*)packet->getAddressRaw(), whatIsThis);
 		});
+	nethook.setMethod(u"readLoginPacket", [](StaticPointer * packet){
+		JsValue logininfo = JsNewArray(2);
+		LoginPacket* login = static_cast<LoginPacket*>(packet->getAddressRaw());
+		ConnectionReqeust* conn = login->connreq;
+		if (conn != nullptr)
+		{
+			Certificate* cert = login->connreq->cert;
+			if (cert != nullptr)
+			{
+				logininfo.set((int)0, cert->getXuid().text());
+				logininfo.set((int)1, cert->getId().text());
+			}
+		}
+		return logininfo;
+		});
+	nethook.setMethod(u"", [] {
+
+		});
+
 	return nethook;
 }
 void NetHookModule::reset() noexcept
@@ -172,27 +190,7 @@ void NetHookModule::hook() noexcept
 
 		try
 		{
-
-			if (packetId == MinecraftPacketIds::Login)
-			{
-				JsValue logininfo = JsNewObject;
-				LoginPacket* login = static_cast<LoginPacket*>(packet);
-				ConnectionReqeust* conn = login->connreq;
-				if (conn != nullptr)
-				{
-					Certificate* cert = login->connreq->cert;
-					if (cert != nullptr)
-					{
-						logininfo.set(u"xuid", cert->getXuid().text());
-						logininfo.set(u"id", cert->getId().text());
-					}
-				}
-				((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId, logininfo);
-			}
-			else
-			{
-				((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId);
-			}
+			((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId);
 		}
 		catch (JsException & err)
 		{
