@@ -532,9 +532,31 @@ struct InventoryTransaction
 
 struct ComplexInventoryTransaction
 {
+	enum class Type:uint32_t
+	{
+		ItemUse=2,
+		ItemUseOnAction=3,
+		ItemRelease=4,
+	};
+
 	void* vftable;
-	size_t transactionType;
+	Type transactionType;
 	InventoryTransaction transaction;
+};
+
+struct ItemReleaseInventoryTransaction : ComplexInventoryTransaction
+{
+	OFFSETFIELD(ItemStack, item, 0x70);
+};
+
+struct ItemUseOnActionInventoryTransaction : ComplexInventoryTransaction
+{
+	OFFSETFIELD(ItemStack, item, 0x78);
+};
+
+struct ItemUseInventoryTransaction : ComplexInventoryTransaction
+{
+	OFFSETFIELD(ItemStack, item, 0x88);
 };
 
 struct ItemStackListItem
@@ -603,6 +625,11 @@ struct LoginPacket :Packet
 {
 	uint32_t u5; //0x184
 	ConnectionReqeust* connreq;
+};
+
+struct InventoryTransactionPacket : Packet
+{
+	ComplexInventoryTransaction* transaction;
 };
 
 struct CommandPacket :Packet

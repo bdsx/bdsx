@@ -1,12 +1,15 @@
-import { nethook, NativePointer, AfterPacketExtra, NetworkIdentifier } from "./native";
+import { nethook, NativePointer, NetworkIdentifier } from "./native";
 import PacketId = require("./packetId");
 import { EventEx, CapsuledEvent } from "krevent";
 import { CANCEL } from "./common";
 
+import readLoginPacket = nethook.readLoginPacket;
+export { readLoginPacket };
+
 type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
 type BeforeListener = (ptr: NativePointer, intnetworkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
 type SendListener = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
-type AfterListener<ID extends PacketId> = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number, extra: AfterPacketExtra<ID>) => void;
+type AfterListener = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number) => void;
 
 class NetEventRaw extends EventEx<RawListener>
 {
@@ -76,19 +79,19 @@ class NetEventBefore extends EventEx<BeforeListener>
     }
 }
 
-class NetEventAfter<ID extends PacketId> extends EventEx<AfterListener<ID>>
+class NetEventAfter extends EventEx<AfterListener>
 {
-    private readonly caller = (ptr:NativePointer, networkIdentifier:NetworkIdentifier, packetId:number, extra:AfterPacketExtra<ID>)=>{
+    private readonly caller = (ptr:NativePointer, networkIdentifier:NetworkIdentifier, packetId:number)=>{
         const ptrlow = ptr.getAddressLow();
         const ptrhigh = ptr.getAddressHigh();
         for (const listener of this.allListeners())
         {
             ptr.setAddress(ptrlow, ptrhigh);
-            listener(ptr, networkIdentifier, packetId, extra);
+            listener(ptr, networkIdentifier, packetId);
         }
     };
     
-    constructor(public readonly id:ID)
+    constructor(public readonly id:PacketId)
     {
         super();
     }
@@ -173,17 +176,17 @@ export function before(id:PacketId):CapsuledEvent<BeforeListener>
 * Maybe you cannot find any documents about the parsed packet structure
 * You need to discover it self!
 */
-export function after<ID extends PacketId>(id:ID):CapsuledEvent<AfterListener<ID>>
+export function after(id:PacketId):CapsuledEvent<AfterListener>
 {
     const event = afterListeners[id];
     if (event) return event;
-    return afterListeners[id] = new NetEventAfter<ID>(id);
+    return afterListeners[id] = new NetEventAfter(id);
 }
 /**
 * Maybe you cannot find any documents about the parsed packet structure
 * You need to discover it self!
 */
-export function send<ID extends PacketId>(id:ID):CapsuledEvent<SendListener>
+export function send(id:PacketId):CapsuledEvent<SendListener>
 {
     const event = sendListeners[id];
     if (event) return event;

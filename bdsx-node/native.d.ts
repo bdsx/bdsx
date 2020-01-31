@@ -169,15 +169,17 @@ export const console: {
     readonly BACKGROUND_INTENSITY: number;
 };
 
-type AfterPacketExtra<ID extends number> = ID extends 1 ? 
-    { id?: string; xuid?: string; }:
-    undefined;
-
 /**
 * for packet listening
 */
 export namespace nethook
 {
+    /**
+     * @param ptr login packet pointer
+     * @return [xuid, username]
+     */
+    export function readLoginPacket(ptr: StaticPointer):[string, string];
+
     /**
     * @param packetId You can use enum PacketId
     * It will bring raw packet buffers before parsing
@@ -200,7 +202,7 @@ export namespace nethook
     * Maybe you cannot find any documents about the parsed packet structure
     * You need to discover it self!
     */
-    export function setOnPacketAfterListener<ID extends number>(packetId: ID, listener: ((ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number, extra:AfterPacketExtra<ID>) => void)|null): void;
+    export function setOnPacketAfterListener(packetId: number, listener: ((ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number) => void)|null): void;
     /**
     * @param packetId You can use enum PacketId
     * Maybe you cannot find any documents about the parsed packet structure
