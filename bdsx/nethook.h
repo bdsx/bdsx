@@ -15,7 +15,8 @@ public:
 	void reset() noexcept;
 	void hook() noexcept;
 
-	kr::JsPersistent lastSender;
+	std::atomic<uint32_t> lastSender;
+	kr::JsPersistent lastSenderNi;
 
 private:
 	enum class EventType

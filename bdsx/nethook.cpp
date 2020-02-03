@@ -43,8 +43,8 @@ void NetHookModule::setCallback(EventType type, MinecraftPacketIds packetId, JsV
 }
 
 NetHookModule::NetHookModule() noexcept
+	:lastSender(0)
 {
-
 }
 NetHookModule::~NetHookModule() noexcept
 {
@@ -96,15 +96,17 @@ kr::JsValue NetHookModule::create() noexcept
 		}
 		return logininfo;
 		});
-	nethook.setMethod(u"", [] {
-
+	nethook.setMethod(u"readInventoryTransaction", [](StaticPointer* packet){
+		JsValue invinfo = JsNewArray(2);
+		InventoryTransactionPacket* login = static_cast<InventoryTransactionPacket*>(packet->getAddressRaw());
 		});
 
 	return nethook;
 }
 void NetHookModule::reset() noexcept
 {
-	lastSender = nullptr;
+	lastSender = 0;
+	lastSenderNi = nullptr;
 	m_callbacks.clear();
 	m_onConnectionClosed = nullptr;
 }
@@ -112,12 +114,11 @@ void NetHookModule::reset() noexcept
 void NetHookModule::hook() noexcept
 {
 	g_mcf.hookOnPacketRaw([](byte* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn)->SharedPtr<Packet>*{
-
 		NetHookModule* _this = &g_native->nethook;
 
 		JsScope scope;
 		JsValue jsni = JsNetworkIdentifier::fromRaw(conn->ni);
-		_this->lastSender = jsni;
+		_this->lastSenderNi = jsni;
 
 		SharedPtr<Packet>* packet_dest = (SharedPtr<Packet>*)(rbp + 0x90);
 
@@ -165,7 +166,7 @@ void NetHookModule::hook() noexcept
 
 		try
 		{
-			JsValue ret = ((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId);
+			JsValue ret = ((JsValue)iter->second)(packetptr, _this->lastSenderNi, (int)packetId);
 			return ret == false ? PacketReadError : res;
 		}
 		catch (JsException & err)
@@ -190,7 +191,7 @@ void NetHookModule::hook() noexcept
 
 		try
 		{
-			((JsValue)iter->second)(packetptr, (JsValue)_this->lastSender, (int)packetId);
+			((JsValue)iter->second)(packetptr, (JsValue)_this->lastSenderNi, (int)packetId);
 		}
 		catch (JsException & err)
 		{

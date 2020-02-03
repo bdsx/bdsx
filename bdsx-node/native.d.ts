@@ -93,7 +93,7 @@ export namespace fs {
 * default error printing is disabled if cb returns false
 */
 export function setOnErrorListener(cb: ((err: Error) => void | boolean)|null): void;
-export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string, lastSender:NetworkIdentifier) => void | boolean)|null): void;
+export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string, lastSender:string) => void | boolean)|null): void;
 
 /**
  * command listener
