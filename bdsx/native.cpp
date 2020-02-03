@@ -635,14 +635,14 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 			nativestack << writer;
 		}
 
-		JsValue lastsender = nethook.lastSender;
+		uint32_t lastsender = nethook.lastSender;
 
 		if (!m_onRuntimeError.isEmpty())
 		{
 			JsValue onError = m_onRuntimeError;
 			try
 			{
-				if (onError(stack, nativestack, lastsender.isEmpty() ? undefined : lastsender) == false)
+				if (onError(stack, nativestack, TText16() << (Ipv4Address&)lastsender) == false)
 				{
 					cleanAllResource();
 					terminate(-1);
@@ -662,16 +662,7 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 			cerr << "[ Runtime Error ]" << endl;
 		}
-		if (!lastsender.isEmpty())
-		{
-			JsNetworkIdentifier* lastni = lastsender.getNativeObject<JsNetworkIdentifier>();
-			if (lastni)
-			{
-				cerr << "Last Sender IP: ";
-				cerr << lastni->identifier.getAddress();
-			}
-		}
-		cerr << endl;
+		cerr << "Last Sender IP: " << lastsender << endl;
 		cerr << "[ JS Stack ]" << endl;
 		cerr << toAnsi(stack) << endl;
 		cerr << "[ Native Stack ]" << endl;
