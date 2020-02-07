@@ -661,7 +661,7 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 			cerr << "[ Runtime Error ]" << endl;
 		}
-		cerr << "Last Sender IP: " << lastsender << endl;
+		cerr << "Last Sender IP: " << (Ipv4Address&)lastsender << endl;
 		cerr << "[ JS Stack ]" << endl;
 		cerr << toAnsi(stack) << endl;
 		cerr << "[ Native Stack ]" << endl;
