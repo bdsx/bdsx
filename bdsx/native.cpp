@@ -325,7 +325,7 @@ JsValue createServerControlModule() noexcept
 		{
 			fork();
 			cleanAllResource();
-			terminate();
+			terminate(-1);
 		}
 		EventPump::getInstance()->post([] {
 			fork();
@@ -635,7 +635,7 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 			nativestack << writer;
 		}
 
-		uint32_t lastsender = nethook.lastSender;
+		uint32_t lastsender = NetHookModule::s_lastSender;
 
 		if (!m_onRuntimeError.isEmpty())
 		{
