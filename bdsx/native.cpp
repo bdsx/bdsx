@@ -287,7 +287,7 @@ void fork() throws(JsException)
 	TText16 cwd = currentDirectory;
 	cwd << nullterm;
 
-	TText16 bdsxPath = win::Module::byName(u"bdsx.dll")->name();
+	TText16 bdsxPath = win::Module::byName(u"bdsx.dll")->fileName();
 
 	TText16 cmdline;
 	cmdline << u'\"';
