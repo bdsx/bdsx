@@ -78,7 +78,7 @@ PdbReader::PdbReader() noexcept
 	);
 
 	TSZ16 moduleName;
-	moduleName << ModuleName<char16>() << nullterm;
+	moduleName << CurrentApplicationPath() << nullterm;
 
 	Must<File> file = File::open(moduleName.data());
 	dword filesize = file->size32();

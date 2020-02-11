@@ -83,7 +83,7 @@ struct FunctionTarget
 void MinecraftFunctionTable::load() noexcept
 {
 #define MC_VERSION "1.14.1.4"
-	TText16 moduleName = ModuleName<char16>();
+	TText16 moduleName = CurrentApplicationPath();
 	BText<32> hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
 	cout << "BDSX: bedrock_server.exe MD5 = " << hash << endl;
 

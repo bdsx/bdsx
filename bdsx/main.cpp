@@ -40,7 +40,7 @@ namespace
 {
 	//JsDebugService s_debug;
 	//JsDebugProtocolHandler s_debugHandler;
-	win::Module* s_module = win::Module::getModule(nullptr);
+	win::Module* s_module = win::Module::current();
 	hook::IATHookerList s_iatChakra(s_module, "chakra.dll");
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
