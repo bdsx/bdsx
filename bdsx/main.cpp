@@ -102,7 +102,7 @@ int CALLBACK recvfromHook(
 	int res = recvfrom(s, buf, len, flags, from, fromlen);
 	if (res == SOCKET_ERROR) return SOCKET_ERROR;
 	uint32_t ip32 = ((sockaddr_in*)from)->sin_addr.s_addr;
-	g_native->nethook.lastSender = ip32;
+	NetHookModule::s_lastSender = ip32;
 	if (!isContextExisted()) return res;
 
 	Ipv4Address& ip = (Ipv4Address&)ip32;

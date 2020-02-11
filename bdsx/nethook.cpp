@@ -20,6 +20,7 @@ namespace
 	constexpr uint MAX_PACKET_ID = 0x100;
 }
 
+std::atomic<uint32_t> NetHookModule::s_lastSender = 0;
 
 uint NetHookModule::getPacketId(EventType type, MinecraftPacketIds id) noexcept
 {
@@ -43,7 +44,6 @@ void NetHookModule::setCallback(EventType type, MinecraftPacketIds packetId, JsV
 }
 
 NetHookModule::NetHookModule() noexcept
-	:lastSender(0)
 {
 }
 NetHookModule::~NetHookModule() noexcept
@@ -105,7 +105,7 @@ kr::JsValue NetHookModule::create() noexcept
 }
 void NetHookModule::reset() noexcept
 {
-	lastSender = 0;
+	s_lastSender = 0;
 	lastSenderNi = nullptr;
 	m_callbacks.clear();
 	m_onConnectionClosed = nullptr;

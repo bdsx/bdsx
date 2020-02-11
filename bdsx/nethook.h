@@ -15,7 +15,7 @@ public:
 	void reset() noexcept;
 	void hook() noexcept;
 
-	std::atomic<uint32_t> lastSender;
+	static std::atomic<uint32_t> s_lastSender;
 	kr::JsPersistent lastSenderNi;
 
 private:
