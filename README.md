@@ -69,7 +69,7 @@ https://github.com/karikera/bdsx/wiki
 https://github.com/karikera/bdsx/issues
 
 ## Discord for Q&A
-https://discordapp.com/channels/646456965983240212/646456965983240218
+https://discord.gg/5tSECK
 
 ## Build It Self
 * Requirement  
