@@ -13,12 +13,14 @@ using namespace kr;
 int main()
 {
 	Text16 commandLine = (Text16)unwide(GetCommandLineW());
-	Text16 injectorPath;
+
+	TText16 injectorPath = readArgument(&commandLine);
+	AText16 dllPath;
 	bool resurrection = false;
 	
 	for (;;)
 	{
-		Text16 param = readArgument(commandLine);
+		TText16 param = readArgument(&commandLine);
 		if (param.empty())
 		{
 			cerr << "injector.exe> It needs exe and dll path" << endl;
@@ -29,22 +31,20 @@ int main()
 		}
 		if (!param.startsWith_y(u"-/"))
 		{
-			injectorPath = param;
+			dllPath = param;
 			break;
 		}
 
-		param = param.subarr(1);
-		if (param == u"r")
+		if (param.subarr(1) == u"r")
 		{
 			resurrection = true;
 		}
 		else
 		{
-			ucerr << u"unknown flags: -" << param << endl;
+			ucerr << u"unknown flags: " << param << endl;
 		}
 	}
 
-	Text16 dllPath = readArgument(commandLine);
 	if (commandLine.empty() || dllPath.empty())
 	{
 		cerr << "injector.exe> It needs exe and dll path" << endl;

@@ -253,14 +253,14 @@ BOOL WINAPI DllMain(
 		g_mcf.load();
 
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
-		readArgument(commandLine); // exepath
+		readArgument(&commandLine); // exepath
 		bool modulePathSetted = false;
 		while (!commandLine.empty())
 		{
-			Text16 option = readArgument(commandLine);
+			Text16 option = readArgument(&commandLine);
 			if (option == u"-M")
 			{
-				Text16 modulePath = readArgument(commandLine);
+				Text16 modulePath = readArgument(&commandLine);
 
 				if (modulePathSetted)
 				{
@@ -274,7 +274,7 @@ BOOL WINAPI DllMain(
 			}
 			else if (option == u"--mutex")
 			{
-				Text16 name = readArgument(commandLine);
+				Text16 name = readArgument(&commandLine);
 				g_singleInstanceLimiter.create(TSZ16() << u"BDSX_" << name);
 			}
 		}
