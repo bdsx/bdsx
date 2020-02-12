@@ -27,7 +27,7 @@ int main()
 #endif
 			return EINVAL;
 		}
-		if (!param.startsWith('/'))
+		if (!param.startsWith_y(u"-/"))
 		{
 			injectorPath = param;
 			break;
@@ -40,7 +40,7 @@ int main()
 		}
 		else
 		{
-			ucerr << u"unknown flags: /" << param << endl;
+			ucerr << u"unknown flags: -" << param << endl;
 		}
 	}
 
