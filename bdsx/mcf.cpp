@@ -82,12 +82,12 @@ struct FunctionTarget
 
 void MinecraftFunctionTable::load() noexcept
 {
-#define MC_VERSION "1.14.1.4"
+#define MC_VERSION "1.14.30.2"
 	TText16 moduleName = CurrentApplicationPath();
 	BText<32> hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
 	cout << "BDSX: bedrock_server.exe MD5 = " << hash << endl;
 
-	if (hash == "B620DAF51666A7DD19CF3982752B2BE1")
+	if (hash == "0DCADDC25415D6818790D1FB09BCB4E9")
 	{
 		cout << "BDSX: MD5 Hash Matched(Version == " MC_VERSION ")" << endl;
 		loadFromPredefined();
@@ -107,41 +107,42 @@ void MinecraftFunctionTable::load() noexcept
 }
 void MinecraftFunctionTable::loadFromPredefined() noexcept
 {
-	ModuleInfo ptr; MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x417BE0);
-	Level$fetchEntity = ptr(0x98C9A0);
-	NetworkHandler$_getConnectionFromId = ptr(0x295C40);
-	std$string$assign = ptr(0x4DCE0);
-	ServerInstance$_update = ptr(0x430750);
-	ServerNetworkHandler$_getServerPlayer = ptr(0x301570);
-	NetworkHandler$onConnectionClosed = ptr(0x296570);
-	ExtendedCertificate$getXuid = ptr(0x5FB80);
-	NetworkHandler$_sortAndPacketizeEvents = ptr(0x295F10);
-	MinecraftCommands$executeCommand = ptr(0x3A80D0);
-	NetworkIdentifier$getHash = ptr(0x298E20);
-	ServerPlayer$sendNetworkPacket = ptr(0x437850);
-	ServerInstance$ServerInstance = ptr(0x42E230);
-	ExtendedCertificate$getIdentityName = ptr(0x2F2460);
-	NetworkHandler$getEncryptedPeerForUser = ptr(0x296F20);
-	Actor$_Actor = ptr(0x48FF50);
-	ScriptEngine$startScriptLoading = ptr(0x360AE0);
-	ServerPlayer$_vftable_ = ptr(0xD64AB0);
-	std$string$append = ptr(0x5C530);
-	std$_Allocate$16 = ptr(0x4DBF0);
-	Level$removeEntityReferences = ptr(0x98CCB0);
-	DedicatedServer$start = ptr(0x55980);
-	Crypto$Random$generateUUID = ptr(0x12BFC0);
-	BaseAttributeMap$getMutableInstance = ptr(0x6AA8B0);
-	NetworkHandler$_sendInternal = ptr(0x2971C0);
-	Minecraft$update = ptr(0xA9C440);
-	NetworkIdentifier$equals = ptr(0x5FB10);
-	NetworkHandler$send = ptr(0x297100);
-	std$string$_Tidy_deallocate = ptr(0x4DB40);
-	StopCommand$mServer = ptr(0x13CEEB0);
-	MinecraftPackets$createPacket = ptr(0x29B3B0);
-	Level$createDimension = ptr(0x9871C0);
-	DedicatedServer$stop = ptr(0x55330);
-	LoopbackPacketSender$sendToClients = ptr(0x2939A0);
-	google_breakpad$ExceptionHandler$HandleException = ptr(0xBD3DA0);
+	ModuleInfo ptr;
+	MinecraftServerScriptEngine$onServerThreadStarted = ptr(0x419590);
+	Level$fetchEntity = ptr(0x98B3C0);
+	NetworkHandler$_getConnectionFromId = ptr(0x296AB0);
+	std$string$assign = ptr(0x4DD40);
+	ServerInstance$_update = ptr(0x432110);
+	ServerNetworkHandler$_getServerPlayer = ptr(0x3024C0);
+	NetworkHandler$onConnectionClosed = ptr(0x2973E0);
+	ExtendedCertificate$getXuid = ptr(0x5FBE0);
+	NetworkHandler$_sortAndPacketizeEvents = ptr(0x296D80);
+	MinecraftCommands$executeCommand = ptr(0x3A94F0);
+	NetworkIdentifier$getHash = ptr(0x299D30);
+	ServerPlayer$sendNetworkPacket = ptr(0x439200);
+	ServerInstance$ServerInstance = ptr(0x42FBE0);
+	ExtendedCertificate$getIdentityName = ptr(0x2F33E0);
+	NetworkHandler$getEncryptedPeerForUser = ptr(0x297D90);
+	google_breakpad$ExceptionHandler$HandleException = ptr(0xBD1B00);
+	Actor$_Actor = ptr(0x491900);
+	ScriptEngine$startScriptLoading = ptr(0x361ED0);
+	ServerPlayer$_vftable_ = ptr(0xD63040);
+	std$string$append = ptr(0x5C590);
+	std$_Allocate$16 = ptr(0x4DC50);
+	Level$removeEntityReferences = ptr(0x98B6D0);
+	DedicatedServer$start = ptr(0x559E0);
+	Crypto$Random$generateUUID = ptr(0x12C1E0);
+	BaseAttributeMap$getMutableInstance = ptr(0x6AC330);
+	NetworkHandler$_sendInternal = ptr(0x298030);
+	Minecraft$update = ptr(0xA9AD80);
+	NetworkIdentifier$equals = ptr(0x5FB70);
+	NetworkHandler$send = ptr(0x297F70);
+	std$string$_Tidy_deallocate = ptr(0x4DBA0);
+	StopCommand$mServer = ptr(0x13CE190);
+	MinecraftPackets$createPacket = ptr(0x29C670);
+	Level$createDimension = ptr(0x985BE0);
+	DedicatedServer$stop = ptr(0x55390);
+	LoopbackPacketSender$sendToClients = ptr(0x2948F0);
 }
 void MinecraftFunctionTable::loadFromPdb() noexcept
 {
