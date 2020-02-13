@@ -26,13 +26,15 @@ chat.on(ev=>{
 * Hijack network packet + Get IP Address & XUID!
 ```ts
 import { netevent, PacketId } from "bdsx";
-netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId, loginInfo)=>{
+netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
+    const loginInfo = netevent.readLoginPacket(ptr);
     // networkIdentifier has non-printable character, It will breaks standard output
     console.log(`${loginInfo.id}> IP=${loginInfo.ip}, XUID=${loginInfo.xuid}`);
-})
+});
 ```
-* [Directory Watcher](https://github.com/karikera/bdsx/wiki#watcher)!
-* [DLL Call](https://github.com/karikera/bdsx/wiki#NativeModule)!
+* [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)!
+* [Directory Watcher](https://github.com/karikera/bdsx/wiki/File-IO:-Watcher)!
+* [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)!
   
 It will run `bdsx/index.js` as server script!  
 It's very mutable now, I will remove or change API names frequently!  
