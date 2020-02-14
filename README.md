@@ -67,7 +67,7 @@ You need to install [NodeJS](https://nodejs.org/en/) before use Typescript
 ## JS API Reference
 https://github.com/karikera/bdsx/wiki
 
-## Bug Report
+## Bug Report or Q&A
 https://github.com/karikera/bdsx/issues
 
 ## Discord for Q&A
