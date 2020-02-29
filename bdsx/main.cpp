@@ -280,7 +280,7 @@ BOOL WINAPI DllMain(
 
 		if (host != nullptr)
 		{
-			console.connect(host.c_str(), port, mutex == nullptr ? (Text)nullptr : (Text)(TSZ() << mutex));
+			console.connect(host.c_str(), port, mutex == nullptr ? (Text)nullptr : (Text)(TSZ() << toUtf8(mutex)));
 		}
 
 		if (!modulePathSetted)
