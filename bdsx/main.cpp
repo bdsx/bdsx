@@ -31,6 +31,7 @@
 #include "mcf.h"
 #include "require.h"
 #include "native.h"
+#include "buildtime.h"
 
 #pragma comment(lib, "chakrart.lib")
 
@@ -232,6 +233,7 @@ BOOL WINAPI DllMain(
 		ondebug(requestDebugger());
 				
 		console.log("BDSX: Attached\n");
+		console.log("BDSX: Build Time = " BUILD_TIME "\n");
 
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");

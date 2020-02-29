@@ -330,16 +330,28 @@ export class NativePointer extends StaticPointer
     writePointer(value: StaticPointer): void;
 
     /**
-    * read C++ std::string
+    * read a C++ std::string (UTF-8)
     */
     readCxxString(): string;
 
     /**
-    * write C++ std::string
-    * Need to target pointer to string
-    * It will call string::assign method to pointer
+    * write a C++ std::string (UTF-8)
+    * Need to target the pointer to a string
+    * It will call string::assign method to the pointer
     */
     writeCxxString(str:string): void;
+
+    /**
+    * read a C++ a std::string (ANSI)
+    */
+    readCxxStringAnsi(): string;
+
+    /**
+    * write a C++ std::string (ANSI)
+    * Need to target the pointer to a string
+    * It will call string::assign method to the pointer
+    */
+    writeCxxStringAnsi(str:string): void;
 
     /**
      * read UTF16 string
