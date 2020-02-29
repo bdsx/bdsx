@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -128,6 +128,12 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>mkdir gen&gt;nul 2&gt;nul
+set errorlevel=0
+set time2=%time::=%
+echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile />
@@ -136,6 +142,12 @@
     </Link>
     <PostBuildEvent />
     <ClCompile />
+    <PreBuildEvent>
+      <Command>mkdir gen&gt;nul 2&gt;nul
+set errorlevel=0
+set time2=%time::=%
+echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile />
@@ -146,13 +158,19 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
-kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
+      <Command>call ksign "BDSX"  "$(TargetPath)"
+kcopy "$(TargetPath)" "$(SolutionDir)release\bin\$(TargetFileName)"
 kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
 kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
 kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
 kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>mkdir gen&gt;nul 2&gt;nul
+set errorlevel=0
+set time2=%time::=%
+echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">
     <ClCompile />
@@ -161,6 +179,12 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>mkdir gen&gt;nul 2&gt;nul
+set errorlevel=0
+set time2=%time::=%
+echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile />
@@ -171,13 +195,19 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "BDSX" "$(OutDir)bdsx.dll"
-kcopy "$(OutDir)bdsx.dll" "$(SolutionDir)release\bin\bdsx.dll"
+      <Command>call ksign "BDSX"  "$(TargetPath)"
+kcopy "$(TargetPath)" "$(SolutionDir)release\bin\$(TargetFileName)"
 kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
 kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
 kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
 kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>mkdir gen&gt;nul 2&gt;nul
+set errorlevel=0
+set time2=%time::=%
+echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">
     <ClCompile />
@@ -186,6 +216,12 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>mkdir gen&gt;nul 2&gt;nul
+set errorlevel=0
+set time2=%time::=%
+echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="codewrite.cpp" />
@@ -203,13 +239,13 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     <ClCompile Include="nativepointer.cpp" />
     <ClCompile Include="nethook.cpp" />
     <ClCompile Include="networkidentifier.cpp" />
-    <ClCompile Include="pdb.cpp" />
     <ClCompile Include="actor.cpp" />
     <ClCompile Include="require.cpp" />
     <ClCompile Include="reverse.cpp" />
     <ClCompile Include="sharedptr.cpp" />
     <ClCompile Include="staticpointer.cpp" />
     <ClCompile Include="watcher.cpp" />
+    <ClCompile Include="webserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clear_regs.h" />
@@ -228,7 +264,6 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     <ClInclude Include="nativepointer.h" />
     <ClInclude Include="nethook.h" />
     <ClInclude Include="networkidentifier.h" />
-    <ClInclude Include="pdb.h" />
     <ClInclude Include="actor.h" />
     <ClInclude Include="require.h" />
     <ClInclude Include="resource.h" />
@@ -236,6 +271,7 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
     <ClInclude Include="sharedptr.h" />
     <ClInclude Include="staticpointer.h" />
     <ClInclude Include="watcher.h" />
+    <ClInclude Include="webserver.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ken\KR3\KR3.vcxproj">
@@ -256,6 +292,59 @@ kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="clear_regs.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="version.bat">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">call %(identity)
+echo "%25BDS_VERSION%"
+(
+echo #define BDS_VERSION "%25BDS_VERSION%"
+echo #define BDSX_VERSION "%25BDSX_VERSION%"
+)&gt;gen/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gen/%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">call %(identity)
+echo "%25BDS_VERSION%"
+(
+echo #define BDS_VERSION "%25BDS_VERSION%"
+echo #define BDSX_VERSION "%25BDSX_VERSION%"
+)&gt;gen/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">gen/%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call %(identity)
+echo "%25BDS_VERSION%"
+(
+echo #define BDS_VERSION "%25BDS_VERSION%"
+echo #define BDSX_VERSION "%25BDSX_VERSION%"
+)&gt;gen/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gen/%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call %(identity)
+echo "%25BDS_VERSION%"
+(
+echo #define BDS_VERSION "%25BDS_VERSION%"
+echo #define BDSX_VERSION "%25BDSX_VERSION%"
+)&gt;gen/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gen/%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">call %(identity)
+echo "%25BDS_VERSION%"
+(
+echo #define BDS_VERSION "%25BDS_VERSION%"
+echo #define BDSX_VERSION "%25BDSX_VERSION%"
+)&gt;gen/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">gen/%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call %(identity)
+echo "%25BDS_VERSION%"
+(
+echo #define BDS_VERSION "%25BDS_VERSION%"
+echo #define BDSX_VERSION "%25BDSX_VERSION%"
+)&gt;gen/%(Filename).h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gen/%(Filename).h</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Identity)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">%(Identity)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(Identity)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Identity)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">%(Identity)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Identity)</Message>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

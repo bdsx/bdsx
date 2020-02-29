@@ -104,7 +104,7 @@ export function setOnCommandListener(cb: ((command:string, originName:string)=>v
 export namespace ipfilter
 {
     export function add(ip:string, periodSeconds?:number):void;
-    export function remove(ip:string):void;
+    export function remove(ip:string):boolean;
     export function has(ip:string):boolean;
     export function logTraffic(path:string|null):void;
     export function setTrafficLimit(bytes:number):void;
@@ -476,6 +476,19 @@ export class MariaDB
     fetch(callback:(row:(string|null)[]|null)=>void):void;
     close():void;
     closeResult():void;
+}
+
+export class Request
+{
+    send(text:string):void;
+    sendFile(file:string):void;
+    end():void;
+}
+
+export class WebServer
+{
+    constructor(localPath:string, port?:number);
+    page(path:string, cb:(req:Request)=>void):void;
 }
 
 /**

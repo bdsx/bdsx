@@ -7,7 +7,6 @@
     <ClCompile Include="jsctx.cpp" />
     <ClCompile Include="nativepointer.cpp" />
     <ClCompile Include="nethook.cpp" />
-    <ClCompile Include="pdb.cpp" />
     <ClCompile Include="require.cpp" />
     <ClCompile Include="native.cpp" />
     <ClCompile Include="watcher.cpp" />
@@ -23,6 +22,7 @@
     <ClCompile Include="reverse.cpp" />
     <ClCompile Include="nativecall.cpp" />
     <ClCompile Include="mariadb.cpp" />
+    <ClCompile Include="webserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h" />
@@ -30,7 +30,6 @@
     <ClInclude Include="jsctx.h" />
     <ClInclude Include="nativepointer.h" />
     <ClInclude Include="nethook.h" />
-    <ClInclude Include="pdb.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="require.h" />
     <ClInclude Include="native.h" />
@@ -49,6 +48,7 @@
     <ClInclude Include="nativecall.h" />
     <ClInclude Include="clear_regs.h" />
     <ClInclude Include="mariadb.h" />
+    <ClInclude Include="webserver.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -63,5 +63,8 @@
   </ItemGroup>
   <ItemGroup>
     <MASM Include="clear_regs.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="version.bat" />
   </ItemGroup>
 </Project>

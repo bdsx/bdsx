@@ -13,17 +13,18 @@
 #include "require.h"
 #include "watcher.h"
 #include "mariadb.h"
+#include "webserver.h"
 
 #include <KR3/util/process.h>
 #include <KR3/util/StackWalker.h>
 #include <KR3/util/envvar.h>
+#include <KR3/util/pdb.h>
 #include <KR3/wl/windows.h>
 #include <KR3/data/crypt.h>
 #include <KR3/http/fetch.h>
 #include <KR3/mt/criticalsection.h>
 #include <KRWin/handle.h>
 
-#include "pdb.h"
 #include <conio.h>
 
 using namespace kr;
@@ -102,7 +103,7 @@ public:
 				{
 					try
 					{
-						io::FOStream<char> file = File::openAndWrite(m_logPath.data());
+						io::FOStream<char> file = File::openWrite(m_logPath.data());
 						file.base()->toEnd();
 
 						{
@@ -124,8 +125,7 @@ public:
 					}
 					catch (...)
 					{
-						cerr << "traffic write failed" << endl;
-						Sleep(500);
+						console.log("traffic write failed\n");
 					}
 				}
 				});
@@ -186,10 +186,10 @@ void SingleInstanceLimiter::create(pcstr16 name) noexcept
 	int err = GetLastError();
 	if (ERROR_ALREADY_EXISTS == err)
 	{
-		cout << "BDSX: (id=" << (Utf16ToAnsi)(Text16)name << ") is Already executing" << endl;
-		cout << "BDSX: Wait the process terminating..." << endl;
+		console.log(TSZ() << "BDSX: (id=" << (Utf16ToAnsi)(Text16)name << ") is Already executing\n");
+		console.log("BDSX: Wait the process terminating...\n");
 		WaitForSingleObject(m_mutex, INFINITE);
-		cout << "BDSX: Previous process terminated" << endl;
+		console.log("BDSX: Previous process terminated\n");
 	}
 	else
 	{
@@ -211,7 +211,7 @@ void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 	{
 		if (addFilter(ip, s_trafficLimitPeriod == 0 ? 0 : time(nullptr) + s_trafficLimitPeriod))
 		{
-			cout << "traffic overed: " << ip << endl;
+			console.log(TSZ() << "traffic overed: " << ip << '\n');
 		}
 	}
 }
@@ -246,11 +246,12 @@ bool NetFilter::addFilter(kr::Ipv4Address ip, time_t endTime) noexcept
 	s_ipfilterLock.leaveWrite();
 	return res.second;
 }
-void NetFilter::removeFilter(kr::Ipv4Address ip) noexcept
+bool NetFilter::removeFilter(kr::Ipv4Address ip) noexcept
 {
 	s_ipfilterLock.enterWrite();
-	s_ipfilter.erase(ip);
+	bool erased = s_ipfilter.erase(ip) != 0;
 	s_ipfilterLock.leaveWrite();
+	return erased;
 }
 void NetFilter::clearFilter() noexcept
 {
@@ -360,12 +361,12 @@ bool Native::fireError(JsRawData err) noexcept
 		}
 	}
 
-	ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+	Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 	
 	JsValue stack = err.getByProperty(u"stack");
 	if (stack == undefined) stack = err.toString();
-	cerr << "[ JS Stack ]" << endl;
-	cerr << toAnsi(stack.cast<Text16>()) << endl;
+	console.log("[JS Stack]\n");
+	console.log(TSZ() << toAnsi(stack.cast<Text16>()) << '\n');
 	return false;
 }
 void Native::reset() noexcept
@@ -410,15 +411,14 @@ void Native::_hook() noexcept
 		ondebug(requestDebugger());
 		if (!isContextExisted())
 		{
-			cerr << "[ Native Stack ]" << endl;
+			console.log("[ Native Stack ]\n");
 
 			StackWriter writer(ptr->ContextRecord);
 			AText16 nativestack;
 			nativestack << writer;
-			cerr << toAnsi(nativestack) << endl;
+			console.log(TSZ() << toAnsi(nativestack) << '\n');
 
 			cleanAllResource();
-			_getch();
 			terminate(-1);
 			return;
 		}
@@ -442,18 +442,18 @@ void Native::_createNativeModule() noexcept
 {
 	JsValue native = JsNewObject;
 	native.set(u"serverControl", createServerControlModule());
-	native.set(u"console", createConsoleModule());
+	native.set(u"console", console.createModule());
 
 	native.setMethod(u"loadPdb", [](Text16 path){
+		console.log("PdbReader: Load Symbols...\n");
 		PdbReader reader;
-		reader.showInfo();
-		cout << "PdbReader: processing... ";
+		reader.showInfo([](Text text) { console.log(text); });
+		console.log("PdbReader: processing... \n");
 
 		struct Local
 		{
 			JsValue out = JsNewObject;
 			timepoint now = timepoint::now();
-			size_t chrcount = 0;
 			size_t totalcount = 0;
 		} local;
 
@@ -464,13 +464,7 @@ void Native::_createNativeModule() noexcept
 			if (newnow - local.now > 200_ms)
 			{
 				local.now = newnow;
-				for (size_t i = 0; i < local.chrcount; i++) cout << '\b';
-				TText count;
-				count << local.totalcount;
-				cout << '(';
-				cout << count;
-				cout << ')';
-				local.chrcount = count.size() + 2;
+				console.log(TSZ() << '(' << local.totalcount << ")\n");
 			}
 
 			NativePointer * ptr = NativePointer::newInstance();
@@ -479,20 +473,19 @@ void Native::_createNativeModule() noexcept
 			return true;
 			});
 
-		for (int i = 0; i < local.chrcount; i++) cout << '\b';
-		cout << "done   " << endl;
+		console.log("done\n");
 		return local.out;
 		});
 
 	native.setMethod(u"std$_Allocate$16", [](int size) {
 		NativePointer* ptr = NativePointer::newInstance();
-		ptr->setAddressRaw(g_mcf.std$_Allocate$16(size));
+		ptr->setAddressRaw(g_mcf.std$_Allocate$_alloc16_(size));
 		return ptr;
 		});
 	native.setMethod(u"malloc", [](int size) {
 		NativePointer* ptr = NativePointer::newInstance();
 		ptr->setAddressRaw(g_mcf.malloc(size));
-		g_mcf.free(ptr->getAddressRaw());
+		return ptr;
 		});
 	native.setMethod(u"free", [](StaticPointer* ptr) {
 		if (ptr == nullptr) return;
@@ -529,16 +522,13 @@ void Native::_createNativeModule() noexcept
 		AText16 path_a = AText16::concat(u"/c ", path);
 
 		threading([path = move(path_a), curdir = move(curdir_a)]{
-			Process process;
-			process.shell(path, curdir == nullptr ? nullptr : curdir.data());
-			process.wait();
-			TText res = StreamBuffer<char, Process>(move(process));
+			TText res = shell(path, curdir == nullptr ? nullptr : curdir.data());
 			AText16 out;
 			out << (AnsiToUtf16)res;
 			return out;
-			})->then([cb = (JsPersistent)cb](Text16 data){
+		})->then([cb = (JsPersistent)cb](Text16 data){
 			((JsValue)cb)(data);
-			});
+		});
 		});
 	native.setMethod(u"spawn", [](Text16 path, Text16 param, JsValue curdir) {
 		Process proc;
@@ -565,6 +555,8 @@ void Native::_createNativeModule() noexcept
 	native.set(u"NetworkIdentifier", JsNetworkIdentifier::classObject);
 	native.set(u"SharedPointer", SharedPointer::classObject);
 	native.set(u"nethook", g_native->nethook.create());
+	native.set(u"WebServer", WebServer::classObject);
+	native.set(u"Response", Request::classObject);
 	native.setMethod(u"getHashFromCxxString", [](StaticPointer* ptr) {
 		String* str = (String*)ptr->getAddressRaw();
 		NativePointer * hash = NativePointer::newInstance();
@@ -581,8 +573,8 @@ void Native::_createNativeModule() noexcept
 			});
 		ipfilter.setMethod(u"remove", [](Text16 ipport) {
 			Text16 iptext = ipport.readwith_e('|');
-			if (iptext.empty()) return;
-			NetFilter::removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
+			if (iptext.empty()) return false;
+			return NetFilter::removeFilter(Ipv4Address(TSZ() << toNone(iptext)));
 			});
 		ipfilter.setMethod(u"clear", []() {
 			NetFilter::clearFilter();
@@ -653,20 +645,20 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 			{
 				Text16 errstr = err.getValue().toString().as<Text16>();
 
-				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				cerr << "[onRuntimeError callback has error]" << endl;
-				cerr << toAnsi(errstr) << endl;
+				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				console.log("[onRuntimeError callback has error]\n");
+				console.log(TSZ() << toAnsi(errstr) << '\n');
 			}
 		}
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << "[ Runtime Error ]" << endl;
+			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			console.log("[ Runtime Error ]\n");
+			console.log(TSZ() << "Last Sender IP: " << (Ipv4Address&)lastsender << '\n');
+			console.log("[ JS Stack ]\n");
+			console.log(TSZ() << toAnsi(stack) << '\n');
+			console.log("[ Native Stack ]\n");
+			console.log(TSZ() << toAnsi(nativestack) << '\n');
 		}
-		cerr << "Last Sender IP: " << (Ipv4Address&)lastsender << endl;
-		cerr << "[ JS Stack ]" << endl;
-		cerr << toAnsi(stack) << endl;
-		cerr << "[ Native Stack ]" << endl;
-		cerr << toAnsi(nativestack) << endl;
 	}
 
 	cleanAllResource();

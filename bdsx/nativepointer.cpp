@@ -11,7 +11,6 @@ NativePointer::NativePointer(const JsArguments& args) noexcept
 	:JsObjectT(args)
 {
 }
-
 void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 {
 	cls->setMethod(u"move", &NativePointer::move);
@@ -43,8 +42,15 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 	cls->setMethod(u"writeUtf16", &NativePointer::writeUtf16);
 	cls->setMethod(u"writeBuffer", &NativePointer::writeBuffer);
 	cls->setMethod(u"writeCxxString", &NativePointer::writeCxxString);
-}
 
+	cls->setMethod(u"readVarUint", &NativePointer::readVarUint);
+	cls->setMethod(u"readVarInt", &NativePointer::readVarInt);
+	cls->setMethod(u"readVarString", &NativePointer::readVarString);
+
+	cls->setMethod(u"writeVarUint", &NativePointer::writeVarUint);
+	cls->setMethod(u"writeVarInt", &NativePointer::writeVarInt);
+	cls->setMethod(u"writeVarString", &NativePointer::writeVarString);
+}
 void NativePointer::move(int32_t lowBits, int32_t highBits) noexcept
 {
 	m_address += (intptr_t)makeqword(lowBits, highBits);
@@ -262,6 +268,80 @@ void NativePointer::writeCxxString(kr::Text16 text) throws(kr::JsException)
 		accessViolation(m_address);
 	}
 }
+
+uint32_t NativePointer::readVarUint() throws(kr::JsException)
+{
+	try
+	{
+		uint32_t value = 0;
+		for (int i = 0; i <= 28; i += 7) {
+			byte b = *m_address++;
+			value |= ((b & 0x7f) << i);
+
+			if ((b & 0x80) == 0) {
+				return value;
+			}
+		}
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+	throw JsException(u"VarInt did not terminate after 5 bytes!");
+}
+int32_t NativePointer::readVarInt() throws(kr::JsException)
+{
+	uint32_t raw = readVarUint();
+	return (raw >> 1) ^ -(int32_t)(raw & 1);
+}
+TText16 NativePointer::readVarString() throws(kr::JsException)
+{
+	uint32_t len = readVarUint();
+	try
+	{
+		byte* ptr = m_address;
+		ptr += len;
+		return TText16((Utf8ToUtf16)Text((char*)ptr, len));
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
+
+void NativePointer::writeVarUint(uint32_t value) throws(kr::JsException)
+{
+	for (;;) {
+		if ((value >> 7) != 0) {
+			*m_address++ = value | 0x80;
+		}
+		else {
+			*m_address++ = value & 0x7f;
+			return;
+		}
+		value = (value >> 7);
+	}
+}
+void NativePointer::writeVarInt(int32_t value) throws(kr::JsException)
+{
+	return writeVarUint((value << 1) ^ (value >> 31));
+}
+void NativePointer::writeVarString(kr::Text16 value) throws(kr::JsException)
+{
+	try
+	{
+		Utf16ToUtf8 convert = value;
+		size_t size = convert.size();
+		writeVarUint(intact<uint32_t>(size));
+		convert.copyTo((char*)m_address);
+		m_address += size;
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
+
 template <typename T>
 T NativePointer::_readas() throws(kr::JsException)
 {

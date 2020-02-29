@@ -44,6 +44,14 @@ public:
 	void writeBuffer(kr::JsValue buffer) throws(kr::JsException);
 	void writeCxxString(kr::Text16 text) throws(kr::JsException);
 
+	uint32_t readVarUint() throws(kr::JsException);
+	int32_t readVarInt() throws(kr::JsException);
+	kr::TText16 readVarString() throws(kr::JsException);
+
+	void writeVarUint(uint32_t v) throws(kr::JsException);
+	void writeVarInt(int32_t v) throws(kr::JsException);
+	void writeVarString(kr::Text16 v) throws(kr::JsException);
+
 	static void initMethods(kr::JsClassT<NativePointer>* cls) noexcept;
 	
 private:

@@ -78,7 +78,7 @@ void NativeFile::readUtf8(double offset, int size, JsValue callback) throws(JsEx
 				{
 					TText16 text16;
 					text16 << utf8ToUtf16(state->buffer.cut(dwBytesTransferred));
-					value(getErrorMessage(dwErrorCode, state->file->toString()), (Text16)text16);
+					value(getErrorMessage(dwErrorCode, state->file->toString()), (Text16)text16, dwBytesTransferred);
 				}
 			}
 			catch (JsException & err)

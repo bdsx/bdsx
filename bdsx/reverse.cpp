@@ -51,11 +51,11 @@ mce::UUID mce::UUID::generate() noexcept
 
 bool NetworkIdentifier::operator ==(const NetworkIdentifier& ni) const noexcept
 {
-	return g_mcf.NetworkIdentifier$equals(this, &ni);
+	return g_mcf.NetworkIdentifier$$_equals_(this, &ni);
 }
 bool NetworkIdentifier::operator !=(const NetworkIdentifier& ni) const noexcept
 {
-	return !g_mcf.NetworkIdentifier$equals(this, &ni);
+	return !g_mcf.NetworkIdentifier$$_equals_(this, &ni);
 }
 size_t NetworkIdentifier::getHash() const noexcept
 {
@@ -89,7 +89,7 @@ VectorData::~VectorData() noexcept
 }
 void* VectorData::_alloc(size_t bytesize) noexcept
 {
-	return g_mcf.std$_Allocate$16(bytesize);
+	return g_mcf.std$_Allocate$_alloc16_(bytesize);
 }
 
 String::String() noexcept
@@ -118,13 +118,13 @@ String::~String() noexcept
 {
 	g_mcf.std$string$_Tidy_deallocate(this);
 }
-const char* String::data() noexcept
+char* String::data() noexcept
 {
 	return capacity >= 16 ? pointer : buffer;
 }
 kr::Text String::text() noexcept
 {
-	const char* d = data();
+	char* d = data();
 	return kr::Text(d, size);
 }
 String* String::assign(const char* str, size_t size) noexcept
@@ -133,7 +133,12 @@ String* String::assign(const char* str, size_t size) noexcept
 }
 String* String::append(const char* str, size_t size) noexcept
 {
-	return g_mcf.std$string$assign(this, str, size);
+	return g_mcf.std$string$append(this, str, size);
+}
+void String::resize(size_t size, char init) noexcept
+{
+	std::string a;
+	return g_mcf.std$string$resize(this, size, init);
 }
 
 HashedString::HashedString() noexcept
@@ -371,7 +376,7 @@ Actor* ServerInstance::getActorFromNetworkIdentifier(const NetworkIdentifier& ni
 
 bool Actor::isServerPlayer() noexcept
 {
-	return vftable == g_mcf.ServerPlayer$_vftable_;
+	return vftable == g_mcf.ServerPlayer$$_vftable_;
 }
 ActorType Actor::getEntityTypeId() noexcept
 {

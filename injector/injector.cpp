@@ -17,6 +17,7 @@ int main()
 	TText16 injectorPath = readArgument(&commandLine);
 	AText16 dllPath;
 	bool resurrection = false;
+	bool noWindow = false;
 	
 	for (;;)
 	{
@@ -35,7 +36,11 @@ int main()
 			break;
 		}
 
-		if (param.subarr(1) == u"r")
+		if (param.subarr(1) == u"q")
+		{
+			noWindow = true;
+		}
+		else if (param.subarr(1) == u"r")
 		{
 			resurrection = true;
 		}
@@ -61,7 +66,8 @@ int main()
 		auto [proc, thread] = win::Process::execute((pstr16)commandLine.data(), TSZ16() << currentDirectory,
 			win::ProcessOptions()
 			.suspended(true)
-			.console(true));
+			.console(!noWindow)
+			.noWindow(noWindow));
 		if (!proc)
 		{
 			ErrorCode last = ErrorCode::getLast();

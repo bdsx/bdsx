@@ -325,10 +325,10 @@ kcopy "%(RelativeDir)index.js" "$(SolutionDir)release\%(RelativeDir)index.js"</C
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)bdsx.zip</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;../release/bin/bdsx.dll;../release/bin/injector.exe;../release/bin/updater.exe;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;README.md;common.bat;download.bat</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bdsx/*.js;bdsx/*.ts;bdsx/package.json;bdsx/package-lock.json;bdsx/tsconfig.json;../release/bin/bdsx.dll;../release/bin/injector.exe;../release/bin/updater.exe;README.md;common.bat;download.bat</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include="bdsx\package-lock.json">
       <FileType>Document</FileType>

@@ -101,8 +101,8 @@ void Require::_loadPackageJson() noexcept
 	}
 	catch (Error&)
 	{
-		ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-		cerr << "BDSX: failed to load package.json" << endl;
+		Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+		console.log("BDSX: failed to load package.json\n");
 	}
 
 	TSZ16 maindir;
@@ -196,7 +196,7 @@ JsValue Require::operator()(Text16 modulename) const throws(JsException)
 		}
 		catch (...)
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
 			throw JsException(TSZ16() << u"failed to load package.json: " << packagejson);
 		}
 		if (entry == nullptr)

@@ -45,6 +45,7 @@ namespace
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
 	Map<Text, AText> s_uuidToPackPath;
+	// Text16 s_properties = nullptr;
 }
 
 void catchException() noexcept
@@ -220,22 +221,6 @@ JsErrorCode CALLBACK JsCallFunctionHook(
 	return err;
 }
 
-BOOL CALLBACK handleConsoleEvent(DWORD CtrlType)
-{
-	switch (CtrlType)
-	{
-	case CTRL_CLOSE_EVENT:
-	case CTRL_LOGOFF_EVENT:
-	case CTRL_SHUTDOWN_EVENT:
-		g_mainPump->post([] {
-			throw QuitException(0);
-		});
-		ThreadHandle::getCurrent()->terminate();
-		return true;
-	}
-	return false;
-}
-
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
 	_In_ DWORD     fdwReason,
@@ -246,26 +231,31 @@ BOOL WINAPI DllMain(
 	{
 		ondebug(requestDebugger());
 				
-		cout << "BDSX: Attached" << endl;
+		console.log("BDSX: Attached\n");
 
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
 		g_mcf.load();
 
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
-		readArgument(&commandLine); // exepath
+		Text16 cmdread = commandLine;
+		AText16 mutex;
+		AText16 host;
+		int port;
+
+		readArgument(&cmdread); // exepath
 		bool modulePathSetted = false;
-		while (!commandLine.empty())
+		while (!cmdread.empty())
 		{
-			Text16 option = readArgument(&commandLine);
+			TText16 option = readArgument(&cmdread);
 			if (option == u"-M")
 			{
-				Text16 modulePath = readArgument(&commandLine);
+				TText16 modulePath = readArgument(&cmdread);
 
 				if (modulePathSetted)
 				{
-					ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-					cerr << "BDSX: multiple modules are not supported" << endl;
+					Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					console.log("BDSX: multiple modules are not supported\n");
 					continue;
 				}
 				modulePathSetted = true;
@@ -274,20 +264,84 @@ BOOL WINAPI DllMain(
 			}
 			else if (option == u"--mutex")
 			{
-				Text16 name = readArgument(&commandLine);
-				g_singleInstanceLimiter.create(TSZ16() << u"BDSX_" << name);
+				mutex = readArgument(&cmdread);
+				g_singleInstanceLimiter.create(TSZ16() << u"BDSX_" << mutex);
 			}
+			else if (option == u"--pipe-socket")
+			{
+				host = readArgument(&cmdread);
+				port = readArgument(&cmdread).to_uint();
+			}
+			//else if (option == u"--properties")
+			//{
+			//	s_properties = readArgument(&commandLine);
+			//}
+		}
+
+		if (host != nullptr)
+		{
+			console.connect(host.c_str(), port, mutex == nullptr ? (Text)nullptr : (Text)(TSZ() << mutex));
 		}
 
 		if (!modulePathSetted)
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << "BDSX: Module is not defined // -M [module path]" << endl;
+			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			console.log("BDSX: Module is not defined // -M [module path]\n");
 		}
 
+		//g_mcf.hookOnPropertyPath([](String* dest) {
+		//	if (s_properties == nullptr)
+		//	{
+		//		ToUtf8<char16> toUtf8 = s_properties;
+		//		dest->resize(toUtf8.size());
+		//		toUtf8.copyTo(dest->data());
+		//	}
+		//	else
+		//	{
+		//		Text path = "server.properties";
+		//		dest->assign(path.data(), path.size());
+		//	}
+		//	});
+		g_mcf.hookOnLog([](int color, const char* log, size_t size) {
+			int ncolor;
+			if (color == 1)
+			{
+				ncolor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+			}
+			else if (color == 2)
+			{
+				ncolor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+			}
+			else if (color == 4)
+			{
+				ncolor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			}
+			else
+			{
+				ncolor = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			}
+			Console::ColorScope __color = ncolor;
+			console.log({log, size});
+			});
+		g_mcf.hookOnCommandPrint([](const char * log, size_t size) {
+			console.logLine({ log, size });
+			});
 		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
 			g_server = instance;
-			SetConsoleCtrlHandler(handleConsoleEvent, true);
+			SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL{
+				switch (CtrlType)
+				{
+				case CTRL_CLOSE_EVENT:
+				case CTRL_LOGOFF_EVENT:
+				case CTRL_SHUTDOWN_EVENT:
+					g_mainPump->post([] {
+						throw QuitException(0);
+						});
+					ThreadHandle::getCurrent()->terminate();
+					return true;
+				}
+				return false;
+				}, true);
 		});
 		g_mcf.hookOnScriptLoading([]{
 			// create require

@@ -82,8 +82,7 @@ MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText passwor
 	m_closed = false;
 
 	EventPump* pump = EventPump::getInstance();
-	JsPersistent * cbptr = _new JsPersistent(cb);
-	m_thread.post([this, cbptr, pump = (Keep<EventPump>)pump] {
+	m_thread.post([this, cbp = (JsPersistent)cb, pump = (Keep<EventPump>)pump]() mutable {
 		if (s_serverInitCounter++ == 0)
 		{
 			s_mysqlServer.create();
@@ -92,9 +91,8 @@ MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText passwor
 		try
 		{
 			m_sql->connect();
-			pump->post([cbptr]() {
-				JsValue cb = *cbptr;
-				delete cbptr;
+			pump->post([cbp = move(cbp)]() {
+				JsValue cb = cbp;
 				if (cb.getType() == JsType::Function) cb();
 				});
 		}
@@ -103,9 +101,8 @@ MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText passwor
 			int no = m_sql->getErrorNumber();
 			const char * errstr = m_sql->getErrorMessage();
 
-			pump->post([cbptr, no, errstr = (AText16)(Utf8ToUtf16)(Text)errstr]() {
-				JsValue cb = *cbptr;
-				delete cbptr;
+			pump->post([cbp=move(cbp), no, errstr = (AText16)(Utf8ToUtf16)(Text)errstr]() {
+				JsValue cb = cbp;
 				if (cb.getType() == JsType::Function) cb(errstr, no);
 				});
 		}
@@ -335,14 +332,14 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		{
 			if (logError)
 			{
-				ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				cerr << "MariaDB Error " << sql->m_sql->getErrorNumber() << ": " << sql->m_sql->getErrorMessage() << endl;
+				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				console.log(TSZ() << "MariaDB Error " << sql->m_sql->getErrorNumber() << ": " << sql->m_sql->getErrorMessage() << '\n');
 			}
 		}
 		catch (ThrowRetry&)
 		{
-			ConsoleColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			cerr << "MariaDB disconnected?" << endl;
+			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			console.log("MariaDB disconnected?\n");
 		}
 		if (data == nullptr) return;
 

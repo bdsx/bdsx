@@ -37,7 +37,6 @@ struct VanilaServerGameplayEventListener;
 struct Whitelist;
 struct PrivateKeyManager;
 struct MinecraftCommands;
-struct CommandOutputSender;
 struct Actor;
 struct ActorDefinitionGroup;
 struct Block;
@@ -53,7 +52,6 @@ struct NetworkIdentifier;
 struct EncryptedNetworkPeer;
 struct String;
 struct Certificate;
-struct CommandContext;
 struct Packet;
 struct Dimension;
 struct Level;
@@ -63,6 +61,10 @@ struct Actor$VFTable;
 struct SharedPtrData;
 struct ItemStack;
 struct AuxDataBlockItem;
+struct CommandOutputSender;
+struct CommandContext;
+struct CommandOrigin;
+struct CommandOutput;
 
 enum class ActorUniqueID :uint64_t;
 enum class ActorRuntimeID :uint64_t;
@@ -322,10 +324,11 @@ struct String
 	String(Dirty_t) noexcept;
 	String(String&& _move) noexcept;
 	~String() noexcept;
-	const char* data() noexcept;
+	char* data() noexcept;
 	kr::Text text() noexcept;
 	String* assign(const char* str, size_t size) noexcept;
 	String* append(const char* str, size_t size) noexcept;
+	void resize(size_t size, char init = char()) noexcept;
 };
 
 template <typename T>

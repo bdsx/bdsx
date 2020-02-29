@@ -25,7 +25,7 @@ declare module './native'
              * @param size reading size
              * @param callback callback, error is zero if succeeded
              */
-            readUtf8(offset: number, size: number, callback?: (error: string | null, buffer: string) => void): Promise<string>;
+            readUtf8(offset: number, size: number, callback?: (error: string | null, buffer: string, byteLength:number) => void): Promise<string>;
 
             /**
              * Write file
@@ -43,7 +43,7 @@ declare module './native'
              */
             writeBuffer(offset: number, buffer: Bufferable, callback?: (error: string | null, bytes: number) => void): Promise<number>;
 
-            _readUtf8(offset: number, size: number, callback: (error: string | null, buffer: string) => void):void;
+            _readUtf8(offset: number, size: number, callback: (error: string | null, buffer: string, byteLength:number) => void):void;
             
             _readBuffer(offset: number, size: number, callback: (error: string | null, buffer: Uint8Array) => void):void;
             
@@ -70,11 +70,11 @@ File.prototype.readBuffer = function(offset: number, size: number, callback?: (e
     });
 };
 
-File.prototype.readUtf8 = function(offset: number, size: number, callback?: (error: string | null, buffer: string) => void): Promise<string>
+File.prototype.readUtf8 = function(offset: number, size: number, callback?: (error: string | null, buffer: string, byteLength:number) => void): Promise<string>
 {
     return new Promise((resolve, reject)=>{
-        this._readUtf8(offset, size, (err, data)=>{
-            if (callback) callback(err, data);
+        this._readUtf8(offset, size, (err, data, byteLength)=>{
+            if (callback) callback(err, data, byteLength);
             if (err) reject(Error(err));
             else resolve(data);
         });
@@ -133,21 +133,24 @@ export function appendFile(path: string, content: string): Promise<void> {
 }
 
 export function readFile(path: string): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {        
         const file = new File(path, File.READ, File.OPEN_EXISTING);
         let out = '';
-        function onread(err:string, buffer:string): void {
+        let byteOffset = 0;
+        function onread(err:string, buffer:string, byteLength:number): void {
             if (err) {
                 file.close();
                 return reject(Error(err));
             }
             out += buffer;
+            byteOffset += byteLength;
+
             if (buffer.length == 0) {
                 file.close();
                 resolve(out);
             }
             else {
-                file.readUtf8(out.length, 8192, onread);
+                file.readUtf8(byteOffset, 8192, onread);
             }
         }
         file.readUtf8(0, 8192, onread);
@@ -158,11 +161,15 @@ export function resolve(path:string)
 {
     path = path.replace(/\//g, '\\');
 
-    let out:string[] = [];
+    let out:string[];
     const dirs = path.split('\\');
     if (dirs[0] !== '' && !dirs[0].endsWith(':'))
     {
-        out.push(cwd());
+        out = cwd().split(/\\/g);
+    }
+    else
+    {
+        out = [];
     }
 
     for (const dir of path.split('\\'))

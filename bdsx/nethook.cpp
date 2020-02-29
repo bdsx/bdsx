@@ -199,7 +199,7 @@ void NetHookModule::hook() noexcept
 		}
 		catch (...)
 		{
-			cerr << "SEH error" << endl;
+			console.log("SEH error\n");
 		}
 		});
 	g_mcf.hookOnPacketSendInternal([](NetworkHandler* handler, const NetworkIdentifier& ni, Packet* packet, String* data)->NetworkHandler::Connection* {
@@ -229,7 +229,7 @@ void NetHookModule::hook() noexcept
 			}
 			catch (...)
 			{
-				cerr << "SEH error" << endl;
+				console.log("SEH error\n");
 			}
 		}
 		return handler->getConnectionFromId(ni);

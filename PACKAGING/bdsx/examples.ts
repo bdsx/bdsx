@@ -56,10 +56,11 @@ chat.on(ev => {
 // Network Hooking: Get login IP and XUID
 import { netevent, PacketId } from "bdsx";
 const connectionList = new Map<NetworkIdentifier, string>();
-netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId, loginInfo) => {
+netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
     const ip = networkIdentifier.getAddress();
-    console.log(`${loginInfo.id}> IP=${ip}, XUID=${loginInfo.xuid}`);
-    if (loginInfo.id) connectionList.set(networkIdentifier, loginInfo.id);
+    const [xuid, username] = netevent.readLoginPacket(ptr);
+    console.log(`${username}> IP=${ip}, XUID=${xuid}`);
+    if (username) connectionList.set(networkIdentifier, username);
 });
 
 // Network Hooking: Print all packets

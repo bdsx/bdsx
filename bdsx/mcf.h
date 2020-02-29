@@ -4,18 +4,18 @@
 
 #include <KR3/main.h>
 #include <KR3/util/dump.h>
+#include <KR3/data/map.h>
 #include <chrono>
 
 struct MinecraftFunctionTable
 {
 	void load() noexcept;
-	void loadFromPredefined() noexcept;
-	void loadFromPdb() noexcept;
-	void checkUnloaded() noexcept;
+	bool isNotFullLoaded() noexcept;
 
 	void stopServer() noexcept;
 
 	// skip when return true
+	void hookOnPropertyPath(void(*onPropertyPath)(String* str)) noexcept;
 	void hookOnUpdate(void(*update)(Minecraft* mc)) noexcept;
 	void hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept;
 	void hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, NetworkHandler::Connection* conn)) noexcept;
@@ -31,6 +31,8 @@ struct MinecraftFunctionTable
 	void hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept;
 	void hookOnActorRelease(void(*callback)(Actor* actor)) noexcept;
 	void hookOnActorDestructor(void(*callback)(Actor* actor)) noexcept;
+	void hookOnLog(void(*callback)(int color, const char * log, size_t size)) noexcept;
+	void hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept;
 	void removeScriptExperientalCheck() noexcept;
 
 	bool (*NetworkHandler$_sortAndPacketizeEvents)(NetworkHandler* _this, NetworkHandler::Connection&, std::chrono::nanoseconds);
@@ -51,28 +53,30 @@ struct MinecraftFunctionTable
 	void (*NetworkHandler$send)(NetworkHandler*, const NetworkIdentifier*, Packet*, unsigned char);
 	void (*NetworkHandler$_sendInternal)(const NetworkIdentifier*, Packet*, const String*);
 	size_t (*NetworkIdentifier$getHash)(const NetworkIdentifier*);
-	bool (*NetworkIdentifier$equals)(const NetworkIdentifier* a, const NetworkIdentifier* b);
+	bool (*NetworkIdentifier$$_equals_)(const NetworkIdentifier* a, const NetworkIdentifier* b);
 	mce::UUID* (*Crypto$Random$generateUUID)(mce::UUID* dest);
-	void (*Actor$_Actor)(Actor*);
+	void (*Actor$dtor$Actor)(Actor*);
 	SharedPtr<Packet>* (*MinecraftPackets$createPacket)(SharedPtr<Packet>* dest, MinecraftPacketIds);
 	AttributeInstance*(*BaseAttributeMap$getMutableInstance)(BaseAttributeMap* map, uint32_t);
 	Dimension* (*Level$createDimension)(Level*, DimensionId);
 	Actor* (*Level$fetchEntity)(Level* level, ActorUniqueID, bool);
-	void* (*std$_Allocate$16)(size_t size);
+	void* (*std$_Allocate$_alloc16_)(size_t size);
 	void (*LoopbackPacketSender$sendToClients)(LoopbackPacketSender*, const Vector<NetworkIdentifierWithSubId> *, Packet*);
 	void (*ServerPlayer$sendNetworkPacket)(ServerPlayer*, Packet*);
 	void (*Level$removeEntityReferences)(Actor*, bool);
-
-
+	void (*BedrockLogOut)(unsigned int, char const*, ...);
+	void (*CommandOutputSender$send)(CommandOutputSender* _this, const CommandOrigin* origin, const CommandOutput* output);
+	
 	void (*std$string$_Tidy_deallocate)(String* str);
 	String* (*std$string$assign)(String* _this, const char* str, size_t size);
 	String* (*std$string$append)(String* _this, const char* str, size_t size);
+	void (*std$string$resize)(String* _this, size_t size, char init);
 	void (*free)(void*);
 	void* (*malloc)(size_t size);
 
 	void (*google_breakpad$ExceptionHandler$HandleException)();
 	DedicatedServer** StopCommand$mServer;
-	const Actor$VFTable* ServerPlayer$_vftable_;
+	const Actor$VFTable* ServerPlayer$$_vftable_;
 };
 
 extern MinecraftFunctionTable g_mcf;

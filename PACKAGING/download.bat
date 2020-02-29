@@ -3,10 +3,10 @@ call common.bat %1
 
 mkdir bin\bds 2>NUL
 
-echo Version: %VERSION%
+echo Version: %BDS_VERSION%
 IF NOT EXIST "%BDSZIP%" (
 	echo %BDSZIP%: download...
-	kget "https://minecraft.azureedge.net/bin-win/bedrock-server-%VERSION%.zip" "%BDSZIP%"
+	kget "https://minecraft.azureedge.net/bin-win/bedrock-server-%BDS_VERSION%.zip" "%BDSZIP%"
 )
 
 echo %BDSZIP%: unzip...

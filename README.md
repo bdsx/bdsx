@@ -27,9 +27,9 @@ chat.on(ev=>{
 ```ts
 import { netevent, PacketId } from "bdsx";
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
-    const loginInfo = netevent.readLoginPacket(ptr);
-    // networkIdentifier has non-printable character, It will breaks standard output
-    console.log(`${loginInfo.id}> IP=${loginInfo.ip}, XUID=${loginInfo.xuid}`);
+    const ip = networkIdentifier.getAddress();
+    const [xuid, username] = netevent.readLoginPacket(ptr);
+    console.log(`${username}> IP=${ip}, XUID=${xuid}`);
 });
 ```
 * [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)!

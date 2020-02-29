@@ -76,7 +76,7 @@ JsValue createFsModule() noexcept
 	fs.setMethod(u"appendUtf8FileSync", [](Text16 filename, Text16 text) {
 		try
 		{
-			Must<File> file = File::openAndWrite(TSZ16() << filename);
+			Must<File> file = File::openWrite(TSZ16() << filename);
 			TSZ utf8;
 			utf8 << (Utf16ToUtf8)text;
 			file->movePointerToEnd(0);
@@ -93,7 +93,7 @@ JsValue createFsModule() noexcept
 
 		try
 		{
-			Must<File> file = File::openAndWrite(TSZ16() << filename);
+			Must<File> file = File::openWrite(TSZ16() << filename);
 			file->movePointerToEnd(0);
 			file->write(buffer.data(), buffer.size());
 		}
