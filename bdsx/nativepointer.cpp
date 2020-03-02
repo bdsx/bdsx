@@ -171,6 +171,22 @@ TText16 NativePointer::readCxxString() throws(kr::JsException)
 		accessViolation(m_address);
 	}
 }
+TText16 NativePointer::readCxxStringAnsi() throws(kr::JsException)
+{
+	TText16 text;
+	try
+	{
+		String* str = (String*)m_address;
+		m_address += sizeof(String);
+
+		text << (AnsiToUtf16)Text(str->data(), str->size);
+		return text;
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
 
 void NativePointer::writeUint8(uint8_t v) throws(kr::JsException)
 {
@@ -260,6 +276,21 @@ void NativePointer::writeCxxString(kr::Text16 text) throws(kr::JsException)
 	{
 		String* str = (String*)m_address;
 		utf8 << toUtf8(text);
+		str->assign(utf8.data(), utf8.size());
+		m_address += sizeof(String);
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
+void NativePointer::writeCxxStringAnsi(kr::Text16 text) throws(kr::JsException)
+{
+	TSZ utf8;
+	try
+	{
+		String* str = (String*)m_address;
+		utf8 << toAnsi(text);
 		str->assign(utf8.data(), utf8.size());
 		m_address += sizeof(String);
 	}

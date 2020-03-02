@@ -29,6 +29,7 @@ public:
 	kr::TText16 readUtf8(kr::JsValue bytes) throws(kr::JsException);
 	kr::JsValue readBuffer(int bytes) throws(kr::JsException);
 	kr::TText16 readCxxString() throws(kr::JsException);
+	kr::TText16 readCxxStringAnsi() throws(kr::JsException);
 
 	void writeUint8(uint8_t v) throws(kr::JsException);
 	void writeUint16(uint16_t v) throws(kr::JsException);
@@ -43,6 +44,7 @@ public:
 	void writeUtf8(kr::Text16 text) throws(kr::JsException);
 	void writeBuffer(kr::JsValue buffer) throws(kr::JsException);
 	void writeCxxString(kr::Text16 text) throws(kr::JsException);
+	void writeCxxStringAnsi(kr::Text16 text) throws(kr::JsException);
 
 	uint32_t readVarUint() throws(kr::JsException);
 	int32_t readVarInt() throws(kr::JsException);
