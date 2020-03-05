@@ -2,6 +2,7 @@
 #include "reverse.h"
 #include "sharedptr.h"
 #include "common.h"
+#include "encoding.h"
 
 #include <KR3/util/unaligned.h>
 
@@ -24,8 +25,7 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 	cls->setMethod(u"readFloat32", &NativePointer::readFloat32);
 	cls->setMethod(u"readFloat64", &NativePointer::readFloat64);
 	cls->setMethod(u"readPointer", &NativePointer::readPointer);
-	cls->setMethod(u"readUtf8", &NativePointer::readUtf8);
-	cls->setMethod(u"readUtf16", &NativePointer::readUtf16);
+	cls->setMethod(u"readString", &NativePointer::readString);
 	cls->setMethod(u"readBuffer", &NativePointer::readBuffer);
 	cls->setMethod(u"readCxxString", &NativePointer::readCxxString);
 
@@ -38,8 +38,7 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 	cls->setMethod(u"writeFloat32", &NativePointer::writeFloat32);
 	cls->setMethod(u"writeFloat64", &NativePointer::writeFloat64);
 	cls->setMethod(u"writePointer", &NativePointer::writePointer);
-	cls->setMethod(u"writeUtf8", &NativePointer::writeUtf8);
-	cls->setMethod(u"writeUtf16", &NativePointer::writeUtf16);
+	cls->setMethod(u"writeString", &NativePointer::writeString);
 	cls->setMethod(u"writeBuffer", &NativePointer::writeBuffer);
 	cls->setMethod(u"writeCxxString", &NativePointer::writeCxxString);
 
@@ -56,92 +55,102 @@ void NativePointer::move(int32_t lowBits, int32_t highBits) noexcept
 	m_address += (intptr_t)makeqword(lowBits, highBits);
 }
 
-uint8_t NativePointer::readUint8() throws(kr::JsException)
+uint8_t NativePointer::readUint8() throws(JsException)
 {
 	return _readas<uint8_t>();
 }
-uint16_t NativePointer::readUint16() throws(kr::JsException)
+uint16_t NativePointer::readUint16() throws(JsException)
 {
 	return _readas<uint16_t>();
 }
-uint32_t NativePointer::readUint32() throws(kr::JsException)
+uint32_t NativePointer::readUint32() throws(JsException)
 {
 	return _readas<int32_t>();
 }
-int8_t NativePointer::readInt8() throws(kr::JsException)
+int8_t NativePointer::readInt8() throws(JsException)
 {
 	return _readas<int8_t>();
 }
-int16_t NativePointer::readInt16() throws(kr::JsException)
+int16_t NativePointer::readInt16() throws(JsException)
 {
 	return _readas<int16_t>();
 }
-int32_t NativePointer::readInt32() throws(kr::JsException)
+int32_t NativePointer::readInt32() throws(JsException)
 {
 	return _readas<int32_t>();
 }
-float NativePointer::readFloat32() throws(kr::JsException)
+float NativePointer::readFloat32() throws(JsException)
 {
 	return _readas<float>();
 }
-double NativePointer::readFloat64() throws(kr::JsException)
+double NativePointer::readFloat64() throws(JsException)
 {
 	return _readas<double>();
 }
-NativePointer* NativePointer::readPointer() throws(kr::JsException)
+NativePointer* NativePointer::readPointer() throws(JsException)
 {
 	NativePointer* pointer = NativePointer::newInstance();
 	pointer->m_address = _readas<byte*>();
 	return pointer;
 }
-Text16 NativePointer::readUtf16(JsValue bytes) throws(kr::JsException)
+JsValue NativePointer::readString(JsValue bytes, int encoding) throws(JsException)
 {
-	Text16 text;
-	try
+	if (encoding == ExEncoding::UTF16)
 	{
-		if (bytes == undefined)
+		try
 		{
-			char16* end = mem16::find((char16*)m_address, '\0');
-			text = Text16((char16*)m_address, end);
-			m_address = (byte*)end;
+			Text16 text;
+			if (bytes == undefined)
+			{
+				char16* end = mem16::find((char16*)m_address, '\0');
+				text = Text16((char16*)m_address, end);
+				m_address = (byte*)end;
+			}
+			else
+			{
+				text = Text16((char16*)m_address, bytes.cast<int>());
+				m_address = (byte*)text.end();
+			}
+			return text;
 		}
-		else
+		catch (...)
 		{
-			text = Text16((char16*)m_address, bytes.cast<int>());
-			m_address = (byte*)text.end();
+			accessViolation(m_address);
 		}
 	}
-	catch (...)
+	else if (encoding == ExEncoding::BUFFER)
 	{
-		accessViolation(m_address);
+		return readBuffer(bytes.cast<int>());
 	}
-	return text;
+	else
+	{
+		try
+		{
+			TText16 text;
+			Text src;
+			if (bytes == undefined)
+			{
+				byte* end = mem::find(m_address, '\0');
+				src = Text((char*)m_address, (char*)end);
+			}
+			else
+			{
+				src = Text((char*)m_address, bytes.cast<int>());
+			}
+			m_address = (byte*)src.end();
+			Charset cs = (Charset)encoding;
+			CHARSET_CONSTLIZE(cs,
+				text << (MultiByteToUtf16<cs>)src;
+			);
+			return text;
+		}
+		catch (...)
+		{
+			accessViolation(m_address);
+		}
+	}
 }
-TText16 NativePointer::readUtf8(JsValue bytes) throws(kr::JsException)
-{
-	TText16 text;
-	try
-	{
-		Text src;
-		if (bytes == undefined)
-		{
-			byte* end = mem::find(m_address, '\0');
-			src = Text((char*)m_address, (char*)end);
-		}
-		else
-		{
-			src = Text((char*)m_address, bytes.cast<int>());
-		}
-		m_address = (byte*)src.end();
-		text << (Utf8ToUtf16)src;
-		return text;
-	}
-	catch (...)
-	{
-		accessViolation(m_address);
-	}
-}
-JsValue NativePointer::readBuffer(int bytes) throws(kr::JsException)
+JsValue NativePointer::readBuffer(int bytes) throws(JsException)
 {
 	JsValue value = JsNewTypedArray(JsTypedArrayType::Uint8, bytes);
 	try
@@ -155,7 +164,7 @@ JsValue NativePointer::readBuffer(int bytes) throws(kr::JsException)
 	}
 	return value;
 }
-TText16 NativePointer::readCxxString() throws(kr::JsException)
+TText16 NativePointer::readCxxString(int encoding) throws(JsException)
 {
 	TText16 text;
 	try
@@ -163,23 +172,10 @@ TText16 NativePointer::readCxxString() throws(kr::JsException)
 		String* str = (String*)m_address;
 		m_address += sizeof(String);
 
-		text << (Utf8ToUtf16)Text(str->data(), str->size);
-		return text;
-	}
-	catch (...)
-	{
-		accessViolation(m_address);
-	}
-}
-TText16 NativePointer::readCxxStringAnsi() throws(kr::JsException)
-{
-	TText16 text;
-	try
-	{
-		String* str = (String*)m_address;
-		m_address += sizeof(String);
-
-		text << (AnsiToUtf16)Text(str->data(), str->size);
+		Charset cs = (Charset)encoding;
+		CHARSET_CONSTLIZE(cs,
+			text << (MultiByteToUtf16<cs>)Text(str->data(), str->size);
+		);
 		return text;
 	}
 	catch (...)
@@ -188,78 +184,91 @@ TText16 NativePointer::readCxxStringAnsi() throws(kr::JsException)
 	}
 }
 
-void NativePointer::writeUint8(uint8_t v) throws(kr::JsException)
+void NativePointer::writeUint8(uint8_t v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeUint16(uint16_t v) throws(kr::JsException)
+void NativePointer::writeUint16(uint16_t v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeUint32(uint32_t v) throws(kr::JsException)
+void NativePointer::writeUint32(uint32_t v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeInt8(int8_t v) throws(kr::JsException)
+void NativePointer::writeInt8(int8_t v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeInt16(int16_t v) throws(kr::JsException)
+void NativePointer::writeInt16(int16_t v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeInt32(int32_t v) throws(kr::JsException)
+void NativePointer::writeInt32(int32_t v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeFloat32(float v) throws(kr::JsException)
+void NativePointer::writeFloat32(float v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writeFloat64(double v) throws(kr::JsException)
+void NativePointer::writeFloat64(double v) throws(JsException)
 {
 	_writeas(v);
 }
-void NativePointer::writePointer(StaticPointer* v) throws(kr::JsException)
+void NativePointer::writePointer(StaticPointer* v) throws(JsException)
 {
 	if (v == nullptr) throw JsException(u"argument must be *Pointer");
 	_writeas(v->getAddressRaw());
 }
-void NativePointer::writeUtf16(kr::Text16 text) throws(kr::JsException)
+void NativePointer::writeString(JsValue buffer, int encoding) throws(JsException)
 {
-	try
+	if (encoding == ExEncoding::UTF16)
 	{
-		size_t size = text.size();
-		memcpy(m_address, text.data(), size);
-		m_address += size * sizeof(char16);
-	}
-	catch (...)
-	{
-		accessViolation(m_address);
-	}
-}
-void NativePointer::writeUtf8(kr::Text16 text) throws(kr::JsException)
-{
-	try
-	{
-		TSZ utf8;
-		utf8 << toUtf8(text);
 
-		size_t size = utf8.size();
-		memcpy(m_address, utf8.data(), size);
-		m_address += size;
+		try
+		{
+			Text16 text = buffer.cast<Text16>();
+			size_t size = text.size();
+			memcpy(m_address, text.data(), size);
+			m_address += size * sizeof(char16);
+		}
+		catch (...)
+		{
+			accessViolation(m_address);
+		}
 	}
-	catch (...)
+	else if (encoding == ExEncoding::BUFFER)
 	{
-		accessViolation(m_address);
+		writeBuffer(buffer);
+	}
+	else
+	{
+		try
+		{
+			Text16 text = buffer.cast<Text16>();
+			TSZ mb;
+			Charset cs = (Charset)encoding;
+			CHARSET_CONSTLIZE(cs,
+				mb << Utf16ToMultiByte<cs>(text);
+			);
+
+			size_t size = mb.size();
+			memcpy(m_address, mb.data(), size);
+			m_address += size;
+		}
+		catch (...)
+		{
+			accessViolation(m_address);
+		}
 	}
 }
-void NativePointer::writeBuffer(kr::JsValue buffer) throws(kr::JsException)
+void NativePointer::writeBuffer(JsValue buffer) throws(JsException)
 {
 	try
 	{
 		Buffer buf = buffer.getBuffer();
-		if (buf == nullptr) throw kr::JsException(u"argument must be buffer");
+		if (buf == nullptr) throw JsException(u"argument must be buffer");
 		size_t size = buf.size();
 		memcpy(m_address, buf.data(), size);
 		m_address += size;
@@ -269,29 +278,18 @@ void NativePointer::writeBuffer(kr::JsValue buffer) throws(kr::JsException)
 		accessViolation(m_address);
 	}
 }
-void NativePointer::writeCxxString(kr::Text16 text) throws(kr::JsException)
+void NativePointer::writeCxxString(Text16 text, int encoding) throws(JsException)
 {
-	TSZ utf8;
+	TSZ mb;
 	try
 	{
 		String* str = (String*)m_address;
-		utf8 << toUtf8(text);
-		str->assign(utf8.data(), utf8.size());
-		m_address += sizeof(String);
-	}
-	catch (...)
-	{
-		accessViolation(m_address);
-	}
-}
-void NativePointer::writeCxxStringAnsi(kr::Text16 text) throws(kr::JsException)
-{
-	TSZ utf8;
-	try
-	{
-		String* str = (String*)m_address;
-		utf8 << toAnsi(text);
-		str->assign(utf8.data(), utf8.size());
+		mb << toUtf8(text);
+		Charset cs = (Charset)encoding;
+		CHARSET_CONSTLIZE(cs,
+			mb << Utf16ToMultiByte<cs>(text);
+		);
+		str->assign(mb.data(), mb.size());
 		m_address += sizeof(String);
 	}
 	catch (...)
@@ -300,7 +298,7 @@ void NativePointer::writeCxxStringAnsi(kr::Text16 text) throws(kr::JsException)
 	}
 }
 
-uint32_t NativePointer::readVarUint() throws(kr::JsException)
+uint32_t NativePointer::readVarUint() throws(JsException)
 {
 	try
 	{
@@ -320,19 +318,24 @@ uint32_t NativePointer::readVarUint() throws(kr::JsException)
 	}
 	throw JsException(u"VarInt did not terminate after 5 bytes!");
 }
-int32_t NativePointer::readVarInt() throws(kr::JsException)
+int32_t NativePointer::readVarInt() throws(JsException)
 {
 	uint32_t raw = readVarUint();
 	return (raw >> 1) ^ -(int32_t)(raw & 1);
 }
-TText16 NativePointer::readVarString() throws(kr::JsException)
+TText16 NativePointer::readVarString(int encoding) throws(JsException)
 {
 	uint32_t len = readVarUint();
 	try
 	{
 		byte* ptr = m_address;
 		ptr += len;
-		return TText16((Utf8ToUtf16)Text((char*)ptr, len));
+
+		Charset cs = (Charset)encoding;
+		CHARSET_CONSTLIZE(cs,
+			return TText16((MultiByteToUtf16<cs>)Text((char*)ptr, len));
+		);
+		return TText16();
 	}
 	catch (...)
 	{
@@ -340,7 +343,7 @@ TText16 NativePointer::readVarString() throws(kr::JsException)
 	}
 }
 
-void NativePointer::writeVarUint(uint32_t value) throws(kr::JsException)
+void NativePointer::writeVarUint(uint32_t value) throws(JsException)
 {
 	for (;;) {
 		if ((value >> 7) != 0) {
@@ -353,19 +356,22 @@ void NativePointer::writeVarUint(uint32_t value) throws(kr::JsException)
 		value = (value >> 7);
 	}
 }
-void NativePointer::writeVarInt(int32_t value) throws(kr::JsException)
+void NativePointer::writeVarInt(int32_t value) throws(JsException)
 {
 	return writeVarUint((value << 1) ^ (value >> 31));
 }
-void NativePointer::writeVarString(kr::Text16 value) throws(kr::JsException)
+void NativePointer::writeVarString(Text16 value, int encoding) throws(JsException)
 {
 	try
 	{
-		Utf16ToUtf8 convert = value;
-		size_t size = convert.size();
-		writeVarUint(intact<uint32_t>(size));
-		convert.copyTo((char*)m_address);
-		m_address += size;
+		Charset cs = (Charset)encoding;
+		CHARSET_CONSTLIZE(cs,
+			Utf16ToMultiByte<cs> convert = value;
+			size_t size = convert.size();
+			writeVarUint(intact<uint32_t>(size));
+			convert.copyTo((char*)m_address);
+			m_address += size;
+		);
 	}
 	catch (...)
 	{
@@ -374,11 +380,11 @@ void NativePointer::writeVarString(kr::Text16 value) throws(kr::JsException)
 }
 
 template <typename T>
-T NativePointer::_readas() throws(kr::JsException)
+T NativePointer::_readas() throws(JsException)
 {
 	try
 	{
-		T value = *(kr::Unaligned<T>*)m_address;
+		T value = *(Unaligned<T>*)m_address;
 		m_address += sizeof(T);
 		return value;
 	}
@@ -388,11 +394,11 @@ T NativePointer::_readas() throws(kr::JsException)
 	}
 }
 template <typename T>
-void NativePointer::_writeas(T value) throws(kr::JsException)
+void NativePointer::_writeas(T value) throws(JsException)
 {
 	try
 	{
-		*(kr::Unaligned<T>*)m_address = value;
+		*(Unaligned<T>*)m_address = value;
 		m_address += sizeof(T);
 	}
 	catch (...)

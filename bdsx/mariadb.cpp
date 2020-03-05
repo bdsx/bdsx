@@ -4,7 +4,7 @@
 #include "console.h"
 #include <KRMySQL/db.h>
 #include <KRMySQL/statement.h>
-#include <KR3/msg/eventdispatcher.h>
+#include <KR3/win/eventhandle.h>
 
 using namespace kr;
 
@@ -203,10 +203,9 @@ void MariaDBInternal::close() noexcept
 		});
 	m_thread.postQuit();
 	EventHandle* ev = m_thread.getThreadObject().getRawHandle();
-	EventDispatcher::registThreaded(ev,
-		[this](DispatchedEvent* dispatched) {
+	ev->callbackThreaded([this](DispatchedEvent* dispatched) {
 			delete this;
-			dispatched->detach(); // 람다를 지워 this참조가 지워지게 된다
+			dispatched->cancel(); // 람다를 지워 this참조가 지워지게 된다
 		});
 }
 

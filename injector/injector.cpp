@@ -1,6 +1,6 @@
 
 #include <KR3/main.h>
-#include <KR3/wl/windows.h>
+#include <KR3/win/windows.h>
 #include <KR3/initializer.h>
 #include <KR3/util/path.h>
 #include <KR3/util/parameter.h>
@@ -26,7 +26,8 @@ int main()
 		{
 			cerr << "injector.exe> It needs exe and dll path" << endl;
 #ifndef NDEBUG
-			MessageBoxW(nullptr, L"It needs exe and dll path", nullptr, MB_OK | MB_ICONERROR);
+			dout << "injector.exe> It needs exe and dll path" << endl;
+			dout.flush();
 #endif
 			return EINVAL;
 		}
@@ -54,7 +55,8 @@ int main()
 	{
 		cerr << "injector.exe> It needs exe and dll path" << endl;
 #ifndef NDEBUG
-		MessageBoxW(nullptr, L"It needs exe and dll path", nullptr, MB_OK | MB_ICONERROR);
+		dout << "injector.exe> It needs exe and dll path" << endl;
+		dout.flush();
 #endif
 		return EINVAL;
 	}
@@ -71,23 +73,29 @@ int main()
 		if (!proc)
 		{
 			ErrorCode last = ErrorCode::getLast();
+			TSZ16 errmsg = last.getMessage<char16>();
 #ifndef NDEBUG
-			MessageBoxW(nullptr, wide(TSZ16() << u"Failed to run: " << commandLine), nullptr, MB_OK | MB_ICONERROR);
+			udout << u"injector.exe> Failed to run: " << commandLine << endl;
+			udout << errmsg << endl;
+			udout.flush();
 #endif
 			ucerr << u"injector.exe> Failed to run: " << commandLine << endl;
-			ucerr << last.getMessage<char16>() << endl;
+			ucerr << errmsg << endl;
 			return ENOENT;
 		}
 
 		win::Module* injected = proc->injectDll(TSZ16() << path16.basename(dllPath));
 		if (!injected)
 		{
-			ErrorCode last = ErrorCode::getLast();
+			ErrorCode last = proc->getLastError();
+			TSZ16 errmsg = last.getMessage<char16>();
 #ifndef NDEBUG
-			MessageBoxW(nullptr, wide(TSZ16() << u"Failed to inject: " << dllPath), nullptr, MB_OK | MB_ICONERROR);
+			udout << u"injector.exe> Failed to inject: " << dllPath << endl;
+			udout << errmsg << endl;
+			udout.flush();
 #endif
 			ucerr << u"injector.exe> Failed to inject: " << dllPath << endl;
-			ucerr << last.getMessage<char16>() << endl;
+			ucerr << errmsg << endl;
 			proc->terminate();
 			thread->detach();
 			return EFAULT;

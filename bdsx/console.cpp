@@ -1,7 +1,8 @@
 #include "console.h"
 #include "jsctx.h"
 
-#include <KR3/wl/windows.h>
+#include <KR3/win/windows.h>
+#include <KR3/net/client.h>
 
 using namespace kr;
 
@@ -12,6 +13,97 @@ namespace
 
 
 Console console;
+
+class Console::Client :private kr::Client, public Threadable<Client>
+{
+	friend Console;
+
+protected:
+	AText16 m_host;
+	word m_port;
+	AText m_key;
+	bool m_connected;
+	EventPump* m_threadPump = nullptr;
+	
+	void onError(Text name, int code) noexcept override
+	{
+		debug();
+	}
+	void onConnect() noexcept override
+	{
+	}
+	void onWriteBegin() noexcept override
+	{
+		console.m_lock.enter();
+	}
+	void onWriteEnd() noexcept override
+	{
+		console.m_lock.leave();
+	}
+	void onRead() throws(...) override
+	{
+		for (Buffer buf : m_receive)
+		{
+			console.input(buf.cast<char>());
+		}
+		m_receive.clear();
+	}
+	void onClose() noexcept override
+	{
+		m_threadPump->post(3000_ms, [this](TimerEvent* timer){ 
+			if (connect()) return;
+			timer->addTime(3000_ms);
+			m_threadPump->attach(timer);
+		});
+	}
+
+public:
+	int thread() noexcept
+	{
+		m_threadPump = EventPump::getInstance();
+		return m_threadPump->messageLoopWith({makeProcedure()});
+	}
+	void init(AText16 host, word port, AText key) noexcept
+	{
+		m_host = move(host);
+		m_host << nullterm;
+		m_port = port;
+		m_key = move(key);
+		m_key << '\n';
+	}
+
+	bool connect() noexcept
+	{
+		getWriteQueue()->clear();
+		write(m_key.cast<void>());
+		try
+		{
+			connectSync(m_host.data(), m_port);
+			return true;
+		}
+		catch (SocketException&)
+		{
+			return false;
+		}
+	}
+
+	Client() noexcept
+	{
+		m_connected = false;
+	}
+	~Client() noexcept
+	{
+		if (m_threadPump == nullptr) return;
+		m_threadPump->quit(0);
+		join();
+	}
+};
+
+namespace
+{
+	Console::Client s_client;
+}
+
 
 int Console::getColor() noexcept
 {
@@ -25,10 +117,10 @@ void Console::setColor(int color) noexcept
 void Console::log(Text text) noexcept
 {
 	CsLock __lock = m_lock;
-	if (m_connected)
+	if (s_client.m_connected)
 	{
-		write(text.cast<void>());
-		flush();
+		s_client.write(text.cast<void>());
+		s_client.flush();
 	}
 	else
 	{
@@ -38,11 +130,11 @@ void Console::log(Text text) noexcept
 void Console::logLine(Text text) noexcept
 {
 	CsLock __lock = m_lock;
-	if (m_connected)
+	if (s_client.m_connected)
 	{
-		write(text.cast<void>());
-		write({ "\n", 1 });
-		flush();
+		s_client.write(text.cast<void>());
+		s_client.write({ "\n", 1 });
+		s_client.flush();
 	}
 	else
 	{
@@ -128,13 +220,14 @@ JsValue Console::createModule() noexcept
 	obj.set(u"BACKGROUND_INTENSITY", BACKGROUND_INTENSITY);
 	return obj;
 }
-bool Console::connect(pcstr16 host, word port, Text key) noexcept
+bool Console::connect(AText16 host, word port, AText key) noexcept
 {
 	try
 	{
-		Client::connect(host, port);
-		if (key != nullptr) logLine(key);
-		m_connected = true;
+		s_client.m_connected = true;
+		s_client.init(move(host), port, move(key));
+		s_client.connect();
+		s_client.start();
 		return true;
 	}
 	catch (SocketException&)
@@ -149,37 +242,9 @@ Console::Console() noexcept
 	m_stdin(GetStdHandle(STD_INPUT_HANDLE))
 {
 	m_color = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-	m_connected = false;
 }
 Console::~Console() noexcept
 {
-}
-
-void Console::onError(Text name, int code) noexcept
-{
-	debug();
-}
-void Console::onConnect() noexcept
-{
-}
-void Console::onWriteBegin() noexcept
-{
-	m_lock.enter();
-}
-void Console::onWriteEnd() noexcept
-{
-	m_lock.leave();
-}
-void Console::onRead() throws(...)
-{
-	for (Buffer buf : m_receive)
-	{
-		input(buf.cast<char>());
-	}
-}
-void Console::onClose() noexcept
-{
-	m_connected = false;
 }
 
 Console::ColorScope::ColorScope(int color) noexcept

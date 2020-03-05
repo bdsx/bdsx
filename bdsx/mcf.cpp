@@ -244,8 +244,8 @@ struct AddressReader
 
 public:
 
-	AddressReader(MinecraftFunctionTable* table, Text hash) noexcept
-		:m_table(table), m_predefinedFile(openPredefinedFile(hash))
+	AddressReader(File* file, MinecraftFunctionTable* table, Text hash) noexcept
+		:m_table(table), m_predefinedFile(file)
 	{
 		Renamer renamer;
 		for (const Renamer::Entry& entry : Renamer::getEntires())
@@ -357,20 +357,30 @@ public:
 
 void MinecraftFunctionTable::load() noexcept
 {
-	TText16 moduleName = CurrentApplicationPath();
-	BText<32> hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
-	console.log(TSZ() << "BDSX: bedrock_server.exe MD5 = " << hash << '\n');
+	BText<32> hash;
+	try
+	{
+		TText16 moduleName = CurrentApplicationPath();
+		hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
+		console.log(TSZ() << "BDSX: bedrock_server.exe MD5 = " << hash << '\n');
+	}
+	catch (Error&)
+	{
+		console.log("Cannot open bedrock_server.exe\n");
+	}
 
 	try
 	{
-		AddressReader reader(this, hash);
-		if (GetLastError() == ERROR_NOT_FOUND)
+		File* file = openPredefinedFile(hash);
+		int openerr = GetLastError();
+		AddressReader reader(file, this, hash);
+		if (openerr == ERROR_ALREADY_EXISTS)
 		{
-			console.log("BDSX: Predefined not founded\n");
+			reader.loadFromPredefined();
 		}
 		else
 		{
-			reader.loadFromPredefined();
+			console.log("BDSX: Predefined not founded\n");
 		}
 
 		if (hash == "0DCADDC25415D6818790D1FB09BCB4E9")

@@ -36,10 +36,9 @@ public:
 	float getFloat32(int offset) throws(kr::JsException);
 	double getFloat64(int offset) throws(kr::JsException);
 	NativePointer* getPointer(int offset) throws(kr::JsException);
-	kr::Text16 getUtf16(kr::JsValue bytes, int offset) throws(kr::JsException);
-	kr::TText16 getUtf8(kr::JsValue bytes, int offset) throws(kr::JsException);
+	kr::JsValue getString(kr::JsValue bytes, int offset, int encoding) throws(kr::JsException);
 	kr::JsValue getBuffer(int bytes, int offset) throws(kr::JsException);
-	kr::TText16 getCxxString(int offset) throws(kr::JsException);
+	kr::TText16 getCxxString(int offset, int encoding) throws(kr::JsException);
 
 	void setUint8(uint8_t v, int offset) throws(kr::JsException);
 	void setUint16(uint16_t v, int offset) throws(kr::JsException);
@@ -50,10 +49,9 @@ public:
 	void setFloat32(float v, int offset) throws(kr::JsException);
 	void setFloat64(double v, int offset) throws(kr::JsException);
 	void setPointer(StaticPointer* v, int offset) throws(kr::JsException);
-	void setUtf16(kr::Text16 text, int offset) throws(kr::JsException);
-	void setUtf8(kr::Text16 text, int offset) throws(kr::JsException);
+	void setString(kr::JsValue buffer, int offset, int encoding) throws(kr::JsException);
 	void setBuffer(kr::JsValue buffer, int offset) throws(kr::JsException);
-	void setCxxString(kr::Text16 text, int offset) throws(kr::JsException);
+	void setCxxString(kr::Text16 text, int offset, int encoding) throws(kr::JsException);
 
 	kr::TText16 toString() noexcept;
 
@@ -73,7 +71,6 @@ private:
 
 protected:
 	uint8_t* m_address;
-
 };
 
 template <typename T>

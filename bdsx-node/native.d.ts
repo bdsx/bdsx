@@ -1,4 +1,4 @@
-import { AttributeId, DimensionId, Bufferable } from "./common";
+import { AttributeId, DimensionId, Bufferable, Encoding } from "./common";
 
 export namespace fs {
     export function appendUtf8FileSync(path: string, content: string): void;
@@ -34,33 +34,19 @@ export namespace fs {
         */
         close(): void;
         /**
-        * Read as buffer
+        * Read as a buffer
         * @param offset position from begin of file
         * @param size reading size
         * @param callback callback, error is zero if succeeded
         */
-        readBuffer(offset: number, size: number, callback: (error: string | null, buffer: Uint8Array) => void): void;
-        /**
-        * Read as string
-        * @param offset position from begin of file
-        * @param size reading size
-        * @param callback callback, error is zero if succeeded
-        */
-        readUtf8(offset: number, size: number, callback: (error: string | null, buffer: string) => void): void;
+        read(offset: number, size: number, callback: (error: string | null, buffer: Uint8Array) => void): void;
         /**
         * Write file
         * @param offset position from begin of file
         * @param buffer buffer for writing
         * @param callback callback, error is zero if succeeded
         */
-        writeUtf8(offset: number, buffer: string, callback: (error: string | null, bytes: number) => void): void;
-        /**
-        * Write file
-        * @param offset position from begin of file
-        * @param buffer buffer for writing
-        * @param callback callback, error is zero if succeeded
-        */
-        writeBuffer(offset: number, buffer: Bufferable, callback: (error: string | null, bytes: number) => void): void;
+        write(offset: number, buffer: Bufferable, callback: (error: string | null, bytes: number) => void): void;
         /**
         * get file size
         * is not async function
@@ -263,37 +249,49 @@ export class StaticPointer
 
     /**
      * get C++ std::string
+     * @param encoding default = Encoding.Utf8
      */
-    getCxxString(offset?:number): string;
+    getCxxString(offset?:number, encoding?:Encoding): string;
+
+    /**
+     * get C++ std::string
+     * @param encoding default = Encoding.Utf8
+     */
+    getCxxString(offset:number, encoding:Encoding.Buffer): Uint8Array;
 
     /**
      * set C++ std::string
      * Need to target pointer to string
      * It will call string::assign method to pointer
+     * @param encoding default = Encoding.Utf8
      */
-    setCxxString(str:string, offset?:number): void;
+    setCxxString(str:string|Bufferable, offset?:number, encoding?:Encoding): void;
 
     /**
-     * get UTF16 string
+     * get string
      * @param bytes if it's not provided, It will read until reach null character
+     * @param encoding default = Encoding.Utf8
+     * if encoding is Encoding.Buffer it will call getBuffer
+     * if encoding is Encoding.Utf16, bytes will be twice
      */
-    getUtf16(bytes?: number, offset?:number): string;
-
+    getString(bytes?: number, offset?:number, encoding?:Encoding): string;
+    
     /**
-     * set UTF16 string
-     */
-    setUtf16(text: string, offset?:number): void;
-
-    /**
-     * get UTF8 string
+     * get string
      * @param bytes if it's not provided, It will read until reach null character
+     * @param encoding default = Encoding.Utf8
+     * if encoding is Encoding.Buffer it will call getBuffer
+     * if encoding is Encoding.Utf16, bytes will be twice
      */
-    getUtf8(bytes?: number, offset?:number): string;
+    getString(bytes: number, offset:number, encoding:Encoding.Buffer): Uint8Array;
 
     /**
-     * set UTF8 string
+     * set string
+     * @param encoding default = Encoding.Utf8
+     * if encoding is Encoding.Buffer it will call setBuffer
+     * if encoding is Encoding.Utf16, bytes will be twice
      */
-    setUtf8(text: string, offset?:number): void;
+    setString(text: string, offset?:number, encoding?:Encoding): void;
 
     getBuffer(bytes: number, offset?:number): Uint8Array;
 
@@ -330,54 +328,57 @@ export class NativePointer extends StaticPointer
     writePointer(value: StaticPointer): void;
 
     /**
-    * read a C++ std::string (UTF-8)
-    */
-    readCxxString(): string;
+     * read a C++ std::string
+     * @param encoding default = Encoding.Utf8
+     */
+    readCxxString<T extends Encoding>(encoding?:T): T extends Encoding.Buffer ? Uint8Array : string;
 
     /**
-    * write a C++ std::string (UTF-8)
-    * Need to target the pointer to a string
-    * It will call string::assign method to the pointer
-    */
-    writeCxxString(str:string): void;
+     * write a C++ std::string
+     * Need to target the pointer to a string
+     * It will call string::assign method to the pointer
+     * @param encoding default = Encoding.Utf8
+     */
+    writeCxxString(str:string|Bufferable, encoding?:Encoding): void;
 
     /**
-    * read a C++ a std::string (ANSI)
-    */
-    readCxxStringAnsi(): string;
-
-    /**
-    * write a C++ std::string (ANSI)
-    * Need to target the pointer to a string
-    * It will call string::assign method to the pointer
-    */
-    writeCxxStringAnsi(str:string): void;
-
-    /**
-     * read UTF16 string
+     * read string
      * @param bytes if it's not provided, It will read until reach null character
+     * @param encoding default = Encoding.Utf8
+     * if encoding is Encoding.Buffer it will call readBuffer
+     * if encoding is Encoding.Utf16, bytes will be twice
      */
-    readUtf16(bytes?: number): string;
+    readString<T extends Encoding>(bytes?: number, encoding?:T): T extends Encoding.Buffer ? Uint8Array : string;
 
     /**
-     * write UTF16 string
+     * write string
+     * @param encoding default = Encoding.Utf8
+     * if encoding is Encoding.Buffer it will call writeBuffer
+     * if encoding is Encoding.Utf16, bytes will be twice
      */
-    writeUtf16(text: string): void;
-
-    /**
-     * read UTF8 string
-     * @param bytes if it's not provided, It will read until reach null character
-     */
-    readUtf8(bytes?: number): string;
-
-    /**
-     * write UTF8 string
-     */
-    writeUtf8(text: string): void;
+    writeString(text: string, encoding?:Encoding): void;
 
     readBuffer(bytes: number): Uint8Array;
 
     writeBuffer(buffer: Bufferable): void;
+    
+	readVarUint():number;
+    readVarInt():number;
+    
+    /**
+     * 
+     * @param encoding default = Encoding.Utf8
+     */
+	readVarString(encoding?:Encoding):string;
+
+	writeVarUint(v:number):void;
+    writeVarInt(v:number):void;
+
+    /**
+     * 
+     * @param encoding default = Encoding.Utf8
+     */
+	writeVarString(v:string, encoding?:Encoding):void;
 }
 
 /**
@@ -527,3 +528,10 @@ export function shell(program:string, command:string, cwd?:string):string;
 export function wget(url:string, callback:(callback:string)=>void):void;
 
 export function loadPdb():{[key:string]:NativePointer};
+
+export function encode(data:string|Bufferable, encoding?:Encoding):Uint8Array;
+
+/**
+ * @return [decoded, decoded bytes]
+ */
+export function decode<T extends Encoding>(data:Uint8Array, encoding?:T):[T extends Encoding.Buffer ? Uint8Array : string, number];

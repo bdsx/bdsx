@@ -51,6 +51,18 @@ export enum AttributeName
 	JumpStrength="minecraft:horse.jump_strength",
 };
 
+export enum Encoding
+{
+	Utf16=-2,
+	Buffer=-1,
+	Utf8=0,
+	None,
+	Ansi,
+	EucKr,
+}
+
+export type TypeFromEncoding<T extends Encoding> = T extends Encoding.Buffer ? Uint8Array : string;
+
 export type Bufferable = Uint8Array | Uint16Array | Uint32Array |
     Uint8ClampedArray | Int8Array | Int16Array | Int32Array |
     Float32Array | Float64Array | ArrayBuffer | DataView;

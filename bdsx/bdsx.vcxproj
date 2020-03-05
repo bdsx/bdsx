@@ -226,6 +226,7 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
   <ItemGroup>
     <ClCompile Include="codewrite.cpp" />
     <ClCompile Include="console.cpp" />
+    <ClCompile Include="encoding.cpp" />
     <ClCompile Include="mariadb.cpp" />
     <ClCompile Include="nativecall.cpp" />
     <ClCompile Include="nativetype.cpp" />
@@ -252,6 +253,7 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     <ClInclude Include="codewrite.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="console.h" />
+    <ClInclude Include="encoding.h" />
     <ClInclude Include="mariadb.h" />
     <ClInclude Include="nativecall.h" />
     <ClInclude Include="nativetype.h" />

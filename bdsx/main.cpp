@@ -1,6 +1,7 @@
 
 
 #include <KR3/main.h>
+#include <KR3/initializer.h>
 #include <KR3/js/js.h>
 #include <KR3/fs/file.h>
 #include <KR3/util/path.h>
@@ -10,7 +11,8 @@
 #include <KR3/data/set.h>
 #include <KR3/io/selfbufferedstream.h>
 #include <KR3/net/ipaddr.h>
-#include <KR3/wl/windows.h>
+#include <KR3/net/socket.h>
+#include <KR3/win/windows.h>
 #include <KR3/msg/pump.h>
 #include <KRWin/handle.h>
 #include <KRWin/hook.h>
@@ -48,6 +50,8 @@ namespace
 	Map<Text, AText> s_uuidToPackPath;
 	// Text16 s_properties = nullptr;
 }
+
+Initializer<Socket> __init;
 
 void catchException() noexcept
 {
@@ -282,7 +286,10 @@ BOOL WINAPI DllMain(
 
 		if (host != nullptr)
 		{
-			console.connect(host.c_str(), port, mutex == nullptr ? (Text)nullptr : (Text)(TSZ() << toUtf8(mutex)));
+			console.connect(move(host), (word)port, mutex == nullptr ? 
+				(AText)nullptr : 
+				move(AText() << toUtf8(mutex))
+			);
 		}
 
 		if (!modulePathSetted)

@@ -1,6 +1,7 @@
 #include "nativefile.h"
 #include "native.h"
-#include <KR3/wl/windows.h>
+#include "encoding.h"
+#include <KR3/win/windows.h>
 
 using namespace kr;
 
@@ -24,8 +25,15 @@ namespace
 	struct FileCallbackState :OVERLAPPED
 	{
 		NativeFile* file;
+		JsPersistent filekeep;
 		JsPersistent callback;
 		T buffer;
+	};
+
+	template <typename T>
+	struct FileCallbackStateWithCharset :FileCallbackState<T>
+	{
+		Charset cs;
 	};
 
 	LinkedList<NativeFile> s_list;
@@ -54,53 +62,16 @@ bool NativeFile::close() noexcept
 	s_list.detach(this);
 	return true;
 }
-void NativeFile::readUtf8(double offset, int size, JsValue callback) throws(JsException)
+void NativeFile::read(double offset, int size, JsValue callback) throws(JsException)
 {
 	if (callback.getType() != JsType::Function) throw JsException(u"3rd argument must be function");
-
-	uint64_t offset64 = (offset < 0) ? -1 : (uint64_t)offset;
-	auto* state = _new FileCallbackState<AText>();
-	(uint64_t&)state->Offset = offset64;
-	state->file = this;
-	state->callback = callback;
-	state->buffer.resize(size);
-	if (!ReadFileEx(m_file, state->buffer.data(), size, state,
-		[](DWORD dwErrorCode, DWORD dwBytesTransferred, LPOVERLAPPED lpOverlapped) noexcept {
-			auto* state = (FileCallbackState<AText>*)lpOverlapped;
-			JsValue value = state->callback;
-			try
-			{
-				if (dwErrorCode == ERROR_HANDLE_EOF)
-				{
-					value(nullptr, u""_tx);
-				}
-				else
-				{
-					TText16 text16;
-					text16 << utf8ToUtf16(state->buffer.cut(dwBytesTransferred));
-					value(getErrorMessage(dwErrorCode, state->file->toString()), (Text16)text16, dwBytesTransferred);
-				}
-			}
-			catch (JsException & err)
-			{
-				g_native->fireError(err.getValue());
-			}
-			delete state;
-		}))
-	{
-		delete state;
-		throwLastError(toString());
-	}
-}
-void NativeFile::readBuffer(double offset, int size, JsValue callback) throws(JsException)
-{
-	if (callback.getType() != JsType::Function) throw JsException(u"3rd argument must be function");
-
+	
 	uint64_t offset64 = (offset < 0) ? -1 : (uint64_t)offset;
 
 	auto* state = _new FileCallbackState<JsPersistent>();
 	JsValue buffer = JsNewArrayBuffer(size);
 	state->file = this;
+	state->filekeep = *this;
 	state->buffer = buffer;
 	(uint64_t&)state->Offset = offset64;
 	state->callback = callback;
@@ -133,50 +104,18 @@ void NativeFile::readBuffer(double offset, int size, JsValue callback) throws(Js
 		throwLastError(toString());
 	}
 }
-void NativeFile::writeUtf8(double offset, Text16 text, JsValue callback) throws(JsException)
+void NativeFile::write(double offset, JsValue obj, JsValue callback) throws(JsException)
 {
-	if (callback.getType() != JsType::Function) throw JsException(u"3rd argument must be function");
+	if (callback.getType() != JsType::Function) throw JsException(u"3rd argument must be a function");
+	Buffer buffer = obj.getBuffer();
+	if (buffer == nullptr) throw JsException(u"3rd argument must be a buffer");
 
 	uint64_t offset64 = (offset < 0) ? -1 : (uint64_t)offset;
-
-	auto* state = _new FileCallbackState<AText>();
-	state->file = this;
-	(uint64_t&)state->Offset = offset64;
-	state->callback = callback;
-	state->buffer = toUtf8(text);
-
-	if (!WriteFileEx(m_file, state->buffer.data(), intact<DWORD>(state->buffer.size()), state,
-		[](DWORD dwErrorCode, DWORD dwBytesTransferred, LPOVERLAPPED lpOverlapped) noexcept {
-			auto* state = (FileCallbackState<AText>*)lpOverlapped;
-			JsValue callback = state->callback;
-			try
-			{
-				callback(getErrorMessage(dwErrorCode, state->file->toString()), (int)dwBytesTransferred);
-			}
-			catch (JsException & err)
-			{
-				g_native->fireError(err.getValue());
-			}
-			delete state;
-		}))
-	{
-		delete state;
-		throwLastError(toString());
-	}
-}
-void NativeFile::writeBuffer(double offset, JsValue text, JsValue callback) throws(JsException)
-{
-	if (callback.getType() != JsType::Function) throw JsException(u"3rd argument must be function");
-	Buffer buffer = text.getBuffer();
-	if (buffer == nullptr) throw JsException(u"2nd argument must be buffer");
-
-	uint64_t offset64 = (offset < 0) ? -1 : (uint64_t)offset;
-
 	auto* state = _new FileCallbackState<JsPersistent>();
 	state->file = this;
 	(uint64_t&)state->Offset = offset64;
 	state->callback = callback;
-	state->buffer = text;
+	state->buffer = obj;
 	if (!WriteFileEx(m_file, buffer.data(), intact<DWORD>(buffer.size()), state,
 		[](DWORD dwErrorCode, DWORD dwBytesTransferred, LPOVERLAPPED lpOverlapped) noexcept {
 			auto* state = (FileCallbackState<ABuffer>*)lpOverlapped;
@@ -214,10 +153,8 @@ TText16 NativeFile::toString() noexcept
 void NativeFile::initMethods(kr::JsClassT<NativeFile>* cls) noexcept
 {
 	cls->setMethod(u"close", &NativeFile::close);
-	cls->setMethod(u"readUtf8", &NativeFile::readUtf8);
-	cls->setMethod(u"readBuffer", &NativeFile::readBuffer);
-	cls->setMethod(u"writeUtf8", &NativeFile::writeUtf8);
-	cls->setMethod(u"writeBuffer", &NativeFile::writeBuffer);
+	cls->setMethod(u"read", &NativeFile::read);
+	cls->setMethod(u"write", &NativeFile::write);
 	cls->setMethod(u"toString", &NativeFile::toString);
 	cls->set(u"WRITE", GENERIC_WRITE);
 	cls->set(u"READ", GENERIC_READ);

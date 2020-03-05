@@ -14,12 +14,13 @@
 #include "watcher.h"
 #include "mariadb.h"
 #include "webserver.h"
+#include "encoding.h"
 
 #include <KR3/util/process.h>
 #include <KR3/util/StackWalker.h>
 #include <KR3/util/envvar.h>
 #include <KR3/util/pdb.h>
-#include <KR3/wl/windows.h>
+#include <KR3/win/windows.h>
 #include <KR3/data/crypt.h>
 #include <KR3/http/fetch.h>
 #include <KR3/mt/criticalsection.h>
@@ -545,6 +546,8 @@ void Native::_createNativeModule() noexcept
 			cb(out);
 			});
 		});
+	native.setMethod(u"encode", ExEncoding::jsencode);
+	native.setMethod(u"decode", ExEncoding::jsdecode);
 	native.set(u"NativeModule", NativeModule::classObject);
 	native.set(u"Primitive", Primitive::classObject);
 	native.set(u"Actor", NativeActor::classObject);

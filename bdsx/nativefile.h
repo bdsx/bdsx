@@ -11,10 +11,8 @@ public:
 	NativeFile(const kr::JsArguments& args) throws(kr::JsException);
 	~NativeFile() noexcept;
 	bool close() noexcept;
-	void writeBuffer(double offset, kr::JsValue text, kr::JsValue callback) throws(kr::JsException);
-	void writeUtf8(double offset, kr::Text16 text, kr::JsValue callback) throws(kr::JsException);
-	void readBuffer(double offset, int size, kr::JsValue callback) throws(kr::JsException);
-	void readUtf8(double offset, int size, kr::JsValue callback) throws(kr::JsException);
+	void write(double offset, kr::JsValue buffer, kr::JsValue callback) throws(kr::JsException);
+	void read(double offset, int size, kr::JsValue callback) throws(kr::JsException);
 	double size() throws(kr::JsException);
 	kr::TText16 toString() noexcept;
 

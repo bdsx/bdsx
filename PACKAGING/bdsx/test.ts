@@ -1,4 +1,4 @@
-import { netevent, PacketId, NetworkIdentifier } from "bdsx";
+import { netevent, PacketId, NetworkIdentifier, File } from "bdsx";
 import { close } from "bdsx/netevent";
 
 const packetOrders = [1, 4, 129, 8, 8, 69, 23, 115];
@@ -30,3 +30,9 @@ netevent.after(PacketId.Login).on((ptr, ni)=>{
 close.on(ni=>{
     console.assert(conns.delete(ni));
 });
+
+(async()=>{
+
+    const file = new File('test.txt', File.WRITE, File.CREATE_ALWAYS);
+    
+})();

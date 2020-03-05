@@ -23,6 +23,7 @@
     <ClCompile Include="nativecall.cpp" />
     <ClCompile Include="mariadb.cpp" />
     <ClCompile Include="webserver.cpp" />
+    <ClCompile Include="encoding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h" />
@@ -49,6 +50,7 @@
     <ClInclude Include="clear_regs.h" />
     <ClInclude Include="mariadb.h" />
     <ClInclude Include="webserver.h" />
+    <ClInclude Include="encoding.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

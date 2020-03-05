@@ -1,7 +1,7 @@
 #pragma once
 
 #include <KR3/js/js.h>
-#include <KR3/wl/handle.h>
+#include <KR3/win/handle.h>
 
 class StaticPointer;
 

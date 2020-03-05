@@ -55,6 +55,11 @@ declare module "./native"
     {
         readHex(size:number):string;
         analyze():void;
+        
+        /**
+         * @deprecated It's replaced to readString(,Encoding.)
+         */
+        readUtf16():string;
     }
 
     namespace Actor

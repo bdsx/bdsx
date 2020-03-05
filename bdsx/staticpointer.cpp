@@ -3,6 +3,7 @@
 #include "networkidentifier.h"
 #include "common.h"
 #include "nativemodule.h"
+#include "encoding.h"
 
 #include <KR3/util/unaligned.h>
 
@@ -109,48 +110,58 @@ NativePointer* StaticPointer::getPointer(int offset) throws(JsException)
 	instance->m_address = _getas<byte*>(offset);
 	return instance;
 }
-Text16 StaticPointer::getUtf16(JsValue bytes, int offset) throws(JsException)
+JsValue StaticPointer::getString(JsValue bytes, int offset, int encoding) throws(JsException)
 {
-	pstr16 str = (pstr16)(m_address + offset);
-	Text16 text;
-	try
+	if (encoding == ExEncoding::UTF16)
 	{
-		if (bytes == undefined)
+		pstr16 str = (pstr16)(m_address + offset);
+		Text16 text;
+		try
 		{
-			text = Text16(str, mem16::find(str, '\0'));
+			if (bytes == undefined)
+			{
+				text = Text16(str, mem16::find(str, '\0'));
+			}
+			else
+			{
+				text = Text16(str, bytes.cast<int>());
+			}
 		}
-		else
+		catch (...)
 		{
-			text = Text16(str, bytes.cast<int>());
+			accessViolation(str);
 		}
-	}
-	catch (...)
-	{
-		accessViolation(str);
-	}
-	return text;
-}
-TText16 StaticPointer::getUtf8(JsValue bytes, int offset) throws(JsException)
-{
-	pstr str = (pstr)(m_address + offset);
-	TText16 text;
-	try
-	{
-		Text src;
-		if (bytes == undefined)
-		{
-			src = Text(str, mem::find(str, '\0'));
-		}
-		else
-		{
-			src = Text(str, bytes.cast<int>());
-		}
-		text << (Utf8ToUtf16)src;
 		return text;
 	}
-	catch (...)
+	else if (encoding == ExEncoding::BUFFER)
 	{
-		accessViolation(str);
+		return getBuffer(bytes.cast<int>(), offset);
+	}
+	else
+	{
+		pstr str = (pstr)(m_address + offset);
+		TText16 text;
+		try
+		{
+			Text src;
+			if (bytes == undefined)
+			{
+				src = Text(str, mem::find(str, '\0'));
+			}
+			else
+			{
+				src = Text(str, bytes.cast<int>());
+			}
+			Charset cs = (Charset)encoding;
+			CHARSET_CONSTLIZE(cs,
+				text << (MultiByteToUtf16<cs>)src;
+			);
+			return text;
+		}
+		catch (...)
+		{
+			accessViolation(str);
+		}
 	}
 }
 JsValue StaticPointer::getBuffer(int bytes, int offset) throws(JsException)
@@ -167,13 +178,16 @@ JsValue StaticPointer::getBuffer(int bytes, int offset) throws(JsException)
 	}
 	return value;
 }
-TText16 StaticPointer::getCxxString(int offset) throws(JsException)
+TText16 StaticPointer::getCxxString(int offset, int encoding) throws(JsException)
 {
 	String* str = (String*)(m_address + offset);
 	TText16 text;
 	try
 	{
-		text << (Utf8ToUtf16)Text(str->data(), str->size);
+		Charset cs = (Charset)encoding;
+		CHARSET_CONSTLIZE(cs,
+			text << (MultiByteToUtf16<cs>)Text(str->data(), str->size);
+		);
 		return text;
 	}
 	catch (...)
@@ -219,34 +233,46 @@ void StaticPointer::setPointer(StaticPointer* v, int offset) throws(JsException)
 	if (v == nullptr) throw JsException(u"1st argument must be *Pointer");
 	return _setas(v->m_address, offset);
 }
-void StaticPointer::setUtf16(Text16 text, int offset) throws(JsException)
+void StaticPointer::setString(JsValue buffer, int offset, int encoding) throws(JsException)
 {
-	pstr16 str = (pstr16)(m_address + offset);
-	try
+	if (encoding == ExEncoding::UTF16)
 	{
-		size_t size = text.size();
-		memcpy(str, text.data(), size);
+		Text16 text = buffer.cast<Text16>();
+		pstr16 str = (pstr16)(m_address + offset);
+		try
+		{
+			size_t size = text.size();
+			memcpy(str, text.data(), size);
+		}
+		catch (...)
+		{
+			accessViolation(str);
+		}
 	}
-	catch (...)
+	else if (encoding == ExEncoding::BUFFER)
 	{
-		accessViolation(str);
+		setBuffer(buffer, offset);
 	}
-}
-void StaticPointer::setUtf8(Text16 text, int offset) throws(JsException)
-{
-	pstr16 str = (pstr16)(m_address + offset);
-	try
+	else
 	{
-		TSZ utf8;
-		utf8 << toUtf8(text);
+		Text16 text = buffer.cast<Text16>();
+		pstr16 str = (pstr16)(m_address + offset);
+		try
+		{
+			TSZ mb;
+			Charset cs = (Charset)encoding;
+			CHARSET_CONSTLIZE(cs,
+				mb << Utf16ToMultiByte<cs>(text);
+			);
 
-		size_t size = utf8.size();
-		memcpy(m_address, utf8.data(), size);
-		m_address += size;
-	}
-	catch (...)
-	{
-		accessViolation(str);
+			size_t size = mb.size();
+			memcpy(m_address, mb.data(), size);
+			m_address += size;
+		}
+		catch (...)
+		{
+			accessViolation(str);
+		}
 	}
 }
 void StaticPointer::setBuffer(JsValue buffer, int offset) throws(JsException)
@@ -264,13 +290,16 @@ void StaticPointer::setBuffer(JsValue buffer, int offset) throws(JsException)
 		accessViolation(p);
 	}
 }
-void StaticPointer::setCxxString(Text16 text, int offset) throws(JsException)
+void StaticPointer::setCxxString(Text16 text, int offset, int encoding) throws(JsException)
 {
 	String* str = (String*)(m_address + offset);
 	TSZ utf8;
 	try
 	{
-		utf8 << toUtf8(text);
+		Charset cs = (Charset)encoding;
+		CHARSET_CONSTLIZE(cs,
+			utf8 << Utf16ToMultiByte<cs>(text);
+			);
 		str->assign(utf8.data(), utf8.size());
 	}
 	catch (...)
@@ -306,8 +335,7 @@ void StaticPointer::initMethods(JsClassT<StaticPointer>* cls) noexcept
 	cls->setMethod(u"getFloat32", &StaticPointer::getFloat32);
 	cls->setMethod(u"getFloat64", &StaticPointer::getFloat64);
 	cls->setMethod(u"getPointer", &StaticPointer::getPointer);
-	cls->setMethod(u"getUtf8", &StaticPointer::getUtf8);
-	cls->setMethod(u"getUtf16", &StaticPointer::getUtf16);
+	cls->setMethod(u"getString", &StaticPointer::getString);
 	cls->setMethod(u"getBuffer", &StaticPointer::getBuffer);
 	cls->setMethod(u"getCxxString", &StaticPointer::getCxxString);
 
@@ -320,8 +348,7 @@ void StaticPointer::initMethods(JsClassT<StaticPointer>* cls) noexcept
 	cls->setMethod(u"setFloat32", &StaticPointer::setFloat32);
 	cls->setMethod(u"setFloat64", &StaticPointer::setFloat64);
 	cls->setMethod(u"setPointer", &StaticPointer::setPointer);
-	cls->setMethod(u"setUtf8", &StaticPointer::setUtf8);
-	cls->setMethod(u"setUtf16", &StaticPointer::setUtf16);
+	cls->setMethod(u"setString", &StaticPointer::setString);
 	cls->setMethod(u"setBuffer", &StaticPointer::setBuffer);
 	cls->setMethod(u"setCxxString", &StaticPointer::setCxxString);
 

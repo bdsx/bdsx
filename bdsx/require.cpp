@@ -3,7 +3,7 @@
 #include <KR3/fs/file.h>
 #include <KR3/util/path.h>
 #include <KR3/parser/jsonparser.h>
-#include <KR3/wl/windows.h>
+#include <KR3/win/windows.h>
 
 #include "console.h"
 #include "native.h"
@@ -210,8 +210,6 @@ JsValue Require::operator()(Text16 modulename) const throws(JsException)
 
 	if (!modulename.startsWith(u'.'))
 	{
-	_retry:
-		AText16 normed_backup = normed;
 		try
 		{
 			pcstr16 packageslash = packagecut(normed);
@@ -226,7 +224,6 @@ JsValue Require::operator()(Text16 modulename) const throws(JsException)
 				delete getPackageRoot(normed.cut(packageslash), &packagejsonpath);
 				path16.joinEx(&filepath, { path16.dirname(packagejsonpath), normed.subarr(packageslash + 1) }, true);
 			}
-			goto _done;
 		}
 		catch (NotFoundException&)
 		{
@@ -235,14 +232,8 @@ JsValue Require::operator()(Text16 modulename) const throws(JsException)
 				return g_native->getModule();
 			}
 
-#ifndef NDEBUG
-			debug(); /// TOFIX: module relative path but find package.json
-#endif
-			// throw JsException(TSZ16() << u"module not found: " << modulename);
+			throw JsException(TSZ16() << u"Module not found: " << modulename);
 		}
-		int a = 0;
-		normed.subcopy(normed_backup);
-		goto _retry;
 	}
 	else
 	{
@@ -253,7 +244,6 @@ JsValue Require::operator()(Text16 modulename) const throws(JsException)
 		}
 
 	}
-_done:
 
 	Text16 importName = filepath;
 	if (importName.endsWith(SEP u".js"))

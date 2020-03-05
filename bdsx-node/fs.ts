@@ -1,9 +1,22 @@
 
-import { fs } from "./native";
-import { Bufferable } from "./common";
+import { fs, encode, decode } from "./native";
+import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 import Event from "krevent";
 
 import File = fs.File;
+
+export interface ReadReport<T>
+{
+    data:T;
+    readedBytes:number;
+    failed:Uint8Array|null;
+}
+
+export interface WriteReport
+{
+    writedBytes:number;
+    failed:Uint8Array|null;
+}
 
 declare module './native'
 {
@@ -12,91 +25,79 @@ declare module './native'
         export interface File
         {
             /**
-            * Read as buffer
-            * @param offset position from begin of file
-            * @param size reading size
-            * @param callback callback, error is zero if succeeded
-            */
-            readBuffer(offset: number, size: number, callback?: (error: string | null, buffer: Uint8Array) => void):Promise<Uint8Array>;
-                        
-            /**
-             * Read as string
+             * Read as a string
              * @param offset position from begin of file
              * @param size reading size
-             * @param callback callback, error is zero if succeeded
              */
-            readUtf8(offset: number, size: number, callback?: (error: string | null, buffer: string, byteLength:number) => void): Promise<string>;
+            readString<T extends Encoding>(offset: number, size: number, encoding?:T): Promise<ReadReport<TypeFromEncoding<T>>>;
 
             /**
              * Write file
              * @param offset position from begin of file
              * @param buffer buffer for writing
-             * @param callback callback, error is zero if succeeded
              */
-            writeUtf8(offset: number, buffer: string, callback?: (error: string | null, bytes: number) => void): Promise<number>;
+            writeString(offset: number, buffer: string, encoding?:Encoding): Promise<WriteReport>;
             
+            /**
+            * Read as a buffer
+            * @param offset position from begin of file
+            * @param size reading size
+            */
+            readBuffer(offset: number, size: number):Promise<Uint8Array>;
+                   
             /**
              * Write file
              * @param offset position from begin of file
              * @param buffer buffer for writing
-             * @param callback callback, error is zero if succeeded
              */
-            writeBuffer(offset: number, buffer: Bufferable, callback?: (error: string | null, bytes: number) => void): Promise<number>;
-
-            _readUtf8(offset: number, size: number, callback: (error: string | null, buffer: string, byteLength:number) => void):void;
-            
-            _readBuffer(offset: number, size: number, callback: (error: string | null, buffer: Uint8Array) => void):void;
-            
-            _writeUtf8(offset: number, buffer: string, callback: (error: string | null, bytes: number) => void):void;
-            
-            _writeBuffer(offset: number, buffer: Bufferable, callback: (error: string | null, bytes: number) => void):void;
+            writeBuffer(offset: number, buffer: Bufferable): Promise<number>;
         }
     }
 }
 
-if (!File.prototype._readBuffer) File.prototype._readBuffer = File.prototype.readBuffer;
-if (!File.prototype._readUtf8) File.prototype._readUtf8 = File.prototype.readUtf8;
-if (!File.prototype._writeBuffer) File.prototype._writeBuffer = File.prototype.writeBuffer;
-if (!File.prototype._writeUtf8) File.prototype._writeUtf8 = File.prototype.writeUtf8;
-
-File.prototype.readBuffer = function(offset: number, size: number, callback?: (error: string | null, buffer: Uint8Array) => void):Promise<Uint8Array>
+File.prototype.readBuffer = function(offset: number, size: number):Promise<Uint8Array>
 {
     return new Promise((resolve, reject)=>{
-        this._readBuffer(offset, size, (err, data)=>{
-            if (callback) callback(err, data);
+        this.read(offset, size, (err, data)=>{
             if (err) reject(Error(err));
             else resolve(data);
         });
     });
 };
 
-File.prototype.readUtf8 = function(offset: number, size: number, callback?: (error: string | null, buffer: string, byteLength:number) => void): Promise<string>
+File.prototype.readString = function<T extends Encoding>(offset: number, size: number, encoding?:T): Promise<ReadReport<TypeFromEncoding<T>>>
 {
     return new Promise((resolve, reject)=>{
-        this._readUtf8(offset, size, (err, data, byteLength)=>{
-            if (callback) callback(err, data, byteLength);
+        this.read(offset, size, (err, data)=>{
+            const [decoded, readedlen] = decode<T>(data, encoding);
             if (err) reject(Error(err));
-            else resolve(data);
+            else resolve({
+                data: decoded,
+                readedBytes: data.length,
+                failed: data.length === readedlen ? null : data.subarray(readedlen),
+            });
         });
     });
 }
 
-File.prototype.writeUtf8 = function(offset: number, buffer: string, callback?: (error: string | null, bytes: number) => void): Promise<number>
+File.prototype.writeString = function(offset: number, buffer: string|Bufferable, encoding?:Encoding): Promise<WriteReport>
 {
     return new Promise((resolve, reject)=>{
-        this._writeUtf8(offset, buffer, (err, bytes)=>{
-            if (callback) callback(err, bytes);
+        const buf = encode(buffer, encoding);
+        this.write(offset, buf, (err, bytes)=>{
             if (err) reject(Error(err));
-            else resolve(bytes);
+            else resolve({
+                writedBytes: bytes,
+                failed: buf.subarray(bytes)
+            });
         });
     });
 };
 
-File.prototype.writeBuffer = function(offset: number, buffer: Bufferable, callback?: (error: string | null, bytes: number) => void): Promise<number>
+File.prototype.writeBuffer = function(offset: number, buffer: Bufferable): Promise<number>
 {
     return new Promise((resolve, reject)=>{
-        this._writeBuffer(offset, buffer, (err, bytes)=>{
-            if (callback) callback(err, bytes);
+        this.write(offset, buffer, (err, bytes)=>{
             if (err) reject(Error(err));
             else resolve(bytes);
         });
@@ -110,54 +111,82 @@ export const appendFileSync = fs.appendUtf8FileSync;
 export const cwd = fs.cwd;
 export const chdir = fs.chdir;
 
-export function writeFile(path: string, content: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const file = new File(path, File.WRITE, File.CREATE_ALWAYS);
-        file.writeUtf8(0, content, err => {
-            if (err) reject(Error(err));
-            else resolve();
-        });
-        file.close();
-    });
-}
-
-export function appendFile(path: string, content: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const file = new File(path, File.WRITE, File.OPEN_ALWAYS);
-        file.writeUtf8(-1, content, err => {
-            if (err) reject(Error(err));
-            else resolve();
-        });
-        file.close();
-    });
-}
-
-export function readFile(path: string): Promise<string> {
-    return new Promise((resolve, reject) => {        
-        const file = new File(path, File.READ, File.OPEN_EXISTING);
-        let out = '';
-        let byteOffset = 0;
-        function onread(err:string, buffer:string, byteLength:number): void {
-            if (err) {
-                file.close();
-                return reject(Error(err));
-            }
-            out += buffer;
-            byteOffset += byteLength;
-
-            if (buffer.length == 0) {
-                file.close();
-                resolve(out);
-            }
-            else {
-                file.readUtf8(byteOffset, 8192, onread);
-            }
+export async function writeFile(path: string, content: string, encoding?:Encoding): Promise<void> {
+    const file = new File(path, File.WRITE, File.CREATE_ALWAYS);
+    try
+    {
+        let buf = encode(content, encoding);
+        let offset = 0;
+        while (buf.length !== 0)
+        {
+            const writed = await file.writeBuffer(offset, buf);
+            offset += writed;
+            buf = buf.subarray(writed);
         }
-        file.readUtf8(0, 8192, onread);
-    });
+        file.close();
+    }
+    catch (err)
+    {
+        file.close();
+        throw err;
+    }
 }
 
-export function resolve(path:string)
+export async function appendFile(path: string, content: string, encoding?:Encoding): Promise<void> {
+    const file = new File(path, File.WRITE, File.OPEN_ALWAYS);
+    try
+    {
+        let buf = encode(content, encoding);
+        while (buf.length !== 0)
+        {
+            const writed = await file.writeBuffer(-1, buf);
+            buf = buf.subarray(writed);
+        }
+        file.close();
+    }
+    catch (err)
+    {
+        file.close();
+        throw err;
+    }
+}
+
+export async function readFile(path: string, encoding?:Encoding): Promise<string> {
+    const file = new File(path, File.READ, File.OPEN_EXISTING);
+    let out = '';
+    let byteOffset = 0;
+    let remained:Uint8Array|null = null;
+    try
+    {
+        for (;;)
+        {
+            let data = await file.readBuffer(byteOffset, 8192);
+            if (data.length == 0) {
+                file.close();
+                return out;
+            }
+            byteOffset += data.length;
+
+            if (remained)
+            {
+                const concat = new Uint8Array(remained.length + data.length);
+                concat.set(remained);
+                concat.set(data, remained.length);
+                data = concat;
+            }
+            const [decoded, decodedBytes] = decode(data, encoding);
+            out += decoded;
+            remained = data.subarray(decodedBytes);
+        }
+    }
+    catch (err)
+    {
+        file.close();
+        throw err;
+    }
+}
+
+export function resolve(path:string):string
 {
     path = path.replace(/\//g, '\\');
 
