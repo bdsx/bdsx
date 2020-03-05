@@ -8,3 +8,5 @@ bin
 /PACKAGING/bdsx/*.d.ts
 /PACKAGING/bdsx/*.js
 /PACKAGING/bdsx/*.js.map
+/bdsx/buildtime.h
+/bdsx/gen

@@ -234,6 +234,7 @@ BOOL WINAPI DllMain(
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
+		requestDebugger();
 		ondebug(requestDebugger());
 				
 		console.log("BDSX: Attached\n");
