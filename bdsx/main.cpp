@@ -33,7 +33,7 @@
 #include "mcf.h"
 #include "require.h"
 #include "native.h"
-#include "buildtime.h"
+#include "gen/buildtime.h"
 
 #pragma comment(lib, "chakrart.lib")
 

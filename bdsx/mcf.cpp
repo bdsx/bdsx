@@ -2,7 +2,6 @@
 #include "mcf.h"
 #include "console.h"
 #include "codewrite.h"
-#include "buildtime.h"
 #include "gen/version.h"
 
 #include <KR3/data/map.h>
