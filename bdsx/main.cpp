@@ -341,6 +341,7 @@ BOOL WINAPI DllMain(
 			console.logLine({ log, size });
 			});
 		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
+			g_server = instance;
 			SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL{
 				switch (CtrlType)
 				{
