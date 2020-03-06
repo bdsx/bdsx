@@ -225,7 +225,6 @@ void NativePointer::writeString(JsValue buffer, int encoding) throws(JsException
 {
 	if (encoding == ExEncoding::UTF16)
 	{
-
 		try
 		{
 			Text16 text = buffer.cast<Text16>();

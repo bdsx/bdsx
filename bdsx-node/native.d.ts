@@ -1,12 +1,15 @@
-import { AttributeId, DimensionId, Bufferable, Encoding } from "./common";
+import { AttributeId, DimensionId, Bufferable, Encoding, TypeFromEncoding } from "./common";
 
 export namespace fs {
-    export function appendUtf8FileSync(path: string, content: string): void;
-    export function appendBufferFileSync(path: string, content: Bufferable): void;
-    export function writeUtf8FileSync(path: string, content: string): void;
-    export function writeBufferFileSync(path: string, content: Bufferable): void;
-    export function readUtf8FileSync(path: string): string;
-    export function readBufferFileSync(path: string): Uint8Array;
+    export function appendFileSync(path: string, content: string|Bufferable, encoding?:Encoding): void;
+    export function writeFileSync(path: string, content: string|Bufferable, encoding?:Encoding): void;
+    export function readFileSync<T extends Encoding=Encoding.Utf8>(path: string, encoding?:T): TypeFromEncoding<T>;
+    export function deleteFileSync(path: string):boolean;
+    export function deleteRecursiveSync(path: string):boolean;
+    export function copyFileSync(from: string, to: string):boolean;
+    export function copyRecursiveSync(from: string, to: string):boolean;
+    export function mkdirSync(path: string):boolean;
+    export function mkdirRecursiveSync(path: string):boolean;
 
     /**
     *  Current working directory
@@ -251,13 +254,7 @@ export class StaticPointer
      * get C++ std::string
      * @param encoding default = Encoding.Utf8
      */
-    getCxxString(offset?:number, encoding?:Encoding): string;
-
-    /**
-     * get C++ std::string
-     * @param encoding default = Encoding.Utf8
-     */
-    getCxxString(offset:number, encoding:Encoding.Buffer): Uint8Array;
+    getCxxString<T extends Encoding=Encoding.Utf8>(offset?:number, encoding?:T): TypeFromEncoding<T>;
 
     /**
      * set C++ std::string
@@ -274,17 +271,8 @@ export class StaticPointer
      * if encoding is Encoding.Buffer it will call getBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    getString(bytes?: number, offset?:number, encoding?:Encoding): string;
+    getString<T extends Encoding=Encoding.Utf8>(bytes?: number, offset?:number, encoding?:T): TypeFromEncoding<T>;
     
-    /**
-     * get string
-     * @param bytes if it's not provided, It will read until reach null character
-     * @param encoding default = Encoding.Utf8
-     * if encoding is Encoding.Buffer it will call getBuffer
-     * if encoding is Encoding.Utf16, bytes will be twice
-     */
-    getString(bytes: number, offset:number, encoding:Encoding.Buffer): Uint8Array;
-
     /**
      * set string
      * @param encoding default = Encoding.Utf8
@@ -331,7 +319,7 @@ export class NativePointer extends StaticPointer
      * read a C++ std::string
      * @param encoding default = Encoding.Utf8
      */
-    readCxxString<T extends Encoding>(encoding?:T): T extends Encoding.Buffer ? Uint8Array : string;
+    readCxxString<T extends Encoding=Encoding.Utf8>(encoding?:T): TypeFromEncoding<T>;
 
     /**
      * write a C++ std::string
@@ -348,7 +336,7 @@ export class NativePointer extends StaticPointer
      * if encoding is Encoding.Buffer it will call readBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    readString<T extends Encoding>(bytes?: number, encoding?:T): T extends Encoding.Buffer ? Uint8Array : string;
+    readString<T extends Encoding=Encoding.Utf8>(bytes?: number, encoding?:T): TypeFromEncoding<T>;
 
     /**
      * write string
@@ -534,4 +522,4 @@ export function encode(data:string|Bufferable, encoding?:Encoding):Uint8Array;
 /**
  * @return [decoded, decoded bytes]
  */
-export function decode<T extends Encoding>(data:Uint8Array, encoding?:T):[T extends Encoding.Buffer ? Uint8Array : string, number];
+export function decode<T extends Encoding=Encoding.Utf8>(data:Uint8Array, encoding?:T):[TypeFromEncoding<T>, number];

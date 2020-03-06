@@ -75,7 +75,7 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 	state->buffer = buffer;
 	(uint64_t&)state->Offset = offset64;
 	state->callback = callback;
-	if (!ReadFileEx(m_file, buffer.getTypedArrayBuffer().data(), size, state,
+	if (!ReadFileEx(m_file, buffer.getArrayBuffer().data(), size, state,
 		[](DWORD dwErrorCode, DWORD dwBytesTransferred, LPOVERLAPPED lpOverlapped) {
 			auto* state = (FileCallbackState<JsPersistent>*)lpOverlapped;
 			JsValue callback = state->callback;
@@ -118,7 +118,7 @@ void NativeFile::write(double offset, JsValue obj, JsValue callback) throws(JsEx
 	state->buffer = obj;
 	if (!WriteFileEx(m_file, buffer.data(), intact<DWORD>(buffer.size()), state,
 		[](DWORD dwErrorCode, DWORD dwBytesTransferred, LPOVERLAPPED lpOverlapped) noexcept {
-			auto* state = (FileCallbackState<ABuffer>*)lpOverlapped;
+			auto* state = (FileCallbackState<JsPersistent>*)lpOverlapped;
 			JsValue callback = state->callback;
 			try
 			{

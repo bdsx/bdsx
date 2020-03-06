@@ -35,12 +35,12 @@ class UserCommandEvents extends EventEx<UserCommandListener>
 {
     private readonly listener = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: PacketId) => {
         ptr.move(0x28);
-        const command = ptr.readCxxString(Encoding.Ansi);
+        const command = ptr.readCxxString();
         const ev = new CommandEventImpl(command, networkIdentifier);
         if (this.fire(ev) === CANCEL) return CANCEL;
         if (ev.isModified) {
             ptr.move(-0x20);
-            ptr.writeCxxString(ev.command, Encoding.Ansi);
+            ptr.writeCxxString(ev.command);
         }
     };
 

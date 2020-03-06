@@ -29,7 +29,7 @@ declare module './native'
              * @param offset position from begin of file
              * @param size reading size
              */
-            readString<T extends Encoding>(offset: number, size: number, encoding?:T): Promise<ReadReport<TypeFromEncoding<T>>>;
+            readString<T extends Encoding=Encoding.Utf8>(offset: number, size: number, encoding?:T): Promise<ReadReport<TypeFromEncoding<T>>>;
 
             /**
              * Write file
@@ -65,7 +65,7 @@ File.prototype.readBuffer = function(offset: number, size: number):Promise<Uint8
     });
 };
 
-File.prototype.readString = function<T extends Encoding>(offset: number, size: number, encoding?:T): Promise<ReadReport<TypeFromEncoding<T>>>
+File.prototype.readString = function<T extends Encoding=Encoding.Utf8>(offset: number, size: number, encoding?:T): Promise<ReadReport<TypeFromEncoding<T>>>
 {
     return new Promise((resolve, reject)=>{
         this.read(offset, size, (err, data)=>{
@@ -105,9 +105,15 @@ File.prototype.writeBuffer = function(offset: number, buffer: Bufferable): Promi
 };
 
 export { File, File as NativeFile };
-export const readFileSync = fs.readUtf8FileSync;
-export const writeFileSync = fs.writeUtf8FileSync;
-export const appendFileSync = fs.appendUtf8FileSync;
+export const readFileSync = fs.readFileSync;
+export const writeFileSync = fs.writeFileSync;
+export const appendFileSync = fs.appendFileSync;
+export const deleteFileSync = fs.deleteFileSync;
+export const deleteRecursiveSync = fs.deleteRecursiveSync;
+export const copyFileSync = fs.copyFileSync;
+export const copyRecursiveSync = fs.copyRecursiveSync;
+export const mkdirSync = fs.mkdirSync;
+export const mkdirRecursiveSync = fs.mkdirRecursiveSync;
 export const cwd = fs.cwd;
 export const chdir = fs.chdir;
 

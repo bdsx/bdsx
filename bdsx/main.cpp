@@ -74,7 +74,7 @@ int CALLBACK bindHook(
 	SOCKET s,
 	const sockaddr* name,
 	int namelen
-)
+) noexcept
 {
 	int res = bind(s, name, namelen);
 	if (res == 0) NetFilter::addBindList(s);
@@ -100,10 +100,15 @@ int CALLBACK sendtoHook(
 	return res;
 }
 
+int CALLBACK WSACleanupHook() noexcept
+{
+	return 0;
+}
+
 int CALLBACK recvfromHook(
 	SOCKET s, char* buf, int len, int flags,
 	sockaddr* from, int* fromlen
-)
+) noexcept
 {
 	int res = recvfrom(s, buf, len, flags, from, fromlen);
 	if (res == SOCKET_ERROR) return SOCKET_ERROR;
@@ -336,7 +341,6 @@ BOOL WINAPI DllMain(
 			console.logLine({ log, size });
 			});
 		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
-			g_server = instance;
 			SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL{
 				switch (CtrlType)
 				{
@@ -360,6 +364,7 @@ BOOL WINAPI DllMain(
 		s_iatWS2_32.hooking(3, closesocketHook);
 		s_iatWS2_32.hooking(17, recvfromHook);
 		s_iatWS2_32.hooking(20, sendtoHook);
+		s_iatWS2_32.hooking(116, WSACleanupHook);
 		s_iatChakra.hooking("JsCreateContext", JsCreateContextHook);
 		s_iatChakra.hooking("JsCreateRuntime", JsCreateRuntimeHook);
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);

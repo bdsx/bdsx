@@ -1,7 +1,7 @@
 
 ## BDSX: The Extended BDS!
 ![logo](logo.png)  
-* Download: [bdsx.zip](https://github.com/karikera/bdsx/releases/download/1.1.32.1/bdsx.zip) or [Other Releases](https://github.com/karikera/bdsx/releases)
+* [Download Link](https://github.com/karikera/bdsx/releases)
 * **Windows Only!**
 * Supports all BDS features!
 * Run scripts without any addons or experimental play!
@@ -10,7 +10,7 @@
 ```ts
 console.log("Hello, World!");
 ```
-* File IO!
+* File IO!t
 ```ts
 import { fs } from 'bdsx';
 console.log('Current Directory: '+fs.cwd());

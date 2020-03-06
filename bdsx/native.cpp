@@ -398,7 +398,7 @@ void Native::_hook() noexcept
 		JsValue oncmd = g_native->m_onCommand;
 
 		String name = ctx->origin->getName();
-		JsValue jsres = oncmd(ctx->command.text(), name.text());
+		JsValue jsres = oncmd(TText16() << utf8ToUtf16(ctx->command.text()), name.text());
 		switch (jsres.getType())
 		{
 		case JsType::Integer:

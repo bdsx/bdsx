@@ -1,6 +1,5 @@
 /// <reference types="minecraft-scripting-types-server" />
 
-
 // Console Output
 console.log("From Script> Hello, World!");
 
@@ -65,6 +64,7 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
 
 // Network Hooking: Print all packets
 const tooLoudFilter = new Set([
+    PacketId.UpdateBlock,
     PacketId.ClientCacheBlobStatus, 
     PacketId.NetworkStackLatencyPacket, 
     PacketId.LevelChunk,
