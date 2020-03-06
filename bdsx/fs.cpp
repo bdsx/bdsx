@@ -130,7 +130,7 @@ JsValue createFsModule() noexcept
 		return File::remove(filename.data());
 		});
 	fs.setMethod(u"deleteRecursiveSync", [](Text16 path) {
-		return File::removeFullDirectory(path.data());
+		return File::removeFull(path.data());
 		});
 	fs.setMethod(u"copyFileSync", [](Text16 from, Text16 to) {
 		return File::copy(to.data(), from.data());
