@@ -104,7 +104,7 @@ int wmain(int argn, wchar_t** argv)
 								if (File::exists(destpath.data()))
 								{
 									cout << "remove " << filename << endl;
-									File::removeFullDirectory(destpath.data());
+									File::removeFull(destpath.data());
 								}
 								cout << "unzip " << filename << endl;
 								return destpath.data();
@@ -121,8 +121,8 @@ int wmain(int argn, wchar_t** argv)
 			};
 
 
-			File::removeFullDirectory(u"..\\server\\structures");
-			File::removeFullDirectory(u"..\\server\\definitions");
+			File::removeFull(u"..\\server\\structures");
+			File::removeFull(u"..\\server\\definitions");
 			unzipper.extractTo(u"..");
 			File::remove(u"bdsx.zip");
 			
