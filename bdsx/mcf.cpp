@@ -140,6 +140,7 @@ public:
 			ENTRY(google_breakpad$ExceptionHandler$HandleException),
 			ENTRY(BedrockLogOut),
 			ENTRY(CommandOutputSender$send),
+			ENTRY(ScriptEngine$dtor$ScriptEngine),
 		};
 #undef ENTRY
 
@@ -400,6 +401,7 @@ void MinecraftFunctionTable::load() noexcept
 			}
 			reader.loadFromPdb();
 		}
+		skipCommandListDestruction();
 		removeScriptExperientalCheck();
 	}
 	catch (Error&)
@@ -780,7 +782,16 @@ void MinecraftFunctionTable::hookOnCommandPrint(void(*callback)(const char* log,
 	junction.patchTo((byte*)CommandOutputSender$send + 0x12d, ORIGINAL_CODE, RAX, false, "commandLogging");
 }
 
-
+void MinecraftFunctionTable::skipCommandListDestruction() noexcept
+{
+	static const byte ORIGINAL_CODE[] = {
+		0x48, 0x8D, 0x4B, 0x78,			// lea         rcx,[rbx+78h]  
+		0xE8, 0x04, 0x24, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
+	};
+	Unprotector unpro((byte*)ScriptEngine$dtor$ScriptEngine + 435, sizeof(ORIGINAL_CODE));
+	if (!checkCode(unpro, ORIGINAL_CODE, "skipCommandListDestruction", { {5, 4} })) return;
+	memset(unpro, 0x90, sizeof(ORIGINAL_CODE));
+}
 void MinecraftFunctionTable::removeScriptExperientalCheck() noexcept
 {
 	static const byte ORIGINAL_CODE[] = {

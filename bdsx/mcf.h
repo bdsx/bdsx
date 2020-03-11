@@ -33,6 +33,7 @@ struct MinecraftFunctionTable
 	void hookOnActorDestructor(void(*callback)(Actor* actor)) noexcept;
 	void hookOnLog(void(*callback)(int color, const char * log, size_t size)) noexcept;
 	void hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept;
+	void skipCommandListDestruction() noexcept;
 	void removeScriptExperientalCheck() noexcept;
 
 	bool (*NetworkHandler$_sortAndPacketizeEvents)(NetworkHandler* _this, NetworkHandler::Connection&, std::chrono::nanoseconds);
@@ -66,6 +67,7 @@ struct MinecraftFunctionTable
 	void (*Level$removeEntityReferences)(Actor*, bool);
 	void (*BedrockLogOut)(unsigned int, char const*, ...);
 	void (*CommandOutputSender$send)(CommandOutputSender* _this, const CommandOrigin* origin, const CommandOutput* output);
+	void (*ScriptEngine$dtor$ScriptEngine)(ScriptEngine*);
 	
 	void (*std$string$_Tidy_deallocate)(String* str);
 	String* (*std$string$assign)(String* _this, const char* str, size_t size);
