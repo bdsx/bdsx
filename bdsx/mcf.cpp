@@ -444,19 +444,14 @@ void MinecraftFunctionTable::load() noexcept
 		if (hash == "1616EAE1F28D2744CB804FEF265DFFD2")
 		{
 			console.logA("BDSX: MD5 Hash matched(Version == " BDS_VERSION ")\n");
-#ifndef NDEBUG
-			if (isNotFullLoaded())
-			{
-				reader.loadFromPdb();
-			}
-#endif
 		}
 		else
 		{
-			{
-				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				console.logA("BDSX: MD5 Hash does not match(Version != " BDS_VERSION ")\n");
-			}
+			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			console.log("BDSX: MD5 Hash does not Matched(Version != " BDS_VERSION ")\n");
+		}
+		if (isNotFullLoaded())
+		{
 			reader.loadFromPdb();
 		}
 		skipChangeCurDir();
