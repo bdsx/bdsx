@@ -126,7 +126,7 @@ public:
 					}
 					catch (...)
 					{
-						console.log("traffic write failed\n");
+						console.logA("traffic write failed\n");
 					}
 				}
 				});
@@ -187,10 +187,10 @@ void SingleInstanceLimiter::create(pcstr16 name) noexcept
 	int err = GetLastError();
 	if (ERROR_ALREADY_EXISTS == err)
 	{
-		console.log(TSZ() << "BDSX: (id=" << (Utf16ToAnsi)(Text16)name << ") is Already executing\n");
-		console.log("BDSX: Wait the process terminating...\n");
+		console.log(TSZ16() << u"BDSX: (id=" << (Text16)name << u") is Already executing\n");
+		console.logA("BDSX: Wait the process terminating...\n");
 		WaitForSingleObject(m_mutex, INFINITE);
-		console.log("BDSX: Previous process terminated\n");
+		console.logA("BDSX: Previous process terminated\n");
 	}
 	else
 	{
@@ -212,7 +212,7 @@ void NetFilter::addTraffic(Ipv4Address ip, uint64_t value) noexcept
 	{
 		if (addFilter(ip, s_trafficLimitPeriod == 0 ? 0 : time(nullptr) + s_trafficLimitPeriod))
 		{
-			console.log(TSZ() << "traffic overed: " << ip << '\n');
+			console.logA(TSZ() << "traffic overed: " << ip << '\n');
 		}
 	}
 }
@@ -366,8 +366,8 @@ bool Native::fireError(JsRawData err) noexcept
 	
 	JsValue stack = err.getByProperty(u"stack");
 	if (stack == undefined) stack = err.toString();
-	console.log("[JS Stack]\n");
-	console.log(TSZ() << toAnsi(stack.cast<Text16>()) << '\n');
+	console.logA("[JS Stack]\n");
+	console.logLine(stack.cast<Text16>());
 	return false;
 }
 void Native::reset() noexcept
@@ -412,12 +412,12 @@ void Native::_hook() noexcept
 		ondebug(requestDebugger());
 		if (!isContextExisted())
 		{
-			console.log("[ Native Stack ]\n");
+			console.logA("[ Native Stack ]\n");
 
 			StackWriter writer(ptr->ContextRecord);
 			AText16 nativestack;
 			nativestack << writer;
-			console.log(TSZ() << toAnsi(nativestack) << '\n');
+			console.logLine(nativestack);
 
 			cleanAllResource();
 			terminate(-1);
@@ -444,12 +444,13 @@ void Native::_createNativeModule() noexcept
 	JsValue native = JsNewObject;
 	native.set(u"serverControl", createServerControlModule());
 	native.set(u"console", console.createModule());
+	native.set(u"moduleRoot", Require::getModuleRoot());
 
 	native.setMethod(u"loadPdb", [](Text16 path){
-		console.log("PdbReader: Load Symbols...\n");
+		console.logA("PdbReader: Load Symbols...\n");
 		PdbReader reader;
-		reader.showInfo([](Text text) { console.log(text); });
-		console.log("PdbReader: processing... \n");
+		reader.showInfo([](Text text) { console.logAnsi(text); });
+		console.logA("PdbReader: processing... \n");
 
 		struct Local
 		{
@@ -465,7 +466,7 @@ void Native::_createNativeModule() noexcept
 			if (newnow - local.now > 200_ms)
 			{
 				local.now = newnow;
-				console.log(TSZ() << '(' << local.totalcount << ")\n");
+				console.logA(TSZ() << '(' << local.totalcount << ")\n");
 			}
 
 			NativePointer * ptr = NativePointer::newInstance();
@@ -474,7 +475,7 @@ void Native::_createNativeModule() noexcept
 			return true;
 			});
 
-		console.log("done\n");
+		console.logA("done\n");
 		return local.out;
 		});
 
@@ -649,18 +650,18 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 				Text16 errstr = err.getValue().toString().as<Text16>();
 
 				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				console.log("[onRuntimeError callback has error]\n");
-				console.log(TSZ() << toAnsi(errstr) << '\n');
+				console.logA("[onRuntimeError callback has error]\n");
+				console.logLine(errstr);
 			}
 		}
 		{
 			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.log("[ Runtime Error ]\n");
-			console.log(TSZ() << "Last Sender IP: " << (Ipv4Address&)lastsender << '\n');
-			console.log("[ JS Stack ]\n");
-			console.log(TSZ() << toAnsi(stack) << '\n');
-			console.log("[ Native Stack ]\n");
-			console.log(TSZ() << toAnsi(nativestack) << '\n');
+			console.logA("[ Runtime Error ]\n");
+			console.logA(TSZ() << "Last Sender IP: " << (Ipv4Address&)lastsender << '\n');
+			console.logA("[ JS Stack ]\n");
+			console.logLine(stack);
+			console.logA("[ Native Stack ]\n");
+			console.logLine(nativestack);
 		}
 	}
 

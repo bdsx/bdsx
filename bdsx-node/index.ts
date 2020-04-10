@@ -27,6 +27,7 @@ import createPacket = nethook.createPacket;
 import sendPacket = nethook.sendPacket;
 import execSync = native.execSync;
 import ipfilter = native.ipfilter;
+import moduleRoot = native.moduleRoot;
 
 import shellVoid = native.shell;
 import { MariaDB } from "./db";

@@ -33,6 +33,8 @@ struct MinecraftFunctionTable
 	void hookOnActorDestructor(void(*callback)(Actor* actor)) noexcept;
 	void hookOnLog(void(*callback)(int color, const char * log, size_t size)) noexcept;
 	void hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept;
+	void hookOnCommandIn(void (*callback)(String* dest)) noexcept;
+	void skipChangeCurDir() noexcept;
 	void skipCommandListDestruction() noexcept;
 	void removeScriptExperientalCheck() noexcept;
 
@@ -68,6 +70,7 @@ struct MinecraftFunctionTable
 	void (*BedrockLogOut)(unsigned int, char const*, ...);
 	void (*CommandOutputSender$send)(CommandOutputSender* _this, const CommandOrigin* origin, const CommandOutput* output);
 	void (*ScriptEngine$dtor$ScriptEngine)(ScriptEngine*);
+	void (*std$_LaunchPad$_stdin_t_$_Execute$_0_)();
 	
 	void (*std$string$_Tidy_deallocate)(String* str);
 	String* (*std$string$assign)(String* _this, const char* str, size_t size);
@@ -75,6 +78,7 @@ struct MinecraftFunctionTable
 	void (*std$string$resize)(String* _this, size_t size, char init);
 	void (*free)(void*);
 	void* (*malloc)(size_t size);
+	int (*main)(const char ** argv, int argn);
 
 	void (*google_breakpad$ExceptionHandler$HandleException)();
 	DedicatedServer** StopCommand$mServer;
