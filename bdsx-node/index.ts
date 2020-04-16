@@ -214,6 +214,7 @@ export {
     ipfilter,
     shellVoid,
     MariaDB,
+    moduleRoot,
 };
 
 

@@ -1246,8 +1246,8 @@ struct MinecraftServerScriptEngine :public ScriptEngine
 
 struct Actor$VFTable
 {
-	OFFSETFIELD(ActorType(*)(Actor*), getEntityTypeId, 0x4d0);
-	OFFSETFIELD(DimensionId* (*)(Actor*, DimensionId*), getDimensionId, 0x510);
+	OFFSETFIELD(ActorType(*)(Actor*), getEntityTypeId, 0x4d8);
+	OFFSETFIELD(DimensionId* (*)(Actor*, DimensionId*), getDimensionId, 0x518);
 };
 
 struct Actor
@@ -1316,13 +1316,13 @@ struct Actor
 	OFFSETFIELD(Dimension*, dimension, 0x350);
 	OFFSETFIELD(ServerLevel*, level, 0x358);
 	OFFSETFIELD(bool, loaded, 0x361); // ? guessed
-	OFFSETFIELD(String, ns, 0x368); // "minecraft"
-	OFFSETFIELD(String, name, 0x388); // "wandering_trader"
-	OFFSETFIELD(String, u, 0x3A8); // ""
-	OFFSETFIELD(String, className, 0x3C8); // minecraft:player<>
-	OFFSETFIELD(String, identifier, 0x3f0); // minecraft:player
-	OFFSETFIELD(BaseAttributeMap*, attributes, 0x410);
-	OFFSETFIELD(ActorRuntimeID, runtimeId, 0x4d0);
+	OFFSETFIELD(String, ns, 0x390); // "minecraft"
+	OFFSETFIELD(String, name, 0x3b0); // "wandering_trader"
+	OFFSETFIELD(String, u, 0x3d0); // ""
+	OFFSETFIELD(String, className, 0x3f0); // minecraft:player<>
+	OFFSETFIELD(String, identifier, 0x418); // minecraft:player
+	OFFSETFIELD(BaseAttributeMap*, attributes, 0x438);
+	OFFSETFIELD(ActorRuntimeID, runtimeId, 0x4f8);
 
 	bool isServerPlayer() noexcept;
 	ActorType getEntityTypeId() noexcept;

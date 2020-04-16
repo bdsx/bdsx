@@ -271,8 +271,15 @@ void NetFilter::setTrafficLimitPeriod(int seconds) noexcept
 
 void cleanAllResource() noexcept
 {
-	destroyJsContext();
-	JsRuntime::dispose();
+	try
+	{
+		destroyJsContext();
+		JsRuntime::dispose();
+	}
+	catch (...)
+	{
+	}
+	try
 	{
 		CsLock _lock = s_csBinds;
 		for (SOCKET sock : s_binds)
@@ -280,6 +287,9 @@ void cleanAllResource() noexcept
 			closesocket(sock);
 		}
 		s_binds.clear();
+	}
+	catch (...)
+	{
 	}
 	g_singleInstanceLimiter.release();
 	StackAllocator::getInstance()->terminate();

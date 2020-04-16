@@ -258,8 +258,6 @@ BOOL WINAPI DllMain(
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
 		Text16 cmdread = commandLine;
 		AText16 mutex;
-		AText16 host;
-		int port;
 
 		readArgument(&cmdread); // exepath
 		bool modulePathSetted = false;
@@ -287,21 +285,18 @@ BOOL WINAPI DllMain(
 			}
 			else if (option == u"--pipe-socket")
 			{
-				host = readArgument(&cmdread);
-				port = readArgument(&cmdread).to_uint();
+				TText16 host = readArgument(&cmdread);
+				uint port = readArgument(&cmdread).to_uint();
+				
+				AText key;
+				key << GetCurrentProcessId();
+
+				console.connect(host, (word)port, key);
 			}
 			//else if (option == u"--properties")
 			//{
 			//	s_properties = readArgument(&commandLine);
 			//}
-		}
-
-		if (host != nullptr)
-		{
-			console.connect(move(host), (word)port, mutex == nullptr ? 
-				(AText)nullptr : 
-				move(AText() << toUtf8(mutex))
-			);
 		}
 
 		console.logA("BDSX: Attached\n");

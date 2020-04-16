@@ -441,7 +441,7 @@ void MinecraftFunctionTable::load() noexcept
 			console.logA("BDSX: Predefined does not founded\n");
 		}
 
-		if (hash == "1616EAE1F28D2744CB804FEF265DFFD2")
+		if (hash == "56F4DA20CB9FA0C42FC2AABC13D4554A")
 		{
 			console.logA("BDSX: MD5 Hash matched(Version == " BDS_VERSION ")\n");
 		}
