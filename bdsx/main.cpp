@@ -69,15 +69,29 @@ int WSAAPI closesocketHook(SOCKET s) noexcept
 	return closesocket(s);
 }
 
-// It cannot use, minecraft trys to open with several ports
+int count = 0;
+
 int CALLBACK bindHook(
 	SOCKET s,
 	const sockaddr* name,
 	int namelen
 ) noexcept
 {
+	if (count >= 2)
+	{
+		if (((sockaddr_in*)name)->sin_port != 0)
+		{
+			SetLastError(WSAENOMORE);
+			return -1;
+		}
+	}
+
 	int res = bind(s, name, namelen);
-	if (res == 0) NetFilter::addBindList(s);
+	if (res == 0)
+	{
+		NetFilter::addBindList(s);
+		count++;
+	}
 	return res;
 }
 int CALLBACK sendtoHook(
@@ -240,19 +254,10 @@ BOOL WINAPI DllMain(
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
 		ondebug(requestDebugger());
-				
-		console.log("BDSX: Attached\n");
-		console.log("BDSX: Build Time = " BUILD_TIME "\n");
-
-		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
-		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
-		g_mcf.load();
-
+	
 		Text16 commandLine = (Text16)unwide(GetCommandLineW());
 		Text16 cmdread = commandLine;
 		AText16 mutex;
-		AText16 host;
-		int port;
 
 		readArgument(&cmdread); // exepath
 		bool modulePathSetted = false;
@@ -266,7 +271,7 @@ BOOL WINAPI DllMain(
 				if (modulePathSetted)
 				{
 					Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-					console.log("BDSX: multiple modules are not supported\n");
+					console.logA("BDSX: multiple modules are not supported\n");
 					continue;
 				}
 				modulePathSetted = true;
@@ -280,8 +285,13 @@ BOOL WINAPI DllMain(
 			}
 			else if (option == u"--pipe-socket")
 			{
-				host = readArgument(&cmdread);
-				port = readArgument(&cmdread).to_uint();
+				TText16 host = readArgument(&cmdread);
+				uint port = readArgument(&cmdread).to_uint();
+				
+				AText key;
+				key << (Utf16ToUtf8)readArgument(&cmdread);
+
+				console.connect(host, (word)port, key);
 			}
 			//else if (option == u"--properties")
 			//{
@@ -289,18 +299,17 @@ BOOL WINAPI DllMain(
 			//}
 		}
 
-		if (host != nullptr)
-		{
-			console.connect(move(host), (word)port, mutex == nullptr ? 
-				(AText)nullptr : 
-				move(AText() << toUtf8(mutex))
-			);
-		}
+		console.logA("BDSX: Attached\n");
+		console.logA("BDSX: Build Time = " BUILD_TIME "\n");
+
+		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
+		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
+		g_mcf.load();
 
 		if (!modulePathSetted)
 		{
 			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.log("BDSX: Module is not defined // -M [module path]\n");
+			console.logA("BDSX: Module is not defined // -M [module path]\n");
 		}
 
 		//g_mcf.hookOnPropertyPath([](String* dest) {
@@ -339,6 +348,10 @@ BOOL WINAPI DllMain(
 			});
 		g_mcf.hookOnCommandPrint([](const char * log, size_t size) {
 			console.logLine({ log, size });
+			});
+		g_mcf.hookOnCommandIn([](String* dest) {
+			TText text = console.getLine();
+			dest->assign(text.data(), text.size());
 			});
 		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
 			g_server = instance;
