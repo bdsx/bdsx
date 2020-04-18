@@ -289,7 +289,7 @@ BOOL WINAPI DllMain(
 				uint port = readArgument(&cmdread).to_uint();
 				
 				AText key;
-				key << GetCurrentProcessId();
+				key << (Utf16ToUtf8)readArgument(&cmdread);
 
 				console.connect(host, (word)port, key);
 			}

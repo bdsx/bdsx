@@ -11,6 +11,7 @@
 using namespace kr;
 
 AText currentTagName;
+AText latestTagName;
 EventPump * g_pump = EventPump::getInstance();
 
 int wmain(int argn, wchar_t** argv)
@@ -26,7 +27,6 @@ int wmain(int argn, wchar_t** argv)
 	cout << "Current Version: " << currentTagName << endl;
 
 	fetchAsTextFromWeb("https://api.github.com/repos/karikera/bdsx/releases/latest")->then([&](Text content) {
-		AText latestTagName;
 		AText browserDownloadUrl;
 		try
 		{
@@ -41,7 +41,6 @@ int wmain(int argn, wchar_t** argv)
 					});
 				});
 			cout << "New Version: " << latestTagName << endl;
-			File::saveFromArray<char>(u"VERSION", latestTagName);
 		}
 		catch (InvalidSourceException&)
 		{
@@ -51,10 +50,14 @@ int wmain(int argn, wchar_t** argv)
 		}
 		if (browserDownloadUrl == nullptr)
 		{
-			cerr << "borwser_download_url not found" << endl;
+			cerr << "browser_download_url not found" << endl;
 			throw ThrowAbort();
 		}
-		
+		if (latestTagName == nullptr)
+		{
+			cerr << "latestTagName not found" << endl;
+			throw ThrowAbort();
+		}
 		if (latestTagName == currentTagName)
 		{
 			cout << "LATEST" << endl;
@@ -146,6 +149,7 @@ int wmain(int argn, wchar_t** argv)
 				cout << npm_install << endl;
 				shellPiped(TSZ16() << (Utf8ToUtf16)npm_install);
 			}
+			File::saveFromArray<char>(u"VERSION", latestTagName);
 
 			g_pump->quit(0);
 		})->katch([](exception_ptr&){
