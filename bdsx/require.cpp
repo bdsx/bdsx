@@ -84,6 +84,10 @@ void Require::clear() noexcept
 	s_modules.clear();
 	s_exports = nullptr;
 }
+Text16 Require::getModuleRoot() noexcept
+{
+	return s_moduleRoot;
+}
 void Require::_loadPackageJson() noexcept
 {
 	AText jsmain;
@@ -102,7 +106,7 @@ void Require::_loadPackageJson() noexcept
 	catch (Error&)
 	{
 		Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-		console.log("BDSX: failed to load package.json\n");
+		console.logA("BDSX: failed to load package.json\n");
 	}
 
 	TSZ16 maindir;

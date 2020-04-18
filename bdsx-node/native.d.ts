@@ -523,3 +523,5 @@ export function encode(data:string|Bufferable, encoding?:Encoding):Uint8Array;
  * @return [decoded, decoded bytes]
  */
 export function decode<T extends Encoding=Encoding.Utf8>(data:Uint8Array, encoding?:T):[TypeFromEncoding<T>, number];
+
+export const moduleRoot:string;

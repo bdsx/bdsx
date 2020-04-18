@@ -332,13 +332,13 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 			if (logError)
 			{
 				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				console.log(TSZ() << "MariaDB Error " << sql->m_sql->getErrorNumber() << ": " << sql->m_sql->getErrorMessage() << '\n');
+				console.logA(TSZ() << "MariaDB Error " << sql->m_sql->getErrorNumber() << ": " << sql->m_sql->getErrorMessage() << '\n');
 			}
 		}
 		catch (ThrowRetry&)
 		{
 			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.log("MariaDB disconnected?\n");
+			console.logA("MariaDB disconnected?\n");
 		}
 		if (data == nullptr) return;
 

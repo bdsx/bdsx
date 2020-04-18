@@ -21,6 +21,7 @@ public:
 	static void init(kr::Text16 root) noexcept;
 	static void start() noexcept;
 	static void clear() noexcept;
+	static kr::Text16 getModuleRoot() noexcept;
 
 	kr::JsValue operator ()(kr::Text16 modulename) const throws(JsException);
 

@@ -28,26 +28,80 @@ using namespace hook;
 MinecraftFunctionTable g_mcf;
 ServerInstance* g_server;
 
+TmpArray<pair<size_t, size_t>> memdiff(const void* _src, const void* _dst, size_t size) noexcept
+{
+	byte* src = (byte*)_src;
+	byte* src_end = (byte*)_src+size;
+	byte* dst = (byte*)_dst;
+
+	TmpArray<pair<size_t, size_t>> diff;
+	pair<size_t, size_t>* last = nullptr;
+
+	for (;src != src_end; src++,dst++)
+	{
+		if (*src == *dst)
+		{
+			if (last == nullptr) continue;
+			last->second = src - (byte*)_src;
+			last = nullptr;
+		}
+		else
+		{
+			if (last != nullptr) continue;
+			last = diff.prepare(1);
+			last->first = src - (byte*)_src;
+		}
+	}
+	if (last != nullptr) last->second = size;
+	return diff;
+}
+bool memdiff_contains(View<pair<size_t, size_t>> larger, View<pair<size_t, size_t>> smaller) noexcept
+{
+	auto* small = smaller.begin();
+	auto* small_end = smaller.end();
+
+	for (auto large : larger)
+	{
+		for (;;)
+		{
+			if (small == small_end) return true;
+
+			if (small->first < large.first) return false;
+			if (small->first > large.second) break;
+			if (small->first == large.second) return false;
+			if (small->second > large.second) return false;
+			if (small->second == large.second)
+			{
+				small++;
+				break;
+			}
+			small++;
+		}
+	}
+	return true;
+}
+
 bool checkCode(void* code, Buffer originalCode, Text name, View<pair<size_t, size_t>> skip) noexcept
 {
+	TmpArray<pair<size_t, size_t>> diff = memdiff(code, originalCode.data(), originalCode.size());
 	if (skip == nullptr)
 	{
-		if (memcmp(code, originalCode.data(), originalCode.size()) != 0) goto _fail;
+		if (diff.empty()) return true;
 	}
 	else
 	{
-		size_t prev = 0;
-		for (const pair<size_t, size_t>& sz : skip)
-		{
-			if (memcmp((byte*)code + prev, (byte*)originalCode.data() + prev, sz.first - prev) != 0) goto _fail;
-			prev = sz.second;
-		}
-		if (memcmp((byte*)code + prev, (byte*)originalCode.data() + prev, originalCode.size() - prev) != 0) goto _fail;
+		if (memdiff_contains(skip, diff)) return true;
 	}
-	return true;
-_fail:
+
 	Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-	console.log(TSZ() << "BDSX: " << name << " - function hooking failed\n");
+	TSZ out;
+	out << "BDSX: " << name << " - function hooking failed, bytes did not matched at {";
+	for (pair<size_t, size_t>& v : diff)
+	{
+		out << " {" << v.first << ", " << v.second << "}, ";
+	}
+	out << "}\n";
+	console.logA(out);
 	return false;
 }
 
@@ -140,7 +194,9 @@ public:
 			ENTRY(google_breakpad$ExceptionHandler$HandleException),
 			ENTRY(BedrockLogOut),
 			ENTRY(CommandOutputSender$send),
+			ENTRY(std$_LaunchPad$_stdin_t_$_Execute$_0_),
 			ENTRY(ScriptEngine$dtor$ScriptEngine),
+			ENTRY(main),
 		};
 #undef ENTRY
 
@@ -153,7 +209,9 @@ public:
 			"::", "$",
 			"operator==", "$_equals_",
 			"<16,std$_Default_allocate_traits,0>", "$_alloc16_",
+			"<0>", "$_0_",
 			"`vftable'", "$_vftable_",
+			"<std$unique_ptr<std$tuple<<lambda_8018a31a875cb002a7f54550810d8bc1> >,std$default_delete<std$tuple<<lambda_8018a31a875cb002a7f54550810d8bc1> > > > >", "$_stdin_t_",
 			"~", "dtor$",
 		};
 		return list;
@@ -283,7 +341,7 @@ public:
 				auto iter = m_targets.find(name);
 				if (iter == m_targets.end())
 				{
-					console.log(TSZ() << "Unknown function: " << name << '\n');
+					console.logA(TSZ() << "Unknown function: " << name << '\n');
 				}
 				else
 				{
@@ -317,10 +375,10 @@ public:
 			}
 		}
 
-		console.log("PdbReader: Load Symbols...\n");
+		console.logA("PdbReader: Load Symbols...\n");
 		PdbReader reader;
-		reader.showInfo([](Text text) {console.log(text); });
-		console.log("PdbReader: processing... \n");
+		reader.showInfo([](Text text) {console.logAnsi(text); });
+		console.logA("PdbReader: processing... \n");
 		reader.search(nullptr, [&](Text name, void* address, uint32_t typeId) {
 			auto iter = m_targets.find(name);
 			if (iter == m_targets.end())
@@ -337,7 +395,7 @@ public:
 			TText line = TText::concat(name, " = 0x", hexf((byte*)address - (byte*)reader.base()));
 			fos << line << endl;
 			line << '\n';
-			console.log(line);
+			console.logA(line);
 			m_targets.erase(iter);
 			return !m_targets.empty();
 			});
@@ -349,7 +407,7 @@ public:
 			{
 				Text name = item.first;
 
-				console.log(TSZ() << name << "not found\n");
+				console.logA(TSZ() << name << "not found\n");
 			}
 		}
 	}
@@ -362,11 +420,11 @@ void MinecraftFunctionTable::load() noexcept
 	{
 		TText16 moduleName = CurrentApplicationPath();
 		hash = (encoder::Hex)(TBuffer)encoder::Md5::hash(File::open(moduleName.data()));
-		console.log(TSZ() << "BDSX: bedrock_server.exe MD5 = " << hash << '\n');
+		console.logA(TSZ() << "BDSX: bedrock_server.exe MD5 = " << hash << '\n');
 	}
 	catch (Error&)
 	{
-		console.log("Cannot open bedrock_server.exe\n");
+		console.logA("Cannot open bedrock_server.exe\n");
 	}
 
 	try
@@ -380,28 +438,29 @@ void MinecraftFunctionTable::load() noexcept
 		}
 		else
 		{
-			console.log("BDSX: Predefined not founded\n");
+			console.logA("BDSX: Predefined does not founded\n");
 		}
 
-		if (hash == "0DCADDC25415D6818790D1FB09BCB4E9")
+		if (hash == "56F4DA20CB9FA0C42FC2AABC13D4554A")
 		{
-			console.log("BDSX: MD5 Hash Matched(Version == " BDS_VERSION ")\n");
+			console.logA("BDSX: MD5 Hash matched(Version == " BDS_VERSION ")\n");
 		}
 		else
 		{
 			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.log("BDSX: MD5 Hash Not Matched(Version != " BDS_VERSION ")\n");
+			console.log("BDSX: MD5 Hash does not Matched(Version != " BDS_VERSION ")\n");
 		}
 		if (isNotFullLoaded())
 		{
 			reader.loadFromPdb();
 		}
+		skipChangeCurDir();
 		skipCommandListDestruction();
 		removeScriptExperientalCheck();
 	}
 	catch (Error&)
 	{
-		console.log("Cannot open predefined file\n");
+		console.logA("Cannot open the predefined file\n");
 	}
 }
 bool MinecraftFunctionTable::isNotFullLoaded() noexcept
@@ -452,7 +511,7 @@ void MinecraftFunctionTable::hookOnUpdate(void(*update)(Minecraft* mc)) noexcept
 	junction.add(RSP, 0x28);
 	junction.write(ORIGINAL_CODE + 5, 7);
 	junction.ret();
-	junction.patchTo((byte*)ServerInstance$_update + 0x16E
+	junction.patchTo((byte*)ServerInstance$_update + 0x17c
 		, ORIGINAL_CODE, RAX, false, "internalUpdate", { {1, 5} });
 };
 void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept
@@ -612,30 +671,24 @@ void MinecraftFunctionTable::hookOnConnectionClosedAfter(void(*onclose)(const Ne
 }
 void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(ServerInstance* instance)) noexcept
 {
-	void(*caller)(byte*, void(*callback)(ServerInstance * instance)) =
-		[](byte* rbp, void(*callback)(ServerInstance* instance)) {
-		callback((ServerInstance*)(rbp + 0x2100));
-	};
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x89, 0x45, 0x00, // mov qword ptr ss:[rbp],rax
-		0x4C, 0x8B, 0x6D, 0xF0, // mov r13,qword ptr ss:[rbp-10]
-		0x4D, 0x85, 0xED, // test r13,r13
+		0x48, 0x85, 0xF6, //test rsi,rsi
 		0x0F, 0x95, 0x45, 0x82, // setne byte ptr ss:[rbp-7E]
+		0x4C, 0x8D, 0x35, 0x00, 0x00, 0x00, 0x00, // lea r14,qword ptr ds:[7FF765549BE0]
+		0x48, 0x8B, 0x9D, 0xA8, 0x00, 0x00, 0x00, // mov rbx,qword ptr ss:[rbp+A8]
 	};
-	Code junction(64);
-	junction.write(ORIGINAL_CODE);
-	junction.push(RAX);
-	junction.push(RCX);
+	Code junction(128);
 	junction.sub(RSP, 0x28);
-	junction.mov(RDX, (uintptr_t)callback);
-	junction.mov(RCX, RBP);
-	junction.call(caller, RAX);
+	junction.lea(RCX, RBP, 0x20A0); // serverInstance = rbp+0x20a0
+	junction.call(callback, RAX);
 	junction.add(RSP, 0x28);
-	junction.pop(RCX);
-	junction.pop(RAX);
+	junction.test(RSI, RSI);
+	junction.write({0x0f, 0x95, 0x45, 0x82}); // setne byte ptr ss:[rbp-7E]
+	junction.mov(R14, (qword)0x7FF765549BE0);
+	junction.mov(RBX, QwordPtr, RBP, 0xA8);
 	junction.ret();
-	junction.patchTo((byte*)DedicatedServer$start + 0x22c6,
-		ORIGINAL_CODE, RDX, false, "serverStart");
+	junction.patchTo((byte*)DedicatedServer$start + 0x231b,
+		ORIGINAL_CODE, RDX, false, "serverStart", { {10, 14} });
 };
 void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept
 {
@@ -724,7 +777,7 @@ void MinecraftFunctionTable::hookOnLog(void(*callback)(int color, const char* lo
 {
 	static const byte ORIGINAL_CODE[] = {
 		0xB9, 0xF5, 0xFF, 0xFF, 0xFF,       // mov ecx,FFFFFFF5                        
-		0xFF, 0x15, 0x7D, 0x27, 0xB9, 0x00, // call qword ptr ds:[<&GetStdHandle>]     
+		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00, // call qword ptr ds:[<&GetStdHandle>]     
 		0x83, 0xFE, 0x01,					// cmp esi,1                               
 		0x75, 0x05,							// jne bedrock_server.7FF6C6905B2D         
 		0x8D, 0x56, 0x06,					// lea edx,qword ptr ds:[rsi+6]            
@@ -738,12 +791,12 @@ void MinecraftFunctionTable::hookOnLog(void(*callback)(int color, const char* lo
 		0x74, 0x05,							// je bedrock_server.7FF6C6905B46          
 		0xBA, 0x0C, 0x00, 0x00, 0x00,       // mov edx,C                               
 		0x48, 0x8B, 0xC8,                   // mov rcx,rax                             
-		0xFF, 0x15, 0x59, 0x27, 0xB9, 0x00, // call SetConsoleTextAttribute 
+		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00, // call SetConsoleTextAttribute 
 		0x48, 0x8D, 0x54, 0x24, 0x60,       // lea rdx,qword ptr ss:[rsp+60]           
-		0x48, 0x8D, 0x0D, 0x29, 0xF9, 0xC4, 0x00, // lea rcx,qword ptr ds:[7FF6C7555484]
+		0x48, 0x8D, 0x0D, 0x00, 0x00, 0x00, 0x00, // lea rcx,qword ptr ds:[7FF6C7555484]
 		0xE8, 0x30, 0x87, 0xFC, 0xFF,		// call <bedrock_server.printf>            
 		0x48, 0x8D, 0x4C, 0x24, 0x60,		// lea rcx,qword ptr ss:[rsp+60]           
-		0xFF, 0x15, 0xCD, 0x26, 0xB9, 0x00, // call OutputDebugStringA 
+		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00, // call OutputDebugStringA 
 	};
 
 	Code junction(64);
@@ -756,15 +809,16 @@ void MinecraftFunctionTable::hookOnLog(void(*callback)(int color, const char* lo
 	junction.ret();
 	junction.patchTo(
 		(byte*)BedrockLogOut + 0x88,
-		ORIGINAL_CODE, RDX, false, "logging");
+		ORIGINAL_CODE, RDX, false, "logging",
+		{ {7, 11}, {51, 54}, {63, 67}, {79, 82} });
 }
 void MinecraftFunctionTable::hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
-		0xE8, 0x1E, 0x00, 0xCE, 0xFF,			// call <bedrock_server.class std::basic_o
+		0xE8, 0x00, 0x00, 0x00, 0x00,			// call <bedrock_server.class std::basic_o
 		0x48, 0x8B, 0xC8,						// mov rcx,rax
-		0x48, 0x8D, 0x15, 0x54, 0x20, 0x9B, 0x00, // lea rdx,qword ptr ds:[7FF75F803A60]
-		0xE8, 0x3F, 0xF9, 0xCD, 0xFF,			// call <bedrock_server.class std::basic_o
+		0x48, 0x8D, 0x15, 0x00, 0x00, 0x00, 0x00, // lea rdx,qword ptr ds:[7FF75F803A60]
+		0xE8, 0x00, 0x00, 0x00, 0x00,			// call <bedrock_server.class std::basic_o
 	};
 
 	Code junction(64);
@@ -774,17 +828,77 @@ void MinecraftFunctionTable::hookOnCommandPrint(void(*callback)(const char* log,
 	junction.call(callback, RAX);
 	junction.add(RSP, 0x28);
 	junction.ret();
-	junction.patchTo((byte*)CommandOutputSender$send + 0x12d, ORIGINAL_CODE, RAX, false, "commandLogging");
+	junction.patchTo((byte*)CommandOutputSender$send + 0x12d, ORIGINAL_CODE, RAX, false, "logging-cmd", 
+		{{1, 5}, {11, 15}, {16, 20}});
+}
+void MinecraftFunctionTable::hookOnCommandIn(void(*callback)(String* dest)) noexcept
+{
+	static const byte ORIGINAL_CODE[] = {
+		0x48, 0x8B, 0x1D, 0x00, 0x00, 0x00, 0x00,	// mov rbx,qword ptr ds:[<&?cin@std@@3V?$basic_istream@DU?$char_traits@D@std@@@1@A>]  
+		0x48, 0x8B, 0x03,							// mov rax,qword ptr ds:[rbx]                                                         
+		0x48, 0x63, 0x48, 0x04,						// movsxd rcx,dword ptr ds:[rax+4]                                                    
+		0x48, 0x03, 0xCB,							// add rcx,rbx                                                                        
+		0xB2, 0x0A,									// mov dl,A                                                                           
+		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00,			// call qword ptr ds:[<&?widen@?$basic_ios@DU?$char_traits@D@std@@@std@@QEBADD@Z>]    
+		0x44, 0x0F, 0xB6, 0xC0,						// movzx r8d,al                                                                       
+		0x48, 0x8D, 0x54, 0x24, 0x28,				// lea rdx,qword ptr ss:[rsp+28]                                                      
+		0x48, 0x8B, 0xCB,							// mov rcx,rbx                                                                        
+		0xE8, 0x07, 0xFD, 0xFF, 0xFF,				// call <bedrock_server.class std::basic_istream<char,struct std::char_traits<char> > 
+		0x48, 0x8B, 0x08,							// mov rcx,qword ptr ds:[rax]
+		0x48, 0x63, 0x51, 0x04,						// movsxd rdx,dword ptr ds:[rcx+4]
+		0xF6, 0x44, 0x02, 0x10, 0x06,				// test byte ptr ds:[rdx+rax+10],6
+		0x0F, 0x85, 0xB1, 0x00, 0x00, 0x00,			// jne bedrock_server.7FF6C7A743AC
+	};
+	Code junction(64);
+	junction.lea(RCX, RSP, 0x30);
+	junction.sub(RSP, 0x28);
+	junction.call(callback, RAX);
+	junction.add(RSP, 0x28);
+	junction.ret();
+	junction.patchTo((byte*)std$_LaunchPad$_stdin_t_$_Execute$_0_ + 0x5f, ORIGINAL_CODE, RAX, false, "standardInput",
+		{ {3, 7}, {21, 24} });
+}
+void MinecraftFunctionTable::skipChangeCurDir() noexcept
+{
+	static const byte ORIGINAL_CODE[] = {
+		0x48, 0x8D, 0x4D, 0x88,				// lea rcx,qword ptr ss:[rbp-78]
+		0xE8, 0x00, 0x00, 0x00, 0x00,		// call <bedrock_server.getExecutableDir>
+		0x48, 0x83, 0x78, 0x18, 0x10,		// cmp qword ptr ds:[rax+18],10
+		0x72, 0x03,							// jb bedrock_server.7FF6EF49F37D
+		0x48, 0x8B, 0x00,					// mov rax,qword ptr ds:[rax]                                                           
+		0x48, 0x8B, 0xC8,					// mov rcx,rax                                                                         
+		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00,	// call qword ptr ds:[<&SetCurrentDirectoryA>]                                         
+		0x48, 0x8B, 0x55, 0xA0, 			// mov rdx,qword ptr ss:[rbp-60]                                                        
+		0x48, 0x83, 0xFA, 0x10, 			// cmp rdx,10                                                                          
+		0x72, 0x34,							// jb bedrock_server.7FF6EF49F3C4                                                      
+		0x48, 0xFF, 0xC2,					// inc rdx                                                                             
+		0x48, 0x8B, 0x4D, 0x88,				// mov rcx,qword ptr ss:[rbp-78]                                                        
+		0x48, 0x8B, 0xC1,					// mov rax,rcx                                                                         
+		0x48, 0x81, 0xFA, 0x00, 0x10, 0x00, 0x00, // cmp rdx,1000
+		0x72, 0x1C,							// jb bedrock_server.7FF6EF49F3BF                                                      
+		0x48, 0x83, 0xC2, 0x27,				// add rdx,27                                                                          
+		0x48, 0x8B, 0x49, 0xF8,				// mov rcx,qword ptr ds:[rcx-8]                                                         
+		0x48, 0x2B, 0xC1,					// sub rax,rcx                                                                         
+		0x48, 0x83, 0xC0, 0xF8,				// add rax,FFFFFFFFFFFFFFF8                                                            
+		0x48, 0x83, 0xF8, 0x1F,				// cmp rax,1F                                                                          
+		0x76, 0x07,							// jbe bedrock_server.7FF6EF49F3BF                                                     
+		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00,	// call qword ptr ds:[<&_invalid_parameter_noinfo_noreturn>]                           
+		0xCC,								// int3                                                                                
+		0xE8, 0x00, 0x00, 0x00, 0x00,		// call <bedrock_server.void __cdecl operator delete(void * __ptr64,unsigned __int64)> 
+	};
+	Unprotector unpro((byte*)main + 0x42A, sizeof(ORIGINAL_CODE));
+	if (!checkCode(unpro, ORIGINAL_CODE, "skipChangeCurDir", { {5, 9}, {24, 28}, {80, 84}, {86, 90} })) return;
+	memset(unpro, 0x90, sizeof(ORIGINAL_CODE));
 }
 
 void MinecraftFunctionTable::skipCommandListDestruction() noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
 		0x48, 0x8D, 0x4B, 0x78,			// lea         rcx,[rbx+78h]  
-		0xE8, 0x04, 0x24, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
+		0xE8, 0x00, 0x00, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
 	};
 	Unprotector unpro((byte*)ScriptEngine$dtor$ScriptEngine + 435, sizeof(ORIGINAL_CODE));
-	if (!checkCode(unpro, ORIGINAL_CODE, "skipCommandListDestruction", { {5, 4} })) return;
+	if (!checkCode(unpro, ORIGINAL_CODE, "skipCommandListDestruction", { {5, 9} })) return;
 	memset(unpro, 0x90, sizeof(ORIGINAL_CODE));
 }
 void MinecraftFunctionTable::removeScriptExperientalCheck() noexcept

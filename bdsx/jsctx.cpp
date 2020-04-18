@@ -24,17 +24,7 @@ void createJsContext(kr::JsRawContext newContext) noexcept
 	contextThreadId = GetCurrentThreadId();
 
 	g_ctx->enter();
-	try
-	{
-		kr::JsRuntime::run(u"Promise.resolve('test').then(()=>{})");
-	}
-	catch (JsException&)
-	{
-		int a = 0;
-	}
-
 	g_native.create();
-
 	g_ctx->exit();
 }
 void destroyJsContext() noexcept
