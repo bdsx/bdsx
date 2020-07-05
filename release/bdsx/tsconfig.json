@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "lib": [ "ES2015" ],
+    "module": "commonjs",
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "inlineSourceMap": true
+  }
+}

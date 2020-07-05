@@ -1,7 +1,9 @@
 /.vs
 bin
 *.user
-/release
+/release/bin
+/release/bdsx/node_modules
+/release-zip
 /bdsx.zip
 /downloaded-bds
 /PACKAGING/bdsx/node_modules

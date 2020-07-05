@@ -61,15 +61,21 @@ https://discord.gg/pC9XdkC
 
 ## Build It Self
 * Requirement
-[Visual Studio 2019](https://visualstudio.microsoft.com/ko/)  
+[Visual Studio 2019](https://visualstudio.microsoft.com/)  
+[Visual Studio Code](https://code.visualstudio.com/)  
 [NASM](https://www.nasm.us/) & Set PATH - It's needed by node-chakracore  
 
-* Clone BDSX and ken(personal library project)  
+1. Clone BDSX and ken.(personal library project)  
 **[parent directory]**  
 ├ ken (https://github.com/karikera/ken)  
 └ bdsx (https://github.com/karikera/bdsx)  
 
-* Build bdsx.sln with Visual Studio 2019
+2. Update git submodules.
 
-If you build it with `Release` configuration, It will make `bdsx.zip` in solution directory.  
-that `bdsx.zip` is standalone server files.
+3. Build bdsx.sln with Visual Studio 2019.
+
+4. Build `bdsx/bdsx-node` with Visual Studio Code. And select `tsc watch`.
+
+5. Build `bdsx/bdsx-node` with Visual Studio Code. And select `Package`.  
+ It will generate a zip file to `bdsx/release-zip/bdsx-[version].zip`
+
