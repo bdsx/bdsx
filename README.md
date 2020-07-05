@@ -4,6 +4,7 @@
 * OS: Windows & Linux(with Wine)
 * Supports all BDS features!
 * Supports all node.js features!
+* [Debuggable by Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-With-VSCode)
 * Run scripts without any addons or experimental play!
 * Hijack chatting!
 ```ts
@@ -32,12 +33,12 @@ It's very mutable now, I will remove or change API names frequently!
 2. (Linux) Install wine
 3. Install BDSX
 ```sh
-npm i -g bdsx # Install bdsx. It will try to install BDS.
+npm i bdsx -g # Install bdsx. It will try to install BDS. if you use linux, 
 ```
 4. Run BDSX
 ```sh
 bdsx --example ./example # make example project to './example'
-bdsx -M './example' # run BDSX with './example', it will read 'main' of 'path/package.json'
+bdsx './example' # run BDSX with './example', it will read 'main' of 'path/package.json'
 ```
 
 ## Build Typescript (Watch Mode)
