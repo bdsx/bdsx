@@ -4,7 +4,7 @@
 * OS: Windows & Linux(with Wine)
 * Supports all BDS features!
 * Supports all node.js features!
-* [Debuggable by Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-With-VSCode)
+* [Debuggable by Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
 * Run scripts without any addons or experimental play!
 * Hijack chatting!
 ```ts
