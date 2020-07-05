@@ -23,6 +23,7 @@
  #include <jsrt.h>
 
 #include <WinSock2.h>
+#include <shellapi.h>
 
 #include "jsctx.h"
 #include "nativepointer.h"
@@ -31,9 +32,11 @@
 #include "fs.h"
 #include "nethook.h"
 #include "mcf.h"
-#include "require.h"
 #include "native.h"
 #include "gen/buildtime.h"
+
+#include "nodegate.h"
+#include "nodecall.h"
 
 #pragma comment(lib, "chakrart.lib")
 
@@ -43,12 +46,13 @@ namespace
 {
 	//JsDebugService s_debug;
 	//JsDebugProtocolHandler s_debugHandler;
+
+	kr::AText s_cmdline_buffer;
 	win::Module* s_module = win::Module::current();
 	hook::IATHookerList s_iatChakra(s_module, "chakra.dll");
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
 	Map<Text, AText> s_uuidToPackPath;
-	// Text16 s_properties = nullptr;
 }
 
 Initializer<Socket> __init;
@@ -69,14 +73,13 @@ int WSAAPI closesocketHook(SOCKET s) noexcept
 	return closesocket(s);
 }
 
-int count = 0;
-
 int CALLBACK bindHook(
 	SOCKET s,
 	const sockaddr* name,
 	int namelen
 ) noexcept
 {
+	static int count = 0;
 	if (count >= 2)
 	{
 		if (((sockaddr_in*)name)->sin_port != 0)
@@ -145,65 +148,32 @@ JsErrorCode CALLBACK JsCreateRuntimeHook(
 	JsThreadServiceCallback threadService,
 	JsRuntimeHandle* runtime) noexcept
 {
-	JsErrorCode err = JsCreateRuntime(attributes, threadService, runtime);
-	if (err == JsNoError)
-	{
-		JsRuntime::setRuntime(*runtime);
-		g_mainPump = EventPump::getInstance();
-
-		g_mcf.hookOnUpdate([](Minecraft* mc){
-			SEHCatcher _catcher;
-			try
-			{
-				g_mcf.Minecraft$update(mc);
-				JsScope scope;
-				g_mainPump->processOnce();
-			}
-			catch (QuitException&)
-			{
-				g_mcf.stopServer();
-			}
-			catch (SEHException& e)
-			{
-				g_native->onRuntimeError(e.exception);
-			}
-			});
-
-		JsonParser parser(File::open(u"valid_known_packs.json"));
-		parser.array([&](size_t idx){
-			AText uuid;
-			AText path;
-			parser.fields([&](JsonField&field){
-				field("uuid", &uuid);
-				field("path", &path);
-			});
-			if (path == nullptr) return;
-			if (uuid == nullptr) return;
-
-			s_uuidToPackPath[uuid] = move(path);
+	if (g_nodecall.runtime == nullptr) return JsErrorOutOfMemory;
+	*runtime = g_nodecall.runtime;
+	JsonParser parser(File::open(u"valid_known_packs.json"));
+	parser.array([&](size_t idx){
+		AText uuid;
+		AText path;
+		parser.fields([&](JsonField&field){
+			field("uuid", &uuid);
+			field("path", &path);
 		});
-		
-		//JsDebugServiceCreate(&s_debug);
-		//JsDebugProtocolHandlerCreate(*runtime, &s_debugHandler);
-		//JsDebugServiceRegisterHandler(s_debug, "minecraft", s_debugHandler, false);
-		//JsDebugServiceListen(s_debug, 9229);
-		//JsDebugProtocolHandlerWaitForDebugger(s_debugHandler);
-	}
-	return err;
+		if (path == nullptr) return;
+		if (uuid == nullptr) return;
+
+		s_uuidToPackPath[uuid] = move(path);
+	});
+	return JsNoError;
 }
 JsErrorCode CALLBACK JsDisposeRuntimeHook(JsRuntimeHandle runtime) noexcept
 {
-	destroyJsContext();
-	return JsDisposeRuntime(runtime);
+	return JsNoError;
 }
 JsErrorCode CALLBACK JsCreateContextHook(JsRuntimeHandle runtime, JsContextRef* newContext) noexcept
 {
-	JsErrorCode err = JsCreateContext(runtime, newContext);
-	if (err == JsNoError)
-	{
-		createJsContext(*newContext);
-	}
-	return err;
+	if (g_nodecall.context == nullptr) return JsErrorOutOfMemory;
+	*newContext = g_nodecall.context;
+	return JsNoError;
 }
 JsErrorCode CALLBACK JsRunScriptHook(
 	const wchar_t* script,
@@ -224,10 +194,23 @@ JsErrorCode CALLBACK JsRunScriptHook(
 			pcstr16 remove_end = rpath.find_r(u'_');
 			if (remove_end != nullptr) rpath.cut_self(remove_end);
 
-			TText16 newpath = TText16::concat(utf8ToUtf16(iter->second), rpath, nullterm);
-			JsErrorCode err = JsRunScript(script, sourceContext, wide(newpath.data()), result);
-			if (err != JsNoError) catchException();
-			return err;
+			TText16 newpath = TText16::concat(u"./", utf8ToUtf16(iter->second), u"/scripts", rpath, nullterm);
+			
+			{
+				JsScope _scope;
+				try
+				{
+					JsExceptionCatcher catcher;
+					g_call->require((Text16)newpath);
+				}
+				catch (JsException& e)
+				{
+					g_native->fireError(e.getValue());
+				}
+			}
+			// JsErrorCode err = JsRunScript(script, sourceContext, wide(newpath.data()), result);
+			// if (err != JsNoError) catchException();
+			return JsNoError;
 		}
 	}
 	JsErrorCode err = JsRunScript(script, sourceContext, sourceUrl, result);
@@ -244,6 +227,31 @@ JsErrorCode CALLBACK JsCallFunctionHook(
 	if (err != JsNoError) catchException();
 	return err;
 }
+JsErrorCode CALLBACK JsStartDebuggingHook() noexcept
+{
+	return JsNoError;
+}
+
+JsErrorCode CALLBACK JsSetPropertyHook(
+	JsValueRef object,
+	JsPropertyIdRef propertyId,
+	JsValueRef value,
+	bool useStrictRules)
+{
+	const wchar_t* name;
+	JsGetPropertyNameFromId(propertyId, &name);
+	if ((Text16)unwide(name) == u"console") debug();
+	return JsSetProperty(object, propertyId, value, useStrictRules);
+}
+
+// unused
+JsErrorCode CALLBACK JsSetIndexedPropertyHook(
+	JsValueRef object,
+	JsValueRef index,
+	JsValueRef value)
+{
+	return JsSetIndexedProperty(object, index, value);
+}
 
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
@@ -254,97 +262,150 @@ BOOL WINAPI DllMain(
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
 		ondebug(requestDebugger());
-	
-		Text16 commandLine = (Text16)unwide(GetCommandLineW());
-		Text16 cmdread = commandLine;
+
 		AText16 mutex;
 
-		readArgument(&cmdread); // exepath
-		bool modulePathSetted = false;
-		while (!cmdread.empty())
 		{
-			TText16 option = readArgument(&cmdread);
-			if (option == u"-M")
-			{
-				TText16 modulePath = readArgument(&cmdread);
+			Array<size_t> positions;
+			Text16 scriptDir = nullptr;
+			wchar_t* commandLine = GetCommandLineW();
+			int argc;
+			char16_t** argv_16_start = kr::unwide(CommandLineToArgvW(commandLine, &argc));
+			positions.reserve(argc);
+			s_cmdline_buffer.reserve(1024);
 
-				if (modulePathSetted)
+
+			char16_t** argv_16 = argv_16_start;
+			s_cmdline_buffer << (kr::Utf16ToUtf8)(kr::Text16)(*argv_16++) << '\0';
+			positions.push(0);
+
+			while (*argv_16 != nullptr)
+			{
+				Text16 arg = (Text16)*argv_16++;
+				if (arg == u"--mutex")
 				{
-					Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-					console.logA("BDSX: multiple modules are not supported\n");
-					continue;
+					pcstr16 arg2 = *argv_16++;
+					if (arg2 == nullptr) continue;
+					mutex = (Text16)arg2;
+					g_singleInstanceLimiter.create(TSZ16() << u"BDSX_" << mutex);
 				}
-				modulePathSetted = true;
+				else if (arg == u"--pipe-socket")
+				{
+					pcstr16 arg2 = *argv_16++;
+					if (arg2 == nullptr) continue;
+					pcstr16 arg3 = *argv_16++;
+					if (arg3 == nullptr) continue;
+					pcstr16 arg4 = *argv_16++;
+					if (arg4 == nullptr) continue;
+					Text16 host = (Text16)arg2;
+					uint port = ((Text16)arg3).to_uint();
+					AText key;
+					key << (Utf16ToUtf8)(Text16)arg4;
+					console.connect(host, (word)port, key);
+				}
+				else if (arg == u"--dir")
+				{
+					pcstr16 arg2 = *argv_16++;
+					if (scriptDir != nullptr)
+					{
+						console.logA("[BDSX] Cannot define multiple --dir", true);
+						continue;
+					}
+					if (arg2 == nullptr) continue;
+					scriptDir = (Text16)arg2;
+				}
+				else if (arg == u"--help")
+				{
+					console.logA("[BDSX] -M [path_to_dir]: Module path");
+					console.logA("[BDSX] --mutex [name]: Set mutex to limit to single instance");
+					console.logA("[BDSX] --pipe-socket [host] [port] [param]: Connect standard output to socket, BDSX will send [param] for first line");
+					console.logA("[BDSX] --dir [path_to_dir]: Base path for -M");
+				}
+				else
+				{
+					if (arg.size() <= 1 || *arg != '-')
+					{
+						// pass through after entry path
+						TText arg8 = (kr::Utf16ToUtf8)arg;
+						positions.push(s_cmdline_buffer.size());
+						if (scriptDir != nullptr)
+						{
+							TText scriptDir8 = (kr::Utf16ToUtf8)scriptDir;
+							path.joinEx(&s_cmdline_buffer, { scriptDir8, arg8 }, true);
+						}
+						else
+						{
+							path.joinEx(&s_cmdline_buffer, { arg8 }, true);
+						}
+						s_cmdline_buffer << '\0';
 
-				Require::init(modulePath);
+						while (*argv_16 != nullptr)
+						{
+							Text16 arg = (Text16)*argv_16++;
+							positions.push(s_cmdline_buffer.size());
+							s_cmdline_buffer << (kr::Utf16ToUtf8)arg << '\0';
+						}
+						break;
+					}
+					else
+					{
+						positions.push(s_cmdline_buffer.size());
+						s_cmdline_buffer << (kr::Utf16ToUtf8)arg << '\0';
+					}
+				}
 			}
-			else if (option == u"--mutex")
-			{
-				mutex = readArgument(&cmdread);
-				g_singleInstanceLimiter.create(TSZ16() << u"BDSX_" << mutex);
-			}
-			else if (option == u"--pipe-socket")
-			{
-				TText16 host = readArgument(&cmdread);
-				uint port = readArgument(&cmdread).to_uint();
-				
-				AText key;
-				key << (Utf16ToUtf8)readArgument(&cmdread);
 
-				console.connect(host, (word)port, key);
+			// utf8 argv
+			{
+				size_t argv_pos = s_cmdline_buffer.size();
+				s_cmdline_buffer.prepare(positions.bytes() + sizeof(char*));
+				s_cmdline_buffer.shrink();
+
+				char** argptr = (char**)(s_cmdline_buffer.begin() + argv_pos);
+				g_nodecall.argv = argptr;
+				g_nodecall.argc = intact<int>(positions.size());
+
+				char* bufptr = s_cmdline_buffer.begin();
+				for (size_t& pos : positions)
+				{
+					*argptr++ = bufptr + pos;
+				}
+				*argptr++ = nullptr;
 			}
-			//else if (option == u"--properties")
-			//{
-			//	s_properties = readArgument(&commandLine);
-			//}
 		}
 
-		console.logA("BDSX: Attached\n");
-		console.logA("BDSX: Build Time = " BUILD_TIME "\n");
+		console.logA("[BDSX] Attached\n");
+		console.logA("[BDSX] Build Time = " BUILD_TIME "\n");
 
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
 		g_mcf.load();
 
-		if (!modulePathSetted)
-		{
-			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.logA("BDSX: Module is not defined // -M [module path]\n");
-		}
-
-		//g_mcf.hookOnPropertyPath([](String* dest) {
-		//	if (s_properties == nullptr)
-		//	{
-		//		ToUtf8<char16> toUtf8 = s_properties;
-		//		dest->resize(toUtf8.size());
-		//		toUtf8.copyTo(dest->data());
-		//	}
-		//	else
-		//	{
-		//		Text path = "server.properties";
-		//		dest->assign(path.data(), path.size());
-		//	}
-		//	});
+		g_mcf.hookOnProgramMainCall([](int _argc, char** _argv){
+#undef main
+			return g_mcf.main(g_nodecall.argc, g_nodecall.argv);
+			});
 		g_mcf.hookOnLog([](int color, const char* log, size_t size) {
-			int ncolor;
 			if (color == 1)
 			{
-				ncolor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+				Console::ColorScope __color = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+				console.log({ log, size });
 			}
 			else if (color == 2)
 			{
-				ncolor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+				Console::ColorScope __color = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+				console.log({ log, size });
 			}
 			else if (color == 4)
 			{
-				ncolor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+				Console::ColorScope __color = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+				console.log({ log, size }, true);
 			}
 			else
 			{
-				ncolor = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				Console::ColorScope __color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				console.log({ log, size }, true);
 			}
-			Console::ColorScope __color = ncolor;
-			console.log({log, size});
 			});
 		g_mcf.hookOnCommandPrint([](const char * log, size_t size) {
 			console.logLine({ log, size });
@@ -370,10 +431,26 @@ BOOL WINAPI DllMain(
 				return false;
 				}, true);
 		});
+		g_mcf.hookOnGameThreadCall([](void* pad, void* lambda) {
+			g_mcf.std$_Pad$_Release(pad);
+			g_nodecall.lambda = lambda;
+			nodegate::start(&g_nodecall);
+			});
 		g_mcf.hookOnScriptLoading([]{
-			// create require
-			Require::start();
+			{
+				JsScope _scope;
+				try
+				{
+					JsExceptionCatcher catcher;
+					g_call->callMain();
+				}
+				catch (JsException& e)
+				{
+					g_native->fireError(e.getValue());
+				}
+			}
 		});
+		g_mcf.skipMakeConsoleObject();
 		s_iatWS2_32.hooking(2, bindHook);
 		s_iatWS2_32.hooking(3, closesocketHook);
 		s_iatWS2_32.hooking(17, recvfromHook);
@@ -384,6 +461,9 @@ BOOL WINAPI DllMain(
 		s_iatChakra.hooking("JsDisposeRuntime", JsDisposeRuntimeHook);
 		s_iatChakra.hooking("JsRunScript", JsRunScriptHook);
 		s_iatChakra.hooking("JsCallFunction", JsCallFunctionHook);
+		s_iatChakra.hooking("JsStartDebugging", JsStartDebuggingHook);
+		s_iatChakra.hooking("JsSetProperty", JsSetPropertyHook);
+		// s_iatChakra.hooking("JsSetIndexedProperty", JsSetIndexedPropertyHook);
 	}
 	return true;
 }

@@ -30,24 +30,29 @@ public:
 	// write log without encoding converting
 	// only for ASCII characters
 	// it will check assertion for ASCII only
-	void logA(kr::Text text) noexcept;
+	void logA(kr::Text text, bool error = false) noexcept;
 
 	// write log with system encoding
-	void logAnsi(kr::Text text) noexcept;
+	void logAnsi(kr::Text text, bool error = false) noexcept;
 
 	// write log with utf-8 encoding
-	void log(kr::Text text) noexcept;
+	void log(kr::Text text, bool error = false) noexcept;
+
+	// write log with utf-8 encoding, socket only
+	void netlog(kr::Text text) noexcept;
 
 	// write log with utf-16 encoding
-	void log(kr::Text16 text) noexcept;
+	void log(kr::Text16 text, bool error = false) noexcept;
 
 	// write log+newline with utf-8 encoding
-	void logLine(kr::Text text) noexcept;
+	void logLine(kr::Text text, bool error = false) noexcept;
 
 	// write log+newline with utf-16 encoding
-	void logLine(kr::Text16 text) noexcept;
+	void logLine(kr::Text16 text, bool error = false) noexcept;
 
 	bool connect(kr::AText16 host, kr::word port, kr::AText key) noexcept;
+
+	void writeToStdin(kr::Text text) noexcept;
 
 	kr::TText getLine() noexcept;
 

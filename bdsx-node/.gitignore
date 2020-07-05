@@ -1,7 +1,11 @@
 /node_modules
-/bin
-/obj
+/gen
+/package/pkg/*
+!/package/pkg/package.json
+!/package/pkg/package-lock.json
+/bdsx-bin.zip
 *.d.ts
 *.js
 *.js.map
+!/native.js
 !/native.d.ts

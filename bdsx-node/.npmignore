@@ -1,9 +1,6 @@
 /tsconfig.json
-/bin
-/obj
 /.vscode
-*.njsproj
-*.njsproj.user
+/package
 *.ts
 !*.d.ts
 *.js.map

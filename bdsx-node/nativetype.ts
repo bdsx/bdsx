@@ -45,10 +45,10 @@ declare module './native'
         function set(ptr:NativePointer, value:Actor):void;
     }
 }
-String.get = function(ptr:NativePointer):string{
+String.get = ptr=>{
     return ptr.getCxxString();
 };
-String.set = function(ptr:NativePointer, value:string):void{
+String.set = (ptr, value)=>{
     ptr.setCxxString(value);
 };
 

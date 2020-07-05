@@ -585,6 +585,12 @@ struct AuxDataBlockItem
 	void* vftable;
 };
 
+struct ExtendedStreamReadResult
+{
+	uint64_t u1; // 1
+
+};
+
 struct Packet
 {
 	Packet() = delete;
@@ -595,6 +601,7 @@ struct Packet
 		void (*getName)(Packet*, String* name);
 		void (*write)(Packet*, BinaryStream*);
 		PacketReadResult(*read)(Packet*, BinaryStream*);
+		ExtendedStreamReadResult*(*readExtended)(Packet*, ExtendedStreamReadResult*, BinaryStream*);
 		bool (*unknown)(Packet*);
 	};
 
@@ -672,10 +679,7 @@ struct ReadOnlyBinaryStream
 	ReadOnlyBinaryStreamVTable* vftable; // 0
 	size_t pointer; // 8
 	void* u1; // 10
-	void* u2; // 18
-	void* u3; // 20
-	void* u4; // 28
-	DataBuffer* data; // 30
+	String data;
 
 	kr::Text getData() noexcept;
 };
@@ -1161,7 +1165,7 @@ struct RakNetInstance
 {
 	void* vftable;
 	NetworkHandler* handler;
-	OFFSETFIELD(RakNet::RakPeer*, peer, 0x1b0);
+	OFFSETFIELD(RakNet::RakPeer*, peer, 0x1b8);
 };
 
 struct LocalConnector;
@@ -1212,20 +1216,14 @@ struct ServerInstance
 {
 	ServerInstance() = delete;
 	void* vftable;
-	AppPlatform_win32* platform;
-	void* vtable2;
-	DedicatedServer* server;
-	Minecraft* minecraft;
-	NetworkHandler* networkHandler;
-	LoopbackPacketSender* sender;
-	void* u1;
-	void* u2;
-	void* u3;
-	EducationOptions* educationOptions;
-	DBStorage* storage;
-	void* us[37];
-	MinecraftServerScriptEngine* scriptEngine;
-	void* us2[10];
+
+	OFFSETFIELD(DedicatedServer*, server, 0x88);
+	OFFSETFIELD(Minecraft*, minecraft, 0x90);
+	OFFSETFIELD(NetworkHandler*, networkHandler, 0x98);
+	OFFSETFIELD(LoopbackPacketSender*, sender, 0xa0);
+	OFFSETFIELD(EducationOptions*, educationOptions, 0xc0);
+	OFFSETFIELD(DBStorage*, storage, 0xc8);
+	OFFSETFIELD(MinecraftServerScriptEngine*, scriptEngine, 0x1f8);
 
 	int makeScriptId() noexcept;
 	Dimension* createDimension(DimensionId id) noexcept;
@@ -1246,8 +1244,8 @@ struct MinecraftServerScriptEngine :public ScriptEngine
 
 struct Actor$VFTable
 {
-	OFFSETFIELD(ActorType(*)(Actor*), getEntityTypeId, 0x4d8);
-	OFFSETFIELD(DimensionId* (*)(Actor*, DimensionId*), getDimensionId, 0x518);
+	OFFSETFIELD(ActorType(*)(Actor*), getEntityTypeId, 0x4f8);
+	OFFSETFIELD(DimensionId* (*)(Actor*, DimensionId*), getDimensionId, 0x538);
 };
 
 struct Actor

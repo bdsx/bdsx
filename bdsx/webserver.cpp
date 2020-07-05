@@ -33,7 +33,8 @@ void Request::sendFile(Text16 filename) noexcept
 	File* file = File::open(filename.data());
 
 	constexpr size_t BUFFER_SIZE = 8192;
-	TText buffer(BUFFER_SIZE);
+	TText buffer;
+	buffer.resize(BUFFER_SIZE);
 	char * bufferptr = buffer.data();
 	try
 	{

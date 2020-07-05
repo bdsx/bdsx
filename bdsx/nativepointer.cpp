@@ -328,8 +328,7 @@ TText16 NativePointer::readVarString(int encoding) throws(JsException)
 	try
 	{
 		byte* ptr = m_address;
-		ptr += len;
-
+		m_address += len;
 		Charset cs = (Charset)encoding;
 		CHARSET_CONSTLIZE(cs,
 			return TText16((MultiByteToUtf16<cs>)Text((char*)ptr, len));

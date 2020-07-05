@@ -112,6 +112,7 @@ export namespace serverControl
      * Reset scripts
      * It will clear bdsx events and reload modules
      * but cannot clear basic addon events
+     * @deprecated too unstable
      */
     export function reset():void;
 
@@ -132,8 +133,9 @@ export namespace serverControl
 }
 
 /**
-* Native console object
-*/
+ * @deprecated use node.js standard IO
+ * Native console object
+ */
 export const console: {
     /**
     * print message to console
@@ -350,23 +352,23 @@ export class NativePointer extends StaticPointer
 
     writeBuffer(buffer: Bufferable): void;
     
-	readVarUint():number;
+    readVarUint():number;
     readVarInt():number;
     
     /**
      * 
      * @param encoding default = Encoding.Utf8
      */
-	readVarString(encoding?:Encoding):string;
+    readVarString(encoding?:Encoding):string;
 
-	writeVarUint(v:number):void;
+    writeVarUint(v:number):void;
     writeVarInt(v:number):void;
 
     /**
      * 
      * @param encoding default = Encoding.Utf8
      */
-	writeVarString(v:string, encoding?:Encoding):void;
+    writeVarString(v:string, encoding?:Encoding):void;
 }
 
 /**
@@ -460,6 +462,7 @@ export class NativeModule
 }
 
 /**
+ * @deprecated use npm package
  * MariaDB access
  */
 export class MariaDB
@@ -479,6 +482,9 @@ export class MariaDB
     closeResult():void;
 }
 
+/**
+ * @deprecated use node.js
+ */
 export class Request
 {
     send(text:string):void;
@@ -486,6 +492,9 @@ export class Request
     end():void;
 }
 
+/**
+ * @deprecated use npm package
+ */
 export class WebServer
 {
     constructor(localPath:string, port?:number);
@@ -507,12 +516,24 @@ export function free(ptr:StaticPointer):void;
 
 export function getHashFromCxxString(ptr:StaticPointer):NativePointer;
 
+/**
+ * @deprecated use node.js
+ */
 export function execSync(command:string, cwd?:string):string;
 
+/**
+ * @deprecated use node.js
+ */
 export function exec(command:string, cwd?:string, callback?:(output:string)=>void):void;
 
+/**
+ * @deprecated use node.js
+ */
 export function shell(program:string, command:string, cwd?:string):string;
 
+/**
+ * @deprecated use node.js
+ */
 export function wget(url:string, callback:(callback:string)=>void):void;
 
 export function loadPdb():{[key:string]:NativePointer};

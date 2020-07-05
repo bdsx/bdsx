@@ -7,7 +7,6 @@
     <ClCompile Include="jsctx.cpp" />
     <ClCompile Include="nativepointer.cpp" />
     <ClCompile Include="nethook.cpp" />
-    <ClCompile Include="require.cpp" />
     <ClCompile Include="native.cpp" />
     <ClCompile Include="watcher.cpp" />
     <ClCompile Include="nativefile.cpp" />
@@ -24,6 +23,8 @@
     <ClCompile Include="mariadb.cpp" />
     <ClCompile Include="webserver.cpp" />
     <ClCompile Include="encoding.cpp" />
+    <ClCompile Include="nodegate.cpp" />
+    <ClCompile Include="nodecall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h" />
@@ -32,7 +33,6 @@
     <ClInclude Include="nativepointer.h" />
     <ClInclude Include="nethook.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="require.h" />
     <ClInclude Include="native.h" />
     <ClInclude Include="watcher.h" />
     <ClInclude Include="nativefile.h" />
@@ -51,6 +51,8 @@
     <ClInclude Include="mariadb.h" />
     <ClInclude Include="webserver.h" />
     <ClInclude Include="encoding.h" />
+    <ClInclude Include="nodegate.h" />
+    <ClInclude Include="nodecall.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

@@ -79,7 +79,7 @@ kr::JsValue NetHookModule::create() noexcept
 	nethook.setMethod(u"sendPacket", [](JsNetworkIdentifier* ni, StaticPointer* packet, int whatIsThis) {
 		if (ni == nullptr) throw JsException(u"1st argument must be NetworkIdentifier");
 		if (packet == nullptr) throw JsException(u"2nd argument must be *Pointer");
-		g_server->networkHandler->send(ni->identifier, (Packet*)packet->getAddressRaw(), whatIsThis);
+		g_server->networkHandler()->send(ni->identifier, (Packet*)packet->getAddressRaw(), whatIsThis);
 		});
 	nethook.setMethod(u"readLoginPacket", [](StaticPointer * packet){
 		JsValue logininfo = JsNewArray(2);
@@ -111,21 +111,28 @@ void NetHookModule::reset() noexcept
 	m_onConnectionClosed = nullptr;
 }
 
+struct OnPacketRBP
+{
+	OFFSETFIELD(SharedPtr<Packet>, packet, 0x138);
+	OFFSETFIELD(ReadOnlyBinaryStream, stream, 0x1d0);
+	OFFSETFIELD(NetworkHandler*, networkHandler, -0xa8);
+};
+
 void NetHookModule::hook() noexcept
 {
-	g_mcf.hookOnPacketRaw([](byte* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn)->SharedPtr<Packet>*{
+	g_mcf.hookOnPacketRaw([](OnPacketRBP* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn)->SharedPtr<Packet>*{
 		NetHookModule* _this = &g_native->nethook;
 
 		JsScope scope;
 		JsValue jsni = JsNetworkIdentifier::fromRaw(conn->ni);
 		_this->lastSenderNi = jsni;
 
-		SharedPtr<Packet>* packet_dest = (SharedPtr<Packet>*)(rbp + 0x90);
+		SharedPtr<Packet>* packet_dest = &rbp->packet();
 
 		auto iter = _this->m_callbacks.find(getPacketId(EventType::Raw, packetId));
 		if (iter != _this->m_callbacks.end())
 		{
-			ReadOnlyBinaryStream* s = (ReadOnlyBinaryStream*)(rbp + 0xA0);
+			ReadOnlyBinaryStream* s = &rbp->stream();
 			Text data = s->getData();
 
 			NativePointer * rawpacketptr = NativePointer::newInstance();
@@ -143,47 +150,41 @@ void NetHookModule::hook() noexcept
 		}
 		return g_mcf.MinecraftPackets$createPacket(packet_dest, packetId);
 		});
-	g_mcf.hookOnPacketBefore([](byte* rbp, PacketReadResult res, NetworkHandler::Connection* conn) {
+	g_mcf.hookOnPacketBefore([](OnPacketRBP* rbp, ExtendedStreamReadResult * result, MinecraftPacketIds packetId, NetworkHandler::Connection* conn) {
 		checkCurrentThread();
 
-		if (res == PacketReadError) return res;
+		if (result->u1 != 1) return result;
 
 		NetHookModule* _this = &g_native->nethook;
 
-		dword packetIdCombined = *(dword*)(rbp + 0x8C);
-		MinecraftPacketIds packetId = (MinecraftPacketIds)(packetIdCombined & 0x3ff);
-		//dword serverIndex = ((packetIdCombined >> 10) & 3);
-		//NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
-		//ServerNetworkHandler** shandler = handler->getServer(serverIndex);
-
 		auto iter = _this->m_callbacks.find(getPacketId(EventType::Before, packetId));
-		if (iter == _this->m_callbacks.end()) return res;
+		if (iter == _this->m_callbacks.end()) return result;
 
 		JsScope scope;
-		SharedPtr<Packet>* packet = (SharedPtr<Packet>*)(rbp + 0x90);
+		SharedPtr<Packet>& packet = rbp->packet();
 		NativePointer* packetptr = NativePointer::newInstance();
-		packetptr->setAddressRaw(packet->pointer());
+		packetptr->setAddressRaw(packet.pointer());
 
 		try
 		{
 			JsValue ret = ((JsValue)iter->second)(packetptr, _this->lastSenderNi, (int)packetId);
-			return ret == false ? PacketReadError : res;
+			if (ret == false) result->u1 = 0;
+			return result;
 		}
 		catch (JsException & err)
 		{
 			g_native->fireError(err.getValue());
-			return PacketReadError;
 		}
+		return result;
 		});
-	g_mcf.hookOnPacketAfter([](byte* rbp, ServerNetworkHandler* server, NetworkHandler::Connection* conn) {
-		MinecraftPacketIds packetId = (MinecraftPacketIds)(*(dword*)(rbp + 0x8C) & 0x3ff);
+	g_mcf.hookOnPacketAfter([](OnPacketRBP* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn) {
 
 		NetHookModule* _this = &g_native->nethook;
 		auto iter = _this->m_callbacks.find(_this->getPacketId(EventType::After, packetId));
 		if (iter == _this->m_callbacks.end()) return;
 
-		NetworkHandler* handler = *(NetworkHandler**)(rbp - 0xC0);
-		Packet* packet = *(Packet**)(rbp + 0x90);
+		NetworkHandler* handler = rbp->networkHandler();
+		Packet* packet = rbp->packet().pointer();
 
 		JsScope scope;
 		NativePointer* packetptr = NativePointer::newInstance();
@@ -235,7 +236,7 @@ void NetHookModule::hook() noexcept
 		return handler->getConnectionFromId(ni);
 		});
 
-	g_mcf.hookOnConnectionClosed([](const NetworkIdentifier& ni) {
+	g_mcf.hookOnConnectionClosed([](NetworkHandler* handler, const NetworkIdentifier& ni, String* msg) {
 		NetHookModule* _this = &g_native->nethook;
 		if (_this->m_onConnectionClosed.isEmpty()) return;
 		JsScope scope;

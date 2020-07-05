@@ -28,18 +28,18 @@ class Native
 public:
 	Native() noexcept;
 	~Native() noexcept;
-	kr::JsValue getModule() noexcept;
 	bool fireError(kr::JsRawData err) noexcept;
 	void reset() noexcept;
 
 	NetHookModule nethook;
 	void onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept;
 
+	kr::Map<kr::Text16, kr::JsPersistent, true> m_props;
+
 private:
 	void _hook() noexcept;
 	void _createNativeModule() noexcept;
 
-	kr::JsPersistent m_module;
 	kr::JsPersistent m_onError;
 	kr::JsPersistent m_onCommand;
 	kr::JsPersistent m_onRuntimeError;

@@ -64,7 +64,7 @@ size_t NetworkIdentifier::getHash() const noexcept
 Text NetworkIdentifier::getAddress() const noexcept
 {
 	RakNet::SystemIndex idx = address.GetSystemIndex();
-	RakNet::RakPeer* rakpeer = g_server->networkHandler->instance->peer();
+	RakNet::RakPeer* rakpeer = g_server->networkHandler()->instance->peer();
 	RakNet::SystemAddress addr = rakpeer->GetSystemAddressFromIndex(idx);
 	return (Text)addr.ToString();
 }
@@ -175,8 +175,7 @@ void* DataBuffer::getData() noexcept
 
 Text ReadOnlyBinaryStream::getData() noexcept
 {
-	void* p = data->getData();
-	return Text((char*)p + pointer, (char*)p + data->size);
+	return Text(data.data(), data.size);
 }
 
 String Certificate::getXuid() const noexcept
@@ -352,11 +351,19 @@ void SharedPtrData::discard() noexcept
 
 int ServerInstance::makeScriptId() noexcept
 {
-	return ++(scriptEngine->chakra->scriptCounter);
+#ifndef NDEBUG
+	static bool first = false;
+	if (!first)
+	{
+		first = true;
+		_assert(scriptEngine()->chakra->scriptCounter == 0);
+	}
+#endif
+	return ++(scriptEngine()->chakra->scriptCounter);
 }
 Dimension* ServerInstance::createDimension(DimensionId id) noexcept
 {
-	return minecraft->something->level->createDimension(id);
+	return minecraft()->something->level->createDimension(id);
 }
 Dimension* ServerInstance::createDimensionByName(Text16 text) noexcept
 {
@@ -371,7 +378,7 @@ Dimension* ServerInstance::createDimensionByName(Text16 text) noexcept
 }
 Actor* ServerInstance::getActorFromNetworkIdentifier(const NetworkIdentifier& ni) noexcept
 {
-	return minecraft->something->shandler->_getServerPlayer(ni);
+	return minecraft()->something->shandler->_getServerPlayer(ni);
 }
 
 bool Actor::isServerPlayer() noexcept

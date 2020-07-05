@@ -7,6 +7,8 @@
 #include <KR3/data/map.h>
 #include <chrono>
 
+struct OnPacketRBP;
+
 struct MinecraftFunctionTable
 {
 	void load() noexcept;
@@ -15,29 +17,32 @@ struct MinecraftFunctionTable
 	void stopServer() noexcept;
 
 	// skip when return true
-	void hookOnPropertyPath(void(*onPropertyPath)(String* str)) noexcept;
+	void hookOnGameThreadCall(void(*thread)(void* pad, void* lambda)) noexcept;
+	void hookOnProgramMainCall(int(*main)(int argn, char** argv)) noexcept;
 	void hookOnUpdate(void(*update)(Minecraft* mc)) noexcept;
-	void hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(byte* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept;
-	void hookOnPacketBefore(PacketReadResult(*onPacketRead)(byte*, PacketReadResult, NetworkHandler::Connection* conn)) noexcept;
-	void hookOnPacketAfter(void(*onPacketAfter)(byte*, ServerNetworkHandler*, NetworkHandler::Connection* conn)) noexcept;
+	void hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(OnPacketRBP*, MinecraftPacketIds, NetworkHandler::Connection*)) noexcept;
+	void hookOnPacketBefore(ExtendedStreamReadResult*(*onPacketRead)(OnPacketRBP*, ExtendedStreamReadResult*, MinecraftPacketIds, NetworkHandler::Connection*)) noexcept;
+	void hookOnPacketAfter(void(*onPacketAfter)(OnPacketRBP*, MinecraftPacketIds, NetworkHandler::Connection*)) noexcept;
 	void hookOnPacketSend(void(*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, unsigned char)) noexcept;
 	void hookOnPacketSendInternal(NetworkHandler::Connection* (*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, String*)) noexcept;
 	void hookOnScriptLoading(void(*callback)()) noexcept;
-	void hookOnConnectionClosed(void(*onclose)(const NetworkIdentifier&)) noexcept;
+	void hookOnConnectionClosed(void(*onclose)(NetworkHandler*, const NetworkIdentifier&, String*)) noexcept;
 	void hookOnConnectionClosedAfter(void(*onclose)(const NetworkIdentifier&)) noexcept;
 	void hookOnLoopStart(void(*callback)(ServerInstance* instance)) noexcept;
 	void hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept;
 	// return error code
 	void hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept;
-	void hookOnActorRelease(void(*callback)(Actor* actor)) noexcept;
+	void hookOnActorRelease(void(*callback)(Level* level, Actor* actor, bool b)) noexcept;
 	void hookOnActorDestructor(void(*callback)(Actor* actor)) noexcept;
 	void hookOnLog(void(*callback)(int color, const char * log, size_t size)) noexcept;
 	void hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept;
 	void hookOnCommandIn(void (*callback)(String* dest)) noexcept;
 	void skipChangeCurDir() noexcept;
+	void skipMakeConsoleObject() noexcept;
 	void skipCommandListDestruction() noexcept;
 	void removeScriptExperientalCheck() noexcept;
 
+	
 	bool (*NetworkHandler$_sortAndPacketizeEvents)(NetworkHandler* _this, NetworkHandler::Connection&, std::chrono::nanoseconds);
 	ServerPlayer* (*ServerNetworkHandler$_getServerPlayer)(ServerNetworkHandler* _this, const NetworkIdentifier&, byte data);
 	EncryptedNetworkPeer* (*NetworkHandler$getEncryptedPeerForUser)(NetworkHandler* _this, const NetworkIdentifier&);
@@ -63,24 +68,32 @@ struct MinecraftFunctionTable
 	AttributeInstance*(*BaseAttributeMap$getMutableInstance)(BaseAttributeMap* map, uint32_t);
 	Dimension* (*Level$createDimension)(Level*, DimensionId);
 	Actor* (*Level$fetchEntity)(Level* level, ActorUniqueID, bool);
-	void* (*std$_Allocate$_alloc16_)(size_t size);
 	void (*LoopbackPacketSender$sendToClients)(LoopbackPacketSender*, const Vector<NetworkIdentifierWithSubId> *, Packet*);
 	void (*ServerPlayer$sendNetworkPacket)(ServerPlayer*, Packet*);
 	void (*Level$removeEntityReferences)(Actor*, bool);
 	void (*BedrockLogOut)(unsigned int, char const*, ...);
 	void (*CommandOutputSender$send)(CommandOutputSender* _this, const CommandOrigin* origin, const CommandOutput* output);
 	void (*ScriptEngine$dtor$ScriptEngine)(ScriptEngine*);
+
+	void (*$_game_thread_lambda_$$_call_)(void* _this);
+	void (*$_game_thread_start_t_)(void* _this);
+
 	void (*std$_LaunchPad$_stdin_t_$_Execute$_0_)();
-	
+	void (*std$_Pad$_Release)(void* _this);
+	void (*google_breakpad$ExceptionHandler$HandleException)();
+
+	void* (*std$_Allocate$_alloc16_)(size_t size);
 	void (*std$string$_Tidy_deallocate)(String* str);
 	String* (*std$string$assign)(String* _this, const char* str, size_t size);
 	String* (*std$string$append)(String* _this, const char* str, size_t size);
 	void (*std$string$resize)(String* _this, size_t size, char init);
+
 	void (*free)(void*);
 	void* (*malloc)(size_t size);
-	int (*main)(const char ** argv, int argn);
+	int (*main)(int argc, char** argv);
+	void* ScriptEngine$initialize;
+	int (*__scrt_common_main_seh)();
 
-	void (*google_breakpad$ExceptionHandler$HandleException)();
 	DedicatedServer** StopCommand$mServer;
 	const Actor$VFTable* ServerPlayer$$_vftable_;
 };

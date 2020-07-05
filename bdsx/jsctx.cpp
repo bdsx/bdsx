@@ -1,6 +1,5 @@
 #include "jsctx.h"
 #include "native.h"
-#include "require.h"
 #include <KR3/win/windows.h>
 #include <KR3/msg/pump.h>
 

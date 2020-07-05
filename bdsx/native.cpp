@@ -10,11 +10,11 @@
 #include "nativemodule.h"
 #include "nativetype.h"
 #include "sharedptr.h"
-#include "require.h"
 #include "watcher.h"
 #include "mariadb.h"
 #include "webserver.h"
 #include "encoding.h"
+#include "nodecall.h"
 
 #include <KR3/util/process.h>
 #include <KR3/util/StackWalker.h>
@@ -43,7 +43,6 @@ namespace
 	RWLock s_ipfilterLock;
 	uint64_t s_trafficLimit = (uint64_t)-1;
 	int s_trafficLimitPeriod = 0;
-
 }
 
 class TrafficLogger
@@ -187,10 +186,10 @@ void SingleInstanceLimiter::create(pcstr16 name) noexcept
 	int err = GetLastError();
 	if (ERROR_ALREADY_EXISTS == err)
 	{
-		console.log(TSZ16() << u"BDSX: (id=" << (Text16)name << u") is Already executing\n");
-		console.logA("BDSX: Wait the process terminating...\n");
+		console.log(TSZ16() << u"[BDSX] (id=" << (Text16)name << u") is Already executing\n");
+		console.logA("[BDSX] Wait the process terminating...\n");
 		WaitForSingleObject(m_mutex, INFINITE);
-		console.logA("BDSX: Previous process terminated\n");
+		console.logA("[BDSX] Previous process terminated\n");
 	}
 	else
 	{
@@ -355,11 +354,6 @@ Native::Native() noexcept
 Native::~Native() noexcept
 {
 	TrafficLogger::clearWait();
-	Require::clear();
-}
-JsValue Native::getModule() noexcept
-{
-	return m_module;
 }
 bool Native::fireError(JsRawData err) noexcept
 {
@@ -376,8 +370,7 @@ bool Native::fireError(JsRawData err) noexcept
 	
 	JsValue stack = err.getByProperty(u"stack");
 	if (stack == undefined) stack = err.toString();
-	console.logA("[JS Stack]\n");
-	console.logLine(stack.cast<Text16>());
+	g_call->error(stack.cast<Text16>());
 	return false;
 }
 void Native::reset() noexcept
@@ -389,15 +382,13 @@ void Native::reset() noexcept
 	MariaDB::reset();
 
 	TrafficLogger::clearWait();
-	m_module = nullptr;
+	m_props.clear();
 	m_onError = nullptr;
 	m_onCommand = nullptr;
 	m_onRuntimeError = nullptr;
 	s_ipfilter.clear();
 
-	Require::clear();
 	_createNativeModule();
-	Require::start();
 }
 
 void Native::_hook() noexcept
@@ -422,12 +413,12 @@ void Native::_hook() noexcept
 		ondebug(requestDebugger());
 		if (!isContextExisted())
 		{
-			console.logA("[ Native Stack ]\n");
+			g_call->error((Text16)u"[ Runtime Error ]\n");
 
 			StackWriter writer(ptr->ContextRecord);
 			AText16 nativestack;
 			nativestack << writer;
-			console.logLine(nativestack);
+			g_call->error((Text16)nativestack);
 
 			cleanAllResource();
 			terminate(-1);
@@ -451,71 +442,79 @@ void Native::_hook() noexcept
 }
 void Native::_createNativeModule() noexcept
 {
-	JsValue native = JsNewObject;
-	native.set(u"serverControl", createServerControlModule());
-	native.set(u"console", console.createModule());
-	native.set(u"moduleRoot", Require::getModuleRoot());
-
-	native.setMethod(u"loadPdb", [](Text16 path){
+	m_props.insert(u"serverControl", createServerControlModule());
+	m_props.insert(u"console", console.createModule());
+	m_props.insert(u"loadPdb", JsFunction::makeT([](Text16 path){
 		console.logA("PdbReader: Load Symbols...\n");
-		PdbReader reader;
-		reader.showInfo([](Text text) { console.logAnsi(text); });
-		console.logA("PdbReader: processing... \n");
-
-		struct Local
+		try
 		{
-			JsValue out = JsNewObject;
-			timepoint now = timepoint::now();
-			size_t totalcount = 0;
-		} local;
+			PdbReader reader;
+			console.logA("PdbReader: processing... \n");
 
-		reader.getAll([&local](Text name, autoptr address) {
-			++local.totalcount;
-
-			timepoint newnow = timepoint::now();
-			if (newnow - local.now > 200_ms)
+			struct Local
 			{
-				local.now = newnow;
-				console.logA(TSZ() << '(' << local.totalcount << ")\n");
-			}
+				JsValue out = JsNewObject;
+				timepoint now = timepoint::now();
+				size_t totalcount = 0;
+			} local;
 
-			NativePointer * ptr = NativePointer::newInstance();
-			ptr->setAddressRaw(address);
-			local.out.set(name, ptr);
-			return true;
-			});
+			reader.getAll([&local](Text name, autoptr address) {
+				++local.totalcount;
 
-		console.logA("done\n");
-		return local.out;
-		});
+				timepoint newnow = timepoint::now();
+				if (newnow - local.now > 200_ms)
+				{
+					local.now = newnow;
+					console.logA(TSZ() << '(' << local.totalcount << ")\n");
+				}
 
-	native.setMethod(u"std$_Allocate$16", [](int size) {
+				NativePointer* ptr = NativePointer::newInstance();
+				ptr->setAddressRaw(address);
+				local.out.set(name, ptr);
+				return true;
+				});
+
+			console.logA("done\n");
+			return local.out;
+		}
+		catch (FunctionError& err)
+		{
+			TSZ tsz;
+			tsz << err.getFunctionName() << ": failed, err=";
+			err.getMessageTo(&tsz);
+			tsz << '\n';
+			console.logAnsi(tsz);
+			throw JsException(u"Internal error");
+		}
+		}));
+
+	m_props.insert(u"std$_Allocate$16", JsFunction::makeT([](int size) {
 		NativePointer* ptr = NativePointer::newInstance();
 		ptr->setAddressRaw(g_mcf.std$_Allocate$_alloc16_(size));
 		return ptr;
-		});
-	native.setMethod(u"malloc", [](int size) {
+		}));
+	m_props.insert(u"malloc", JsFunction::makeT([](int size) {
 		NativePointer* ptr = NativePointer::newInstance();
 		ptr->setAddressRaw(g_mcf.malloc(size));
 		return ptr;
-		});
-	native.setMethod(u"free", [](StaticPointer* ptr) {
+		}));
+	m_props.insert(u"free", JsFunction::makeT([](StaticPointer* ptr) {
 		if (ptr == nullptr) return;
 		g_mcf.free(ptr->getAddressRaw());
-		});
-	native.setMethod(u"setOnCommandListener", [](JsValue listener) {
+		}));
+	m_props.insert(u"setOnCommandListener", JsFunction::makeT([](JsValue listener) {
 		storeListener(&g_native->m_onCommand, listener);
-		});
-	native.setMethod(u"setOnErrorListener", [](JsValue listener) {
+		}));
+	m_props.insert(u"setOnErrorListener", JsFunction::makeT([](JsValue listener) {
 		storeListener(&g_native->m_onError, listener);
-		});
-	native.setMethod(u"setOnRuntimeErrorListener", [](JsValue listener) {
+		}));
+	m_props.insert(u"setOnRuntimeErrorListener", JsFunction::makeT([](JsValue listener) {
 		storeListener(&g_native->m_onRuntimeError, listener);
-		});
-	native.setMethod(u"execSync", [](Text16 path, JsValue curdir) {
+		}));
+	m_props.insert(u"execSync", JsFunction::makeT([](Text16 path, JsValue curdir) {
 		return (AText)shell(path, curdir != undefined ? curdir.cast<Text16>().data() : nullptr);
-		});
-	native.setMethod(u"exec", [](Text16 path, JsValue curdir, JsValue cb) {
+		}));
+	m_props.insert(u"exec", JsFunction::makeT([](Text16 path, JsValue curdir, JsValue cb) {
 		if (cb == undefined)
 		{
 			Process process;
@@ -541,12 +540,12 @@ void Native::_createNativeModule() noexcept
 		})->then([cb = (JsPersistent)cb](Text16 data){
 			((JsValue)cb)(data);
 		});
-		});
-	native.setMethod(u"spawn", [](Text16 path, Text16 param, JsValue curdir) {
+		}));
+	m_props.insert(u"spawn", JsFunction::makeT([](Text16 path, Text16 param, JsValue curdir) {
 		Process proc;
 		proc.exec(path.data(), TSZ16() << param, curdir != undefined ? curdir.cast<Text16>().data() : nullptr);
-		});
-	native.setMethod(u"wget", [](Text16 url, JsValue callback){
+		}));
+	m_props.insert(u"wget", JsFunction::makeT([](Text16 url, JsValue callback){
 		if (callback.getType() != JsType::Function) throw JsException(u"argument must be function");
 
 		fetchAsTextFromWeb(TSZ() << toUtf8(url))->then([callback = (JsPersistent)callback](AText& text) {
@@ -556,27 +555,27 @@ void Native::_createNativeModule() noexcept
 			JsValue cb = callback;
 			cb(out);
 			});
-		});
-	native.setMethod(u"encode", ExEncoding::jsencode);
-	native.setMethod(u"decode", ExEncoding::jsdecode);
-	native.set(u"NativeModule", NativeModule::classObject);
-	native.set(u"Primitive", Primitive::classObject);
-	native.set(u"Actor", NativeActor::classObject);
-	native.set(u"MariaDB", MariaDB::classObject);
-	native.set(u"fs", createFsModule());
-	native.set(u"StaticPointer", StaticPointer::classObject);
-	native.set(u"NativePointer", NativePointer::classObject);
-	native.set(u"NetworkIdentifier", JsNetworkIdentifier::classObject);
-	native.set(u"SharedPointer", SharedPointer::classObject);
-	native.set(u"nethook", g_native->nethook.create());
-	native.set(u"WebServer", WebServer::classObject);
-	native.set(u"Response", Request::classObject);
-	native.setMethod(u"getHashFromCxxString", [](StaticPointer* ptr) {
+		}));
+	m_props.insert(u"encode", JsFunction::makeT(ExEncoding::jsencode));
+	m_props.insert(u"decode", JsFunction::makeT(ExEncoding::jsdecode));
+	m_props.insert(u"NativeModule", NativeModule::classObject);
+	m_props.insert(u"Primitive", Primitive::classObject);
+	m_props.insert(u"Actor", NativeActor::classObject);
+	m_props.insert(u"MariaDB", MariaDB::classObject);
+	m_props.insert(u"fs", createFsModule());
+	m_props.insert(u"StaticPointer", StaticPointer::classObject);
+	m_props.insert(u"NativePointer", NativePointer::classObject);
+	m_props.insert(u"NetworkIdentifier", JsNetworkIdentifier::classObject);
+	m_props.insert(u"SharedPointer", SharedPointer::classObject);
+	m_props.insert(u"nethook", g_native->nethook.create());
+	m_props.insert(u"WebServer", WebServer::classObject);
+	m_props.insert(u"Response", Request::classObject);
+	m_props.insert(u"getHashFromCxxString", JsFunction::makeT([](StaticPointer* ptr) {
 		String* str = (String*)ptr->getAddressRaw();
 		NativePointer * hash = NativePointer::newInstance();
 		hash->setAddressRaw((void*)HashedString::getHash(str->text()));
 		return hash;
-		});
+		}));
 
 	{
 		JsValue ipfilter = JsNewObject;
@@ -614,9 +613,8 @@ void Native::_createNativeModule() noexcept
 				TrafficLogger::clear();
 			}
 			});
-		native.set(u"ipfilter", ipfilter);
+		m_props.insert(u"ipfilter", ipfilter);
 	}
-	m_module = native;
 }
 void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 {
@@ -628,6 +626,7 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 		try
 		{
 			JsRuntime::run(u"[error]", u"throw Error('Runtime Error')");
+			unreachable();
 		}
 		catch (JsException & err)
 		{
@@ -657,21 +656,22 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 			}
 			catch (JsException & err)
 			{
-				Text16 errstr = err.getValue().toString().as<Text16>();
+				JsValue stack = err.getValue().get(u"stack").toString();
+				Text16 errstr = stack.as<Text16>();
 
 				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				console.logA("[onRuntimeError callback has error]\n");
-				console.logLine(errstr);
+				g_call->log((Text16)u"[onRuntimeError callback has error]");
+				g_call->log((Text16)errstr);
 			}
 		}
 		{
 			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.logA("[ Runtime Error ]\n");
-			console.logA(TSZ() << "Last Sender IP: " << (Ipv4Address&)lastsender << '\n');
-			console.logA("[ JS Stack ]\n");
-			console.logLine(stack);
-			console.logA("[ Native Stack ]\n");
-			console.logLine(nativestack);
+			g_call->log((Text16)u"[ Runtime Error ]\n");
+			g_call->log((Text16)(TSZ16() << u"Last Sender IP: " << (Ipv4Address&)lastsender));
+			g_call->log((Text16)u"[ JS Stack ]");
+			g_call->log(stack);
+			g_call->log((Text16)u"[ Native Stack ]\n");
+			g_call->log((Text16)nativestack);
 		}
 	}
 
@@ -692,5 +692,17 @@ void storeListener(JsPersistent* persistent, const JsValue& listener) throws(JsE
 		break;
 	default:
 		throw JsException(u"argument must be function or null");
+	}
+}
+
+#include "nodegate.h"
+
+void nodegate::initNativeModule(void* exports_raw)
+{
+	kr::JsScope _scope;
+	kr::JsValue exports = (JsRawData)(JsValueRef)exports_raw;
+	for (auto& pair : g_native->m_props)
+	{
+		exports.set((JsPropertyId)((Text16)pair.first).data(), (JsValue)pair.second);
 	}
 }

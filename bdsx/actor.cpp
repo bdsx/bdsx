@@ -143,6 +143,7 @@ kr::JsValue NativeActor::fromRaw(Actor* actor) throws(JsException)
 
 	JsValue jsactor = NativeActor::newInstanceRaw({});
 	res.first->second = jsactor;
+	JsPersistent test = jsactor;
 	jsactor.getNativeObject<NativeActor>()->ptr() = actor;
 	return jsactor;
 }
@@ -154,7 +155,7 @@ kr::JsValue NativeActor::fromPointer(StaticPointer* ptr) throws(JsException)
 }
 JsValue NativeActor::fromUniqueId(int lowbits, int highbits) throws(JsException)
 {
-	return fromRaw(g_server->minecraft->something->level->fetchEntity((ActorUniqueID)makeqword(lowbits, highbits)));
+	return fromRaw(g_server->minecraft()->something->level->fetchEntity((ActorUniqueID)makeqword(lowbits, highbits)));
 }
 void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 {
@@ -175,7 +176,7 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 	cls->setStaticMethod(u"fromPointer", &NativeActor::fromPointer);
 	cls->setStaticMethod(u"fromUniqueId", &NativeActor::fromUniqueId);
 
-	g_mcf.hookOnActorRelease([](Actor* actor) {
+	g_mcf.hookOnActorRelease([](Level* level, Actor* actor, bool b) {
 		_assert((intptr_t)actor > 0);
 		_removeActor(actor);
 		});
@@ -213,7 +214,6 @@ void NativeActor::_removeActor(Actor* actor) noexcept
 	auto iter = s_actorMap.find(actor);
 	if (iter == s_actorMap.end()) return;
 	JsScope _scope;
-	JsPersistent test = iter->second;
 	NativeActor* jsactor = JsValue(iter->second).getNativeObject<NativeActor>();
 	s_actorMap.erase(iter);
 	delete jsactor;

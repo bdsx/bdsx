@@ -6,6 +6,8 @@
     "alwaysStrict": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
-    "declaration": true
+    "declaration": true,
+    "resolveJsonModule": true,
+    "sourceMap": true
   }
 }

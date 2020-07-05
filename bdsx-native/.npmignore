@@ -1,0 +1,9 @@
+/tsconfig.json
+/bin
+/obj
+/.vscode
+*.njsproj
+*.njsproj.user
+*.ts
+!*.d.ts
+*.js.map

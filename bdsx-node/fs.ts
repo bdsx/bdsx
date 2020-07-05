@@ -22,6 +22,9 @@ declare module './native'
 {
     namespace fs
     {
+        /**
+         * @deprecated Use node.js
+         */
         export interface File
         {
             /**
@@ -117,6 +120,9 @@ export const mkdirRecursiveSync = fs.mkdirRecursiveSync;
 export const cwd = fs.cwd;
 export const chdir = fs.chdir;
 
+/**
+ * @deprecated use node.js
+ */
 export async function writeFile(path: string, content: string, encoding?:Encoding): Promise<void> {
     const file = new File(path, File.WRITE, File.CREATE_ALWAYS);
     try
@@ -138,6 +144,9 @@ export async function writeFile(path: string, content: string, encoding?:Encodin
     }
 }
 
+/**
+ * @deprecated use node.js
+ */
 export async function appendFile(path: string, content: string, encoding?:Encoding): Promise<void> {
     const file = new File(path, File.WRITE, File.OPEN_ALWAYS);
     try
@@ -157,6 +166,9 @@ export async function appendFile(path: string, content: string, encoding?:Encodi
     }
 }
 
+/**
+ * @deprecated use node.js
+ */
 export async function readFile(path: string, encoding?:Encoding): Promise<string> {
     const file = new File(path, File.READ, File.OPEN_EXISTING);
     let out = '';
@@ -192,6 +204,9 @@ export async function readFile(path: string, encoding?:Encoding): Promise<string
     }
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function resolve(path:string):string
 {
     path = path.replace(/\//g, '\\');
@@ -226,6 +241,9 @@ export function resolve(path:string):string
     return out.join('\\');
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function basename(path:string):string
 {
     const idx = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
@@ -233,6 +251,9 @@ export function basename(path:string):string
     return path.substr(idx+1);
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function dirname(path:string):string
 {
     const idx = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
@@ -240,6 +261,9 @@ export function dirname(path:string):string
     return path.substr(0, idx);
 }
 
+/**
+ * @deprecated use node.js
+ */
 export class DirectoryWatcher extends fs.Watcher
 {
     private static readonly all = new Map<string, DirectoryWatcher>();
@@ -423,6 +447,9 @@ class FilteredWatchEvent extends WatchEvent
     }
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function watch(path:string):WatchEvent
 {
     path = resolve(path);
@@ -430,6 +457,9 @@ export function watch(path:string):WatchEvent
     return new FilteredWatchEvent(watcher, basename(path));
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function watchDir(path:string):WatchEvent
 {
     const watcher = DirectoryWatcher.getInstance(path);

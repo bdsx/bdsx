@@ -1,3 +1,6 @@
 [submodule "RakNet"]
 	path = RakNet
 	url = https://github.com/karikera/RakNet
+[submodule "node-chakracore"]
+	path = node-chakracore
+	url = https://github.com/karikera/node-chakracore

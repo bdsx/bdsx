@@ -11,6 +11,14 @@
                 "$tsc-watch"
             ],
             "group": "build"
+        },
+        {
+            "label": "Package",
+            "type": "process",
+            "command": "node",
+            "args": ["./package/index"],
+            "group": "build",
+            "problemMatcher": []
         }
     ]
 }

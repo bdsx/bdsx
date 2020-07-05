@@ -157,4 +157,3 @@ void NativeModule::clearMethods() noexcept
 {
 	s_addressId = nullptr;
 }
-

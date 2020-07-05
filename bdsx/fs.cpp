@@ -29,7 +29,8 @@ JsValue createFsModule() noexcept
 			}
 			else
 			{
-				TText buffer(size);
+				TText buffer;
+				buffer.resize(size);
 				size_t readed = file->read(buffer.data(), size);
 				buffer.resize(readed);
 				if (encoding == ExEncoding::UTF16)
@@ -46,6 +47,11 @@ JsValue createFsModule() noexcept
 					return (JsValue)text16;
 				}
 			}
+		}
+		catch (Error&)
+		{
+			ErrorCode err = ErrorCode::getLast();
+			throw JsException(err.getMessage<char16>() << u": " << filename);
 		}
 		catch (ErrorCode & err)
 		{
@@ -81,6 +87,11 @@ JsValue createFsModule() noexcept
 					file->write(mb.data(), mb.size());
 				}
 			}
+		}
+		catch (Error&)
+		{
+			ErrorCode err = ErrorCode::getLast();
+			throw JsException(err.getMessage<char16>() << u": " << filename);
 		}
 		catch (ErrorCode & err)
 		{
@@ -120,6 +131,11 @@ JsValue createFsModule() noexcept
 				}
 			}
 			
+		}
+		catch (Error&)
+		{
+			ErrorCode err = ErrorCode::getLast();
+			throw JsException(err.getMessage<char16>() << u": " << filename);
 		}
 		catch (ErrorCode & err)
 		{

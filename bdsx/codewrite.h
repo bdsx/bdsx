@@ -3,7 +3,7 @@
 #include <KR3/main.h>
 #include <KRWin/hook.h>
 
-bool checkCode(void* code, kr::Buffer originalCode, kr::Text name, kr::View<std::pair<size_t, size_t> > skip = nullptr) noexcept;
+bool checkCode(kr::Text name, void* code, size_t offset, kr::Buffer originalCode, kr::View<std::pair<size_t, size_t> > skip = nullptr) noexcept;
 
 class Code :public kr::hook::CodeWriter
 {
@@ -12,8 +12,10 @@ private:
 
 public:
 	Code(size_t size) noexcept;
-	void patchTo(void* junctionPoint, kr::Buffer originalCode, kr::hook::Register tempregister, bool jump, kr::Text name, kr::View<std::pair<size_t, size_t>> skip = nullptr) noexcept;
-	void patchToBoolean(void* junctionPoint, kr::hook::Register testregister, void* jumpPoint, kr::Buffer originalCode, kr::hook::Register tempregister, kr::Text name) noexcept;
+	static void hook(kr::Text name, void* from, void* to, kr::Buffer originalCode, kr::View<std::pair<size_t, size_t>> skip = nullptr) noexcept;
+	static void nopping(kr::Text name, void* base, size_t offset, kr::Buffer originalCode, kr::View<std::pair<size_t, size_t>> skip = nullptr) noexcept;
+	void patchTo(kr::Text name, void* base, size_t offset, kr::Buffer originalCode, kr::hook::Register tempregister, bool jump, kr::View<std::pair<size_t, size_t>> skip = nullptr) noexcept;
+	void patchToBoolean(kr::Text name, void* base, size_t offset, kr::hook::Register testregister, void* jumpPoint, kr::Buffer originalCode, kr::hook::Register tempregister) noexcept;
 };
 
 class ModuleInfo

@@ -1,5 +1,6 @@
 #include "console.h"
 #include "jsctx.h"
+#include "nodegate.h"
 
 #include <KR3/win/windows.h>
 #include <KR3/net/client.h>
@@ -11,7 +12,6 @@ namespace
 {
 	constexpr size_t MAXIMUM_BUFFER = 8192;
 }
-
 
 Console console;
 
@@ -65,7 +65,6 @@ public:
 		m_key = move(key);
 		m_key << '\n';
 	}
-
 	bool connect() noexcept
 	{
 		getWriteQueue()->clear();
@@ -416,19 +415,21 @@ public:
 			}
 		}
 	}
-	void print(Text text) noexcept
+	void print(Text text, bool error) noexcept
 	{
 		m_displayLock.enter();
 		_clearDisplay();
-		cout << text;
+		if (error) cerr << text;
+		else cout << text;
 		_restoreDisplay();
 		m_displayLock.leave();
 	}
-	void println(Text text) noexcept
+	void println(Text text, bool error) noexcept
 	{
 		m_displayLock.enter();
 		_clearDisplay();
-		cout << text << endl;
+		if (error) cerr << text << endl;
+		else cout << text << endl;
 		_restoreDisplay();
 		m_displayLock.leave();
 	}
@@ -461,7 +462,7 @@ void Console::setColor(int color) noexcept
 	SetConsoleTextAttribute(m_stdout, color);
 	m_color = color;
 }
-void Console::logA(Text text) noexcept
+void Console::logA(Text text, bool error) noexcept
 {
 #ifdef _DEBUG
 	for (char chr : text)
@@ -469,18 +470,10 @@ void Console::logA(Text text) noexcept
 		_assert(chr >= 0);
 	}
 #endif
-	{
-		CsLock __lock = m_lock;
-		if (s_client.m_connected)
-		{
-			s_client.write(text.cast<void>());
-			s_client.flush();
-			return;
-		}
-	}
-	s_input.print(text);
+	netlog(text);
+	s_input.print(text, error);
 }
-void Console::logAnsi(Text text) noexcept
+void Console::logAnsi(Text text, bool error) noexcept
 {
 	{
 		CsLock __lock = m_lock;
@@ -493,24 +486,27 @@ void Console::logAnsi(Text text) noexcept
 			return;
 		}
 	}
-	s_input.print(text);
+	s_input.print(text, error);
 }
-void Console::log(Text text) noexcept
+void Console::log(Text text, bool error) noexcept
 {
-	{
-		CsLock __lock = m_lock;
-		if (s_client.m_connected)
-		{
-			s_client.write(text.cast<void>());
-			s_client.flush();
-			return;
-		}
-	}
+	netlog(text);
 	TText16 utf16 = utf8ToUtf16(text);
 	TText ansi = toAnsi(utf16);
-	s_input.print(ansi);
+	s_input.print(ansi, error);
 }
-void Console::log(Text16 text) noexcept
+// write log with utf-8 encoding, socket only
+void Console::netlog(kr::Text text) noexcept
+{
+	CsLock __lock = m_lock;
+	if (s_client.m_connected)
+	{
+		s_client.write(text.cast<void>());
+		s_client.flush();
+		return;
+	}
+}
+void Console::log(Text16 text, bool error) noexcept
 {
 	{
 		CsLock __lock = m_lock;
@@ -523,9 +519,9 @@ void Console::log(Text16 text) noexcept
 		}
 	}
 	TText ansi = toAnsi(text);
-	s_input.print(ansi);
+	s_input.print(ansi, error);
 }
-void Console::logLine(Text text) noexcept
+void Console::logLine(Text text, bool error) noexcept
 {
 	{
 		CsLock __lock = m_lock;
@@ -539,9 +535,9 @@ void Console::logLine(Text text) noexcept
 	}
 	TText16 utf16 = utf8ToUtf16(text);
 	TText ansi = toAnsi(utf16);
-	s_input.println(ansi);
+	s_input.println(ansi, error);
 }
-void Console::logLine(Text16 text) noexcept
+void Console::logLine(Text16 text, bool error) noexcept
 {
 	{
 		CsLock __lock = m_lock;
@@ -555,7 +551,11 @@ void Console::logLine(Text16 text) noexcept
 		}
 	}
 	TText ansi = toAnsi(text);
-	s_input.println(ansi);
+	s_input.println(ansi, error);
+}
+void Console::writeToStdin(kr::Text text) noexcept
+{
+	s_input.input(text);
 }
 
 TText Console::getLine() noexcept
@@ -594,7 +594,7 @@ bool Console::connect(AText16 host, word port, AText key) noexcept
 	}
 	catch (SocketException&)
 	{
-		log(TSZ() << "BDSX: --pipe-socket failed, Cannot connect to " << toAnsi((Text16)host) << ':' << port << '\n');
+		log(TSZ() << "[BDSX] --pipe-socket failed, Cannot connect to " << toAnsi((Text16)host) << ':' << port << '\n');
 		return false;
 	}
 }

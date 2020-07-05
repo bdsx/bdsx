@@ -1,21 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseTest|Win32">
-      <Configuration>ReleaseTest</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="ReleaseTest|x64">
       <Configuration>ReleaseTest</Configuration>
       <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -33,26 +21,6 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>false</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -79,18 +47,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\ken\KR.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\ken\KR.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\ken\KR.props" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\ken\KR.props" />
@@ -104,37 +60,18 @@
     <Import Project="..\..\ken\KR.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">
-    <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\node-chakracore\$(ConfigDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\node-chakracore\$(ConfigDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">
     <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\node-chakracore\$(ConfigDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile />
-    <Link>
-      <SubSystem>Console</SubSystem>
-    </Link>
-    <PostBuildEvent />
-    <PreBuildEvent>
-      <Command>mkdir gen&gt;nul 2&gt;nul
-set errorlevel=0
-set time2=%time::=%
-echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
-    </PreBuildEvent>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile />
     <Link>
@@ -148,43 +85,8 @@ set errorlevel=0
 set time2=%time::=%
 echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     </PreBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile />
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>call ksign "BDSX"  "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)release\bin\$(TargetFileName)"
-kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
-kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
-kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
-kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>mkdir gen&gt;nul 2&gt;nul
-set errorlevel=0
-set time2=%time::=%
-echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
-    </PreBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">
-    <ClCompile />
-    <Link>
-      <SubSystem>Console</SubSystem>
-    </Link>
-    <PostBuildEvent />
-    <PostBuildEvent />
-    <PreBuildEvent>
-      <Command>mkdir gen&gt;nul 2&gt;nul
-set errorlevel=0
-set time2=%time::=%
-echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile />
@@ -195,12 +97,7 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>call ksign "BDSX"  "$(TargetPath)"
-kcopy "$(TargetPath)" "$(SolutionDir)release\bin\$(TargetFileName)"
-kcopy "$(OutDir)bdsx.pdb" "$(SolutionDir)release\bin\bdsx.pdb"
-kcopy "$(OutDir)libmariadb.dll" "$(SolutionDir)release\bin\libmariadb.dll"
-kcopy "$(OutDir)libcurl.dll" "$(SolutionDir)release\bin\libcurl.dll"
-kcopy "$(OutDir)zlib.dll" "$(SolutionDir)release\bin\zlib.dll"</Command>
+      <Command>call ksign "BDSX"  "$(TargetPath)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>mkdir gen&gt;nul 2&gt;nul
@@ -208,6 +105,7 @@ set errorlevel=0
 set time2=%time::=%
 echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     </PreBuildEvent>
+    <ClCompile />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">
     <ClCompile />
@@ -222,6 +120,8 @@ set errorlevel=0
 set time2=%time::=%
 echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     </PreBuildEvent>
+    <ClCompile />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="codewrite.cpp" />
@@ -241,7 +141,12 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     <ClCompile Include="nethook.cpp" />
     <ClCompile Include="networkidentifier.cpp" />
     <ClCompile Include="actor.cpp" />
-    <ClCompile Include="require.cpp" />
+    <ClCompile Include="nodecall.cpp" />
+    <ClCompile Include="nodegate.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\node-chakracore\src;..\node-chakracore\deps\chakrashim\include;..\node-chakracore\deps\chakrashim;..\node-chakracore\deps\icu-small\source\i18n;..\node-chakracore\deps\icu-small\source\common;..\node-chakracore\deps\zlib;..\node-chakracore\deps\http_parser;..\node-chakracore\deps\cares\include;..\node-chakracore\deps\uv\include;..\node-chakracore\deps\nghttp2\lib\includes;..\node-chakracore\deps\openssl\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">..\node-chakracore\src;..\node-chakracore\deps\chakrashim\include;..\node-chakracore\deps\chakrashim;..\node-chakracore\deps\icu-small\source\i18n;..\node-chakracore\deps\icu-small\source\common;..\node-chakracore\deps\zlib;..\node-chakracore\deps\http_parser;..\node-chakracore\deps\cares\include;..\node-chakracore\deps\uv\include;..\node-chakracore\deps\nghttp2\lib\includes;..\node-chakracore\deps\openssl\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\node-chakracore\src;..\node-chakracore\deps\chakrashim\include;..\node-chakracore\deps\chakrashim;..\node-chakracore\deps\icu-small\source\i18n;..\node-chakracore\deps\icu-small\source\common;..\node-chakracore\deps\zlib;..\node-chakracore\deps\http_parser;..\node-chakracore\deps\cares\include;..\node-chakracore\deps\uv\include;..\node-chakracore\deps\nghttp2\lib\includes;..\node-chakracore\deps\openssl\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="reverse.cpp" />
     <ClCompile Include="sharedptr.cpp" />
     <ClCompile Include="staticpointer.cpp" />
@@ -267,7 +172,8 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     <ClInclude Include="nethook.h" />
     <ClInclude Include="networkidentifier.h" />
     <ClInclude Include="actor.h" />
-    <ClInclude Include="require.h" />
+    <ClInclude Include="nodecall.h" />
+    <ClInclude Include="nodegate.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="reverse.h" />
     <ClInclude Include="sharedptr.h" />
@@ -285,6 +191,9 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     <ProjectReference Include="..\..\ken\KRWin\KRWin.vcxproj">
       <Project>{432cc3c8-34b1-405d-9675-36fdf25289c7}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\node-chakracore-vcbuild\node-chakracore-vcbuild.vcxproj">
+      <Project>{512aef3b-7454-499f-b360-e9a6eb3d8849}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\RakNetProject\LibStatic_vc9.vcxproj">
       <Project>{6533bdae-0f0c-45e4-8fe7-add0f37fe063}</Project>
     </ProjectReference>
@@ -298,51 +207,45 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
   <ItemGroup>
     <CustomBuild Include="version.bat">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">call %(identity)
-echo "%25BDS_VERSION%"
-(
-echo #define BDS_VERSION "%25BDS_VERSION%"
-echo #define BDSX_VERSION "%25BDSX_VERSION%"
-)&gt;gen/%(Filename).h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gen/%(Filename).h</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">call %(identity)
-echo "%25BDS_VERSION%"
-(
-echo #define BDS_VERSION "%25BDS_VERSION%"
-echo #define BDSX_VERSION "%25BDSX_VERSION%"
-)&gt;gen/%(Filename).h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">gen/%(Filename).h</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">call %(identity)
-echo "%25BDS_VERSION%"
-(
-echo #define BDS_VERSION "%25BDS_VERSION%"
-echo #define BDSX_VERSION "%25BDSX_VERSION%"
-)&gt;gen/%(Filename).h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gen/%(Filename).h</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">call %(identity)
-echo "%25BDS_VERSION%"
+mkdir gen 2&gt;nul
 (
 echo #define BDS_VERSION "%25BDS_VERSION%"
-echo #define BDSX_VERSION "%25BDSX_VERSION%"
-)&gt;gen/%(Filename).h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gen/%(Filename).h</Outputs>
+)&gt;gen/%(Filename).h
+mkdir ../bdsx-node/gen 2&gt;nul
+(
+echo {
+echo     "BDS_VERSION": "%25BDS_VERSION%"
+echo }
+)&gt;../bdsx-node/gen/%(Filename).json
+set errorlevel=0</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gen/%(Filename).h;../bdsx-node/gen/%(Filename).json</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">call %(identity)
-echo "%25BDS_VERSION%"
+mkdir gen 2&gt;nul
 (
 echo #define BDS_VERSION "%25BDS_VERSION%"
-echo #define BDSX_VERSION "%25BDSX_VERSION%"
-)&gt;gen/%(Filename).h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">gen/%(Filename).h</Outputs>
+)&gt;gen/%(Filename).h
+mkdir ../bdsx-node/gen 2&gt;nul
+(
+echo {
+echo     "BDS_VERSION": "%25BDS_VERSION%"
+echo }
+)&gt;../bdsx-node/gen/%(Filename).json
+set errorlevel=0</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">gen/%(Filename).h;../bdsx-node/gen/%(Filename).json</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">call %(identity)
-echo "%25BDS_VERSION%"
+mkdir gen 2&gt;nul
 (
 echo #define BDS_VERSION "%25BDS_VERSION%"
-echo #define BDSX_VERSION "%25BDSX_VERSION%"
-)&gt;gen/%(Filename).h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gen/%(Filename).h</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Identity)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|Win32'">%(Identity)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(Identity)</Message>
+)&gt;gen/%(Filename).h
+mkdir ../bdsx-node/gen 2&gt;nul
+(
+echo {
+echo     "BDS_VERSION": "%25BDS_VERSION%"
+echo }
+)&gt;../bdsx-node/gen/%(Filename).json
+set errorlevel=0</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gen/%(Filename).h;../bdsx-node/gen/%(Filename).json</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Identity)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">%(Identity)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Identity)</Message>
