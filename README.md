@@ -33,12 +33,12 @@ It's very mutable now, I will remove or change API names frequently!
 2. (Linux) Install wine
 3. Install BDSX
 ```sh
-npm i bdsx -g # Install bdsx. It will try to install BDS. if you use linux, 
+npm i bdsx -g # Install bdsx. If you use linux, maybe it needs sudo 
 ```
 4. Run BDSX
 ```sh
-bdsx --example ./example # make example project to './example'
-bdsx './example' # run BDSX with './example', it will read 'main' of 'path/package.json'
+bdsx example ./example # make example project to './example'
+bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package.json'
 ```
 
 ## Build Typescript (Watch Mode)

@@ -3,6 +3,7 @@ import fs = require('fs');
 
 export async function zip(zippath:string, onzip:(archive:archiver.Archiver)=>void):Promise<number>
 {
+    console.log('zip '+zippath);
     return new Promise((resolve, reject)=>{
         // create a file to stream archive data to.
         var output = fs.createWriteStream(zippath);

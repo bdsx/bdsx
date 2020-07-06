@@ -19,6 +19,14 @@
             "args": ["./package/index"],
             "group": "build",
             "problemMatcher": []
+        },
+        {
+            "label": "Package (No Publish)",
+            "type": "process",
+            "command": "node",
+            "args": ["./package/index", "--no-publish"],
+            "group": "build",
+            "problemMatcher": []
         }
     ]
 }

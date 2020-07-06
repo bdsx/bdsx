@@ -4,10 +4,11 @@ bdsx is the MOD for [Bedrock Dedicated Server](https://www.minecraft.net/en-us/d
 
 ## How to install and execute
 ```sh
-npm i -g bdsx # Install bdsx. It will try to install BDS when it installed.
-bdsx # Execute bdsx.
+npm i -g bdsx # Install bdsx.
+bdsx # Execute bdsx. It will try to install BDS to [home]/.bds
 ```
 
 ## Features
-* bdsx install, bdsx i - install BDS. it will update BDS if installed BDS is old
-* bdsx remove, bdsx r - remove BDS. It will remove all worlds & addons
+* bdsx [path_to_module] - Run BDS with node module. It will install BDS if BDS is not installed
+* bdsx install, bdsx i - Install BDS. It will update BDS if installed BDS is old
+* bdsx remove, bdsx r - Remove BDS. It will remove all worlds & addons

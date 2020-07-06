@@ -4,6 +4,7 @@
 !/package/pkg/package.json
 !/package/pkg/package-lock.json
 /bdsx-bin.zip
+/bdsx-example.zip
 *.d.ts
 *.js
 *.js.map

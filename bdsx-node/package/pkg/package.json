@@ -1,6 +1,6 @@
 {
   "name": "bdsx-cli",
-  "version": "1.3.14",
+  "version": "1.3.18",
   "description": "Bedrock Dedicated Server X for pkg",
   "main": "index.js",
   "scripts": {},
@@ -17,9 +17,9 @@
   "license": "ISC",
   "dependencies": {
     "fstream": "^1.0.12",
+    "readline": "^1.3.0",
     "request": "^2.88.2",
-    "unzipper": "^0.10.11",
-    "yesno": "^0.3.1"
+    "unzipper": "^0.10.11"
   },
   "devDependencies": {
     "@types/node": "^14.0.14",

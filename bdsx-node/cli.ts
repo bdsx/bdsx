@@ -1,11 +1,14 @@
+/**
+ * This script will copy to package/pkg/index.js
+ */
+
 import request = require('request');
-import fs = require('fs');
-import yesno = require('yesno');
+import fs_ori = require('fs');
 import unzipper = require('unzipper');
 import { sep } from 'path';
 import path = require('path');
 import { Writer } from 'fstream';
-
+import readline = require('readline');
 import version = require('./gen/version.json');
 import pkg = require("./package.json");
 
@@ -17,6 +20,146 @@ catch (err)
 {
 }
 
+// async
+function async<T, THIS, PARAMS extends any[]>(genfunc:(this:THIS, ...params:PARAMS)=>Generator<Promise<any>, T, any>):(...params:PARAMS)=>Promise<T>
+{
+    return function (this:THIS){
+        const gen:Generator<Promise<any>, T, any> = genfunc.apply(this, arguments);
+        return new Promise<T>((resolve, reject)=>{
+            function rejected(err:any)
+            {
+                next(gen.throw(err));
+            }
+            function fufilled(value?:any)
+            {
+                next(gen.next(value!));
+            }
+            function next(prom:IteratorResult<Promise<any>, T>, value?:any)
+            {
+                if (prom.done)
+                {
+                    resolve(prom.value);
+                }
+                else
+                {
+                    prom.value.then(fufilled, rejected).catch(reject);
+                }
+            }
+            fufilled();
+        });
+    };
+}
+
+// fs
+const fs = {
+    readFile(path:string):Promise<string>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.readFile(path, 'utf-8', (err, data)=>{
+                if (err) reject(err);
+                else resolve(data);
+            });
+        });
+    },
+    writeFile(path:string, content:string):Promise<void>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.writeFile(path, content, (err)=>{
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    },
+    readdir(path:string):Promise<string[]>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.readdir(path, 'utf-8', (err, data)=>{
+                if (err) reject(err);
+                else resolve(data);
+            });
+        });
+    },
+    mkdir(path:string):Promise<void>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.mkdir(path, (err)=>{
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    },
+    rmdir(path:string):Promise<void>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.rmdir(path, (err)=>{
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    },
+    stat(path:string):Promise<fs_ori.Stats>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.stat(path, (err, data)=>{
+                if (err) reject(err);
+                else resolve(data);
+            });
+        });
+    },
+    unlink(path:string):Promise<void>
+    {
+        return new Promise((resolve, reject)=>{
+            fs_ori.unlink(path, (err)=>{
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    },
+        
+    exists(path:string):Promise<boolean>
+    {
+        return fs.stat(path).then(()=>true, ()=>false);
+    },
+};
+
+// yesno
+const yesno = function({ question, defaultValue }:{question:string, defaultValue?:boolean}) {
+    function invalid (){
+        process.stdout.write('\nInvalid Response.\n');
+        process.stdout.write('Answer either yes : (' + yesValues.join(', ')+') \n');
+        process.stdout.write('Or no: (' + noValues.join(', ') + ') \n\n');
+    }
+
+    const yesValues = [ 'yes', 'y'];
+    const noValues  = [ 'no', 'n' ];
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    return new Promise(function (resolve, reject) {
+        rl.question(question + ' ', async(function*(answer) {
+            rl.close();
+
+            const cleaned = answer.trim().toLowerCase();
+            if (cleaned == '' && defaultValue != null)
+                return resolve(defaultValue);
+    
+            if (yesValues.indexOf(cleaned) >= 0)
+                return resolve(true);
+                
+            if (noValues.indexOf(cleaned) >= 0)
+                return resolve(false);
+    
+            invalid();
+            const result = yield yesno({ question, defaultValue });
+            resolve(result);
+        }));
+    });
+};
+
+// globals
 const homedir:string = require('os').homedir();
 const BDS_VERSION = version.BDS_VERSION;
 const BDSX_VERSION = pkg.version;
@@ -51,11 +194,10 @@ const KEEPS = new Set([
     `${sep}permissions.json`,
 ]);
 
-async function readInstallInfo():Promise<InstallInfo>
-{
+const readInstallInfo = async(function*(){
     try
     {
-        const file = await fs.promises.readFile(INSTALL_INFO_PATH, 'utf-8');
+        const file = yield fs.readFile(INSTALL_INFO_PATH);
         return JSON.parse(file);
     }
     catch (err)
@@ -69,7 +211,7 @@ async function readInstallInfo():Promise<InstallInfo>
         }
         return iinfo;
     }
-}
+});
 
 class MessageError extends Error
 {
@@ -97,84 +239,71 @@ interface GitHubInfo
     version:string;
     url:string;
 }
-async function wgetGitHubInfo(url:string):Promise<GitHubInfo>
-{
-    const latest = JSON.parse(await wget(url));
+const wgetGitHubInfo = async(function*(url:string){
+    const latest = JSON.parse(yield wget(url));
     return {
         version: latest.tag_name,
         url: latest.assets[0].browser_download_url
     }
-}
-async function readFiles(root:string):Promise<string[]>
-{
+});
+
+const readFiles = async(function*(root:string){
     const out:string[] = [];
-    async function _readFiles(path:string):Promise<void>
-    {
+    const _readFiles = async(function*(path:string){
         const proms:Promise<void>[] = [];
-        for (const file of await fs.promises.readdir(root+path, {withFileTypes: true}))
+        for (const file of <string[]>(yield fs.readdir(root+path)))
         {
-            if (!file.isDirectory())
+            const stat:fs_ori.Stats = yield fs.stat(file);
+            if (!stat.isDirectory())
             {
-                out.push(`${path}${sep}${file.name}`);
+                out.push(`${path}${sep}${file}`);
                 continue;
             }
             else
             {
-                out.push(`${path}${sep}${file.name}${sep}`);
-                proms.push(_readFiles(`${path}${sep}${file.name}`));
+                out.push(`${path}${sep}${file}${sep}`);
+                proms.push(_readFiles(`${path}${sep}${file}`));
             }
         }
-        await Promise.all(proms);
-    }
-    await _readFiles('');
+        yield Promise.all(proms);
+    });
+    yield _readFiles(root);
     return out;
-}
-async function rmdirRecursive(path:string, filter:(path:string)=>boolean=()=>true):Promise<void>
-{
-    const files = await fs.promises.readdir(path, {withFileTypes: true});
+});
+
+const rmdirRecursive = async(function*(path:string, filter:(path:string)=>boolean=()=>true){
+    const files = yield fs.readdir(path);
     const filecount = files.length;
     if (filecount === 0)
     {
-        await fs.promises.rmdir(path);
+        yield fs.rmdir(path);
         return;
     }
     if (path.endsWith(sep)) path = path.substr(0, path.length-1);
 
-    const proms = files.map(async(file)=>{
-        const filepath = `${path}${sep}${file.name}`;
+    const proms = files.map(async(function*(file:string){
+        const filepath = `${path}${sep}${file}`;
         if (!filter(filepath)) return;
-        if (file.isDirectory())
+        const stat:fs_ori.Stats = yield fs.stat(file);
+        if (stat.isDirectory())
         {
-            await rmdirRecursive(filepath);
+            yield rmdirRecursive(filepath);
         }
         else
         {
-            await fs.promises.unlink(filepath);
+            yield fs.unlink(filepath);
         }
-    });
-    await Promise.all(proms);
-    await fs.promises.rmdir(path);
-}
-async function fileExists(path:string):Promise<boolean>
-{
-    try
-    {
-        await fs.promises.stat(path);
-        return true;
-    }
-    catch (err)
-    {
-        if (err.code !== 'ENOENT') throw err;
-        return false;
-    }
-}
-async function concurrencyLoop<T>(array:T[], concurrency:number, callback:(entry:T)=>Promise<void>):Promise<void>
-{
+    }));
+    yield Promise.all(proms);
+    yield fs.rmdir(path);
+});
+
+const concurrencyLoop = async(function*<T>(array:T[], concurrency:number, callback:(entry:T)=>Promise<void>){
     if (concurrency <= 1)
     {
         for (const entry of array)
         {
-            await callback(entry);
+            yield callback(entry);
         }
     }
     else
@@ -185,7 +314,7 @@ async function concurrencyLoop<T>(array:T[], concurrency:number, callback:(entry
         {
             while (waitings.size >= concurrency)
             {
-                await Promise.race(waitings);
+                yield Promise.race(waitings);
                 if (errored) throw errored;
             }
             const prom = callback(entry).then(
@@ -195,18 +324,18 @@ async function concurrencyLoop<T>(array:T[], concurrency:number, callback:(entry
             });
             waitings.add(prom);
         }
-        await Promise.all(waitings);
+        yield Promise.all(waitings);
     }
-}
+});
+
 function unzipBdsxTo(dest:string):Promise<void>
 {
-    return fs.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
+    return fs_ori.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
     .pipe(unzipper.Extract({ path: dest }))
     .promise();
 }
-async function downloadAndUnzip(url:string, dest:string, skipExists:boolean):Promise<string[]>
-{
-    const archive = await unzipper.Open.url(request as any, url);
+const downloadAndUnzip = async(function*(url:string, dest:string, skipExists:boolean) {
+    const archive:unzipper.CentralDirectory = yield unzipper.Open.url(request as any, url);
     const writedFiles:string[] = [];
 
     const files:unzipper.File[] = [];
@@ -221,7 +350,7 @@ async function downloadAndUnzip(url:string, dest:string, skipExists:boolean):Pro
         {
             try
             {
-                const stat = await fs.promises.stat(BDS_DIR+filepath);
+                const stat = yield fs.stat(BDS_DIR+filepath);
                 if (!stat.isDirectory()) continue;
             }
             catch (err)
@@ -233,32 +362,32 @@ async function downloadAndUnzip(url:string, dest:string, skipExists:boolean):Pro
 
     if (skipExists)
     {
-        await concurrencyLoop(files, 5, async(entry)=>{
+        yield concurrencyLoop(files, 5, async(function*(entry:unzipper.File){
             if (entry.type == 'Directory') return;
             var extractPath = path.join(dest, entry.path);
             if (extractPath.indexOf(dest) != 0) return;
             var writer = Writer({ path: extractPath });
-            await new Promise(function(resolve, reject) {
+            yield new Promise((resolve, reject)=>{
                 entry.stream()
                     .on('error',reject)
                     .pipe(writer)
                     .on('close',resolve)
                     .on('error',reject);
             });
-        });
+        }));
     }
     else
     {
-        await archive.extract({
+        yield archive.extract({
             path: dest,
             concurrency: 5,
             verbose: true,
         });
     }
     return writedFiles;
-}
-async function removeInstalled(files:string[])
-{
+});
+
+const removeInstalled = async(function*(files:string[]){
     for (let i=files.length - 1;i>=0;i--)
     {
         const file = files[i];
@@ -266,7 +395,7 @@ async function removeInstalled(files:string[])
         {
             try
             {
-                await fs.promises.rmdir(BDS_DIR+file.substr(0, file.length-1));
+                yield fs.rmdir(BDS_DIR+file.substr(0, file.length-1));
             }
             catch (err)
             {
@@ -276,25 +405,29 @@ async function removeInstalled(files:string[])
         {
             try
             {
-                await fs.promises.unlink(BDS_DIR+file);
+                yield fs.unlink(BDS_DIR+file);
             }
             catch (err)
             {
             }
         }
     }
-}
-async function downloadBDS(installinfo:InstallInfo, agree?:boolean):Promise<boolean>
-{
+});
+
+const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
     try
     {
-        await fs.promises.mkdir(BDS_DIR);
+        yield fs.mkdir(BDS_DIR);
     }
     catch (err)
     {
         if (err.code !== 'EEXIST') throw err;
     }
-    if (await fileExists(`${BDS_DIR}${sep}${EXE_NAME}`)) return false;
+    if (yield fs.exists(`${BDS_DIR}${sep}${EXE_NAME}`)) 
+    {
+        yield update(installinfo);
+        return;
+    }
     console.log(`It will download and install Bedrock Dedicated Server to '${BDS_DIR}'`);
     console.log(`BDS Version: ${BDS_VERSION}`);
     console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
@@ -302,7 +435,7 @@ async function downloadBDS(installinfo:InstallInfo, agree?:boolean):Promise<bool
 
     if (!agree)
     {
-        const ok = await yesno({
+        const ok = yield yesno({
             question: "Would you like to agree it?(Y/n)"
         });
         if (!ok) throw new MessageError("Canceled");
@@ -313,28 +446,27 @@ async function downloadBDS(installinfo:InstallInfo, agree?:boolean):Promise<bool
     }
 
     console.log(`BDS: Install to ${BDS_DIR}`);
-    const writedFiles = await downloadAndUnzip(BDS_LINK, BDS_DIR, true);
+    const writedFiles = yield downloadAndUnzip(BDS_LINK, BDS_DIR, true);
     installinfo.bdsVersion = BDS_VERSION;
     installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
 
     // eminus
     console.log(`Element Minus: Install to ${BDS_DIR}`);
-    const eminusInfo = await wgetGitHubInfo(EMINUS_INFO_URL);
-    await downloadAndUnzip(eminusInfo.url, BDS_DIR, false);
+    const eminusInfo = yield wgetGitHubInfo(EMINUS_INFO_URL);
+    yield downloadAndUnzip(eminusInfo.url, BDS_DIR, false);
     installinfo.eminusVersion = eminusInfo.version;
-    await fs.promises.mkdir(MOD_DIR);
+    yield fs.mkdir(MOD_DIR);
 
     // bdsx
     console.log(`BDSX-mod: Install to ${MOD_DIR}`);
-    await unzipBdsxTo(MOD_DIR);
+    yield unzipBdsxTo(MOD_DIR);
     installinfo.bdsxVersion = BDSX_VERSION;
 
     console.log(`BDSX: Done`);
-    return true;
-}
+});
 
-async function update(installinfo:InstallInfo):Promise<void>
-{
+
+const update = async(function*(installinfo:InstallInfo){
     console.log(`BDSX: Check update`);
     let updated = false;
     if (installinfo.bdsVersion === BDS_VERSION)
@@ -345,15 +477,15 @@ async function update(installinfo:InstallInfo):Promise<void>
     {
         console.log(`BDS: Old (${installinfo.bdsVersion})`);
         console.log(`BDS: Install to ${BDS_DIR}`);
-        await removeInstalled(installinfo.files);
-        const writedFiles = await downloadAndUnzip(BDS_LINK, BDS_DIR, true);
+        yield removeInstalled(installinfo.files);
+        const writedFiles = yield downloadAndUnzip(BDS_LINK, BDS_DIR, true);
         installinfo.bdsVersion = BDS_VERSION;
         installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
         updated = true;
     }
     
     // element minus
-    const eminusInfo = await wgetGitHubInfo(EMINUS_INFO_URL);
+    const eminusInfo = yield wgetGitHubInfo(EMINUS_INFO_URL);
     if (installinfo.eminusVersion === eminusInfo.version)
     {
         console.log(`Element Minus: Latest (${eminusInfo.version})`);
@@ -362,13 +494,13 @@ async function update(installinfo:InstallInfo):Promise<void>
     {
         console.log(`Element Minus: Old (${installinfo.eminusVersion})`);
         console.log(`Element Minus: Install to ${BDS_DIR}`);
-        await downloadAndUnzip(eminusInfo.url, BDS_DIR, false);
+        yield downloadAndUnzip(eminusInfo.url, BDS_DIR, false);
         installinfo.eminusVersion = eminusInfo.version;
         updated = true;
     }
     try
     {
-        await fs.promises.mkdir(MOD_DIR);
+        yield fs.mkdir(MOD_DIR);
     }
     catch (err)
     {
@@ -383,19 +515,22 @@ async function update(installinfo:InstallInfo):Promise<void>
     {
         console.log(`BDSX-mod: Old (${installinfo.bdsxVersion})`);
         console.log(`BDSX-mod: Install to ${MOD_DIR}`);
-        await unzipBdsxTo(MOD_DIR);
+        yield unzipBdsxTo(MOD_DIR);
         installinfo.bdsxVersion = BDSX_VERSION;
         updated = true;
     }
 
     if (updated) console.log(`BDSX: Updated`);
     else console.log(`BDSX: Latest`);
-}
+});
+
 
 interface ArgsOption
 {
     command?:string;
+    command_next?:string;
     yes?:boolean;
+    example?:string;
 }
 function parseOption():ArgsOption
 {
@@ -404,27 +539,37 @@ function parseOption():ArgsOption
     for (let i=2;i<process.argv.length;i++)
     {
         const arg = process.argv[i];
-        if (/^[a-zA-Z]/.test(arg))
-        {
-            if (option.command) throw Error('');
-            option.command = arg;
-        }
-        else if (arg.startsWith('-'))
+        if (arg.startsWith('-'))
         {
             switch (arg.substr(1))
             {
             case 'y': option.yes = true; break;
             }
+            continue;
+        }
+        if (!option.command)
+        {
+            if (/^[a-zA-Z]/.test(arg))
+            {
+                option.command = arg;
+                continue;
+            }
+        }
+        else
+        {
+            option.command_next = arg;
+            continue;
         }
     }
     return option;
 }
 
-(async()=>{
+
+async(function*(){
     try
     {
         let removing = false;
-        const installinfo = await readInstallInfo();
+        const installinfo = yield readInstallInfo();
         try
         {
             const option = parseOption();
@@ -432,25 +577,22 @@ function parseOption():ArgsOption
             {
             case 'i':
             case 'install':
-                if (!await downloadBDS(installinfo, option.yes))
-                {
-                    await update(installinfo);
-                }
+                yield downloadBDS(installinfo, option.yes);
                 return ExitCode.DO_NOTHING;
             case 'r':
             case 'remove':
                 removing = true;
-                if (await fileExists(BDS_DIR))
+                if (yield fs.exists(BDS_DIR))
                 {
                     if (!option.yes)
                     {
-                        const ok = await yesno({
+                        const ok = yield yesno({
                             question: "BDSX: It will remove worlds and addons. Are you sure?(Y/n)"
                         });
                         if (!ok) throw new MessageError("Canceled");
                     }
                     console.log(`${BDS_DIR}: Removing`);
-                    await rmdirRecursive(BDS_DIR);
+                    yield rmdirRecursive(BDS_DIR);
                     console.log(`${BDS_DIR}: Removed`);
                 }
                 else
@@ -458,20 +600,31 @@ function parseOption():ArgsOption
                     console.log(`${BDS_DIR}: Not found`);
                 }
                 return ExitCode.DO_NOTHING;
+            case 'example':
+                if (!option.command_next)
+                {
+                    console.error(`bdsx example ./path/to/example`);
+                    return ExitCode.DO_NOTHING;
+                }
+                const example_path = path.resolve(option.command_next);
+                console.log(`${example_path}: Unzip example`);
+                const archive:unzipper.CentralDirectory = yield unzipper.Open.file(__dirname +'/bdsx-example.zip');
+                yield archive.extract({path: example_path});
+                console.log(`${example_path}: Done`);
+                return ExitCode.DO_NOTHING;
             default:
                 break;
             }
         
-            await downloadBDS(installinfo);
+            yield downloadBDS(installinfo);
             return ExitCode.RUN_BDS;
         }
         finally
         {
             if (!removing)
             {
-                await fs.promises.writeFile(INSTALL_INFO_PATH, 
-                    JSON.stringify(installinfo, null, 4), 
-                    'utf-8');
+                yield fs.writeFile(INSTALL_INFO_PATH, 
+                    JSON.stringify(installinfo, null, 4));
             }
         }
     }

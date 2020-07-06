@@ -1,13 +1,12 @@
 {
-  "name": "bdsx-bin",
+  "name": "bdsx-example",
   "private": true,
   "version": "1.0.0",
   "description": "Bedrock Dedicated Server eXended",
   "main": "index",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w",
-    "start": "cd .. & .\\bdsx.bat"
+    "watch": "tsc -w"
   },
   "keywords": [],
   "author": "YOU",

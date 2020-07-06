@@ -316,10 +316,9 @@ BOOL WINAPI DllMain(
 				}
 				else if (arg == u"--help")
 				{
-					console.logA("[BDSX] -M [path_to_dir]: Module path");
 					console.logA("[BDSX] --mutex [name]: Set mutex to limit to single instance");
 					console.logA("[BDSX] --pipe-socket [host] [port] [param]: Connect standard output to socket, BDSX will send [param] for first line");
-					console.logA("[BDSX] --dir [path_to_dir]: Base path for -M");
+					console.logA("[BDSX] --dir [path_to_dir]: Base path for entry");
 				}
 				else
 				{
