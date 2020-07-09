@@ -1,10 +1,11 @@
 
 ## BDSX: Minecraft Bedrock Dedicated Server + node.js!
 ![logo](icon.png)  
+It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
 * OS: Windows & Linux(with Wine)
 * Supports all BDS features!
 * Supports all node.js features!
-* [Debuggable by Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
+* [Debug with Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
 * Run scripts without any addons or experimental play!
 * Hijack chatting!
 ```ts
@@ -25,21 +26,25 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
 * [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)!
 * [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)!
   
-It will run `bdsx/index.js` as server script!  
 It's very mutable now, I will remove or change API names frequently!  
 
 ## How to use it?
-1. Install [node.js](https://nodejs.org/en/) if you didn't install it
-2. (Linux) Install wine
-3. Install BDSX
+### by executable
+* Requirement  
+Wine(for Linux)  
+
+### by npm module
+* Requirement  
+[node.js](https://nodejs.org/)  
+Wine(for Linux)  
 ```sh
-npm i bdsx -g # Install bdsx. If you use linux, maybe it needs sudo 
-```
-4. Run BDSX
-```sh
+# Install BDSX
+npm i bdsx -g # If you use linux, maybe it needs sudo 
+# Run BDSX
 bdsx example ./example # make example project to './example'
-bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package.json'
+bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package.json
 ```
+
 
 ## Build Typescript (Watch Mode)
 * Build with VSCode
