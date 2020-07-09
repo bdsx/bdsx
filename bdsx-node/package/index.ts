@@ -4,8 +4,9 @@ import child_process = require('child_process');
 
 // update version
 import bdsx_pkg = require("../package.json");
-import { copy, zip, mkdir } from './util';
+import { copy, zip, mkdir, targz } from './util';
 import { homedir } from 'os';
+import { sep } from 'path';
 
 const BDSX_VERSION = bdsx_pkg.version;
 
@@ -26,7 +27,7 @@ function updatePackageJsonVersion(path:string, version:string)
     // npm update for example
     process.chdir('../release/bdsx');
     child_process.execSync('npm update', {stdio: 'inherit'});
-    child_process.execSync('tsc .', {stdio: 'inherit'});
+    child_process.execSync('tsc', {stdio: 'inherit'});
     process.chdir('../..');
 
     // zip bin
@@ -78,10 +79,20 @@ function updatePackageJsonVersion(path:string, version:string)
     // zip for release
     mkdir('./release-zip');
 
-    const ZIP = `./release-zip/bdsx-${BDSX_VERSION}.zip`;
+    const ZIP = `./release-zip/bdsx-${BDSX_VERSION}-win.zip`;
     await zip(ZIP, archive=>{        
-        archive.directory('release/', false);
+        archive.directory('release/bdsx', 'bdsx');
+        archive.file('release/bin/bdsx-cli-win.exe', { name: 'bin/bdsx-cli-win.exe' });
+        archive.file('release/bdsx.bat', { name: 'bdsx.bat' });
     });
-
-    console.log(`${ZIP}: Generated `);
-})();
+    
+    await targz('./release', `./release-zip/bdsx-${BDSX_VERSION}-linux.tar.gz`, new Map([
+        [`bdsx.bat`, 0],
+        [`bin${sep}bdsx-cli-win.exe`, 0],
+        [`bin${sep}bdsx-cli-macos`, 0],
+        [`bin${sep}bdsx-cli-linux`, 0o755],
+        [`bdsx.sh`, 0o755],
+    ]));
+})().catch(err=>{
+    console.error(err.stack || err.toString());
+});

@@ -5,19 +5,44 @@
 
 using namespace kr;
 
+
+const char* getWineVersion() noexcept
+{
+	static HMODULE hntdll = GetModuleHandle("ntdll.dll");
+	if (!hntdll) return nullptr;
+
+	static const char* (CDECL * pwine_get_version)(void) = (autoptr)GetProcAddress(hntdll, "wine_get_version");
+	if (pwine_get_version)
+	{
+		return pwine_get_version();
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const char* g_wineVersion = getWineVersion();
+
+
 namespace
 {
 	TText16 getErrorMessage(int errcode, Text16 extra_msg) noexcept
 	{
 		if (errcode == 0) return nullptr;
-		TText16 msg = ErrorCode(errcode).getMessage<char16>();
+		if (g_wineVersion != nullptr)
+		{
+			TSZ16 msg;
+			msg << u"Error(" << errcode << u"): " << extra_msg;
+			return msg;
+		}
+		TSZ16 msg = ErrorCode(errcode).getMessage<char16_t>();
 		msg << u" (" << errcode << u"): " << extra_msg;
-		return msg;
+		return move(msg);
 	}
 
-	ATTR_NORETURN void throwLastError(Text16 extra_msg) throws(JsException)
+	ATTR_NORETURN void throwError(int errcode, Text16 extra_msg) throws(JsException)
 	{
-		int errcode = GetLastError();
 		throw JsException((Text16)getErrorMessage(errcode, extra_msg));
 	}
 
@@ -47,7 +72,7 @@ NativeFile::NativeFile(const JsArguments& args) throws(JsException)
 	Text16 filename = args.at<Text16>(0);
 	m_file = CreateFileW(wide((TSZ16() << filename).c_str()),
 		access, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, creation, FILE_FLAG_OVERLAPPED, nullptr);
-	if (m_file == INVALID_HANDLE_VALUE) throwLastError(filename);
+	if (m_file == INVALID_HANDLE_VALUE) throwError(GetLastError(), filename);
 	s_list.attach(this);
 }
 NativeFile::~NativeFile() noexcept
@@ -85,12 +110,19 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 				if (dwErrorCode == ERROR_HANDLE_EOF)
 				{
 					JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, 0);
-					callback(nullptr, buffer);
+					callback(nullptr, nullptr);
 				}
 				else
 				{
 					JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, dwBytesTransferred);
-					callback(getErrorMessage(dwErrorCode, state->file->toString()), buffer);
+					if (dwErrorCode == 0)
+					{
+						callback(nullptr, buffer);
+					}
+					else
+					{
+						callback(getErrorMessage(dwErrorCode, state->file->toString()), buffer);
+					}
 				}
 			}
 			catch (JsException & err)
@@ -100,8 +132,16 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 			delete state;
 		}))
 	{
+		int err = GetLastError();
 		delete state;
-		throwLastError(toString());
+		if (err == ERROR_HANDLE_EOF)
+		{
+			JsValue ab = state->buffer;
+			JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, 0);
+			callback(nullptr, buffer);
+			return;
+		}
+		throwError(err, toString());
 	}
 }
 void NativeFile::write(double offset, JsValue obj, JsValue callback) throws(JsException)
@@ -122,7 +162,14 @@ void NativeFile::write(double offset, JsValue obj, JsValue callback) throws(JsEx
 			JsValue callback = state->callback;
 			try
 			{
-				callback(getErrorMessage(dwErrorCode, state->file->toString()), (int)dwBytesTransferred);
+				if (dwErrorCode != 0)
+				{
+					callback(getErrorMessage(dwErrorCode, state->file->toString()), (int)dwBytesTransferred);
+				}
+				else
+				{
+					callback(nullptr, (int)dwBytesTransferred);
+				}
 			}
 			catch (JsException & err)
 			{
@@ -131,8 +178,9 @@ void NativeFile::write(double offset, JsValue obj, JsValue callback) throws(JsEx
 			delete state;
 		}))
 	{
+		int err = GetLastError();
 		delete state;
-		throwLastError(toString());
+		throwError(err, toString());
 	}
 }
 double NativeFile::size() throws(JsException)
@@ -140,14 +188,15 @@ double NativeFile::size() throws(JsException)
 	LARGE_INTEGER size;
 	if (!GetFileSizeEx(m_file, &size))
 	{
-		throwLastError(toString());
+		int err = GetLastError();
+		throwError(err, toString());
 	}
 	return (double)size.QuadPart;
 }
 TText16 NativeFile::toString() noexcept
 {
 	TText16 out;
-	out << u"[file: " << m_file << ']';
+	out << u"[file: " << m_file << u']';
 	return out;
 }
 void NativeFile::initMethods(kr::JsClassT<NativeFile>* cls) noexcept

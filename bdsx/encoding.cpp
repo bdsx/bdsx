@@ -43,7 +43,6 @@ JsValue ExEncoding::jsdecode(JsValue buffer, int encoding) throws(JsException)
 		return out;
 	}
 
-
 	JsValue out = JsNewArray(2);
 	if (encoding == UTF16)
 	{

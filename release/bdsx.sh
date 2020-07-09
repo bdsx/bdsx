@@ -10,7 +10,7 @@ SCRIPTDIR=$(dirname "$SCRIPT")
 if [ $? != 2 ]; then exit $?; fi
 TARGET=$(pwd)/bdsx
 
-pushd ~./.bds
+pushd ~/.bds
 wine ~/.bds/bedrock_server.exe "$TARGET"
 popd
 

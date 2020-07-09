@@ -2,6 +2,7 @@ import { netevent, PacketId, NetworkIdentifier, fs, command, serverControl, Acto
 import { close } from "bdsx/netevent";
 
 (async()=>{
+    console.log('running user: '+ require("os").userInfo().username);
 
     let idcheck = 0;
     for (let i=0;i<255;i++)
@@ -27,17 +28,35 @@ import { close } from "bdsx/netevent";
     });
     
     // deprecated!! but for testing
+
+    const fileiopath = __dirname+'\\test.txt';
     try
     {
-        await fs.writeFile(__dirname+'/test.txt', 'test');
-        console.assert(await fs.readFile(__dirname+'./test.txt') === 'test', 'file reading failed');
-        console.assert(fs.deleteFileSync(__dirname+'./test.txt'), 'file deleting failed');
+        await fs.writeFile(fileiopath, 'test');
     }
     catch (err)
     {
-        console.error('File IO test failed: '+err.message);
+        console.error(`${fileiopath}: File writing failed: ${err.message}`);
         console.error('Is permission granted?');
     }
+    try
+    {
+        console.assert(await fs.readFile(fileiopath) === 'test', 'file reading failed');
+    }
+    catch (err)
+    {
+        console.error(`${fileiopath}: File reading failed: ${err.message}`);
+    }
+    try
+    {
+        console.assert(fs.deleteFileSync(fileiopath), 'file deleting failed');
+    }
+    catch (err)
+    {
+        console.error(`${fileiopath}: File deleting failed: ${err.message}`);
+    }
+	
+	
 	
 	command.hook.on((cmd, origin)=>{
         console.log({cmd, origin});
