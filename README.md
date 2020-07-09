@@ -1,5 +1,5 @@
 
-## BDSX: node.js + BDS!
+## BDSX: Minecraft Bedrock Dedicated Server + node.js!
 ![logo](icon.png)  
 * OS: Windows & Linux(with Wine)
 * Supports all BDS features!

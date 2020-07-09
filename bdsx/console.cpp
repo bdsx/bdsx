@@ -93,7 +93,7 @@ public:
 };
 
 
-class Console::Input
+class Console::Input:public Threadable<Console::Input>
 {
 	static constexpr size_t HISTORY_MAX = 100;
 
@@ -115,6 +115,28 @@ private:
 	CriticalSection m_inputLock;
 	CriticalSection m_displayLock;
 
+	struct AsyncRead: OVERLAPPED
+	{
+		char buffer[256];
+
+		void request() noexcept
+		{
+			if (!ReadFile(console.m_stdin, buffer, sizeof(buffer), nullptr, this))
+			{
+				ErrorCode err = ErrorCode::getLast();
+				if (err != ERROR_IO_PENDING)
+				{
+					console.logLine(u"Cannot read stdin", true);
+					TSZ16 errstr = err.getMessage<char16>();
+					if (g_call != nullptr) g_call->error((Text16)errstr);
+					else console.logLine(errstr, true);
+				}
+				return;
+			}
+		}
+
+	};
+
 	COORD _getPos() noexcept
 	{
 		CONSOLE_SCREEN_BUFFER_INFO cinfo;
@@ -130,7 +152,7 @@ private:
 	{
 		m_input.remove(m_cursor);
 		m_inputPos.remove(m_cursor);
-		invalidate(m_cursor);
+		_invalidate(m_cursor);
 	}
 
 	size_t _getConsolePos() noexcept
@@ -141,7 +163,6 @@ private:
 	{
 		return at == 0 ? 0 : m_inputPos[at - 1];
 	}
-
 
 	void _clearDisplay() noexcept
 	{
@@ -192,140 +213,64 @@ private:
 		_move(frompos, topos);
 	}
 
-public:
-
-	Input() noexcept
+	bool _readStdin() noexcept
 	{
-		m_inputEvents.push((EventHandle*)console.m_stdin);
-		m_inputEvents.push(EventHandle::create(false, false));
-	}
-	~Input() noexcept
-	{
-	}
-
-	void outputLock() noexcept
-	{
-		m_displayLock.enter();
-	}
-	void outputUnlock() noexcept
-	{
-		m_displayLock.leave();
-	}
-
-	void invalidate(size_t from) noexcept
-	{
-		size_t cpos = _getConsolePos();
-		size_t pos = _getConsolePos(from);
-		_move(cpos, pos);
-
-		Text16 fromText = m_input.subarr(from);
-
-		ArrayWriter<size_t> poslist = m_inputPos.subarr(from).toWriter();
-		for (char16 chr : fromText)
+		for (char chr : Text(""))
 		{
-			short prevpos = _getPos().X;
-			cout << (Utf16ToAnsi)Text16(&chr, 1);
-			size_t size = _getPos().X - prevpos;
-			pos += size;
-			poslist.write(pos);
-		}
-		size_t end = !m_inputPos.empty() ? m_inputPos.back() : 0;
-		if (end < m_lengthInConsole)
-		{
-			for (; end < m_lengthInConsole; end++)
+			m_displayLock.enter();
+			cout << "0x" << hexf((byte)chr) << endl;
+			m_displayLock.leave();
+
+			if (chr == (char)0xe0)
 			{
-				cout << ' ';
+				switch (chr)
+				{
+				case 0x48: // up
+					if (m_historyIdx > 0)
+					{
+						m_historyIdx--;
+						_setInput(m_history[m_historyIdx]);
+					}
+					break;
+				case 0x4B: // left
+					m_displayLock.enter();
+					if (m_cursor > 0)
+					{
+						_setCursor(m_cursor - 1);
+					}
+					m_displayLock.leave();
+					break;
+				case 0x4D: // right
+					m_displayLock.enter();
+					if (m_cursor < m_input.size())
+					{
+						_setCursor(m_cursor + 1);
+					}
+					m_displayLock.leave();
+					break;
+				case 0x50: // down
+					size_t size = m_history.size();
+					if (m_historyIdx < size)
+					{
+						m_historyIdx++;
+						if (m_historyIdx == size)
+						{
+							m_displayLock.enter();
+							m_input.clear();
+							m_inputPos.clear();
+							m_cursor = 0;
+							m_displayLock.leave();
+						}
+						else
+						{
+							_setInput(m_history[m_historyIdx]);
+						}
+					}
+					break;
+				}
 			}
-			_back(m_lengthInConsole - cpos);
-		}
-		else
-		{
-			_back(end - cpos);
-		}
-		m_lengthInConsole = end;
-	}
-	void setInput(Text16 input) noexcept
-	{
-		m_displayLock.enter();
-		_clearDisplay();
-		m_inputPos.resize(0, input.size());
-		m_input = input;
-		size_t pos = 0;
-		for (char16 chr : input)
-		{
-			short prevpos = _getPos().X;
-			cout << (Utf16ToAnsi)Text16(&chr, 1);
-			size_t size = _getPos().X - prevpos;
-			pos += size;
-			m_inputPos.push(pos);
-		}
-		m_lengthInConsole = m_inputPos.empty() ? 0 : m_inputPos.back();
-		m_cursor = m_input.size();
-		m_displayLock.leave();
-	}
-	void input(AText text) noexcept
-	{
-		m_inputLock.enter();
-		m_inputRequests.push(move(text));
-		m_inputLock.leave();
-		m_inputCount++;
-
-		m_inputEvents[1]->set();
-	}
-	bool inputToCin() noexcept
-	{
-		INPUT_RECORD records[32];
-		DWORD numRead;
-		if (!ReadConsoleInputW(console.m_stdin, records, countof(records), &numRead)) return false;
-		for (INPUT_RECORD& record : records)
-		{
-			if (record.EventType != KEY_EVENT) return false;
-			if (!record.Event.KeyEvent.bKeyDown) return false;
-			switch (record.Event.KeyEvent.wVirtualKeyCode)
+			else switch (chr)
 			{
-			case VK_LEFT:
-				m_displayLock.enter();
-				if (m_cursor > 0)
-				{
-					_setCursor(m_cursor - 1);
-				}
-				m_displayLock.leave();
-				break;
-			case VK_RIGHT:
-				m_displayLock.enter();
-				if (m_cursor < m_input.size())
-				{
-					_setCursor(m_cursor + 1);
-				}
-				m_displayLock.leave();
-				break;
-			case VK_UP:
-				if (m_historyIdx > 0)
-				{
-					m_historyIdx--;
-					setInput(m_history[m_historyIdx]);
-				}
-				break;
-			case VK_DOWN: {
-				size_t size = m_history.size();
-				if (m_historyIdx < size)
-				{
-					m_historyIdx++;
-					if (m_historyIdx == size)
-					{
-						m_displayLock.enter();
-						m_input.clear();
-						m_inputPos.clear();
-						m_cursor = 0;
-						m_displayLock.leave();
-					}
-					else
-					{
-						setInput(m_history[m_historyIdx]);
-					}
-				}
-				break;
-			}
 			case VK_RETURN: {
 				m_displayLock.enter();
 				AText16 out = move(m_input);
@@ -365,26 +310,119 @@ public:
 				m_displayLock.leave();
 				break;
 			default:
-				char16 chr = (char16)record.Event.KeyEvent.uChar.UnicodeChar;
+				//	char16 chr = (char16)record.Event.KeyEvent.uChar.UnicodeChar;
 				if (chr == 0) break;
 				m_displayLock.enter();
 				m_input.insert(m_cursor, chr);
 				size_t prevpos = _getPos().X;
-				TText ansi = (Utf16ToAnsi)Text16(&chr, 1);
-				cout << ansi;
+				cout << chr;
 				size_t size = _getPos().X - prevpos;
 				size_t oldpos = _getConsolePos(m_cursor);
 				m_inputPos.insert(m_cursor, oldpos + size);
 
 				m_cursor++;
-				invalidate(m_cursor);
+				_invalidate(m_cursor);
 
-				m_lengthInConsole += ansi.size();
+				m_lengthInConsole++;
 				m_displayLock.leave();
 				break;
 			}
 		}
 		return false;
+	}
+
+	void _invalidate(size_t from) noexcept
+	{
+		size_t cpos = _getConsolePos();
+		size_t pos = _getConsolePos(from);
+		_move(cpos, pos);
+
+		Text16 fromText = m_input.subarr(from);
+
+		ArrayWriter<size_t> poslist = m_inputPos.subarr(from).toWriter();
+		for (char16 chr : fromText)
+		{
+			short prevpos = _getPos().X;
+			cout << (Utf16ToAnsi)Text16(&chr, 1);
+			size_t size = _getPos().X - prevpos;
+			pos += size;
+			poslist.write(pos);
+		}
+		size_t end = !m_inputPos.empty() ? m_inputPos.back() : 0;
+		if (end < m_lengthInConsole)
+		{
+			for (; end < m_lengthInConsole; end++)
+			{
+				cout << ' ';
+			}
+			_back(m_lengthInConsole - cpos);
+		}
+		else
+		{
+			_back(end - cpos);
+		}
+		m_lengthInConsole = end;
+	}
+	void _setInput(Text16 input) noexcept
+	{
+		m_displayLock.enter();
+		_clearDisplay();
+		m_inputPos.resize(0, input.size());
+		m_input = input;
+		size_t pos = 0;
+		for (char16 chr : input)
+		{
+			short prevpos = _getPos().X;
+			cout << (Utf16ToAnsi)Text16(&chr, 1);
+			size_t size = _getPos().X - prevpos;
+			pos += size;
+			m_inputPos.push(pos);
+		}
+		m_lengthInConsole = m_inputPos.empty() ? 0 : m_inputPos.back();
+		m_cursor = m_input.size();
+		m_displayLock.leave();
+	}
+
+public:
+
+	Input() noexcept
+	{
+		m_inputEvents.push(EventHandle::create(false, false));
+		start();
+	}
+	~Input() noexcept
+	{
+		terminate();
+	}
+
+	int thread() noexcept
+	{
+		char buffer[256];
+		for (;;)
+		{
+			gets_s(buffer);
+			input((Text)(const char *)buffer);
+		}
+		return 0;
+	}
+
+	void outputLock() noexcept
+	{
+		m_displayLock.enter();
+	}
+	void outputUnlock() noexcept
+	{
+		m_displayLock.leave();
+	}
+
+	void input(AText text) noexcept
+	{
+		m_inputLock.enter();
+		m_inputRequests.push(move(text));
+		m_inputLock.leave();
+		m_inputCount++;
+
+		m_inputEvents[0]->set();
 	}
 	TText getLine() noexcept
 	{
@@ -395,12 +433,6 @@ public:
 			switch (m_inputEvents.wait())
 			{
 			case 0:
-				if (inputToCin())
-				{
-					return (Utf16ToUtf8)m_history.back();
-				}
-				break;
-			case 1:
 				if (m_inputCount != 0)
 				{
 				__readInput:

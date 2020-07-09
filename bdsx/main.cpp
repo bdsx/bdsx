@@ -432,8 +432,9 @@ BOOL WINAPI DllMain(
 		});
 		g_mcf.hookOnGameThreadCall([](void* pad, void* lambda) {
 			g_mcf.std$_Pad$_Release(pad);
-			g_nodecall.lambda = lambda;
-			nodegate::start(&g_nodecall);
+
+			 g_nodecall.lambda = lambda;
+			 nodegate::start(&g_nodecall);
 			});
 		g_mcf.hookOnScriptLoading([]{
 			{

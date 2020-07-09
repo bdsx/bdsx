@@ -26,12 +26,13 @@ function updatePackageJsonVersion(path:string, version:string)
     // npm update for example
     process.chdir('../release/bdsx');
     child_process.execSync('npm update', {stdio: 'inherit'});
+    child_process.execSync('tsc .', {stdio: 'inherit'});
     process.chdir('../..');
 
     // zip bin
     await zip(`./bdsx-node/bdsx-bin.zip`, archive=>{
         const outdir = './bin/x64/Release';
-        archive.directory(`${homedir()}/predefined`, 'predefined');
+        archive.directory(`${homedir()}/.bds/mods/predefined`, 'predefined');
         archive.file(`${outdir}/bdsx.dll`, {name: `bdsx.dll`});
         archive.file(`${outdir}/bdsx.pdb`, {name: `bdsx.pdb`});
         archive.file(`${outdir}/libcurl.dll`, {name: `libcurl.dll`});
@@ -66,6 +67,7 @@ function updatePackageJsonVersion(path:string, version:string)
     copy('./cli.js', './package/pkg/index.js');
     copy('./bdsx-bin.zip', './package/pkg/bdsx-bin.zip');
     copy('./bdsx-example.zip', './package/pkg/bdsx-example.zip');
+    copy('./vcruntime140_1.dll', './package/pkg/vcruntime140_1.dll');
     mkdir('./package/pkg/gen');
     copy('./gen/version.json', './package/pkg/gen/version.json');
     process.chdir('..');

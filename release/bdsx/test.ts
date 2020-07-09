@@ -1,7 +1,5 @@
 import { netevent, PacketId, NetworkIdentifier, fs, command, serverControl, Actor, MariaDB } from "bdsx";
 import { close } from "bdsx/netevent";
-import { DimensionId, AttributeId } from "bdsx/common";
-import { isDate } from "util";
 
 (async()=>{
 
@@ -28,9 +26,18 @@ import { isDate } from "util";
         console.assert(conns.delete(ni), 'disconnected without connected');
     });
     
-    await fs.writeFile('./test.txt', 'test');
-    console.assert(await fs.readFile('./test.txt') === 'test', 'file reading failed');
-    console.assert(fs.deleteFileSync('./test.txt'), 'file deleting failed');
+    // deprecated!! but for testing
+    try
+    {
+        await fs.writeFile(__dirname+'/test.txt', 'test');
+        console.assert(await fs.readFile(__dirname+'./test.txt') === 'test', 'file reading failed');
+        console.assert(fs.deleteFileSync(__dirname+'./test.txt'), 'file deleting failed');
+    }
+    catch (err)
+    {
+        console.error('File IO test failed: '+err.message);
+        console.error('Is permission granted?');
+    }
 	
 	command.hook.on((cmd, origin)=>{
         console.log({cmd, origin});
@@ -52,7 +59,7 @@ import { isDate } from "util";
     }
     catch (err)
     {
-        console.log(`mariadb test failed: ${err.message}`);
+        console.log(`MariaDB test failed: ${err.message}`);
     }
     
 })().catch(console.error);

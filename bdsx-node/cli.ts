@@ -11,6 +11,7 @@ import { Writer } from 'fstream';
 import readline = require('readline');
 import version = require('./gen/version.json');
 import pkg = require("./package.json");
+import ProgressBar = require("progress");
 
 try
 {
@@ -115,7 +116,19 @@ const fs = {
             });
         });
     },
-        
+    copyFile(from:string, to:string):Promise<void>
+    {
+        return new Promise((resolve, reject)=>{
+            const rd = fs_ori.createReadStream(from);
+            rd.on("error", reject);
+            const wr = fs_ori.createWriteStream(to);
+            wr.on("error", reject);
+            wr.on("close", ()=>{
+                resolve();
+            });
+            rd.pipe(wr);
+        });
+    },
     exists(path:string):Promise<boolean>
     {
         return fs.stat(path).then(()=>true, ()=>false);
@@ -165,7 +178,8 @@ const BDS_VERSION = version.BDS_VERSION;
 const BDSX_VERSION = pkg.version;
 const BDS_ZIP_NAME = `bedrock-server-${BDS_VERSION}.zip`;
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/${BDS_ZIP_NAME}`;
-const EMINUS_INFO_URL = `https://api.github.com/repos/karikera/elementminus/releases/latest`;
+const EMINUS_VERSION = '1.0.4';
+const EMINUS_LINK = `https://github.com/karikera/elementminus/releases/download/1.0.4/eminus.zip`;
 const BDS_DIR = `${homedir}${sep}.bds`;
 const EXE_NAME = `bedrock_server.exe`;
 const USER_AGENT = 'nodebs/1.0';
@@ -281,10 +295,10 @@ const rmdirRecursive = async(function*(path:string, filter:(path:string)=>boolea
     }
     if (path.endsWith(sep)) path = path.substr(0, path.length-1);
 
-    const proms = files.map(async(function*(file:string){
+    yield concurrencyLoop(files, 5, async(function*(file:string){
         const filepath = `${path}${sep}${file}`;
         if (!filter(filepath)) return;
-        const stat:fs_ori.Stats = yield fs.stat(file);
+        const stat:fs_ori.Stats = yield fs.stat(filepath);
         if (stat.isDirectory())
         {
             yield rmdirRecursive(filepath);
@@ -294,7 +308,6 @@ const rmdirRecursive = async(function*(path:string, filter:(path:string)=>boolea
             yield fs.unlink(filepath);
         }
     }));
-    yield Promise.all(proms);
     yield fs.rmdir(path);
 });
 
@@ -334,13 +347,20 @@ function unzipBdsxTo(dest:string):Promise<void>
     .pipe(unzipper.Extract({ path: dest }))
     .promise();
 }
-const downloadAndUnzip = async(function*(url:string, dest:string, skipExists:boolean) {
+
+const downloadAndUnzip = async(function*(prefix:string, url:string, dest:string, skipExists:boolean) {
+    const bar = new ProgressBar(prefix+': :bar :current/:total', { 
+        total: 1,
+        width: 20,
+     });
     const archive:unzipper.CentralDirectory = yield unzipper.Open.url(request as any, url);
     const writedFiles:string[] = [];
 
     const files:unzipper.File[] = [];
     for (const file of archive.files)
     {
+        if (file.type == 'Directory') continue;
+
         let filepath = file.path;
         if (sep !== '/') filepath = filepath.replace(/\//g, sep);
         if (!filepath.startsWith(sep)) filepath = sep+filepath;
@@ -348,42 +368,29 @@ const downloadAndUnzip = async(function*(url:string, dest:string, skipExists:boo
 
         if (skipExists)
         {
-            try
-            {
-                const stat = yield fs.stat(BDS_DIR+filepath);
-                if (!stat.isDirectory()) continue;
-            }
-            catch (err)
-            {
-            }
-            files.push(file);
+            const exists:boolean = yield fs.exists(BDS_DIR+filepath);
+            if (exists) continue;
         }
+        files.push(file);
     }
 
-    if (skipExists)
-    {
-        yield concurrencyLoop(files, 5, async(function*(entry:unzipper.File){
-            if (entry.type == 'Directory') return;
-            var extractPath = path.join(dest, entry.path);
-            if (extractPath.indexOf(dest) != 0) return;
-            var writer = Writer({ path: extractPath });
-            yield new Promise((resolve, reject)=>{
-                entry.stream()
-                    .on('error',reject)
-                    .pipe(writer)
-                    .on('close',resolve)
-                    .on('error',reject);
-            });
-        }));
-    }
-    else
-    {
-        yield archive.extract({
-            path: dest,
-            concurrency: 5,
-            verbose: true,
+    bar.total = files.length;
+
+    yield concurrencyLoop(files, 5, async(function*(entry:unzipper.File){
+        var extractPath = path.join(dest, entry.path);
+        if (extractPath.indexOf(dest) != 0) return;
+        var writer = Writer({ path: extractPath });
+        yield new Promise((resolve, reject)=>{
+            entry.stream()
+                .on('error',reject)
+                .pipe(writer)
+                .on('close',()=>{
+                    bar.tick();
+                    resolve();
+                })
+                .on('error',reject);
         });
-    }
+    }));
     return writedFiles;
 });
 
@@ -446,15 +453,16 @@ const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
     }
 
     console.log(`BDS: Install to ${BDS_DIR}`);
-    const writedFiles = yield downloadAndUnzip(BDS_LINK, BDS_DIR, true);
+    const writedFiles:string[] = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
     installinfo.bdsVersion = BDS_VERSION;
     installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
 
+    yield fs.copyFile(`${__dirname}${sep}vcruntime140_1.dll`, `${BDS_DIR}${sep}vcruntime140_1.dll`);
+
     // eminus
     console.log(`Element Minus: Install to ${BDS_DIR}`);
-    const eminusInfo = yield wgetGitHubInfo(EMINUS_INFO_URL);
-    yield downloadAndUnzip(eminusInfo.url, BDS_DIR, false);
-    installinfo.eminusVersion = eminusInfo.version;
+    yield downloadAndUnzip('Element Minus', EMINUS_LINK, BDS_DIR, false);
+    installinfo.eminusVersion = EMINUS_VERSION;
     yield fs.mkdir(MOD_DIR);
 
     // bdsx
@@ -465,9 +473,7 @@ const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
     console.log(`BDSX: Done`);
 });
 
-
 const update = async(function*(installinfo:InstallInfo){
-    console.log(`BDSX: Check update`);
     let updated = false;
     if (installinfo.bdsVersion === BDS_VERSION)
     {
@@ -478,24 +484,23 @@ const update = async(function*(installinfo:InstallInfo){
         console.log(`BDS: Old (${installinfo.bdsVersion})`);
         console.log(`BDS: Install to ${BDS_DIR}`);
         yield removeInstalled(installinfo.files);
-        const writedFiles = yield downloadAndUnzip(BDS_LINK, BDS_DIR, true);
+        const writedFiles = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
         installinfo.bdsVersion = BDS_VERSION;
         installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
         updated = true;
     }
     
     // element minus
-    const eminusInfo = yield wgetGitHubInfo(EMINUS_INFO_URL);
-    if (installinfo.eminusVersion === eminusInfo.version)
+    if (installinfo.eminusVersion === EMINUS_VERSION)
     {
-        console.log(`Element Minus: Latest (${eminusInfo.version})`);
+        console.log(`Element Minus: Latest (${EMINUS_VERSION})`);
     }
     else
     {
         console.log(`Element Minus: Old (${installinfo.eminusVersion})`);
         console.log(`Element Minus: Install to ${BDS_DIR}`);
-        yield downloadAndUnzip(eminusInfo.url, BDS_DIR, false);
-        installinfo.eminusVersion = eminusInfo.version;
+        yield downloadAndUnzip('Element Minus', EMINUS_LINK, BDS_DIR, false);
+        installinfo.eminusVersion = EMINUS_VERSION;
         updated = true;
     }
     try
@@ -521,7 +526,6 @@ const update = async(function*(installinfo:InstallInfo){
     }
 
     if (updated) console.log(`BDSX: Updated`);
-    else console.log(`BDSX: Latest`);
 });
 
 
@@ -636,7 +640,7 @@ async(function*(){
         }
         else
         {
-            console.error(err);
+            console.error(err.stack || err.toString());
         }
     }
     return ExitCode.DO_NOTHING;

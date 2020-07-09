@@ -2,13 +2,8 @@
 bin
 *.user
 /release/bin
-/release/bdsx/node_modules
 /release-zip
 /bdsx.zip
 /downloaded-bds
-/PACKAGING/bdsx/node_modules
-/PACKAGING/bdsx/*.d.ts
-/PACKAGING/bdsx/*.js
-/PACKAGING/bdsx/*.js.map
 /bdsx/buildtime.h
 /bdsx/gen
