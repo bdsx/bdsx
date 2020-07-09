@@ -32,6 +32,7 @@ It's very mutable now, I will remove or change API names frequently!
 ### by executable
 * Requirement  
 Wine(for Linux)  
+[Download Link](https://github.com/karikera/bdsx/releases/latest)
 
 ### by npm module
 * Requirement  
