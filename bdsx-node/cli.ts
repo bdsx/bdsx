@@ -137,12 +137,6 @@ const fs = {
 
 // yesno
 const yesno = function({ question, defaultValue }:{question:string, defaultValue?:boolean}) {
-    function invalid (){
-        process.stdout.write('\nInvalid Response.\n');
-        process.stdout.write('Answer either yes : (' + yesValues.join(', ')+') \n');
-        process.stdout.write('Or no: (' + noValues.join(', ') + ') \n\n');
-    }
-
     const yesValues = [ 'yes', 'y'];
     const noValues  = [ 'no', 'n' ];
 
@@ -151,7 +145,7 @@ const yesno = function({ question, defaultValue }:{question:string, defaultValue
       output: process.stdout
     });
 
-    return new Promise(function (resolve, reject) {
+    return new Promise<boolean>(resolve=>{
         rl.question(question + ' ', async(function*(answer) {
             rl.close();
 
@@ -165,9 +159,10 @@ const yesno = function({ question, defaultValue }:{question:string, defaultValue
             if (noValues.indexOf(cleaned) >= 0)
                 return resolve(false);
     
-            invalid();
-            const result = yield yesno({ question, defaultValue });
-            resolve(result);
+            process.stdout.write('\nInvalid Response.\n');
+            process.stdout.write('Answer either yes : (' + yesValues.join(', ')+') \n');
+            process.stdout.write('Or no: (' + noValues.join(', ') + ') \n\n');
+            resolve(yesno({ question, defaultValue }));
         }));
     });
 };
@@ -470,7 +465,7 @@ const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
     yield unzipBdsxTo(MOD_DIR);
     installinfo.bdsxVersion = BDSX_VERSION;
 
-    console.log(`BDSX: Done`);
+    console.log(`BDSX: Installed successfully`);
 });
 
 const update = async(function*(installinfo:InstallInfo){
@@ -534,6 +529,7 @@ interface ArgsOption
     command?:string;
     command_next?:string;
     yes?:boolean;
+    help?:boolean;
     example?:string;
 }
 function parseOption():ArgsOption
@@ -548,6 +544,7 @@ function parseOption():ArgsOption
             switch (arg.substr(1))
             {
             case 'y': option.yes = true; break;
+            case '-help': option.help = true; break;
             }
             continue;
         }
@@ -615,6 +612,16 @@ async(function*(){
                 const archive:unzipper.CentralDirectory = yield unzipper.Open.file(__dirname +'/bdsx-example.zip');
                 yield archive.extract({path: example_path});
                 console.log(`${example_path}: Done`);
+                return ExitCode.DO_NOTHING;
+            case 'help':
+                console.log("[Commands]");
+                console.log("bdsx [path_to_module]: Run BDS with node module. It will install BDS if BDS is not installed");
+                console.log("bdsx i, bdsx install: Install BDS. It will update BDS if installed BDS is old");
+                console.log("bdsx r, bdsx remove: Remove BDS. It will remove all worlds & addons");
+                console.log("[Options]");
+                console.log("--mutex [name]: Set mutex to limit to single instance, It will wait for the exit of previous one");
+                console.log("--pipe-socket [host] [port] [param]: Connect the standard output to a socket, BDSX will send [param] as first line");
+                console.log("-y: Agree and no prompt about Minecraft End User License & Privacy Policy at installation");
                 return ExitCode.DO_NOTHING;
             default:
                 break;

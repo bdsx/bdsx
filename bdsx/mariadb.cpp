@@ -1,7 +1,7 @@
 #include "mariadb.h"
 #include "native.h"
 #include "jsctx.h"
-#include "console.h"
+#include "nodegate.h"
 #include <KRMySQL/db.h>
 #include <KRMySQL/statement.h>
 #include <KR3/win/eventhandle.h>
@@ -331,14 +331,19 @@ void MariaDB::query(Text16 text, JsValue callback) throws(JsException)
 		{
 			if (logError)
 			{
-				Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-				console.logA(TSZ() << "MariaDB Error " << sql->m_sql->getErrorNumber() << ": " << sql->m_sql->getErrorMessage() << '\n');
+				AText16 temp;
+				temp.reserve(64);
+				temp << u"MariaDB Error " << sql->m_sql->getErrorNumber() << u": " << (Utf8ToUtf16)(Text)sql->m_sql->getErrorMessage() << u'\n';
+				pump->post([temp=move(temp)]{
+					g_call->error((Text16)temp);
+					});
 			}
 		}
 		catch (ThrowRetry&)
 		{
-			Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			console.logA("MariaDB disconnected?\n");
+			pump->post([]{
+				g_call->error((Text16)u"MariaDB disconnected?\n");
+				});
 		}
 		if (data == nullptr) return;
 

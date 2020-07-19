@@ -8,7 +8,11 @@ npm i -g bdsx # Install bdsx.
 bdsx # Execute bdsx. It will try to install BDS to [home]/.bds
 ```
 
-## Features
-* bdsx [path_to_module] - Run BDS with node module. It will install BDS if BDS is not installed
-* bdsx install, bdsx i - Install BDS. It will update BDS if installed BDS is old
-* bdsx remove, bdsx r - Remove BDS. It will remove all worlds & addons
+## Commands
+* bdsx [path_to_module]: Run BDS with node module. It will install BDS if BDS is not installed
+* bdsx install, bdsx i: Install BDS. It will update BDS if installed BDS is old
+* bdsx remove, bdsx r: Remove BDS. It will remove all worlds & addons
+## Options
+* --mutex [name]: Set mutex to limit to single instance, It will wait for the exit of previous one
+* --pipe-socket [host] [port] [param]: Connect the standard output to a socket, BDSX will send [param] as first line
+* -y: Agree and no prompt about Minecraft End User License & Privacy Policy at installation

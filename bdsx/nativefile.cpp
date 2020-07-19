@@ -110,7 +110,7 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 				if (dwErrorCode == ERROR_HANDLE_EOF)
 				{
 					JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, 0);
-					callback(nullptr, nullptr);
+					callback(nullptr, buffer);
 				}
 				else
 				{

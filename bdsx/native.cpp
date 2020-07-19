@@ -298,14 +298,7 @@ void fork() throws(JsException)
 	TText16 cwd = currentDirectory;
 	cwd << nullterm;
 
-	TText16 bdsxPath = win::Module::byName(u"bdsx.dll")->fileName();
-
 	TText16 cmdline;
-	cmdline << u'\"';
-	cmdline << bdsxPath.cut(bdsxPath.find_r('\\') + 1);
-	cmdline << u"injector.exe\" \"";
-	cmdline << bdsxPath;
-	cmdline << u"\" ";
 	cmdline << (Text16)unwide(GetCommandLineW());
 	cmdline << nullterm;
 
@@ -313,7 +306,7 @@ void fork() throws(JsException)
 		win::ProcessOptions().console(true));
 	if (process == nullptr)
 	{
-		throw JsException(TSZ16() << u"Cannot run injector.exe");
+		throw JsException(u"Re-run bedrock_server.exe failed");
 	}
 	delete process;
 	thread->detach();

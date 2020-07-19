@@ -45,7 +45,8 @@ import { close } from "bdsx/netevent";
     }
     catch (err)
     {
-        console.error(`${fileiopath}: File reading failed: ${err.message}`);
+        console.error(`${fileiopath}: File reading failed`);
+        console.error(err.stack);
     }
     try
     {
@@ -53,7 +54,8 @@ import { close } from "bdsx/netevent";
     }
     catch (err)
     {
-        console.error(`${fileiopath}: File deleting failed: ${err.message}`);
+        console.error(`${fileiopath}: File deleting failed`);
+        console.error(err.stack);
     }
 	
 	
@@ -72,8 +74,11 @@ import { close } from "bdsx/netevent";
     
     try
     {
-        const mariadb = new MariaDB('localhost', 'test', '1234');
+        const mariadb = new MariaDB('localhost', 'test', '1234', 'test');
         const v = await mariadb.execute('select 1');
+        await mariadb.execute('create table test(a int)');
+        await mariadb.execute('insert into test values(1)');
+        await mariadb.execute('drop table test');
         console.assert(v[0][0] === '1', 'mariadb: select 1 failed');
     }
     catch (err)
