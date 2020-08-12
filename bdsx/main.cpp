@@ -261,8 +261,6 @@ BOOL WINAPI DllMain(
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-		ondebug(requestDebugger());
-
 		AText16 mutex;
 
 		{
@@ -369,6 +367,10 @@ BOOL WINAPI DllMain(
 			LocalFree(argv_16_start);
 		}
 
+		if (!console.isConnectedWithSocket())
+		{
+			console.startStdin();
+		}
 		console.logA("[BDSX] Attached\n");
 		console.logA("[BDSX] Build Time = " BUILD_TIME "\n");
 

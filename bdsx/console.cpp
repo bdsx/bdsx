@@ -388,7 +388,6 @@ public:
 	Input() noexcept
 	{
 		m_inputEvents.push(EventHandle::create(false, false));
-		start();
 	}
 	~Input() noexcept
 	{
@@ -593,6 +592,14 @@ void Console::writeToStdin(kr::Text text) noexcept
 TText Console::getLine() noexcept
 {
 	return s_input.getLine();
+}
+void Console::startStdin() noexcept
+{
+	s_input.start();
+}
+bool Console::isConnectedWithSocket() noexcept
+{
+	return s_client.m_connected;
 }
 
 JsValue Console::createModule() noexcept

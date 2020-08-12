@@ -55,6 +55,8 @@ public:
 	void writeToStdin(kr::Text text) noexcept;
 
 	kr::TText getLine() noexcept;
+	void startStdin() noexcept;
+	bool isConnectedWithSocket() noexcept;
 
 private:
 
