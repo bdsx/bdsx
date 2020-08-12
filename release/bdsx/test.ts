@@ -2,7 +2,8 @@ import { netevent, PacketId, NetworkIdentifier, fs, command, serverControl, Acto
 import { close } from "bdsx/netevent";
 
 (async()=>{
-    console.log('running user: '+ require("os").userInfo().username);
+    console.log('NodeJS Version: '+ process.version);
+    console.log('JS Engine: '+process['jsEngine']);
 
     let idcheck = 0;
     for (let i=0;i<255;i++)
@@ -94,7 +95,11 @@ system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
     const actor2 = Actor.fromUniqueId(uniqueId["64bit_low"], uniqueId["64bit_high"]);
     const actor = Actor.fromEntity(ev.data.entity);
     console.assert(actor === actor2, 'Actor.fromEntity is not matched');
-    console.assert(actor.getUniqueIdLow() === uniqueId["64bit_low"] && actor.getUniqueIdHigh() === uniqueId["64bit_high"], 'Actor uniqueId is not matched');
+
+    const actualId = actor.getUniqueIdLow()+':'+actor.getUniqueIdHigh();
+    const expectedId = uniqueId["64bit_low"]+':'+uniqueId["64bit_high"];
+    console.assert(actualId === expectedId, 
+        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
     if (ev.__identifier__ === 'minecraft:player')
     {
         console.assert(actor.getTypeId() == 0x13f, 'player type is not matched');

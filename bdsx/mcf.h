@@ -74,6 +74,7 @@ struct MinecraftFunctionTable
 	void (*BedrockLogOut)(unsigned int, char const*, ...);
 	void (*CommandOutputSender$send)(CommandOutputSender* _this, const CommandOrigin* origin, const CommandOutput* output);
 	void (*ScriptEngine$dtor$ScriptEngine)(ScriptEngine*);
+	ActorUniqueID*(*Actor$getUniqueID)(Actor* actor);
 
 	void (*$_game_thread_lambda_$$_call_)(void* _this);
 	void (*$_game_thread_start_t_)(void* _this);

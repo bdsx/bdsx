@@ -5,6 +5,7 @@ console.log("From Script> Hello, World!");
 
 // Addon Script
 import { Actor } from "bdsx";
+import { DimensionId, AttributeId } from "bdsx/common";
 const system = server.registerSystem(0, 0);
 system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
     console.log('entity created: ' + ev.data.entity.__identifier__);
@@ -70,8 +71,8 @@ const tooLoudFilter = new Set([
 ]);
 for (let i = 2; i <= 136; i++) {
     if (tooLoudFilter.has(i)) continue;
-    netevent.after(i).on((ptr, networkIdentifier, packetId) => {
-        console.log('RECV '+ PacketId[packetId]+': '+ptr.readHex(16));
+    netevent.raw(i).on((ptr, size, networkIdentifier, packetId) => {
+        console.log('RECV '+ PacketId[packetId]+': '+ptr.readHex(Math.min(16, size)));
     });
     netevent.send(i).on((ptr, networkIdentifier, packetId) => {
         console.log('SEND '+ PacketId[packetId]+': '+ptr.readHex(16));
@@ -82,7 +83,7 @@ for (let i = 2; i <= 136; i++) {
 netevent.close.on(networkIdentifier => {
     const id = connectionList.get(networkIdentifier);
     connectionList.delete(networkIdentifier);
-    console.log(`${id}> disconnected(${networkIdentifier})`);
+    console.log(`${id}> disconnected`);
 });
 
 // Call Native Functions
@@ -97,7 +98,6 @@ SetWindowText(wnd, "BDSX Window!!!");
 // Global Error Listener
 import { setOnErrorListener } from "bdsx";
 import { NetworkIdentifier } from "bdsx/native";
-import { DimensionId, AttributeId } from "bdsx/common";
 console.log('\nerror handling>');
 setOnErrorListener(err => {
     console.log('ERRMSG Example> ' + err.message);

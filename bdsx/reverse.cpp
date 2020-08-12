@@ -394,6 +394,10 @@ DimensionId Actor::getDimenionId() noexcept
 	DimensionId id;
 	return *vftable->getDimensionId()(this, &id);
 }
+ActorUniqueID* Actor::getUniqueId() noexcept
+{
+	return g_mcf.Actor$getUniqueID(this);
+}
 AttributeInstance* Actor::getAttribute(AttributeId id) noexcept
 {
 	return attributes()->getMutableInstance(id);

@@ -1252,63 +1252,6 @@ struct Actor
 {
 	Actor() = delete;
 	Actor$VFTable* vftable;
-	void* offset_08; // 000001C0E59C7530
-	void* offset_10; // 0000000000000010 // flags?
-	void* offset_18; // 0000000000000001
-	void* offset_20; // 0000000000000005
-	void* offset_28; // 0000000000000000
-	void* offset_30; // 0000000000000000
-	void* offset_38; // 0000000000000000
-	void* offset_40; // 000000000000000F
-	void* offset_48; // 0000000000000000
-	void* offset_50; // self or null
-	void* offset_58; // 0000000000000000
-	void* offset_60; // 0000000000000000  
-	void* offset_68; // 0000000000000000  
-	void* offset_70; // 0000000000000000  
-	void* offset_78; // 0000000000000000  
-	void* offset_80; // 0000000000000000  
-	void* offset_88; // 0000000000000000  
-	void* offset_90; // 0000000000000000  
-	void* offset_98; // 0000000000000000  
-	void* offset_a0; // 0000000000000000  
-	void* offset_a8; // 0000000000000000  
-	void* offset_b0; // 0000000000000000  
-	void* offset_b8; // 0000000000000000  
-	void* offset_c0; // 0000000000000001  
-	ActorDefinitionGroup* group;
-	void* offset_d0; // 000001C0F1004EC0  
-	ActorUniqueID uniqueId;
-	void* offset_e0; // 0000000000000000  
-	void* offset_e8; // 0000000000000000  
-	void* offset_f0; // C2B4019000000000  
-	void* offset_f8; // C2B4019000000000  
-	void* offset_100; // 0000000000000000  
-	void* offset_108; // FFFFFFFFFFFFFFFE  
-	void* offset_110; // 42440000C18673F2  
-	void* offset_118; // 00000000C127FFB7  
-	void* offset_120; // FFFFFF7C00000000  
-	void* offset_128; // 0000400E00000000  
-	void* offset_130; // 000001C0F0A56350  
-	void* offset_138; // 000001C0F0A566D8  
-	void* offset_140; // 000001C0F0A567B8  
-	void* offset_148; // 000000000000FFFF  
-	void* offset_150; // 000001C0F17AFB10  
-	void* offset_158; // BDA0902E3D78D121  
-	void* offset_160; // 3F8000003B852F34  
-	void* offset_168; // 000000003F800000  
-	void* offset_170; // 0000000000000000  
-	void* offset_178; // 0000000101000101  
-	Block* block;
-	void* offset_188; // 0000000000000000
-	void* offset_190; // 0000000000000000  
-	void* offset_198; // 0000000000000000  
-	void* offset_1a0; // 0000000000000000  
-	void* offset_1a8; // 0000000000000000  
-	void* offset_1b0; // 0000000000000000  
-	void* offset_1b8; // 0000000000000000  
-	void* offset_1c0; // 55EAF0E702AA4D71  
-	String combined;
 
 	OFFSETFIELD(BlockSource*, blockSource, 0x348);
 	OFFSETFIELD(Dimension*, dimension, 0x350);
@@ -1325,6 +1268,7 @@ struct Actor
 	bool isServerPlayer() noexcept;
 	ActorType getEntityTypeId() noexcept;
 	DimensionId getDimenionId() noexcept;
+	ActorUniqueID* getUniqueId() noexcept;
 	AttributeInstance* getAttribute(AttributeId id) noexcept;
 };
 

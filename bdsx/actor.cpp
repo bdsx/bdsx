@@ -60,11 +60,13 @@ TText16 NativeActor::getIdentifier() noexcept
 }
 int NativeActor::getUniqueIdLow() noexcept
 {
-	return lodword((qword&)ptr()->uniqueId);
+	ActorUniqueID id = *ptr()->getUniqueId();
+	return lodword((qword&)id);
 }
 int NativeActor::getUniqueIdHigh() noexcept
 {
-	return hidword((qword&)ptr()->uniqueId);
+	ActorUniqueID id = *ptr()->getUniqueId();
+	return hidword((qword&)id);
 }
 NativePointer* NativeActor::getRuntimeId() noexcept
 {
@@ -81,21 +83,21 @@ void NativeActor::setAttribute(int attribute, float value) noexcept
 	if (attribute < 1) return;
 	if ((uint)attribute > countof(attribNames)) return;
 
-	Actor * actor = ptr();
-	AttributeInstance * attr = actor->getAttribute((AttributeId)attribute);
+	Actor* actor = ptr();
+	AttributeInstance* attr = actor->getAttribute((AttributeId)attribute);
 
 	SharedPtr<Packet> packetc = Dirty;
 	g_mcf.MinecraftPackets$createPacket(&packetc, MinecraftPacketIds::UpdateAttributes);
 	UpdateAttributesPacket* packet = (UpdateAttributesPacket*)packetc.pointer();
 	packet->actorId = actor->runtimeId();
 
-	UpdateAttributesPacket::AttributeData * data = packet->list.prepare();
-	data->name = attribNames[attribute-1];
+	UpdateAttributesPacket::AttributeData* data = packet->list.prepare();
+	data->name = attribNames[attribute - 1];
 	data->current = attr->currentValue() = value;
 	data->minv = attr->minValue();
 	data->maxv = attr->maxValue();
 	data->defaultv = attr->defaultValue();
-	
+
 	if (actor->isServerPlayer())
 	{
 		static_cast<ServerPlayer*>(actor)->sendNetworkPacket(packet);
@@ -105,13 +107,13 @@ float NativeActor::getAttribute(int attribute) noexcept
 {
 	if (attribute < 1) return 0;
 	if ((uint)attribute > countof(attribNames)) return 0;
-	AttributeInstance * attr = ptr()->getAttribute((AttributeId)attribute);
+	AttributeInstance* attr = ptr()->getAttribute((AttributeId)attribute);
 	if (!attr) return 0;
 	return attr->currentValue();
 }
 kr::JsValue NativeActor::getNetworkIdentifier() noexcept
 {
-	Actor * actor = ptr();
+	Actor* actor = ptr();
 	if (!actor->isServerPlayer()) return nullptr;
 	auto& ni = static_cast<ServerPlayer*>(actor)->networkIdentifier();
 	return JsNetworkIdentifier::fromRaw(ni);
@@ -120,7 +122,7 @@ void NativeActor::sendPacket(StaticPointer* packet) throws(JsException)
 {
 	Actor* actor = ptr();
 	if (!actor->isServerPlayer()) throw JsException(u"sendPacket: is not Player");
-	void * addr = packet->getAddressRaw();
+	void* addr = packet->getAddressRaw();
 	try
 	{
 		static_cast<ServerPlayer*>(actor)->sendNetworkPacket((Packet*)addr);
@@ -170,9 +172,9 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 	cls->setMethod(u"getDimension", &NativeActor::getDimension);
 	cls->setMethod(u"setAttribute", &NativeActor::setAttribute);
 	cls->setMethod(u"getAttribute", &NativeActor::getAttribute);
-	cls->setStaticMethod(u"setOnDestroy", [](JsValue listener){
+	cls->setStaticMethod(u"setOnDestroy", [](JsValue listener) {
 		storeListener(&s_onActorDestroyed, listener);
-	});
+		});
 	cls->setStaticMethod(u"fromPointer", &NativeActor::fromPointer);
 	cls->setStaticMethod(u"fromUniqueId", &NativeActor::fromUniqueId);
 
@@ -180,7 +182,7 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 		_assert((intptr_t)actor > 0);
 		_removeActor(actor);
 		});
-	g_mcf.hookOnActorDestructor([](Actor* actor){
+	g_mcf.hookOnActorDestructor([](Actor* actor) {
 		_assert((intptr_t)actor > 0);
 		if (!isContextThread())
 		{

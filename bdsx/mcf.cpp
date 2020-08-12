@@ -27,6 +27,7 @@ using namespace hook;
 
 #define HASH_1_16_1_02 "26694FF65D20A61D6A3731A2E827AE61"
 #define HASH_1_16_0_2 "B3385584CF5F99FEB29180A5A04A0788"
+#define HASH_1_16_20_03 "B575B802BE9C4B17F580B2485DE06D98"
 
 MinecraftFunctionTable g_mcf;
 ServerInstance* g_server;
@@ -127,6 +128,7 @@ public:
 			ENTRY($_game_thread_start_t_),
 			ENTRY(std$_Pad$_Release),
 			ENTRY(ScriptEngine$initialize),
+			ENTRY(Actor$getUniqueID),
 		};
 #undef ENTRY
 
@@ -388,7 +390,7 @@ void MinecraftFunctionTable::load() noexcept
 			console.logA("[BDSX] Predefined does not founded\n");
 		}
 
-		if (hash == HASH_1_16_1_02)
+		if (hash == HASH_1_16_20_03)
 		{
 			console.logA("[BDSX] MD5 Hash matched(Version == " BDS_VERSION ")\n");
 		}
@@ -493,7 +495,8 @@ void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(OnPa
 	call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0x41, 0x8B, 0xD7, 0x48, 0x8D, 0x8D, 0x38, 0x01, 0x00, 0x00, 0xE8, 0x28, 0x63, 0x00, 0x00,
+		0x41, 0x8B, 0xD7, 0x48, 0x8D, 0x8D, 0x38, 0x01, 
+		0x00, 0x00, 0xE8, 0x28, 0x63, 0x00, 0x00,
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
@@ -506,7 +509,7 @@ void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(OnPa
 
 	Renamer renamer;
 	junction.patchTo(FNNAME(NetworkHandler$_sortAndPacketizeEvents), 0x2c9,
-		ORIGINAL_CODE, RAX, false);
+		ORIGINAL_CODE, RAX, false, { {11, 15}, });
 };
 void MinecraftFunctionTable::hookOnPacketBefore(ExtendedStreamReadResult* (*onPacketRead)(OnPacketRBP*, ExtendedStreamReadResult*, MinecraftPacketIds, NetworkHandler::Connection* conn)) noexcept
 {
@@ -694,8 +697,8 @@ void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(ServerInstance* ins
 	junction.ret();
 
 	Renamer renamer;
-	junction.patchTo(FNNAME(DedicatedServer$start), 0x2718,
-		ORIGINAL_CODE, RDX, false);
+	junction.patchTo(FNNAME(DedicatedServer$start), 0x2768,
+		ORIGINAL_CODE, RDX, false, { {10, 14}, });
 };
 void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept
 {
@@ -833,7 +836,7 @@ void MinecraftFunctionTable::hookOnCommandPrint(void(*callback)(const char* log,
 	junction.ret();
 
 	Renamer renamer;
-	junction.patchTo(FNNAME(CommandOutputSender$send), 0x1b3, ORIGINAL_CODE, RAX, false);
+	junction.patchTo(FNNAME(CommandOutputSender$send), 0x1b3, ORIGINAL_CODE, RAX, false, { {1, 5},  {17, 21}, });
 }
 void MinecraftFunctionTable::hookOnCommandIn(void(*callback)(String* dest)) noexcept
 {
@@ -897,13 +900,18 @@ void MinecraftFunctionTable::skipChangeCurDir() noexcept
 }
 void MinecraftFunctionTable::skipMakeConsoleObject() noexcept
 {
+	/*
+	lea r9,qword ptr ss:[rbp-28]
+	lea r8,qword ptr ds:[7FF76658D9E0]
+	lea rdx,qword ptr ss:[rbp-18]
+	*/
 	static const byte ORIGINAL_CODE[] = {
 		0x4C, 0x8D, 0x4D, 0xD8, 0x4C, 0x8D, 0x05, 0x36, 
 		0x75, 0x19, 0x01, 0x48, 0x8D, 0x55, 0xE8, 0x41,
 		0xFF, 0xD2, 0x84, 0xC0, 0x74, 0xA6
 	};
 	Renamer renamer;
-	Code::nopping(FNNAME(ScriptEngine$initialize), 0x287, ORIGINAL_CODE);
+	Code::nopping(FNNAME(ScriptEngine$initialize), 0x287, ORIGINAL_CODE, { {7, 11}, });
 }
 
 void MinecraftFunctionTable::skipCommandListDestruction() noexcept

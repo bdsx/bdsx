@@ -240,7 +240,7 @@ JsErrorCode CALLBACK JsSetPropertyHook(
 {
 	const wchar_t* name;
 	JsGetPropertyNameFromId(propertyId, &name);
-	if ((Text16)unwide(name) == u"console") debug();
+	_assert((Text16)unwide(name) != u"console");
 	return JsSetProperty(object, propertyId, value, useStrictRules);
 }
 
