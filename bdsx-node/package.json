@@ -1,6 +1,6 @@
 {
   "name": "bdsx",
-  "version": "1.3.29",
+  "version": "1.3.32",
   "description": "Bedrock Dedicated Server X",
   "main": "index.js",
   "keywords": [
@@ -21,12 +21,12 @@
   },
   "devDependencies": {
     "@types/archiver": "^3.1.0",
-    "@types/node": "^14.0.14",
+    "@types/node": "^14.6.1",
     "@types/progress": "^2.0.3",
     "@types/request": "^2.48.5",
     "@types/tar-fs": "^2.0.0",
     "@types/unzipper": "^0.10.3",
-    "archiver": "^4.0.1",
+    "archiver": "^4.0.2",
     "minecraft-scripting-types-server": "^1.0.0",
     "source-map-support": "^0.5.19",
     "tar-fs": "^2.1.0"

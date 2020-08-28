@@ -1,4 +1,4 @@
-import { netevent, PacketId, NetworkIdentifier, fs, command, serverControl, Actor, MariaDB } from "bdsx";
+import { netevent, PacketId, NetworkIdentifier, fs, command, serverControl, Actor, MariaDB, chat, CANCEL } from "bdsx";
 import { close } from "bdsx/netevent";
 
 (async()=>{
@@ -89,6 +89,13 @@ import { close } from "bdsx/netevent";
     
 })().catch(console.error);
 
+chat.on(ev=>{
+    if (ev.message == "test")
+    {
+        return CANCEL;
+    }
+});
+
 const system = server.registerSystem(0, 0);
 system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
     const uniqueId = ev.data.entity.__unique_id__;
@@ -105,3 +112,5 @@ system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
         console.assert(actor.getTypeId() == 0x13f, 'player type is not matched');
     }
 });
+
+

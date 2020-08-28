@@ -585,9 +585,19 @@ struct AuxDataBlockItem
 	void* vftable;
 };
 
+enum class StreamReadResult : int32_t
+{
+	Disconnect,
+	Pass,
+	Warning, // disconnect at 3 times
+	Ignore=0x7f,
+};
+
 struct ExtendedStreamReadResult
 {
-	uint64_t u1; // 1
+	StreamReadResult streamReadResult;
+	int32_t dummy;
+	// array?
 
 };
 
@@ -677,9 +687,7 @@ struct ReadOnlyBinaryStream
 {
 	ReadOnlyBinaryStream() = delete;
 	ReadOnlyBinaryStreamVTable* vftable; // 0
-	size_t pointer; // 8
-	void* u1; // 10
-	String data;
+	OFFSETFIELD(String*, data, 0x38);
 
 	kr::Text getData() noexcept;
 };
@@ -780,6 +788,15 @@ enum Compressibility
 };
 
 struct Block :public BlockLegacy
+{
+};
+
+struct PacketViolationHandler
+{
+	PacketViolationHandler() = delete;
+};
+
+enum PacketViolationResponse : int32_t
 {
 };
 

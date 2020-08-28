@@ -42,7 +42,7 @@ command.hook.on((command, originName)=>{
 });
 
 // Chat Listening
-import { chat } from 'bdsx';
+import { chat, CANCEL } from 'bdsx';
 chat.on(ev => {
     ev.setMessage(ev.message.toUpperCase() + " YEY!");
 });
@@ -72,6 +72,7 @@ const tooLoudFilter = new Set([
 for (let i = 2; i <= 136; i++) {
     if (tooLoudFilter.has(i)) continue;
     netevent.raw(i).on((ptr, size, networkIdentifier, packetId) => {
+        console.assert(size !== 0, 'invalid packet size');
         console.log('RECV '+ PacketId[packetId]+': '+ptr.readHex(Math.min(16, size)));
     });
     netevent.send(i).on((ptr, networkIdentifier, packetId) => {
@@ -87,7 +88,7 @@ netevent.close.on(networkIdentifier => {
 });
 
 // Call Native Functions
-import { NativeModule } from "bdsx/native";
+import { NativeModule } from "bdsx";
 const kernel32 = new NativeModule("Kernel32.dll");
 const user32 = new NativeModule("User32.dll");
 const GetConsoleWindow = kernel32.get("GetConsoleWindow")!;
@@ -96,8 +97,7 @@ const wnd = GetConsoleWindow();
 SetWindowText(wnd, "BDSX Window!!!");
 
 // Global Error Listener
-import { setOnErrorListener } from "bdsx";
-import { NetworkIdentifier } from "bdsx/native";
+import { setOnErrorListener, NetworkIdentifier } from "bdsx";
 console.log('\nerror handling>');
 setOnErrorListener(err => {
     console.log('ERRMSG Example> ' + err.message);

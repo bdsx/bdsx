@@ -129,6 +129,7 @@ public:
 			ENTRY(std$_Pad$_Release),
 			ENTRY(ScriptEngine$initialize),
 			ENTRY(Actor$getUniqueID),
+			ENTRY(PacketViolationHandler$_handleViolation),
 		};
 #undef ENTRY
 
@@ -533,7 +534,6 @@ void MinecraftFunctionTable::hookOnPacketBefore(ExtendedStreamReadResult* (*onPa
 	junction.mov(R8, R15); // packetId
 	junction.mov(R9, QwordPtr, RSP, 0x68); // Connection
 	junction.call(onPacketRead, RAX);
-	junction.lea(RAX, RBP, 0x60);
 	junction.add(RSP, 0x28);
 	junction.ret();
 
@@ -867,6 +867,35 @@ void MinecraftFunctionTable::hookOnCommandIn(void(*callback)(String* dest)) noex
 	junction.patchTo(FNNAME(std$_LaunchPad$_stdin_t_$_Execute$_0_), 0x5f, ORIGINAL_CODE, RAX, false,
 		{ {3, 7}, {21, 24} });
 }
+void MinecraftFunctionTable::skipPacketViolationWhen7f() noexcept
+{
+	/*
+	mov qword ptr ss:[rsp+10],rbx
+	push rbp
+	push rsi
+	push rdi
+	push r12
+	push r13
+	push r14
+	*/
+	static const byte ORIGINAL_CODE[] = {
+		0x48, 0x89, 0x5C, 0x24, 0x10, 0x55, 0x56, 0x57, 
+		0x41, 0x54, 0x41, 0x55, 0x41, 0x56
+	};
+
+	Code junction(64);
+	junction.cmp(R8, 0x7f);
+	junction.jz(9);
+	junction.mov(RAX, QwordPtr, RSP, 0x28);
+	junction.mov(BytePtr, RAX, 0, 0);
+	junction.ret();
+	junction.write(ORIGINAL_CODE);
+	junction.jump((byte*)PacketViolationHandler$_handleViolation + sizeof(ORIGINAL_CODE), RAX);
+
+	Renamer renamer;
+	junction.patchTo(FNNAME(PacketViolationHandler$_handleViolation), 0, ORIGINAL_CODE, RAX, true,
+		{ {3, 7}, {21, 24} });
+}
 void MinecraftFunctionTable::skipChangeCurDir() noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
@@ -913,6 +942,7 @@ void MinecraftFunctionTable::skipMakeConsoleObject() noexcept
 	Renamer renamer;
 	Code::nopping(FNNAME(ScriptEngine$initialize), 0x287, ORIGINAL_CODE, { {7, 11}, });
 }
+
 
 void MinecraftFunctionTable::skipCommandListDestruction() noexcept
 {

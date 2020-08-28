@@ -37,6 +37,7 @@ struct MinecraftFunctionTable
 	void hookOnLog(void(*callback)(int color, const char * log, size_t size)) noexcept;
 	void hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept;
 	void hookOnCommandIn(void (*callback)(String* dest)) noexcept;
+	void skipPacketViolationWhen7f() noexcept;
 	void skipChangeCurDir() noexcept;
 	void skipMakeConsoleObject() noexcept;
 	void skipCommandListDestruction() noexcept;
@@ -74,6 +75,7 @@ struct MinecraftFunctionTable
 	void (*BedrockLogOut)(unsigned int, char const*, ...);
 	void (*CommandOutputSender$send)(CommandOutputSender* _this, const CommandOrigin* origin, const CommandOutput* output);
 	void (*ScriptEngine$dtor$ScriptEngine)(ScriptEngine*);
+	PacketViolationResponse (*PacketViolationHandler$_handleViolation)(PacketViolationHandler*, MinecraftPacketIds, StreamReadResult, const NetworkIdentifier*, bool* out);
 	ActorUniqueID*(*Actor$getUniqueID)(Actor* actor);
 
 	void (*$_game_thread_lambda_$$_call_)(void* _this);

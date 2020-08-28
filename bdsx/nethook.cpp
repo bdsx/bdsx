@@ -1,3 +1,4 @@
+
 #include "nethook.h"
 #include "console.h"
 
@@ -150,10 +151,11 @@ void NetHookModule::hook() noexcept
 		}
 		return g_mcf.MinecraftPackets$createPacket(packet_dest, packetId);
 		});
+	g_mcf.skipPacketViolationWhen7f();
 	g_mcf.hookOnPacketBefore([](OnPacketRBP* rbp, ExtendedStreamReadResult * result, MinecraftPacketIds packetId, NetworkHandler::Connection* conn) {
 		checkCurrentThread();
 
-		if (result->u1 != 1) return result;
+		if (result->streamReadResult != StreamReadResult::Pass) return result;
 
 		NetHookModule* _this = &g_native->nethook;
 
@@ -168,8 +170,10 @@ void NetHookModule::hook() noexcept
 		try
 		{
 			JsValue ret = ((JsValue)iter->second)(packetptr, _this->lastSenderNi, (int)packetId);
-			if (ret == false) result->u1 = 0;
-			return result;
+			if (ret == false)
+			{
+				result->streamReadResult = StreamReadResult::Ignore;
+			}
 		}
 		catch (JsException & err)
 		{

@@ -569,7 +569,7 @@ function parseOption():ArgsOption
 async(function*(){
     try
     {
-        let removing = false;
+        let installing = false;
         const installinfo = yield readInstallInfo();
         try
         {
@@ -578,11 +578,11 @@ async(function*(){
             {
             case 'i':
             case 'install':
+                installing = true;
                 yield downloadBDS(installinfo, option.yes);
                 return ExitCode.DO_NOTHING;
             case 'r':
             case 'remove':
-                removing = true;
                 if (yield fs.exists(BDS_DIR))
                 {
                     if (!option.yes)
@@ -627,12 +627,13 @@ async(function*(){
                 break;
             }
         
+            installing = true;
             yield downloadBDS(installinfo);
             return ExitCode.RUN_BDS;
         }
         finally
         {
-            if (!removing)
+            if (installing)
             {
                 yield fs.writeFile(INSTALL_INFO_PATH, 
                     JSON.stringify(installinfo, null, 4));

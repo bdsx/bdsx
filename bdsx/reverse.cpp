@@ -175,7 +175,8 @@ void* DataBuffer::getData() noexcept
 
 Text ReadOnlyBinaryStream::getData() noexcept
 {
-	return Text(data.data(), data.size);
+	String* str = data();
+	return Text(str->data(), str->size);
 }
 
 String Certificate::getXuid() const noexcept
