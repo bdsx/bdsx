@@ -12,6 +12,7 @@ import readline = require('readline');
 import version = require('./gen/version.json');
 import pkg = require("./package.json");
 import ProgressBar = require("progress");
+import { execSync } from 'child_process';
 
 try
 {
@@ -612,6 +613,11 @@ async(function*(){
                 const archive:unzipper.CentralDirectory = yield unzipper.Open.file(__dirname +'/bdsx-example.zip');
                 yield archive.extract({path: example_path});
                 console.log(`${example_path}: Done`);
+
+                const curdir = process.cwd();
+                process.chdir(example_path);
+                execSync('npm i', {stdio: 'inherit'});
+                process.chdir(curdir);
                 return ExitCode.DO_NOTHING;
             case 'help':
                 console.log("[Commands]");

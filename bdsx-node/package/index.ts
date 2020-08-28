@@ -10,25 +10,44 @@ import { sep } from 'path';
 
 const BDSX_VERSION = bdsx_pkg.version;
 
-function updatePackageJsonVersion(path:string, version:string)
+function updateJson(path:string, cb:(obj:any)=>boolean):boolean
 {
     const pkgjson = fs.readFileSync(path, 'utf-8');
-    const cli_pkg = JSON.parse(pkgjson);
-    if (cli_pkg.version !== version)
+    const pkg = JSON.parse(pkgjson);
+    if (cb(pkg))
     {
-        cli_pkg.version = version;
-        fs.writeFileSync(path, JSON.stringify(cli_pkg, null, 2));
+        fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
         return true;
     }
     return false;
 }
 
+function updatePackageJsonVersion(path:string, version:string):boolean
+{
+    return updateJson(path, cli_pkg=>{
+        if (cli_pkg.version === version) return false;
+        cli_pkg.version = version;
+        return true;
+    });
+}
+
+function run(cmd:string):void
+{
+    child_process.execSync(cmd, {stdio: 'inherit'});
+}
+
 (async()=>{
     // npm update for example
     process.chdir('../release/bdsx');
-    child_process.execSync('npm update', {stdio: 'inherit'});
-    child_process.execSync('tsc', {stdio: 'inherit'});
+    run('npm update');
+    run('tsc');
     process.chdir('../..');
+
+    // update bdsx version in package-example.json
+    updateJson('./bdsx-node/package/package-example.json', pkg=>{
+        pkg.dependencies['bdsx'] = BDSX_VERSION;
+        return true;
+    });
 
     // zip bin
     await zip(`./bdsx-node/bdsx-bin.zip`, archive=>{
@@ -54,15 +73,18 @@ function updatePackageJsonVersion(path:string, version:string)
         archive.file('./release/bdsx/tsconfig.json', {name: 'tsconfig.json'});
     });
 
-    if (process.argv[2] === '--no-publish') return;
-
     // publish
     process.chdir('./bdsx-node');
     if (updatePackageJsonVersion('./package/pkg/package.json', BDSX_VERSION))
     {
-        child_process.execSync('npm publish', {stdio: 'inherit'});
-    }
+        run('npm publish');
         
+        // install published bdsx to example
+        process.chdir('../release/bdsx');
+        run('npm i bdsx@'+BDSX_VERSION);
+        process.chdir('../../bdsx-node');
+    }
+    
     // copy files to pkg dir
     copy('./ii_unknown.json', './package/pkg/ii_unknown.json');
     copy('./cli.js', './package/pkg/index.js');
@@ -74,7 +96,7 @@ function updatePackageJsonVersion(path:string, version:string)
     process.chdir('..');
     
     // pkg
-    child_process.execSync('pkg ./bdsx-node/package/pkg --out-path=./release/bin', {stdio: 'inherit'});
+    run('pkg ./bdsx-node/package/pkg --out-path=./release/bin');
     
     // zip for release
     mkdir('./release-zip');
