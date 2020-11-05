@@ -44,11 +44,15 @@ public:
 
 	uint32_t readVarUint() throws(kr::JsException);
 	int32_t readVarInt() throws(kr::JsException);
+	kr::TText16 readVarBin() throws(kr::JsException);
 	kr::TText16 readVarString(int encoding) throws(kr::JsException);
+	kr::JsValue readBin(int words) throws(kr::JsException);
 
 	void writeVarUint(uint32_t v) throws(kr::JsException);
 	void writeVarInt(int32_t v) throws(kr::JsException);
+	void writeVarBin(kr::Text16 v) throws(kr::JsException);
 	void writeVarString(kr::Text16 v, int encoding) throws(kr::JsException);
+	void writeBin(kr::Text16 value) throws(kr::JsException);
 
 	static void initMethods(kr::JsClassT<NativePointer>* cls) noexcept;
 

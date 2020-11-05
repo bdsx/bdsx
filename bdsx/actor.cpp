@@ -68,6 +68,13 @@ int NativeActor::getUniqueIdHigh() noexcept
 	ActorUniqueID id = *ptr()->getUniqueId();
 	return hidword((qword&)id);
 }
+TText16 NativeActor::getUniqueIdBin() noexcept
+{
+	TText16 text;
+	ActorUniqueID id = *ptr()->getUniqueId();
+	text.writeas<ActorUniqueID>(id);
+	return move(text);
+}
 NativePointer* NativeActor::getRuntimeId() noexcept
 {
 	NativePointer* p = NativePointer::newInstance();
@@ -158,6 +165,11 @@ kr::JsValue NativeActor::fromPointer(StaticPointer* ptr) throws(JsException)
 JsValue NativeActor::fromUniqueId(int lowbits, int highbits) throws(JsException)
 {
 	return fromRaw(g_server->minecraft()->something->level->fetchEntity((ActorUniqueID)makeqword(lowbits, highbits)));
+}
+JsValue NativeActor::fromUniqueIdBin(Text16 hex) throws(JsException)
+{
+	ActorUniqueID id = hex.readas<ActorUniqueID>();
+	return fromRaw(g_server->minecraft()->something->level->fetchEntity(id));
 }
 void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 {

@@ -322,6 +322,39 @@ int32_t NativePointer::readVarInt() throws(JsException)
 	uint32_t raw = readVarUint();
 	return (raw >> 1) ^ -(int32_t)(raw & 1);
 }
+TText16 NativePointer::readVarBin() throws(JsException)
+{
+	TText16 out;
+	int i = 0;
+	uint32_t dest = 0;
+
+	try
+	{
+		for (;;) {
+			byte b = *m_address++;
+
+			dest |= (uint32_t)(b & 0x7f) << i;
+			if (i >= 9)
+			{
+				i -= 9;
+				out.write((word)dest);
+				dest >>= 16;
+				if ((b & 0x80) == 0)
+				{
+					return std::move(out);
+				}
+			}
+			else
+			{
+				i += 7;
+			}
+		}
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
 TText16 NativePointer::readVarString(int encoding) throws(JsException)
 {
 	uint32_t len = readVarUint();
@@ -340,11 +373,24 @@ TText16 NativePointer::readVarString(int encoding) throws(JsException)
 		accessViolation(m_address);
 	}
 }
-
+JsValue NativePointer::readBin(int words) throws(kr::JsException)
+{
+	try
+	{
+		size_t bytes = words * sizeof(char16_t);
+		JsValue out = Text16((pcstr16)m_address, (pcstr16)((byte*)m_address + bytes));
+		m_address += bytes;
+		return out;
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
 void NativePointer::writeVarUint(uint32_t value) throws(JsException)
 {
 	for (;;) {
-		if ((value >> 7) != 0) {
+		if (value <= 0x7f) {
 			*m_address++ = value | 0x80;
 		}
 		else {
@@ -358,6 +404,50 @@ void NativePointer::writeVarInt(int32_t value) throws(JsException)
 {
 	return writeVarUint((value << 1) ^ (value >> 31));
 }
+void NativePointer::writeVarBin(Text16 value) throws(JsException)
+{
+	try
+	{
+		int v = 0;
+		int offset = 0;
+		if (value.empty())
+		{
+			*m_address++ = (byte)0x00;
+			return;
+		}
+
+		pcstr16 iter = value.begin();
+		pcstr16 end = value.end() - 1;
+		if (iter < end)
+		{
+			do
+			{
+				v |= (word)*iter << offset;
+				offset += 16;
+				do
+				{
+					*m_address++ = (byte)(v | 0x80);
+					v >>= 7;
+					offset -= 7;
+				} while (offset > 7);
+				iter++;
+			} while (iter != end);
+		}
+
+		v |= (word)*iter << offset;
+		offset += 16;
+		for (;;)
+		{
+			*m_address++ = (byte)(v | 0x80);
+			if (v <= 0x7f) return;
+			v >>= 7;
+		}
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
 void NativePointer::writeVarString(Text16 value, int encoding) throws(JsException)
 {
 	try
@@ -370,6 +460,19 @@ void NativePointer::writeVarString(Text16 value, int encoding) throws(JsExceptio
 			convert.copyTo((char*)m_address);
 			m_address += size;
 		);
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
+void NativePointer::writeBin(Text16 value) throws(kr::JsException)
+{
+	try
+	{
+		size_t bytes = value.bytes();
+		memcpy(m_address, value.data(), bytes);
+		m_address += bytes;
 	}
 	catch (...)
 	{

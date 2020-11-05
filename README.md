@@ -55,7 +55,7 @@ bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package
 
 * Build with Command Line
 1. Open `bdsx/` with Prompt
-2. run `npm watch`
+2. run `npm run watch`
 
 ## JS API Reference
 https://github.com/karikera/bdsx/wiki

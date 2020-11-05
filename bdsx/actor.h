@@ -23,6 +23,7 @@ public:
 	kr::TText16 getIdentifier() noexcept;
 	int getUniqueIdLow() noexcept;
 	int getUniqueIdHigh() noexcept;
+	kr::TText16 getUniqueIdBin() noexcept;
 	NativePointer* getRuntimeId() noexcept;
 	int getTypeId() noexcept;
 	void setAttribute(int attribute, float value) noexcept;
@@ -33,6 +34,7 @@ public:
 	static kr::JsValue fromRaw(Actor* actor) throws(JsException);
 	static kr::JsValue fromPointer(StaticPointer* ptr) throws(JsException);
 	static kr::JsValue fromUniqueId(int lowbits, int highbits) throws(JsException);
+	static kr::JsValue fromUniqueIdBin(kr::Text16 hex) throws(JsException);
 	static void initMethods(kr::JsClassT<NativeActor>* cls) noexcept;
 	static void reset() noexcept;
 	static void clearMethods() noexcept;

@@ -7,7 +7,7 @@ import readLoginPacket = nethook.readLoginPacket;
 export { readLoginPacket };
 
 type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
-type BeforeListener = (ptr: NativePointer, intnetworkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
+type BeforeListener = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
 type SendListener = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
 type AfterListener = (ptr: NativePointer, networkIdentifier: NetworkIdentifier, packetId: number) => void;
 

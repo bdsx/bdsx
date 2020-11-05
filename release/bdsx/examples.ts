@@ -48,13 +48,24 @@ chat.on(ev => {
 });
 
 // Network Hooking: Get login IP and XUID
-import { netevent, PacketId } from "bdsx";
+import { netevent, PacketId, createPacket, sendPacket } from "bdsx";
 const connectionList = new Map<NetworkIdentifier, string>();
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
     const ip = networkIdentifier.getAddress();
     const [xuid, username] = netevent.readLoginPacket(ptr);
     console.log(`${username}> IP=${ip}, XUID=${xuid}`);
     if (username) connectionList.set(networkIdentifier, username);
+
+    // sendPacket
+    setTimeout(()=>{
+        console.log('packet sended');
+
+        // It uses C++ class packets. and they are not specified everywhere.
+        const textPacket = createPacket(PacketId.Text); 
+        textPacket.setCxxString('[message]', 0x50);
+        sendPacket(networkIdentifier, textPacket);
+        textPacket.dispose(); // need to delete it. or It will make memory lyrics
+    }, 10000);
 });
 
 // Network Hooking: Print all packets
@@ -95,6 +106,39 @@ const GetConsoleWindow = kernel32.get("GetConsoleWindow")!;
 const SetWindowText = user32.get("SetWindowTextW")!;
 const wnd = GetConsoleWindow();
 SetWindowText(wnd, "BDSX Window!!!");
+
+// Parse raw packet
+// referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/MovePlayerPacket.php
+netevent.raw(PacketId.MovePlayer).on((ptr, size, ni)=>{
+    console.log(`Packet Id: ${ptr.readUint8()}`);
+    
+    const runtimeId = ptr.readVarBin();
+    const x = ptr.readFloat32();
+    const y = ptr.readFloat32();
+    const z = ptr.readFloat32();
+    const pitch = ptr.readFloat32();
+    const yaw = ptr.readFloat32();
+    const headYaw = ptr.readFloat32();
+    const mode = ptr.readUint8();
+    const onGround = ptr.readUint8() !== 0;
+    console.log(`move: ${x} ${y} ${z} ${pitch} ${yaw} ${headYaw} ${mode} ${onGround}`);
+});
+// referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/CraftingEventPacket.php
+netevent.raw(PacketId.CraftingEvent).on((ptr, size, ni)=>{
+    console.log(`Packet Id: ${ptr.readUint8()}`);
+    
+    const windowId = ptr.readUint8();
+    const type = ptr.readVarInt();
+
+    const uuid1 = ptr.readUint32();
+    const uuid2 = ptr.readUint32();
+    const uuid3 = ptr.readUint32();
+    const uuid4 = ptr.readUint32();
+
+    console.log(`crafting: ${windowId} ${type} ${uuid1} ${uuid2} ${uuid3} ${uuid4}`);
+    const size1 = ptr.readVarUint();
+    // need to parse more
+});
 
 // Global Error Listener
 import { setOnErrorListener, NetworkIdentifier } from "bdsx";

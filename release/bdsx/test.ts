@@ -84,7 +84,7 @@ import { close } from "bdsx/netevent";
     }
     catch (err)
     {
-        console.log(`MariaDB test failed: ${err.message}`);
+        console.log(`MariaDB connection failed: ${err.message} (not error)`);
     }
     
 })().catch(console.error);

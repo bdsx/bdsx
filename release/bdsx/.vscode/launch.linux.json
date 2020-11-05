@@ -13,10 +13,11 @@
             ],
             "cwd": "~/.bds",
             "runtimeExecutable": "~/.bds/bedrock_server.exe",
-            "program": "${workspaceFolder}",
+            "args": ["${workspaceFolder}"],
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
-            ]
+            ],
+            "timeout": 30000
         }
     ]
 }

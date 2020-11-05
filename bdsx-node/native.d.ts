@@ -352,8 +352,23 @@ export class NativePointer extends StaticPointer
 
     writeBuffer(buffer: Bufferable): void;
     
+    /**
+     * Variable length unsigned integer
+     * The maximum is 32bits
+     */
     readVarUint():number;
+    
+    /**
+     * Variable length integer
+     * The maximum is 32bits
+     */
     readVarInt():number;
+
+    /**
+     * Variable length number
+     * Unlimited maximum
+     */
+    readVarBin():string;
     
     /**
      * 
@@ -361,14 +376,45 @@ export class NativePointer extends StaticPointer
      */
     readVarString(encoding?:Encoding):string;
 
+    /**
+     * Variable length unsigned integer
+     * The maximum is 32bits
+     */
     writeVarUint(v:number):void;
+    
+    /**
+     * Variable length integer
+     * The maximum is 32bits
+     */
     writeVarInt(v:number):void;
+    
+    /**
+     * Variable length number
+     * It stores 2bytes per character
+     * Unlimited maximum
+     */
+    writeVarBin(v:string):void;
 
     /**
-     * 
+     * Variable length number
+     * It reads 2bytes per character
      * @param encoding default = Encoding.Utf8
      */
     writeVarString(v:string, encoding?:Encoding):void;
+
+    /**
+     * Read memory as binary string.
+     * It stores 2bytes per character
+     * @param words 2bytes per word
+     */
+    readBin(words:number):string;
+    
+    /**
+     * Write memory with binary string.
+     * It reads 2bytes per character
+     * @param words 2bytes per word
+     */
+    readBin(words:number):string;
 }
 
 /**
@@ -538,9 +584,13 @@ export function wget(url:string, callback:(callback:string)=>void):void;
 
 export function loadPdb():{[key:string]:NativePointer};
 
+/**
+ * @deprecated use node.js
+ */
 export function encode(data:string|Bufferable, encoding?:Encoding):Uint8Array;
 
 /**
+ * @deprecated use node.js
  * @return [decoded, decoded bytes]
  */
 export function decode<T extends Encoding=Encoding.Utf8>(data:Uint8Array, encoding?:T):[TypeFromEncoding<T>, number];

@@ -2,7 +2,7 @@
 
 using namespace kr;
 
-JsValue ExEncoding::jsencode(JsValue buffer, int encoding, JsValue cacheBuffer) throws(JsException)
+JsValue ExEncoding::jsencode(JsValue buffer, int encoding) throws(JsException)
 {
 	if (encoding == BUFFER) return buffer;
 	Buffer buf = buffer.getBuffer();

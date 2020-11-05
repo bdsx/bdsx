@@ -29,6 +29,9 @@ if (!Promise.prototype.finally)
     };
 }
 
+/**
+ * @deprecated use node.js instead
+ */
 export class MariaDBTransaction
 {
     constructor(private readonly db:native.MariaDB)
@@ -56,7 +59,10 @@ export class MariaDBTransaction
     }
 
 }
-    
+
+/**
+ * @deprecated use node.js instead
+ */
 export class MariaDB
 {
     private worker:Promise<any>;
