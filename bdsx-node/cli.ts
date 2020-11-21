@@ -339,7 +339,7 @@ const concurrencyLoop = async(function*<T>(array:T[], concurrency:number, callba
 
 function unzipBdsxTo(dest:string):Promise<void>
 {
-    fs.unlink(`${dest}${sep}node.dll`).catch();
+    fs_ori.unlink(`${dest}${sep}node.dll`, ()=>{});
     return fs_ori.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
     .pipe(unzipper.Extract({ path: dest }))
     .promise();

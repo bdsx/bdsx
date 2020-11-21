@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "Bedrock Dedicated Server eXended",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w"

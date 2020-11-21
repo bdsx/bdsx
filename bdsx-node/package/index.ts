@@ -7,6 +7,9 @@ import bdsx_package_json = require("../package.json");
 import { copy, zip, mkdir, targz } from './util';
 import { homedir } from 'os';
 import { sep } from 'path';
+import archiver = require('archiver');
+
+import 'source-map-support';
 
 const BDSX_VERSION = bdsx_package_json.version;
 
@@ -27,12 +30,38 @@ function run(cmd:string):void
     child_process.execSync(cmd, {stdio: 'inherit'});
 }
 
+
+
+type FileMap = [string, string][];
+const EXAMPLE_FILE_MAP:FileMap = [
+    ['./bdsx-example/examples.ts', 'examples.ts'],
+    ['./bdsx-example/examples.js', 'examples.js'],
+    ['./bdsx-example/test.ts', 'test.ts'],
+    ['./bdsx-example/test.js', 'test.js'],
+    ['./bdsx-example/index.ts', 'index.ts'],
+    ['./bdsx-example/index.js', 'index.js'],
+    ['./bdsx-node/package/package-example.json', 'package.json'],
+    ['./bdsx-example/tsconfig.json', 'tsconfig.json']
+];
+
+function copyFiles(map:FileMap, targetdir:string):void
+{
+    for (const [from, to] of map)
+    {
+        copy(from, targetdir + to);
+    }
+}
+
+function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):void
+{
+    for (const [from, to] of map)
+    {
+        archive.file(from, {name: dirname+to});
+    }
+}
+
 (async()=>{
-    // npm update for example
-    process.chdir('../release/bdsx');
-    run('npm update');
-    run('tsc');
-    process.chdir('../..');
+    process.chdir('..');
 
     // update bdsx version in package-example.json
     updateJson('./bdsx-node/package/package-example.json', pkg=>{
@@ -54,14 +83,7 @@ function run(cmd:string):void
 
     // zip example
     await zip(`./bdsx-node/bdsx-example.zip`, archive=>{
-        archive.file('./release/bdsx/examples.ts', {name: 'examples.ts'});
-        archive.file('./release/bdsx/examples.js', {name: 'examples.js'});
-        archive.file('./release/bdsx/test.ts', {name: 'test.ts'});
-        archive.file('./release/bdsx/test.js', {name: 'test.js'});
-        archive.file('./release/bdsx/index.ts', {name: 'index.ts'});
-        archive.file('./release/bdsx/index.js', {name: 'index.js'});
-        archive.file('./bdsx-node/package/package-example.json', {name: 'package.json'});
-        archive.file('./release/bdsx/tsconfig.json', {name: 'tsconfig.json'});
+        putToArchive(EXAMPLE_FILE_MAP, archive, '');
     });
 
     // publish
@@ -94,20 +116,27 @@ function run(cmd:string):void
     // pkg
     run('pkg ./bdsx-node/package/pkg --out-path=./release/bin');
     
+    // copy example
+    mkdir('./release/bdsx');
+    copyFiles(EXAMPLE_FILE_MAP, './release/bdsx/');
+    process.chdir('./release/bdsx');
+    run('npm i');
+    process.chdir('../..');
+
     // zip for release
     mkdir('./release-zip');
 
     const ZIP = `./release-zip/bdsx-${BDSX_VERSION}-win.zip`;
-    await zip(ZIP, archive=>{        
+    await zip(ZIP, archive=>{
         archive.directory('release/bdsx', 'bdsx');
         archive.file('release/bin/bdsx-cli-win.exe', { name: 'bin/bdsx-cli-win.exe' });
         archive.file('release/bdsx.bat', { name: 'bdsx.bat' });
     });
     
     await targz('./release', `./release-zip/bdsx-${BDSX_VERSION}-linux.tar.gz`, new Map([
-        [`bdsx.bat`, 0],
-        [`bin${sep}bdsx-cli-win.exe`, 0],
-        [`bin${sep}bdsx-cli-macos`, 0],
+        [`bdsx.bat`, 0], // ignore
+        [`bin${sep}bdsx-cli-win.exe`, 0], // ignore
+        [`bin${sep}bdsx-cli-macos`, 0], // ignore
         [`bin${sep}bdsx-cli-linux`, 0o755],
         [`bdsx.sh`, 0o755],
     ]));

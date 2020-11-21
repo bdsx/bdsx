@@ -7,5 +7,4 @@ bin
 /downloaded-bds
 /bdsx/buildtime.h
 /bdsx/gen
-/Debug
-/Release
+/release/bdsx
