@@ -62,15 +62,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\node-chakracore\$(ConfigDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\node-chakracore\$(ConfigDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseTest|x64'">
     <IncludePath>$(ProjectDir)..\RakNet\Source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\node-chakracore\$(ConfigDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile />
@@ -86,6 +83,7 @@ set time2=%time::=%
 echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     </PreBuildEvent>
     <ClCompile />
+    <PostBuildEvent />
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -154,7 +152,6 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     <ClCompile Include="webserver.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="clear_regs.h" />
     <ClInclude Include="codewrite.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="console.h" />
@@ -191,8 +188,8 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
     <ProjectReference Include="..\..\ken\KRWin\KRWin.vcxproj">
       <Project>{432cc3c8-34b1-405d-9675-36fdf25289c7}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\node-chakracore-vcbuild\node-chakracore-vcbuild.vcxproj">
-      <Project>{512aef3b-7454-499f-b360-e9a6eb3d8849}</Project>
+    <ProjectReference Include="..\node-chakracore\node_lib.vcxproj">
+      <Project>{bb1bff01-bba9-3885-7a95-1e5372405cd3}</Project>
     </ProjectReference>
     <ProjectReference Include="..\RakNetProject\LibStatic_vc9.vcxproj">
       <Project>{6533bdae-0f0c-45e4-8fe7-add0f37fe063}</Project>
@@ -200,9 +197,6 @@ echo #define BUILD_TIME "%25date%-%time2:.=%"&gt;"gen/buildtime.h"</Command>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="bdsx.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="clear_regs.asm" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="version.bat">

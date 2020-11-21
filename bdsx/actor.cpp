@@ -4,7 +4,6 @@
 #include "networkidentifier.h"
 #include "nativepointer.h"
 #include "jsctx.h"
-#include "clear_regs.h"
 
 #include <KR3/mt/criticalsection.h>
 
@@ -166,9 +165,9 @@ JsValue NativeActor::fromUniqueId(int lowbits, int highbits) throws(JsException)
 {
 	return fromRaw(g_server->minecraft()->something->level->fetchEntity((ActorUniqueID)makeqword(lowbits, highbits)));
 }
-JsValue NativeActor::fromUniqueIdBin(Text16 hex) throws(JsException)
+JsValue NativeActor::fromUniqueIdBin(Text16 bin) throws(JsException)
 {
-	ActorUniqueID id = hex.readas<ActorUniqueID>();
+	ActorUniqueID id = bin.readas<ActorUniqueID>();
 	return fromRaw(g_server->minecraft()->something->level->fetchEntity(id));
 }
 void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
@@ -190,22 +189,33 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 	cls->setStaticMethod(u"fromPointer", &NativeActor::fromPointer);
 	cls->setStaticMethod(u"fromUniqueId", &NativeActor::fromUniqueId);
 
-	g_mcf.hookOnActorRelease([](Level* level, Actor* actor, bool b) {
-		_assert((intptr_t)actor > 0);
-		_removeActor(actor);
-		});
-	g_mcf.hookOnActorDestructor([](Actor* actor) {
-		_assert((intptr_t)actor > 0);
-		if (!isContextThread())
-		{
+	{
+		McftRenamer renamer;
+
+		// hookOnActorRelease
+		MCF_HOOK(Level$removeEntityReferences,
+			{ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8D, 0x68, 0xA1 }
+		)(Level * level, Actor * actor, bool b) {
+			_assert((intptr_t)actor > 0);
+			_removeActor(actor);
+		};
+
+		// hookOnActorDestructor
+		MCF_HOOK(Actor$dtor$Actor,
+			{ 0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF }
+		)(Actor* actor) {
+			_assert((intptr_t)actor > 0);
+			if (!isContextThread())
+			{
 #ifndef NDEBUG
-			CsLock _lock = s_csActorMap;
-			_assert(!s_actorMap.has(actor));
+				CsLock _lock = s_csActorMap;
+				_assert(!s_actorMap.has(actor));
 #endif
-			return;
-		}
-		_removeActor(actor);
-		});
+				return;
+			}
+			_removeActor(actor);
+		};
+	}
 }
 void NativeActor::reset() noexcept
 {

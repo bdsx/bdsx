@@ -47,7 +47,6 @@
     <ClInclude Include="codewrite.h" />
     <ClInclude Include="reverse.h" />
     <ClInclude Include="nativecall.h" />
-    <ClInclude Include="clear_regs.h" />
     <ClInclude Include="mariadb.h" />
     <ClInclude Include="webserver.h" />
     <ClInclude Include="encoding.h" />
@@ -64,9 +63,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="bdsx.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="clear_regs.asm" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="version.bat" />

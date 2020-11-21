@@ -74,7 +74,7 @@ export class MariaDB
     {
         var resolve:()=>void;
         var reject:(err:Error)=>void;
-        this.worker = new Promise((_resolve, _reject)=>{
+        this.worker = new Promise<void>((_resolve, _reject)=>{
             resolve = _resolve;
             reject = _reject;
         });

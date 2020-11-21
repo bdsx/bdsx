@@ -46,8 +46,10 @@ bdsx example ./example # make example project to './example'
 bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package.json
 ```
 
+## Build (Watch Mode)
+It will build by rollup/babel/typescript in watch mode.  
+babel can transpile latest scripts to es2015. and it makes compatibility.
 
-## Build Typescript (Watch Mode)
 * Build with VSCode
 1. Open `bdsx/` with VSCode
 2. Ctrl + Shift + B

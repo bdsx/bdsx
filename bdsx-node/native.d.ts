@@ -303,8 +303,8 @@ export class NativePointer extends StaticPointer
     readInt8(): number;
     readInt16(): number;
     readInt32(): number;
-    readFloat32(): void;
-    readFloat64(): void;
+    readFloat32(): number;
+    readFloat64(): number;
     readPointer(): NativePointer;
     
     writeUint8(value: number):void;
@@ -441,7 +441,7 @@ export class Actor extends StaticPointer
     setAttribute(id:AttributeId, value:number):void;
     
     static fromPointer(ptr:StaticPointer):Actor;
-    static fromUniqueId(_64bit_low:number, _64bit_high:number):Actor;
+    static fromUniqueId(_64bit_low:number, _64bit_high:number):Actor|null;
 }
 
 /**

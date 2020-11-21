@@ -41,9 +41,9 @@ namespace nodegate
 	int start(NodeGateConfig* arg) noexcept;
 
 #ifdef NODEGATE_EXPORT
-#define NODEGATE_EXPORT_ __declspec(dllexport)
+#define NODEGATE_EXPORT_ __declspec(dllexport) __stdcall
 #else
-#define NODEGATE_EXPORT_ __declspec(dllimport)
+#define NODEGATE_EXPORT_ __declspec(dllimport) __stdcall
 #endif
 	void NODEGATE_EXPORT_ setMainCallback(NodeGateConfig* _config) noexcept;
 	void NODEGATE_EXPORT_ nodeProcessTimer() noexcept;

@@ -174,11 +174,11 @@ const BDS_VERSION = version.BDS_VERSION;
 const BDSX_VERSION = pkg.version;
 const BDS_ZIP_NAME = `bedrock-server-${BDS_VERSION}.zip`;
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/${BDS_ZIP_NAME}`;
-const EMINUS_VERSION = '1.0.4';
-const EMINUS_LINK = `https://github.com/karikera/elementminus/releases/download/1.0.4/eminus.zip`;
+const EMINUS_VERSION = '1.0.5';
+const EMINUS_LINK = `https://github.com/karikera/elementminus/releases/download/${EMINUS_VERSION}/eminus.zip`;
 const BDS_DIR = `${homedir}${sep}.bds`;
 const EXE_NAME = `bedrock_server.exe`;
-const USER_AGENT = 'nodebs/1.0';
+const USER_AGENT = 'bdsx/1.0';
 const INSTALL_INFO_PATH = `${BDS_DIR}${sep}installinfo.json`;
 const MOD_DIR = `${BDS_DIR}${sep}mods`;
 
@@ -191,10 +191,10 @@ enum ExitCode
 
 interface InstallInfo
 {
-    bdsVersion:string;
-    bdsxVersion:string;
-    eminusVersion:string;
-    files:string[];
+    bdsVersion?:string|null;
+    bdsxVersion?:string;
+    eminusVersion?:string;
+    files?:string[];
 }
 
 const KEEPS = new Set([
@@ -213,9 +213,9 @@ const readInstallInfo = async(function*(){
     catch (err)
     {
         if (err.code !== 'ENOENT') throw err;
-        const iinfo:InstallInfo = require('./ii_unknown.json');;
+        const iinfo:InstallInfo = require('./ii_unknown.json');
 
-        if (sep !== '/')
+        if (iinfo.files && sep !== '/')
         {
             iinfo.files = iinfo.files.map(file => file.replace(/\//g, sep));
         }
@@ -339,6 +339,7 @@ const concurrencyLoop = async(function*<T>(array:T[], concurrency:number, callba
 
 function unzipBdsxTo(dest:string):Promise<void>
 {
+    fs.unlink(`${dest}${sep}node.dll`).catch();
     return fs_ori.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
     .pipe(unzipper.Extract({ path: dest }))
     .promise();
@@ -376,7 +377,7 @@ const downloadAndUnzip = async(function*(prefix:string, url:string, dest:string,
         var extractPath = path.join(dest, entry.path);
         if (extractPath.indexOf(dest) != 0) return;
         var writer = Writer({ path: extractPath });
-        yield new Promise((resolve, reject)=>{
+        yield new Promise<void>((resolve, reject)=>{
             entry.stream()
                 .on('error',reject)
                 .pipe(writer)
@@ -417,7 +418,7 @@ const removeInstalled = async(function*(files:string[]){
     }
 });
 
-const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
+const downloadBDS = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     try
     {
         yield fs.mkdir(BDS_DIR);
@@ -431,28 +432,35 @@ const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
         yield update(installinfo);
         return;
     }
-    console.log(`It will download and install Bedrock Dedicated Server to '${BDS_DIR}'`);
-    console.log(`BDS Version: ${BDS_VERSION}`);
-    console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
-    console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
-
-    if (!agree)
+    if (!opts || !opts.manualBds)
     {
-        const ok = yield yesno({
-            question: "Would you like to agree it?(Y/n)"
-        });
-        if (!ok) throw new MessageError("Canceled");
+        console.log(`It will download and install Bedrock Dedicated Server to '${BDS_DIR}'`);
+        console.log(`BDS Version: ${BDS_VERSION}`);
+        console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
+        console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
+    
+        if (!opts || !opts.yes)
+        {
+            const ok = yield yesno({
+                question: "Would you like to agree it?(Y/n)"
+            });
+            if (!ok) throw new MessageError("Canceled");
+        }
+        else
+        {
+            console.log("Agreed by -y");
+        }
+    
+        console.log(`BDS: Install to ${BDS_DIR}`);
+        const writedFiles:string[] = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
+        installinfo.bdsVersion = BDS_VERSION;
+        installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
     }
     else
     {
-        console.log("Agreed by -y");
+        installinfo.bdsVersion = null;
+        delete installinfo.files;
     }
-
-    console.log(`BDS: Install to ${BDS_DIR}`);
-    const writedFiles:string[] = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
-    installinfo.bdsVersion = BDS_VERSION;
-    installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
-
     yield fs.copyFile(`${__dirname}${sep}vcruntime140_1.dll`, `${BDS_DIR}${sep}vcruntime140_1.dll`);
 
     // eminus
@@ -471,7 +479,11 @@ const downloadBDS = async(function*(installinfo:InstallInfo, agree?:boolean){
 
 const update = async(function*(installinfo:InstallInfo){
     let updated = false;
-    if (installinfo.bdsVersion === BDS_VERSION)
+    if (installinfo.bdsVersion === null)
+    {
+        console.log(`BDS: --manual-bds`);
+    }
+    else if (installinfo.bdsVersion === BDS_VERSION)
     {
         console.log(`BDS: Latest (${BDS_VERSION})`);
     }
@@ -479,7 +491,10 @@ const update = async(function*(installinfo:InstallInfo){
     {
         console.log(`BDS: Old (${installinfo.bdsVersion})`);
         console.log(`BDS: Install to ${BDS_DIR}`);
-        yield removeInstalled(installinfo.files);
+        if (installinfo.files)
+        {
+            yield removeInstalled(installinfo.files);
+        }
         const writedFiles = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
         installinfo.bdsVersion = BDS_VERSION;
         installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
@@ -529,10 +544,27 @@ interface ArgsOption
 {
     command?:string;
     command_next?:string;
+    manualBds?:boolean;
     yes?:boolean;
     help?:boolean;
     example?:string;
 }
+
+const commands:Record<string, {key:keyof ArgsOption, desc:string}> = {
+    'y':{
+        key: 'yes',
+        desc: 'Agree and no prompt about Minecraft End User License & Privacy Policy at installation'
+    },
+    '-manual-bds':{
+        key: 'manualBds',
+        desc: 'Do not install BDS, You need to install BDS manually at [userdir]/.bds'
+    },
+    '-help':{
+        key: 'help',
+        desc: 'a recursive thing'
+    }
+};
+
 function parseOption():ArgsOption
 {
     const option:ArgsOption = {};
@@ -542,11 +574,8 @@ function parseOption():ArgsOption
         const arg = process.argv[i];
         if (arg.startsWith('-'))
         {
-            switch (arg.substr(1))
-            {
-            case 'y': option.yes = true; break;
-            case '-help': option.help = true; break;
-            }
+            const cmd = commands[arg.substr(1)];
+            if (cmd) option[cmd.key] = true as any;
             continue;
         }
         if (!option.command)
@@ -580,7 +609,7 @@ async(function*(){
             case 'i':
             case 'install':
                 installing = true;
-                yield downloadBDS(installinfo, option.yes);
+                yield downloadBDS(installinfo, option);
                 return ExitCode.DO_NOTHING;
             case 'r':
             case 'remove':
@@ -589,7 +618,7 @@ async(function*(){
                     if (!option.yes)
                     {
                         const ok = yield yesno({
-                            question: "BDSX: It will remove worlds and addons. Are you sure?(Y/n)"
+                            question: `BDSX: It will entire files in ${BDS_DIR}(It contains worlds and addons). Are you sure?(Y/n)`
                         });
                         if (!ok) throw new MessageError("Canceled");
                     }
@@ -627,7 +656,11 @@ async(function*(){
                 console.log("[Options]");
                 console.log("--mutex [name]: Set mutex to limit to single instance, It will wait for the exit of previous one");
                 console.log("--pipe-socket [host] [port] [param]: Connect the standard output to a socket, BDSX will send [param] as first line");
-                console.log("-y: Agree and no prompt about Minecraft End User License & Privacy Policy at installation");
+                for (const name in commands)
+                {
+                    const cmd = commands[name];
+                    console.log(`-${name}: ${cmd.desc}`);
+                }
                 return ExitCode.DO_NOTHING;
             default:
                 break;

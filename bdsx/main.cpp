@@ -378,6 +378,68 @@ BOOL WINAPI DllMain(
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
 		g_mcf.load();
 
+		{
+			McftRenamer renamer;
+
+			// skipChangeCurDir
+			/*
+			lea rcx,qword ptr ss:[rbp+50]
+			call <bedrock_server.getExecutableDir>
+			cmp qword ptr ds:[rax+18],10
+			jb bedrock_server.7FF6A8F741FD
+			mov rax,qword ptr ds:[rax]
+			mov rcx,rax
+			call qword ptr ds:[<&SetCurrentDirectoryA>]
+			mov rdx,qword ptr ss:[rbp+68]
+			cmp rdx,10
+			jb bedrock_server.7FF6A8F74244
+			inc rdx
+			mov rcx,qword ptr ss:[rbp+50]
+			mov rax,rcx
+			cmp rdx,1000
+			jb bedrock_server.7FF6A8F7423F
+			add rdx,27
+			mov rcx,qword ptr ds:[rcx-8]
+			sub rax,rcx
+			add rax,FFFFFFFFFFFFFFF8
+			cmp rax,1F
+			jbe bedrock_server.7FF6A8F7423F
+			call qword ptr ds:[<&_invalid_parameter_noinfo_noreturn>]
+			int3
+			call <bedrock_server.void __cdecl operator delete[](void * __ptr64,unsigned __int64)>
+			*/
+			MCF_NOP(main, 0x43a, {
+				0x48, 0x8D, 0x4D, 0x50, 0xE8, 0x9D, 0x56, 0xCB,
+				0x00, 0x48, 0x83, 0x78, 0x18, 0x10, 0x72, 0x03,
+				0x48, 0x8B, 0x00, 0x48, 0x8B, 0xC8, 0xFF, 0x15,
+				0xCA, 0xCE, 0x1C, 0x01, 0x48, 0x8B, 0x55, 0x68,
+				0x48, 0x83, 0xFA, 0x10, 0x72, 0x34, 0x48, 0xFF,
+				0xC2, 0x48, 0x8B, 0x4D, 0x50, 0x48, 0x8B, 0xC1,
+				0x48, 0x81, 0xFA, 0x00, 0x10, 0x00, 0x00, 0x72,
+				0x1C, 0x48, 0x83, 0xC2, 0x27, 0x48, 0x8B, 0x49,
+				0xF8, 0x48, 0x2B, 0xC1, 0x48, 0x83, 0xC0, 0xF8,
+				0x48, 0x83, 0xF8, 0x1F, 0x76, 0x07, 0xFF, 0x15,
+				0x3A, 0xDA, 0x1C, 0x01, 0xCC, 0xE8, 0x80, 0x55,
+				0x01, 0x01
+			});
+
+			// skipCommandListDestruction
+			MCF_NOP(ScriptEngine$dtor$ScriptEngine, 435, {
+				0x48, 0x8D, 0x4B, 0x78,			// lea         rcx,[rbx+78h]  
+				0xE8, 0x00, 0x00, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
+			}, { {5, 9} });
+
+			// force enable script
+			MCF_NOP(MinecraftServerScriptEngine$onServerThreadStarted, 0x42, { 
+				0xE8, 0xE9, 0x9F, 0xF3, 0xFF, 0x84, 0xC0, 0x0F, 
+				0x84, 0x6A, 0x01, 0x00, 0x00, 0x48, 0x8B, 0x86, 
+				0x28, 0x02, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x75, 
+				0x07, 0x48, 0x8D, 0x86, 0x30, 0x02, 0x00, 0x00,
+				0x48, 0x8B, 0x80, 0x38, 0x01, 0x00, 0x00, 0xF6, 
+				0x00, 0x04, 0x0F, 0x84, 0x47, 0x01, 0x00, 0x00
+			});
+		}
+
 		g_mcf.hookOnProgramMainCall([](int _argc, char** _argv){
 #undef main
 			return g_mcf.main(g_nodecall.argc, g_nodecall.argv);
@@ -411,44 +473,68 @@ BOOL WINAPI DllMain(
 			TText text = console.getLine();
 			dest->assign(text.data(), text.size());
 			});
-		g_mcf.hookOnLoopStart([](ServerInstance * instance) {
-			g_server = instance;
-			SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL{
-				switch (CtrlType)
-				{
-				case CTRL_CLOSE_EVENT:
-				case CTRL_LOGOFF_EVENT:
-				case CTRL_SHUTDOWN_EVENT:
-					g_mainPump->post([] {
-						throw QuitException(0);
-						});
-					ThreadHandle::getCurrent()->terminate();
-					return true;
-				}
-				return false;
-				}, true);
-		});
 		g_mcf.hookOnGameThreadCall([](void* pad, void* lambda) {
 			g_mcf.std$_Pad$_Release(pad);
 
 			 g_nodecall.lambda = lambda;
 			 nodegate::start(&g_nodecall);
 			});
-		g_mcf.hookOnScriptLoading([]{
+
+		{
+			McftRenamer renamer;
+
+			// hook on start server
+			MCF_HOOK(ServerInstance$startServerThread, 
+				{ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x56, 0x48, 0x8D, 0x68, 0xA1, 0x48, 0x81, 0xEC, 0xD0, 0x00, 0x00, 0x00 }
+			)(ServerInstance* instance) {
+				g_server = instance;
+				SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL {
+					switch (CtrlType)
+					{
+					case CTRL_CLOSE_EVENT:
+					case CTRL_LOGOFF_EVENT:
+					case CTRL_SHUTDOWN_EVENT:
+						g_mainPump->post([] {
+							throw QuitException(0);
+							});
+						ThreadHandle::getCurrent()->terminate();
+						return true;
+					}
+					return false;
+					}, true);
+			};
+
+			// hook on script loading
+			MCF_HOOK(ScriptEngine$startScriptLoading, 
+				{ 0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF })
 			{
-				JsScope _scope;
-				try
 				{
-					JsExceptionCatcher catcher;
-					g_call->callMain();
+					JsScope _scope;
+					try
+					{
+						JsExceptionCatcher catcher;
+						g_call->callMain();
+					}
+					catch (JsException& e)
+					{
+						g_native->fireError(e.getValue());
+					}
 				}
-				catch (JsException& e)
-				{
-					g_native->fireError(e.getValue());
-				}
-			}
-		});
-		g_mcf.skipMakeConsoleObject();
+			};
+
+			// skipMakeConsoleObject
+			/*
+			lea r9,qword ptr ss:[rbp-28]
+			lea r8,qword ptr ds:[7FF76658D9E0]
+			lea rdx,qword ptr ss:[rbp-18]
+			*/
+			MCF_NOP(ScriptEngine$initialize, 0x287, {
+				0x4C, 0x8D, 0x4D, 0xD8, 0x4C, 0x8D, 0x05, 0x36,
+				0x75, 0x19, 0x01, 0x48, 0x8D, 0x55, 0xE8, 0x41,
+				0xFF, 0xD2, 0x84, 0xC0, 0x74, 0xA6
+			}, { {7, 11}, });
+		}
+
 		s_iatWS2_32.hooking(2, bindHook);
 		s_iatWS2_32.hooking(3, closesocketHook);
 		s_iatWS2_32.hooking(17, recvfromHook);

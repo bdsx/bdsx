@@ -308,6 +308,29 @@ void StaticPointer::setCxxString(Text16 text, int offset, int encoding) throws(J
 	}
 }
 
+JsValue StaticPointer::getBin(int words, int offset) throws(kr::JsException)
+{
+	try
+	{
+		return Text16((char16_t*)(m_address + offset), (size_t)words);
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
+void StaticPointer::setBin(kr::Text16 buffer, int offset) throws(kr::JsException)
+{
+	try
+	{
+		memcpy(m_address+offset, buffer.data(), buffer.bytes());
+	}
+	catch (...)
+	{
+		accessViolation(m_address);
+	}
+}
+
 TText16 StaticPointer::toString() noexcept
 {
 	TText16 out;
@@ -351,6 +374,10 @@ void StaticPointer::initMethods(JsClassT<StaticPointer>* cls) noexcept
 	cls->setMethod(u"setString", &StaticPointer::setString);
 	cls->setMethod(u"setBuffer", &StaticPointer::setBuffer);
 	cls->setMethod(u"setCxxString", &StaticPointer::setCxxString);
+
+	cls->setMethod(u"clone", &StaticPointer::clone);
+	cls->setMethod(u"setBin", &StaticPointer::setBin);
+	cls->setMethod(u"getBin", &StaticPointer::getBin);
 
 	cls->setMethod(u"toString", &StaticPointer::toString);
 }

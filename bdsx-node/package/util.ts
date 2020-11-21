@@ -5,12 +5,12 @@ import zlib = require('zlib');
 import path = require('path');
 import { sep } from 'path';
 
-export function targz(src:string, dest:string, mods:Map<string, number>)
+export function targz(src:string, dest:string, mods:Map<string, number>):Promise<void>
 {
     src = path.join(src);
     const srcsep = src+sep;
     console.log(`tar.gz ${dest}`);
-    return new Promise((resolve, reject)=>{
+    return new Promise<void>((resolve, reject)=>{
         const opts_gz:zlib.ZlibOptions = {
             level: 6,
             memLevel: 6,

@@ -3,6 +3,8 @@
 
 #define BUILDING_NODE_EXTENSION
 
+#pragma comment(lib, "bdsx_node.lib")
+
 #pragma warning(push, 0)
 #include "node.h"
 #pragma warning(pop)

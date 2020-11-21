@@ -15,4 +15,6 @@ bdsx # Execute bdsx. It will try to install BDS to [home]/.bds
 ## Options
 * --mutex [name]: Set mutex to limit to single instance, It will wait for the exit of previous one
 * --pipe-socket [host] [port] [param]: Connect the standard output to a socket, BDSX will send [param] as first line
-* -y: Agree and no prompt about Minecraft End User License & Privacy Policy at installation
+* -y: Agree all and no prompt about Minecraft End User License & Privacy Policy at installation
+* --manual-bds: Do not install BDS, You need to install BDS manually at [userdir]/.bds
+* --help: Show these options

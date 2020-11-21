@@ -12,9 +12,18 @@ system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
 
     // Get extra informations from entity
     const actor = Actor.fromEntity(ev.data.entity);
-    if (actor) console.log('entity dimension: ' + DimensionId[actor.getDimension()]);
-    const level = actor.getAttribute(AttributeId.PlayerLevel);
-    console.log('entity level: ' + level);
+    if (actor)
+    {
+        console.log('entity dimension: ' + DimensionId[actor.getDimension()]);
+        const level = actor.getAttribute(AttributeId.PlayerLevel);
+        console.log('entity level: ' + level);
+        
+        if (actor.isPlayer())
+        {
+            const ni = actor.getNetworkIdentifier();
+            console.log('player IP: '+ni.getAddress());
+        }
+    }
 });
 
 // Custom Command
@@ -62,7 +71,7 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
 
         // It uses C++ class packets. and they are not specified everywhere.
         const textPacket = createPacket(PacketId.Text); 
-        textPacket.setCxxString('[message]', 0x50);
+        textPacket.setCxxString('[message packet from bdsx]', 0x50);
         sendPacket(networkIdentifier, textPacket);
         textPacket.dispose(); // need to delete it. or It will make memory lyrics
     }, 10000);
@@ -99,7 +108,7 @@ netevent.close.on(networkIdentifier => {
 });
 
 // Call Native Functions
-import { NativeModule } from "bdsx";
+import { bin, NativeModule } from "bdsx";
 const kernel32 = new NativeModule("Kernel32.dll");
 const user32 = new NativeModule("User32.dll");
 const GetConsoleWindow = kernel32.get("GetConsoleWindow")!;
@@ -121,7 +130,7 @@ netevent.raw(PacketId.MovePlayer).on((ptr, size, ni)=>{
     const headYaw = ptr.readFloat32();
     const mode = ptr.readUint8();
     const onGround = ptr.readUint8() !== 0;
-    console.log(`move: ${x} ${y} ${z} ${pitch} ${yaw} ${headYaw} ${mode} ${onGround}`);
+    console.log(`move: ${bin.toString(runtimeId, 16)} ${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)} ${pitch.toFixed(1)} ${yaw.toFixed(1)} ${headYaw.toFixed(1)} ${mode} ${onGround}`);
 });
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/CraftingEventPacket.php
 netevent.raw(PacketId.CraftingEvent).on((ptr, size, ni)=>{

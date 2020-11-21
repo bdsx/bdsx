@@ -164,7 +164,8 @@ JsValue createFsModule() noexcept
 		return move(TText16() << currentDirectory);
 	});
 	fs.setMethod(u"chdir", [](TText16 dir) {
-		SetCurrentDirectoryW(szlize(dir, &TText16()));
+		TText16 buf;
+		SetCurrentDirectoryW(szlize(dir, &buf));
 	});
 	return fs;
 }

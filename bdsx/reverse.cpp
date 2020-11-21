@@ -198,7 +198,7 @@ Dimension::FilterLambda::FilterLambda(Dimension* _this) noexcept
 }
 bool Dimension::FilterLambda::operator ()(ServerPlayer* player) noexcept
 {
-	return player->getDimenionId() == m_this->id() && player->loaded();
+	return player->getDimenionId() == m_this->id();
 }
 kr::FilterIterable<Vector<ServerPlayer*>, Dimension::FilterLambda> Dimension::players() noexcept
 {
@@ -350,18 +350,6 @@ void SharedPtrData::discard() noexcept
 	pointer = nullptr;
 }
 
-int ServerInstance::makeScriptId() noexcept
-{
-#ifndef NDEBUG
-	static bool first = false;
-	if (!first)
-	{
-		first = true;
-		_assert(scriptEngine()->chakra->scriptCounter == 0);
-	}
-#endif
-	return ++(scriptEngine()->chakra->scriptCounter);
-}
 Dimension* ServerInstance::createDimension(DimensionId id) noexcept
 {
 	return minecraft()->something->level->createDimension(id);

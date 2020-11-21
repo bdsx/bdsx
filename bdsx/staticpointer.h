@@ -53,6 +53,9 @@ public:
 	void setBuffer(kr::JsValue buffer, int offset) throws(kr::JsException);
 	void setCxxString(kr::Text16 text, int offset, int encoding) throws(kr::JsException);
 
+	kr::JsValue getBin(int words, int offset) throws(kr::JsException);
+	void setBin(kr::Text16 buffer, int offset) throws(kr::JsException);
+
 	kr::TText16 toString() noexcept;
 
 	static void initMethods(kr::JsClassT<StaticPointer>* cls) noexcept;

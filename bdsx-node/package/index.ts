@@ -3,12 +3,12 @@ import fs = require('fs');
 import child_process = require('child_process');
 
 // update version
-import bdsx_pkg = require("../package.json");
+import bdsx_package_json = require("../package.json");
 import { copy, zip, mkdir, targz } from './util';
 import { homedir } from 'os';
 import { sep } from 'path';
 
-const BDSX_VERSION = bdsx_pkg.version;
+const BDSX_VERSION = bdsx_package_json.version;
 
 function updateJson(path:string, cb:(obj:any)=>boolean):boolean
 {
@@ -20,15 +20,6 @@ function updateJson(path:string, cb:(obj:any)=>boolean):boolean
         return true;
     }
     return false;
-}
-
-function updatePackageJsonVersion(path:string, version:string):boolean
-{
-    return updateJson(path, cli_pkg=>{
-        if (cli_pkg.version === version) return false;
-        cli_pkg.version = version;
-        return true;
-    });
 }
 
 function run(cmd:string):void
@@ -58,7 +49,7 @@ function run(cmd:string):void
         archive.file(`${outdir}/libcurl.dll`, {name: `libcurl.dll`});
         archive.file(`${outdir}/libmariadb.dll`, {name: `libmariadb.dll`});
         archive.file(`${outdir}/zlib.dll`, {name: `zlib.dll`});
-        archive.file(`${outdir}/node.dll`, {name: `node.dll`});
+        archive.file(`${outdir}/bdsx_node.dll`, {name: `bdsx_node.dll`});
     });
 
     // zip example
@@ -75,14 +66,19 @@ function run(cmd:string):void
 
     // publish
     process.chdir('./bdsx-node');
-    if (updatePackageJsonVersion('./package/pkg/package.json', BDSX_VERSION))
+
+    if (updateJson('./package/pkg/package.json', pkg_package_json=>{
+        if (pkg_package_json.version === BDSX_VERSION) return false;
+        pkg_package_json.version = BDSX_VERSION;
+        pkg_package_json.dependencies = bdsx_package_json.dependencies;
+        pkg_package_json.devDependencies = bdsx_package_json.devDependencies;
+        return true;
+    }))
     {
         run('npm publish');
-        
-        // install published bdsx to example
-        process.chdir('../release/bdsx');
-        run('npm i bdsx@'+BDSX_VERSION);
-        process.chdir('../../bdsx-node');
+        process.chdir('./package/pkg');
+        run('npm i');
+        process.chdir('../..');
     }
     
     // copy files to pkg dir

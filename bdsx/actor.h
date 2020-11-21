@@ -34,7 +34,7 @@ public:
 	static kr::JsValue fromRaw(Actor* actor) throws(JsException);
 	static kr::JsValue fromPointer(StaticPointer* ptr) throws(JsException);
 	static kr::JsValue fromUniqueId(int lowbits, int highbits) throws(JsException);
-	static kr::JsValue fromUniqueIdBin(kr::Text16 hex) throws(JsException);
+	static kr::JsValue fromUniqueIdBin(kr::Text16 bin) throws(JsException);
 	static void initMethods(kr::JsClassT<NativeActor>* cls) noexcept;
 	static void reset() noexcept;
 	static void clearMethods() noexcept;

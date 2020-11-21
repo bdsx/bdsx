@@ -402,10 +402,15 @@ void Native::_hook() noexcept
 		}
 		return 1;
 		});
+	// get_thread_local_invalid_parameter_handler
+
 	g_mcf.hookOnRuntimeError([](EXCEPTION_POINTERS* ptr) {
-		ondebug(requestDebugger());
+		if (ptr->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT) return;
+
 		if (!isContextExisted())
 		{
+			ondebug(requestDebugger());
+			debug();
 			g_call->error((Text16)u"[ Runtime Error ]\n");
 
 			StackWriter writer(ptr->ContextRecord);
@@ -413,7 +418,6 @@ void Native::_hook() noexcept
 			nativestack << writer;
 			g_call->error((Text16)nativestack);
 
-			cleanAllResource();
 			terminate(-1);
 			return;
 		}
@@ -612,6 +616,7 @@ void Native::_createNativeModule() noexcept
 void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 {
 	ondebug(requestDebugger());
+	debug();
 	{
 		JsScope _scope;
 		Text16 stack;

@@ -28,6 +28,9 @@ using namespace hook;
 #define HASH_1_16_1_02 "26694FF65D20A61D6A3731A2E827AE61"
 #define HASH_1_16_0_2 "B3385584CF5F99FEB29180A5A04A0788"
 #define HASH_1_16_20_03 "B575B802BE9C4B17F580B2485DE06D98"
+#define HASH_1_16_100_04 "6E4E57777403D4359C899F3308436B27"
+
+#define FNNAME(v) renamer.varNameToCppName(#v), v
 
 MinecraftFunctionTable g_mcf;
 ServerInstance* g_server;
@@ -59,150 +62,140 @@ public:
 	}
 };
 
-class Renamer
+McftRenamer::McftRenamer() noexcept
 {
-private:
-	AText m_str2;
-	AText m_str1;
+	m_str2.reserve(32);
+	m_str1.reserve(32);
+}
 
-public:
-	struct Entry {
-		Text name;
-		void* (MinecraftFunctionTable::*target);
-		size_t idx;
-	};
-	Renamer() noexcept
-	{
-		m_str2.reserve(32);
-		m_str1.reserve(32);
-	}
-
-	static View<Entry> getEntires() noexcept
-	{
+View<McftRenamer::Entry> McftRenamer::getEntires() noexcept
+{
 #define ENTRY(x) {#x, (void* (MinecraftFunctionTable::*))&MinecraftFunctionTable::x, 0}
 #define ENTRY_IDX(x, n) {#x, (void* (MinecraftFunctionTable::*))&MinecraftFunctionTable::x, n}
-		static const Entry entries[] = {
-			ENTRY(NetworkHandler$_sortAndPacketizeEvents),
-			ENTRY(MinecraftPackets$createPacket),
-			ENTRY(ServerNetworkHandler$_getServerPlayer),
-			ENTRY(NetworkHandler$getEncryptedPeerForUser),
-			ENTRY(NetworkHandler$_getConnectionFromId),
-			ENTRY(ExtendedCertificate$getXuid),
-			ENTRY(ExtendedCertificate$getIdentityName),
-			ENTRY(ServerInstance$_update),
-			ENTRY(Minecraft$update),
-			ENTRY_IDX(NetworkHandler$onConnectionClosed, 1),
-			ENTRY(ServerInstance$ServerInstance),
-			ENTRY(DedicatedServer$start),
-			ENTRY(ScriptEngine$startScriptLoading),
-			ENTRY(MinecraftServerScriptEngine$onServerThreadStarted),
-			ENTRY(std$string$_Tidy_deallocate),
-			ENTRY(std$string$assign),
-			ENTRY_IDX(std$string$append, 1),
-			ENTRY(std$string$resize),
-			ENTRY(MinecraftCommands$executeCommand),
-			ENTRY(DedicatedServer$stop),
-			ENTRY(StopCommand$mServer),
-			ENTRY(NetworkHandler$send),
-			ENTRY(NetworkIdentifier$getHash),
-			ENTRY(NetworkIdentifier$$_equals_),
-			ENTRY(Crypto$Random$generateUUID),
-			ENTRY(BaseAttributeMap$getMutableInstance),
-			ENTRY(Level$createDimension),
-			ENTRY(Actor$dtor$Actor),
-			ENTRY(Level$fetchEntity),
-			ENTRY(NetworkHandler$_sendInternal),
-			ENTRY(std$_Allocate$_alloc16_),
-			ENTRY(ServerPlayer$$_vftable_),
-			ENTRY(ServerPlayer$sendNetworkPacket),
-			ENTRY(LoopbackPacketSender$sendToClients),
-			ENTRY(Level$removeEntityReferences),
-			ENTRY(google_breakpad$ExceptionHandler$HandleException),
-			ENTRY(BedrockLogOut),
-			ENTRY(CommandOutputSender$send),
-			ENTRY(std$_LaunchPad$_stdin_t_$_Execute$_0_),
-			ENTRY(ScriptEngine$dtor$ScriptEngine),
-			ENTRY(main),
-			ENTRY(__scrt_common_main_seh),
-			ENTRY($_game_thread_lambda_$$_call_),
-			ENTRY($_game_thread_start_t_),
-			ENTRY(std$_Pad$_Release),
-			ENTRY(ScriptEngine$initialize),
-			ENTRY(Actor$getUniqueID),
-			ENTRY(PacketViolationHandler$_handleViolation),
-		};
+	static const Entry entries[] = {
+		ENTRY(NetworkHandler$_sortAndPacketizeEvents),
+		ENTRY(MinecraftPackets$createPacket),
+		ENTRY(ServerNetworkHandler$_getServerPlayer),
+		ENTRY(NetworkHandler$getEncryptedPeerForUser),
+		ENTRY(NetworkHandler$_getConnectionFromId),
+		ENTRY(ExtendedCertificate$getXuid),
+		ENTRY(ExtendedCertificate$getIdentityName),
+		ENTRY(ServerInstance$_update),
+		ENTRY(Minecraft$update),
+		ENTRY_IDX(NetworkHandler$onConnectionClosed, 1),
+		ENTRY(ServerInstance$ServerInstance),
+		ENTRY(DedicatedServer$start),
+		ENTRY(ScriptEngine$startScriptLoading),
+		ENTRY(ScriptEngine$isScriptingEnabled),
+		ENTRY(std$string$_Tidy_deallocate),
+		ENTRY(std$string$assign),
+		ENTRY_IDX(std$string$append, 1),
+		ENTRY(std$string$resize),
+		ENTRY(MinecraftCommands$executeCommand),
+		ENTRY(DedicatedServer$stop),
+		ENTRY(StopCommand$mServer),
+		ENTRY(NetworkHandler$send),
+		ENTRY(NetworkIdentifier$getHash),
+		ENTRY(NetworkIdentifier$$_equals_),
+		ENTRY(Crypto$Random$generateUUID),
+		ENTRY(BaseAttributeMap$getMutableInstance),
+		ENTRY(Level$createDimension),
+		ENTRY(Actor$dtor$Actor),
+		ENTRY(Level$fetchEntity),
+		ENTRY(NetworkHandler$_sendInternal),
+		ENTRY(std$_Allocate$_alloc16_),
+		ENTRY(ServerPlayer$$_vftable_),
+		ENTRY(ServerPlayer$sendNetworkPacket),
+		ENTRY(LoopbackPacketSender$sendToClients),
+		ENTRY(Level$removeEntityReferences),
+		ENTRY(google_breakpad$ExceptionHandler$HandleException),
+		ENTRY(google_breakpad$ExceptionHandler$HandleInvalidParameter),
+		ENTRY(BedrockLogOut),
+		ENTRY(CommandOutputSender$send),
+		ENTRY(std$_LaunchPad$_stdin_t_$_Execute$_0_),
+		ENTRY(ScriptEngine$dtor$ScriptEngine),
+		ENTRY(ServerInstance$startServerThread),
+		ENTRY(main),
+		ENTRY(__scrt_common_main_seh),
+		ENTRY($_game_thread_lambda_$$_call_),
+		ENTRY($_game_thread_start_t_),
+		ENTRY(std$_Pad$_Release),
+		ENTRY(ScriptEngine$initialize),
+		ENTRY(Actor$getUniqueID),
+		ENTRY(PacketViolationHandler$_handleViolation),
+		ENTRY(MinecraftServerScriptEngine$onServerThreadStarted),
+	};
 #undef ENTRY
 
-		return entries;
-	}
-	static View<Text> getReplaceMap() noexcept
+	return entries;
+}
+View<Text> McftRenamer::getReplaceMap() noexcept
+{
+	static const Text list[] = {
+		"basic_string<char,std::char_traits<char>,std::allocator<char> >"_tx, "string"_tx,
+		"::"_tx, "$"_tx,
+		"operator=="_tx, "$_equals_"_tx,
+		"operator()"_tx, "$_call_"_tx,
+		"<16,std$_Default_allocate_traits,0>"_tx, "$_alloc16_"_tx,
+		"<0>"_tx, "$_0_"_tx,
+		"`vftable'"_tx, "$_vftable_"_tx,
+		"<lambda_85c8d3d148027f864c62d97cac0c7e52>"_tx, "$_game_thread_lambda_"_tx,
+		"<lambda_cab8a9f6b80f4de6ca3785c051efa45e>"_tx, "$_std_input_lambda_"_tx,
+		"<std$unique_ptr<std$tuple<$_std_input_lambda_ >,std$default_delete<std$tuple<$_std_input_lambda_ > > > >"_tx, "$_stdin_t_"_tx,
+		"~"_tx, "dtor$"_tx,
+		"std::_LaunchPad<std::unique_ptr<std::tuple<$_game_thread_lambda_ >,std::default_delete<std::tuple<$_game_thread_lambda_ > > > >::_Go"_tx, "$_game_thread_start_t_"_tx,
+	};
+	return list;
+}
+	
+Text McftRenamer::cppNameToVarName(Text text) noexcept
+{
+	AText *dst = &m_str2, *src = &m_str1;
+
+	View<Text> rmap = getReplaceMap();
 	{
-		static const Text list[] = {
-			"basic_string<char,std::char_traits<char>,std::allocator<char> >", "string",
-			"::", "$",
-			"operator==", "$_equals_",
-			"operator()", "$_call_",
-			"<16,std$_Default_allocate_traits,0>", "$_alloc16_",
-			"<0>", "$_0_",
-			"`vftable'", "$_vftable_",
-			"<lambda_612f03455f6f7aad68e1f818a7c63f7f>", "$_game_thread_lambda_",
-			"<std$unique_ptr<std$tuple<<lambda_8018a31a875cb002a7f54550810d8bc1> >,std$default_delete<std$tuple<<lambda_8018a31a875cb002a7f54550810d8bc1> > > > >", "$_stdin_t_",
-			"~", "dtor$",
-			"std::_LaunchPad<std::unique_ptr<std::tuple<$_game_thread_lambda_ >,std::default_delete<std::tuple<$_game_thread_lambda_ > > > >::_Go", "$_game_thread_start_t_",
-		};
-		return list;
+		Text from = *rmap++;
+		Text to = *rmap++;
+		src->clear();
+		text.replace(src, from, to);
 	}
-
-	Text cppNameToVarName(Text text) noexcept
+	while (!rmap.empty())
 	{
-		AText *dst = &m_str2, *src = &m_str1;
+		Text from = *rmap++;
+		Text to = *rmap++;
+		dst->clear();
+		src->replace(dst, from, to);
 
-		View<Text> rmap = getReplaceMap();
-		{
-			Text from = *rmap++;
-			Text to = *rmap++;
-			src->clear();
-			text.replace(src, from, to);
-		}
-		while (!rmap.empty())
-		{
-			Text from = *rmap++;
-			Text to = *rmap++;
-			dst->clear();
-			src->replace(dst, from, to);
-
-			AText* t = dst;
-			dst = src;
-			src = t;
-		}
-		return *src;
+		AText* t = dst;
+		dst = src;
+		src = t;
 	}
-	Text varNameToCppName(Text text) noexcept
+	return *src;
+}
+Text McftRenamer::varNameToCppName(Text text) noexcept
+{
+	AText* dst = &m_str2, * src = &m_str1;
+
+	View<Text> rmap = getReplaceMap();
 	{
-		AText* dst = &m_str2, * src = &m_str1;
-
-		View<Text> rmap = getReplaceMap();
-		{
-			Text from = rmap.readBack();
-			Text to = rmap.readBack();
-			src->clear();
-			text.replace(src, from, to);
-		}
-		while (!rmap.empty())
-		{
-			Text from = rmap.readBack();
-			Text to = rmap.readBack();
-			dst->clear();
-			src->replace(dst, from, to);
-
-			AText* t = dst;
-			dst = src;
-			src = t;
-		}
-		return *src;
+		Text from = rmap.readBack();
+		Text to = rmap.readBack();
+		src->clear();
+		text.replace(src, from, to);
 	}
+	while (!rmap.empty())
+	{
+		Text from = rmap.readBack();
+		Text to = rmap.readBack();
+		dst->clear();
+		src->replace(dst, from, to);
 
-};
+		AText* t = dst;
+		dst = src;
+		src = t;
+	}
+	return *src;
+}
 
 namespace
 {
@@ -243,8 +236,8 @@ public:
 	AddressReader(File* file, MinecraftFunctionTable* table, Text hash) noexcept
 		:m_table(table), m_predefinedFile(file)
 	{
-		Renamer renamer;
-		for (const Renamer::Entry& entry : Renamer::getEntires())
+		McftRenamer renamer;
+		for (const McftRenamer::Entry& entry : McftRenamer::getEntires())
 		{
 			m_targets[renamer.varNameToCppName(entry.name)] = { entry.name, &(table->*entry.target), entry.idx };
 		}
@@ -346,7 +339,7 @@ public:
 				{
 					Text name = item.first;
 
-					console.logA(TSZ() << name << "not found\n");
+					console.logA(TSZ() << name << " not found\n");
 				}
 			}
 		}
@@ -360,8 +353,6 @@ public:
 		}
 	}
 };
-
-#define FNNAME(v) renamer.varNameToCppName(#v), v
 
 void MinecraftFunctionTable::load() noexcept
 {
@@ -391,7 +382,7 @@ void MinecraftFunctionTable::load() noexcept
 			console.logA("[BDSX] Predefined does not founded\n");
 		}
 
-		if (hash == HASH_1_16_20_03)
+		if (hash == HASH_1_16_100_04)
 		{
 			console.logA("[BDSX] MD5 Hash matched(Version == " BDS_VERSION ")\n");
 		}
@@ -404,9 +395,6 @@ void MinecraftFunctionTable::load() noexcept
 		{
 			reader.loadFromPdb();
 		}
-		skipChangeCurDir();
-		skipCommandListDestruction();
-		removeScriptExperientalCheck();
 	}
 	catch (Error&)
 	{
@@ -445,7 +433,7 @@ void MinecraftFunctionTable::hookOnGameThreadCall(void(*thread)(void* pad, void*
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(FNNAME($_game_thread_start_t_), 0x1b, ORIGINAL_CODE, RAX, false, { {1, 5}, {9, 13} });
 }
 void MinecraftFunctionTable::hookOnProgramMainCall(int(*onMain)(int argn, char** argv)) noexcept
@@ -454,7 +442,7 @@ void MinecraftFunctionTable::hookOnProgramMainCall(int(*onMain)(int argn, char**
 		0x4C, 0x8B, 0xC0,                // mov r8,rax
 		0x48, 0x8B, 0xD7,                // mov rdx,rdi
 		0x8B, 0x0B,                      // mov ecx,dword ptr ds:[rbx]
-		0xE8, 0x68, 0x18, 0x48, 0xFF,    // call <bedrock_server.main>
+		0xE8, 0xFF, 0xFF, 0xFF, 0xFF,    // call <bedrock_server.main>
 		0x8B, 0xD8,                      // mov ebx,eax
 	};
 	Code junction(64);
@@ -466,38 +454,40 @@ void MinecraftFunctionTable::hookOnProgramMainCall(int(*onMain)(int argn, char**
 	junction.add(RSP, 0x28);
 	junction.mov(RBX, RAX);
 	junction.ret();
-	Renamer renamer;
-	junction.patchTo(FNNAME(__scrt_common_main_seh), 0xFF, ORIGINAL_CODE, RCX, false, { {9, 12} });
+	McftRenamer renamer;
+	junction.patchTo(FNNAME(__scrt_common_main_seh), 0xFF, ORIGINAL_CODE, RCX, false, { {9, 13} });
 }
 void MinecraftFunctionTable::hookOnUpdate(void(*update)(Minecraft* mc)) noexcept
 {
+	/*
+	call <bedrock_server.public: bool __cdecl Minecraft::update(void) __ptr64>
+	mov eax,dword ptr ds:[r14+F8]
+	cmp eax,2
+	*/
 	static const byte ORIGINAL_CODE[] = {
-		0xE8, 0xFF, 0xFF, 0xFF, 0xFF,		// call Minecraft::update
-		0x8B, 0x85, 0xF8, 0x00, 0x00, 0x00,	// mov eax,dword ptr ds:[rbp+F8]
-		0x83, 0xF8, 0x02,					// cmp eax,2
+		0xE8, 0x38, 0xEB, 0x6E, 0x00, 0x41, 0x8B, 0x86, 0xF8, 0x00, 0x00, 0x00, 0x83, 0xF8, 0x02
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
 	junction.call(update, RAX);
 	junction.add(RSP, 0x28);
-	junction.mov(RAX, DwordPtr, RBP, 0xF8);
+	junction.mov(RAX, DwordPtr, R14, 0xF8);
 	junction.cmp(RAX, 2);
 	junction.ret();
 
-	Renamer renamer;
-	junction.patchTo(FNNAME(ServerInstance$_update), 0x109
-		, ORIGINAL_CODE, RAX, false, { {1, 5} });
+	McftRenamer renamer;
+	junction.patchTo(FNNAME(ServerInstance$_update), 0x123
+		, ORIGINAL_CODE, RAX, false);
 };
 void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(OnPacketRBP* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept
 {
 	/*
 	mov edx,r15d
-	lea rcx,qword ptr ss:[rbp+138]
+	lea rcx,qword ptr ss:[rbp+148]
 	call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0x41, 0x8B, 0xD7, 0x48, 0x8D, 0x8D, 0x38, 0x01, 
-		0x00, 0x00, 0xE8, 0x28, 0x63, 0x00, 0x00,
+		0x41, 0x8B, 0xD7, 0x48, 0x8D, 0x8D, 0x48, 0x01, 0x00, 0x00, 0xE8, 0xB8, 0x3A, 0x00, 0x00
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
@@ -508,65 +498,58 @@ void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(OnPa
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(FNNAME(NetworkHandler$_sortAndPacketizeEvents), 0x2c9,
 		ORIGINAL_CODE, RAX, false, { {11, 15}, });
 };
-void MinecraftFunctionTable::hookOnPacketBefore(ExtendedStreamReadResult* (*onPacketRead)(OnPacketRBP*, ExtendedStreamReadResult*, MinecraftPacketIds, NetworkHandler::Connection* conn)) noexcept
+void MinecraftFunctionTable::hookOnPacketBefore(ExtendedStreamReadResult* (*onPacketRead)(ExtendedStreamReadResult*, OnPacketRBP*, MinecraftPacketIds)) noexcept
 {
 	/*
 	mov rax,qword ptr ds:[rcx]
-	lea r8,qword ptr ss:[rbp+1D0]
-	lea rdx,qword ptr ss:[rbp+60]
+	lea r8,qword ptr ss:[rbp+1E0]
+	lea rdx,qword ptr ss:[rbp+70]
 	call qword ptr ds:[rax+28]
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x85, 0xD0, 0x01,
-		0x00, 0x00, 0x48, 0x8D, 0x55, 0x60, 0xFF, 0x50,
-		0x28,
+		0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x85, 0xE0, 0x01, 0x00, 0x00, 0x48, 0x8D, 0x55, 0x70, 0xFF, 0x50, 0x28
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
 	junction.write(ORIGINAL_CODE);
-	junction.mov(QwordPtr, RSP, 0x20, RAX);
-	junction.mov(RCX, RBP); // rbp
-	junction.lea(RDX, RBP, 0x60); // readresult
+	junction.mov(RCX, RAX); // read result
+	junction.mov(RDX, RBP); // rbp
 	junction.mov(R8, R15); // packetId
-	junction.mov(R9, QwordPtr, RSP, 0x68); // Connection
 	junction.call(onPacketRead, RAX);
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
-	junction.patchTo(FNNAME(NetworkHandler$_sortAndPacketizeEvents), 0x434
+	McftRenamer renamer;
+	junction.patchTo(FNNAME(NetworkHandler$_sortAndPacketizeEvents), 0x430
 		, ORIGINAL_CODE, RAX, false);
 };
-void MinecraftFunctionTable::hookOnPacketAfter(void(*onPacketAfter)(OnPacketRBP*, MinecraftPacketIds, NetworkHandler::Connection* conn)) noexcept
+void MinecraftFunctionTable::hookOnPacketAfter(void(*onPacketAfter)(OnPacketRBP*, MinecraftPacketIds)) noexcept
 {
 	/*
 	mov rax,qword ptr ds:[rcx]
-	lea r9,qword ptr ss:[rbp+138]
+	lea r9,qword ptr ss:[rbp+148]
 	mov r8,rsi
 	mov rdx,r13
-	call qword ptr ds:[rax+8] (handle)
+	call qword ptr ds:[rax+8]
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0x01,
-		0x4C, 0x8D, 0x8D, 0x38, 0x01, 0x00, 0x00, 0x4C,
-		0x8B, 0xC6, 0x49, 0x8B, 0xD5, 0xFF, 0x50, 0x08,
+		0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x8D, 0x48, 0x01, 0x00, 0x00, 0x4C, 0x8B, 0xC6, 0x49, 0x8B, 0xD5, 0xFF, 0x50, 0x08
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
 	junction.write(ORIGINAL_CODE);
 	junction.mov(RCX, RBP); // rbp
 	junction.mov(RDX, R15); // packetId
-	junction.mov(R8, QwordPtr, RSP, 0x68); // Connection
 	junction.call(onPacketAfter, RAX);
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
-	junction.patchTo(FNNAME(NetworkHandler$_sortAndPacketizeEvents), 0x765,
+	McftRenamer renamer;
+	junction.patchTo(FNNAME(NetworkHandler$_sortAndPacketizeEvents), 0x720,
 		ORIGINAL_CODE, RAX, false);
 };
 void MinecraftFunctionTable::hookOnPacketSend(void(*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, unsigned char)) noexcept
@@ -587,65 +570,35 @@ void MinecraftFunctionTable::hookOnPacketSend(void(*callback)(NetworkHandler*, c
 	junction.mov(R8, RDI);
 	junction.ret();
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(FNNAME(NetworkHandler$send), 0x1A,
 		ORIGINAL_CODE, RAX, false);
 };
 void MinecraftFunctionTable::hookOnPacketSendInternal(NetworkHandler::Connection* (*callback)(NetworkHandler*, const NetworkIdentifier&, Packet*, String*)) noexcept
 {
-	static const byte ORIGINAL_CODE[] = {
-		0x49, 0x8B, 0xF8, // mov rdi,r8
-		0x4C, 0x8B, 0xF2, // mov r14,rdx
-		0x48, 0x8B, 0xF1, // mov rsi,rcx
-		0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call NetworkHandler$_getConnectionFromId
-	};
-	Code junction(64);
-	junction.mov(RDI, R8);
-	junction.mov(R14, RDX);
-	junction.mov(RSI, RCX);
-	junction.sub(RSP, 0x28);
-	junction.call(callback, RAX);
-	junction.add(RSP, 0x28);
-	junction.ret();
-
-	Renamer renamer;
-	junction.patchTo(FNNAME(NetworkHandler$_sendInternal), 13,
-		ORIGINAL_CODE, RAX, false, { {10, 14} });
-};
-void MinecraftFunctionTable::hookOnScriptLoading(void(*callback)()) noexcept
-{
-	static const byte ORIGINAL_CODE[] = {
-		0xBF, 0x80, 0x00, 0x00, 0x00,							// mov edi,80                                                          |
-		0x65, 0x48, 0x8B, 0x04, 0x25, 0x58, 0x00, 0x00, 0x00,	// mov rax,qword ptr gs:[58]                                           |
-	};
-	Code junction(64);
-	junction.sub(RSP, 0x28);
-	junction.call(callback, RAX);
-	junction.add(RSP, 0x28);
-	junction.write(ORIGINAL_CODE);
-	junction.ret();
-
-	Renamer renamer;
-	junction.patchTo(FNNAME(ScriptEngine$startScriptLoading), 0x1c,
-		ORIGINAL_CODE, RAX, false);
-};
-void MinecraftFunctionTable::hookOnConnectionClosed(void(*onclose)(NetworkHandler*, const NetworkIdentifier&, String*)) noexcept
-{
 	/*
-	push rbx
-	push rbp
-	push rsi
-	push rdi
-	push r14
-	push r15
-	sub rsp,48
+	mov r14,r9
+	mov rdi,r8
+	mov rbp,rdx
+	mov rsi,rcx
+	call <bedrock_server.private: class NetworkHandler::Connection * __ptr64 __cdecl NetworkHandler::_getConnectionFromId(class NetworkIdentifier const & __ptr64)const __ptr64>
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0x40, 0x53, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xEC, 0x48,
+		0x4D, 0x8B, 0xF1, 0x49, 0x8B, 0xF8, 0x48, 0x8B, 0xEA, 0x48, 0x8B, 0xF1, 0xE8, 0xAB, 0xE3, 0xFF, 0xFF
 	};
+	Code junction(64);
+	junction.mov(R14, R9);
+	junction.mov(RDI, R8);
+	junction.sub(RBP, RDX);
+	junction.mov(RSI, RCX);
+	junction.add(RSP, 0x28);
+	junction.call(callback, RAX);
+	junction.add(RSP, 0x28);
+	junction.ret();
 
-	Renamer renamer;
-	Code::hook(FNNAME(NetworkHandler$onConnectionClosed), onclose, ORIGINAL_CODE);
+	McftRenamer renamer;
+	// junction.patchTo(FNNAME(NetworkHandler$_sendInternal), 0x14,
+	//	ORIGINAL_CODE, RAX, false, { {10, 14} });
 };
 void MinecraftFunctionTable::hookOnConnectionClosedAfter(void(*onclose)(const NetworkIdentifier&)) noexcept
 {
@@ -673,33 +626,10 @@ void MinecraftFunctionTable::hookOnConnectionClosedAfter(void(*onclose)(const Ne
 	junction.pop(RBX);
 	junction.jump(onclose, RAX);
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(FNNAME(NetworkHandler$onConnectionClosed), 0xE3,
 		ORIGINAL_CODE, RAX, true);
 }
-void MinecraftFunctionTable::hookOnLoopStart(void(*callback)(ServerInstance* instance)) noexcept
-{
-	/*
-	test rsi,rsi
-	setne byte ptr ss:[rbp-80]
-	lea r14,qword ptr ds:[7FF68D0519E0]
-	*/
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x85, 0xF6, 0x0F, 0x95, 0x45, 0x80, 0x4C, 
-		0x8D, 0x35, 0x9A, 0x1C, 0xE6, 0x00,
-	};
-	Code junction(128);
-	junction.sub(RSP, 0x28);
-	junction.mov(RCX, QwordPtr, RBP, 0x7f8); // serverInstance = rbp+0x7f8
-	junction.call(callback, RAX);
-	junction.add(RSP, 0x28);
-	junction.write(ORIGINAL_CODE);
-	junction.ret();
-
-	Renamer renamer;
-	junction.patchTo(FNNAME(DedicatedServer$start), 0x2768,
-		ORIGINAL_CODE, RDX, false, { {10, 14}, });
-};
 void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
@@ -707,10 +637,38 @@ void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(EXCEPTION_POINTE
 		0x48, 0x8B, 0x8B, 0x20, 0x01, 0x00, 0x00, // mov rcx,qword ptr[rbx + 120h]
 		0x45, 0x33, 0xC0,	// xor r8d,r8d
 	};
-	void* target = (byte*)google_breakpad$ExceptionHandler$HandleException;
-	Unprotector unpro(target, 12); 
-	CodeWriter code(target, 12);
-	code.jump(callback, RAX);
+
+	{
+		void* target = (byte*)google_breakpad$ExceptionHandler$HandleException;
+		Unprotector unpro(target, 12);
+		CodeWriter code(target, 12);
+		code.jump(callback, RAX);
+	}
+
+	static void(* s_callback)(EXCEPTION_POINTERS * ptr) = callback;
+
+	void (*onInvalidParameter)() = []() {
+		EXCEPTION_RECORD exception_record = {};
+		CONTEXT exception_context = {};
+		EXCEPTION_POINTERS exception_ptrs = { &exception_record, &exception_context };
+		::RtlCaptureContext(&exception_context);
+		exception_record.ExceptionCode = STATUS_INVALID_PARAMETER;
+
+		// We store pointers to the the expression and function strings,
+		// and the line as exception parameters to make them easy to
+		// access by the developer on the far side.
+		exception_record.NumberParameters = 3;
+		exception_record.ExceptionInformation[0] = 0;
+		exception_record.ExceptionInformation[1] = 0;
+		exception_record.ExceptionInformation[2] = 0;
+		s_callback(&exception_ptrs);
+	};
+	{
+		void* target = google_breakpad$ExceptionHandler$HandleInvalidParameter;
+		Unprotector unpro(target, 12);
+		CodeWriter code(target, 12);
+		code.jump(onInvalidParameter, RAX);
+	}
 };
 void MinecraftFunctionTable::hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept
 {
@@ -735,44 +693,12 @@ void MinecraftFunctionTable::hookOnCommand(intptr_t(*callback)(MCRESULT* res, Co
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchToBoolean(
 		FNNAME(MinecraftCommands$executeCommand), 0x40,
 		RAX, (byte*)MinecraftCommands$executeCommand + 0x76d,
 		ORIGINAL_CODE, RAX);
 };
-void MinecraftFunctionTable::hookOnActorRelease(void(*callback)(Level* level, Actor* actor, bool b)) noexcept
-{
-	/*
-	mov rax,rsp
-	push rbp
-	push rdi
-	push r12
-	push r14
-	push r15
-	lea rbp,qword ptr ds:[rax-5F]
-	*/
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8D, 0x68, 0xA1,
-	};
-
-	Renamer renamer;
-	Code::hook(FNNAME(Level$removeEntityReferences), callback, ORIGINAL_CODE);
-}
-void MinecraftFunctionTable::hookOnActorDestructor(void(*callback)(Actor* actor)) noexcept
-{
-	/*
-	push rdi
-	sub rsp,30
-	mov qword ptr ss:[rsp+20],FFFFFFFFFFFFFFFE
-	*/
-	static const byte ORIGINAL_CODE[] = {
-		0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF,
-	};
-
-	Renamer renamer;
-	Code::hook(FNNAME(Actor$dtor$Actor), callback, ORIGINAL_CODE);
-}
 void MinecraftFunctionTable::hookOnLog(void(*callback)(int color, const char* log, size_t size)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
@@ -808,7 +734,7 @@ void MinecraftFunctionTable::hookOnLog(void(*callback)(int color, const char* lo
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(
 		FNNAME(BedrockLogOut), 0x8A,
 		ORIGINAL_CODE, RDX, false, { {7, 11},  {51, 55},  {63, 67},  {68, 72},  {79, 83}, });
@@ -822,9 +748,10 @@ void MinecraftFunctionTable::hookOnCommandPrint(void(*callback)(const char* log,
 	call qword ptr ds:[<&??5?$basic_istream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@P6AAEAV01@AEAV01@@Z@Z>]
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0xE8, 0xD8, 0xBE, 0xC8, 0xFF, 0x48, 0x8D, 0x15, 
-		0x21, 0x0C, 0x00, 0x00, 0x48, 0x8B, 0xC8, 0xFF, 
-		0x15, 0xF8, 0x42, 0xAC, 0x00,
+		0xE8, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF, 
+		0x48, 0x8B, 0xC8, 
+		0xFF, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,
 	};
 
 	Code junction(64);
@@ -835,8 +762,8 @@ void MinecraftFunctionTable::hookOnCommandPrint(void(*callback)(const char* log,
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
-	junction.patchTo(FNNAME(CommandOutputSender$send), 0x1b3, ORIGINAL_CODE, RAX, false, { {1, 5},  {17, 21}, });
+	McftRenamer renamer;
+	junction.patchTo(FNNAME(CommandOutputSender$send), 0x1b3, ORIGINAL_CODE, RAX, false, { {1, 5},  {8, 12},  {17, 21}, });
 }
 void MinecraftFunctionTable::hookOnCommandIn(void(*callback)(String* dest)) noexcept
 {
@@ -850,7 +777,7 @@ void MinecraftFunctionTable::hookOnCommandIn(void(*callback)(String* dest)) noex
 		0x44, 0x0F, 0xB6, 0xC0,						// movzx r8d,al                                                                       
 		0x48, 0x8D, 0x54, 0x24, 0x28,				// lea rdx,qword ptr ss:[rsp+28]                                                      
 		0x48, 0x8B, 0xCB,							// mov rcx,rbx                                                                        
-		0xE8, 0x07, 0xFD, 0xFF, 0xFF,				// call <bedrock_server.class std::basic_istream<char,struct std::char_traits<char> > 
+		0xE8, 0xFF, 0xFF, 0xFF, 0xFF,				// call <bedrock_server.class std::basic_istream<char,struct std::char_traits<char> > 
 		0x48, 0x8B, 0x08,							// mov rcx,qword ptr ds:[rax]
 		0x48, 0x63, 0x51, 0x04,						// movsxd rdx,dword ptr ds:[rcx+4]
 		0xF6, 0x44, 0x02, 0x10, 0x06,				// test byte ptr ds:[rdx+rax+10],6
@@ -863,9 +790,9 @@ void MinecraftFunctionTable::hookOnCommandIn(void(*callback)(String* dest)) noex
 	junction.add(RSP, 0x28);
 	junction.ret();
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(FNNAME(std$_LaunchPad$_stdin_t_$_Execute$_0_), 0x5f, ORIGINAL_CODE, RAX, false,
-		{ {3, 7}, {21, 24} });
+		{ {3, 7}, {21, 25}, {38, 42} });
 }
 void MinecraftFunctionTable::skipPacketViolationWhen7f() noexcept
 {
@@ -892,75 +819,17 @@ void MinecraftFunctionTable::skipPacketViolationWhen7f() noexcept
 	junction.write(ORIGINAL_CODE);
 	junction.jump((byte*)PacketViolationHandler$_handleViolation + sizeof(ORIGINAL_CODE), RAX);
 
-	Renamer renamer;
+	McftRenamer renamer;
 	junction.patchTo(FNNAME(PacketViolationHandler$_handleViolation), 0, ORIGINAL_CODE, RAX, true,
 		{ {3, 7}, {21, 24} });
 }
-void MinecraftFunctionTable::skipChangeCurDir() noexcept
-{
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8D, 0x4D, 0x88,				// lea rcx,qword ptr ss:[rbp-78]
-		0xE8, 0x00, 0x00, 0x00, 0x00,		// call <bedrock_server.getExecutableDir>
-		0x48, 0x83, 0x78, 0x18, 0x10,		// cmp qword ptr ds:[rax+18],10
-		0x72, 0x03,							// jb bedrock_server.7FF6EF49F37D
-		0x48, 0x8B, 0x00,					// mov rax,qword ptr ds:[rax]                                                           
-		0x48, 0x8B, 0xC8,					// mov rcx,rax                                                                         
-		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00,	// call qword ptr ds:[<&SetCurrentDirectoryA>]                                         
-		0x48, 0x8B, 0x55, 0xA0, 			// mov rdx,qword ptr ss:[rbp-60]                                                        
-		0x48, 0x83, 0xFA, 0x10, 			// cmp rdx,10                                                                          
-		0x72, 0x34,							// jb bedrock_server.7FF6EF49F3C4                                                      
-		0x48, 0xFF, 0xC2,					// inc rdx                                                                             
-		0x48, 0x8B, 0x4D, 0x88,				// mov rcx,qword ptr ss:[rbp-78]                                                        
-		0x48, 0x8B, 0xC1,					// mov rax,rcx                                                                         
-		0x48, 0x81, 0xFA, 0x00, 0x10, 0x00, 0x00, // cmp rdx,1000
-		0x72, 0x1C,							// jb bedrock_server.7FF6EF49F3BF                                                      
-		0x48, 0x83, 0xC2, 0x27,				// add rdx,27                                                                          
-		0x48, 0x8B, 0x49, 0xF8,				// mov rcx,qword ptr ds:[rcx-8]                                                         
-		0x48, 0x2B, 0xC1,					// sub rax,rcx                                                                         
-		0x48, 0x83, 0xC0, 0xF8,				// add rax,FFFFFFFFFFFFFFF8                                                            
-		0x48, 0x83, 0xF8, 0x1F,				// cmp rax,1F                                                                          
-		0x76, 0x07,							// jbe bedrock_server.7FF6EF49F3BF                                                     
-		0xFF, 0x15, 0x00, 0x00, 0x00, 0x00,	// call qword ptr ds:[<&_invalid_parameter_noinfo_noreturn>]                           
-		0xCC,								// int3                                                                                
-		0xE8, 0x00, 0x00, 0x00, 0x00,		// call <bedrock_server.void __cdecl operator delete(void * __ptr64,unsigned __int64)> 
-	};
-	Renamer renamer;
-	Code::nopping(FNNAME(main), 0x43A, ORIGINAL_CODE, { {5, 9}, {24, 28}, {80, 84}, {86, 90} });
-}
-void MinecraftFunctionTable::skipMakeConsoleObject() noexcept
-{
-	/*
-	lea r9,qword ptr ss:[rbp-28]
-	lea r8,qword ptr ds:[7FF76658D9E0]
-	lea rdx,qword ptr ss:[rbp-18]
-	*/
-	static const byte ORIGINAL_CODE[] = {
-		0x4C, 0x8D, 0x4D, 0xD8, 0x4C, 0x8D, 0x05, 0x36, 
-		0x75, 0x19, 0x01, 0x48, 0x8D, 0x55, 0xE8, 0x41,
-		0xFF, 0xD2, 0x84, 0xC0, 0x74, 0xA6
-	};
-	Renamer renamer;
-	Code::nopping(FNNAME(ScriptEngine$initialize), 0x287, ORIGINAL_CODE, { {7, 11}, });
-}
 
-
-void MinecraftFunctionTable::skipCommandListDestruction() noexcept
+void MinecraftFunctionTable::forceEnableScript() noexcept
 {
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8D, 0x4B, 0x78,			// lea         rcx,[rbx+78h]  
-		0xE8, 0x00, 0x00, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
-	};
-	Renamer renamer;
-	Code::nopping(FNNAME(ScriptEngine$dtor$ScriptEngine), 435, ORIGINAL_CODE, { {5, 9} });
-}
-void MinecraftFunctionTable::removeScriptExperientalCheck() noexcept
-{
-	static const byte ORIGINAL_CODE[] = {
-		0x48, 0x8B, 0xCE, // mov rcx,rsi
-		0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // Level::hasExperimentalGameplayEnabled
-		0x84, 0xC0, // test al,al
-		0x0F, 0x84, 0x3C, 0x01, 0x00, 0x00, // je bedrock_server.7FF6FCB29198
-	};
-	Renamer renamer;
-	Code::nopping(FNNAME(MinecraftServerScriptEngine$onServerThreadStarted), 0x4f, ORIGINAL_CODE, { {4, 8} });
+	size_t targetSize = 16;
+	Unprotector unpro((byte*)MinecraftServerScriptEngine$onServerThreadStarted, targetSize);
+	CodeWriter writer((void*)unpro, targetSize);
+	writer.mov(RAX, (dword)1);
+	writer.debugBreak();
+	writer.ret();
 }

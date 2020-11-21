@@ -114,14 +114,17 @@ void NetHookModule::reset() noexcept
 
 struct OnPacketRBP
 {
-	OFFSETFIELD(SharedPtr<Packet>, packet, 0x138);
-	OFFSETFIELD(ReadOnlyBinaryStream, stream, 0x1d0);
+	OFFSETFIELD(SharedPtr<Packet>, packet, 0x148);
+	OFFSETFIELD(ReadOnlyBinaryStream, stream, 0x1e0);
+	OFFSETFIELD(ExtendedStreamReadResult, readResult, 0x70);
 	OFFSETFIELD(NetworkHandler*, networkHandler, -0xa8);
+	OFFSETFIELD(NetworkHandler::Connection*, connection, -0xc8);
 };
 
 void NetHookModule::hook() noexcept
 {
 	g_mcf.hookOnPacketRaw([](OnPacketRBP* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn)->SharedPtr<Packet>*{
+
 		NetHookModule* _this = &g_native->nethook;
 
 		JsScope scope;
@@ -152,9 +155,7 @@ void NetHookModule::hook() noexcept
 		return g_mcf.MinecraftPackets$createPacket(packet_dest, packetId);
 		});
 	g_mcf.skipPacketViolationWhen7f();
-	g_mcf.hookOnPacketBefore([](OnPacketRBP* rbp, ExtendedStreamReadResult * result, MinecraftPacketIds packetId, NetworkHandler::Connection* conn) {
-		checkCurrentThread();
-
+	g_mcf.hookOnPacketBefore([](ExtendedStreamReadResult* result, OnPacketRBP* rbp, MinecraftPacketIds packetId) {
 		if (result->streamReadResult != StreamReadResult::Pass) return result;
 
 		NetHookModule* _this = &g_native->nethook;
@@ -181,7 +182,7 @@ void NetHookModule::hook() noexcept
 		}
 		return result;
 		});
-	g_mcf.hookOnPacketAfter([](OnPacketRBP* rbp, MinecraftPacketIds packetId, NetworkHandler::Connection* conn) {
+	g_mcf.hookOnPacketAfter([](OnPacketRBP* rbp, MinecraftPacketIds packetId) {
 
 		NetHookModule* _this = &g_native->nethook;
 		auto iter = _this->m_callbacks.find(_this->getPacketId(EventType::After, packetId));
@@ -221,6 +222,7 @@ void NetHookModule::hook() noexcept
 
 			JsValue jsni = JsNetworkIdentifier::fromRaw(ni);
 
+
 			try
 			{
 				if (((JsValue)iter->second)(packetptr, jsni, (int)packetId, data->text()) == false)
@@ -240,13 +242,20 @@ void NetHookModule::hook() noexcept
 		return handler->getConnectionFromId(ni);
 		});
 
-	g_mcf.hookOnConnectionClosed([](NetworkHandler* handler, const NetworkIdentifier& ni, String* msg) {
-		NetHookModule* _this = &g_native->nethook;
-		if (_this->m_onConnectionClosed.isEmpty()) return;
-		JsScope scope;
-		JsValue onClosed = _this->m_onConnectionClosed;
-		onClosed(JsNetworkIdentifier::fromRaw(ni));
-		});
+	{
+		McftRenamer renamer;
+
+		// hook on connection closed
+		MCF_HOOK(NetworkHandler$onConnectionClosed, {
+			0x40, 0x53, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xEC, 0x48,
+		})(NetworkHandler* handler, const NetworkIdentifier& ni, String* msg) {
+			NetHookModule* _this = &g_native->nethook;
+			if (_this->m_onConnectionClosed.isEmpty()) return;
+			JsScope scope;
+			JsValue onClosed = _this->m_onConnectionClosed;
+			onClosed(JsNetworkIdentifier::fromRaw(ni));
+		};
+	}
 	g_mcf.hookOnConnectionClosedAfter([](const NetworkIdentifier& ni) {
 		JsNetworkIdentifier::dispose(ni);
 		});

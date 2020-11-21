@@ -30,6 +30,7 @@ import ipfilter = native.ipfilter;
 
 import shellVoid = native.shell;
 import { MariaDB } from "./db";
+import { bin } from "./bin";
 
 declare global
 {
@@ -64,7 +65,7 @@ declare module "./native"
 
     namespace Actor
     {
-        function fromEntity(entity:IEntity):Actor;
+        function fromEntity(entity:IEntity):Actor|null;
     }
 
     interface Actor
@@ -213,6 +214,8 @@ export {
     ipfilter,
     shellVoid,
     MariaDB,
+    bin,
+    native
 };
 
 

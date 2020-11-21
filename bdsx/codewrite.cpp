@@ -4,151 +4,58 @@
 using namespace kr;
 using namespace hook;
 
-TmpArray<pair<size_t, size_t>> memdiff(const void* _src, const void* _dst, size_t size) noexcept
+
+namespace
 {
-	byte* src = (byte*)_src;
-	byte* src_end = (byte*)_src + size;
-	byte* dst = (byte*)_dst;
-
-	TmpArray<pair<size_t, size_t>> diff;
-	pair<size_t, size_t>* last = nullptr;
-
-	for (; src != src_end; src++, dst++)
+	void codeError(Text name, void* code, size_t offset, View<pair<size_t, size_t>> diff) noexcept
 	{
-		if (*src == *dst)
+		Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
+		TSZ out;
+		out << "[BDSX] " << name << "+0x" << hexf(offset) << " - hooking failed, bytes did not matched at {";
+		for (const pair<size_t, size_t>& v : diff)
 		{
-			if (last == nullptr) continue;
-			last->second = src - (byte*)_src;
-			last = nullptr;
+			out << " {" << v.first << ", " << v.second << "}, ";
 		}
-		else
-		{
-			if (last != nullptr) continue;
-			last = diff.prepare(1);
-			last->first = src - (byte*)_src;
-		}
+		out << "}\n";
+		console.logA(out);
 	}
-	if (last != nullptr) last->second = size;
-	return diff;
 }
-bool memdiff_contains(View<pair<size_t, size_t>> larger, View<pair<size_t, size_t>> smaller) noexcept
-{
-	auto* small = smaller.begin();
-	auto* small_end = smaller.end();
-
-	for (auto large : larger)
-	{
-		for (;;)
-		{
-			if (small == small_end) return true;
-
-			if (small->first < large.first) return false;
-			if (small->first > large.second) break;
-			if (small->first == large.second) return false;
-			if (small->second > large.second) return false;
-			if (small->second == large.second)
-			{
-				small++;
-				break;
-			}
-			small++;
-		}
-	}
-	return true;
-}
-bool checkCode(kr::Text name, void* code, size_t offset, Buffer originalCode, View<pair<size_t, size_t>> skip) noexcept
-{
-	TmpArray<pair<size_t, size_t>> diff = memdiff((byte*)code+offset, originalCode.data(), originalCode.size());
-	if (skip == nullptr)
-	{
-		if (diff.empty()) return true;
-	}
-	else
-	{
-		if (memdiff_contains(skip, diff)) return true;
-	}
-
-	Console::ColorScope _color = FOREGROUND_RED | FOREGROUND_INTENSITY;
-	TSZ out;
-	out << "[BDSX] " << name << "+0x" << hexf(offset) << " - function hooking failed, bytes did not matched at {";
-	for (pair<size_t, size_t>& v : diff)
-	{
-		out << " {" << v.first << ", " << v.second << "}, ";
-	}
-	out << "}\n";
-	console.logA(out);
-	return false;
-}
-
 
 Code::Code(size_t size) noexcept
-	:CodeWriter(ExecutableAllocator::getInstance()->alloc(size), size)
+	:JitFunction(size)
 {
-	m_codeptr = end();
-	memset(m_codeptr, 0xcc, 64);
+	memset(pointer(), 0xcc, size);
 }
-void Code::hook(kr::Text name, void* from, void* to, kr::Buffer originalCode, View<std::pair<size_t, size_t>> skip) noexcept
-{
-	size_t size = originalCode.size();
-	Unprotector unpro(from, size);
-	if (!checkCode(name, from, 0, originalCode, skip)) return;
-
-	Code hooker(64 + size);
-	hooker.push(RCX);
-	hooker.push(RDX);
-	hooker.push(R8);
-	hooker.push(R9);
-	hooker.sub(RSP, 0x28);
-	hooker.call(to, RAX);
-	hooker.add(RSP, 0x28);
-	hooker.pop(R9);
-	hooker.pop(R8);
-	hooker.pop(RDX);
-	hooker.pop(RCX);
-	hooker.write(originalCode.cast<byte>());
-	hooker.jumpWithoutTemp((byte*)from + size);
-
-	{
-		CodeWriter writer((void*)unpro, size);
-		writer.jump(hooker.m_codeptr, RAX);
-	}
-}
-void Code::nopping(kr::Text name, void* base, size_t offset, kr::Buffer originalCode, kr::View<std::pair<size_t, size_t>> skip) noexcept
-{
-	size_t codeSize = originalCode.size();
-	Unprotector unpro((byte*)base + offset, codeSize);
-	if (!checkCode(name, base, offset, originalCode, skip)) return;
-	CodeWriter code((void*)unpro, codeSize);
-	code.fillNop();
-}
-void Code::patchTo(kr::Text name, void* base, size_t offset, Buffer originalCode, kr::hook::Register tempregister, bool jump, View<pair<size_t, size_t>> skip) noexcept
+void Code::patchTo(Text name, void* base, size_t offset, Buffer originalCode, Register tempregister, bool jump, View<pair<size_t, size_t>> skip) noexcept
 {
 	if (base == nullptr)
 	{
-		console.logA(TSZ() << "[BDSX] " << name << "+0x" << hexf(offset) << " - skipped, junction point not found");
+		console.logA(TSZ() << "[BDSX] " << name << "+0x" << hexf(offset) << " - skipped, junction point not found\n");
 		return;
 	}
-	size_t size = originalCode.size();
-	Unprotector unpro((byte*)base + offset, size);
-	if (!checkCode(name, base, offset, originalCode, skip)) return;
-
-	CodeWriter writer((void*)unpro, size);
-	if (jump) writer.jump(m_codeptr, tempregister);
-	else writer.call(m_codeptr, tempregister);
-	writer.fillNop();
+	CodeDiff diff = JitFunction::patchTo((byte*)base + offset, originalCode, tempregister, jump, skip);
+	if (!diff.succeeded()) codeError(name, base, offset, diff);
 }
-void Code::patchToBoolean(kr::Text name, void* base, size_t offset, kr::hook::Register testregister, void* jumpPoint, Buffer originalCode, kr::hook::Register tempregister) noexcept
+void Code::patchToBoolean(Text name, void* base, size_t offset, hook::Register testregister, void* jumpPoint, Buffer originalCode, Register tempregister) noexcept
 {
-	if (base == nullptr) return;
-	size_t size = originalCode.size();
-	Unprotector unpro((byte*)base + offset, size);
-	if (!checkCode(name, base, offset, originalCode)) return;
+	if (base == nullptr)
+	{
+		console.logA(TSZ() << "[BDSX] " << name << "+0x" << hexf(offset) << " - skipped, junction point not found\n");
+		return;
+	}
+	CodeDiff diff = JitFunction::patchToBoolean((byte*)base + offset, testregister, jumpPoint, originalCode, tempregister);
+	if (!diff.succeeded()) codeError(name, base, offset, diff);
+}
 
-	CodeWriter writer((void*)unpro, size);
-	writer.call(m_codeptr, tempregister);
-	writer.test(testregister, testregister);
-	writer.jz(intact<int32_t>((byte*)jumpPoint - (byte*)writer.end() - 6));
-	writer.fillNop();
+void Code::hook(Text name, void* from, void* to, View<uint8_t> originalCode, View<pair<size_t, size_t>> skip) noexcept
+{
+	CodeDiff diff = JitFunction::hook(from, to, originalCode, skip);
+	if (!diff.succeeded()) codeError(name, from, 0, diff);
+}
+void Code::nopping(Text name, void* base, size_t offset, View<uint8_t> originalCode, View<pair<size_t, size_t>> skip) noexcept
+{
+	CodeDiff diff = JitFunction::nopping((byte*)base+offset, originalCode, skip);
+	if (!diff.succeeded()) codeError(name, base, offset, diff);
 }
 
 ModuleInfo::ModuleInfo() noexcept

@@ -12,7 +12,8 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\cli",
-            "args": ["i"]
+            "args": ["i"],
+            "console": "integratedTerminal"
         }
     ]
 }

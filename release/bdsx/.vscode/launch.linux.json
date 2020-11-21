@@ -11,6 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "console": "integratedTerminal",
             "cwd": "~/.bds",
             "runtimeExecutable": "~/.bds/bedrock_server.exe",
             "args": ["${workspaceFolder}"],

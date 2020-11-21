@@ -44,11 +44,15 @@ void NativePointer::initMethods(JsClassT<NativePointer>* cls) noexcept
 
 	cls->setMethod(u"readVarUint", &NativePointer::readVarUint);
 	cls->setMethod(u"readVarInt", &NativePointer::readVarInt);
+	cls->setMethod(u"readVarBin", &NativePointer::readVarBin);
 	cls->setMethod(u"readVarString", &NativePointer::readVarString);
+	cls->setMethod(u"readBin", &NativePointer::readBin);
 
 	cls->setMethod(u"writeVarUint", &NativePointer::writeVarUint);
 	cls->setMethod(u"writeVarInt", &NativePointer::writeVarInt);
+	cls->setMethod(u"writeVarBin", &NativePointer::writeVarBin);
 	cls->setMethod(u"writeVarString", &NativePointer::writeVarString);
+	cls->setMethod(u"writeBin", &NativePointer::writeBin);
 }
 void NativePointer::move(int32_t lowBits, int32_t highBits) noexcept
 {
@@ -347,6 +351,11 @@ TText16 NativePointer::readVarBin() throws(JsException)
 			else
 			{
 				i += 7;
+				if ((b & 0x80) == 0)
+				{
+					out.write((word)dest);
+					return std::move(out);
+				}
 			}
 		}
 	}
@@ -435,11 +444,17 @@ void NativePointer::writeVarBin(Text16 value) throws(JsException)
 		}
 
 		v |= (word)*iter << offset;
-		offset += 16;
 		for (;;)
 		{
-			*m_address++ = (byte)(v | 0x80);
-			if (v <= 0x7f) return;
+			if (v <= 0x7f)
+			{
+				*m_address++ = (byte)v;
+				return;
+			}
+			else
+			{
+				*m_address++ = (byte)(v | 0x80);
+			}
 			v >>= 7;
 		}
 	}
