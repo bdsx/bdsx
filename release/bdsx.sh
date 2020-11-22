@@ -1,7 +1,7 @@
 
-if [ -x "$(command -v wine)" ] then
+if [ -x "$(command -v wine)" ]; then
   WINE=wine
-elif [ -x "$(command -v wine64)" ] then
+elif [ -x "$(command -v wine64)" ]; then
   WINE=wine64
 else
   echo 'Error: It requires wine. Please install wine first' >&2
