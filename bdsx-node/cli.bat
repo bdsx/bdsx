@@ -24,7 +24,11 @@ popd
 GOTO :eof
 ::CMDLITERAL
 
-if ! [ -x "$(command -v wine)" ]; then
+if [ -x "$(command -v wine)" ] then
+  WINE=wine
+elif [ -x "$(command -v wine64)" ] then
+  WINE=wine64
+else
   echo 'Error: It requires wine. Please install wine first' >&2
   exit 1
 fi
@@ -43,7 +47,7 @@ else
 fi
 TARGETDIR=$(pwd)
 pushd ~/.bds
-wine ~/.bds/bedrock_server.exe --dir "$TARGETDIR" $@
+$WINE ~/.bds/bedrock_server.exe --dir "$TARGETDIR" $@
 popd
 
 exit $?

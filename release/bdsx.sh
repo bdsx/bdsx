@@ -1,5 +1,9 @@
 
-if ! [ -x "$(command -v wine)" ]; then
+if [ -x "$(command -v wine)" ] then
+  WINE=wine
+elif [ -x "$(command -v wine64)" ] then
+  WINE=wine64
+else
   echo 'Error: It requires wine. Please install wine first' >&2
   exit 1
 fi
@@ -11,7 +15,7 @@ if [ $? != 2 ]; then exit $?; fi
 TARGET=$(pwd)/bdsx
 
 pushd ~/.bds
-wine ~/.bds/bedrock_server.exe "$TARGET"
+$WINE ~/.bds/bedrock_server.exe "$TARGET"
 popd
 
 exit $?
