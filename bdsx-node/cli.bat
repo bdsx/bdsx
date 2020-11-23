@@ -49,6 +49,6 @@ TARGETDIR=$(pwd)
 export WINEDEBUG=-all
 cd ~/.bds
 $WINE ~/.bds/bedrock_server.exe --dir "$TARGETDIR" $@
-cd TARGETDIR
+cd $TARGETDIR
 
 exit $?

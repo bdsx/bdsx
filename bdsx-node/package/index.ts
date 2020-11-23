@@ -27,6 +27,7 @@ function updateJson(path:string, cb:(obj:any)=>boolean):boolean
 
 function run(cmd:string):void
 {
+    console.log(cmd);
     child_process.execSync(cmd, {stdio: 'inherit'});
 }
 
@@ -79,6 +80,7 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
         archive.file(`${outdir}/libmariadb.dll`, {name: `libmariadb.dll`});
         archive.file(`${outdir}/zlib.dll`, {name: `zlib.dll`});
         archive.file(`${outdir}/bdsx_node.dll`, {name: `bdsx_node.dll`});
+        archive.file(`./INSTALL/vcruntime140_1.dll`, {name: `vcruntime140_1.dll`});
     });
 
     // zip example
@@ -147,11 +149,13 @@ FROM alpine
 
 RUN apk update
 RUN apk add screen freetype nodejs npm wine
-RUN npm i bdsx@${BDSX_VERSION} -g
-RUN bdsx i -y
-EXPOSE 19132 19133
+RUN npm i -g bdsx@${BDSX_VERSION} -g
+RUN echo ${BDSX_VERSION}&bdsx i -y
+RUN echo ${BDSX_VERSION}&bdsx example ~/bdsx
+WORKDIR ~/bdsx
+EXPOSE 19132
 
-ENTRYPOINT screen -S bdsx sh /usr/bin/bdsx
+ENTRYPOINT screen -S bdsx sh /usr/bin/bdsx ~/bdsx
 `;
     await fs.promises.writeFile('docker/Dockerfile', dockerfile);
     try { run(`docker image rm -f karikera/bdsx`); } catch (err) {}

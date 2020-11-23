@@ -79,22 +79,8 @@ int CALLBACK bindHook(
 	int namelen
 ) noexcept
 {
-	static int count = 0;
-	if (count >= 2)
-	{
-		if (((sockaddr_in*)name)->sin_port != 0)
-		{
-			SetLastError(WSAENOMORE);
-			return -1;
-		}
-	}
-
 	int res = bind(s, name, namelen);
-	if (res == 0)
-	{
-		NetFilter::addBindList(s);
-		count++;
-	}
+	if (res == 0) NetFilter::addBindList(s);
 	return res;
 }
 int CALLBACK sendtoHook(

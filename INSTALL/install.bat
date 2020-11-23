@@ -17,5 +17,6 @@ copy "%outdir%libcurl%_debug%.dll" "%~1\libcurl%_debug%.dll"
 copy "%outdir%libmariadb.dll" "%~1\libmariadb.dll"
 copy "%outdir%zlib%d%.dll" "%~1\zlib%d%.dll"
 copy "%outdir%bdsx_node.dll" "%~1\bdsx_node.dll"
+copy "%solutiondir%INSTALL\vcruntime140_1.dll" "%~1\vcruntime140_1.dll"
 EXIT /B 0
 

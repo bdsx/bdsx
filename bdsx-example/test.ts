@@ -161,7 +161,7 @@ async function testWithModule<T>(
         if (msg.startsWith("Can't connect to MySQL server on ") || 
             msg.startsWith('Access denied for user '))
         {
-            console.log("bdsx's mariadb: The test is skipped.");
+            console.log("bdsx's mariadb: skipped");
         }
         else
         {

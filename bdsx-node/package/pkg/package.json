@@ -1,6 +1,6 @@
 {
-  "name": "bdsx-cli",
-  "version": "1.3.42",
+  "name": "bdsx",
+  "version": "1.3.46",
   "description": "Bedrock Dedicated Server X for pkg",
   "main": "index.js",
   "scripts": {},
@@ -36,5 +36,9 @@
     "minecraft-scripting-types-server": "^1.0.0",
     "source-map-support": "^0.5.19",
     "tar-fs": "^2.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/karikera/bdsx"
   }
 }
