@@ -386,11 +386,13 @@ void Native::reset() noexcept
 
 void Native::_hook() noexcept
 {
-	g_mcf.hookOnCommand([](MCRESULT* res, CommandContext* ctx)->intptr_t {
-		if (g_native->m_onCommand.isEmpty()) return 1;
+	g_mcf.hookOnCommand([](MinecraftCommands* commands, MCRESULT* res, SharedPtr<CommandContext>* ctxptr, bool)->intptr_t {
+		if (g_native->m_onCommand.isEmpty()) return 0;
+
 		JsScope _scope;
 		JsValue oncmd = g_native->m_onCommand;
 
+		CommandContext* ctx = ctxptr->pointer();
 		String name = ctx->origin->getName();
 		JsValue jsres = oncmd(TText16() << utf8ToUtf16(ctx->command.text()), name.text());
 		switch (jsres.getType())
@@ -398,9 +400,9 @@ void Native::_hook() noexcept
 		case JsType::Integer:
 		case JsType::Float:
 			res->result = jsres.cast<int>();
-			return 0;
+			return 1;
 		}
-		return 1;
+		return 0;
 		});
 	// get_thread_local_invalid_parameter_handler
 

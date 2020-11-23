@@ -12,10 +12,13 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTDIR=$(dirname "$SCRIPT")
 "$SCRIPTDIR"/bin/bdsx-cli-linux $@
 if [ $? != 2 ]; then exit $?; fi
-TARGETDIR=$(pwd)/bdsx
+
+cwd=$(pwd)
+TARGETDIR=$cwd/bdsx
 export WINEDEBUG=-all
-pushd ~/.bds
+
+cd ~/.bds
 $WINE ~/.bds/bedrock_server.exe "$TARGETDIR"
-popd
+cd $cwd
 
 exit $?

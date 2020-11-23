@@ -140,6 +140,24 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
         [`bin${sep}bdsx-cli-linux`, 0o755],
         [`bdsx.sh`, 0o755],
     ]));
+
+    // make docker image
+    const dockerfile = `
+FROM alpine
+
+RUN apk update
+RUN apk add screen freetype nodejs npm wine
+RUN npm i bdsx@${BDSX_VERSION} -g
+RUN bdsx i -y
+EXPOSE 19132 19133
+
+ENTRYPOINT screen -S bdsx sh /usr/bin/bdsx
+`;
+    await fs.promises.writeFile('docker/Dockerfile', dockerfile);
+    try { run(`docker image rm -f karikera/bdsx`); } catch (err) {}
+    run(`docker build ./docker -t karikera/bdsx:${BDSX_VERSION}`);
+    run(`docker push karikera/bdsx:${BDSX_VERSION}`);
+
 })().catch(err=>{
     console.error(err.stack || err.toString());
 });

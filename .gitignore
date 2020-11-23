@@ -8,3 +8,4 @@ bin
 /bdsx/buildtime.h
 /bdsx/gen
 /release/bdsx
+/docker

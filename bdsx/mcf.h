@@ -32,7 +32,7 @@ struct MinecraftFunctionTable
 	void hookOnConnectionClosedAfter(void(*onclose)(const NetworkIdentifier&)) noexcept;
 	void hookOnRuntimeError(void(*callback)(EXCEPTION_POINTERS* ptr)) noexcept;
 	// return error code
-	void hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept;
+	void hookOnCommand(intptr_t(*callback)(MinecraftCommands* commands, MCRESULT* res, SharedPtr<CommandContext>* ctx, bool)) noexcept;
 	void hookOnLog(void(*callback)(int color, const char * log, size_t size)) noexcept;
 	void hookOnCommandPrint(void(*callback)(const char* log, size_t size)) noexcept;
 	void hookOnCommandIn(void (*callback)(String* dest)) noexcept;

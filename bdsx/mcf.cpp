@@ -670,34 +670,34 @@ void MinecraftFunctionTable::hookOnRuntimeError(void(*callback)(EXCEPTION_POINTE
 		code.jump(onInvalidParameter, RAX);
 	}
 };
-void MinecraftFunctionTable::hookOnCommand(intptr_t(*callback)(MCRESULT* res, CommandContext* ctx)) noexcept
+void MinecraftFunctionTable::hookOnCommand(intptr_t(*callback)(MinecraftCommands* commands, MCRESULT* res, SharedPtr<CommandContext>* ctx, bool)) noexcept
 {
 	static const byte ORIGINAL_CODE[] = {
-		// 0x4C, 0x8B, 0xF2, // mov r14,rdx
-		// 0x4C, 0x8B, 0xF9, // mov r15,rcx
 		0x4C, 0x89, 0x45, 0xB0, // mov qword ptr ss:[rbp-50],r8
 		0x49, 0x8B, 0x00, // mov rax,qword ptr ds:[r8]
 		0x48, 0x8B, 0x48, 0x20, // mov rcx,qword ptr ds:[rax+20]
 		0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-		0xFF, 0x90, 0xA0, 0x00, 0x00, 0x00, // call qword ptr ds:[rax+A0]
-		0x48, 0x8B, 0xF8, // mov rdi,rax
 	};
 
 	Code junction(96);
+	junction.mov(RCX, RSP);
 	junction.sub(RSP, 0x28);
-	junction.write(ORIGINAL_CODE);
-	junction.mov(RCX, R14);
-	junction.mov(RAX, QwordPtr, RBP, -0x50);
-	junction.mov(RDX, QwordPtr, RAX);
 	junction.call(callback, RAX);
 	junction.add(RSP, 0x28);
+	junction.test(RAX, RAX);
+	junction.jz(13);
+	junction.pop(RCX);
+	junction.jump64((byte*)MinecraftCommands$executeCommand + 0x73b, RAX);
+	junction.mov(QwordPtr, RBP, -0x50, RSI);
+	junction.mov(RAX, QwordPtr, RSI);
+	junction.mov(RCX, QwordPtr, RAX, 0x20);
+	junction.mov(RAX, QwordPtr, RCX);
 	junction.ret();
 
 	McftRenamer renamer;
-	junction.patchToBoolean(
+	junction.patchTo(
 		FNNAME(MinecraftCommands$executeCommand), 0x40,
-		RAX, (byte*)MinecraftCommands$executeCommand + 0x76d,
-		ORIGINAL_CODE, RAX);
+		ORIGINAL_CODE, RAX, false);
 };
 void MinecraftFunctionTable::hookOnLog(void(*callback)(int color, const char* log, size_t size)) noexcept
 {

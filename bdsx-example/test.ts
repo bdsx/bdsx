@@ -224,7 +224,8 @@ chat.on(ev=>{
     }
 });
 command.hook.on((command)=>{
-    if (command === 'test')
+    console.log(command);
+    if (command === '/test')
     {
         console.log('tested');
         return 0;

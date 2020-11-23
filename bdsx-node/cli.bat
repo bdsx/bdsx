@@ -17,9 +17,9 @@ if "%NODE_PATH%" == "" (
 )
 
 set TARGETDIR=%cd%
-pushd "%UserProfile%\.bds"
+cd "%UserProfile%\.bds"
 %UserProfile%\.bds\bedrock_server.exe --dir "%TARGETDIR%" %*
-popd
+cd %TARGETDIR%
 
 GOTO :eof
 ::CMDLITERAL
@@ -47,8 +47,8 @@ else
 fi
 TARGETDIR=$(pwd)
 export WINEDEBUG=-all
-pushd ~/.bds
+cd ~/.bds
 $WINE ~/.bds/bedrock_server.exe --dir "$TARGETDIR" $@
-popd
+cd TARGETDIR
 
 exit $?

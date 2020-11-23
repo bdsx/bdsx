@@ -36,14 +36,14 @@ void Code::patchTo(Text name, void* base, size_t offset, Buffer originalCode, Re
 	CodeDiff diff = JitFunction::patchTo((byte*)base + offset, originalCode, tempregister, jump, skip);
 	if (!diff.succeeded()) codeError(name, base, offset, diff);
 }
-void Code::patchToBoolean(Text name, void* base, size_t offset, hook::Register testregister, void* jumpPoint, Buffer originalCode, Register tempregister) noexcept
+void Code::patchTo_jz(Text name, void* base, size_t offset, hook::Register testregister, void* jumpPoint, Buffer originalCode, Register tempregister) noexcept
 {
 	if (base == nullptr)
 	{
 		console.logA(TSZ() << "[BDSX] " << name << "+0x" << hexf(offset) << " - skipped, junction point not found\n");
 		return;
 	}
-	CodeDiff diff = JitFunction::patchToBoolean((byte*)base + offset, testregister, jumpPoint, originalCode, tempregister);
+	CodeDiff diff = JitFunction::patchTo_jz((byte*)base + offset, testregister, jumpPoint, originalCode, tempregister);
 	if (!diff.succeeded()) codeError(name, base, offset, diff);
 }
 
