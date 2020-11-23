@@ -216,11 +216,18 @@ async function testWithModule<T>(
 let connectedNi:NetworkIdentifier;
 
 chat.on(ev=>{
-    if (ev.message == "est")
+    if (ev.message == "test")
     {
         console.assert(connectedNi === ev.networkIdentifier, 'the network identifier does not matched');
         console.log('tested');
         return CANCEL;
+    }
+});
+command.hook.on((command)=>{
+    if (command === 'test')
+    {
+        console.log('tested');
+        return 0;
     }
 });
 

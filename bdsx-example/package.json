@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "YOU",
   "dependencies": {
-    "bdsx": "file:../../bdsx-node",
+    "bdsx": "file:../bdsx-node",
     "discord.js": "^11.6.4",
     "mariadb": "^2.5.1"
   },

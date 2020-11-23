@@ -174,7 +174,7 @@ const BDS_VERSION = version.BDS_VERSION;
 const BDSX_VERSION = pkg.version;
 const BDS_ZIP_NAME = `bedrock-server-${BDS_VERSION}.zip`;
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/${BDS_ZIP_NAME}`;
-const EMINUS_VERSION = '1.0.5';
+const EMINUS_VERSION = '1.0.6';
 const EMINUS_LINK = `https://github.com/karikera/elementminus/releases/download/${EMINUS_VERSION}/eminus.zip`;
 const BDS_DIR = `${homedir}${sep}.bds`;
 const EXE_NAME = `bedrock_server.exe`;
@@ -339,7 +339,7 @@ const concurrencyLoop = async(function*<T>(array:T[], concurrency:number, callba
 
 function unzipBdsxTo(dest:string):Promise<void>
 {
-    fs_ori.unlink(`${dest}${sep}node.dll`, ()=>{});
+    fs.unlink(`${dest}${sep}node.dll`).catch(()=>{});
     return fs_ori.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
     .pipe(unzipper.Extract({ path: dest }))
     .promise();
@@ -461,7 +461,7 @@ const downloadBDS = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
         installinfo.bdsVersion = null;
         delete installinfo.files;
     }
-    yield fs.copyFile(`${__dirname}${sep}vcruntime140_1.dll`, `${BDS_DIR}${sep}vcruntime140_1.dll`);
+    fs.unlink(`${BDS_DIR}${sep}vcruntime140_1.dll`).catch(()=>{});
 
     // eminus
     console.log(`Element Minus: Install to ${BDS_DIR}`);

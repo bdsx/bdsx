@@ -4,7 +4,7 @@ import child_process = require('child_process');
 
 // update version
 import bdsx_package_json = require("../package.json");
-import { copy, zip, mkdir, targz } from './util';
+import { copy, zip, mkdir, targz, delfile } from './util';
 import { homedir } from 'os';
 import { sep } from 'path';
 import archiver = require('archiver');
@@ -108,7 +108,7 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
     copy('./cli.js', './package/pkg/index.js');
     copy('./bdsx-bin.zip', './package/pkg/bdsx-bin.zip');
     copy('./bdsx-example.zip', './package/pkg/bdsx-example.zip');
-    copy('./vcruntime140_1.dll', './package/pkg/vcruntime140_1.dll');
+    delfile('./package/pkg/vcruntime140_1.dll');
     mkdir('./package/pkg/gen');
     copy('./gen/version.json', './package/pkg/gen/version.json');
     process.chdir('..');

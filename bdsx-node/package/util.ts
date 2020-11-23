@@ -84,7 +84,7 @@ export function zip(dest:string, onzip:(archive:archiver.Archiver)=>void):Promis
     });
 }
 
-export function copy(from:string, to:string)
+export function copy(from:string, to:string):void
 {
     console.log(`copy "${from}" "${to}"`);
     try
@@ -97,7 +97,12 @@ export function copy(from:string, to:string)
     }
 }
 
-export function mkdir(path:string)
+export function delfile(path:string):void
+{
+    try { fs.unlinkSync(path); } catch (err) {}
+}
+
+export function mkdir(path:string):void
 {
     try { fs.mkdirSync(path); } catch (err) {}
 }

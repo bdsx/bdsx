@@ -46,6 +46,7 @@ else
 	export NODE_PATH=$NODE_PATH:$GLOBAL_NODE_PATH
 fi
 TARGETDIR=$(pwd)
+export WINEDEBUG=-all
 pushd ~/.bds
 $WINE ~/.bds/bedrock_server.exe --dir "$TARGETDIR" $@
 popd

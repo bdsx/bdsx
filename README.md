@@ -68,6 +68,9 @@ https://github.com/karikera/bdsx/issues
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
 
+## for ChakraCore
+https://github.com/karikera/bdsx/wiki
+
 ## Build It Self
 * Requirement
 [Visual Studio 2019](https://visualstudio.microsoft.com/)  

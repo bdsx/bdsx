@@ -11,8 +11,7 @@
       "gen/version.json"
     ],
     "assets": [
-      "bdsx-bin.zip",
-      "vcruntime140_1.dll"
+      "bdsx-bin.zip"
     ]
   },
   "keywords": [],
