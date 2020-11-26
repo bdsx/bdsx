@@ -429,7 +429,7 @@ const downloadBDS = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     }
     if (yield fs.exists(`${BDS_DIR}${sep}${EXE_NAME}`)) 
     {
-        yield update(installinfo);
+        yield update(installinfo, opts);
         return;
     }
     if (!opts || !opts.manualBds)
@@ -477,28 +477,38 @@ const downloadBDS = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     console.log(`BDSX: Installed successfully`);
 });
 
-const update = async(function*(installinfo:InstallInfo){
+const update = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     let updated = false;
+    
     if (installinfo.bdsVersion === null)
     {
         console.log(`BDS: --manual-bds`);
     }
-    else if (installinfo.bdsVersion === BDS_VERSION)
+    else if (!opts || !opts.manualBds)
     {
-        console.log(`BDS: Latest (${BDS_VERSION})`);
+        if (installinfo.bdsVersion === BDS_VERSION)
+        {
+            console.log(`BDS: Latest (${BDS_VERSION})`);
+        }
+        else
+        {
+            console.log(`BDS: Old (${installinfo.bdsVersion})`);
+            console.log(`BDS: Install to ${BDS_DIR}`);
+            if (installinfo.files)
+            {
+                yield removeInstalled(installinfo.files);
+            }
+            const writedFiles:string[] = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
+            installinfo.bdsVersion = BDS_VERSION;
+            installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
+            updated = true;
+        }
     }
     else
     {
-        console.log(`BDS: Old (${installinfo.bdsVersion})`);
-        console.log(`BDS: Install to ${BDS_DIR}`);
-        if (installinfo.files)
-        {
-            yield removeInstalled(installinfo.files);
-        }
-        const writedFiles = yield downloadAndUnzip('BDS', BDS_LINK, BDS_DIR, true);
-        installinfo.bdsVersion = BDS_VERSION;
-        installinfo.files = writedFiles.filter(file=>!KEEPS.has(file));
+        installinfo.bdsVersion = null;
         updated = true;
+        console.log(`BDS: --manual-bds`);
     }
     
     // element minus

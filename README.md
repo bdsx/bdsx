@@ -46,6 +46,11 @@ bdsx example ./example # make example project to './example'
 bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package.json
 ```
 
+### by docker
+```sh
+docker run karikera/bdsx
+```
+
 ## Build (Watch Mode)
 It will build by rollup/babel/typescript in watch mode.  
 babel can transpile latest scripts to es2015. and it makes compatibility.
@@ -90,4 +95,3 @@ https://github.com/karikera/bdsx/wiki
 
 5. Build `bdsx/bdsx-node` with Visual Studio Code. And select `Package`.  
  It will generate a zip file to `bdsx/release-zip/bdsx-[version].zip`
-
