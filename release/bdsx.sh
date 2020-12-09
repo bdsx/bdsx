@@ -10,7 +10,7 @@ fi
 
 SCRIPT=$(readlink -f "$0")
 SCRIPTDIR=$(dirname "$SCRIPT")
-"$SCRIPTDIR"/bin/bdsx-cli-linux $@
+"$SCRIPTDIR"/bin/bdsx-linux $@
 if [ $? != 2 ]; then exit $?; fi
 
 cwd=$(pwd)

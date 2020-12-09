@@ -25,6 +25,7 @@ namespace nodegate
 		virtual void require(StringView a) noexcept = 0;
 		virtual void log(StringView a) noexcept = 0;
 		virtual void error(StringView a) noexcept = 0;
+		virtual void tickCallback() noexcept = 0;
 	};
 	class NodeGateConfig
 	{

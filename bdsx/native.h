@@ -29,7 +29,6 @@ public:
 	Native() noexcept;
 	~Native() noexcept;
 	bool fireError(kr::JsRawData err) noexcept;
-	void reset() noexcept;
 
 	NetHookModule nethook;
 	void onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept;

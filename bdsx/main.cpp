@@ -40,6 +40,8 @@
 
 #pragma comment(lib, "chakrart.lib")
 
+#undef main
+
 using namespace kr;
 
 namespace
@@ -52,6 +54,7 @@ namespace
 	hook::IATHookerList s_iatChakra(s_module, "chakra.dll");
 	hook::IATHookerList s_iatWS2_32(s_module, "WS2_32.dll");
 	hook::IATHookerList s_iatUcrtbase(s_module, "api-ms-win-crt-heap-l1-1-0.dll");
+	hook::IATHookerList s_iatMsvcp140(s_module, "msvcp140.dll");
 	Map<Text, AText> s_uuidToPackPath;
 }
 
@@ -186,13 +189,15 @@ JsErrorCode CALLBACK JsRunScriptHook(
 				JsScope _scope;
 				try
 				{
-					JsExceptionCatcher catcher;
-					g_call->require((Text16)newpath);
+					TText source = File::openAsArray<char>(newpath.data());
+					TText16 source16 = (Utf8ToUtf16)source;
+					JsRuntime::run((Text16)newpath, (Text16)source16);
 				}
 				catch (JsException& e)
 				{
 					g_native->fireError(e.getValue());
 				}
+				g_call->tickCallback();
 			}
 			// JsErrorCode err = JsRunScript(script, sourceContext, wide(newpath.data()), result);
 			// if (err != JsNoError) catchException();
@@ -201,6 +206,7 @@ JsErrorCode CALLBACK JsRunScriptHook(
 	}
 	JsErrorCode err = JsRunScript(script, sourceContext, sourceUrl, result);
 	if (err != JsNoError) catchException();
+	g_call->tickCallback();
 	return err;
 }
 JsErrorCode CALLBACK JsCallFunctionHook(
@@ -211,6 +217,7 @@ JsErrorCode CALLBACK JsCallFunctionHook(
 {
 	JsErrorCode err = JsCallFunction(function, arguments, argumentCount, result);
 	if (err != JsNoError) catchException();
+	g_call->tickCallback();
 	return err;
 }
 JsErrorCode CALLBACK JsStartDebuggingHook() noexcept
@@ -257,7 +264,6 @@ BOOL WINAPI DllMain(
 			char16_t** argv_16_start = kr::unwide(CommandLineToArgvW(commandLine, &argc));
 			positions.reserve(argc);
 			s_cmdline_buffer.reserve(1024);
-
 
 			char16_t** argv_16 = argv_16_start;
 			s_cmdline_buffer << (kr::Utf16ToUtf8)(kr::Text16)(*argv_16++) << '\0';
@@ -357,11 +363,13 @@ BOOL WINAPI DllMain(
 		{
 			console.startStdin();
 		}
+
 		console.logA("[BDSX] Attached\n");
 		console.logA("[BDSX] Build Time = " BUILD_TIME "\n");
 
 		g_mcf.free = (void(*)(void*)) * s_iatUcrtbase.getFunctionStore("free");
 		g_mcf.malloc = (void* (*)(size_t)) * s_iatUcrtbase.getFunctionStore("malloc");
+		g_mcf._Cnd_do_broadcast_at_thread_exit = (void(*)()) * s_iatMsvcp140.getFunctionStore("_Cnd_do_broadcast_at_thread_exit");
 		g_mcf.load();
 
 		{
@@ -407,9 +415,9 @@ BOOL WINAPI DllMain(
 				0x48, 0x83, 0xF8, 0x1F, 0x76, 0x07, 0xFF, 0x15,
 				0x3A, 0xDA, 0x1C, 0x01, 0xCC, 0xE8, 0x80, 0x55,
 				0x01, 0x01
-			});
+			}, { {5, 9},  {24, 28},  {80, 84},  {86, 90} });
 
-			// skipCommandListDestruction
+			// skipCommandListDestruction, it makes an error when run commands on shutdown.
 			MCF_NOP(ScriptEngine$dtor$ScriptEngine, 435, {
 				0x48, 0x8D, 0x4B, 0x78,			// lea         rcx,[rbx+78h]  
 				0xE8, 0x00, 0x00, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
@@ -423,11 +431,10 @@ BOOL WINAPI DllMain(
 				0x07, 0x48, 0x8D, 0x86, 0x30, 0x02, 0x00, 0x00,
 				0x48, 0x8B, 0x80, 0x38, 0x01, 0x00, 0x00, 0xF6, 
 				0x00, 0x04, 0x0F, 0x84, 0x47, 0x01, 0x00, 0x00
-			});
+			}, { {1, 5},  {16, 20},  {28, 32} });
 		}
 
 		g_mcf.hookOnProgramMainCall([](int _argc, char** _argv){
-#undef main
 			return g_mcf.main(g_nodecall.argc, g_nodecall.argv);
 			});
 		g_mcf.hookOnLog([](int color, const char* log, size_t size) {
@@ -453,7 +460,7 @@ BOOL WINAPI DllMain(
 			}
 			});
 		g_mcf.hookOnCommandPrint([](const char * log, size_t size) {
-			console.logLine({ log, size });
+			console.log({ log, size });
 			});
 		g_mcf.hookOnCommandIn([](String* dest) {
 			TText text = console.getLine();
@@ -462,8 +469,10 @@ BOOL WINAPI DllMain(
 		g_mcf.hookOnGameThreadCall([](void* pad, void* lambda) {
 			g_mcf.std$_Pad$_Release(pad);
 
-			 g_nodecall.lambda = lambda;
-			 nodegate::start(&g_nodecall);
+			g_nodecall.lambda = lambda;
+			nodegate::start(&g_nodecall);
+			// g_mcf.$_game_thread_lambda_$$_call_(lambda);
+			g_mcf._Cnd_do_broadcast_at_thread_exit();
 			});
 
 		{
@@ -471,7 +480,7 @@ BOOL WINAPI DllMain(
 
 			// hook on start server
 			MCF_HOOK(ServerInstance$startServerThread, 
-				{ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x56, 0x48, 0x8D, 0x68, 0xA1, 0x48, 0x81, 0xEC, 0xD0, 0x00, 0x00, 0x00 }
+				{ 0x48, 0x8B, 0xC4, 0x55, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8D, 0x68, 0xA1, 0x48, 0x81, 0xEC, 0x00, 0x01, 0x00, 0x00 }
 			)(ServerInstance* instance) {
 				g_server = instance;
 				SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL {
@@ -505,6 +514,7 @@ BOOL WINAPI DllMain(
 					{
 						g_native->fireError(e.getValue());
 					}
+					g_call->tickCallback();
 				}
 			};
 
@@ -533,7 +543,7 @@ BOOL WINAPI DllMain(
 		s_iatChakra.hooking("JsCallFunction", JsCallFunctionHook);
 		s_iatChakra.hooking("JsStartDebugging", JsStartDebuggingHook);
 		s_iatChakra.hooking("JsSetProperty", JsSetPropertyHook);
-		// s_iatChakra.hooking("JsSetIndexedProperty", JsSetIndexedPropertyHook);
+		s_iatChakra.hooking("JsSetIndexedProperty", JsSetIndexedPropertyHook);
 	}
 	return true;
 }

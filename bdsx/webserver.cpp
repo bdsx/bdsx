@@ -2,6 +2,7 @@
 #include <KR3/fs/file.h>
 #include "native.h"
 #include "nativefile.h"
+#include "nodegate.h"
 
 using namespace kr;
 
@@ -98,6 +99,7 @@ void WebServer::page(Text16 path, JsValue cb) noexcept
 			{
 				g_native->fireError(err.getValue());
 			}
+			g_call->tickCallback();
 			});
 		});
 }

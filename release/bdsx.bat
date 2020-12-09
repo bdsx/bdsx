@@ -1,8 +1,8 @@
 
-@%~dp0\bin\bdsx-cli-win %*
+@%~dp0\bin\bdsx-win %*
 @if "%errorlevel%" neq "2" goto :eof
 
-@set TARGET="%cd%\bdsx"
-@pushd "%UserProfile%\.bds" 
-@"%UserProfile%\.bds\bedrock_server.exe" "%TARGET%"
-@popd
+@set TARGETDIR=%cd%
+cd /D "%UserProfile%\.bds"
+@"%UserProfile%\.bds\bedrock_server.exe" "%TARGETDIR%\bdsx"
+cd /D %TARGETDIR%

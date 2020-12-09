@@ -6,11 +6,15 @@
 #include <KR3/net/client.h>
 #include <KR3/util/bufferqueue.h>
 
+#include <conio.h>
+
 using namespace kr;
 
 namespace
 {
 	constexpr size_t MAXIMUM_BUFFER = 8192;
+	CriticalSection s_csForInput;
+	bool s_quitingWithInput = false;
 }
 
 Console console;
@@ -100,15 +104,7 @@ class Console::Input:public Threadable<Console::Input>
 private:
 	EventList<2> m_inputEvents;
 
-	AText16 m_input;
-	Array<size_t> m_inputPos;
-	size_t m_lengthInConsole = 0;
-	
-	Array<AText16> m_history;
-	size_t m_historyIdx = 0;
-
-	size_t m_cursor;
-
+	AText m_input;
 	Array<AText> m_inputRequests;
 	atomic<size_t> m_inputCount;
 
@@ -137,252 +133,6 @@ private:
 
 	};
 
-	COORD _getPos() noexcept
-	{
-		CONSOLE_SCREEN_BUFFER_INFO cinfo;
-		GetConsoleScreenBufferInfo(console.m_stdout, &cinfo);
-		return cinfo.dwCursorPosition;
-	}
-	void _setPos(COORD coord) noexcept
-	{
-		SetConsoleCursorPosition(console.m_stdout, coord);
-	}
-
-	void _delete() noexcept
-	{
-		m_input.remove(m_cursor);
-		m_inputPos.remove(m_cursor);
-		_invalidate(m_cursor);
-	}
-
-	size_t _getConsolePos() noexcept
-	{
-		return m_cursor == 0 ? 0 : m_inputPos[m_cursor - 1];
-	}
-	size_t _getConsolePos(size_t at) noexcept
-	{
-		return at == 0 ? 0 : m_inputPos[at - 1];
-	}
-
-	void _clearDisplay() noexcept
-	{
-		size_t pos = _getConsolePos();
-		for (size_t i = 0; i < pos; i++)
-		{
-			cout << '\b';
-		}
-		for (size_t i = 0; i < m_lengthInConsole; i++)
-		{
-			cout << ' ';
-		}
-		for (size_t i = 0; i < m_lengthInConsole; i++)
-		{
-			cout << '\b';
-		}
-	}
-	void _forward(size_t count) noexcept
-	{
-		COORD coord = _getPos();
-		coord.X += (short)(count);
-		_setPos(coord);
-	}
-	void _back(size_t count) noexcept
-	{
-		COORD coord = _getPos();
-		coord.X -= (short)(count);
-		_setPos(coord);;
-	}
-	void _move(size_t from, size_t to)
-	{
-		if (to > from) _forward(to - from);
-		else _back(from - to);
-	}
-	void _restoreDisplay() noexcept
-	{
-		cout << Utf16ToAnsi(m_input);
-		size_t pos = _getConsolePos();
-		size_t end = m_lengthInConsole;
-		_back(end - pos);
-	}
-	void _setCursor(size_t to) noexcept
-	{
-		if (m_cursor == to) return;
-		size_t frompos = _getConsolePos();
-		size_t topos = _getConsolePos(to);
-		m_cursor = to;
-		_move(frompos, topos);
-	}
-
-	bool _readStdin() noexcept
-	{
-		for (char chr : Text(""))
-		{
-			m_displayLock.enter();
-			cout << "0x" << hexf((byte)chr) << endl;
-			m_displayLock.leave();
-
-			if (chr == (char)0xe0)
-			{
-				switch (chr)
-				{
-				case 0x48: // up
-					if (m_historyIdx > 0)
-					{
-						m_historyIdx--;
-						_setInput(m_history[m_historyIdx]);
-					}
-					break;
-				case 0x4B: // left
-					m_displayLock.enter();
-					if (m_cursor > 0)
-					{
-						_setCursor(m_cursor - 1);
-					}
-					m_displayLock.leave();
-					break;
-				case 0x4D: // right
-					m_displayLock.enter();
-					if (m_cursor < m_input.size())
-					{
-						_setCursor(m_cursor + 1);
-					}
-					m_displayLock.leave();
-					break;
-				case 0x50: // down
-					size_t size = m_history.size();
-					if (m_historyIdx < size)
-					{
-						m_historyIdx++;
-						if (m_historyIdx == size)
-						{
-							m_displayLock.enter();
-							m_input.clear();
-							m_inputPos.clear();
-							m_cursor = 0;
-							m_displayLock.leave();
-						}
-						else
-						{
-							_setInput(m_history[m_historyIdx]);
-						}
-					}
-					break;
-				}
-			}
-			else switch (chr)
-			{
-			case VK_RETURN: {
-				m_displayLock.enter();
-				AText16 out = move(m_input);
-				m_inputPos.clear();
-				m_lengthInConsole = 0;
-				m_cursor = 0;
-				if (out.empty())
-				{
-					m_displayLock.leave();
-					return false;
-				}
-				cout << endl;
-				m_displayLock.leave();
-				m_history.push(move(out));
-				if (m_history.size() > HISTORY_MAX)
-				{
-					m_history.remove(0);
-				}
-				m_historyIdx = m_history.size();
-				return true;
-			}
-			case VK_BACK:
-				m_displayLock.enter();
-				if (m_cursor != 0)
-				{
-					_setCursor(m_cursor - 1);
-					_delete();
-				}
-				m_displayLock.leave();
-				break;
-			case VK_DELETE:
-				m_displayLock.enter();
-				if (m_cursor != m_input.size())
-				{
-					_delete();
-				}
-				m_displayLock.leave();
-				break;
-			default:
-				//	char16 chr = (char16)record.Event.KeyEvent.uChar.UnicodeChar;
-				if (chr == 0) break;
-				m_displayLock.enter();
-				m_input.insert(m_cursor, chr);
-				size_t prevpos = _getPos().X;
-				cout << chr;
-				size_t size = _getPos().X - prevpos;
-				size_t oldpos = _getConsolePos(m_cursor);
-				m_inputPos.insert(m_cursor, oldpos + size);
-
-				m_cursor++;
-				_invalidate(m_cursor);
-
-				m_lengthInConsole++;
-				m_displayLock.leave();
-				break;
-			}
-		}
-		return false;
-	}
-
-	void _invalidate(size_t from) noexcept
-	{
-		size_t cpos = _getConsolePos();
-		size_t pos = _getConsolePos(from);
-		_move(cpos, pos);
-
-		Text16 fromText = m_input.subarr(from);
-
-		ArrayWriter<size_t> poslist = m_inputPos.subarr(from).toWriter();
-		for (char16 chr : fromText)
-		{
-			short prevpos = _getPos().X;
-			cout << (Utf16ToAnsi)Text16(&chr, 1);
-			size_t size = _getPos().X - prevpos;
-			pos += size;
-			poslist.write(pos);
-		}
-		size_t end = !m_inputPos.empty() ? m_inputPos.back() : 0;
-		if (end < m_lengthInConsole)
-		{
-			for (; end < m_lengthInConsole; end++)
-			{
-				cout << ' ';
-			}
-			_back(m_lengthInConsole - cpos);
-		}
-		else
-		{
-			_back(end - cpos);
-		}
-		m_lengthInConsole = end;
-	}
-	void _setInput(Text16 input) noexcept
-	{
-		m_displayLock.enter();
-		_clearDisplay();
-		m_inputPos.resize(0, input.size());
-		m_input = input;
-		size_t pos = 0;
-		for (char16 chr : input)
-		{
-			short prevpos = _getPos().X;
-			cout << (Utf16ToAnsi)Text16(&chr, 1);
-			size_t size = _getPos().X - prevpos;
-			pos += size;
-			m_inputPos.push(pos);
-		}
-		m_lengthInConsole = m_inputPos.empty() ? 0 : m_inputPos.back();
-		m_cursor = m_input.size();
-		m_displayLock.leave();
-	}
-
 public:
 
 	Input() noexcept
@@ -399,8 +149,31 @@ public:
 		char buffer[256];
 		for (;;)
 		{
-			gets_s(buffer);
-			input((Text)(const char *)buffer);
+			char* dest = m_input.padding(256);
+
+			s_csForInput.enter();
+			if (!s_quitingWithInput)
+			{
+				fgets(dest, 256, stdin);
+				s_csForInput.leave();
+				if (s_quitingWithInput) Sleep(INFINITE);
+			}
+			else
+			{
+				s_csForInput.leave();
+				Sleep(INFINITE);
+			}
+
+			size_t length = strlen(dest);
+			if (length != 0)
+			{
+				m_input.commit(length);
+				if (m_input.back() == '\n')
+				{
+					m_input.pop();
+					input(move(m_input));
+				}
+			}
 		}
 		return 0;
 	}
@@ -449,19 +222,15 @@ public:
 	void print(Text text, bool error) noexcept
 	{
 		m_displayLock.enter();
-		_clearDisplay();
 		if (error) cerr << text;
 		else cout << text;
-		_restoreDisplay();
 		m_displayLock.leave();
 	}
 	void println(Text text, bool error) noexcept
 	{
 		m_displayLock.enter();
-		_clearDisplay();
 		if (error) cerr << text << endl;
 		else cout << text << endl;
-		_restoreDisplay();
 		m_displayLock.leave();
 	}
 };
@@ -492,6 +261,20 @@ void Console::setColor(int color) noexcept
 {
 	SetConsoleTextAttribute(m_stdout, color);
 	m_color = color;
+}
+void Console::waitInput() noexcept
+{
+	if (s_csForInput.tryEnter())
+	{
+		_getch();
+		s_csForInput.leave();
+	}
+	else
+	{
+		s_quitingWithInput = true;
+		s_csForInput.enter();
+		s_csForInput.leave();
+	}
 }
 void Console::logA(Text text, bool error) noexcept
 {

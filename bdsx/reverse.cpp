@@ -64,7 +64,7 @@ size_t NetworkIdentifier::getHash() const noexcept
 Text NetworkIdentifier::getAddress() const noexcept
 {
 	RakNet::SystemIndex idx = address.GetSystemIndex();
-	RakNet::RakPeer* rakpeer = g_server->networkHandler()->instance->peer();
+	RakNet::RakPeer* rakpeer = g_server->networkHandler()->instance()->peer();
 	RakNet::SystemAddress addr = rakpeer->GetSystemAddressFromIndex(idx);
 	return (Text)addr.ToString();
 }
@@ -210,10 +210,6 @@ ServerPlayer* ServerNetworkHandler::_getServerPlayer(const NetworkIdentifier& ni
 	return g_mcf.ServerNetworkHandler$_getServerPlayer(this, ni, data);
 }
 
-ServerNetworkHandler** NetworkHandler::getServer(size_t serverIndex) noexcept
-{
-	return (&serversBegin())[serverIndex];
-}
 void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char u) noexcept
 {
 	return g_mcf.NetworkHandler$send(this, &ni, packet, u);
@@ -221,10 +217,6 @@ void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned 
 NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni) noexcept
 {
 	return g_mcf.NetworkHandler$_getConnectionFromId(this, ni);
-}
-EncryptedNetworkPeer * NetworkHandler::getEncryptedPeerForUser(const NetworkIdentifier& ni) noexcept
-{
-	return g_mcf.NetworkHandler$getEncryptedPeerForUser(this, ni);
 }
 
 AttributeInstance* BaseAttributeMap::getMutableInstance(AttributeId type) noexcept

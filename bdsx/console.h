@@ -26,6 +26,7 @@ public:
 	kr::JsValue createModule() noexcept;
 	int getColor() noexcept;
 	void setColor(int color) noexcept;
+	void waitInput() noexcept;
 
 	// write log without encoding converting
 	// only for ASCII characters

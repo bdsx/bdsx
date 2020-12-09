@@ -131,15 +131,15 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
     const ZIP = `./release-zip/bdsx-${BDSX_VERSION}-win.zip`;
     await zip(ZIP, archive=>{
         archive.directory('release/bdsx', 'bdsx');
-        archive.file('release/bin/bdsx-cli-win.exe', { name: 'bin/bdsx-cli-win.exe' });
+        archive.file('release/bin/bdsx-win.exe', { name: 'bin/bdsx-win.exe' });
         archive.file('release/bdsx.bat', { name: 'bdsx.bat' });
     });
     
     await targz('./release', `./release-zip/bdsx-${BDSX_VERSION}-linux.tar.gz`, new Map([
         [`bdsx.bat`, 0], // ignore
-        [`bin${sep}bdsx-cli-win.exe`, 0], // ignore
-        [`bin${sep}bdsx-cli-macos`, 0], // ignore
-        [`bin${sep}bdsx-cli-linux`, 0o755],
+        [`bin${sep}bdsx-win.exe`, 0], // ignore
+        [`bin${sep}bdsx-macos`, 0], // ignore
+        [`bin${sep}bdsx-linux`, 0o755],
         [`bdsx.sh`, 0o755],
     ]));
 
@@ -148,14 +148,14 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
 FROM alpine
 
 RUN apk update
-RUN apk add screen freetype nodejs npm wine
+RUN apk add freetype nodejs npm wine
 RUN npm i -g bdsx@${BDSX_VERSION} -g
 RUN echo ${BDSX_VERSION}&bdsx i -y
 RUN echo ${BDSX_VERSION}&bdsx example ~/bdsx
 WORKDIR ~/bdsx
 EXPOSE 19132
 
-ENTRYPOINT screen -S bdsx sh /usr/bin/bdsx ~/bdsx
+ENTRYPOINT /usr/bin/bdsx ~/bdsx
 `;
     await fs.promises.writeFile('docker/Dockerfile', dockerfile);
     try { run(`docker image rm -f karikera/bdsx`); } catch (err) {}

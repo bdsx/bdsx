@@ -13,7 +13,7 @@ JsValue ExEncoding::jsencode(JsValue buffer, int encoding) throws(JsException)
 	if (encoding == UTF16)
 	{
 		size_t textBytes = text.bytes();
-		destbuf = JsNewTypedArray(JsTypedArrayType::Uint8, textBytes);
+		destbuf = JsNewTypedArray(JsTypedType::Uint8, textBytes);
 		WBuffer dest = destbuf.getBuffer();
 		memcpy(dest.data(), text.data(), textBytes);
 	}
@@ -23,7 +23,7 @@ JsValue ExEncoding::jsencode(JsValue buffer, int encoding) throws(JsException)
 		CHARSET_CONSTLIZE(cs,
 			Utf16ToMultiByte<cs> encoding = text;
 			size_t textBytes = encoding.size();
-			destbuf = JsNewTypedArray(JsTypedArrayType::Uint8, textBytes);
+			destbuf = JsNewTypedArray(JsTypedType::Uint8, textBytes);
 			WBuffer dest = destbuf.getBuffer();
 			encoding.copyTo((char*)dest.data());
 		);

@@ -9,8 +9,6 @@ Manual<JsContext> g_ctx;
 
 namespace
 {
-	JsPersistent s_callbacks[0x100];
-
 	bool s_ctxCreated = false;
 	DWORD contextThreadId;
 }

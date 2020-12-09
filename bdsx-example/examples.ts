@@ -28,7 +28,7 @@ system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
 
 // Custom Command
 import { command, serverControl } from "bdsx";
-// this hooks all commands, even It will can run by command blocks
+// this hooks all commands, but it cannot be executed by command blocks
 command.hook.on((command, originName)=>{
     if (command === '/close')
     {

@@ -1181,8 +1181,7 @@ struct BatchedNetworkPeer
 struct RakNetInstance
 {
 	void* vftable;
-	NetworkHandler* handler;
-	OFFSETFIELD(RakNet::RakPeer*, peer, 0x1b8);
+	OFFSETFIELD(RakNet::RakPeer*, peer, 0x1c8);
 };
 
 struct LocalConnector;
@@ -1204,20 +1203,11 @@ struct NetworkHandler
 	};
 
 	NetworkHandler() = delete;
-	void* vftable; // 0x0
-	void* vtable2; // 0x8
-	void* vtable3; // 0x10
-	void* vtable4; // 0x18
-	RakNetInstance* instance;
-	LocalConnector* local;
-	RakNetServerLocator* locator;
-	OFFSETFIELD(BatchedNetworkPeer*, bpeer, 0xd0);
-	OFFSETFIELD(ServerNetworkHandler**, serversBegin, 0x258);
+	void* vftable;
+	OFFSETFIELD(RakNetInstance*, instance, 0x30);
 
 	void send(const NetworkIdentifier& ni, Packet* packet, unsigned char u) noexcept;
 	Connection* getConnectionFromId(const NetworkIdentifier& ni) noexcept;
-	ServerNetworkHandler** getServer(size_t serverIndex) noexcept;
-	EncryptedNetworkPeer* getEncryptedPeerForUser(const NetworkIdentifier& ni) noexcept;
 };
 
 
@@ -1235,10 +1225,9 @@ struct ServerInstance
 	ServerInstance() = delete;
 	void* vftable;
 
-	OFFSETFIELD(DedicatedServer*, server, 0x88);
-	OFFSETFIELD(Minecraft*, minecraft, 0x90);
-	OFFSETFIELD(NetworkHandler*, networkHandler, 0x98);
-	OFFSETFIELD(LoopbackPacketSender*, sender, 0xa0);
+	OFFSETFIELD(DedicatedServer*, server, 0x90);
+	OFFSETFIELD(Minecraft*, minecraft, 0x98);
+	OFFSETFIELD(NetworkHandler*, networkHandler, 0xa0);
 
 	Dimension* createDimension(DimensionId id) noexcept;
 	Dimension* createDimensionByName(kr::Text16 text) noexcept;
@@ -1267,18 +1256,9 @@ struct Actor
 	Actor() = delete;
 	Actor$VFTable* vftable;
 
-	// need to re-match
-	OFFSETFIELD(BlockSource*, blockSource, 0x348);
-	OFFSETFIELD(Dimension*, dimension, 0x350);
-	OFFSETFIELD(ServerLevel*, level, 0x358);
-
-	OFFSETFIELD(String, ns, 0x3b8); // "minecraft"
-	OFFSETFIELD(String, name, 0x3d8); // "player"
-
-	OFFSETFIELD(String, className, 0x418); // minecraft:player<>
-	OFFSETFIELD(String, identifier, 0x440); // minecraft:player
-	OFFSETFIELD(BaseAttributeMap*, attributes, 0x460);
-	OFFSETFIELD(ActorRuntimeID, runtimeId, 0x570); // 0x4f8
+	OFFSETFIELD(String, identifier, 0x450); // minecraft:player
+	OFFSETFIELD(BaseAttributeMap*, attributes, 0x478);
+	OFFSETFIELD(ActorRuntimeID, runtimeId, 0x588); // 0x4f8
 
 	bool isServerPlayer() noexcept;
 	ActorType getEntityTypeId() noexcept;

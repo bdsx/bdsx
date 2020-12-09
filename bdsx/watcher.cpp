@@ -1,5 +1,6 @@
 #include "watcher.h"
 #include "native.h"
+#include "nodegate.h"
 
 using namespace kr;
 
@@ -20,6 +21,7 @@ void Watcher::Impl::onCreated(Text16 name) noexcept
 	{
 		g_native->fireError(err.getValue());
 	}
+	g_call->tickCallback();
 }
 void Watcher::Impl::onDeleted(Text16 name) noexcept
 {
@@ -33,6 +35,7 @@ void Watcher::Impl::onDeleted(Text16 name) noexcept
 	{
 		g_native->fireError(err.getValue());
 	}
+	g_call->tickCallback();
 }
 void Watcher::Impl::onModified(Text16 name) noexcept
 {
@@ -46,6 +49,7 @@ void Watcher::Impl::onModified(Text16 name) noexcept
 	{
 		g_native->fireError(err.getValue());
 	}
+	g_call->tickCallback();
 }
 void Watcher::Impl::onRenamed(Text16 newname, Text16 oldname) noexcept
 {
@@ -59,6 +63,7 @@ void Watcher::Impl::onRenamed(Text16 newname, Text16 oldname) noexcept
 	{
 		g_native->fireError(err.getValue());
 	}
+	g_call->tickCallback();
 }
 Watcher* Watcher::Impl::_watcher() noexcept
 {

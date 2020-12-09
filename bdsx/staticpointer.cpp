@@ -167,7 +167,7 @@ JsValue StaticPointer::getString(JsValue bytes, int offset, int encoding) throws
 JsValue StaticPointer::getBuffer(int bytes, int offset) throws(JsException)
 {
 	byte* p = m_address + offset;
-	JsValue value = JsNewTypedArray(JsTypedArrayType::Uint8, bytes);
+	JsValue value = JsNewTypedArray(JsTypedType::Uint8, bytes);
 	try
 	{
 		value.getBuffer().subcopy(Buffer(p, bytes));

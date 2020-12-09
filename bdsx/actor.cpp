@@ -13,7 +13,6 @@ using namespace kr;
 static CriticalSection s_csActorMap;
 #endif
 
-JsPersistent NativeActor::s_onActorDestroyed;
 Map<Actor*, JsPersistent> NativeActor::s_actorMap;
 using ActorMapIterator = Map<Actor*, JsPersistent>::iterator;
 
@@ -183,9 +182,6 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 	cls->setMethod(u"getDimension", &NativeActor::getDimension);
 	cls->setMethod(u"setAttribute", &NativeActor::setAttribute);
 	cls->setMethod(u"getAttribute", &NativeActor::getAttribute);
-	cls->setStaticMethod(u"setOnDestroy", [](JsValue listener) {
-		storeListener(&s_onActorDestroyed, listener);
-		});
 	cls->setStaticMethod(u"fromPointer", &NativeActor::fromPointer);
 	cls->setStaticMethod(u"fromUniqueId", &NativeActor::fromUniqueId);
 
@@ -194,7 +190,7 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 
 		// hookOnActorRelease
 		MCF_HOOK(Level$removeEntityReferences,
-			{ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8D, 0x68, 0xA1 }
+			{ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8B, 0xEC, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00 }
 		)(Level * level, Actor * actor, bool b) {
 			_assert((intptr_t)actor > 0);
 			_removeActor(actor);
@@ -219,7 +215,6 @@ void NativeActor::initMethods(JsClassT<NativeActor>* cls) noexcept
 }
 void NativeActor::reset() noexcept
 {
-	s_onActorDestroyed = JsPersistent();
 #ifndef NDEBUG
 	CsLock _lock = s_csActorMap;
 #endif

@@ -25,7 +25,7 @@ JsValue createFsModule() noexcept
 			{
 				JsValue buffer = JsNewArrayBuffer(size);
 				size_t readed = file->read(buffer.getTypedArrayBuffer().data(), size);
-				return (JsValue)JsNewTypedArray(buffer, JsTypedArrayType::Uint8, readed);
+				return (JsValue)JsNewTypedArray(buffer, JsTypedType::Uint8, readed);
 			}
 			else
 			{

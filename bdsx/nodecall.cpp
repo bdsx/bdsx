@@ -27,10 +27,10 @@ void NodeCall::main_call(nodegate::JsCall* jscall) noexcept
 		try
 		{
 			g_mcf.Minecraft$update(mc);
+			g_call->tickCallback();
 
 			kr::JsScope scope;
 			g_mainPump->processOnce();
-
 			nodegate::nodeProcessTimer();
 		}
 		catch (kr::QuitException&)

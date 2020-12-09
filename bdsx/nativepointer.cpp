@@ -156,7 +156,7 @@ JsValue NativePointer::readString(JsValue bytes, int encoding) throws(JsExceptio
 }
 JsValue NativePointer::readBuffer(int bytes) throws(JsException)
 {
-	JsValue value = JsNewTypedArray(JsTypedArrayType::Uint8, bytes);
+	JsValue value = JsNewTypedArray(JsTypedType::Uint8, bytes);
 	try
 	{
 		value.getBuffer().subcopy(Buffer(m_address, bytes));

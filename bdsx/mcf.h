@@ -46,14 +46,14 @@ struct MinecraftFunctionTable
 	String* (*ExtendedCertificate$getXuid)(String* out, const Certificate&);
 	String* (*ExtendedCertificate$getIdentityName)(String* out, const Certificate&);
 	void (*ServerInstance$_update)(ServerInstance*);
-	void (*Minecraft$update)(Minecraft*);
+	bool (*Minecraft$update)(Minecraft*);
 	void (*NetworkHandler$onConnectionClosed)(NetworkHandler*, const NetworkIdentifier&, bool);
 	void (*ServerInstance$ServerInstance)(ServerInstance* server, IMinecraftApp*, ServerInstanceEventCoordinator&);
 	void (*DedicatedServer$start)(String* str);
 	void (*ScriptEngine$startScriptLoading)(ScriptEngine*);
 	bool (*ScriptEngine$isScriptingEnabled)(ScriptEngine*);
 	MCRESULT* (*MinecraftCommands$executeCommand)(MinecraftCommands * _this, MCRESULT* out, SharedPtr<CommandContext>, bool);
-	void (*DedicatedServer$stop)(void* DedicatedServer_add_8);
+	void (*DedicatedServer$stop)(void* DedicatedServer_8);
 	void (*NetworkHandler$send)(NetworkHandler*, const NetworkIdentifier*, Packet*, unsigned char);
 	void (*NetworkHandler$_sendInternal)(const NetworkIdentifier*, Packet*, const String*);
 	size_t (*NetworkIdentifier$getHash)(const NetworkIdentifier*);
@@ -91,6 +91,7 @@ struct MinecraftFunctionTable
 
 	void (*free)(void*);
 	void* (*malloc)(size_t size);
+	void (*_Cnd_do_broadcast_at_thread_exit)();
 	int (*main)(int argc, char** argv);
 	void* ScriptEngine$initialize;
 	int (*__scrt_common_main_seh)();

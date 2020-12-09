@@ -1,29 +1,59 @@
 import { AttributeId, DimensionId, Bufferable, Encoding, TypeFromEncoding } from "./common";
 
 export namespace fs {
+    /** 
+     * @deprecated use node.js
+     */
     export function appendFileSync(path: string, content: string|Bufferable, encoding?:Encoding): void;
+    /** 
+     * @deprecated use node.js
+     */
     export function writeFileSync(path: string, content: string|Bufferable, encoding?:Encoding): void;
+    /** 
+     * @deprecated use node.js
+     */
     export function readFileSync<T extends Encoding=Encoding.Utf8>(path: string, encoding?:T): TypeFromEncoding<T>;
+    /** 
+     * @deprecated use node.js
+     */
     export function deleteFileSync(path: string):boolean;
+    /** 
+     * @deprecated use node.js
+     */
     export function deleteRecursiveSync(path: string):boolean;
+    /** 
+     * @deprecated use node.js
+     */
     export function copyFileSync(from: string, to: string):boolean;
+    /** 
+     * @deprecated use node.js
+     */
     export function copyRecursiveSync(from: string, to: string):boolean;
+    /** 
+     * @deprecated use node.js
+     */
     export function mkdirSync(path: string):boolean;
+    /** 
+     * @deprecated use node.js
+     */
     export function mkdirRecursiveSync(path: string):boolean;
 
     /**
     *  Current working directory
+    * @deprecated use node.js
     */
     export function cwd(): string;
 
     /**
     *  Change directory
+    * @deprecated use node.js
     */
     export function chdir(dir: string): void;
 
     /**
     * Native file, It will open file with CreateFile WinAPI function
     * Must be closed
+    * @deprecated use node.js
     */
     export class File {
         /**
@@ -66,8 +96,12 @@ export namespace fs {
 
     /**
     * Watch directory changes
+    * @deprecated use node.js
     */
     export class Watcher {
+        /**
+         * @deprecated use node.js
+         */
         constructor(path:string, subtree?:boolean);
         setOnCreated(func: (name: string) => void): void;
         setOnDeleted(func: (name: string) => void): void;
@@ -546,6 +580,11 @@ export class WebServer
     constructor(localPath:string, port?:number);
     page(path:string, cb:(req:Request)=>void):void;
 }
+
+/**
+ * for test
+ */
+export function forceRuntimeError(onOtherThread?:boolean):void;
 
 /**
  * the alloc function for std::vector

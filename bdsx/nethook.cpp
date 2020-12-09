@@ -13,6 +13,7 @@
 #include "networkidentifier.h"
 #include "sharedptr.h"
 #include "native.h"
+#include "nodegate.h"
 
 using namespace kr;
 
@@ -142,15 +143,22 @@ void NetHookModule::hook() noexcept
 			NativePointer * rawpacketptr = NativePointer::newInstance();
 			rawpacketptr->setAddressRaw(data.data());
 
+			bool ignore;
 			try
 			{
-				JsValue ret = ((JsValue)iter->second)(rawpacketptr, (int)data.size(), jsni, (int)packetId);
-				if (ret == false) return nullptr;
+				ignore = ((JsValue)iter->second)(rawpacketptr, (int)data.size(), jsni, (int)packetId) == false;
 			}
 			catch (JsException & err)
 			{
+				ignore = false;
 				g_native->fireError(err.getValue());
 			}
+			catch (...)
+			{
+				console.logA("SEH error\n");
+			}
+			g_call->tickCallback();
+			if (ignore) return nullptr;
 		}
 		return g_mcf.MinecraftPackets$createPacket(packet_dest, packetId);
 		});
@@ -170,8 +178,8 @@ void NetHookModule::hook() noexcept
 
 		try
 		{
-			JsValue ret = ((JsValue)iter->second)(packetptr, _this->lastSenderNi, (int)packetId);
-			if (ret == false)
+			bool ignore = ((JsValue)iter->second)(packetptr, _this->lastSenderNi, (int)packetId) == false;
+			if (ignore)
 			{
 				result->streamReadResult = StreamReadResult::Ignore;
 			}
@@ -180,6 +188,11 @@ void NetHookModule::hook() noexcept
 		{
 			g_native->fireError(err.getValue());
 		}
+		catch (...)
+		{
+			console.logA("SEH error\n");
+		}
+		g_call->tickCallback();
 		return result;
 		});
 	g_mcf.hookOnPacketAfter([](OnPacketRBP* rbp, MinecraftPacketIds packetId) {
@@ -207,6 +220,7 @@ void NetHookModule::hook() noexcept
 		{
 			console.logA("SEH error\n");
 		}
+		g_call->tickCallback();
 		});
 	g_mcf.hookOnPacketSendInternal([](NetworkHandler* handler, const NetworkIdentifier& ni, Packet* packet, String* data)->NetworkHandler::Connection* {
 
@@ -223,21 +237,23 @@ void NetHookModule::hook() noexcept
 			JsValue jsni = JsNetworkIdentifier::fromRaw(ni);
 
 
+			bool ignore;
 			try
 			{
-				if (((JsValue)iter->second)(packetptr, jsni, (int)packetId, data->text()) == false)
-				{
-					return nullptr;
-				}
+				ignore = ((JsValue)iter->second)(packetptr, jsni, (int)packetId, data->text()) == false;
 			}
 			catch (JsException & err)
 			{
+				ignore = false;
 				g_native->fireError(err.getValue());
 			}
 			catch (...)
 			{
+				ignore = false;
 				console.logA("SEH error\n");
 			}
+			g_call->tickCallback();
+			if (ignore) return nullptr;
 		}
 		return handler->getConnectionFromId(ni);
 		});
@@ -254,6 +270,7 @@ void NetHookModule::hook() noexcept
 			JsScope scope;
 			JsValue onClosed = _this->m_onConnectionClosed;
 			onClosed(JsNetworkIdentifier::fromRaw(ni));
+			g_call->tickCallback();
 		};
 	}
 	g_mcf.hookOnConnectionClosedAfter([](const NetworkIdentifier& ni) {

@@ -26,8 +26,6 @@
 #include <KR3/mt/criticalsection.h>
 #include <KRWin/handle.h>
 
-#include <conio.h>
-
 using namespace kr;
 
 Manual<Native> g_native;
@@ -319,7 +317,6 @@ JsValue createServerControlModule() noexcept
 			throw QuitException(0);
 			});
 		});
-	winmodule.setMethod(u"reset", []() { g_native->reset(); });
 	winmodule.setMethod(u"debug", [] {
 		requestDebugger();
 		debug();
@@ -353,7 +350,22 @@ bool Native::fireError(JsRawData err) noexcept
 	JsValue onError = m_onError;
 	if (!onError.isEmpty())
 	{
-		if (onError(err) == false)
+		bool ignore;
+		try
+		{
+			ignore = onError(err) == false;
+		}
+		catch (JsException& newerr)
+		{
+			ignore = false;
+			err = newerr.getValue();
+		}
+		catch (...)
+		{
+			console.logA("SEH error\n");
+		}
+		g_call->tickCallback();
+		if (ignore)
 		{
 			return true;
 		}
@@ -365,23 +377,6 @@ bool Native::fireError(JsRawData err) noexcept
 	if (stack == undefined) stack = err.toString();
 	g_call->error(stack.cast<Text16>());
 	return false;
-}
-void Native::reset() noexcept
-{
-	nethook.reset();
-	NativeActor::reset();
-	JsNetworkIdentifier::reset();
-	Watcher::reset();
-	MariaDB::reset();
-
-	TrafficLogger::clearWait();
-	m_props.clear();
-	m_onError = nullptr;
-	m_onCommand = nullptr;
-	m_onRuntimeError = nullptr;
-	s_ipfilter.clear();
-
-	_createNativeModule();
 }
 
 void Native::_hook() noexcept
@@ -400,9 +395,12 @@ void Native::_hook() noexcept
 		case JsType::Integer:
 		case JsType::Float:
 			res->result = jsres.cast<int>();
+			g_call->tickCallback();
 			return 1;
+		default:
+			g_call->tickCallback();
+			return 0;
 		}
-		return 0;
 		});
 	// get_thread_local_invalid_parameter_handler
 
@@ -441,6 +439,31 @@ void Native::_hook() noexcept
 }
 void Native::_createNativeModule() noexcept
 {
+	JsValueRef forceRuntimeError;
+	JsCreateFunction([](JsValueRef, bool, JsValueRef* args, unsigned short argn, void*)->JsValueRef {
+		JsScope __scope;
+
+		if (argn >= 2)
+		{
+			JsValue onOtherThread = (JsRawData)args[1];
+			if (onOtherThread == true)
+			{
+				try
+				{
+					throw JsException(u"unimplemented");
+				}
+				catch (JsException& err)
+				{
+					JsSetException(err.getValue().getRaw());
+				}
+				return JsValue(undefined).getRaw();
+			}
+		}
+		*(void**)0 = 0;
+		return JsValue(undefined).getRaw();
+	}, nullptr, &forceRuntimeError);
+	m_props.insert(u"forceRuntimeError", (JsRawData)forceRuntimeError);
+
 	m_props.insert(u"serverControl", createServerControlModule());
 	m_props.insert(u"console", console.createModule());
 	m_props.insert(u"loadPdb", JsFunction::makeT([](Text16 path){
@@ -538,6 +561,7 @@ void Native::_createNativeModule() noexcept
 			return out;
 		})->then([cb = (JsPersistent)cb](Text16 data){
 			((JsValue)cb)(data);
+			g_call->tickCallback();
 		});
 		}));
 	m_props.insert(u"spawn", JsFunction::makeT([](Text16 path, Text16 param, JsValue curdir) {
@@ -553,6 +577,7 @@ void Native::_createNativeModule() noexcept
 			text = nullptr;
 			JsValue cb = callback;
 			cb(out);
+			g_call->tickCallback();
 			});
 		}));
 	m_props.insert(u"encode", JsFunction::makeT(ExEncoding::jsencode));
@@ -676,7 +701,7 @@ void Native::onRuntimeError(EXCEPTION_POINTERS* ptr) noexcept
 	}
 
 	cleanAllResource();
-	_getch();
+	console.waitInput();
 	terminate(-1);
 }
 

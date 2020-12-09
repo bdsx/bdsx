@@ -29,6 +29,7 @@ using namespace hook;
 #define HASH_1_16_0_2 "B3385584CF5F99FEB29180A5A04A0788"
 #define HASH_1_16_20_03 "B575B802BE9C4B17F580B2485DE06D98"
 #define HASH_1_16_100_04 "6E4E57777403D4359C899F3308436B27"
+#define HASH_1_16_200_02 "5C9351D3BB8FCDA6D7037F9911A5F03E"
 
 #define FNNAME(v) renamer.varNameToCppName(#v), v
 
@@ -382,7 +383,7 @@ void MinecraftFunctionTable::load() noexcept
 			console.logA("[BDSX] Predefined does not founded\n");
 		}
 
-		if (hash == HASH_1_16_100_04)
+		if (hash == HASH_1_16_200_02)
 		{
 			console.logA("[BDSX] MD5 Hash matched(Version == " BDS_VERSION ")\n");
 		}
@@ -465,19 +466,21 @@ void MinecraftFunctionTable::hookOnUpdate(void(*update)(Minecraft* mc)) noexcept
 	cmp eax,2
 	*/
 	static const byte ORIGINAL_CODE[] = {
-		0xE8, 0x38, 0xEB, 0x6E, 0x00, 0x41, 0x8B, 0x86, 0xF8, 0x00, 0x00, 0x00, 0x83, 0xF8, 0x02
+		0xE8, 0x38, 0xEB, 0x6E, 0x00, 
+		0x41, 0x8B, 0x86, 0x08, 0x01, 0x00, 0x00, 
+		0x83, 0xF8, 0x02
 	};
 	Code junction(64);
 	junction.sub(RSP, 0x28);
 	junction.call(update, RAX);
 	junction.add(RSP, 0x28);
-	junction.mov(RAX, DwordPtr, R14, 0xF8);
+	junction.mov(RAX, DwordPtr, R14, 0x108);
 	junction.cmp(RAX, 2);
 	junction.ret();
 
 	McftRenamer renamer;
-	junction.patchTo(FNNAME(ServerInstance$_update), 0x123
-		, ORIGINAL_CODE, RAX, false);
+	junction.patchTo(FNNAME(ServerInstance$_update), 0x116
+		, ORIGINAL_CODE, RAX, false, { {1, 5} });
 };
 void MinecraftFunctionTable::hookOnPacketRaw(SharedPtr<Packet>* (*onPacket)(OnPacketRBP* rbp, MinecraftPacketIds id, NetworkHandler::Connection* conn)) noexcept
 {

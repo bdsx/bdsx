@@ -1,6 +1,5 @@
 /.vs
 bin
-*.user
 /release/bin
 /release-zip
 /bdsx.zip
@@ -9,3 +8,4 @@ bin
 /bdsx/gen
 /release/bdsx
 /docker
+/bdsx-example/discord.bot.token.txt

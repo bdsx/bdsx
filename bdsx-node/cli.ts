@@ -458,7 +458,7 @@ const downloadBDS = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     }
     else
     {
-        installinfo.bdsVersion = null;
+        installinfo.bdsVersion = 'manual';
         delete installinfo.files;
     }
     fs.unlink(`${BDS_DIR}${sep}vcruntime140_1.dll`).catch(()=>{});
@@ -477,22 +477,35 @@ const downloadBDS = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     console.log(`BDSX: Installed successfully`);
 });
 
+/**
+ * @return true if it needs the update
+ */
+function checkVersion(name:string, curVersion:string|null|undefined, newVersion:string):boolean
+{
+    if (curVersion === newVersion)
+    {
+        console.log(`${name}: Latest (${newVersion})`);
+        return false;
+    }
+    else
+    {
+        console.log(`${name}: Old (${curVersion})`);
+        console.log(`${name}: New (${newVersion})`);
+        return true;
+    }
+}
+
 const update = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     let updated = false;
     
-    if (installinfo.bdsVersion === null)
+    if (installinfo.bdsVersion === null || installinfo.bdsVersion === 'manual')
     {
         console.log(`BDS: --manual-bds`);
     }
     else if (!opts || !opts.manualBds)
     {
-        if (installinfo.bdsVersion === BDS_VERSION)
+        if (checkVersion('BDS', installinfo.bdsVersion, BDS_VERSION))
         {
-            console.log(`BDS: Latest (${BDS_VERSION})`);
-        }
-        else
-        {
-            console.log(`BDS: Old (${installinfo.bdsVersion})`);
             console.log(`BDS: Install to ${BDS_DIR}`);
             if (installinfo.files)
             {
@@ -512,13 +525,8 @@ const update = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     }
     
     // element minus
-    if (installinfo.eminusVersion === EMINUS_VERSION)
+    if (checkVersion('Element Minus', installinfo.eminusVersion, EMINUS_VERSION))
     {
-        console.log(`Element Minus: Latest (${EMINUS_VERSION})`);
-    }
-    else
-    {
-        console.log(`Element Minus: Old (${installinfo.eminusVersion})`);
         console.log(`Element Minus: Install to ${BDS_DIR}`);
         yield downloadAndUnzip('Element Minus', EMINUS_LINK, BDS_DIR, false);
         installinfo.eminusVersion = EMINUS_VERSION;
@@ -533,13 +541,8 @@ const update = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
     }
 
     // bdsx
-    if (installinfo.bdsxVersion === BDSX_VERSION)
+    if (checkVersion('BDSX-mod', installinfo.bdsxVersion, BDSX_VERSION))
     {
-        console.log(`BDSX-mod: Latest (${BDSX_VERSION})`);
-    }
-    else
-    {
-        console.log(`BDSX-mod: Old (${installinfo.bdsxVersion})`);
         console.log(`BDSX-mod: Install to ${MOD_DIR}`);
         yield unzipBdsxTo(MOD_DIR);
         installinfo.bdsxVersion = BDSX_VERSION;

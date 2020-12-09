@@ -42,6 +42,5 @@ public:
 private:
 	static void _removeActor(Actor* actor) noexcept;
 
-	static kr::JsPersistent s_onActorDestroyed;
 	static kr::Map<Actor*, kr::JsPersistent> s_actorMap;
 };

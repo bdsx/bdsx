@@ -219,6 +219,9 @@ export {
 };
 
 
+/**
+ * @deprecated use node.js
+ */
 export function wget(url:string):Promise<string>
 {
     return new Promise(resolve=>{
@@ -228,6 +231,9 @@ export function wget(url:string):Promise<string>
     });
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function exec(command:string, cwd?:string):Promise<string>
 {
     return new Promise(resolve=>{
@@ -235,6 +241,9 @@ export function exec(command:string, cwd?:string):Promise<string>
     });
 }
 
+/**
+ * @deprecated use node.js
+ */
 export function execVoid(command:string, cwd?:string):void
 {
     native.exec(command, cwd);

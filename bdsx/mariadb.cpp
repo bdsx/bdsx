@@ -112,6 +112,7 @@ MariaDBInternal::MariaDBInternal(JsValue cb, AText host, AText id, AText passwor
 MariaDBInternal::~MariaDBInternal() noexcept
 {
 	s_db_ref--;
+	_assert(s_db_ref >= 0);
 	s_db_removed->set();
 }
 void MariaDBInternal::fetch(JsValue callback) throws(JsException)

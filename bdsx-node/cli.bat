@@ -17,9 +17,9 @@ if "%NODE_PATH%" == "" (
 )
 
 set TARGETDIR=%cd%
-cd "%UserProfile%\.bds"
+cd /D "%UserProfile%\.bds"
 %UserProfile%\.bds\bedrock_server.exe --dir "%TARGETDIR%" %*
-cd %TARGETDIR%
+cd /D %TARGETDIR%
 
 GOTO :eof
 ::CMDLITERAL

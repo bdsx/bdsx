@@ -4,9 +4,9 @@
 It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
 * OS: Windows & Linux(with Wine)
 * Supports all BDS features!
-* Supports all node.js features!
+* Supports all[(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules) node.js features!
 * [Debug with Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
-* Run scripts without any addons or experimental play!
+* Run scripts without any addons!
 * Hijack chatting!
 ```ts
 import { chat } from 'bdsx';
@@ -25,8 +25,6 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
 ```
 * [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)!
 * [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)!
-  
-It's very mutable now, I will remove or change API names frequently!  
 
 ## How to use it?
 ### by executable

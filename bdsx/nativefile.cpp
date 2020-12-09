@@ -1,6 +1,7 @@
 #include "nativefile.h"
 #include "native.h"
 #include "encoding.h"
+#include "nodegate.h"
 #include <KR3/win/windows.h>
 
 using namespace kr;
@@ -109,12 +110,12 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 			{
 				if (dwErrorCode == ERROR_HANDLE_EOF)
 				{
-					JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, 0);
+					JsValue buffer = JsNewTypedArray(ab, JsTypedType::Uint8, 0);
 					callback(nullptr, buffer);
 				}
 				else
 				{
-					JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, dwBytesTransferred);
+					JsValue buffer = JsNewTypedArray(ab, JsTypedType::Uint8, dwBytesTransferred);
 					if (dwErrorCode == 0)
 					{
 						callback(nullptr, buffer);
@@ -129,6 +130,7 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 			{
 				g_native->fireError(err.getValue());
 			}
+			g_call->tickCallback();
 			delete state;
 		}))
 	{
@@ -137,8 +139,9 @@ void NativeFile::read(double offset, int size, JsValue callback) throws(JsExcept
 		if (err == ERROR_HANDLE_EOF)
 		{
 			JsValue ab = state->buffer;
-			JsValue buffer = JsNewTypedArray(ab, JsTypedArrayType::Uint8, 0);
+			JsValue buffer = JsNewTypedArray(ab, JsTypedType::Uint8, 0);
 			callback(nullptr, buffer);
+			g_call->tickCallback();
 			return;
 		}
 		throwError(err, toString());
@@ -175,6 +178,7 @@ void NativeFile::write(double offset, JsValue obj, JsValue callback) throws(JsEx
 			{
 				g_native->fireError(err.getValue());
 			}
+			g_call->tickCallback();
 			delete state;
 		}))
 	{
