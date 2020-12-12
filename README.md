@@ -1,3 +1,4 @@
+[EN](README.md)|[KR](README.ko.md)
 
 ## BDSX: Minecraft Bedrock Dedicated Server + node.js!
 ![logo](icon.png)  
@@ -62,7 +63,7 @@ babel can transpile latest scripts to es2015. and it makes compatibility.
 1. Open `bdsx/` with Prompt
 2. run `npm run watch`
 
-## JS API Reference
+## BDSX Wiki(Include JS API Reference)
 https://github.com/karikera/bdsx/wiki
 
 ## Bug Report or Q&A
@@ -70,9 +71,6 @@ https://github.com/karikera/bdsx/issues
 
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
-
-## for ChakraCore
-https://github.com/karikera/bdsx/wiki
 
 ## Build It Self
 * Requirement
