@@ -101,6 +101,7 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
     {
         run('npm publish');
         process.chdir('./package/pkg');
+        await new Promise(resolve=>setTimeout(resolve, 5000)); // waiting to avoid npm not found
         run('npm i');
         process.chdir('../..');
     }
