@@ -12,6 +12,7 @@
   "author": "karikera <karikera3@hotmail.com> (https://rua.kr)",
   "license": "ISC",
   "dependencies": {
+    "follow-redirects": "^1.13.1",
     "fstream": "^1.0.12",
     "krevent": "^2.0.1",
     "progress": "^2.0.3",
@@ -19,6 +20,7 @@
     "unzipper": "^0.10.11"
   },
   "devDependencies": {
+    "@types/follow-redirects": "^1.13.0",
     "@types/archiver": "^3.1.1",
     "@types/node": "^14.14.11",
     "@types/progress": "^2.0.3",

@@ -1,6 +1,7 @@
 /tsconfig.json
 /.vscode
 /package
+/downloadedZip
 *.ts
 !*.d.ts
 *.js.map

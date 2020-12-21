@@ -12,7 +12,7 @@ import version = require('./gen/version.json');
 import pkg = require("./package.json");
 import ProgressBar = require("progress");
 import { execSync } from 'child_process';
-import https = require('https');
+import { https } from 'follow-redirects';
 
 try
 {
@@ -85,7 +85,11 @@ const fs = {
     {
         return new Promise((resolve, reject)=>{
             fs_ori.mkdir(path, (err)=>{
-                if (err) reject(err);
+                if (err)
+                {
+                    if (err.code === 'EEXIST') resolve();
+                    else reject(err);
+                }
                 else resolve();
             });
         });
@@ -290,25 +294,42 @@ const concurrencyLoop = async(function*<T>(array:T[], concurrency:number, callba
 function unzipBdsxTo(dest:string):Promise<void>
 {
     fs.unlink(`${dest}${sep}node.dll`).catch(()=>{});
-    return fs_ori.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
-    .pipe(unzipper.Extract({ path: dest }))
-    .promise();
+    return new Promise((resolve, reject)=>{
+        fs_ori.createReadStream(`${__dirname}${sep}bdsx-bin.zip`)
+        .on('error', reject)
+        .pipe(unzipper.Extract({ path: dest }))
+        .promise().then(resolve, reject);
+    });
 }
 
 function download(url:string, dest:string):Promise<void>
 {
     return new Promise((resolve, reject)=>{
-        const file = fs_ori.createWriteStream(dest);
-        https.get(url, function(response) {
-          response.pipe(file);
-          file.on('finish', function() {
-            file.close();
-            resolve();
-          });
-        }).on('error', function(err) { // Handle errors
-          fs.unlink(dest);
-          reject(err.message);
+        https.get(url, (response)=>{
+            if (response.statusCode !== 200)
+            {
+                fs.unlink(dest);
+                reject(Error(`${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
+                return;
+            }
+            const file = fs_ori.createWriteStream(dest);
+            response.pipe(file);
+            file.on('finish', ()=>{
+                file.close();
+                resolve();
+            });
+        }).on('error', (err)=>{
+            fs.unlink(dest);
+            reject(err);
         });
+    });
+}
+function downloadIfNotExists(url:string, dest:string):Promise<void>
+{
+    return fs.stat(dest).then(stat=>{
+        if (stat.size < 10) return download(url, dest);
+    }, ()=>{
+        return download(url, dest);
     });
 }
 
@@ -319,9 +340,11 @@ const downloadAndUnzip = async(function*(prefix:string, url:string, dest:string,
      });
     
     const zipfilename = url.substr(url.lastIndexOf('/')+1);
-    const zipfilepath = path.join(path.join(__dirname, zipfilename));
+    const zipfiledir = path.join(__dirname, 'downloadedZip');
+    const zipfilepath = path.join(zipfiledir, zipfilename);
 
-    yield download(url, zipfilepath);
+    yield fs.mkdir(zipfiledir);
+    yield downloadIfNotExists(url, zipfilepath);
     const archive:unzipper.CentralDirectory = yield unzipper.Open.file(zipfilepath);
 
     const writedFiles:string[] = [];
@@ -350,15 +373,21 @@ const downloadAndUnzip = async(function*(prefix:string, url:string, dest:string,
         var extractPath = path.join(dest, entry.path);
         if (extractPath.indexOf(dest) != 0) return;
         var writer = Writer({ path: extractPath });
-        yield new Promise<void>((resolve, reject)=>{
+        yield new Promise<void>(resolve=>{
             entry.stream()
-                .on('error',reject)
+                .on('error', err=>{
+                    console.error(err);
+                    resolve();
+                })
                 .pipe(writer)
                 .on('close',()=>{
                     bar.tick();
                     resolve();
                 })
-                .on('error',reject);
+                .on('error', err=>{
+                    console.error(err);
+                    resolve();
+                });
         });
     }));
     return writedFiles;
@@ -505,13 +534,7 @@ const update = async(function*(installinfo:InstallInfo, opts?:ArgsOption){
         installinfo.eminusVersion = EMINUS_VERSION;
         updated = true;
     }
-    try
-    {
-        yield fs.mkdir(MOD_DIR);
-    }
-    catch (err)
-    {
-    }
+    yield fs.mkdir(MOD_DIR);
 
     // bdsx
     if (checkVersion('BDSX-mod', installinfo.bdsxVersion, BDSX_VERSION))
