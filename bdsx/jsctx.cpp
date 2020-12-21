@@ -28,7 +28,8 @@ void destroyJsContext() noexcept
 {
 	if (!s_ctxCreated) return;
 	s_ctxCreated = false;
-	JsContext::_cleanForce();
+	JsContext::_cleanStackCounter();
+	JsContext::_exit();
 	g_ctx->enter();
 	try
 	{

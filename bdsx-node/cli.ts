@@ -2,7 +2,6 @@
  * This script will copy to package/pkg/index.js
  */
 
-import request = require('request');
 import fs_ori = require('fs');
 import unzipper = require('unzipper');
 import { sep } from 'path';
@@ -13,6 +12,7 @@ import version = require('./gen/version.json');
 import pkg = require("./package.json");
 import ProgressBar = require("progress");
 import { execSync } from 'child_process';
+import https = require('https');
 
 try
 {
@@ -231,56 +231,6 @@ class MessageError extends Error
     }
 }
 
-function wget(url:string):Promise<string>
-{
-    return new Promise((resolve, reject)=>{
-        request({
-            url,
-            headers:{'User-Agent': USER_AGENT},
-        }, (error, resp, body)=>{
-            if (error) return reject(error);
-            resolve(body);
-        });
-    });
-}
-
-interface GitHubInfo
-{
-    version:string;
-    url:string;
-}
-const wgetGitHubInfo = async(function*(url:string){
-    const latest = JSON.parse(yield wget(url));
-    return {
-        version: latest.tag_name,
-        url: latest.assets[0].browser_download_url
-    }
-});
-
-const readFiles = async(function*(root:string){
-    const out:string[] = [];
-    const _readFiles = async(function*(path:string){
-        const proms:Promise<void>[] = [];
-        for (const file of <string[]>(yield fs.readdir(root+path)))
-        {
-            const stat:fs_ori.Stats = yield fs.stat(file);
-            if (!stat.isDirectory())
-            {
-                out.push(`${path}${sep}${file}`);
-                continue;
-            }
-            else
-            {
-                out.push(`${path}${sep}${file}${sep}`);
-                proms.push(_readFiles(`${path}${sep}${file}`));
-            }
-        }
-        yield Promise.all(proms);
-    });
-    yield _readFiles(root);
-    return out;
-});
-
 const rmdirRecursive = async(function*(path:string, filter:(path:string)=>boolean=()=>true){
     const files = yield fs.readdir(path);
     const filecount = files.length;
@@ -345,12 +295,35 @@ function unzipBdsxTo(dest:string):Promise<void>
     .promise();
 }
 
+function download(url:string, dest:string):Promise<void>
+{
+    return new Promise((resolve, reject)=>{
+        const file = fs_ori.createWriteStream(dest);
+        https.get(url, function(response) {
+          response.pipe(file);
+          file.on('finish', function() {
+            file.close();
+            resolve();
+          });
+        }).on('error', function(err) { // Handle errors
+          fs.unlink(dest);
+          reject(err.message);
+        });
+    });
+}
+
 const downloadAndUnzip = async(function*(prefix:string, url:string, dest:string, skipExists:boolean) {
     const bar = new ProgressBar(prefix+': :bar :current/:total', { 
         total: 1,
         width: 20,
      });
-    const archive:unzipper.CentralDirectory = yield unzipper.Open.url(request as any, url);
+    
+    const zipfilename = url.substr(url.lastIndexOf('/')+1);
+    const zipfilepath = path.join(path.join(__dirname, zipfilename));
+
+    yield download(url, zipfilepath);
+    const archive:unzipper.CentralDirectory = yield unzipper.Open.file(zipfilepath);
+
     const writedFiles:string[] = [];
 
     const files:unzipper.File[] = [];

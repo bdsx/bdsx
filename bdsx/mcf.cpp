@@ -307,11 +307,11 @@ public:
 			}
 		}
 
-		console.logA("PdbReader: Load Symbols...\n");
 		try
 		{
+			console.logA("PdbReader: Load Symbols...\n");
 			PdbReader reader;
-			console.logA("PdbReader: processing... \n");
+			reader.load();
 			reader.search(nullptr, [&](Text name, void* address, uint32_t typeId) {
 				auto iter = m_targets.find(name);
 				if (iter == m_targets.end())
@@ -815,7 +815,7 @@ void MinecraftFunctionTable::skipPacketViolationWhen7f() noexcept
 
 	Code junction(64);
 	junction.cmp(R8, 0x7f);
-	junction.jz(9);
+	junction.jnz(9);
 	junction.mov(RAX, QwordPtr, RSP, 0x28);
 	junction.mov(BytePtr, RAX, 0, 0);
 	junction.ret();
@@ -833,6 +833,5 @@ void MinecraftFunctionTable::forceEnableScript() noexcept
 	Unprotector unpro((byte*)MinecraftServerScriptEngine$onServerThreadStarted, targetSize);
 	CodeWriter writer((void*)unpro, targetSize);
 	writer.mov(RAX, (dword)1);
-	writer.debugBreak();
 	writer.ret();
 }

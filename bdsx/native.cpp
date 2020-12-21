@@ -466,12 +466,12 @@ void Native::_createNativeModule() noexcept
 
 	m_props.insert(u"serverControl", createServerControlModule());
 	m_props.insert(u"console", console.createModule());
-	m_props.insert(u"loadPdb", JsFunction::makeT([](Text16 path){
-		console.logA("PdbReader: Load Symbols...\n");
+	m_props.insert(u"loadPdb", JsFunction::makeT([](){
 		try
 		{
+			console.logA("PdbReader: Load Symbols...\n");
 			PdbReader reader;
-			console.logA("PdbReader: processing... \n");
+			reader.load();
 
 			struct Local
 			{
@@ -487,7 +487,7 @@ void Native::_createNativeModule() noexcept
 				if (newnow - local.now > 200_ms)
 				{
 					local.now = newnow;
-					console.logA(TSZ() << '(' << local.totalcount << ")\n");
+					console.logA(TSZ() << "(" << local.totalcount << ")\n");
 				}
 
 				NativePointer* ptr = NativePointer::newInstance();

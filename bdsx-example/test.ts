@@ -222,7 +222,7 @@ async function testWithModule(
             {
                 pool.end();
             }
-        }, '(conn=-1, no: 45012, SQLState: 08S01) Connection timeout: failed to create socket after ');
+        }, '(conn=-1, no: 45012, SQLState: 08S01) Connection timeout: failed to create socket after ', 'retrieve connection from pool timeout after');
     }
     
     await testWithModule('discord.js', async (Discord)=>{ // needs discord.js@11.x
@@ -237,7 +237,7 @@ async function testWithModule(
             console.log('[test] discord.js: no token for testing, skipped');
             return;
         }
-        await new Promise((resolve, reject)=>{
+        await new Promise<void>((resolve, reject)=>{
             client.on('ready', () => {
                 if (client.user.tag === '루아ai#8755') resolve();
                 else reject(Error('[test] who are you?'));
@@ -254,13 +254,18 @@ async function testWithModule(
 
 
 let connectedNi:NetworkIdentifier;
-
+let counter = 0;
 chat.on(ev=>{
-    if (ev.message == "test")
+    if (ev.message == "t")
     {
         console.assert(connectedNi === ev.networkIdentifier, 'the network identifier does not matched');
-        console.log('> tested and stopping...');
-        setTimeout(()=>serverControl.stop(), 5000);
+        counter ++;
+        console.log(`test: ${counter}/5`);
+        if (counter >= 5)
+        {
+            console.log('> tested and stopping...');
+            setTimeout(()=>serverControl.stop(), 1000);
+        }
         return CANCEL;
     }
 });
@@ -287,6 +292,7 @@ system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
             
             if (ev.__identifier__ === 'minecraft:player')
             {
+                counter = 0;
                 console.assert(actor.getTypeId() == 0x13f, 'player type is not matched');
                 console.assert(actor.isPlayer(), 'a player is not the player');
                 console.assert(connectedNi === actor.getNetworkIdentifier(), 'the network identifier does not matched');

@@ -92,7 +92,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(UserProfile)\.bds\mods\bdsx.dll;$(UserProfile)\.bds\mods\libmariadb.dll;$(UserProfile)\.bds\mods\libcurl$(_debug).dll;$(UserProfile)\.bds\mods\bdsx_node.dll;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(UserProfile)\.bds\mods\bdsx.dll;$(UserProfile)\.bds\mods\libmariadb.dll;$(UserProfile)\.bds\mods\libcurl$(_debug).dll;$(UserProfile)\.bds\mods\bdsx_node.dll;%(Outputs)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)bdsx.dll;$(OutDir)libmariadb.dll;$(OutDir)libcurl$(_debug).dll;$(OutDir)bdsx_node.dll</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)bdsx.dll;$(OutDir)libmariadb.dll;$(OutDir)libcurl$(_debug).dll;$(OutDir)node.dll</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)bdsx.dll;$(OutDir)libmariadb.dll;$(OutDir)libcurl$(_debug).dll;$(OutDir)bdsx_node.dll</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
