@@ -90,7 +90,9 @@ https://discord.gg/pC9XdkC
 
 4. Build `bdsx/bdsx-node` with Visual Studio Code. And select `tsc watch`.
 
-5. `npm i -g pkg` to install pkg
+5. Run bdsx once to update ini
 
-5. Build `bdsx/bdsx-node` with Visual Studio Code. And select `Package`.  
+6. `npm i -g pkg` to install pkg
+
+7. Build `bdsx/bdsx-node` with Visual Studio Code. And select `Package`.  
  It will generate a zip file to `bdsx/release-zip/bdsx-[version].zip`

@@ -94,7 +94,9 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
     // zip bin
     await zip(`./bdsx-node/bdsx-bin.zip`, archive=>{
         const outdir = './bin/x64/Release';
-        archive.directory(`${homedir()}/.bds/mods/predefined`, 'predefined');
+        const predefinedPath = `${homedir()}/.bds/mods/predefined`;
+        if (!fs.existsSync(predefinedPath)) throw Error('predefined not found');
+        archive.directory(predefinedPath, 'predefined');
         archive.file(`${outdir}/bdsx.dll`, {name: `bdsx.dll`});
         archive.file(`${outdir}/bdsx.pdb`, {name: `bdsx.pdb`});
         archive.file(`${outdir}/libcurl.dll`, {name: `libcurl.dll`});
