@@ -84,8 +84,25 @@ export function zip(dest:string, onzip:(archive:archiver.Archiver)=>void):Promis
     });
 }
 
+function modifiedTime(file:string):number
+{
+    try
+    {
+        return fs.statSync(file).mtimeMs;
+    }
+    catch (err)
+    {
+        return -1;
+    }
+}
+
 export function copy(from:string, to:string):void
 {
+    if (modifiedTime(to) >= modifiedTime(from))
+    {
+        console.log(`copy "${from}" "${to}" [skipped]`);
+        return;
+    }
     console.log(`copy "${from}" "${to}"`);
     try
     {

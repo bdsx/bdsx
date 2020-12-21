@@ -9,15 +9,23 @@ import { homedir } from 'os';
 import { sep } from 'path';
 import archiver = require('archiver');
 
-import 'source-map-support';
+import sourceMapSupport = require('source-map-support');
+sourceMapSupport.install();
 
 const BDSX_VERSION = bdsx_package_json.version;
 
-function updateJson(path:string, cb:(obj:any)=>boolean):boolean
+function checkJsonVersion(path:string, version:string):boolean
 {
     const pkgjson = fs.readFileSync(path, 'utf-8');
     const pkg = JSON.parse(pkgjson);
-    if (cb(pkg))
+    return pkg.version === version;
+}
+
+async function updateJson(path:string, cb:(obj:any)=>boolean|Promise<boolean>):Promise<boolean>
+{
+    const pkgjson = fs.readFileSync(path, 'utf-8');
+    const pkg = JSON.parse(pkgjson);
+    if (await cb(pkg))
     {
         fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
         return true;
@@ -28,7 +36,20 @@ function updateJson(path:string, cb:(obj:any)=>boolean):boolean
 function run(cmd:string):void
 {
     console.log(cmd);
-    child_process.execSync(cmd, {stdio: 'inherit'});
+    try
+    {
+        child_process.execSync(cmd, {stdio: 'inherit'});
+    }
+    catch (err)
+    {
+        const pos = err.stack.split('\n')[4];
+        const [source, line, column] = pos.split(':');
+        const mapped = sourceMapSupport.mapSourcePosition({
+            source: source.substr(source.indexOf('at ')+3), 
+            line, column
+        });
+        throw `Error: ${cmd}\n    at ${mapped.source}:${mapped.line}:${mapped.column}`;
+    }
 }
 
 
@@ -65,7 +86,7 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
     process.chdir('..');
 
     // update bdsx version in package-example.json
-    updateJson('./bdsx-node/package/package-example.json', pkg=>{
+    await updateJson('./bdsx-node/package/package-example.json', pkg=>{
         pkg.dependencies['bdsx'] = BDSX_VERSION;
         return true;
     });
@@ -91,17 +112,18 @@ function putToArchive(map:FileMap, archive:archiver.Archiver, dirname:string):vo
     // publish
     process.chdir('./bdsx-node');
 
-    if (updateJson('./package/pkg/package.json', pkg_package_json=>{
+    await updateJson('./package/pkg/package.json', async(pkg_package_json)=>{
         if (pkg_package_json.version === BDSX_VERSION) return false;
+        run('npm publish');
         pkg_package_json.version = BDSX_VERSION;
         pkg_package_json.dependencies = bdsx_package_json.dependencies;
         pkg_package_json.devDependencies = bdsx_package_json.devDependencies;
         return true;
-    }))
+    });
+
+    if (!checkJsonVersion('./package/pkg/package-lock.json', BDSX_VERSION))
     {
-        run('npm publish');
         process.chdir('./package/pkg');
-        await new Promise(resolve=>setTimeout(resolve, 5000)); // waiting to avoid npm not found
         run('npm i');
         process.chdir('../..');
     }
@@ -158,11 +180,13 @@ EXPOSE 19132
 
 ENTRYPOINT /usr/bin/bdsx ~/bdsx
 `;
-    await fs.promises.writeFile('docker/Dockerfile', dockerfile);
+    try { fs.mkdirSync('./docker'); } catch (err) {}
+    await fs.promises.writeFile('./docker/Dockerfile', dockerfile);
     try { run(`docker image rm -f karikera/bdsx`); } catch (err) {}
     run(`docker build ./docker -t karikera/bdsx:${BDSX_VERSION}`);
     run(`docker push karikera/bdsx:${BDSX_VERSION}`);
 
 })().catch(err=>{
-    console.error(err.stack || err.toString());
+    if (typeof err === 'string') console.error(err);
+    else console.error(err.stack || err.toString());
 });
