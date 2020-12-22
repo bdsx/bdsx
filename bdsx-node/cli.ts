@@ -339,8 +339,10 @@ const downloadAndUnzip = async(function*(prefix:string, url:string, dest:string,
         width: 20,
      });
     
+    yield fs.mkdir(BDS_DIR);
+
     const zipfilename = url.substr(url.lastIndexOf('/')+1);
-    const zipfiledir = path.join(__dirname, 'downloadedZip');
+    const zipfiledir = path.join(BDS_DIR, 'zip');
     const zipfilepath = path.join(zipfiledir, zipfilename);
 
     yield fs.mkdir(zipfiledir);
