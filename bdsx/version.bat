@@ -1,2 +1,0 @@
-
-set BDS_VERSION=1.16.200.02
