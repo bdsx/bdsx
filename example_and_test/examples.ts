@@ -4,8 +4,7 @@
 console.log("From Script> Hello, World!");
 
 // Addon Script
-import { Actor } from "bdsx";
-import { DimensionId, AttributeId } from "bdsx/common";
+import { DimensionId, AttributeId, Actor, NativeModule, VoidPointer, MinecraftPacketIds } from "bdsx";
 const system = server.registerSystem(0, 0);
 system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
     console.log('entity created: ' + ev.data.entity.__identifier__);
@@ -51,17 +50,23 @@ command.hook.on((command, originName)=>{
 });
 
 // Chat Listening
-import { chat, CANCEL } from 'bdsx';
+import { chat, CANCEL } from '../bdsx';
 chat.on(ev => {
+    if (ev.message === 'nochat')
+    {
+        return CANCEL; // canceling
+    }
     ev.setMessage(ev.message.toUpperCase() + " YEY!");
 });
 
 // Network Hooking: Get login IP and XUID
-import { netevent, PacketId, createPacket, sendPacket } from "bdsx";
+import { netevent, PacketId } from "bdsx";
 const connectionList = new Map<NetworkIdentifier, string>();
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
     const ip = networkIdentifier.getAddress();
-    const [xuid, username] = netevent.readLoginPacket(ptr);
+    const cert = ptr.connreq.cert;
+    const xuid = cert.getXuid();
+    const username = cert.getId();
     console.log(`${username}> IP=${ip}, XUID=${xuid}`);
     if (username) connectionList.set(networkIdentifier, username);
 
@@ -69,11 +74,10 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
     setTimeout(()=>{
         console.log('packet sended');
 
-        // It uses C++ class packets. and they are not specified everywhere.
-        const textPacket = createPacket(PacketId.Text); 
-        textPacket.setCxxString('[message packet from bdsx]', 0x50);
-        sendPacket(networkIdentifier, textPacket);
-        textPacket.dispose(); // need to delete it. or It will make memory lyrics
+        const textPacket = TextPacket.create();
+        textPacket.message = '[message packet from bdsx]';
+        textPacket.sendTo(networkIdentifier);
+        textPacket.dispose();
     }, 10000);
 });
 
@@ -81,7 +85,6 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
 const tooLoudFilter = new Set([
     PacketId.UpdateBlock,
     PacketId.ClientCacheBlobStatus, 
-    PacketId.NetworkStackLatencyPacket, 
     PacketId.LevelChunk,
     PacketId.ClientCacheMissResponse,
     PacketId.MoveEntityDelta,
@@ -89,14 +92,14 @@ const tooLoudFilter = new Set([
     PacketId.SetEntityData,
     PacketId.NetworkChunkPublisherUpdate,
 ]);
-for (let i = 2; i <= 136; i++) {
+for (let i = 2; i <= 0xe1; i++) {
     if (tooLoudFilter.has(i)) continue;
     netevent.raw(i).on((ptr, size, networkIdentifier, packetId) => {
         console.assert(size !== 0, 'invalid packet size');
-        console.log('RECV '+ PacketId[packetId]+': '+ptr.readHex(Math.min(16, size)));
+        console.log('RECV '+ PacketId[packetId]+': '+hex(ptr.readBuffer(Math.min(16, size))));
     });
-    netevent.send(i).on((ptr, networkIdentifier, packetId) => {
-        console.log('SEND '+ PacketId[packetId]+': '+ptr.readHex(16));
+    netevent.send<MinecraftPacketIds>(i).on((ptr, networkIdentifier, packetId) => {
+        console.log('SEND '+ PacketId[packetId]+': '+hex(ptr.getBuffer(16)));
     });
 }
 
@@ -108,16 +111,16 @@ netevent.close.on(networkIdentifier => {
 });
 
 // Call Native Functions
-import { bin, NativeModule } from "bdsx";
-const kernel32 = new NativeModule("Kernel32.dll");
-const user32 = new NativeModule("User32.dll");
-const GetConsoleWindow = kernel32.get("GetConsoleWindow")!;
-const SetWindowText = user32.get("SetWindowTextW")!;
+const kernel32 = NativeModule.load('Kernel32.dll');
+const user32 = NativeModule.load('User32.dll');
+const GetConsoleWindow = kernel32.getFunction('GetConsoleWindow', VoidPointer, null, false);
+const SetWindowText = user32.getFunction('SetWindowTextW', RawTypeId.Void, null, false, VoidPointer, RawTypeId.StringUtf16)!;
 const wnd = GetConsoleWindow();
-SetWindowText(wnd, "BDSX Window!!!");
+SetWindowText(wnd, 'BDSX Window!!!');
 
 // Parse raw packet
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/MovePlayerPacket.php
+import { bin } from "bdsx";
 netevent.raw(PacketId.MovePlayer).on((ptr, size, ni)=>{
     console.log(`Packet Id: ${ptr.readUint8()}`);
     
@@ -150,10 +153,15 @@ netevent.raw(PacketId.CraftingEvent).on((ptr, size, ni)=>{
 });
 
 // Global Error Listener
-import { setOnErrorListener, NetworkIdentifier } from "bdsx";
+import { NetworkIdentifier, RawTypeId } from "bdsx";
+import { bedrockServer } from "bdsx/launcher";
+import { TextPacket } from "bdsx/bds/packets";
+import { hex } from "bdsx/util";
 console.log('\nerror handling>');
-setOnErrorListener(err => {
+bedrockServer.error.on(err => {
     console.log('ERRMSG Example> ' + err.message);
     // return false; // Suppress default error outputs
 });
-console.log(eval("undefined_identifier")); // Make the error for this example
+system.initialize = ()=>{
+    console.log(eval("undefined_identifier")); // Make the error for this example
+};

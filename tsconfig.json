@@ -1,13 +1,26 @@
 {
+  "entry": "./launcher.ts",
+  "output": "./dist/bundle.dist.js",
+  "bundlerOptions": {
+    "clearConsole": true,
+    "checkCircularDependency": true,
+    "suppressDynamicImportErrors": true,
+    "faster": true
+  },
   "compilerOptions": {
-    "target": "es2015",
-    "lib": [ "es2015" ],
-    "module": "commonjs",
+    "baseUrl": ".",
+    "target": "es2017",
+    "lib": [ "es2017" ],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "alwaysStrict": true,
+    "noImplicitAny": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
-    "declaration": true,
     "resolveJsonModule": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "bdsx/*": ["./bdsx/*"]
+    }
   }
 }

@@ -5,14 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch BDSX",
+            "args": ["--expose-gc", "${workspaceFolder}"],
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\cli",
-            "args": ["i"],
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Installer",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/bdsx/bds/installer/index",
             "console": "integratedTerminal"
         }
     ]

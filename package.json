@@ -1,39 +1,36 @@
 {
-  "name": "bdsx",
-  "version": "1.3.52",
-  "description": "Bedrock Dedicated Server X",
-  "main": "index.js",
-  "keywords": [
-    "minecraft"
-  ],
-  "bin": {
-    "bdsx": "cli.bat"
-  },
-  "author": "karikera <karikera3@hotmail.com> (https://rua.kr)",
+  "name": "bdsx-project",
+  "version": "1.0.0",
+  "description": "bdsx project",
+  "private": true,
+  "main": "./dist/bundle.dist.js",
+  "author": "YOU!",
   "license": "ISC",
+  "scripts": {
+    "postinstall": "node ./bdsx/bds/installer  ./bedrock_server",
+    "watch": "tsb -w ."
+  },
   "dependencies": {
+    "@puresamari/ts-bundler": "^0.2.0",
+    "colors": "^1.4.0",
     "follow-redirects": "^1.13.1",
     "fstream": "^1.0.12",
     "krevent": "^2.0.1",
     "progress": "^2.0.3",
-    "readline": "^1.3.0",
+    "source-map": "~0.6.1",
     "unzipper": "^0.10.11"
   },
   "devDependencies": {
     "@types/archiver": "^3.1.1",
     "@types/follow-redirects": "^1.13.0",
-    "@types/node": "^14.14.11",
+    "@types/node": "^12.19.11",
     "@types/progress": "^2.0.3",
-    "@types/source-map-support": "^0.5.3",
-    "@types/tar-fs": "^2.0.0",
     "@types/unzipper": "^0.10.3",
-    "archiver": "^4.0.2",
+    "buffer-from": "^1.1.1",
+    "if-tsb": "file:../../../js/tsb-kr",
     "minecraft-scripting-types-server": "^1.0.0",
-    "source-map-support": "^0.5.19",
-    "tar-fs": "^2.1.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/karikera/bdsx"
+    "node-html-parser": "^2.0.1",
+    "tslib": "^2.0.3",
+    "typescript": "^4.1.3"
   }
 }
