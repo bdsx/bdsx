@@ -1,7 +1,7 @@
 
 // AttributeInstance* getMutableInstance(AttributeId type) noexcept;
 
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { float32_t } from "bdsx/nativetype";
@@ -48,12 +48,12 @@ AttributeInstance.abstract({
 
 export class BaseAttributeMap extends NativeClass
 {
-    getMutableInstance(type:AttributeId):AttributeInstance
+    getMutableInstance(type:AttributeId):AttributeInstance|null
     {
-        throw 'abstract';
+        abstract();
     }
 }
 BaseAttributeMap.abstract({});
 
-BaseAttributeMap.prototype.getMutableInstance = makefunc.js(proc["BaseAttributeMap::getMutableInstance"], AttributeInstance, BaseAttributeMap, false, RawTypeId.Int32);
+BaseAttributeMap.prototype.getMutableInstance = makefunc.js(proc["BaseAttributeMap::getMutableInstance"], AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, RawTypeId.Int32);
 

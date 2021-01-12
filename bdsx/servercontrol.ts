@@ -7,7 +7,7 @@ import { bedrock_server_exe, makefunc, VoidPointer } from './core';
 
 export namespace serverControl
 {
-    const stopfunc = makefunc.js(proc['DedicatedServer::stop'], RawTypeId.Void, null, false, VoidPointer);
+    const stopfunc = makefunc.js(proc['DedicatedServer::stop'], RawTypeId.Void, null, VoidPointer);
 
     /**
      * stop the BDS

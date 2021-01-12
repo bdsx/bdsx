@@ -1,5 +1,4 @@
-import { makefunc_vf } from "bdsx/capi";
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
 import { CxxStringPointer } from "bdsx/pointer";
 import { MantleClass, NativeClass } from "bdsx/nativeclass";
@@ -50,26 +49,26 @@ export class Packet extends MantleClass
     [sharedptr_of_packet]?:SharedPtr<any>|null;
 
     destructor():void {
-        throw 'abstract';
+        abstract();
     }
     getId():MinecraftPacketIds {
-        throw 'abstract';
+        abstract();
     }
     getName(name:CxxStringPointer):void {
-        throw 'abstract';
+        abstract();
     }
     write(stream:BinaryStream):void {
-        throw 'abstract';
+        abstract();
     }
     read(stream:BinaryStream):PacketReadResult {
-        throw 'abstract';
+        abstract();
     }
     readExtended(read:ExtendedStreamReadResult, stream:BinaryStream):ExtendedStreamReadResult {
-        throw 'abstract';
+        abstract();
     }
-    sendTo(target:NetworkIdentifier, unknownarg:number=0)
+    sendTo(target:NetworkIdentifier, unknownarg:number)
     {
-        throw 'abstract';
+        abstract();
     }
     dispose():void
     {
@@ -106,14 +105,14 @@ export function createPacket(packetId:MinecraftPacketIds):SharedPointer
     return new SharedPointer(p);
 }
 
-export const createPacketRawFunc = makefunc.js(proc["MinecraftPackets::createPacket"], RawTypeId.Void, null, false, PacketSharedPtr, RawTypeId.Int32);
+export const createPacketRawFunc = makefunc.js(proc["MinecraftPackets::createPacket"], RawTypeId.Void, null, PacketSharedPtr, RawTypeId.Int32);
 
 
 Packet.abstract({}, 0x28);
-Packet.prototype.destructor = makefunc_vf(0, 0x0, RawTypeId.Void, false);
-Packet.prototype.getId = makefunc_vf(0, 0x8, RawTypeId.Int32, false);
-Packet.prototype.getName = makefunc_vf(0, 0x10, RawTypeId.Void, false, CxxStringPointer);
-Packet.prototype.write = makefunc_vf(0, 0x18, RawTypeId.Void, false, BinaryStream);
-Packet.prototype.read = makefunc_vf(0, 0x20, RawTypeId.Int32, false, BinaryStream);
-Packet.prototype.readExtended = makefunc_vf(0, 0x28, ExtendedStreamReadResult, false, ExtendedStreamReadResult, BinaryStream);
-// Packet.prototype.unknown = makefunc_vf(0, 0x30, RawTypeId.Boolean);
+Packet.prototype.destructor = makefunc.js([0x0], RawTypeId.Void, {this:Packet});
+Packet.prototype.getId = makefunc.js([0x8], RawTypeId.Int32, {this:Packet});
+Packet.prototype.getName = makefunc.js([0x10], RawTypeId.Void, {this:Packet}, CxxStringPointer);
+Packet.prototype.write = makefunc.js([0x18], RawTypeId.Void, {this:Packet}, BinaryStream);
+Packet.prototype.read = makefunc.js([0x20], RawTypeId.Int32, {this:Packet}, BinaryStream);
+Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
+// Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});

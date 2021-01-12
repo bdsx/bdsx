@@ -3,6 +3,9 @@ import { bedrock_server_exe } from "bdsx/core";
 import { bedrockServer } from "bdsx/launcher";
 import { remapStack } from "bdsx/source-map-support";
 import colors = require('colors');
+import { analyzer } from "./bdsx";
+
+// prank
 console.log(colors.rainbow('       ///////////////'));
 console.log(colors.rainbow('       //// BDSX2 ////'));
 console.log(colors.rainbow('       ///////////////'));
@@ -13,6 +16,10 @@ if (bedrock_server_exe.md5 != HASH_1_16_200_02)
     console.error('[BDSX] MD5 Hash does not Matched');
     console.error(`[BDSX] target MD5 = ${HASH_1_16_200_02}`);
     console.error(`[BDSX] current MD5 = ${bedrock_server_exe.md5}`);
+}
+else
+{
+    analyzer.total = 252092; // predefined total symbol count
 }
 
 (async()=>{

@@ -58,3 +58,8 @@ export enum RawTypeId {
 }
 
 export function emptyFunc(){}
+
+export function abstract():never
+{
+	throw Error('abstract');
+}

@@ -6,10 +6,11 @@
     "configurations": [
         {
             "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "cwd": "${workspaceFolder}/bedrock_server",
             "type": "node",
             "request": "launch",
             "name": "Launch BDSX",
-            "args": ["--expose-gc", "${workspaceFolder}"],
+            "args": ["${workspaceFolder}"],
             "skipFiles": [
                 "<node_internals>/**"
             ],

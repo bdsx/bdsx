@@ -12,7 +12,7 @@ import native = require('./native');
 import { analyzer } from './analyzer';
 import { CANCEL, RawTypeId } from './common';
 import { bin } from "./bin";
-import { NetworkIdentifier, ServerNetworkHandler } from './bds/networkidentifier';
+import { networkHandler, NetworkIdentifier, ServerNetworkHandler } from './bds/networkidentifier';
 import { Actor, DimensionId } from './bds/actor';
 import { bedrockServer } from './launcher';
 import { nethook } from './nethook';
@@ -103,7 +103,7 @@ const attribNames = [
 ];
 
 Actor.fromUniqueId = function(lowbits, highbits) {
-    return serverInstance.minecraft.something.level.fetchEntity(bin.make64(lowbits, highbits));  
+    return serverInstance.minecraft.something.level.fetchEntity(bin.make64(lowbits, highbits), true);  
 };
 NetworkIdentifier.prototype.getActor = function():Actor|null
 {
@@ -111,11 +111,11 @@ NetworkIdentifier.prototype.getActor = function():Actor|null
 };
 Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number):void
 {
-    serverInstance.networkHandler.send(target, this, unknownarg);
+    networkHandler.send(target, this, unknownarg);
 };
 
 const ServerNetworkHandler$_getServerPlayer = core.makefunc.js(
-    proc["ServerNetworkHandler::_getServerPlayer"], ServerPlayer, null, false, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
+    proc["ServerNetworkHandler::_getServerPlayer"], ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
 
 (Actor.prototype as any)._sendAttributePacket = function(this:Actor, id:AttributeId, value:number, attr:AttributeInstance):void
 {

@@ -159,6 +159,19 @@ export namespace bin
         }
         return out;
     }
+    export function makeVar(n:number):string
+    {
+        n = Math.floor(n);
+        if (n < 0) n = 0;
+        
+        const out:number[] = [];
+        for (let i=0;n !== 0;i++)
+        {
+            out[i] = n % 0x10000;
+            n = Math.floor(n / 0x10000);
+        }
+        return String.fromCharCode(...out);
+    }
     export function make(n:number, size:number):string
     {
         n = Math.floor(n);

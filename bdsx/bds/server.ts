@@ -1,5 +1,5 @@
 import { CommandOrigin } from "bdsx/commandorigin";
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { LoopbackPacketSender } from "bdsx/loopbacksender";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { bin64_t, CxxString, uint32_t } from "bdsx/nativetype";
@@ -111,7 +111,7 @@ export class CommandContext extends NativeClass
 };
 CommandContext.abstract({
 	command:CxxString,
-	origin:ServerCommandOrigin,
+	origin:ServerCommandOrigin.ref(),
 });
 
 
@@ -124,7 +124,7 @@ export class MinecraftCommands extends NativeClass
 
 	_executeCommand(ptr:SharedPtr<CommandContext>, b:boolean):MCRESULT
 	{
-		throw 'abstract';
+		abstract();
 	}
 	executeCommand(ctx:SharedPtr<CommandContext>, b:boolean):MCRESULT
 	{
@@ -132,7 +132,7 @@ export class MinecraftCommands extends NativeClass
 	}
 }
 
-MinecraftCommands.prototype._executeCommand = makefunc.js(proc["MinecraftCommands::executeCommand"], MCRESULT, MinecraftCommands, true, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+MinecraftCommands.prototype._executeCommand = makefunc.js(proc["MinecraftCommands::executeCommand"], MCRESULT, {thisType: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
 
 
 DedicatedServer.abstract({});

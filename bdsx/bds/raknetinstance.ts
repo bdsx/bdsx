@@ -6,5 +6,5 @@ export class RakNetInstance extends NativeClass
     peer:RakNet.RakPeer;
 }
 RakNetInstance.abstract({
-    peer:[RakNet.RakPeer, 0x1c8]
+    peer:[RakNet.RakPeer.ref(), 0x1c8]
 });

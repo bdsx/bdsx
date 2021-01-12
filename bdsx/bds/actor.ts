@@ -1,12 +1,16 @@
 import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { bin64_t, CxxString, NativeType } from "bdsx/nativetype";
 import { NativeClass } from "bdsx/nativeclass";
-import { RawTypeId } from "bdsx/common";
-import { makefunc_vf } from "bdsx/capi";
+import { abstract, RawTypeId } from "bdsx/common";
 import { bin } from "bdsx/bin";
 import { proc } from "./proc";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { NetworkIdentifier } from "./networkidentifier";
+import { exehacker } from "bdsx/exehacker";
+import { Level } from "./level";
+import { asm, Register } from "bdsx/assembler";
+import { dll } from "bdsx/dll";
+import { capi } from "bdsx/capi";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t
@@ -44,12 +48,12 @@ export class Actor extends NativeClass
 	
 	protected _sendNetworkPacket(packet:VoidPointer):void
 	{
-		throw 'abstract';
+		abstract();
 	}
 
 	protected _sendAttributePacket(id:AttributeId, value:number, attr:AttributeInstance):void
 	{
-		throw 'abstract';
+		abstract();
 	}
 
 	sendPacket(packet:StaticPointer):void
@@ -63,7 +67,7 @@ export class Actor extends NativeClass
 
     getDimensionId(out:Int32Array):void
     {
-        throw 'abstract';
+        abstract();
 	}
 	
 	getDimension():DimensionId
@@ -102,17 +106,19 @@ export class Actor extends NativeClass
 
 	getUniqueIdBin():ActorUniqueID
 	{
-		throw 'abstract';
+		abstract();
 	}
 
 	getTypeId():ActorType
 	{
-		throw 'abstract';
+		abstract();
 	}
 	
-	getAttribute(id:AttributeId):AttributeInstance
+	getAttribute(id:AttributeId):number
 	{
-		return this.attributes.getMutableInstance(id);
+		const attr = this.attributes.getMutableInstance(id);
+		if (attr === null) return 0;
+		return attr.currentValue;
 	}
 
 	setAttribute(id:AttributeId, value:number):void
@@ -120,7 +126,8 @@ export class Actor extends NativeClass
 		if (id < 1) return;
 		if (id > 15) return;
 	
-		const attr = this.getAttribute(id);
+		const attr = this.attributes.getMutableInstance(id);
+		if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || 'Attribute'+id}`);
 		attr.currentValue = value;
 	
 		if (this.isPlayer())
@@ -176,7 +183,7 @@ export class Actor extends NativeClass
 
 	static fromUniqueId(lowbits:number, highbits:number):Actor|null
 	{
-		throw 'abstract';
+		abstract();
 	}
 	static fromEntity(entity:IEntity):Actor|null
 	{
@@ -200,49 +207,44 @@ export class Actor extends NativeClass
 
 }
 
-(Actor.prototype as any).sendNetworkPacket = makefunc.js(proc["ServerPlayer::sendNetworkPacket"], RawTypeId.Void, Actor, false, VoidPointer);
-Actor.prototype.getUniqueIdBin = makefunc.js(proc["Actor::getUniqueID"], RawTypeId.Bin64, Actor, false);
+(Actor.prototype as any).sendNetworkPacket = makefunc.js(proc["ServerPlayer::sendNetworkPacket"], RawTypeId.Void, {this:Actor}, VoidPointer);
+Actor.prototype.getUniqueIdBin = makefunc.js(proc["Actor::getUniqueID"], RawTypeId.Bin64, {this:Actor});
 
 Actor.abstract({
 	vftable: VoidPointer,
 	identifier: [CxxString, 0x450], // minecraft:player
-	attributes: [BaseAttributeMap, 0x478],
+	attributes: [BaseAttributeMap.ref(), 0x478],
 	runtimeId: [ActorRuntimeID, 0x588],
 });
-Actor.prototype.getTypeId = makefunc_vf(0, 0x508, RawTypeId.Int32, false); // ActorType getEntityTypeId()
-Actor.prototype.getDimensionId = makefunc_vf(0, 0x548, RawTypeId.Void, false, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
+Actor.prototype.getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
 
 function _removeActor(actor:Actor)
 {
 	actorMaps.delete(actor.getAddressBin());
 }
 
-// 		// hookOnActorRelease
-// 		MCF_HOOK(Level$removeEntityReferences,
-// 			{ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8B, 0xEC, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00 }
-// 		)(Level * level, Actor * actor, bool b) {
-// 			_assert((intptr_t)actor > 0);
-// 			_removeActor(actor);
-// 		};
+export function hookingForActor():void
+{
+	exehacker.hooking('hook-actor-release', 'Level::removeEntityReferences',
+		makefunc.np((level:Level, actor:Actor, b:boolean)=>{
+			_removeActor(actor);
+		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
+		[ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8B, 0xEC, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00 ],
+		[]
+	);
+	exehacker.hooking('hook-actor-delete', 'Actor::~Actor',
+		asm()
+		.push_r(Register.rcx)
+		.call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
+		.pop_r(Register.rcx)
+		.cmp_r_c(Register.rax, capi.nodeThreadId)
+		.jne(12)
+		.jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
+		.ret()
+		.alloc(),
+		[ 0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF ],
+		[]
+	);
+}
 
-
-// 	{
-// 		McftRenamer renamer;
-
-// 		// hookOnActorDestructor
-// 		MCF_HOOK(Actor$dtor$Actor,
-// 			{ 0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF }
-// 		)(Actor* actor) {
-// 			_assert((intptr_t)actor > 0);
-// 			if (!isContextThread())
-// 			{
-// #ifndef NDEBUG
-// 				CsLock _lock = s_csActorMap;
-// 				_assert(!s_actorMap.has(actor));
-// #endif
-// 				return;
-// 			}
-// 			_removeActor(actor);
-// 		};
-//     }
-    

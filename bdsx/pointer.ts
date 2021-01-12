@@ -1,7 +1,7 @@
 import { StructurePointer, VoidPointer } from "./core";
 import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
-import { CxxString, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
+import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 
 export interface PointerType<T> extends Type<Pointer<T>>
 {
@@ -83,38 +83,30 @@ export abstract class Pointer<T> extends NativeClass
     }
 }
 
-interface CxxStringPointerType extends Type<CxxStringPointer>
+export class CxxStringStructure extends NativeClass
 {
-    new(ptr?:VoidPointer|boolean):CxxStringPointer;
-}
-
-export const CxxStringPointer:CxxStringPointerType = Pointer.make(CxxString) as CxxStringPointerType;
-
-Object.defineProperties(CxxStringPointer.prototype, {
-    pptr:{
-        get(this:CxxStringPointer){
-            if (this.capacity >= 0x10) return this.getPointer();
-            else return this as any;
-        }
-    },
-    length:{
-        get(this:CxxStringPointer){
-            return this.getInt64AsFloat(0x10);
-        }
-    },
-    capacity:{
-        get(this:CxxStringPointer){
-            return this.getInt64AsFloat(0x18);
-        }
-    },
-});
-
-export interface CxxStringPointer extends Pointer<CxxString>
-{
-    p:CxxString;
-    pptr:StaticPointer;
-    type:Type<CxxString>;
     length:number;
     capacity:number;
-}
 
+    get value():string
+    {
+        return this.getCxxString();
+    }
+    set value(str:string)
+    {
+        this.setCxxString(str);
+    }
+
+    get valueptr():VoidPointer
+    {
+        if (this.capacity >= 0x10) return this.getPointer();
+        else return this as any;
+    }
+}
+CxxStringStructure.define({
+    length:[int64_as_float_t, 0x10],
+    capacity:[int64_as_float_t, 0x18]
+});
+
+export const CxxStringPointer = Pointer.make(CxxString);
+export type CxxStringPointer = Pointer<CxxString>;

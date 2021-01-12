@@ -1,6 +1,7 @@
 import { bin } from "./bin";
 import { dll } from "./dll";
-import { cgate, FunctionFromTypes_js, makefunc, ParamType, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { cgate, FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { RawTypeId } from ".";
 
 export enum Register
 {
@@ -146,10 +147,10 @@ export class X64Assembler {
         return mem;
     }
     
-    make<THIS extends ParamType, RETURN extends ReturnType, PARAMS extends ParamType[]>(
-        returnType: RETURN, thisType: THIS|null, structureReturn: boolean, ...params: PARAMS):
-        FunctionFromTypes_js<StaticPointer, THIS, PARAMS, RETURN> {
-        return makefunc.js(this.alloc(), returnType, thisType, structureReturn, ...params);
+    make<OPTS extends MakeFuncOptions<any>|null, RETURN extends ReturnType, PARAMS extends ParamType[]>(
+        returnType: RETURN, opts?: OPTS, ...params: PARAMS):
+        FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN> {
+        return makefunc.js(this.alloc(), returnType, opts,  ...params);
     }
 
     ret(): this {
@@ -719,4 +720,9 @@ export class X64Assembler {
 export function asm():X64Assembler
 {
     return new X64Assembler;
+}
+
+export function debugGate(func:VoidPointer):VoidPointer
+{
+    return asm().debugBreak().jmp64(func, Register.rax).alloc();
 }

@@ -31,4 +31,4 @@ export namespace mce
     export const UUIDPointer = Pointer.make(mce.UUID);
 }
 
-const generateUUID = makefunc.js(proc["Crypto::Random::generateUUID"], mce.UUIDPointer, null, true);
+const generateUUID = makefunc.js(proc["Crypto::Random::generateUUID"], mce.UUIDPointer, {structureReturn: true});

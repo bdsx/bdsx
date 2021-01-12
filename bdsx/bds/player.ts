@@ -1,4 +1,4 @@
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { Actor } from "./actor";
 import { NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -15,10 +15,10 @@ export class ServerPlayer extends Player
 
 	sendNetworkPacket(packet:VoidPointer):void
 	{
-		throw 'abstract';
+		abstract();
 	}
 }
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, Actor.OFFSET_OF_NI]
 });
-ServerPlayer.prototype.sendNetworkPacket = makefunc.js(proc["ServerPlayer::sendNetworkPacket"], RawTypeId.Void, ServerPlayer, false, VoidPointer);
+ServerPlayer.prototype.sendNetworkPacket = makefunc.js(proc["ServerPlayer::sendNetworkPacket"], RawTypeId.Void, {this: ServerPlayer}, VoidPointer);

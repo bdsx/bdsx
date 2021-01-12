@@ -31,6 +31,10 @@ export function memdiff_contains(larger:number[], smaller:number[]):boolean
     let small_i = 0;
     const smaller_size = smaller.length;
     const larger_size = larger.length;
+    if (larger_size === 0)
+    {
+        return smaller_size === 0;
+    }
 	for (let i=0;i<larger_size;)
 	{
         const large_from = larger[i++];
@@ -73,7 +77,7 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string
     if (nextLinePer === undefined) nextLinePer = size;
     
     let out:number[] = [];
-    for (let i=0;i<size;i++)
+    for (let i=0;i<size;)
     {
         const v = values[i];
         const n1 = (v & 0xf);
@@ -83,6 +87,7 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string
         if (n2 < 10) out.push(n2+0x30);
         else out.push(n2+(0x41-10));
         out.push(0x20);
+        i++;
         if (i % nextLinePer === 0) out.push(10);
     }
     out.pop();

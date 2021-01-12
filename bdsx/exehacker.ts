@@ -26,6 +26,7 @@ export namespace exehacker
         {
             console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: code unmatch`));
             console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
+            console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
             console.error(colors.red(`${subject}: skipping `));
             return false;
         }
@@ -113,6 +114,15 @@ export namespace exehacker
         {
             X64Assembler.jump(ptr, jumpTo, tempRegister, size);
         }
+        unlock.done();
+    }
+
+    export function write(key:keyof proc, offset:number, asm:X64Assembler):void
+    {
+        const buffer = asm.buffer();
+        const ptr = proc[key].add(offset);
+        const unlock = new MemoryUnlocker(ptr, buffer.length);
+        ptr.writeBuffer(buffer);
         unlock.done();
     }
 }

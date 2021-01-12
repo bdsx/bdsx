@@ -12,6 +12,7 @@ const symbols = [
     '<lambda_85c8d3d148027f864c62d97cac0c7e52>::operator()',
     'ScriptEngine::initialize',
     'Level::createDimension',
+    'Level::fetchEntity',
     'Crypto::Random::generateUUID',
     'ServerNetworkHandler::_getServerPlayer',
     'ServerPlayer::sendNetworkPacket',
@@ -38,13 +39,20 @@ const symbols = [
     'NetworkHandler::_getConnectionFromId',
     'NetworkHandler::send',
     'NetworkHandler::_sortAndPacketizeEvents',
-    'PacketViolationHandler::_handleViolation',
     'NetworkHandler::_sendInternal',
+    'PacketViolationHandler::_handleViolation',
+    'Level::removeEntityReferences',
+    'Actor::~Actor',
+    'ScriptEngine::_processSystemInitialize'
 ] as const;
 
 // decorated symbols
 const symbols2 = [
-    '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ', // overrided function
+    '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ',
+    '??_7ServerInstance@@6BAppPlatformListener@@@',
+    '??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@',
+    '??_7RakNetInstance@@6BConnector@@@',
+    '??_7RakPeer@RakNet@@6BRakPeerInterface@1@@',
 ] as const;
 
 const SYMOPT_PUBLICS_ONLY = 0x00004000;

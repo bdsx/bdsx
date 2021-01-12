@@ -1,5 +1,5 @@
 
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { dll } from "bdsx/dll";
 import { exehacker } from "bdsx/exehacker";
 import { NativeClass } from "bdsx/nativeclass";
@@ -32,12 +32,12 @@ export class NetworkHandler extends NativeClass
 
     send(ni:NetworkIdentifier, packet:Packet, u:number):void
     {
-        throw 'abstract';
+        abstract();
     }
     
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection
     {
-        throw 'abstract';
+        abstract();
     }
     
     static readonly Connection = NetworkHandler$Connection;
@@ -108,7 +108,7 @@ export class NetworkIdentifier extends NativeClass
 
     equals(other:NetworkIdentifier):boolean
     {
-        throw 'abstract';
+        abstract();
     }
 
 // size_t NetworkIdentifier::getHash() const noexcept
@@ -122,7 +122,7 @@ export class NetworkIdentifier extends NativeClass
 
     getActor():Actor|null
     {
-        throw 'abstract';
+        abstract();
     }
 
     getAddress():string
@@ -137,7 +137,7 @@ export class NetworkIdentifier extends NativeClass
         return this.getAddress();
     }
 
-    static readonly onCloseListener:CapsuledEvent<(ni:NetworkIdentifier)=>void> = new CloseListener;
+    static readonly close:CapsuledEvent<(ni:NetworkIdentifier)=>void> = new CloseListener;
     static fromPointer(ptr:StaticPointer):NetworkIdentifier
     {
         const size = NetworkIdentifier[NativeType.size];
@@ -163,7 +163,7 @@ export class NetworkIdentifier extends NativeClass
 NetworkIdentifier.define({
     address:RakNet.AddressOrGUID
 });
-NetworkIdentifier.prototype.equals = makefunc.js(proc["NetworkIdentifier::operator=="], RawTypeId.Boolean, NetworkIdentifier, false, NetworkIdentifier);
+NetworkIdentifier.prototype.equals = makefunc.js(proc["NetworkIdentifier::operator=="], RawTypeId.Boolean, {this:NetworkIdentifier}, NetworkIdentifier);
 NetworkHandler$Connection.abstract({
     networkIdentifier:NetworkIdentifier,
     u1:VoidPointer, // null
@@ -175,13 +175,13 @@ NetworkHandler$Connection.abstract({
 });
 
 NetworkHandler.abstract({
-    instance: [RakNetInstance, 0x30]
+    instance: [RakNetInstance.ref(), 0x30]
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
-NetworkHandler.prototype.getConnectionFromId = makefunc.js(proc[`NetworkHandler::_getConnectionFromId`], NetworkHandler$Connection, NetworkHandler, false);
+NetworkHandler.prototype.getConnectionFromId = makefunc.js(proc[`NetworkHandler::_getConnectionFromId`], NetworkHandler$Connection, {this:NetworkHandler});
 
 // void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char u)
-NetworkHandler.prototype.send = makefunc.js(proc['NetworkHandler::send'], RawTypeId.Void, NetworkHandler, false, NetworkIdentifier, Packet, RawTypeId.Int32);
+NetworkHandler.prototype.send = makefunc.js(proc['NetworkHandler::send'], RawTypeId.Void, {this:NetworkHandler}, NetworkIdentifier, Packet, RawTypeId.Int32);
 
 export let networkHandler:NetworkHandler;

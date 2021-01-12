@@ -1,4 +1,4 @@
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { mce } from "bdsx/mce";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
@@ -28,13 +28,13 @@ export class Certificate extends NativeClass
 
 	getTitleId():number
 	{
-		throw 'abstract';
+		abstract();
 	}
 }
-const getXuid = makefunc.js(proc["ExtendedCertificate::getXuid"], CxxStringPointer, null, true, Certificate);
-const getIdentityName = makefunc.js(proc["ExtendedCertificate::getIdentityName"], CxxStringPointer, null, true, Certificate);
-Certificate.prototype.getTitleId = makefunc.js(proc["ExtendedCertificate::getTitleID"], RawTypeId.Int32, Certificate, false);
-const getIdentity = makefunc.js(proc["ExtendedCertificate::getIdentity"], mce.UUIDPointer, null, true, Certificate);
+const getXuid = makefunc.js(proc["ExtendedCertificate::getXuid"], CxxStringPointer, {structureReturn: true}, Certificate);
+const getIdentityName = makefunc.js(proc["ExtendedCertificate::getIdentityName"], CxxStringPointer, {structureReturn: true}, Certificate);
+Certificate.prototype.getTitleId = makefunc.js(proc["ExtendedCertificate::getTitleID"], RawTypeId.Int32, {this:Certificate});
+const getIdentity = makefunc.js(proc["ExtendedCertificate::getIdentity"], mce.UUIDPointer, {structureReturn: true}, Certificate);
 
 export class ConnectionReqeust extends NativeClass
 {

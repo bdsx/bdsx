@@ -3,7 +3,7 @@ import { NativeType, Type } from "./nativetype";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { proc } from "./bds/proc";
 import { dll } from "./dll";
-import { RawTypeId } from "./common";
+import { abstract, RawTypeId } from "./common";
 import { Singleton } from "./singleton";
 
 export interface CxxVectorType<T> extends Type<CxxVector<T>>
@@ -218,8 +218,8 @@ export abstract class CxxVector<T> extends NativeClass
      */
     static _alloc16(size:number):NativePointer
     {
-        throw 'abstract';
+        abstract();
     }
 }
 
-CxxVector._alloc16 = makefunc.js(proc["std::_Allocate<16,std::_Default_allocate_traits,0>"], NativePointer, null, false, RawTypeId.FloatAsInt64);
+CxxVector._alloc16 = makefunc.js(proc["std::_Allocate<16,std::_Default_allocate_traits,0>"], NativePointer, null, RawTypeId.FloatAsInt64);

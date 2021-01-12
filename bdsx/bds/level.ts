@@ -6,7 +6,7 @@ import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";
 import { proc } from "./proc";
 import { CxxVector } from "bdsx/cxxvector";
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 
 export class Level extends NativeClass
 {
@@ -14,14 +14,17 @@ export class Level extends NativeClass
 
     createDimension(id:DimensionId):Dimension
     {
-        throw 'abstract';
+        abstract();
     }
-    fetchEntity(id:ActorUniqueID):Actor
+    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor
     {
-        throw 'abstract';
+        abstract();
     }
 }
-Level.prototype.createDimension = makefunc.js(proc["Level::createDimension"], Dimension, Level, false, RawTypeId.Int32);
+Level.prototype.createDimension = makefunc.js(proc["Level::createDimension"], Dimension, {this:Level}, RawTypeId.Int32);
+Level.prototype.fetchEntity = makefunc.js(proc["Level::fetchEntity"], Actor, {this:Level, nullableReturn: true}, RawTypeId.Bin64, RawTypeId.Boolean);
+
+
 
 Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
 
@@ -34,9 +37,3 @@ ServerLevel.abstract({
     packetSender:[LoopbackPacketSender.ref(), 0x830],
     actors:[CxxVector.make(Actor.ref()), 0x1590],
 });
-
-// Actor* Level::fetchEntity(ActorUniqueID id) noexcept
-// {
-// 	// 3rd bool: return null if not loaded?
-// 	return g_mcf.Level$fetchEntity(this, id, true);
-// }

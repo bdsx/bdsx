@@ -1,7 +1,7 @@
 
-import { EventEx, CapsuledEvent } from 'krevent';
+import Event, { EventEx, CapsuledEvent } from 'krevent';
 import netevent = require('./netevent');
-import { makefunc, NativePointer } from './core';
+import { makefunc, NativePointer, StaticPointer } from './core';
 import { CANCEL, RawTypeId } from './common';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { asm, Register } from './assembler';
@@ -13,24 +13,23 @@ import { MinecraftPacketIds } from './bds/packetids';
 import { _tickCallback } from './util';
 import { CommandRequestPacket } from './bds/packets';
 
-function hookOnCommand():void
+export function hookingForCommand():void
 {
     function oncommand(commands:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:boolean):number
     {
         const ctx = ctxptr.p!;
         const name = ctx.origin.getName();
-        const resv = hookev.fire(ctxptr.p!.command, name);
+        const resv = hookev.fire(ctxptr.p!.command, name, ctx);
 		switch (typeof resv)
 		{
         case 'number':
             res.result = resv;
-            
 			_tickCallback();
 			return 1;
 		default:
 			_tickCallback();
 			return 0;
-		}
+        }
     }
     const callback = makefunc.np(oncommand, RawTypeId.Int32, null, MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), RawTypeId.Boolean);
     // int32_t callback(MinecraftCommands* commands, MCRESULT* res, SharedPtr<CommandContext>* ctx, bool)
@@ -44,10 +43,10 @@ function hookOnCommand():void
 
     const newcode = asm()
     .mov_r_r(Register.rcx, Register.rsp)
-	.sub_r_c(Register.rsp, 0x28)
+    .sub_r_c(Register.rsp, 0x28)
 	.call64(callback, Register.rax)
 	.add_r_c(Register.rsp, 0x28)
-	.test_r_r(Register.rax, Register.rax)
+    .test_r_r(Register.rax, Register.rax)
 	.jz(13)
 	.pop_r(Register.rcx)
 	.jmp64(proc['MinecraftCommands::executeCommand'].add(0x73b), Register.rax)
@@ -88,7 +87,7 @@ class CommandEventImpl implements CommandEvent {
     }
 }
 type UserCommandListener = (ev: CommandEvent) => void|CANCEL;
-type HookCommandListener = (command:string, originName:string) => void|number;
+type HookCommandListener = (command:string, originName:string, ctx:CommandContext) => void|number;
 
 class UserCommandEvents extends EventEx<UserCommandListener>
 {
@@ -109,18 +108,6 @@ class UserCommandEvents extends EventEx<UserCommandListener>
     }
 }
 
-let hookCommandHooked = false;
-class HookCommandEvents extends EventEx<HookCommandListener>
-{
-    onStarted(): void {
-        if (hookCommandHooked) return;
-        hookCommandHooked = true;
-        hookOnCommand();
-    }
-    onCleared(): void {
-    }
-}
-
-const hookev = new HookCommandEvents;
+const hookev = new Event<HookCommandListener>();
 export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
 export const hook = hookev as CapsuledEvent<HookCommandListener>;

@@ -4,7 +4,7 @@
 console.log("From Script> Hello, World!");
 
 // Addon Script
-import { DimensionId, AttributeId, Actor, NativeModule, VoidPointer, MinecraftPacketIds } from "bdsx";
+import { DimensionId, AttributeId, Actor, NativeModule, VoidPointer, MinecraftPacketIds, capi } from "bdsx";
 const system = server.registerSystem(0, 0);
 system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
     console.log('entity created: ' + ev.data.entity.__identifier__);
@@ -76,7 +76,7 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
 
         const textPacket = TextPacket.create();
         textPacket.message = '[message packet from bdsx]';
-        textPacket.sendTo(networkIdentifier);
+        textPacket.sendTo(networkIdentifier, 0);
         textPacket.dispose();
     }, 10000);
 });
@@ -91,15 +91,17 @@ const tooLoudFilter = new Set([
     PacketId.SetEntityMotion,
     PacketId.SetEntityData,
     PacketId.NetworkChunkPublisherUpdate,
+    0x72,
+    0x90,
 ]);
 for (let i = 2; i <= 0xe1; i++) {
     if (tooLoudFilter.has(i)) continue;
     netevent.raw(i).on((ptr, size, networkIdentifier, packetId) => {
         console.assert(size !== 0, 'invalid packet size');
-        console.log('RECV '+ PacketId[packetId]+': '+hex(ptr.readBuffer(Math.min(16, size))));
+        console.log(`RECV ${(PacketId[packetId] || '0x'+packetId.toString(16))}: ${hex(ptr.readBuffer(Math.min(16, size)))}`);
     });
     netevent.send<MinecraftPacketIds>(i).on((ptr, networkIdentifier, packetId) => {
-        console.log('SEND '+ PacketId[packetId]+': '+hex(ptr.getBuffer(16)));
+        console.log(`SEND ${(PacketId[packetId] || '0x'+packetId.toString(16))}: ${hex(ptr.getBuffer(16))}`);
     });
 }
 
@@ -111,10 +113,11 @@ netevent.close.on(networkIdentifier => {
 });
 
 // Call Native Functions
+import { RawTypeId } from "bdsx";
 const kernel32 = NativeModule.load('Kernel32.dll');
 const user32 = NativeModule.load('User32.dll');
-const GetConsoleWindow = kernel32.getFunction('GetConsoleWindow', VoidPointer, null, false);
-const SetWindowText = user32.getFunction('SetWindowTextW', RawTypeId.Void, null, false, VoidPointer, RawTypeId.StringUtf16)!;
+const GetConsoleWindow = kernel32.getFunction('GetConsoleWindow', VoidPointer);
+const SetWindowText = user32.getFunction('SetWindowTextW', RawTypeId.Void, null, VoidPointer, RawTypeId.StringUtf16)!;
 const wnd = GetConsoleWindow();
 SetWindowText(wnd, 'BDSX Window!!!');
 
@@ -153,15 +156,16 @@ netevent.raw(PacketId.CraftingEvent).on((ptr, size, ni)=>{
 });
 
 // Global Error Listener
-import { NetworkIdentifier, RawTypeId } from "bdsx";
+import { NetworkIdentifier } from "bdsx";
 import { bedrockServer } from "bdsx/launcher";
 import { TextPacket } from "bdsx/bds/packets";
 import { hex } from "bdsx/util";
-console.log('\nerror handling>');
+import colors = require('colors');
+console.log('error handling>');
 bedrockServer.error.on(err => {
-    console.log('ERRMSG Example> ' + err.message);
+    console.log('ERRMSG Example> ' + err.message + colors.brightYellow(' // this is just a example'));
     // return false; // Suppress default error outputs
 });
 system.initialize = ()=>{
-    console.log(eval("undefined_identifier")); // Make the error for this example
+    eval("undefined_identifier")
 };

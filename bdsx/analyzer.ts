@@ -5,11 +5,13 @@ let symbols:Record<string, NativePointer>|null = null;
 
 export namespace analyzer
 {
+    export let total = 0;
+
     export function loadMap():void
     {
         if (analyzeMap) return;
         analyzeMap = new Map<string, string>();
-        if (symbols === null) symbols = pdb.getAll();
+        if (symbols === null) symbols = pdb.getAll(false, total);
         
         for (const name in symbols)
         {
@@ -62,6 +64,7 @@ export namespace analyzer
                     }
                     if (nums.every(n=>n<0x7f))
                     {
+                        nums.reverse();
                         const text = String.fromCharCode(...nums.map(n=>n<0x20 ? 0x20 : n));
                         console.log(`${offset}: ${addrstr} ${text}`);
                     }

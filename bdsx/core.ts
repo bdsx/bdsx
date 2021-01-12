@@ -3,8 +3,14 @@ import { Bufferable, Encoding, RawTypeId, TypeFromEncoding } from "./common";
 
 export type ParamType = RawTypeId | { new(): VoidPointer; };
 export type ReturnType = RawTypeId | { new(): VoidPointer; };
-type TypeFrom_js2np<T extends ParamType> = T extends RawTypeId ? TypeMap_js2np[T] : T extends { new(...args: any[]): infer V } ? (V|null) : never;
-type TypeFrom_np2js<T extends ParamType> = T extends RawTypeId ? TypeMap_np2js[T] : T extends { new(): infer V } ? V : never;
+type TypeFrom_js2np<T extends ParamType|{new():VoidPointer|void}> = 
+    T extends RawTypeId ? TypeMap_js2np[T] : 
+    T extends { new(...args: any[]): infer V } ? (V|null) : 
+    never;
+type TypeFrom_np2js<T extends ParamType> = 
+    T extends RawTypeId ? TypeMap_np2js[T] : 
+    T extends { new(): infer V } ? V : 
+    never;
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_js2np<T[key]> : T[key];
 };
@@ -13,18 +19,36 @@ export type TypesFromParamIds_np2js<T extends ParamType[]> = {
 };
 
 
+export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
+{
+    /**
+     * *Pointer, 'this' parameter passes as first parameter.
+     */
+    this?:THIS;
+    /**
+     * it allocates at the first parameter with the returning class and returns it.
+     * if this is defined, it allocates at the second parameter.
+     */
+    structureReturn?:boolean;
+    nullableReturn?:boolean;
+    nullableThis?:boolean;
+    nullableParams?:boolean;
+}
+type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> = OPTS extends MakeFuncOptions<infer THIS> ? InstanceType<THIS> : void;
+
+
 export type FunctionFromTypes_np<
-    THIS extends ParamType,
+    OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
     RETURN extends ReturnType> =
-    (this:TypeFrom_np2js<THIS>, ...args: TypesFromParamIds_np2js<PARAMS>) => TypeFrom_js2np<RETURN>;
+    (this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_np2js<PARAMS>) => TypeFrom_js2np<RETURN>;
     
 export type FunctionFromTypes_js<
-    PTR extends VoidPointer,
-    THIS extends ParamType,
+    PTR extends VoidPointer|[number, number?],
+    OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
     RETURN extends ReturnType> =
-    ((this:TypeFrom_js2np<THIS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
+    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
 
 interface TypeMap_np2js {
     [RawTypeId.Int32]: number;
@@ -523,7 +547,7 @@ export declare namespace pdb
     /**
      * get all symbols
      */
-    export function getAll():Record<string, NativePointer>;
+    export function getAll(quiet?:boolean, total?:number):Record<string, NativePointer>;
 }
 
 export declare namespace runtimeError
@@ -631,6 +655,8 @@ export declare namespace cgate
      * it will allocate a executable memory by VirtualAlloc
      */
     export function allocExecutableMemory(size:number):StaticPointer;
+
+    export function nodeLoopOnce():void;
 }
 
 export declare namespace makefunc
@@ -643,14 +669,14 @@ export declare namespace makefunc
      * 
      * @param name name of procedure
      * @param returnType RawTypeId or *Pointer
-     * @param thisType RawTypeId or *Pointer, if it's non-null, it passes this parameter as first parameter.
-     * @param structureReturn if set it to true, it allocates first parameter with the returning class and returns it.
      * @param params RawTypeId or *Pointer
      */
-    export function js<PTR extends VoidPointer, THIS extends ParamType, RETURN extends ReturnType, PARAMS extends ParamType[]>(
+    export function js<PTR extends VoidPointer|[number, number?], OPTS extends MakeFuncOptions<any>|null, RETURN extends ReturnType, PARAMS extends ParamType[]>(
         functionPointer: PTR,
-        returnType: RETURN, thisType: THIS|null, structureReturn:boolean, ...params: PARAMS):
-        FunctionFromTypes_js<PTR, THIS, PARAMS, RETURN>;
+        returnType:RETURN,
+        opts?: OPTS, 
+        ...params: PARAMS):
+        FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;
 
     /**
      * make the JS function as a native function.
@@ -658,9 +684,9 @@ export declare namespace makefunc
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
      */
-    export function np<RETURN extends ReturnType, THIS extends ParamType, PARAMS extends ParamType[]>(
-        jsfunction: FunctionFromTypes_np<THIS, PARAMS, RETURN>,
-        returnType: RETURN, thisType: THIS|null, ...params: PARAMS): VoidPointer;
+    export function np<RETURN extends ReturnType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
+        jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
+        returnType: RETURN, thisType?: OPTS, ...params: PARAMS): VoidPointer;
         
     /** @deprecated */
     export interface NativeFunction extends Function

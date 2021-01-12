@@ -1,129 +1,38 @@
 
-import { netevent, PacketId, NetworkIdentifier, command, serverControl, Actor, chat, bin, NativePointer, CANCEL } from "bdsx";
+import { netevent, PacketId, NetworkIdentifier, command, serverControl, Actor, chat, bin, NativePointer, CANCEL, serverInstance, StaticPointer, VoidPointer, MinecraftPacketIds } from "bdsx";
 import { capi } from "bdsx/capi";
 import { HashSet } from "bdsx/hashset";
 import { bin64_t } from "bdsx/nativetype";
-import { close } from "bdsx/netevent";
 import { PseudoRandom } from "bdsx/pseudorandom";
-import { remapError, remapStack, remapStackLine } from "bdsx/source-map-support";
-import fs = require('fs');
-import colors = require('colors');
 import { dll } from "bdsx/dll";
-
-class Tester
-{
-    subject = '';
-    errored = false;
-    constructor()
-    {
-    }
-
-    log(message:string):void
-    {
-        console.log(`[test/${this.subject}] ${message}`);
-    }
-    
-    error(message:string, stackidx = 2):void
-    {
-        console.error(colors.red(`[test/${this.subject}] failed. ${message}`));
-        const stack = Error().stack!;
-        console.error(colors.red(remapStackLine(stack.split('\n')[stackidx]).stackLine));
-        this.errored = true;
-    }
-
-    fail():void
-    {
-        this.error('failed', 3);
-    }
-
-    assert(cond:boolean, message:string):void
-    {
-        if (!cond) this.error(message, 3);
-    }
-
-    async module(
-        moduleName:string, 
-        cb:(module:any)=>Promise<void>,
-        ...skipprefix:string[]):Promise<void>
-    {
-        this.subject = moduleName;
-        try
-        {
-            await cb(require(moduleName));
-        }
-        catch (err)
-        {
-            if (err && err.message)
-            {
-                const msg = err.message+'';
-                for (const [prefix, cb] of skipprefix)
-                {
-                    if (msg.startsWith(prefix))
-                    {
-                        this.log('skipped');
-                        return;
-                    }
-                }
-                if (msg.startsWith('Cannot find module'))
-                {
-                    this.log('skipped');
-                }
-                else
-                {
-                    console.error(colors.red(`[test/${moduleName}] failed`));
-                    console.error(colors.red(remapStack(err.stack) || msg));
-                    this.errored = true;
-                }
-            }
-            else
-            {
-                console.error(colors.red(`[test/${moduleName}] failed`));
-                console.error(err);
-                this.errored = true;
-            }
-        }
-    }
-    
-    async process(tests:Record<string, (this:Tester)=>Promise<void>|void>):Promise<void>
-    {
-        await new Promise(resolve=>setTimeout(resolve, 10)); // run after examples
-    
-        console.log(`[test] node: ${process.versions.node}`);
-        console.log('[test] engine: '+process.jsEngine+'@'+process.versions[process.jsEngine!]);
-        console.log('[test] begin');
-    
-        let passed = 0;
-        let testnum = 1;
-        const testlist = Object.entries(tests);        
-        for (const [subject, test] of testlist)
-        {
-            try
-            {
-                console.log(`[test] (${testnum++}/${testlist.length}) ${subject}`);
-                this.subject = subject;
-                this.errored = false;
-                await test.call(this);
-                if (!this.errored) passed++;
-            }
-            catch (err)
-            {
-                console.error(remapError(err));
-            }
-        }
-        if (passed !== testlist.length)
-        {
-            console.error(colors.red(`[test] FAILED (${passed}/${testlist.length})`));
-        }
-        else
-        {
-            console.log(`[test] PASSED (${passed}/${testlist.length})`);
-        }
-    }
-}
+import { bedrockServer } from "bdsx/launcher";
+import { Tester } from "bdsx/tester";
+import { ActorType } from "bdsx/bds/actor";
+import { networkHandler } from "bdsx/bds/networkidentifier";
+import { proc, proc2 } from "bdsx/bds/proc";
 
 let nextTickPassed = false;
-const test = new Tester;
-test.process({
+let commandTestPassed = false;
+let commandNetPassed = false;
+let chatCancelCounter = 0;
+Tester.test({
+    async globals() {
+        this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
+        this.assert((serverInstance as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7ServerInstance@@6BAppPlatformListener@@@"]), 
+            'serverInstance is not ServerInstance');
+        this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
+        this.assert((networkHandler as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@"]),
+            'networkHandler is not NetworkHandler');
+        const inst = networkHandler.instance;
+        this.assert(!!inst && inst.isNotNull(), 'RaknetInstance not found');
+        this.assert((inst as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7RakNetInstance@@6BConnector@@@"]), 
+            'networkHandler.instance is not RaknetInstance');
+
+        const rakpeer = inst.peer;
+        this.assert(!!rakpeer && rakpeer.isNotNull(), 'RakNet::RakPeer not found');
+        this.assert((rakpeer as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]), 
+            'networkHandler.instance.peer is not RakNet::RakPeer');
+    },
     async nexttick() {
         nextTickPassed = await Promise.race([
             new Promise<boolean>(resolve=>process.nextTick(()=>resolve(true))),
@@ -135,7 +44,105 @@ test.process({
         ]);
     },
 
-    // jslib
+    async command(){
+        let passed = false;
+        command.hook.on((cmd, origin)=>{
+            if (cmd === '/__dummy_command')
+            {
+                passed = origin === 'Server';
+            }
+            else if (cmd === '/test')
+            {
+                if (origin === 'Server') return;
+                if (!commandTestPassed)
+                {
+                    if (!commandNetPassed) this.error('command.net does not emitted');
+                    commandTestPassed = true;
+                    this.log('/test passed');
+                }
+            }
+        });
+        command.net.on((ev)=>{
+            if (ev.command === '/test')
+            {
+                commandNetPassed = true;
+            }
+        });
+        await new Promise<void>((resolve)=>{
+            bedrockServer.commandOutput.on(output=>{
+                if (output.startsWith('Unknown command: __dummy_command'))
+                {
+                    if (passed) resolve();
+                    else this.error('command.hook.listener failed');
+                    return CANCEL;
+                }
+            });
+            bedrockServer.executeCommandOnConsole('__dummy_command');
+        })
+    },
+
+    chat(){
+        chat.on(ev=>{
+            if (ev.message == "test")
+            {
+                if (!commandTestPassed && !commandNetPassed)
+                {
+                    console.error('Please /test first');
+                    return CANCEL;
+                }
+                const MAX_CHAT = 5;
+                chatCancelCounter ++;
+                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
+                this.assert(connectedNi === ev.networkIdentifier, 'the network identifier does not matched');
+                if (chatCancelCounter === MAX_CHAT)
+                {
+                    this.log('> tested and stopping...');
+                    setTimeout(()=>serverControl.stop(), 1000);
+                }
+                return CANCEL;
+            }
+        });
+    },
+
+    actor(){
+
+        const system = server.registerSystem(0, 0);
+        system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
+            try
+            {
+                const uniqueId = ev.data.entity.__unique_id__;
+                const actor2 = Actor.fromUniqueId(uniqueId["64bit_low"], uniqueId["64bit_high"]);
+                const actor = Actor.fromEntity(ev.data.entity);
+                this.assert(actor === actor2, 'Actor.fromEntity is not matched');
+            
+                if (actor !== null)
+                {
+                    const actualId = actor.getUniqueIdLow()+':'+actor.getUniqueIdHigh();
+                    const expectedId = uniqueId["64bit_low"]+':'+uniqueId["64bit_high"];
+                    this.assert(actualId === expectedId, 
+                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
+                    
+                    if (ev.__identifier__ === 'minecraft:player')
+                    {
+                        const name = system.getComponent(ev.data.entity ,MinecraftComponent.Nameable)!.data.name;
+                        this.assert(name === connectedId, 'id does not matched');
+                        this.assert(actor.getTypeId() === ActorType.Player, 'player type does not matched');
+                        this.assert(actor.isPlayer(), 'a player is not the player');
+                        this.assert(connectedNi === actor.getNetworkIdentifier(), 'the network identifier does not matched');
+                    }
+                    else
+                    {
+                        this.assert(!actor.isPlayer(), `a not player is the player(identifier:${ev.__identifier__})`);
+                    }
+                }
+            }
+            catch (err)
+            {
+                this.error(err.stack);
+            }
+        });
+    },
+
     bin(){
         this.assert(bin.make64(1, 0) === bin64_t.one, '[test] bin.make64(1, 0) failed');
         this.assert(bin.make64(0, 0) === bin64_t.zero, '[test] bin.make64(0, 0) failed');
@@ -157,15 +164,16 @@ test.process({
         const ptr = capi.malloc(10);
         try
         {
-            const bignum = bin.make(123456789012345, 4);
+            const bignum = bin.makeVar(123456789012345);
             new NativePointer(ptr).writeVarBin(bignum);
-            console.assert(new NativePointer(ptr).readVarBin() === bignum, '[test] writevarbin / readvarbin failed');
+            this.assert(new NativePointer(ptr).readVarBin() === bignum, '[test] writevarbin / readvarbin failed');
         }
         finally
         {
             capi.free(ptr);
         }
     },
+
     hashset(){
         class HashItem
         {
@@ -232,7 +240,6 @@ test.process({
         
     },
 
-    // nativelib
     memset():void
     {
         const dest = new Uint8Array(12);
@@ -245,7 +252,6 @@ test.process({
         }
     },
 
-    // hooking lib
     nethook(){
         let idcheck = 0;
         let sendpacket = 0;
@@ -255,18 +261,19 @@ test.process({
                 idcheck = packetId;
                 this.assert(packetId === ptr.readUint8(), '[test] different packetId in buffer');
             });
-            netevent.after(i).on((ptr, ni, packetId)=>{
-                this.assert(packetId === idcheck, '[test] different packetId');
+            netevent.before<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
+                this.assert(packetId === idcheck, '[test] different packetId on before');
+                this.assert(ptr.getId() === idcheck, '[test] different class.packetId on before');
             });
-            netevent.before(i).on((ptr, ni, packetId)=>{
-                this.assert(packetId === idcheck, '[test] different packetId');
+            netevent.after(<MinecraftPacketIds>i).on((ptr, ni, packetId)=>{
+                this.assert(packetId === idcheck, '[test] different packetId on after');
+                this.assert(ptr.getId() === idcheck, '[test] different class.packetId on after');
             });
-            netevent.send(i).on((ptr, ni, packetId)=>{
-                this.assert(packetId === idcheck, '[test] different packetId');
+            netevent.send<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
+                this.assert(ptr.getId() === packetId, '[test] different class.packetId on send');
                 sendpacket++;
             });
         }
-        
     
         const conns = new Set<NetworkIdentifier>();
         netevent.after(PacketId.Login).on((ptr, ni)=>{
@@ -279,124 +286,20 @@ test.process({
                 }
             }, 1000);
         });
-        close.on(ni=>{
-            console.assert(conns.delete(ni), '[test] disconnected without connected');
-        });
-    },
-    commandHook(){
-        command.hook.on((cmd, origin)=>{
-            console.log({cmd, origin});
-            if (cmd === '/test')
-            {
-                console.log('> tested');
-                return 0;
-            }
-        });
-        command.net.on((ev)=>{
-            console.log('[test] cmd/net: '+ev.command);
-        });
-    },
-
-    // modules
-    mariadb(){
-        return this.module('mariadb', async(db)=>{ // needs mariadb@2.3.x
-            const pool = db.createPool({user:'test', password:'1234', database: 'test', acquireTimeout: 1000, connectTimeout: 1000});
-            try
-            {
-                const conn = await pool.getConnection();
-                try
-                {
-                    await conn.query('create table test(a int)');
-                    await conn.query('insert into test values(1)');
-                    const v = await conn.query('select * from test');
-                    await conn.query('drop table test');
-                    console.assert(v[0].a === 1, '[test] mariadb: select 1 failed');
-                }
-                finally
-                {
-                    conn.end();
-                }
-            }
-            finally
-            {
-                pool.end();
-            }
-        }, '(conn=-1, no: 45012, SQLState: 08S01) Connection timeout: failed to create socket after ');
-    },
-    
-    discord_js(){
-        return this.module('discord.js', async (Discord)=>{ // needs discord.js@11.x
-            const client = new Discord.Client();
-            let token:string;
-            try
-            {
-                token = await new Promise((resolve, reject)=>
-                    fs.readFile(__dirname+'\\discord.bot.token.txt', 'utf-8', (err, data)=>err ? reject(err) : resolve(data)));
-            }
-            catch (err)
-            {
-                this.log('no token for testing, skipped');
-                return;
-            }
-            await new Promise<void>((resolve, reject)=>{
-                client.on('ready', () => {
-                    if (client.user.tag === '루아ai#8755') resolve();
-                    else reject(Error('who are you?'));
-                    client.destroy();
-                });
-                client.login(token);
-            });
+        NetworkIdentifier.close.on(ni=>{
+            this.assert(conns.delete(ni), '[test] disconnected without connected');
         });
     },
 });
 
 let connectedNi:NetworkIdentifier;
-
-chat.on(ev=>{
-    if (ev.message == "test")
-    {
-        console.assert(connectedNi === ev.networkIdentifier, 'the network identifier does not matched');
-        console.log('> tested and stopping...');
-        setTimeout(()=>serverControl.stop(), 5000);
-        return CANCEL;
-    }
-});
+let connectedId:string;
 
 netevent.raw(PacketId.Login).on((ptr, size, ni)=>{
     connectedNi = ni;
 });
-
-const system = server.registerSystem(0, 0);
-system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
-    try
-    {
-        const uniqueId = ev.data.entity.__unique_id__;
-        const actor2 = Actor.fromUniqueId(uniqueId["64bit_low"], uniqueId["64bit_high"]);
-        const actor = Actor.fromEntity(ev.data.entity);
-        console.assert(actor === actor2, 'Actor.fromEntity is not matched');
-    
-        if (actor !== null)
-        {
-            const actualId = actor.getUniqueIdLow()+':'+actor.getUniqueIdHigh();
-            const expectedId = uniqueId["64bit_low"]+':'+uniqueId["64bit_high"];
-            console.assert(actualId === expectedId, 
-                `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
-            
-            if (ev.__identifier__ === 'minecraft:player')
-            {
-                console.assert(actor.getTypeId() == 0x13f, 'player type is not matched');
-                console.assert(actor.isPlayer(), 'a player is not the player');
-                console.assert(connectedNi === actor.getNetworkIdentifier(), 'the network identifier does not matched');
-            }
-            else
-            {
-                console.assert(!actor.isPlayer(), `a not player is the player(identifier:${ev.__identifier__})`);
-            }
-        }
-    }
-    catch (err)
-    {
-        console.error(err.stack);
-    }
+netevent.after(PacketId.Login).on(ptr=>{
+    connectedId = ptr.connreq.cert.getId();
 });
+
 

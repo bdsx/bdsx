@@ -1,6 +1,5 @@
-import { makefunc_vf } from "./capi";
-import { RawTypeId } from "./common";
-import { StaticPointer, VoidPointer } from "./core";
+import { abstract, RawTypeId } from "./common";
+import { makefunc, StaticPointer, VoidPointer } from "./core";
 import { NativeType, Type, uint32_t } from "./nativetype";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { Singleton } from "./singleton";
@@ -29,15 +28,15 @@ class RefCounter extends NativeClass
     }
     _DeleteThis():void
     {
-        throw 'abstract';
+        abstract();
     }
     _Destroy():void
     {
-        throw 'abstract';
+        abstract();
     }
 }
-RefCounter.prototype._Destroy = makefunc_vf(0, 0, RawTypeId.Void, false);
-RefCounter.prototype._DeleteThis = makefunc_vf(0, 8, RawTypeId.Void, false);
+RefCounter.prototype._Destroy = makefunc.js([0], RawTypeId.Void, {this:RefCounter});
+RefCounter.prototype._DeleteThis = makefunc.js([8], RawTypeId.Void, {this:RefCounter});
 RefCounter.abstract({
     vftable:VoidPointer,
     useRef:uint32_t,

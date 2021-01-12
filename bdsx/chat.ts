@@ -51,7 +51,7 @@ class ChatManager extends EventEx<ChatListener>
 {
     private readonly chatlistener = (ptr:TextPacket, networkIdentifier:NetworkIdentifier, packetId:MinecraftPacketIds)=>{
         const name = ptr.name;
-        const message = ptr.name;
+        const message = ptr.message;
         const ev = new ChatEventImpl(name, message, networkIdentifier);
         if (this.fire(ev) === CANCEL) return CANCEL;
         if (ev.isModified)

@@ -1,5 +1,4 @@
-import { makefunc_vf } from "bdsx/capi";
-import { RawTypeId } from "bdsx/common";
+import { abstract, RawTypeId } from "bdsx/common";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { bin64_t, uint16_t } from "bdsx/nativetype";
 import { NativeClass } from "bdsx/nativeclass";
@@ -16,7 +15,7 @@ export namespace RakNet
         // void SystemAddress::ToString(bool writePort, char *dest, char portDelineator) const
         ToString(writePort:boolean, dest:Uint8Array, portDelineator:number):void
         {
-            throw 'abstract';
+            abstract();
         }
 
         toString():string
@@ -31,7 +30,7 @@ export namespace RakNet
     SystemAddress.define<SystemAddress>({
         systemIndex:[uint16_t, 130]
     }, 136);
-    SystemAddress.prototype.ToString = makefunc.js(proc["RakNet::SystemAddress::ToString"], RawTypeId.Void, SystemAddress, false, RawTypeId.Boolean, RawTypeId.Buffer, RawTypeId.Int32);
+    SystemAddress.prototype.ToString = makefunc.js(proc["RakNet::SystemAddress::ToString"], RawTypeId.Void, {this: SystemAddress}, RawTypeId.Boolean, RawTypeId.Buffer, RawTypeId.Int32);
 
 
     export class RakNetGUID extends NativeClass
@@ -54,11 +53,11 @@ export namespace RakNet
     {
         GetSystemAddressFromIndex(idx:number):SystemAddress
         {
-            throw 'abstract';
+            abstract();
         }
     }
     RakPeer.abstract({});
-    RakPeer.prototype.GetSystemAddressFromIndex = makefunc_vf(0, 0xf0, SystemAddress, true, RawTypeId.Int32);
+    RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], SystemAddress, {this:RakPeer, structureReturn: true}, RawTypeId.Int32);
 
     export const UNASSIGNED_RAKNET_GUID = new RakNetGUID;
     

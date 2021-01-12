@@ -1,4 +1,4 @@
-import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
+import { abstract, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { CxxString, NativeDescriptorBuilder, NativeType,  Type } from "./nativetype";
 import { Singleton } from "./singleton";
@@ -395,7 +395,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
         }
         static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void
         {
-            throw 'abstract';
+            abstract();
         }
 
         static define():void

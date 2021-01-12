@@ -1,5 +1,8 @@
 /node_modules
-/bedrock_server
+/bedrock_server/*
+!/bedrock_server/mods
+/bedrock_server/mods/*
+!/bedrock_server/mods/predefined
 /dist
 /bdsx/bds/installer/zip
 /mods/bdsx.dll

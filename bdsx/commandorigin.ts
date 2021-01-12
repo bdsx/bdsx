@@ -1,11 +1,10 @@
 import { Dimension } from "./bds/dimension";
 import { Level, ServerLevel } from "./bds/level";
 import { BlockPos, Vec3 } from "./blockpos";
-import { makefunc_vf } from "./capi";
-import { RawTypeId } from "./common";
+import { abstract, RawTypeId } from "./common";
 import { mce } from "./mce";
-import { VoidPointer } from "./core";
-import { CxxStringPointer, Pointer } from "./pointer";
+import { makefunc, VoidPointer } from "./core";
+import { CxxStringPointer } from "./pointer";
 import { NativeClass } from "./nativeclass";
 import { Actor } from "./bds/actor";
 
@@ -24,7 +23,7 @@ export class CommandOrigin extends NativeClass
     
     destructor():void
     {
-        throw 'abstract';
+        abstract();
     }
     getRequestId():string
     {
@@ -42,23 +41,23 @@ export class CommandOrigin extends NativeClass
     }
     getBlockPosition(): BlockPos
     {
-        throw 'abstract';
+        abstract();
     }
     getWorldPosition(): Vec3
     {
-        throw 'abstract';
+        abstract();
     }
     getLevel(origin:CommandOrigin): Level
     {
-        throw 'abstract';
+        abstract();
     }
     getDimension(origin:CommandOrigin): Dimension
     {
-        throw 'abstract';
+        abstract();
     }
     getEntity(origin:CommandOrigin):Actor
     {
-        throw 'abstract';
+        abstract();
     }
 };
 CommandOrigin.define({
@@ -70,28 +69,28 @@ CommandOrigin.define({
 // vftable
 
 // void destructor(CommandOrigin* origin);
-CommandOrigin.prototype.destructor = makefunc_vf(0, 0x00, RawTypeId.Void, false);
+CommandOrigin.prototype.destructor = makefunc.js([0x00], RawTypeId.Void, {this: CommandOrigin});
 
-// std::string getRequestId(CommandOrigin* origin);
-const getRequestId = makefunc_vf(0, 0x08, CxxStringPointer, true);
+// std::string CommandOrigin::getRequestId();
+const getRequestId = makefunc.js([0x08], CxxStringPointer, {this: CommandOrigin, structureReturn: true});
 
-// std::string getName(CommandOrigin* origin);
-const getName = makefunc_vf(0, 0x10, CxxStringPointer, true);
+// std::string CommandOrigin::getName();
+const getName = makefunc.js([0x10], CxxStringPointer, {this: CommandOrigin, structureReturn: true});
 
-// BlockPos getBlockPosition(CommandOrigin* origin);
-CommandOrigin.prototype.getBlockPosition = makefunc_vf(0, 0x18, BlockPos, true);
+// BlockPos CommandOrigin::getBlockPosition();
+CommandOrigin.prototype.getBlockPosition = makefunc.js([0x18], BlockPos, {this: CommandOrigin, structureReturn: true});
 
 // Vec3 getWorldPosition(CommandOrigin* origin);
-CommandOrigin.prototype.getWorldPosition = makefunc_vf(0, 0x20, Vec3, true);
+CommandOrigin.prototype.getWorldPosition = makefunc.js([0x20], Vec3, {this: CommandOrigin, structureReturn: true});
 
 // Level* getLevel(CommandOrigin* origin);
-CommandOrigin.prototype.getLevel = makefunc_vf(0, 0x28, Level, false);
+CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrigin});
 
 // Dimension* (*getDimension)(CommandOrigin* origin);
-CommandOrigin.prototype.getDimension = makefunc_vf(0, 0x30, Dimension, false);
+CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
 
 // Actor* getEntity(CommandOrigin* origin);
-CommandOrigin.prototype.getEntity = makefunc_vf(0, 0x30, Actor, false);
+CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOrigin});
 
 // .....
 
