@@ -1,19 +1,22 @@
-## BDSX: Minecraft Bedrock Dedicated Server + node.js!
+## BDSX 2.0: Minecraft Bedrock Dedicated Server + node.js!
 ![logo](icon.png)  
 It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
+
+# Caution: Under Constructon
+
 * OS: Windows & Linux(with Wine)
-* Supports all BDS features!
-* Supports all[(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules) node.js features!
-* [Debug with Visual Studio Code! (You can debug addons too!)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
-* Run scripts without any addons!
-* Hijack chatting!
+* Supports all BDS features
+* Supports all[(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules) node.js features
+* [Debug with Visual Studio Code (You can debug addons too)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
+* Run scripts without any addons
+* Hijack chatting
 ```ts
 import { chat } from 'bdsx';
 chat.on(ev=>{
     ev.setMessage(ev.message.toUpperCase()+" YEY!");
 });
 ```
-* Hijack network packet + Get IP Address & XUID!
+* Hijack network packet + Get IP Address & XUID
 ```ts
 import { netevent, PacketId } from "bdsx";
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
@@ -22,20 +25,19 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
     console.log(`${username}> IP=${ip}, XUID=${xuid}`);
 });
 ```
-* [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)!
-* [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)!
+* [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)
+* [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)
 
 ## How to use it?
 * Requirement  
 [node.js](https://nodejs.org/)  
 Wine(for Linux)  
+* Recommended  
+[VSCode](https://code.visualstudio.com/)  
+GIT
 
 1. git clone https://github.com/karikera/bdsx.git # clone repo, or download it
-2. run ./bdsx/bdsx.bat or ./bdsx/bdsx.sh
-```sh
-bdsx example ./example # make example project to './example'
-bdsx ./example # run BDSX with './example', it will read 'main' of 'path/package.json
-```
+2. run `./bdsx/bdsx.bat` or `./bdsx/bdsx.sh` or `F5 on VSCode`
 
 ### by docker
 ```sh
