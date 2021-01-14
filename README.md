@@ -1,14 +1,11 @@
-## BDSX 2.0: Minecraft Bedrock Dedicated Server + node.js!
+# BDSX 2.0 : BDS + node.js
 ![logo](icon.png)  
 It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
 
-# Caution: Under Constructon
-
 * OS: Windows & Linux(with Wine)
-* Supports all BDS features
-* Supports all[(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules) node.js features
+* Basic Minecraft features as usual.
+* node.js features [(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules)
 * [Debug with Visual Studio Code (You can debug addons too)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
-* Run scripts without any addons
 * Hijack chatting
 ```ts
 import { chat } from 'bdsx';
@@ -38,8 +35,11 @@ Wine(for Linux)
 [VSCode](https://code.visualstudio.com/)  
 GIT
 
-1. git clone https://github.com/karikera/bdsx.git # clone repo, or download it
-2. run `./bdsx/bdsx.bat` or `./bdsx/bdsx.sh` or `F5 on VSCode`
+1. git clone https://github.com/karikera/bdsx.git  
+or download it
+2. Open it `VSCode` → `Ctrl+Shift+B`(Build) → `F5`(Run)  
+or run `./bdsx/bdsx.bat` (on Windows)  
+or run `./bdsx/bdsx.sh` (on Linux)
 
 ### by docker
 ```sh

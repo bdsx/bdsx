@@ -1,7 +1,4 @@
 
-// TODO:
-// NetworkIdentifier::getHash does it work?
-
 // redirect x button close
 
 // 				SetConsoleCtrlHandler([](DWORD CtrlType)->BOOL {
