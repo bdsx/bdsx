@@ -13,7 +13,7 @@ export class LoginPacket extends Packet
 }
 LoginPacket.abstract({
     u5:uint32_t,
-    connreq:[ConnectionReqeust, 0x30],
+    connreq:[ConnectionReqeust.ref(), 0x30],
 });
 
 // struct InventoryTransactionPacket : Packet

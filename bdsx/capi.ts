@@ -1,7 +1,7 @@
 import { asm, Register } from "./assembler";
 import { RawTypeId } from "./common";
+import { makefunc, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
-import { FunctionFromTypes_js, makefunc, NativePointer, ParamType, ReturnType, runtimeError, VoidPointer } from "./core";
 
 export namespace capi
 {

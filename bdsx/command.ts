@@ -1,17 +1,17 @@
 
-import Event, { EventEx, CapsuledEvent } from 'krevent';
-import netevent = require('./netevent');
-import { makefunc, NativePointer, StaticPointer } from './core';
-import { CANCEL, RawTypeId } from './common';
-import { NetworkIdentifier } from './bds/networkidentifier';
+import Event, { CapsuledEvent, EventEx } from 'krevent';
 import { asm, Register } from './assembler';
-import { exehacker } from './exehacker';
+import { NetworkIdentifier } from './bds/networkidentifier';
+import { MinecraftPacketIds } from './bds/packetids';
+import { CommandRequestPacket } from './bds/packets';
 import { proc } from './bds/proc';
 import { CommandContext, MCRESULT, MinecraftCommands } from './bds/server';
+import { CANCEL, RawTypeId } from './common';
+import { makefunc } from './core';
+import { exehacker } from './exehacker';
 import { SharedPtr } from './sharedpointer';
-import { MinecraftPacketIds } from './bds/packetids';
 import { _tickCallback } from './util';
-import { CommandRequestPacket } from './bds/packets';
+import netevent = require('./netevent');
 
 export function hookingForCommand():void
 {

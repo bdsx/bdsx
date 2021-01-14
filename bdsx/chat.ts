@@ -1,11 +1,10 @@
 
-import { EventEx, CapsuledEvent } from 'krevent';
-import netevent = require('./netevent');
-import { NativePointer } from './core';
-import { CANCEL } from './common';
+import { CapsuledEvent, EventEx } from 'krevent';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { TextPacket } from './bds/packets';
+import { CANCEL } from './common';
+import netevent = require('./netevent');
 
 
 interface ChatEvent

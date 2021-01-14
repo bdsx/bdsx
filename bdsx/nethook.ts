@@ -1,13 +1,12 @@
 
 import Event from "krevent";
-import { analyzer } from "./analyzer";
 import { asm, OperationSize, Register } from "./assembler";
 import { NetworkHandler, NetworkIdentifier } from "./bds/networkidentifier";
-import { createPacket as createPacketOld, ExtendedStreamReadResult, Packet, PacketSharedPtr, createPacketRawFunc, StreamReadResult } from "./bds/packet";
+import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "./bds/packet";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { LoginPacket, PacketIdToType } from "./bds/packets";
 import { proc } from "./bds/proc";
-import { RawTypeId, abstract, CANCEL } from "./common";
+import { abstract, CANCEL, RawTypeId } from "./common";
 import { makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
 import { exehacker } from "./exehacker";
 import { NativeClass } from "./nativeclass";
@@ -112,7 +111,7 @@ export namespace nethook
                     }
                     _tickCallback();
                 }
-                createPacketRawFunc(packet_dest, packetId);
+                createPacketRaw(packet_dest, packetId);
             }
             catch (err)
             {

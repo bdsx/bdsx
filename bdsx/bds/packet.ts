@@ -84,7 +84,7 @@ export class Packet extends MantleClass
         const sharedptr = new cls(true);
         sharedptr[NativeType.ctor]();
         
-        createPacketRawFunc(sharedptr, id);
+        createPacketRaw(sharedptr, id);
         
         const packet = sharedptr.p as T;
         packet[sharedptr_of_packet] = sharedptr;
@@ -101,18 +101,8 @@ export type PacketSharedPtr = SharedPtr<Packet>;
 export function createPacket(packetId:MinecraftPacketIds):SharedPointer
 {
     const p = new PacketSharedPtr(true);
-    createPacketRawFunc(p, packetId);
+    createPacketRaw(p, packetId);
     return new SharedPointer(p);
 }
 
-export const createPacketRawFunc = makefunc.js(proc["MinecraftPackets::createPacket"], RawTypeId.Void, null, PacketSharedPtr, RawTypeId.Int32);
-
-
-Packet.abstract({}, 0x28);
-Packet.prototype.destructor = makefunc.js([0x0], RawTypeId.Void, {this:Packet});
-Packet.prototype.getId = makefunc.js([0x8], RawTypeId.Int32, {this:Packet});
-Packet.prototype.getName = makefunc.js([0x10], RawTypeId.Void, {this:Packet}, CxxStringPointer);
-Packet.prototype.write = makefunc.js([0x18], RawTypeId.Void, {this:Packet}, BinaryStream);
-Packet.prototype.read = makefunc.js([0x20], RawTypeId.Int32, {this:Packet}, BinaryStream);
-Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
-// Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});
+export const createPacketRaw = makefunc.js(proc["MinecraftPackets::createPacket"], RawTypeId.Void, null, PacketSharedPtr, RawTypeId.Int32);

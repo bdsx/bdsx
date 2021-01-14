@@ -1,11 +1,11 @@
-import { EventEx, CapsuledEvent } from "krevent";
-
+import { CapsuledEvent } from "krevent";
 import { NetworkIdentifier } from "./bds/networkidentifier";
+import { MinecraftPacketIds } from "./bds/packetids";
 import { nethook } from "./nethook";
+import { hex } from "./util";
+
 
 import readLoginPacket = nethook.readLoginPacket;
-import { MinecraftPacketIds } from "./bds/packetids";
-import { hex } from "./util";
 
 export { readLoginPacket };
 

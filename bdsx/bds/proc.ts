@@ -28,7 +28,7 @@ const symbols = [
     'ExtendedCertificate::getTitleID',
     'ExtendedCertificate::getIdentity',
     'MinecraftPackets::createPacket',
-    'NetworkHandler::onConnectionClosed',
+    'NetworkHandler::onConnectionClosed#1',
     'BedrockLogOut',
     'google_breakpad::ExceptionHandler::HandleException',
     'google_breakpad::ExceptionHandler::HandleInvalidParameter',
@@ -43,7 +43,8 @@ const symbols = [
     'PacketViolationHandler::_handleViolation',
     'Level::removeEntityReferences',
     'Actor::~Actor',
-    'ScriptEngine::_processSystemInitialize'
+    'ScriptEngine::_processSystemInitialize',
+    'NetworkIdentifier::getHash',
 ] as const;
 
 // decorated symbols

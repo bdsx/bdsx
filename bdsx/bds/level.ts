@@ -21,19 +21,8 @@ export class Level extends NativeClass
         abstract();
     }
 }
-Level.prototype.createDimension = makefunc.js(proc["Level::createDimension"], Dimension, {this:Level}, RawTypeId.Int32);
-Level.prototype.fetchEntity = makefunc.js(proc["Level::fetchEntity"], Actor, {this:Level, nullableReturn: true}, RawTypeId.Bin64, RawTypeId.Boolean);
-
-
-
-Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
-
 export class ServerLevel extends Level
 {
     packetSender:LoopbackPacketSender;
     actors:CxxVector<Actor>;
 }
-ServerLevel.abstract({
-    packetSender:[LoopbackPacketSender.ref(), 0x830],
-    actors:[CxxVector.make(Actor.ref()), 0x1590],
-});

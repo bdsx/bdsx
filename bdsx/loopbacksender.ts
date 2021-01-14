@@ -1,6 +1,6 @@
-import { Pointer } from "./pointer";
-import { NativeClass } from "./nativeclass";
 import { NetworkHandler } from "./bds/networkidentifier";
+import { NativeClass } from "./nativeclass";
+import { Pointer } from "./pointer";
 
 export class LoopbackPacketSender extends NativeClass
 {

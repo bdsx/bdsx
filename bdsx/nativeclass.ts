@@ -1,6 +1,6 @@
 import { abstract, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
-import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
-import { CxxString, NativeDescriptorBuilder, NativeType,  Type } from "./nativetype";
+import { makefunc, NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
+import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 
 declare global
@@ -116,7 +116,6 @@ export class NativeClass extends StructurePointer
         }
         return new this(ptr.add(count * size)) as any;
     }
-
     /**
      * Cannot construct & Unknown size
      */
@@ -128,6 +127,12 @@ export class NativeClass extends StructurePointer
     static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, abstract:boolean=false):void
     {
         const clazz = this as NativeClassType<T>;
+        if (makefunc.np2js in clazz)
+        {
+            clazz[NativeType.getter] = wrapperGetter;
+            clazz[NativeType.descriptor] = wrapperDescriptor;
+        }
+
         let offset:number|null = this.__proto__[NativeType.size];
         let size = offset;
 
@@ -194,6 +199,37 @@ export class NativeClass extends StructurePointer
         return refSingleton.newInstance(this, ()=>makeReference(this));
     }
 }
+
+function wrapperGetter<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
+    return (this as any)[makefunc.np2js](ptr.addAs(this, offset));
+}
+function wrapperGetterRef<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
+    return (this as any)[makefunc.np2js](ptr.getNullablePointerAs(this, offset));
+}
+function wrapperSetterRef<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void{
+    ptr.setPointer((this as any)[makefunc.js2np](value), offset);
+}
+function wrapperDescriptor<THIS extends NativeClass>(this:{new():THIS}, builder:NativeDescriptorBuilder, key:string|number, offset:number):void
+{
+    const clazz = this as NativeClassType<THIS>;
+    builder.desc[key] = {
+        configurable: true,
+        get(this:VoidPointer) {
+            const value = (clazz as any)[makefunc.np2js](this.addAs(clazz, offset));
+            Object.defineProperty(this, key, {value});
+            return value;
+        }
+    };
+    if (clazz[NativeType.ctor] !== emptyFunc)
+    {
+        builder.ctor_code += `this.${key}[NativeType.ctor]()\n`;
+    }
+    if (clazz[NativeType.dtor] !== emptyFunc)
+    {
+        builder.dtor_code += `this.${key}[NativeType.dtor]()\n`;
+    }
+}
+
 const refSingleton = new Singleton<NativeClassType<any>>();
 
 export interface NativeArrayType<T> extends Type<NativeArray<T>>
@@ -373,7 +409,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
 
         static [NativeType.getter](ptr:StaticPointer, offset?:number):T|null
         {
-            return ptr.getNullablePointerAs(Pointer, offset) as unknown as T;
+            return ptr.getNullablePointerAs(this, offset) as unknown as T;
         }
         static [NativeType.setter](ptr:StaticPointer, value:T, offset?:number):void
         {
@@ -404,5 +440,8 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
         }
     }
     Pointer[NativeType.descriptor] = NativeType.defaultDescriptor;
+    
+    if (makefunc.np2js in type) Pointer[NativeType.getter] = wrapperGetterRef as any;
+    if (makefunc.js2np in type) Pointer[NativeType.setter] = wrapperSetterRef;
     return Pointer as Type<T> as NativeClassType<T>;
 }

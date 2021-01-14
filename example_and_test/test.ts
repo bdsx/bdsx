@@ -9,7 +9,7 @@ import { bedrockServer } from "bdsx/launcher";
 import { Tester } from "bdsx/tester";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
-import { proc, proc2 } from "bdsx/bds/proc";
+import { proc2 } from "bdsx/bds/proc";
 
 let nextTickPassed = false;
 let commandTestPassed = false;
@@ -259,18 +259,18 @@ Tester.test({
         {
             netevent.raw(i).on((ptr, size, ni, packetId)=>{
                 idcheck = packetId;
-                this.assert(packetId === ptr.readUint8(), '[test] different packetId in buffer');
+                this.assert(packetId === ptr.readUint8(), `different packetId in buffer. id=${packetId}`);
             });
             netevent.before<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
-                this.assert(packetId === idcheck, '[test] different packetId on before');
-                this.assert(ptr.getId() === idcheck, '[test] different class.packetId on before');
+                this.assert(packetId === idcheck, `different packetId on before. id=${packetId}`);
+                this.assert(ptr.getId() === idcheck, `different class.packetId on before. id=${packetId}`);
             });
             netevent.after(<MinecraftPacketIds>i).on((ptr, ni, packetId)=>{
-                this.assert(packetId === idcheck, '[test] different packetId on after');
-                this.assert(ptr.getId() === idcheck, '[test] different class.packetId on after');
+                this.assert(packetId === idcheck, `different packetId on after. id=${packetId}`);
+                this.assert(ptr.getId() === idcheck, `different class.packetId on after. id=${packetId}`);
             });
             netevent.send<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
-                this.assert(ptr.getId() === packetId, '[test] different class.packetId on send');
+                this.assert(ptr.getId() === packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             });
         }

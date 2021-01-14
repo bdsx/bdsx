@@ -1,7 +1,7 @@
-import { CommandOrigin } from "bdsx/commandorigin";
-import { abstract, RawTypeId } from "bdsx/common";
+import { CommandOrigin } from "./commandorigin";
+import { abstract } from "bdsx/common";
 import { LoopbackPacketSender } from "bdsx/loopbacksender";
-import { makefunc, VoidPointer } from "bdsx/core";
+import { VoidPointer } from "bdsx/core";
 import { bin64_t, CxxString, uint32_t } from "bdsx/nativetype";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { NativeClass } from "bdsx/nativeclass";
@@ -9,24 +9,20 @@ import { DimensionId } from "./actor";
 import { Dimension } from "./dimension";
 import { ServerLevel } from "./level";
 import { NetworkHandler, ServerNetworkHandler } from "./networkidentifier";
-import { proc } from "./proc";
 
-class MinecraftEventing extends NativeClass {}
-class ResourcePackManager extends NativeClass {}
-class Whitelist extends NativeClass {}
-class PrivateKeyManager extends NativeClass {}
-class ServerMetrics extends NativeClass {}
-class ServerMetricsImpl extends ServerMetrics {}
-class VanilaServerGameplayEventListener extends NativeClass {}
-class EntityRegistryOwned extends NativeClass {}
+export class MinecraftEventing extends NativeClass {}
+export class ResourcePackManager extends NativeClass {}
+export class Whitelist extends NativeClass {}
+export class PrivateKeyManager extends NativeClass {}
+export class ServerMetrics extends NativeClass {}
+export class ServerMetricsImpl extends ServerMetrics {}
+export class VanilaServerGameplayEventListener extends NativeClass {}
+export class EntityRegistryOwned extends NativeClass {}
 
 export class MCRESULT extends NativeClass
 {
 	result:uint32_t;
-};
-MCRESULT.define({
-	result:uint32_t
-});
+}
 
 
 export class CommandOutputSender extends NativeClass
@@ -36,20 +32,17 @@ export class CommandOutputSender extends NativeClass
 /**
  * unknown instance
  */
-class Minecraft$Something extends NativeClass
+export class Minecraft$Something extends NativeClass
 {
     network:NetworkHandler;
     level:ServerLevel;
     shandler:ServerNetworkHandler;
 }
 
-class VanilaGameModuleServer extends NativeClass
+export class VanilaGameModuleServer extends NativeClass
 {
 	listener:VanilaServerGameplayEventListener;
 }
-VanilaGameModuleServer.abstract({
-	listener:[VanilaServerGameplayEventListener.ref(), 0x8]
-});
 
 export class Minecraft extends NativeClass
 {
@@ -109,10 +102,6 @@ export class CommandContext extends NativeClass
 	command:CxxString;
 	origin:ServerCommandOrigin;
 };
-CommandContext.abstract({
-	command:CxxString,
-	origin:ServerCommandOrigin.ref(),
-});
 
 
 export class MinecraftCommands extends NativeClass
@@ -131,46 +120,6 @@ export class MinecraftCommands extends NativeClass
 		return this._executeCommand(ctx, b);
 	}
 }
-
-MinecraftCommands.prototype._executeCommand = makefunc.js(proc["MinecraftCommands::executeCommand"], MCRESULT, {thisType: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
-
-
-DedicatedServer.abstract({});
-Minecraft$Something.abstract({
-    network:NetworkHandler.ref(),
-    level:ServerLevel.ref(),
-    shandler:ServerNetworkHandler.ref(),
-});
-MinecraftCommands.abstract({
-	sender:CommandOutputSender.ref(),
-	u1:VoidPointer,
-	u2:bin64_t,
-	minecraft:Minecraft.ref(),
-});
-Minecraft.abstract({
-	vftable:VoidPointer,
-	serverInstance:ServerInstance.ref(),
-	minecraftEventing:MinecraftEventing.ref(),
-	resourcePackManager:ResourcePackManager.ref(),
-	offset_20:VoidPointer,
-	vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
-	whitelist:Whitelist.ref(),
-	permissionsJsonFileName:CxxString.ref(),
-	privateKeyManager:PrivateKeyManager.ref(),
-	serverMetrics:[ServerMetrics.ref(), 0x78],
-	commands:[MinecraftCommands.ref(), 0xa0],
-	something:Minecraft$Something.ref(),
-	network:[NetworkHandler.ref(), 0xc0],
-	LoopbackPacketSender:LoopbackPacketSender.ref(),
-	server:DedicatedServer.ref(),
-    entityRegistryOwned:[SharedPtr.make(EntityRegistryOwned), 0xe0],
-});
-ServerInstance.abstract({
-    server:[DedicatedServer.ref(), 0x90],
-    minecraft:[Minecraft.ref(), 0x98],
-    networkHandler:[NetworkHandler.ref(), 0xa0],
-});
-
 
 export let serverInstance:ServerInstance;
 

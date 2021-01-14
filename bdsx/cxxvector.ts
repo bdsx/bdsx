@@ -1,9 +1,9 @@
-import { makefunc, NativePointer, VoidPointer } from "./core";
-import { NativeType, Type } from "./nativetype";
-import { NativeClass, NativeClassType } from "./nativeclass";
 import { proc } from "./bds/proc";
-import { dll } from "./dll";
 import { abstract, RawTypeId } from "./common";
+import { makefunc, NativePointer, VoidPointer } from "./core";
+import { dll } from "./dll";
+import { NativeClass, NativeClassType } from "./nativeclass";
+import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 
 export interface CxxVectorType<T> extends Type<CxxVector<T>>

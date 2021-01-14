@@ -1,23 +1,22 @@
-import { jshook, NativePointer, StaticPointer, RuntimeError, MultiThreadQueue, AllocatedPointer, VoidPointer } from "./core";
+import Event, { CapsuledEvent } from "krevent";
 import { asm, OperationSize, Register } from "./assembler";
+import { hookingForActor } from "./bds/actor";
 import { proc } from "./bds/proc";
 import { capi } from "./capi";
+import { hookingForCommand } from "./command";
 import { CANCEL, Encoding, RawTypeId } from "./common";
+import { AllocatedPointer, bedrock_server_exe, cgate, ipfilter, jshook, makefunc, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { exehacker } from "./exehacker";
-import { bedrock_server_exe, cgate, ipfilter, makefunc, runtimeError, uv_async } from "./core";
-import Event, { CapsuledEvent } from "krevent";
+import { CxxString, NativeType } from "./nativetype";
+import { nethook } from "./nethook";
 import { remapError, remapStack } from "./source-map-support";
 import { _tickCallback } from "./util";
 import { EXCEPTION_BREAKPOINT } from "./windows_h";
 
 import readline = require("readline");
 import colors = require('colors');
-import { CxxString, NativeType } from "./nativetype";
 import bd_server = require("./bds/server");
-import { nethook } from "./nethook";
-import { hookingForCommand } from "./command";
-import { hookingForActor } from "./bds/actor";
 import nimodule = require("./bds/networkidentifier");
 
 declare module 'colors'
@@ -492,8 +491,7 @@ export namespace bedrockServer
         exehacker.hooking('script-starting-hook', 'ScriptEngine::startScriptLoading', 
             makefunc.np((scriptEngine:VoidPointer)=>{
                 cgate.nodeLoopOnce();
-
-                const system = server.registerSystem(0,0);
+                
                 bd_server.serverInstance = serverInstanceDest.getPointerAs(bd_server.ServerInstance);
                 nimodule.networkHandler = bd_server.serverInstance.networkHandler;
                 openEvTarget.fire();

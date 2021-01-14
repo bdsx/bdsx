@@ -207,18 +207,6 @@ export class Actor extends NativeClass
 
 }
 
-(Actor.prototype as any).sendNetworkPacket = makefunc.js(proc["ServerPlayer::sendNetworkPacket"], RawTypeId.Void, {this:Actor}, VoidPointer);
-Actor.prototype.getUniqueIdBin = makefunc.js(proc["Actor::getUniqueID"], RawTypeId.Bin64, {this:Actor});
-
-Actor.abstract({
-	vftable: VoidPointer,
-	identifier: [CxxString, 0x450], // minecraft:player
-	attributes: [BaseAttributeMap.ref(), 0x478],
-	runtimeId: [ActorRuntimeID, 0x588],
-});
-Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
-Actor.prototype.getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
-
 function _removeActor(actor:Actor)
 {
 	actorMaps.delete(actor.getAddressBin());

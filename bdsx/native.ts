@@ -3,17 +3,16 @@
  */
 
 import core = require('./core');
-import { bedrockServer } from './launcher';
-import { serverControl as serverControlOrigin } from './servercontrol';
-import { nethook as nethookOrigin } from './nethook';
-import { NetworkIdentifier as NetworkIdentifierOrigin } from './bds/networkidentifier';
 import { Actor as ActorOrigin } from './bds/actor';
-import { SharedPointer as SharedPointerOrigin } from './sharedpointer';
-import { NativeModule as NativeModuleOrigin } from './dll';
-import { capi } from './capi';
 import { HashedString } from './bds/hashedstring';
+import { NetworkIdentifier as NetworkIdentifierOrigin } from './bds/networkidentifier';
+import { capi } from './capi';
 import { CxxVector } from './cxxvector';
+import { NativeModule as NativeModuleOrigin } from './dll';
 import { legacy } from './legacy';
+import { nethook as nethookOrigin } from './nethook';
+import { serverControl as serverControlOrigin } from './servercontrol';
+import { SharedPointer as SharedPointerOrigin } from './sharedpointer';
 
 function defaultErrorMethod(err:Error)
 {

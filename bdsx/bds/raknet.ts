@@ -1,8 +1,6 @@
-import { abstract, RawTypeId } from "bdsx/common";
-import { makefunc, VoidPointer } from "bdsx/core";
+import { abstract } from "bdsx/common";
 import { bin64_t, uint16_t } from "bdsx/nativetype";
 import { NativeClass } from "bdsx/nativeclass";
-import { proc } from "./proc";
 
 const portDelineator = '|'.charCodeAt(0);
 
@@ -27,11 +25,6 @@ export namespace RakNet
             return dest.subarray(0, len).toString();
         }
     }
-    SystemAddress.define<SystemAddress>({
-        systemIndex:[uint16_t, 130]
-    }, 136);
-    SystemAddress.prototype.ToString = makefunc.js(proc["RakNet::SystemAddress::ToString"], RawTypeId.Void, {this: SystemAddress}, RawTypeId.Boolean, RawTypeId.Buffer, RawTypeId.Int32);
-
 
     export class RakNetGUID extends NativeClass
     {
@@ -44,10 +37,6 @@ export namespace RakNet
             this.g = g;
         }
     }
-    RakNetGUID.define({
-        g:bin64_t,
-        systemIndex:uint16_t
-    }, 16);
 
     export class RakPeer extends NativeClass
     {
@@ -56,8 +45,6 @@ export namespace RakNet
             abstract();
         }
     }
-    RakPeer.abstract({});
-    RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], SystemAddress, {this:RakPeer, structureReturn: true}, RawTypeId.Int32);
 
     export const UNASSIGNED_RAKNET_GUID = new RakNetGUID;
     
@@ -79,9 +66,5 @@ export namespace RakNet
             }
         }
     }
-    AddressOrGUID.define({
-        rakNetGuid:RakNetGUID,
-        systemAddress:SystemAddress,
-    });
 
 }

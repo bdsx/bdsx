@@ -1,8 +1,5 @@
-// one page TS
-
 /// <reference path='./fstream.d.ts' />
 'use strict';
-
 
 import fs_ori = require('fs');
 import unzipper = require('unzipper');
@@ -11,13 +8,16 @@ import { Writer } from 'fstream';
 import readline = require('readline');
 import ProgressBar = require('progress');
 import { https } from 'follow-redirects';
+import version = require('../version.json');
 
 const sep = path.sep;
 
-export const BDS_VERSION = '1.16.200.02';
+const BDS_VERSION = '1.16.201.02';
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_VERSION}.zip`;
+const BDSX_CORE_VERSION = version.coreVersion;
+const BDSX_CORE_LINK = `https://github.com/karikera/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
 
-function yesno({ question, defaultValue }:{question:string, defaultValue?:boolean}):Promise<boolean>{
+function yesno(question:string, defaultValue?:boolean):Promise<boolean>{
     const yesValues = [ 'yes', 'y'];
     const noValues  = [ 'no', 'n' ];
 
@@ -31,7 +31,7 @@ function yesno({ question, defaultValue }:{question:string, defaultValue?:boolea
             rl.close();
 
             const cleaned = answer.trim().toLowerCase();
-            if (cleaned == '' && defaultValue != null)
+            if (cleaned == '' && defaultValue !== undefined)
                 return resolve(defaultValue);
     
             if (yesValues.indexOf(cleaned) >= 0)
@@ -43,7 +43,7 @@ function yesno({ question, defaultValue }:{question:string, defaultValue?:boolea
             process.stdout.write('\nInvalid Response.\n');
             process.stdout.write('Answer either yes : (' + yesValues.join(', ')+') \n');
             process.stdout.write('Or no: (' + noValues.join(', ') + ') \n\n');
-            resolve(yesno({ question, defaultValue }));
+            resolve(yesno(question, defaultValue));
         });
     });
 }
@@ -138,6 +138,7 @@ const fs = {
 interface InstallInfo
 {
     bdsVersion?:string|null;
+    bdsxCoreVersion?:string|null;
     files?:string[];
 }
 
@@ -155,8 +156,6 @@ class MessageError extends Error
         super(msg);
     }
 }
-
-const resolved = Promise.resolve();
 
 async function concurrencyLoop<T>(array:T[], concurrency:number, callback:(entry:T)=>Promise<void>):Promise<void>
 {    if (concurrency <= 1)
@@ -186,86 +185,40 @@ async function concurrencyLoop<T>(array:T[], concurrency:number, callback:(entry
     await Promise.all(waitings);
 }
 
-function downloadFile(filepath:string, url:string):Promise<void>
+function downloadFile(name:string, filepath:string, url:string):Promise<void>
 {
+    const bar = new ProgressBar(`${name}: Download :bar :current/:total`, { 
+        total: 1,
+        width: 20,
+    });
     return new Promise((resolve, reject)=>{
         function download()
         {
             const file = fs_ori.createWriteStream(filepath);
             https.get(url, (response)=>{
+                bar.total = +response.headers['content-length']!;
                 if (response.statusCode !== 200)
                 {
                     fs.unlink(filepath);
-                    reject(Error(`${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
+                    reject(new MessageError(`${name}: ${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
                     return;
                 }
-                response.pipe(file)
-                .on('end', resolve);
+                response.on('data', (data:Buffer)=>{
+                    bar.tick(data.length);
+                }).pipe(file).on('finish', ()=>{
+                    file.close();
+                    resolve();
+                });
             }).on('error', err=>{
                 fs.unlink(filepath);
                 reject(err);
             });
         }
         fs.stat(filepath).then(stat=>{
-            if (stat.size >= 10) resolve();
+            if (stat.size >= 10*1024*1024) resolve();
             else download();
         }, download);
     });
-}
-
-async function downloadAndUnzip(prefix:string, url:string, dest:string, skipExists:boolean):Promise<string[]>
-{
-    const bar = new ProgressBar(prefix+': :bar :current/:total', { 
-        total: 1,
-        width: 20,
-    });
-    const urlidx = url.lastIndexOf('/');
-    const zipfilename = url.substr(urlidx+1);
-    const zipfiledir = path.join(__dirname, 'zip');
-    const zipfilepath = path.join(zipfiledir, zipfilename);
-    
-    const writedFiles:string[] = [];
-    
-    await fs.mkdir(zipfiledir);
-    await downloadFile(zipfilepath, url);
-    const archive = await unzipper.Open.file(zipfilepath);
-    
-    const files:unzipper.File[] = [];
-    for (const entry of archive.files)
-    {
-        if (entry.type == 'Directory') continue;
-
-        let filepath = entry.path;
-        if (sep !== '/') filepath = filepath.replace(/\//g, sep);
-        if (!filepath.startsWith(sep)) filepath = sep+filepath;
-        writedFiles.push(filepath);
-
-        if (skipExists)
-        {
-            const exists = fs_ori.existsSync(path.join(dest, filepath));
-            if (exists) continue;
-        }
-        files.push(entry);
-    }
-
-    bar.total = files.length;
-
-    await concurrencyLoop(files, 5, entry=>{
-        const extractPath = path.join(dest, entry.path);
-        if (extractPath.indexOf(dest) != 0) return resolved;
-        const writer = Writer({ path: extractPath });
-        return new Promise<void>((resolve, reject)=>{
-            entry.stream()
-                .on('error',reject)
-                .pipe(writer)
-                .on('close',()=>{
-                    bar.tick();
-                    resolve();
-                })
-                .on('error',reject);
-        });
-    });
-    return writedFiles;
 }
 
 async function removeInstalled(dest:string, files:string[]):Promise<void>
@@ -296,12 +249,13 @@ const bdsPath = process.argv[2];
 const agree = process.argv[3] === '-y';
 const installInfoPath = `${bdsPath}${sep}installinfo.json`;
 
-async function readInstallInfoSync():Promise<void>
+async function readInstallInfo():Promise<void>
 {
     try
     {
         const file = await fs.readFile(installInfoPath);
         installInfo = JSON.parse(file);
+        if (!installInfo) installInfo = {};
     }
     catch (err)
     {
@@ -312,76 +266,181 @@ async function readInstallInfoSync():Promise<void>
 
 function saveInstallInfo():Promise<void>
 {
-    if (installInfo === null) return resolved;
     return fs.writeFile(installInfoPath, JSON.stringify(installInfo, null, 4));
 }
 
-async function installBDS():Promise<void>
+class InstallItem
 {
-    console.log(`BDS: Install to ${bdsPath}`);
-    let prom:Promise<void>;
-    if (installInfo.files)
+    constructor(public readonly opts:{
+        name:string,
+        key:keyof InstallInfo,
+        version:string,
+        targetPath:string,
+        url:string,
+        keyFile?:string,
+        confirm?:()=>Promise<void>|void,
+        preinstall?:()=>Promise<void>|void,
+        postinstall?:(writedFiles:string[])=>Promise<void>|void,
+        skipExists?:boolean
+    })
     {
-        prom = removeInstalled(bdsPath, installInfo.files!);
     }
-    else
+
+    private async _downloadAndUnzip():Promise<string[]>
     {
-        prom = resolved;
+        const url = this.opts.url;
+        const dest = this.opts.targetPath;
+        const urlidx = url.lastIndexOf('/');
+        const zipfilename = url.substr(urlidx+1);
+        const zipfiledir = path.join(__dirname, 'zip');
+        const zipfilepath = path.join(zipfiledir, zipfilename);
+        
+        const writedFiles:string[] = [];
+        
+        await fs.mkdir(zipfiledir);
+        await downloadFile(this.opts.name, zipfilepath, url);
+        const bar = new ProgressBar(`${this.opts.name}: Install :bar :current/:total`, { 
+            total: 1,
+            width: 20,
+        });
+        const archive = await unzipper.Open.file(zipfilepath);
+        
+        const files:unzipper.File[] = [];
+        for (const entry of archive.files)
+        {
+            if (entry.type == 'Directory') continue;
+    
+            let filepath = entry.path;
+            if (sep !== '/') filepath = filepath.replace(/\//g, sep);
+            if (!filepath.startsWith(sep)) filepath = sep+filepath;
+            writedFiles.push(filepath);
+    
+            if (this.opts.skipExists)
+            {
+                const exists = fs_ori.existsSync(path.join(dest, filepath));
+                if (exists) continue;
+            }
+            files.push(entry);
+        }
+        bar.total = files.length;
+    
+        await concurrencyLoop(files, 5, entry=>{
+            const extractPath = path.join(dest, entry.path);
+            const writer = Writer({ path: extractPath });
+            return new Promise<void>((resolve, reject)=>{
+                entry.stream()
+                    .on('error',reject)
+                    .pipe(writer)
+                    .on('close',()=>{
+                        bar.tick();
+                        resolve();
+                    })
+                    .on('error',reject);
+            });
+        });
+        return writedFiles;
     }
-    const writedFiles = await downloadAndUnzip('BDS', BDS_LINK, installInfoPath, true);
-    if (installInfo === null) installInfo = {};
-    installInfo.bdsVersion = BDS_VERSION;
-    installInfo.files = writedFiles.filter(file=>!KEEPS.has(file));;
+    
+    private async _install():Promise<void>
+    {
+        const preinstall = this.opts.preinstall;
+        if (preinstall) await preinstall();
+        const writedFiles = await this._downloadAndUnzip();
+        installInfo[this.opts.key] = this.opts.version as any;
+
+        const postinstall = this.opts.postinstall;
+        if (postinstall) await postinstall(writedFiles);
+    }
+        
+    async install():Promise<void>
+    {
+        await fs.mkdir(this.opts.targetPath);
+        const name = this.opts.name;
+        const key = this.opts.key;
+        if (installInfo[key] === undefined)
+        {
+            const keyFile = this.opts.keyFile;
+            if (keyFile && await fs.exists(path.join(this.opts.targetPath, keyFile)))
+            {
+                if (await yesno(`${name}: Would you like to use what already installed?`))
+                {
+                    installInfo[key] = 'manual' as any;
+                    console.log(`${name}: manual`);
+                    return;
+                }
+            }
+            const confirm = this.opts.confirm;
+            if (confirm) await confirm();
+            await this._install();
+            console.log(`${name}: Installed successfully`);
+        }
+        else if (installInfo[key] === null || installInfo[key] === 'manual')
+        {
+            console.log(`${name}: manual`);
+        }
+        else if (installInfo[key] === this.opts.version)
+        {
+            console.log(`${name}: ${this.opts.version}`);
+        }
+        else
+        {
+            console.log(`${name}: Old (${installInfo[key]})`);
+            console.log(`${name}: New (${this.opts.version})`);
+            await this._install();
+            console.log(`${name}: Updated`);
+        }
+    }
+
 }
 
-async function downloadBDS(yes:boolean):Promise<void>
-{
-    await fs.mkdir(bdsPath);
-    // BDS
-    if (installInfo.bdsVersion === null || installInfo.bdsVersion === 'manual')
-    {
-        console.log(`BDS: --manual-bds`);
-        return;
-    }
-    if (installInfo.bdsVersion === undefined)
-    {
-        // not installed
-        console.log(`It will download and install Bedrock Dedicated Server to '${bdsPath}'`);
+const bds = new InstallItem({
+    name: 'BDS',
+    version:BDS_VERSION,
+    url: BDS_LINK,
+    targetPath: bdsPath,
+    key: 'bdsVersion',
+    keyFile: 'bedrock_server.exe',
+    async confirm(){
+        console.log(`It will download and install Bedrock Dedicated Server to '${path.resolve(bdsPath)}'`);
         console.log(`BDS Version: ${BDS_VERSION}`);
         console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
         console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
-        if (!yes)
+        if (!agree)
         {
-            const ok = await yesno({
-                question: "Would you like to agree it?(Y/n)"
-            });
+            const ok = await yesno("Would you like to agree it?(Y/n)");
             if (!ok) throw new MessageError("Canceled");
         }
         else
         {
             console.log("Agreed by -y");
+        }  
+    },
+    async preinstall(){
+        if (installInfo.files)
+        {
+            await removeInstalled(bdsPath, installInfo.files!);
         }
-        await installBDS();
-        console.log(`BDS: Installed successfully`);
+    },
+    async postinstall(writedFiles){
+        installInfo.files = writedFiles.filter(file=>!KEEPS.has(file));;
     }
-    else if (installInfo.bdsVersion === BDS_VERSION)
-    {
-        console.log(`BDS: ${BDS_VERSION}`);
-    }
-    else
-    {
-        console.log(`BDS: Old (${installInfo.bdsVersion})`);
-        console.log(`BDS: New (${BDS_VERSION})`);
-        await installBDS();
-        console.log(`BDS: Updated`);
-    }
-}
+});
+
+const bdsxCore = new InstallItem({
+    name: 'bdsx-core',
+    version: BDSX_CORE_VERSION,
+    url: BDSX_CORE_LINK,
+    targetPath: bdsPath,
+    key: 'bdsxCoreVersion',
+    keyFile: 'mods/bdsx.dll',
+});
 
 (async()=>{
     try
     {
-        await readInstallInfoSync();
-        await downloadBDS(agree);
+        await readInstallInfo();
+        await bds.install();
+        await bdsxCore.install();
         await saveInstallInfo();
     }
     catch (err)
@@ -394,5 +453,7 @@ async function downloadBDS(yes:boolean):Promise<void>
         {
             console.error(err.stack);
         }
+        await saveInstallInfo();
+        process.exit(-1);
     }
 })();

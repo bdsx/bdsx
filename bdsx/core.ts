@@ -547,7 +547,7 @@ export declare namespace pdb
     /**
      * get all symbols
      */
-    export function getAll(quiet?:boolean, total?:number):Record<string, NativePointer>;
+    export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer>;
 }
 
 export declare namespace runtimeError

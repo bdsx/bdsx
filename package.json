@@ -7,7 +7,7 @@
   "author": "YOU!",
   "license": "ISC",
   "scripts": {
-    "postinstall": "node ./bdsx/bds/installer ./bedrock_server",
+    "postinstall": "node ./bdsx/installer ./bedrock_server",
     "watch": "tsb -w ."
   },
   "dependencies": {

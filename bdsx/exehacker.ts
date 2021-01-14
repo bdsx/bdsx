@@ -1,12 +1,11 @@
 
-import { VoidPointer, pdb, StaticPointer, makefunc } from "./core";
-import { dll } from "./dll";
-import { hex, memdiff, memdiff_contains } from "./util";
-import colors = require('colors');
-import { MemoryUnlocker } from "./unlocker";
 import { Register, X64Assembler } from './assembler';
 import { proc } from "./bds/proc";
-import { RawTypeId } from "./common";
+import { StaticPointer, VoidPointer } from "./core";
+import { dll } from "./dll";
+import { MemoryUnlocker } from "./unlocker";
+import { hex, memdiff, memdiff_contains } from "./util";
+import colors = require('colors');
 
 export namespace exehacker
 {
@@ -27,7 +26,7 @@ export namespace exehacker
             console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: code unmatch`));
             console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
             console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
-            console.error(colors.red(`${subject}: skipping `));
+            console.error(colors.red(`${subject}: skip `));
             return false;
         }
         else
@@ -46,6 +45,11 @@ export namespace exehacker
     export function nopping(subject:string, key:keyof proc, offset:number, originalCode:number[], ignoreArea:number[]):void
     {
         const ptr = proc[key].add(offset);
+        if (!ptr)
+        {
+            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            return;
+        }
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (check(subject, key, offset, ptr, originalCode, ignoreArea))
@@ -65,6 +69,11 @@ export namespace exehacker
     export function hooking(subject:string, key:keyof proc, to: VoidPointer, originalCode:number[], ignoreArea:number[]):void
     {
         const ptr = proc[key];
+        if (!ptr)
+        {
+            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            return;
+        }
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (check(subject, key, 0, ptr, originalCode, ignoreArea))
@@ -86,7 +95,18 @@ export namespace exehacker
      */
     export function patching(subject:string, key:keyof proc, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void
     {
-        const ptr = proc[key].add(offset);
+        let ptr = proc[key];
+        if (!ptr)
+        {
+            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            return;
+        }
+        ptr = ptr.add(offset);
+        if (!ptr)
+        {
+            console.error(colors.red(`${subject}: skip`));
+            return;
+        }
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (check(subject, key, offset, ptr, originalCode, ignoreArea))
@@ -107,7 +127,13 @@ export namespace exehacker
      */
     export function jumping(subject:string, key:keyof proc, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void
     {
-        const ptr = proc[key].add(offset);
+        let ptr = proc[key];
+        if (!ptr)
+        {
+            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            return;
+        }
+        ptr = ptr.add(offset);
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (check(subject, key, offset, ptr, originalCode, ignoreArea))

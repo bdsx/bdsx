@@ -10,7 +10,7 @@ then
   if ! command -v npm &> /dev/null
   then
     echo 'Error: bdsx requires npm. Please install node.js first' >&2
-    exit 1
+    exit $?
   fi
   npm i
 fi
@@ -20,9 +20,10 @@ then
   if ! command -v node &> /dev/null
   then
     echo 'Error: bdsx requires node. Please install node.js first' >&2
-    exit 1
+    exit $?
   fi
-  node ./bdsx/bds/installer ./bedrock_server
+  node ./bdsx/installer ./bedrock_server
+  if [ $? != 0 ]; then exit 0; fi
 fi
 
 if ! command -v wine &> /dev/null
@@ -33,7 +34,7 @@ then
   WINE=wine64
 else
   echo 'Error: bdsx requires wine. Please install wine first' >&2
-  exit 1
+  exit $?
 fi
 
 export WINEDEBUG=-all

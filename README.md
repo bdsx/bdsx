@@ -21,7 +21,9 @@ chat.on(ev=>{
 import { netevent, PacketId } from "bdsx";
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
     const ip = networkIdentifier.getAddress();
-    const [xuid, username] = netevent.readLoginPacket(ptr);
+    const cert = ptr.connreq.cert;
+    const xuid = cert.getXuid();
+    const username = cert.getId();
     console.log(`${username}> IP=${ip}, XUID=${xuid}`);
 });
 ```

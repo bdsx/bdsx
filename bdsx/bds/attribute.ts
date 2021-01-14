@@ -1,11 +1,10 @@
 
 // AttributeInstance* getMutableInstance(AttributeId type) noexcept;
 
-import { abstract, RawTypeId } from "bdsx/common";
-import { makefunc, VoidPointer } from "bdsx/core";
+import { abstract } from "bdsx/common";
+import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { float32_t } from "bdsx/nativetype";
-import { proc } from "./proc";
 
 export enum AttributeId
 {
@@ -36,16 +35,6 @@ export class AttributeInstance extends NativeClass
 	maxValue:float32_t;
 	defaultValue:float32_t;
 }
-AttributeInstance.abstract({
-	vftable:VoidPointer,
-	u1:VoidPointer,
-	u2:VoidPointer,
-	currentValue: [float32_t, 0x84],
-	minValue: [float32_t, 0x7C],
-	maxValue: [float32_t, 0x80],
-	defaultValue: [float32_t, 0x78],
-});
-
 export class BaseAttributeMap extends NativeClass
 {
     getMutableInstance(type:AttributeId):AttributeInstance|null
@@ -53,7 +42,3 @@ export class BaseAttributeMap extends NativeClass
         abstract();
     }
 }
-BaseAttributeMap.abstract({});
-
-BaseAttributeMap.prototype.getMutableInstance = makefunc.js(proc["BaseAttributeMap::getMutableInstance"], AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, RawTypeId.Int32);
-

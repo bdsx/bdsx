@@ -1,4 +1,5 @@
 import { NativePointer, pdb, VoidPointer } from "./core";
+import ProgressBar = require('progress');
 
 let analyzeMap:Map<string, string>|undefined;
 let symbols:Record<string, NativePointer>|null = null;
@@ -11,7 +12,21 @@ export namespace analyzer
     {
         if (analyzeMap) return;
         analyzeMap = new Map<string, string>();
-        if (symbols === null) symbols = pdb.getAll(false, total);
+        if (symbols === null)
+        {
+            if (total === 0)
+            {
+                symbols = pdb.getAll();
+            }
+            else
+            {
+                console.log('[BDSX] PdbReader: Search Symbols...');
+                const progress = new ProgressBar(`[:bar] :current/:total`, total);
+                symbols = pdb.getAll(count=>{
+                    progress.update(count / total);
+                });
+            }
+        }
         
         for (const name in symbols)
         {

@@ -64,10 +64,25 @@ export class HashSet<T extends Hashable>
         }
     }
 
+    get(item:T):T|null
+    {
+        let hash = item[hashkey];
+        if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
+
+        const idx = hash % this.array.length;
+        let found = this.array[idx];
+        for (;;)
+        {
+            if (found === null) return null;
+            if (found[hashkey] === hash) return found;
+            found = found[nextlink] as T;
+        }
+    }
+
     has(item:T):boolean
     {
         let hash = item[hashkey];
-        if (hash === undefined) hash = item[hashkey] = item.hash();
+        if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
@@ -82,7 +97,7 @@ export class HashSet<T extends Hashable>
     delete(item:T):boolean
     {
         let hash = item[hashkey];
-        if (hash === undefined) hash = item[hashkey] = item.hash();
+        if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
@@ -121,7 +136,7 @@ export class HashSet<T extends Hashable>
         }
 
         let hash = item[hashkey];
-        if (hash === undefined) hash = item[hashkey] = item.hash();
+        if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
 
         const idx = hash % cap;
         item[nextlink] = this.array[idx];

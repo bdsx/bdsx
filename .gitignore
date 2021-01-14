@@ -4,6 +4,8 @@
 /bedrock_server/mods/*
 !/bedrock_server/mods/predefined
 /dist
-/bdsx/bds/installer/zip
+/bdsx/installer/zip
+/bdsx/installer/installer.js
+/bdsx/installer/installer.js.map
 /mods/bdsx.dll
 /mods/bdsx.pdb

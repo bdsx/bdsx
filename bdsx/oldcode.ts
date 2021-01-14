@@ -1,8 +1,6 @@
 
 // TODO:
-// NetworkIdentifier::getHash 사용한 해쉬맵을 만들어야함
-// bdsx.bat installer fix
-// download dlls on installer
+// NetworkIdentifier::getHash does it work?
 
 // redirect x button close
 

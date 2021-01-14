@@ -1,7 +1,6 @@
 import { bin } from "./bin";
-import { dll } from "./dll";
 import { cgate, FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType, ReturnType, StaticPointer, VoidPointer } from "./core";
-import { RawTypeId } from ".";
+import { dll } from "./dll";
 
 export enum Register
 {
@@ -89,7 +88,7 @@ function split64bits(value:Value64):[number, number]
     case 'number':
         return [value, -(value < 0)];
     default:
-        throw Error(`unknown Value64: ${value}`);
+        throw Error(`invalid constant value: ${value}`);
     }
 }
 
@@ -657,7 +656,25 @@ export class X64Assembler {
     {
         return this._oper(MovOper.Write, Operator.and, dest, 0, offset, chr, size);
     }
+
+    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this
+    {
+        this._regex(dest, 0, size);
+        this.write(0xc1);
+        this.write(0xe8 | dest);
+        this.write(chr%128);
+        return this;
+    }
     
+    shl_r_c(dest:Register, chr:number, size = OperationSize.qword):this
+    {
+        this._regex(dest, 0, size);
+        this.write(0xc1);
+        this.write(0xe0 | dest);
+        this.write(chr%128);
+        return this;
+    }
+
     static hook(from:StaticPointer, to:VoidPointer, originalCodeSize:number):void
     {
         const newcode = asm()

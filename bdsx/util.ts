@@ -79,16 +79,16 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string
     let out:number[] = [];
     for (let i=0;i<size;)
     {
-        const v = values[i];
-        const n1 = (v & 0xf);
+        if (i !== 0 && (i % nextLinePer) === 0) out.push(10);
+        
+        const v = values[i++];
+        const n1 = (v >> 4);
         if (n1 < 10) out.push(n1+0x30);
         else out.push(n1+(0x41-10));
-        const n2 = (v & 0xf);
+        const n2 = (v & 0x0f);
         if (n2 < 10) out.push(n2+0x30);
         else out.push(n2+(0x41-10));
         out.push(0x20);
-        i++;
-        if (i % nextLinePer === 0) out.push(10);
     }
     out.pop();
     return String.fromCharCode(...out);

@@ -1,21 +1,21 @@
-import { TextPacket } from "bdsx/bds/packets";
 import { bedrock_server_exe } from "bdsx/core";
 import { bedrockServer } from "bdsx/launcher";
 import { remapStack } from "bdsx/source-map-support";
-import colors = require('colors');
 import { analyzer } from "./bdsx";
+import colors = require('colors');
 
 // prank
+console.clear();
 console.log(colors.rainbow('       ///////////////'));
 console.log(colors.rainbow('       //// BDSX2 ////'));
 console.log(colors.rainbow('       ///////////////'));
 
-const HASH_1_16_200_02 = '5C9351D3BB8FCDA6D7037F9911A5F03E';
-if (bedrock_server_exe.md5 != HASH_1_16_200_02)
+const MD5_HASH = '43F9F2C959B37F5601504CFC3C018B5F';
+if (bedrock_server_exe.md5 != MD5_HASH)
 {
-    console.error('[BDSX] MD5 Hash does not Matched');
-    console.error(`[BDSX] target MD5 = ${HASH_1_16_200_02}`);
-    console.error(`[BDSX] current MD5 = ${bedrock_server_exe.md5}`);
+    console.error(colors.red('[BDSX] MD5 Hash does not Matched'));
+    console.error(colors.red(`[BDSX] target MD5 = ${MD5_HASH}`));
+    console.error(colors.red(`[BDSX] current MD5 = ${bedrock_server_exe.md5}`));
 }
 else
 {
@@ -23,15 +23,9 @@ else
 }
 
 (async()=>{
-    // Log Listener
-    // bedrockServer.log.on((err, color)=>{
-    //     console.log(color(err));
-    //     return CANCEL;
-    // });
-
     /**
      * send stdin to bedrockServer.executeCommandOnConsole
-     * without this, you can control stdin manually
+     * without this, you need to control stdin manually
      */
     bedrockServer.DefaultStdInHandler.install();
 
@@ -45,7 +39,8 @@ else
     // launch BDS
     console.log('[BDSX] bedrockServer launching...');
     await bedrockServer.launch();
-    
+
+    // run index
     require('./index');
 })().catch(err=>{
     console.error(remapStack(err.stack));
