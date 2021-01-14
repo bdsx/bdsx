@@ -16,16 +16,13 @@ then
   npm run build
 fi
 
-if [ ! -d "./bedrock_server" ]
+if ! command -v node &> /dev/null
 then
-  if ! command -v node &> /dev/null
-  then
-    echo 'Error: bdsx requires node. Please install node.js first' >&2
-    exit $?
-  fi
-  node ./bdsx/installer ./bedrock_server
-  if [ $? != 0 ]; then exit 0; fi
+  echo 'Error: bdsx requires node. Please install node.js first' >&2
+  exit $?
 fi
+node ./bdsx/installer ./bedrock_server
+if [ $? != 0 ]; then exit 0; fi
 
 if ! command -v wine &> /dev/null
 then
@@ -38,6 +35,7 @@ else
   exit $?
 fi
 
+cd bedrock_server
 export WINEDEBUG=-all
 $WINE ./bedrock_server.exe ..
 cd $cwd
