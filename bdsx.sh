@@ -13,6 +13,7 @@ then
     exit $?
   fi
   npm i
+  npm run build
 fi
 
 if [ ! -d "./bedrock_server" ]
