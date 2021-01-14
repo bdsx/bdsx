@@ -23,11 +23,6 @@ else
 }
 
 (async()=>{
-    /**
-     * send stdin to bedrockServer.executeCommandOnConsole
-     * without this, you need to control stdin manually
-     */
-    bedrockServer.DefaultStdInHandler.install();
 
     bedrockServer.close.on(()=>{
         console.log('[BDSX] bedrockServer is Closed');
@@ -40,6 +35,12 @@ else
     console.log('[BDSX] bedrockServer launching...');
     await bedrockServer.launch();
 
+    /**
+     * send stdin to bedrockServer.executeCommandOnConsole
+     * without this, you need to control stdin manually
+     */
+    bedrockServer.DefaultStdInHandler.install();
+    
     // run index
     require('./index');
 })().catch(err=>{

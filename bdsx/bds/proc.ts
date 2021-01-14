@@ -56,6 +56,11 @@ const symbols2 = [
     '??_7RakPeer@RakNet@@6BRakPeerInterface@1@@',
 ] as const;
 
+
+/**
+ * more options
+ * https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/symbol-options
+ */
 export const SYMOPT_PUBLICS_ONLY = 0x00004000;
 
 export const proc = pdb.getProcAddresses({}, symbols);

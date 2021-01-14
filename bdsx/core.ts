@@ -520,6 +520,12 @@ export declare namespace pdb
     export function close():void;
 
     export function getOptions():number;
+
+    /**
+     * Wrapper of SymSetOptions
+     * You can find more options from https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/symbol-options
+     * @param dbghelpOptions
+     */
     export function setOptions(dbghelpOptions:number):number;
     
     /**
