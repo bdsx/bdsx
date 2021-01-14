@@ -312,12 +312,21 @@ class InstallItem
     
             let filepath = entry.path;
             if (sep !== '/') filepath = filepath.replace(/\//g, sep);
-            if (!filepath.startsWith(sep)) filepath = sep+filepath;
+            else filepath = filepath.replace(/\\/g, sep);
+            if (!filepath.startsWith(sep))
+            {
+                filepath = sep+filepath;
+                entry.path = filepath;
+            }
+            else
+            {
+                entry.path = filepath.substr(1);
+            }
             writedFiles.push(filepath);
     
             if (this.opts.skipExists)
             {
-                const exists = fs_ori.existsSync(path.join(dest, filepath));
+                const exists = fs_ori.existsSync(path.join(dest, entry.path));
                 if (exists) continue;
             }
             files.push(entry);
