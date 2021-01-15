@@ -17,7 +17,6 @@ export namespace serverControl
     {
         const server = serverInstance.server;
         stopfunc(server.add(8));
-        throw Error('need to implement');
     }
 
     /**

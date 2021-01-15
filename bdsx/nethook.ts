@@ -212,7 +212,7 @@ export namespace nethook
         exehacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
             asm()
             .cmp_r_c(Register.r8, 0x7f)
-            .jz(9)
+            .jnz(9)
             .mov_r_rp(Register.rax, Register.rsp, 0x28)
             .mov_rp_c(Register.rax, 0, 0, OperationSize.byte)
             .ret()

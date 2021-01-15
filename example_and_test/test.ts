@@ -59,6 +59,7 @@ Tester.test({
                     if (!commandNetPassed) this.error('command.net does not emitted');
                     commandTestPassed = true;
                     this.log('/test passed');
+                    return 0;
                 }
             }
         });

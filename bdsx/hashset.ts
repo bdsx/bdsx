@@ -101,29 +101,27 @@ export class HashSet<T extends Hashable>
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
-        if (found !== null)
+        if (found === null) return false;
+        if (found[hashkey] === hash && item.equals(found))
         {
-            if (found[hashkey] === hash && item.equals(found))
+            this.array[idx] = found[nextlink] as T;
+            found[nextlink] = null;
+            this.size--;
+            return true;
+        }
+        for (;;)
+        {
+            const next = found![nextlink] as T
+            if (next[hashkey] === hash && next.equals(found))
             {
-                this.array[idx] = found[nextlink] as T;
-                found[nextlink] = null;
+                found![nextlink] = next[nextlink];
+                next[nextlink] = null;
                 this.size--;
                 return true;
             }
-            for (;;)
-            {
-                const next = found![nextlink] as T
-                if (next[hashkey] === hash && next.equals(found))
-                {
-                    found![nextlink] = next[nextlink];
-                    next[nextlink] = null;
-                    this.size--;
-                    return true;
-                }
-                found = next;
-            }
+            if (next === null) return false;
+            found = next;
         }
-        return false;
     }
 
     add(item:T):this
