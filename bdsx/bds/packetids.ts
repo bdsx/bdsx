@@ -16,7 +16,7 @@ export enum MinecraftPacketIds {//int32_t
 	StartGame = 0x0b,
 	AddPlayer = 0x0c,
 	AddEntity = 0x0d,
-	RemoveEntity = 0x0e,
+	RemoveEntity_ = 0x0e, // ?
 	AddItemEntity = 0x0f,
 	TakeItemEntity = 0x11,
 	MoveEntity = 0x12,
