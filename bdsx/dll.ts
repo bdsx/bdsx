@@ -69,6 +69,11 @@ export class NativeModule extends VoidPointer {
         return makefunc.js_old(ptr);
     }
 
+    /**
+     * get NativeModule by name
+     * wrapper of GetModuleHandleW
+     * @param name return exe module if null 
+     */
     static get(name: string|null): NativeModule {
         const module = getModuleHandle(name);
         if (module.isNull()) throw Error(name + ': Cannot find module');
@@ -76,6 +81,10 @@ export class NativeModule extends VoidPointer {
         return module;
     }
 
+    /**
+     * load NativeModule by name
+     * wrapper of LoadLibraryW
+     */
     static load(name: string): NativeModule {
         const module = dll.kernel32.LoadLibraryW(name);
         if (module.isNull())

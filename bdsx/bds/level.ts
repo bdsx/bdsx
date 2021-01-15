@@ -1,4 +1,4 @@
-import { LoopbackPacketSender } from "bdsx/loopbacksender";
+import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { makefunc } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";

@@ -1,5 +1,5 @@
-import { NativeClass } from "./nativeclass";
-import { float32_t, uint32_t } from "./nativetype";
+import { NativeClass } from "../nativeclass";
+import { float32_t, uint32_t } from "../nativetype";
 
 export class BlockPos extends NativeClass
 {

@@ -129,5 +129,4 @@ exehacker.hooking('hook-on-close-connection', 'NetworkHandler::onConnectionClose
     closeEvTarget.fire(ni);
     identifiers.delete(ni);
     _tickCallback();
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringPointer), 
-[0x40, 0x53, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xEC, 0x48], []);
+}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringPointer));

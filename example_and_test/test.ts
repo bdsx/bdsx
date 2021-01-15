@@ -83,7 +83,7 @@ Tester.test({
 
     chat(){
         chat.on(ev=>{
-            if (ev.message == "test")
+            if (ev.message == "TEST YEY!")
             {
                 if (!commandTestPassed && !commandNetPassed)
                 {

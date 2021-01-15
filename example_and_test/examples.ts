@@ -121,7 +121,7 @@ import { RawTypeId } from "bdsx";
 const kernel32 = NativeModule.load('Kernel32.dll');
 const user32 = NativeModule.load('User32.dll');
 const GetConsoleWindow = kernel32.getFunction('GetConsoleWindow', VoidPointer);
-const SetWindowText = user32.getFunction('SetWindowTextW', RawTypeId.Void, null, VoidPointer, RawTypeId.StringUtf16)!;
+const SetWindowText = user32.getFunction('SetWindowTextW', RawTypeId.Void, null, VoidPointer, RawTypeId.StringUtf16);
 const wnd = GetConsoleWindow();
 SetWindowText(wnd, 'BDSX Window!!!');
 
@@ -173,3 +173,14 @@ bedrockServer.error.on(err => {
 system.initialize = ()=>{
     eval("undefined_identifier")
 };
+
+// Transfer Server
+import { TransferPacket } from "bdsx/bds/packets";
+
+function transferServer(networkIdentifier:NetworkIdentifier, address:string, port:number):void {
+    const transferPacket = TransferPacket.create();
+    transferPacket.address = address;
+    transferPacket.port = port;
+    transferPacket.sendTo(networkIdentifier, 0);
+    transferPacket.dispose();
+}

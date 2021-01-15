@@ -45,6 +45,7 @@ const symbols = [
     'Actor::~Actor',
     'ScriptEngine::_processSystemInitialize',
     'NetworkIdentifier::getHash',
+    'BatchedNetworkPeer::sendPacket',
 ] as const;
 
 // decorated symbols

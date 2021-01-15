@@ -5,7 +5,6 @@ import { analyzer } from "./bdsx";
 import colors = require('colors');
 
 // prank
-console.clear();
 console.log(colors.rainbow('       ///////////////'));
 console.log(colors.rainbow('       //// BDSX2 ////'));
 console.log(colors.rainbow('       ///////////////'));

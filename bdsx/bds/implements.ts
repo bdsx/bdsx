@@ -1,13 +1,13 @@
 import { asm, Register } from "bdsx/assembler";
 import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bds/commandorigin";
 import { bin } from "bdsx/bin";
-import { BlockPos, Vec3 } from "bdsx/blockpos";
+import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { RawTypeId } from "bdsx/common";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
-import { LoopbackPacketSender } from "bdsx/loopbacksender";
+import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { mce } from "bdsx/mce";
-import { CxxStringPointer } from "bdsx/pointer";
+import { CxxStringPointer, CxxStringStructure } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { bin64_t, CxxString, float32_t, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
@@ -207,6 +207,8 @@ NetworkHandler.prototype.getConnectionFromId = makefunc.js(proc[`NetworkHandler:
 
 // void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char u)
 NetworkHandler.prototype.send = makefunc.js(proc['NetworkHandler::send'], RawTypeId.Void, {this:NetworkHandler}, NetworkIdentifier, Packet, RawTypeId.Int32);
+
+BatchedNetworkPeer.prototype.sendPacket = makefunc.js(proc['BatchedNetworkPeer::sendPacket'], RawTypeId.Void, {this:BatchedNetworkPeer}, CxxStringStructure, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
 
 // packet.ts
 Packet.abstract({}, 0x28);

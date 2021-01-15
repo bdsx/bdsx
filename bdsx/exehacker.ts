@@ -1,11 +1,12 @@
 
 import { Register, X64Assembler } from './assembler';
 import { proc } from "./bds/proc";
-import { StaticPointer, VoidPointer } from "./core";
+import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
+import { disasm } from './disassembler';
 
 export namespace exehacker
 {
@@ -63,10 +64,8 @@ export namespace exehacker
      * @param subject for printing on error
      * @param key target symbol name
      * @param to call address
-     * @param originalCode bytes comparing before hooking
-     * @param ignoreArea pair offsets to ignore of originalCode
      */
-    export function hooking(subject:string, key:keyof proc, to: VoidPointer, originalCode:number[], ignoreArea:number[]):void
+    export function hooking(subject:string, key:keyof proc, to: VoidPointer, dummy_for_backward_compatible?:any, dummy2?:any):void
     {
         const ptr = proc[key];
         if (!ptr)
@@ -74,12 +73,10 @@ export namespace exehacker
             console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
             return;
         }
-        const size = originalCode.length;
-        const unlock = new MemoryUnlocker(ptr, size);
-        if (check(subject, key, 0, ptr, originalCode, ignoreArea))
-        {
-            X64Assembler.hook(ptr, to, size);
-        }
+
+        const code = disasm.process(ptr, 12);
+        const unlock = new MemoryUnlocker(ptr, code.size);
+        X64Assembler.hook(ptr, to, code.size);
         unlock.done();
     }
 

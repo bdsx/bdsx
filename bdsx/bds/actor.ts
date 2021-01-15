@@ -217,9 +217,7 @@ export function hookingForActor():void
 	exehacker.hooking('hook-actor-release', 'Level::removeEntityReferences',
 		makefunc.np((level:Level, actor:Actor, b:boolean)=>{
 			_removeActor(actor);
-		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
-		[ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8B, 0xEC, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00 ],
-		[]
+		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean)
 	);
 	exehacker.hooking('hook-actor-delete', 'Actor::~Actor',
 		asm()
@@ -230,9 +228,7 @@ export function hookingForActor():void
 		.jne(12)
 		.jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
 		.ret()
-		.alloc(),
-		[ 0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF ],
-		[]
+		.alloc()
 	);
 }
 

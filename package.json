@@ -16,7 +16,7 @@
     "colors": "^1.4.0",
     "follow-redirects": "^1.13.1",
     "fstream": "^1.0.12",
-    "krevent": "^2.0.1",
+    "krevent": "^2.2.0",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
     "unzipper": "^0.10.11"

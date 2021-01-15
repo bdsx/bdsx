@@ -215,6 +215,11 @@ export namespace bedrockServer
     export const open = openEvTarget as CapsuledEvent<()=>void>;
     export const close = closeEvTarget as CapsuledEvent<()=>void>;
     export const update = updateEvTarget as CapsuledEvent<()=>void>;
+
+    /**
+    * global error listeners
+    * if returns CANCEL, then default error printing is disabled
+    */
     export const error = errorEvTarget as CapsuledEvent<(err:Error)=>CANCEL|void>;
     export const bedrockLog = logEvTarget as CapsuledEvent<(log:string, color:colors.Color)=>CANCEL|void>;
     export const commandOutput = commandOutputEvTarget as CapsuledEvent<(log:string)=>CANCEL|void>;
@@ -347,9 +352,7 @@ export namespace bedrockServer
             .mov_r_c(Register.rax, serverInstanceDest)
             .mov_rp_r(Register.rax, 0, Register.rcx)
             .ret()
-            .alloc(),
-            [ 0x48, 0x8B, 0xC4, 0x55, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8D, 0x68, 0xA1, 0x48, 0x81, 0xEC, 0x00, 0x01, 0x00, 0x00 ],
-            []
+            .alloc()
         );
 
         // it removes errors when run commands on shutdown.
@@ -501,8 +504,7 @@ export namespace bedrockServer
                 makefunc.js(proc['ScriptEngine::_processSystemInitialize'], RawTypeId.Void, null, VoidPointer)(scriptEngine);
                 _tickCallback();
                 cgate.nodeLoopOnce();
-            }, RawTypeId.Void, null, VoidPointer),
-            [0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF], []);
+            }, RawTypeId.Void, null, VoidPointer));
     }
 
     export function launch():Promise<void>

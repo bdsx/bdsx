@@ -1,6 +1,6 @@
 import { CommandOrigin } from "./commandorigin";
 import { abstract } from "bdsx/common";
-import { LoopbackPacketSender } from "bdsx/loopbacksender";
+import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { VoidPointer } from "bdsx/core";
 import { bin64_t, CxxString, uint32_t } from "bdsx/nativetype";
 import { SharedPtr } from "bdsx/sharedpointer";
