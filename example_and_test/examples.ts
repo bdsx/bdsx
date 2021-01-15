@@ -29,7 +29,11 @@ system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
 import { command, serverControl } from "bdsx";
 // this hooks all commands, but it cannot be executed by command blocks
 command.hook.on((command, originName)=>{
-    if (command === '/close')
+    if (command.startsWith('/tp '))
+    {
+        return -1; // block command
+    }
+    else if (command === '/close')
     {
         serverControl.stop(); // same with the stop command
         return 0;
