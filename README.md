@@ -30,14 +30,15 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
 ## How to use it?
 * Requirement  
 [node.js](https://nodejs.org/)  
-Wine(for Linux)  
+Wine(for Linux)
 * Recommended  
 [VSCode](https://code.visualstudio.com/)  
 GIT
 
 1. git clone https://github.com/karikera/bdsx.git  
 or download it
-2. Open it `VSCode` → `Ctrl+Shift+B`(Build) → `F5`(Run)  
+2. Run `npm i` and install BDS
+3. Open it `VSCode` → `Ctrl+Shift+B`(Build) → `F5`(Run)  
 or run `./bdsx/bdsx.bat` (on Windows)  
 or run `./bdsx/bdsx.sh` (on Linux)
 
