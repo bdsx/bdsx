@@ -9,7 +9,11 @@ if %errorlevel% neq 0 (
     echo "Error:bdsx requires node. Please install node.js first"
     exit /b %errorlevel%
 )
-node bdsx\installer .\bedrock_server
+
+call npm run install_bds
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+call npm run build
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd bedrock_server
@@ -24,5 +28,4 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 ) 
 call npm i
-call npm run build
 exit /b

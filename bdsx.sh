@@ -13,7 +13,6 @@ then
     exit $?
   fi
   npm i
-  npm run build
 fi
 
 if ! command -v node &> /dev/null
@@ -21,8 +20,9 @@ then
   echo 'Error: bdsx requires node. Please install node.js first' >&2
   exit $?
 fi
-node ./bdsx/installer ./bedrock_server
-if [ $? != 0 ]; then exit 0; fi
+
+npm run install_bds
+if [ $? != 0 ]; then exit $?; fi
 
 if ! command -v wine &> /dev/null
 then
@@ -34,6 +34,9 @@ else
   echo 'Error: bdsx requires wine. Please install wine first' >&2
   exit $?
 fi
+
+npm run build
+if [ $? != 0 ]; then exit $?; fi
 
 cd bedrock_server
 export WINEDEBUG=-all

@@ -30,33 +30,30 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
 ## How to use it?
 * Requirement  
 [node.js](https://nodejs.org/)  
-Wine(for Linux)
+Wine(for Linux)  
+git clone https://github.com/karikera/bdsx.git or download it
 * Recommended  
 [VSCode](https://code.visualstudio.com/)  
 GIT
 
-1. git clone https://github.com/karikera/bdsx.git  
-or download it
-2. Run `npm i` and install BDS
-3. Open it `VSCode` → `Ctrl+Shift+B`(Build) → `F5`(Run)  
-or run `./bdsx/bdsx.bat` (on Windows)  
-or run `./bdsx/bdsx.sh` (on Linux)
+### Starting with VSCode
+```sh
+1. Open the project with VSCode
+2. Open a terminal(Ctrl+Shift+｀) and run
+npm i # install modules
+npm run install_bds # install bedrock server
+3. Press `Ctrl+Shift+B` # Build with watch mode
+4. Press `F5` # run
+```
+
+### Starting with the executable
+run `./bdsx/bdsx.bat` (on Windows)  
+run `./bdsx/bdsx.sh` (on Linux)
 
 ### by docker
 ```sh
 docker run karikera/bdsx
 ```
-
-## Build (Watch Mode)
-It will build in watch mode.  
-
-* Build with VSCode
-1. Open the project directory with VSCode
-2. Ctrl + Shift + B
-
-* Build with Command Line
-1. Open `bdsx/` with Prompt
-2. run `npm run watch`
 
 ## BDSX Wiki(Include JS API Reference)
 https://github.com/karikera/bdsx/wiki
