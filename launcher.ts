@@ -4,6 +4,7 @@
 // So there are no 'server' variable yet
 // launcher.ts will import ./index.ts after launching BDS.
 
+import 'bdsx/checkcore';
 import { bedrock_server_exe } from "bdsx/core";
 import { bedrockServer } from "bdsx/launcher";
 import { remapStack } from "bdsx/source-map-support";

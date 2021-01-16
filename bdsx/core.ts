@@ -34,7 +34,9 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
     nullableThis?:boolean;
     nullableParams?:boolean;
 }
-type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> = OPTS extends MakeFuncOptions<infer THIS> ? InstanceType<THIS> : void;
+type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> = 
+    OPTS extends MakeFuncOptions<infer THIS> ? 
+    THIS extends { new(): VoidPointer; } ? InstanceType<THIS> : void : void;
 
 
 export type FunctionFromTypes_np<
@@ -535,6 +537,8 @@ export declare namespace pdb
      */
     export function getProcAddresses<OLD extends {}, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
 
+    export function getDllDependeny():void;
+
     /**
      * get all symbols
      */
@@ -633,6 +637,8 @@ export declare namespace uv_async
 
 export declare namespace cgate
 {
+    export const bdsxCoreVersion:string;
+
     /**
      * the native function in kernal32.dll
      * HMODULE GetModuleHandleW(LPCWSTR lpModuleName)
