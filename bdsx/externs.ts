@@ -10,3 +10,20 @@ declare namespace NodeJS {
         // bedrock_server:string; // it does not exists yet
     }
 }
+
+interface IExecuteCommandCallbackFix extends IExecuteCommandCallback {
+    data: {
+        message:string;
+        statucMessage: string;
+        statusCode: number;
+    }
+}
+
+declare global
+{
+    interface IServerSystem<TSystem> {
+        executeCommand(command: string, callback: (callback: IExecuteCommandCallbackFix) => void): void;
+    }
+} 
+
+export {};
