@@ -182,6 +182,10 @@ VoidPointer[NativeType.ctor_move] = function(to:StaticPointer, from:StaticPointe
 };
 VoidPointer[NativeType.descriptor] = NativeType.defaultDescriptor;
 
+export const bool_t = new NativeType<boolean>(
+    1,
+    (ptr, offset)=>ptr.getBoolean(offset), 
+    (ptr, v, offset)=>ptr.setBoolean(v, offset));
 export const uint8_t = new NativeType<number>(
     1,
     (ptr, offset)=>ptr.getUint8(offset), 

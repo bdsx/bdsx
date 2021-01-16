@@ -1,6 +1,6 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
-import { CxxString, float32_t, NativeType,  uint16_t, uint32_t } from "bdsx/nativetype";
+import { bool_t, CxxString, float32_t, NativeType,  uint16_t, uint32_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
 import { ConnectionReqeust } from "./connreq";
 import { HashedString } from "./hashedstring";
@@ -38,8 +38,11 @@ export class ClientToServerHandshakePacket extends Packet
 
 export class DisconnectPacket extends Packet
 {
-    // unknown
+    message:CxxString;
 }
+DisconnectPacket.abstract({
+    message:[CxxString, 0x30]
+});
 
 export class ResourcePacksInfoPacket extends Packet
 {
@@ -349,8 +352,19 @@ export class SetDifficultyPacket extends Packet
 
 export class ChangeDimensionPacket extends Packet
 {
-    // unknown
+    dimensionId:uint32_t;
+    x:number;
+    y:number;
+    z:number;
+    respawn:boolean;
 }
+ChangeDimensionPacket.abstract({
+    dimensionId:uint32_t,
+    x:float32_t,
+    y:float32_t,
+    z:float32_t,
+    respawn:bool_t
+});
 
 export class SetPlayerGameTypePacket extends Packet
 {
@@ -473,7 +487,6 @@ export class ResourcePackChunkRequestPacket extends Packet
 
 export class TransferPacket extends Packet
 {
-    // unknown
     address:string;
     port:uint16_t;
 }
@@ -554,8 +567,13 @@ export class PhotoTransferPacket extends Packet
 
 export class ModalFormRequestPacket extends Packet
 {
-    // unknown
+    id:uint32_t;
+    content:CxxString;
 }
+ModalFormRequestPacket.abstract({
+    id: [uint32_t, 0x28],
+    content: [CxxString, 0x30],
+});
 
 export class ModalFormResponsePacket extends Packet
 {
