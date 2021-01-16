@@ -11,7 +11,8 @@ if %errorlevel% neq 0 (
 )
 
 call npm run install_bds %*
-call npm run -s install_bds -- %*if %errorlevel% neq 0 exit /b %errorlevel%
+call npm run -s install_bds -- %*
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 call npm run -s build
 if %errorlevel% neq 0 exit /b %errorlevel%
