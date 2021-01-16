@@ -1,8 +1,8 @@
 
 import version = require('bdsx/version.json');
+import { cgate } from './core';
+import colors = require('colors');
 
-
-cgate.bdsxCoreVersion does not exist yet.
 if (cgate.bdsxCoreVersion !== version.coreVersion)
 {
     console.error(colors.red('BDSX Core Version is unmatched'));
