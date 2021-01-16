@@ -1,3 +1,4 @@
+import { capi } from "./capi";
 import { StructurePointer, VoidPointer } from "./core";
 import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
@@ -88,10 +89,22 @@ export class CxxStringStructure extends NativeClass
     length:number;
     capacity:number;
 
+    [NativeType.ctor]()
+    {
+        this.length = 0;
+        this.capacity = 15;
+    }
+
+    [NativeType.dtor]()
+    {
+        if (this.capacity >= 0x10) capi.free(this.getPointer());
+    }
+    
     get value():string
     {
         return this.getCxxString();
     }
+
     set value(str:string)
     {
         this.setCxxString(str);
