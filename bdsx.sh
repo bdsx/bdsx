@@ -24,10 +24,10 @@ fi
 npm run -s install_bds -- $@ 
 if [ $? != 0 ]; then exit $?; fi
 
-if ! command -v wine &> /dev/null
+if command -v wine &> /dev/null
 then
   WINE=wine
-elif ! command -v node64 &> /dev/null
+elif command -v win64 &> /dev/null
 then
   WINE=wine64
 else
