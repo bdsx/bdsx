@@ -36,6 +36,20 @@ git clone https://github.com/karikera/bdsx.git or download it
 [VSCode](https://code.visualstudio.com/)  
 GIT
 
+### File Structure
+```sh
+[bdsx project]
+├ [bdsx] # Core Library
+├ [example_and_test]
+├ [bedrock_server] # Installed BDS
+├ launcher.ts # It's started before BDS. 
+├ index.ts # Main entry point. 
+├ bdsx.sh # Executable for Linux
+└ bdsx.bat # Executable for Windows
+# ./launcher.ts imports ./index.ts after launching BDS
+# Please start your own code from ./index.ts
+```
+
 ### Starting with VSCode
 ```sh
 1. Open the project with VSCode
