@@ -21,7 +21,7 @@ then
   exit $?
 fi
 
-npm run -s install_bds -- $@if [ $? != 0 ]; then exit $?; fi
+npm run -s install_bds -- $@ if [ $? != 0 ]; then exit $?; fi
 
 if ! command -v wine &> /dev/null
 then
