@@ -10,10 +10,10 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-call npm run install_bds -- %*
-if %errorlevel% neq 0 exit /b %errorlevel%
+call npm run install_bds %*
+call npm run -s install_bds -- %*if %errorlevel% neq 0 exit /b %errorlevel%
 
-call npm run build
+call npm run -s build
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd bedrock_server
