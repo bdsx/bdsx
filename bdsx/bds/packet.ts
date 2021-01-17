@@ -105,4 +105,4 @@ export function createPacket(packetId:MinecraftPacketIds):SharedPointer
     return new SharedPointer(p);
 }
 
-export const createPacketRaw = makefunc.js(proc["MinecraftPackets::createPacket"], RawTypeId.Void, null, PacketSharedPtr, RawTypeId.Int32);
+export const createPacketRaw = makefunc.js(proc["MinecraftPackets::createPacket"], PacketSharedPtr, null, PacketSharedPtr, RawTypeId.Int32);

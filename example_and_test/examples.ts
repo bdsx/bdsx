@@ -110,7 +110,8 @@ for (let i = 2; i <= 0xe1; i++) {
 }
 
 // Network Hooking: disconnected
-netevent.close.on(networkIdentifier => {
+import { NetworkIdentifier } from "bdsx";
+NetworkIdentifier.close.on(networkIdentifier => {
     const id = connectionList.get(networkIdentifier);
     connectionList.delete(networkIdentifier);
     console.log(`${id}> disconnected`);
@@ -160,7 +161,6 @@ netevent.raw(PacketId.CraftingEvent).on((ptr, size, ni)=>{
 });
 
 // Global Error Listener
-import { NetworkIdentifier } from "bdsx";
 import { bedrockServer } from "bdsx/launcher";
 import { TextPacket } from "bdsx/bds/packets";
 import { hex } from "bdsx/util";
