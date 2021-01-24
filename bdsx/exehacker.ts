@@ -1,12 +1,12 @@
 
 import { Register, X64Assembler } from './assembler';
 import { proc } from "./bds/proc";
-import { NativePointer, StaticPointer, VoidPointer } from "./core";
+import { StaticPointer, VoidPointer } from "./core";
+import { disasm } from './disassembler';
 import { dll } from "./dll";
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
-import { disasm } from './disassembler';
 
 export namespace exehacker
 {
