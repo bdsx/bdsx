@@ -249,12 +249,12 @@ Certificate.prototype.getTitleId = function():number
 }
 Certificate.prototype.getIdentity = function():mce.UUID
 {
-	return getIdentity(this).p;
+	return getIdentity(this).value;
 };
 const getXuid = makefunc.js(proc["ExtendedCertificate::getXuid"], CxxStringWrapper, {structureReturn: true}, Certificate);
 const getIdentityName = makefunc.js(proc["ExtendedCertificate::getIdentityName"], CxxStringWrapper, {structureReturn: true}, Certificate);
 const getTitleId = makefunc.js(proc["ExtendedCertificate::getTitleID"], RawTypeId.Int32, null, Certificate);
-const getIdentity = makefunc.js(proc["ExtendedCertificate::getIdentity"], mce.UUIDPointer, {structureReturn: true}, Certificate);
+const getIdentity = makefunc.js(proc["ExtendedCertificate::getIdentity"], mce.UUIDWrapper, {structureReturn: true}, Certificate);
 ConnectionRequest.abstract({
 	u1: VoidPointer,
 	cert:Certificate.ref()

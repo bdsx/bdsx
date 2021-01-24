@@ -84,7 +84,7 @@ export abstract class Pointer<T> extends Wrapper<T>
 {
     p:T;
 
-    static make<T>(type:Type<T>):WrapperType<T>
+    static make<T>(type:Type<T>):PointerType<T>
     {
         class TypedPointer extends Pointer<T>
         {

@@ -1,7 +1,7 @@
 import { proc } from "./bds/proc";
 import { makefunc } from "./core";
 import { bin128_t, bin64_t, uint16_t, uint32_t } from "./nativetype";
-import { Pointer } from "./pointer";
+import { Pointer, Wrapper } from "./pointer";
 import { bin } from "./bin";
 
 export namespace mce
@@ -25,7 +25,7 @@ export namespace mce
         },
         generate():UUID
         {
-            return generateUUID().p;
+            return generateUUID().value;
         },
         toString(uuid:UUID)
         {
@@ -39,7 +39,9 @@ export namespace mce
         },
     });
     export type UUID = string;
+    /** @deprecated use UUIDWrapper */
     export const UUIDPointer = Pointer.make(mce.UUID);
+    export const UUIDWrapper = Wrapper.make(mce.UUID);
 }
 
-const generateUUID = makefunc.js(proc["Crypto::Random::generateUUID"], mce.UUIDPointer, {structureReturn: true});
+const generateUUID = makefunc.js(proc["Crypto::Random::generateUUID"], mce.UUIDWrapper, {structureReturn: true});
