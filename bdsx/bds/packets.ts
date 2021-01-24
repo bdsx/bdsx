@@ -1,19 +1,19 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
-import { bool_t, CxxString, float32_t, NativeType,  uint16_t, uint32_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType,  uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
-import { ConnectionReqeust } from "./connreq";
+import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
 
 export class LoginPacket extends Packet
 {
 	u5:uint32_t; //0x184
-	connreq:ConnectionReqeust;
+	connreq:ConnectionRequest;
 }
 LoginPacket.abstract({
     u5:uint32_t,
-    connreq:[ConnectionReqeust.ref(), 0x30],
+    connreq:[ConnectionRequest.ref(), 0x30],
 });
 
 // struct InventoryTransactionPacket : Packet
@@ -183,8 +183,6 @@ AttributeData.define({
     name: [HashedString, 16],
 }, 0x38);
 
-const CxxVector$AttributeData = CxxVector.make(AttributeData);
-
 export class UpdateAttributesPacket extends Packet
 {
     actorId:ActorRuntimeID;
@@ -192,7 +190,7 @@ export class UpdateAttributesPacket extends Packet
 }
 UpdateAttributesPacket.define({
     actorId: [ActorRuntimeID, 0x28],
-    attributes: [CxxVector$AttributeData, 0x30],
+    attributes: [CxxVector.make(AttributeData), 0x30],
 });
 
 export class InventoryTransactionPacket extends Packet
@@ -275,10 +273,31 @@ export class RespawnPacket extends Packet
     // unknown
 }
 
+export class NetworkBlockPosition extends NativeClass
+{
+    x:uint32_t;
+    y:uint32_t;
+    z:uint32_t;
+}
+NetworkBlockPosition.define({
+    x:uint32_t,
+    y:uint32_t,
+    z:uint32_t,
+});
+
 export class ContainerOpenPacket extends Packet
 {
-    // unknown
+    windowId:uint8_t;
+    type:int8_t;
+    pos:NetworkBlockPosition;
+    entityUniqueId:bin64_t;
 }
+ContainerOpenPacket.abstract({
+    windowId:[uint8_t, 0x28],
+    type:[int8_t, 0x29],
+    pos:[NetworkBlockPosition, 0x2C],
+    entityUniqueId:[bin64_t, 0x38],
+});
 
 export class ContainerClosePacket extends Packet
 {

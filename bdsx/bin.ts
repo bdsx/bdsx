@@ -404,6 +404,27 @@ export namespace bin
         }
         return String.fromCharCode(...out);
     }
+    export function neg(a:string):string
+    {
+        const n = a.length;
+        if (n === 0) return a;
+        let carry = 0;
+
+        const out = new Array(n);
+        let i = 0;
+        {
+            const v = a.charCodeAt(0);
+            out[i] = -v;
+            carry = +(v === 0);
+        }
+        for (;i<n;i++)
+        {
+            carry = (~a.charCodeAt(i)) + carry;
+            out[i] = carry & 0xffff;
+            carry >>= 16;
+        }
+        return String.fromCharCode(...out);
+    }
     export function reads32(str:string):number[]
     {
         const n = str.length;
@@ -421,5 +442,41 @@ export namespace bin
             out[i] = str.charCodeAt(i*2);
         }
         return out;
+    }
+    /**
+     * makes as hex bytes
+     */
+    export function hex(a:string):string
+    {
+        let out:number[] = [];
+        function write(v:number):void
+        {
+            if (v < 10)
+            {
+                out.push(v+0x30);
+            }
+            else
+            {
+                out.push(v+(0x61-10));
+            }
+        }
+
+        const n = a.length;
+        for (let i=0;i<n;i++)
+        {
+            const v = a.charCodeAt(i);
+            write((v >> 4) & 0xf);
+            write(v & 0xf);
+            write((v >> 12) & 0xf);
+            write((v >> 8) & 0xf);
+        }
+        return String.fromCharCode(...out);
+    }
+    export function as64(v:string):string
+    {
+        const n = v.length;
+        if (n === 4) return v;
+        if (n > 4) return v.substr(0, 4);
+        return v+'\0'.repeat(4-n);
     }
 }

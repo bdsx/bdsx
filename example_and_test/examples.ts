@@ -1,4 +1,3 @@
-/// <reference types="minecraft-scripting-types-server" />
 
 // Console Output
 console.log("From Script> Hello, World!");
@@ -6,7 +5,7 @@ console.log("From Script> Hello, World!");
 // Addon Script
 import { DimensionId, AttributeId, Actor, NativeModule, VoidPointer, MinecraftPacketIds, capi } from "bdsx";
 const system = server.registerSystem(0, 0);
-system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
+system.listenForEvent('minecraft:entity_created', ev => {
     console.log('entity created: ' + ev.data.entity.__identifier__);
 
     // Get extra informations from entity

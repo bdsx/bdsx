@@ -7,7 +7,7 @@
 import { bedrock_server_exe } from "bdsx/core";
 import { bedrockServer } from "bdsx/launcher";
 import { remapStack } from "bdsx/source-map-support";
-import { analyzer } from "./bdsx";
+import { analyzer } from "bdsx";
 import colors = require('colors');
 
 // prank

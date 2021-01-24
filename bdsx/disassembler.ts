@@ -2,20 +2,39 @@ import { OperationSize, Operator, Register, X64Assembler } from "./assembler";
 import { NativePointer, VoidPointer } from "./core";
 import colors = require('colors');
 import { hex } from "./util";
+import { bin64_t } from "./nativetype";
+import { bin } from "./bin";
 
 
-function shex(v:number):string
+function shex(v:number|bin64_t):string
 {
+    if (typeof v === 'string') return '0x'+bin.toString(v, 16);
     if (v < 0) return '-0x'+(-v).toString(16);
     else return '0x'+v.toString(16);
 }
-function shex_o(v:number):string
+function shex_o(v:number|bin64_t):string
 {
+    if (typeof v === 'string') return '+0x'+bin.toString(v, 16);
     if (v < 0) return '-0x'+(-v).toString(16);
     else return '+0x'+v.toString(16);
 }
-
-function walk_offset(rex:number, ptr:NativePointer):{offset:number|null, r1:Register, r2:Register}|null
+function readConst(size:OperationSize, ptr:NativePointer):number|bin64_t
+{
+    switch (size)
+    {
+    case OperationSize.byte:
+        return ptr.readInt8();
+    case OperationSize.word:
+        return ptr.readInt16();
+    case OperationSize.dword:
+        return ptr.readInt32();
+    case OperationSize.qword:
+        return ptr.readBin64();
+    default:
+        throw Error(`Unexpected operation size: ${size}`);
+    }
+}
+function walk_offset(rex:number, ptr:NativePointer):{offset:OperationSize|null, r1:Register, r2:Register}|null
 {
     const v = ptr.readUint8();
     const r1 = (v & 0x7) | ((rex & 1) << 3);
@@ -33,13 +52,13 @@ function walk_offset(rex:number, ptr:NativePointer):{offset:number|null, r1:Regi
     {
     case 0x40:
         return {
-            offset: ptr.readInt8(), 
+            offset: OperationSize.byte, 
             r1,
             r2,
         };
     case 0x80:
         return {
-            offset: ptr.readInt32(), 
+            offset: OperationSize.dword, 
             r1,
             r2,
         };
@@ -81,72 +100,91 @@ function walk_raw(ptr:NativePointer):disasm.Operation|null
             if (v & 0x08) return [X64Assembler.prototype.pop_r, [reg]];
             else return [X64Assembler.prototype.push_r, [reg]];
         }
-        else if ((v & 0xfd) === 0x89) // mov_r_r
+        else if ((v&0xfd) === 0x81) // operation
         {
-            const v2 = ptr.readUint8();
-            if ((v2 & 0xc0) === 0xc0)
-            {
-                const r1 = v2 & 0x7;
-                const r2 = (v2 >> 3) & 0x7;
-                
-                return [X64Assembler.prototype.mov_r_r, (v & 2) ? [r2, r1, size] : [r1, r2, size]];
-            }
-        }
-        else if (v === 0x83) // operation
-        {
+            let constsize = (v&2) ? OperationSize.byte : OperationSize.dword;
             const info = walk_offset(rex, ptr);
-            if (info !== null)
+            if (info === null) break;
+            if (info.offset === null)
             {
-                if (info.offset === null)
+                const chr = readConst(constsize, ptr);
+                switch (info.r2 & 0x7)
                 {
-                    const chr = ptr.readUint8();
-                    switch (info.r2 & 0x7)
-                    {
-                        case Operator.add: return [X64Assembler.prototype.add_r_c, [info.r1, chr, size]];
-                        case Operator.or: return [X64Assembler.prototype.or_r_c, [info.r1, chr, size]];
-                        case Operator.adc: return [X64Assembler.prototype.adc_r_c, [info.r1, chr, size]];
-                        case Operator.sbb: return [X64Assembler.prototype.sbb_r_c, [info.r1, chr, size]];
-                        case Operator.and: return [X64Assembler.prototype.and_r_c, [info.r1, chr, size]];
-                        case Operator.sub: return [X64Assembler.prototype.sub_r_c, [info.r1, chr, size]];
-                        case Operator.xor: return [X64Assembler.prototype.xor_r_c, [info.r1, chr, size]];
-                        case Operator.cmp: return [X64Assembler.prototype.cmp_r_c, [info.r1, chr, size]];
-                    }
+                    case Operator.add: return [X64Assembler.prototype.add_r_c, [info.r1, chr, size]];
+                    case Operator.or: return [X64Assembler.prototype.or_r_c, [info.r1, chr, size]];
+                    case Operator.adc: return [X64Assembler.prototype.adc_r_c, [info.r1, chr, size]];
+                    case Operator.sbb: return [X64Assembler.prototype.sbb_r_c, [info.r1, chr, size]];
+                    case Operator.and: return [X64Assembler.prototype.and_r_c, [info.r1, chr, size]];
+                    case Operator.sub: return [X64Assembler.prototype.sub_r_c, [info.r1, chr, size]];
+                    case Operator.xor: return [X64Assembler.prototype.xor_r_c, [info.r1, chr, size]];
+                    case Operator.cmp: return [X64Assembler.prototype.cmp_r_c, [info.r1, chr, size]];
                 }
-                else
+            }
+            else
+            {
+                const offset = readConst(info.offset, ptr);
+                const chr = readConst(constsize, ptr);
+                switch (info.r2 & 0x7)
                 {
+                    case Operator.add: return [X64Assembler.prototype.add_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.or: return [X64Assembler.prototype.or_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.adc: return [X64Assembler.prototype.adc_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.sbb: return [X64Assembler.prototype.sbb_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.and: return [X64Assembler.prototype.and_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.sub: return [X64Assembler.prototype.sub_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.xor: return [X64Assembler.prototype.xor_rp_c, [info.r1, offset, chr, size]];
+                    case Operator.cmp: return [X64Assembler.prototype.cmp_rp_c, [info.r1, offset, chr, size]];
                 }
             }
         }
         else if ((v&0xfe) === 0xc6) // mov rp c
         {
             const info = walk_offset(rex, ptr);
-            if (info !== null)
+            if (info === null) break;
+            if (!(v & 0x01)) size = OperationSize.byte;
+            if (info.offset === null)
             {
-                let value = 0;
-                if (v & 1)
-                {
-                    if (size === OperationSize.word)
-                    {
-                        value = ptr.readInt16();
-                    }
-                    else
-                    {
-                        value = ptr.readInt32();
-                    }
-                }
-                else
-                {
-                    value = ptr.readInt8();
-                }
-                return [X64Assembler.prototype.mov_rp_c, [info.r1, info.offset, value, size]];
+                const value = readConst(size, ptr);
+                return [X64Assembler.prototype.mov_r_c, [info.r1, value, size]];
+            }
+            else
+            {
+                const offset = readConst(info.offset, ptr);
+                const value = readConst(size === OperationSize.qword ? OperationSize.dword : size, ptr);
+                return [X64Assembler.prototype.mov_rp_c, [info.r1, offset, value, size]];
             }
         }
-        else if (v === 0x8d) // lea rp_c
+        else if ((v&0xf8) === 0x88) // mov variation
         {
+            if (v === 0xef) break; // bad
+
             const info = walk_offset(rex, ptr);
-            if (info !== null)
+            if (info === null) break;
+            if (v === 0x8d) // lea rp_c
             {
-                return [X64Assembler.prototype.lea_r_rp, [info.r1, info.r2, info.offset, size]];
+                if (info.offset === null) break; // bad
+                const offset = readConst(info.offset, ptr);
+                return [X64Assembler.prototype.lea_r_rp, [info.r2, info.r1, offset, size]];
+            }
+            if (v & 0x04) size = OperationSize.word;
+            else if (!(v & 0x01)) size = OperationSize.byte;
+            if (v & 0x02) // reverse
+            {
+                if (info.offset === null) // mov_r_r
+                {
+                    return [X64Assembler.prototype.mov_r_r, [info.r2, info.r1, size]];
+                }
+                const offset = readConst(info.offset, ptr);
+                return [X64Assembler.prototype.mov_r_rp, [info.r2, info.r1, offset, size]];
+            }
+            else
+            {
+                if (info.offset === null) // mov_r_r
+                {
+                    return [X64Assembler.prototype.mov_r_r, [info.r1, info.r2, size]];
+                }
+                const offset = readConst(info.offset, ptr);
+                return [X64Assembler.prototype.mov_rp_r, [info.r1, offset, info.r2, size]];
             }
         }
         break;
@@ -157,6 +195,37 @@ function walk_raw(ptr:NativePointer):disasm.Operation|null
 export namespace disasm
 {
     export type Operation = [(this:X64Assembler, ...args:any[])=>X64Assembler, any[]];
+    export function stringify(oper:Operation):string
+    {
+        const [func, args] = oper;
+        const name = func.name;
+        const splited = name.split('_');
+        let line = splited.shift()!;
+        let i=0;
+        for (const item of splited)
+        {
+            const v = args[i++];
+            switch (item)
+            {
+            case 'r':
+                line += ' ';
+                line += Register[v];
+                break;
+            case 'c':
+                line += ' ';
+                line += shex(v);
+                break;
+            case 'rp':
+                line += ' [';
+                line += Register[v];
+                line += shex_o(args[i++]);
+                line += ']';
+                break;
+            }
+            line += ',';
+        }
+        return line.substr(0, line.length-1);
+    }
     export class Code
     {
         constructor(
@@ -168,35 +237,9 @@ export namespace disasm
         toString():string
         {
             let out:string[] = [];
-            for (const [func, args] of this.operations)
+            for (const oper of this.operations)
             {
-                const name = func.name;
-                const splited = name.split('_');
-                let line = splited.shift()!;
-                let i=0;
-                for (const item of splited)
-                {
-                    const v = args[i++];
-                    switch (item)
-                    {
-                    case 'r':
-                        line += ' ';
-                        line += Register[v];
-                        break;
-                    case 'c':
-                        line += ' ';
-                        line += shex(v);
-                        break;
-                    case 'rp':
-                        line += ' [';
-                        line += Register[v];
-                        line += shex_o(args[i++]);
-                        line += ']';
-                        break;
-                    }
-                    line += ',';
-                }
-                out.push(line.substr(0, line.length-1));
+                out.push(stringify(oper));
             }
             return out.join('\n');
         }
@@ -207,7 +250,10 @@ export namespace disasm
         const high = ptr.getAddressHigh();
             
         const res = walk_raw(ptr);
-        if (res !== null) return res;
+        if (res !== null)
+        {
+            return res;
+        }
 
         ptr.setAddress(low, high);
         let size = 16;
@@ -215,6 +261,7 @@ export namespace disasm
         {
             try
             {
+                console.error(colors.red('disasm.walk is not completed.'));
                 console.trace(colors.red(`undefined opcode: ${hex(ptr.getBuffer(size))}`));
                 break;
             }

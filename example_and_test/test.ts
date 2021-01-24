@@ -108,7 +108,7 @@ Tester.test({
     actor(){
 
         const system = server.registerSystem(0, 0);
-        system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
+        system.listenForEvent('minecraft:entity_created', ev => {
             try
             {
                 const uniqueId = ev.data.entity.__unique_id__;
@@ -125,7 +125,7 @@ Tester.test({
                     
                     if (ev.__identifier__ === 'minecraft:player')
                     {
-                        const name = system.getComponent(ev.data.entity ,MinecraftComponent.Nameable)!.data.name;
+                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
                         this.assert(name === connectedId, 'id does not matched');
                         this.assert(actor.getTypeId() === ActorType.Player, 'player type does not matched');
                         this.assert(actor.isPlayer(), 'a player is not the player');

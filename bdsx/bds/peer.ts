@@ -4,7 +4,7 @@ import { NativeClass } from "bdsx/nativeclass";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";
 import { abstract } from "bdsx/common";
-import { CxxStringStructure } from "bdsx/pointer";
+import { CxxStringWrapper } from "bdsx/pointer";
 
 
 export class RaknetNetworkPeer extends NativeClass
@@ -45,7 +45,7 @@ export class BatchedNetworkPeer extends NativeClass
 	peer:CompressedNetworkPeer;
 	stream:BinaryStream;
 
-	sendPacket(data:CxxStringStructure, reliability:number, n:number, n2:number, compressibility:number):void
+	sendPacket(data:CxxStringWrapper, reliability:number, n:number, n2:number, compressibility:number):void
 	{
 		abstract();
 	}

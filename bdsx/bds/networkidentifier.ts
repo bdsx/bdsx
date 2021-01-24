@@ -5,7 +5,7 @@ import { exehacker } from "bdsx/exehacker";
 import { Hashable, HashSet } from "bdsx/hashset";
 import { NativeClass } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
-import { CxxStringPointer } from "bdsx/pointer";
+import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { _tickCallback } from "bdsx/util";
 import Event, { CapsuledEvent, EventEx } from "krevent";
@@ -129,4 +129,4 @@ exehacker.hooking('hook-on-close-connection', 'NetworkHandler::onConnectionClose
     closeEvTarget.fire(ni);
     identifiers.delete(ni);
     _tickCallback();
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringPointer));
+}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper));

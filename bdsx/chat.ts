@@ -68,6 +68,13 @@ class ChatManager extends EventEx<ChatListener>
     {
         netevent.before(MinecraftPacketIds.Text).remove(this.chatlistener);
     }
+
+    /** @deprecated use netevent.before(MinecraftPacketIds.Text).on */
+    on(listener: ChatListener): void
+    {
+        super.on(listener);
+    }
 }
 
+/** @deprecated use netevent.before(MinecraftPacketIds.Text).on */
 export = new ChatManager() as CapsuledEvent<ChatListener>;

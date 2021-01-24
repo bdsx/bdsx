@@ -222,12 +222,12 @@ export const int32_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type int32_t = number;
 export const int64_as_float_t = new NativeType<number>(
-    4,
+    8,
     (ptr, offset)=>ptr.getInt64AsFloat(offset), 
     (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset));
 export type int64_as_float_t = number;
 export const float32_t = new NativeType<number>(
-    4,
+    8,
     (ptr, offset)=>ptr.getUint32(offset), 
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type float32_t = number;

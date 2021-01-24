@@ -22,14 +22,12 @@
     "unzipper": "^0.10.11"
   },
   "devDependencies": {
-    "@types/archiver": "^3.1.1",
     "@types/follow-redirects": "^1.13.0",
     "@types/node": "^12.19.11",
     "@types/progress": "^2.0.3",
     "@types/unzipper": "^0.10.3",
     "buffer-from": "^1.1.1",
-    "if-tsb": "^0.1.10",
-    "minecraft-scripting-types-server": "^1.0.0",
+    "if-tsb": "^0.1.22",
     "node-html-parser": "^2.0.1",
     "tslib": "^2.0.3",
     "typescript": "^4.1.3"

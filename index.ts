@@ -1,4 +1,3 @@
-/// <reference types="minecraft-scripting-types-server" />
 
 // Please start your own codes from here!
 

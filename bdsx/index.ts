@@ -1,6 +1,4 @@
-/// <reference types="minecraft-scripting-types-server" />
-
-import './externs';
+/// <reference path="./externs/index.d.ts" />
 import './polyfill';
 import './bds/enumfiller';
 
@@ -39,25 +37,6 @@ import createPacket = nethook.createPacket;
 import sendPacket = nethook.sendPacket;
 import PacketId = MinecraftPacketIds;
 
-
-
-declare global
-{
-    interface IEntity
-    {
-        __unique_id__:{
-            "64bit_low":number;
-            "64bit_high":number;
-        };
-    }
-
-    interface NodeRequireFunction {
-        (id: string): any;
-    }
-    interface NodeRequire extends NodeRequireFunction {
-    }
-    var require: NodeRequire;    
-}
 
 declare module "./core"
 {

@@ -109,5 +109,8 @@ class UserCommandEvents extends EventEx<UserCommandListener>
 }
 
 const hookev = new Event<HookCommandListener>();
+
+/** @deprecated use netevent.before(MinecraftPacketIds.CommandRequest).on */
 export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
+
 export const hook = hookev as CapsuledEvent<HookCommandListener>;

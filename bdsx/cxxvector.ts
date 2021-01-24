@@ -23,13 +23,11 @@ const singleton = new Singleton<CxxVectorType<any>>();
  * std::vector<T>
  * C++ standard dynamic array class
  */
-export abstract class CxxVector<T> extends NativeClass
+export abstract class CxxVector<T> extends NativeClass implements Iterable<T>
 {
     // 	m_begin = nullptr; // 0x00
     // 	m_end = nullptr; // 0x08
     // 	m_cap = nullptr; // 0x10
-
-    static readonly[NativeType.size] = 12;
 
     abstract componentType:Type<T>;
     static readonly componentType:Type<any>;
@@ -38,8 +36,6 @@ export abstract class CxxVector<T> extends NativeClass
     constructor(address?:VoidPointer|boolean)
     {
         super(address);
-
-        if (CxxVector.componentType[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
     }
 
     [NativeType.ctor]():void
@@ -151,9 +147,36 @@ export abstract class CxxVector<T> extends NativeClass
         return endptr.subptr(beginptr) / this.componentType[NativeType.size]! | 0;
     }
 
-    static make<T>(type:{new():T}):CxxVectorType<T>
+    toArray():T[]
+    {
+        const n = this.size();
+        const out:T[] = new Array(n);
+        for (let i=0;i<n;i++)
+        {
+            out[i] = this.get(i)!;
+        }
+        return out;
+    }
+
+    *[Symbol.iterator]():IterableIterator<T>
+    {
+        const n = this.size();
+        for (let i=0;i<n;i++)
+        {
+            yield this.get(i)!;
+        }
+    }
+
+    dispose():void
+    {
+        this[NativeType.dtor]();
+    }
+
+    static make<T>(type:{new():T}|{[NativeType.getter]:T}):CxxVectorType<T>
     {
         return singleton.newInstance(type, ()=>{
+            if ((type as any)[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
+
             if (NativeClass.isNativeClassType(type))
             {
                 class VectorImpl extends CxxVector<NativeClass>
@@ -185,6 +208,7 @@ export abstract class CxxVector<T> extends NativeClass
                     }
                 }
                 VectorImpl.prototype.componentType = type as any;
+                VectorImpl.abstract({}, 0x18);
                 return VectorImpl;
             }
             else
@@ -207,6 +231,7 @@ export abstract class CxxVector<T> extends NativeClass
                     }
                 }
                 VectorImpl.prototype.componentType = type as any;
+                VectorImpl.abstract({}, 0x18);
                 return VectorImpl;
             }
         });
