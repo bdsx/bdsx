@@ -510,8 +510,8 @@ export class TransferPacket extends Packet
     port:uint16_t;
 }
 TransferPacket.abstract({
-    address:CxxString,
-    port:uint16_t,
+    address:[CxxString, 0x28],
+    port:[uint16_t, 0x48]
 });
 
 export class PlaySoundPacket extends Packet

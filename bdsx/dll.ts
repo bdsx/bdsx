@@ -1,5 +1,6 @@
 'use strict';
 
+import { networkHandler } from './bds/networkidentifier';
 import { abstract, RawTypeId } from './common';
 import { cgate, makefunc, StaticPointer, NativePointer, ReturnType, ParamType, VoidPointer, FunctionFromTypes_js, MakeFuncOptions } from './core';
 
@@ -48,7 +49,7 @@ export class NativeModule extends VoidPointer {
      * @param params RawTypeId or *Pointer
      */
     getFunction<RETURN extends ReturnType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
-        name: string, returnType: RETURN, opts?: |null, ...params: PARAMS):
+        name: string, returnType: RETURN, opts?: OPTS|null, ...params: PARAMS):
         FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN>{
             const addr = this.getProcAddress(name);
             if (addr.isNull()) throw Error(this.name + ': Cannot find procedure, ' + name);
@@ -159,7 +160,10 @@ export namespace dll {
         export const EnterCriticalSection = module.getFunction('EnterCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const LeaveCriticalSection = module.getFunction('LeaveCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const TryEnterCriticalSection = module.getFunction('TryEnterCriticalSection', RawTypeId.Boolean, null, CriticalSection);
-        export const WaitForMultipleObjects = module.getProcAddress("WaitForMultipleObjects");
+        export const WaitForMultipleObjects = module.getProcAddress('WaitForMultipleObjects');
+        export const FormatMessageW = module.getFunction('FormatMessageW', RawTypeId.Int32, null, RawTypeId.Int32, VoidPointer, RawTypeId.Int32, RawTypeId.Int32, VoidPointer, RawTypeId.Int32, VoidPointer);
+        export const LocalFree = module.getFunction('LocalFree', VoidPointer, null, VoidPointer);
+        export const SetDllDirectoryW = module.getFunction('SetDllDirectoryW', RawTypeId.Boolean, null, RawTypeId.StringUtf16);
     }
     export namespace ucrtbase {
         export const module = NativeModule.get('ucrtbase.dll');
