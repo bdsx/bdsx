@@ -47,6 +47,10 @@ const symbols = [
     'ScriptEngine::_processSystemInitialize',
     'NetworkIdentifier::getHash',
     'BatchedNetworkPeer::sendPacket',
+    'Json::Value::isMember',
+    'Json::Value::~Value',
+    'Json::Value::getMemberNames',
+    'Json::Value::size',
 ] as const;
 
 // decorated symbols
@@ -55,7 +59,11 @@ const symbols2 = [
     '??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@',
     '??_7RakNetInstance@@6BConnector@@@',
     '??_7RakPeer@RakNet@@6BRakPeerInterface@1@@',
-    '??$getline@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@YAAEAV?$basic_istream@DU?$char_traits@D@std@@@0@$$QEAV10@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@D@Z'
+    '??AValue@Json@@QEAAAEAV01@H@Z',
+    '??AValue@Json@@QEAAAEAV01@PEBD@Z',
+    '?log@ItemTransactionLogger@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
+    '?sItemTransactionLoggerEnabled@?A0x5e9fdcc2@@3_NA',
+    '??$getline@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@YAAEAV?$basic_istream@DU?$char_traits@D@std@@@0@$$QEAV10@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@D@Z',
 ] as const;
 
 

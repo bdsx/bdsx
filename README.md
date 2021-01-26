@@ -1,11 +1,11 @@
 # BDSX 2.0 : BDS + node.js
-![logo](icon.png)  
+![logo](bdsx/icon/icon.png)  
 It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
 
 * OS: Windows & Linux(with Wine)
 * Basic Minecraft features as usual.
-* node.js features [(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules)
-* [Debug with Visual Studio Code (You can debug addons too)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
+* node.js features [(?)](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules)
+* [Debug with Visual Studio Code (You can debug addons too)](https://github.com/bdsx/bdsx/wiki/Debug-with-VSCode)
 * Hijack chatting
 ```ts
 import { chat } from 'bdsx';
@@ -24,31 +24,17 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
     console.log(`${username}> IP=${ip}, XUID=${xuid}`);
 });
 ```
-* [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)
-* [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)
+* [Command hooking](https://github.com/bdsx/bdsx/wiki/Command-Hooking)
+* [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
 
 ## How to use it?
 * Requirement  
 [node.js](https://nodejs.org/)  
 Wine(for Linux)  
-git clone https://github.com/karikera/bdsx.git or download it
+git clone https://github.com/bdsx/bdsx.git or download it
 * Recommended  
 [VSCode](https://code.visualstudio.com/)  
 GIT
-
-### File Structure
-```sh
-[bdsx project]
-├ [bdsx] # Core Library
-├ [example_and_test]
-├ [bedrock_server] # Installed BDS
-├ launcher.ts # It's started before BDS. 
-├ index.ts # Main entry point. 
-├ bdsx.sh # Executable for Linux
-└ bdsx.bat # Executable for Windows
-# ./launcher.ts imports ./index.ts after launching BDS
-# Please start your own code from ./index.ts
-```
 
 ### Starting with VSCode
 ```sh
@@ -69,14 +55,28 @@ run `./bdsx/bdsx.sh` (on Linux)
 docker run karikera/bdsx
 ```
 
+## File Structure
+```sh
+[bdsx project]
+├ [bdsx] # Core Library
+├ [example_and_test]
+├ [bedrock_server] # Installed BDS
+├ launcher.ts # It's started before BDS. 
+├ index.ts # Main entry point. 
+├ bdsx.sh # Executable for Linux
+└ bdsx.bat # Executable for Windows
+# ./launcher.ts imports ./index.ts after launching BDS
+# Please start your own code from ./index.ts
+```
+
 ## BDSX Wiki(Include JS API Reference)
-https://github.com/karikera/bdsx/wiki
+https://github.com/bdsx/bdsx/wiki
 
 ## Bug Report or Q&A
-https://github.com/karikera/bdsx/issues
+https://github.com/bdsx/bdsx/issues
 
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
 
 ## BDSX Core
-https://github.com/karikera/bdsx-core
+https://github.com/bdsx/bdsx-core

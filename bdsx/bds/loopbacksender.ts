@@ -1,11 +1,10 @@
 import { NetworkHandler } from "./networkidentifier";
 import { NativeClass } from "../nativeclass";
-import { Pointer } from "../pointer";
 
 export class LoopbackPacketSender extends NativeClass
 {
-    networkHandler:Pointer<NetworkHandler>;
+    networkHandler:NetworkHandler;
 }
 LoopbackPacketSender.abstract({
-    networkHandler:[NetworkHandler, 8]
+    networkHandler:[NetworkHandler.ref(), 8]
 });

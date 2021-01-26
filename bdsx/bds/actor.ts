@@ -143,6 +143,9 @@ export class Actor extends NativeClass
 		return new NativePointer(this.runtimeId);
 	}
 
+	/**
+	 * @deprecated Need more implement
+	 */
 	getEntity():IEntity
 	{
 		let entity:IEntity = (this as any).entity;

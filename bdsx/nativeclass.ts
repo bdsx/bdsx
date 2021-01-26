@@ -110,6 +110,16 @@ export class NativeClass extends StructurePointer
         }
     }
 
+    construct():void
+    {
+        this[NativeType.ctor]();
+    }
+
+    destruct():void
+    {
+        this[NativeType.dtor]();
+    }
+
     static next<T extends NativeClass>(this:{new(ptr?:VoidPointer):T}, ptr:T, count:number):T
     {
         const clazz = this as NativeClassType<T>;

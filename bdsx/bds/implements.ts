@@ -1,18 +1,18 @@
 import { asm, Register } from "bdsx/assembler";
-import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bds/commandorigin";
-import { bin } from "bdsx/bin";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
+import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bds/commandorigin";
+import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
+import { bin } from "bdsx/bin";
 import { RawTypeId } from "bdsx/common";
 import { makefunc, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
-import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { mce } from "bdsx/mce";
-import { CxxStringPointer, CxxStringStructure } from "bdsx/pointer";
+import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { bin64_t, CxxString, float32_t, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { Certificate, ConnectionReqeust } from "./connreq";
+import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -23,7 +23,7 @@ import { ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
-import { MCRESULT, serverInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener, CommandContext, ServerCommandOrigin, MinecraftCommands, DedicatedServer, Minecraft$Something, CommandOutputSender, Minecraft, ServerInstance, MinecraftEventing, ResourcePackManager, Whitelist, PrivateKeyManager, ServerMetrics, EntityRegistryOwned } from "./server";
+import { CommandContext, CommandOutputSender, DedicatedServer, EntityRegistryOwned, MCRESULT, Minecraft, Minecraft$Something, MinecraftCommands, MinecraftEventing, PrivateKeyManager, ResourcePackManager, ServerCommandOrigin, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency
@@ -67,25 +67,25 @@ CommandOrigin.define({
 PlayerCommandOrigin.abstract({});
 ScriptCommandOrigin.abstract({});
 
-// void destructor(CommandOrigin* origin);
-CommandOrigin.prototype.destructor = makefunc.js([0x00], RawTypeId.Void, {this: CommandOrigin});
+// void destruct(CommandOrigin* origin);
+CommandOrigin.prototype.destruct = makefunc.js([0x00], RawTypeId.Void, {this: CommandOrigin});
 
 // std::string CommandOrigin::getRequestId();
-const getRequestId = makefunc.js([0x08], CxxStringPointer, {this: CommandOrigin, structureReturn: true});
+const getRequestId = makefunc.js([0x08], CxxStringWrapper, {this: CommandOrigin, structureReturn: true});
 CommandOrigin.prototype.getRequestId = function():string
 {
-    const p = getRequestId.call(this) as CxxStringPointer;
-    const str = p.p;
+    const p = getRequestId.call(this) as CxxStringWrapper;
+    const str = p.value;
     p.destruct();
     return str;
 };
 
 // std::string CommandOrigin::getName();
-const getName = makefunc.js([0x10], CxxStringPointer, {this: CommandOrigin, structureReturn: true});
+const getName = makefunc.js([0x10], CxxStringWrapper, {this: CommandOrigin, structureReturn: true});
 CommandOrigin.prototype.getName = function():string
 {
-    const p = getName.call(this) as CxxStringPointer;
-    const str = p.p;
+    const p = getName.call(this) as CxxStringWrapper;
+    const str = p.value;
     p.destruct();
     return str;
 };
@@ -206,16 +206,16 @@ NetworkHandler.prototype.getConnectionFromId = procHacker.js(`NetworkHandler::_g
 // void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char u)
 NetworkHandler.prototype.send = procHacker.js('NetworkHandler::send', RawTypeId.Void, {this:NetworkHandler}, NetworkIdentifier, Packet, RawTypeId.Int32);
 
-BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', RawTypeId.Void, {this:BatchedNetworkPeer}, CxxStringStructure, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
+BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', RawTypeId.Void, {this:BatchedNetworkPeer}, CxxStringWrapper, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
 
 // packet.ts
 Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number):void
 {
     networkHandler.send(target, this, unknownarg);
 };
-Packet.prototype.destructor = makefunc.js([0x0], RawTypeId.Void, {this:Packet});
+Packet.prototype.destruct = makefunc.js([0x0], RawTypeId.Void, {this:Packet});
 Packet.prototype.getId = makefunc.js([0x8], RawTypeId.Int32, {this:Packet});
-Packet.prototype.getName = makefunc.js([0x10], RawTypeId.Void, {this:Packet}, CxxStringPointer);
+Packet.prototype.getName = makefunc.js([0x10], RawTypeId.Void, {this:Packet}, CxxStringWrapper);
 Packet.prototype.write = makefunc.js([0x18], RawTypeId.Void, {this:Packet}, BinaryStream);
 Packet.prototype.read = makefunc.js([0x20], RawTypeId.Int32, {this:Packet}, BinaryStream);
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
@@ -229,14 +229,14 @@ const ServerNetworkHandler$_getServerPlayer = procHacker.js(
 Certificate.prototype.getXuid = function():string
 {
 	const out = getXuid(this);
-	const xuid = out.p;
+	const xuid = out.value;
 	out.destruct();
 	return xuid;
 };
 Certificate.prototype.getId = function():string
 {
 	const out = getIdentityName(this);
-	const id = out.p;
+	const id = out.value;
 	out.destruct();
 	return id;
 };
@@ -246,13 +246,13 @@ Certificate.prototype.getTitleId = function():number
 }
 Certificate.prototype.getIdentity = function():mce.UUID
 {
-	return getIdentity(this).p;
+	return getIdentity(this).value;
 };
-const getXuid = procHacker.js("ExtendedCertificate::getXuid", CxxStringPointer, {structureReturn: true}, Certificate);
-const getIdentityName = procHacker.js("ExtendedCertificate::getIdentityName", CxxStringPointer, {structureReturn: true}, Certificate);
-const getTitleId = procHacker.js("ExtendedCertificate::getTitleID", RawTypeId.Int32, {}, Certificate);
-const getIdentity = procHacker.js("ExtendedCertificate::getIdentity", mce.UUIDPointer, {structureReturn: true}, Certificate);
-ConnectionReqeust.abstract({
+const getXuid = procHacker.js("ExtendedCertificate::getXuid", CxxStringWrapper, {structureReturn: true}, Certificate);
+const getIdentityName = procHacker.js("ExtendedCertificate::getIdentityName", CxxStringWrapper, {structureReturn: true}, Certificate);
+const getTitleId = procHacker.js("ExtendedCertificate::getTitleID", RawTypeId.Int32, null, Certificate);
+const getIdentity = procHacker.js("ExtendedCertificate::getIdentity", mce.UUIDWrapper, {structureReturn: true}, Certificate);
+ConnectionRequest.abstract({
 	u1: VoidPointer,
 	cert:Certificate.ref()
 });

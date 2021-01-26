@@ -9,7 +9,7 @@ import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL, RawTypeId } from "./common";
 import { makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
 import { NativeClass } from "./nativeclass";
-import { CxxStringPointer, CxxStringStructure } from "./pointer";
+import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapStack } from "./source-map-support";
 import { _tickCallback } from "./util";
@@ -19,7 +19,7 @@ const EVENT_INDEX_COUNT = 0x400;
 
 class ReadOnlyBinaryStream extends NativeClass
 {
-    data:CxxStringStructure;
+    data:CxxStringWrapper;
 
     read(dest:VoidPointer, size:number):boolean
     {
@@ -28,7 +28,7 @@ class ReadOnlyBinaryStream extends NativeClass
 }
 
 ReadOnlyBinaryStream.abstract({
-    data:[CxxStringStructure.ref(), 0x38]
+    data:[CxxStringWrapper.ref(), 0x38]
 });
 ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], RawTypeId.Boolean, {this: ReadOnlyBinaryStream}, VoidPointer, RawTypeId.FloatAsInt64);
 
@@ -51,9 +51,9 @@ OnPacketRBP.abstract({
 export namespace nethook
 {
     export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
-    export type BeforeListener<ID extends MinecraftPacketIds> = (ptr: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
-    export type AfterListener<ID extends MinecraftPacketIds> = (ptr: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => void;
-    export type SendListener<ID extends MinecraftPacketIds> = (ptr: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type BeforeListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type AfterListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => void;
+    export type SendListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
     type AllEventTarget = Event<RawListener|BeforeListener<any>|AfterListener<any>|SendListener<any>>;
     type AnyEventTarget = Event<RawListener&BeforeListener<any>&AfterListener<any>&SendListener<any>>;
     
@@ -289,7 +289,7 @@ export namespace nethook
             .alloc(), 
             Register.rax, true, packetAfterOriginalCode, []);
 
-        const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringPointer)=>{
+        const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>{
             try
             {
                 const packetId = packet.getId();
@@ -313,7 +313,7 @@ export namespace nethook
             {
                 console.error(remapStack(err.stack));
             }
-        }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringPointer);
+        }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
 
         const packetSendOriginalCode = [
             0x48, 0x8B, 0x81, 0x68, 0x02, 0x00, 0x00, // mov rax,qword ptr ds:[rcx+268]

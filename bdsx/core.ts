@@ -33,6 +33,8 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
     nullableReturn?:boolean;
     nullableThis?:boolean;
     nullableParams?:boolean;
+    nativeDebugBreak?:boolean;
+    nativeDebugBreakOnMake?:boolean;
 }
 type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> = 
     OPTS extends MakeFuncOptions<infer THIS> ? 

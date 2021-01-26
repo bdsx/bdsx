@@ -416,8 +416,6 @@ export namespace bedrockServer
         call <bedrock_server.void __cdecl operator delete[](void * __ptr64,unsigned __int64)>
         */
 
-        // hookLog();
-        
         // seh wrapped main
         const wrapped_main = asm()
         .sub_r_c(Register.rsp, 0x28)

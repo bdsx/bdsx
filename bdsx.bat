@@ -1,5 +1,6 @@
 @echo off
-pushd "%~dp0"
+set cwd=%cd%
+cd /D "%~dp0"
 
 if not exist "node_modules" call :npminstall
 if %errorlevel% neq 0 exit /b %errorlevel%
@@ -10,7 +11,6 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-call npm run install_bds %*
 call npm run -s install_bds -- %*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
@@ -19,7 +19,7 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd bedrock_server
 bedrock_server.exe ..
-popd
+cd /D "%cwd%"
 exit /b
 
 :npminstall

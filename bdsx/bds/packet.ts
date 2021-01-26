@@ -1,7 +1,7 @@
 import { abstract, RawTypeId } from "bdsx/common";
 import { MantleClass, NativeClass } from "bdsx/nativeclass";
 import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
-import { CxxStringPointer } from "bdsx/pointer";
+import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
@@ -47,13 +47,16 @@ export class Packet extends MantleClass
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
 
+    /**
+     * @deprecated use packet.destruct();
+     */
     destructor():void {
         abstract();
     }
     getId():MinecraftPacketIds {
         abstract();
     }
-    getName(name:CxxStringPointer):void {
+    getName(name:CxxStringWrapper):void {
         abstract();
     }
     write(stream:BinaryStream):void {

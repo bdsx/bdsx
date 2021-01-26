@@ -112,6 +112,8 @@ export class HashSet<T extends Hashable>
         for (;;)
         {
             const next = found![nextlink] as T
+            if (next === null) return false;
+            
             if (next[hashkey] === hash && next.equals(found))
             {
                 found![nextlink] = next[nextlink];
@@ -119,7 +121,6 @@ export class HashSet<T extends Hashable>
                 this.size--;
                 return true;
             }
-            if (next === null) return false;
             found = next;
         }
     }
