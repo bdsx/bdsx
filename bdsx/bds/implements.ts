@@ -4,16 +4,17 @@ import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bd
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { bin } from "bdsx/bin";
 import { RawTypeId } from "bdsx/common";
-import { makefunc, VoidPointer } from "bdsx/core";
+import { makefunc, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { mce } from "bdsx/mce";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { bin64_t, CxxString, float32_t, uint16_t, uint32_t } from "../nativetype";
+import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
+import { GameMode } from "./gamemode";
 import { Level, ServerLevel } from "./level";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
@@ -23,7 +24,7 @@ import { ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
-import { CommandContext, CommandOutputSender, DedicatedServer, EntityRegistryOwned, MCRESULT, Minecraft, Minecraft$Something, MinecraftCommands, MinecraftEventing, PrivateKeyManager, ResourcePackManager, ServerCommandOrigin, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
+import { CommandContext, CommandOutputSender, DedicatedServer, EntityRegistryOwned, MCRESULT, Minecraft, Minecraft$Something, MinecraftCommands, MinecraftEventing, ScriptFramework, PrivateKeyManager, ResourcePackManager, ServerCommandOrigin, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist, MinecraftServerScriptEngine } from "./server";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency
@@ -38,7 +39,9 @@ RakNet.RakNetGUID.define({
     g:bin64_t,
     systemIndex:uint16_t
 }, 16);
-RakNet.RakPeer.abstract({});
+RakNet.RakPeer.abstract({
+	vftable: VoidPointer
+});
 RakNet.RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, RawTypeId.Int32);
 RakNet.AddressOrGUID.define({
     rakNetGuid:RakNet.RakNetGUID,
@@ -115,7 +118,7 @@ Actor.abstract({
 	runtimeId: [ActorRuntimeID, 0x588],
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
-Actor.prototype.getUniqueIdBin = procHacker.js("Actor::getUniqueID", RawTypeId.Bin64, {this:Actor});
+Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 
 Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
 Actor.prototype.getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
@@ -197,6 +200,7 @@ NetworkHandler.Connection.abstract({
     bpeer2:SharedPtr.make(BatchedNetworkPeer),
 });
 NetworkHandler.abstract({
+	vftable: VoidPointer,
     instance: [RakNetInstance.ref(), 0x30]
 });
 
@@ -209,7 +213,7 @@ NetworkHandler.prototype.send = procHacker.js('NetworkHandler::send', RawTypeId.
 BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', RawTypeId.Void, {this:BatchedNetworkPeer}, CxxStringWrapper, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
 
 // packet.ts
-Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number):void
+Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void
 {
     networkHandler.send(target, this, unknownarg);
 };
@@ -220,7 +224,6 @@ Packet.prototype.write = makefunc.js([0x18], RawTypeId.Void, {this:Packet}, Bina
 Packet.prototype.read = makefunc.js([0x20], RawTypeId.Int32, {this:Packet}, BinaryStream);
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
 // Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});
-
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js(
     "ServerNetworkHandler::_getServerPlayer", ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
@@ -312,9 +315,22 @@ Minecraft.abstract({
 	server:DedicatedServer.ref(),
     entityRegistryOwned:[SharedPtr.make(EntityRegistryOwned), 0xe0],
 });
+ScriptFramework.abstract({
+	vftable:VoidPointer,
+});
+MinecraftServerScriptEngine.abstract({
+	scriptEngineVftable:[VoidPointer, 0x428]
+});
 ServerInstance.abstract({
+	vftable:VoidPointer,
     server:[DedicatedServer.ref(), 0x90],
     minecraft:[Minecraft.ref(), 0x98],
-    networkHandler:[NetworkHandler.ref(), 0xa0],
+	networkHandler:[NetworkHandler.ref(), 0xa0],
+	scriptEngine:[MinecraftServerScriptEngine.ref(), 0x208],
 });
 MinecraftCommands.prototype._executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {thisType: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+
+// gamemode.ts
+GameMode.define({
+	actor: [Actor.ref(), 8]
+});

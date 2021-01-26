@@ -23,13 +23,13 @@ export namespace exehacker
     }
 
     /**
-     * @deprecated use procHacker.hooking instead
+     * @deprecated use procHacker.hooking or procHacker.hookingRawWithCallOriginal instead
      * @param key target symbol name
      * @param to call address
      */
     export function hooking(dummy:string, key:keyof proc, to: VoidPointer, dummy_for_backward_compatible?:any, dummy2?:any):void
     {
-        procHacker.hooking(key, to);
+        procHacker.hookingRawWithCallOriginal(key, to, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
     }
 
     /**

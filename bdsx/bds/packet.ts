@@ -68,7 +68,11 @@ export class Packet extends MantleClass
     readExtended(read:ExtendedStreamReadResult, stream:BinaryStream):ExtendedStreamReadResult {
         abstract();
     }
-    sendTo(target:NetworkIdentifier, unknownarg:number)
+
+    /**
+     * same with target.send
+     */
+    sendTo(target:NetworkIdentifier, unknownarg?:number)
     {
         abstract();
     }

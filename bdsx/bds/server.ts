@@ -1,7 +1,7 @@
 import { CommandOrigin } from "./commandorigin";
 import { abstract } from "bdsx/common";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { VoidPointer } from "bdsx/core";
+import { StaticPointer, VoidPointer } from "bdsx/core";
 import { bin64_t, CxxString, uint32_t } from "bdsx/nativetype";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { NativeClass } from "bdsx/nativeclass";
@@ -79,16 +79,29 @@ export class DedicatedServer extends NativeClass
 // 	};
 // 	DedicatedServer() = delete;
 
+
+export class ScriptFramework extends NativeClass
+{
+	vftable:VoidPointer;
+}
+
+export class MinecraftServerScriptEngine extends ScriptFramework
+{
+	scriptEngineVftable:VoidPointer;
+}
+
 export class ServerInstance extends NativeClass
 {
+	vftable:VoidPointer;
     server:DedicatedServer;
     minecraft:Minecraft;
-    networkHandler:NetworkHandler;
+	networkHandler:NetworkHandler;
+	scriptEngine:MinecraftServerScriptEngine;
 
     createDimension(id:DimensionId):Dimension
     {
         return this.minecraft.something.level.createDimension(id);
-    }
+	}
 }
 
 export class ServerCommandOrigin extends CommandOrigin
@@ -102,7 +115,6 @@ export class CommandContext extends NativeClass
 	command:CxxString;
 	origin:ServerCommandOrigin;
 };
-
 
 export class MinecraftCommands extends NativeClass
 {

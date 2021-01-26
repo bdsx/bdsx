@@ -1,11 +1,11 @@
 import { capi } from ".";
 import { asm, Register } from "./assembler";
 import { proc2 } from "./bds/proc";
-import { emptyFunc, RawTypeId } from "./common";
-import { AllocatedPointer, cxxException, makefunc, StaticPointer, uv_async, VoidPointer } from "./core";
+import { RawTypeId } from "./common";
+import { makefunc, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { CxxString, NativeType } from "./nativetype";
-import { CxxStringStructure } from "./pointer";
+import { CxxStringWrapper } from "./pointer";
 
 let getLineThreadPointer:VoidPointer|null = null;
 
@@ -24,7 +24,7 @@ function createGetLineThreadFunction():VoidPointer
     }
 
     const processTask = makefunc.np((asyncTask:StaticPointer)=>{
-        const str = asyncTask.addAs(CxxStringStructure, uv_async.sizeOfTask);
+        const str = asyncTask.addAs(CxxStringWrapper, uv_async.sizeOfTask);
         const value = str.value;
         str[NativeType.dtor]();
         const cb:GetLineCallback = asyncTask.getJsValueRef(uv_async.sizeOfTask+string_size);

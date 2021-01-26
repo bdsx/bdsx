@@ -115,6 +115,7 @@ export interface VoidPointer {
     getAddressHigh(): number;
     getAddressLow(): number;
     getAddressBin(): string;
+    getAddressAsFloat(): number;
     /**
      * with radix, it returns like Number.toString.
      * or it retruns 0x0000000000000000 format.
@@ -365,6 +366,7 @@ export declare class NativePointer extends StaticPointer {
     setAddress(lowBits: number, highBits: number): void;
     setAddressBin(bin:string):void;
     setAddressFromBuffer(buffer:Bufferable):void;
+    setAddressWithFloat(value:number):void;
 
 
     readBoolean(): boolean;

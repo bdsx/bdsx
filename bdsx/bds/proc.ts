@@ -51,6 +51,7 @@ const symbols = [
     'Json::Value::~Value',
     'Json::Value::getMemberNames',
     'Json::Value::size',
+    'MinecraftServerScriptEngine::onServerUpdateEnd',
 ] as const;
 
 // decorated symbols
@@ -64,6 +65,8 @@ const symbols2 = [
     '?log@ItemTransactionLogger@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?sItemTransactionLoggerEnabled@?A0x5e9fdcc2@@3_NA',
     '??$getline@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@YAAEAV?$basic_istream@DU?$char_traits@D@std@@@0@$$QEAV10@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@D@Z',
+    '??_7MinecraftServerScriptEngine@@6BScriptFramework@ScriptApi@@@',
+    '??_7MinecraftServerScriptEngine@@6B@',
 ] as const;
 
 

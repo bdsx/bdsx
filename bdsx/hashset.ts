@@ -12,7 +12,7 @@ export interface Hashable
 
 const INITIAL_CAP = 16;
 
-export class HashSet<T extends Hashable>
+export class HashSet<T extends Hashable> implements Iterable<T>
 {
     private array:(T|null)[] = new Array(INITIAL_CAP);
     public size = 0;
@@ -51,7 +51,25 @@ export class HashSet<T extends Hashable>
         this.array = narray;
     }
 
-    *entires():IterableIterator<T>
+    [Symbol.iterator]():IterableIterator<T>
+    {
+        return this.keys();
+    }
+
+    /**
+     * @deprecated use values() or keys()
+     */
+    entires():IterableIterator<T>
+    {
+        return this.keys();
+    }
+
+    keys():IterableIterator<T>
+    {
+        return this.values();
+    }
+    
+    *values():IterableIterator<T>
     {
         for (let item of this.array)
         {

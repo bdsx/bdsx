@@ -38,7 +38,7 @@ export enum ActorType
 
 export class Actor extends NativeClass
 {
-	public static readonly OFFSET_OF_NI = 0x9d0;
+	public static readonly OFFSET_OF_NI = 0x9e8;
 
 	vftable:VoidPointer;
 	identifier:string;
@@ -96,14 +96,14 @@ export class Actor extends NativeClass
 		
 	getUniqueIdLow():number
 	{
-		return bin.int32(this.getUniqueIdBin());
+		return this.getUniqueIdPointer().getInt32(0);
 	}
 	getUniqueIdHigh():number
 	{
-		return bin.int32_high(this.getUniqueIdBin());
+		return this.getUniqueIdPointer().getInt32(4);
 	}
 
-	getUniqueIdBin():ActorUniqueID
+	getUniqueIdPointer():StaticPointer
 	{
 		abstract();
 	}
@@ -216,12 +216,15 @@ function _removeActor(actor:Actor)
 
 export function hookingForActor():void
 {
-	procHacker.hooking('Level::removeEntityReferences',
-		makefunc.np((level:Level, actor:Actor, b:boolean)=>{
+	procHacker.hookingRawWithCallOriginal(
+		'Level::removeEntityReferences', 
+		makefunc.np((level, actor, b)=>{
 			_removeActor(actor);
-		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean)
+		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
+		[Register.rcx, Register.rdx, Register.r8], []
 	);
-	procHacker.hooking('Actor::~Actor',
+
+	procHacker.hookingRawWithCallOriginal('Actor::~Actor',
 		asm()
 		.push_r(Register.rcx)
 		.call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
@@ -230,7 +233,8 @@ export function hookingForActor():void
 		.jne(12)
 		.jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
 		.ret()
-		.alloc()
+		.alloc(),
+		[Register.rcx], []
 	);
 }
 

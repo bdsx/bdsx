@@ -22,6 +22,26 @@ export enum Register
     r15,
 }
 
+export enum FloatRegister
+{
+    xmm0,
+    xmm1,
+    xmm2,
+    xmm3,
+    xmm4,
+    xmm5,
+    xmm6,
+    xmm7,
+    xmm8,
+    xmm9,
+    xmm10,
+    xmm11,
+    xmm12,
+    xmm13,
+    xmm14,
+    xmm15,
+}
+
 enum MovOper
 {
     Register,
@@ -228,7 +248,7 @@ export class X64Assembler {
             return;
         }
         if (offset !== (offset|0)) throw Error('needs int32 offset');
-        if (offset == 0 && r != Register.rbp) {}
+        if (offset === 0 && r !== Register.rbp) {}
         else if (INT8_MIN <= offset && offset <= INT8_MAX)
         {
             opcode |= 0x40;
@@ -239,7 +259,7 @@ export class X64Assembler {
         }
         this.write(opcode);
     
-        if (r == Register.rsp) this.write(0x24);
+        if (r === Register.rsp) this.write(0x24);
         if (opcode & 0x40) this.write(offset);
         else if (opcode & 0x80)
         {
@@ -500,6 +520,13 @@ export class X64Assembler {
         return this._jmp(false, register, offset, MovOper.Read);
     }
 
+    jmp_rpip(offset:number):this
+    {
+        this.write(0xff, 0x25);
+        this.writeInt32(offset);
+        return this;
+    }
+
     /**
      * call with register pointer
      */
@@ -531,18 +558,16 @@ export class X64Assembler {
     }
 
     /**
-     * push rcx
-     * mov [rsp+4], high32(v)
-     * mov [rsp],  low32(v)
-     * ret
+     * mov [rsp-4], high32(v)
+     * mov [rsp-8],  low32(v)
+     * jmp [rsp-8]
      */
     jmp64_notemp(value:Value64):this
     {
-        this.push_r(Register.rcx);
         const [low32, high32] = split64bits(value);
-        this.mov_rp_c(Register.rsp, 0, low32, OperationSize.dword);
-        this.mov_rp_c(Register.rsp, 4, high32, OperationSize.dword);
-        this.ret();
+        this.mov_rp_c(Register.rsp, -8, low32, OperationSize.dword);
+        this.mov_rp_c(Register.rsp, -4, high32, OperationSize.dword);
+        this.jmp_rp(Register.rsp, -8);
         return this;
     }
 
@@ -581,6 +606,18 @@ export class X64Assembler {
     call_c(offset:number):this {
         this.write(0xe8);
         this.writeInt32(offset);
+        return this;
+    }
+
+    movdqa_rp_f(dest:Register, offset:number, src:FloatRegister):this {
+        this.write(0x66, 0x0f, 0x7f);
+        this._target((dest&7) | ((src&7) << 3), dest, offset, MovOper.Write);
+        return this;
+    }
+    
+    movdqa_f_rp(dest:FloatRegister, src:Register, offset:number):this {
+        this.write(0x66, 0x0f, 0x7f);
+        this._target((src&7) | ((dest&7) << 3), src, offset, MovOper.Read);
         return this;
     }
 

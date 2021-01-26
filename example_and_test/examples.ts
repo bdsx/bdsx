@@ -3,7 +3,7 @@
 console.log("From Script> Hello, World!");
 
 // Addon Script
-import { DimensionId, AttributeId, Actor, NativeModule, VoidPointer, MinecraftPacketIds, capi } from "bdsx";
+import { DimensionId, AttributeId, Actor, NativeModule, VoidPointer, MinecraftPacketIds } from "bdsx";
 const system = server.registerSystem(0, 0);
 system.listenForEvent('minecraft:entity_created', ev => {
     console.log('entity created: ' + ev.data.entity.__identifier__);
@@ -75,11 +75,9 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
 
     // sendPacket
     setTimeout(()=>{
-        console.log('packet sended');
-
         const textPacket = TextPacket.create();
         textPacket.message = '[message packet from bdsx]';
-        textPacket.sendTo(networkIdentifier, 0);
+        textPacket.sendTo(networkIdentifier);
         textPacket.dispose();
     }, 10000);
 });
@@ -94,8 +92,9 @@ const tooLoudFilter = new Set([
     PacketId.SetEntityMotion,
     PacketId.SetEntityData,
     PacketId.NetworkChunkPublisherUpdate,
-    0x72,
-    0x90,
+    PacketId.EntityEvent,
+    PacketId.UpdateSoftEnum,
+    PacketId.PlayerAuthInput,
 ]);
 for (let i = 2; i <= 0xe1; i++) {
     if (tooLoudFilter.has(i)) continue;
@@ -180,28 +179,37 @@ function transferServer(networkIdentifier:NetworkIdentifier, address:string, por
     const transferPacket = TransferPacket.create();
     transferPacket.address = address;
     transferPacket.port = port;
-    transferPacket.sendTo(networkIdentifier, 0);
+    transferPacket.sendTo(networkIdentifier);
     transferPacket.dispose();
 }
 
 // API Hooking
 import { ProcHacker } from "bdsx/prochacker";
-import { makefunc, pdb } from "bdsx/core";
-import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
-import { hacktool } from "bdsx/hacktool";
+import { pdb } from "bdsx/core";
+import { BlockPos } from "bdsx/bds/blockpos";
 import { SYMOPT_UNDNAME } from "bdsx/common";
-// Dimension * Level::createDimension(AutomaticID<Dimension,int>) // it's dug from the disassembler.
+import { GameMode } from "bdsx/bds/gamemode";
 
 pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names
 const procHacker = ProcHacker.load('../pdbcache_by_example.ini', ['GameMode::destroyBlock']);
 pdb.setOptions(0); // reset the option
 pdb.close(); // close the pdb to reduce the resource usage.
 
-function onDestroyBlock(gameMode:VoidPointer, blockPos:BlockPos, v:number):boolean
+let halfMiss = false;
+function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean
 {
-    console.log(colors.red(`block destroyed: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`));
-    hacktool.setReturn();
-    return false;
+    halfMiss = !halfMiss;
+    const ni = gameMode.actor.getNetworkIdentifier();
+    const packet = TextPacket.create();
+    console.log(ni.hash());
+    console.log(ni.getAddress());
+    packet.message = `${halfMiss ? 'missed' : 'destroyed'}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`;
+    packet.sendTo(ni);
+    packet.dispose();
+
+    if (halfMiss) return false;
+    return originalFunc(gameMode, blockPos, v);
 }
-const nativeLizedJsFunction = makefunc.np(onDestroyBlock, RawTypeId.Boolean, null, VoidPointer, BlockPos, RawTypeId.Int32);
-procHacker.hooking('GameMode::destroyBlock', nativeLizedJsFunction);
+
+// bool GameMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
+const originalFunc = procHacker.hooking('GameMode::destroyBlock', RawTypeId.Boolean, null, GameMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);

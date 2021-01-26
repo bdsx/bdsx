@@ -60,12 +60,6 @@ NativePointer.prototype.analyze = function(){
     return analyzer.analyze(this);
 };
 
-/** @deprecated use Actor */
-export const Entity = Actor;
-/** @deprecated use Actor */
-export type Entity = Actor;
-
-
 /**
  * @deprecated use bedrockServer.close.on
  */

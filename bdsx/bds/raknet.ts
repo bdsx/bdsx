@@ -1,6 +1,7 @@
 import { abstract } from "bdsx/common";
 import { bin64_t, uint16_t } from "bdsx/nativetype";
 import { NativeClass } from "bdsx/nativeclass";
+import { VoidPointer } from "bdsx/core";
 
 const portDelineator = '|'.charCodeAt(0);
 
@@ -40,6 +41,8 @@ export namespace RakNet
 
     export class RakPeer extends NativeClass
     {
+        vftable:VoidPointer;
+        
         GetSystemAddressFromIndex(idx:number):SystemAddress
         {
             abstract();

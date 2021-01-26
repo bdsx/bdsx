@@ -1,10 +1,10 @@
-import { FunctionFromTypes_js, makefunc, MakeFuncOptions, NativePointer, ParamType, pdb, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, NativePointer, ParamType, pdb, ReturnType, StaticPointer, VoidPointer } from "./core";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
 import { MemoryUnlocker } from "./unlocker";
 import { dll } from "./dll";
 import { disasm } from "./disassembler";
-import { Register, X64Assembler } from "./assembler";
+import { FloatRegister, Register, X64Assembler } from "./assembler";
 import { hacktool } from "./hacktool";
 
 export class ProcHacker<T extends Record<string, NativePointer>>
@@ -77,15 +77,58 @@ export class ProcHacker<T extends Record<string, NativePointer>>
      * @param key target symbol name
      * @param to call address
      */
-    hooking(key:keyof T, to: VoidPointer):void
+    hookingRaw(key:keyof T, to: VoidPointer):VoidPointer
     {
         const ptr = this.map[key];
         if (!ptr) throw Error(`${key} symbol not found`);
 
         const code = disasm.process(ptr, 12);
         const unlock = new MemoryUnlocker(ptr, code.size);
-        hacktool.hook(ptr, to, code.size);
+        const ret = hacktool.hook(ptr, to, code.size);
         unlock.done();
+        return ret;
+    }
+
+    /**
+     * @param key target symbol name
+     * @param to call address
+     */
+    hookingRawWithCallOriginal(key:keyof T, to: VoidPointer, 
+        keepRegister:Register[],
+        keepFloatRegister:FloatRegister[]):void
+    {
+        const ptr = this.map[key];
+        if (!ptr) throw Error(`${key} symbol not found`);
+
+        const code = disasm.process(ptr, 12);
+        const unlock = new MemoryUnlocker(ptr, code.size);
+        const ret = hacktool.hookWithCallOriginal(ptr, to, code.size, keepRegister, keepFloatRegister);
+        unlock.done();
+    }
+
+    /**
+     * @param key target symbol name
+     * @param to call address
+     */
+    hooking<OPTS extends MakeFuncOptions<any>|null, RETURN extends ReturnType, PARAMS extends ParamType[]>(
+        key:keyof T, 
+        returnType:RETURN,
+        opts?: OPTS, 
+        ...params: PARAMS):
+        (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN>
+    {
+        return callback=>{
+            const ptr = this.map[key];
+            if (!ptr) throw Error(`${key} symbol not found`);
+    
+            const to = makefunc.np(callback, returnType, opts, ...params);
+            const code = disasm.process(ptr, 12);
+            const unlock = new MemoryUnlocker(ptr, code.size);
+            const original = hacktool.hook(ptr, to, code.size);
+            unlock.done();
+            
+            return makefunc.js(original, returnType, opts, ...params);
+        };
     }
 
     /**

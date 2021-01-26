@@ -1,6 +1,5 @@
-import { capi } from "./capi";
 import { abstract } from "./common";
-import { StructurePointer, VoidPointer } from "./core";
+import { VoidPointer } from "./core";
 import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
@@ -144,8 +143,8 @@ CxxStringWrapper.define({
 });
 const strctor = CxxString[NativeType.ctor];
 const strdtor = CxxString[NativeType.dtor];
-CxxStringStructure.prototype[NativeType.ctor] = function(this:CxxStringStructure) { return strctor(this as any); };
-CxxStringStructure.prototype[NativeType.dtor] = function(this:CxxStringStructure) { return strdtor(this as any); };
+CxxStringWrapper.prototype[NativeType.ctor] = function(this:CxxStringWrapper) { return strctor(this as any); };
+CxxStringWrapper.prototype[NativeType.dtor] = function(this:CxxStringWrapper) { return strdtor(this as any); };
 
 /** @deprecated renamed to CxxStringWrapper */
 export type CxxStringStructure = CxxStringWrapper;

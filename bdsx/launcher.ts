@@ -347,12 +347,13 @@ export namespace bedrockServer
 
         // get server instance
         const serverInstanceDest = new AllocatedPointer(8);
-        procHacker.hooking('ServerInstance::startServerThread', 
+        procHacker.hookingRawWithCallOriginal('ServerInstance::startServerThread', 
             asm()
             .mov_r_c(Register.rax, serverInstanceDest)
             .mov_rp_r(Register.rax, 0, Register.rcx)
             .ret()
-            .alloc()
+            .alloc(), 
+            [Register.rcx], []
         );
 
         // it removes errors when run commands on shutdown.
@@ -443,8 +444,6 @@ export namespace bedrockServer
             0xFF, 0xD2, 0x84, 0xC0, 0x74, 0xA6              // lea rdx,qword ptr ss:[rbp-18]
         ], [ 7, 11 ]);
 
-        // procHacker.write('ScriptEngine::initialize', 0x287, asm().debugBreak());
-
         // hook on update
         const updateWithSleep = asm()
         .sub_r_c(Register.rsp, 0x28)
@@ -489,7 +488,7 @@ export namespace bedrockServer
 
         // hook on script starting
         // this hooking point is slower than system.initlaize.
-        procHacker.hooking('ScriptEngine::startScriptLoading', 
+        procHacker.hookingRawWithCallOriginal('ScriptEngine::startScriptLoading', 
             makefunc.np((scriptEngine:VoidPointer)=>{
                 try
                 {
@@ -509,7 +508,11 @@ export namespace bedrockServer
                 {
                     console.error(remapStack(err.stack));
                 }
-            }, RawTypeId.Void, null, VoidPointer));
+            }, RawTypeId.Void, null, VoidPointer), 
+            [Register.rcx], []);
+
+        // keep ScriptEngine variables. idk why need it.
+        procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
     }
 
     export function launch():Promise<void>

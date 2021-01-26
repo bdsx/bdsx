@@ -1,4 +1,5 @@
 
+import { Register } from "bdsx/assembler";
 import { abstract, RawTypeId } from "bdsx/common";
 import { dll } from "bdsx/dll";
 import { Hashable, HashSet } from "bdsx/hashset";
@@ -28,6 +29,7 @@ class NetworkHandler$Connection extends NativeClass
 }
 export class NetworkHandler extends NativeClass
 {
+    vftable:VoidPointer;
     instance:RakNetInstance;
 
     send(ni:NetworkIdentifier, packet:Packet, u:number):void
@@ -101,7 +103,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable
         const rakpeer = networkHandler.instance.peer;
         return rakpeer.GetSystemAddressFromIndex(idx).toString();
     }
-    
+
     toString():string
     {
         return this.getAddress();
@@ -120,13 +122,19 @@ export class NetworkIdentifier extends NativeClass implements Hashable
         ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
 		identifiers.add(ni);
 		return ni;
-	}
+    }
+    
+    static all():IterableIterator<NetworkIdentifier>
+    {
+        return identifiers.values();
+    }
 }
 
 export let networkHandler:NetworkHandler;
 
-procHacker.hooking('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
     closeEvTarget.fire(ni);
     identifiers.delete(ni);
     _tickCallback();
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper));
+}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
+    [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
