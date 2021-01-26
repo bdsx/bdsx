@@ -4,11 +4,10 @@ import { asm, Register } from './assembler';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { CommandRequestPacket } from './bds/packets';
-import { proc } from './bds/proc';
+import { proc, procHacker } from './bds/proc';
 import { CommandContext, MCRESULT, MinecraftCommands } from './bds/server';
 import { CANCEL, RawTypeId } from './common';
 import { makefunc } from './core';
-import { exehacker } from './exehacker';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 import netevent = require('./netevent');
@@ -57,7 +56,7 @@ export function hookingForCommand():void
     .ret()
     .alloc();
     
-    exehacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, newcode, Register.rax, true, ORIGINAL_CODE, []);
+    procHacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, newcode, Register.rax, true, ORIGINAL_CODE, []);
 };
 
 // 	m_props.insert(u"execSync", JsFunction::makeT([](Text16 path, JsValue curdir) {

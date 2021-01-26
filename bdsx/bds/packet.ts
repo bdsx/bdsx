@@ -1,13 +1,12 @@
 import { abstract, RawTypeId } from "bdsx/common";
+import { MantleClass, NativeClass } from "bdsx/nativeclass";
 import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
 import { CxxStringPointer } from "bdsx/pointer";
-import { MantleClass, NativeClass } from "bdsx/nativeclass";
-import { MinecraftPacketIds } from "./packetids";
-import { BinaryStream } from "./stream";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
-import { cgate, makefunc } from "bdsx/core";
-import { proc } from "./proc";
 import { NetworkIdentifier } from "./networkidentifier";
+import { MinecraftPacketIds } from "./packetids";
+import { procHacker } from "./proc";
+import { BinaryStream } from "./stream";
 
 // export interface PacketType<T> extends StructureType<T>
 // {
@@ -105,4 +104,4 @@ export function createPacket(packetId:MinecraftPacketIds):SharedPointer
     return new SharedPointer(p);
 }
 
-export const createPacketRaw = makefunc.js(proc["MinecraftPackets::createPacket"], PacketSharedPtr, null, PacketSharedPtr, RawTypeId.Int32);
+export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, RawTypeId.Int32);

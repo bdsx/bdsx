@@ -1,8 +1,6 @@
 
-
-import { proc, proc2 } from './bds/proc';
 import { abstract, emptyFunc, RawTypeId } from './common';
-import { makefunc, StaticPointer, VoidPointer } from './core';
+import { makefunc, pdb, StaticPointer, VoidPointer } from './core';
 import { Singleton } from './singleton';
 
 namespace NativeTypeFn
@@ -202,7 +200,7 @@ export const uint32_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type uint32_t = number;
 export const uint64_as_float_t = new NativeType<number>(
-    4,
+    8,
     (ptr, offset)=>ptr.getUint64AsFloat(offset), 
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
@@ -222,7 +220,7 @@ export const int32_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type int32_t = number;
 export const int64_as_float_t = new NativeType<number>(
-    4,
+    8,
     (ptr, offset)=>ptr.getInt64AsFloat(offset), 
     (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset));
 export type int64_as_float_t = number;
@@ -236,16 +234,23 @@ export const float64_t = new NativeType<number>(
     (ptr, offset)=>ptr.getUint32(offset), 
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type float64_t = number;
+
+const strfn = pdb.getList(pdb.coreCachePath, {}, [
+    '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ', 
+    '?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'
+]);
+pdb.close();
+
+const string_ctor = makefunc.js(strfn['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
+const string_dtor = makefunc.js(strfn['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], RawTypeId.Void, null, VoidPointer);
+
 export const CxxString = new NativeType<string>(
     0x20,
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
-    (ptr)=>string_ctor(ptr),
-    (ptr)=>string_dtor(ptr));
+    string_ctor,
+    string_dtor);
 export type CxxString = string;
-
-const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
-const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], RawTypeId.Void, null, VoidPointer);
 
 export const bin64_t = new NativeType<string>(
     8,

@@ -1,15 +1,16 @@
 
-import { netevent, PacketId, NetworkIdentifier, command, serverControl, Actor, chat, bin, NativePointer, CANCEL, serverInstance, StaticPointer, VoidPointer, MinecraftPacketIds } from "bdsx";
-import { capi } from "bdsx/capi";
-import { HashSet } from "bdsx/hashset";
-import { bin64_t } from "bdsx/nativetype";
-import { PseudoRandom } from "bdsx/pseudorandom";
-import { dll } from "bdsx/dll";
-import { bedrockServer } from "bdsx/launcher";
-import { Tester } from "bdsx/tester";
+import { Actor, bin, CANCEL, chat, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, PacketId, serverControl, serverInstance, StaticPointer, VoidPointer } from "bdsx";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
 import { proc2 } from "bdsx/bds/proc";
+import { capi } from "bdsx/capi";
+import { dll } from "bdsx/dll";
+import { HashSet } from "bdsx/hashset";
+import { bedrockServer } from "bdsx/launcher";
+import { bin64_t, NativeType } from "bdsx/nativetype";
+import { CxxStringStructure } from "bdsx/pointer";
+import { PseudoRandom } from "bdsx/pseudorandom";
+import { Tester } from "bdsx/tester";
 
 let nextTickPassed = false;
 let commandTestPassed = false;
@@ -291,6 +292,20 @@ Tester.test({
             this.assert(conns.delete(ni), '[test] disconnected without connected');
         });
     },
+
+    cxxstring(){
+        const str = new CxxStringStructure(true);
+        str[NativeType.ctor]();
+        this.assert(str.length === 0, 'std::string invalid constructor');
+        this.assert(str.capacity === 15, 'std::string invalid constructor');
+        const shortcase = '111';
+        const longcase = '123123123123123123123123';
+        str.value = shortcase;
+        this.assert(str.value === shortcase, 'failed with short text');
+        str.value = longcase;
+        this.assert(str.value === longcase, 'failed with long text');
+        str[NativeType.dtor]();
+    }
 });
 
 let connectedNi:NetworkIdentifier;

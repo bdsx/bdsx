@@ -133,6 +133,23 @@ const fs = {
     {
         return fs.stat(path).then(()=>true, ()=>false);
     },
+    async del(filepath:string):Promise<void>
+    {
+        const stat = await fs.stat(filepath);
+        if (stat.isDirectory())
+        {
+            const files = await fs.readdir(filepath);
+            for (const file of files)
+            {
+                await fs.del(path.join(filepath, file));
+            }
+            await fs.rmdir(filepath);
+        }
+        else
+        {
+            await fs.unlink(filepath);
+        }
+    }
 };
 
 interface InstallInfo
@@ -281,7 +298,8 @@ class InstallItem
         confirm?:()=>Promise<void>|void,
         preinstall?:()=>Promise<void>|void,
         postinstall?:(writedFiles:string[])=>Promise<void>|void,
-        skipExists?:boolean
+        skipExists?:boolean,
+        oldFiles?:string[],
     })
     {
     }
@@ -352,6 +370,20 @@ class InstallItem
     
     private async _install():Promise<void>
     {
+        const oldFiles = this.opts.oldFiles;
+        if (oldFiles)
+        {
+            for (const oldfile of oldFiles)
+            {
+                try
+                {
+                    await fs.del(path.join(this.opts.targetPath, oldfile));
+                }
+                catch (err)
+                {
+                }
+            }
+        }
         const preinstall = this.opts.preinstall;
         if (preinstall) await preinstall();
         const writedFiles = await this._downloadAndUnzip();
@@ -441,7 +473,8 @@ const bdsxCore = new InstallItem({
     url: BDSX_CORE_LINK,
     targetPath: bdsPath,
     key: 'bdsxCoreVersion',
-    keyFile: 'mods/bdsx.dll',
+    keyFile: 'Chakra.dll',
+    oldFiles: ['mods'],
 });
 
 (async()=>{

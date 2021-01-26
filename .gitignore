@@ -1,13 +1,8 @@
 /node_modules
 /bedrock_server/*
-!/bedrock_server/mods
-/bedrock_server/mods/*
-!/bedrock_server/mods/predefined
-!/bedrock_server/mods/eminus.ini
 /dist
 /bdsx/installer/zip
 /bdsx/installer/installer.js
 /bdsx/installer/installer.js.map
-/mods/bdsx.dll
-/mods/bdsx.pdb
 /npm-debug.log
+/pdbcache_by_example.ini

@@ -1,7 +1,7 @@
 import { asm, Register } from "./assembler";
 import { RawTypeId } from "./common";
 import { makefunc, NativePointer, VoidPointer } from "./core";
-import { dll, ThreadHandle } from "./dll";
+import { dll, NativeModule, ThreadHandle } from "./dll";
 
 export namespace capi
 {
@@ -33,4 +33,9 @@ export namespace capi
      * memory release by native c
      */
     export const free:(ptr:VoidPointer)=>void = dll.ucrtbase.free;
+
+    export function isRunningOnWine():boolean
+    {
+        return dll.ntdll.wine_get_version !== null;
+    }
 }

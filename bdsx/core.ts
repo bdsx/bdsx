@@ -232,6 +232,8 @@ export declare class PrivatePointer extends VoidPointer
     protected interlockedCompareExchange32(exchange:number, compare:number, offset?:number):number;
     protected interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
 
+    protected getJsValueRef(offset?:number):any;
+    protected setJsValueRef(value:any, offset?:number):void;
 }
 
 export declare class StaticPointer extends PrivatePointer
@@ -332,6 +334,9 @@ export declare class StaticPointer extends PrivatePointer
     interlockedCompareExchange16(exchange:number, compare:number, offset?:number):number;
     interlockedCompareExchange32(exchange:number, compare:number, offset?:number):number;
     interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
+
+    getJsValueRef(offset?:number):any;
+    setJsValueRef(value:any, offset?:number):void;
 }
 
 /**
@@ -490,6 +495,9 @@ export declare class NativePointer extends StaticPointer {
      * @param words 2bytes per word
      */
     writeBin(v:string, words: number): string;
+    
+    readJsValueRef():any;
+    writeJsValueRef(value:any):void;
 }
 
 export declare class RuntimeError extends Error
@@ -502,6 +510,10 @@ export declare class MultiThreadQueue extends VoidPointer
     constructor(size:number);
 
     enqueue(src:VoidPointer):void;
+
+    /**
+     * blocking method
+     */
     dequeue(dest:VoidPointer):void;
 
     /**
@@ -511,6 +523,7 @@ export declare class MultiThreadQueue extends VoidPointer
     static readonly enqueue:VoidPointer;
     /**
      * native function
+     * blocking method
      * void dequeue(MultiThreadQueue*, void*)
      */
     static readonly dequeue:VoidPointer;
@@ -518,6 +531,11 @@ export declare class MultiThreadQueue extends VoidPointer
 
 export declare namespace pdb
 {
+    export const coreCachePath:string;
+
+    /**
+     * @deprecated it's do nothing now. pdb methods will open itself.
+     */
     export function open():void;
     export function close():void;
 
@@ -531,11 +549,16 @@ export declare namespace pdb
     export function setOptions(dbghelpOptions:number):number;
     
     /**
+     * @deprecated use pdb.getList instead
+     */
+    export function getProcAddresses<OLD extends {}, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
+
+    /**
      * get symbols from cache.
      * if symbols don't exist in cache. it reads pdb.
      * @returns 'out' the first parameter.
      */
-    export function getProcAddresses<OLD extends {}, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
+    export function getList<OLD extends {}, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean):{[key in KEYS[number]]: NativePointer} & OLD;
 
     export function getDllDependeny():void;
 
@@ -558,6 +581,7 @@ export declare namespace pdb
      * get all symbols
      */
     export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer>;
+    
 }
 
 export declare namespace runtimeError
@@ -622,7 +646,7 @@ export declare namespace uv_async
     /**
      * native function
      * allocate the task with a extra buffer for 'uv_async.post'
-     * AsyncTask* alloc(void(*fn)(AsyncTask*), size_t size)
+     * AsyncTask* alloc(void(*fn)(AsyncTask*), size_t extraSize)
      */
     export const alloc: VoidPointer;
     
@@ -679,7 +703,6 @@ export declare namespace makefunc
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
      * 
-     * @param name name of procedure
      * @param returnType RawTypeId or *Pointer
      * @param params RawTypeId or *Pointer
      */
@@ -698,7 +721,7 @@ export declare namespace makefunc
      */
     export function np<RETURN extends ReturnType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
         jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
-        returnType: RETURN, thisType?: OPTS, ...params: PARAMS): VoidPointer;
+        returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer;
         
     /** @deprecated */
     export interface NativeFunction extends Function
@@ -710,6 +733,7 @@ export declare namespace makefunc
     /** @deprecated */
     export function js_old(functionPointer: VoidPointer): NativeFunction;
 
+    export function asJsValueRef(value:any):VoidPointer;
 
     export const js2np:unique symbol;
     export const np2js:unique symbol;
@@ -792,6 +816,25 @@ export declare namespace jshook
     export function setOnError(onError:ErrorListener):ErrorListener;
     export function getOnError():ErrorListener;
     export function fireError(err:Error):void;
+}
+
+export declare namespace cxxException
+{
+    /**
+     * void trycatch(void* param, void(*try)(void* param), void(*catch)(void* param, const char* error));
+     */
+    export const trycatch:VoidPointer;
+
+    /**
+     * void cxxthrow();
+     * will not pass catch
+     */
+    export const cxxthrow:VoidPointer;
+    
+    /**
+     * void trycatch(const char*);
+     */
+    export const cxxthrowString:VoidPointer;
 }
 
 module.exports = (process as any)._linkedBinding('bdsx_core');

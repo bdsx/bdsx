@@ -1,5 +1,4 @@
-import { proc } from "./bds/proc";
-import { makefunc } from "./core";
+import { procHacker } from "./bds/proc";
 import { bin64_t, uint16_t, uint32_t } from "./nativetype";
 import { Pointer } from "./pointer";
 
@@ -31,4 +30,4 @@ export namespace mce
     export const UUIDPointer = Pointer.make(mce.UUID);
 }
 
-const generateUUID = makefunc.js(proc["Crypto::Random::generateUUID"], mce.UUIDPointer, {structureReturn: true});
+const generateUUID = procHacker.js("Crypto::Random::generateUUID", mce.UUIDPointer, {structureReturn: true});

@@ -5,10 +5,9 @@ import { NetworkHandler, NetworkIdentifier } from "./bds/networkidentifier";
 import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "./bds/packet";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { LoginPacket, PacketIdToType } from "./bds/packets";
-import { proc } from "./bds/proc";
+import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL, RawTypeId } from "./common";
 import { makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
-import { exehacker } from "./exehacker";
 import { NativeClass } from "./nativeclass";
 import { CxxStringPointer, CxxStringStructure } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
@@ -127,7 +126,7 @@ export namespace nethook
             }
         }
         
-        exehacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x2c9, 
+        procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x2c9, 
             asm()
             .sub_r_c(Register.rsp, 0x28)
             .mov_r_r(Register.rcx, Register.rbp) // rbp
@@ -196,7 +195,7 @@ export namespace nethook
         */
         const packetBeforeOriginalCode = [ 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x85, 0xE0, 0x01, 0x00, 0x00, 0x48, 0x8D, 0x55, 0x70, 0xFF, 0x50, 0x28 ];
 
-        exehacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x430, 
+        procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x430, 
             asm()
             .sub_r_c(Register.rsp, 0x28)
             .write(...packetBeforeOriginalCode)
@@ -222,7 +221,7 @@ export namespace nethook
             0x41, 0x55, // push r13
             0x41, 0x56, // push r14
         ];
-        exehacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
+        procHacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
             asm()
             .cmp_r_c(Register.r8, 0x7f)
             .jnz(9)
@@ -278,7 +277,7 @@ export namespace nethook
                 console.error(remapStack(err.stack));
             }
         }
-        exehacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, 
+        procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, 
             asm()
             .sub_r_c(Register.rsp, 0x28)
             .write(...packetAfterOriginalCode)
@@ -323,7 +322,7 @@ export namespace nethook
             0x49, 0x8B, 0xF8, // mov rdi,r8
             0x4C, 0x8B, 0xF2, // mov r14,rdx
         ];
-        exehacker.patching('hook-packet-send', 'NetworkHandler::send', 0x1A, 
+        procHacker.patching('hook-packet-send', 'NetworkHandler::send', 0x1A, 
             asm()
             .write(...packetSendOriginalCode.slice(7))
             .sub_r_c(Register.rsp, 0x28)
@@ -335,7 +334,7 @@ export namespace nethook
             .alloc(),
             Register.rax, true, packetSendOriginalCode, []);
         
-        exehacker.patching('hook-packet-send', 'NetworkHandler::_sendInternal', 0x14,
+        procHacker.patching('hook-packet-send', 'NetworkHandler::_sendInternal', 0x14,
             asm()
             .mov_r_r(Register.r14, Register.r9)
             .mov_r_r(Register.rdi, Register.r8)

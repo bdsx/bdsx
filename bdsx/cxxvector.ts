@@ -1,6 +1,6 @@
-import { proc } from "./bds/proc";
+import { procHacker } from "./bds/proc";
 import { abstract, RawTypeId } from "./common";
-import { makefunc, NativePointer, VoidPointer } from "./core";
+import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
@@ -222,4 +222,4 @@ export abstract class CxxVector<T> extends NativeClass
     }
 }
 
-CxxVector._alloc16 = makefunc.js(proc["std::_Allocate<16,std::_Default_allocate_traits,0>"], NativePointer, null, RawTypeId.FloatAsInt64);
+CxxVector._alloc16 = procHacker.js("std::_Allocate<16,std::_Default_allocate_traits,0>", NativePointer, null, RawTypeId.FloatAsInt64);

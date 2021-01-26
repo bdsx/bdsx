@@ -1,18 +1,18 @@
 
 import { abstract, RawTypeId } from "bdsx/common";
 import { dll } from "bdsx/dll";
-import { exehacker } from "bdsx/exehacker";
 import { Hashable, HashSet } from "bdsx/hashset";
 import { NativeClass } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
 import { CxxStringPointer } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { _tickCallback } from "bdsx/util";
-import Event, { CapsuledEvent, EventEx } from "krevent";
+import { Event, CapsuledEvent } from "krevent";
 import { makefunc, StaticPointer, VoidPointer } from "../core";
 import { Actor } from "./actor";
 import { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
+import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
@@ -125,7 +125,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable
 
 export let networkHandler:NetworkHandler;
 
-exehacker.hooking('hook-on-close-connection', 'NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+procHacker.hooking('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
     closeEvTarget.fire(ni);
     identifiers.delete(ni);
     _tickCallback();

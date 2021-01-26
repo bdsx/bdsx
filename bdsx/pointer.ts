@@ -1,4 +1,5 @@
 import { capi } from "./capi";
+import { abstract } from "./common";
 import { StructurePointer, VoidPointer } from "./core";
 import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
@@ -91,13 +92,12 @@ export class CxxStringStructure extends NativeClass
 
     [NativeType.ctor]()
     {
-        this.length = 0;
-        this.capacity = 15;
+        abstract();
     }
 
     [NativeType.dtor]()
     {
-        if (this.capacity >= 0x10) capi.free(this.getPointer());
+        abstract();
     }
     
     get value():string
@@ -120,6 +120,10 @@ CxxStringStructure.define({
     length:[int64_as_float_t, 0x10],
     capacity:[int64_as_float_t, 0x18]
 });
+const strctor = CxxString[NativeType.ctor];
+const strdtor = CxxString[NativeType.dtor];
+CxxStringStructure.prototype[NativeType.ctor] = function(this:CxxStringStructure) { return strctor(this as any); };
+CxxStringStructure.prototype[NativeType.dtor] = function(this:CxxStringStructure) { return strdtor(this as any); };
 
 export const CxxStringPointer = Pointer.make(CxxString);
 export type CxxStringPointer = Pointer<CxxString>;

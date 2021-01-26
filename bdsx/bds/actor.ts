@@ -1,16 +1,15 @@
-import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
-import { bin64_t, CxxString, NativeType } from "bdsx/nativetype";
-import { NativeClass } from "bdsx/nativeclass";
-import { abstract, RawTypeId } from "bdsx/common";
-import { bin } from "bdsx/bin";
-import { proc } from "./proc";
-import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { NetworkIdentifier } from "./networkidentifier";
-import { exehacker } from "bdsx/exehacker";
-import { Level } from "./level";
 import { asm, Register } from "bdsx/assembler";
-import { dll } from "bdsx/dll";
+import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
+import { abstract, RawTypeId } from "bdsx/common";
+import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { dll } from "bdsx/dll";
+import { NativeClass } from "bdsx/nativeclass";
+import { bin64_t, NativeType } from "bdsx/nativetype";
+import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Level } from "./level";
+import { NetworkIdentifier } from "./networkidentifier";
+import { proc, procHacker } from "./proc";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t
@@ -214,12 +213,12 @@ function _removeActor(actor:Actor)
 
 export function hookingForActor():void
 {
-	exehacker.hooking('hook-actor-release', 'Level::removeEntityReferences',
+	procHacker.hooking('Level::removeEntityReferences',
 		makefunc.np((level:Level, actor:Actor, b:boolean)=>{
 			_removeActor(actor);
 		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean)
 	);
-	exehacker.hooking('hook-actor-delete', 'Actor::~Actor',
+	procHacker.hooking('Actor::~Actor',
 		asm()
 		.push_r(Register.rcx)
 		.call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)

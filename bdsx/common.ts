@@ -63,3 +63,7 @@ export function abstract():never
 {
 	throw Error('abstract');
 }
+
+export const SYMOPT_PUBLICS_ONLY = 0x00004000;
+export const SYMOPT_AUTO_PUBLICS = 0x00010000;
+export const SYMOPT_UNDNAME = 0x00000002;

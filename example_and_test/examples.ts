@@ -184,3 +184,25 @@ function transferServer(networkIdentifier:NetworkIdentifier, address:string, por
     transferPacket.sendTo(networkIdentifier, 0);
     transferPacket.dispose();
 }
+
+// API Hooking
+import { ProcHacker } from "bdsx/prochacker";
+import { makefunc, pdb } from "bdsx/core";
+import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
+import { hacktool } from "bdsx/hacktool";
+import { SYMOPT_UNDNAME } from "bdsx/common";
+// Dimension * Level::createDimension(AutomaticID<Dimension,int>) // it's dug from the disassembler.
+
+pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names
+const procHacker = ProcHacker.load('../pdbcache_by_example.ini', ['GameMode::destroyBlock']);
+pdb.setOptions(0); // reset the option
+pdb.close(); // close the pdb to reduce the resource usage.
+
+function onDestroyBlock(gameMode:VoidPointer, blockPos:BlockPos, v:number):boolean
+{
+    console.log(colors.red(`block destroyed: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`));
+    hacktool.setReturn();
+    return false;
+}
+const nativeLizedJsFunction = makefunc.np(onDestroyBlock, RawTypeId.Boolean, null, VoidPointer, BlockPos, RawTypeId.Int32);
+procHacker.hooking('GameMode::destroyBlock', nativeLizedJsFunction);

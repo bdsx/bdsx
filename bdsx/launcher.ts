@@ -1,13 +1,12 @@
 import Event, { CapsuledEvent } from "krevent";
 import { asm, OperationSize, Register } from "./assembler";
 import { hookingForActor } from "./bds/actor";
-import { proc } from "./bds/proc";
+import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { hookingForCommand } from "./command";
 import { CANCEL, Encoding, RawTypeId } from "./common";
 import { AllocatedPointer, bedrock_server_exe, cgate, ipfilter, jshook, makefunc, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { exehacker } from "./exehacker";
 import { CxxString, NativeType } from "./nativetype";
 import { nethook } from "./nethook";
 import { remapError, remapStack } from "./source-map-support";
@@ -18,6 +17,7 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
+import { GetLine } from "./getline";
 
 declare module 'colors'
 {
@@ -136,7 +136,7 @@ export namespace bedrockServer
         .add_r_c(Register.rsp, 0x28)
         .jmp64(uv_async.post, Register.rax)
         .alloc();
-        exehacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
+        procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
             0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |
             0xFF, 0x15, 0x33, 0x1B, 0xE4, 0x00,		//	| call qword ptr ds:[<&GetStdHandle>]                                 |
             0x83, 0xFF, 0x01,						//	| cmp edi,1                                                           |
@@ -162,7 +162,7 @@ export namespace bedrockServer
 
         // void(*callback)(const char* log, size_t size)
 
-        exehacker.patching('hook-command-output', 'CommandOutputSender::send', 0x1b3, asm()
+        procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x1b3, asm()
         .sub_r_c(Register.rsp, 0x28)
         .mov_r_r(Register.rcx, Register.r8)
         .call64(makefunc.np((bytes, ptr)=>{
@@ -186,7 +186,7 @@ export namespace bedrockServer
     
         // hook stdin
         const stdin_launchpad = 'std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_cab8a9f6b80f4de6ca3785c051efa45e> >,std::default_delete<std::tuple<<lambda_cab8a9f6b80f4de6ca3785c051efa45e> > > > >::_Execute<0>';
-        exehacker.patching('hook-stdin-command', stdin_launchpad, 0x5f, asm()
+        procHacker.patching('hook-stdin-command', stdin_launchpad, 0x5f, asm()
         .lea_r_rp(Register.rdx, Register.rsp, 0x30)
         .sub_r_c(Register.rsp, 0x28)
         .mov_r_c(Register.rcx, commandQueue)
@@ -278,7 +278,7 @@ export namespace bedrockServer
         .alloc();
 
         // hook game thread
-        exehacker.patching(
+        procHacker.patching(
             'hook-game-thread', 
             'std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_85c8d3d148027f864c62d97cac0c7e52> >,std::default_delete<std::tuple<<lambda_85c8d3d148027f864c62d97cac0c7e52> > > > >::_Go',
             0x1b,
@@ -314,7 +314,7 @@ export namespace bedrockServer
         .ret()
         .jmp64(runtimeError.raise, Register.rax)
         .alloc();
-        exehacker.jumping('hook-runtime-error', 'google_breakpad::ExceptionHandler::HandleException', 0, runtime_error_asm, Register.rax, [
+        procHacker.jumping('hook-runtime-error', 'google_breakpad::ExceptionHandler::HandleException', 0, runtime_error_asm, Register.rax, [
             0x48, 0x89, 0x5C, 0x24, 0x08,   // mov qword ptr ss:[rsp+8],rbx
             0x57,                           // push rdi
             0x48, 0x83, 0xEC, 0x20,         // sub rsp,20
@@ -347,7 +347,7 @@ export namespace bedrockServer
 
         // get server instance
         const serverInstanceDest = new AllocatedPointer(8);
-        exehacker.hooking('get-server-instance', 'ServerInstance::startServerThread', 
+        procHacker.hooking('ServerInstance::startServerThread', 
             asm()
             .mov_r_c(Register.rax, serverInstanceDest)
             .mov_rp_r(Register.rax, 0, Register.rcx)
@@ -356,13 +356,13 @@ export namespace bedrockServer
         );
 
         // it removes errors when run commands on shutdown.
-        exehacker.nopping('skip-command-list-destruction', 'ScriptEngine::~ScriptEngine', 435, [
+        procHacker.nopping('skip-command-list-destruction', 'ScriptEngine::~ScriptEngine', 435, [
             0x48, 0x8D, 0x4B, 0x78,			// lea         rcx,[rbx+78h]  
             0xE8, 0x00, 0x00, 0x00, 0x00,	// call        std::deque<ScriptCommand,std::allocator<ScriptCommand> >::_Tidy (07FF7ED6A00E0h)  
         ], [5, 9]);
 
         // enable script
-        exehacker.nopping('force-enable-script', 'MinecraftServerScriptEngine::onServerThreadStarted', 0x42, [
+        procHacker.nopping('force-enable-script', 'MinecraftServerScriptEngine::onServerThreadStarted', 0x42, [
             0xE8, 0xE9, 0x9F, 0xF3, 0xFF, 0x84, 0xC0, 0x0F, 
             0x84, 0x6A, 0x01, 0x00, 0x00, 0x48, 0x8B, 0x86, 
             0x28, 0x02, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x75, 
@@ -375,7 +375,7 @@ export namespace bedrockServer
         // BDS is change cwd to bedrock_server.exe
         // this code patchs to skip that.
         // but it's useless maybe
-        // exehacker.nopping('skip-change-working-directory', 'main', 0x43a, [
+        // procHacker.nopping('skip-change-working-directory', 'main', 0x43a, [
         // 	0x48, 0x8D, 0x4D, 0x50, 0xE8, 0x9D, 0x56, 0xCB,
         // 	0x00, 0x48, 0x83, 0x78, 0x18, 0x10, 0x72, 0x03,
         // 	0x48, 0x8B, 0x00, 0x48, 0x8B, 0xC8, 0xFF, 0x15,
@@ -439,13 +439,13 @@ export namespace bedrockServer
         const [threadHandle] = capi.createThread(wrapped_main);
 
         // skip to create the console of BDS
-        exehacker.nopping('skip-bedrock-console-object', 'ScriptEngine::initialize', 0x287, [
+        procHacker.nopping('skip-bedrock-console-object', 'ScriptEngine::initialize', 0x287, [
             0x4C, 0x8D, 0x4D, 0xD8, 0x4C, 0x8D, 0x05, 0x36, // lea r9,qword ptr ss:[rbp-28]
             0x75, 0x19, 0x01, 0x48, 0x8D, 0x55, 0xE8, 0x41, // lea r8,qword ptr ds:[7FF76658D9E0]
             0xFF, 0xD2, 0x84, 0xC0, 0x74, 0xA6              // lea rdx,qword ptr ss:[rbp-18]
         ], [ 7, 11 ]);
 
-        // exehacker.write('ScriptEngine::initialize', 0x287, asm().debugBreak());
+        // procHacker.write('ScriptEngine::initialize', 0x287, asm().debugBreak());
 
         // hook on update
         const updateWithSleep = asm()
@@ -456,7 +456,7 @@ export namespace bedrockServer
         .jmp64(makefunc.np(()=>updateEvTarget.fire(), RawTypeId.Void, null), Register.rax)
         .ret()
         .alloc();
-        exehacker.patching('update-hook', '<lambda_85c8d3d148027f864c62d97cac0c7e52>::operator()', 0x69e, 
+        procHacker.patching('update-hook', '<lambda_85c8d3d148027f864c62d97cac0c7e52>::operator()', 0x69e, 
             updateWithSleep, Register.rcx, true, [
                 0x7C, 0x4A, // jl bedrock_server.7FF7E450BB9A
                 0xFF, 0x15, 0x92, 0xDA, 0xC1, 0x00, // call qword ptr ds:[<&_Query_perf_frequency>]
@@ -491,19 +491,26 @@ export namespace bedrockServer
 
         // hook on script starting
         // this hooking point is slower than system.initlaize.
-        exehacker.hooking('script-starting-hook', 'ScriptEngine::startScriptLoading', 
+        procHacker.hooking('ScriptEngine::startScriptLoading', 
             makefunc.np((scriptEngine:VoidPointer)=>{
-                cgate.nodeLoopOnce();
-                
-                bd_server.serverInstance = serverInstanceDest.getPointerAs(bd_server.ServerInstance);
-                nimodule.networkHandler = bd_server.serverInstance.networkHandler;
-                openEvTarget.fire();
-                asyncResolve();
-                _tickCallback();
-                
-                makefunc.js(proc['ScriptEngine::_processSystemInitialize'], RawTypeId.Void, null, VoidPointer)(scriptEngine);
-                _tickCallback();
-                cgate.nodeLoopOnce();
+                try
+                {
+                    cgate.nodeLoopOnce();
+                    
+                    bd_server.serverInstance = serverInstanceDest.getPointerAs(bd_server.ServerInstance);
+                    nimodule.networkHandler = bd_server.serverInstance.networkHandler;
+                    openEvTarget.fire();
+                    asyncResolve();
+                    _tickCallback();
+                    
+                    procHacker.js('ScriptEngine::_processSystemInitialize', RawTypeId.Void, null, VoidPointer)(scriptEngine);
+                    _tickCallback();
+                    cgate.nodeLoopOnce();
+                }
+                catch (err)
+                {
+                    console.error(remapStack(err.stack));
+                }
             }, RawTypeId.Void, null, VoidPointer));
     }
 
@@ -526,51 +533,72 @@ export namespace bedrockServer
         commandQueue.enqueue(commandQueueBuffer);
     }
 
-    export class DefaultStdInHandler
+    let stdInHandler:DefaultStdInHandler|null = null;
+
+    export abstract class DefaultStdInHandler
+    {
+        protected online:(line:string)=>void = executeCommandOnConsole;
+        protected readonly onclose = ()=>{
+            this.close();
+        };
+
+        protected constructor()
+        {
+        }
+    
+        abstract close():void;
+
+        static install():DefaultStdInHandler
+        {
+            if (stdInHandler !== null) throw remapError(Error('Already opened'));
+            return stdInHandler = new DefaultStdInHandlerGetLine;
+        }
+    }
+
+    /**
+     * this handler has bugs on Linux+Wine
+     */
+    class DefaultStdInHandlerJs extends DefaultStdInHandler
     {
         private readonly rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
           });
     
-        private online:(line:string)=>void = executeCommandOnConsole;
-        private readonly onclose = ()=>{
-            this.close();
-        };
-
-        private constructor()
+        constructor()
         {
+            super();
+            
             this.rl.on('line', line=>this.online(line));
             close.on(this.onclose);
         }
-    
+
         close():void
         {
-            if (DefaultStdInHandler.instance === null) return;
-            console.assert(DefaultStdInHandler.instance !== null);
-            DefaultStdInHandler.instance = null;
+            if (stdInHandler === null) return;
+            console.assert(stdInHandler !== null);
+            stdInHandler = null;
             this.rl.close();
             this.rl.removeAllListeners();
             close.remove(this.onclose);
         }
-    
-        closeWithKeyWait():Promise<void>
+    }
+
+    class DefaultStdInHandlerGetLine extends DefaultStdInHandler
+    {    
+        private readonly getline = new GetLine(line=>this.online(line));
+        constructor()
         {
-            if (DefaultStdInHandler.instance === null) return Promise.resolve();
-            if (this.onclose !== executeCommandOnConsole)  return Promise.resolve();
-            return new Promise(resolve=>{
-                this.online = ()=>{
-                    this.close();
-                    resolve();
-                };
-            });
+            super();
+            close.on(this.onclose);
         }
 
-        private static instance:DefaultStdInHandler|null = null;
-        static install():DefaultStdInHandler
+        close():void
         {
-            if (DefaultStdInHandler.instance !== null) throw remapError(Error('Already opened'));
-            return DefaultStdInHandler.instance = new DefaultStdInHandler;
+            if (stdInHandler === null) return;
+            console.assert(stdInHandler !== null);
+            stdInHandler = null;
+            this.getline.close();
         }
     }
 }

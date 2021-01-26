@@ -6,6 +6,8 @@ import { ConnectionReqeust } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
 
+Packet.abstract({}, 0x28);
+
 export class LoginPacket extends Packet
 {
 	u5:uint32_t; //0x184

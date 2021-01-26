@@ -18,6 +18,10 @@ export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends Function ?
 
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
 
+const isNativeClass = Symbol();
+const isInherited = Symbol();
+const offsetmap = Symbol();
+
 export interface NativeClassType<T extends NativeClass> extends Type<T>
 {
     new():T;
@@ -26,13 +30,13 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     define<T extends NativeClass>(this:NativeClassType<T>, fields:StructureFields<T>, defineSize?:number|null, abstract?:boolean):void;
 }
 
-const isNativeClass = Symbol();
-
 export class NativeClass extends StructurePointer
 {
     static readonly [NativeType.size]:number = 0;
     static [StructurePointer.contentSize]:number = 0;
     static readonly [isNativeClass] = true;
+    static readonly [isInherited] = true;
+    static readonly [offsetmap] = {};
 
     static isNativeClassType(type:{}):type is typeof NativeClass
     {
@@ -133,9 +137,23 @@ export class NativeClass extends StructurePointer
             clazz[NativeType.descriptor] = wrapperDescriptor;
         }
 
+        if (this.hasOwnProperty(isInherited))
+        {
+            throw Error('Cannot define structure of already inherited NativeClass');
+        }
+        {
+            let node = this.__proto__;
+            while (!node.hasOwnProperty(isInherited))
+            {
+                node[isInherited] = true;
+                node = node.__proto__;
+            }
+        }
         let offset:number|null = this.__proto__[NativeType.size];
         let size = offset;
 
+        const offmap:Record<string, number> = (clazz as any)[offsetmap] = {};
+        
         const propmap = new NativeDescriptorBuilder;
         for (const key in fields) {
             let type:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
@@ -146,6 +164,7 @@ export class NativeClass extends StructurePointer
             }
             if (offset === null) throw Error('Cannot set fields without offset when extends abstract class');
             type[NativeType.descriptor](propmap, key, offset);
+            offmap[key] = offset;
             const sizeofType = type[NativeType.size];
             if (sizeofType === null) offset = null;
             else offset += sizeofType;
@@ -198,7 +217,13 @@ export class NativeClass extends StructurePointer
     {
         return refSingleton.newInstance(this, ()=>makeReference(this));
     }
+
+    static offsetOf<T>(this:{new():T}, field:NonFunctionParams<T>|symbol):number
+    {
+        return (this as any)[offsetmap][field]!;
+    }
 }
+type NonFunctionParams<T> = Exclude<{[key in keyof T]: T[key] extends (...args:any[])=>any ? never : key}[keyof T], undefined>;
 
 function wrapperGetter<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
     return (this as any)[makefunc.np2js](ptr.addAs(this, offset));
@@ -391,6 +416,9 @@ export declare class MantleClass extends NativeClass
     interlockedCompareExchange16(exchange:number, compare:number, offset?:number):number;
     interlockedCompareExchange32(exchange:number, compare:number, offset?:number):number;
     interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
+    
+    getJsValueRef(offset?:number):any;
+    setJsValueRef(value:any, offset?:number):void;
 }
 exports.MantleClass = NativeClass;
 
