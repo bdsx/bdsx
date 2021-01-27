@@ -11,7 +11,7 @@ import { makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
 import { NativeClass } from "./nativeclass";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
-import { remapStack } from "./source-map-support";
+import { remapAndPrintError } from "./source-map-support";
 import { _tickCallback } from "./util";
 
 const MAX_PACKET_ID = 0x100;
@@ -121,7 +121,7 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(remapStack(err.stack));
+                remapAndPrintError(err);
                 return null;
             }
         }
@@ -182,7 +182,7 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(remapStack(err.stack));
+                remapAndPrintError(err);
             }
             return result;
         }
@@ -274,7 +274,7 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(remapStack(err.stack));
+                remapAndPrintError(err);
             }
         }
         procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, 
@@ -311,7 +311,7 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(remapStack(err.stack));
+                remapAndPrintError(err);
             }
         }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
 

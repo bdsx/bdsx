@@ -1,27 +1,8 @@
-
 cwd=$(pwd)
-
 SCRIPT=$(readlink -f "$0")
-SCRIPTDIR=$(dirname "$SCRIPT")
-cd $SCRIPTDIR
+cd $(dirname "$SCRIPT")
 
-if [ ! -d "./node_modules" ] 
-then
-  if ! command -v npm &> /dev/null
-  then
-    echo 'Error: bdsx requires npm. Please install node.js first' >&2
-    exit $?
-  fi
-  npm i
-fi
-
-if ! command -v node &> /dev/null
-then
-  echo 'Error: bdsx requires node. Please install node.js first' >&2
-  exit $?
-fi
-
-npm run -s install_bds -- $@ 
+if [ ! -d "./node_modules" ]; then; ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
 if command -v wine &> /dev/null

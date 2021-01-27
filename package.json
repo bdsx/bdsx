@@ -6,7 +6,8 @@
   "main": "./dist/bundle.dist.js",
   "author": "YOU!",
   "scripts": {
-    "install_bds": "node ./bdsx/installer ./bedrock_server",
+    "postinstall": "node ./bdsx/installer ./bedrock_server",
+    "install_bds": "echo Please use 'npm i' instead",
     "watch": "if-tsb -w",
     "build": "if-tsb"
   },
@@ -14,7 +15,6 @@
     "@puresamari/ts-bundler": "^0.2.0",
     "colors": "^1.4.0",
     "follow-redirects": "^1.13.1",
-    "fstream": "^1.0.12",
     "krevent": "^2.2.0",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",

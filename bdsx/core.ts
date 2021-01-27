@@ -836,7 +836,7 @@ export declare namespace cxxException
     export const cxxthrow:VoidPointer;
     
     /**
-     * void trycatch(const char*);
+     * void cxxthrowString(const char*);
      */
     export const cxxthrowString:VoidPointer;
 }

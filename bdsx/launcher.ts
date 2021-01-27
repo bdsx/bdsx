@@ -7,9 +7,10 @@ import { hookingForCommand } from "./command";
 import { CANCEL, Encoding, RawTypeId } from "./common";
 import { AllocatedPointer, bedrock_server_exe, cgate, ipfilter, jshook, makefunc, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
+import { GetLine } from "./getline";
 import { CxxString, NativeType } from "./nativetype";
 import { nethook } from "./nethook";
-import { remapError, remapStack } from "./source-map-support";
+import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
 import { _tickCallback } from "./util";
 import { EXCEPTION_BREAKPOINT } from "./windows_h";
 
@@ -17,7 +18,6 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
-import { GetLine } from "./getline";
 
 declare module 'colors'
 {
@@ -506,7 +506,7 @@ export namespace bedrockServer
                 }
                 catch (err)
                 {
-                    console.error(remapStack(err.stack));
+                    remapAndPrintError(err);
                 }
             }, RawTypeId.Void, null, VoidPointer), 
             [Register.rcx], []);

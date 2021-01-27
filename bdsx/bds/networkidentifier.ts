@@ -7,8 +7,9 @@ import { NativeClass } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
+import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
-import { Event, CapsuledEvent } from "krevent";
+import { CapsuledEvent, Event } from "krevent";
 import { makefunc, StaticPointer, VoidPointer } from "../core";
 import { Actor } from "./actor";
 import { Packet } from "./packet";
@@ -133,8 +134,15 @@ export class NetworkIdentifier extends NativeClass implements Hashable
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
-    closeEvTarget.fire(ni);
-    identifiers.delete(ni);
-    _tickCallback();
+    try
+    {
+        closeEvTarget.fire(ni);
+        identifiers.delete(ni);
+        _tickCallback();
+    }
+    catch (err)
+    {
+        remapAndPrintError(err);
+    }
 }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
     [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
