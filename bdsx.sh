@@ -35,6 +35,11 @@ else
   exit $?
 fi
 
+#wine_ver=`wine --version| cut -d'-' -f 2`
+#wine_ver_1=`echo wine_ver| cut -d'.' -f 1`
+#wine_ver_2=`echo wine_ver| cut -d'.' -f 2`
+#wine_ver_3=`echo wine_ver| cut -d'.' -f 3`
+
 npm run -s build
 if [ $? != 0 ]; then exit $?; fi
 

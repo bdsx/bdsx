@@ -169,7 +169,7 @@ bedrockServer.error.on(err => {
     // return false; // Suppress default error outputs
 });
 system.initialize = ()=>{
-    eval("undefined_identifier")
+    eval("undefined_identifier");
 };
 
 // Transfer Server
@@ -183,9 +183,9 @@ function transferServer(networkIdentifier:NetworkIdentifier, address:string, por
     transferPacket.dispose();
 }
 
-// API Hooking
+// Low Level - API Hooking
 import { ProcHacker } from "bdsx/prochacker";
-import { pdb } from "bdsx/core";
+import { NativePointer, pdb, StaticPointer } from "bdsx/core";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { SYMOPT_UNDNAME } from "bdsx/common";
 import { GameMode } from "bdsx/bds/gamemode";
@@ -213,3 +213,53 @@ function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean
 
 // bool GameMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
 const originalFunc = procHacker.hooking('GameMode::destroyBlock', RawTypeId.Boolean, null, GameMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);
+
+
+// Low Level - define C++ class or structure
+import { NativeClass } from "bdsx/nativeclass";
+import { int8_t, int16_t, int32_t } from "bdsx/nativetype";
+class SampleStructure extends NativeClass
+{
+    a:int32_t;
+    b:int16_t;
+    c:int8_t;
+    d:int32_t;
+}
+SampleStructure.define({
+    a:int32_t,
+    b:int16_t,
+    c:int8_t,
+    d:int32_t,
+});
+/**
+ * struct SampleStructure
+ * {
+ *     int32_t a;
+ *     int16_t b;
+ *     int8_t c;
+ *     int32_t d;
+ * };
+ */
+
+/**
+ * it allocates itself if it's received 'true'
+ */
+const obj = new SampleStructure(true);
+const pointer = new NativePointer(obj);
+
+// full bits is -1
+obj.a = 0xffffffff;
+console.log(obj.a);
+console.assert(obj.a === -1);
+
+// &obj.a == (address of obj + 0);
+console.assert(obj.a === pointer.getInt32(0));
+
+// truncated without 8bits
+obj.c = 0xffffff01;
+console.assert(obj.c === 1 && obj.c === pointer.getInt8(6));
+
+// &obj.d == (address of obj + 8);
+// alignment test
+obj.d = 123;
+console.assert(obj.d === pointer.getInt32(8));

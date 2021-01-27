@@ -133,12 +133,12 @@ export class NativeClass extends StructurePointer
     /**
      * Cannot construct & Unknown size
      */
-    static abstract<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number):void
+    static abstract<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number, defineAlign?:number|null):void
     {
-        (this as any).define(fields, defineSize, true);
+        (this as any).define(fields, defineSize, defineAlign, true);
     }
 
-    static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, abstract:boolean=false):void
+    static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract:boolean=false):void
     {
         const clazz = this as NativeClassType<T>;
         if (makefunc.np2js in clazz)
@@ -161,6 +161,7 @@ export class NativeClass extends StructurePointer
         }
         let offset:number|null = this.__proto__[NativeType.size];
         let size = offset;
+        let align:number = defineAlign != null ? defineAlign : this.__proto__[NativeType.align];
 
         const offmap:Record<string, number> = (clazz as any)[offsetmap] = {};
         
@@ -173,11 +174,18 @@ export class NativeClass extends StructurePointer
                 type = type[0];
             }
             if (offset === null) throw Error('Cannot set fields without offset when extends abstract class');
+            const alignofType = type[NativeType.align];
+
+            offset = (((offset + alignofType - 1) / alignofType)|0)*alignofType;
+
             type[NativeType.descriptor](propmap, key, offset);
             offmap[key] = offset;
             const sizeofType = type[NativeType.size];
+            if (defineAlign == null && alignofType > align) align = alignofType;
+
             if (sizeofType === null) offset = null;
             else offset += sizeofType;
+
             if (size !== null)
             {
                 if (offset !== null && offset > size) size = offset;
@@ -206,6 +214,7 @@ export class NativeClass extends StructurePointer
         clazz[StructurePointer.contentSize] = 
         this.prototype[NativeType.size] = 
         clazz[NativeType.size] = defineSize != null ? defineSize : abstract ? null : size;
+        clazz[NativeType.align] = align;
         
         Object.defineProperties(this.prototype, propmap.desc);
     }
@@ -233,6 +242,8 @@ export class NativeClass extends StructurePointer
         return (this as any)[offsetmap][field]!;
     }
 }
+NativeClass.prototype[NativeType.size] = 0;
+
 type NonFunctionParams<T> = Exclude<{[key in keyof T]: T[key] extends (...args:any[])=>any ? never : key}[keyof T], undefined>;
 
 function wrapperGetter<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
@@ -304,6 +315,7 @@ export class NativeArray<T> extends PrivatePointer
             builder.dtor_code += `this.${key}[NativeType.dtor]()\n`;
         }
     }
+    static readonly [NativeType.align]:number = 1;
 
     static make<T>(itemType:Type<T>, count:number):NativeArrayType<T>
     {
@@ -320,13 +332,14 @@ export class NativeArray<T> extends PrivatePointer
         }
         class NativeArrayImpl extends NativeArray<T>
         {
+            static readonly [NativeType.size] = off;
+            static readonly [NativeType.align] = itemType[NativeType.align];
         }
         Object.defineProperties(NativeArrayImpl.prototype, propmap.desc);
         return NativeArrayImpl;
     }
 }
 
-NativeClass.prototype[NativeType.size] = 0;
 
 export declare class MantleClass extends NativeClass
 {
@@ -438,6 +451,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
     class Pointer extends Parent
     {
         static readonly [NativeType.size] = 8;
+        static readonly [NativeType.align] = 8;
         static readonly [StructurePointer.contentSize]:number;
 
         constructor()
