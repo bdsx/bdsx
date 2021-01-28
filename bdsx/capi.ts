@@ -11,10 +11,10 @@ export namespace capi
     export const getJsValueRef:(value:any)=>VoidPointer = makefunc.js(
         asm().mov_r_r(Register.rax, Register.rcx).ret().alloc(), VoidPointer, null, RawTypeId.JsValueRef);
 
-    export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null):[ThreadHandle, number]
+    export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null, stackSize:number = 0):[ThreadHandle, number]
     {
         const out = new Uint32Array(1);
-        const handle = dll.kernel32.CreateThread(null, 0, functionPointer, param, 0, out);
+        const handle = dll.kernel32.CreateThread(null, stackSize, functionPointer, param, 0, out);
         return [handle, out[0]];
     }
     

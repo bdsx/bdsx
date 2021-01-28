@@ -106,7 +106,6 @@ export namespace bedrockServer
             if (logEvTarget.fire(line, color) === CANCEL) return;
             console.log(color(line));
         }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
-        console.log('current thread id: '+capi.nodeThreadId);
 
         const logHookAsyncCb = asm()
         .mov_r_rp(Register.r8, Register.rcx, uv_async.sizeOfTask+8)
@@ -115,10 +114,11 @@ export namespace bedrockServer
         .jmp64(bedrockLogNp, Register.rax)
         .alloc();
 
+        console.log('current thread id: '+capi.nodeThreadId.toString(16));
         const logHook = asm()
         .sub_r_c(Register.rsp, 0x28)
         .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-        .mov_r_c(Register.rcx, asm.const_str('thread id: %d'))
+        .mov_r_c(Register.rcx, asm.const_str('thread id: %x'))
         .mov_r_c(Register.rdx, Register.rax)
         .call64(proc.printf, Register.rax)
         .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
@@ -444,7 +444,7 @@ export namespace bedrockServer
         // call main as a new thread
         // main will create a game thread.
         // and bdsx will hijack the game thread and run it on the node thread.
-        const [threadHandle] = capi.createThread(wrapped_main);
+        const [threadHandle] = capi.createThread(wrapped_main, null, 64*1024);
 
         // skip to create the console of BDS
         procHacker.nopping('skip-bedrock-console-object', 'ScriptEngine::initialize', 0x287, [
