@@ -52,6 +52,7 @@ const symbols = [
     'Json::Value::getMemberNames',
     'Json::Value::size',
     'MinecraftServerScriptEngine::onServerUpdateEnd',
+    'printf',
 ] as const;
 
 // decorated symbols

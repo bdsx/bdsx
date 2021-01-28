@@ -1,7 +1,7 @@
 import { asm, Register } from "./assembler";
 import { RawTypeId } from "./common";
-import { AllocatedPointer, makefunc, NativePointer, VoidPointer } from "./core";
-import { dll, NativeModule, ThreadHandle } from "./dll";
+import { AllocatedPointer, makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
+import { dll, ThreadHandle } from "./dll";
 
 export namespace capi
 {
@@ -37,5 +37,14 @@ export namespace capi
     export function isRunningOnWine():boolean
     {
         return dll.ntdll.wine_get_version !== null;
+    }
+
+    /**
+     * Keep the object from GC
+     */
+    export function permanent<T>(v:T):T
+    {
+        dll.ChakraCore.JsAddRef(v, null);
+        return v;
     }
 }

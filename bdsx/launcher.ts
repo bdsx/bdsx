@@ -106,6 +106,8 @@ export namespace bedrockServer
             if (logEvTarget.fire(line, color) === CANCEL) return;
             console.log(color(line));
         }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
+        console.log('current thread id: '+capi.nodeThreadId);
+
         const logHookAsyncCb = asm()
         .mov_r_rp(Register.r8, Register.rcx, uv_async.sizeOfTask+8)
         .lea_r_rp(Register.rdx, Register.rcx, uv_async.sizeOfTask+0x10)
@@ -113,6 +115,12 @@ export namespace bedrockServer
         .jmp64(bedrockLogNp, Register.rax)
         .alloc();
         const logHook = asm()
+        .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
+        .sub_r_c(Register.rsp, 0x28)
+        .mov_r_c(Register.rcx, asm.const_str('thread id: %d'))
+        .mov_r_c(Register.rdx, Register.rax)
+        .call64(proc.printf, Register.rax)
+        .add_r_c(Register.rsp, 0x28)
         .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
         .cmp_r_c(Register.rax, capi.nodeThreadId)
         .jne(23)

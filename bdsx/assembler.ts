@@ -1,5 +1,5 @@
 import { bin } from "./bin";
-import { cgate, FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { cgate, FunctionFromTypes_js, makefunc, MakeFuncOptions, NativePointer, ParamType, ReturnType, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 
 export enum Register
@@ -95,7 +95,7 @@ export enum JumpOperation
 const INT8_MIN = -0x80;
 const INT8_MAX = 0x7f;
 
-type Value64 = number|string|VoidPointer;
+type Value64 = number|string|VoidPointer|Uint8Array;
 
 function split64bits(value:Value64):[number, number]
 {
@@ -104,6 +104,12 @@ function split64bits(value:Value64):[number, number]
     case 'string': 
         return bin.int32_2(value);
     case 'object':
+        if (value instanceof Uint8Array)
+        {
+            const ptr = new NativePointer;
+            ptr.setAddressFromBuffer(value);
+            value = ptr;
+        }
         return [value.getAddressLow(), value.getAddressHigh()];
     case 'number':
         const lowbits = value|0;
@@ -123,6 +129,12 @@ function is32Bits(value:Value64):boolean
         const [low, high] = bin.int32_2(value);
         return high === (low >> 31);
     case 'object':
+        if (value instanceof Uint8Array)
+        {
+            const ptr = new NativePointer;
+            ptr.setAddressFromBuffer(value);
+            value = ptr;
+        }
         return value.getAddressHigh() === (value.getAddressLow() >> 31);
     case 'number':
         return value === (value|0);
@@ -879,6 +891,16 @@ export class X64Assembler {
 export function asm():X64Assembler
 {
     return new X64Assembler;
+}
+
+export namespace asm
+{
+    export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer
+    {
+        const buf = Buffer.from(str+'\0', encoding);
+        dll.ChakraCore.JsAddRef(buf, null);
+        return buf;
+    }
 }
 
 export function debugGate(func:VoidPointer):VoidPointer
