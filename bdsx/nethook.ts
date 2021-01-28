@@ -224,10 +224,11 @@ export namespace nethook
         procHacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
             asm()
             .cmp_r_c(Register.r8, 0x7f)
-            .jnz(9)
+            .jne_label('violation')
             .mov_r_rp(Register.rax, Register.rsp, 0x28)
             .mov_rp_c(Register.rax, 0, 0, OperationSize.byte)
             .ret()
+            .label('violation')
             .write(...packetViolationOriginalCode)
             .jmp64(proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length), Register.rax)
             .alloc(), 

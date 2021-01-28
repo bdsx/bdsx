@@ -118,14 +118,13 @@ export namespace bedrockServer
         const logHook = asm()
         .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
         .cmp_r_c(Register.rax, capi.nodeThreadId)
-        .jne(23)
+        .jne_label('async_post')
         .lea_r_rp(Register.rdx, Register.rsp, 0x58)
         .mov_r_r(Register.rcx, Register.rdi)
         .mov_r_r(Register.r8, Register.rbx)
         .jmp64(bedrockLogNp, Register.rax)
+        .label('async_post')
         .sub_r_c(Register.rsp, 0x28)
-        .mov_r_c(Register.rcx, asm.const_str("test\n"))
-        .call64(proc.printf, Register.rax)
         .lea_r_rp(Register.rdx, Register.rbx, 0x11)
         .mov_r_c(Register.rcx, logHookAsyncCb)
         .call64(uv_async.alloc, Register.rax)
@@ -140,7 +139,6 @@ export namespace bedrockServer
         .add_r_c(Register.rsp, 0x28)
         .jmp64(uv_async.post, Register.rax)
         .alloc();
-        console.log(hex(logHook.getBuffer(16)));
         
         procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
             0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |

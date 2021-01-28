@@ -298,6 +298,7 @@ export class X64Assembler {
 
     buffer():Uint8Array
     {
+        this._normalize();
         return this.chunk.buffer();
     }
 
@@ -979,12 +980,11 @@ export class X64Assembler {
         let now = this.chunk;
         let prev = now.prev!;
 
-        while (prev.jumpLabel !== key)
+        while (prev !== null && prev.jumpLabel === key)
         {
             this._resolveJump(prev, label, true);
             now = prev;
             prev = now.prev!;
-            if (prev == null) break;
         }
         return this;
     }

@@ -230,8 +230,9 @@ export function hookingForActor():void
 		.call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
 		.pop_r(Register.rcx)
 		.cmp_r_c(Register.rax, capi.nodeThreadId)
-		.jne(12)
+		.jne_label('skip_dtor')
 		.jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
+		.label('skip_dtor')
 		.ret()
 		.alloc(),
 		[Register.rcx], []
