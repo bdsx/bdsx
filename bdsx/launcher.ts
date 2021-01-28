@@ -444,7 +444,7 @@ export namespace bedrockServer
         // call main as a new thread
         // main will create a game thread.
         // and bdsx will hijack the game thread and run it on the node thread.
-        const [threadHandle] = capi.createThread(wrapped_main, null, 64*1024);
+        const [threadHandle] = capi.createThread(wrapped_main, null, 96*1024);
 
         // skip to create the console of BDS
         procHacker.nopping('skip-bedrock-console-object', 'ScriptEngine::initialize', 0x287, [
