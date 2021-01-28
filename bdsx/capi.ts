@@ -1,6 +1,6 @@
 import { asm, Register } from "./assembler";
 import { RawTypeId } from "./common";
-import { makefunc, NativePointer, VoidPointer } from "./core";
+import { AllocatedPointer, makefunc, NativePointer, VoidPointer } from "./core";
 import { dll, NativeModule, ThreadHandle } from "./dll";
 
 export namespace capi
@@ -37,5 +37,27 @@ export namespace capi
     export function isRunningOnWine():boolean
     {
         return dll.ntdll.wine_get_version !== null;
+    }
+
+    // if (isRunningOnWine())
+    {
+        const str = new AllocatedPointer(100);
+        str.setString("abc");
+
+        const value = makefunc.js(asm()
+            .sub_r_c(Register.rsp, 0x38)
+            .mov_rp_c(Register.rsp, 0x28, 0)
+            .mov_rp_c(Register.rsp, 0x20, 0)
+            .mov_r_c(Register.rcx, 0)
+            .mov_r_c(Register.rdx, 0)
+            .mov_r_c(Register.r8, 0)
+            .mov_r_c(Register.r9, str)
+            .call64(dll.ucrtbase.__stdio_common_vsprintf, Register.rax)
+            .add_r_c(Register.rsp, 0x38)
+            .ret()
+            .alloc(), RawTypeId.Int32)();
+        console.log(value);
+
+        //__stdio_common_vsprintf
     }
 }

@@ -39,9 +39,7 @@ GIT
 ### Starting with VSCode
 ```sh
 1. Open the project with VSCode
-2. Open a terminal(Ctrl+Shift+｀) and run
-npm i # install modules
-npm run install_bds # install bedrock server
+2. Open a terminal(Ctrl+Shift+｀) and run `npm i`
 3. Press `Ctrl+Shift+B` # Build with watch mode
 4. Press `F5` # run
 ```
