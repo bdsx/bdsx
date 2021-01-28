@@ -11,7 +11,7 @@ import { GetLine } from "./getline";
 import { CxxString, NativeType } from "./nativetype";
 import { nethook } from "./nethook";
 import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
-import { _tickCallback } from "./util";
+import { hex, _tickCallback } from "./util";
 import { EXCEPTION_BREAKPOINT } from "./windows_h";
 
 import readline = require("readline");
@@ -114,15 +114,9 @@ export namespace bedrockServer
         .jmp64(bedrockLogNp, Register.rax)
         .alloc();
 
-        console.log('current thread id: '+capi.nodeThreadId.toString(16));
+        console.log('node thread id: '+capi.nodeThreadId);
         const logHook = asm()
-        .sub_r_c(Register.rsp, 0x28)
         .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-        .mov_r_c(Register.rcx, asm.const_str('thread id: %x'))
-        .mov_r_c(Register.rdx, Register.rax)
-        .call64(proc.printf, Register.rax)
-        .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-        .add_r_c(Register.rsp, 0x28)
         .cmp_r_c(Register.rax, capi.nodeThreadId)
         .jne(23)
         .lea_r_rp(Register.rdx, Register.rsp, 0x58)
@@ -130,7 +124,9 @@ export namespace bedrockServer
         .mov_r_r(Register.r8, Register.rbx)
         .jmp64(bedrockLogNp, Register.rax)
         .sub_r_c(Register.rsp, 0x28)
-        .lea_r_rp(Register.rdx, Register.rax, 0x11)
+        .mov_r_c(Register.rcx, asm.const_str("test\n"))
+        .call64(proc.printf, Register.rax)
+        .lea_r_rp(Register.rdx, Register.rbx, 0x11)
         .mov_r_c(Register.rcx, logHookAsyncCb)
         .call64(uv_async.alloc, Register.rax)
         .mov_rp_r(Register.rax, uv_async.sizeOfTask+0, Register.rdi)
@@ -144,6 +140,7 @@ export namespace bedrockServer
         .add_r_c(Register.rsp, 0x28)
         .jmp64(uv_async.post, Register.rax)
         .alloc();
+        console.log(hex(logHook.getBuffer(16)));
         
         procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
             0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |
@@ -444,7 +441,7 @@ export namespace bedrockServer
         // call main as a new thread
         // main will create a game thread.
         // and bdsx will hijack the game thread and run it on the node thread.
-        const [threadHandle] = capi.createThread(wrapped_main, null, 96*1024);
+        const [threadHandle] = capi.createThread(wrapped_main, null);
 
         // skip to create the console of BDS
         procHacker.nopping('skip-bedrock-console-object', 'ScriptEngine::initialize', 0x287, [

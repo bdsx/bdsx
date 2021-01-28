@@ -7,7 +7,7 @@
   "author": "YOU!",
   "scripts": {
     "postinstall": "node ./bdsx/installer ./bedrock_server",
-    "install_bds": "echo Please use 'npm i' instead",
+    "install_bds": "node ./bdsx/installer ./bedrock_server",
     "watch": "if-tsb -w",
     "build": "if-tsb"
   },

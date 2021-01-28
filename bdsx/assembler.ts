@@ -143,14 +143,130 @@ function is32Bits(value:Value64):boolean
     }
 }
 
+class AsmChunk
+{
+    public array = new Uint8Array(64);
+    public size = 0;
+
+    public prev:AsmChunk|null = null;
+    public next:AsmChunk|null = null;
+    public jumpInfo:JumpInfo|null = null;
+    public jumpLabel:string|null = null;
+    public jumpArgs:any[]|null = null;
+    public readonly labels:AsmLabel[] = [];
+    public readonly unresolvedJumps:AsmUnresolvedJump[] = [];
+
+    put(v:number):this
+    {
+        const osize = this.size;
+        const nsize = osize + 1;
+        this.size = nsize;
+        if (nsize > this.array.length)
+        {
+            const narray = new Uint8Array(this.array.length*2);
+            narray.set(this.array.subarray(0, osize));
+            this.array = narray;
+        }
+        this.array[osize] = v;
+        return this;
+    }
+
+    write(values:number[]|Uint8Array):this
+    {
+        const n = values.length;
+        const osize = this.size;
+        const nsize = osize + n;
+        this.size = nsize;
+        
+        if (nsize > this.array.length)
+        {
+            const narray = new Uint8Array(Math.max(this.array.length*2, nsize));
+            narray.set(this.array.subarray(0, osize));
+            this.array = narray;
+        }
+        this.array.set(values, osize);
+        return this;
+    }
+
+    buffer():Uint8Array
+    {
+        return this.array.subarray(0, this.size);
+    }
+
+    removeNext():boolean
+    {
+        const chunk = this.next;
+        if (chunk === null) return false;
+
+        this.jumpLabel = chunk.jumpLabel;
+        this.jumpInfo = chunk.jumpInfo;
+        this.jumpArgs = chunk.jumpArgs;
+        
+        for (const label of chunk.labels)
+        {
+            label.chunk = this;
+            label.offset += this.size;
+        }
+        this.labels.push(...chunk.labels);
+        for (const jump of chunk.unresolvedJumps)
+        {
+            jump.offset += this.size;   
+        }
+        this.unresolvedJumps.push(...chunk.unresolvedJumps);
+        this.write(chunk.buffer());
+
+        const next = chunk.next;
+        this.next = next;
+        if (next !== null) next.prev = this;
+
+        chunk.labels.length = 0;
+        chunk.labels.length = 0;
+        chunk.jumpLabel = null;
+        chunk.jumpInfo = null;
+        chunk.jumpArgs = null;
+        chunk.next = null;
+        chunk.prev = null;
+        return true;
+    }
+}
+
+class AsmLabel
+{
+    constructor(
+        public chunk:AsmChunk, 
+        public offset:number)
+    {
+    }
+}
+
+class JumpInfo
+{
+    constructor(
+        public readonly byteSize:number,
+        public readonly dwordSize:number,
+        public readonly func:(this:X64Assembler, ...args:any[])=>X64Assembler)
+    {
+    }
+}
+
+class AsmUnresolvedJump
+{
+    constructor(
+        public offset:number,
+        public readonly isDword:boolean,
+        public readonly label:AsmLabel)
+    {
+    }
+}
+
 export class X64Assembler {
-    private array = new Uint8Array(64);
-    private _size = 0;
-    private readonly addrmap:Record<string, number> = {entry:0};
+
+    private chunk = new AsmChunk;
+    private readonly labels:Record<string, AsmLabel> = {entry:new AsmLabel(this.chunk, 0)};
 
     size():number
     {
-        return this._size;
+        return this.chunk.size;
     }
 
     connect(cb:(asm:X64Assembler)=>this):this
@@ -160,18 +276,7 @@ export class X64Assembler {
 
     write(...values:number[]):this
     {
-        const n = values.length;
-        const osize = this._size;
-        const nsize = osize + n;
-        this._size = nsize;
-        
-        if (nsize > this.array.length)
-        {
-            const narray = new Uint8Array(Math.max(this.array.length*2, nsize));
-            narray.set(this.array.subarray(0, osize));
-            this.array = narray;
-        }
-        this.array.set(values, osize);
+        this.chunk.write(values);
         return this;
     }
 
@@ -193,25 +298,28 @@ export class X64Assembler {
 
     buffer():Uint8Array
     {
-        return this.array.subarray(0, this._size);
+        return this.chunk.buffer();
     }
 
     alloc():StaticPointer
     {
-        const mem = cgate.allocExecutableMemory(this._size);
-        mem.setBuffer(this.array.subarray(0, this._size));
+        const mem = cgate.allocExecutableMemory(this.chunk.size);
+        mem.setBuffer(this.buffer());
         return mem;
     }
     
     allocs():{entry:StaticPointer; [key:string]:StaticPointer; }
     {
-        const mem = cgate.allocExecutableMemory(this._size);
-        mem.setBuffer(this.array.subarray(0, this._size));
-
+        const mem = this.alloc();
         const out:Record<string, StaticPointer> = {};
-        for (const key in this.addrmap)
+        for (const key in this.labels)
         {
-            out[key] = mem.add(this.addrmap[key]);
+            const pos = this.labels[key];
+            if (typeof pos !== 'number')
+            {
+                throw Error(`${key} label is not determined`);
+            }
+            out[key] = mem.add(pos);
         }
         return out as any;
     }
@@ -243,12 +351,6 @@ export class X64Assembler {
     {
         if (n === 3) return this.int3();
         return this.write(0xcd, n & 0xff);
-    }
-
-    label(key:string):this
-    {
-        this.addrmap[key] = this.size();
-        return this;
     }
 
     private _target(opcode:number, r:Register, offset:number, oper:MovOper)
@@ -431,9 +533,9 @@ export class X64Assembler {
         return this._jmp(isCall, r, 0, MovOper.Register);
     }
 
-    private _jmp_o(oper:JumpOperation, offset:number):this
+    private _jmp_o(oper:JumpOperation, offset:number, alwaysDwordSpace:boolean = false):this
     {
-        if (INT8_MIN <= offset && offset <= INT8_MAX)
+        if (!alwaysDwordSpace && INT8_MIN <= offset && offset <= INT8_MAX)
         {
             return this.write(0x70 | oper, offset);
         }
@@ -583,27 +685,8 @@ export class X64Assembler {
         return this;
     }
 
-    jmp_label(label:string):this
-    {
-        const size = this.size();
-        const addr = this.addrmap[label];
-        if (typeof addr !== 'number')
-        {
-            throw Error('asm does not support the forward jmp currently');
-        }
-        let offset = addr - size - 2;
-        if (INT8_MIN <= offset && offset <= INT8_MAX)
-        {
-            return this.jmp_c(offset);
-        }
-        else
-        {
-            return this.jmp_c(offset - 3);
-        }
-    }
-
-    jmp_c(offset:number):this {
-        if (INT8_MIN <= offset && offset <= INT8_MAX)
+    jmp_c(offset:number, alwaysDwordSpace:boolean = false):this {
+        if (!alwaysDwordSpace && INT8_MIN <= offset && offset <= INT8_MAX)
         {
             return this.write(0xeb, offset);
         }
@@ -886,7 +969,196 @@ export class X64Assembler {
         this.write(chr%128);
         return this;
     }
+
+    label(key:string):this
+    {
+        const label = new AsmLabel(this.chunk, this.chunk.size);
+        this.labels[key] = label;
+        this.chunk.labels.push(label);
+
+        let now = this.chunk;
+        let prev = now.prev!;
+
+        while (prev.jumpLabel !== key)
+        {
+            this._resolveJump(prev, label, true);
+            now = prev;
+            prev = now.prev!;
+            if (prev == null) break;
+        }
+        return this;
+    }
+
+    jmp_label(labelName:string):this
+    {
+        this.chunk.jumpInfo = X64Assembler.jmp_c_info;
+        this.chunk.jumpLabel = labelName;
+        this.chunk.jumpArgs = [];
+
+        const label = this.labels[labelName];
+        if (!label) return this._genChunk();
+        return this._resolveJump(this.chunk, label, false);
+    }
+    private _jmp_o_label(oper:JumpOperation, labelName:string):this
+    {
+        this.chunk.jumpInfo = X64Assembler.jmp_o_info;
+        this.chunk.jumpLabel = labelName;
+        this.chunk.jumpArgs = [oper];
+
+        const label = this.labels[labelName];
+        if (!label) return this._genChunk();
+        return this._resolveJump(this.chunk, label, false);
+    }
+
+    private _resolveJump(jumpChunk:AsmChunk, label:AsmLabel, forward:boolean):this
+    {
+        if (label.chunk === jumpChunk)
+        {
+            if (forward === true) throw Error(`cannot forward to self chunk`);
+            if (this.chunk !== jumpChunk) throw Error('is not front chunk');
+            const info = jumpChunk.jumpInfo!;
+            let offset = label.offset - jumpChunk.size;
+            offset -= info.byteSize;
+            if (offset < INT8_MIN || offset > INT8_MAX)
+            {
+                offset = offset - info.dwordSize + info.byteSize;
+            }
+            info.func.call(this, ...jumpChunk.jumpArgs!, offset);
+            
+            jumpChunk.jumpLabel = null;
+            jumpChunk.jumpInfo = null;
+            jumpChunk.jumpArgs = null;
+            return this;
+        }
+
+        const orichunk = this.chunk;
+        this.chunk = jumpChunk;
+        let offset = 0;
+        if (forward)
+        {
+            let chunk = jumpChunk.next!;
+            if (chunk === label.chunk)
+            {
+                const info = jumpChunk.jumpInfo!;
+                info.func.call(this, ...jumpChunk.jumpArgs!, label.offset);
+                jumpChunk.removeNext();
+                if (jumpChunk.next === null) this.chunk = jumpChunk;
+                else this.chunk = orichunk;
+                return this;
+            }
+
+            for (;;)
+            {
+                offset += chunk.size;
+                offset += chunk.jumpInfo!.dwordSize;
+                chunk = chunk.next!;
+                if (chunk === label.chunk)
+                {
+                    offset += label.offset;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            let chunk = jumpChunk;
+            for (;;)
+            {
+                offset -= chunk.jumpInfo!.dwordSize;
+                offset -= chunk.size;
+                if (chunk === label.chunk)
+                {
+                    offset += label.offset;
+                    break;
+                }
+                chunk = chunk.prev!;
+            }
+        }
+        
+        if (INT8_MIN <= offset && offset <= INT8_MAX)
+        {
+            jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, 0);
+            jumpChunk.unresolvedJumps.push(new AsmUnresolvedJump(jumpChunk.size-1, false, label));
+        }
+        else
+        {
+            jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, 0, true);
+            jumpChunk.unresolvedJumps.push(new AsmUnresolvedJump(jumpChunk.size-4, true, label));
+        }
+        jumpChunk.removeNext();
+        if (jumpChunk.next === null) this.chunk = jumpChunk;
+        else this.chunk = orichunk;
+        return this;
+    }
+    private _genChunk():this
+    {
+        const nbuf = new AsmChunk;
+        this.chunk.next = nbuf;
+        nbuf.prev = this.chunk;
+        this.chunk = nbuf;
+        return this;
+    }
+    private _normalize():this
+    {
+        let prev = this.chunk.prev;
+        while (prev !== null)
+        {
+            const labelName = prev.jumpLabel!;
+            const label = this.labels[labelName];
+            if (!label) throw Error(`${labelName}: Label not found`);
+            this._resolveJump(prev, label, true);
+            prev = prev.prev;
+        }
+
+        console.assert(this.chunk.next === null && this.chunk.prev === null, `chunk is remained`);
+        for (const jump of this.chunk.unresolvedJumps)
+        {
+            console.assert(jump.label.chunk === this.chunk, 'chunk is remained');
+
+            const arr = this.chunk.array;
+            let i = jump.offset;
+            if (jump.isDword)
+            {
+                const offset = jump.label.offset - jump.offset - 4;
+                arr[i++] = offset;
+                arr[i++] = offset >> 8;
+                arr[i++] = offset >> 16;
+                arr[i] = offset >> 24;
+            }
+            else
+            {
+                const offset = jump.label.offset - jump.offset - 1;;
+                console.assert(INT8_MIN <= offset && offset <= INT8_MAX, 'offset out of bounds');
+                arr[i] = offset;
+            }
+        }
+        this.chunk.unresolvedJumps.length = 0;
+        return this;
+    }
+    jz_label(label:string) { return this._jmp_o_label(JumpOperation.je, label); }
+    jnz_label(label:string) { return this._jmp_o_label(JumpOperation.jne, label); }
+    jo_label(label:string) { return this._jmp_o_label(JumpOperation.jo, label); }
+    jno_label(label:string) { return this._jmp_o_label(JumpOperation.jno, label); }
+    jb_label(label:string) { return this._jmp_o_label(JumpOperation.jb, label); }
+    jae_label(label:string) { return this._jmp_o_label(JumpOperation.jae, label); }
+    je_label(label:string) { return this._jmp_o_label(JumpOperation.je, label); }
+    jne_label(label:string) { return this._jmp_o_label(JumpOperation.jne, label); }
+    jbe_label(label:string) { return this._jmp_o_label(JumpOperation.jbe, label); }
+    ja_label(label:string) { return this._jmp_o_label(JumpOperation.ja, label); }
+    js_label(label:string) { return this._jmp_o_label(JumpOperation.js, label); }
+    jns_label(label:string) { return this._jmp_o_label(JumpOperation.jns, label); }
+    jp_label(label:string) { return this._jmp_o_label(JumpOperation.jp, label); }
+    jnp_label(label:string) { return this._jmp_o_label(JumpOperation.jnp, label); }
+    jl_label(label:string) { return this._jmp_o_label(JumpOperation.jl, label); }
+    jge_label(label:string) { return this._jmp_o_label(JumpOperation.jge, label); }
+    jle_label(label:string) { return this._jmp_o_label(JumpOperation.jle, label); }
+    jg_label(label:string) { return this._jmp_o_label(JumpOperation.jg, label); }
+
+
+    private static jmp_c_info = new JumpInfo(2, 5, X64Assembler.prototype.jmp_c);
+    private static jmp_o_info = new JumpInfo(2, 6, X64Assembler.prototype._jmp_o);
 }
+
 
 export function asm():X64Assembler
 {
