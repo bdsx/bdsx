@@ -185,34 +185,39 @@ function transferServer(networkIdentifier:NetworkIdentifier, address:string, por
 
 // Low Level - API Hooking
 import { ProcHacker } from "bdsx/prochacker";
-import { NativePointer, pdb, StaticPointer } from "bdsx/core";
+import { NativePointer, pdb } from "bdsx/core";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { SYMOPT_UNDNAME } from "bdsx/common";
 import { GameMode } from "bdsx/bds/gamemode";
+import { capi } from "bdsx";
 
-pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names
-const procHacker = ProcHacker.load('../pdbcache_by_example.ini', ['GameMode::destroyBlock']);
-pdb.setOptions(0); // reset the option
-pdb.close(); // close the pdb to reduce the resource usage.
 
-let halfMiss = false;
-function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean
+if (!capi.isRunningOnWine()) // Skip for Linux, pdb is not working on Wine.
 {
-    halfMiss = !halfMiss;
-    const ni = gameMode.actor.getNetworkIdentifier();
-    const packet = TextPacket.create();
-    console.log(ni.hash());
-    console.log(ni.getAddress());
-    packet.message = `${halfMiss ? 'missed' : 'destroyed'}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`;
-    packet.sendTo(ni);
-    packet.dispose();
-
-    if (halfMiss) return false;
-    return originalFunc(gameMode, blockPos, v);
+    pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names
+    const procHacker = ProcHacker.load('../pdbcache_by_example.ini', ['GameMode::destroyBlock']);
+    pdb.setOptions(0); // reset the option
+    pdb.close(); // close the pdb to reduce the resource usage.
+    
+    let halfMiss = false;
+    function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean
+    {
+        halfMiss = !halfMiss;
+        const ni = gameMode.actor.getNetworkIdentifier();
+        const packet = TextPacket.create();
+        console.log(ni.hash());
+        console.log(ni.getAddress());
+        packet.message = `${halfMiss ? 'missed' : 'destroyed'}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`;
+        packet.sendTo(ni);
+        packet.dispose();
+    
+        if (halfMiss) return false;
+        return originalFunc(gameMode, blockPos, v);
+    }
+    
+    // bool GameMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
+    const originalFunc = procHacker.hooking('GameMode::destroyBlock', RawTypeId.Boolean, null, GameMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);
 }
-
-// bool GameMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
-const originalFunc = procHacker.hooking('GameMode::destroyBlock', RawTypeId.Boolean, null, GameMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);
 
 
 // Low Level - define C++ class or structure
@@ -249,7 +254,6 @@ const pointer = new NativePointer(obj);
 
 // full bits is -1
 obj.a = 0xffffffff;
-console.log(obj.a);
 console.assert(obj.a === -1);
 
 // &obj.a == (address of obj + 0);
