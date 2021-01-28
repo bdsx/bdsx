@@ -183,7 +183,6 @@ export namespace dll {
 
         export const free = module.getFunction('free', RawTypeId.Void, null, VoidPointer);
 		export const malloc = module.getFunction('malloc', NativePointer, null, RawTypeId.FloatAsInt64);
-        export const __stdio_common_vsprintf = module.getProcAddress('__stdio_common_vsprintf');
     }
     export namespace vcruntime140 {
         export const module = NativeModule.load('vcruntime140.dll');
