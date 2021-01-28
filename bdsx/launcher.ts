@@ -143,7 +143,7 @@ export namespace bedrockServer
         .add_r_c(Register.rsp, 0x28)
         .jmp64(uv_async.post, Register.rax)
         .alloc();
-        procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
+        procHacker.nopping('hook-logging', 'BedrockLogOut', 0x8A, [
             0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |
             0xFF, 0x15, 0x33, 0x1B, 0xE4, 0x00,		//	| call qword ptr ds:[<&GetStdHandle>]                                 |
             0x83, 0xFF, 0x01,						//	| cmp edi,1                                                           |
@@ -166,6 +166,29 @@ export namespace bedrockServer
             0x48, 0x8D, 0x4C, 0x24, 0x50,			//	| lea rcx,qword ptr ss:[rsp+50]                                       | [rsp+50]:"LdrpInitializeProcess"
             0xFF, 0x15, 0x83, 0x1A, 0xE4, 0x00,		//	| call qword ptr ds:[<&OutputDebugStringA>]                           |
         ], [7, 11,  51, 55,  63, 67,  68, 72,  79, 83]);
+        // procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
+        //     0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |
+        //     0xFF, 0x15, 0x33, 0x1B, 0xE4, 0x00,		//	| call qword ptr ds:[<&GetStdHandle>]                                 |
+        //     0x83, 0xFF, 0x01,						//	| cmp edi,1                                                           |
+        //     0x75, 0x05,								//	| jne bedrock_server.7FF786A2273F                                     |
+        //     0x8D, 0x55, 0x08, 						//	| lea edx,qword ptr ss:[rbp+8]                                        |
+        //     0xEB, 0x19,								//	| jmp bedrock_server.7FF786A22758                                     |
+        //     0x83, 0xFF, 0x02, 						//	| cmp edi,2                                                           |
+        //     0x75, 0x05,								//	| jne bedrock_server.7FF786A22749                                     |
+        //     0x8D, 0x57, 0x0D, 						//	| lea edx,qword ptr ds:[rdi+D]                                        |
+        //     0xEB, 0x0F,								//	| jmp bedrock_server.7FF786A22758                                     |
+        //     0xBA, 0x0E, 0x00, 0x00, 0x00,			//	| mov edx,E                                                           |
+        //     0x83, 0xFF, 0x04,						//	| cmp edi,4                                                           |
+        //     0x74, 0x05,								//	| je bedrock_server.7FF786A22758                                      |
+        //     0xBA, 0x0C, 0x00, 0x00, 0x00,			//	| mov edx,C                                                           | C:'\f'
+        //     0x48, 0x8B, 0xC8, 						//	| mov rcx,rax                                                         |
+        //     0xFF, 0x15, 0x0F, 0x1B, 0xE4, 0x00,		//	| call qword ptr ds:[<&SetConsoleTextAttribute>]                      |
+        //     0x48, 0x8D, 0x54, 0x24, 0x50,			//	| lea rdx,qword ptr ss:[rsp+50]                                       | [rsp+50]:"LdrpInitializeProcess"
+        //     0x48, 0x8D, 0x0D, 0xC7, 0xF6, 0xEF, 0x00, // | lea rcx,qword ptr ds:[7FF787921E34]                                 | 00007FF787921E34:"%s"
+        //     0xE8, 0x3E, 0x86, 0xFC, 0xFF,			//	| call <bedrock_server.printf>                                        |
+        //     0x48, 0x8D, 0x4C, 0x24, 0x50,			//	| lea rcx,qword ptr ss:[rsp+50]                                       | [rsp+50]:"LdrpInitializeProcess"
+        //     0xFF, 0x15, 0x83, 0x1A, 0xE4, 0x00,		//	| call qword ptr ds:[<&OutputDebugStringA>]                           |
+        // ], [7, 11,  51, 55,  63, 67,  68, 72,  79, 83]);
 
         // void(*callback)(const char* log, size_t size)
 
