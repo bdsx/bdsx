@@ -2,7 +2,10 @@ cwd=$(pwd)
 SCRIPT=$(readlink -f "$0")
 cd $(dirname "$SCRIPT")
 
-if [ ! -d "./node_modules" ]; then; ./update.sh; fi
+if [ ! -d "./node_modules" ]; then ./update.sh; fi
+if [ $? != 0 ]; then exit $?; fi
+
+if [ ! -d "./bedrock_server" ]; then ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
 if command -v wine &> /dev/null
@@ -25,8 +28,7 @@ npm run -s build
 if [ $? != 0 ]; then exit $?; fi
 
 cd bedrock_server
-export WINEDEBUG=-all
-$WINE ./bedrock_server.exe ..
-cd $cwd
+WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
 
+cd $cwd
 exit $?
