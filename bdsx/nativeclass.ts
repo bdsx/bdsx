@@ -398,12 +398,13 @@ export declare class MantleClass extends NativeClass
     getString<T extends Encoding = Encoding.Utf8>(bytes?: number, offset?: number, encoding?: T): TypeFromEncoding<T>;
 
     /**
-     * set string
+     * set string with null character
      * @param encoding default = Encoding.Utf8
+     * @return writed bytes without null character
      * if encoding is Encoding.Buffer it will call setBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    setString(text: string, offset?: number, encoding?: Encoding): void;
+    setString(text: string, offset?: number, encoding?: Encoding): number;
 
     getBuffer(bytes: number, offset?: number): Uint8Array;
 
