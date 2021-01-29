@@ -30,19 +30,21 @@ export enum AttributeName
 // https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
 export enum DeviceOS
 {
-	OS_ANDROID = 1,
-	OS_IOS = 2,
-	OS_OSX = 3,
-	OS_FIREOS = 4,
-	OS_GEARVR = 5,
-	OS_HOLOLENS = 6,
-	OS_WIN10 = 7,
-	OS_WIN32 = 8,
-	OS_DEDICATED = 9,
-	OS_TVOS = 10,
-	OS_ORBIS = 11,
-	OS_NX = 12,
-	OS_UNKNOWN = -1,
+	UNKNOWN = -1,
+	ANDROID = 1,
+	IOS = 2,
+	OSX = 3,
+	AMAZON = 4,
+	GEAR_VR = 5,
+	HOLOLENS = 6,
+	WINDOWS_10 = 7,
+	WIN32 = 8,
+	DEDICATED = 9,
+	TVOS = 10,
+	PLAYSTATION = 11,
+	NINTENDO = 12,
+	XBOX = 13,
+	WINDOWS_PHONE = 14,
 }
 
 export enum Encoding
