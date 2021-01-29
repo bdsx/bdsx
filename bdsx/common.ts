@@ -27,6 +27,24 @@ export enum AttributeName
 	JumpStrength="minecraft:horse.jump_strength",
 };
 
+// https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
+export enum DeviceOS
+{
+	OS_ANDROID = 1,
+	OS_IOS = 2,
+	OS_OSX = 3,
+	OS_FIREOS = 4,
+	OS_GEARVR = 5,
+	OS_HOLOLENS = 6,
+	OS_WIN10 = 7,
+	OS_WIN32 = 8,
+	OS_DEDICATED = 9,
+	OS_TVOS = 10,
+	OS_ORBIS = 11,
+	OS_NX = 12,
+	OS_UNKNOWN = -1,
+}
+
 export enum Encoding
 {
 	Utf16=-2,

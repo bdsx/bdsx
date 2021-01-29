@@ -126,6 +126,11 @@ export class JsonValue extends NativeClass
 			throw Error(`unexpected type: ${type}`);
 		}
 	}
+	
+	toString():string
+	{
+		return this.value()+'';
+	}
 }
 JsonValue.abstract({
 	type: [uint8_t, 8],
@@ -153,6 +158,21 @@ export class ConnectionRequest extends NativeClass
 	{
 		return this.getJson()?.value();
 	}
+
+	getDeviceId():string
+	{
+		const json = this.getJson();
+		if (json === null) throw Error('Json object not found in ConnectionRequest');
+		return json.get('DeviceId').toString();
+	}
+
+	getDeviceOS():number
+	{
+		const json = this.getJson();
+		if (json === null) throw Error('Json object not found in ConnectionRequest');
+		return +json.get('DeviceOS');
+	}
+
 }
 
 /**

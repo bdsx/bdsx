@@ -64,13 +64,17 @@ chat.on(ev => {
 
 // Network Hooking: Get login IP and XUID
 import { netevent, PacketId } from "bdsx";
+import { DeviceOS } from "bdsx/common";
 const connectionList = new Map<NetworkIdentifier, string>();
 netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
     const ip = networkIdentifier.getAddress();
-    const cert = ptr.connreq.cert;
+    const connreq = ptr.connreq;
+    const cert = connreq.cert;
     const xuid = cert.getXuid();
     const username = cert.getId();
-    console.log(`${username}> IP=${ip}, XUID=${xuid}`);
+    
+    require('fs').writeFileSync('../out.txt', JSON.stringify(connreq.getJsonValue()));
+    console.log(`${username}> IP=${ip}, XUID=${xuid}, OS=${DeviceOS[connreq.getDeviceOS()] || 'UNKNOWN'}`);
     if (username) connectionList.set(networkIdentifier, username);
 
     // sendPacket
@@ -275,7 +279,7 @@ import { proc } from "bdsx/bds/proc";
 
 const asmmain = asm()
 .sub_r_c(Register.rsp, 0x28) // make stack frame
-.mov_r_c(Register.rcx, asm.const_str('Hello World with machine codes!\n')) // rcx = "Hello World!\n";
+.mov_r_c(Register.rcx, asm.const_str('Hello World!\n')) // rcx = "Hello World!\n";
 .call64(proc['printf'], Register.rax) // printf(rcx);
 .add_r_c(Register.rsp, 0x28) // remove stack frame
 .ret() // return
