@@ -73,7 +73,6 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId) => {
     const xuid = cert.getXuid();
     const username = cert.getId();
     
-    require('fs').writeFileSync('../out.txt', JSON.stringify(connreq.getJsonValue()));
     console.log(`${username}> IP=${ip}, XUID=${xuid}, OS=${DeviceOS[connreq.getDeviceOS()] || 'UNKNOWN'}`);
     if (username) connectionList.set(networkIdentifier, username);
 
