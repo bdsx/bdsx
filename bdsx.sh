@@ -8,6 +8,9 @@ if [ $? != 0 ]; then exit $?; fi
 if [ ! -d "./bedrock_server" ]; then ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
+npm run -s build
+if [ $? != 0 ]; then exit $?; fi
+
 if command -v wine &> /dev/null
 then
   WINE=wine
@@ -23,9 +26,6 @@ fi
 #wine_ver_1=`echo wine_ver| cut -d'.' -f 1`
 #wine_ver_2=`echo wine_ver| cut -d'.' -f 2`
 #wine_ver_3=`echo wine_ver| cut -d'.' -f 3`
-
-npm run -s build
-if [ $? != 0 ]; then exit $?; fi
 
 cd bedrock_server
 WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
