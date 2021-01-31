@@ -5,9 +5,9 @@
   "private": true,
   "main": "./dist/bundle.dist.js",
   "author": "YOU!",
-  "license": "ISC",
   "scripts": {
     "postinstall": "node ./bdsx/installer ./bedrock_server",
+    "install_bds": "node ./bdsx/installer ./bedrock_server",
     "watch": "if-tsb -w",
     "build": "if-tsb"
   },
@@ -15,23 +15,18 @@
     "@puresamari/ts-bundler": "^0.2.0",
     "colors": "^1.4.0",
     "follow-redirects": "^1.13.1",
-    "fstream": "^1.0.12",
-    "krevent": "^2.0.1",
+    "krevent": "^2.2.0",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
     "unzipper": "^0.10.11"
   },
   "devDependencies": {
-    "@types/archiver": "^3.1.1",
     "@types/follow-redirects": "^1.13.0",
-    "@types/node": "^12.19.11",
+    "@types/node": "~12.19.11",
     "@types/progress": "^2.0.3",
     "@types/unzipper": "^0.10.3",
-    "buffer-from": "^1.1.1",
-    "if-tsb": "^0.1.10",
-    "minecraft-scripting-types-server": "^1.0.0",
-    "node-html-parser": "^2.0.1",
-    "tslib": "^2.0.3",
+    "if-tsb": "^0.1.22",
+    "tslib": "^2.1.0",
     "typescript": "^4.1.3"
   }
 }

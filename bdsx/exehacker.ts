@@ -1,41 +1,16 @@
 
 import { Register, X64Assembler } from './assembler';
-import { proc } from "./bds/proc";
-import { StaticPointer, VoidPointer } from "./core";
-import { dll } from "./dll";
-import { MemoryUnlocker } from "./unlocker";
-import { hex, memdiff, memdiff_contains } from "./util";
-import colors = require('colors');
+import { proc, procHacker } from "./bds/proc";
+import { VoidPointer } from "./core";
 
+
+/**
+ * @deprecated use procHacker instead
+ */
 export namespace exehacker
 {
     /**
-     * @param subject name of hooking
-     * @param key target symbol
-     * @param offset offset from target
-     * @param ptr target pointer
-     * @param originalCode old codes
-     * @param ignoreArea pairs of offset, ignores partial bytes.
-     */
-    function check(subject:string, key:keyof proc, offset:number, ptr:StaticPointer, originalCode:number[], ignoreArea:number[]):boolean
-    {
-        const buffer = ptr.getBuffer(originalCode.length);
-        const diff = memdiff(buffer, originalCode);
-        if (!memdiff_contains(ignoreArea, diff))
-        {
-            console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: code unmatch`));
-            console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
-            console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
-            console.error(colors.red(`${subject}: skip `));
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-    
-    /**
+     * @deprecated use procHacker.nopping instead
      * @param subject for printing on error
      * @param key target symbol name
      * @param offset offset from target
@@ -44,46 +19,21 @@ export namespace exehacker
      */
     export function nopping(subject:string, key:keyof proc, offset:number, originalCode:number[], ignoreArea:number[]):void
     {
-        const ptr = proc[key].add(offset);
-        if (!ptr)
-        {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
-            return;
-        }
-        const size = originalCode.length;
-        const unlock = new MemoryUnlocker(ptr, size);
-        if (check(subject, key, offset, ptr, originalCode, ignoreArea))
-        {
-            dll.vcruntime140.memset(ptr, 0x90, size);
-        }
-        unlock.done();
+        procHacker.nopping(subject, key, offset, originalCode, ignoreArea);
     }
 
     /**
-     * @param subject for printing on error
+     * @deprecated use procHacker.hooking or procHacker.hookingRawWithCallOriginal instead
      * @param key target symbol name
      * @param to call address
-     * @param originalCode bytes comparing before hooking
-     * @param ignoreArea pair offsets to ignore of originalCode
      */
-    export function hooking(subject:string, key:keyof proc, to: VoidPointer, originalCode:number[], ignoreArea:number[]):void
+    export function hooking(dummy:string, key:keyof proc, to: VoidPointer, dummy_for_backward_compatible?:any, dummy2?:any):void
     {
-        const ptr = proc[key];
-        if (!ptr)
-        {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
-            return;
-        }
-        const size = originalCode.length;
-        const unlock = new MemoryUnlocker(ptr, size);
-        if (check(subject, key, 0, ptr, originalCode, ignoreArea))
-        {
-            X64Assembler.hook(ptr, to, size);
-        }
-        unlock.done();
+        procHacker.hookingRawWithCallOriginal(key, to, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
     }
 
     /**
+     * @deprecated use procHacker.patching instead
      * @param subject for printing on error
      * @param key target symbol name
      * @param offset offset from target
@@ -95,28 +45,11 @@ export namespace exehacker
      */
     export function patching(subject:string, key:keyof proc, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void
     {
-        let ptr = proc[key];
-        if (!ptr)
-        {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
-            return;
-        }
-        ptr = ptr.add(offset);
-        if (!ptr)
-        {
-            console.error(colors.red(`${subject}: skip`));
-            return;
-        }
-        const size = originalCode.length;
-        const unlock = new MemoryUnlocker(ptr, size);
-        if (check(subject, key, offset, ptr, originalCode, ignoreArea))
-        {
-            X64Assembler.patch(ptr, newCode, tempRegister, size, call);
-        }
-        unlock.done();
+        procHacker.patching(subject, key, offset, newCode, tempRegister, call, originalCode, ignoreArea);
     }
     
     /**
+     * @deprecated use procHacker.jumping instead
      * @param subject for printing on error
      * @param key target symbol name
      * @param offset offset from target
@@ -127,28 +60,14 @@ export namespace exehacker
      */
     export function jumping(subject:string, key:keyof proc, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void
     {
-        let ptr = proc[key];
-        if (!ptr)
-        {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
-            return;
-        }
-        ptr = ptr.add(offset);
-        const size = originalCode.length;
-        const unlock = new MemoryUnlocker(ptr, size);
-        if (check(subject, key, offset, ptr, originalCode, ignoreArea))
-        {
-            X64Assembler.jump(ptr, jumpTo, tempRegister, size);
-        }
-        unlock.done();
+        procHacker.jumping(subject, key, offset, jumpTo, tempRegister, originalCode, ignoreArea);
     }
 
+    /**
+     * @deprecated use procHacker.write instead
+     */
     export function write(key:keyof proc, offset:number, asm:X64Assembler):void
     {
-        const buffer = asm.buffer();
-        const ptr = proc[key].add(offset);
-        const unlock = new MemoryUnlocker(ptr, buffer.length);
-        ptr.writeBuffer(buffer);
-        unlock.done();
+        procHacker.write(key, offset, asm);
     }
 }

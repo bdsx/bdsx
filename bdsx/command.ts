@@ -4,11 +4,10 @@ import { asm, Register } from './assembler';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { CommandRequestPacket } from './bds/packets';
-import { proc } from './bds/proc';
+import { proc, procHacker } from './bds/proc';
 import { CommandContext, MCRESULT, MinecraftCommands } from './bds/server';
 import { CANCEL, RawTypeId } from './common';
 import { makefunc } from './core';
-import { exehacker } from './exehacker';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 import netevent = require('./netevent');
@@ -47,9 +46,10 @@ export function hookingForCommand():void
 	.call64(callback, Register.rax)
 	.add_r_c(Register.rsp, 0x28)
     .test_r_r(Register.rax, Register.rax)
-	.jz(13)
+	.jz_label('skip')
 	.pop_r(Register.rcx)
-	.jmp64(proc['MinecraftCommands::executeCommand'].add(0x73b), Register.rax)
+    .jmp64(proc['MinecraftCommands::executeCommand'].add(0x73b), Register.rax)
+    .label('skip')
 	.mov_rp_r(Register.rbp, -0x50, Register.rsi)
 	.mov_r_rp(Register.rax, Register.rsi, 0)
 	.mov_r_rp(Register.rcx, Register.rax, 0x20)
@@ -57,7 +57,7 @@ export function hookingForCommand():void
     .ret()
     .alloc();
     
-    exehacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, newcode, Register.rax, true, ORIGINAL_CODE, []);
+    procHacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, newcode, Register.rax, true, ORIGINAL_CODE, []);
 };
 
 // 	m_props.insert(u"execSync", JsFunction::makeT([](Text16 path, JsValue curdir) {
@@ -109,5 +109,8 @@ class UserCommandEvents extends EventEx<UserCommandListener>
 }
 
 const hookev = new Event<HookCommandListener>();
+
+/** @deprecated use netevent.before(MinecraftPacketIds.CommandRequest).on */
 export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
+
 export const hook = hookev as CapsuledEvent<HookCommandListener>;

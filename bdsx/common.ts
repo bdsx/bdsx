@@ -27,6 +27,26 @@ export enum AttributeName
 	JumpStrength="minecraft:horse.jump_strength",
 };
 
+// https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
+export enum DeviceOS
+{
+	UNKNOWN = -1,
+	ANDROID = 1,
+	IOS = 2,
+	OSX = 3,
+	AMAZON = 4,
+	GEAR_VR = 5,
+	HOLOLENS = 6,
+	WINDOWS_10 = 7,
+	WIN32 = 8,
+	DEDICATED = 9,
+	TVOS = 10,
+	PLAYSTATION = 11,
+	NINTENDO = 12,
+	XBOX = 13,
+	WINDOWS_PHONE = 14,
+}
+
 export enum Encoding
 {
 	Utf16=-2,
@@ -63,3 +83,7 @@ export function abstract():never
 {
 	throw Error('abstract');
 }
+
+export const SYMOPT_PUBLICS_ONLY = 0x00004000;
+export const SYMOPT_AUTO_PUBLICS = 0x00010000;
+export const SYMOPT_UNDNAME = 0x00000002;

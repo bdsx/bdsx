@@ -1,3 +1,4 @@
+
 import { SourceMapConsumer } from 'source-map';
 import path = require('path');
 import fs = require('fs');
@@ -255,6 +256,9 @@ interface FrameInfo
   internal:boolean;
 }
 
+/**
+ * remap filepath to original filepath
+ */
 export function remapStack(stack?:string):string|undefined {
   if (stack === undefined) return undefined;
   
@@ -277,6 +281,9 @@ export function remapStack(stack?:string):string|undefined {
   return frames.join('\n');
 }
 
+/**
+ * remap filepath to original filepath for one line
+ */
 export function remapStackLine(stackLine:string, state:StackState = { nextPosition: null, curPosition: null }):FrameInfo {
   
   const matched = /^   at (.+) \(([^(]+)\)$/.exec(stackLine);
@@ -312,6 +319,21 @@ export function remapStackLine(stackLine:string, state:StackState = { nextPositi
     stackLine: `   at ${fnname} (${position.source}:${position.line}:${position.column+1})`, 
     internal: position.source.startsWith('internal/') 
   };
+}
+
+/**
+ * remap stack and print
+ */
+export function remapAndPrintError(err:any):void
+{
+  if (err && err.stack)
+  {
+    console.error(remapStack(err.stack+''));
+  }
+  else
+  {
+    console.error(err);
+  }
 }
 
 // Generate position and snippet of original source with pointer

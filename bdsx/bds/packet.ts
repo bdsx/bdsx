@@ -1,13 +1,12 @@
 import { abstract, RawTypeId } from "bdsx/common";
-import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
-import { CxxStringPointer } from "bdsx/pointer";
 import { MantleClass, NativeClass } from "bdsx/nativeclass";
-import { MinecraftPacketIds } from "./packetids";
-import { BinaryStream } from "./stream";
+import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
+import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
-import { cgate, makefunc } from "bdsx/core";
-import { proc } from "./proc";
 import { NetworkIdentifier } from "./networkidentifier";
+import { MinecraftPacketIds } from "./packetids";
+import { procHacker } from "./proc";
+import { BinaryStream } from "./stream";
 
 // export interface PacketType<T> extends StructureType<T>
 // {
@@ -48,13 +47,16 @@ export class Packet extends MantleClass
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
 
+    /**
+     * @deprecated use packet.destruct();
+     */
     destructor():void {
         abstract();
     }
     getId():MinecraftPacketIds {
         abstract();
     }
-    getName(name:CxxStringPointer):void {
+    getName(name:CxxStringWrapper):void {
         abstract();
     }
     write(stream:BinaryStream):void {
@@ -66,7 +68,11 @@ export class Packet extends MantleClass
     readExtended(read:ExtendedStreamReadResult, stream:BinaryStream):ExtendedStreamReadResult {
         abstract();
     }
-    sendTo(target:NetworkIdentifier, unknownarg:number)
+
+    /**
+     * same with target.send
+     */
+    sendTo(target:NetworkIdentifier, unknownarg?:number)
     {
         abstract();
     }
@@ -105,4 +111,4 @@ export function createPacket(packetId:MinecraftPacketIds):SharedPointer
     return new SharedPointer(p);
 }
 
-export const createPacketRaw = makefunc.js(proc["MinecraftPackets::createPacket"], RawTypeId.Void, null, PacketSharedPtr, RawTypeId.Int32);
+export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, RawTypeId.Int32);

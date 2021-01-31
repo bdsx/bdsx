@@ -1,18 +1,20 @@
 
+import { Register } from "bdsx/assembler";
 import { abstract, RawTypeId } from "bdsx/common";
 import { dll } from "bdsx/dll";
-import { exehacker } from "bdsx/exehacker";
 import { Hashable, HashSet } from "bdsx/hashset";
 import { NativeClass } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
-import { CxxStringPointer } from "bdsx/pointer";
+import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
+import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
-import Event, { CapsuledEvent, EventEx } from "krevent";
+import { CapsuledEvent, Event } from "krevent";
 import { makefunc, StaticPointer, VoidPointer } from "../core";
 import { Actor } from "./actor";
 import { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
+import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
@@ -28,6 +30,7 @@ class NetworkHandler$Connection extends NativeClass
 }
 export class NetworkHandler extends NativeClass
 {
+    vftable:VoidPointer;
     instance:RakNetInstance;
 
     send(ni:NetworkIdentifier, packet:Packet, u:number):void
@@ -101,7 +104,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable
         const rakpeer = networkHandler.instance.peer;
         return rakpeer.GetSystemAddressFromIndex(idx).toString();
     }
-    
+
     toString():string
     {
         return this.getAddress();
@@ -120,14 +123,26 @@ export class NetworkIdentifier extends NativeClass implements Hashable
         ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
 		identifiers.add(ni);
 		return ni;
-	}
+    }
+    
+    static all():IterableIterator<NetworkIdentifier>
+    {
+        return identifiers.values();
+    }
 }
 
 export let networkHandler:NetworkHandler;
 
-exehacker.hooking('hook-on-close-connection', 'NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
-    closeEvTarget.fire(ni);
-    identifiers.delete(ni);
-    _tickCallback();
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringPointer), 
-[0x40, 0x53, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xEC, 0x48], []);
+procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+    try
+    {
+        closeEvTarget.fire(ni);
+        identifiers.delete(ni);
+        _tickCallback();
+    }
+    catch (err)
+    {
+        remapAndPrintError(err);
+    }
+}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
+    [Register.rcx, Register.rdx, Register.r8, Register.r9], []);

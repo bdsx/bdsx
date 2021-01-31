@@ -145,6 +145,5 @@ export function getHashFromCxxString(ptr:StaticPointer):NativePointer
  */
 export function loadPdb():{[key:string]:NativePointer}
 {
-    core.pdb.open();
     return core.pdb.getAll();
 }

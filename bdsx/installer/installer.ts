@@ -1,10 +1,8 @@
-/// <reference path='./fstream.d.ts' />
 'use strict';
 
 import fs_ori = require('fs');
 import unzipper = require('unzipper');
 import path = require('path');
-import { Writer } from 'fstream';
 import readline = require('readline');
 import ProgressBar = require('progress');
 import { https } from 'follow-redirects';
@@ -15,7 +13,7 @@ const sep = path.sep;
 const BDS_VERSION = '1.16.201.02';
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_VERSION}.zip`;
 const BDSX_CORE_VERSION = version.coreVersion;
-const BDSX_CORE_LINK = `https://github.com/karikera/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
+const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
 
 function yesno(question:string, defaultValue?:boolean):Promise<boolean>{
     const yesValues = [ 'yes', 'y'];
@@ -88,6 +86,16 @@ const fs = {
                 else resolve();
             });
         });
+    }, 
+    _processMkdirError(dirname:string, err:any):boolean
+    {
+        if (err.code === 'EEXIST') {
+            return true;
+        }
+        if (err.code === 'ENOENT') {
+            throw new Error(`EACCES: permission denied, mkdir '${dirname}'`);
+        }
+        return false;
     },
     rmdir(path:string):Promise<void>
     {
@@ -133,6 +141,23 @@ const fs = {
     {
         return fs.stat(path).then(()=>true, ()=>false);
     },
+    async del(filepath:string):Promise<void>
+    {
+        const stat = await fs.stat(filepath);
+        if (stat.isDirectory())
+        {
+            const files = await fs.readdir(filepath);
+            for (const file of files)
+            {
+                await fs.del(path.join(filepath, file));
+            }
+            await fs.rmdir(filepath);
+        }
+        else
+        {
+            await fs.unlink(filepath);
+        }
+    }
 };
 
 interface InstallInfo
@@ -155,70 +180,6 @@ class MessageError extends Error
     {
         super(msg);
     }
-}
-
-async function concurrencyLoop<T>(array:T[], concurrency:number, callback:(entry:T)=>Promise<void>):Promise<void>
-{    if (concurrency <= 1)
-    {
-        for (const item of array)
-        {
-            await callback(item);
-        }
-        return;
-    }
-    
-    let entryidx = 0;
-    async function process():Promise<void>
-    {
-        while (entryidx < array.length)
-        {
-            await callback(array[entryidx++]);
-        }
-    }
-
-    const waitings:Promise<void>[] = [];
-    const n = Math.min(array.length, concurrency);
-    for (let i=0;i<n;i++)
-    {
-        waitings.push(process());
-    }
-    await Promise.all(waitings);
-}
-
-function downloadFile(name:string, filepath:string, url:string):Promise<void>
-{
-    const bar = new ProgressBar(`${name}: Download :bar :current/:total`, { 
-        total: 1,
-        width: 20,
-    });
-    return new Promise((resolve, reject)=>{
-        function download()
-        {
-            const file = fs_ori.createWriteStream(filepath);
-            https.get(url, (response)=>{
-                bar.total = +response.headers['content-length']!;
-                if (response.statusCode !== 200)
-                {
-                    fs.unlink(filepath);
-                    reject(new MessageError(`${name}: ${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
-                    return;
-                }
-                response.on('data', (data:Buffer)=>{
-                    bar.tick(data.length);
-                }).pipe(file).on('finish', ()=>{
-                    file.close();
-                    resolve();
-                });
-            }).on('error', err=>{
-                fs.unlink(filepath);
-                reject(err);
-            });
-        }
-        fs.stat(filepath).then(stat=>{
-            if (stat.size >= 10*1024*1024) resolve();
-            else download();
-        }, download);
-    });
 }
 
 async function removeInstalled(dest:string, files:string[]):Promise<void>
@@ -281,7 +242,8 @@ class InstallItem
         confirm?:()=>Promise<void>|void,
         preinstall?:()=>Promise<void>|void,
         postinstall?:(writedFiles:string[])=>Promise<void>|void,
-        skipExists?:boolean
+        skipExists?:boolean,
+        oldFiles?:string[],
     })
     {
     }
@@ -289,69 +251,98 @@ class InstallItem
     private async _downloadAndUnzip():Promise<string[]>
     {
         const url = this.opts.url;
-        const dest = this.opts.targetPath;
-        const urlidx = url.lastIndexOf('/');
-        const zipfilename = url.substr(urlidx+1);
-        const zipfiledir = path.join(__dirname, 'zip');
-        const zipfilepath = path.join(zipfiledir, zipfilename);
-        
+        const dest = path.join(this.opts.targetPath);
         const writedFiles:string[] = [];
         
-        await fs.mkdir(zipfiledir);
-        await downloadFile(this.opts.name, zipfilepath, url);
+        const zipfiledir = path.join(__dirname, 'zip');
+        try { await fs.del(zipfiledir); } catch (err) {}
+
         const bar = new ProgressBar(`${this.opts.name}: Install :bar :current/:total`, { 
             total: 1,
             width: 20,
         });
-        const archive = await unzipper.Open.file(zipfilepath);
-        
-        const files:unzipper.File[] = [];
-        for (const entry of archive.files)
+
+        const dirhas = new Set<string>();
+        dirhas.add(dest);
+
+        async function mkdirRecursive(dirpath:string):Promise<void>
         {
-            if (entry.type == 'Directory') continue;
-    
-            let filepath = entry.path;
-            if (sep !== '/') filepath = filepath.replace(/\//g, sep);
-            else filepath = filepath.replace(/\\/g, sep);
-            if (!filepath.startsWith(sep))
-            {
-                filepath = sep+filepath;
-                entry.path = filepath;
-            }
-            else
-            {
-                entry.path = filepath.substr(1);
-            }
-            writedFiles.push(filepath);
-    
-            if (this.opts.skipExists)
-            {
-                const exists = fs_ori.existsSync(path.join(dest, entry.path));
-                if (exists) continue;
-            }
-            files.push(entry);
+            if (dirhas.has(dirpath)) return;
+            await mkdirRecursive(path.dirname(dirpath));
+            await fs.mkdir(dirpath);
         }
-        bar.total = files.length;
-    
-        await concurrencyLoop(files, 5, entry=>{
-            const extractPath = path.join(dest, entry.path);
-            const writer = Writer({ path: extractPath });
-            return new Promise<void>((resolve, reject)=>{
-                entry.stream()
-                    .on('error',reject)
-                    .pipe(writer)
-                    .on('close',()=>{
-                        bar.tick();
-                        resolve();
-                    })
-                    .on('error',reject);
-            });
+
+        await new Promise<unzipper.ParseStream>((resolve, reject)=>{
+            https.get(url, (response)=>{
+                bar.total = +response.headers['content-length']!;
+                if (response.statusCode !== 200)
+                {
+                    reject(new MessageError(`${this.opts.name}: ${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
+                    return;
+                }
+                response.on('data', (data:Buffer)=>{
+                    bar.tick(data.length);
+                });
+
+                const zip = response.pipe(unzipper.Parse());
+                zip.on('entry', async(entry:unzipper.Entry)=>{
+                    let filepath = entry.path;
+                    if (sep !== '/') filepath = filepath.replace(/\//g, sep);
+                    else filepath = filepath.replace(/\\/g, sep);
+                    if (!filepath.startsWith(sep))
+                    {
+                        filepath = sep+filepath;
+                        entry.path = filepath;
+                    }
+                    else
+                    {
+                        entry.path = filepath.substr(1);
+                    }
+                    writedFiles.push(filepath);
+
+                    const extractPath = path.join(dest, entry.path);
+                    if (entry.type == 'Directory')
+                    {
+                        await mkdirRecursive(extractPath);
+                        entry.autodrain();
+                        return;
+                    }
+            
+                    if (this.opts.skipExists)
+                    {
+                        const exists = await fs.exists(path.join(dest, entry.path));
+                        if (exists)
+                        {
+                            entry.autodrain();
+                            return;
+                        }
+                    }
+                    
+                    await mkdirRecursive(path.dirname(extractPath));
+                    entry.pipe(fs_ori.createWriteStream(extractPath)).on('error', reject);
+                }).on('finish', resolve).on('error', reject);
+            }).on('error', reject);
         });
+        
         return writedFiles;
     }
     
     private async _install():Promise<void>
     {
+        const oldFiles = this.opts.oldFiles;
+        if (oldFiles)
+        {
+            for (const oldfile of oldFiles)
+            {
+                try
+                {
+                    await fs.del(path.join(this.opts.targetPath, oldfile));
+                }
+                catch (err)
+                {
+                }
+            }
+        }
         const preinstall = this.opts.preinstall;
         if (preinstall) await preinstall();
         const writedFiles = await this._downloadAndUnzip();
@@ -441,7 +432,8 @@ const bdsxCore = new InstallItem({
     url: BDSX_CORE_LINK,
     targetPath: bdsPath,
     key: 'bdsxCoreVersion',
-    keyFile: 'mods/bdsx.dll',
+    keyFile: 'Chakra.dll',
+    oldFiles: ['mods'],
 });
 
 (async()=>{

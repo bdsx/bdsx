@@ -49,6 +49,9 @@ export interface SharedPtrType<T extends NativeClass> extends Type<SharedPtr<T>>
     new(ptr?:VoidPointer|boolean):SharedPtr<T>;
 }
 
+/**
+ * wrapper for std::shared_ptr
+ */
 export abstract class SharedPtr<T extends NativeClass> extends NativeClass
 {
     static readonly type:NativeClassType<any>;

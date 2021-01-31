@@ -12,7 +12,7 @@ export interface Hashable
 
 const INITIAL_CAP = 16;
 
-export class HashSet<T extends Hashable>
+export class HashSet<T extends Hashable> implements Iterable<T>
 {
     private array:(T|null)[] = new Array(INITIAL_CAP);
     public size = 0;
@@ -51,7 +51,25 @@ export class HashSet<T extends Hashable>
         this.array = narray;
     }
 
-    *entires():IterableIterator<T>
+    [Symbol.iterator]():IterableIterator<T>
+    {
+        return this.keys();
+    }
+
+    /**
+     * @deprecated use values() or keys()
+     */
+    entires():IterableIterator<T>
+    {
+        return this.keys();
+    }
+
+    keys():IterableIterator<T>
+    {
+        return this.values();
+    }
+    
+    *values():IterableIterator<T>
     {
         for (let item of this.array)
         {
@@ -101,29 +119,28 @@ export class HashSet<T extends Hashable>
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
-        if (found !== null)
+        if (found === null) return false;
+        if (found[hashkey] === hash && item.equals(found))
         {
-            if (found[hashkey] === hash && item.equals(found))
+            this.array[idx] = found[nextlink] as T;
+            found[nextlink] = null;
+            this.size--;
+            return true;
+        }
+        for (;;)
+        {
+            const next = found![nextlink] as T
+            if (next === null) return false;
+            
+            if (next[hashkey] === hash && next.equals(found))
             {
-                this.array[idx] = found[nextlink] as T;
-                found[nextlink] = null;
+                found![nextlink] = next[nextlink];
+                next[nextlink] = null;
                 this.size--;
                 return true;
             }
-            for (;;)
-            {
-                const next = found![nextlink] as T
-                if (next[hashkey] === hash && next.equals(found))
-                {
-                    found![nextlink] = next[nextlink];
-                    next[nextlink] = null;
-                    this.size--;
-                    return true;
-                }
-                found = next;
-            }
+            found = next;
         }
-        return false;
     }
 
     add(item:T):this

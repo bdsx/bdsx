@@ -1,19 +1,21 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
-import { CxxString, float32_t, NativeType,  uint16_t, uint32_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType,  uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
-import { ConnectionReqeust } from "./connreq";
+import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
+
+Packet.abstract({}, 0x28);
 
 export class LoginPacket extends Packet
 {
 	u5:uint32_t; //0x184
-	connreq:ConnectionReqeust;
+	connreq:ConnectionRequest;
 }
 LoginPacket.abstract({
     u5:uint32_t,
-    connreq:[ConnectionReqeust.ref(), 0x30],
+    connreq:[ConnectionRequest.ref(), 0x30],
 });
 
 // struct InventoryTransactionPacket : Packet
@@ -38,8 +40,11 @@ export class ClientToServerHandshakePacket extends Packet
 
 export class DisconnectPacket extends Packet
 {
-    // unknown
+    message:CxxString;
 }
+DisconnectPacket.abstract({
+    message:[CxxString, 0x30]
+});
 
 export class ResourcePacksInfoPacket extends Packet
 {
@@ -86,7 +91,7 @@ export class AddEntityPacket extends Packet
     // unknown
 }
 
-export class RemoveEntityPacket extends Packet
+export class RemoveEntity_Packet extends Packet
 {
     // unknown
 }
@@ -180,8 +185,6 @@ AttributeData.define({
     name: [HashedString, 16],
 }, 0x38);
 
-const CxxVector$AttributeData = CxxVector.make(AttributeData);
-
 export class UpdateAttributesPacket extends Packet
 {
     actorId:ActorRuntimeID;
@@ -189,7 +192,7 @@ export class UpdateAttributesPacket extends Packet
 }
 UpdateAttributesPacket.define({
     actorId: [ActorRuntimeID, 0x28],
-    attributes: [CxxVector$AttributeData, 0x30],
+    attributes: [CxxVector.make(AttributeData), 0x30],
 });
 
 export class InventoryTransactionPacket extends Packet
@@ -272,10 +275,31 @@ export class RespawnPacket extends Packet
     // unknown
 }
 
+export class NetworkBlockPosition extends NativeClass
+{
+    x:uint32_t;
+    y:uint32_t;
+    z:uint32_t;
+}
+NetworkBlockPosition.define({
+    x:uint32_t,
+    y:uint32_t,
+    z:uint32_t,
+});
+
 export class ContainerOpenPacket extends Packet
 {
-    // unknown
+    windowId:uint8_t;
+    type:int8_t;
+    pos:NetworkBlockPosition;
+    entityUniqueId:bin64_t;
 }
+ContainerOpenPacket.abstract({
+    windowId:[uint8_t, 0x28],
+    type:[int8_t, 0x29],
+    pos:[NetworkBlockPosition, 0x2C],
+    entityUniqueId:[bin64_t, 0x38],
+});
 
 export class ContainerClosePacket extends Packet
 {
@@ -349,8 +373,19 @@ export class SetDifficultyPacket extends Packet
 
 export class ChangeDimensionPacket extends Packet
 {
-    // unknown
+    dimensionId:uint32_t;
+    x:number;
+    y:number;
+    z:number;
+    respawn:boolean;
 }
+ChangeDimensionPacket.abstract({
+    dimensionId:uint32_t,
+    x:float32_t,
+    y:float32_t,
+    z:float32_t,
+    respawn:bool_t
+});
 
 export class SetPlayerGameTypePacket extends Packet
 {
@@ -473,13 +508,12 @@ export class ResourcePackChunkRequestPacket extends Packet
 
 export class TransferPacket extends Packet
 {
-    // unknown
     address:string;
     port:uint16_t;
 }
 TransferPacket.abstract({
-    address:CxxString,
-    port:uint16_t,
+    address:[CxxString, 0x28],
+    port:[uint16_t, 0x48]
 });
 
 export class PlaySoundPacket extends Packet
@@ -554,8 +588,13 @@ export class PhotoTransferPacket extends Packet
 
 export class ModalFormRequestPacket extends Packet
 {
-    // unknown
+    id:uint32_t;
+    content:CxxString;
 }
+ModalFormRequestPacket.abstract({
+    id: [uint32_t, 0x28],
+    content: [CxxString, 0x30],
+});
 
 export class ModalFormResponsePacket extends Packet
 {
@@ -682,6 +721,11 @@ export class VideoStreamConnectPacket extends Packet
     // unknown
 }
 
+export class RemoveEntityPacket extends Packet
+{
+    // unknown
+}
+
 export class ClientCacheStatusPacket extends Packet
 {
     // unknown
@@ -722,7 +766,42 @@ export class ClientCacheMissResponsePacket extends Packet
     // unknown
 }
 
+export class EducationSettingsPacket extends Packet
+{
+    // unknown
+}
+
+export class EmotePacket extends Packet
+{
+    // unknown
+}
+
+export class MultiplayerSettingsPacket extends Packet
+{
+    // unknown
+}
+
+export class SettingsCommandPacket extends Packet
+{
+    // unknown
+}
+
+export class AnvilDamagePacket extends Packet
+{
+    // unknown
+}
+
+export class CompletedUsingItemPacket extends Packet
+{
+    // unknown
+}
+
 export class NetworkSettingsPacket extends Packet
+{
+    // unknown
+}
+
+export class PlayerAuthInputPacket extends Packet
 {
     // unknown
 }
@@ -747,12 +826,67 @@ export class ItemStackResponsePacket extends Packet
     // unknown
 }
 
+export class PlayerArmorDamagePacket extends Packet
+{
+    // unknown
+}
+
+export class CodeBuilderPacket extends Packet
+{
+    // unknown
+}
+
 export class UpdatePlayerGameTypePacket extends Packet
 {
     // unknown
 }
 
+export class EmoteListPacketPacket extends Packet
+{
+    // unknown
+}
+
+export class PositionTrackingDBServerBroadcastPacket extends Packet
+{
+    // unknown
+}
+
+export class PositionTrackingDBClientRequestPacket extends Packet
+{
+    // unknown
+}
+
+export class DebugInfoPacket extends Packet
+{
+    // unknown
+}
+
 export class PacketViolationWarningPacket extends Packet
+{
+    // unknown
+}
+
+export class MotionPredictionHintsPacket extends Packet
+{
+    // unknown
+}
+
+export class AnimateEntityPacket extends Packet
+{
+    // unknown
+}
+
+export class CameraShakePacket extends Packet
+{
+    // unknown
+}
+
+export class PlayerFogPacket extends Packet
+{
+    // unknown
+}
+
+export class CorrectPlayerMovePredictionPacketPacket extends Packet
 {
     // unknown
 }
@@ -786,7 +920,7 @@ export const PacketIdToType = {
 	0x0b: StartGamePacket,
 	0x0c: AddPlayerPacket,
 	0x0d: AddEntityPacket,
-	0x0e: RemoveEntityPacket,
+	0x0e: RemoveEntity_Packet,
 	0x0f: AddItemEntityPacket,
 	0x11: TakeItemEntityPacket,
 	0x12: MoveEntityPacket,
@@ -895,7 +1029,8 @@ export const PacketIdToType = {
 	0x7b: LevelSoundEventPacket,
 	0x7c: LevelEventGenericPacket,
 	0x7d: LecternUpdatePacket,
-	0x7e: VideoStreamConnectPacket,
+    0x7e: VideoStreamConnectPacket,
+    0x80: RemoveEntityPacket,
 	0x81: ClientCacheStatusPacket,
 	0x82: OnScreenTextureAnimationPacket,
 	0x83: MapCreateLockedCopyPacket,
@@ -904,13 +1039,31 @@ export const PacketIdToType = {
 	0x86: UpdateBlockPropertiesPacket,
 	0x87: ClientCacheBlobStatusPacket,
 	0x88: ClientCacheMissResponsePacket,
-	0x8f: NetworkSettingsPacket,
+	0x89: EducationSettingsPacket,
+	0x8a: EmotePacket,
+	0x8b: MultiplayerSettingsPacket,
+	0x8c: SettingsCommandPacket,
+	0x8d: AnvilDamagePacket,
+	0x8e: CompletedUsingItemPacket,
+    0x8f: NetworkSettingsPacket,
+    0x90: PlayerAuthInputPacket,
 	0x91: CreativeContentPacket,
 	0x92: PlayerEnchantOptionsPacket,
 	0x93: ItemStackRequestPacket,
 	0x94: ItemStackResponsePacket,
+	0x95: PlayerArmorDamagePacket,
+	0x96: CodeBuilderPacket,
 	0x97: UpdatePlayerGameTypePacket,
+	0x98: EmoteListPacketPacket,
+	0x99: PositionTrackingDBServerBroadcastPacket,
+	0x9a: PositionTrackingDBClientRequestPacket,
+	0x9b: DebugInfoPacket,
 	0x9c: PacketViolationWarningPacket,
+	0x9d: MotionPredictionHintsPacket,
+	0x9e: AnimateEntityPacket,
+	0x9f: CameraShakePacket,
+	0xa0: PlayerFogPacket,
+	0xa1: CorrectPlayerMovePredictionPacketPacket,
 	0xa2: ItemComponentPacket,
 	0xa3: FilterTextPacketPacket,
 	0xe0: AlexEntityAnimationPacket,

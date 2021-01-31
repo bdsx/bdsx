@@ -3,6 +3,8 @@ import { SharedPtr } from "bdsx/sharedpointer";
 import { NativeClass } from "bdsx/nativeclass";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";
+import { abstract } from "bdsx/common";
+import { CxxStringWrapper } from "bdsx/pointer";
 
 
 export class RaknetNetworkPeer extends NativeClass
@@ -42,6 +44,11 @@ export class BatchedNetworkPeer extends NativeClass
 	vftable:VoidPointer;
 	peer:CompressedNetworkPeer;
 	stream:BinaryStream;
+
+	sendPacket(data:CxxStringWrapper, reliability:number, n:number, n2:number, compressibility:number):void
+	{
+		abstract();
+	}
 }
 BatchedNetworkPeer.abstract({
 	vftable:VoidPointer,

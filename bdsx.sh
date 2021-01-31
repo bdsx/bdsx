@@ -1,33 +1,17 @@
-
 cwd=$(pwd)
-
 SCRIPT=$(readlink -f "$0")
-SCRIPTDIR=$(dirname "$SCRIPT")
-cd $SCRIPTDIR
+cd $(dirname "$SCRIPT")
 
-if [ ! -d "./node_modules" ] 
-then
-  if ! command -v npm &> /dev/null
-  then
-    echo 'Error: bdsx requires npm. Please install node.js first' >&2
-    exit $?
-  fi
-  npm i
-  npm run build
-fi
+if [ ! -d "./node_modules" ]; then ./update.sh; fi
+if [ $? != 0 ]; then exit $?; fi
 
-if ! command -v node &> /dev/null
-then
-  echo 'Error: bdsx requires node. Please install node.js first' >&2
-  exit $?
-fi
-node ./bdsx/installer ./bedrock_server
-if [ $? != 0 ]; then exit 0; fi
+if [ ! -d "./bedrock_server" ]; then ./update.sh; fi
+if [ $? != 0 ]; then exit $?; fi
 
-if ! command -v wine &> /dev/null
+if command -v wine &> /dev/null
 then
   WINE=wine
-elif ! command -v node64 &> /dev/null
+elif command -v wine64 &> /dev/null
 then
   WINE=wine64
 else
@@ -35,9 +19,16 @@ else
   exit $?
 fi
 
-cd bedrock_server
-export WINEDEBUG=-all
-$WINE ./bedrock_server.exe ..
-cd $cwd
+#wine_ver=`wine --version| cut -d'-' -f 2`
+#wine_ver_1=`echo wine_ver| cut -d'.' -f 1`
+#wine_ver_2=`echo wine_ver| cut -d'.' -f 2`
+#wine_ver_3=`echo wine_ver| cut -d'.' -f 3`
 
+npm run -s build
+if [ $? != 0 ]; then exit $?; fi
+
+cd bedrock_server
+WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
+
+cd $cwd
 exit $?

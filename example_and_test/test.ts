@@ -1,15 +1,16 @@
 
-import { netevent, PacketId, NetworkIdentifier, command, serverControl, Actor, chat, bin, NativePointer, CANCEL, serverInstance, StaticPointer, VoidPointer, MinecraftPacketIds } from "bdsx";
-import { capi } from "bdsx/capi";
-import { HashSet } from "bdsx/hashset";
-import { bin64_t } from "bdsx/nativetype";
-import { PseudoRandom } from "bdsx/pseudorandom";
-import { dll } from "bdsx/dll";
-import { bedrockServer } from "bdsx/launcher";
-import { Tester } from "bdsx/tester";
+import { Actor, bin, CANCEL, chat, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, PacketId, serverControl, serverInstance, StaticPointer, VoidPointer } from "bdsx";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
 import { proc2 } from "bdsx/bds/proc";
+import { capi } from "bdsx/capi";
+import { dll } from "bdsx/dll";
+import { HashSet } from "bdsx/hashset";
+import { bedrockServer } from "bdsx/launcher";
+import { bin64_t, NativeType } from "bdsx/nativetype";
+import { CxxStringWrapper } from "bdsx/pointer";
+import { PseudoRandom } from "bdsx/pseudorandom";
+import { Tester } from "bdsx/tester";
 
 let nextTickPassed = false;
 let commandTestPassed = false;
@@ -18,20 +19,26 @@ let chatCancelCounter = 0;
 Tester.test({
     async globals() {
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
-        this.assert((serverInstance as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7ServerInstance@@6BAppPlatformListener@@@"]), 
+        this.assert(serverInstance.vftable.equals(proc2["??_7ServerInstance@@6BAppPlatformListener@@@"]), 
             'serverInstance is not ServerInstance');
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
-        this.assert((networkHandler as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@"]),
+        this.assert(networkHandler.vftable.equals(proc2["??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@"]),
             'networkHandler is not NetworkHandler');
         const inst = networkHandler.instance;
         this.assert(!!inst && inst.isNotNull(), 'RaknetInstance not found');
-        this.assert((inst as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7RakNetInstance@@6BConnector@@@"]), 
+        this.assert(inst.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]), 
             'networkHandler.instance is not RaknetInstance');
 
         const rakpeer = inst.peer;
         this.assert(!!rakpeer && rakpeer.isNotNull(), 'RakNet::RakPeer not found');
-        this.assert((rakpeer as VoidPointer as StaticPointer).getPointer(0).equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]), 
+        this.assert(rakpeer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]), 
             'networkHandler.instance.peer is not RakNet::RakPeer');
+
+        this.assert(serverInstance.scriptEngine.vftable.equals(proc2['??_7MinecraftServerScriptEngine@@6BScriptFramework@ScriptApi@@@']), 
+            'serverInstance.scriptEngine is not ScriptFrameWork');
+
+        this.assert(serverInstance.scriptEngine.scriptEngineVftable.equals(proc2['??_7MinecraftServerScriptEngine@@6B@']),
+            'serverInstance.scriptEngine wrong vftable offset');
     },
     async nexttick() {
         nextTickPassed = await Promise.race([
@@ -59,6 +66,7 @@ Tester.test({
                     if (!commandNetPassed) this.error('command.net does not emitted');
                     commandTestPassed = true;
                     this.log('/test passed');
+                    return 0;
                 }
             }
         });
@@ -83,7 +91,7 @@ Tester.test({
 
     chat(){
         chat.on(ev=>{
-            if (ev.message == "test")
+            if (ev.message == "TEST YEY!")
             {
                 if (!commandTestPassed && !commandNetPassed)
                 {
@@ -105,9 +113,8 @@ Tester.test({
     },
 
     actor(){
-
         const system = server.registerSystem(0, 0);
-        system.listenForEvent(ReceiveFromMinecraftServer.EntityCreated, ev => {
+        system.listenForEvent('minecraft:entity_created', ev => {
             try
             {
                 const uniqueId = ev.data.entity.__unique_id__;
@@ -122,17 +129,17 @@ Tester.test({
                     this.assert(actualId === expectedId, 
                         `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
                     
-                    if (ev.__identifier__ === 'minecraft:player')
+                    if (ev.data.entity.__identifier__ === 'minecraft:player')
                     {
-                        const name = system.getComponent(ev.data.entity ,MinecraftComponent.Nameable)!.data.name;
+                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
                         this.assert(name === connectedId, 'id does not matched');
                         this.assert(actor.getTypeId() === ActorType.Player, 'player type does not matched');
-                        this.assert(actor.isPlayer(), 'a player is not the player');
+                        this.assert(actor.isPlayer(), 'player is not the player');
                         this.assert(connectedNi === actor.getNetworkIdentifier(), 'the network identifier does not matched');
                     }
                     else
                     {
-                        this.assert(!actor.isPlayer(), `a not player is the player(identifier:${ev.__identifier__})`);
+                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
                     }
                 }
             }
@@ -290,6 +297,20 @@ Tester.test({
             this.assert(conns.delete(ni), '[test] disconnected without connected');
         });
     },
+
+    cxxstring(){
+        const str = new CxxStringWrapper(true);
+        str[NativeType.ctor]();
+        this.assert(str.length === 0, 'std::string invalid constructor');
+        this.assert(str.capacity === 15, 'std::string invalid constructor');
+        const shortcase = '111';
+        const longcase = '123123123123123123123123';
+        str.value = shortcase;
+        this.assert(str.value === shortcase, 'failed with short text');
+        str.value = longcase;
+        this.assert(str.value === longcase, 'failed with long text');
+        str[NativeType.dtor]();
+    }
 });
 
 let connectedNi:NetworkIdentifier;

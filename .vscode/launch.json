@@ -23,7 +23,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "args": ["./bedrock_server"],
+            "args": ["./bedrock_server", "-y"],
             "program": "${workspaceFolder}/bdsx/installer/index",
             "console": "integratedTerminal"
         }

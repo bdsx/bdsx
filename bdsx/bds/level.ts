@@ -1,12 +1,10 @@
-import { LoopbackPacketSender } from "bdsx/loopbacksender";
-import { makefunc } from "bdsx/core";
+import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
+import { abstract } from "bdsx/common";
+import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";
-import { proc } from "./proc";
-import { CxxVector } from "bdsx/cxxvector";
-import { abstract, RawTypeId } from "bdsx/common";
 
 export class Level extends NativeClass
 {

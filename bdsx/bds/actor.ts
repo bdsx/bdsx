@@ -1,16 +1,15 @@
-import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
-import { bin64_t, CxxString, NativeType } from "bdsx/nativetype";
-import { NativeClass } from "bdsx/nativeclass";
-import { abstract, RawTypeId } from "bdsx/common";
-import { bin } from "bdsx/bin";
-import { proc } from "./proc";
-import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { NetworkIdentifier } from "./networkidentifier";
-import { exehacker } from "bdsx/exehacker";
-import { Level } from "./level";
 import { asm, Register } from "bdsx/assembler";
-import { dll } from "bdsx/dll";
+import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
+import { abstract, RawTypeId } from "bdsx/common";
+import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { dll } from "bdsx/dll";
+import { NativeClass } from "bdsx/nativeclass";
+import { bin64_t, NativeType } from "bdsx/nativetype";
+import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Level } from "./level";
+import { NetworkIdentifier } from "./networkidentifier";
+import { proc, procHacker } from "./proc";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t
@@ -39,7 +38,7 @@ export enum ActorType
 
 export class Actor extends NativeClass
 {
-	public static readonly OFFSET_OF_NI = 0x9d0;
+	public static readonly OFFSET_OF_NI = 0x9e8;
 
 	vftable:VoidPointer;
 	identifier:string;
@@ -97,14 +96,14 @@ export class Actor extends NativeClass
 		
 	getUniqueIdLow():number
 	{
-		return bin.int32(this.getUniqueIdBin());
+		return this.getUniqueIdPointer().getInt32(0);
 	}
 	getUniqueIdHigh():number
 	{
-		return bin.int32_high(this.getUniqueIdBin());
+		return this.getUniqueIdPointer().getInt32(4);
 	}
 
-	getUniqueIdBin():ActorUniqueID
+	getUniqueIdPointer():StaticPointer
 	{
 		abstract();
 	}
@@ -144,6 +143,9 @@ export class Actor extends NativeClass
 		return new NativePointer(this.runtimeId);
 	}
 
+	/**
+	 * @deprecated Need more implement
+	 */
 	getEntity():IEntity
 	{
 		let entity:IEntity = (this as any).entity;
@@ -214,25 +216,26 @@ function _removeActor(actor:Actor)
 
 export function hookingForActor():void
 {
-	exehacker.hooking('hook-actor-release', 'Level::removeEntityReferences',
-		makefunc.np((level:Level, actor:Actor, b:boolean)=>{
+	procHacker.hookingRawWithCallOriginal(
+		'Level::removeEntityReferences', 
+		makefunc.np((level, actor, b)=>{
 			_removeActor(actor);
 		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
-		[ 0x48, 0x8B, 0xC4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57, 0x48, 0x8B, 0xEC, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00 ],
-		[]
+		[Register.rcx, Register.rdx, Register.r8], []
 	);
-	exehacker.hooking('hook-actor-delete', 'Actor::~Actor',
+
+	procHacker.hookingRawWithCallOriginal('Actor::~Actor',
 		asm()
 		.push_r(Register.rcx)
 		.call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
 		.pop_r(Register.rcx)
 		.cmp_r_c(Register.rax, capi.nodeThreadId)
-		.jne(12)
+		.jne_label('skip_dtor')
 		.jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
+		.label('skip_dtor')
 		.ret()
 		.alloc(),
-		[ 0x40, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF ],
-		[]
+		[Register.rcx], []
 	);
 }
 

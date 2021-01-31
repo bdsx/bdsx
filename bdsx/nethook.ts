@@ -5,20 +5,21 @@ import { NetworkHandler, NetworkIdentifier } from "./bds/networkidentifier";
 import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "./bds/packet";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { LoginPacket, PacketIdToType } from "./bds/packets";
-import { proc } from "./bds/proc";
+import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL, RawTypeId } from "./common";
 import { makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
-import { exehacker } from "./exehacker";
 import { NativeClass } from "./nativeclass";
-import { CxxStringPointer, CxxStringStructure } from "./pointer";
+import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
+import { remapAndPrintError } from "./source-map-support";
 import { _tickCallback } from "./util";
 
 const MAX_PACKET_ID = 0x100;
+const EVENT_INDEX_COUNT = 0x400;
 
 class ReadOnlyBinaryStream extends NativeClass
 {
-    data:CxxStringStructure;
+    data:CxxStringWrapper;
 
     read(dest:VoidPointer, size:number):boolean
     {
@@ -27,7 +28,7 @@ class ReadOnlyBinaryStream extends NativeClass
 }
 
 ReadOnlyBinaryStream.abstract({
-    data:[CxxStringStructure.ref(), 0x38]
+    data:[CxxStringWrapper.ref(), 0x38]
 });
 ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], RawTypeId.Boolean, {this: ReadOnlyBinaryStream}, VoidPointer, RawTypeId.FloatAsInt64);
 
@@ -50,13 +51,12 @@ OnPacketRBP.abstract({
 export namespace nethook
 {
     export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
-    export type BeforeListener<ID extends MinecraftPacketIds> = (ptr: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
-    export type AfterListener<ID extends MinecraftPacketIds> = (ptr: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => void;
-    export type SendListener<ID extends MinecraftPacketIds> = (ptr: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type BeforeListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type AfterListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => void;
+    export type SendListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
     type AllEventTarget = Event<RawListener|BeforeListener<any>|AfterListener<any>|SendListener<any>>;
     type AnyEventTarget = Event<RawListener&BeforeListener<any>&AfterListener<any>&SendListener<any>>;
     
-    const EVENT_INDEX_COUNT = 0x400;
     const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
     for (let i=0;i<EVENT_INDEX_COUNT;i++)
     {
@@ -82,6 +82,12 @@ export namespace nethook
         {
             try
             {
+                if ((packetId>>>0) >= MAX_PACKET_ID)
+                {
+                    console.error(`onPacketRaw - Unexpected packetId: ${packetId}`);
+                    return createPacketRaw(rbp.packet, packetId);
+                }
+
                 const ni = conn.networkIdentifier;
                 nethook.lastSender = ni;
                 const packet_dest = rbp.packet;
@@ -111,16 +117,16 @@ export namespace nethook
                     }
                     _tickCallback();
                 }
-                createPacketRaw(packet_dest, packetId);
+                return createPacketRaw(packet_dest, packetId);
             }
             catch (err)
             {
-                console.error(err.stack);
+                remapAndPrintError(err);
+                return null;
             }
-            return null;
         }
         
-        exehacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x2c9, 
+        procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x2c9, 
             asm()
             .sub_r_c(Register.rsp, 0x28)
             .mov_r_r(Register.rcx, Register.rbp) // rbp
@@ -141,6 +147,12 @@ export namespace nethook
         {
             try
             {
+                if ((packetId>>>0) >= MAX_PACKET_ID)
+                {
+                    console.error(`onPacketBefore - Unexpected packetId: ${packetId}`);
+                    return result;
+                }
+
                 if (result.streamReadResult != StreamReadResult.Pass) return result;
     
                 const target = alltargets[packetId + BEFORE_OFFSET] as Event<BeforeListener<MinecraftPacketIds>>;
@@ -170,7 +182,7 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(err.stack);
+                remapAndPrintError(err);
             }
             return result;
         }
@@ -183,7 +195,7 @@ export namespace nethook
         */
         const packetBeforeOriginalCode = [ 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x85, 0xE0, 0x01, 0x00, 0x00, 0x48, 0x8D, 0x55, 0x70, 0xFF, 0x50, 0x28 ];
 
-        exehacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x430, 
+        procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x430, 
             asm()
             .sub_r_c(Register.rsp, 0x28)
             .write(...packetBeforeOriginalCode)
@@ -209,13 +221,14 @@ export namespace nethook
             0x41, 0x55, // push r13
             0x41, 0x56, // push r14
         ];
-        exehacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
+        procHacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
             asm()
             .cmp_r_c(Register.r8, 0x7f)
-            .jz(9)
+            .jne_label('violation')
             .mov_r_rp(Register.rax, Register.rsp, 0x28)
             .mov_rp_c(Register.rax, 0, 0, OperationSize.byte)
             .ret()
+            .label('violation')
             .write(...packetViolationOriginalCode)
             .jmp64(proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length), Register.rax)
             .alloc(), 
@@ -235,6 +248,11 @@ export namespace nethook
         {
             try
             {
+                if ((packetId>>>0) >= MAX_PACKET_ID)
+                {
+                    console.error(`onPacketAfter - Unexpected packetId: ${packetId}`);
+                    return;
+                }
                 const target = alltargets[packetId + AFTER_OFFSET] as Event<AfterListener<MinecraftPacketIds>>;
                 if (target !== null && !target.isEmpty())
                 {
@@ -257,10 +275,10 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(err.stack);
+                remapAndPrintError(err);
             }
         }
-        exehacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, 
+        procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, 
             asm()
             .sub_r_c(Register.rsp, 0x28)
             .write(...packetAfterOriginalCode)
@@ -272,10 +290,15 @@ export namespace nethook
             .alloc(), 
             Register.rax, true, packetAfterOriginalCode, []);
 
-        const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringPointer)=>{
+        const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>{
             try
             {
                 const packetId = packet.getId();
+                if ((packetId>>>0) >= MAX_PACKET_ID)
+                {
+                    console.error(`onPacketSend - Unexpected packetId: ${packetId}`);
+                    return;
+                }
                 
                 const target = alltargets[packetId+SEND_OFFSET] as Event<SendListener<MinecraftPacketIds>>;
                 if (target !== null && !target.isEmpty())
@@ -289,9 +312,9 @@ export namespace nethook
             }
             catch (err)
             {
-                console.error(err.stack);
+                remapAndPrintError(err);
             }
-        }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringPointer);
+        }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
 
         const packetSendOriginalCode = [
             0x48, 0x8B, 0x81, 0x68, 0x02, 0x00, 0x00, // mov rax,qword ptr ds:[rcx+268]
@@ -300,7 +323,7 @@ export namespace nethook
             0x49, 0x8B, 0xF8, // mov rdi,r8
             0x4C, 0x8B, 0xF2, // mov r14,rdx
         ];
-        exehacker.patching('hook-packet-send', 'NetworkHandler::send', 0x1A, 
+        procHacker.patching('hook-packet-send', 'NetworkHandler::send', 0x1A, 
             asm()
             .write(...packetSendOriginalCode.slice(7))
             .sub_r_c(Register.rsp, 0x28)
@@ -312,7 +335,7 @@ export namespace nethook
             .alloc(),
             Register.rax, true, packetSendOriginalCode, []);
         
-        exehacker.patching('hook-packet-send', 'NetworkHandler::_sendInternal', 0x14,
+        procHacker.patching('hook-packet-send', 'NetworkHandler::_sendInternal', 0x14,
             asm()
             .mov_r_r(Register.r14, Register.r9)
             .mov_r_r(Register.rdi, Register.r8)
@@ -360,7 +383,7 @@ export namespace nethook
     
     export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AnyEventTarget
     {
-        if (packetId < 0 || packetId >= MAX_PACKET_ID)
+        if ((packetId>>>0) >= MAX_PACKET_ID)
         {
             throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
         }

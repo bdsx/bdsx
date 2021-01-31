@@ -1,13 +1,13 @@
 
 import child_process = require('child_process');
-import { proc } from './bds/proc';
+import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { RawTypeId } from './common';
-import { bedrock_server_exe, makefunc, VoidPointer } from './core';
+import { bedrock_server_exe, VoidPointer } from './core';
 
 export namespace serverControl
 {
-    const stopfunc = makefunc.js(proc['DedicatedServer::stop'], RawTypeId.Void, null, VoidPointer);
+    const stopfunc = procHacker.js('DedicatedServer::stop', RawTypeId.Void, null, VoidPointer);
 
     /**
      * stop the BDS
@@ -17,7 +17,6 @@ export namespace serverControl
     {
         const server = serverInstance.server;
         stopfunc(server.add(8));
-        throw Error('need to implement');
     }
 
     /**

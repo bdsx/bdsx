@@ -1,11 +1,11 @@
 # BDSX 2.0 : BDS + node.js
-![logo](icon.png)  
+![logo](bdsx/icon/icon.png)  
 It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
 
 * OS: Windows & Linux(with Wine)
 * Basic Minecraft features as usual.
-* node.js features [(?)](https://github.com/karikera/bdsx/wiki/Available-NPM-Modules)
-* [Debug with Visual Studio Code (You can debug addons too)](https://github.com/karikera/bdsx/wiki/Debug-with-VSCode)
+* node.js features [(?)](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules)
+* [Debug with Visual Studio Code (You can debug addons too)](https://github.com/bdsx/bdsx/wiki/Debug-with-VSCode)
 * Hijack chatting
 ```ts
 import { chat } from 'bdsx';
@@ -24,47 +24,57 @@ netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
     console.log(`${username}> IP=${ip}, XUID=${xuid}`);
 });
 ```
-* [Command hooking](https://github.com/karikera/bdsx/wiki/Command-Hooking)
-* [DLL Call](https://github.com/karikera/bdsx/wiki/Call-DLL-Directly)
+* [Command hooking](https://github.com/bdsx/bdsx/wiki/Command-Hooking)
+* [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
 
 ## How to use it?
 * Requirement  
 [node.js](https://nodejs.org/)  
 Wine(for Linux)  
+git clone https://github.com/bdsx/bdsx.git or download it
 * Recommended  
 [VSCode](https://code.visualstudio.com/)  
 GIT
 
-1. git clone https://github.com/karikera/bdsx.git  
-or download it
-2. Open it `VSCode` → `Ctrl+Shift+B`(Build) → `F5`(Run)  
-or run `./bdsx/bdsx.bat` (on Windows)  
-or run `./bdsx/bdsx.sh` (on Linux)
+### Starting with VSCode
+```sh
+1. Open the project with VSCode
+2. Open a terminal(Ctrl+Shift+｀) and run `npm i`
+3. Press `Ctrl+Shift+B` # Build with watch mode
+4. Press `F5` # run
+```
+
+### Starting with the executable
+run `./bdsx/bdsx.bat` (on Windows)  
+run `./bdsx/bdsx.sh` (on Linux)
 
 ### by docker
 ```sh
 docker run karikera/bdsx
 ```
 
-## Build (Watch Mode)
-It will build in watch mode.  
-
-* Build with VSCode
-1. Open the project directory with VSCode
-2. Ctrl + Shift + B
-
-* Build with Command Line
-1. Open `bdsx/` with Prompt
-2. run `npm run watch`
+## File Structure
+```sh
+[bdsx project]
+├ [bdsx] # Core Library
+├ [example_and_test]
+├ [bedrock_server] # Installed BDS
+├ launcher.ts # It's started before BDS. 
+├ index.ts # Main entry point. 
+├ bdsx.sh # Executable for Linux
+└ bdsx.bat # Executable for Windows
+# ./launcher.ts imports ./index.ts after launching BDS
+# Please start your own code from ./index.ts
+```
 
 ## BDSX Wiki(Include JS API Reference)
-https://github.com/karikera/bdsx/wiki
+https://github.com/bdsx/bdsx/wiki
 
 ## Bug Report or Q&A
-https://github.com/karikera/bdsx/issues
+https://github.com/bdsx/bdsx/issues
 
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
 
 ## BDSX Core
-https://github.com/karikera/bdsx-core
+https://github.com/bdsx/bdsx-core

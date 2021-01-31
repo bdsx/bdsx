@@ -1,13 +1,12 @@
 
-
-import { proc, proc2 } from './bds/proc';
 import { abstract, emptyFunc, RawTypeId } from './common';
-import { makefunc, StaticPointer, VoidPointer } from './core';
+import { makefunc, pdb, StaticPointer, VoidPointer } from './core';
 import { Singleton } from './singleton';
 
 namespace NativeTypeFn
 {
     export const size = Symbol('size');
+    export const align = Symbol('align');
     export const getter = Symbol('getter');
     export const setter = Symbol('setter');
     export const ctor = Symbol('ctor');
@@ -31,6 +30,7 @@ export interface Type<T>
     [NativeTypeFn.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
     [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void;
     [NativeTypeFn.size]:number|null;
+    [NativeTypeFn.align]:number;
     [NativeTypeFn.isNativeClass]?:true;
 }
 
@@ -59,6 +59,7 @@ export class NativeType<T> implements Type<T>
     public static readonly ctor_copy:typeof NativeTypeFn.ctor_copy = NativeTypeFn.ctor_copy;
     public static readonly ctor_move:typeof NativeTypeFn.ctor_move = NativeTypeFn.ctor_move;
     public static readonly size:typeof NativeTypeFn.size = NativeTypeFn.size;
+    public static readonly align:typeof NativeTypeFn.align = NativeTypeFn.align;
     public static readonly descriptor:typeof NativeTypeFn.descriptor = NativeTypeFn.descriptor;
     
     
@@ -69,9 +70,12 @@ export class NativeType<T> implements Type<T>
     public readonly [NativeTypeFn.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
     public readonly [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void;
     public readonly [NativeTypeFn.size]:number;
+    public readonly [NativeTypeFn.align]:number;
+
 
     constructor(
         size:number,
+        align:number,
         get:(ptr:StaticPointer, offset?:number)=>T, 
         set:(ptr:StaticPointer, v:T, offset?:number)=>void,
         ctor:(ptr:StaticPointer)=>void = emptyFunc,
@@ -80,6 +84,7 @@ export class NativeType<T> implements Type<T>
         ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy)
     {
         this[NativeType.size] = size;
+        this[NativeType.align] = align;
         this[NativeType.getter] = get;
         this[NativeType.setter] = set;
         this[NativeType.ctor] = ctor;
@@ -93,6 +98,7 @@ export class NativeType<T> implements Type<T>
         const type = this;
         const ntype = new NativeType(
             type[NativeType.size],
+            type[NativeType.align],
             (ptr) => type[NativeType.getter](ptr),
             (ptr, v) => type[NativeType.setter](ptr, v),
         );
@@ -144,6 +150,7 @@ function makeReference<T>(type:NativeType<T>):NativeType<T>
 {
     return new NativeType<T>(
         8,
+        8,
         (ptr)=>type[NativeType.getter](ptr.getPointer()),
         (ptr, v)=>type[NativeType.setter](ptr.getPointer(), v),
     );
@@ -155,6 +162,7 @@ declare module './core'
     interface VoidPointerConstructor
     {
         [NativeType.size]:number;
+        [NativeType.align]:number;
         [NativeType.getter]<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS;
         [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:VoidPointer, offset?:number):void;
         [NativeType.ctor](ptr:StaticPointer):void;
@@ -166,6 +174,7 @@ declare module './core'
 }
 
 VoidPointer[NativeType.size] = 8;
+VoidPointer[NativeType.align] = 8;
 VoidPointer[NativeType.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS{
     return ptr.getPointerAs(this, offset);
 };
@@ -182,69 +191,80 @@ VoidPointer[NativeType.ctor_move] = function(to:StaticPointer, from:StaticPointe
 };
 VoidPointer[NativeType.descriptor] = NativeType.defaultDescriptor;
 
+export const bool_t = new NativeType<boolean>(
+    1, 1,
+    (ptr, offset)=>ptr.getBoolean(offset), 
+    (ptr, v, offset)=>ptr.setBoolean(v, offset));
 export const uint8_t = new NativeType<number>(
-    1,
-    (ptr, offset)=>ptr.getUint8(offset), 
-    (ptr, v, offset)=>ptr.setUint8(v, offset));
+    1, 1,
+    (ptr, offset)=>ptr.getInt8(offset), 
+    (ptr, v, offset)=>ptr.setInt8(v, offset));
 export type uint8_t = number;
 export const uint16_t = new NativeType<number>(
-    2,
-    (ptr, offset)=>ptr.getUint16(offset), 
-    (ptr, v, offset)=>ptr.setUint16(v, offset));
+    2, 2,
+    (ptr, offset)=>ptr.getInt16(offset), 
+    (ptr, v, offset)=>ptr.setInt16(v, offset));
 export type uint16_t = number;
 export const uint32_t = new NativeType<number>(
-    4,
+    4, 4,
     (ptr, offset)=>ptr.getUint32(offset), 
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type uint32_t = number;
 export const uint64_as_float_t = new NativeType<number>(
-    4,
+    8, 8,
     (ptr, offset)=>ptr.getUint64AsFloat(offset), 
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
-    1,
+    1, 1,
     (ptr, offset)=>ptr.getUint8(offset), 
     (ptr, v, offset)=>ptr.setUint8(v, offset));
 export type int8_t = number;
 export const int16_t = new NativeType<number>(
-    2,
+    2, 2,
     (ptr, offset)=>ptr.getUint16(offset), 
     (ptr, v, offset)=>ptr.setUint16(v, offset));
 export type int16_t = number;
 export const int32_t = new NativeType<number>(
-    4,
-    (ptr, offset)=>ptr.getUint32(offset), 
-    (ptr, v, offset)=>ptr.setUint32(v, offset));
+    4, 4,
+    (ptr, offset)=>ptr.getInt32(offset), 
+    (ptr, v, offset)=>ptr.setInt32(v, offset));
 export type int32_t = number;
 export const int64_as_float_t = new NativeType<number>(
-    4,
+    8, 8,
     (ptr, offset)=>ptr.getInt64AsFloat(offset), 
     (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset));
 export type int64_as_float_t = number;
 export const float32_t = new NativeType<number>(
-    4,
+    8, 8,
     (ptr, offset)=>ptr.getUint32(offset), 
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type float32_t = number;
 export const float64_t = new NativeType<number>(
-    8,
+    8, 8,
     (ptr, offset)=>ptr.getUint32(offset), 
     (ptr, v, offset)=>ptr.setUint32(v, offset));
 export type float64_t = number;
+
+const strfn = pdb.getList(pdb.coreCachePath, {}, [
+    '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ', 
+    '?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'
+]);
+pdb.close();
+
+const string_ctor = makefunc.js(strfn['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
+const string_dtor = makefunc.js(strfn['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], RawTypeId.Void, null, VoidPointer);
+
 export const CxxString = new NativeType<string>(
-    0x20,
+    0x20, 8,
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
-    (ptr)=>string_ctor(ptr),
-    (ptr)=>string_dtor(ptr));
+    string_ctor,
+    string_dtor);
 export type CxxString = string;
 
-const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
-const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], RawTypeId.Void, null, VoidPointer);
-
 export const bin64_t = new NativeType<string>(
-    8,
+    8, 8,
     (ptr)=>ptr.getBin64(), 
     (ptr, v)=>ptr.setBin(v)
 ).extends({
@@ -255,7 +275,7 @@ export const bin64_t = new NativeType<string>(
 export type bin64_t = string;
 
 export const bin128_t = new NativeType<string>(
-    16,
+    16, 8,
     (ptr)=>ptr.getBin(8), 
     (ptr, v)=>ptr.setBin(v)
 ).extends({

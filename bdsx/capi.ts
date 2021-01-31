@@ -1,6 +1,6 @@
 import { asm, Register } from "./assembler";
 import { RawTypeId } from "./common";
-import { makefunc, NativePointer, VoidPointer } from "./core";
+import { AllocatedPointer, makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 
 export namespace capi
@@ -11,10 +11,10 @@ export namespace capi
     export const getJsValueRef:(value:any)=>VoidPointer = makefunc.js(
         asm().mov_r_r(Register.rax, Register.rcx).ret().alloc(), VoidPointer, null, RawTypeId.JsValueRef);
 
-    export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null):[ThreadHandle, number]
+    export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null, stackSize:number = 0):[ThreadHandle, number]
     {
         const out = new Uint32Array(1);
-        const handle = dll.kernel32.CreateThread(null, 0, functionPointer, param, 0, out);
+        const handle = dll.kernel32.CreateThread(null, stackSize, functionPointer, param, 0, out);
         return [handle, out[0]];
     }
     
@@ -33,4 +33,18 @@ export namespace capi
      * memory release by native c
      */
     export const free:(ptr:VoidPointer)=>void = dll.ucrtbase.free;
+
+    export function isRunningOnWine():boolean
+    {
+        return dll.ntdll.wine_get_version !== null;
+    }
+
+    /**
+     * Keep the object from GC
+     */
+    export function permanent<T>(v:T):T
+    {
+        dll.ChakraCore.JsAddRef(v, null);
+        return v;
+    }
 }
