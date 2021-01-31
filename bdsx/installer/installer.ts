@@ -15,13 +15,13 @@ const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_V
 const BDSX_CORE_VERSION = version.coreVersion;
 const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
 
-function yesno(question:string, defaultValue?:boolean):Promise<boolean>{
+function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
     const yesValues = [ 'yes', 'y'];
     const noValues  = [ 'no', 'n' ];
 
     const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
+        input: process.stdin,
+        output: process.stdout
     });
 
     return new Promise<boolean>(resolve=>{
@@ -29,7 +29,7 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean>{
             rl.close();
 
             const cleaned = answer.trim().toLowerCase();
-            if (cleaned == '' && defaultValue !== undefined)
+            if (cleaned === '' && defaultValue !== undefined)
                 return resolve(defaultValue);
     
             if (yesValues.indexOf(cleaned) >= 0)
@@ -47,8 +47,7 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean>{
 }
 
 const fs = {
-    readFile(path:string):Promise<string>
-    {
+    readFile(path:string):Promise<string> {
         return new Promise((resolve, reject)=>{
             fs_ori.readFile(path, 'utf-8', (err, data)=>{
                 if (err) reject(err);
@@ -56,8 +55,7 @@ const fs = {
             });
         });
     },
-    writeFile(path:string, content:string):Promise<void>
-    {
+    writeFile(path:string, content:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs_ori.writeFile(path, content, (err)=>{
                 if (err) reject(err);
@@ -65,8 +63,7 @@ const fs = {
             });
         });
     },
-    readdir(path:string):Promise<string[]>
-    {
+    readdir(path:string):Promise<string[]> {
         return new Promise((resolve, reject)=>{
             fs_ori.readdir(path, 'utf-8', (err, data)=>{
                 if (err) reject(err);
@@ -74,21 +71,17 @@ const fs = {
             });
         });
     },
-    mkdir(path:string):Promise<void>
-    {
+    mkdir(path:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs_ori.mkdir(path, (err)=>{
-                if (err)
-                {
+                if (err) {
                     if (err.code === 'EEXIST') resolve();
                     else reject(err);
-                }
-                else resolve();
+                } else resolve();
             });
         });
     }, 
-    _processMkdirError(dirname:string, err:any):boolean
-    {
+    _processMkdirError(dirname:string, err:any):boolean {
         if (err.code === 'EEXIST') {
             return true;
         }
@@ -97,8 +90,7 @@ const fs = {
         }
         return false;
     },
-    rmdir(path:string):Promise<void>
-    {
+    rmdir(path:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs_ori.rmdir(path, (err)=>{
                 if (err) reject(err);
@@ -106,8 +98,7 @@ const fs = {
             });
         });
     },
-    stat(path:string):Promise<fs_ori.Stats>
-    {
+    stat(path:string):Promise<fs_ori.Stats> {
         return new Promise((resolve, reject)=>{
             fs_ori.stat(path, (err, data)=>{
                 if (err) reject(err);
@@ -115,8 +106,7 @@ const fs = {
             });
         });
     },
-    unlink(path:string):Promise<void>
-    {
+    unlink(path:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs_ori.unlink(path, (err)=>{
                 if (err) reject(err);
@@ -124,8 +114,7 @@ const fs = {
             });
         });
     },
-    copyFile(from:string, to:string):Promise<void>
-    {
+    copyFile(from:string, to:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             const rd = fs_ori.createReadStream(from);
             rd.on("error", reject);
@@ -137,24 +126,18 @@ const fs = {
             rd.pipe(wr);
         });
     },
-    exists(path:string):Promise<boolean>
-    {
+    exists(path:string):Promise<boolean> {
         return fs.stat(path).then(()=>true, ()=>false);
     },
-    async del(filepath:string):Promise<void>
-    {
+    async del(filepath:string):Promise<void> {
         const stat = await fs.stat(filepath);
-        if (stat.isDirectory())
-        {
+        if (stat.isDirectory()) {
             const files = await fs.readdir(filepath);
-            for (const file of files)
-            {
+            for (const file of files) {
                 await fs.del(path.join(filepath, file));
             }
             await fs.rmdir(filepath);
-        }
-        else
-        {
+        } else {
             await fs.unlink(filepath);
         }
     }
@@ -174,32 +157,22 @@ const KEEPS = new Set([
     `${sep}permissions.json`,
 ]);
 
-class MessageError extends Error
-{
-    constructor(msg:string)
-    {
+class MessageError extends Error {
+    constructor(msg:string) {
         super(msg);
     }
 }
 
-async function removeInstalled(dest:string, files:string[]):Promise<void>
-{
-    for (let i = files.length - 1; i >= 0; i--)
-    {
-        try
-        {
+async function removeInstalled(dest:string, files:string[]):Promise<void> {
+    for (let i = files.length - 1; i >= 0; i--) {
+        try {
             const file = files[i];
-            if (file.endsWith(sep))
-            {
+            if (file.endsWith(sep)) {
                 await fs.rmdir(path.join(dest, file.substr(0, file.length-1)));
-            }
-            else
-            {
+            } else {
                 await fs.unlink(path.join(dest, file));
             }
-        }
-        catch (err)
-        {
+        } catch (err) {
         }
     }
 }
@@ -210,28 +183,22 @@ const bdsPath = process.argv[2];
 const agree = process.argv[3] === '-y';
 const installInfoPath = `${bdsPath}${sep}installinfo.json`;
 
-async function readInstallInfo():Promise<void>
-{
-    try
-    {
+async function readInstallInfo():Promise<void> {
+    try {
         const file = await fs.readFile(installInfoPath);
         installInfo = JSON.parse(file);
         if (!installInfo) installInfo = {};
-    }
-    catch (err)
-    {
+    } catch (err) {
         if (err.code !== 'ENOENT') throw err;
         installInfo = {};
     }
 }
 
-function saveInstallInfo():Promise<void>
-{
+function saveInstallInfo():Promise<void> {
     return fs.writeFile(installInfoPath, JSON.stringify(installInfo, null, 4));
 }
 
-class InstallItem
-{
+class InstallItem {
     constructor(public readonly opts:{
         name:string,
         key:keyof InstallInfo,
@@ -244,12 +211,10 @@ class InstallItem
         postinstall?:(writedFiles:string[])=>Promise<void>|void,
         skipExists?:boolean,
         oldFiles?:string[],
-    })
-    {
+    }) {
     }
 
-    private async _downloadAndUnzip():Promise<string[]>
-    {
+    private async _downloadAndUnzip():Promise<string[]> {
         const url = this.opts.url;
         const dest = path.join(this.opts.targetPath);
         const writedFiles:string[] = [];
@@ -265,8 +230,7 @@ class InstallItem
         const dirhas = new Set<string>();
         dirhas.add(dest);
 
-        async function mkdirRecursive(dirpath:string):Promise<void>
-        {
+        async function mkdirRecursive(dirpath:string):Promise<void> {
             if (dirhas.has(dirpath)) return;
             await mkdirRecursive(path.dirname(dirpath));
             await fs.mkdir(dirpath);
@@ -275,8 +239,7 @@ class InstallItem
         await new Promise<unzipper.ParseStream>((resolve, reject)=>{
             https.get(url, (response)=>{
                 bar.total = +response.headers['content-length']!;
-                if (response.statusCode !== 200)
-                {
+                if (response.statusCode !== 200) {
                     reject(new MessageError(`${this.opts.name}: ${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
                     return;
                 }
@@ -289,30 +252,24 @@ class InstallItem
                     let filepath = entry.path;
                     if (sep !== '/') filepath = filepath.replace(/\//g, sep);
                     else filepath = filepath.replace(/\\/g, sep);
-                    if (!filepath.startsWith(sep))
-                    {
+                    if (!filepath.startsWith(sep)) {
                         filepath = sep+filepath;
                         entry.path = filepath;
-                    }
-                    else
-                    {
+                    } else {
                         entry.path = filepath.substr(1);
                     }
                     writedFiles.push(filepath);
 
                     const extractPath = path.join(dest, entry.path);
-                    if (entry.type == 'Directory')
-                    {
+                    if (entry.type === 'Directory') {
                         await mkdirRecursive(extractPath);
                         entry.autodrain();
                         return;
                     }
             
-                    if (this.opts.skipExists)
-                    {
+                    if (this.opts.skipExists) {
                         const exists = await fs.exists(path.join(dest, entry.path));
-                        if (exists)
-                        {
+                        if (exists) {
                             entry.autodrain();
                             return;
                         }
@@ -327,19 +284,13 @@ class InstallItem
         return writedFiles;
     }
     
-    private async _install():Promise<void>
-    {
+    private async _install():Promise<void> {
         const oldFiles = this.opts.oldFiles;
-        if (oldFiles)
-        {
-            for (const oldfile of oldFiles)
-            {
-                try
-                {
+        if (oldFiles) {
+            for (const oldfile of oldFiles) {
+                try {
                     await fs.del(path.join(this.opts.targetPath, oldfile));
-                }
-                catch (err)
-                {
+                } catch (err) {
                 }
             }
         }
@@ -352,18 +303,14 @@ class InstallItem
         if (postinstall) await postinstall(writedFiles);
     }
         
-    async install():Promise<void>
-    {
+    async install():Promise<void> {
         await fs.mkdir(this.opts.targetPath);
         const name = this.opts.name;
         const key = this.opts.key;
-        if (installInfo[key] === undefined)
-        {
+        if (installInfo[key] === undefined) {
             const keyFile = this.opts.keyFile;
-            if (keyFile && await fs.exists(path.join(this.opts.targetPath, keyFile)))
-            {
-                if (await yesno(`${name}: Would you like to use what already installed?`))
-                {
+            if (keyFile && await fs.exists(path.join(this.opts.targetPath, keyFile))) {
+                if (await yesno(`${name}: Would you like to use what already installed?`)) {
                     installInfo[key] = 'manual' as any;
                     console.log(`${name}: manual`);
                     return;
@@ -373,17 +320,11 @@ class InstallItem
             if (confirm) await confirm();
             await this._install();
             console.log(`${name}: Installed successfully`);
-        }
-        else if (installInfo[key] === null || installInfo[key] === 'manual')
-        {
+        } else if (installInfo[key] === null || installInfo[key] === 'manual') {
             console.log(`${name}: manual`);
-        }
-        else if (installInfo[key] === this.opts.version)
-        {
+        } else if (installInfo[key] === this.opts.version) {
             console.log(`${name}: ${this.opts.version}`);
-        }
-        else
-        {
+        } else {
             console.log(`${name}: Old (${installInfo[key]})`);
             console.log(`${name}: New (${this.opts.version})`);
             await this._install();
@@ -400,29 +341,25 @@ const bds = new InstallItem({
     targetPath: bdsPath,
     key: 'bdsVersion',
     keyFile: 'bedrock_server.exe',
-    async confirm(){
+    async confirm() {
         console.log(`It will download and install Bedrock Dedicated Server to '${path.resolve(bdsPath)}'`);
         console.log(`BDS Version: ${BDS_VERSION}`);
         console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
         console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
-        if (!agree)
-        {
+        if (!agree) {
             const ok = await yesno("Would you like to agree it?(Y/n)");
             if (!ok) throw new MessageError("Canceled");
-        }
-        else
-        {
+        } else {
             console.log("Agreed by -y");
         }  
     },
-    async preinstall(){
-        if (installInfo.files)
-        {
+    async preinstall() {
+        if (installInfo.files) {
             await removeInstalled(bdsPath, installInfo.files!);
         }
     },
-    async postinstall(writedFiles){
-        installInfo.files = writedFiles.filter(file=>!KEEPS.has(file));;
+    async postinstall(writedFiles) {
+        installInfo.files = writedFiles.filter(file=>!KEEPS.has(file));
     }
 });
 
@@ -437,21 +374,15 @@ const bdsxCore = new InstallItem({
 });
 
 (async()=>{
-    try
-    {
+    try {
         await readInstallInfo();
         await bds.install();
         await bdsxCore.install();
         await saveInstallInfo();
-    }
-    catch (err)
-    {
-        if (err instanceof MessageError)
-        {
+    } catch (err) {
+        if (err instanceof MessageError) {
             console.error(err.message);
-        }
-        else
-        {
+        } else {
             console.error(err.stack);
         }
         await saveInstallInfo();

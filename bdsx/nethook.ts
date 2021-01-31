@@ -17,12 +17,10 @@ import { _tickCallback } from "./util";
 const MAX_PACKET_ID = 0x100;
 const EVENT_INDEX_COUNT = 0x400;
 
-class ReadOnlyBinaryStream extends NativeClass
-{
+class ReadOnlyBinaryStream extends NativeClass {
     data:CxxStringWrapper;
 
-    read(dest:VoidPointer, size:number):boolean
-    {
+    read(dest:VoidPointer, size:number):boolean {
         abstract();
     }
 }
@@ -32,8 +30,7 @@ ReadOnlyBinaryStream.abstract({
 });
 ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], RawTypeId.Boolean, {this: ReadOnlyBinaryStream}, VoidPointer, RawTypeId.FloatAsInt64);
 
-class OnPacketRBP extends NativeClass
-{
+class OnPacketRBP extends NativeClass {
     packet:SharedPtr<Packet>;
     stream:ReadOnlyBinaryStream;
     readResult:ExtendedStreamReadResult;
@@ -58,8 +55,7 @@ export namespace nethook
     type AnyEventTarget = Event<RawListener&BeforeListener<any>&AfterListener<any>&SendListener<any>>;
     
     const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
-    for (let i=0;i<EVENT_INDEX_COUNT;i++)
-    {
+    for (let i=0;i<EVENT_INDEX_COUNT;i++) {
         alltargets[i] = null;
     }
 
@@ -76,14 +72,10 @@ export namespace nethook
     const AFTER_OFFSET = EventType.After*MAX_PACKET_ID;
     const SEND_OFFSET = EventType.Send*MAX_PACKET_ID;
         
-    export function hooking(fireError:(err:any)=>void):void
-    {
-        function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null
-        {
-            try
-            {
-                if ((packetId>>>0) >= MAX_PACKET_ID)
-                {
+    export function hooking(fireError:(err:any)=>void):void {
+        function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
+            try {
+                if ((packetId>>>0) >= MAX_PACKET_ID) {
                     console.error(`onPacketRaw - Unexpected packetId: ${packetId}`);
                     return createPacketRaw(rbp.packet, packetId);
                 }
@@ -93,34 +85,26 @@ export namespace nethook
                 const packet_dest = rbp.packet;
     
                 const target = alltargets[packetId + RAW_OFFSET] as Event<RawListener>;
-                if (target !== null && !target.isEmpty()) 
-                {
+                if (target !== null && !target.isEmpty()) {
                     const s = rbp.stream;
                     const data = s.data;
                     const rawpacketptr = data.valueptr;
     
-                    for (const listener of target.allListeners())
-                    {
-                        try
-                        {
+                    for (const listener of target.allListeners()) {
+                        try {
                             const ptr = new NativePointer(rawpacketptr);
-                            if (listener(ptr, data.length, ni, packetId) === CANCEL)
-                            {
+                            if (listener(ptr, data.length, ni, packetId) === CANCEL) {
                                 _tickCallback();
                                 return null;
                             }
-                        }
-                        catch (err)
-                        {
+                        } catch (err) {
                             fireError(err);
                         }
                     }
                     _tickCallback();
                 }
                 return createPacketRaw(packet_dest, packetId);
-            }
-            catch (err)
-            {
+            } catch (err) {
                 remapAndPrintError(err);
                 return null;
             }
@@ -143,45 +127,34 @@ export namespace nethook
             ],
             [ 11, 15 ]);
             
-        function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packetId:MinecraftPacketIds):ExtendedStreamReadResult
-        {
-            try
-            {
-                if ((packetId>>>0) >= MAX_PACKET_ID)
-                {
+        function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packetId:MinecraftPacketIds):ExtendedStreamReadResult {
+            try {
+                if ((packetId>>>0) >= MAX_PACKET_ID) {
                     console.error(`onPacketBefore - Unexpected packetId: ${packetId}`);
                     return result;
                 }
 
-                if (result.streamReadResult != StreamReadResult.Pass) return result;
+                if (result.streamReadResult !== StreamReadResult.Pass) return result;
     
                 const target = alltargets[packetId + BEFORE_OFFSET] as Event<BeforeListener<MinecraftPacketIds>>;
-                if (target !== null && !target.isEmpty())
-                {
+                if (target !== null && !target.isEmpty()) {
                     const packet = rbp.packet.p!;
                     const TypedPacket = PacketIdToType[packetId] || Packet;
                     const typedPacket = new TypedPacket(packet);
-                    for (const listener of target.allListeners())
-                    {
-                        try
-                        {
-                            if (listener(typedPacket, nethook.lastSender, packetId) === CANCEL)
-                            {
+                    for (const listener of target.allListeners()) {
+                        try {
+                            if (listener(typedPacket, nethook.lastSender, packetId) === CANCEL) {
                                 result.streamReadResult = StreamReadResult.Ignore;
                                 _tickCallback();
                                 return result;
                             }
-                        }
-                        catch (err)
-                        {
+                        } catch (err) {
                             fireError(err);
                         }
                     }
                     _tickCallback();
                 }
-            }
-            catch (err)
-            {
+            } catch (err) {
                 remapAndPrintError(err);
             }
             return result;
@@ -232,7 +205,7 @@ export namespace nethook
             .write(...packetViolationOriginalCode)
             .jmp64(proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length), Register.rax)
             .alloc(), 
-            Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24])
+            Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24]);
                 
         /*
         mov rax,qword ptr ds:[rcx]
@@ -244,37 +217,27 @@ export namespace nethook
         const packetAfterOriginalCode = [
             0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x8D, 0x48, 0x01, 0x00, 0x00, 0x4C, 0x8B, 0xC6, 0x49, 0x8B, 0xD5, 0xFF, 0x50, 0x08
         ];
-        function onPacketAfter(rbp:OnPacketRBP, packetId:MinecraftPacketIds):void
-        {
-            try
-            {
-                if ((packetId>>>0) >= MAX_PACKET_ID)
-                {
+        function onPacketAfter(rbp:OnPacketRBP, packetId:MinecraftPacketIds):void {
+            try {
+                if ((packetId>>>0) >= MAX_PACKET_ID) {
                     console.error(`onPacketAfter - Unexpected packetId: ${packetId}`);
                     return;
                 }
                 const target = alltargets[packetId + AFTER_OFFSET] as Event<AfterListener<MinecraftPacketIds>>;
-                if (target !== null && !target.isEmpty())
-                {
+                if (target !== null && !target.isEmpty()) {
                     const packet = rbp.packet.p!;
                     const TypedPacket = PacketIdToType[packetId] || Packet;
                     const typedPacket = new TypedPacket(packet);
-                    for (const listener of target.allListeners())
-                    {
-                        try
-                        {
+                    for (const listener of target.allListeners()) {
+                        try {
                             listener(typedPacket, nethook.lastSender, packetId);
-                        }
-                        catch (err)
-                        {
+                        } catch (err) {
                             fireError(err);
                         }
                     }
                     _tickCallback();
                 }
-            }
-            catch (err)
-            {
+            } catch (err) {
                 remapAndPrintError(err);
             }
         }
@@ -291,27 +254,22 @@ export namespace nethook
             Register.rax, true, packetAfterOriginalCode, []);
 
         const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>{
-            try
-            {
+            try {
                 const packetId = packet.getId();
-                if ((packetId>>>0) >= MAX_PACKET_ID)
-                {
+                if ((packetId>>>0) >= MAX_PACKET_ID) {
                     console.error(`onPacketSend - Unexpected packetId: ${packetId}`);
                     return;
                 }
                 
                 const target = alltargets[packetId+SEND_OFFSET] as Event<SendListener<MinecraftPacketIds>>;
-                if (target !== null && !target.isEmpty())
-                {
+                if (target !== null && !target.isEmpty()) {
                     const TypedPacket = PacketIdToType[packetId] || Packet;
                     const packetptr = new TypedPacket(packet);
                     const ignore = target.fire(packetptr, ni, packetId) === CANCEL;
                     _tickCallback();
                     if (ignore) return;
                 }
-            }
-            catch (err)
-            {
+            } catch (err) {
                 remapAndPrintError(err);
             }
         }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
@@ -366,25 +324,20 @@ export namespace nethook
      * @param ptr login packet pointer
      * @return [xuid, username]
      */
-    export function readLoginPacket(packet: StaticPointer):[string, string]
-    {
+    export function readLoginPacket(packet: StaticPointer):[string, string] {
         const loginpacket = new LoginPacket(packet);
         const conn = loginpacket.connreq;
-        if (conn !== null)
-        {
+        if (conn !== null) {
             const cert = conn.cert;
-            if (cert !== null)
-            {
+            if (cert !== null) {
                 return [cert.getXuid(), cert.getId()];
             }
         }
         throw Error('LoginPacket does not have cert info');
     }
     
-    export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AnyEventTarget
-    {
-        if ((packetId>>>0) >= MAX_PACKET_ID)
-        {
+    export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AnyEventTarget {
+        if ((packetId>>>0) >= MAX_PACKET_ID) {
             throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
         }
         const id = type*MAX_PACKET_ID + packetId;
@@ -402,8 +355,7 @@ export namespace nethook
     /**
      * @deprecated use packet.sendTo instead
      */
-    export function sendPacket(networkIdentifier:NetworkIdentifier, packet:StaticPointer, unknownarg:number=0):void
-    {
+    export function sendPacket(networkIdentifier:NetworkIdentifier, packet:StaticPointer, unknownarg:number=0):void {
         new Packet(packet).sendTo(networkIdentifier, 0);
     }
 }

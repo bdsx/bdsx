@@ -14,36 +14,34 @@ import { BinaryStream } from "./stream";
 // }
 
 export const PacketReadResult = uint32_t.extends({
-	PacketReadNoError: 0,
-	PacketReadError: 1,
+    PacketReadNoError: 0,
+    PacketReadError: 1,
 });
 export type PacketReadResult = uint32_t;
 
 
 export const StreamReadResult = int32_t.extends({
-	Disconnect: 0,
-	Pass: 1,
-	Warning: 2, // disconnect at 3 times
-	Ignore: 0x7f,
+    Disconnect: 0,
+    Pass: 1,
+    Warning: 2, // disconnect at 3 times
+    Ignore: 0x7f,
 });
 export type StreamReadResult = int32_t;
 
-export class ExtendedStreamReadResult extends NativeClass
-{
+export class ExtendedStreamReadResult extends NativeClass {
 	streamReadResult:StreamReadResult;
 	dummy:int32_t;
 	// array?
-};
+}
 ExtendedStreamReadResult.abstract({
-	streamReadResult:StreamReadResult,
-	dummy:int32_t,
+    streamReadResult:StreamReadResult,
+    dummy:int32_t,
 	// array?
 });
 
 const sharedptr_of_packet = Symbol('sharedptr');
 
-export class Packet extends MantleClass
-{
+export class Packet extends MantleClass {
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
 
@@ -72,18 +70,15 @@ export class Packet extends MantleClass
     /**
      * same with target.send
      */
-    sendTo(target:NetworkIdentifier, unknownarg?:number)
-    {
+    sendTo(target:NetworkIdentifier, unknownarg?:number):void {
         abstract();
     }
-    dispose():void
-    {
+    dispose():void {
         this[sharedptr_of_packet]!.dispose();
         this[sharedptr_of_packet] = null;
     }
 
-    static create<T extends Packet>(this:{new():T, ID:number, ref():any}):T
-    {
+    static create<T extends Packet>(this:{new():T, ID:number, ref():any}):T {
         const id = this.ID;
         if (id === undefined) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
         const cls = SharedPtr.make(this);
@@ -104,8 +99,7 @@ export type PacketSharedPtr = SharedPtr<Packet>;
 /**
  * @deprecated use *Packet.create() instead
  */
-export function createPacket(packetId:MinecraftPacketIds):SharedPointer
-{
+export function createPacket(packetId:MinecraftPacketIds):SharedPointer {
     const p = new PacketSharedPtr(true);
     createPacketRaw(p, packetId);
     return new SharedPointer(p);

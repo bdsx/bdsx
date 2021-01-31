@@ -25,7 +25,7 @@ export enum AttributeName
 	Absorption="minecraft:absorption",
 	Luck="minecraft:luck",
 	JumpStrength="minecraft:horse.jump_strength",
-};
+}
 
 // https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
 export enum DeviceOS
@@ -77,11 +77,12 @@ export enum RawTypeId {
 	Void,
 }
 
-export function emptyFunc(){}
+export function emptyFunc():void{
+	// empty
+}
 
-export function abstract():never
-{
-	throw Error('abstract');
+export function abstract():never {
+    throw Error('abstract');
 }
 
 export const SYMOPT_PUBLICS_ONLY = 0x00004000;

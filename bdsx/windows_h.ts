@@ -86,20 +86,18 @@ export const IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR = 14;   // COM Runtime descrip
 export const IMAGE_ORDINAL_FLAG64 = bin.make64(0, 0x80000000);
 export const IMAGE_ORDINAL_FLAG32 = 0x80000000;
 export const b64_LOW_WORD = bin.make(0xffff, 4);
-export function IMAGE_ORDINAL64(Ordinal:string) { return (bin.bitand(Ordinal, b64_LOW_WORD)); }
-export function IMAGE_SNAP_BY_ORDINAL64(Ordinal:string) { return (bin.bitand(Ordinal, IMAGE_ORDINAL_FLAG64) !== bin64_t.zero); }
+export function IMAGE_ORDINAL64(Ordinal:string):string { return (bin.bitand(Ordinal, b64_LOW_WORD)); }
+export function IMAGE_SNAP_BY_ORDINAL64(Ordinal:string):boolean { return (bin.bitand(Ordinal, IMAGE_ORDINAL_FLAG64) !== bin64_t.zero); }
 
-export class IMAGE_DATA_DIRECTORY extends NativeClass
-{
+export class IMAGE_DATA_DIRECTORY extends NativeClass {
     VirtualAddress:DWORD;
     Size:DWORD;
-};
+}
 IMAGE_DATA_DIRECTORY.define({
     VirtualAddress: DWORD,
     Size: DWORD,
 });
-export class IMAGE_DOS_HEADER extends NativeClass
-{
+export class IMAGE_DOS_HEADER extends NativeClass {
     e_magic: WORD;                     // Magic number
     e_cblp: WORD;                      // Bytes on last page of file
     e_cp: WORD;                        // Pages in file
@@ -149,8 +147,7 @@ IMAGE_DOS_HEADER.define({// DOS .EXE header
     e_res2: NativeArray.make(WORD, 10),     // Reserved words
     e_lfanew: LONG,                    // File address of new exe header
 });
-export class IMAGE_FILE_HEADER extends NativeClass
-{
+export class IMAGE_FILE_HEADER extends NativeClass {
     Machine: WORD;
     NumberOfSections: WORD;
     TimeDateStamp: DWORD;
@@ -168,8 +165,7 @@ IMAGE_FILE_HEADER.define({
     SizeOfOptionalHeader: WORD,
     Characteristics: WORD,
 });
-export class IMAGE_OPTIONAL_HEADER64 extends NativeClass
-{
+export class IMAGE_OPTIONAL_HEADER64 extends NativeClass {
     Magic: WORD;
     MajorLinkerVersion: BYTE;
     MinorLinkerVersion: BYTE;
@@ -233,8 +229,7 @@ IMAGE_OPTIONAL_HEADER64.define({
     NumberOfRvaAndSizes: DWORD,
     DataDirectory: NativeArray.make<IMAGE_DATA_DIRECTORY>(IMAGE_DATA_DIRECTORY, IMAGE_NUMBEROF_DIRECTORY_ENTRIES),
 });
-export class IMAGE_NT_HEADERS64 extends NativeClass
-{
+export class IMAGE_NT_HEADERS64 extends NativeClass {
     Signature: DWORD;
     FileHeader: IMAGE_FILE_HEADER;
     OptionalHeader: IMAGE_OPTIONAL_HEADER64;
@@ -244,8 +239,7 @@ IMAGE_NT_HEADERS64.define({
     FileHeader: IMAGE_FILE_HEADER,
     OptionalHeader: IMAGE_OPTIONAL_HEADER64,
 });
-export class IMAGE_DEBUG_DIRECTORY extends NativeClass
-{
+export class IMAGE_DEBUG_DIRECTORY extends NativeClass {
     Characteristics: DWORD;
     TimeDateStamp: DWORD;
     MajorVersion: WORD;
@@ -265,8 +259,7 @@ IMAGE_DEBUG_DIRECTORY.define({
     AddressOfRawData: DWORD,
     PointerToRawData: DWORD,
 });
-export class IMAGE_IMPORT_DESCRIPTOR extends NativeClass
-{
+export class IMAGE_IMPORT_DESCRIPTOR extends NativeClass {
     Characteristics:DWORD;                  // 0 for terminating null import descriptor
     OriginalFirstThunk:DWORD;               // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
     
@@ -293,13 +286,11 @@ IMAGE_IMPORT_DESCRIPTOR.define({
     FirstThunk: DWORD,                      // RVA to IAT (if bound this IAT has actual addresses)
 });
 
-export class IMAGE_THUNK_DATA64 extends NativeClass
-{
+export class IMAGE_THUNK_DATA64 extends NativeClass {
     u1:IMAGE_THUNK_DATA64_union;
 }
 
-class IMAGE_THUNK_DATA64_union extends NativeClass
-{
+class IMAGE_THUNK_DATA64_union extends NativeClass {
     ForwarderString:ULONGLONG;  // PBYTE 
     Function:ULONGLONG;         // PDWORD
     Ordinal:ULONGLONG;
@@ -319,8 +310,7 @@ IMAGE_THUNK_DATA64.define({
 
 const EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
 
-export class EXCEPTION_RECORD extends NativeClass
-{    
+export class EXCEPTION_RECORD extends NativeClass {    
     ExceptionCode:DWORD;
     ExceptionFlags:DWORD;
     ExceptionRecord:VoidPointer;
@@ -458,8 +448,7 @@ EXCEPTION_RECORD.define({
 //     DWORD64 LastExceptionFromRip;
 // } CONTEXT, *PCONTEXT;
 
-export class EXCEPTION_POINTERS extends NativeClass
-{
+export class EXCEPTION_POINTERS extends NativeClass {
     ExceptionRecord:EXCEPTION_RECORD;
     ContextRecord:VoidPointer; // CONTEXT
 }
@@ -468,11 +457,10 @@ EXCEPTION_POINTERS.define({
     ContextRecord:VoidPointer, // CONTEXT
 });
 
-export class FILETIME extends NativeClass
-{
+export class FILETIME extends NativeClass {
     dwLowDateTime: DWORD;
     dwHighDateTime: DWORD;
-};
+}
 FILETIME.define({
     dwLowDateTime: DWORD,
     dwHighDateTime: DWORD,
@@ -488,16 +476,13 @@ export const FORMAT_MESSAGE_FROM_SYSTEM      = 0x00001000;
 export const FORMAT_MESSAGE_ARGUMENT_ARRAY   = 0x00002000;
 export const FORMAT_MESSAGE_MAX_WIDTH_MASK   = 0x000000FF;
 
-export function MAKELANGID(p:number, s:number):number
-{
+export function MAKELANGID(p:number, s:number):number {
     return (s << 10) | p;
 }
-export function PRIMARYLANGID(lgid:number):number
-{
+export function PRIMARYLANGID(lgid:number):number {
     return lgid & 0x3ff;
 }
-export function SUBLANGID(lgid:number):number
-{
+export function SUBLANGID(lgid:number):number {
     return (lgid & 0xffff) >>> 10;
 }
 

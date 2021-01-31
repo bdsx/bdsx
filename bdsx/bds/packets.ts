@@ -8,8 +8,7 @@ import { Packet } from "./packet";
 
 Packet.abstract({}, 0x28);
 
-export class LoginPacket extends Packet
-{
+export class LoginPacket extends Packet {
 	u5:uint32_t; //0x184
 	connreq:ConnectionRequest;
 }
@@ -23,46 +22,38 @@ LoginPacket.abstract({
 // 	ComplexInventoryTransaction* transaction;
 // };
 
-export class PlayStatusPacket extends Packet
-{
+export class PlayStatusPacket extends Packet {
     // unknown
 }
 
-export class ServerToClientHandshakePacket extends Packet
-{
+export class ServerToClientHandshakePacket extends Packet {
     // unknown
 }
 
-export class ClientToServerHandshakePacket extends Packet
-{
+export class ClientToServerHandshakePacket extends Packet {
     // unknown
 }
 
-export class DisconnectPacket extends Packet
-{
+export class DisconnectPacket extends Packet {
     message:CxxString;
 }
 DisconnectPacket.abstract({
     message:[CxxString, 0x30]
 });
 
-export class ResourcePacksInfoPacket extends Packet
-{
+export class ResourcePacksInfoPacket extends Packet {
     // unknown
 }
 
-export class ResourcePackStackPacket extends Packet
-{
+export class ResourcePackStackPacket extends Packet {
     // unknown
 }
 
-export class ResourcePackClientResponsePacket extends Packet
-{
+export class ResourcePackClientResponsePacket extends Packet {
     // unknown
 }
 
-export class TextPacket extends Packet
-{
+export class TextPacket extends Packet {
     name:string;
     message:string;
 }
@@ -71,106 +62,86 @@ TextPacket.abstract({
     message: [CxxString, 0x50],
 });
 
-export class SetTimePacket extends Packet
-{
+export class SetTimePacket extends Packet {
     // unknown
 }
 
-export class StartGamePacket extends Packet
-{
+export class StartGamePacket extends Packet {
     // unknown
 }
 
-export class AddPlayerPacket extends Packet
-{
+export class AddPlayerPacket extends Packet {
     // unknown
 }
 
-export class AddEntityPacket extends Packet
-{
+export class AddEntityPacket extends Packet {
     // unknown
 }
 
-export class RemoveEntity_Packet extends Packet
-{
+export class RemoveEntity_Packet extends Packet {
     // unknown
 }
 
-export class AddItemEntityPacket extends Packet
-{
+export class AddItemEntityPacket extends Packet {
     // unknown
 }
 
-export class TakeItemEntityPacket extends Packet
-{
+export class TakeItemEntityPacket extends Packet {
     // unknown
 }
 
-export class MoveEntityPacket extends Packet
-{
+export class MoveEntityPacket extends Packet {
     // unknown
 }
 
-export class MovePlayerPacket extends Packet
-{
+export class MovePlayerPacket extends Packet {
     // unknown
 }
 
-export class RiderJumpPacket extends Packet
-{
+export class RiderJumpPacket extends Packet {
     // unknown
 }
 
-export class UpdateBlockPacket extends Packet
-{
+export class UpdateBlockPacket extends Packet {
     // unknown
 }
 
-export class AddPaintingPacket extends Packet
-{
+export class AddPaintingPacket extends Packet {
     // unknown
 }
 
-export class TickSyncPacket extends Packet
-{
+export class TickSyncPacket extends Packet {
     // unknown
 }
 
-export class LevelSoundEventOldPacket extends Packet
-{
+export class LevelSoundEventOldPacket extends Packet {
     // unknown
 }
 
-export class LevelEventPacket extends Packet
-{
+export class LevelEventPacket extends Packet {
     // unknown
 }
 
-export class BlockEventPacket extends Packet
-{
+export class BlockEventPacket extends Packet {
     // unknown
 }
 
-export class EntityEventPacket extends Packet
-{
+export class EntityEventPacket extends Packet {
     // unknown
 }
 
-export class MobEffectPacket extends Packet
-{
+export class MobEffectPacket extends Packet {
     // unknown
 }
 
-export class AttributeData extends NativeClass
-{
+export class AttributeData extends NativeClass {
     min:number;
     max:number;
     current:number;
     default:number;
     name:HashedString;
 
-    [NativeType.ctor]()
-    {
+    [NativeType.ctor]():void {
         this.min = 0;
         this.max = 0;
         this.current = 0;
@@ -185,8 +156,7 @@ AttributeData.define({
     name: [HashedString, 16],
 }, 0x38);
 
-export class UpdateAttributesPacket extends Packet
-{
+export class UpdateAttributesPacket extends Packet {
     actorId:ActorRuntimeID;
     attributes:CxxVector<AttributeData>;
 }
@@ -195,88 +165,71 @@ UpdateAttributesPacket.define({
     attributes: [CxxVector.make(AttributeData), 0x30],
 });
 
-export class InventoryTransactionPacket extends Packet
-{
+export class InventoryTransactionPacket extends Packet {
     // unknown
 }
 
-export class MobEquipmentPacket extends Packet
-{
+export class MobEquipmentPacket extends Packet {
     // unknown
 }
 
-export class MobArmorEquipmentPacket extends Packet
-{
+export class MobArmorEquipmentPacket extends Packet {
     // unknown
 }
 
-export class InteractPacket extends Packet
-{
+export class InteractPacket extends Packet {
     // unknown
 }
 
-export class BlockPickRequestPacket extends Packet
-{
+export class BlockPickRequestPacket extends Packet {
     // unknown
 }
 
-export class EntityPickRequestPacket extends Packet
-{
+export class EntityPickRequestPacket extends Packet {
     // unknown
 }
 
-export class PlayerActionPacket extends Packet
-{
+export class PlayerActionPacket extends Packet {
     // unknown
 }
 
-export class EntityFallPacket extends Packet
-{
+export class EntityFallPacket extends Packet {
     // unknown
 }
 
-export class HurtArmorPacket extends Packet
-{
+export class HurtArmorPacket extends Packet {
     // unknown
 }
 
-export class SetEntityDataPacket extends Packet
-{
+export class SetEntityDataPacket extends Packet {
     // unknown
 }
 
-export class SetEntityMotionPacket extends Packet
-{
+export class SetEntityMotionPacket extends Packet {
     // unknown
 }
 
-export class SetEntityLinkPacket extends Packet
-{
+export class SetEntityLinkPacket extends Packet {
     // unknown
 }
 
-export class SetHealthPacket extends Packet
-{
+export class SetHealthPacket extends Packet {
     // unknown
 }
 
-export class SetSpawnPositionPacket extends Packet
-{
+export class SetSpawnPositionPacket extends Packet {
     // unknown
 }
 
-export class AnimatePacket extends Packet
-{
+export class AnimatePacket extends Packet {
     // unknown
 }
 
-export class RespawnPacket extends Packet
-{
+export class RespawnPacket extends Packet {
     // unknown
 }
 
-export class NetworkBlockPosition extends NativeClass
-{
+export class NetworkBlockPosition extends NativeClass {
     x:uint32_t;
     y:uint32_t;
     z:uint32_t;
@@ -287,8 +240,7 @@ NetworkBlockPosition.define({
     z:uint32_t,
 });
 
-export class ContainerOpenPacket extends Packet
-{
+export class ContainerOpenPacket extends Packet {
     windowId:uint8_t;
     type:int8_t;
     pos:NetworkBlockPosition;
@@ -301,78 +253,63 @@ ContainerOpenPacket.abstract({
     entityUniqueId:[bin64_t, 0x38],
 });
 
-export class ContainerClosePacket extends Packet
-{
+export class ContainerClosePacket extends Packet {
     // unknown
 }
 
-export class PlayerHotbarPacket extends Packet
-{
+export class PlayerHotbarPacket extends Packet {
     // unknown
 }
 
-export class InventoryContentPacket extends Packet
-{
+export class InventoryContentPacket extends Packet {
     // unknown
 }
 
-export class InventorySlotPacket extends Packet
-{
+export class InventorySlotPacket extends Packet {
     // unknown
 }
 
-export class ContainerSetDataPacket extends Packet
-{
+export class ContainerSetDataPacket extends Packet {
     // unknown
 }
 
-export class CraftingDataPacket extends Packet
-{
+export class CraftingDataPacket extends Packet {
     // unknown
 }
 
-export class CraftingEventPacket extends Packet
-{
+export class CraftingEventPacket extends Packet {
     // unknown
 }
 
-export class GuiDataPickItemPacket extends Packet
-{
+export class GuiDataPickItemPacket extends Packet {
     // unknown
 }
 
-export class AdventureSettingsPacket extends Packet
-{
+export class AdventureSettingsPacket extends Packet {
     // unknown
 }
 
-export class BlockEntityDataPacket extends Packet
-{
+export class BlockEntityDataPacket extends Packet {
     // unknown
 }
 
-export class PlayerInputPacket extends Packet
-{
+export class PlayerInputPacket extends Packet {
     // unknown
 }
 
-export class LevelChunkPacket extends Packet
-{
+export class LevelChunkPacket extends Packet {
     // unknown
 }
 
-export class SetCommandsEnabledPacket extends Packet
-{
+export class SetCommandsEnabledPacket extends Packet {
     // unknown
 }
 
-export class SetDifficultyPacket extends Packet
-{
+export class SetDifficultyPacket extends Packet {
     // unknown
 }
 
-export class ChangeDimensionPacket extends Packet
-{
+export class ChangeDimensionPacket extends Packet {
     dimensionId:uint32_t;
     x:number;
     y:number;
@@ -387,83 +324,67 @@ ChangeDimensionPacket.abstract({
     respawn:bool_t
 });
 
-export class SetPlayerGameTypePacket extends Packet
-{
+export class SetPlayerGameTypePacket extends Packet {
     // unknown
 }
 
-export class PlayerListPacket extends Packet
-{
+export class PlayerListPacket extends Packet {
     // unknown
 }
 
-export class SimpleEventPacket extends Packet
-{
+export class SimpleEventPacket extends Packet {
     // unknown
 }
 
-export class TelemetryEventPacket extends Packet
-{
+export class TelemetryEventPacket extends Packet {
     // unknown
 }
 
-export class SpawnExperienceOrbPacket extends Packet
-{
+export class SpawnExperienceOrbPacket extends Packet {
     // unknown
 }
 
-export class ClientboundMapItemDataPacket extends Packet
-{
+export class ClientboundMapItemDataPacket extends Packet {
     // unknown
 }
 
-export class MapInfoRequestPacket extends Packet
-{
+export class MapInfoRequestPacket extends Packet {
     // unknown
 }
 
-export class RequestChunkRadiusPacket extends Packet
-{
+export class RequestChunkRadiusPacket extends Packet {
     // unknown
 }
 
-export class ChunkRadiusUpdatePacket extends Packet
-{
+export class ChunkRadiusUpdatePacket extends Packet {
     // unknown
 }
 
-export class ItemFrameDropItemPacket extends Packet
-{
+export class ItemFrameDropItemPacket extends Packet {
     // unknown
 }
 
-export class GameRulesChangedPacket extends Packet
-{
+export class GameRulesChangedPacket extends Packet {
     // unknown
 }
 
-export class CameraPacket extends Packet
-{
+export class CameraPacket extends Packet {
     // unknown
 }
 
-export class BossEventPacket extends Packet
-{
+export class BossEventPacket extends Packet {
     // unknown
 }
 
-export class ShowCreditsPacket extends Packet
-{
+export class ShowCreditsPacket extends Packet {
     // unknown
 }
 
-export class AvailableCommandsPacket extends Packet
-{
+export class AvailableCommandsPacket extends Packet {
     // unknown
 }
 
-export class CommandRequestPacket extends Packet
-{
+export class CommandRequestPacket extends Packet {
     command:string;
 }
 CommandRequestPacket.abstract({
@@ -471,43 +392,35 @@ CommandRequestPacket.abstract({
 });
 
 
-export class CommandBlockUpdatePacket extends Packet
-{
+export class CommandBlockUpdatePacket extends Packet {
     // unknown
 }
 
-export class CommandOutputPacket extends Packet
-{
+export class CommandOutputPacket extends Packet {
     // unknown
 }
 
-export class UpdateTradePacket extends Packet
-{
+export class UpdateTradePacket extends Packet {
     // unknown
 }
 
-export class UpdateEquipmentPacket extends Packet
-{
+export class UpdateEquipmentPacket extends Packet {
     // unknown
 }
 
-export class ResourcePackDataInfoPacket extends Packet
-{
+export class ResourcePackDataInfoPacket extends Packet {
     // unknown
 }
 
-export class ResourcePackChunkDataPacket extends Packet
-{
+export class ResourcePackChunkDataPacket extends Packet {
     // unknown
 }
 
-export class ResourcePackChunkRequestPacket extends Packet
-{
+export class ResourcePackChunkRequestPacket extends Packet {
     // unknown
 }
 
-export class TransferPacket extends Packet
-{
+export class TransferPacket extends Packet {
     address:string;
     port:uint16_t;
 }
@@ -516,78 +429,63 @@ TransferPacket.abstract({
     port:[uint16_t, 0x48]
 });
 
-export class PlaySoundPacket extends Packet
-{
+export class PlaySoundPacket extends Packet {
     // unknown
 }
 
-export class StopSoundPacket extends Packet
-{
+export class StopSoundPacket extends Packet {
     // unknown
 }
 
-export class SetTitlePacket extends Packet
-{
+export class SetTitlePacket extends Packet {
     // unknown
 }
 
-export class AddBehaviorTreePacket extends Packet
-{
+export class AddBehaviorTreePacket extends Packet {
     // unknown
 }
 
-export class StructureBlockUpdatePacket extends Packet
-{
+export class StructureBlockUpdatePacket extends Packet {
     // unknown
 }
 
-export class ShowStoreOfferPacket extends Packet
-{
+export class ShowStoreOfferPacket extends Packet {
     // unknown
 }
 
-export class PurchaseReceiptPacket extends Packet
-{
+export class PurchaseReceiptPacket extends Packet {
     // unknown
 }
 
-export class PlayerSkinPacket extends Packet
-{
+export class PlayerSkinPacket extends Packet {
     // unknown
 }
 
-export class SubClientLoginPacket extends Packet
-{
+export class SubClientLoginPacket extends Packet {
     // unknown
 }
 
-export class InitiateWebSocketConnectionPacket extends Packet
-{
+export class InitiateWebSocketConnectionPacket extends Packet {
     // unknown
 }
 
-export class SetLastHurtByPacket extends Packet
-{
+export class SetLastHurtByPacket extends Packet {
     // unknown
 }
 
-export class BookEditPacket extends Packet
-{
+export class BookEditPacket extends Packet {
     // unknown
 }
 
-export class NpcRequestPacket extends Packet
-{
+export class NpcRequestPacket extends Packet {
     // unknown
 }
 
-export class PhotoTransferPacket extends Packet
-{
+export class PhotoTransferPacket extends Packet {
     // unknown
 }
 
-export class ModalFormRequestPacket extends Packet
-{
+export class ModalFormRequestPacket extends Packet {
     id:uint32_t;
     content:CxxString;
 }
@@ -596,481 +494,418 @@ ModalFormRequestPacket.abstract({
     content: [CxxString, 0x30],
 });
 
-export class ModalFormResponsePacket extends Packet
-{
+export class ModalFormResponsePacket extends Packet {
     // unknown
 }
 
-export class ServerSettingsRequestPacket extends Packet
-{
+export class ServerSettingsRequestPacket extends Packet {
     // unknown
 }
 
-export class ServerSettingsResponsePacket extends Packet
-{
+export class ServerSettingsResponsePacket extends Packet {
     // unknown
 }
 
-export class ShowProfilePacket extends Packet
-{
+export class ShowProfilePacket extends Packet {
     // unknown
 }
 
-export class SetDefaultGameTypePacket extends Packet
-{
+export class SetDefaultGameTypePacket extends Packet {
     // unknown
 }
 
-export class RemoveObjectivePacket extends Packet
-{
+export class RemoveObjectivePacket extends Packet {
     // unknown
 }
 
-export class SetDisplayObjectivePacket extends Packet
-{
+export class SetDisplayObjectivePacket extends Packet {
     // unknown
 }
 
-export class SetScorePacket extends Packet
-{
+export class SetScorePacket extends Packet {
     // unknown
 }
 
-export class LabTablePacket extends Packet
-{
+export class LabTablePacket extends Packet {
     // unknown
 }
 
-export class UpdateBlockSyncedPacket extends Packet
-{
+export class UpdateBlockSyncedPacket extends Packet {
     // unknown
 }
 
-export class MoveEntityDeltaPacket extends Packet
-{
+export class MoveEntityDeltaPacket extends Packet {
     // unknown
 }
 
-export class SetScoreboardIdentityPacket extends Packet
-{
+export class SetScoreboardIdentityPacket extends Packet {
     // unknown
 }
 
-export class SetLocalPlayerAsInitializedPacket extends Packet
-{
+export class SetLocalPlayerAsInitializedPacket extends Packet {
     // unknown
 }
 
-export class UpdateSoftEnumPacket extends Packet
-{
+export class UpdateSoftEnumPacket extends Packet {
     // unknown
 }
 
-export class NetworkStackLatencyPacket extends Packet
-{
+export class NetworkStackLatencyPacket extends Packet {
     // unknown
 }
 
-export class ScriptCustomEventPacket extends Packet
-{
+export class ScriptCustomEventPacket extends Packet {
     // unknown
 }
 
-export class SpawnParticleEffectPacket extends Packet
-{
+export class SpawnParticleEffectPacket extends Packet {
     // unknown
 }
 
-export class AvailableEntityIdentifiersPacket extends Packet
-{
+export class AvailableEntityIdentifiersPacket extends Packet {
     // unknown
 }
 
-export class LevelSoundEventV2Packet extends Packet
-{
+export class LevelSoundEventV2Packet extends Packet {
     // unknown
 }
 
-export class NetworkChunkPublisherUpdatePacket extends Packet
-{
+export class NetworkChunkPublisherUpdatePacket extends Packet {
     // unknown
 }
 
-export class BiomeDefinitionListPacket extends Packet
-{
+export class BiomeDefinitionListPacket extends Packet {
     // unknown
 }
 
-export class LevelSoundEventPacket extends Packet
-{
+export class LevelSoundEventPacket extends Packet {
     // unknown
 }
 
-export class LevelEventGenericPacket extends Packet
-{
+export class LevelEventGenericPacket extends Packet {
     // unknown
 }
 
-export class LecternUpdatePacket extends Packet
-{
+export class LecternUpdatePacket extends Packet {
     // unknown
 }
 
-export class VideoStreamConnectPacket extends Packet
-{
+export class VideoStreamConnectPacket extends Packet {
     // unknown
 }
 
-export class RemoveEntityPacket extends Packet
-{
+export class RemoveEntityPacket extends Packet {
     // unknown
 }
 
-export class ClientCacheStatusPacket extends Packet
-{
+export class ClientCacheStatusPacket extends Packet {
     // unknown
 }
 
-export class OnScreenTextureAnimationPacket extends Packet
-{
+export class OnScreenTextureAnimationPacket extends Packet {
     // unknown
 }
 
-export class MapCreateLockedCopyPacket extends Packet
-{
+export class MapCreateLockedCopyPacket extends Packet {
     // unknown
 }
 
-export class StructureTemplateDataExportRequestPacket extends Packet
-{
+export class StructureTemplateDataExportRequestPacket extends Packet {
     // unknown
 }
 
-export class StructureTemplateDataExportResponsePacket extends Packet
-{
+export class StructureTemplateDataExportResponsePacket extends Packet {
     // unknown
 }
 
-export class UpdateBlockPropertiesPacket extends Packet
-{
+export class UpdateBlockPropertiesPacket extends Packet {
     // unknown
 }
 
-export class ClientCacheBlobStatusPacket extends Packet
-{
+export class ClientCacheBlobStatusPacket extends Packet {
     // unknown
 }
 
-export class ClientCacheMissResponsePacket extends Packet
-{
+export class ClientCacheMissResponsePacket extends Packet {
     // unknown
 }
 
-export class EducationSettingsPacket extends Packet
-{
+export class EducationSettingsPacket extends Packet {
     // unknown
 }
 
-export class EmotePacket extends Packet
-{
+export class EmotePacket extends Packet {
     // unknown
 }
 
-export class MultiplayerSettingsPacket extends Packet
-{
+export class MultiplayerSettingsPacket extends Packet {
     // unknown
 }
 
-export class SettingsCommandPacket extends Packet
-{
+export class SettingsCommandPacket extends Packet {
     // unknown
 }
 
-export class AnvilDamagePacket extends Packet
-{
+export class AnvilDamagePacket extends Packet {
     // unknown
 }
 
-export class CompletedUsingItemPacket extends Packet
-{
+export class CompletedUsingItemPacket extends Packet {
     // unknown
 }
 
-export class NetworkSettingsPacket extends Packet
-{
+export class NetworkSettingsPacket extends Packet {
     // unknown
 }
 
-export class PlayerAuthInputPacket extends Packet
-{
+export class PlayerAuthInputPacket extends Packet {
     // unknown
 }
 
-export class CreativeContentPacket extends Packet
-{
+export class CreativeContentPacket extends Packet {
     // unknown
 }
 
-export class PlayerEnchantOptionsPacket extends Packet
-{
+export class PlayerEnchantOptionsPacket extends Packet {
     // unknown
 }
 
-export class ItemStackRequestPacket extends Packet
-{
+export class ItemStackRequestPacket extends Packet {
     // unknown
 }
 
-export class ItemStackResponsePacket extends Packet
-{
+export class ItemStackResponsePacket extends Packet {
     // unknown
 }
 
-export class PlayerArmorDamagePacket extends Packet
-{
+export class PlayerArmorDamagePacket extends Packet {
     // unknown
 }
 
-export class CodeBuilderPacket extends Packet
-{
+export class CodeBuilderPacket extends Packet {
     // unknown
 }
 
-export class UpdatePlayerGameTypePacket extends Packet
-{
+export class UpdatePlayerGameTypePacket extends Packet {
     // unknown
 }
 
-export class EmoteListPacketPacket extends Packet
-{
+export class EmoteListPacketPacket extends Packet {
     // unknown
 }
 
-export class PositionTrackingDBServerBroadcastPacket extends Packet
-{
+export class PositionTrackingDBServerBroadcastPacket extends Packet {
     // unknown
 }
 
-export class PositionTrackingDBClientRequestPacket extends Packet
-{
+export class PositionTrackingDBClientRequestPacket extends Packet {
     // unknown
 }
 
-export class DebugInfoPacket extends Packet
-{
+export class DebugInfoPacket extends Packet {
     // unknown
 }
 
-export class PacketViolationWarningPacket extends Packet
-{
+export class PacketViolationWarningPacket extends Packet {
     // unknown
 }
 
-export class MotionPredictionHintsPacket extends Packet
-{
+export class MotionPredictionHintsPacket extends Packet {
     // unknown
 }
 
-export class AnimateEntityPacket extends Packet
-{
+export class AnimateEntityPacket extends Packet {
     // unknown
 }
 
-export class CameraShakePacket extends Packet
-{
+export class CameraShakePacket extends Packet {
     // unknown
 }
 
-export class PlayerFogPacket extends Packet
-{
+export class PlayerFogPacket extends Packet {
     // unknown
 }
 
-export class CorrectPlayerMovePredictionPacketPacket extends Packet
-{
+export class CorrectPlayerMovePredictionPacketPacket extends Packet {
     // unknown
 }
 
-export class ItemComponentPacket extends Packet
-{
+export class ItemComponentPacket extends Packet {
     // unknown
 }
 
-export class FilterTextPacketPacket extends Packet
-{
+export class FilterTextPacketPacket extends Packet {
     // unknown
 }
 
-export class AlexEntityAnimationPacket extends Packet
-{
+export class AlexEntityAnimationPacket extends Packet {
     // unknown
 }
 
 export const PacketIdToType = {
-	0x01: LoginPacket,
-	0x02: PlayStatusPacket,
-	0x03: ServerToClientHandshakePacket,
-	0x04: ClientToServerHandshakePacket,
-	0x05: DisconnectPacket,
-	0x06: ResourcePacksInfoPacket,
-	0x07: ResourcePackStackPacket,
-	0x08: ResourcePackClientResponsePacket,
-	0x09: TextPacket,
-	0x0a: SetTimePacket,
-	0x0b: StartGamePacket,
-	0x0c: AddPlayerPacket,
-	0x0d: AddEntityPacket,
-	0x0e: RemoveEntity_Packet,
-	0x0f: AddItemEntityPacket,
-	0x11: TakeItemEntityPacket,
-	0x12: MoveEntityPacket,
-	0x13: MovePlayerPacket,
-	0x14: RiderJumpPacket,
-	0x15: UpdateBlockPacket,
-	0x16: AddPaintingPacket,
-	0x17: TickSyncPacket,
-	0x18: LevelSoundEventOldPacket,
-	0x19: LevelEventPacket,
-	0x1a: BlockEventPacket,
-	0x1b: EntityEventPacket,
-	0x1c: MobEffectPacket,
-	0x1d: UpdateAttributesPacket,
-	0x1e: InventoryTransactionPacket,
-	0x1f: MobEquipmentPacket,
-	0x20: MobArmorEquipmentPacket,
-	0x21: InteractPacket,
-	0x22: BlockPickRequestPacket,
-	0x23: EntityPickRequestPacket,
-	0x24: PlayerActionPacket,
-	0x26: HurtArmorPacket,
-	0x27: SetEntityDataPacket,
-	0x28: SetEntityMotionPacket,
-	0x29: SetEntityLinkPacket,
-	0x2a: SetHealthPacket,
-	0x2b: SetSpawnPositionPacket,
-	0x2c: AnimatePacket,
-	0x2d: RespawnPacket,
-	0x2e: ContainerOpenPacket,
-	0x2f: ContainerClosePacket,
-	0x30: PlayerHotbarPacket,
-	0x31: InventoryContentPacket,
-	0x32: InventorySlotPacket,
-	0x33: ContainerSetDataPacket,
-	0x34: CraftingDataPacket,
-	0x35: CraftingEventPacket,
-	0x36: GuiDataPickItemPacket,
-	0x37: AdventureSettingsPacket,
-	0x38: BlockEntityDataPacket,
-	0x39: PlayerInputPacket,
-	0x3a: LevelChunkPacket,
-	0x3b: SetCommandsEnabledPacket,
-	0x3c: SetDifficultyPacket,
-	0x3d: ChangeDimensionPacket,
-	0x3e: SetPlayerGameTypePacket,
-	0x3f: PlayerListPacket,
-	0x40: SimpleEventPacket,
-	0x41: TelemetryEventPacket,
-	0x42: SpawnExperienceOrbPacket,
-	0x43: ClientboundMapItemDataPacket,
-	0x44: MapInfoRequestPacket,
-	0x45: RequestChunkRadiusPacket,
-	0x46: ChunkRadiusUpdatePacket,
-	0x47: ItemFrameDropItemPacket,
-	0x48: GameRulesChangedPacket,
-	0x49: CameraPacket,
-	0x4a: BossEventPacket,
-	0x4b: ShowCreditsPacket,
-	0x4c: AvailableCommandsPacket,
-	0x4d: CommandRequestPacket,
-	0x4e: CommandBlockUpdatePacket,
-	0x4f: CommandOutputPacket,
-	0x50: UpdateTradePacket,
-	0x51: UpdateEquipmentPacket,
-	0x52: ResourcePackDataInfoPacket,
-	0x53: ResourcePackChunkDataPacket,
-	0x54: ResourcePackChunkRequestPacket,
-	0x55: TransferPacket,
-	0x56: PlaySoundPacket,
-	0x57: StopSoundPacket,
-	0x58: SetTitlePacket,
-	0x59: AddBehaviorTreePacket,
-	0x5a: StructureBlockUpdatePacket,
-	0x5b: ShowStoreOfferPacket,
-	0x5c: PurchaseReceiptPacket,
-	0x5d: PlayerSkinPacket,
-	0x5e: SubClientLoginPacket,
-	0x5f: InitiateWebSocketConnectionPacket,
-	0x60: SetLastHurtByPacket,
-	0x61: BookEditPacket,
-	0x62: NpcRequestPacket,
-	0x63: PhotoTransferPacket,
-	0x64: ModalFormRequestPacket,
-	0x65: ModalFormResponsePacket,
-	0x66: ServerSettingsRequestPacket,
-	0x67: ServerSettingsResponsePacket,
-	0x68: ShowProfilePacket,
-	0x69: SetDefaultGameTypePacket,
-	0x6a: RemoveObjectivePacket,
-	0x6b: SetDisplayObjectivePacket,
-	0x6c: SetScorePacket,
-	0x6d: LabTablePacket,
-	0x6e: UpdateBlockSyncedPacket,
-	0x6f: MoveEntityDeltaPacket,
-	0x70: SetScoreboardIdentityPacket,
-	0x71: SetLocalPlayerAsInitializedPacket,
-	0x72: UpdateSoftEnumPacket,
-	0x73: NetworkStackLatencyPacket,
-	0x75: ScriptCustomEventPacket,
-	0x76: SpawnParticleEffectPacket,
-	0x77: AvailableEntityIdentifiersPacket,
-	0x78: LevelSoundEventV2Packet,
-	0x79: NetworkChunkPublisherUpdatePacket,
-	0x7a: BiomeDefinitionListPacket,
-	0x7b: LevelSoundEventPacket,
-	0x7c: LevelEventGenericPacket,
-	0x7d: LecternUpdatePacket,
+    0x01: LoginPacket,
+    0x02: PlayStatusPacket,
+    0x03: ServerToClientHandshakePacket,
+    0x04: ClientToServerHandshakePacket,
+    0x05: DisconnectPacket,
+    0x06: ResourcePacksInfoPacket,
+    0x07: ResourcePackStackPacket,
+    0x08: ResourcePackClientResponsePacket,
+    0x09: TextPacket,
+    0x0a: SetTimePacket,
+    0x0b: StartGamePacket,
+    0x0c: AddPlayerPacket,
+    0x0d: AddEntityPacket,
+    0x0e: RemoveEntity_Packet,
+    0x0f: AddItemEntityPacket,
+    0x11: TakeItemEntityPacket,
+    0x12: MoveEntityPacket,
+    0x13: MovePlayerPacket,
+    0x14: RiderJumpPacket,
+    0x15: UpdateBlockPacket,
+    0x16: AddPaintingPacket,
+    0x17: TickSyncPacket,
+    0x18: LevelSoundEventOldPacket,
+    0x19: LevelEventPacket,
+    0x1a: BlockEventPacket,
+    0x1b: EntityEventPacket,
+    0x1c: MobEffectPacket,
+    0x1d: UpdateAttributesPacket,
+    0x1e: InventoryTransactionPacket,
+    0x1f: MobEquipmentPacket,
+    0x20: MobArmorEquipmentPacket,
+    0x21: InteractPacket,
+    0x22: BlockPickRequestPacket,
+    0x23: EntityPickRequestPacket,
+    0x24: PlayerActionPacket,
+    0x26: HurtArmorPacket,
+    0x27: SetEntityDataPacket,
+    0x28: SetEntityMotionPacket,
+    0x29: SetEntityLinkPacket,
+    0x2a: SetHealthPacket,
+    0x2b: SetSpawnPositionPacket,
+    0x2c: AnimatePacket,
+    0x2d: RespawnPacket,
+    0x2e: ContainerOpenPacket,
+    0x2f: ContainerClosePacket,
+    0x30: PlayerHotbarPacket,
+    0x31: InventoryContentPacket,
+    0x32: InventorySlotPacket,
+    0x33: ContainerSetDataPacket,
+    0x34: CraftingDataPacket,
+    0x35: CraftingEventPacket,
+    0x36: GuiDataPickItemPacket,
+    0x37: AdventureSettingsPacket,
+    0x38: BlockEntityDataPacket,
+    0x39: PlayerInputPacket,
+    0x3a: LevelChunkPacket,
+    0x3b: SetCommandsEnabledPacket,
+    0x3c: SetDifficultyPacket,
+    0x3d: ChangeDimensionPacket,
+    0x3e: SetPlayerGameTypePacket,
+    0x3f: PlayerListPacket,
+    0x40: SimpleEventPacket,
+    0x41: TelemetryEventPacket,
+    0x42: SpawnExperienceOrbPacket,
+    0x43: ClientboundMapItemDataPacket,
+    0x44: MapInfoRequestPacket,
+    0x45: RequestChunkRadiusPacket,
+    0x46: ChunkRadiusUpdatePacket,
+    0x47: ItemFrameDropItemPacket,
+    0x48: GameRulesChangedPacket,
+    0x49: CameraPacket,
+    0x4a: BossEventPacket,
+    0x4b: ShowCreditsPacket,
+    0x4c: AvailableCommandsPacket,
+    0x4d: CommandRequestPacket,
+    0x4e: CommandBlockUpdatePacket,
+    0x4f: CommandOutputPacket,
+    0x50: UpdateTradePacket,
+    0x51: UpdateEquipmentPacket,
+    0x52: ResourcePackDataInfoPacket,
+    0x53: ResourcePackChunkDataPacket,
+    0x54: ResourcePackChunkRequestPacket,
+    0x55: TransferPacket,
+    0x56: PlaySoundPacket,
+    0x57: StopSoundPacket,
+    0x58: SetTitlePacket,
+    0x59: AddBehaviorTreePacket,
+    0x5a: StructureBlockUpdatePacket,
+    0x5b: ShowStoreOfferPacket,
+    0x5c: PurchaseReceiptPacket,
+    0x5d: PlayerSkinPacket,
+    0x5e: SubClientLoginPacket,
+    0x5f: InitiateWebSocketConnectionPacket,
+    0x60: SetLastHurtByPacket,
+    0x61: BookEditPacket,
+    0x62: NpcRequestPacket,
+    0x63: PhotoTransferPacket,
+    0x64: ModalFormRequestPacket,
+    0x65: ModalFormResponsePacket,
+    0x66: ServerSettingsRequestPacket,
+    0x67: ServerSettingsResponsePacket,
+    0x68: ShowProfilePacket,
+    0x69: SetDefaultGameTypePacket,
+    0x6a: RemoveObjectivePacket,
+    0x6b: SetDisplayObjectivePacket,
+    0x6c: SetScorePacket,
+    0x6d: LabTablePacket,
+    0x6e: UpdateBlockSyncedPacket,
+    0x6f: MoveEntityDeltaPacket,
+    0x70: SetScoreboardIdentityPacket,
+    0x71: SetLocalPlayerAsInitializedPacket,
+    0x72: UpdateSoftEnumPacket,
+    0x73: NetworkStackLatencyPacket,
+    0x75: ScriptCustomEventPacket,
+    0x76: SpawnParticleEffectPacket,
+    0x77: AvailableEntityIdentifiersPacket,
+    0x78: LevelSoundEventV2Packet,
+    0x79: NetworkChunkPublisherUpdatePacket,
+    0x7a: BiomeDefinitionListPacket,
+    0x7b: LevelSoundEventPacket,
+    0x7c: LevelEventGenericPacket,
+    0x7d: LecternUpdatePacket,
     0x7e: VideoStreamConnectPacket,
     0x80: RemoveEntityPacket,
-	0x81: ClientCacheStatusPacket,
-	0x82: OnScreenTextureAnimationPacket,
-	0x83: MapCreateLockedCopyPacket,
-	0x84: StructureTemplateDataExportRequestPacket,
-	0x85: StructureTemplateDataExportResponsePacket,
-	0x86: UpdateBlockPropertiesPacket,
-	0x87: ClientCacheBlobStatusPacket,
-	0x88: ClientCacheMissResponsePacket,
-	0x89: EducationSettingsPacket,
-	0x8a: EmotePacket,
-	0x8b: MultiplayerSettingsPacket,
-	0x8c: SettingsCommandPacket,
-	0x8d: AnvilDamagePacket,
-	0x8e: CompletedUsingItemPacket,
+    0x81: ClientCacheStatusPacket,
+    0x82: OnScreenTextureAnimationPacket,
+    0x83: MapCreateLockedCopyPacket,
+    0x84: StructureTemplateDataExportRequestPacket,
+    0x85: StructureTemplateDataExportResponsePacket,
+    0x86: UpdateBlockPropertiesPacket,
+    0x87: ClientCacheBlobStatusPacket,
+    0x88: ClientCacheMissResponsePacket,
+    0x89: EducationSettingsPacket,
+    0x8a: EmotePacket,
+    0x8b: MultiplayerSettingsPacket,
+    0x8c: SettingsCommandPacket,
+    0x8d: AnvilDamagePacket,
+    0x8e: CompletedUsingItemPacket,
     0x8f: NetworkSettingsPacket,
     0x90: PlayerAuthInputPacket,
-	0x91: CreativeContentPacket,
-	0x92: PlayerEnchantOptionsPacket,
-	0x93: ItemStackRequestPacket,
-	0x94: ItemStackResponsePacket,
-	0x95: PlayerArmorDamagePacket,
-	0x96: CodeBuilderPacket,
-	0x97: UpdatePlayerGameTypePacket,
-	0x98: EmoteListPacketPacket,
-	0x99: PositionTrackingDBServerBroadcastPacket,
-	0x9a: PositionTrackingDBClientRequestPacket,
-	0x9b: DebugInfoPacket,
-	0x9c: PacketViolationWarningPacket,
-	0x9d: MotionPredictionHintsPacket,
-	0x9e: AnimateEntityPacket,
-	0x9f: CameraShakePacket,
-	0xa0: PlayerFogPacket,
-	0xa1: CorrectPlayerMovePredictionPacketPacket,
-	0xa2: ItemComponentPacket,
-	0xa3: FilterTextPacketPacket,
-	0xe0: AlexEntityAnimationPacket,
+    0x91: CreativeContentPacket,
+    0x92: PlayerEnchantOptionsPacket,
+    0x93: ItemStackRequestPacket,
+    0x94: ItemStackResponsePacket,
+    0x95: PlayerArmorDamagePacket,
+    0x96: CodeBuilderPacket,
+    0x97: UpdatePlayerGameTypePacket,
+    0x98: EmoteListPacketPacket,
+    0x99: PositionTrackingDBServerBroadcastPacket,
+    0x9a: PositionTrackingDBClientRequestPacket,
+    0x9b: DebugInfoPacket,
+    0x9c: PacketViolationWarningPacket,
+    0x9d: MotionPredictionHintsPacket,
+    0x9e: AnimateEntityPacket,
+    0x9f: CameraShakePacket,
+    0xa0: PlayerFogPacket,
+    0xa1: CorrectPlayerMovePredictionPacketPacket,
+    0xa2: ItemComponentPacket,
+    0xa3: FilterTextPacketPacket,
+    0xe0: AlexEntityAnimationPacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
-for (const packetId in PacketIdToType)
-{
+for (const packetId in PacketIdToType) {
     PacketIdToType[packetId as unknown as keyof PacketIdToType].ID = +packetId;
 }

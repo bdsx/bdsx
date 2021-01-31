@@ -23,10 +23,9 @@ export enum AttributeId
 	Absorption=13,
 	Luck=14,
 	JumpStrength=15, // for horse?
-};
+}
 
-export class AttributeInstance extends NativeClass
-{
+export class AttributeInstance extends NativeClass {
 	vftable:VoidPointer;
 	u1:VoidPointer;
 	u2:VoidPointer;
@@ -35,10 +34,8 @@ export class AttributeInstance extends NativeClass
 	maxValue:float32_t;
 	defaultValue:float32_t;
 }
-export class BaseAttributeMap extends NativeClass
-{
-    getMutableInstance(type:AttributeId):AttributeInstance|null
-    {
+export class BaseAttributeMap extends NativeClass {
+    getMutableInstance(type:AttributeId):AttributeInstance|null {
         abstract();
     }
 }

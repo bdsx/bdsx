@@ -13,42 +13,31 @@ export namespace legacy
     /**
      * @deprecated just catch it from bedrockServer.launch()
      */
-    export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string, lastSender:string) => void | boolean)|null): void
-    {
+    export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string, lastSender:string) => void | boolean)|null): void {
         onRuntimeError = cb;
     }
 
     /**
      * @deprecated this is a implementation for mimic old bdsx
      */
-    export function catchAndSendToRuntimeErrorListener(err:Error):void
-    {
+    export function catchAndSendToRuntimeErrorListener(err:Error):void {
         remapError(err);
-        if (!(err instanceof RuntimeError))
-        {
+        if (!(err instanceof RuntimeError)) {
             console.error(err.stack || err.message);
             return;
         }
-        let defmsg:boolean = true;
+        let defmsg = true;
 
         const lastSender = ipfilter.getLastSender();
 
-        if (onRuntimeError !== null)
-        {
-            try
-            {
+        if (onRuntimeError !== null) {
+            try {
                 defmsg = onRuntimeError(err.stack!, err.nativeStack, lastSender) !== false;
-            }
-            catch (err)
-            {
+            } catch (err) {
                 const errstr = err.stack!;
                 console.log("[onRuntimeError callback has error]");
                 console.log(errstr);
             }
-        }
-        
-        if (defmsg)
-        {
         }
     }
 

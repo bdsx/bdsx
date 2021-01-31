@@ -1,8 +1,7 @@
 import { NetworkHandler } from "./networkidentifier";
 import { NativeClass } from "../nativeclass";
 
-export class LoopbackPacketSender extends NativeClass
-{
+export class LoopbackPacketSender extends NativeClass {
     networkHandler:NetworkHandler;
 }
 LoopbackPacketSender.abstract({

@@ -18,8 +18,7 @@ import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-class NetworkHandler$Connection extends NativeClass
-{
+class NetworkHandler$Connection extends NativeClass {
     networkIdentifier:NetworkIdentifier;
     u1:VoidPointer;
     u2:VoidPointer;
@@ -28,18 +27,15 @@ class NetworkHandler$Connection extends NativeClass
     bpeer:SharedPtr<BatchedNetworkPeer>;
     bpeer2:SharedPtr<BatchedNetworkPeer>;
 }
-export class NetworkHandler extends NativeClass
-{
+export class NetworkHandler extends NativeClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
 
-    send(ni:NetworkIdentifier, packet:Packet, u:number):void
-    {
+    send(ni:NetworkIdentifier, packet:Packet, u:number):void {
         abstract();
     }
     
-    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection
-    {
+    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
     }
     
@@ -51,13 +47,11 @@ export namespace NetworkHandler
     export type Connection = NetworkHandler$Connection;
 }
 
-class ServerNetworkHandler$Client extends NativeClass
-{
+class ServerNetworkHandler$Client extends NativeClass {
 }
 ServerNetworkHandler$Client.abstract({});
 
-export class ServerNetworkHandler extends NativeClass
-{
+export class ServerNetworkHandler extends NativeClass {
 }
 ServerNetworkHandler.abstract({});
 
@@ -69,64 +63,53 @@ export namespace ServerNetworkHandler
 const identifiers = new HashSet<NetworkIdentifier>();
 const closeEvTarget = new Event<(ni:NetworkIdentifier)=>void>();
 
-export class NetworkIdentifier extends NativeClass implements Hashable
-{
+export class NetworkIdentifier extends NativeClass implements Hashable {
     public address:RakNet.AddressOrGUID;
 
-    constructor(allocate?:boolean)
-    {
+    constructor(allocate?:boolean) {
         super(allocate);
     }
 
-    assignTo(target:VoidPointer):void
-    {
+    assignTo(target:VoidPointer):void {
         dll.vcruntime140.memcpy(target, this, NetworkHandler[NativeClass.contentSize]);
     }
 
-    equals(other:NetworkIdentifier):boolean
-    {
+    equals(other:NetworkIdentifier):boolean {
         abstract();
     }
 
-    hash():number
-    {
+    hash():number {
         abstract();
     }
 
-    getActor():Actor|null
-    {
+    getActor():Actor|null {
         abstract();
     }
 
-    getAddress():string
-    {
+    getAddress():string {
         const idx = this.address.GetSystemIndex();
         const rakpeer = networkHandler.instance.peer;
         return rakpeer.GetSystemAddressFromIndex(idx).toString();
     }
 
-    toString():string
-    {
+    toString():string {
         return this.getAddress();
     }
 
     static readonly close:CapsuledEvent<(ni:NetworkIdentifier)=>void> = closeEvTarget;
-    static fromPointer(ptr:StaticPointer):NetworkIdentifier
-    {
+    static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-	static [makefunc.np2js](ptr:NetworkIdentifier):NetworkIdentifier
-	{
-		let ni = identifiers.get(ptr);
-		if (ni) return ni;
+    static [makefunc.np2js](ptr:NetworkIdentifier):NetworkIdentifier {
+        let ni = identifiers.get(ptr);
+        if (ni) return ni;
         ni = new NetworkIdentifier(true);
         ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-		identifiers.add(ni);
-		return ni;
+        identifiers.add(ni);
+        return ni;
     }
     
-    static all():IterableIterator<NetworkIdentifier>
-    {
+    static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
 }
@@ -134,15 +117,12 @@ export class NetworkIdentifier extends NativeClass implements Hashable
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
-    try
-    {
+    try {
         closeEvTarget.fire(ni);
         identifiers.delete(ni);
         _tickCallback();
-    }
-    catch (err)
-    {
+    } catch (err) {
         remapAndPrintError(err);
     }
 }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
-    [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
+[Register.rcx, Register.rdx, Register.r8, Register.r9], []);

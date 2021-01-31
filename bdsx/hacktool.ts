@@ -26,22 +26,18 @@ export namespace hacktool
         from:StaticPointer, to:VoidPointer, originalCodeSize:number, 
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[],
-        tempRegister?:Register|null):void
-    {
+        tempRegister?:Register|null):void {
         const newcode = asm();
 
         const fullsize = keepRegister.length * 8;
-        for (const r of keepRegister)
-        {
+        for (const r of keepRegister) {
             const off = registerOffsetMap[r];
             if (off == null) throw Error(`${Register[r]} is not the register of arguments`);
             newcode.mov_rp_r(Register.rsp, off+fullsize, r);
         }
-        if (keepFloatRegister.length !== 0)
-        {
+        if (keepFloatRegister.length !== 0) {
             newcode.sub_r_c(Register.rsp, 0x18);
-            for (let i=0;i<keepFloatRegister.length;i++)
-            {
+            for (let i=0;i<keepFloatRegister.length;i++) {
                 if (i !== 0) newcode.sub_r_c(Register.rsp, 0x10);
                 newcode.movdqa_rp_f(Register.rsp, 0, keepFloatRegister[i]);
             }
@@ -51,22 +47,18 @@ export namespace hacktool
             .call64(to, Register.rax)
             .add_r_c(Register.rsp, 0x30);
     
-            for (let i=keepFloatRegister.length-1;i>=0;i--)
-            {
+            for (let i=keepFloatRegister.length-1;i>=0;i--) {
                 newcode.movdqa_f_rp(keepFloatRegister[i], Register.rsp, 0);
                 if (i !== 0) newcode.add_r_c(Register.rsp, 0x10);
             }
             newcode.sub_r_c(Register.rsp, 0x18);
-        }
-        else
-        {
+        } else {
             newcode
             .sub_r_c(Register.rsp, 0x28)
             .call64(to, Register.rax)
             .add_r_c(Register.rsp, 0x28);
         }
-        for (const r of keepRegister)
-        {
+        for (const r of keepRegister) {
             const off = registerOffsetMap[r]!;
             newcode.mov_r_rp(r, Register.rsp, off+fullsize);
         }
@@ -84,8 +76,7 @@ export namespace hacktool
 
     export function hook(
         from:StaticPointer, to:VoidPointer, originalCodeSize:number, 
-        tempRegister?:Register|null):VoidPointer
-    {
+        tempRegister?:Register|null):VoidPointer {
         const newcode = asm().write(...from.getBuffer(originalCodeSize));
         if (tempRegister != null) newcode.jmp64(from, tempRegister);
         else newcode.jmp64_notemp(from.add(originalCodeSize));
@@ -100,17 +91,13 @@ export namespace hacktool
         return original;
     }
 
-    export function patch(from:StaticPointer, to:VoidPointer, tmpRegister:Register, originalCodeSize:number, call:boolean):void
-    {
+    export function patch(from:StaticPointer, to:VoidPointer, tmpRegister:Register, originalCodeSize:number, call:boolean):void {
         let jumper:Uint8Array;
-        if (call)
-        {
+        if (call) {
             jumper = asm()
             .call64(to, tmpRegister)
             .buffer();
-        }
-        else
-        {
+        } else {
             jumper = asm()
             .jmp64(to, tmpRegister)
             .buffer();
@@ -122,8 +109,7 @@ export namespace hacktool
         dll.vcruntime140.memset(from.add(jumper.length), 0x90, originalCodeSize - jumper.length); // fill nop at remained
     }
 
-    export function jump(from:StaticPointer, to:VoidPointer, tmpRegister:Register, originalCodeSize:number):void
-    {
+    export function jump(from:StaticPointer, to:VoidPointer, tmpRegister:Register, originalCodeSize:number):void {
         const jumper = asm()
         .jmp64(to, tmpRegister)
         .buffer();

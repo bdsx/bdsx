@@ -163,4 +163,4 @@ export enum MinecraftPacketIds {//int32_t
 	ItemComponent = 0xa2,
 	FilterTextPacket = 0xa3,
 	AlexEntityAnimation = 0xe0,
-};
+}

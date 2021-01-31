@@ -6,21 +6,17 @@ import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";
 
-export class Level extends NativeClass
-{
-	players:CxxVector<ServerPlayer>;
+export class Level extends NativeClass {
+    players:CxxVector<ServerPlayer>;
 
-    createDimension(id:DimensionId):Dimension
-    {
+    createDimension(id:DimensionId):Dimension {
         abstract();
     }
-    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor
-    {
+    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor {
         abstract();
     }
 }
-export class ServerLevel extends Level
-{
+export class ServerLevel extends Level {
     packetSender:LoopbackPacketSender;
     actors:CxxVector<Actor>;
 }

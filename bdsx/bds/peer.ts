@@ -7,12 +7,11 @@ import { abstract } from "bdsx/common";
 import { CxxStringWrapper } from "bdsx/pointer";
 
 
-export class RaknetNetworkPeer extends NativeClass
-{
-	vftable:VoidPointer;
-	u1:VoidPointer; // null
-	u2:VoidPointer; // null
-	peer:RakNet.RakPeer;
+export class RaknetNetworkPeer extends NativeClass {
+    vftable:VoidPointer;
+    u1:VoidPointer; // null
+    u2:VoidPointer; // null
+    peer:RakNet.RakPeer;
     addr:RakNet.AddressOrGUID;
 }
 RaknetNetworkPeer.abstract({
@@ -23,35 +22,31 @@ RaknetNetworkPeer.abstract({
     addr:RakNet.AddressOrGUID
 });
 
-export class EncryptedNetworkPeer extends NativeClass
-{
+export class EncryptedNetworkPeer extends NativeClass {
     peer:SharedPtr<RaknetNetworkPeer>;
 }
 EncryptedNetworkPeer.abstract({
     peer:SharedPtr,
 });
 
-export class CompressedNetworkPeer extends NativeClass
-{
-	peer:EncryptedNetworkPeer;
+export class CompressedNetworkPeer extends NativeClass {
+    peer:EncryptedNetworkPeer;
 }
 CompressedNetworkPeer.abstract({
     peer:[EncryptedNetworkPeer.ref(), 0x48]
 });
 
-export class BatchedNetworkPeer extends NativeClass
-{
-	vftable:VoidPointer;
-	peer:CompressedNetworkPeer;
-	stream:BinaryStream;
+export class BatchedNetworkPeer extends NativeClass {
+    vftable:VoidPointer;
+    peer:CompressedNetworkPeer;
+    stream:BinaryStream;
 
-	sendPacket(data:CxxStringWrapper, reliability:number, n:number, n2:number, compressibility:number):void
-	{
-		abstract();
-	}
+    sendPacket(data:CxxStringWrapper, reliability:number, n:number, n2:number, compressibility:number):void {
+        abstract();
+    }
 }
 BatchedNetworkPeer.abstract({
-	vftable:VoidPointer,
-	peer:CompressedNetworkPeer.ref(),
-	stream:BinaryStream,
+    vftable:VoidPointer,
+    peer:CompressedNetworkPeer.ref(),
+    stream:BinaryStream,
 });

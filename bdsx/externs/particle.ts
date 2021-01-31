@@ -1,5 +1,7 @@
 
-type MinecraftParticleEffect =
+declare global
+{
+    type MinecraftParticleEffect =
     /**
      * Beacon effects
      */
@@ -177,3 +179,6 @@ type MinecraftParticleEffect =
      * Witches.
      */
     "minecraft:witchspell";
+}
+
+export {};

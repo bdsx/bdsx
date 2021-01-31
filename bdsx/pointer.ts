@@ -9,15 +9,12 @@ export interface WrapperType<T> extends Type<Wrapper<T>>
     new(ptr?:VoidPointer|boolean):Wrapper<T>;
 }
 
-export abstract class Wrapper<T> extends NativeClass
-{
+export abstract class Wrapper<T> extends NativeClass {
     abstract value:T;
     abstract type:Type<T>;
 
-    static make<T>(type:Type<T>):WrapperType<T>
-    {
-        class TypedWrapper extends Wrapper<T>
-        {
+    static make<T>(type:Type<T>):WrapperType<T>{
+        class TypedWrapper extends Wrapper<T>{
             value:any;
             type:Type<T>;
         }
@@ -26,35 +23,29 @@ export abstract class Wrapper<T> extends NativeClass
         return TypedWrapper;
     }
 
-    static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS
-    {
+    static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
         return ptr.getPointerAs(this, offset);
     }
-    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void
-    {
+    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void{
         ptr.setPointer(value, offset);
     }
-    static [NativeType.ctor](ptr:StaticPointer):void
-    {
+    static [NativeType.ctor](ptr:StaticPointer):void{
+        // empty
     }
-    static [NativeType.dtor](ptr:StaticPointer):void
-    {
+    static [NativeType.dtor](ptr:StaticPointer):void{
+        // empty
     }
-    static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void
-    {
+    static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void{
         to.copyFrom(from, 8);
     }
-    static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void
-    {
+    static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
         to.copyFrom(from, 8);
     }
-    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, offset:number):void
-    {
+    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, offset:number):void {
         const type = this;
         let obj:VoidPointer|null = null;
 
-        function init(ptr:StaticPointer)
-        {
+        function init(ptr:StaticPointer):void {
             obj = ptr.getPointerAs(type, offset);
             Object.defineProperty(ptr, key, {
                 get(){
@@ -80,14 +71,11 @@ export abstract class Wrapper<T> extends NativeClass
 export type PointerType<T> = WrapperType<T>;
 
 /** @deprecated renamed to Wrapper<T> */
-export abstract class Pointer<T> extends Wrapper<T>
-{
+export abstract class Pointer<T> extends Wrapper<T> {
     p:T;
 
-    static make<T>(type:Type<T>):PointerType<T>
-    {
-        class TypedPointer extends Pointer<T>
-        {
+    static make<T>(type:Type<T>):PointerType<T> {
+        class TypedPointer extends Pointer<T> {
             p:any;
             value:any;
             type:Type<T>;
@@ -98,41 +86,34 @@ export abstract class Pointer<T> extends Wrapper<T>
     }
 }
 
-export class CxxStringWrapper extends NativeClass
-{
+export class CxxStringWrapper extends NativeClass {
     length:number;
     capacity:number;
 
-    [NativeType.ctor]()
-    {
+    [NativeType.ctor]():void {
         abstract();
     }
 
-    [NativeType.dtor]()
-    {
+    [NativeType.dtor]():void {
         abstract();
     }
 
     /**
      * @deprecated use .destruct
      */
-    dispose():void
-    {
+    dispose():void {
         this.destruct();
     }
     
-    get value():string
-    {
+    get value():string {
         return this.getCxxString();
     }
 
-    set value(str:string)
-    {
+    set value(str:string) {
         this.setCxxString(str);
     }
 
-    get valueptr():VoidPointer
-    {
+    get valueptr():VoidPointer {
         if (this.capacity >= 0x10) return this.getPointer();
         else return this as any;
     }

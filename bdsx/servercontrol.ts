@@ -13,8 +13,7 @@ export namespace serverControl
      * stop the BDS
      * It will stop next tick
      */
-    export function stop():void
-    {
+    export function stop():void {
         const server = serverInstance.server;
         stopfunc(server.add(8));
     }
@@ -22,16 +21,12 @@ export namespace serverControl
     /**
      * shutdown server and restart
      */
-    export function restart(force?:boolean):void
-    {
+    export function restart(force?:boolean):void {
         const argsLine = bedrock_server_exe.argsLine;
-		if (force)
-		{
+        if (force) {
             child_process.spawn(argsLine);
             bedrock_server_exe.forceKill(-1);
-        }
-        else
-        {
+        } else {
             child_process.spawn(argsLine);
             stop();
         }

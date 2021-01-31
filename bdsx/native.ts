@@ -14,8 +14,7 @@ import { nethook as nethookOrigin } from './nethook';
 import { serverControl as serverControlOrigin } from './servercontrol';
 import { SharedPointer as SharedPointerOrigin } from './sharedpointer';
 
-function defaultErrorMethod(err:Error)
-{
+function defaultErrorMethod(err:Error):void {
     console.error(err);
 }
 
@@ -24,19 +23,14 @@ function defaultErrorMethod(err:Error)
  * default error printing is disabled if cb returns false
  * @deprecated use bedrockServer.error.on
  */
-export function setOnErrorListener(cb: ((err: Error) => void | boolean)|null): void
-{
-    if (cb)
-    {
+export function setOnErrorListener(cb: ((err: Error) => void | boolean)|null): void {
+    if (cb) {
         core.jshook.setOnError(err=>{
-            if (cb(err) !== false)
-            {
+            if (cb(err) !== false) {
                 console.error(err.stack || err.toString());
             }
         });
-    }
-    else
-    {
+    } else {
         core.jshook.setOnError(defaultErrorMethod);
     }
 }
@@ -50,8 +44,7 @@ export const setOnRuntimeErrorListener = legacy.setOnRuntimeErrorListener;
 /**
  * @deprecated
  */
-export function setOnCommandListener(cb: ((command:string, originName:string)=>void | number)|null):void
-{
+export function setOnCommandListener(cb: ((command:string, originName:string)=>void | number)|null):void {
     throw Error('not implemented');
 }
 
@@ -132,8 +125,7 @@ export const free = capi.free;
 /**
  * @deprecated use bdsx/bds/hashedstring.HashedString.getHash
  */
-export function getHashFromCxxString(ptr:StaticPointer):NativePointer
-{
+export function getHashFromCxxString(ptr:StaticPointer):NativePointer {
     const hash = new NativePointer;
     const binhash = HashedString.getHash(ptr.getCxxString());
     hash.setAddressBin(binhash);
@@ -143,7 +135,6 @@ export function getHashFromCxxString(ptr:StaticPointer):NativePointer
 /**
  * @deprecated use analyzer.loadMap
  */
-export function loadPdb():{[key:string]:NativePointer}
-{
+export function loadPdb():{[key:string]:NativePointer} {
     return core.pdb.getAll();
 }

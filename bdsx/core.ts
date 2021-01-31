@@ -136,8 +136,7 @@ export interface VoidPointer {
     // addressOfThis():NativePointer;
 }
 
-export declare class PrivatePointer extends VoidPointer
-{
+export declare class PrivatePointer extends VoidPointer {
     protected getBoolean(offset?: number): boolean;
     protected getUint8(offset?: number): number;
     protected getUint16(offset?: number): number;
@@ -237,11 +236,10 @@ export declare class PrivatePointer extends VoidPointer
     protected interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
 
     protected getJsValueRef(offset?:number):any;
-    protected setJsValueRef(value:any, offset?:number):void;
+    protected setJsValueRef(value:unknown, offset?:number):void;
 }
 
-export declare class StaticPointer extends PrivatePointer
-{
+export declare class StaticPointer extends PrivatePointer {
     getBoolean(offset?: number): boolean;
     getUint8(offset?: number): number;
     getUint16(offset?: number): number;
@@ -341,19 +339,17 @@ export declare class StaticPointer extends PrivatePointer
     interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
 
     getJsValueRef(offset?:number):any;
-    setJsValueRef(value:any, offset?:number):void;
+    setJsValueRef(value:unknown, offset?:number):void;
 }
 
 /**
  * this pointer has the buffer itself 
  */
-export declare class AllocatedPointer extends StaticPointer
-{
+export declare class AllocatedPointer extends StaticPointer {
     constructor(size:number);
 }
 
-export declare class StructurePointer extends PrivatePointer
-{
+export declare class StructurePointer extends PrivatePointer {
     static readonly contentSize:unique symbol;
     static [StructurePointer.contentSize]:number;
     constructor(pointerOrBufferItSelf?:VoidPointer|boolean|null);
@@ -503,16 +499,14 @@ export declare class NativePointer extends StaticPointer {
     writeBin(v:string, words: number): string;
     
     readJsValueRef():any;
-    writeJsValueRef(value:any):void;
+    writeJsValueRef(value:unknown):void;
 }
 
-export declare class RuntimeError extends Error
-{
+export declare class RuntimeError extends Error {
     nativeStack:string;
 }
 
-export declare class MultiThreadQueue extends VoidPointer
-{
+export declare class MultiThreadQueue extends VoidPointer {
     constructor(size:number);
 
     enqueue(src:VoidPointer):void;
@@ -557,14 +551,14 @@ export declare namespace pdb
     /**
      * @deprecated use pdb.getList instead
      */
-    export function getProcAddresses<OLD extends {}, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
+    export function getProcAddresses<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
 
     /**
      * get symbols from cache.
      * if symbols don't exist in cache. it reads pdb.
      * @returns 'out' the first parameter.
      */
-    export function getList<OLD extends {}, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean):{[key in KEYS[number]]: NativePointer} & OLD;
+    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean):{[key in KEYS[number]]: NativePointer} & OLD;
 
     export function getDllDependeny():void;
 
@@ -811,7 +805,7 @@ export declare namespace ipfilter
      * time is for un-blocking in unix time stamp 
      * time = 0 : permanent
      */
-    export function entires():[string, number][]
+    export function entires():[string, number][];
 }
 
 type ErrorListener = (err:Error)=>void;

@@ -20,58 +20,49 @@ interface ChatEvent
     setMessage(message:string):void;
 }
 
-class ChatEventImpl implements ChatEvent
-{
+class ChatEventImpl implements ChatEvent {
     public isModified = false;
 
     constructor(
         public name:string, 
         public message:string,
         public networkIdentifier:NetworkIdentifier
-    )
-    {
+    ) {
     }
 
-    setName(name:string):void
-    {
+    setName(name:string):void {
         this.isModified = true;
         this.name = name;
     }
 
-    setMessage(message:string):void
-    {
+    setMessage(message:string):void {
         this.isModified = true;
         this.message = message;
     }
 }
 type ChatListener = (ev:ChatEvent)=>CANCEL|void;
 
-class ChatManager extends EventEx<ChatListener>
-{
-    private readonly chatlistener = (ptr:TextPacket, networkIdentifier:NetworkIdentifier, packetId:MinecraftPacketIds)=>{
+class ChatManager extends EventEx<ChatListener> {
+    private readonly chatlistener = (ptr:TextPacket, networkIdentifier:NetworkIdentifier, packetId:MinecraftPacketIds):CANCEL|void=>{
         const name = ptr.name;
         const message = ptr.message;
         const ev = new ChatEventImpl(name, message, networkIdentifier);
         if (this.fire(ev) === CANCEL) return CANCEL;
-        if (ev.isModified)
-        {
+        if (ev.isModified) {
             ptr.name = ev.name;
             ptr.message = ev.message;
         }
     };
 
-    onStarted():void
-    {
+    onStarted():void {
         netevent.before(MinecraftPacketIds.Text).on(this.chatlistener);
     }
-    onCleared():void
-    {
+    onCleared():void {
         netevent.before(MinecraftPacketIds.Text).remove(this.chatlistener);
     }
 
     /** @deprecated use netevent.before(MinecraftPacketIds.Text).on */
-    on(listener: ChatListener): void
-    {
+    on(listener: ChatListener): void {
         super.on(listener);
     }
 }

@@ -1,4 +1,4 @@
-/// <reference path="./externs/index.d.ts" />
+import './externs';
 import './polyfill';
 import './bds/enumfiller';
 
@@ -53,10 +53,10 @@ declare module "./core"
         analyze():void;
     }
 }
-NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16){
+NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16) {
     return hex(this.readBuffer(size), nextLinePer);
 };
-NativePointer.prototype.analyze = function(){
+NativePointer.prototype.analyze = function() {
     return analyzer.analyze(this);
 };
 

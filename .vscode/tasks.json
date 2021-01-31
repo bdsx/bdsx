@@ -11,6 +11,20 @@
 			"problemMatcher": "$tsc-watch",
 			"label": "npm: watch",
 			"isBackground": true
+		},
+		{
+			"type": "npm",
+			"script": "lint-bdsx",
+			"group": "test",
+			"problemMatcher": "$eslint-stylish",
+			"label": "npm: lint-bdsx"
+		},
+		{
+			"type": "npm",
+			"script": "tsc-no-emit",
+			"group": "test",
+			"problemMatcher": "$tsc",
+			"label": "npm: tsc-no-emit"
 		}
 	]
 }

@@ -6,28 +6,22 @@ import { bin } from "./bin";
 export namespace mce
 {
     export const UUID = bin128_t.extends({
-        v1(uuid:UUID):uint32_t
-        {
+        v1(uuid:UUID):uint32_t {
             return uuid.charCodeAt(0) | (uuid.charCodeAt(1)<<16);
         },
-        v2(uuid:UUID):uint16_t
-        {
+        v2(uuid:UUID):uint16_t {
             return uuid.charCodeAt(2);
         },
-        v3(uuid:UUID):uint16_t
-        {
+        v3(uuid:UUID):uint16_t {
             return uuid.charCodeAt(3);
         },
-        v4(uuid:UUID):bin64_t
-        {
+        v4(uuid:UUID):bin64_t {
             return uuid.substr(4);
         },
-        generate():UUID
-        {
+        generate():UUID {
             return generateUUID().value;
         },
-        toString(uuid:UUID)
-        {
+        toString(uuid:UUID) {
             const hex = bin.hex(uuid);
             const u1 = hex.substr(0, 8);
             const u2 = hex.substr(8, 4);

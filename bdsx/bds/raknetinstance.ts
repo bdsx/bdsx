@@ -2,8 +2,7 @@ import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { RakNet } from "./raknet";
 
-export class RakNetInstance extends NativeClass
-{
+export class RakNetInstance extends NativeClass {
     vftable:VoidPointer;
     peer:RakNet.RakPeer;
 }

@@ -12,33 +12,26 @@ export interface Hashable
 
 const INITIAL_CAP = 16;
 
-export class HashSet<T extends Hashable> implements Iterable<T>
-{
+export class HashSet<T extends Hashable> implements Iterable<T> {
     private array:(T|null)[] = new Array(INITIAL_CAP);
     public size = 0;
 
-    constructor()
-    {
-        for (let i=0;i<INITIAL_CAP;i++)
-        {
+    constructor() {
+        for (let i=0;i<INITIAL_CAP;i++) {
             this.array[i] = null;
         }
     }
 
-    private _resetCap(n:number):void
-    {
+    private _resetCap(n:number):void {
         const narray = new Array(n);
-        for (let i=0;i<n;i++)
-        {
+        for (let i=0;i<n;i++) {
             narray[i] = null;
         }
 
-        for (let item of this.array)
-        {
-            for (;;)
-            {
+        for (let item of this.array) {
+            for (;;) {
                 if (item === null) break;
-                let next:T|null = item[nextlink] as T;
+                const next:T|null = item[nextlink] as T;
 
                 const idx = item[hashkey]! % this.array.length;
                 item[nextlink] = narray[idx];
@@ -51,30 +44,24 @@ export class HashSet<T extends Hashable> implements Iterable<T>
         this.array = narray;
     }
 
-    [Symbol.iterator]():IterableIterator<T>
-    {
+    [Symbol.iterator]():IterableIterator<T> {
         return this.keys();
     }
 
     /**
      * @deprecated use values() or keys()
      */
-    entires():IterableIterator<T>
-    {
+    entires():IterableIterator<T> {
         return this.keys();
     }
 
-    keys():IterableIterator<T>
-    {
+    keys():IterableIterator<T> {
         return this.values();
     }
     
-    *values():IterableIterator<T>
-    {
-        for (let item of this.array)
-        {
-            for (;;)
-            {
+    *values():IterableIterator<T> {
+        for (let item of this.array) {
+            for (;;) {
                 if (item === null) break;
                 yield item;
                 item = item[nextlink] as T;
@@ -82,58 +69,50 @@ export class HashSet<T extends Hashable> implements Iterable<T>
         }
     }
 
-    get(item:T):T|null
-    {
+    get(item:T):T|null {
         let hash = item[hashkey];
         if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
-        for (;;)
-        {
+        for (;;) {
             if (found === null) return null;
             if (found[hashkey] === hash) return found;
             found = found[nextlink] as T;
         }
     }
 
-    has(item:T):boolean
-    {
+    has(item:T):boolean {
         let hash = item[hashkey];
         if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
-        for (;;)
-        {
+        for (;;) {
             if (found === null) return false;
             if (found[hashkey] === hash) return true;
             found = found[nextlink] as T;
         }
     }
 
-    delete(item:T):boolean
-    {
+    delete(item:T):boolean {
         let hash = item[hashkey];
         if (hash === undefined) hash = item[hashkey] = item.hash()>>>0;
 
         const idx = hash % this.array.length;
         let found = this.array[idx];
         if (found === null) return false;
-        if (found[hashkey] === hash && item.equals(found))
-        {
+        if (found[hashkey] === hash && item.equals(found)) {
             this.array[idx] = found[nextlink] as T;
             found[nextlink] = null;
             this.size--;
             return true;
         }
-        for (;;)
-        {
-            const next = found![nextlink] as T
+        for (;;) {
+            const next = found![nextlink] as T;
             if (next === null) return false;
             
-            if (next[hashkey] === hash && next.equals(found))
-            {
+            if (next[hashkey] === hash && next.equals(found)) {
                 found![nextlink] = next[nextlink];
                 next[nextlink] = null;
                 this.size--;
@@ -143,12 +122,10 @@ export class HashSet<T extends Hashable> implements Iterable<T>
         }
     }
 
-    add(item:T):this
-    {
+    add(item:T):this {
         this.size ++;
         const cap = this.array.length;
-        if (this.size > (cap * 3 >> 2))
-        {
+        if (this.size > (cap * 3 >> 2)) {
             this._resetCap(cap * 3 >> 1);
         }
 

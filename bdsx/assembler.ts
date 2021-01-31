@@ -70,7 +70,7 @@ export enum Operator
     sub,
     xor,
     cmp,
-};
+}
 
 export enum JumpOperation
 {
@@ -97,40 +97,36 @@ const INT8_MAX = 0x7f;
 
 type Value64 = number|string|VoidPointer|Uint8Array;
 
-function split64bits(value:Value64):[number, number]
-{
-    switch (typeof value)
-    {
+function split64bits(value:Value64):[number, number] {
+    switch (typeof value) {
     case 'string': 
         return bin.int32_2(value);
     case 'object':
-        if (value instanceof Uint8Array)
-        {
+        if (value instanceof Uint8Array) {
             const ptr = new NativePointer;
             ptr.setAddressFromBuffer(value);
             value = ptr;
         }
         return [value.getAddressLow(), value.getAddressHigh()];
-    case 'number':
+    case 'number': {
         const lowbits = value|0;
         let highbits = ((value-lowbits)/ 0x100000000);
         highbits = highbits >= 0 ? Math.floor(highbits) : Math.ceil(highbits);
         return [lowbits, highbits];
+    }
     default:
         throw Error(`invalid constant value: ${value}`);
     }
 }
 
-function is32Bits(value:Value64):boolean
-{
-    switch (typeof value)
-    {
-    case 'string': 
+function is32Bits(value:Value64):boolean {
+    switch (typeof value) {
+    case 'string': {
         const [low, high] = bin.int32_2(value);
         return high === (low >> 31);
+    }
     case 'object':
-        if (value instanceof Uint8Array)
-        {
+        if (value instanceof Uint8Array) {
             const ptr = new NativePointer;
             ptr.setAddressFromBuffer(value);
             value = ptr;
@@ -143,8 +139,7 @@ function is32Bits(value:Value64):boolean
     }
 }
 
-class AsmChunk
-{
+class AsmChunk {
     public array = new Uint8Array(64);
     public size = 0;
 
@@ -156,13 +151,11 @@ class AsmChunk
     public readonly labels:AsmLabel[] = [];
     public readonly unresolvedJumps:AsmUnresolvedJump[] = [];
 
-    put(v:number):this
-    {
+    put(v:number):this {
         const osize = this.size;
         const nsize = osize + 1;
         this.size = nsize;
-        if (nsize > this.array.length)
-        {
+        if (nsize > this.array.length) {
             const narray = new Uint8Array(this.array.length*2);
             narray.set(this.array.subarray(0, osize));
             this.array = narray;
@@ -171,15 +164,13 @@ class AsmChunk
         return this;
     }
 
-    write(values:number[]|Uint8Array):this
-    {
+    write(values:number[]|Uint8Array):this {
         const n = values.length;
         const osize = this.size;
         const nsize = osize + n;
         this.size = nsize;
         
-        if (nsize > this.array.length)
-        {
+        if (nsize > this.array.length) {
             const narray = new Uint8Array(Math.max(this.array.length*2, nsize));
             narray.set(this.array.subarray(0, osize));
             this.array = narray;
@@ -188,13 +179,11 @@ class AsmChunk
         return this;
     }
 
-    buffer():Uint8Array
-    {
+    buffer():Uint8Array {
         return this.array.subarray(0, this.size);
     }
 
-    removeNext():boolean
-    {
+    removeNext():boolean {
         const chunk = this.next;
         if (chunk === null) return false;
 
@@ -202,14 +191,12 @@ class AsmChunk
         this.jumpInfo = chunk.jumpInfo;
         this.jumpArgs = chunk.jumpArgs;
         
-        for (const label of chunk.labels)
-        {
+        for (const label of chunk.labels) {
             label.chunk = this;
             label.offset += this.size;
         }
         this.labels.push(...chunk.labels);
-        for (const jump of chunk.unresolvedJumps)
-        {
+        for (const jump of chunk.unresolvedJumps) {
             jump.offset += this.size;   
         }
         this.unresolvedJumps.push(...chunk.unresolvedJumps);
@@ -230,32 +217,26 @@ class AsmChunk
     }
 }
 
-class AsmLabel
-{
+class AsmLabel {
     constructor(
         public chunk:AsmChunk, 
-        public offset:number)
-    {
+        public offset:number) {
     }
 }
 
-class JumpInfo
-{
+class JumpInfo {
     constructor(
         public readonly byteSize:number,
         public readonly dwordSize:number,
-        public readonly func:(this:X64Assembler, ...args:any[])=>X64Assembler)
-    {
+        public readonly func:(this:X64Assembler, ...args:any[])=>X64Assembler) {
     }
 }
 
-class AsmUnresolvedJump
-{
+class AsmUnresolvedJump {
     constructor(
         public offset:number,
         public readonly isDword:boolean,
-        public readonly label:AsmLabel)
-    {
+        public readonly label:AsmLabel) {
     }
 }
 
@@ -264,31 +245,26 @@ export class X64Assembler {
     private chunk = new AsmChunk;
     private readonly labels:Record<string, AsmLabel> = {entry:new AsmLabel(this.chunk, 0)};
 
-    size():number
-    {
+    size():number {
         return this.chunk.size;
     }
 
-    connect(cb:(asm:X64Assembler)=>this):this
-    {
+    connect(cb:(asm:X64Assembler)=>this):this {
         return cb(this);
     }
 
-    write(...values:number[]):this
-    {
+    write(...values:number[]):this {
         this.chunk.write(values);
         return this;
     }
 
-    writeInt16(value:number):this
-    {
+    writeInt16(value:number):this {
         return this.write(
             value&0xff,
             (value>>>8)&0xff);
     }
 
-    writeInt32(value:number):this
-    {
+    writeInt32(value:number):this {
         return this.write(
             value&0xff,
             (value>>>8)&0xff,
@@ -296,28 +272,23 @@ export class X64Assembler {
             (value>>>24));
     }
 
-    buffer():Uint8Array
-    {
+    buffer():Uint8Array {
         this._normalize();
         return this.chunk.buffer();
     }
 
-    alloc():StaticPointer
-    {
+    alloc():StaticPointer {
         const mem = cgate.allocExecutableMemory(this.chunk.size);
         mem.setBuffer(this.buffer());
         return mem;
     }
     
-    allocs():{entry:StaticPointer; [key:string]:StaticPointer; }
-    {
+    allocs():{entry:StaticPointer; [key:string]:StaticPointer; } {
         const mem = this.alloc();
         const out:Record<string, StaticPointer> = {};
-        for (const key in this.labels)
-        {
+        for (const key in this.labels) {
             const pos = this.labels[key];
-            if (typeof pos !== 'number')
-            {
+            if (typeof pos !== 'number') {
                 throw Error(`${key} label is not determined`);
             }
             out[key] = mem.add(pos);
@@ -343,48 +314,40 @@ export class X64Assembler {
         return this.int3();
     }
 
-    int3():this
-    {
+    int3():this {
         return this.write(0xcc);
     }
 
-    int(n:number):this
-    {
+    int(n:number):this {
         if (n === 3) return this.int3();
         return this.write(0xcd, n & 0xff);
     }
 
-    private _target(opcode:number, r:Register, offset:number, oper:MovOper)
-    {
-        if (oper === MovOper.Register || oper === MovOper.Const)
-        {
+    private _target(opcode:number, r:Register, offset:number, oper:MovOper):void {
+        if (oper === MovOper.Register || oper === MovOper.Const) {
             if (offset !== 0) throw Error('Register operation with offset');
             this.write(opcode | 0xc0);
             return;
         }
         if (offset !== (offset|0)) throw Error('needs int32 offset');
-        if (offset === 0 && r !== Register.rbp) {}
-        else if (INT8_MIN <= offset && offset <= INT8_MAX)
-        {
+        if (offset === 0 && r !== Register.rbp) {
+            // empty
+        } else if (INT8_MIN <= offset && offset <= INT8_MAX) {
             opcode |= 0x40;
-        }
-        else
-        {
+        } else {
             opcode |= 0x80;
         }
         this.write(opcode);
     
         if (r === Register.rsp) this.write(0x24);
         if (opcode & 0x40) this.write(offset);
-        else if (opcode & 0x80)
-        {
+        else if (opcode & 0x80) {
             this.writeInt32(offset);
         }
     }
 
-    private _regex(r1:Register, r2:Register, size:OperationSize):void
-    {
-        if (size == OperationSize.word) this.write(0x66);
+    private _regex(r1:Register, r2:Register, size:OperationSize):void {
+        if (size === OperationSize.word) this.write(0x66);
     
         let rex = 0x40;
         if (size === OperationSize.qword) rex |= 0x08;
@@ -393,24 +356,16 @@ export class X64Assembler {
         if (rex !== 0x40) this.write(rex);
     }
 
-    private _const(v:Value64, size:OperationSize):this
-    {
+    private _const(v:Value64, size:OperationSize):this {
         const [low32, high32] = split64bits(v);
-        if (size === OperationSize.byte)
-        {
+        if (size === OperationSize.byte) {
             this.write(low32 & 0xff);
-        }
-        else if (size === OperationSize.word)
-        {
+        } else if (size === OperationSize.word) {
             this.writeInt16(low32 & 0xffff);
-        }
-        else if (size === OperationSize.qword)
-        {
+        } else if (size === OperationSize.qword) {
             this.writeInt32(low32);
             this.writeInt32(high32);
-        }
-        else
-        {
+        } else {
             this.writeInt32(low32);
         }
         return this;
@@ -419,48 +374,33 @@ export class X64Assembler {
     private _mov(
         r1:Register, r2:Register, 
         offset:number, value:Value64, 
-        oper:MovOper, size:OperationSize):this
-    {
+        oper:MovOper, size:OperationSize):this {
         this._regex(r1, r2, size);
         let opcode = (r1&7) | ((r2&7) << 3);
 
-        if (size === OperationSize.byte)
-        {
-            if (oper === MovOper.WriteConst)
-            {
+        if (size === OperationSize.byte) {
+            if (oper === MovOper.WriteConst) {
                 this.write(0xc6);
-            }
-            else if (oper === MovOper.Const)
-            {
+            } else if (oper === MovOper.Const) {
                 opcode |= 0xb0;
             }
-        }
-        else
-        {
-            if (oper === MovOper.WriteConst)
-            {
+        } else {
+            if (oper === MovOper.WriteConst) {
                 this.write(0xc7);
-            }
-            else if (oper === MovOper.Const)
-            {
-                if (size === OperationSize.qword && is32Bits(value))
-                {
+            } else if (oper === MovOper.Const) {
+                if (size === OperationSize.qword && is32Bits(value)) {
                     size = OperationSize.dword;
                     this.write(0xc7);
                     opcode |= 0xc0;
-                }
-                else
-                {
+                } else {
                     opcode |= 0xb8;
                 }
             }
         }
         
 
-        if (oper !== MovOper.Const && oper !== MovOper.WriteConst)
-        {
-            if (oper === MovOper.Lea && size !== OperationSize.dword && size !== OperationSize.qword)
-            {
+        if (oper !== MovOper.Const && oper !== MovOper.WriteConst) {
+            if (oper === MovOper.Lea && size !== OperationSize.dword && size !== OperationSize.qword) {
                 throw Error('Invalid operation');
             }
     
@@ -471,47 +411,34 @@ export class X64Assembler {
             this.write(memorytype);
         }
     
-        if (oper === MovOper.Const)
-        {
+        if (oper === MovOper.Const) {
             this.write(opcode);
-        }
-        else
-        {
+        } else {
             this._target(opcode, r1, offset, oper);
         }
     
-        if (oper === MovOper.WriteConst)
-        {
+        if (oper === MovOper.WriteConst) {
             this._const(value, size === OperationSize.qword ? OperationSize.dword : size);
-        }
-        else if (oper === MovOper.Const)
-        {
+        } else if (oper === MovOper.Const) {
             this._const(value, size);
         }
         return this;
     }
 
-    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:number):this
-    {
+    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:number):this {
         if (chr !== (chr|0)) throw Error('needs 32bit integer');
 
         this._regex(dest, 0, size);
 
-        if (movoper === MovOper.Register)
-        {
+        if (movoper === MovOper.Register) {
             this.write(0x01 | (oper << 3));
             this._target((dest&7) | ((src&7) << 3), dest, offset, movoper);
-        }
-        else
-        {
+        } else {
             const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
-            if (!is8bits && dest === Register.rax)
-            {
+            if (!is8bits && dest === Register.rax) {
                 this.write(0x05 | (oper << 3));
                 this.writeInt32(chr);
-            }
-            else
-            {
+            } else {
                 this.write(0x81 | (+is8bits << 1));
                 this._target((oper << 3) | (dest&7), dest, offset, movoper);
                 if (is8bits) this.write(chr);
@@ -521,27 +448,21 @@ export class X64Assembler {
         return this;
     }
 
-    private _jmp(isCall:boolean, r:Register, offset:number, oper:MovOper):this
-    {
+    private _jmp(isCall:boolean, r:Register, offset:number, oper:MovOper):this {
         if (r >= Register.r8) this.write(0x41);
         this.write(0xff);
         this._target((isCall ? 0x10 : 0x20) | (r & 7), r, offset, oper);
         return this;
     }
 
-    private _jmp_r(isCall:boolean, r:Register):this
-    {
+    private _jmp_r(isCall:boolean, r:Register):this {
         return this._jmp(isCall, r, 0, MovOper.Register);
     }
 
-    private _jmp_o(oper:JumpOperation, offset:number, alwaysDwordSpace:boolean = false):this
-    {
-        if (!alwaysDwordSpace && INT8_MIN <= offset && offset <= INT8_MAX)
-        {
+    private _jmp_o(oper:JumpOperation, offset:number, alwaysDwordSpace:boolean = false):this {
+        if (!alwaysDwordSpace && INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0x70 | oper, offset);
-        }
-        else
-        {
+        } else {
             this.write(0x0f);
             this.write(0x80 | oper);
             this.writeInt32(offset);
@@ -552,8 +473,7 @@ export class X64Assembler {
     /**
      * lea
      */
-    lea_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this
-    {
+    lea_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this {
         if (offset === 0) return this.mov_r_r(dest, src, size);
         return this._mov(src, dest, offset, 0, MovOper.Lea, size);
     }
@@ -561,48 +481,42 @@ export class X64Assembler {
     /**
      * move register to register
      */
-    mov_r_r(dest:Register, src:Register, size = OperationSize.qword):this
-    {
+    mov_r_r(dest:Register, src:Register, size = OperationSize.qword):this {
         return this._mov(dest, src, 0, 0, MovOper.Register, size);
     }
 
     /**
      * move const to register
      */
-    mov_r_c(dest:Register, value:Value64, size = OperationSize.qword):this
-    {
+    mov_r_c(dest:Register, value:Value64, size = OperationSize.qword):this {
         return this._mov(dest, 0, 0, value, MovOper.Const, size);
     }
 
     /**
      * move const to register pointer
      */
-    mov_rp_c(dest:Register, offset:number, value:number, size = OperationSize.qword):this
-    {
+    mov_rp_c(dest:Register, offset:number, value:number, size = OperationSize.qword):this {
         return this._mov(dest, 0, offset, value, MovOper.WriteConst, size);
     }
 
     /**
      * move register to register pointer
      */
-    mov_rp_r(dest:Register, offset:number, src:Register, size = OperationSize.qword):this
-    {
+    mov_rp_r(dest:Register, offset:number, src:Register, size = OperationSize.qword):this {
         return this._mov(dest, src, offset, 0, MovOper.Write, size);
     }
 
     /**
      * move register pointer to register
      */
-    mov_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this
-    {
+    mov_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this {
         return this._mov(src, dest, offset, 0, MovOper.Read, size);
     }
 
     /**
      * move gs to register
      */
-    mov_r_gs(register:Register, value:number):this
-    {
+    mov_r_gs(register:Register, value:number):this {
         if (register >= Register.r8) throw Error('unsupported');
         return this.write(0x65, 0x48, 0x8b, 0x04 | (register<<3), 0x25, 
             value & 0xff, 
@@ -614,29 +528,25 @@ export class X64Assembler {
     /**
      * jump with register
      */
-    jmp_r(register:Register):this
-    {
+    jmp_r(register:Register):this {
         return this._jmp_r(false, register);
     }
 
     /**
      * call with register
      */
-    call_r(register:Register):this
-    {
+    call_r(register:Register):this {
         return this._jmp_r(true, register);
     }
 
     /**
      * jump with register pointer
      */
-    jmp_rp(register:Register, offset:number):this
-    {
+    jmp_rp(register:Register, offset:number):this {
         return this._jmp(false, register, offset, MovOper.Read);
     }
 
-    jmp_rpip(offset:number):this
-    {
+    jmp_rpip(offset:number):this {
         this.write(0xff, 0x25);
         this.writeInt32(offset);
         return this;
@@ -645,8 +555,7 @@ export class X64Assembler {
     /**
      * call with register pointer
      */
-    call_rp(register:Register, offset:number):this
-    {
+    call_rp(register:Register, offset:number):this {
         return this._jmp(true, register, offset, MovOper.Read);
     }
 
@@ -654,8 +563,7 @@ export class X64Assembler {
      * mov tmpreg, 64bits
      * call tmpreg
      */
-    call64(value:Value64, tempRegister:Register):this
-    {
+    call64(value:Value64, tempRegister:Register):this {
         this.mov_r_c(tempRegister, value);
         this.call_r(tempRegister);
         return this;
@@ -665,8 +573,7 @@ export class X64Assembler {
      * mov tmpreg, 64bits
      * jmp tmpreg
      */
-    jmp64(value:Value64, tempRegister:Register):this
-    {
+    jmp64(value:Value64, tempRegister:Register):this {
         this.mov_r_c(tempRegister, value);
         this.jmp_r(tempRegister);
         return this;
@@ -677,8 +584,7 @@ export class X64Assembler {
      * mov [rsp-8],  low32(v)
      * jmp [rsp-8]
      */
-    jmp64_notemp(value:Value64):this
-    {
+    jmp64_notemp(value:Value64):this {
         const [low32, high32] = split64bits(value);
         this.mov_rp_c(Register.rsp, -8, low32, OperationSize.dword);
         this.mov_rp_c(Register.rsp, -4, high32, OperationSize.dword);
@@ -687,12 +593,9 @@ export class X64Assembler {
     }
 
     jmp_c(offset:number, alwaysDwordSpace:boolean = false):this {
-        if (!alwaysDwordSpace && INT8_MIN <= offset && offset <= INT8_MAX)
-        {
+        if (!alwaysDwordSpace && INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0xeb, offset);
-        }
-        else
-        {
+        } else {
             this.write(0xe9);
             this.writeInt32(offset);
             return this;
@@ -717,31 +620,30 @@ export class X64Assembler {
         return this;
     }
 
-    jz(offset:number) { return this._jmp_o(JumpOperation.je, offset); }
-    jnz(offset:number) { return this._jmp_o(JumpOperation.jne, offset); }
-    jo(offset:number) { return this._jmp_o(JumpOperation.jo, offset); }
-    jno(offset:number) { return this._jmp_o(JumpOperation.jno, offset); }
-    jb(offset:number) { return this._jmp_o(JumpOperation.jb, offset); }
-    jae(offset:number) { return this._jmp_o(JumpOperation.jae, offset); }
-    je(offset:number) { return this._jmp_o(JumpOperation.je, offset); }
-    jne(offset:number) { return this._jmp_o(JumpOperation.jne, offset); }
-    jbe(offset:number) { return this._jmp_o(JumpOperation.jbe, offset); }
-    ja(offset:number) { return this._jmp_o(JumpOperation.ja, offset); }
-    js(offset:number) { return this._jmp_o(JumpOperation.js, offset); }
-    jns(offset:number) { return this._jmp_o(JumpOperation.jns, offset); }
-    jp(offset:number) { return this._jmp_o(JumpOperation.jp, offset); }
-    jnp(offset:number) { return this._jmp_o(JumpOperation.jnp, offset); }
-    jl(offset:number) { return this._jmp_o(JumpOperation.jl, offset); }
-    jge(offset:number) { return this._jmp_o(JumpOperation.jge, offset); }
-    jle(offset:number) { return this._jmp_o(JumpOperation.jle, offset); }
-    jg(offset:number) { return this._jmp_o(JumpOperation.jg, offset); }
+    jz(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
+    jnz(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
+    jo(offset:number):this { return this._jmp_o(JumpOperation.jo, offset); }
+    jno(offset:number):this { return this._jmp_o(JumpOperation.jno, offset); }
+    jb(offset:number):this { return this._jmp_o(JumpOperation.jb, offset); }
+    jae(offset:number):this { return this._jmp_o(JumpOperation.jae, offset); }
+    je(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
+    jne(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
+    jbe(offset:number):this { return this._jmp_o(JumpOperation.jbe, offset); }
+    ja(offset:number):this { return this._jmp_o(JumpOperation.ja, offset); }
+    js(offset:number):this { return this._jmp_o(JumpOperation.js, offset); }
+    jns(offset:number):this { return this._jmp_o(JumpOperation.jns, offset); }
+    jp(offset:number):this { return this._jmp_o(JumpOperation.jp, offset); }
+    jnp(offset:number):this { return this._jmp_o(JumpOperation.jnp, offset); }
+    jl(offset:number):this { return this._jmp_o(JumpOperation.jl, offset); }
+    jge(offset:number):this { return this._jmp_o(JumpOperation.jge, offset); }
+    jle(offset:number):this { return this._jmp_o(JumpOperation.jle, offset); }
+    jg(offset:number):this { return this._jmp_o(JumpOperation.jg, offset); }
 
 
     /**
      * push register
      */
-    push_r(register:Register):this
-    {
+    push_r(register:Register):this {
         if (register >= Register.r8) this.write(0x41);
         this.write(0x50 | (register & 7));
         return this;
@@ -750,220 +652,171 @@ export class X64Assembler {
     /**
      * push const
      */
-    push_c(value:number):this
-    {
+    push_c(value:number):this {
         if (value !== (value|0)) throw Error('needs int32 integer');
-        if (INT8_MIN <= value && value <= INT8_MAX)
-        {
+        if (INT8_MIN <= value && value <= INT8_MAX) {
             this.write(0x6A);
             this.write(value);
-        }
-        else
-        {
+        } else {
             this.write(0x68);
             this.writeInt32(value);
         }
         return this;
     }
 
-    push_rp(r:Register, offset:number):this
-    {
+    push_rp(r:Register, offset:number):this {
         if (r >= Register.r8) this.write(0x41);
         this.write(0xff);
         this._target(0x30 | (r & 7), r, offset, MovOper.Write);
         return this;
     }
         
-    pop_r(r:Register):this
-    {
+    pop_r(r:Register):this {
         if (r >= Register.r8) this.write(0x41);
         this.write(0x58 | (r&7));
         return this;
     }
 
-    test_r_r(dest:Register, src:Register):this
-    {
+    test_r_r(dest:Register, src:Register):this {
         this._regex(src, dest, OperationSize.qword);
         this.write(0x85);
         this.write(0xC0 | (src << 3) | dest);
         return this;
     }
 
-    cmp_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    cmp_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.cmp, dest, src, 0, 0, size);
     }
-    sub_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    sub_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.sub, dest, src, 0, 0, size);
     }
-    add_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    add_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.add, dest, src, 0, 0, size);
     }
-    sbb_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    sbb_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.sbb, dest, src, 0, 0, size);
     }
-    adc_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    adc_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.adc, dest, src, 0, 0, size);
     }
-    xor_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    xor_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.xor, dest, src, 0, 0, size);
     }
-    or_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    or_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.or, dest, src, 0, 0, size);
     }
-    and_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    and_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Register, Operator.and, dest, src, 0, 0, size);
     }
 
-    cmp_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    cmp_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.cmp, dest, 0, 0, chr, size);
     }
-    sub_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    sub_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.sub, dest, 0, 0, chr, size);
     }
-    add_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    add_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.add, dest, 0, 0, chr, size);
     }
-    sbb_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    sbb_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.sbb, dest, 0, 0, chr, size);
     }
-    adc_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    adc_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.adc, dest, 0, 0, chr, size);
     }
-    xor_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    xor_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.xor, dest, 0, 0, chr, size);
     }
-    or_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    or_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.or, dest, 0, 0, chr, size);
     }
-    and_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this
-    {
+    and_r_c(dest:Register, chr:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Const, Operator.and, dest, 0, 0, chr, size);
     }
 
-    cmp_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    cmp_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.cmp, dest, 0, offset, chr, size);
     }
-    sub_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    sub_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.sub, dest, 0, offset, chr, size);
     }
-    add_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    add_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.add, dest, 0, offset, chr, size);
     }
-    sbb_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    sbb_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.sbb, dest, 0, offset, chr, size);
     }
-    adc_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    adc_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.adc, dest, 0, offset, chr, size);
     }
-    xor_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    xor_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.xor, dest, 0, offset, chr, size);
     }
-    or_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    or_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.or, dest, 0, offset, chr, size);
     }
-    and_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this
-    {
+    and_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.and, dest, 0, offset, chr, size);
     }
 
-    cmp_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    cmp_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.cmp, src, dest, offset, 0, size);
     }
-    sub_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    sub_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.sub, src, dest, offset, 0, size);
     }
-    add_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    add_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.add, src, dest, offset, 0, size);
     }
-    sbb_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    sbb_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.sbb, src, dest, offset, 0, size);
     }
-    adc_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    adc_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.adc, src, dest, offset, 0, size);
     }
-    xor_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    xor_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.xor, src, dest, offset, 0, size);
     }
-    or_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    or_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.or, src, dest, offset, 0, size);
     }
-    and_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this
-    {
+    and_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Read, Operator.and, src, dest, offset, 0, size);
     }
 
-    cmp_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    cmp_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.cmp, dest, src, offset, 0, size);
     }
-    sub_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    sub_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.sub, dest, src, offset, 0, size);
     }
-    add_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    add_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.add, dest, src, offset, 0, size);
     }
-    sbb_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    sbb_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.sbb, dest, src, offset, 0, size);
     }
-    adc_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    adc_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.adc, dest, src, offset, 0, size);
     }
-    xor_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    xor_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.xor, dest, src, offset, 0, size);
     }
-    or_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    or_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.or, dest, src, offset, 0, size);
     }
-    and_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this
-    {
+    and_rp_r(dest:Register, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._oper(MovOper.Write, Operator.and, dest, src, offset, 0, size);
     }
 
-    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this
-    {
+    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
         this._regex(dest, 0, size);
         this.write(0xc1);
         this.write(0xe8 | dest);
         this.write(chr%128);
         return this;
     }
-    shl_r_c(dest:Register, chr:number, size = OperationSize.qword):this
-    {
+    shl_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
         this._regex(dest, 0, size);
         this.write(0xc1);
         this.write(0xe0 | dest);
@@ -971,8 +824,7 @@ export class X64Assembler {
         return this;
     }
 
-    label(key:string):this
-    {
+    label(key:string):this {
         const label = new AsmLabel(this.chunk, this.chunk.size);
         this.labels[key] = label;
         this.chunk.labels.push(label);
@@ -980,8 +832,7 @@ export class X64Assembler {
         let now = this.chunk;
         let prev = now.prev!;
 
-        while (prev !== null && prev.jumpLabel === key)
-        {
+        while (prev !== null && prev.jumpLabel === key) {
             this._resolveJump(prev, label, true);
             now = prev;
             prev = now.prev!;
@@ -989,8 +840,7 @@ export class X64Assembler {
         return this;
     }
 
-    jmp_label(labelName:string):this
-    {
+    jmp_label(labelName:string):this {
         this.chunk.jumpInfo = X64Assembler.jmp_c_info;
         this.chunk.jumpLabel = labelName;
         this.chunk.jumpArgs = [];
@@ -999,8 +849,7 @@ export class X64Assembler {
         if (!label) return this._genChunk();
         return this._resolveJump(this.chunk, label, false);
     }
-    private _jmp_o_label(oper:JumpOperation, labelName:string):this
-    {
+    private _jmp_o_label(oper:JumpOperation, labelName:string):this {
         this.chunk.jumpInfo = X64Assembler.jmp_o_info;
         this.chunk.jumpLabel = labelName;
         this.chunk.jumpArgs = [oper];
@@ -1010,17 +859,14 @@ export class X64Assembler {
         return this._resolveJump(this.chunk, label, false);
     }
 
-    private _resolveJump(jumpChunk:AsmChunk, label:AsmLabel, forward:boolean):this
-    {
-        if (label.chunk === jumpChunk)
-        {
+    private _resolveJump(jumpChunk:AsmChunk, label:AsmLabel, forward:boolean):this {
+        if (label.chunk === jumpChunk) {
             if (forward === true) throw Error(`cannot forward to self chunk`);
             if (this.chunk !== jumpChunk) throw Error('is not front chunk');
             const info = jumpChunk.jumpInfo!;
             let offset = label.offset - jumpChunk.size;
             offset -= info.byteSize;
-            if (offset < INT8_MIN || offset > INT8_MAX)
-            {
+            if (offset < INT8_MIN || offset > INT8_MAX) {
                 offset = offset - info.dwordSize + info.byteSize;
             }
             info.func.call(this, ...jumpChunk.jumpArgs!, offset);
@@ -1034,11 +880,9 @@ export class X64Assembler {
         const orichunk = this.chunk;
         this.chunk = jumpChunk;
         let offset = 0;
-        if (forward)
-        {
+        if (forward) {
             let chunk = jumpChunk.next!;
-            if (chunk === label.chunk)
-            {
+            if (chunk === label.chunk) {
                 const info = jumpChunk.jumpInfo!;
                 info.func.call(this, ...jumpChunk.jumpArgs!, label.offset);
                 jumpChunk.removeNext();
@@ -1047,27 +891,21 @@ export class X64Assembler {
                 return this;
             }
 
-            for (;;)
-            {
+            for (;;) {
                 offset += chunk.size;
                 offset += chunk.jumpInfo!.dwordSize;
                 chunk = chunk.next!;
-                if (chunk === label.chunk)
-                {
+                if (chunk === label.chunk) {
                     offset += label.offset;
                     break;
                 }
             }
-        }
-        else
-        {
+        } else {
             let chunk = jumpChunk;
-            for (;;)
-            {
+            for (;;) {
                 offset -= chunk.jumpInfo!.dwordSize;
                 offset -= chunk.size;
-                if (chunk === label.chunk)
-                {
+                if (chunk === label.chunk) {
                     offset += label.offset;
                     break;
                 }
@@ -1075,13 +913,10 @@ export class X64Assembler {
             }
         }
         
-        if (INT8_MIN <= offset && offset <= INT8_MAX)
-        {
+        if (INT8_MIN <= offset && offset <= INT8_MAX) {
             jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, 0);
             jumpChunk.unresolvedJumps.push(new AsmUnresolvedJump(jumpChunk.size-1, false, label));
-        }
-        else
-        {
+        } else {
             jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, 0, true);
             jumpChunk.unresolvedJumps.push(new AsmUnresolvedJump(jumpChunk.size-4, true, label));
         }
@@ -1090,19 +925,16 @@ export class X64Assembler {
         else this.chunk = orichunk;
         return this;
     }
-    private _genChunk():this
-    {
+    private _genChunk():this {
         const nbuf = new AsmChunk;
         this.chunk.next = nbuf;
         nbuf.prev = this.chunk;
         this.chunk = nbuf;
         return this;
     }
-    private _normalize():this
-    {
+    private _normalize():this {
         let prev = this.chunk.prev;
-        while (prev !== null)
-        {
+        while (prev !== null) {
             const labelName = prev.jumpLabel!;
             const label = this.labels[labelName];
             if (!label) throw Error(`${labelName}: Label not found`);
@@ -1111,23 +943,19 @@ export class X64Assembler {
         }
 
         console.assert(this.chunk.next === null && this.chunk.prev === null, `chunk is remained`);
-        for (const jump of this.chunk.unresolvedJumps)
-        {
+        for (const jump of this.chunk.unresolvedJumps) {
             console.assert(jump.label.chunk === this.chunk, 'chunk is remained');
 
             const arr = this.chunk.array;
             let i = jump.offset;
-            if (jump.isDword)
-            {
+            if (jump.isDword) {
                 const offset = jump.label.offset - jump.offset - 4;
                 arr[i++] = offset;
                 arr[i++] = offset >> 8;
                 arr[i++] = offset >> 16;
                 arr[i] = offset >> 24;
-            }
-            else
-            {
-                const offset = jump.label.offset - jump.offset - 1;;
+            } else {
+                const offset = jump.label.offset - jump.offset - 1;
                 console.assert(INT8_MIN <= offset && offset <= INT8_MAX, 'offset out of bounds');
                 arr[i] = offset;
             }
@@ -1135,24 +963,24 @@ export class X64Assembler {
         this.chunk.unresolvedJumps.length = 0;
         return this;
     }
-    jz_label(label:string) { return this._jmp_o_label(JumpOperation.je, label); }
-    jnz_label(label:string) { return this._jmp_o_label(JumpOperation.jne, label); }
-    jo_label(label:string) { return this._jmp_o_label(JumpOperation.jo, label); }
-    jno_label(label:string) { return this._jmp_o_label(JumpOperation.jno, label); }
-    jb_label(label:string) { return this._jmp_o_label(JumpOperation.jb, label); }
-    jae_label(label:string) { return this._jmp_o_label(JumpOperation.jae, label); }
-    je_label(label:string) { return this._jmp_o_label(JumpOperation.je, label); }
-    jne_label(label:string) { return this._jmp_o_label(JumpOperation.jne, label); }
-    jbe_label(label:string) { return this._jmp_o_label(JumpOperation.jbe, label); }
-    ja_label(label:string) { return this._jmp_o_label(JumpOperation.ja, label); }
-    js_label(label:string) { return this._jmp_o_label(JumpOperation.js, label); }
-    jns_label(label:string) { return this._jmp_o_label(JumpOperation.jns, label); }
-    jp_label(label:string) { return this._jmp_o_label(JumpOperation.jp, label); }
-    jnp_label(label:string) { return this._jmp_o_label(JumpOperation.jnp, label); }
-    jl_label(label:string) { return this._jmp_o_label(JumpOperation.jl, label); }
-    jge_label(label:string) { return this._jmp_o_label(JumpOperation.jge, label); }
-    jle_label(label:string) { return this._jmp_o_label(JumpOperation.jle, label); }
-    jg_label(label:string) { return this._jmp_o_label(JumpOperation.jg, label); }
+    jz_label(label:string):this { return this._jmp_o_label(JumpOperation.je, label); }
+    jnz_label(label:string):this { return this._jmp_o_label(JumpOperation.jne, label); }
+    jo_label(label:string):this { return this._jmp_o_label(JumpOperation.jo, label); }
+    jno_label(label:string):this { return this._jmp_o_label(JumpOperation.jno, label); }
+    jb_label(label:string):this { return this._jmp_o_label(JumpOperation.jb, label); }
+    jae_label(label:string):this { return this._jmp_o_label(JumpOperation.jae, label); }
+    je_label(label:string):this { return this._jmp_o_label(JumpOperation.je, label); }
+    jne_label(label:string):this { return this._jmp_o_label(JumpOperation.jne, label); }
+    jbe_label(label:string):this { return this._jmp_o_label(JumpOperation.jbe, label); }
+    ja_label(label:string):this { return this._jmp_o_label(JumpOperation.ja, label); }
+    js_label(label:string):this { return this._jmp_o_label(JumpOperation.js, label); }
+    jns_label(label:string):this { return this._jmp_o_label(JumpOperation.jns, label); }
+    jp_label(label:string):this { return this._jmp_o_label(JumpOperation.jp, label); }
+    jnp_label(label:string):this { return this._jmp_o_label(JumpOperation.jnp, label); }
+    jl_label(label:string):this { return this._jmp_o_label(JumpOperation.jl, label); }
+    jge_label(label:string):this { return this._jmp_o_label(JumpOperation.jge, label); }
+    jle_label(label:string):this { return this._jmp_o_label(JumpOperation.jle, label); }
+    jg_label(label:string):this { return this._jmp_o_label(JumpOperation.jg, label); }
 
 
     private static jmp_c_info = new JumpInfo(2, 5, X64Assembler.prototype.jmp_c);
@@ -1160,22 +988,19 @@ export class X64Assembler {
 }
 
 
-export function asm():X64Assembler
-{
+export function asm():X64Assembler {
     return new X64Assembler;
 }
 
 export namespace asm
 {
-    export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer
-    {
+    export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer {
         const buf = Buffer.from(str+'\0', encoding);
         dll.ChakraCore.JsAddRef(buf, null);
         return buf;
     }
 }
 
-export function debugGate(func:VoidPointer):VoidPointer
-{
+export function debugGate(func:VoidPointer):VoidPointer {
     return asm().debugBreak().jmp64(func, Register.rax).alloc();
 }

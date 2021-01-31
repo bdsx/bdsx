@@ -12,18 +12,17 @@ import { NetworkIdentifier } from "./networkidentifier";
 import { proc, procHacker } from "./proc";
 
 export const ActorUniqueID = bin64_t.extends();
-export type ActorUniqueID = bin64_t
+export type ActorUniqueID = bin64_t;
 
 export enum DimensionId // int32_t
 {
-	Overworld = 0,
-	Nether = 1,
-	TheEnd = 2
+    Overworld = 0,
+    Nether = 1,
+    TheEnd = 2
 }
 
 
-export class ActorRuntimeID extends VoidPointer
-{
+export class ActorRuntimeID extends VoidPointer {
 }
 
 
@@ -33,209 +32,185 @@ const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
 
 export enum ActorType 
 {
-	Player = 0x13f,
+    Player = 0x13f,
 }
 
-export class Actor extends NativeClass
-{
-	public static readonly OFFSET_OF_NI = 0x9e8;
+export class Actor extends NativeClass {
+    public static readonly OFFSET_OF_NI = 0x9e8;
 
-	vftable:VoidPointer;
-	identifier:string;
-	attributes:BaseAttributeMap;
-	runtimeId:ActorRuntimeID;
-	
-	protected _sendNetworkPacket(packet:VoidPointer):void
-	{
-		abstract();
-	}
+    vftable:VoidPointer;
+    identifier:string;
+    attributes:BaseAttributeMap;
+    runtimeId:ActorRuntimeID;
+    
+    protected _sendNetworkPacket(packet:VoidPointer):void {
+        abstract();
+    }
 
-	protected _sendAttributePacket(id:AttributeId, value:number, attr:AttributeInstance):void
-	{
-		abstract();
-	}
+    protected _sendAttributePacket(id:AttributeId, value:number, attr:AttributeInstance):void {
+        abstract();
+    }
 
-	sendPacket(packet:StaticPointer):void
-	{
-		if (!this.isPlayer()) throw Error("this is not ServerPlayer");
-		this._sendNetworkPacket(packet);
-	}
+    sendPacket(packet:StaticPointer):void {
+        if (!this.isPlayer()) throw Error("this is not ServerPlayer");
+        this._sendNetworkPacket(packet);
+    }
 
 //     static fromPointer(ptr:StaticPointer):Actor;
 //     static fromUniqueId(_64bit_low:number, _64bit_high:number):Actor|null;
 
-    getDimensionId(out:Int32Array):void
-    {
+    getDimensionId(out:Int32Array):void {
         abstract();
-	}
-	
-	getDimension():DimensionId
-	{
-		const out = new Int32Array(1);
-		this.getDimensionId(out);
-		return out[0];
-	}
-
-	/**
-	 * @deprecated use actor.identifier
-	 */
-	getIdentifier():string
-	{
-		return this.identifier;
-	}
-
-	isPlayer():boolean
-	{
-		return this.vftable.equals(ServerPlayer_vftable);
-	}
-	getNetworkIdentifier():NetworkIdentifier
-	{
-		if (!this.isPlayer()) throw Error(`this is not player`);
-		return NetworkIdentifier[NativeType.getter](this, Actor.OFFSET_OF_NI);
-	}
-		
-	getUniqueIdLow():number
-	{
-		return this.getUniqueIdPointer().getInt32(0);
-	}
-	getUniqueIdHigh():number
-	{
-		return this.getUniqueIdPointer().getInt32(4);
-	}
-
-	getUniqueIdPointer():StaticPointer
-	{
-		abstract();
-	}
-
-	getTypeId():ActorType
-	{
-		abstract();
-	}
-	
-	getAttribute(id:AttributeId):number
-	{
-		const attr = this.attributes.getMutableInstance(id);
-		if (attr === null) return 0;
-		return attr.currentValue;
-	}
-
-	setAttribute(id:AttributeId, value:number):void
-	{
-		if (id < 1) return;
-		if (id > 15) return;
-	
-		const attr = this.attributes.getMutableInstance(id);
-		if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || 'Attribute'+id}`);
-		attr.currentValue = value;
-	
-		if (this.isPlayer())
-		{
-			this._sendAttributePacket(id, value, attr);
-		}
-	}
+    }
     
-	/**
-	 * @deprecated use actor.runtimeId
-	 */
-	getRuntimeId():NativePointer
-	{
-		return new NativePointer(this.runtimeId);
-	}
+    getDimension():DimensionId {
+        const out = new Int32Array(1);
+        this.getDimensionId(out);
+        return out[0];
+    }
 
-	/**
-	 * @deprecated Need more implement
-	 */
-	getEntity():IEntity
-	{
-		let entity:IEntity = (this as any).entity;
-		if (entity) return entity;
-		entity = {
-			__unique_id__:{
-				"64bit_low": this.getUniqueIdLow(),
-				"64bit_high": this.getUniqueIdHigh()
-			},
-			__identifier__:this.identifier,
-			__type__:(this.getTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
-			id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
-		};
-		return (this as any).entity = entity;
-	}
+    /**
+     * @deprecated use actor.identifier
+     */
+    getIdentifier():string {
+        return this.identifier;
+    }
+
+    isPlayer():boolean {
+        return this.vftable.equals(ServerPlayer_vftable);
+    }
+    getNetworkIdentifier():NetworkIdentifier {
+        if (!this.isPlayer()) throw Error(`this is not player`);
+        return NetworkIdentifier[NativeType.getter](this, Actor.OFFSET_OF_NI);
+    }
+        
+    getUniqueIdLow():number {
+        return this.getUniqueIdPointer().getInt32(0);
+    }
+    getUniqueIdHigh():number {
+        return this.getUniqueIdPointer().getInt32(4);
+    }
+
+    getUniqueIdPointer():StaticPointer {
+        abstract();
+    }
+
+    getTypeId():ActorType {
+        abstract();
+    }
+    
+    getAttribute(id:AttributeId):number {
+        const attr = this.attributes.getMutableInstance(id);
+        if (attr === null) return 0;
+        return attr.currentValue;
+    }
+
+    setAttribute(id:AttributeId, value:number):void {
+        if (id < 1) return;
+        if (id > 15) return;
+    
+        const attr = this.attributes.getMutableInstance(id);
+        if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || 'Attribute'+id}`);
+        attr.currentValue = value;
+    
+        if (this.isPlayer()) {
+            this._sendAttributePacket(id, value, attr);
+        }
+    }
+    
+    /**
+     * @deprecated use actor.runtimeId
+     */
+    getRuntimeId():NativePointer {
+        return new NativePointer(this.runtimeId);
+    }
+
+    /**
+     * @deprecated Need more implement
+     */
+    getEntity():IEntity {
+        let entity:IEntity = (this as any).entity;
+        if (entity) return entity;
+        entity = {
+            __unique_id__:{
+                "64bit_low": this.getUniqueIdLow(),
+                "64bit_high": this.getUniqueIdHigh()
+            },
+            __identifier__:this.identifier,
+            __type__:(this.getTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
+            id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
+        };
+        return (this as any).entity = entity;
+    }
 
 // float NativeActor::getAttribute(int attribute) noexcept
 // {
-// 	if (attribute < 1) return 0;
-// 	if ((uint)attribute > countof(attribNames)) return 0;
-// 	AttributeInstance* attr = ptr()->getAttribute((AttributeId)attribute);
-// 	if (!attr) return 0;
-// 	return attr->currentValue();
+//     if (attribute < 1) return 0;
+//     if ((uint)attribute > countof(attribNames)) return 0;
+//     AttributeInstance* attr = ptr()->getAttribute((AttributeId)attribute);
+//     if (!attr) return 0;
+//     return attr->currentValue();
 // }
 
 // kr::JsValue NativeActor::fromPointer(StaticPointer* ptr) throws(JsException)
 // {
-// 	if (ptr == nullptr) throw JsException(u"1st argument must be *Pointer");
-// 	Actor* actor = (Actor*)ptr->getAddressRaw();
-// 	return fromRaw(actor);
+//     if (ptr == nullptr) throw JsException(u"1st argument must be *Pointer");
+//     Actor* actor = (Actor*)ptr->getAddressRaw();
+//     return fromRaw(actor);
 // }
 // JsValue NativeActor::fromUniqueIdBin(Text16 bin) throws(JsException)
 // {
-// 	ActorUniqueID id = bin.readas<ActorUniqueID>();
-// 	return fromRaw(g_server->minecraft()->something->level->fetchEntity(id));
+//     ActorUniqueID id = bin.readas<ActorUniqueID>();
+//     return fromRaw(g_server->minecraft()->something->level->fetchEntity(id));
 // }
 
-	static fromUniqueId(lowbits:number, highbits:number):Actor|null
-	{
-		abstract();
-	}
-	static fromEntity(entity:IEntity):Actor|null
-	{
-		const u = entity.__unique_id__;
-		return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
-	}
-	static [makefunc.np2js](ptr:VoidPointer):Actor
-	{
-		const binptr = ptr.getAddressBin();
-		let actor = actorMaps.get(binptr);
-		if (actor) return actor;
-		actor = new Actor(ptr);
-		actorMaps.set(binptr, actor);
-		return actor;
-	}
+    static fromUniqueId(lowbits:number, highbits:number):Actor|null {
+        abstract();
+    }
+    static fromEntity(entity:IEntity):Actor|null {
+        const u = entity.__unique_id__;
+        return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
+    }
+    static [makefunc.np2js](ptr:VoidPointer):Actor {
+        const binptr = ptr.getAddressBin();
+        let actor = actorMaps.get(binptr);
+        if (actor) return actor;
+        actor = new Actor(ptr);
+        actorMaps.set(binptr, actor);
+        return actor;
+    }
 
-	static all():IterableIterator<Actor>
-	{
-		return actorMaps.values();
-	}
+    static all():IterableIterator<Actor> {
+        return actorMaps.values();
+    }
 
 }
 
-function _removeActor(actor:Actor)
-{
-	actorMaps.delete(actor.getAddressBin());
+function _removeActor(actor:Actor):void {
+    actorMaps.delete(actor.getAddressBin());
 }
 
-export function hookingForActor():void
-{
-	procHacker.hookingRawWithCallOriginal(
-		'Level::removeEntityReferences', 
-		makefunc.np((level, actor, b)=>{
-			_removeActor(actor);
-		}, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
-		[Register.rcx, Register.rdx, Register.r8], []
-	);
+export function hookingForActor():void {
+    procHacker.hookingRawWithCallOriginal(
+        'Level::removeEntityReferences', 
+        makefunc.np((level, actor, b)=>{
+            _removeActor(actor);
+        }, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
+        [Register.rcx, Register.rdx, Register.r8], []
+    );
 
-	procHacker.hookingRawWithCallOriginal('Actor::~Actor',
-		asm()
-		.push_r(Register.rcx)
-		.call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-		.pop_r(Register.rcx)
-		.cmp_r_c(Register.rax, capi.nodeThreadId)
-		.jne_label('skip_dtor')
-		.jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
-		.label('skip_dtor')
-		.ret()
-		.alloc(),
-		[Register.rcx], []
-	);
+    procHacker.hookingRawWithCallOriginal('Actor::~Actor',
+        asm()
+        .push_r(Register.rcx)
+        .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
+        .pop_r(Register.rcx)
+        .cmp_r_c(Register.rax, capi.nodeThreadId)
+        .jne_label('skip_dtor')
+        .jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
+        .label('skip_dtor')
+        .ret()
+        .alloc(),
+        [Register.rcx], []
+    );
 }
 

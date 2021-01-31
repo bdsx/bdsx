@@ -3,18 +3,10 @@ import { makefunc, NativePointer, PrivatePointer, StaticPointer, StructurePointe
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 
-declare global
-{
-    interface Function
-    {
-        __proto__:any; // non standard
-    }
-}
-
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
 
-export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends Function ? never: key}[keyof T];
+export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:any[])=>any ? never: key}[keyof T];
 
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
 
@@ -30,67 +22,55 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     define<T extends NativeClass>(this:NativeClassType<T>, fields:StructureFields<T>, defineSize?:number|null, abstract?:boolean):void;
 }
 
-export class NativeClass extends StructurePointer
-{
+export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static [StructurePointer.contentSize]:number = 0;
     static readonly [isNativeClass] = true;
     static readonly [isInherited] = true;
     static readonly [offsetmap] = {};
 
-    static isNativeClassType(type:{}):type is typeof NativeClass
-    {
+    static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
     }
 
-    constructor(ptr?:VoidPointer|boolean)
-    {
+    constructor(ptr?:VoidPointer|boolean) {
         super(ptr);
     }
 
     [NativeType.size]:number;
     
-    static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:VoidPointer, offset?:number):THIS
-    {
+    static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:VoidPointer, offset?:number):THIS {
         return ptr.addAs(this, offset);
     }
-    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:VoidPointer, value:THIS, offset?:number):void
-    {
+    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:VoidPointer, value:THIS, offset?:number):void {
         throw Error("non assignable");
     }
 
-    [NativeType.ctor]():void
-    {
+    [NativeType.ctor]():void {
+        // empty
     }
-    [NativeType.dtor]():void
-    {
+    [NativeType.dtor]():void {
+        // empty
     }
-    [NativeType.ctor_copy](from:NativeClass):void
-    {
+    [NativeType.ctor_copy](from:NativeClass):void {
         this.copyFrom(from, this[NativeType.size]);
     }
-    [NativeType.ctor_move](from:NativeClass):void
-    {
+    [NativeType.ctor_move](from:NativeClass):void {
         this[NativeType.ctor_copy](from);
     }
-    static [NativeType.ctor](ptr:StaticPointer):void
-    {
+    static [NativeType.ctor](ptr:StaticPointer):void {
         throw Error('cannot use static ctor of NativeClass');
     }
-    static [NativeType.dtor](ptr:StaticPointer):void
-    {
+    static [NativeType.dtor](ptr:StaticPointer):void {
         throw Error('cannot use static dtor of NativeClass');
     }
-    static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void
-    {
+    static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void {
         throw Error('cannot use static ctor_copy of NativeClass');
     }
-    static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void
-    {
+    static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
         throw Error('cannot use static ctor_move of NativeClass');
     }
-    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void
-    {
+    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void {
         const type = this;
         builder.desc[key] = {
             configurable: true,
@@ -100,32 +80,26 @@ export class NativeClass extends StructurePointer
                 return value;
             }
         };
-        if (type[NativeType.ctor] !== emptyFunc)
-        {
+        if (type[NativeType.ctor] !== emptyFunc) {
             builder.ctor_code += `this.${key}[NativeType.ctor]()\n`;
         }
-        if (type[NativeType.dtor] !== emptyFunc)
-        {
+        if (type[NativeType.dtor] !== emptyFunc) {
             builder.dtor_code += `this.${key}[NativeType.dtor]()\n`;
         }
     }
 
-    construct():void
-    {
+    construct():void {
         this[NativeType.ctor]();
     }
 
-    destruct():void
-    {
+    destruct():void {
         this[NativeType.dtor]();
     }
 
-    static next<T extends NativeClass>(this:{new(ptr?:VoidPointer):T}, ptr:T, count:number):T
-    {
+    static next<T extends NativeClass>(this:{new(ptr?:VoidPointer):T}, ptr:T, count:number):T {
         const clazz = this as NativeClassType<T>;
         const size = clazz[StructurePointer.contentSize];
-        if (size === null)
-        {
+        if (size === null) {
             throw Error('Cannot call the next with the unknown sized structure');
         }
         return new this(ptr.add(count * size)) as any;
@@ -133,43 +107,39 @@ export class NativeClass extends StructurePointer
     /**
      * Cannot construct & Unknown size
      */
-    static abstract<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number, defineAlign?:number|null):void
-    {
+    static abstract<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number, defineAlign?:number|null):void {
         (this as any).define(fields, defineSize, defineAlign, true);
     }
 
-    static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract:boolean=false):void
-    {
+    static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract:boolean=false):void {
         const clazz = this as NativeClassType<T>;
-        if (makefunc.np2js in clazz)
-        {
+        if (makefunc.np2js in clazz) {
             clazz[NativeType.getter] = wrapperGetter;
             clazz[NativeType.descriptor] = wrapperDescriptor;
         }
 
-        if (this.hasOwnProperty(isInherited))
-        {
+        if (this.hasOwnProperty(isInherited)) {
             throw Error('Cannot define structure of already inherited NativeClass');
         }
+
+        const proto = (this as any).__proto__;
         {
-            let node = this.__proto__;
-            while (!node.hasOwnProperty(isInherited))
-            {
+            let node = proto;
+            while (!node.hasOwnProperty(isInherited)) {
                 node[isInherited] = true;
                 node = node.__proto__;
             }
         }
-        let offset:number|null = this.__proto__[NativeType.size];
+        let offset:number|null = proto[NativeType.size];
         let size = offset;
-        let align:number = defineAlign != null ? defineAlign : this.__proto__[NativeType.align];
+        let align:number = defineAlign != null ? defineAlign : proto[NativeType.align];
 
         const offmap:Record<string, number> = (clazz as any)[offsetmap] = {};
         
         const propmap = new NativeDescriptorBuilder;
         for (const key in fields) {
             let type:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
-            if (type instanceof Array)
-            {
+            if (type instanceof Array) {
                 offset = type[1];
                 type = type[0];
             }
@@ -186,15 +156,13 @@ export class NativeClass extends StructurePointer
             if (sizeofType === null) offset = null;
             else offset += sizeofType;
 
-            if (size !== null)
-            {
+            if (size !== null) {
                 if (offset !== null && offset > size) size = offset;
             }
         }
 
         const types = propmap.types;
-        if (propmap.ctor_code !== '')
-        {
+        if (propmap.ctor_code !== '') {
             const ctorfunc = new Function('NativeType', 'types', propmap.ctor_code);
             const superCtor = clazz.prototype[NativeType.ctor];
             clazz.prototype[NativeType.ctor] = function(this:T){ 
@@ -202,8 +170,7 @@ export class NativeClass extends StructurePointer
                 superCtor.call(this);
             };
         }
-        if (propmap.dtor_code !== '')
-        {
+        if (propmap.dtor_code !== '') {
             const dtorfunc = new Function('NativeType', 'types', propmap.dtor_code);
             const superDtor = clazz.prototype[NativeType.dtor];
             clazz.prototype[NativeType.dtor] = function(this:T){ 
@@ -219,26 +186,21 @@ export class NativeClass extends StructurePointer
         Object.defineProperties(this.prototype, propmap.desc);
     }
 
-    static defineAsUnion<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, abstract:boolean = false):void
-    {
-        for (const key in fields)
-        {
+    static defineAsUnion<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, abstract:boolean = false):void {
+        for (const key in fields) {
             const item:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
-            if (!(item instanceof Array))
-            {
+            if (!(item instanceof Array)) {
                 fields[key as KeysWithoutFunction<T>] = [item, 0];
             }
         }
         return (this as any).define(fields, null, abstract);
     }
 
-    static ref<T extends NativeClass>(this:{new():T}):NativeClassType<T>
-    {
+    static ref<T extends NativeClass>(this:{new():T}):NativeClassType<T> {
         return refSingleton.newInstance(this, ()=>makeReference(this));
     }
 
-    static offsetOf<T>(this:{new():T}, field:NonFunctionParams<T>|symbol):number
-    {
+    static offsetOf<T>(this:{new():T}, field:NonFunctionParams<T>|symbol):number {
         return (this as any)[offsetmap][field]!;
     }
 }
@@ -255,8 +217,7 @@ function wrapperGetterRef<THIS extends VoidPointer>(this:{new():THIS}, ptr:Stati
 function wrapperSetterRef<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void{
     ptr.setPointer((this as any)[makefunc.js2np](value), offset);
 }
-function wrapperDescriptor<THIS extends NativeClass>(this:{new():THIS}, builder:NativeDescriptorBuilder, key:string|number, offset:number):void
-{
+function wrapperDescriptor<THIS extends NativeClass>(this:{new():THIS}, builder:NativeDescriptorBuilder, key:string|number, offset:number):void {
     const clazz = this as NativeClassType<THIS>;
     builder.desc[key] = {
         configurable: true,
@@ -266,12 +227,10 @@ function wrapperDescriptor<THIS extends NativeClass>(this:{new():THIS}, builder:
             return value;
         }
     };
-    if (clazz[NativeType.ctor] !== emptyFunc)
-    {
+    if (clazz[NativeType.ctor] !== emptyFunc) {
         builder.ctor_code += `this.${key}[NativeType.ctor]()\n`;
     }
-    if (clazz[NativeType.dtor] !== emptyFunc)
-    {
+    if (clazz[NativeType.dtor] !== emptyFunc) {
         builder.dtor_code += `this.${key}[NativeType.dtor]()\n`;
     }
 }
@@ -283,20 +242,16 @@ export interface NativeArrayType<T> extends Type<NativeArray<T>>
     new(ptr?:VoidPointer):NativeArray<T>;
 }
 
-export class NativeArray<T> extends PrivatePointer
-{
+export class NativeArray<T> extends PrivatePointer {
     [index:number]:T;
 
-    static [NativeType.getter]<THIS extends VoidPointer>(this:{new(ptr:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS
-    {
+    static [NativeType.getter]<THIS extends VoidPointer>(this:{new(ptr:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS {
         return new this(offset ? ptr : ptr.add(offset));
     }
-    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void
-    {
+    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void {
         throw Error("non assignable");
     }
-    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void
-    {
+    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void {
         const type = this;
         builder.desc[key] = {
             configurable: true,
@@ -306,19 +261,16 @@ export class NativeArray<T> extends PrivatePointer
                 return value;
             }
         };
-        if (type[NativeType.ctor] !== emptyFunc)
-        {
+        if (type[NativeType.ctor] !== emptyFunc) {
             builder.ctor_code += `this.${key}[NativeType.ctor]()\n`;
         }
-        if (type[NativeType.dtor] !== emptyFunc)
-        {
+        if (type[NativeType.dtor] !== emptyFunc) {
             builder.dtor_code += `this.${key}[NativeType.dtor]()\n`;
         }
     }
     static readonly [NativeType.align]:number = 1;
 
-    static make<T>(itemType:Type<T>, count:number):NativeArrayType<T>
-    {
+    static make<T>(itemType:Type<T>, count:number):NativeArrayType<T> {
         const itemSize = itemType[NativeType.size];
         if (itemSize === null) throw Error('Unknown size of item. NativeArray needs item size');
 
@@ -330,8 +282,7 @@ export class NativeArray<T> extends PrivatePointer
             itemType[NativeType.descriptor](propmap, i, off);
             off += itemSize;
         }
-        class NativeArrayImpl extends NativeArray<T>
-        {
+        class NativeArrayImpl extends NativeArray<T> {
             static readonly [NativeType.size] = off;
             static readonly [NativeType.align] = itemType[NativeType.align];
         }
@@ -341,8 +292,7 @@ export class NativeArray<T> extends PrivatePointer
 }
 
 
-export declare class MantleClass extends NativeClass
-{
+export declare class MantleClass extends NativeClass {
     getBoolean(offset?: number): boolean;
     getUint8(offset?: number): number;
     getUint16(offset?: number): number;
@@ -442,53 +392,44 @@ export declare class MantleClass extends NativeClass
     interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
     
     getJsValueRef(offset?:number):any;
-    setJsValueRef(value:any, offset?:number):void;
+    setJsValueRef(value:unknown, offset?:number):void;
 }
 exports.MantleClass = NativeClass;
 
-function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
-{
+function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T> {
     const Parent:{new():NativeClass} = type;
-    class Pointer extends Parent
-    {
+    class Pointer extends Parent {
         static readonly [NativeType.size] = 8;
         static readonly [NativeType.align] = 8;
         static readonly [StructurePointer.contentSize]:number;
 
-        constructor()
-        {
+        constructor() {
             super();
         }
 
-        static [NativeType.getter](ptr:StaticPointer, offset?:number):T|null
-        {
+        static [NativeType.getter](ptr:StaticPointer, offset?:number):T|null {
             return ptr.getNullablePointerAs(this, offset) as unknown as T;
         }
-        static [NativeType.setter](ptr:StaticPointer, value:T, offset?:number):void
-        {
+        static [NativeType.setter](ptr:StaticPointer, value:T, offset?:number):void {
             ptr.setPointer(value, offset);
         }
-        static [NativeType.ctor]():void
-        {
+        static [NativeType.ctor]():void {
+            // empty
         }
-        static [NativeType.dtor]():void
-        {
+        static [NativeType.dtor]():void {
+            // empty
         }
-        static [NativeType.ctor_copy](ptr:StaticPointer, from:VoidPointer):void
-        {
+        static [NativeType.ctor_copy](ptr:StaticPointer, from:VoidPointer):void {
             ptr.copyFrom(from, 8);
         }
-        static [NativeType.ctor_move](ptr:StaticPointer, from:VoidPointer):void
-        {
+        static [NativeType.ctor_move](ptr:StaticPointer, from:VoidPointer):void {
             this[NativeType.ctor_copy](ptr, from);
         }
-        static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void
-        {
+        static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void {
             abstract();
         }
 
-        static define():void
-        {
+        static define():void {
             throw Error('Wrong call, does not need to define structure of pointer class');
         }
     }

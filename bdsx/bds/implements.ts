@@ -40,7 +40,7 @@ RakNet.RakNetGUID.define({
     systemIndex:uint16_t
 }, 16);
 RakNet.RakPeer.abstract({
-	vftable: VoidPointer
+    vftable: VoidPointer
 });
 RakNet.RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, RawTypeId.Int32);
 RakNet.AddressOrGUID.define({
@@ -63,9 +63,9 @@ ServerLevel.abstract({
 // commandorigin.ts
 
 CommandOrigin.define({
-	vftable:VoidPointer,
-	uuid:mce.UUID,
-	level:ServerLevel.ref(),
+    vftable:VoidPointer,
+    uuid:mce.UUID,
+    level:ServerLevel.ref(),
 });
 PlayerCommandOrigin.abstract({});
 ScriptCommandOrigin.abstract({});
@@ -75,8 +75,7 @@ CommandOrigin.prototype.destruct = makefunc.js([0x00], RawTypeId.Void, {this: Co
 
 // std::string CommandOrigin::getRequestId();
 const getRequestId = makefunc.js([0x08], CxxStringWrapper, {this: CommandOrigin, structureReturn: true});
-CommandOrigin.prototype.getRequestId = function():string
-{
+CommandOrigin.prototype.getRequestId = function():string {
     const p = getRequestId.call(this) as CxxStringWrapper;
     const str = p.value;
     p.destruct();
@@ -85,8 +84,7 @@ CommandOrigin.prototype.getRequestId = function():string
 
 // std::string CommandOrigin::getName();
 const getName = makefunc.js([0x10], CxxStringWrapper, {this: CommandOrigin, structureReturn: true});
-CommandOrigin.prototype.getName = function():string
-{
+CommandOrigin.prototype.getName = function():string {
     const p = getName.call(this) as CxxStringWrapper;
     const str = p.value;
     p.destruct();
@@ -112,10 +110,10 @@ CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOri
 
 // actor.ts
 Actor.abstract({
-	vftable: VoidPointer,
-	identifier: [CxxString, 0x450], // minecraft:player
-	attributes: [BaseAttributeMap.ref(), 0x478],
-	runtimeId: [ActorRuntimeID, 0x588],
+    vftable: VoidPointer,
+    identifier: [CxxString, 0x450], // minecraft:player
+    attributes: [BaseAttributeMap.ref(), 0x478],
+    runtimeId: [ActorRuntimeID, 0x588],
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
@@ -128,24 +126,23 @@ Actor.fromUniqueId = function(lowbits, highbits) {
 };
 
 const attribNames = [
-	"minecraft:zombie.spawn.reinforcements",
-	"minecraft:player.hunger",
-	"minecraft:player.saturation",
-	"minecraft:player.exhaustion",
-	"minecraft:player.level",
-	"minecraft:player.experience",
-	"minecraft:health",
-	"minecraft:follow_range",
-	"minecraft:knockback_registance",
-	"minecraft:movement",
-	"minecraft:underwater_movement",
-	"minecraft:attack_damage",
-	"minecraft:absorption",
-	"minecraft:luck",
-	"minecraft:horse.jump_strength",
+    "minecraft:zombie.spawn.reinforcements",
+    "minecraft:player.hunger",
+    "minecraft:player.saturation",
+    "minecraft:player.exhaustion",
+    "minecraft:player.level",
+    "minecraft:player.experience",
+    "minecraft:health",
+    "minecraft:follow_range",
+    "minecraft:knockback_registance",
+    "minecraft:movement",
+    "minecraft:underwater_movement",
+    "minecraft:attack_damage",
+    "minecraft:absorption",
+    "minecraft:luck",
+    "minecraft:horse.jump_strength",
 ];
-(Actor.prototype as any)._sendAttributePacket = function(this:Actor, id:AttributeId, value:number, attr:AttributeInstance):void
-{
+(Actor.prototype as any)._sendAttributePacket = function(this:Actor, id:AttributeId, value:number, attr:AttributeInstance):void {
     const packet = UpdateAttributesPacket.create();
     packet.actorId = this.runtimeId;
 
@@ -158,7 +155,7 @@ const attribNames = [
     packet.attributes.push(data);
     this._sendNetworkPacket(packet);
     packet.dispose();
-}
+};
 
 // player.ts
 ServerPlayer.abstract({
@@ -171,21 +168,20 @@ ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetw
 NetworkIdentifier.define({
     address:RakNet.AddressOrGUID
 });
-NetworkIdentifier.prototype.getActor = function():Actor|null
-{
+NetworkIdentifier.prototype.getActor = function():Actor|null {
     return ServerNetworkHandler$_getServerPlayer(serverInstance.minecraft.something.shandler, this, 0);
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", RawTypeId.Boolean, {this:NetworkIdentifier}, NetworkIdentifier);
 NetworkIdentifier.prototype.hash = makefunc.js(
-	asm()
-	.sub_r_c(Register.rsp, 8)
-	.call64(proc['NetworkIdentifier::getHash'], Register.rax)
-	.add_r_c(Register.rsp, 8)
-	.mov_r_c(Register.rcx, Register.rax)
-	.shr_r_c(Register.rcx, 32)
-	.xor_r_r(Register.rax, Register.rcx)
-	.ret()
-	.alloc(), RawTypeId.Int32, {this:NetworkIdentifier});
+    asm()
+    .sub_r_c(Register.rsp, 8)
+    .call64(proc['NetworkIdentifier::getHash'], Register.rax)
+    .add_r_c(Register.rsp, 8)
+    .mov_r_c(Register.rcx, Register.rax)
+    .shr_r_c(Register.rcx, 32)
+    .xor_r_r(Register.rax, Register.rcx)
+    .ret()
+    .alloc(), RawTypeId.Int32, {this:NetworkIdentifier});
 // size_t NetworkIdentifier::getHash() const noexcept
 // {
 // 	return (this);
@@ -200,7 +196,7 @@ NetworkHandler.Connection.abstract({
     bpeer2:SharedPtr.make(BatchedNetworkPeer),
 });
 NetworkHandler.abstract({
-	vftable: VoidPointer,
+    vftable: VoidPointer,
     instance: [RakNetInstance.ref(), 0x30]
 });
 
@@ -213,8 +209,7 @@ NetworkHandler.prototype.send = procHacker.js('NetworkHandler::send', RawTypeId.
 BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', RawTypeId.Void, {this:BatchedNetworkPeer}, CxxStringWrapper, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
 
 // packet.ts
-Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void
-{
+Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void {
     networkHandler.send(target, this, unknownarg);
 };
 Packet.prototype.destruct = makefunc.js([0x0], RawTypeId.Void, {this:Packet});
@@ -229,46 +224,42 @@ const ServerNetworkHandler$_getServerPlayer = procHacker.js(
     "ServerNetworkHandler::_getServerPlayer", ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
 
 // connreq.ts
-Certificate.prototype.getXuid = function():string
-{
-	const out = getXuid(this);
-	const xuid = out.value;
-	out.destruct();
-	return xuid;
+Certificate.prototype.getXuid = function():string {
+    const out = getXuid(this);
+    const xuid = out.value;
+    out.destruct();
+    return xuid;
 };
-Certificate.prototype.getId = function():string
-{
-	const out = getIdentityName(this);
-	const id = out.value;
-	out.destruct();
-	return id;
+Certificate.prototype.getId = function():string {
+    const out = getIdentityName(this);
+    const id = out.value;
+    out.destruct();
+    return id;
 };
-Certificate.prototype.getTitleId = function():number
-{
-	return getTitleId(this);
-}
-Certificate.prototype.getIdentity = function():mce.UUID
-{
-	return getIdentity(this).value;
+Certificate.prototype.getTitleId = function():number {
+    return getTitleId(this);
+};
+Certificate.prototype.getIdentity = function():mce.UUID {
+    return getIdentity(this).value;
 };
 const getXuid = procHacker.js("ExtendedCertificate::getXuid", CxxStringWrapper, {structureReturn: true}, Certificate);
 const getIdentityName = procHacker.js("ExtendedCertificate::getIdentityName", CxxStringWrapper, {structureReturn: true}, Certificate);
 const getTitleId = procHacker.js("ExtendedCertificate::getTitleID", RawTypeId.Int32, null, Certificate);
 const getIdentity = procHacker.js("ExtendedCertificate::getIdentity", mce.UUIDWrapper, {structureReturn: true}, Certificate);
 ConnectionRequest.abstract({
-	u1: VoidPointer,
-	cert:Certificate.ref()
+    u1: VoidPointer,
+    cert:Certificate.ref()
 });
 
 // attribute.ts
 AttributeInstance.abstract({
-	vftable:VoidPointer,
-	u1:VoidPointer,
-	u2:VoidPointer,
-	currentValue: [float32_t, 0x84],
-	minValue: [float32_t, 0x7C],
-	maxValue: [float32_t, 0x80],
-	defaultValue: [float32_t, 0x78],
+    vftable:VoidPointer,
+    u1:VoidPointer,
+    u2:VoidPointer,
+    currentValue: [float32_t, 0x84],
+    minValue: [float32_t, 0x7C],
+    maxValue: [float32_t, 0x80],
+    defaultValue: [float32_t, 0x78],
 });
 BaseAttributeMap.abstract({});
 
@@ -276,14 +267,14 @@ BaseAttributeMap.prototype.getMutableInstance = procHacker.js("BaseAttributeMap:
 
 // server.ts
 MCRESULT.define({
-	result:uint32_t
+    result:uint32_t
 });
 VanilaGameModuleServer.abstract({
-	listener:[VanilaServerGameplayEventListener.ref(), 0x8]
+    listener:[VanilaServerGameplayEventListener.ref(), 0x8]
 });
 CommandContext.abstract({
-	command:CxxString,
-	origin:ServerCommandOrigin.ref(),
+    command:CxxString,
+    origin:ServerCommandOrigin.ref(),
 });
 DedicatedServer.abstract({});
 Minecraft$Something.abstract({
@@ -292,45 +283,45 @@ Minecraft$Something.abstract({
     shandler:ServerNetworkHandler.ref(),
 });
 MinecraftCommands.abstract({
-	sender:CommandOutputSender.ref(),
-	u1:VoidPointer,
-	u2:bin64_t,
-	minecraft:Minecraft.ref(),
+    sender:CommandOutputSender.ref(),
+    u1:VoidPointer,
+    u2:bin64_t,
+    minecraft:Minecraft.ref(),
 });
 Minecraft.abstract({
-	vftable:VoidPointer,
-	serverInstance:ServerInstance.ref(),
-	minecraftEventing:MinecraftEventing.ref(),
-	resourcePackManager:ResourcePackManager.ref(),
-	offset_20:VoidPointer,
-	vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
-	whitelist:Whitelist.ref(),
-	permissionsJsonFileName:CxxString.ref(),
-	privateKeyManager:PrivateKeyManager.ref(),
-	serverMetrics:[ServerMetrics.ref(), 0x78],
-	commands:[MinecraftCommands.ref(), 0xa0],
-	something:Minecraft$Something.ref(),
-	network:[NetworkHandler.ref(), 0xc0],
-	LoopbackPacketSender:LoopbackPacketSender.ref(),
-	server:DedicatedServer.ref(),
+    vftable:VoidPointer,
+    serverInstance:ServerInstance.ref(),
+    minecraftEventing:MinecraftEventing.ref(),
+    resourcePackManager:ResourcePackManager.ref(),
+    offset_20:VoidPointer,
+    vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
+    whitelist:Whitelist.ref(),
+    permissionsJsonFileName:CxxString.ref(),
+    privateKeyManager:PrivateKeyManager.ref(),
+    serverMetrics:[ServerMetrics.ref(), 0x78],
+    commands:[MinecraftCommands.ref(), 0xa0],
+    something:Minecraft$Something.ref(),
+    network:[NetworkHandler.ref(), 0xc0],
+    LoopbackPacketSender:LoopbackPacketSender.ref(),
+    server:DedicatedServer.ref(),
     entityRegistryOwned:[SharedPtr.make(EntityRegistryOwned), 0xe0],
 });
 ScriptFramework.abstract({
-	vftable:VoidPointer,
+    vftable:VoidPointer,
 });
 MinecraftServerScriptEngine.abstract({
-	scriptEngineVftable:[VoidPointer, 0x428]
+    scriptEngineVftable:[VoidPointer, 0x428]
 });
 ServerInstance.abstract({
-	vftable:VoidPointer,
+    vftable:VoidPointer,
     server:[DedicatedServer.ref(), 0x90],
     minecraft:[Minecraft.ref(), 0x98],
-	networkHandler:[NetworkHandler.ref(), 0xa0],
-	scriptEngine:[MinecraftServerScriptEngine.ref(), 0x208],
+    networkHandler:[NetworkHandler.ref(), 0xa0],
+    scriptEngine:[MinecraftServerScriptEngine.ref(), 0x208],
 });
 MinecraftCommands.prototype._executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {thisType: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
 
 // gamemode.ts
 GameMode.define({
-	actor: [Actor.ref(), 8]
+    actor: [Actor.ref(), 8]
 });

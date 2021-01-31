@@ -13,25 +13,21 @@ export class NativeModule extends VoidPointer {
     /**
      * @deprecated use NativeModule.load(moduleName)
      */
-    constructor(moduleNameOrPtr?:string|VoidPointer)
-    {
+    constructor(moduleNameOrPtr?:string|VoidPointer) {
         super(moduleNameOrPtr !== undefined ? moduleNameOrPtr instanceof VoidPointer ? moduleNameOrPtr : getModuleHandle(moduleNameOrPtr) : undefined);
     }
 
     /**
      * @deprecated use module.getFunction
      */
-	get(name:string):makefunc.NativeFunction|null
-	{
+    get(name:string):makefunc.NativeFunction|null {
         return makefunc.js_old(this.getProcAddress(name));
     }
     
-    getProcAddress(name: string): NativePointer
-    {
+    getProcAddress(name: string): NativePointer {
         abstract();
     }
-    getProcAddressByOrdinal(ordinal: number): NativePointer
-    {
+    getProcAddressByOrdinal(ordinal: number): NativePointer {
         abstract();
     }
 
@@ -50,13 +46,12 @@ export class NativeModule extends VoidPointer {
     getFunction<RETURN extends ReturnType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
         name: string, returnType: RETURN, opts?: OPTS|null, ...params: PARAMS):
         FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN>{
-            const addr = this.getProcAddress(name);
-            if (addr.isNull()) throw Error(this.name + ': Cannot find procedure, ' + name);
-            return makefunc.js(addr, returnType, opts, ...params);
-        }
+        const addr = this.getProcAddress(name);
+        if (addr.isNull()) throw Error(this.name + ': Cannot find procedure, ' + name);
+        return makefunc.js(addr, returnType, opts, ...params);
+    }
 
-    toString()
-    {
+    toString():string {
         return `[${this.name}: 0x${super.toString()}]`;
     }
 
@@ -64,8 +59,7 @@ export class NativeModule extends VoidPointer {
     /**
      * @deprecated use makefunc.js
      */
-    static pointerToFunction(ptr:StaticPointer):makefunc.NativeFunction
-    {
+    static pointerToFunction(ptr:StaticPointer):makefunc.NativeFunction {
         return makefunc.js_old(ptr);
     }
 
@@ -87,8 +81,7 @@ export class NativeModule extends VoidPointer {
      */
     static load(name: string): NativeModule {
         const module = dll.kernel32.LoadLibraryW(name);
-        if (module.isNull())
-        {
+        if (module.isNull()) {
             const err = dll.kernel32.GetLastError();
             throw Error(name + ': Cannot load module, errno='+err);
         }
@@ -100,8 +93,7 @@ export class NativeModule extends VoidPointer {
 const getModuleHandle = makefunc.js(cgate.GetModuleHandleW, NativeModule, null, RawTypeId.StringUtf16);
 
 export class ThreadHandle extends VoidPointer {
-    close():boolean
-    {
+    close():boolean {
         return dll.kernel32.CloseHandle(this);
     }
 }
@@ -109,29 +101,24 @@ export class ThreadHandle extends VoidPointer {
 export class CriticalSection extends VoidPointer {
     private static readonly bytes = 40;
     
-    constructor()
-    {
+    constructor() {
         super(dll.ucrtbase.malloc(CriticalSection.bytes));
         dll.kernel32.InitializeCriticalSection(this);
     }
 
-    enter():void
-    {
+    enter():void {
         dll.kernel32.EnterCriticalSection(this);
     }
 
-    leave():void
-    {
+    leave():void {
         dll.kernel32.LeaveCriticalSection(this);
     }
 
-    tryEnter():boolean
-    {
+    tryEnter():boolean {
         return dll.kernel32.TryEnterCriticalSection(this);
     }
 
-    dispose():void
-    {
+    dispose():void {
         dll.kernel32.DeleteCriticalSection(this);
         dll.ucrtbase.free(this);
     }

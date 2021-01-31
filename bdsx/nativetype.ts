@@ -34,24 +34,21 @@ export interface Type<T>
     [NativeTypeFn.isNativeClass]?:true;
 }
 
-function defaultCopy(size:number):(to:StaticPointer, from:StaticPointer)=>void
-{
+function defaultCopy(size:number):(to:StaticPointer, from:StaticPointer)=>void {
     return (to:StaticPointer, from:StaticPointer)=>{
         to.copyFrom(from, size);
     };
 }
 
-export class NativeDescriptorBuilder
-{
+export class NativeDescriptorBuilder {
     public readonly desc:PropertyDescriptorMap = {};
     public readonly types:Type<any>[] = [];
 
     public ctor_code = '';
     public dtor_code = '';
-};
+}
 
-export class NativeType<T> implements Type<T>
-{
+export class NativeType<T> implements Type<T> {
     public static readonly getter:typeof NativeTypeFn.getter = NativeTypeFn.getter;
     public static readonly setter:typeof NativeTypeFn.setter = NativeTypeFn.setter;
     public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
@@ -81,8 +78,7 @@ export class NativeType<T> implements Type<T>
         ctor:(ptr:StaticPointer)=>void = emptyFunc,
         dtor:(ptr:StaticPointer)=>void = emptyFunc,
         ctor_copy:(to:StaticPointer, from:StaticPointer)=>void = defaultCopy(size),
-        ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy)
-    {
+        ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy) {
         this[NativeType.size] = size;
         this[NativeType.align] = align;
         this[NativeType.getter] = get;
@@ -93,8 +89,7 @@ export class NativeType<T> implements Type<T>
         this[NativeType.ctor_move] = ctor_move;
     }
     
-    extends<FIELDS>(fields?:FIELDS):NativeType<T>&FIELDS
-    {
+    extends<FIELDS>(fields?:FIELDS):NativeType<T>&FIELDS {
         const type = this;
         const ntype = new NativeType(
             type[NativeType.size],
@@ -102,42 +97,33 @@ export class NativeType<T> implements Type<T>
             (ptr) => type[NativeType.getter](ptr),
             (ptr, v) => type[NativeType.setter](ptr, v),
         );
-        if (fields)
-        {
-            for (const field in fields)
-            {
+        if (fields) {
+            for (const field in fields) {
                 (ntype as any)[field] = fields[field];
             }
         }
         return ntype as any;
     }
 
-    ref():NativeType<T>
-    {
-        return refSingleton.newInstance(this, ()=>{
-            return makeReference(this);
-        });
+    ref():NativeType<T> {
+        return refSingleton.newInstance(this, ()=>makeReference(this));
     }
     
-    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void
-    {
+    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void {
         abstract();
     }
 
-    static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, offset:number):void
-    {
+    static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, offset:number):void {
         const type = this;
         builder.desc[key] = {
             get(this: StaticPointer) { return type[NativeType.getter](this, offset); },
             set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); }
         };
         const typeidx = builder.types.push(type)-1;
-        if (type[NativeType.ctor] !== emptyFunc)
-        {
+        if (type[NativeType.ctor] !== emptyFunc) {
             builder.ctor_code += `types[${typeidx}][NativeType.ctor](this, ${offset})\n`;
         }
-        if (type[NativeType.dtor] !== emptyFunc)
-        {
+        if (type[NativeType.dtor] !== emptyFunc) {
             builder.dtor_code += `types[${typeidx}][NativeType.dtor](this, ${offset})\n`;
         }
     }
@@ -146,8 +132,7 @@ NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
 
 const refSingleton = new Singleton<NativeType<any>>();
 
-function makeReference<T>(type:NativeType<T>):NativeType<T>
-{
+function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
         8,
         8,

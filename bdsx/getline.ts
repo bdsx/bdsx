@@ -11,15 +11,13 @@ let getLineThreadPointer:VoidPointer|null = null;
 
 type GetLineCallback = (line:string|null)=>void;
 
-function createGetLineThreadFunction():VoidPointer
-{
+function createGetLineThreadFunction():VoidPointer {
     const getline = proc2["??$getline@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@YAAEAV?$basic_istream@DU?$char_traits@D@std@@@0@$$QEAV10@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@D@Z"];
     const string_ctor:VoidPointer = (CxxString[NativeType.ctor] as any).pointer;
     const string_dtor:VoidPointer = (CxxString[NativeType.dtor] as any).pointer;
     const string_size = CxxString[NativeType.size];
 
-    if (!string_ctor || !string_dtor)
-    {
+    if (!string_ctor || !string_dtor) {
         throw Error('cannot find the constructor and the destructor of std::string');
     }
 
@@ -102,13 +100,10 @@ function createGetLineThreadFunction():VoidPointer
     return addr;
 }
 
-export class GetLine
-{
+export class GetLine {
     private readonly thread:ThreadHandle;
-    constructor(private readonly online:(line:string)=>void)
-    {
-        if (getLineThreadPointer === null)
-        {
+    constructor(private readonly online:(line:string)=>void) {
+        if (getLineThreadPointer === null) {
             getLineThreadPointer = createGetLineThreadFunction();
         }
 
@@ -119,8 +114,7 @@ export class GetLine
         this.thread = handle;
     }
 
-    close():void
-    {
+    close():void {
         dll.kernel32.TerminateThread(this.thread, 0);
         dll.ChakraCore.JsRelease(this.online, null);
         uv_async.close();
