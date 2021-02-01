@@ -10,7 +10,7 @@ import version = require('../version.json');
 
 const sep = path.sep;
 
-const BDS_VERSION = '1.16.201.02';
+const BDS_VERSION = version.bdsVersion;
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_VERSION}.zip`;
 const BDSX_CORE_VERSION = version.coreVersion;
 const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
