@@ -33,7 +33,7 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
                 if (item === null) break;
                 const next:T|null = item[nextlink] as T;
 
-                const idx = item[hashkey]! % this.array.length;
+                const idx = item[hashkey]! % narray.length;
                 item[nextlink] = narray[idx];
                 narray[idx] = item;
 
