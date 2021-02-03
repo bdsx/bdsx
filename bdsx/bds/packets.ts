@@ -103,8 +103,18 @@ export class RiderJumpPacket extends Packet {
 }
 
 export class UpdateBlockPacket extends Packet {
-    // unknown
+    blockPos: NetworkBlockPosition;
+    blockRuntimeId: uint32_t;
+    flags: uint32_t; // Is a byte
+    dataLayerId: uint32_t;
 }
+
+UpdateBlockPacket.abstract({
+    blockPos: [NetworkBlockPosition, 0x28],
+    blockRuntimeId: [uint32_t, 0x3c],
+    flags: [uint32_t, 0x38],
+    dataLayerId: [uint32_t, 0x34]
+});
 
 export class AddPaintingPacket extends Packet {
     // unknown
