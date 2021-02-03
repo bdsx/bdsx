@@ -25,6 +25,11 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
     });
 
     return new Promise<boolean>(resolve=>{
+        if (!process.stdin.isTTY || process.env.BDSX_YES === "true") {
+            resolve(true);
+            return;
+        }
+
         rl.question(question + ' ', async(answer)=>{
             rl.close();
 

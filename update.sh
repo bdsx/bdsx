@@ -8,7 +8,7 @@ then
     echo 'Error: bdsx requires npm. Please install node.js first' >&2
     exit $?
 fi
-echo "> npm i"
-npm i
+echo "> npm i --unsafe-perm"
+npm i --unsafe-perm
 
 cd $cwd
