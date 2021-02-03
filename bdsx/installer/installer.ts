@@ -25,6 +25,7 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
     });
 
     return new Promise<boolean>(resolve=>{
+        if(process.env.BDSX_YES === "false") return resolve(false);
         if (!process.stdin.isTTY || process.env.BDSX_YES === "true") {
             resolve(true);
             return;
