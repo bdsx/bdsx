@@ -286,7 +286,7 @@ function _launch(asyncResolve:()=>void):void {
     const runtime_error_asm = asm()
     .mov_r_rp(Register.rax, Register.rcx, 0)
     .cmp_rp_c(Register.rax, 0, EXCEPTION_BREAKPOINT, OperationSize.dword)
-    .jne(1)
+    .jne_c(1)
     .ret()
     .jmp64(runtimeError.raise, Register.rax)
     .alloc();

@@ -14,11 +14,10 @@ export class Tester {
     log(message:string):void {
         console.log(`[test/${this.subject}] ${message}`);
     }
-    
-    error(message:string, stackidx = 2):void {
+
+    private _error(message:string, errorpos:string):void {
         console.error(colors.red(`[test/${this.subject}] failed. ${message}`));
-        const stack = Error().stack!;
-        console.error(colors.red(remapStackLine(stack.split('\n')[stackidx]).stackLine));
+        console.error(colors.red(errorpos));
         if (this.done) {
             if (!this.errored) {
                 passed--;
@@ -27,9 +26,20 @@ export class Tester {
         }
         this.errored = true;
     }
+    
+    error(message:string, stackidx:number = 2):void {
+        const stack = Error().stack!;
+        this._error(message, remapStackLine(stack.split('\n')[stackidx]).stackLine);
+    }
+
+    processError(err:Error):void {
+        const stack = (remapError(err).stack||'').split('\n');
+        this._error(err.message, stack[1]);
+        console.error(stack.slice(2).join('\n'));
+    }
 
     fail():void {
-        this.error('failed', 3);
+        this.error('', 3);
     }
 
     assert(cond:boolean, message:string):void {
@@ -46,8 +56,8 @@ export class Tester {
         testcount += testlist.length;
 
         for (const [subject, test] of testlist) {
+            const tester = new Tester;
             try {
-                const tester = new Tester;
                 console.log(`[test] (${testnum++}/${testcount}) ${subject}`);
                 tester.subject = subject;
                 tester.errored = false;
@@ -55,7 +65,7 @@ export class Tester {
                 if (!tester.errored) passed++;
                 tester.done = true;
             } catch (err) {
-                console.error(remapError(err));
+                tester.processError(err);
             }
         }
         if (passed !== testcount) {

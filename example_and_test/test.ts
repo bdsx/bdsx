@@ -2,11 +2,12 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, chat, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, PacketId, serverControl, serverInstance, StaticPointer, VoidPointer } from "bdsx";
+import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, PacketId, serverControl, serverInstance } from "bdsx";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
-import { proc2 } from "bdsx/bds/proc";
+import { proc, proc2 } from "bdsx/bds/proc";
 import { capi } from "bdsx/capi";
+import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
@@ -16,8 +17,6 @@ import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 
 let nextTickPassed = false;
-let commandTestPassed = false;
-let commandNetPassed = false;
 let chatCancelCounter = 0;
 Tester.test({
     async globals() {
@@ -43,6 +42,7 @@ Tester.test({
         this.assert(serverInstance.scriptEngine.scriptEngineVftable.equals(proc2['??_7MinecraftServerScriptEngine@@6B@']),
             'serverInstance.scriptEngine wrong vftable offset');
     },
+
     async nexttick() {
         nextTickPassed = await Promise.race([
             new Promise<boolean>(resolve=>process.nextTick(()=>resolve(true))),
@@ -54,57 +54,19 @@ Tester.test({
         ]);
     },
 
-    async command(){
-        let passed = false;
-        command.hook.on((cmd, origin)=>{
-            if (cmd === '/__dummy_command')
-            {
-                passed = origin === 'Server';
-            }
-            else if (cmd === '/test')
-            {
-                if (origin === 'Server') return;
-                if (!commandTestPassed)
-                {
-                    if (!commandNetPassed) this.error('command.net does not emitted');
-                    commandTestPassed = true;
-                    this.log('/test passed');
-                    return 0;
-                }
-            }
-        });
-        command.net.on((ev)=>{
-            if (ev.command === '/test')
-            {
-                commandNetPassed = true;
-            }
-        });
-        await new Promise<void>((resolve)=>{
-            bedrockServer.commandOutput.on(output=>{
-                if (output.startsWith('Unknown command: __dummy_command'))
-                {
-                    if (passed) resolve();
-                    else this.error('command.hook.listener failed');
-                    return CANCEL;
-                }
-            });
-            bedrockServer.executeCommandOnConsole('__dummy_command');
-        })
+    disasm() {
+        const code = disasm.process(proc['ServerNetworkHandler::_onPlayerLeft'], 12);
+        if (code.size < 12) this.fail();
     },
 
     chat(){
-        chat.on(ev=>{
-            if (ev.message == "TEST YEY!")
+        netevent.before(MinecraftPacketIds.Text).on((packet, ni)=>{
+            if (packet.message == "TEST YEY!")
             {
-                if (!commandTestPassed && !commandNetPassed)
-                {
-                    console.error('Please /test first');
-                    return CANCEL;
-                }
                 const MAX_CHAT = 5;
                 chatCancelCounter ++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.assert(connectedNi === ev.networkIdentifier, 'the network identifier does not matched');
+                this.assert(connectedNi === ni, 'the network identifier does not matched');
                 if (chatCancelCounter === MAX_CHAT)
                 {
                     this.log('> tested and stopping...');
@@ -313,7 +275,29 @@ Tester.test({
         str.value = longcase;
         this.assert(str.value === longcase, 'failed with long text');
         str[NativeType.dtor]();
-    }
+    },
+    
+    async command(){
+        let passed = false;
+        command.hook.on((cmd, origin)=>{
+            if (cmd === '/__dummy_command')
+            {
+                passed = origin === 'Server';
+            }
+        });
+        await new Promise<void>((resolve)=>{
+            bedrockServer.commandOutput.on(output=>{
+                if (output.startsWith('Unknown command: __dummy_command'))
+                {
+                    if (passed) resolve();
+                    else this.error('command.hook.listener failed');
+                    return CANCEL;
+                }
+            });
+            bedrockServer.executeCommandOnConsole('__dummy_command');
+        })
+    },
+
 });
 
 let connectedNi:NetworkIdentifier;

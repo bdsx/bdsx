@@ -1,6 +1,7 @@
 import { bin } from "./bin";
 import { cgate, FunctionFromTypes_js, makefunc, MakeFuncOptions, NativePointer, ParamType, ReturnType, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
+import { bin64_t } from "./nativetype";
 
 export enum Register
 {
@@ -74,22 +75,22 @@ export enum Operator
 
 export enum JumpOperation
 {
-    jo = 0x00,
-    jno = 0x01,
-    jb = 0x02,
-    jae = 0x03,
-    je = 0x04,
-    jne = 0x05,
-    jbe = 0x06,
-    ja = 0x07,
-    js = 0x08,
-    jns = 0x09,
-    jp = 0x0a,
-    jnp = 0x0b,
-    jl = 0x0c,
-    jge = 0x0d,
-    jle = 0x0e,
-    jg = 0x0f,
+    jo,
+    jno,
+    jb,
+    jae,
+    je,
+    jne,
+    jbe,
+    ja,
+    js,
+    jns,
+    jp,
+    jnp,
+    jl,
+    jge,
+    jle,
+    jg,
 }
 
 const INT8_MIN = -0x80;
@@ -620,24 +621,24 @@ export class X64Assembler {
         return this;
     }
 
-    jz(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
-    jnz(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
-    jo(offset:number):this { return this._jmp_o(JumpOperation.jo, offset); }
-    jno(offset:number):this { return this._jmp_o(JumpOperation.jno, offset); }
-    jb(offset:number):this { return this._jmp_o(JumpOperation.jb, offset); }
-    jae(offset:number):this { return this._jmp_o(JumpOperation.jae, offset); }
-    je(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
-    jne(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
-    jbe(offset:number):this { return this._jmp_o(JumpOperation.jbe, offset); }
-    ja(offset:number):this { return this._jmp_o(JumpOperation.ja, offset); }
-    js(offset:number):this { return this._jmp_o(JumpOperation.js, offset); }
-    jns(offset:number):this { return this._jmp_o(JumpOperation.jns, offset); }
-    jp(offset:number):this { return this._jmp_o(JumpOperation.jp, offset); }
-    jnp(offset:number):this { return this._jmp_o(JumpOperation.jnp, offset); }
-    jl(offset:number):this { return this._jmp_o(JumpOperation.jl, offset); }
-    jge(offset:number):this { return this._jmp_o(JumpOperation.jge, offset); }
-    jle(offset:number):this { return this._jmp_o(JumpOperation.jle, offset); }
-    jg(offset:number):this { return this._jmp_o(JumpOperation.jg, offset); }
+    jz_c(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
+    jnz_c(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
+    jo_c(offset:number):this { return this._jmp_o(JumpOperation.jo, offset); }
+    jno_c(offset:number):this { return this._jmp_o(JumpOperation.jno, offset); }
+    jb_c(offset:number):this { return this._jmp_o(JumpOperation.jb, offset); }
+    jae_c(offset:number):this { return this._jmp_o(JumpOperation.jae, offset); }
+    je_c(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
+    jne_c(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
+    jbe_c(offset:number):this { return this._jmp_o(JumpOperation.jbe, offset); }
+    ja_c(offset:number):this { return this._jmp_o(JumpOperation.ja, offset); }
+    js_c(offset:number):this { return this._jmp_o(JumpOperation.js, offset); }
+    jns_c(offset:number):this { return this._jmp_o(JumpOperation.jns, offset); }
+    jp_c(offset:number):this { return this._jmp_o(JumpOperation.jp, offset); }
+    jnp_c(offset:number):this { return this._jmp_o(JumpOperation.jnp, offset); }
+    jl_c(offset:number):this { return this._jmp_o(JumpOperation.jl, offset); }
+    jge_c(offset:number):this { return this._jmp_o(JumpOperation.jge, offset); }
+    jle_c(offset:number):this { return this._jmp_o(JumpOperation.jle, offset); }
+    jg_c(offset:number):this { return this._jmp_o(JumpOperation.jg, offset); }
 
 
     /**
@@ -677,11 +678,20 @@ export class X64Assembler {
         return this;
     }
 
-    test_r_r(dest:Register, src:Register):this {
-        this._regex(src, dest, OperationSize.qword);
-        this.write(0x85);
-        this.write(0xC0 | (src << 3) | dest);
+    private _test(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
+        this._regex(r1, r2, size);
+        if (size === OperationSize.byte) this.write(0x84);
+        else this.write(0x85);
+        this._target(((r2&7)<<3) | (r1&7), r1, offset, oper);
         return this;
+    }
+
+    test_r_r(r1:Register, r2:Register, size:OperationSize = OperationSize.qword):this {
+        return this._test(r1, r2, 0, size, MovOper.Register);
+    }
+    
+    test_r_rp(r1:Register, r2:Register, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._test(r1, r2, offset, size, MovOper.Read);
     }
 
     cmp_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
@@ -987,17 +997,135 @@ export class X64Assembler {
     private static jmp_o_info = new JumpInfo(2, 6, X64Assembler.prototype._jmp_o);
 }
 
-
 export function asm():X64Assembler {
     return new X64Assembler;
 }
 
+function shex(v:number|bin64_t):string {
+    if (typeof v === 'string') return '0x'+bin.toString(v, 16);
+    if (v < 0) return '-0x'+(-v).toString(16);
+    else return '0x'+v.toString(16);
+}
+function shex_o(v:number|bin64_t):string {
+    if (typeof v === 'string') return '+0x'+bin.toString(v, 16);
+    if (v < 0) return '-0x'+(-v).toString(16);
+    else return '+0x'+v.toString(16);
+}
+
+const REVERSE_MAP:Record<string, string> = {
+    jo: 'jno',
+    jno: 'jo',
+    jb: 'jae',
+    jae: 'jb',
+    je: 'jne',
+    jne: 'je',
+    jbe: 'ja',
+    ja: 'jbe',
+    js: 'jns',
+    jns: 'js',
+    jp: 'jnp',
+    jnp: 'jp',
+    jl: 'jge',
+    jge: 'jl',
+    jle: 'jg',
+    jg: 'jle',
+};
+
 export namespace asm
 {
+    export const code = X64Assembler.prototype;
     export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer {
         const buf = Buffer.from(str+'\0', encoding);
         dll.ChakraCore.JsAddRef(buf, null);
         return buf;
+    }
+    export class Operation {
+        public size = -1;
+        private _splits:string[]|null = null;
+
+        constructor(
+            public readonly code:(this:X64Assembler, ...args:any[])=>X64Assembler,
+            public readonly args:any[]) {
+        }
+
+        get splits():string[] {
+            if (this._splits !== null) return this._splits;
+            const name = this.code.name;
+            return this._splits = name.split('_');
+        }
+
+        reverseJump():string|null{
+            return REVERSE_MAP[this.splits[0]] || null;
+        }
+
+        registers():Register[] {
+            const out:Register[] = [];
+            const splits = this.splits;
+            for (let i=1;i<splits.length;i++) {
+                if (splits[i] === 'r') {
+                    const r = this.args[i-1];
+                    if (typeof r !== 'number' || r < 0 || r >= 16) {
+                        throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
+                    }
+                    out.push(r);
+                }
+            }
+            return out;
+        }
+        toString():string {
+            const {code, args} = this;
+            const name = code.name;
+            const splited = name.split('_');
+            let line = splited.shift()!;
+            let i=0;
+            for (const item of splited) {
+                const v = args[i++];
+                switch (item) {
+                case 'r':
+                    line += ' ';
+                    line += Register[v];
+                    break;
+                case 'c':
+                    line += ' ';
+                    line += shex(v);
+                    break;
+                case 'rp':
+                    line += ' [';
+                    line += Register[v];
+                    line += shex_o(args[i++]);
+                    line += ']';
+                    break;
+                }
+                line += ',';
+            }
+            return line.substr(0, line.length-1);
+        }
+    }
+    export class Operations {
+        constructor(
+            public readonly operations:asm.Operation[], 
+            public readonly size:number) {
+        }
+
+        toString():string {
+            const out:string[] = [];
+            for (const oper of this.operations) {
+                out.push(oper.toString());
+            }
+            return out.join('\n');
+        }
+
+        asm():X64Assembler {
+            const code = asm();
+            for (const {code: opcode, args} of this.operations) {
+                opcode.apply(code, args);
+            }
+            return code;
+        }
+
+        buffer():Uint8Array {
+            return this.asm().buffer();
+        }
     }
 }
 
