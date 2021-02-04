@@ -111,9 +111,10 @@ CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOri
 // actor.ts
 Actor.abstract({
     vftable: VoidPointer,
+    dimension: [Dimension, 0x350],
     identifier: [CxxString, 0x450], // minecraft:player
     attributes: [BaseAttributeMap.ref(), 0x478],
-    runtimeId: [ActorRuntimeID, 0x588],
+    runtimeId: [ActorRuntimeID, 0x538],
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
@@ -146,13 +147,15 @@ const attribNames = [
     const packet = UpdateAttributesPacket.create();
     packet.actorId = this.runtimeId;
 
-    const data = new AttributeData;
+    const data = new AttributeData(true);
+    data.construct();
     data.name.set(attribNames[id - 1]);
     data.current = value;
     data.min = attr.minValue;
     data.max = attr.maxValue;
     data.default = attr.defaultValue;
     packet.attributes.push(data);
+    data.destruct();
     this._sendNetworkPacket(packet);
     packet.dispose();
 };
@@ -221,7 +224,7 @@ Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {t
 // Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js(
-    "ServerNetworkHandler::_getServerPlayer", ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
+    "ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {

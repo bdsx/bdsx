@@ -7,6 +7,7 @@ import { dll } from "bdsx/dll";
 import { NativeClass } from "bdsx/nativeclass";
 import { bin64_t, NativeType } from "bdsx/nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Dimension } from "./dimension";
 import { Level } from "./level";
 import { NetworkIdentifier } from "./networkidentifier";
 import { proc, procHacker } from "./proc";
@@ -42,6 +43,7 @@ export class Actor extends NativeClass {
     identifier:string;
     attributes:BaseAttributeMap;
     runtimeId:ActorRuntimeID;
+    dimension:Dimension;
     
     protected _sendNetworkPacket(packet:VoidPointer):void {
         abstract();
@@ -112,7 +114,6 @@ export class Actor extends NativeClass {
         const attr = this.attributes.getMutableInstance(id);
         if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || 'Attribute'+id}`);
         attr.currentValue = value;
-    
         if (this.isPlayer()) {
             this._sendAttributePacket(id, value, attr);
         }

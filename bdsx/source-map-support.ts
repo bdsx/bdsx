@@ -373,12 +373,12 @@ function printErrorAndExit(error: Error):void {
     process.exit(1);
 }
 
-function shimEmitUncaughtException(...args:any[]):void {
+function shimEmitUncaughtException():void {
     const origEmit = process.emit;
 
-    process.emit = function (type: string) {
+    process.emit = function (type: string, ...args:any[]) {
         if (type === 'uncaughtException') {
-            const err = args[1];
+            const err = args[0];
             const hasStack = (err && err.stack);
             const hasListeners = (this.listeners(type).length > 0);
 
@@ -387,7 +387,7 @@ function shimEmitUncaughtException(...args:any[]):void {
                 return printErrorAndExit(err);
             }
         } else if (type === 'unhandledRejection') {
-            const err = args[1];
+            const err = args[0];
             err.stack = remapStack(err.stack);
         }
 

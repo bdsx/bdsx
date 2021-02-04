@@ -175,7 +175,7 @@ AttributeData.define({
     max: [float32_t, 8],
     default: [float32_t, 12],
     name: [HashedString, 16],
-}, 0x38);
+}, 0x40);
 
 export class UpdateAttributesPacket extends Packet {
     actorId:ActorRuntimeID;

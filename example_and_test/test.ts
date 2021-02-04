@@ -1,3 +1,6 @@
+/**
+ * These are unit tests for bdsx
+ */
 
 import { Actor, bin, CANCEL, chat, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, PacketId, serverControl, serverInstance, StaticPointer, VoidPointer } from "bdsx";
 import { ActorType } from "bdsx/bds/actor";

@@ -84,14 +84,19 @@ interface TypeMap_js2np {
 
 export interface VoidPointerConstructor
 {
+    /**
+     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
+     */
     new(pointer?: VoidPointer|null):VoidPointer;
+
+    new():VoidPointer;
 }
 
 export declare const VoidPointer:VoidPointerConstructor;
 
 export interface VoidPointer {
     equals(ptr: VoidPointer): boolean;
-    /** @deprecated use ptr.as(NativePointer) */
+    /** @deprecated use ptr.as(NativePointer) or ptr.add() */
     clone():NativePointer;
     /**
      * make cloned pointer with offset

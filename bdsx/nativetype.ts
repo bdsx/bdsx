@@ -44,8 +44,53 @@ export class NativeDescriptorBuilder {
     public readonly desc:PropertyDescriptorMap = {};
     public readonly types:Type<any>[] = [];
 
-    public ctor_code = '';
-    public dtor_code = '';
+    public readonly ctor = new NativeDescriptorBuilder.UseContextCtor;
+    public readonly dtor = new NativeDescriptorBuilder.UseContextDtor;
+    public readonly ctor_copy = new NativeDescriptorBuilder.UseContextCtorCopy;
+}
+export namespace NativeDescriptorBuilder {
+    export abstract class UseContext {
+        public code = '';
+        protected _use = false;
+        public offset = 0;
+        
+        protected abstract initUse():void;
+
+        setPtrOffset(offset:number):void {
+            if (!this._use) {
+                this._use = true;
+                this.initUse();
+            }
+            const delta = offset-this.offset;
+            if (delta !== 0) this.code += `ptr.move(${delta});\n`;
+            this.offset = offset;
+        }
+    }
+
+    export class UseContextCtor extends UseContext {
+        protected initUse(): void {
+            this.code += `const ptr = this.add();\n`;
+        }
+    }
+    export class UseContextDtor extends UseContext {
+        protected initUse(): void {
+            this.code += `const ptr = this.add();\n`;
+        }
+    }
+    export class UseContextCtorCopy extends UseContext {
+        setPtrOffset(offset:number):void {
+            if (!this._use) {
+                this._use = true;
+                this.initUse();
+            }
+            const delta = offset-this.offset;
+            if (delta !== 0) this.code += `ptr.move(${delta});\noptr.move(${delta});\n`;
+            this.offset = offset;
+        }
+        protected initUse(): void {
+            this.code += `const ptr = this.add();\nconst optr = o.add();\n`;
+        }
+    }
 }
 
 export class NativeType<T> implements Type<T> {
@@ -62,8 +107,8 @@ export class NativeType<T> implements Type<T> {
     
     public readonly [NativeTypeFn.getter]:(ptr:StaticPointer, offset?:number)=>T;
     public readonly [NativeTypeFn.setter]:(ptr:StaticPointer, v:T, offset?:number)=>void;
-    public readonly [NativeTypeFn.ctor]:(ptr:StaticPointer, offset?:number)=>void;
-    public readonly [NativeTypeFn.dtor]:(ptr:StaticPointer, offset?:number)=>void;
+    public readonly [NativeTypeFn.ctor]:(ptr:StaticPointer)=>void;
+    public readonly [NativeTypeFn.dtor]:(ptr:StaticPointer)=>void;
     public readonly [NativeTypeFn.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
     public readonly [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void;
     public readonly [NativeTypeFn.size]:number;
@@ -121,11 +166,15 @@ export class NativeType<T> implements Type<T> {
         };
         const typeidx = builder.types.push(type)-1;
         if (type[NativeType.ctor] !== emptyFunc) {
-            builder.ctor_code += `types[${typeidx}][NativeType.ctor](this, ${offset})\n`;
+            builder.ctor.setPtrOffset(offset);
+            builder.ctor.code += `types[${typeidx}][NativeType.ctor](ptr);\n`;
         }
         if (type[NativeType.dtor] !== emptyFunc) {
-            builder.dtor_code += `types[${typeidx}][NativeType.dtor](this, ${offset})\n`;
+            builder.dtor.setPtrOffset(offset);
+            builder.dtor.code += `types[${typeidx}][NativeType.dtor](ptr);\n`;
         }
+        builder.ctor_copy.setPtrOffset(offset);
+        builder.ctor_copy.code += `types[${typeidx}][NativeType.ctor_copy](ptr, optr);\n`;
     }
 }
 NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
@@ -221,14 +270,14 @@ export const int64_as_float_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset));
 export type int64_as_float_t = number;
 export const float32_t = new NativeType<number>(
-    8, 8,
-    (ptr, offset)=>ptr.getUint32(offset), 
-    (ptr, v, offset)=>ptr.setUint32(v, offset));
+    4, 4,
+    (ptr, offset)=>ptr.getFloat32(offset), 
+    (ptr, v, offset)=>ptr.setFloat32(v, offset));
 export type float32_t = number;
 export const float64_t = new NativeType<number>(
     8, 8,
-    (ptr, offset)=>ptr.getUint32(offset), 
-    (ptr, v, offset)=>ptr.setUint32(v, offset));
+    (ptr, offset)=>ptr.getFloat64(offset), 
+    (ptr, v, offset)=>ptr.setFloat64(v, offset));
 export type float64_t = number;
 
 const strfn = pdb.getList(pdb.coreCachePath, {}, [
@@ -245,7 +294,13 @@ export const CxxString = new NativeType<string>(
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
     string_ctor,
-    string_dtor);
+    string_dtor,
+    (to, from)=>{
+        to.setCxxString(from.getCxxString());
+    }, (to, from)=>{
+        to.copyFrom(from, 0x20);
+        string_ctor(from);
+    });
 export type CxxString = string;
 
 export const bin64_t = new NativeType<string>(
