@@ -1,15 +1,15 @@
 import { NativeClass } from "../nativeclass";
-import { float32_t, uint32_t } from "../nativetype";
+import { float32_t, int32_t, uint32_t } from "../nativetype";
 
 export class BlockPos extends NativeClass {
-    x:uint32_t;
+    x:int32_t;
     y:uint32_t;
-    z:uint32_t;
+    z:int32_t;
 }
 BlockPos.define({
-    x:uint32_t,
+    x:int32_t,
     y:uint32_t,
-    z:uint32_t,
+    z:int32_t,
 });
 
 export class Vec3 extends NativeClass {

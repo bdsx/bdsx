@@ -137,8 +137,8 @@ Tester.test({
         try
         {
             const bignum = bin.makeVar(123456789012345);
-            new NativePointer(ptr).writeVarBin(bignum);
-            this.assert(new NativePointer(ptr).readVarBin() === bignum, '[test] writevarbin / readvarbin failed');
+            ptr.add().writeVarBin(bignum);
+            this.assert(ptr.add().readVarBin() === bignum, '[test] writevarbin / readvarbin failed');
         }
         finally
         {

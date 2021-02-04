@@ -1,23 +1,18 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType,  uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
+import { BlockPos } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
 
 Packet.abstract({}, 0x28);
 
-export class NetworkBlockPosition extends NativeClass {
-    x:uint32_t;
-    y:uint32_t;
-    z:uint32_t;
-}
-NetworkBlockPosition.define({
-    x:uint32_t,
-    y:uint32_t,
-    z:uint32_t,
-});
+/** @deprecated use BlockPos instead */
+export const NetworkBlockPosition = BlockPos;
+/** @deprecated use BlockPos instead */
+export type NetworkBlockPosition = BlockPos;
 
 export class LoginPacket extends Packet {
 	u5:uint32_t; //0x184
@@ -114,14 +109,14 @@ export class RiderJumpPacket extends Packet {
 }
 
 export class UpdateBlockPacket extends Packet {
-    blockPos: NetworkBlockPosition;
+    blockPos: BlockPos;
     blockRuntimeId: uint32_t;
     flags: uint32_t; // Is a byte
     dataLayerId: uint32_t;
 }
 
 UpdateBlockPacket.abstract({
-    blockPos: [NetworkBlockPosition, 0x28],
+    blockPos: [BlockPos, 0x28],
     blockRuntimeId: [uint32_t, 0x3c],
     flags: [uint32_t, 0x38],
     dataLayerId: [uint32_t, 0x34]
@@ -255,13 +250,13 @@ export class RespawnPacket extends Packet {
 export class ContainerOpenPacket extends Packet {
     windowId:uint8_t;
     type:int8_t;
-    pos:NetworkBlockPosition;
+    pos:BlockPos;
     entityUniqueId:bin64_t;
 }
 ContainerOpenPacket.abstract({
     windowId:[uint8_t, 0x28],
     type:[int8_t, 0x29],
-    pos:[NetworkBlockPosition, 0x2C],
+    pos:[BlockPos, 0x2C],
     entityUniqueId:[bin64_t, 0x38],
 });
 

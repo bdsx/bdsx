@@ -74,6 +74,9 @@ export namespace hacktool
         dll.vcruntime140.memset(from.add(jumper.length), 0xcc, originalCodeSize - jumper.length); // fill int3 at remained
     }
 
+    /**
+     * @deprecated use ProcHacker. it cannot handle jump/call codes.
+     */
     export function hook(
         from:StaticPointer, to:VoidPointer, originalCodeSize:number, 
         tempRegister?:Register|null):VoidPointer {
