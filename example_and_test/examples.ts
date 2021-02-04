@@ -53,13 +53,13 @@ command.hook.on((command, originName)=>{
 });
 
 // Chat Listening
-import { chat, CANCEL } from '../bdsx';
-chat.on(ev => {
+import { CANCEL } from '../bdsx';
+netevent.before(MinecraftPacketIds.Text).on(ev => {
     if (ev.message === 'nochat')
     {
         return CANCEL; // canceling
     }
-    ev.setMessage(ev.message.toUpperCase() + " YEY!");
+    ev.message = ev.message.toUpperCase() + " YEY!";
 });
 
 // Network Hooking: Get login IP and XUID
