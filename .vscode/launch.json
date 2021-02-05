@@ -14,7 +14,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
         },
         {
             "type": "node",

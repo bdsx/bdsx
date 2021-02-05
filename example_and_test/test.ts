@@ -110,7 +110,7 @@ Tester.test({
             }
             catch (err)
             {
-                this.error(err.stack);
+                this.processError(err);
             }
         });
     },

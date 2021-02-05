@@ -24,8 +24,6 @@ if (!capi.isRunningOnWine()) // Skip for Linux, pdb is not working on Wine.
         halfMiss = !halfMiss;
         const ni = gameMode.actor.getNetworkIdentifier();
         const packet = TextPacket.create();
-        console.log(ni.hash());
-        console.log(ni.getAddress());
         packet.message = `${halfMiss ? 'missed' : 'destroyed'}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`;
         packet.sendTo(ni);
         packet.dispose();

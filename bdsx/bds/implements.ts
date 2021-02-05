@@ -3,13 +3,15 @@ import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bds/commandorigin";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { bin } from "bdsx/bin";
+import { capi } from "bdsx/capi";
 import { RawTypeId } from "bdsx/common";
 import { makefunc, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
+import { dll } from "bdsx/dll";
 import { mce } from "bdsx/mce";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
+import { bin64_t, CxxString, float32_t, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Certificate, ConnectionRequest } from "./connreq";
@@ -24,7 +26,7 @@ import { ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
-import { CommandContext, CommandOutputSender, DedicatedServer, EntityRegistryOwned, MCRESULT, Minecraft, Minecraft$Something, MinecraftCommands, MinecraftEventing, ScriptFramework, PrivateKeyManager, ResourcePackManager, ServerCommandOrigin, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist, MinecraftServerScriptEngine } from "./server";
+import { CommandContext, CommandOutputSender, DedicatedServer, EntityRegistryOwned, MCRESULT, Minecraft, Minecraft$Something, MinecraftCommands, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, ServerCommandOrigin, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency
@@ -109,6 +111,27 @@ CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOri
 // .....
 
 // actor.ts
+const actorMaps = new Map<string, Actor>();
+const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
+Actor.prototype.isPlayer = function() {
+    return this.vftable.equals(ServerPlayer_vftable);
+};
+(Actor as any)._singletoning = function(ptr:StaticPointer):Actor {
+    const binptr = ptr.getAddressBin();
+    let actor = actorMaps.get(binptr);
+    if (actor) return actor;
+    if (ptr.getPointer().equals(ServerPlayer_vftable)) {
+        actor = ptr.as(ServerPlayer);
+    } else {
+        actor = ptr.as(Actor);
+    }
+    actorMaps.set(binptr, actor);
+    return actor;
+};
+Actor.all = function():IterableIterator<Actor> {
+    return actorMaps.values();
+};
+
 Actor.abstract({
     vftable: VoidPointer,
     dimension: [Dimension, 0x350],
@@ -160,12 +183,40 @@ const attribNames = [
     packet.dispose();
 };
 
+function _removeActor(actor:Actor):void {
+    actorMaps.delete(actor.getAddressBin());
+}
+
+procHacker.hookingRawWithCallOriginal(
+    'Level::removeEntityReferences', 
+    makefunc.np((level, actor, b)=>{
+        _removeActor(actor);
+    }, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
+    [Register.rcx, Register.rdx, Register.r8], []
+);
+
+procHacker.hookingRawWithCallOriginal('Actor::~Actor',
+    asm()
+    .push_r(Register.rcx)
+    .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
+    .pop_r(Register.rcx)
+    .cmp_r_c(Register.rax, capi.nodeThreadId)
+    .jne_label('skip_dtor')
+    .jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
+    .label('skip_dtor')
+    .ret()
+    .alloc(),
+    [Register.rcx], []
+);
+
 // player.ts
 ServerPlayer.abstract({
-    networkIdentifier:[NetworkIdentifier, Actor.OFFSET_OF_NI]
+    networkIdentifier:[NetworkIdentifier, 0x9e8]
 });
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this: ServerPlayer}, VoidPointer);
-
+ServerPlayer.prototype.getNetworkIdentifier = function () {
+    return this.networkIdentifier;
+};
 
 // networkidentifier.ts
 NetworkIdentifier.define({

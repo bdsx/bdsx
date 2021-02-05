@@ -1,6 +1,5 @@
 import Event, { CapsuledEvent } from "krevent";
 import { asm, OperationSize, Register } from "./assembler";
-import { hookingForActor } from "./bds/actor";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { hookingForCommand } from "./command";
@@ -407,6 +406,7 @@ function _launch(asyncResolve:()=>void):void {
     .alloc();
 
     patchForStdio();
+    require('./bds/implements');
 
     // call main as a new thread
     // main will create a game thread.
@@ -459,7 +459,6 @@ function _launch(asyncResolve:()=>void):void {
         }
     });
     hookingForCommand();
-    hookingForActor();
 
     // hook on script starting
     // this hooking point is slower than system.initlaize.

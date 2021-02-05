@@ -1,16 +1,10 @@
-import { asm, Register } from "bdsx/assembler";
-import { bin } from "bdsx/bin";
-import { capi } from "bdsx/capi";
-import { abstract, RawTypeId } from "bdsx/common";
+import { abstract } from "bdsx/common";
 import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
-import { dll } from "bdsx/dll";
 import { NativeClass } from "bdsx/nativeclass";
 import { bin64_t, NativeType } from "bdsx/nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Dimension } from "./dimension";
-import { Level } from "./level";
 import { NetworkIdentifier } from "./networkidentifier";
-import { proc, procHacker } from "./proc";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -26,19 +20,12 @@ export enum DimensionId // int32_t
 export class ActorRuntimeID extends VoidPointer {
 }
 
-
-const actorMaps = new Map<string, Actor>();
-
-const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
-
 export enum ActorType 
 {
     Player = 0x13f,
 }
 
 export class Actor extends NativeClass {
-    public static readonly OFFSET_OF_NI = 0x9e8;
-
     vftable:VoidPointer;
     identifier:string;
     attributes:BaseAttributeMap;
@@ -79,11 +66,10 @@ export class Actor extends NativeClass {
     }
 
     isPlayer():boolean {
-        return this.vftable.equals(ServerPlayer_vftable);
+        abstract();
     }
     getNetworkIdentifier():NetworkIdentifier {
-        if (!this.isPlayer()) throw Error(`this is not player`);
-        return NetworkIdentifier[NativeType.getter](this, Actor.OFFSET_OF_NI);
+        throw Error(`this is not player`);
     }
         
     getUniqueIdLow():number {
@@ -172,46 +158,15 @@ export class Actor extends NativeClass {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
     }
-    static [makefunc.np2js](ptr:VoidPointer):Actor {
-        const binptr = ptr.getAddressBin();
-        let actor = actorMaps.get(binptr);
-        if (actor) return actor;
-        actor = new Actor(ptr);
-        actorMaps.set(binptr, actor);
-        return actor;
+    static [makefunc.np2js](ptr:StaticPointer):Actor {
+        return Actor._singletoning(ptr);
     }
-
     static all():IterableIterator<Actor> {
-        return actorMaps.values();
+        abstract();
     }
 
-}
-
-function _removeActor(actor:Actor):void {
-    actorMaps.delete(actor.getAddressBin());
-}
-
-export function hookingForActor():void {
-    procHacker.hookingRawWithCallOriginal(
-        'Level::removeEntityReferences', 
-        makefunc.np((level, actor, b)=>{
-            _removeActor(actor);
-        }, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
-        [Register.rcx, Register.rdx, Register.r8], []
-    );
-
-    procHacker.hookingRawWithCallOriginal('Actor::~Actor',
-        asm()
-        .push_r(Register.rcx)
-        .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-        .pop_r(Register.rcx)
-        .cmp_r_c(Register.rax, capi.nodeThreadId)
-        .jne_label('skip_dtor')
-        .jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
-        .label('skip_dtor')
-        .ret()
-        .alloc(),
-        [Register.rcx], []
-    );
+    private static _singletoning(ptr:StaticPointer):Actor {
+        abstract();
+    }
 }
 
