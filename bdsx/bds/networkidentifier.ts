@@ -18,15 +18,6 @@ import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-class NetworkHandler$Connection extends NativeClass {
-    networkIdentifier:NetworkIdentifier;
-    u1:VoidPointer;
-    u2:VoidPointer;
-    u3:VoidPointer;
-    epeer:SharedPtr<EncryptedNetworkPeer>;
-    bpeer:SharedPtr<BatchedNetworkPeer>;
-    bpeer2:SharedPtr<BatchedNetworkPeer>;
-}
 export class NetworkHandler extends NativeClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
@@ -38,13 +29,19 @@ export class NetworkHandler extends NativeClass {
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
     }
-    
-    static readonly Connection = NetworkHandler$Connection;
 }
 
 export namespace NetworkHandler
 {
-    export type Connection = NetworkHandler$Connection;
+    export class Connection extends NativeClass {
+        networkIdentifier:NetworkIdentifier;
+        u1:VoidPointer;
+        u2:VoidPointer;
+        u3:VoidPointer;
+        epeer:SharedPtr<EncryptedNetworkPeer>;
+        bpeer:SharedPtr<BatchedNetworkPeer>;
+        bpeer2:SharedPtr<BatchedNetworkPeer>;
+    }
 }
 
 class ServerNetworkHandler$Client extends NativeClass {
