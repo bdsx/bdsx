@@ -222,7 +222,7 @@ ServerPlayer.prototype.getNetworkIdentifier = function () {
 NetworkIdentifier.define({
     address:RakNet.AddressOrGUID
 });
-NetworkIdentifier.prototype.getActor = function():Actor|null {
+NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
     return ServerNetworkHandler$_getServerPlayer(serverInstance.minecraft.something.shandler, this, 0);
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", RawTypeId.Boolean, {this:NetworkIdentifier}, NetworkIdentifier);

@@ -11,9 +11,9 @@ import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
 import { CapsuledEvent, Event } from "krevent";
 import { makefunc, StaticPointer, VoidPointer } from "../core";
-import { Actor } from "./actor";
 import { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
+import { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
@@ -82,7 +82,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         abstract();
     }
 
-    getActor():Actor|null {
+    getActor():ServerPlayer|null {
         abstract();
     }
 

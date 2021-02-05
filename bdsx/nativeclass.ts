@@ -26,7 +26,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     prototype:T;
     [StructurePointer.contentSize]:number|null;
     [offsetmap]:Record<string, number>;
-    define(fields:StructureFields<T>, defineSize?:number|null, abstract?:boolean):void;
+    define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
 }
 
@@ -90,7 +90,7 @@ export class NativeClass extends StructurePointer {
         builder.desc[key] = {
             configurable: true,
             get(this:VoidPointer) {
-                const value = this.addAs(type, offset);
+                const value = type[NativeType.getter](this, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
             }
@@ -124,7 +124,8 @@ export class NativeClass extends StructurePointer {
      * Cannot construct & Unknown size
      */
     static abstract<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number, defineAlign?:number|null):void {
-        (this as any).define(fields, defineSize, defineAlign, true);
+        const clazz = this as NativeClassType<T>;
+        clazz.define(fields, defineSize, defineAlign, true);
     }
 
     static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract:boolean=false):void {
