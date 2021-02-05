@@ -39,6 +39,7 @@ export enum ActorType
 
 export class Actor extends NativeClass
 {
+	public static readonly OFFSET_OF_NAME = 0x838;
 	public static readonly OFFSET_OF_NI = 0x9d0;
 
 	vftable:VoidPointer;
@@ -89,6 +90,10 @@ export class Actor extends NativeClass
 	{
 		return this.vftable.equals(ServerPlayer_vftable);
 	}
+    	getName():string
+	{
+        	return this.getString(96, Actor.OFFSET_OF_NAME);
+    	}
 	getNetworkIdentifier():NetworkIdentifier
 	{
 		if (!this.isPlayer()) throw Error(`this is not player`);
