@@ -87,8 +87,7 @@ export interface VoidPointerConstructor
     /**
      * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
      */
-    new(pointer?: VoidPointer|null):VoidPointer;
-
+    new(pointer: VoidPointer|null):VoidPointer;
     new():VoidPointer;
 }
 
