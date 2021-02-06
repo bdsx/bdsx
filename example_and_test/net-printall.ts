@@ -1,4 +1,6 @@
 import { MinecraftPacketIds, netevent } from "bdsx";
+import { Packet } from "bdsx/bds/packet";
+import { NativeType } from "bdsx/nativetype";
 import { hex } from "bdsx/util";
 
 // Network Hooking: Print all packets
@@ -17,11 +19,18 @@ const tooLoudFilter = new Set([
 ]);
 for (let i = 2; i <= 0xe1; i++) {
     if (tooLoudFilter.has(i)) continue;
+    
+    // netevent.raw uses serialized packets
     netevent.raw(i).on((ptr, size, networkIdentifier, packetId) => {
         console.assert(size !== 0, 'invalid packet size');
-        console.log(`RECV ${(MinecraftPacketIds[packetId] || '0x'+packetId.toString(16))}: ${hex(ptr.readBuffer(Math.min(16, size)))}`);
+        const packetName = (MinecraftPacketIds[packetId] || '0x'+packetId.toString(16));
+        console.log(`RECV ${packetName}: ${hex(ptr.readBuffer(Math.min(16, size)))}`);
     });
+    
+    // netevent.send uses C++ packets
     netevent.send<MinecraftPacketIds>(i).on((ptr, networkIdentifier, packetId) => {
-        console.log(`SEND ${(MinecraftPacketIds[packetId] || '0x'+packetId.toString(16))}: ${hex(ptr.getBuffer(16))}`);
+        const packetName = (MinecraftPacketIds[packetId] || '0x'+packetId.toString(16));
+        const COMMON_AREA_SIZE = Packet[NativeType.size]!; // skip common area of the C++ packet
+        console.log(`SEND ${packetName}: ${hex(ptr.getBuffer(16, COMMON_AREA_SIZE))}`);
     });
 }
