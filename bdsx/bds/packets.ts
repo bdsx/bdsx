@@ -238,8 +238,15 @@ export class SetSpawnPositionPacket extends Packet {
 }
 
 export class AnimatePacket extends Packet {
-    // unknown
+    action:uint8_t;
+    actorId:ActorRuntimeID;
+    unknown:float32_t;
 }
+AnimatePacket.abstract({
+    action:[uint8_t, 0x30],
+    actorId:[ActorRuntimeID, 0x28],
+    unknown:[float32_t, 0x34]
+});
 
 export class RespawnPacket extends Packet {
     // unknown
@@ -265,8 +272,15 @@ export class ContainerClosePacket extends Packet {
 }
 
 export class PlayerHotbarPacket extends Packet {
-    // unknown
+    selectedSlot:uint8_t;
+    windowId:uint8_t;
+    selectHotbarSlot:boolean
 }
+PlayerHotbarPacket.abstract({
+    selectedSlot:[uint8_t, 0x28],
+    windowId:[uint8_t, 0x2D],
+    selectHotbarSlot:[bool_t, 0x2C],
+});
 
 export class InventoryContentPacket extends Packet {
     // unknown
