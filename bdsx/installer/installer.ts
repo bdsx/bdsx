@@ -215,6 +215,7 @@ class InstallItem {
         confirm?:()=>Promise<void>|void,
         preinstall?:()=>Promise<void>|void,
         postinstall?:(writedFiles:string[])=>Promise<void>|void,
+        shouldInstallFile?: (filepath:string, destination:string)=>Promise<boolean>,
         skipExists?:boolean,
         oldFiles?:string[],
     }) {
@@ -269,6 +270,11 @@ class InstallItem {
                     const extractPath = path.join(dest, entry.path);
                     if (entry.type === 'Directory') {
                         await mkdirRecursive(extractPath);
+                        entry.autodrain();
+                        return;
+                    }
+
+                    if (this.opts.shouldInstallFile && !(await this.opts.shouldInstallFile(filepath, dest))) {
                         entry.autodrain();
                         return;
                     }
@@ -363,6 +369,9 @@ const bds = new InstallItem({
         if (installInfo.files) {
             await removeInstalled(bdsPath, installInfo.files!);
         }
+    },
+    async shouldInstallFile(filePath, destination) {
+        return !KEEPS.has(filePath) || !(await fs.exists(path.join(destination, filePath)));
     },
     async postinstall(writedFiles) {
         installInfo.files = writedFiles.filter(file=>!KEEPS.has(file));
