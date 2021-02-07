@@ -6,20 +6,20 @@
   "main": "./dist/bundle.dist.js",
   "author": "YOU!",
   "scripts": {
-    "postinstall": "node ./bdsx/installer ./bedrock_server",
-    "install_bds": "node ./bdsx/installer ./bedrock_server",
+    "postinstall": "ts-node ./bdsx/installer/installer ./bedrock_server",
+    "install_bds": "ts-node ./bdsx/installer/installer ./bedrock_server",
     "lint-bdsx": "eslint bdsx --ext ts",
     "tsc-no-emit": "tsc --noEmit",
     "watch": "if-tsb -w",
     "build": "if-tsb"
   },
   "dependencies": {
-    "@puresamari/ts-bundler": "^0.2.0",
     "colors": "^1.4.0",
     "follow-redirects": "^1.13.1",
     "krevent": "^2.2.0",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
+    "ts-node": "^9.1.1",
     "unzipper": "^0.10.11"
   },
   "devDependencies": {
@@ -30,7 +30,7 @@
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
     "eslint": "^7.19.0",
-    "if-tsb": "^0.1.22",
+    "if-tsb": "^0.2.7",
     "tslib": "^2.1.0",
     "typescript": "^4.1.3"
   }
