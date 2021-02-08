@@ -60,10 +60,14 @@ export class ResourcePackClientResponsePacket extends Packet {
 }
 
 export class TextPacket extends Packet {
+    type:number;
+    needsTranslation:boolean;
     name:string;
     message:string;
 }
 TextPacket.abstract({
+    type: [uint8_t, 0x28],
+    needsTranslation: [uint8_t, 0x29],
     name: [CxxString, 0x30],
     message: [CxxString, 0x50],
 });
