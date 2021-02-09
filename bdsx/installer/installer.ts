@@ -19,17 +19,18 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
     const yesValues = [ 'yes', 'y'];
     const noValues  = [ 'no', 'n' ];
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
     return new Promise<boolean>(resolve=>{
-        if(process.env.BDSX_YES === "false") return resolve(false);
-        if (!process.stdin.isTTY || process.env.BDSX_YES === "true") {
-            resolve(true);
-            return;
+        if (process.env.BDSX_YES === "false") {
+            return resolve(false);
         }
+        if (!process.stdin.isTTY || process.env.BDSX_YES === "true") {
+            return resolve(true);
+        }
+
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
 
         rl.question(question + ' ', async(answer)=>{
             rl.close();
