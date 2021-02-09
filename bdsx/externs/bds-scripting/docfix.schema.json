@@ -1,0 +1,33 @@
+{
+    "type":"object",
+    "patternProperties": {
+        "^.*$": {
+            "$ref": "#/definitions/type"
+        }
+    },
+    "additionalProperties": false,
+    "definitions": {
+        "type": {
+            "properties": {
+                "optional":{"type":"boolean"},
+                "type":{"type":"string"},
+                "desc":{"type":"string"},
+                "wrapToArray":{ "anyOf":[{"type":"string"}, {"type":"boolean"}]}
+            },
+            "patternProperties": {
+                "^field:": { "$ref": "#/definitions/type" },
+                "^method:": { "$ref": "#/definitions/method" }
+            },
+            "additionalProperties": false
+        },
+        "method": {
+            "properties": {
+                "return": { "$ref": "#/definitions/type" }
+            },
+            "patternProperties": {
+                "^param[0-9]+:": { "$ref": "#/definitions/type" }
+            },
+            "additionalProperties": false
+        }
+    }
+}

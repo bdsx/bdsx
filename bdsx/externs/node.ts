@@ -9,7 +9,6 @@ declare global
         interface ProcessVersions
         {
             chakracore?:string;
-            // bedrock_server:string; // it does not exists yet
         }
     }
 }

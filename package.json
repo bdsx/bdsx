@@ -17,6 +17,7 @@
     "colors": "^1.4.0",
     "follow-redirects": "^1.13.1",
     "krevent": "^2.2.0",
+    "node-html-parser": "^2.1.0",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
     "ts-node": "^9.1.1",
@@ -30,7 +31,7 @@
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
     "eslint": "^7.19.0",
-    "if-tsb": "^0.2.7",
+    "if-tsb": "^0.2.8",
     "tslib": "^2.1.0",
     "typescript": "^4.1.3"
   }
