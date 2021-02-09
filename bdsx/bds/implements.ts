@@ -11,7 +11,7 @@ import { dll } from "bdsx/dll";
 import { mce } from "bdsx/mce";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { bin64_t, CxxString, float32_t, uint16_t, uint32_t } from "../nativetype";
+import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Certificate, ConnectionRequest } from "./connreq";
@@ -135,7 +135,7 @@ Actor.all = function():IterableIterator<Actor> {
 Actor.abstract({
     vftable: VoidPointer,
     dimension: [Dimension, 0x350],
-    identifier: [CxxString, 0x450], // minecraft:player
+    identifier: [CxxString as NativeType<EntityId>, 0x450], // minecraft:player
     attributes: [BaseAttributeMap.ref(), 0x478],
     runtimeId: [ActorRuntimeID, 0x538],
 });

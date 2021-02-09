@@ -1,6 +1,6 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
 import { BlockPos } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
@@ -274,7 +274,7 @@ export class ContainerClosePacket extends Packet {
 export class PlayerHotbarPacket extends Packet {
     selectedSlot:uint8_t;
     windowId:uint8_t;
-    selectHotbarSlot:boolean
+    selectHotbarSlot:boolean;
 }
 PlayerHotbarPacket.abstract({
     selectedSlot:[uint8_t, 0x28],

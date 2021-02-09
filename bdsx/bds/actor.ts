@@ -27,7 +27,7 @@ export enum ActorType
 
 export class Actor extends NativeClass {
     vftable:VoidPointer;
-    identifier:string;
+    identifier:EntityId;
     attributes:BaseAttributeMap;
     runtimeId:ActorRuntimeID;
     dimension:Dimension;
