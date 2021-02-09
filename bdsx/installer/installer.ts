@@ -8,6 +8,11 @@ import ProgressBar = require('progress');
 import { https } from 'follow-redirects';
 import version = require('../version.json');
 
+const BDSX_YES = process.env.BDSX_YES;
+if (BDSX_YES === 'skip') {
+    process.exit(0);
+}
+
 const sep = path.sep;
 
 const BDS_VERSION = '1.16.201.02';
@@ -22,10 +27,10 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
     const noValues  = [ 'no', 'n' ];
 
     return new Promise<boolean>(resolve=>{
-        if (process.env.BDSX_YES === "false") {
+        if (BDSX_YES === "false") {
             return resolve(false);
         }
-        if (!process.stdin.isTTY || process.env.BDSX_YES === "true") {
+        if (!process.stdin.isTTY || BDSX_YES === "true") {
             return resolve(true);
         }
         if (agreeOption) {
