@@ -61,7 +61,7 @@ export class ResourcePackClientResponsePacket extends Packet {
 
 export class TextPacket extends Packet {
     type:number;
-    needsTranslation:boolean;
+    needsTranslation:number;
     name:string;
     message:string;
 }
