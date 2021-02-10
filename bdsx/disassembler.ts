@@ -1,5 +1,4 @@
-import { asm, JumpOperation, OperationSize, Operator, Register, X64Assembler } from "./assembler";
-import { bin } from "./bin";
+import { asm, JumpOperation, OperationSize, Operator, Register } from "./assembler";
 import { NativePointer, VoidPointer } from "./core";
 import { bin64_t } from "./nativetype";
 import { hex } from "./util";
@@ -61,8 +60,9 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
     let size:OperationSize = 0;
     for (;;) {
         const v = ptr.readUint8();
-        if ((v&0xf6) === 0x40){ // rex
+        if ((v&0xf2) === 0x40){ // rex
             rex = v;
+            size = (rex & 0x08) ? OperationSize.qword : OperationSize.dword;
             size = (rex & 0x08) ? OperationSize.qword : OperationSize.dword;
             continue;
         }

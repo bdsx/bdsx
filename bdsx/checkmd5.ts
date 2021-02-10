@@ -1,4 +1,4 @@
-import { analyzer } from "bdsx";
+import { analyzer } from "./analyzer";
 import { bedrock_server_exe } from "./core";
 import colors = require('colors');
 
