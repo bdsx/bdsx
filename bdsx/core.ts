@@ -1,87 +1,6 @@
 
 import { Bufferable, Encoding, RawTypeId, TypeFromEncoding } from "./common";
 
-export type ParamType = RawTypeId | { new(): VoidPointer; };
-export type ReturnType = RawTypeId | { new(): VoidPointer; };
-type TypeFrom_js2np<T extends ParamType|{new():VoidPointer|void}> = 
-    T extends RawTypeId ? TypeMap_js2np[T] : 
-    T extends { new(...args: any[]): infer V } ? (V|null) : 
-    never;
-type TypeFrom_np2js<T extends ParamType> = 
-    T extends RawTypeId ? TypeMap_np2js[T] : 
-    T extends { new(): infer V } ? V : 
-    never;
-export type TypesFromParamIds_js2np<T extends ParamType[]> = {
-    [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_js2np<T[key]> : T[key];
-};
-export type TypesFromParamIds_np2js<T extends ParamType[]> = {
-    [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_np2js<T[key]> : T[key];
-};
-
-
-export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
-{
-    /**
-     * *Pointer, 'this' parameter passes as first parameter.
-     */
-    this?:THIS;
-    /**
-     * it allocates at the first parameter with the returning class and returns it.
-     * if this is defined, it allocates at the second parameter.
-     */
-    structureReturn?:boolean;
-    nullableReturn?:boolean;
-    nullableThis?:boolean;
-    nullableParams?:boolean;
-    nativeDebugBreak?:boolean;
-    nativeDebugBreakOnMake?:boolean;
-}
-type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> = 
-    OPTS extends MakeFuncOptions<infer THIS> ? 
-    THIS extends { new(): VoidPointer; } ? InstanceType<THIS> : void : void;
-
-
-export type FunctionFromTypes_np<
-    OPTS extends MakeFuncOptions<any>|null,
-    PARAMS extends ParamType[],
-    RETURN extends ReturnType> =
-    (this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_np2js<PARAMS>) => TypeFrom_js2np<RETURN>;
-    
-export type FunctionFromTypes_js<
-    PTR extends VoidPointer|[number, number?],
-    OPTS extends MakeFuncOptions<any>|null,
-    PARAMS extends ParamType[],
-    RETURN extends ReturnType> =
-    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
-
-interface TypeMap_np2js {
-    [RawTypeId.Int32]: number;
-    [RawTypeId.FloatAsInt64]: number;
-    [RawTypeId.Float]: number;
-    [RawTypeId.StringAnsi]: string;
-    [RawTypeId.StringUtf8]: string;
-    [RawTypeId.StringUtf16]: string;
-    [RawTypeId.Buffer]: void;
-    [RawTypeId.Bin64]: string;
-    [RawTypeId.Boolean]: boolean;
-    [RawTypeId.JsValueRef]: any;
-    [RawTypeId.Void]: void;
-}
-
-interface TypeMap_js2np {
-    [RawTypeId.Int32]: number;
-    [RawTypeId.FloatAsInt64]: number;
-    [RawTypeId.Float]: number;
-    [RawTypeId.StringAnsi]: string|null;
-    [RawTypeId.StringUtf8]: string|null;
-    [RawTypeId.StringUtf16]: string|null;
-    [RawTypeId.Buffer]: VoidPointer|Bufferable|null;
-    [RawTypeId.Bin64]: string;
-    [RawTypeId.Boolean]: boolean;
-    [RawTypeId.JsValueRef]: any;
-    [RawTypeId.Void]: void;
-}
-
 export interface VoidPointerConstructor
 {
     new(pointer?: VoidPointer|null):VoidPointer;
@@ -503,7 +422,7 @@ export declare class NativePointer extends StaticPointer {
 }
 
 export declare class RuntimeError extends Error {
-    nativeStack:string;
+    nativeStack?:string;
 }
 
 export declare class MultiThreadQueue extends VoidPointer {
@@ -589,8 +508,15 @@ export declare namespace runtimeError
     export function codeToString(code:number):string;
     export function setHandler(handler:(err:RuntimeError)=>void):void;
 
+    /**
+     * [[noreturn]] fire(JsValueRef error)
+     */
+    export const fire:VoidPointer;
+
     export const beginHandler: VoidPointer;
     export const endHandler: VoidPointer;
+
+    // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
 }
 
@@ -687,56 +613,24 @@ export declare namespace cgate
      */
     export const tester: VoidPointer;
 
+    export const stack_alloc:VoidPointer;
+    export const stack_free_all:VoidPointer;
+    export const stack_ptr:VoidPointer;
+
     /**
      * it will allocate a executable memory by VirtualAlloc
      */
-    export function allocExecutableMemory(size:number):StaticPointer;
+    export function allocExecutableMemory(size:number, alignment?:number):StaticPointer;
 
     export function nodeLoopOnce():void;
-}
 
-export declare namespace makefunc
-{
-    /**
-     * make the native function as a JS function.
-     * 
-     * wrapper codes are not deleted permanently.
-     * do not use it dynamically.
-     * 
-     * @param returnType RawTypeId or *Pointer
-     * @param params RawTypeId or *Pointer
-     */
-    export function js<PTR extends VoidPointer|[number, number?], OPTS extends MakeFuncOptions<any>|null, RETURN extends ReturnType, PARAMS extends ParamType[]>(
-        functionPointer: PTR,
-        returnType:RETURN,
-        opts?: OPTS, 
-        ...params: PARAMS):
-        FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;
+    export function JsCreateFunction(funcptr:VoidPointer, state:VoidPointer|null):(...args:any[])=>any;
 
-    /**
-     * make the JS function as a native function.
-     * 
-     * wrapper codes are not deleted permanently.
-     * do not use it dynamically.
-     */
-    export function np<RETURN extends ReturnType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
-        jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
-        returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer;
-        
-    /** @deprecated */
-    export interface NativeFunction extends Function
-    {
-        (...args: any[]): NativePointer;
-        address:NativePointer;
-    }
+    export function JsAddRef(value:unknown):number;
+    
+    export function JsRelease(value:unknown):number;
 
-    /** @deprecated */
-    export function js_old(functionPointer: VoidPointer): NativeFunction;
-
-    export function asJsValueRef(value:any):VoidPointer;
-
-    export const js2np:unique symbol;
-    export const np2js:unique symbol;
+    export function asJsValueRef(value:unknown):VoidPointer;
 }
 
 export declare namespace ipfilter

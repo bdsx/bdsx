@@ -5,7 +5,9 @@
     "clearConsole": true,
     "checkCircularDependency": true,
     "suppressDynamicImportErrors": true,
-    "faster": true
+    "faster": true,
+    "preimport": ["source-map", "colors", "krevent"],
+    "concurrency": 4
   },
   "compilerOptions": {
     "baseUrl": ".",
@@ -19,6 +21,7 @@
     "noImplicitThis": true,
     "resolveJsonModule": true,
     "sourceMap": true,
+    "importHelpers": true,
     "paths": {
       "bdsx/*": ["./bdsx/*"]
     }

@@ -1,5 +1,3 @@
-import { install } from "./source-map-support";
-install();
 
 export interface CANCEL{ 
     __CANCEL_OBJECT__?:void;
@@ -66,7 +64,8 @@ export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 export enum RawTypeId {
 	Int32,
 	FloatAsInt64,
-	Float,
+	Float32,
+	Float64,
 	StringAnsi,
 	StringUtf8,
 	StringUtf16,
@@ -75,6 +74,8 @@ export enum RawTypeId {
 	Boolean,
 	JsValueRef,
 	Void,
+	/** @deprecated use Float64 */
+	Float = 3,
 }
 
 export function emptyFunc():void{

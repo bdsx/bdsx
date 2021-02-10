@@ -32,7 +32,7 @@ export namespace legacy
 
         if (onRuntimeError !== null) {
             try {
-                defmsg = onRuntimeError(err.stack!, err.nativeStack, lastSender) !== false;
+                defmsg = onRuntimeError(err.stack!, err.nativeStack || '', lastSender) !== false;
             } catch (err) {
                 const errstr = err.stack!;
                 console.log("[onRuntimeError callback has error]");

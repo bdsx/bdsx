@@ -121,8 +121,8 @@ Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticP
 Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
 Actor.prototype.getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
 
-Actor.fromUniqueId = function(lowbits, highbits) {
-    return serverInstance.minecraft.something.level.fetchEntity(bin.make64(lowbits, highbits), true);  
+Actor.fromUniqueIdBin = function(bin) {
+    return serverInstance.minecraft.something.level.fetchEntity(bin, true);  
 };
 
 const attribNames = [

@@ -1,4 +1,4 @@
-import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, NativePointer, ParamType, pdb, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
 import { MemoryUnlocker } from "./unlocker";
@@ -6,6 +6,7 @@ import { dll } from "./dll";
 import { disasm } from "./disassembler";
 import { FloatRegister, Register, X64Assembler } from "./assembler";
 import { hacktool } from "./hacktool";
+import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 
 export class ProcHacker<T extends Record<string, NativePointer>> {
     constructor(public readonly map:T) {
@@ -97,7 +98,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      * @param to call address
      */
-    hooking<OPTS extends MakeFuncOptions<any>|null, RETURN extends ReturnType, PARAMS extends ParamType[]>(
+    hooking<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         key:keyof T, 
         returnType:RETURN,
         opts?: OPTS, 
@@ -187,7 +188,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param returnType RawTypeId or *Pointer
      * @param params RawTypeId or *Pointer
      */
-    js<OPTS extends MakeFuncOptions<any>|null, RETURN extends ReturnType, PARAMS extends ParamType[]>(
+    js<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         key: keyof T,
         returnType:RETURN,
         opts?: OPTS, 

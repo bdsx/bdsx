@@ -18,6 +18,7 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
+import asmcode = require("./asm/asmcode");
 
 declare module 'colors'
 {
@@ -102,40 +103,9 @@ function patchForStdio():void {
         console.log(color(line));
     }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
 
-    const logHookAsyncCb = asm()
-    .mov_r_rp(Register.r8, Register.rcx, uv_async.sizeOfTask+8)
-    .lea_r_rp(Register.rdx, Register.rcx, uv_async.sizeOfTask+0x10)
-    .mov_r_rp(Register.rcx, Register.rcx, uv_async.sizeOfTask+0)
-    .jmp64(bedrockLogNp, Register.rax)
-    .alloc();
-
     console.log('node thread id: '+capi.nodeThreadId);
-    const logHook = asm()
-    .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-    .cmp_r_c(Register.rax, capi.nodeThreadId)
-    .jne_label('async_post')
-    .lea_r_rp(Register.rdx, Register.rsp, 0x58)
-    .mov_r_r(Register.rcx, Register.rdi)
-    .mov_r_r(Register.r8, Register.rbx)
-    .jmp64(bedrockLogNp, Register.rax)
-    .label('async_post')
-    .sub_r_c(Register.rsp, 0x28)
-    .lea_r_rp(Register.rdx, Register.rbx, 0x11)
-    .mov_r_c(Register.rcx, logHookAsyncCb)
-    .call64(uv_async.alloc, Register.rax)
-    .mov_rp_r(Register.rax, uv_async.sizeOfTask+0, Register.rdi)
-    .lea_r_rp(Register.r8, Register.rbx, 1)
-    .mov_rp_r(Register.rax, uv_async.sizeOfTask+8, Register.r8)
-    .lea_r_rp(Register.rcx, Register.rax, uv_async.sizeOfTask+0x10)
-    .lea_r_rp(Register.rdx, Register.rsp, 0x80)
-    .mov_rp_r(Register.rsp, 0x20, Register.rax)
-    .call64(dll.vcruntime140.memcpy.pointer, Register.rax)
-    .mov_r_rp(Register.rcx, Register.rsp, 0x20)
-    .add_r_c(Register.rsp, 0x28)
-    .jmp64(uv_async.post, Register.rax)
-    .alloc();
     
-    procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, logHook, Register.rdx, true, [
+    procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, asmcode.logHook, Register.rdx, true, [
         0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |
         0xFF, 0x15, 0x33, 0x1B, 0xE4, 0x00,		//	| call qword ptr ds:[<&GetStdHandle>]                                 |
         0x83, 0xFF, 0x01,						//	| cmp edi,1                                                           |

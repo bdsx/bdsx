@@ -25,13 +25,6 @@ interface SourceMapConsumerMap {
     map: SourceMapConsumer | null;
 }
 
-/**
- * Requires a module which is protected against bundler minification.
- */
-function dynamicRequire(mod: NodeModule, request: string): any {
-    return mod.require(request);
-}
-
 // Only install once if called multiple times
 let uncaughtShimInstalled = false;
 
@@ -373,12 +366,12 @@ function printErrorAndExit(error: Error):void {
     process.exit(1);
 }
 
-function shimEmitUncaughtException(...args:any[]):void {
+function shimEmitUncaughtException():void {
     const origEmit = process.emit;
 
     process.emit = function (type: string) {
         if (type === 'uncaughtException') {
-            const err = args[1];
+            const err = arguments[1];
             const hasStack = (err && err.stack);
             const hasListeners = (this.listeners(type).length > 0);
 
@@ -387,11 +380,11 @@ function shimEmitUncaughtException(...args:any[]):void {
                 return printErrorAndExit(err);
             }
         } else if (type === 'unhandledRejection') {
-            const err = args[1];
+            const err = arguments[1];
             err.stack = remapStack(err.stack);
         }
 
-        return origEmit.apply(this, args);
+        return origEmit.apply(this, arguments);
     };
 }
 
@@ -399,7 +392,7 @@ export function install():void {
     if (uncaughtShimInstalled) return;
     let installHandler = true;
     try {
-        const worker_threads = dynamicRequire(module, 'worker_threads');
+        const worker_threads = module.require('worker_threads');
         if (worker_threads.isMainThread === false) {
             installHandler = false;
         }

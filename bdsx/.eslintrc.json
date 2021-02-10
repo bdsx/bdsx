@@ -31,6 +31,7 @@
         "no-empty": ["warn", {"allowEmptyCatch": true}],
         "indent": ["warn", 4, {"ignoreComments": true, "MemberExpression": 0 }],
         "brace-style": ["warn", "1tbs", {"allowSingleLine": true}],
-        "no-prototype-builtins": "off"
+        "no-prototype-builtins": "off",
+        "prefer-rest-params": "off"
     }
 }

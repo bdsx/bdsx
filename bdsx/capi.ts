@@ -1,6 +1,6 @@
-import { asm, Register } from "./assembler";
+import { asm } from "./assembler";
 import { RawTypeId } from "./common";
-import { AllocatedPointer, makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
+import { cgate, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 
 export namespace capi
@@ -8,8 +8,10 @@ export namespace capi
     export const nodeThreadId = dll.kernel32.GetCurrentThreadId();
     export const debugBreak = asm().debugBreak().ret().make(RawTypeId.Void);
 
-    export const getJsValueRef:(value:any)=>VoidPointer = makefunc.js(
-        asm().mov_r_r(Register.rax, Register.rcx).ret().alloc(), VoidPointer, null, RawTypeId.JsValueRef);
+    /**
+     * @deprecated use cgate.asJsValueRef
+     */
+    export const getJsValueRef:(value:any)=>VoidPointer = cgate.asJsValueRef;
 
     export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null, stackSize:number = 0):[ThreadHandle, number] {
         const out = new Uint32Array(1);
@@ -40,7 +42,7 @@ export namespace capi
      * Keep the object from GC
      */
     export function permanent<T>(v:T):T {
-        dll.ChakraCore.JsAddRef(v, null);
+        cgate.JsAddRef(v);
         return v;
     }
 }

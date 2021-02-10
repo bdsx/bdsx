@@ -83,14 +83,20 @@ export class Actor extends NativeClass {
         if (!this.isPlayer()) throw Error(`this is not player`);
         return NetworkIdentifier[NativeType.getter](this, Actor.OFFSET_OF_NI);
     }
-        
+
     getUniqueIdLow():number {
         return this.getUniqueIdPointer().getInt32(0);
     }
     getUniqueIdHigh():number {
         return this.getUniqueIdPointer().getInt32(4);
     }
+    getUniqueIdBin():bin64_t {
+        return this.getUniqueIdPointer().getBin64();
+    }
 
+    /**
+     * it returns address of the unique id field
+     */
     getUniqueIdPointer():StaticPointer {
         abstract();
     }
@@ -158,14 +164,12 @@ export class Actor extends NativeClass {
 //     Actor* actor = (Actor*)ptr->getAddressRaw();
 //     return fromRaw(actor);
 // }
-// JsValue NativeActor::fromUniqueIdBin(Text16 bin) throws(JsException)
-// {
-//     ActorUniqueID id = bin.readas<ActorUniqueID>();
-//     return fromRaw(g_server->minecraft()->something->level->fetchEntity(id));
-// }
+    static fromUniqueIdBin(bin:bin64_t):Actor|null {
+        abstract();
+    }
 
     static fromUniqueId(lowbits:number, highbits:number):Actor|null {
-        abstract();
+        return Actor.fromUniqueIdBin(bin.make64(lowbits, highbits));
     }
     static fromEntity(entity:IEntity):Actor|null {
         const u = entity.__unique_id__;

@@ -1,7 +1,7 @@
-'use strict';
 
 import { abstract, RawTypeId } from './common';
-import { cgate, makefunc, StaticPointer, NativePointer, ReturnType, ParamType, VoidPointer, FunctionFromTypes_js, MakeFuncOptions } from './core';
+import { cgate, StaticPointer, NativePointer, VoidPointer } from './core';
+import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType } from './makefunc';
 
 /**
  * Load external DLL
@@ -14,16 +14,9 @@ export class NativeModule extends VoidPointer {
      * @deprecated use NativeModule.load(moduleName)
      */
     constructor(moduleNameOrPtr?:string|VoidPointer) {
-        super(moduleNameOrPtr !== undefined ? moduleNameOrPtr instanceof VoidPointer ? moduleNameOrPtr : getModuleHandle(moduleNameOrPtr) : undefined);
+        super(moduleNameOrPtr !== undefined ? moduleNameOrPtr instanceof VoidPointer ? moduleNameOrPtr : dll.kernel32.LoadLibraryW(moduleNameOrPtr) : undefined);
     }
 
-    /**
-     * @deprecated use module.getFunction
-     */
-    get(name:string):makefunc.NativeFunction|null {
-        return makefunc.js_old(this.getProcAddress(name));
-    }
-    
     getProcAddress(name: string): NativePointer {
         abstract();
     }
@@ -43,7 +36,7 @@ export class NativeModule extends VoidPointer {
      * @param structureReturn if set it to true, it allocates first parameter with the returning class and returns it.
      * @param params RawTypeId or *Pointer
      */
-    getFunction<RETURN extends ReturnType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
+    getFunction<RETURN extends ParamType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
         name: string, returnType: RETURN, opts?: OPTS|null, ...params: PARAMS):
         FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN>{
         const addr = this.getProcAddress(name);
@@ -53,14 +46,6 @@ export class NativeModule extends VoidPointer {
 
     toString():string {
         return `[${this.name}: 0x${super.toString()}]`;
-    }
-
-
-    /**
-     * @deprecated use makefunc.js
-     */
-    static pointerToFunction(ptr:StaticPointer):makefunc.NativeFunction {
-        return makefunc.js_old(ptr);
     }
 
     /**
@@ -162,6 +147,8 @@ export namespace dll {
         export const SetThreadContext = module.getFunction('SetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
         export const SuspendThread = module.getFunction('SuspendThread', RawTypeId.Int32, null, VoidPointer);
         export const ResumeThread = module.getFunction('ResumeThread', RawTypeId.Int32, null, VoidPointer);
+        export const TlsAlloc = module.getFunction('TlsAlloc', RawTypeId.Int32);
+        export const TlsFree = module.getFunction('TlsFree', RawTypeId.Boolean, null, RawTypeId.Int32);
     }
     export namespace ucrtbase {
         export const module = NativeModule.get('ucrtbase.dll');
@@ -183,10 +170,5 @@ export namespace dll {
         export const module = NativeModule.load('msvcp140.dll');
         export const _Cnd_do_broadcast_at_thread_exit = module.getProcAddress("_Cnd_do_broadcast_at_thread_exit");
         export const std_cin = module.getProcAddress("?cin@std@@3V?$basic_istream@DU?$char_traits@D@std@@@1@A");
-    }
-    export namespace ChakraCore {
-        export const module = NativeModule.get('ChakraCore.dll');
-        export const JsAddRef = module.getFunction("JsAddRef", RawTypeId.Int32, null, RawTypeId.JsValueRef, RawTypeId.Buffer);
-        export const JsRelease = module.getFunction("JsRelease", RawTypeId.Int32, null, RawTypeId.JsValueRef, RawTypeId.Buffer);
     }
 }

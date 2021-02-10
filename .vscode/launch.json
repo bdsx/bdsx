@@ -25,7 +25,8 @@
             ],
             "args": ["./bedrock_server", "-y"],
             "program": "${workspaceFolder}/bdsx/installer/index",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
         }
     ]
 }

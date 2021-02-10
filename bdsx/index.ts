@@ -18,6 +18,7 @@ import { nethook } from './nethook';
 import { serverControl } from './servercontrol';
 import { SharedPtr } from './sharedpointer';
 import { hex } from './util';
+import makefuncModule = require('./makefunc');
 
 import core = require("./core");
 import netevent = require('./netevent');
@@ -28,15 +29,14 @@ import native = require('./native');
 
 import './bds/implements';
 
-import VoidPointer = core.VoidPointer;
-import StaticPointer = core.StaticPointer;
-import NativePointer = core.NativePointer;
-import ipfilter = core.ipfilter;
-import jshook = core.jshook;
-import createPacket = nethook.createPacket;
-import sendPacket = nethook.sendPacket;
-import PacketId = MinecraftPacketIds;
-
+export import VoidPointer = core.VoidPointer;
+export import StaticPointer = core.StaticPointer;
+export import NativePointer = core.NativePointer;
+export import ipfilter = core.ipfilter;
+export import jshook = core.jshook;
+export import createPacket = nethook.createPacket;
+export import sendPacket = nethook.sendPacket;
+export import PacketId = MinecraftPacketIds;
 
 declare module "./core"
 {
@@ -52,6 +52,54 @@ declare module "./core"
          */
         analyze():void;
     }
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    let makefunc:typeof makefuncModule.makefunc;
+
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    type ParamType = makefuncModule.ParamType;
+
+    /**
+     * @deprecated use ParamType of 'bdsx/makefunc'
+     */
+    type ReturnType = makefuncModule.ParamType;
+
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    type TypesFromParamIds_js2np<T extends ParamType[]> = makefuncModule.TypesFromParamIds_js2np<T>;
+
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    type TypesFromParamIds_np2js<T extends ParamType[]> = makefuncModule.TypesFromParamIds_np2js<T>;
+
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    type MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> = makefuncModule.MakeFuncOptions<THIS>;
+
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    type FunctionFromTypes_np<
+        OPTS extends MakeFuncOptions<any>|null,
+        PARAMS extends ParamType[],
+        RETURN extends ReturnType> = 
+        makefuncModule.FunctionFromTypes_np<OPTS, PARAMS, RETURN>;
+        
+    /**
+     * @deprecated use 'bdsx/makefunc'
+     */
+    type FunctionFromTypes_js<
+        PTR extends VoidPointer|[number, number?],
+        OPTS extends MakeFuncOptions<any>|null,
+        PARAMS extends ParamType[],
+        RETURN extends ReturnType> =
+        makefuncModule.FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;
 }
 NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16) {
     return hex(this.readBuffer(size), nextLinePer);
@@ -59,7 +107,7 @@ NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16)
 NativePointer.prototype.analyze = function() {
     return analyzer.analyze(this);
 };
-
+core.makefunc = makefuncModule.makefunc;
 /**
  * @deprecated use bedrockServer.close.on
  */
@@ -79,14 +127,9 @@ export const setOnErrorListener = native.setOnErrorListener;
 export const loadMap = analyzer.loadMap;
 
 export {
-    PacketId,
     NetworkIdentifier,
     Actor,
     ServerPlayer,
-    VoidPointer,
-    StaticPointer,
-    NativePointer,
-    jshook,
     MinecraftPacketIds,
     nethook,
     serverControl,
@@ -96,11 +139,8 @@ export {
     native,
     serverInstance,
     CANCEL,
-    createPacket,
-    sendPacket,
     nativetype,
     NativeModule,
-    ipfilter,
     bin,
     DimensionId,
     AttributeId,

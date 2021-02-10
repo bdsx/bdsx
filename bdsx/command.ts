@@ -7,7 +7,7 @@ import { CommandRequestPacket } from './bds/packets';
 import { proc, procHacker } from './bds/proc';
 import { CommandContext, MCRESULT, MinecraftCommands } from './bds/server';
 import { CANCEL, RawTypeId } from './common';
-import { makefunc } from './core';
+import { makefunc } from './makefunc';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 import netevent = require('./netevent');

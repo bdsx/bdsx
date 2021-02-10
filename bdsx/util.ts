@@ -1,4 +1,3 @@
-'use strict';
 
 export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
     const size = src.length;
