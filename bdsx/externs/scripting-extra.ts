@@ -1,4 +1,3 @@
-import "./common";
 
 /// Referenced from https://github.com/minecraft-addon-tools/minecraft-scripting-types
 
