@@ -396,6 +396,79 @@ function shimEmitUncaughtException():void {
     };
 }
 
+function anyToString(v:unknown):string {
+    const circular = new WeakSet<Record<string, any>>();
+
+    let out = '';
+    function writeArray(v:unknown[]):void {
+        if (v.length === 0) {
+            out += '[]';
+            return;
+        }
+        out += '[ ';
+        out += v[0];
+        for (let i=1;i<v.length;i++) {
+            out += ', ';
+            write(v[i]);
+        }
+        out += '] ';
+    }
+    function writeObject(v:Record<string, any>|null):void {
+        if (v === null) {
+            out += 'null';
+            return;
+        }
+        if (circular.has(v)) {
+            out += '[Circular]';
+            return;
+        }
+        circular.add(v);
+        if (v instanceof Array) {
+            writeArray(v);
+        } else {
+            const entires = Object.entries(v);
+            if (entires.length === 0) {
+                out += '{}';
+                return;
+            }
+            out += '{ ';
+            {
+                const [name, value] = entires[0];
+                out += name;
+                out += ': ';
+                write(value);
+            }
+            for (let i=1;i<entires.length;i++) {
+                const [name, value] = entires[i];
+                out += ', ';
+                out += name;
+                out += ': ';
+                write(value);
+            }
+            out += ' }';
+        }
+    }
+    function write(v:unknown):void {
+        switch (typeof v) {
+        case 'object':
+            writeObject(v);
+            break;
+        case 'string':
+            out += JSON.stringify(v);
+            break;
+        default:
+            out += v;
+            break;
+        }
+    }
+    if (typeof v === 'object') {
+        writeObject(v);
+    } else {
+        return v+'';
+    }
+    return out;
+}
+
 export function install():void {
     if (uncaughtShimInstalled) return;
     let installHandler = true;
@@ -411,7 +484,8 @@ export function install():void {
         shimEmitUncaughtException();
     }
 
-    console.trace = function(...messages:string[]) {
-        console.log('Trace: '+remapStack(removeLine(Error(messages.join(' ')).stack || '', 1, 2)));
+    console.trace = function(...messages:any[]) {
+        const err = remapStack(removeLine(Error(messages.map(anyToString).join(' ')).stack || '', 1, 2))!;
+        console.error('Trace'+err.substr(5));
     };
 }
