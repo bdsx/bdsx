@@ -472,7 +472,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsBoolToBoolean);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, RawTypeId.Void, true);
@@ -484,7 +484,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsIntToNumber);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, RawTypeId.Void, true);
@@ -496,7 +496,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, RawTypeId.Void, true);
@@ -508,7 +508,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, RawTypeId.Void, true);
@@ -520,7 +520,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, RawTypeId.Void, true);
@@ -556,7 +556,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.r8, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsPointerToString);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, RawTypeId.Void, true);
@@ -593,7 +593,7 @@ class Maker extends X64Assembler {
             if (info.numberOnUsing === PARAMNUM_THIS) {
                 if (!this.pi.nullableThis) {
                     this.test_r_r(Register.rax, Register.rax);
-                    this.jnz(9);
+                    this.jnz_c(9);
                     this.mov_r_c(Register.rcx, info.numberOnUsing);
                     this.call_rp(Register.rdi, fn.getout_invalid_parameter);
                 }
@@ -609,7 +609,7 @@ class Maker extends X64Assembler {
             if (info.numberOnUsing === PARAMNUM_THIS) {
                 if (!this.pi.nullableThis) {
                     this.test_r_r(Register.rax, Register.rax);
-                    this.jnz(9);
+                    this.jnz_c(9);
                     this.mov_r_c(Register.rcx, info.numberOnUsing);
                     this.call_rp(Register.rdi, fn.getout_invalid_parameter);
                 }
@@ -623,7 +623,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsBooleanToBool);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, info.typeId, false);
@@ -635,7 +635,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsNumberToInt);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, info.typeId, false);
@@ -647,7 +647,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, info.typeId, false);
@@ -659,7 +659,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, info.typeId, false);
@@ -671,7 +671,7 @@ class Maker extends X64Assembler {
             this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
             this.call_rp(Register.rdi, fn.JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
-            this.jz(9);
+            this.jz_c(9);
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, fn.getout_invalid_parameter);
             this._mov_t_t(target, temp, info.typeId, false);
@@ -879,7 +879,7 @@ export namespace makefunc {
         func.call_rp(Register.rdi, fn.JsCallFunction);
     
         func.test_r_r(Register.rax, Register.rax);
-        func.jz(6);
+        func.jz_c(6);
         func.mov_r_r(Register.rcx, Register.rax);
         func.call_rp(Register.rdi, fn.getout);
     
@@ -938,7 +938,7 @@ export namespace makefunc {
         }
         if (pimaker.countOnCalling !== 0) {
             func.cmp_r_c(Register.r9, pimaker.countOnCalling + 1);
-            func.jz(14);
+            func.jz_c(14);
             func.mov_r_c(Register.rdx, pimaker.countOnCalling); // 7 bytes
             func.lea_r_rp(Register.rcx, Register.r9, -1); // 4 bytes
             func.jmp_rp(Register.rdi, fn.getout_invalid_parameter_count); // 3 bytes
@@ -1077,12 +1077,12 @@ declare module "./assembler"
     }
     namespace asm
     {
+        function const_str(str:string, encoding?:BufferEncoding):Buffer;
         interface CodeBuffer
         {
             alloc():StaticPointer;
             allocs():Record<string, StaticPointer>;
         }
-        function const_str(str:string, encoding?:BufferEncoding):Buffer;
     }
 }
 declare module "./core"

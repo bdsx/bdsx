@@ -1,14 +1,12 @@
-import { NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
 import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
-import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, NativePointer, ParamType, pdb, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
 import { disasm } from "./disassembler";
 import { dll } from "./dll";
 import { hacktool } from "./hacktool";
+import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
-import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
-
 
 const FREE_REGS:Register[] = [
     Register.rax,

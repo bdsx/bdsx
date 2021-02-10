@@ -1,7 +1,9 @@
+import { bin } from "bdsx/bin";
 import { abstract } from "bdsx/common";
-import { makefunc, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { makefunc } from "bdsx/makefunc";
 import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t, NativeType } from "bdsx/nativetype";
+import { bin64_t } from "bdsx/nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";

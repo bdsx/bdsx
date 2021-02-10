@@ -1,10 +1,10 @@
 import { TextDecoder } from "util";
 import { bin } from "./bin";
+import { bin64_t } from "./nativetype";
 import { polynominal } from "./polynominal";
 import colors = require('colors');
 import fs = require('fs');
 import path = require('path');
-import { bin64_t } from "./nativetype";
 
 export enum Register
 {
@@ -489,29 +489,6 @@ export class X64Assembler {
         return this;
     }
 
-    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:number):this {
-        if (chr !== (chr|0)) throw Error('needs 32bit integer');
-
-        this._regex(dest, 0, null, size);
-
-        if (movoper === MovOper.Register) {
-            this.write(0x01 | (oper << 3));
-            this._target(((src&7) << 3), dest, null, offset, movoper);
-        } else {
-            const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
-            if (!is8bits && dest === Register.rax) {
-                this.write(0x05 | (oper << 3));
-                this.writeInt32(chr);
-            } else {
-                this.write(0x81 | (+is8bits << 1));
-                this._target((oper << 3), dest, null, offset, movoper);
-                if (is8bits) this.write(chr);
-                else this.writeInt32(chr);
-            }
-        }
-        return this;
-    }
-
     private _jmp(isCall:boolean, r:Register, offset:number, oper:MovOper):this {
         if (r >= Register.r8) this.write(0x41);
         this.write(0xff);
@@ -679,12 +656,12 @@ export class X64Assembler {
     }
 
     private _movaps(r1:FloatRegister|Register, r2:FloatRegister, oper:MovOper, offset:number):this {
-        this._regex(r1, r2, OperationSize.dword);
+        this._regex(r1, r2, null, OperationSize.dword);
         this.write(0x0f);
         let v = 0x28;
         if (oper === MovOper.Write) v |= 1;
         this.write(v);
-        this._target((r1&7) | ((r2&7) << 3), r1, offset, oper);
+        this._target(((r2&7) << 3), r1, null, offset, oper);
         return this;
     }
 
@@ -768,7 +745,7 @@ export class X64Assembler {
         this._regex(r1, r2, null, size);
         if (size === OperationSize.byte) this.write(0x84);
         else this.write(0x85);
-        this._target(((r2&7)<<3) | (r1&7), r1, offset, oper);
+        this._target(((r2&7)<<3), r1, null, offset, oper);
         return this;
     }
 
@@ -781,10 +758,10 @@ export class X64Assembler {
     }
 
     private _xchg(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
-        this._regex(r1, r2, size);
+        this._regex(r1, r2, null, size);
         if (size === OperationSize.byte) this.write(0x86);
         else this.write(0x87);
-        this._target(((r2&7)<<3) | (r1&7), r1, offset, oper);
+        this._target(((r2&7)<<3), r1, null, offset, oper);
         return this;
     }
 
@@ -796,15 +773,16 @@ export class X64Assembler {
         return this._xchg(r1, r2, offset, size, MovOper.Read);
     }
 
+
     private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:OperationSize):this {
         if (chr !== (chr|0)) throw Error('need 32bits integer');
 
-        this._regex(dest, 0, size);
+        this._regex(dest, 0, null, size);
 
         let lowflag = size === OperationSize.byte ? 0 : 1;
         if (movoper === MovOper.Register) {
             this.write(lowflag | (oper << 3));
-            this._target((dest&7) | ((src&7) << 3), dest, offset, movoper);
+            this._target(((src&7) << 3), dest, null, offset, movoper);
         } else {
             const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
             if (!is8bits && size === OperationSize.byte) throw Error('need 8bits integer');
@@ -816,7 +794,7 @@ export class X64Assembler {
                     if (lowflag !== 0) lowflag = 3;
                 }
                 this.write(0x80 | lowflag);
-                this._target((oper << 3) | (dest&7), dest, offset, movoper);
+                this._target((oper << 3), dest, null, offset, movoper);
                 if (is8bits) this.write(chr);
                 else this.writeInt32(chr);
             }
@@ -1561,10 +1539,6 @@ function checkModified(ori:string, out:string):boolean{
 export namespace asm
 {
     export const code:Code = X64Assembler.prototype;
-    export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer {
-        const buf = Buffer.from(str+'\0', encoding);
-        dll.ChakraCore.JsAddRef(buf, null);
-        return buf;
     export import SyntaxError = polynominal.SyntaxError;
     export class CompileError extends Error {
         errors:SyntaxError[] = [];
@@ -1686,11 +1660,10 @@ export namespace asm
             return code;
         }
 
-        buffer():Uint8Array {
+        buffer():asm.CodeBuffer {
             return this.asm().buffer();
         }
     }
-}
 
     export class CodeBuffer extends Uint8Array {
         constructor(
