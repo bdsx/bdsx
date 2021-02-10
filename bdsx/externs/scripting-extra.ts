@@ -228,3 +228,5 @@ declare global
 
     const server: IServer;
 }
+
+export {};
