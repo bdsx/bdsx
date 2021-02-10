@@ -51,7 +51,7 @@ runtimeError.setHandler(err=>{
     remapError(err);
 
     const lastSender = ipfilter.getLastSender();
-    console.error('[ Runtime Error ]');
+    console.error('[ Native Crash ]');
     console.error(`Last Sender IP: ${lastSender}`);
     console.error('[ Native Stack ]');
     console.error(err.nativeStack);
