@@ -13,8 +13,8 @@ if (!capi.isRunningOnWine()) // Skip for Linux, pdb is not working on Wine.
 {
     // the API hooking is possible on Wine with the generated cache.
 
-    pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names
-    const procHacker = ProcHacker.load('../pdbcache_by_example.ini', ['GameMode::destroyBlock']);
+    pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names. without this, ProcHacker.load will use mangled names
+    const hacker = ProcHacker.load('../pdbcache_by_example.ini', ['GameMode::destroyBlock']);
     pdb.setOptions(0); // reset the option
     pdb.close(); // close the pdb to reduce the resource usage.
     
@@ -33,6 +33,6 @@ if (!capi.isRunningOnWine()) // Skip for Linux, pdb is not working on Wine.
     }
     
     // bool GameMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
-    const originalFunc = procHacker.hooking('GameMode::destroyBlock', RawTypeId.Boolean, null, GameMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);
+    const originalFunc = hacker.hooking('GameMode::destroyBlock', RawTypeId.Boolean, null, GameMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);
 }
 

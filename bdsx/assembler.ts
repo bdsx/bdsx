@@ -50,7 +50,7 @@ enum MovOper
     Read,
     Write,
     WriteConst,
-    Lea
+    Lea,
 }
 
 export enum OperationSize
@@ -58,7 +58,8 @@ export enum OperationSize
     byte,
     word,
     dword,
-    qword
+    qword,
+    xmmword
 }
 
 export enum Operator
@@ -324,13 +325,13 @@ export class X64Assembler {
         return this.write(0xcd, n & 0xff);
     }
 
-    private _target(opcode:number, r:Register, offset:number, oper:MovOper):void {
+    private _target(opcode:number, r:Register|FloatRegister, offset:number, oper:MovOper):void {
         if (oper === MovOper.Register || oper === MovOper.Const) {
             if (offset !== 0) throw Error('Register operation with offset');
             this.write(opcode | 0xc0);
             return;
         }
-        if (offset !== (offset|0)) throw Error('needs int32 offset');
+        if (offset !== (offset|0)) throw Error('need int32 offset');
         if (offset === 0 && r !== Register.rbp) {
             // empty
         } else if (INT8_MIN <= offset && offset <= INT8_MAX) {
@@ -347,7 +348,7 @@ export class X64Assembler {
         }
     }
 
-    private _regex(r1:Register, r2:Register, size:OperationSize):void {
+    private _regex(r1:Register|FloatRegister, r2:Register|FloatRegister, size:OperationSize):void {
         if (size === OperationSize.word) this.write(0x66);
     
         let rex = 0x40;
@@ -398,7 +399,6 @@ export class X64Assembler {
                 }
             }
         }
-        
 
         if (oper !== MovOper.Const && oper !== MovOper.WriteConst) {
             if (oper === MovOper.Lea && size !== OperationSize.dword && size !== OperationSize.qword) {
@@ -422,29 +422,6 @@ export class X64Assembler {
             this._const(value, size === OperationSize.qword ? OperationSize.dword : size);
         } else if (oper === MovOper.Const) {
             this._const(value, size);
-        }
-        return this;
-    }
-
-    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:number):this {
-        if (chr !== (chr|0)) throw Error('needs 32bit integer');
-
-        this._regex(dest, 0, size);
-
-        if (movoper === MovOper.Register) {
-            this.write(0x01 | (oper << 3));
-            this._target((dest&7) | ((src&7) << 3), dest, offset, movoper);
-        } else {
-            const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
-            if (!is8bits && dest === Register.rax) {
-                this.write(0x05 | (oper << 3));
-                this.writeInt32(chr);
-            } else {
-                this.write(0x81 | (+is8bits << 1));
-                this._target((oper << 3) | (dest&7), dest, offset, movoper);
-                if (is8bits) this.write(chr);
-                else this.writeInt32(chr);
-            }
         }
         return this;
     }
@@ -609,6 +586,28 @@ export class X64Assembler {
         return this;
     }
 
+    private _movaps(r1:FloatRegister|Register, r2:FloatRegister, oper:MovOper, offset:number):this {
+        this._regex(r1, r2, OperationSize.dword);
+        this.write(0x0f);
+        let v = 0x28;
+        if (oper === MovOper.Write) v |= 1;
+        this.write(v);
+        this._target((r1&7) | ((r2&7) << 3), r1, offset, oper);
+        return this;
+    }
+
+    movaps_f_f(dest:FloatRegister, src:FloatRegister):this {
+        return this._movaps(src, dest, MovOper.Register, 0);
+    }
+
+    movaps_f_rp(dest:FloatRegister, src:FloatRegister, offset:number):this {
+        return this._movaps(src, dest, MovOper.Read, offset);
+    }
+    
+    movaps_rp_f(dest:FloatRegister, src:FloatRegister, offset:number):this {
+        return this._movaps(dest, src, MovOper.Write, offset);
+    }
+
     movdqa_rp_f(dest:Register, offset:number, src:FloatRegister):this {
         this.write(0x66, 0x0f, 0x7f);
         this._target((dest&7) | ((src&7) << 3), dest, offset, MovOper.Write);
@@ -654,7 +653,7 @@ export class X64Assembler {
      * push const
      */
     push_c(value:number):this {
-        if (value !== (value|0)) throw Error('needs int32 integer');
+        if (value !== (value|0)) throw Error('need int32 integer');
         if (INT8_MIN <= value && value <= INT8_MAX) {
             this.write(0x6A);
             this.write(value);
@@ -692,6 +691,50 @@ export class X64Assembler {
     
     test_r_rp(r1:Register, r2:Register, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._test(r1, r2, offset, size, MovOper.Read);
+    }
+
+    private _xchg(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
+        this._regex(r1, r2, size);
+        if (size === OperationSize.byte) this.write(0x86);
+        else this.write(0x87);
+        this._target(((r2&7)<<3) | (r1&7), r1, offset, oper);
+        return this;
+    }
+
+    xchg_r_r(r1:Register, r2:Register, size:OperationSize = OperationSize.qword):this {
+        return this._xchg(r1, r2, 0, size, MovOper.Register);
+    }
+    
+    xchg_r_rp(r1:Register, r2:Register, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._xchg(r1, r2, offset, size, MovOper.Read);
+    }
+
+    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:OperationSize):this {
+        if (chr !== (chr|0)) throw Error('need 32bits integer');
+
+        this._regex(dest, 0, size);
+
+        let lowflag = size === OperationSize.byte ? 0 : 1;
+        if (movoper === MovOper.Register) {
+            this.write(lowflag | (oper << 3));
+            this._target((dest&7) | ((src&7) << 3), dest, offset, movoper);
+        } else {
+            const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
+            if (!is8bits && size === OperationSize.byte) throw Error('need 8bits integer');
+            if (!is8bits && dest === Register.rax && movoper === MovOper.Const) {
+                this.write(0x04 | lowflag | (oper << 3));
+                this.writeInt32(chr);
+            } else {
+                if (is8bits) {
+                    if (lowflag !== 0) lowflag = 3;
+                }
+                this.write(0x80 | lowflag);
+                this._target((oper << 3) | (dest&7), dest, offset, movoper);
+                if (is8bits) this.write(chr);
+                else this.writeInt32(chr);
+            }
+        }
+        return this;
     }
 
     cmp_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
@@ -1031,9 +1074,14 @@ const REVERSE_MAP:Record<string, string> = {
     jg: 'jle',
 };
 
+interface Code extends X64Assembler
+{
+    [key:string]: any;
+}
+
 export namespace asm
 {
-    export const code = X64Assembler.prototype;
+    export const code:Code = X64Assembler.prototype;
     export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer {
         const buf = Buffer.from(str+'\0', encoding);
         dll.ChakraCore.JsAddRef(buf, null);
@@ -1061,44 +1109,59 @@ export namespace asm
         registers():Register[] {
             const out:Register[] = [];
             const splits = this.splits;
+            let argi = 0;
             for (let i=1;i<splits.length;i++) {
-                if (splits[i] === 'r') {
-                    const r = this.args[i-1];
+                const type = splits[i];
+                if (type === 'r') {
+                    const r = this.args[argi];
                     if (typeof r !== 'number' || r < 0 || r >= 16) {
                         throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
                     }
                     out.push(r);
+                    argi ++;
+                } else if (type === 'rp') {
+                    argi += 2;
+                } else {
+                    argi ++;
                 }
             }
             return out;
         }
+
         toString():string {
             const {code, args} = this;
             const name = code.name;
             const splited = name.split('_');
-            let line = splited.shift()!;
+            const cmd = splited.shift()!;
             let i=0;
+            const ptridx:number[] = [];
+            const argstr:string[] = [];
             for (const item of splited) {
                 const v = args[i++];
                 switch (item) {
                 case 'r':
-                    line += ' ';
-                    line += Register[v];
+                    argstr.push(Register[v]);
+                    break;
+                case 'f':
+                    argstr.push(FloatRegister[v]);
                     break;
                 case 'c':
-                    line += ' ';
-                    line += shex(v);
+                    argstr.push(shex(v));
                     break;
                 case 'rp':
-                    line += ' [';
-                    line += Register[v];
-                    line += shex_o(args[i++]);
-                    line += ']';
+                    ptridx.push(argstr.length);
+                    argstr.push(`[${Register[v]}${shex_o(args[i++])}]`);
                     break;
                 }
-                line += ',';
             }
-            return line.substr(0, line.length-1);
+            const size = args[i];
+            if (size !== undefined) {
+                const sizestr = OperationSize[size];
+                for (const j of ptridx) {
+                    argstr[j] = sizestr+' ptr '+argstr[j];
+                }
+            }
+            return cmd+' '+argstr.join(', ');
         }
     }
     export class Operations {
