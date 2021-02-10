@@ -14,7 +14,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
         },
         {
             "type": "node",
@@ -23,10 +24,20 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "args": ["./bedrock_server", "-y"],
-            "program": "${workspaceFolder}/bdsx/installer/index",
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["${workspaceFolder}/bdsx/installer/installer.ts", "./bedrock_server", "-y"],
             "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Document Parser",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["${workspaceFolder}/bdsx/externs/bds-scripting/parser.ts"]
         }
     ]
 }

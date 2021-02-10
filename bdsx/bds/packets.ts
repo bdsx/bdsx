@@ -1,12 +1,18 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType,  uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
+import { BlockPos } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
 
 Packet.abstract({}, 0x28);
+
+/** @deprecated use BlockPos instead */
+export const NetworkBlockPosition = BlockPos;
+/** @deprecated use BlockPos instead */
+export type NetworkBlockPosition = BlockPos;
 
 export class LoginPacket extends Packet {
 	u5:uint32_t; //0x184
@@ -54,10 +60,14 @@ export class ResourcePackClientResponsePacket extends Packet {
 }
 
 export class TextPacket extends Packet {
+    type:number;
+    needsTranslation:number;
     name:string;
     message:string;
 }
 TextPacket.abstract({
+    type: [uint8_t, 0x28],
+    needsTranslation: [uint8_t, 0x29],
     name: [CxxString, 0x30],
     message: [CxxString, 0x50],
 });
@@ -103,8 +113,18 @@ export class RiderJumpPacket extends Packet {
 }
 
 export class UpdateBlockPacket extends Packet {
-    // unknown
+    blockPos: BlockPos;
+    blockRuntimeId: uint32_t;
+    flags: uint32_t; // Is a byte
+    dataLayerId: uint32_t;
 }
+
+UpdateBlockPacket.abstract({
+    blockPos: [BlockPos, 0x28],
+    blockRuntimeId: [uint32_t, 0x3c],
+    flags: [uint32_t, 0x38],
+    dataLayerId: [uint32_t, 0x34]
+});
 
 export class AddPaintingPacket extends Packet {
     // unknown
@@ -154,7 +174,7 @@ AttributeData.define({
     max: [float32_t, 8],
     default: [float32_t, 12],
     name: [HashedString, 16],
-}, 0x38);
+}, 0x40);
 
 export class UpdateAttributesPacket extends Packet {
     actorId:ActorRuntimeID;
@@ -222,34 +242,32 @@ export class SetSpawnPositionPacket extends Packet {
 }
 
 export class AnimatePacket extends Packet {
-    // unknown
+    action:uint8_t;
+    actorId:ActorRuntimeID;
+    unknown:float32_t;
 }
+AnimatePacket.abstract({
+    action:[uint8_t, 0x30],
+    actorId:[ActorRuntimeID, 0x28],
+    unknown:[float32_t, 0x34]
+});
 
 export class RespawnPacket extends Packet {
     // unknown
 }
 
-export class NetworkBlockPosition extends NativeClass {
-    x:uint32_t;
-    y:uint32_t;
-    z:uint32_t;
-}
-NetworkBlockPosition.define({
-    x:uint32_t,
-    y:uint32_t,
-    z:uint32_t,
-});
+
 
 export class ContainerOpenPacket extends Packet {
     windowId:uint8_t;
     type:int8_t;
-    pos:NetworkBlockPosition;
+    pos:BlockPos;
     entityUniqueId:bin64_t;
 }
 ContainerOpenPacket.abstract({
     windowId:[uint8_t, 0x28],
     type:[int8_t, 0x29],
-    pos:[NetworkBlockPosition, 0x2C],
+    pos:[BlockPos, 0x2C],
     entityUniqueId:[bin64_t, 0x38],
 });
 
@@ -258,8 +276,15 @@ export class ContainerClosePacket extends Packet {
 }
 
 export class PlayerHotbarPacket extends Packet {
-    // unknown
+    selectedSlot:uint8_t;
+    windowId:uint8_t;
+    selectHotbarSlot:boolean;
 }
+PlayerHotbarPacket.abstract({
+    selectedSlot:[uint8_t, 0x28],
+    windowId:[uint8_t, 0x2D],
+    selectHotbarSlot:[bool_t, 0x2C],
+});
 
 export class InventoryContentPacket extends Packet {
     // unknown

@@ -74,6 +74,9 @@ export namespace hacktool
         dll.vcruntime140.memset(from.add(jumper.length), 0xcc, originalCodeSize - jumper.length); // fill int3 at remained
     }
 
+    /**
+     * @deprecated use ProcHacker. it cannot handle jump/call codes.
+     */
     export function hook(
         from:StaticPointer, to:VoidPointer, originalCodeSize:number, 
         tempRegister?:Register|null):VoidPointer {
@@ -82,12 +85,7 @@ export namespace hacktool
         else newcode.jmp64_notemp(from.add(originalCodeSize));
         const original = newcode.alloc();
         
-        const jumper = asm().jmp64(to, Register.rax).buffer();
-        if (jumper.length > originalCodeSize) throw Error(`Too small area to hook, needs=${jumper.length}, originalCodeSize=${originalCodeSize}`);
-
-        from.setBuffer(jumper);
-        dll.vcruntime140.memset(from.add(jumper.length), 0xcc, originalCodeSize - jumper.length); // fill int3 at remained
-        
+        jump(from, to, Register.rax, originalCodeSize);
         return original;
     }
 
@@ -103,17 +101,15 @@ export namespace hacktool
             .buffer();
         }
 
-        if (jumper.length > originalCodeSize) throw Error(`Too small area to patch, needs=${jumper.length}, originalCodeSize=${originalCodeSize}`);
+        if (jumper.length > originalCodeSize) throw Error(`Too small area to patch, require=${jumper.length}, actual=${originalCodeSize}`);
 
         from.setBuffer(jumper);
         dll.vcruntime140.memset(from.add(jumper.length), 0x90, originalCodeSize - jumper.length); // fill nop at remained
     }
 
     export function jump(from:StaticPointer, to:VoidPointer, tmpRegister:Register, originalCodeSize:number):void {
-        const jumper = asm()
-        .jmp64(to, tmpRegister)
-        .buffer();
-        if (jumper.length > originalCodeSize) throw Error(`Too small area to patch, needs=${jumper.length}, originalCodeSize=${originalCodeSize}`);
+        const jumper = asm().jmp64(to, tmpRegister).buffer();
+        if (jumper.length > originalCodeSize) throw Error(`Too small area to patch, require=${jumper.length}, actual=${originalCodeSize}`);
         from.setBuffer(jumper);
         dll.vcruntime140.memset(from.add(jumper.length), 0x90, originalCodeSize - jumper.length); // fill nop at remained
     }

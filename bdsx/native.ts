@@ -123,16 +123,6 @@ export const malloc = capi.malloc;
 export const free = capi.free;
 
 /**
- * @deprecated use bdsx/bds/hashedstring.HashedString.getHash
- */
-export function getHashFromCxxString(ptr:StaticPointer):NativePointer {
-    const hash = new NativePointer;
-    const binhash = HashedString.getHash(ptr.getCxxString());
-    hash.setAddressBin(binhash);
-    return hash;
-}
-
-/**
  * @deprecated use analyzer.loadMap
  */
 export function loadPdb():{[key:string]:NativePointer} {

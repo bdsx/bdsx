@@ -1,12 +1,20 @@
 import { NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
+import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
+import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, NativePointer, ParamType, pdb, ReturnType, StaticPointer, VoidPointer } from "./core";
+import { disasm } from "./disassembler";
+import { dll } from "./dll";
+import { hacktool } from "./hacktool";
+import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
-import { MemoryUnlocker } from "./unlocker";
-import { dll } from "./dll";
-import { disasm } from "./disassembler";
-import { FloatRegister, Register, X64Assembler } from "./assembler";
-import { hacktool } from "./hacktool";
 import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
+
+
+const FREE_REGS:Register[] = [
+    Register.rax,
+    Register.r10,
+    Register.r11,
+];
 
 export class ProcHacker<T extends Record<string, NativePointer>> {
     constructor(public readonly map:T) {
@@ -68,14 +76,66 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param to call address
      */
     hookingRaw(key:keyof T, to: VoidPointer):VoidPointer {
-        const ptr = this.map[key];
-        if (!ptr) throw Error(`${key} symbol not found`);
+        const origin = this.map[key];
+        if (!origin) throw Error(`${key} symbol not found`);
 
-        const code = disasm.process(ptr, 12);
-        const unlock = new MemoryUnlocker(ptr, code.size);
-        const ret = hacktool.hook(ptr, to, code.size);
+        const REQUIRE_SIZE = 12;
+        const codes = disasm.process(origin, REQUIRE_SIZE);
+        const using = new Set<Register>();
+        const getUnusing = ():number|null=>{
+            for (const r of FREE_REGS) {
+                if (!using.has(r)) return r;
+            }
+            return null;
+        };
+        let pos = 0;
+        let labelCounter = 0;
+        const out = asm();
+        for (const oper of codes.operations) {
+            const splits = oper.splits;
+            const basename = splits[0];
+            if (basename === 'ret' || basename === 'jmp' || basename === 'call') {
+                throw Error(`Too small area to patch, require=${REQUIRE_SIZE}, actual=${pos}`);
+            }
+            pos += oper.size;
+
+            for (const reg of oper.registers()) {
+                using.add(reg);
+            }
+
+            if ((basename.startsWith('j') || basename === 'call') && splits.length === 2 && splits[1] === 'c') {
+                // jump
+                const offset = pos + oper.args[0];
+                if (offset < 0 || offset > codes.size) {
+                    const tmpreg = getUnusing();
+                    if (tmpreg === null) throw Error(`Not enough free registers`);
+                    const jmp_r = (asm.code as any)[basename+'_r'];
+                    if (jmp_r) {
+                        out.mov_r_c(tmpreg, origin.add(offset));
+                        jmp_r.call(out, tmpreg);
+                    } else {
+                        const reversed = oper.reverseJump();
+                        const label = `label_`+labelCounter++;
+                        (out as any)[reversed+'_label'](label);
+                        out.jmp64(origin.add(offset), tmpreg);
+                        out.label(label);
+                    }
+                    continue;
+                }
+            }
+            oper.code.apply(out, oper.args);
+        }
+        const tmpreg = getUnusing();
+        const originend = origin.add(codes.size);
+        if (tmpreg != null) out.jmp64(originend, tmpreg);
+        else out.jmp64_notemp(originend);
+        const original = out.alloc();
+
+        const unlock = new MemoryUnlocker(origin, codes.size);
+        hacktool.jump(origin, to, Register.rax, codes.size);
         unlock.done();
-        return ret;
+
+        return original;
     }
 
     /**
@@ -89,8 +149,12 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         if (!ptr) throw Error(`${key} symbol not found`);
 
         const code = disasm.process(ptr, 12);
+        for (const oper of code.operations) {
+            const basename = oper.splits[0];
+            if (basename.startsWith('j') || basename === 'call') throw Error(`It cannot handle jump/call codes`);
+        }
         const unlock = new MemoryUnlocker(ptr, code.size);
-        const ret = hacktool.hookWithCallOriginal(ptr, to, code.size, keepRegister, keepFloatRegister);
+        hacktool.hookWithCallOriginal(ptr, to, code.size, keepRegister, keepFloatRegister);
         unlock.done();
     }
 
@@ -104,17 +168,9 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         opts?: OPTS, 
         ...params: PARAMS):
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
-        return callback=>{
-            const ptr = this.map[key];
-            if (!ptr) throw Error(`${key} symbol not found`);
-    
+        return callback=>{    
             const to = makefunc.np(callback, returnType, opts, ...params);
-            const code = disasm.process(ptr, 12);
-            const unlock = new MemoryUnlocker(ptr, code.size);
-            const original = hacktool.hook(ptr, to, code.size);
-            unlock.done();
-            
-            return makefunc.js(original, returnType, opts, ...params);
+            return makefunc.js(this.hookingRaw(key, to), returnType, opts, ...params);
         };
     }
 

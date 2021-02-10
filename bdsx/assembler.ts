@@ -4,6 +4,7 @@ import { polynominal } from "./polynominal";
 import colors = require('colors');
 import fs = require('fs');
 import path = require('path');
+import { bin64_t } from "./nativetype";
 
 export enum Register
 {
@@ -69,7 +70,8 @@ export enum OperationSize
     byte,
     word,
     dword,
-    qword
+    qword,
+    xmmword
 }
 
 export enum Operator
@@ -86,22 +88,22 @@ export enum Operator
 
 export enum JumpOperation
 {
-    jo = 0x00,
-    jno = 0x01,
-    jb = 0x02,
-    jae = 0x03,
-    je = 0x04,
-    jne = 0x05,
-    jbe = 0x06,
-    ja = 0x07,
-    js = 0x08,
-    jns = 0x09,
-    jp = 0x0a,
-    jnp = 0x0b,
-    jl = 0x0c,
-    jge = 0x0d,
-    jle = 0x0e,
-    jg = 0x0f,
+    jo,
+    jno,
+    jb,
+    jae,
+    je,
+    jne,
+    jbe,
+    ja,
+    js,
+    jns,
+    jp,
+    jnp,
+    jl,
+    jge,
+    jle,
+    jg,
 }
 
 export interface Value64Castable
@@ -383,7 +385,7 @@ export class X64Assembler {
             if (offset !== 0) throw Error('Register operation with offset');
             return this.write(opcode | 0xc0);
         }
-        if (offset !== (offset|0)) throw Error('needs int32 offset');
+        if (offset !== (offset|0)) throw Error('need int32 offset');
         if (r3 !== null) {
             this.write(opcode | 0x04);
             if (r1 === Register.rsp) {
@@ -460,7 +462,6 @@ export class X64Assembler {
                 }
             }
         }
-        
 
         if (oper !== MovOper.Const && oper !== MovOper.WriteConst) {
             if (oper === MovOper.Lea && size !== OperationSize.dword && size !== OperationSize.qword) {
@@ -677,6 +678,28 @@ export class X64Assembler {
         return this;
     }
 
+    private _movaps(r1:FloatRegister|Register, r2:FloatRegister, oper:MovOper, offset:number):this {
+        this._regex(r1, r2, OperationSize.dword);
+        this.write(0x0f);
+        let v = 0x28;
+        if (oper === MovOper.Write) v |= 1;
+        this.write(v);
+        this._target((r1&7) | ((r2&7) << 3), r1, offset, oper);
+        return this;
+    }
+
+    movaps_f_f(dest:FloatRegister, src:FloatRegister):this {
+        return this._movaps(src, dest, MovOper.Register, 0);
+    }
+
+    movaps_f_rp(dest:FloatRegister, src:FloatRegister, offset:number):this {
+        return this._movaps(src, dest, MovOper.Read, offset);
+    }
+    
+    movaps_rp_f(dest:FloatRegister, src:FloatRegister, offset:number):this {
+        return this._movaps(dest, src, MovOper.Write, offset);
+    }
+
     movdqa_rp_f(dest:Register, offset:number, src:FloatRegister):this {
         this.write(0x66, 0x0f, 0x7f);
         this._target((src&7) << 3, dest, null, offset, MovOper.Write);
@@ -689,24 +712,24 @@ export class X64Assembler {
         return this;
     }
 
-    jz(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
-    jnz(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
-    jo(offset:number):this { return this._jmp_o(JumpOperation.jo, offset); }
-    jno(offset:number):this { return this._jmp_o(JumpOperation.jno, offset); }
-    jb(offset:number):this { return this._jmp_o(JumpOperation.jb, offset); }
-    jae(offset:number):this { return this._jmp_o(JumpOperation.jae, offset); }
-    je(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
-    jne(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
-    jbe(offset:number):this { return this._jmp_o(JumpOperation.jbe, offset); }
-    ja(offset:number):this { return this._jmp_o(JumpOperation.ja, offset); }
-    js(offset:number):this { return this._jmp_o(JumpOperation.js, offset); }
-    jns(offset:number):this { return this._jmp_o(JumpOperation.jns, offset); }
-    jp(offset:number):this { return this._jmp_o(JumpOperation.jp, offset); }
-    jnp(offset:number):this { return this._jmp_o(JumpOperation.jnp, offset); }
-    jl(offset:number):this { return this._jmp_o(JumpOperation.jl, offset); }
-    jge(offset:number):this { return this._jmp_o(JumpOperation.jge, offset); }
-    jle(offset:number):this { return this._jmp_o(JumpOperation.jle, offset); }
-    jg(offset:number):this { return this._jmp_o(JumpOperation.jg, offset); }
+    jz_c(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
+    jnz_c(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
+    jo_c(offset:number):this { return this._jmp_o(JumpOperation.jo, offset); }
+    jno_c(offset:number):this { return this._jmp_o(JumpOperation.jno, offset); }
+    jb_c(offset:number):this { return this._jmp_o(JumpOperation.jb, offset); }
+    jae_c(offset:number):this { return this._jmp_o(JumpOperation.jae, offset); }
+    je_c(offset:number):this { return this._jmp_o(JumpOperation.je, offset); }
+    jne_c(offset:number):this { return this._jmp_o(JumpOperation.jne, offset); }
+    jbe_c(offset:number):this { return this._jmp_o(JumpOperation.jbe, offset); }
+    ja_c(offset:number):this { return this._jmp_o(JumpOperation.ja, offset); }
+    js_c(offset:number):this { return this._jmp_o(JumpOperation.js, offset); }
+    jns_c(offset:number):this { return this._jmp_o(JumpOperation.jns, offset); }
+    jp_c(offset:number):this { return this._jmp_o(JumpOperation.jp, offset); }
+    jnp_c(offset:number):this { return this._jmp_o(JumpOperation.jnp, offset); }
+    jl_c(offset:number):this { return this._jmp_o(JumpOperation.jl, offset); }
+    jge_c(offset:number):this { return this._jmp_o(JumpOperation.jge, offset); }
+    jle_c(offset:number):this { return this._jmp_o(JumpOperation.jle, offset); }
+    jg_c(offset:number):this { return this._jmp_o(JumpOperation.jg, offset); }
 
     /**
      * push register
@@ -720,7 +743,7 @@ export class X64Assembler {
      * push const
      */
     push_c(value:number):this {
-        if (value !== (value|0)) throw Error('needs int32 integer');
+        if (value !== (value|0)) throw Error('need int32 integer');
         if (INT8_MIN <= value && value <= INT8_MAX) {
             this.write(0x6A);
             this.write(value);
@@ -741,10 +764,63 @@ export class X64Assembler {
         this.write(0x58 | (r&7));
         return this;
     }
-    test_r_r(dest:Register, src:Register):this {
-        this._regex(src, dest, null, OperationSize.qword);
-        this.write(0x85);
-        this.write(0xC0 | (src << 3) | dest);
+    private _test(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
+        this._regex(r1, r2, null, size);
+        if (size === OperationSize.byte) this.write(0x84);
+        else this.write(0x85);
+        this._target(((r2&7)<<3) | (r1&7), r1, offset, oper);
+        return this;
+    }
+
+    test_r_r(r1:Register, r2:Register, size:OperationSize = OperationSize.qword):this {
+        return this._test(r1, r2, 0, size, MovOper.Register);
+    }
+    
+    test_r_rp(r1:Register, r2:Register, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._test(r1, r2, offset, size, MovOper.Read);
+    }
+
+    private _xchg(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
+        this._regex(r1, r2, size);
+        if (size === OperationSize.byte) this.write(0x86);
+        else this.write(0x87);
+        this._target(((r2&7)<<3) | (r1&7), r1, offset, oper);
+        return this;
+    }
+
+    xchg_r_r(r1:Register, r2:Register, size:OperationSize = OperationSize.qword):this {
+        return this._xchg(r1, r2, 0, size, MovOper.Register);
+    }
+    
+    xchg_r_rp(r1:Register, r2:Register, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._xchg(r1, r2, offset, size, MovOper.Read);
+    }
+
+    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:OperationSize):this {
+        if (chr !== (chr|0)) throw Error('need 32bits integer');
+
+        this._regex(dest, 0, size);
+
+        let lowflag = size === OperationSize.byte ? 0 : 1;
+        if (movoper === MovOper.Register) {
+            this.write(lowflag | (oper << 3));
+            this._target((dest&7) | ((src&7) << 3), dest, offset, movoper);
+        } else {
+            const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
+            if (!is8bits && size === OperationSize.byte) throw Error('need 8bits integer');
+            if (!is8bits && dest === Register.rax && movoper === MovOper.Const) {
+                this.write(0x04 | lowflag | (oper << 3));
+                this.writeInt32(chr);
+            } else {
+                if (is8bits) {
+                    if (lowflag !== 0) lowflag = 3;
+                }
+                this.write(0x80 | lowflag);
+                this._target((oper << 3) | (dest&7), dest, offset, movoper);
+                if (is8bits) this.write(chr);
+                else this.writeInt32(chr);
+            }
+        }
         return this;
     }
 
@@ -1356,6 +1432,41 @@ export function asm():X64Assembler {
     return new X64Assembler;
 }
 
+function shex(v:number|bin64_t):string {
+    if (typeof v === 'string') return '0x'+bin.toString(v, 16);
+    if (v < 0) return '-0x'+(-v).toString(16);
+    else return '0x'+v.toString(16);
+}
+function shex_o(v:number|bin64_t):string {
+    if (typeof v === 'string') return '+0x'+bin.toString(v, 16);
+    if (v < 0) return '-0x'+(-v).toString(16);
+    else return '+0x'+v.toString(16);
+}
+
+const REVERSE_MAP:Record<string, string> = {
+    jo: 'jno',
+    jno: 'jo',
+    jb: 'jae',
+    jae: 'jb',
+    je: 'jne',
+    jne: 'je',
+    jbe: 'ja',
+    ja: 'jbe',
+    js: 'jns',
+    jns: 'js',
+    jp: 'jnp',
+    jnp: 'jp',
+    jl: 'jge',
+    jge: 'jl',
+    jle: 'jg',
+    jg: 'jle',
+};
+
+interface Code extends X64Assembler
+{
+    [key:string]: any;
+}
+
 class ArgName {
     constructor(
         public readonly name:string, 
@@ -1449,6 +1560,11 @@ function checkModified(ori:string, out:string):boolean{
 
 export namespace asm
 {
+    export const code:Code = X64Assembler.prototype;
+    export function const_str(str:string, encoding:BufferEncoding='utf-8'):Buffer {
+        const buf = Buffer.from(str+'\0', encoding);
+        dll.ChakraCore.JsAddRef(buf, null);
+        return buf;
     export import SyntaxError = polynominal.SyntaxError;
     export class CompileError extends Error {
         errors:SyntaxError[] = [];
@@ -1471,6 +1587,110 @@ export namespace asm
         }
     }
     export const splitTwo32Bits = Symbol('splitTwo32Bits');
+    export class Operation {
+        public size = -1;
+        private _splits:string[]|null = null;
+
+        constructor(
+            public readonly code:(this:X64Assembler, ...args:any[])=>X64Assembler,
+            public readonly args:any[]) {
+        }
+
+        get splits():string[] {
+            if (this._splits !== null) return this._splits;
+            const name = this.code.name;
+            return this._splits = name.split('_');
+        }
+
+        reverseJump():string|null{
+            return REVERSE_MAP[this.splits[0]] || null;
+        }
+
+        registers():Register[] {
+            const out:Register[] = [];
+            const splits = this.splits;
+            let argi = 0;
+            for (let i=1;i<splits.length;i++) {
+                const type = splits[i];
+                if (type === 'r') {
+                    const r = this.args[argi];
+                    if (typeof r !== 'number' || r < 0 || r >= 16) {
+                        throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
+                    }
+                    out.push(r);
+                    argi ++;
+                } else if (type === 'rp') {
+                    argi += 2;
+                } else {
+                    argi ++;
+                }
+            }
+            return out;
+        }
+
+        toString():string {
+            const {code, args} = this;
+            const name = code.name;
+            const splited = name.split('_');
+            const cmd = splited.shift()!;
+            let i=0;
+            const ptridx:number[] = [];
+            const argstr:string[] = [];
+            for (const item of splited) {
+                const v = args[i++];
+                switch (item) {
+                case 'r':
+                    argstr.push(Register[v]);
+                    break;
+                case 'f':
+                    argstr.push(FloatRegister[v]);
+                    break;
+                case 'c':
+                    argstr.push(shex(v));
+                    break;
+                case 'rp':
+                    ptridx.push(argstr.length);
+                    argstr.push(`[${Register[v]}${shex_o(args[i++])}]`);
+                    break;
+                }
+            }
+            const size = args[i];
+            if (size !== undefined) {
+                const sizestr = OperationSize[size];
+                for (const j of ptridx) {
+                    argstr[j] = sizestr+' ptr '+argstr[j];
+                }
+            }
+            return cmd+' '+argstr.join(', ');
+        }
+    }
+    export class Operations {
+        constructor(
+            public readonly operations:asm.Operation[], 
+            public readonly size:number) {
+        }
+
+        toString():string {
+            const out:string[] = [];
+            for (const oper of this.operations) {
+                out.push(oper.toString());
+            }
+            return out.join('\n');
+        }
+
+        asm():X64Assembler {
+            const code = asm();
+            for (const {code: opcode, args} of this.operations) {
+                opcode.apply(code, args);
+            }
+            return code;
+        }
+
+        buffer():Uint8Array {
+            return this.asm().buffer();
+        }
+    }
+}
 
     export class CodeBuffer extends Uint8Array {
         constructor(

@@ -2,6 +2,7 @@
 import { SourceMapConsumer } from 'source-map';
 import path = require('path');
 import fs = require('fs');
+import { removeLine as removeLine } from './util';
 
 interface StackState {
     nextPosition: Position | null;
@@ -369,9 +370,9 @@ function printErrorAndExit(error: Error):void {
 function shimEmitUncaughtException():void {
     const origEmit = process.emit;
 
-    process.emit = function (type: string) {
+    process.emit = function (type: string, ...args:any[]) {
         if (type === 'uncaughtException') {
-            const err = arguments[1];
+            const err = args[0];
             const hasStack = (err && err.stack);
             const hasListeners = (this.listeners(type).length > 0);
 
@@ -380,12 +381,85 @@ function shimEmitUncaughtException():void {
                 return printErrorAndExit(err);
             }
         } else if (type === 'unhandledRejection') {
-            const err = arguments[1];
+            const err = args[0];
             err.stack = remapStack(err.stack);
         }
 
         return origEmit.apply(this, arguments);
     };
+}
+
+function anyToString(v:unknown):string {
+    const circular = new WeakSet<Record<string, any>>();
+
+    let out = '';
+    function writeArray(v:unknown[]):void {
+        if (v.length === 0) {
+            out += '[]';
+            return;
+        }
+        out += '[ ';
+        out += v[0];
+        for (let i=1;i<v.length;i++) {
+            out += ', ';
+            write(v[i]);
+        }
+        out += '] ';
+    }
+    function writeObject(v:Record<string, any>|null):void {
+        if (v === null) {
+            out += 'null';
+            return;
+        }
+        if (circular.has(v)) {
+            out += '[Circular]';
+            return;
+        }
+        circular.add(v);
+        if (v instanceof Array) {
+            writeArray(v);
+        } else {
+            const entires = Object.entries(v);
+            if (entires.length === 0) {
+                out += '{}';
+                return;
+            }
+            out += '{ ';
+            {
+                const [name, value] = entires[0];
+                out += name;
+                out += ': ';
+                write(value);
+            }
+            for (let i=1;i<entires.length;i++) {
+                const [name, value] = entires[i];
+                out += ', ';
+                out += name;
+                out += ': ';
+                write(value);
+            }
+            out += ' }';
+        }
+    }
+    function write(v:unknown):void {
+        switch (typeof v) {
+        case 'object':
+            writeObject(v);
+            break;
+        case 'string':
+            out += JSON.stringify(v);
+            break;
+        default:
+            out += v;
+            break;
+        }
+    }
+    if (typeof v === 'object') {
+        writeObject(v);
+    } else {
+        return v+'';
+    }
+    return out;
 }
 
 export function install():void {
@@ -402,4 +476,9 @@ export function install():void {
         uncaughtShimInstalled = true;
         shimEmitUncaughtException();
     }
+
+    console.trace = function(...messages:any[]) {
+        const err = remapStack(removeLine(Error(messages.map(anyToString).join(' ')).stack || '', 1, 2))!;
+        console.error('Trace'+err.substr(5));
+    };
 }

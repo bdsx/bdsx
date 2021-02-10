@@ -8,6 +8,11 @@ import ProgressBar = require('progress');
 import { https } from 'follow-redirects';
 import version = require('../version.json');
 
+const BDSX_YES = process.env.BDSX_YES;
+if (BDSX_YES === 'skip') {
+    process.exit(0);
+}
+
 const sep = path.sep;
 
 const BDS_VERSION = '1.16.201.02';
@@ -15,16 +20,29 @@ const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_V
 const BDSX_CORE_VERSION = version.coreVersion;
 const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
 
+let agreeOption = false;
+
 function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
     const yesValues = [ 'yes', 'y'];
     const noValues  = [ 'no', 'n' ];
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
     return new Promise<boolean>(resolve=>{
+        if (BDSX_YES === "false") {
+            return resolve(false);
+        }
+        if (!process.stdin.isTTY || BDSX_YES === "true") {
+            return resolve(true);
+        }
+        if (agreeOption) {
+            console.log("Agreed by -y");
+            return resolve(true);
+        }
+
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
         rl.question(question + ' ', async(answer)=>{
             rl.close();
 
@@ -179,8 +197,14 @@ async function removeInstalled(dest:string, files:string[]):Promise<void> {
 
 let installInfo:InstallInfo;
 
+const argv = process.argv;
 const bdsPath = process.argv[2];
-const agree = process.argv[3] === '-y';
+for (let i=3;i<argv.length;i++) {
+    const arg = process.argv[i];
+    switch (arg) {
+    case '-y': agreeOption = true; break;
+    }
+}
 const installInfoPath = `${bdsPath}${sep}installinfo.json`;
 
 async function readInstallInfo():Promise<void> {
@@ -341,17 +365,14 @@ const bds = new InstallItem({
     targetPath: bdsPath,
     key: 'bdsVersion',
     keyFile: 'bedrock_server.exe',
+    skipExists: true,
     async confirm() {
         console.log(`It will download and install Bedrock Dedicated Server to '${path.resolve(bdsPath)}'`);
         console.log(`BDS Version: ${BDS_VERSION}`);
         console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
         console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
-        if (!agree) {
-            const ok = await yesno("Would you like to agree it?(Y/n)");
-            if (!ok) throw new MessageError("Canceled");
-        } else {
-            console.log("Agreed by -y");
-        }  
+        const ok = await yesno("Would you like to agree it?(Y/n)");
+        if (!ok) throw new MessageError("Canceled");
     },
     async preinstall() {
         if (installInfo.files) {

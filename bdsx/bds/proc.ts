@@ -53,6 +53,7 @@ const symbols = [
     'Json::Value::size',
     'MinecraftServerScriptEngine::onServerUpdateEnd',
     'printf',
+    'ServerNetworkHandler::_onPlayerLeft',
 ] as const;
 
 // decorated symbols
@@ -68,6 +69,7 @@ const symbols2 = [
     '??$getline@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@YAAEAV?$basic_istream@DU?$char_traits@D@std@@@0@$$QEAV10@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@D@Z',
     '??_7MinecraftServerScriptEngine@@6BScriptFramework@ScriptApi@@@',
     '??_7MinecraftServerScriptEngine@@6B@',
+    '?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
 ] as const;
 
 

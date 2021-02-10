@@ -27,8 +27,6 @@ import command = require('./command');
 import nativetype = require('./nativetype');
 import native = require('./native');
 
-import './bds/implements';
-
 export import VoidPointer = core.VoidPointer;
 export import StaticPointer = core.StaticPointer;
 export import NativePointer = core.NativePointer;

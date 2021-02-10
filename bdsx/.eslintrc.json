@@ -23,6 +23,7 @@
         "@typescript-eslint/no-non-null-assertion": "off",
         "@typescript-eslint/explicit-function-return-type": ["warn", { "allowExpressions": true }],
         "@typescript-eslint/no-this-alias": "off",
+        "@typescript-eslint/no-var-requires": "off",
         "eqeqeq": ["warn", "always", {"null": "ignore"}],
         "no-throw-literal": "warn",
         "semi": "warn",
@@ -32,6 +33,7 @@
         "indent": ["warn", 4, {"ignoreComments": true, "MemberExpression": 0 }],
         "brace-style": ["warn", "1tbs", {"allowSingleLine": true}],
         "no-prototype-builtins": "off",
-        "prefer-rest-params": "off"
+        "prefer-rest-params": "off",
+        "no-debugger": "warn"
     }
 }

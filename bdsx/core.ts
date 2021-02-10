@@ -3,14 +3,18 @@ import { Bufferable, Encoding, RawTypeId, TypeFromEncoding } from "./common";
 
 export interface VoidPointerConstructor
 {
-    new(pointer?: VoidPointer|null):VoidPointer;
+    /**
+     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
+     */
+    new(pointer: VoidPointer|null|undefined):VoidPointer;
+    new():VoidPointer;
 }
 
 export declare const VoidPointer:VoidPointerConstructor;
 
 export interface VoidPointer {
     equals(ptr: VoidPointer): boolean;
-    /** @deprecated use ptr.as(NativePointer) */
+    /** @deprecated use ptr.as(NativePointer) or ptr.add() */
     clone():NativePointer;
     /**
      * make cloned pointer with offset

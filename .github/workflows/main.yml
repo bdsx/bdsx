@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      BDSX_YES: skip
+
     steps:
       - uses: actions/checkout@v2
 

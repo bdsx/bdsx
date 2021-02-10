@@ -11,22 +11,13 @@ import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
 import { CapsuledEvent, Event } from "krevent";
 import { makefunc, StaticPointer, VoidPointer } from "../core";
-import { Actor } from "./actor";
 import { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
+import { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-class NetworkHandler$Connection extends NativeClass {
-    networkIdentifier:NetworkIdentifier;
-    u1:VoidPointer;
-    u2:VoidPointer;
-    u3:VoidPointer;
-    epeer:SharedPtr<EncryptedNetworkPeer>;
-    bpeer:SharedPtr<BatchedNetworkPeer>;
-    bpeer2:SharedPtr<BatchedNetworkPeer>;
-}
 export class NetworkHandler extends NativeClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
@@ -38,13 +29,19 @@ export class NetworkHandler extends NativeClass {
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
     }
-    
-    static readonly Connection = NetworkHandler$Connection;
 }
 
 export namespace NetworkHandler
 {
-    export type Connection = NetworkHandler$Connection;
+    export class Connection extends NativeClass {
+        networkIdentifier:NetworkIdentifier;
+        u1:VoidPointer;
+        u2:VoidPointer;
+        u3:VoidPointer;
+        epeer:SharedPtr<EncryptedNetworkPeer>;
+        bpeer:SharedPtr<BatchedNetworkPeer>;
+        bpeer2:SharedPtr<BatchedNetworkPeer>;
+    }
 }
 
 class ServerNetworkHandler$Client extends NativeClass {
@@ -82,7 +79,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         abstract();
     }
 
-    getActor():Actor|null {
+    getActor():ServerPlayer|null {
         abstract();
     }
 

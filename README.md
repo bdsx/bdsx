@@ -39,8 +39,9 @@ GIT
 ### Starting with VSCode
 ```sh
 1. Open the project with VSCode
-2. Open a terminal(Ctrl+Shift+｀) and run `npm i`
-4. Press `F5` # run
+2. Open a terminal(Ctrl+Shift+｀) 
+3. run `npm i` # install npm packages and BDS
+4. Press `F5` # build & run
 ```
 
 ### Starting with the executable

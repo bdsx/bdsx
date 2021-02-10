@@ -1,6 +1,5 @@
 import Event, { CapsuledEvent } from "krevent";
 import { asm, OperationSize, Register } from "./assembler";
-import { hookingForActor } from "./bds/actor";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { hookingForCommand } from "./command";
@@ -53,7 +52,7 @@ runtimeError.setHandler(err=>{
     remapError(err);
 
     const lastSender = ipfilter.getLastSender();
-    console.error('[ Runtime Error ]');
+    console.error('[ Native Crash ]');
     console.error(`Last Sender IP: ${lastSender}`);
     console.error('[ Native Stack ]');
     console.error(err.nativeStack);
@@ -256,7 +255,7 @@ function _launch(asyncResolve:()=>void):void {
     const runtime_error_asm = asm()
     .mov_r_rp(Register.rax, Register.rcx, 0)
     .cmp_rp_c(Register.rax, 0, EXCEPTION_BREAKPOINT, OperationSize.dword)
-    .jne(1)
+    .jne_c(1)
     .ret()
     .jmp64(runtimeError.raise, Register.rax)
     .alloc();
@@ -377,6 +376,7 @@ function _launch(asyncResolve:()=>void):void {
     .alloc();
 
     patchForStdio();
+    require('./bds/implements');
 
     // call main as a new thread
     // main will create a game thread.
@@ -429,7 +429,6 @@ function _launch(asyncResolve:()=>void):void {
         }
     });
     hookingForCommand();
-    hookingForActor();
 
     // hook on script starting
     // this hooking point is slower than system.initlaize.

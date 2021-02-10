@@ -23,18 +23,6 @@ export abstract class Wrapper<T> extends NativeClass {
         return TypedWrapper;
     }
 
-    static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
-        return ptr.getPointerAs(this, offset);
-    }
-    static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void{
-        ptr.setPointer(value, offset);
-    }
-    static [NativeType.ctor](ptr:StaticPointer):void{
-        // empty
-    }
-    static [NativeType.dtor](ptr:StaticPointer):void{
-        // empty
-    }
     static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void{
         to.copyFrom(from, 8);
     }
