@@ -2,6 +2,7 @@
 import { SourceMapConsumer } from 'source-map';
 import path = require('path');
 import fs = require('fs');
+import { removeLine as removeLine } from './util';
 
 interface StackState {
     nextPosition: Position | null;
@@ -409,4 +410,8 @@ export function install():void {
         uncaughtShimInstalled = true;
         shimEmitUncaughtException();
     }
+
+    console.trace = function(...messages:string[]) {
+        console.log('Trace: '+remapStack(removeLine(Error(messages.join(' ')).stack || '', 1, 2)));
+    };
 }

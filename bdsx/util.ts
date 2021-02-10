@@ -79,4 +79,49 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
     out.pop();
     return String.fromCharCode(...out);
 }
+export function unhex(hex:string):Uint8Array {
+    const hexes = hex.split(/[ \t\r\n]+/g);
+    const out = new Uint8Array(hexes.length);
+    for (let i=0;i<hexes.length;i++) {
+        out[i] = parseInt(hexes[i], 16);
+    }
+    return out;
+}
 export const _tickCallback:()=>void = (process as any)._tickCallback;
+
+/**
+ * @param lineIndex first line is zero
+ */
+export function indexOfLine(context:string, lineIndex:number, p:number = 0):number {
+    for (;;) {
+        if (lineIndex === 0) return p;
+
+        const idx = context.indexOf('\n', p);
+        if (idx === -1) return -1;
+        p = idx + 1;
+        lineIndex --;
+    }
+}
+/**
+ * removeLine("a \n b \n c", 1, 2) === "a \n c"
+ * @param lineFrom first line is zero
+ * @param lineTo first line is one
+ */
+export function removeLine(context:string, lineFrom:number, lineTo:number):string {
+    const idx = indexOfLine(context, lineFrom);
+    if (idx === -1) return context;
+    const next = indexOfLine(context, lineTo-lineFrom, idx);
+    if (next === -1) return context.substr(0, idx-1);
+    else return context.substr(0, idx)+context.substr(next);
+}
+/**
+ * @param lineIndex first line is zero
+ */
+export function getLineAt(context:string, lineIndex:number):string {
+    const idx = indexOfLine(context, lineIndex);
+    if (idx === -1) return context;
+    
+    const next = context.indexOf('\n', idx);
+    if (next === -1) return context.substr(idx);
+    else return context.substring(idx, next);
+}

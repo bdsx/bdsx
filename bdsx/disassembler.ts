@@ -1,7 +1,7 @@
 import { asm, JumpOperation, OperationSize, Operator, Register } from "./assembler";
 import { NativePointer, VoidPointer } from "./core";
 import { bin64_t } from "./nativetype";
-import { hex } from "./util";
+import { hex, unhex } from "./util";
 import colors = require('colors');
 
 function readConst(size:OperationSize, ptr:NativePointer):number|bin64_t {
@@ -223,5 +223,12 @@ export namespace disasm
             ressize += oper.size;
         }
         return new asm.Operations(operations, ressize);
+    }
+    export function checkHex(hex:string):void {
+        const buffer = unhex(hex);
+        const ptr = new NativePointer;
+        ptr.setAddressFromBuffer(buffer);
+        process(ptr, buffer.length);
+        console.log(buffer+'');
     }
 }

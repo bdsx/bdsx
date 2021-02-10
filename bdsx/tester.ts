@@ -1,5 +1,6 @@
 
 import { remapError, remapStackLine } from "bdsx/source-map-support";
+import { getLineAt } from "./util";
 import colors = require('colors');
 
 let passed = 0;
@@ -29,7 +30,7 @@ export class Tester {
     
     error(message:string, stackidx:number = 2):void {
         const stack = Error().stack!;
-        this._error(message, remapStackLine(stack.split('\n')[stackidx]).stackLine);
+        this._error(message, remapStackLine(getLineAt(stack, stackidx)).stackLine);
     }
 
     processError(err:Error):void {

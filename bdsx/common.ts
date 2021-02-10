@@ -1,5 +1,3 @@
-import { install } from "./source-map-support";
-install();
 
 export interface CANCEL{ 
     __CANCEL_OBJECT__?:void;

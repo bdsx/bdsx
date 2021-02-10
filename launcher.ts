@@ -4,10 +4,12 @@
 // So there are no 'server' variable yet
 // launcher.ts will import ./index.ts after launching BDS.
 
+import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";
+installSourceMapSupport();
+
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
 import { bedrockServer } from "bdsx/launcher";
-import { remapAndPrintError } from "bdsx/source-map-support";
 import colors = require('colors');
 
 // prank
