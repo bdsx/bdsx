@@ -97,7 +97,7 @@ declare global
     interface IExecuteCommandCallback {
         command: string;
         data: {
-            statucMessage: string;
+            statusMessage: string;
             statusCode: number;
         }
     }
