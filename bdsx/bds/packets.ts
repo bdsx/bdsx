@@ -1,6 +1,6 @@
 import { CxxVector } from "bdsx/cxxvector";
-import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { MantleClass, NativeClass } from "bdsx/nativeclass";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
 import { BlockPos } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
@@ -60,8 +60,8 @@ export class ResourcePackClientResponsePacket extends Packet {
 }
 
 export class TextPacket extends Packet {
-    type:number;
-    needsTranslation:number;
+    type:uint8_t;
+    needsTranslation:uint8_t;
     name:string;
     message:string;
 }
@@ -76,9 +76,19 @@ export class SetTimePacket extends Packet {
     // unknown
 }
 
-export class StartGamePacket extends Packet {
-    // unknown
+export class LevelSettings extends MantleClass {
+    seed:int32_t;
 }
+LevelSettings.define({
+    seed:int32_t,
+});
+
+export class StartGamePacket extends Packet {
+    settings:LevelSettings;
+}
+StartGamePacket.define({
+    settings:LevelSettings,
+});
 
 export class AddPlayerPacket extends Packet {
     // unknown
@@ -115,14 +125,14 @@ export class RiderJumpPacket extends Packet {
 export class UpdateBlockPacket extends Packet {
     blockPos: BlockPos;
     blockRuntimeId: uint32_t;
-    flags: uint32_t; // Is a byte
+    flags: uint8_t;
     dataLayerId: uint32_t;
 }
 
 UpdateBlockPacket.abstract({
     blockPos: [BlockPos, 0x28],
     blockRuntimeId: [uint32_t, 0x3c],
-    flags: [uint32_t, 0x38],
+    flags: [uint8_t, 0x38],
     dataLayerId: [uint32_t, 0x34]
 });
 
@@ -336,10 +346,10 @@ export class SetDifficultyPacket extends Packet {
 
 export class ChangeDimensionPacket extends Packet {
     dimensionId:uint32_t;
-    x:number;
-    y:number;
-    z:number;
-    respawn:boolean;
+    x:float32_t;
+    y:float32_t;
+    z:float32_t;
+    respawn:bool_t;
 }
 ChangeDimensionPacket.abstract({
     dimensionId:uint32_t,
@@ -410,7 +420,7 @@ export class AvailableCommandsPacket extends Packet {
 }
 
 export class CommandRequestPacket extends Packet {
-    command:string;
+    command:CxxString;
 }
 CommandRequestPacket.abstract({
     command:[CxxString, 0x28]
@@ -446,7 +456,7 @@ export class ResourcePackChunkRequestPacket extends Packet {
 }
 
 export class TransferPacket extends Packet {
-    address:string;
+    address:CxxString;
     port:uint16_t;
 }
 TransferPacket.abstract({

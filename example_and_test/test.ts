@@ -2,10 +2,10 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, PacketId, serverControl, serverInstance } from "bdsx";
+import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, serverControl, serverInstance } from "bdsx";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
-import { proc, proc2 } from "bdsx/bds/proc";
+import { proc2 } from "bdsx/bds/proc";
 import { capi } from "bdsx/capi";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
@@ -253,7 +253,7 @@ Tester.test({
         }
     
         const conns = new Set<NetworkIdentifier>();
-        netevent.after(PacketId.Login).on((ptr, ni)=>{
+        netevent.after(MinecraftPacketIds.Login).on((ptr, ni)=>{
             this.assert(!conns.has(ni), '[test] logined without connected');
             conns.add(ni);
             setTimeout(()=>{
@@ -308,10 +308,10 @@ Tester.test({
 let connectedNi:NetworkIdentifier;
 let connectedId:string;
 
-netevent.raw(PacketId.Login).on((ptr, size, ni)=>{
+netevent.raw(MinecraftPacketIds.Login).on((ptr, size, ni)=>{
     connectedNi = ni;
 });
-netevent.after(PacketId.Login).on(ptr=>{
+netevent.after(MinecraftPacketIds.Login).on(ptr=>{
     connectedId = ptr.connreq.cert.getId();
 });
 

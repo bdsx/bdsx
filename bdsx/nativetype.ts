@@ -229,6 +229,7 @@ export const bool_t = new NativeType<boolean>(
     1, 1,
     (ptr, offset)=>ptr.getBoolean(offset), 
     (ptr, v, offset)=>ptr.setBoolean(v, offset));
+export type bool_t = boolean;
 export const uint8_t = new NativeType<number>(
     1, 1,
     (ptr, offset)=>ptr.getInt8(offset), 

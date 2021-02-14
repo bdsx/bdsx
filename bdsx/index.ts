@@ -33,6 +33,8 @@ import ipfilter = core.ipfilter;
 import jshook = core.jshook;
 import createPacket = nethook.createPacket;
 import sendPacket = nethook.sendPacket;
+
+/** @deprecated use MinecraftPacketIds, matching to the original name  */
 import PacketId = MinecraftPacketIds;
 
 

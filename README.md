@@ -15,8 +15,8 @@ chat.on(ev=>{
 ```
 * Hijack network packet + Get IP Address & XUID
 ```ts
-import { netevent, PacketId } from "bdsx";
-netevent.after(PacketId.Login).on((ptr, networkIdentifier, packetId)=>{
+import { netevent, MinecraftPacketIds } from "bdsx";
+netevent.after(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId)=>{
     const ip = networkIdentifier.getAddress();
     const cert = ptr.connreq.cert;
     const xuid = cert.getXuid();

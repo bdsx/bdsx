@@ -93,6 +93,9 @@ export interface VoidPointerConstructor
 
 export declare const VoidPointer:VoidPointerConstructor;
 
+/**
+ * the root of all pointer-based classes
+ */
 export interface VoidPointer {
     equals(ptr: VoidPointer): boolean;
     /** @deprecated use ptr.as(NativePointer) or ptr.add() */
@@ -140,6 +143,10 @@ export interface VoidPointer {
     // addressOfThis():NativePointer;
 }
 
+/**
+ * StaticPointer but protected accessors
+ * It's the same class as StaticPointer actually (PrivatePointer === StaticPointer)
+ */
 export declare class PrivatePointer extends VoidPointer {
     protected getBoolean(offset?: number): boolean;
     protected getUint8(offset?: number): number;
@@ -243,6 +250,9 @@ export declare class PrivatePointer extends VoidPointer {
     protected setJsValueRef(value:unknown, offset?:number):void;
 }
 
+/**
+ * the pointer with accessors
+ */
 export declare class StaticPointer extends PrivatePointer {
     getBoolean(offset?: number): boolean;
     getUint8(offset?: number): number;
@@ -360,8 +370,10 @@ export declare class StructurePointer extends PrivatePointer {
 }
 
 /**
-* for access native pointer
-*/
+ * extends of StaticPointer
+ * moveable
+ * It can be treated as a binary stream
+ */
 export declare class NativePointer extends StaticPointer {
     move(lowBits: number, highBits?: number): void;
     setAddressPointer(pointer?: VoidPointer): void;
@@ -510,6 +522,9 @@ export declare class RuntimeError extends Error {
     nativeStack:string;
 }
 
+/**
+ * queue for multi threading.
+ */
 export declare class MultiThreadQueue extends VoidPointer {
     constructor(size:number);
 
@@ -533,6 +548,9 @@ export declare class MultiThreadQueue extends VoidPointer {
     static readonly dequeue:VoidPointer;
 }
 
+/**
+ * native debug information handlers
+ */
 export declare namespace pdb
 {
     export const coreCachePath:string;
@@ -588,6 +606,9 @@ export declare namespace pdb
     
 }
 
+/**
+ * native error handling
+ */
 export declare namespace runtimeError
 {
     export function codeToString(code:number):string;
