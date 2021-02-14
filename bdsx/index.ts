@@ -34,6 +34,8 @@ export import ipfilter = core.ipfilter;
 export import jshook = core.jshook;
 export import createPacket = nethook.createPacket;
 export import sendPacket = nethook.sendPacket;
+
+/** @deprecated use MinecraftPacketIds, matching to the original name  */
 export import PacketId = MinecraftPacketIds;
 
 declare module "./core"

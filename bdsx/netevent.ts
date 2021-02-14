@@ -10,32 +10,45 @@ import readLoginPacket = nethook.readLoginPacket;
 export { readLoginPacket };
 
 /**
-* It will bring raw packet buffers before parsing
-* It will cancel the packet if you return false
-*/
+ * before 'before' and 'after'
+ * earliest event for the packet receiving.
+ * It will bring raw packet buffers before parsing
+ * It will cancel the packet if you return false
+ */
 export function raw(id:MinecraftPacketIds):CapsuledEvent<nethook.RawListener> {
     return nethook.getEventTarget(nethook.EventType.Raw, id);
 }
+
 /**
-* Maybe you cannot find any documents about the parsed packet structure
-* You need to discover it self!
-*/
+ * after 'raw', before 'after'
+ * the event that before processing but after parsed from raw.
+ */
 export function before<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.BeforeListener<ID>> {
     return nethook.getEventTarget(nethook.EventType.Before, id);
 }
+
 /**
-* Maybe you cannot find any documents about the parsed packet structure
-* You need to discover it self!
-*/
+ * after 'raw' and 'before'
+ * the event that after processing. some fields are assigned after the processing
+ */
 export function after<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.AfterListener<ID>> {
     return nethook.getEventTarget(nethook.EventType.After, id);
 }
+
 /**
-* Maybe you cannot find any documents about the parsed packet structure
-* You need to discover it self!
-*/
+ * before serializing.
+ * it can modify class fields.
+ */
 export function send<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.SendListener<ID>> {
     return nethook.getEventTarget(nethook.EventType.Send, id);
+}
+
+/**
+ * after serializing. before sending.
+ * it can access serialized buffer.
+ */
+export function sendRaw(id:number):CapsuledEvent<nethook.SendRawListener> {
+    return nethook.getEventTarget(nethook.EventType.SendRaw, id);
 }
 
 /** @deprecated use NetworkIdentifier.close */

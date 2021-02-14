@@ -39,6 +39,7 @@ const symbols = [
     'ServerInstance::startServerThread',
     'NetworkHandler::_getConnectionFromId',
     'NetworkHandler::send',
+    'LoopbackPacketSender::sendToClients',
     'NetworkHandler::_sortAndPacketizeEvents',
     'NetworkHandler::_sendInternal',
     'PacketViolationHandler::_handleViolation',
