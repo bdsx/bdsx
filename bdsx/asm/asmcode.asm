@@ -19,9 +19,9 @@ const JsFunction 6
 const JsError 7
 const JsArray 8
 const JsSymbol 9
-const JsArrayBuffer = 10
-const JsTypedArray = 11
-const JsDataView = 12
+const JsArrayBuffer 10
+const JsTypedArray 11
+const JsDataView 12
 
 externconst fn_asyncSize:byte
 externconst fn_runtimeErrorFire:byte
@@ -53,6 +53,8 @@ externconst fn_getout_invalid_parameter_count:byte
 externconst fn_JsCallFunction:byte
 externconst fn_pointer_js_new:byte
 externconst fn_returnPoint:byte
+
+externconst asyncSize:byte;
 
 exportdef GetCurrentThreadId:qword
 exportdef bedrockLogNp:qword
@@ -138,11 +140,11 @@ proc makeError
     lea r8, [rsp, 18h]
     call [rdi + fn_JsPointerToString]
     mov rcx, [rsp + 18h]
-    lea_r_rp(rdx, rsp, 18h)
-    call_rp(rdi, fn_JsCreateError)
-    mov_r_rp(rax, rsp, 18h)
-    add_r_c(rsp, 28h)
-    ret()
+    lea_r_rp rdx, rsp, 18h
+    call_rp rdi, fn_JsCreateError
+    mov_r_rp rax, rsp, 18h
+    add_r_c rsp, 28h
+    ret
 endp
 
 # [[noreturn]] getout_jserror(JsValueRef error)
@@ -393,7 +395,7 @@ proc utf16_np2js
     test eax, eax
     jz _failed
     mov rax, [rsp+18h]
-    add rsp 28h
+    add rsp, 28h
     ret
 _failed:
     mov rcx, [rsp+38h]

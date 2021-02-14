@@ -5,6 +5,7 @@ import { polynominal } from "./polynominal";
 import colors = require('colors');
 import fs = require('fs');
 import path = require('path');
+import { ParsingError, TextLineParser } from "./textparser";
 
 export enum Register
 {
@@ -74,6 +75,15 @@ export enum OperationSize
     xmmword
 }
 
+const sizemap = new Map<string, {bytes: number, size:OperationSize|null}>([
+    ['void', {bytes: 0, size: null} ],
+    ['byte', {bytes: 1, size: OperationSize.byte} ],
+    ['word', {bytes: 2, size: OperationSize.word} ],
+    ['dword', {bytes: 4, size: OperationSize.dword} ],
+    ['qword', {bytes: 8, size: OperationSize.qword} ],
+    ['xmmword', {bytes: 16, size: OperationSize.xmmword} ],
+]);
+
 export enum Operator
 {
     add,
@@ -113,8 +123,10 @@ export interface Value64Castable
 
 const INT8_MIN = -0x80;
 const INT8_MAX = 0x7f;
+const INT16_MAX = 0x7fff;
 const INT32_MIN = -0x80000000;
 const INT32_MAX = 0x7fffffff;
+const COMMENT_REGEXP = /[;#]/;
 
 export type Value64 = number|string|Value64Castable;
 
@@ -151,34 +163,18 @@ function is32Bits(value:Value64):boolean {
         throw Error(`invalid constant value: ${value}`);
     }
 }
-
-function splitWithSpaces(str:string):string[] {
-    str = str.trim();
-    const out:string[] = [];
-    if (str.length === 0) return out;
-    const reg = /[ \t\r\n]+/g;
-    let prev = 0;
-    let matched:RegExpExecArray|null;
-    while ((matched = reg.exec(str)) !== null) {
-        out.push(str.substring(prev, matched.index));
-        prev = reg.lastIndex;
-    }
-    out.push(str.substr(prev));
-    return out;
-}
-
 class AsmChunk {
-    public array = new Uint8Array(64);
-    public size = 0;
-
     public prev:AsmChunk|null = null;
     public next:AsmChunk|null = null;
     public jumpInfo:JumpInfo|null = null;
     public jumpLabel:string|null = null;
     public jumpArgs:any[]|null = null;
     public readonly labels:Label[] = [];
-    public readonly unresolvedJumps:AsmUnresolvedJump[] = [];
-    public readonly externs = new Map<string, number[]>();
+    public readonly externs:Extern[] = [];
+    public readonly unresolved:UnresolvedConstant[] = [];
+    
+    constructor(public array:Uint8Array, public size:number) {
+    }
 
     put(v:number):this {
         const osize = this.size;
@@ -225,25 +221,24 @@ class AsmChunk {
             label.offset += this.size;
         }
         this.labels.push(...chunk.labels);
-        for (const [name, values] of chunk.externs) {
+        for (const extern of chunk.externs) {
+            const values = extern.map.get(chunk)!;
             for (let i=0;i<values.length;i++) {
                 values[i] += this.size;
             }
-            const desc = this.externs.get(name);
-            if (!desc) this.externs.set(name, values);
-            else desc.push(...values);
+            extern.adds(this, values);
         }
-        for (const jump of chunk.unresolvedJumps) {
+        for (const jump of chunk.unresolved) {
             jump.offset += this.size;   
         }
-        this.unresolvedJumps.push(...chunk.unresolvedJumps);
+        this.unresolved.push(...chunk.unresolved);
         this.write(chunk.buffer());
 
         const next = chunk.next;
         this.next = next;
         if (next !== null) next.prev = this;
 
-        chunk.externs.clear();
+        chunk.externs.length = 0;
         chunk.labels.length = 0;
         chunk.jumpLabel = null;
         chunk.jumpInfo = null;
@@ -253,10 +248,31 @@ class AsmChunk {
         return true;
     }
 
-    extern(name:string, offset:number):void {
-        const array = this.externs.get(name);
-        if (array) array.push(offset);
-        else this.externs.set(name, [offset]);
+    resolveAll():void {
+        for (const unresolved of this.unresolved) {
+            const addr = unresolved.address;
+
+            const size = unresolved.bytes;
+            let offset = addr.offset - unresolved.offset - size;
+            if (addr instanceof Label) {
+                if (addr.type === LabelType.Unknown) throw Error(`${addr}: Label not found`);
+                console.assert(addr.chunk === this, 'chunk is remained');
+            } else if (addr instanceof Defination) {
+                offset -= addr.chunk!.size;
+            } else {
+                throw Error(`Unexpected type ${addr.constructor.name}`);
+            }
+
+            const arr = this.array;
+            let i = unresolved.offset;
+            
+            const to = i + size;
+            for (;i!==to;i++) {
+                arr[i++] = offset;
+                offset >>= 8;
+            }
+        }
+        this.unresolved.length = 0;
     }
 }
 
@@ -266,12 +282,69 @@ enum LabelType {
     Proc
 }
 
-class Label {
+class Identifier {
     constructor(
-        public name:string,
+        public name:string) {
+    }
+}
+
+class Constant extends Identifier {
+    constructor(name:string, public value:number) {
+        super(name);
+    }
+}
+
+class AddressIdentifier extends Identifier {
+    constructor(
+        name:string,
         public chunk:AsmChunk|null, 
-        public offset:number,
+        public offset:number) {
+        super(name);
+    }
+}
+
+class Label extends AddressIdentifier {
+    constructor(
+        name:string,
+        chunk:AsmChunk|null, 
+        offset:number,
         public type:LabelType) {
+        super(name, chunk, offset);
+    }
+}
+
+class Defination extends AddressIdentifier {
+
+    constructor(name:string, 
+        chunk:AsmChunk|null, 
+        offset:number,
+        public exports:boolean, 
+        public size:OperationSize|null) {
+        super(name, chunk, offset);
+    }
+}
+
+class Extern extends Identifier {
+    public readonly map = new Map<AsmChunk, number[]>();
+    constructor(name:string, public size:OperationSize) {
+        super(name);
+    }
+
+    add(chunk:AsmChunk, offset:number):void {
+        const dest = this.map.get(chunk);
+        if (dest) dest.push(offset);
+        else {
+            this.map.set(chunk, [offset]);
+            chunk.externs.push(this);
+        }
+    }
+    adds(chunk:AsmChunk, offsets:number[]):void {
+        const dest = this.map.get(chunk);
+        if (dest) dest.push(...offsets);
+        else {
+            this.map.set(chunk, offsets);
+            chunk.externs.push(this);
+        }
     }
 }
 
@@ -279,52 +352,88 @@ class JumpInfo {
     constructor(
         public readonly byteSize:number,
         public readonly dwordSize:number,
-        public readonly func:(this:X64Assembler, ...args:any[])=>X64Assembler) {
+        public readonly addrSize:number,
+        public readonly func:(this:X64Assembler, ...args:any[])=>X64Assembler,
+        public readonly func_addr:((this:X64Assembler, ...args:any[])=>X64Assembler)|null) {
     }
 }
 
-class AsmUnresolvedJump {
+class UnresolvedConstant {
     constructor(
         public offset:number,
-        public readonly isDword:boolean,
-        public readonly label:Label) {
+        public readonly bytes:number,
+        public readonly address:AddressIdentifier) {
     }
 }
+
+interface TypeInfo {
+    size:OperationSize|null;
+    bytes:number;
+    align:number;
+    arraySize:number;
+}
+
+const SIZE_MAX_VAL:{[key in OperationSize]?:number|bin64_t}= {
+    [OperationSize.byte]: INT8_MAX,
+    [OperationSize.word]: INT16_MAX,
+    [OperationSize.dword]: INT32_MAX,
+    [OperationSize.qword]: bin.make64(INT32_MAX, -1),
+    [OperationSize.qword]: bin.make64(INT32_MAX, -1),
+};
+
+
+// TODO: externconst를 상수에서 가져온다
+
 
 export class X64Assembler {
 
-    private chunk = new AsmChunk;
-    private readonly labels = new Map<string, Label>();
-    private readonly constants = new Map<string, number>();
+    private memoryChunk = new AsmChunk(new Uint8Array(0), 0);
+    private chunk:AsmChunk;
+    private readonly ids = new Map<string, Identifier>();
 
-    private _polynominalToAddress(text:string):[Register|null, Register|null, number] {
+    private _polynominalToAddress(text:string):[Register|null, Register|null, number, Extern[]] {
         let res = polynominal.parse(text);
-        for (const [name, value] of this.constants) {
-            res = res.defineVariable(name, value);
+        for (const [name, value] of this.ids) {
+            if (!(value instanceof Constant)) continue;
+            res = res.defineVariable(name, value.value);
         }
         const poly = res.asAdditive();
         let varcount = 0;
 
+        const externs:Extern[] = [];
         const regs:(Register|null)[] = [];
         for (const term of poly.terms) {
-            if (term.variables.length > 1) throw new asm.SyntaxError(`polynominal is too complex, variables multiplying`, 0, text.length);
+            if (term.variables.length > 1) {
+                throw new ParsingError(`polynominal is too complex, variables are multiplying`, 0, text.length);
+            }
             const v = term.variables[0];
-            if (!v.degree.equalsConstant(1)) throw new asm.SyntaxError(`polynominal is too complex, degree is not 1`, 0, text.length);
-            if (!(v.term instanceof polynominal.Name)) throw new asm.SyntaxError('polynominal is too complex, complex term', 0, text.length);
+            if (!v.degree.equalsConstant(1)) throw new ParsingError(`polynominal is too complex, degree is not 1`, 0, text.length);
+            if (!(v.term instanceof polynominal.Name)) throw new ParsingError('polynominal is too complex, complex term', 0, text.length);
             
-            const type = typemap.get(v.term.name.toLowerCase());
-            if (!type) throw new asm.SyntaxError(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
-            const [argname, reg, size] = type;
-            if (argname.short !== 'r') throw new asm.SyntaxError(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
-            if (size !== OperationSize.qword) throw new asm.SyntaxError(`unexpected register: ${v.term.name}`, 0, text.length);
-            
-            varcount ++;
-            if (varcount >= 3) throw new asm.SyntaxError(`polynominal has too many variables`, 0, text.length);
-
-            regs.push(reg);
+            const type = regmap.get(v.term.name.toLowerCase());
+            if (type) {
+                const [argname, reg, size] = type;
+                if (argname.short !== 'r') throw new ParsingError(`unexpected identifier: ${v.term.name}`, v.term.column, v.term.length);
+                if (size !== OperationSize.qword) throw new ParsingError(`unexpected register: ${v.term.name}`, 0, text.length);
+                
+                varcount ++;
+                if (varcount >= 3) throw new ParsingError(`polynominal has too many variables`, 0, text.length);
+    
+                regs.push(reg);
+            } else {
+                const identifier = this.ids.get(v.term.name);
+                if (!identifier) throw new ParsingError(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
+                if (!(identifier instanceof Extern)) throw new ParsingError(`Invalid identifier: ${v.term.name}`, v.term.column, v.term.length);
+                externs.push(identifier);
+            }
         }
+        if (regs.length > 3) throw new ParsingError('Too many registers', 0, text.length);
         while (regs.length < 2) regs.push(null);
-        return [regs[0], regs[1], poly.constant];
+        return [regs[0], regs[1], poly.constant, externs];
+    }
+
+    constructor(buffer:Uint8Array, size:number) {
+        this.chunk = new AsmChunk(buffer, size);
     }
 
     connect(cb:(asm:X64Assembler)=>this):this {
@@ -333,6 +442,11 @@ export class X64Assembler {
 
     write(...values:number[]):this {
         this.chunk.write(values);
+        return this;
+    }
+    
+    writeBuffer(buffer:number[]|Uint8Array):this {
+        this.chunk.write(buffer);
         return this;
     }
 
@@ -350,13 +464,31 @@ export class X64Assembler {
             (value>>>24));
     }
 
-    buffer():asm.CodeBuffer {
+    labels():Record<string, number> {
         this._normalize();
         const labels:Record<string, number> = {};
-        for (const [name, label] of this.labels) {
-            labels[name] = label.offset;
+        for (const [name, label] of this.ids) {
+            if (label instanceof Label) {
+                labels[name] = label.offset;
+            }
         }
-        return new asm.CodeBuffer(this.chunk.array, this.chunk.array.byteOffset, this.chunk.size, labels, 0, 1);
+        return labels;
+    }
+
+    exports():Record<string, number> {
+        this._normalize();
+        const labels:Record<string, number> = {};
+        for (const [name, label] of this.ids) {
+            if (label instanceof Defination) {
+                labels[name] = label.offset;
+            }
+        }
+        return labels;
+    }
+
+    buffer():Uint8Array {
+        this._normalize();
+        return new Uint8Array(this.chunk.array, this.chunk.array.byteOffset, this.chunk.size);
     }
 
     ret(): this {
@@ -511,11 +643,43 @@ export class X64Assembler {
         return this;
     }
 
-    extern(name:string, offset:number):this {
-        this.chunk.extern(name, this.chunk.size + offset);
+    load_externconst(name:string, offsets:number[], size:OperationSize):this {
+        if (this.chunk.prev !== null) throw Error("building asm cannot use externconsts");
+        if (this.ids.has(name)) throw Error(`${name} is already defined`);
+        const extern = new Extern(name, size);
+        this.ids.set(name, extern);
+        extern.adds(this.chunk, offsets);
+        this.chunk.externs.push(extern);
         return this;
     }
 
+    define_externconst(name:string, size:OperationSize):this {
+        if (this.chunk.prev !== null) throw Error("building asm cannot use externconsts");
+        if (this.ids.has(name)) throw Error(`${name} is already defined`);
+        const extern = new Extern(name, size);
+        this.ids.set(name, extern);
+        this.chunk.externs.push(extern);
+        return this;
+    }
+
+    use_externconst(name:string, offset:number):this {
+        const id = this.ids.get(name);
+        if (!(id instanceof Extern)) throw Error(`${name} is not externconst`);
+        id.add(this.chunk, this.chunk.size + offset);
+        return this;
+    }
+
+    def(name:string, size:OperationSize|null, bytes:number, align:number, exports:boolean):this {
+        if (this.chunk.prev !== null) throw Error("building asm cannot use externconst");
+        const memSize = this.memoryChunk.size;
+        const offset = align <= 1 ? memSize : ((memSize + bytes - 1) / align | 0) * align;
+        this.memoryChunk.size = offset + bytes;
+        if (name === '') return this;
+        if (this.ids.has(name)) throw Error(`${name} is already defined`);
+        this.ids.set(name, new Defination(name, this.memoryChunk, offset, exports, size));
+        return this;
+    }
+    
     lea_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this {
         if (offset === 0) return this.mov_r_r(dest, src, size);
         return this._mov(src, dest, null, offset, 0, MovOper.Lea, size);
@@ -593,7 +757,7 @@ export class X64Assembler {
         return this._jmp(false, register, offset, MovOper.Read);
     }
 
-    jmp_rpip(offset:number):this {
+    jmp_cp(offset:number):this {
         this.write(0xff, 0x25);
         this.writeInt32(offset);
         return this;
@@ -651,6 +815,12 @@ export class X64Assembler {
 
     call_c(offset:number):this {
         this.write(0xe8);
+        this.writeInt32(offset);
+        return this;
+    }
+
+    call_cp(offset:number):this {
+        this.write(0xff, 0x15);
         this.writeInt32(offset);
         return this;
     }
@@ -1050,6 +1220,9 @@ export class X64Assembler {
 
     label(labelName:string, type:LabelType = LabelType.Label):this {
         const label = this._getLabel(labelName, this.chunk, this.chunk.size);
+        if (label instanceof Defination) {
+            throw Error(`${labelName} is already defined`);
+        }
         if (label.type !== type) {
             if (label.type === LabelType.Unknown) {
                 label.type = type;
@@ -1063,17 +1236,25 @@ export class X64Assembler {
         let prev = now.prev!;
 
         while (prev !== null && prev.jumpLabel === labelName) {
-            this._resolveJump(prev, label, true);
+            this._resolveIdSize(prev, label, true);
             now = prev;
             prev = now.prev!;
         }
         return this;
     }
-    private _getLabel(labelName:string, chunk:AsmChunk|null, offset:number = 0):Label {
-        let label = this.labels.get(labelName);
-        if (label) return label;
-        label = new Label(labelName, chunk, offset, LabelType.Unknown);
-        this.labels.set(labelName, label);
+
+    private _getLabel(labelName:string, chunk:AsmChunk|null, offset:number = 0):Label|Defination {
+        const id = this.ids.get(labelName);
+        if (id) {
+            if (id instanceof Defination) {
+                if (id.size !== OperationSize.qword) throw Error(`${labelName} size unmatched`);
+                return id;
+            }
+            if (!(id instanceof Label)) throw Error(`${labelName} is not label`);
+            return id;
+        }
+        const label = new Label(labelName, chunk, offset, LabelType.Unknown);
+        this.ids.set(labelName, label);
         return label;
     }
 
@@ -1082,38 +1263,56 @@ export class X64Assembler {
         this.chunk.jumpLabel = labelName;
         this.chunk.jumpArgs = [];
 
-        const label = this.labels.get(labelName);
-        if (!label) return this._genChunk();
-        return this._resolveJump(this.chunk, label, false);
+        const id = this.ids.get(labelName);
+        if (!id) return this._genChunk();
+        if (!(id instanceof AddressIdentifier)) throw Error(`unexpected identifier ${labelName}`);
+        return this._resolveIdSize(this.chunk, id, false);
     }
     call_label(labelName:string):this {
         const label = this._getLabel(labelName, null);
         if (label.chunk === null) {
             this.call_c(0);
-            this.chunk.unresolvedJumps.push(new AsmUnresolvedJump(this.chunk.size-4, true, label));
+            this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, label));
             return this;
         }
         this.chunk.jumpInfo = X64Assembler.call_c_info;
         this.chunk.jumpLabel = labelName;
         this.chunk.jumpArgs = [];
-        return this._resolveJump(this.chunk, label, false);
+        return this._resolveIdSize(this.chunk, label, false);
     }
     private _jmp_o_label(oper:JumpOperation, labelName:string):this {
         this.chunk.jumpInfo = X64Assembler.jmp_o_info;
         this.chunk.jumpLabel = labelName;
         this.chunk.jumpArgs = [oper];
 
-        const label = this.labels.get(labelName);
+        const label = this.ids.get(labelName);
         if (!label) return this._genChunk();
-        return this._resolveJump(this.chunk, label, false);
+        if (!(label instanceof AddressIdentifier)) throw Error(`unexpected identifier ${labelName}`);
+        return this._resolveIdSize(this.chunk, label, false);
     }
 
-    private _resolveJump(jumpChunk:AsmChunk, label:Label, forward:boolean):this {
-        if (label.chunk === jumpChunk) {
+    private _resolveIdSize(jumpChunk:AsmChunk, id:AddressIdentifier, forward:boolean):this {
+        if (id instanceof Defination) {
+            const info = jumpChunk.jumpInfo!;
+            const func = info.func_addr;
+            if (func === null) throw Error(`Invalid operand: ${id.name}`);
+            if (this.chunk.prev === null) {
+                func.call(this, ...jumpChunk.jumpArgs!, id.offset - this.memoryChunk.size - this.chunk.size - info.addrSize);
+            } else {
+                func.call(this, ...jumpChunk.jumpArgs!, INT32_MAX);
+                jumpChunk.unresolved.push(new UnresolvedConstant(jumpChunk.size-4, 4, id));
+            }
+            jumpChunk.jumpLabel = null;
+            jumpChunk.jumpInfo = null;
+            jumpChunk.jumpArgs = null;
+            return this;
+        }
+
+        if (id.chunk === jumpChunk) {
             if (forward === true) throw Error(`cannot forward to self chunk`);
             if (this.chunk !== jumpChunk) throw Error('is not front chunk');
             const info = jumpChunk.jumpInfo!;
-            let offset = label.offset - jumpChunk.size;
+            let offset = id.offset - jumpChunk.size;
             offset -= info.byteSize;
             if (offset < INT8_MIN || offset > INT8_MAX) {
                 offset = offset - info.dwordSize + info.byteSize;
@@ -1131,9 +1330,9 @@ export class X64Assembler {
         let offset = 0;
         if (forward) {
             let chunk = jumpChunk.next!;
-            if (chunk === label.chunk) {
+            if (chunk === id.chunk) {
                 const info = jumpChunk.jumpInfo!;
-                info.func.call(this, ...jumpChunk.jumpArgs!, label.offset);
+                info.func.call(this, ...jumpChunk.jumpArgs!, id.offset);
                 jumpChunk.removeNext();
                 if (jumpChunk.next === null) this.chunk = jumpChunk;
                 else this.chunk = orichunk;
@@ -1144,8 +1343,8 @@ export class X64Assembler {
                 offset += chunk.size;
                 offset += chunk.jumpInfo!.dwordSize;
                 chunk = chunk.next!;
-                if (chunk === label.chunk) {
-                    offset += label.offset;
+                if (chunk === id.chunk) {
+                    offset += id.offset;
                     break;
                 }
             }
@@ -1154,23 +1353,23 @@ export class X64Assembler {
             for (;;) {
                 offset -= chunk.jumpInfo!.dwordSize;
                 offset -= chunk.size;
-                if (chunk === label.chunk) {
-                    offset += label.offset;
+                if (chunk === id.chunk) {
+                    offset += id.offset;
                     break;
                 }
                 chunk = chunk.prev!;
                 if (chunk === null) {
-                    throw Error(`${label.name}: failed to find label chunk`);
+                    throw Error(`${id.name}: failed to find label chunk`);
                 }
             }
         }
         
         if (INT8_MIN <= offset && offset <= INT8_MAX) {
             jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, 0);
-            jumpChunk.unresolvedJumps.push(new AsmUnresolvedJump(jumpChunk.size-1, false, label));
+            jumpChunk.unresolved.push(new UnresolvedConstant(jumpChunk.size-1, 1, id));
         } else {
             jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, INT32_MAX);
-            jumpChunk.unresolvedJumps.push(new AsmUnresolvedJump(jumpChunk.size-4, true, label));
+            jumpChunk.unresolved.push(new UnresolvedConstant(jumpChunk.size-4, 4, id));
         }
         jumpChunk.removeNext();
         if (jumpChunk.next === null) this.chunk = jumpChunk;
@@ -1178,7 +1377,7 @@ export class X64Assembler {
         return this;
     }
     private _genChunk():this {
-        const nbuf = new AsmChunk;
+        const nbuf = new AsmChunk(new Uint8Array(64), 0);
         this.chunk.next = nbuf;
         nbuf.prev = this.chunk;
         this.chunk = nbuf;
@@ -1188,33 +1387,15 @@ export class X64Assembler {
         let prev = this.chunk.prev;
         while (prev !== null) {
             const labelName = prev.jumpLabel!;
-            const label = this.labels.get(labelName);
+            const label = this.ids.get(labelName);
             if (!label) throw Error(`${labelName}: Label not found`);
-            this._resolveJump(prev, label, true);
+            if (!(label instanceof Label)) throw Error(`${labelName} is not label`);
+            this._resolveIdSize(prev, label, true);
             prev = prev.prev;
         }
 
         console.assert(this.chunk.next === null && this.chunk.prev === null, `chunk is remained`);
-        for (const jump of this.chunk.unresolvedJumps) {
-            const label = jump.label;
-            if (label.type === LabelType.Unknown) throw Error(`${label}: Label not found`);
-            console.assert(label.chunk === this.chunk, 'chunk is remained');
-
-            const arr = this.chunk.array;
-            let i = jump.offset;
-            if (jump.isDword) {
-                const offset = label.offset - jump.offset - 4;
-                arr[i++] = offset;
-                arr[i++] = offset >> 8;
-                arr[i++] = offset >> 16;
-                arr[i] = offset >> 24;
-            } else {
-                const offset = label.offset - jump.offset - 1;
-                console.assert(INT8_MIN <= offset && offset <= INT8_MAX, 'offset out of bounds');
-                arr[i] = offset;
-            }
-        }
-        this.chunk.unresolvedJumps.length = 0;
+        this.chunk.resolveAll();
         return this;
     }
     jz_label(label:string):this { return this._jmp_o_label(JumpOperation.je, label); }
@@ -1241,10 +1422,11 @@ export class X64Assembler {
     }
 
     endp():this {
-        for (const [labelName, label] of this.labels) {
+        for (const [labelName, label] of this.ids) {
+            if (!(label instanceof Label)) continue;
             switch (label.type) {
             case LabelType.Label:
-                this.labels.delete(labelName);
+                this.ids.delete(labelName);
                 break;
             case LabelType.Unknown:
                 label.type = LabelType.Proc;
@@ -1254,31 +1436,15 @@ export class X64Assembler {
         return this;
     }
 
+    const(name:string, value:number):this {
+        if (this.ids.has(name)) throw Error(`${name} is already defined`);
+        this.ids.set(name, new Constant(name, value));
+        return this;
+    }
+
     compileLine(lineText:string):void {
-        function prespace(text:string):number {
-            return text.match(/^\s*/)![0].length;
-        }
-
-        function indexMin(a:number, b:number):number {
-            return a === -1 ? b : b === -1 ? a : a < b ? a : b;
-        }
-
-        const indentspace = prespace(lineText);
-        lineText = lineText.substr(indentspace);
-        const commentIdx = indexMin(lineText.indexOf('#'), lineText.indexOf(';'));
-
-        const line = (commentIdx !== -1 ? lineText.substr(0, commentIdx) : lineText).trim();
-        if (line.length === 0) return;
-
-        let column = 0;
-        let width = 0;
-
-        function error(message:string):never {
-            throw new asm.SyntaxError(
-                message, 
-                column, 
-                width);
-        }
+        const commentIdx = lineText.search(COMMENT_REGEXP);
+        const parser = new TextLineParser(commentIdx === -1 ? lineText : lineText.substr(0, commentIdx));
 
         function setSize(nsize:OperationSize):void {
             if (size === null) {
@@ -1286,102 +1452,181 @@ export class X64Assembler {
                 return;
             }
             if (size !== nsize) {
-                error(`Operation size unmatched (${OperationSize[size]} != ${OperationSize[nsize]})`);
+                parser.error(`Operation size unmatched (${OperationSize[size]} != ${OperationSize[nsize]})`);
             }
         }
 
-        const spaceidx = line.indexOf(' ');
-        let command_base:string;
-        let command:string;
+        function parseType(type:string):TypeInfo {
+
+            let arraySize = 0;
+            let brace = type.indexOf('[');
+            let type_base = type;
+            if (brace !== -1) {
+                type_base = type_base.substr(0, brace).trim();
+                brace++;
+                const braceEnd = type.indexOf(']', brace);
+                if (braceEnd === -1) parser.error(`brace end not found: '${type}'`);
+                
+                const braceInner = type.substring(brace, braceEnd).trim();
+                const trails = type.substr(braceEnd+1).trim();
+                if (trails !== '') parser.error(`Unexpected characters '${trails}'`);
+                const res = polynominal.parseToNumber(braceInner);
+                if (res === null) parser.error(`Unexpected array length '${braceInner}'`);
+                arraySize = res!;
+            }
+
+            const size = sizemap.get(type_base);
+            if (size === undefined) parser.error(`Unexpected type name '${type}'`);
+
+            return {bytes: size!.bytes * Math.max(arraySize, 1), size:size!.size, align:size!.bytes, arraySize};
+        }
+
+        const command_base = parser.readToSpace();
+        if (command_base === '') return;
+        let command = command_base;
+        const callinfo:string[] = [command_base];
+
+        const totalIndex = parser.matchedIndex;
         let size:OperationSize|null = null;
 
-        const callinfo:string[] = [];
+        let unresolvedConstant:Identifier|null = null;
+        let unresolvedOffset:Extern[]|null = null;
+
         const args:any[] = [];
-        if (spaceidx !== -1){
-            command_base = command = line.substr(0, spaceidx);
-            column = spaceidx+1;
+        if (!parser.eof()){
             if (command === 'const') {
-                line.substr(column);
+                const name = parser.readToSpace();
+                const value = parser.readToSpace();
+                const valueNum = polynominal.parseToNumber(value);
+                if (valueNum === null) parser.error(`Unexpected number syntax '${value}'`);
+                try {
+                    this.const(name, valueNum!);
+                } catch (err) {
+                    parser.error(err.message);
+                }
+                return;
+            } else if (command === 'externconst') {
+                const name = parser.readTo(':');
+                const type = parser.readAll();
+                const res = parseType(type);
+                if (res.size === null) parser.error(`cannot use '${type}' at externconst`);
+                try {
+                    this.define_externconst(name, res.arraySize !== 0 ? OperationSize.qword : res.size!);
+                } catch (err) {
+                    parser.error(err.message);
+                }
+                return;
+            } else if (command === 'exportdef') {
+                const name = parser.readTo(':');
+                const type = parser.readAll();
+                const res = parseType(type);
+                try {
+                    this.def(name, res.size, res.bytes, res.align, true);
+                } catch (err) {
+                    parser.error(err.message);
+                }
+                return;
+            } else if (command === 'def') {
+                const name = parser.readTo(':');
+                const type = parser.readAll();
+                const res = parseType(type);
+                try {
+                    this.def(name, res.size, res.bytes, res.align, false);
+                } catch (err) {
+                    parser.error(err.message);
+                }
                 return;
             }
-            callinfo.push(command_base);
-            const params = line.substr(column).split(',');
-            column += indentspace;
-            for (const paramori of params){
-
-                const paramindent = prespace(paramori);
-                column += paramindent;
-
-                const param = paramori.substr(paramindent).trim();
-                width = param.length;
+            
+            for (const param of parser.split(',')){
 
                 const constval = polynominal.parseToNumber(param);
                 if (constval !== null) { // number
                     if (isNaN(constval)) {
-                        return error(`Unexpected number syntax ${callinfo.join(' ')}'`);
+                        return parser.error(`Unexpected number syntax ${callinfo.join(' ')}'`);
                     }
                     command += '_c';
+                    callinfo.push('(constant)');
                     args.push(constval);
                 } else if (param.endsWith(']')) { // memory access
-                    const bracketStart = param.indexOf('[');
-                    if (bracketStart === -1) {
-                        return error(`Unexpected bracket syntax ${callinfo.join(' ')}'`);
-                    }
-                    const words = splitWithSpaces(param.substr(0, bracketStart));
+                    const ctx = parser.enter('[');
+                    if (ctx === null) parser.error(`Unexpected bracket syntax ${param}'`);
+                    const bracketStart = parser.matchedIndex + parser.matchedWidth;
+                    const words = [...parser.splitWithSpaces()];
                     if (words.length !== 0) {
-                        if ((words.length !== 2) || words[1] !== 'ptr') error(`Invalid address syntax: ${param}`);
+                        if ((words.length !== 2) || words[1] !== 'ptr') parser.error(`Invalid address syntax: ${param}`);
                         const sizename = words[0];
-                        if (sizename !== 'byte' && sizename !== 'word' && sizename !== 'dword' && sizename !== 'qword') {
-                            throw Error(`Unexpected size name: ${sizename}`);
+                        const size = sizemap.get(sizename);
+                        if (size === undefined || size.size === null) {
+                            parser.error(`Unexpected size name: ${sizename}`);
                         }
-                        setSize(OperationSize[sizename]);
+                        setSize(size!.size!);
                     }
-                    const inner = param.substring(bracketStart+1, param.length-1);
+                    parser.leave(ctx!);
+
+                    let inner = parser.readAll();
+                    inner = inner.substr(0, inner.length-1);
                     try {
-                        const [r1, r2, c] = this._polynominalToAddress(inner);
+                        const [r1, r2, c, externs] = this._polynominalToAddress(inner);
+                        unresolvedOffset = externs;
                         if (r1 === null) {
                             callinfo.push('(constant address)');
-                            command += `_p`;
+                            command += `_cp`;
                         } else {
                             args.push(r1);
                             if (r2 === null) {
-                                callinfo.push('(1 reg address)');
+                                callinfo.push('(register pointer)');
                                 command += `_rp`;
                             } else {
-                                callinfo.push('(2 regs address)');
+                                callinfo.push('(2 register pointer)');
                                 command += `_rrp`;
                                 args.push(r2);
                             }
                         }
                         args.push(c);
                     } catch (err) {
-                        if (err instanceof asm.SyntaxError) {
-                            err.column += column + bracketStart + 1;
+                        if (err instanceof ParsingError) {
+                            err.column += bracketStart + 1;
                         }
                         throw err;
                     }
                 } else {
-                    const type = typemap.get(param.toLowerCase());
-                    if (!type) {
-                        command += '_label';
-                        args.push(param);
-                        callinfo.push('(label)');
-                    } else {
+                    const type = regmap.get(param.toLowerCase());
+                    if (type) {
                         setSize(type[2]);
                         command += '_'+type[0].short;
                         args.push(type[1]);
                         callinfo.push('('+type[0].name+')');
+                    } else {
+                        const id = this.ids.get(param);
+                        if (id instanceof Constant) {
+                            command += '_c';
+                            callinfo.push('(constant)');
+                            args.push(id.value);
+                        } else if (id instanceof Extern) {
+                            command += '_c';
+                            callinfo.push('(constant)');
+                            args.push(SIZE_MAX_VAL[id.size]);
+                            unresolvedConstant = id;
+                        } else if (id instanceof Defination) {
+                            command += '_cp';
+                            callinfo.push('(constant pointer)');
+                            if (id.size === null) parser.error(`Invalid operand type`);
+                            args.push(SIZE_MAX_VAL[id.size!]);
+                            unresolvedConstant = id;
+                        } else {
+                            command += '_label';
+                            args.push(param);
+                            callinfo.push('(label)');
+                        }
                     }
                 }
-                column += paramori.length - paramindent + 1;
+                
             }
-        } else {
-            command_base = command = line;
-            callinfo.push(command_base);
         }
 
-        column = indentspace;
-        width = line.length;
+        parser.matchedIndex = totalIndex;
+        parser.matchedWidth = parser.matchedIndex + parser.matchedWidth - totalIndex;
 
         if (command.endsWith(':')) {
             this.label(command.substr(0, command.length-1).trim());
@@ -1396,18 +1641,29 @@ export class X64Assembler {
         }
         const fn = (this as any)[command];
         if (typeof fn !== 'function') {
-            return error(`Unexpected command '${callinfo.join(' ')}'`);
+            parser.error(`Unexpected command '${callinfo.join(' ')}'`);
         }
-        fn.apply(this, args);
+        try {
+            fn.apply(this, args);
+            if (unresolvedConstant instanceof Extern) {
+                unresolvedConstant.add(this.chunk, this.chunk.size-4);
+            } else if (unresolvedConstant instanceof Defination) {
+                this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4,4,unresolvedConstant));
+            }
+            // TODO: apply unresolvedOffset
+
+        } catch (err) {
+            parser.error(err.message);
+        }
     }
 
-    private static call_c_info = new JumpInfo(5, 5, X64Assembler.prototype.call_c);
-    private static jmp_c_info = new JumpInfo(2, 5, X64Assembler.prototype.jmp_c);
-    private static jmp_o_info = new JumpInfo(2, 6, X64Assembler.prototype._jmp_o);
+    private static call_c_info = new JumpInfo(5, 5, 6, X64Assembler.prototype.call_c, X64Assembler.prototype.call_cp);
+    private static jmp_c_info = new JumpInfo(2, 5, 6, X64Assembler.prototype.jmp_c, X64Assembler.prototype.jmp_cp);
+    private static jmp_o_info = new JumpInfo(2, 6, -1, X64Assembler.prototype._jmp_o, null);
 }
 
 export function asm():X64Assembler {
-    return new X64Assembler;
+    return new X64Assembler(new Uint8Array(64), 0);
 }
 
 function shex(v:number|bin64_t):string {
@@ -1453,7 +1709,7 @@ class ArgName {
     public static readonly Register=new ArgName('register', 'r');
     public static readonly Const=new ArgName('const', 'c');
 }
-const typemap = new Map<string, [ArgName, Register, OperationSize]>([
+const regmap = new Map<string, [ArgName, Register, OperationSize]>([
     ['rax', [ArgName.Register, Register.rax, OperationSize.qword]],
     ['rcx', [ArgName.Register, Register.rcx, OperationSize.qword]],
     ['rdx', [ArgName.Register, Register.rdx, OperationSize.qword]],
@@ -1539,24 +1795,18 @@ function checkModified(ori:string, out:string):boolean{
 export namespace asm
 {
     export const code:Code = X64Assembler.prototype;
-    export import SyntaxError = polynominal.SyntaxError;
     export class CompileError extends Error {
-        errors:SyntaxError[] = [];
+        errors:ParsingError[] = [];
         sourcePath?:string;
         
-        add(error:SyntaxError):void {
+        add(error:ParsingError):void {
             this.errors.push(error);
         }
 
         report():void {
             const sourcePath = this.sourcePath || 'asmcode';
             for (const err of this.errors) {
-                console.error();
-                console.error(`${colors.cyan(sourcePath)}:${colors.yellow(err.line+'')}:${colors.yellow(err.column+'')} - ${colors.red(err.severity)}: ${err.message}`);
-                
-                const linestr = err.line+'';
-                console.error(colors.black(colors.bgWhite(linestr))+` ${err.lineText}`);
-                console.error(colors.bgWhite(' '.repeat(linestr.length))+' '.repeat(err.column+1)+colors.red('~'.repeat(err.width)));
+                err.report(sourcePath);
             }
         }
     }
@@ -1659,23 +1909,9 @@ export namespace asm
             }
             return code;
         }
-
-        buffer():asm.CodeBuffer {
-            return this.asm().buffer();
-        }
     }
 
-    export class CodeBuffer extends Uint8Array {
-        constructor(
-            array:ArrayBuffer, offset:number, length:number,
-            public readonly labels:Record<string, number>,
-            public readonly memory:number,
-            public readonly alignment:number) {
-            super(array, offset, length);
-        }
-    }
-
-    export function compile(source:string):Uint8Array{
+    export function compile(source:string, reportDirectWithFileName?:string|null):Uint8Array{
         let p = 0;
         let lineNumber = 1;
         const generator = asm();
@@ -1689,11 +1925,14 @@ export namespace asm
             try {
                 generator.compileLine(lineText);
             } catch (err) {
-                if (err instanceof SyntaxError) {
+                if (err instanceof ParsingError) {
                     err.line = lineNumber;
                     err.lineText = lineText;
                     if (errs === null) errs = new CompileError(`${err.message}, line:${lineNumber}`);
                     errs.errors.push(err);
+                    if (reportDirectWithFileName) {
+                        err.report(reportDirectWithFileName);
+                    }
                 } else {
                     throw err;
                 }
@@ -1709,7 +1948,7 @@ export namespace asm
         return Buffer.concat([Buffer.from(names, 'utf-8'), generator.buffer()]);
     }
 
-    export function load(bin:Uint8Array):asm.CodeBuffer {
+    export function load(bin:Uint8Array):X64Assembler {
 
         let p = 0;
         function readVarUint():number {
@@ -1752,22 +1991,37 @@ export namespace asm
             }
             memorySize += size;
         }
+        interface ExternInfo {
+            name:string;
+            offsets:number[];
+            size:OperationSize;
+        }
+        const externs:ExternInfo[] = [];
         for (;;){
             const name = readString();
             if (name === null) break;
 
+            const size = readVarUint();
+            const offsets:number[] = [];
+            const info:ExternInfo = {name, offsets, size};
             let offset = memorySize;
             for (;;) {
                 const move = readVarUint();
                 if (move === 0) break;
+                offsets.push(offset);
                 offset += move;
-
             }
+            externs.push(info);
         }
-        return new asm.CodeBuffer(bin.buffer, bin.byteOffset+p, bin.length-p, labels, memorySize, 8);
+        const buf = bin.subarray(p);
+        const out = new X64Assembler(buf, buf.length);
+        for (const {name, offsets, size} of externs) {
+            out.load_externconst(name, offsets, size);
+        }
+        return out;
     }
     
-    export function loadFromFile(src:string):asm.CodeBuffer{
+    export function loadFromFile(src:string, reportDirect:boolean = false):X64Assembler{
         try {
             const binpath = src.substr(0, src.lastIndexOf('.')+1)+'bin';
             const binpathLower = binpath.toLowerCase();
@@ -1775,7 +2029,7 @@ export namespace asm
     
             let buffer:Uint8Array;
             if (checkModified(src, binpath)){
-                buffer = asm.compile(fs.readFileSync(src, 'utf-8'));
+                buffer = asm.compile(fs.readFileSync(src, 'utf-8'), reportDirect ? src : null);
                 writingMap.add(binpathLower);
                 fs.writeFile(binpath, buffer, ()=>{
                     writingMap.delete(binpathLower);

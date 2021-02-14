@@ -45,8 +45,8 @@ GIT
 ```
 
 ### Starting with the executable
-run `./bdsx/bdsx.bat` (on Windows)  
-run `./bdsx/bdsx.sh` (on Linux)
+run `./bdsx.bat` (on Windows)  
+run `./bdsx.sh` (on Linux)
 
 ### by docker
 ```sh
@@ -59,7 +59,7 @@ docker run karikera/bdsx
 ├ [bdsx] # Core Library
 ├ [example_and_test]
 ├ [bedrock_server] # Installed BDS
-├ launcher.ts # It's started before BDS. 
+├ launcher.ts # Script before launching BDS. 
 ├ index.ts # Main entry point. 
 ├ bdsx.sh # Executable for Linux
 └ bdsx.bat # Executable for Windows

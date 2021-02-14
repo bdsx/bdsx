@@ -6,10 +6,9 @@ import path = require('path');
 let loaded:Record<string, StaticPointer>;
 
 try {
-    loaded = asm.loadFromFile(path.join(__dirname, '../bdsx/asm/asmcode.asm')).allocs();
+    loaded = asm.loadFromFile(path.join(__dirname, '../bdsx/asm/asmcode.asm'), true).allocs();
 } catch (err) {
     if (err instanceof asm.CompileError) {
-        err.report();
         process.exit(-1);
     }
     throw err;

@@ -1,3 +1,4 @@
+import { ParsingError } from "./textparser";
 
 
 function str2set(str:string):Set<number>{
@@ -79,7 +80,7 @@ export namespace polynominal {
         }
         asAdditive():Additive {
             const out = new Additive;
-            const mult = new Multiplicative();
+            const mult = new Multiplicative;
             mult.pushVariable(new Variable(this, new Constant(1)));
             out.pushTerm(mult);
             return out;
@@ -192,8 +193,21 @@ export namespace polynominal {
             return true;
         }
         isSameVariables(o:Multiplicative):boolean {
-            for (const v of o.variables) {
-                if (!o.has(v)) return false;
+            const arr = this.variables.slice();
+            _foundSame:for (const v of o.variables) {
+
+                for (let i=0;i<arr.length;i++) {
+                    if (!arr[i].equals(v)) continue;
+                
+                    const last = arr.length-1;
+                    if (i !== last) {
+                        arr[i] = arr.pop()!;
+                    } else {
+                        arr.length = last;
+                    }
+                    continue _foundSame;
+                }
+                return false;
             }
             return true;
         }
@@ -293,18 +307,6 @@ export namespace polynominal {
             return `(${this.terms.join('+')}+${this.constant})`;
         }
     }
-    export class SyntaxError extends Error {
-        public severity:'error'|'warning' = 'error';
-        public lineText?:string;
-        public line?:number;
-
-        constructor(
-            message:string, 
-            public column:number, 
-            public width:number) {
-            super(message);
-        }
-    }
     export class Operator {
         public name:string;
         public type:keyof OperatorSet;
@@ -319,6 +321,9 @@ export namespace polynominal {
         }
     }
 
+    /**
+     * @return null if invalid
+     */
     export function parseToNumber(text:string):number|null {
         const firstchr = text.charCodeAt(0);
         const minus = (firstchr === 0x2d);
@@ -344,7 +349,7 @@ export namespace polynominal {
         const ungettedOperators:Operator[] = [];
 
         function error(message:string, word:string):never {
-            throw new SyntaxError(message, i-word.length, word.length); 
+            throw new ParsingError(message, i-word.length, word.length); 
         }
     
         function skipSpace():void {
@@ -359,6 +364,7 @@ export namespace polynominal {
             if (ungettedOperators.length !== 0) {
                 return ungettedOperators.shift()!;
             }
+            skipSpace();
             const from = i;
             if (from >= text.length) return OPER_EOF;
             let out = '';
@@ -371,29 +377,29 @@ export namespace polynominal {
             }
             const opername = text.substring(from, i);
             const opers = OPERATORS.get(opername);
-            if (opers === undefined) throw new SyntaxError(`Unexpected operator '${opername}'`, from, i-from);
+            if (opers === undefined) throw new ParsingError(`Unexpected operator '${opername}'`, from, i-from);
 
             for (const type of types) {
                 const oper = opers[type];
                 if (oper !== undefined) return oper;
             }
-            throw new SyntaxError(`Unexpected operator '${opername}' for ${types.join(',')}`, from, i-from);
+            throw new ParsingError(`Unexpected operator '${opername}' for ${types.join(',')}`, from, i-from);
         }
 
         function ungetOperator(oper:Operator):void {
             ungettedOperators.push(oper);
         }
     
-        function parseOperand(text:string):polynominal.Name|polynominal.Constant {
-            const n = polynominal.parseToNumber(text);
+        function parseOperand(word:string):polynominal.Name|polynominal.Constant {
+            const n = polynominal.parseToNumber(word);
             let out:polynominal.Name|polynominal.Constant;
 
             if (n === null) {
-                out = new polynominal.Name(text);
-                out.column = i-text.length;
-                out.length = text.length;
+                out = new polynominal.Name(word);
+                out.column = i-word.length;
+                out.length = word.length;
             } else {
-                if (isNaN(n)) throw error(`Unexpected number: ${text}`, text);
+                if (isNaN(n)) throw error(`Unexpected number: ${word}`, word);
                 out = new polynominal.Constant(n);
             }
             return out;
@@ -516,7 +522,6 @@ namespace operation {
         }),
     ];
 }
-
 
 
 interface OperatorSet {

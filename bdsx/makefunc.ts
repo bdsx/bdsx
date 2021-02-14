@@ -278,8 +278,7 @@ class Maker extends X64Assembler {
         public readonly pi: ParamInfoMaker,
         public readonly stackSize: number,
         private readonly useGetOut: boolean) {
-        super();
-
+        super(new Uint8Array(64), 0);
 
         this.push_r(Register.rdi);
         this.push_r(Register.rsi);
@@ -1072,17 +1071,12 @@ declare module "./assembler"
         make<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
             returnType: RETURN, opts?: OPTS, ...params: PARAMS):
             FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN>;
-        alloc():StaticPointer;
-        allocs():Record<string, StaticPointer>;
+        alloc(constants?:Record<string, number>, alignment?:number):StaticPointer;
+        allocs(constants?:Record<string, number>, alignment?:number):Record<string, StaticPointer>;
     }
     namespace asm
     {
         function const_str(str:string, encoding?:BufferEncoding):Buffer;
-        interface CodeBuffer
-        {
-            alloc():StaticPointer;
-            allocs():Record<string, StaticPointer>;
-        }
     }
 }
 declare module "./core"
@@ -1121,26 +1115,22 @@ X64Assembler.prototype.make = function<OPTS extends MakeFuncOptions<any>|null, R
     return makefunc.js(this.alloc(), returnType, opts,  ...params);
 };
 
-X64Assembler.prototype.alloc = function():StaticPointer {
-    return this.buffer().alloc();
-};
-
-X64Assembler.prototype.allocs = function():Record<string, StaticPointer> {
-    return this.buffer().allocs();
-};
-
-asm.CodeBuffer.prototype.alloc = function():StaticPointer {
-    const mem = cgate.allocExecutableMemory(this.memory+this.length, this.alignment);
-    mem.setBuffer(this, this.memory);
+X64Assembler.prototype.alloc = function(constants:Record<string, number> = {}, alignment:number=1):StaticPointer {
+    const buffer = this.buffer();
+    const mem = cgate.allocExecutableMemory(buffer.length, alignment);
+    mem.setBuffer(buffer);
     return mem;
 };
 
-asm.CodeBuffer.prototype.allocs = function():Record<string, StaticPointer> {
-    const mem = cgate.allocExecutableMemory(this.memory+this.length, this.alignment);
-    mem.setBuffer(this, this.memory);
+X64Assembler.prototype.allocs = function(constants:Record<string, number> = {}, alignment:number=1):Record<string, StaticPointer> {
+    const buffer = this.buffer();
+    const mem = cgate.allocExecutableMemory(buffer.length, alignment);
+    mem.setBuffer(buffer);
+
     const out:Record<string, StaticPointer> = {};
-    for (const name in this.labels) {
-        out[name] = mem.add(this.labels[name]);
+    const labels = this.labels();
+    for (const name in labels) {
+        out[name] = mem.add(labels[name]);
     }
     return out;
 };

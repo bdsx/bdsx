@@ -109,6 +109,17 @@ export namespace bin
         const v4 = high >>> 16;
         return String.fromCharCode(v1,v2,v3,v4);
     }
+    export function make128(a:number, b:number, c:number, d:number):string {
+        const a1 = a & 0xffff;
+        const a2 = a >>> 16;
+        const b1 = b & 0xffff;
+        const b2 = b >>> 16;
+        const c1 = c & 0xffff;
+        const c2 = c >>> 16;
+        const d1 = d & 0xffff;
+        const d2 = d >>> 16;
+        return String.fromCharCode(a1,a2,b1,b2,c1,c2,d1,d2);
+    }
     export function toNumber(v:string):number {
         let out = 0;
         let mult = 1;
