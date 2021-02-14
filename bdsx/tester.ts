@@ -12,6 +12,8 @@ export class Tester {
     errored = false;
     done = false;
 
+    public static errored = false;
+
     log(message:string):void {
         console.log(`[test/${this.subject}] ${message}`);
     }
@@ -19,13 +21,14 @@ export class Tester {
     private _error(message:string, errorpos:string):void {
         console.error(colors.red(`[test/${this.subject}] failed. ${message}`));
         console.error(colors.red(errorpos));
-        if (this.done) {
-            if (!this.errored) {
+        if (!this.errored) {
+            if (this.done) {
                 passed--;
                 console.error(colors.red(`[test] FAILED (${passed}/${testcount})`));
             }
+            this.errored = true;
+            Tester.errored = true;
         }
-        this.errored = true;
     }
     
     error(message:string, stackidx:number = 2):void {

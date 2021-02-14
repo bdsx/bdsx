@@ -15,7 +15,7 @@ import { remapAndPrintError } from "./source-map-support";
 import { _tickCallback } from "./util";
 
 const MAX_PACKET_ID = 0x100;
-const EVENT_INDEX_COUNT = 0x400;
+const EVENT_INDEX_COUNT = 0x500;
 
 class ReadOnlyBinaryStream extends NativeClass {
     data:CxxStringWrapper;
@@ -49,10 +49,11 @@ export namespace nethook
 {
     export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
     export type BeforeListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
-    export type AfterListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => void;
+    export type AfterListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
     export type SendListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
-    type AllEventTarget = Event<RawListener|BeforeListener<any>|AfterListener<any>|SendListener<any>>;
-    type AnyEventTarget = Event<RawListener&BeforeListener<any>&AfterListener<any>&SendListener<any>>;
+    export type SendRawListener = (ptr:NativePointer, size:number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
+    type AllEventTarget = Event<RawListener|BeforeListener<any>|AfterListener<any>|SendListener<any>|SendRawListener>;
+    type AnyEventTarget = Event<RawListener&BeforeListener<any>&AfterListener<any>&SendListener<any>&SendRawListener>;
     
     const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
     for (let i=0;i<EVENT_INDEX_COUNT;i++) {
@@ -64,13 +65,15 @@ export namespace nethook
         Raw,
         Before,
         After,
-        Send
+        Send,
+        SendRaw
     }
 
     const RAW_OFFSET = EventType.Raw*MAX_PACKET_ID;
     const BEFORE_OFFSET = EventType.Before*MAX_PACKET_ID;
     const AFTER_OFFSET = EventType.After*MAX_PACKET_ID;
     const SEND_OFFSET = EventType.Send*MAX_PACKET_ID;
+    const SEND_AFTER_OFFSET = EventType.SendRaw*MAX_PACKET_ID;
         
     export function hooking(fireError:(err:any)=>void):void {
         function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
@@ -253,7 +256,7 @@ export namespace nethook
             .alloc(), 
             Register.rax, true, packetAfterOriginalCode, []);
 
-        const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>{
+        const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet)=>{
             try {
                 const packetId = packet.getId();
                 if ((packetId>>>0) >= MAX_PACKET_ID) {
@@ -266,6 +269,25 @@ export namespace nethook
                     const TypedPacket = PacketIdToType[packetId] || Packet;
                     const packetptr = new TypedPacket(packet);
                     const ignore = target.fire(packetptr, ni, packetId) === CANCEL;
+                    _tickCallback();
+                    if (ignore) return;
+                }
+            } catch (err) {
+                remapAndPrintError(err);
+            }
+        }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet);
+
+        const onPacketSendRaw = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>{
+            try {
+                const packetId = packet.getId();
+                if ((packetId>>>0) >= MAX_PACKET_ID) {
+                    console.error(`onPacketSendAfter - Unexpected packetId: ${packetId}`);
+                    return;
+                }
+
+                const target = alltargets[packetId+SEND_AFTER_OFFSET] as Event<SendRawListener>;
+                if (target !== null && !target.isEmpty()) {
+                    const ignore = target.fire(data.valueptr, data.length, ni, packetId) === CANCEL;
                     _tickCallback();
                     if (ignore) return;
                 }
@@ -292,15 +314,37 @@ export namespace nethook
             .ret()
             .alloc(),
             Register.rax, true, packetSendOriginalCode, []);
+
+        const packetSendAllOriginalCode = [
+            0x49, 0x8B, 0x06, // mov rax,qword ptr ds:[r14]
+            0x49, 0x8D, 0x97, 0x08, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r15+208]
+            0x49, 0x8B, 0xCE, // mov rcx,r14
+            0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
+        ];
+        procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0xf0,
+            asm()
+            .mov_r_r(Register.r8, Register.r14)
+            .mov_r_r(Register.rdx, Register.rsi)
+            .mov_r_r(Register.rcx, Register.r15)
+            .sub_r_c(Register.rsp, 0x28)
+            .call64(onPacketSend, Register.rax)
+            .add_r_c(Register.rsp, 0x28)
+            .mov_r_rp(Register.rax, Register.r14, 0)
+            .lea_r_rp(Register.rdx, Register.r15, 0x208)
+            .mov_r_r(Register.rcx, Register.r14)
+            .jmp_rp(Register.rax, 0x18)
+            .ret()
+            .alloc(),
+            Register.rax, true, packetSendAllOriginalCode, []);
         
-        procHacker.patching('hook-packet-send', 'NetworkHandler::_sendInternal', 0x14,
+        procHacker.patching('hook-packet-send-after', 'NetworkHandler::_sendInternal', 0x14,
             asm()
             .mov_r_r(Register.r14, Register.r9)
             .mov_r_r(Register.rdi, Register.r8)
             .mov_r_r(Register.rbp, Register.rdx)
             .mov_r_r(Register.rsi, Register.rcx)
             .sub_r_c(Register.rsp, 0x28)
-            .call64(onPacketSend, Register.rax)
+            .call64(onPacketSendRaw, Register.rax)
             .add_r_c(Register.rsp, 0x28)
             .mov_r_r(Register.rcx, Register.rsi)
             .mov_r_r(Register.rdx, Register.rbp)

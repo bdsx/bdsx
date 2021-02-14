@@ -1,5 +1,5 @@
 import { abstract } from "./common";
-import { VoidPointer } from "./core";
+import { NativePointer, VoidPointer } from "./core";
 import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
@@ -101,9 +101,9 @@ export class CxxStringWrapper extends NativeClass {
         this.setCxxString(str);
     }
 
-    get valueptr():VoidPointer {
+    get valueptr():NativePointer {
         if (this.capacity >= 0x10) return this.getPointer();
-        else return this as any;
+        else return this.add();
     }
 }
 CxxStringWrapper.define({

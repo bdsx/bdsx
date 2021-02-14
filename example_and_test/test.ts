@@ -231,23 +231,32 @@ Tester.test({
 
     nethook(){
         let idcheck = 0;
+        let sendidcheck = 0;
         let sendpacket = 0;
         for (let i=0;i<255;i++)
         {
             netevent.raw(i).on((ptr, size, ni, packetId)=>{
                 idcheck = packetId;
-                this.assert(packetId === ptr.readUint8(), `different packetId in buffer. id=${packetId}`);
+                this.assert(size > 0, `packet size is too little`);
+                this.assert(packetId === ptr.readVarUint(), `different packetId in buffer. id=${packetId}`);
             });
             netevent.before<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
                 this.assert(packetId === idcheck, `different packetId on before. id=${packetId}`);
                 this.assert(ptr.getId() === idcheck, `different class.packetId on before. id=${packetId}`);
             });
-            netevent.after(<MinecraftPacketIds>i).on((ptr, ni, packetId)=>{
+            netevent.after<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
                 this.assert(packetId === idcheck, `different packetId on after. id=${packetId}`);
                 this.assert(ptr.getId() === idcheck, `different class.packetId on after. id=${packetId}`);
             });
             netevent.send<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
+                sendidcheck = packetId;
                 this.assert(ptr.getId() === packetId, `different class.packetId on send. id=${packetId}`);
+                sendpacket++;
+            });
+            netevent.sendRaw(i).on((ptr, size, ni, packetId)=>{
+                this.assert(size > 0, `packet size is too little`);
+                this.assert(packetId === sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                this.assert(packetId === ptr.readVarUint(), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             });
         }

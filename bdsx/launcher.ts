@@ -398,7 +398,7 @@ function _launch(asyncResolve:()=>void):void {
     .call64(runtimeError.beginHandler, Register.rax)
     .mov_r_c(Register.rcx, bedrock_server_exe.argc, OperationSize.dword)
     .mov_r_c(Register.rdx, bedrock_server_exe.args)
-    .xor_r_r(Register.r8, Register.r8)
+    .xor_r_r(Register.r8, Register.r8, OperationSize.dword)
     .call64(bedrock_server_exe.main, Register.rax)
     .add_r_c(Register.rsp, 0x28)
     .mov_r_c(Register.rcx, makefunc.np(finishCallback, RawTypeId.Void, null))
@@ -577,5 +577,3 @@ export namespace bedrockServer
         }
     }
 }
-
-
