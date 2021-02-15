@@ -7,8 +7,7 @@ system.listenForEvent('minecraft:entity_created', ev => {
 
     // Get extra informations from entity
     const actor = Actor.fromEntity(ev.data.entity);
-    if (actor)
-    {
+    if (actor) {
         console.log('entity dimension: ' + DimensionId[actor.getDimension()]);
         const level = actor.getAttribute(AttributeId.PlayerLevel);
         console.log('entity level: ' + level);

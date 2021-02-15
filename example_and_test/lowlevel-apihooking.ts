@@ -9,8 +9,7 @@ import { pdb } from "bdsx/core";
 import { ProcHacker } from "bdsx/prochacker";
 
 
-if (!capi.isRunningOnWine()) // Skip for Linux, pdb is not working on Wine.
-{
+if (!capi.isRunningOnWine()) { // Skip for Linux, pdb is not working on Wine.
     // the API hooking is possible on Wine with the generated cache.
 
     pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names. without this, ProcHacker.load will use mangled names
@@ -19,8 +18,7 @@ if (!capi.isRunningOnWine()) // Skip for Linux, pdb is not working on Wine.
     pdb.close(); // close the pdb to reduce the resource usage.
     
     let halfMiss = false;
-    function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean
-    {
+    function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean {
         halfMiss = !halfMiss;
         const ni = gameMode.actor.getNetworkIdentifier();
         const packet = TextPacket.create();
