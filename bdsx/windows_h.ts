@@ -1,7 +1,9 @@
 import { bin } from "./bin";
-import { bin64_t, int32_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
+import { bin64_t, int32_t, NativeType, uint16_t, uint32_t, uint8_t } from "./nativetype";
 import { NativeArray, NativeClass } from "./nativeclass";
 import { VoidPointer } from "./core";
+
+export const MAX_PATH = 260;
 
 export const PAGE_NOACCESS =                    0x01;
 export const PAGE_READONLY =                    0x02;
@@ -307,6 +309,42 @@ IMAGE_THUNK_DATA64.define({
     u1:IMAGE_THUNK_DATA64_union
 });
 
+
+const IMAGE_SIZEOF_SHORT_NAME = 8;
+
+export class IMAGE_SECTION_HEADER extends NativeClass {
+    Name: NativeArray<BYTE>;
+    Misc:IMAGE_SECTION_HEADER_Misc;
+    VirtualAddress:DWORD;
+    SizeOfRawData:DWORD;
+    PointerToRawData:DWORD;
+    PointerToRelocations:DWORD;
+    PointerToLinenumbers:DWORD;
+    NumberOfRelocations:WORD;
+    NumberOfLinenumbers:WORD;
+    Characteristics:DWORD;
+}
+class IMAGE_SECTION_HEADER_Misc extends NativeClass {
+    PhysicalAddress:DWORD;
+    VirtualSize:DWORD;
+}
+IMAGE_SECTION_HEADER_Misc.defineAsUnion({
+    PhysicalAddress:DWORD,
+    VirtualSize:DWORD,
+});
+
+IMAGE_SECTION_HEADER.define({
+    Name: NativeArray.make(BYTE, IMAGE_SIZEOF_SHORT_NAME),
+    Misc:IMAGE_SECTION_HEADER_Misc,
+    VirtualAddress:DWORD,
+    SizeOfRawData:DWORD,
+    PointerToRawData:DWORD,
+    PointerToRelocations:DWORD,
+    PointerToLinenumbers:DWORD,
+    NumberOfRelocations:WORD,
+    NumberOfLinenumbers:WORD,
+    Characteristics:DWORD,
+});
 
 const EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
 

@@ -108,7 +108,6 @@ function patchForStdio():void {
     .jmp64(bedrockLogNp, Register.rax)
     .alloc();
 
-    console.log('node thread id: '+capi.nodeThreadId);
     const logHook = asm()
     .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
     .cmp_r_c(Register.rax, capi.nodeThreadId)

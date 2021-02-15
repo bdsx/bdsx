@@ -66,6 +66,7 @@ export class NativeModule extends VoidPointer {
     /**
      * get NativeModule by name
      * wrapper of GetModuleHandleW
+     * if you want to load the new module. Please use NativeModule.load instead
      * @param name return exe module if null 
      */
     static get(name: string|null): NativeModule {
@@ -82,8 +83,10 @@ export class NativeModule extends VoidPointer {
     static load(name: string): NativeModule {
         const module = dll.kernel32.LoadLibraryW(name);
         if (module.isNull()) {
-            const err = dll.kernel32.GetLastError();
-            throw Error(name + ': Cannot load module, errno='+err);
+            const errno = dll.kernel32.GetLastError();
+            const errobj:NodeJS.ErrnoException = Error(name + ': Cannot load module, errno='+errno);
+            errobj.errno = errno;
+            throw errobj;
         }
         module.name = name;
         return module;
@@ -138,9 +141,11 @@ export namespace dll {
     export namespace kernel32 {
         export const module = NativeModule.get('kernel32.dll');
         export const LoadLibraryW = module.getFunction('LoadLibraryW', NativeModule, null, RawTypeId.StringUtf16);
+        export const LoadLibraryExW = module.getFunction('LoadLibraryExW', NativeModule, null, RawTypeId.StringUtf16, VoidPointer, RawTypeId.Int32);
+        export const FreeLibrary = module.getFunction('FreeLibrary', RawTypeId.Boolean, null, NativeModule);
         export const VirtualProtect = module.getFunction('VirtualProtect', RawTypeId.Boolean, null, VoidPointer, RawTypeId.FloatAsInt64, RawTypeId.FloatAsInt64, RawTypeId.Buffer);
-        export const Sleep = module.getFunction('Sleep', RawTypeId.Void, null, RawTypeId.Int32);
-        export const SetCurrentDirectoryW = module.getFunction('SetCurrentDirectoryW', RawTypeId.Boolean, null, RawTypeId.StringUtf16);
+        // export const Sleep = module.getFunction('Sleep', RawTypeId.Void, null, RawTypeId.Int32);
+        // export const SetCurrentDirectoryW = module.getFunction('SetCurrentDirectoryW', RawTypeId.Boolean, null, RawTypeId.StringUtf16);
         export const GetLastError = module.getFunction('GetLastError', RawTypeId.Int32);
         export const CreateThread = module.getFunction('CreateThread', ThreadHandle, null, VoidPointer, RawTypeId.FloatAsInt64, VoidPointer, VoidPointer, RawTypeId.Int32, RawTypeId.Buffer);
         export const TerminateThread = module.getFunction('TerminateThread', RawTypeId.Void, null, ThreadHandle, RawTypeId.Int32);
@@ -154,18 +159,18 @@ export namespace dll {
         export const EnterCriticalSection = module.getFunction('EnterCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const LeaveCriticalSection = module.getFunction('LeaveCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const TryEnterCriticalSection = module.getFunction('TryEnterCriticalSection', RawTypeId.Boolean, null, CriticalSection);
-        export const WaitForMultipleObjects = module.getProcAddress('WaitForMultipleObjects');
+        // export const WaitForMultipleObjects = module.getProcAddress('WaitForMultipleObjects');
         export const FormatMessageW = module.getFunction('FormatMessageW', RawTypeId.Int32, null, RawTypeId.Int32, VoidPointer, RawTypeId.Int32, RawTypeId.Int32, VoidPointer, RawTypeId.Int32, VoidPointer);
         export const LocalFree = module.getFunction('LocalFree', VoidPointer, null, VoidPointer);
         export const SetDllDirectoryW = module.getFunction('SetDllDirectoryW', RawTypeId.Boolean, null, RawTypeId.StringUtf16);
-        export const GetThreadContext = module.getFunction('GetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
-        export const SetThreadContext = module.getFunction('SetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
-        export const SuspendThread = module.getFunction('SuspendThread', RawTypeId.Int32, null, VoidPointer);
-        export const ResumeThread = module.getFunction('ResumeThread', RawTypeId.Int32, null, VoidPointer);
+        // export const GetThreadContext = module.getFunction('GetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
+        // export const SetThreadContext = module.getFunction('SetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
+        // export const SuspendThread = module.getFunction('SuspendThread', RawTypeId.Int32, null, VoidPointer);
+        // export const ResumeThread = module.getFunction('ResumeThread', RawTypeId.Int32, null, VoidPointer);
     }
     export namespace ucrtbase {
         export const module = NativeModule.get('ucrtbase.dll');
-        export const _get_initial_narrow_environment = module.getFunction('_get_initial_narrow_environment', StaticPointer);
+        // export const _get_initial_narrow_environment = module.getFunction('_get_initial_narrow_environment', StaticPointer);
         export const _beginthreadex = module.getFunction('_beginthreadex', ThreadHandle, null, VoidPointer, RawTypeId.FloatAsInt64, VoidPointer, VoidPointer, RawTypeId.Int32, RawTypeId.Buffer);
 
         export const free = module.getFunction('free', RawTypeId.Void, null, VoidPointer);

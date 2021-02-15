@@ -1,4 +1,5 @@
-'use strict';
+
+import fs = require('fs');
 
 export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
     const size = src.length;
@@ -124,4 +125,20 @@ export function getLineAt(context:string, lineIndex:number):string {
     const next = context.indexOf('\n', idx);
     if (next === -1) return context.substr(idx);
     else return context.substring(idx, next);
+}
+
+export function isDirectory(file:string):boolean {
+    try {
+        return fs.statSync(file).isDirectory();
+    } catch (err) {
+        return false;
+    }
+}
+
+export function isFile(filepath:string):boolean {
+    try {
+        return fs.statSync(filepath).isFile();
+    } catch (err) {
+        return false;
+    }
 }

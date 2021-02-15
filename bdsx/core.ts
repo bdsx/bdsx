@@ -582,8 +582,6 @@ export declare namespace pdb
      */
     export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean):{[key in KEYS[number]]: NativePointer} & OLD;
 
-    export function getDllDependeny():void;
-
     /**
      * get all symbols
      */

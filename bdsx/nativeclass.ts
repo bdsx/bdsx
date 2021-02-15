@@ -32,10 +32,11 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
 
 export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
+    static readonly [NativeType.align]:number = 1;
     static [StructurePointer.contentSize]:number = 0;
     static readonly [isNativeClass] = true;
     static readonly [isInherited] = true;
-    static readonly [offsetmap] = {};
+    static [offsetmap]:Record<string,number>;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -151,7 +152,7 @@ export class NativeClass extends StructurePointer {
         let size = offset;
         let align:number = defineAlign != null ? defineAlign : proto[NativeType.align];
 
-        const offmap:Record<string, number> = clazz[offsetmap];
+        const offmap:Record<string, number> = clazz[offsetmap] = {};
         
         const propmap = new NativeDescriptorBuilder;
         for (const key in fields) {
@@ -211,13 +212,14 @@ export class NativeClass extends StructurePointer {
     }
 
     static defineAsUnion<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, abstract:boolean = false):void {
+        const clazz = this as NativeClassType<T>;
         for (const key in fields) {
             const item:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
             if (!(item instanceof Array)) {
                 fields[key as KeysWithoutFunction<T>] = [item, 0];
             }
         }
-        return (this as any).define(fields, null, abstract);
+        return clazz.define(fields, null, null, abstract);
     }
 
     static ref<T extends NativeClass>(this:{new():T}):NativeClassType<T> {
@@ -308,8 +310,12 @@ export class NativeArray<T> extends PrivatePointer {
         }
         class NativeArrayImpl extends NativeArray<T> {
             static readonly [NativeType.size] = off;
+            static readonly [StructurePointer.contentSize] = off;
             static readonly [NativeType.align] = itemType[NativeType.align];
+            [NativeType.size]:number;
         }
+        NativeArrayImpl.prototype[NativeType.size] = off;
+
         Object.defineProperties(NativeArrayImpl.prototype, propmap.desc);
         return NativeArrayImpl;
     }
