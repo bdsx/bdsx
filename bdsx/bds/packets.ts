@@ -554,8 +554,19 @@ export class RemoveObjectivePacket extends Packet {
 }
 
 export class SetDisplayObjectivePacket extends Packet {
-    // unknown
+    displaySlot:CxxString;
+    objectiveName:CxxString;
+    displayName:CxxString;
+    criteriaName:CxxString;
+    sortOrder:int32_t;
 }
+SetDisplayObjectivePacket.abstract({
+    displaySlot:[CxxString, 0x28],
+    objectiveName:[CxxString, 0x48],
+    displayName:[CxxString, 0x68],
+    criteriaName:[CxxString, 0x88],
+    sortOrder:[int32_t, 0xA8],
+});
 
 export class SetScorePacket extends Packet {
     // unknown
