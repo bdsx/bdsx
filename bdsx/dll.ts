@@ -174,7 +174,7 @@ export namespace dll {
         export const _beginthreadex = module.getFunction('_beginthreadex', ThreadHandle, null, VoidPointer, RawTypeId.FloatAsInt64, VoidPointer, VoidPointer, RawTypeId.Int32, RawTypeId.Buffer);
 
         export const free = module.getFunction('free', RawTypeId.Void, null, VoidPointer);
-		export const malloc = module.getFunction('malloc', NativePointer, null, RawTypeId.FloatAsInt64);
+		export const malloc = module.getFunction('malloc', NativePointer, {nullableReturn:true}, RawTypeId.FloatAsInt64);
         export const __stdio_common_vsprintf = module.getProcAddress('__stdio_common_vsprintf');
     }
     export namespace vcruntime140 {

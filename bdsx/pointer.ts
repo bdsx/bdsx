@@ -1,5 +1,6 @@
 import { abstract } from "./common";
 import { NativePointer, VoidPointer } from "./core";
+import { dll } from "./dll";
 import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
@@ -104,6 +105,24 @@ export class CxxStringWrapper extends NativeClass {
     get valueptr():NativePointer {
         if (this.capacity >= 0x10) return this.getPointer();
         else return this.add();
+    }
+
+    reserve(nsize:number):void {
+        const capacity = this.capacity;
+        if (nsize > capacity) {
+            const orivalue = this.valueptr;
+            this.capacity = nsize;
+            const dest = dll.ucrtbase.malloc(nsize + 1);
+            dest.copyFrom(orivalue, this.length);
+            if (capacity >= 0x10) dll.ucrtbase.free(orivalue);
+            this.setPointer(dest);
+            if (dest === null) {
+                this.setString("[out of memory]");
+                this.capacity = 15;
+                this.length = 15;
+                return;
+            }
+        }
     }
 }
 CxxStringWrapper.define({

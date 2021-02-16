@@ -25,6 +25,10 @@ export class NetworkHandler extends NativeClass {
     send(ni:NetworkIdentifier, packet:Packet, u:number):void {
         abstract();
     }
+
+    sendInternal(ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
+        abstract();
+    }
     
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
