@@ -259,6 +259,9 @@ NetworkHandler.prototype.getConnectionFromId = procHacker.js(`NetworkHandler::_g
 // void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char u)
 NetworkHandler.prototype.send = procHacker.js('NetworkHandler::send', RawTypeId.Void, {this:NetworkHandler}, NetworkIdentifier, Packet, RawTypeId.Int32);
 
+// void NetworkHandler::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
+NetworkHandler.prototype.sendInternal = procHacker.js('NetworkHandler::_sendInternal', RawTypeId.Void, {this:NetworkHandler}, NetworkIdentifier, Packet, CxxStringWrapper);
+
 BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', RawTypeId.Void, {this:BatchedNetworkPeer}, CxxStringWrapper, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
 
 // packet.ts

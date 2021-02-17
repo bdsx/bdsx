@@ -26,6 +26,10 @@ export class NetworkHandler extends NativeClass {
     send(ni:NetworkIdentifier, packet:Packet, u:number):void {
         abstract();
     }
+
+    sendInternal(ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
+        abstract();
+    }
     
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
@@ -117,10 +121,14 @@ export let networkHandler:NetworkHandler;
 procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
     try {
         closeEvTarget.fire(ni);
-        identifiers.delete(ni);
         _tickCallback();
     } catch (err) {
         remapAndPrintError(err);
     }
+    // ni is used after onConnectionClosed. on some message processings.
+    // timeout for avoiding the re-allocation
+    setTimeout(()=>{
+        identifiers.delete(ni);
+    }, 3000);
 }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);

@@ -103,7 +103,6 @@ function patchForStdio():void {
         console.log(color(line));
     }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
 
-    console.log('node thread id: '+capi.nodeThreadId);
     
     procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, asmcode.logHook, Register.rdx, true, [
         0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |

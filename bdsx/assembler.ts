@@ -1,5 +1,5 @@
 import { bin } from "./bin";
-import { BufferReader, BufferWriter } from "./bufferstream";
+import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { bin64_t } from "./nativetype";
 import { polynominal } from "./polynominal";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
@@ -1507,7 +1507,8 @@ export class X64Assembler {
                 if (qoutedString !== null) {
                     if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
                     const id = new Defination('', this.constChunk, this.constChunk.size, OperationSize.void);
-                    this.constChunk.write(Buffer.from(qoutedString, 'utf-8')).write([0]);
+                    this.constChunk.write(Buffer.from(qoutedString, 'utf-8'));
+                    this.constChunk.put(0);
                     command += '_rp';
                     callinfo.push('(register pointer)');
                     if (addressCommand) setSize(OperationSize.qword);
@@ -1683,7 +1684,7 @@ export class X64Assembler {
             out.put(0);
         }
         function writeAddress(id:AddressIdentifier):void {
-            out.writeString(id.name);
+            out.writeNullTerminatedString(id.name);
             out.writeVarUint(id.offset - address);
             address = id.offset;
         }
@@ -1736,7 +1737,7 @@ export class X64Assembler {
         }
 
         function readAddress():[string,number]|null {
-            const name = reader.readString();
+            const name = reader.readNullTerminatedString();
             if (name === '') return null;
 
             const size = reader.readVarUint();

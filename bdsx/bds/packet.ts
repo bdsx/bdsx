@@ -84,8 +84,6 @@ export class Packet extends MantleClass {
         if (id === undefined) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
         const cls = SharedPtr.make(this);
         const sharedptr = new cls(true);
-        sharedptr[NativeType.ctor]();
-        
         createPacketRaw(sharedptr, id);
         
         const packet = sharedptr.p as T;

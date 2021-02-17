@@ -6,8 +6,9 @@ import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadRes
 import { MinecraftPacketIds } from "./bds/packetids";
 import { LoginPacket, PacketIdToType } from "./bds/packets";
 import { proc, procHacker } from "./bds/proc";
-import { abstract, CANCEL, RawTypeId } from "./common";
-import { makefunc, NativePointer, StaticPointer, VoidPointer } from "./core";
+import { abstract, CANCEL } from "./common";
+import { NativePointer, StaticPointer, VoidPointer } from "./core";
+import { makefunc, RawTypeId } from "./makefunc";
 import { NativeClass } from "./nativeclass";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";

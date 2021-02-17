@@ -101,7 +101,16 @@ declare global
             statusCode: number;
         }
     }
-    
+    interface IExecuteCommandListCallback {
+        command: 'list';
+        data: {
+            currentPlayerCount:number;
+            maxPlayerCount:number;
+            players:string;
+            statusMessage: string;
+            statusCode: number;
+        }
+    }
     interface IServer {
         registerSystem(majorVersion: number, minorVersion: number): IVanillaServerSystem;
         log(message: string): void;
@@ -145,6 +154,14 @@ declare global
          * 
          */
         executeCommand(command: string, callback: (callback: IExecuteCommandCallback) => void): void;
+        
+        /**
+         * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
+         * @param command The slash command to run
+         * @param callback The JavaScript object that will be called after the command executes
+         * 
+         */
+        executeCommand(command: 'list', callback: (callback: IExecuteCommandListCallback) => void): void;
         
         /**
          * Removes the specified component from the given entity. If the entity has the component, it will be removed. Currently this only works with custom components and can't be used to remove components defined for an entity in JSON.

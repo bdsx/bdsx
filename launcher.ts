@@ -9,6 +9,7 @@ installSourceMapSupport();
 
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
+
 import { bedrockServer } from "bdsx/launcher";
 import colors = require('colors');
 
@@ -16,6 +17,9 @@ import colors = require('colors');
 console.log(colors.rainbow('       ///////////////'));
 console.log(colors.rainbow('       //// BDSX2 ////'));
 console.log(colors.rainbow('       ///////////////'));
+
+// loads DLLs in mods directory, deprecated
+// require("bdsx/eminus").eminus_load_dlls_in_mods();
 
 (async()=>{
 

@@ -1,9 +1,11 @@
 
 // Parse raw packet
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/MovePlayerPacket.php
-import { bin, netevent, MinecraftPacketIds } from "bdsx";
+import { bin, MinecraftPacketIds, netevent } from "bdsx";
+import { RawPacket } from "bdsx/rawpacket";
+import { setRecentSendedPacketForTest } from "./test";
 netevent.raw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
-    console.log(`Packet Id: ${ptr.readUint8()}`);
+    console.log(`Packet Id: ${ptr.readVarInt()&0x3ff}`);
     
     const runtimeId = ptr.readVarBin();
     const x = ptr.readFloat32();
@@ -15,10 +17,22 @@ netevent.raw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
     const mode = ptr.readUint8();
     const onGround = ptr.readUint8() !== 0;
     console.log(`move: ${bin.toString(runtimeId, 16)} ${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)} ${pitch.toFixed(1)} ${yaw.toFixed(1)} ${headYaw.toFixed(1)} ${mode} ${onGround}`);
+
+    // part of testing
+    setRecentSendedPacketForTest(MinecraftPacketIds.Text);
+
+    // https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/TextPacket.php
+    const packet = new RawPacket(MinecraftPacketIds.Text);
+    packet.writeUint8(0); // type
+    packet.writeBoolean(false); // needsTranslation
+    packet.writeVarString(`[rawpacket message] move ${x.toFixed(1)} ${y.toFixed()} ${z.toFixed()}`); // message
+    packet.writeVarString(''); // xboxUserId
+    packet.writeVarString(''); // platformChatId
+    packet.sendTo(ni);
 });
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/CraftingEventPacket.php
 netevent.raw(MinecraftPacketIds.CraftingEvent).on((ptr, size, ni)=>{
-    console.log(`Packet Id: ${ptr.readUint8()}`);
+    console.log(`Packet Id: ${ptr.readVarInt()&0x3ff}`);
     
     const windowId = ptr.readUint8();
     const type = ptr.readVarInt();

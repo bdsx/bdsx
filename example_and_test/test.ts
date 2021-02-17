@@ -16,8 +16,14 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 
+let sendidcheck = 0;
 let nextTickPassed = false;
 let chatCancelCounter = 0;
+
+export function setRecentSendedPacketForTest(packetId:number):void {
+    sendidcheck = packetId;
+}
+
 Tester.test({
     async globals() {
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
@@ -231,14 +237,13 @@ Tester.test({
 
     nethook(){
         let idcheck = 0;
-        let sendidcheck = 0;
         let sendpacket = 0;
         for (let i=0;i<255;i++)
         {
             netevent.raw(i).on((ptr, size, ni, packetId)=>{
                 idcheck = packetId;
                 this.assert(size > 0, `packet size is too little`);
-                this.assert(packetId === ptr.readVarUint(), `different packetId in buffer. id=${packetId}`);
+                this.assert(packetId === (ptr.readVarUint()&0x3ff), `different packetId in buffer. id=${packetId}`);
             });
             netevent.before<MinecraftPacketIds>(i).on((ptr, ni, packetId)=>{
                 this.assert(packetId === idcheck, `different packetId on before. id=${packetId}`);
@@ -256,7 +261,7 @@ Tester.test({
             netevent.sendRaw(i).on((ptr, size, ni, packetId)=>{
                 this.assert(size > 0, `packet size is too little`);
                 this.assert(packetId === sendidcheck, `different packetId on sendRaw. id=${packetId}`);
-                this.assert(packetId === ptr.readVarUint(), `different packetId in buffer. id=${packetId}`);
+                this.assert(packetId === (ptr.readVarUint()&0x3ff), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             });
         }
