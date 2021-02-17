@@ -1,14 +1,14 @@
-import { TextDecoder } from "util";
 import { bin } from "./bin";
+import { BufferReader, BufferWriter } from "./bufferstream";
 import { bin64_t } from "./nativetype";
 import { polynominal } from "./polynominal";
-import colors = require('colors');
+import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
+import { getLineAt } from "./util";
 import fs = require('fs');
-import path = require('path');
-import { ParsingError, TextLineParser } from "./textparser";
 
 export enum Register
 {
+    rip=-1,
     rax,
     rcx,
     rdx,
@@ -68,6 +68,7 @@ enum FloatOper
 
 export enum OperationSize
 {
+    void,
     byte,
     word,
     dword,
@@ -75,8 +76,8 @@ export enum OperationSize
     xmmword
 }
 
-const sizemap = new Map<string, {bytes: number, size:OperationSize|null}>([
-    ['void', {bytes: 0, size: null} ],
+const sizemap = new Map<string, {bytes: number, size:OperationSize}>([
+    ['void', {bytes: 0, size: OperationSize.void} ],
     ['byte', {bytes: 1, size: OperationSize.byte} ],
     ['word', {bytes: 2, size: OperationSize.word} ],
     ['dword', {bytes: 4, size: OperationSize.dword} ],
@@ -163,73 +164,49 @@ function is32Bits(value:Value64):boolean {
         throw Error(`invalid constant value: ${value}`);
     }
 }
-class AsmChunk {
+
+class SplitedJump {
+    constructor(
+        public info:JumpInfo,
+        public label:Label,
+        public args:any[],
+        public pos:SourcePosition|null) {
+
+    }
+}
+
+class AsmChunk extends BufferWriter {
     public prev:AsmChunk|null = null;
     public next:AsmChunk|null = null;
-    public jumpInfo:JumpInfo|null = null;
-    public jumpLabel:string|null = null;
-    public jumpArgs:any[]|null = null;
+    public jump:SplitedJump|null = null;
     public readonly labels:Label[] = [];
-    public readonly externs:Extern[] = [];
     public readonly unresolved:UnresolvedConstant[] = [];
     
-    constructor(public array:Uint8Array, public size:number) {
+    constructor(array:Uint8Array, size:number) {
+        super(array, size);
     }
 
-    put(v:number):this {
-        const osize = this.size;
-        const nsize = osize + 1;
-        this.size = nsize;
-        if (nsize > this.array.length) {
-            const narray = new Uint8Array(this.array.length*2);
-            narray.set(this.array.subarray(0, osize));
-            this.array = narray;
-        }
-        this.array[osize] = v;
-        return this;
-    }
-
-    write(values:number[]|Uint8Array):this {
-        const n = values.length;
-        const osize = this.size;
-        const nsize = osize + n;
-        this.size = nsize;
-        
-        if (nsize > this.array.length) {
-            const narray = new Uint8Array(Math.max(this.array.length*2, nsize));
-            narray.set(this.array.subarray(0, osize));
-            this.array = narray;
-        }
-        this.array.set(values, osize);
-        return this;
-    }
-
-    buffer():Uint8Array {
-        return this.array.subarray(0, this.size);
+    connect(next:AsmChunk):void {
+        if (this.next !== null) throw Error('Already connected chunk');
+        if (next.prev !== null) throw Error('Already connected chunk');
+        this.next = next;
+        next.prev = this;
     }
 
     removeNext():boolean {
         const chunk = this.next;
         if (chunk === null) return false;
 
-        this.jumpLabel = chunk.jumpLabel;
-        this.jumpInfo = chunk.jumpInfo;
-        this.jumpArgs = chunk.jumpArgs;
+        this.jump = chunk.jump;
+        chunk.jump = null;
         
         for (const label of chunk.labels) {
             label.chunk = this;
             label.offset += this.size;
         }
         this.labels.push(...chunk.labels);
-        for (const extern of chunk.externs) {
-            const values = extern.map.get(chunk)!;
-            for (let i=0;i<values.length;i++) {
-                values[i] += this.size;
-            }
-            extern.adds(this, values);
-        }
         for (const jump of chunk.unresolved) {
-            jump.offset += this.size;   
+            jump.offset += this.size;
         }
         this.unresolved.push(...chunk.unresolved);
         this.write(chunk.buffer());
@@ -238,11 +215,8 @@ class AsmChunk {
         this.next = next;
         if (next !== null) next.prev = this;
 
-        chunk.externs.length = 0;
+        chunk.unresolved.length = 0;
         chunk.labels.length = 0;
-        chunk.jumpLabel = null;
-        chunk.jumpInfo = null;
-        chunk.jumpArgs = null;
         chunk.next = null;
         chunk.prev = null;
         return true;
@@ -254,13 +228,12 @@ class AsmChunk {
 
             const size = unresolved.bytes;
             let offset = addr.offset - unresolved.offset - size;
-            if (addr instanceof Label) {
-                if (addr.type === LabelType.Unknown) throw Error(`${addr}: Label not found`);
-                console.assert(addr.chunk === this, 'chunk is remained');
-            } else if (addr instanceof Defination) {
+            if (addr.chunk === MEMORY_INDICATE_CHUNK) {
                 offset -= addr.chunk!.size;
-            } else {
-                throw Error(`Unexpected type ${addr.constructor.name}`);
+            } else  if (addr.chunk === null) {
+                throw new ParsingError(`${addr.name}: Label not found`, unresolved.pos);
+            } else if (addr.chunk !== this) {
+                throw Error('Different chunk. internal problem.');
             }
 
             const arr = this.array;
@@ -268,7 +241,7 @@ class AsmChunk {
             
             const to = i + size;
             for (;i!==to;i++) {
-                arr[i++] = offset;
+                arr[i] = offset;
                 offset >>= 8;
             }
         }
@@ -279,7 +252,7 @@ class AsmChunk {
 enum LabelType {
     Unknown,
     Label,
-    Proc
+    Proc,
 }
 
 class Identifier {
@@ -304,12 +277,9 @@ class AddressIdentifier extends Identifier {
 }
 
 class Label extends AddressIdentifier {
-    constructor(
-        name:string,
-        chunk:AsmChunk|null, 
-        offset:number,
-        public type:LabelType) {
-        super(name, chunk, offset);
+    public type:LabelType = LabelType.Unknown;
+    constructor(name:string) {
+        super(name, null, 0);
     }
 }
 
@@ -318,33 +288,8 @@ class Defination extends AddressIdentifier {
     constructor(name:string, 
         chunk:AsmChunk|null, 
         offset:number,
-        public exports:boolean, 
-        public size:OperationSize|null) {
+        public size:OperationSize|undefined) {
         super(name, chunk, offset);
-    }
-}
-
-class Extern extends Identifier {
-    public readonly map = new Map<AsmChunk, number[]>();
-    constructor(name:string, public size:OperationSize) {
-        super(name);
-    }
-
-    add(chunk:AsmChunk, offset:number):void {
-        const dest = this.map.get(chunk);
-        if (dest) dest.push(offset);
-        else {
-            this.map.set(chunk, [offset]);
-            chunk.externs.push(this);
-        }
-    }
-    adds(chunk:AsmChunk, offsets:number[]):void {
-        const dest = this.map.get(chunk);
-        if (dest) dest.push(...offsets);
-        else {
-            this.map.set(chunk, offsets);
-            chunk.externs.push(this);
-        }
     }
 }
 
@@ -362,12 +307,13 @@ class UnresolvedConstant {
     constructor(
         public offset:number,
         public readonly bytes:number,
-        public readonly address:AddressIdentifier) {
+        public readonly address:AddressIdentifier,
+        public readonly pos:SourcePosition|null) {
     }
 }
 
 interface TypeInfo {
-    size:OperationSize|null;
+    size:OperationSize;
     bytes:number;
     align:number;
     arraySize:number;
@@ -381,18 +327,19 @@ const SIZE_MAX_VAL:{[key in OperationSize]?:number|bin64_t}= {
     [OperationSize.qword]: bin.make64(INT32_MAX, -1),
 };
 
-
-// TODO: externconst를 상수에서 가져온다
-
+const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0);
 
 export class X64Assembler {
 
-    private memoryChunk = new AsmChunk(new Uint8Array(0), 0);
+    private memoryChunkSize = 0;
+    private constChunk:AsmChunk|null = null;
     private chunk:AsmChunk;
     private readonly ids = new Map<string, Identifier>();
 
-    private _polynominalToAddress(text:string):[Register|null, Register|null, number, Extern[]] {
-        let res = polynominal.parse(text);
+    private pos:SourcePosition|null = null;
+
+    private _polynominalToAddress(text:string, offset:number, lineNumber:number):[Register|null, Register|null, number] {
+        let res = polynominal.parse(text, lineNumber, offset);
         for (const [name, value] of this.ids) {
             if (!(value instanceof Constant)) continue;
             res = res.defineVariable(name, value.value);
@@ -400,36 +347,42 @@ export class X64Assembler {
         const poly = res.asAdditive();
         let varcount = 0;
 
-        const externs:Extern[] = [];
+        function error(message:string, column:number=0, width:number = text.length):never {
+            throw new ParsingError(message, {
+                column: offset + column, 
+                width: width, 
+                line: lineNumber
+            });
+        }
+
         const regs:(Register|null)[] = [];
         for (const term of poly.terms) {
             if (term.variables.length > 1) {
-                throw new ParsingError(`polynominal is too complex, variables are multiplying`, 0, text.length);
+                error(`polynominal is too complex, variables are multiplying`);
             }
             const v = term.variables[0];
-            if (!v.degree.equalsConstant(1)) throw new ParsingError(`polynominal is too complex, degree is not 1`, 0, text.length);
-            if (!(v.term instanceof polynominal.Name)) throw new ParsingError('polynominal is too complex, complex term', 0, text.length);
+            if (!v.degree.equalsConstant(1)) error(`polynominal is too complex, degree is not 1`);
+            if (!(v.term instanceof polynominal.Name)) error('polynominal is too complex, complex term');
             
             const type = regmap.get(v.term.name.toLowerCase());
             if (type) {
                 const [argname, reg, size] = type;
-                if (argname.short !== 'r') throw new ParsingError(`unexpected identifier: ${v.term.name}`, v.term.column, v.term.length);
-                if (size !== OperationSize.qword) throw new ParsingError(`unexpected register: ${v.term.name}`, 0, text.length);
+                if (argname.short !== 'r') error(`unexpected identifier: ${v.term.name}`, v.term.column, v.term.length);
+                if (size !== OperationSize.qword) error(`unexpected register: ${v.term.name}`);
                 
                 varcount ++;
-                if (varcount >= 3) throw new ParsingError(`polynominal has too many variables`, 0, text.length);
+                if (varcount >= 3) error(`polynominal has too many variables`);
     
                 regs.push(reg);
             } else {
                 const identifier = this.ids.get(v.term.name);
-                if (!identifier) throw new ParsingError(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
-                if (!(identifier instanceof Extern)) throw new ParsingError(`Invalid identifier: ${v.term.name}`, v.term.column, v.term.length);
-                externs.push(identifier);
+                if (!identifier) error(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
+                error(`Invalid identifier: ${v.term.name}`, v.term.column, v.term.length);
             }
         }
-        if (regs.length > 3) throw new ParsingError('Too many registers', 0, text.length);
+        if (regs.length > 3) error('Too many registers');
         while (regs.length < 2) regs.push(null);
-        return [regs[0], regs[1], poly.constant, externs];
+        return [regs[0], regs[1], poly.constant];
     }
 
     constructor(buffer:Uint8Array, size:number) {
@@ -526,7 +479,11 @@ export class X64Assembler {
         } else if (r1 === Register.rsp) {
             this.write(0x24);
         }
-        if (offset === 0 && r1 !== Register.rbp) {
+        if (r1 === Register.rip) {
+            this.write(opcode | 0x05);
+            this.writeInt32(offset);
+            return this;
+        } else if (offset === 0 && r1 !== Register.rbp) {
             // empty
         } else if (INT8_MIN <= offset && offset <= INT8_MAX) {
             opcode |= 0x40;
@@ -643,40 +600,14 @@ export class X64Assembler {
         return this;
     }
 
-    load_externconst(name:string, offsets:number[], size:OperationSize):this {
-        if (this.chunk.prev !== null) throw Error("building asm cannot use externconsts");
-        if (this.ids.has(name)) throw Error(`${name} is already defined`);
-        const extern = new Extern(name, size);
-        this.ids.set(name, extern);
-        extern.adds(this.chunk, offsets);
-        this.chunk.externs.push(extern);
-        return this;
-    }
-
-    define_externconst(name:string, size:OperationSize):this {
-        if (this.chunk.prev !== null) throw Error("building asm cannot use externconsts");
-        if (this.ids.has(name)) throw Error(`${name} is already defined`);
-        const extern = new Extern(name, size);
-        this.ids.set(name, extern);
-        this.chunk.externs.push(extern);
-        return this;
-    }
-
-    use_externconst(name:string, offset:number):this {
-        const id = this.ids.get(name);
-        if (!(id instanceof Extern)) throw Error(`${name} is not externconst`);
-        id.add(this.chunk, this.chunk.size + offset);
-        return this;
-    }
-
-    def(name:string, size:OperationSize|null, bytes:number, align:number, exports:boolean):this {
-        if (this.chunk.prev !== null) throw Error("building asm cannot use externconst");
-        const memSize = this.memoryChunk.size;
+    def(name:string, size:OperationSize, bytes:number, align:number):this {
+        if (this.chunk.prev !== null) throw Error("building asm cannot use def");
+        const memSize = this.memoryChunkSize;
         const offset = align <= 1 ? memSize : ((memSize + bytes - 1) / align | 0) * align;
-        this.memoryChunk.size = offset + bytes;
+        this.memoryChunkSize = offset + bytes;
         if (name === '') return this;
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
-        this.ids.set(name, new Defination(name, this.memoryChunk, offset, exports, size));
+        this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, size));
         return this;
     }
     
@@ -757,12 +688,6 @@ export class X64Assembler {
         return this._jmp(false, register, offset, MovOper.Read);
     }
 
-    jmp_cp(offset:number):this {
-        this.write(0xff, 0x25);
-        this.writeInt32(offset);
-        return this;
-    }
-
     /**
      * call with register pointer
      */
@@ -815,12 +740,6 @@ export class X64Assembler {
 
     call_c(offset:number):this {
         this.write(0xe8);
-        this.writeInt32(offset);
-        return this;
-    }
-
-    call_cp(offset:number):this {
-        this.write(0xff, 0x15);
         this.writeInt32(offset);
         return this;
     }
@@ -1127,13 +1046,14 @@ export class X64Assembler {
             this.write(0x63);
             break;
         default:
-            throw Error(`movsx: invalid operand size`);
+            throw Error(`Invalid operand size, ${OperationSize[size] || size}`);
         }
         return this._target(dest << 3, src, null, offset, MovOper.Read);
     }
     movsxd_r_rp(dest:Register, src:Register, offset:number):this {
         return this.movsx_r_rp(dest, src, offset, OperationSize.qword);
     }
+
     movzx_r_rp(dest:Register, src:Register, offset:number):this {
         this._regex(src, dest, null, OperationSize.qword);
         this.write(0x0f);
@@ -1219,31 +1139,27 @@ export class X64Assembler {
     }
 
     label(labelName:string, type:LabelType = LabelType.Label):this {
-        const label = this._getLabel(labelName, this.chunk, this.chunk.size);
-        if (label instanceof Defination) {
+        const label = this._getJumpTarget(labelName);
+        if ((label instanceof Defination) || label.chunk !== null) {
             throw Error(`${labelName} is already defined`);
         }
-        if (label.type !== type) {
-            if (label.type === LabelType.Unknown) {
-                label.type = type;
-            } else {
-                throw Error(`${labelName}: label dupplicated`);
-            }
-        }
+        label.chunk = this.chunk;
+        label.offset = this.chunk.size;
+        label.type = type;
         this.chunk.labels.push(label);
 
         let now = this.chunk;
         let prev = now.prev!;
 
-        while (prev !== null && prev.jumpLabel === labelName) {
-            this._resolveIdSize(prev, label, true);
+        while (prev !== null && prev.jump!.label === label) {
+            this._resolveLabelSizeForward(prev, prev.jump!);
             now = prev;
             prev = now.prev!;
         }
         return this;
     }
 
-    private _getLabel(labelName:string, chunk:AsmChunk|null, offset:number = 0):Label|Defination {
+    private _getJumpTarget(labelName:string):Label|Defination {
         const id = this.ids.get(labelName);
         if (id) {
             if (id instanceof Defination) {
@@ -1253,151 +1169,199 @@ export class X64Assembler {
             if (!(id instanceof Label)) throw Error(`${labelName} is not label`);
             return id;
         }
-        const label = new Label(labelName, chunk, offset, LabelType.Unknown);
+        const label = new Label(labelName);
         this.ids.set(labelName, label);
         return label;
     }
 
     jmp_label(labelName:string):this {
-        this.chunk.jumpInfo = X64Assembler.jmp_c_info;
-        this.chunk.jumpLabel = labelName;
-        this.chunk.jumpArgs = [];
-
-        const id = this.ids.get(labelName);
-        if (!id) return this._genChunk();
-        if (!(id instanceof AddressIdentifier)) throw Error(`unexpected identifier ${labelName}`);
-        return this._resolveIdSize(this.chunk, id, false);
+        const label = this._getJumpTarget(labelName);
+        if (label instanceof Defination) {
+            this.jmp_rp(Register.rip, 0);
+            this._registerUnresolvedConstant(true, label);
+            return this;
+        }
+        if (label.chunk === null) {
+            return this._genChunk(X64Assembler.jmp_c_info, label, []);
+        }
+        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.jmp_c_info, label, [], this.pos));
+        return this;
     }
     call_label(labelName:string):this {
-        const label = this._getLabel(labelName, null);
+        const label = this._getJumpTarget(labelName);
+        if (label instanceof Defination) {
+            this.jmp_rp(Register.rip, 0);
+            this._registerUnresolvedConstant(true, label);
+            return this;
+        }
         if (label.chunk === null) {
             this.call_c(0);
-            this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, label));
+            this._registerUnresolvedConstant(true, label);
             return this;
         }
-        this.chunk.jumpInfo = X64Assembler.call_c_info;
-        this.chunk.jumpLabel = labelName;
-        this.chunk.jumpArgs = [];
-        return this._resolveIdSize(this.chunk, label, false);
+        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.call_c_info, label, [], this.pos));
+        return this;
     }
     private _jmp_o_label(oper:JumpOperation, labelName:string):this {
-        this.chunk.jumpInfo = X64Assembler.jmp_o_info;
-        this.chunk.jumpLabel = labelName;
-        this.chunk.jumpArgs = [oper];
-
-        const label = this.ids.get(labelName);
-        if (!label) return this._genChunk();
-        if (!(label instanceof AddressIdentifier)) throw Error(`unexpected identifier ${labelName}`);
-        return this._resolveIdSize(this.chunk, label, false);
+        const label = this._getJumpTarget(labelName);
+        if (!(label instanceof Label)) throw Error(`Unexpected identifier ${labelName}`);
+        if (label.chunk === null) {
+            return this._genChunk(X64Assembler.jmp_o_info, label, [oper]);
+        }
+        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.jmp_o_info, label, [oper], this.pos));
+        return this;
     }
 
-    private _resolveIdSize(jumpChunk:AsmChunk, id:AddressIdentifier, forward:boolean):this {
-        if (id instanceof Defination) {
-            const info = jumpChunk.jumpInfo!;
-            const func = info.func_addr;
-            if (func === null) throw Error(`Invalid operand: ${id.name}`);
-            if (this.chunk.prev === null) {
-                func.call(this, ...jumpChunk.jumpArgs!, id.offset - this.memoryChunk.size - this.chunk.size - info.addrSize);
-            } else {
-                func.call(this, ...jumpChunk.jumpArgs!, INT32_MAX);
-                jumpChunk.unresolved.push(new UnresolvedConstant(jumpChunk.size-4, 4, id));
-            }
-            jumpChunk.jumpLabel = null;
-            jumpChunk.jumpInfo = null;
-            jumpChunk.jumpArgs = null;
-            return this;
-        }
+    private _registerUnresolvedConstant(isDword:boolean, id:AddressIdentifier):void {
+        const size = isDword ? 4 : 1;
+        this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-size, size, id, this.pos));
+        this.pos = null;
+    }
 
-        if (id.chunk === jumpChunk) {
-            if (forward === true) throw Error(`cannot forward to self chunk`);
-            if (this.chunk !== jumpChunk) throw Error('is not front chunk');
-            const info = jumpChunk.jumpInfo!;
-            let offset = id.offset - jumpChunk.size;
-            offset -= info.byteSize;
-            if (offset < INT8_MIN || offset > INT8_MAX) {
-                offset = offset - info.dwordSize + info.byteSize;
-            }
-            info.func.call(this, ...jumpChunk.jumpArgs!, offset);
-            
-            jumpChunk.jumpLabel = null;
-            jumpChunk.jumpInfo = null;
-            jumpChunk.jumpArgs = null;
-            return this;
-        }
-
-        const orichunk = this.chunk;
-        this.chunk = jumpChunk;
-        let offset = 0;
-        if (forward) {
-            let chunk = jumpChunk.next!;
-            if (chunk === id.chunk) {
-                const info = jumpChunk.jumpInfo!;
-                info.func.call(this, ...jumpChunk.jumpArgs!, id.offset);
-                jumpChunk.removeNext();
-                if (jumpChunk.next === null) this.chunk = jumpChunk;
-                else this.chunk = orichunk;
-                return this;
-            }
-
-            for (;;) {
-                offset += chunk.size;
-                offset += chunk.jumpInfo!.dwordSize;
-                chunk = chunk.next!;
-                if (chunk === id.chunk) {
-                    offset += id.offset;
-                    break;
-                }
-            }
+    private _resolveLabelSize(chunk:AsmChunk, jump:SplitedJump, dwordSize:boolean):void {
+        if (dwordSize) {
+            jump.info.func.call(this, ...jump.args, 0);
+            chunk.unresolved.push(new UnresolvedConstant(chunk.size-1, 1, jump.label, jump.pos));
         } else {
-            let chunk = jumpChunk;
+            jump.info.func.call(this, ...jump.args, INT32_MAX);
+            chunk.unresolved.push(new UnresolvedConstant(chunk.size-4, 4, jump.label, jump.pos));
+        }
+        chunk.removeNext();
+        if (chunk.next === null) this.chunk = chunk;
+    }
+
+    private _resolveLabelSizeBackward(jumpChunk:AsmChunk, jump:SplitedJump, dwordSize:boolean|null = null):void {
+        if (jump.label.chunk === jumpChunk) {
+            if (this.chunk !== jumpChunk) throw Error('is not front chunk');
+            let offset = jump.label.offset - jumpChunk.size;
+            offset -= jump.info.byteSize;
+            if (offset < INT8_MIN || offset > INT8_MAX) {
+                offset = offset - jump.info.dwordSize + jump.info.byteSize;
+            }
+            jump.info.func.call(this, ...jump.args, offset);
+            return;
+        }
+
+        if (dwordSize === null) {
+            let offset = 0;
+            offset -= jumpChunk.size;
+            offset -= jump.info.dwordSize;
+            let chunk = jumpChunk.prev;
             for (;;) {
-                offset -= chunk.jumpInfo!.dwordSize;
+                if (chunk === null) {
+                    throw Error(`${jump.label.name}: failed to find label chunk`);
+                }
                 offset -= chunk.size;
-                if (chunk === id.chunk) {
-                    offset += id.offset;
+                offset -= chunk.jump!.info.dwordSize;
+                if (chunk === jump.label.chunk) {
+                    offset += jump.label.offset;
                     break;
                 }
                 chunk = chunk.prev!;
-                if (chunk === null) {
-                    throw Error(`${id.name}: failed to find label chunk`);
-                }
             }
+            dwordSize = (offset < INT8_MIN || offset > INT8_MAX);
         }
         
-        if (INT8_MIN <= offset && offset <= INT8_MAX) {
-            jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, 0);
-            jumpChunk.unresolved.push(new UnresolvedConstant(jumpChunk.size-1, 1, id));
-        } else {
-            jumpChunk.jumpInfo!.func.call(this, ...jumpChunk.jumpArgs!, INT32_MAX);
-            jumpChunk.unresolved.push(new UnresolvedConstant(jumpChunk.size-4, 4, id));
-        }
-        jumpChunk.removeNext();
-        if (jumpChunk.next === null) this.chunk = jumpChunk;
-        else this.chunk = orichunk;
-        return this;
+        this._resolveLabelSize(jumpChunk, jump, dwordSize);
     }
-    private _genChunk():this {
+
+    private _resolveLabelSizeForward(jumpChunk:AsmChunk, jump:SplitedJump, dwordSize:boolean|null = null):void {
+        if (jump.label.chunk === jumpChunk) throw Error(`cannot forward to self chunk`);
+
+        const orichunk = this.chunk;
+        this.chunk = jumpChunk;
+        
+        if (dwordSize === null) {
+            let chunk = jumpChunk.next!;
+            if (chunk === jump.label.chunk) {
+                jump.info.func.call(this, ...jump.args, jump.label.offset);
+                jumpChunk.removeNext();
+                if (jumpChunk.next === null) this.chunk = jumpChunk;
+                else this.chunk = orichunk;
+                return;
+            }
+
+            let offset = 0;
+            for (;;) {
+                offset += chunk.size;
+                offset += chunk.jump!.info.dwordSize;
+                chunk = chunk.next!;
+                if (chunk === jump.label.chunk) {
+                    offset += jump.label.offset;
+                    break;
+                }
+            }
+            dwordSize = (offset < INT8_MIN || offset > INT8_MAX);
+        }
+        
+        this._resolveLabelSize(jumpChunk, jump, dwordSize);
+    }
+
+    private _genChunk(info:JumpInfo, label:Label, args:any[]):this {
+        let chunk = this.chunk;
+        let totalsize = 0;
+        for (;;) {
+            const prev = chunk.prev;
+            if (prev === null) break;
+            totalsize += chunk.size + info.byteSize;
+            chunk = prev;
+            if (totalsize >= 127) {
+                this._resolveLabelSizeForward(chunk, chunk.jump!, true);
+                chunk.removeNext();
+            }
+        }
+        chunk = this.chunk;
+        chunk.jump = new SplitedJump(info, label, args, this.pos);
+        this.pos = null;
         const nbuf = new AsmChunk(new Uint8Array(64), 0);
-        this.chunk.next = nbuf;
-        nbuf.prev = this.chunk;
+        chunk.next = nbuf;
+        nbuf.prev = chunk;
         this.chunk = nbuf;
         return this;
     }
+
     private _normalize():this {
+        const errors = new ParsingErrorContainer;
         let prev = this.chunk.prev;
         while (prev !== null) {
-            const labelName = prev.jumpLabel!;
-            const label = this.ids.get(labelName);
-            if (!label) throw Error(`${labelName}: Label not found`);
-            if (!(label instanceof Label)) throw Error(`${labelName} is not label`);
-            this._resolveIdSize(prev, label, true);
+            const jump = prev.jump!;
+            const label = jump.label;
+            if (label.chunk === null) {
+                errors.add(new ParsingError(`${label.name}: Identifier not found`, jump.pos));
+            } else {
+                this._resolveLabelSizeForward(prev, jump);
+            }
             prev = prev.prev;
         }
 
-        console.assert(this.chunk.next === null && this.chunk.prev === null, `chunk is remained`);
-        this.chunk.resolveAll();
+        if (this.chunk.next !== null || this.chunk.prev !== null) {
+            throw Error(`All chunks don't merge. internal problem.`);
+        }
+
+        let chunk = this.chunk;
+        if (this.constChunk !== null) {
+            this.constChunk.connect(chunk);
+            chunk = this.constChunk;
+            this.constChunk = null;
+            chunk.removeNext();
+        }
+        
+        this.chunk = chunk;
+        try {
+            this.chunk.resolveAll();
+        } catch (err) {
+            if (err instanceof ParsingError) {
+                errors.add(err);
+            } else {
+                throw err;
+            }
+        }
+        if (errors.error !== null) {
+            throw errors.error;
+        }
         return this;
     }
+
     jz_label(label:string):this { return this._jmp_o_label(JumpOperation.je, label); }
     jnz_label(label:string):this { return this._jmp_o_label(JumpOperation.jne, label); }
     jo_label(label:string):this { return this._jmp_o_label(JumpOperation.jo, label); }
@@ -1442,11 +1406,12 @@ export class X64Assembler {
         return this;
     }
 
-    compileLine(lineText:string):void {
+    compileLine(lineText:string, lineNumber:number):void {
         const commentIdx = lineText.search(COMMENT_REGEXP);
-        const parser = new TextLineParser(commentIdx === -1 ? lineText : lineText.substr(0, commentIdx));
+        const parser = new TextLineParser(commentIdx === -1 ? lineText : lineText.substr(0, commentIdx), lineNumber);
 
-        function setSize(nsize:OperationSize):void {
+        function setSize(nsize:OperationSize|undefined):void {
+            if (nsize === undefined) return;
             if (size === null) {
                 size = nsize;
                 return;
@@ -1490,10 +1455,13 @@ export class X64Assembler {
         let size:OperationSize|null = null;
 
         let unresolvedConstant:Identifier|null = null;
-        let unresolvedOffset:Extern[]|null = null;
+        let unresolvedPos:SourcePosition|null = null;
 
         const args:any[] = [];
         if (!parser.eof()){
+            let extendingCommand = false;
+            let addressCommand = false;
+            let jumpCommand = false;
             if (command === 'const') {
                 const name = parser.readToSpace();
                 const value = parser.readToSpace();
@@ -1505,41 +1473,54 @@ export class X64Assembler {
                     parser.error(err.message);
                 }
                 return;
-            } else if (command === 'externconst') {
-                const name = parser.readTo(':');
-                const type = parser.readAll();
-                const res = parseType(type);
-                if (res.size === null) parser.error(`cannot use '${type}' at externconst`);
-                try {
-                    this.define_externconst(name, res.arraySize !== 0 ? OperationSize.qword : res.size!);
-                } catch (err) {
-                    parser.error(err.message);
-                }
-                return;
-            } else if (command === 'exportdef') {
-                const name = parser.readTo(':');
-                const type = parser.readAll();
-                const res = parseType(type);
-                try {
-                    this.def(name, res.size, res.bytes, res.align, true);
-                } catch (err) {
-                    parser.error(err.message);
-                }
-                return;
             } else if (command === 'def') {
                 const name = parser.readTo(':');
                 const type = parser.readAll();
                 const res = parseType(type);
                 try {
-                    this.def(name, res.size, res.bytes, res.align, false);
+                    this.def(name, res.size, res.bytes, res.align);
                 } catch (err) {
                     parser.error(err.message);
                 }
                 return;
+            } else if (command === 'movsx' || command === 'movzx') {
+                extendingCommand = true;
+            } else if (command === 'lea') {
+                addressCommand = true;
+            } else if (command === 'proc') {
+                try {
+                    this.proc(parser.readAll().trim());
+                } catch (err) {
+                    parser.error(err.message);
+                }
+                return;
+            } else if (command.startsWith('j')) {
+                jumpCommand = true;
             }
             
-            for (const param of parser.split(',')){
+            // TODO: parse string quot
+            // store string
+            
+            while (!parser.eof()) {
 
+                const qoutedString = parser.readQuotedString();
+                if (qoutedString !== null) {
+                    if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
+                    const id = new Defination('', this.constChunk, this.constChunk.size, OperationSize.void);
+                    this.constChunk.write(Buffer.from(qoutedString, 'utf-8')).write([0]);
+                    command += '_rp';
+                    callinfo.push('(register pointer)');
+                    if (addressCommand) setSize(OperationSize.qword);
+                    else setSize(id.size);
+                    args.push(Register.rip);
+                    args.push(0);
+                    unresolvedConstant = id;
+                    unresolvedPos = parser.getPosition();
+                    parser.skipSpaces();
+                    continue;
+                }
+                const param = parser.readTo(',');
+                
                 const constval = polynominal.parseToNumber(param);
                 if (constval !== null) { // number
                     if (isNaN(constval)) {
@@ -1549,79 +1530,88 @@ export class X64Assembler {
                     callinfo.push('(constant)');
                     args.push(constval);
                 } else if (param.endsWith(']')) { // memory access
-                    const ctx = parser.enter('[');
-                    if (ctx === null) parser.error(`Unexpected bracket syntax ${param}'`);
-                    const bracketStart = parser.matchedIndex + parser.matchedWidth;
-                    const words = [...parser.splitWithSpaces()];
+                    let end = param.indexOf('[');
+                    if (end === null) parser.error(`Unexpected bracket syntax ${param}'`);
+                    const iparser = new TextLineParser(param.substr(0, end), lineNumber, parser.matchedIndex);
+                    
+                    end++;
+                    const bracketInnerStart = parser.matchedIndex + end + 1;
+
+
+                    const words = [...iparser.splitWithSpaces()];
                     if (words.length !== 0) {
-                        if ((words.length !== 2) || words[1] !== 'ptr') parser.error(`Invalid address syntax: ${param}`);
+                        if ((words.length !== 2) || words[1] !== 'ptr') {
+                            parser.error(`Invalid address syntax: ${param}`);
+                        }
                         const sizename = words[0];
                         const size = sizemap.get(sizename);
-                        if (size === undefined || size.size === null) {
+                        if (size === undefined || size.size === OperationSize.void) {
                             parser.error(`Unexpected size name: ${sizename}`);
                         }
-                        setSize(size!.size!);
+                        if (addressCommand) setSize(OperationSize.qword);
+                        else setSize(size!.size!);
                     }
-                    parser.leave(ctx!);
 
-                    let inner = parser.readAll();
-                    inner = inner.substr(0, inner.length-1);
-                    try {
-                        const [r1, r2, c, externs] = this._polynominalToAddress(inner);
-                        unresolvedOffset = externs;
-                        if (r1 === null) {
-                            callinfo.push('(constant address)');
-                            command += `_cp`;
-                        } else {
-                            args.push(r1);
-                            if (r2 === null) {
-                                callinfo.push('(register pointer)');
-                                command += `_rp`;
-                            } else {
-                                callinfo.push('(2 register pointer)');
-                                command += `_rrp`;
-                                args.push(r2);
-                            }
-                        }
-                        args.push(c);
-                    } catch (err) {
-                        if (err instanceof ParsingError) {
-                            err.column += bracketStart + 1;
-                        }
-                        throw err;
+                    const inner = param.substring(end, param.length-1);
+                    const [r1, r2, c] = this._polynominalToAddress(inner, bracketInnerStart, lineNumber);
+                    if (r1 === null) {
+
+                        throw new ParsingError('need one register at least', {
+                            column: bracketInnerStart,
+                            width: inner.length, 
+                            line: lineNumber
+                        });
                     }
+
+                    args.push(r1);
+                    if (r2 === null) {
+                        callinfo.push('(register pointer)');
+                        command += `_rp`;
+                    } else {
+                        callinfo.push('(2 register pointer)');
+                        command += `_rrp`;
+                        args.push(r2);
+                    }
+                    args.push(c);
                 } else {
                     const type = regmap.get(param.toLowerCase());
                     if (type) {
-                        setSize(type[2]);
-                        command += '_'+type[0].short;
-                        args.push(type[1]);
-                        callinfo.push('('+type[0].name+')');
+                        const [name, reg, size]  = type;
+                        if (extendingCommand) {
+                            if (size < OperationSize.dword || size > OperationSize.qword) {
+                                parser.error(`Invalid operand size ${OperationSize[size] || size}`);
+                            }
+                        } else setSize(size);
+                        command += '_'+name.short;
+                        args.push(reg);
+                        callinfo.push('('+name.name+')');
                     } else {
                         const id = this.ids.get(param);
                         if (id instanceof Constant) {
                             command += '_c';
                             callinfo.push('(constant)');
                             args.push(id.value);
-                        } else if (id instanceof Extern) {
-                            command += '_c';
-                            callinfo.push('(constant)');
-                            args.push(SIZE_MAX_VAL[id.size]);
-                            unresolvedConstant = id;
                         } else if (id instanceof Defination) {
-                            command += '_cp';
-                            callinfo.push('(constant pointer)');
-                            if (id.size === null) parser.error(`Invalid operand type`);
-                            args.push(SIZE_MAX_VAL[id.size!]);
+                            command += '_rp';
+                            callinfo.push('(register pointer)');
+                            if (id.size === OperationSize.void) parser.error(`Invalid operand type`);
+                            args.push(Register.rip);
+                            args.push(0);
+                            unresolvedConstant = id;
+                        } else if ((id instanceof Label) && !jumpCommand) {
+                            command += '_rp';
+                            callinfo.push('(register pointer)');
+                            args.push(Register.rip);
+                            args.push(0);
                             unresolvedConstant = id;
                         } else {
                             command += '_label';
                             args.push(param);
                             callinfo.push('(label)');
                         }
+                        unresolvedPos = parser.getPosition();
                     }
                 }
-                
             }
         }
 
@@ -1634,31 +1624,154 @@ export class X64Assembler {
         }
 
         command = command.toLowerCase();
-        switch (command) {
-        case 'proc_label':
-            command = 'proc';
-            break;
-        }
+        if (size !== null) args.push(size);
+
         const fn = (this as any)[command];
         if (typeof fn !== 'function') {
             parser.error(`Unexpected command '${callinfo.join(' ')}'`);
         }
         try {
+            this.pos = unresolvedPos;
             fn.apply(this, args);
-            if (unresolvedConstant instanceof Extern) {
-                unresolvedConstant.add(this.chunk, this.chunk.size-4);
-            } else if (unresolvedConstant instanceof Defination) {
-                this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4,4,unresolvedConstant));
+            if (unresolvedConstant instanceof Defination) {
+                this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, unresolvedConstant, unresolvedPos));
+            } else if (unresolvedConstant instanceof Label) {
+                this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, unresolvedConstant, unresolvedPos));
             }
-            // TODO: apply unresolvedOffset
-
         } catch (err) {
             parser.error(err.message);
         }
     }
 
-    private static call_c_info = new JumpInfo(5, 5, 6, X64Assembler.prototype.call_c, X64Assembler.prototype.call_cp);
-    private static jmp_c_info = new JumpInfo(2, 5, 6, X64Assembler.prototype.jmp_c, X64Assembler.prototype.jmp_cp);
+    compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):Uint8Array{
+        let p = 0;
+        let lineNumber = 1;
+        if (defines != null) {
+            for (const name in defines) {
+                this.const(name, defines[name]);
+            }
+        }
+
+        const errs = new ParsingErrorContainer;
+
+        for (;;){
+            const lineidx = source.indexOf('\n', p);
+            const lineText = (lineidx === -1 ? source.substr(p) : source.substring(p,lineidx));
+            try {
+                this.compileLine(lineText, lineNumber);
+            } catch (err) {
+                if (err instanceof ParsingError) {
+                    errs.add(err);
+                    if (reportDirectWithFileName) {
+                        err.report(reportDirectWithFileName, lineText);
+                    }
+                } else {
+                    throw err;
+                }
+            }
+            if (lineidx === -1) break;
+            p = lineidx + 1;
+            lineNumber++;
+        }
+
+        if (errs !== null && errs.error !== null) throw errs.error;
+
+        function writeArray<T>(array:T[], writer:(value:T)=>void):void {
+            for (const item of array) {
+                writer(item);
+            }
+            out.put(0);
+        }
+        function writeAddress(id:AddressIdentifier):void {
+            out.writeString(id.name);
+            out.writeVarUint(id.offset - address);
+            address = id.offset;
+        }
+
+        const out = new BufferWriter(new Uint8Array(64), 0);
+        const labels:Label[] = [];
+        const defs:Defination[] = [];
+        for (const id of this.ids.values()) {
+            if (id instanceof Label) {
+                labels.push(id);
+            } else if (id instanceof Defination) {
+                defs.push(id);
+            }
+        }
+        defs.sort((a,b)=>a.offset-b.offset);
+        labels.sort((a,b)=>a.offset-b.offset);
+
+        let address = 0;
+        writeArray(labels, writeAddress);
+        address = 0;
+        writeArray(defs, writeAddress);
+        out.writeVarUint(this.memoryChunkSize - address);
+
+        try {
+            out.write(this.buffer());
+            return out.buffer();
+        } catch (err) {
+            if (err instanceof ParsingError) {
+                if (reportDirectWithFileName) {
+                    err.report(reportDirectWithFileName, err.pos !== null ? getLineAt(source, err.pos.line-1) : null);
+                }
+                errs.add(err);
+                throw errs;
+            } else {
+                throw err;
+            }
+        }
+    }
+    static load(bin:Uint8Array):X64Assembler {
+
+        const reader = new BufferReader(bin);
+
+        function readArray<T>(reader:()=>(T|null)):T[] {
+            const out:T[] = [];
+            for (;;) {
+                const item = reader();
+                if (item === null) return out;
+                out.push(item);
+            }
+        }
+
+        function readAddress():[string,number]|null {
+            const name = reader.readString();
+            if (name === '') return null;
+
+            const size = reader.readVarUint();
+            const offset = address;
+            address += size;
+            return [name, offset];
+        }
+
+        let address = 0;
+        const labels = readArray(readAddress);
+        address = 0;
+        const defs = readArray(readAddress);
+        const memorySize = reader.readVarUint() + address;
+
+        const buf = reader.remaining();
+        const out = new X64Assembler(buf, buf.length);
+        out.memoryChunkSize = memorySize;
+
+        for (const [name, offset] of labels) {
+            if (out.ids.has(name)) throw Error(`${name} is already defined`);
+            const label = new Label(name);
+            label.chunk = out.chunk;
+            label.offset = offset;
+            label.type = LabelType.Proc;
+            out.ids.set(name, label);
+        }
+        for (const [name, offset] of defs) {
+            if (out.ids.has(name)) throw Error(`${name} is already defined`);
+            out.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, undefined));
+        }
+        return out;
+    }
+
+    private static call_c_info = new JumpInfo(5, 5, 6, X64Assembler.prototype.call_c, X64Assembler.prototype.call_rp);
+    private static jmp_c_info = new JumpInfo(2, 5, 6, X64Assembler.prototype.jmp_c, X64Assembler.prototype.jmp_rp);
     private static jmp_o_info = new JumpInfo(2, 6, -1, X64Assembler.prototype._jmp_o, null);
 }
 
@@ -1710,6 +1823,7 @@ class ArgName {
     public static readonly Const=new ArgName('const', 'c');
 }
 const regmap = new Map<string, [ArgName, Register, OperationSize]>([
+    ['rip', [ArgName.Register, Register.rip, OperationSize.qword]],
     ['rax', [ArgName.Register, Register.rax, OperationSize.qword]],
     ['rcx', [ArgName.Register, Register.rcx, OperationSize.qword]],
     ['rdx', [ArgName.Register, Register.rdx, OperationSize.qword]],
@@ -1779,8 +1893,6 @@ const regmap = new Map<string, [ArgName, Register, OperationSize]>([
     ['r15b', [ArgName.Register, Register.r15, OperationSize.byte]],
 ]);
 
-const writingMap = new Set<string>();
-
 function checkModified(ori:string, out:string):boolean{
     const ostat = fs.statSync(ori);
 
@@ -1795,21 +1907,6 @@ function checkModified(ori:string, out:string):boolean{
 export namespace asm
 {
     export const code:Code = X64Assembler.prototype;
-    export class CompileError extends Error {
-        errors:ParsingError[] = [];
-        sourcePath?:string;
-        
-        add(error:ParsingError):void {
-            this.errors.push(error);
-        }
-
-        report():void {
-            const sourcePath = this.sourcePath || 'asmcode';
-            for (const err of this.errors) {
-                err.report(sourcePath);
-            }
-        }
-    }
     export const splitTwo32Bits = Symbol('splitTwo32Bits');
     export class Operation {
         public size = -1;
@@ -1911,140 +2008,26 @@ export namespace asm
         }
     }
 
-    export function compile(source:string, reportDirectWithFileName?:string|null):Uint8Array{
-        let p = 0;
-        let lineNumber = 1;
-        const generator = asm();
-        let names = '';
-
-        let errs:CompileError|null = null;
-
-        for (;;){
-            const lineidx = source.indexOf('\n', p);
-            const lineText = (lineidx === -1 ? source.substr(p) : source.substring(p,lineidx));
-            try {
-                generator.compileLine(lineText);
-            } catch (err) {
-                if (err instanceof ParsingError) {
-                    err.line = lineNumber;
-                    err.lineText = lineText;
-                    if (errs === null) errs = new CompileError(`${err.message}, line:${lineNumber}`);
-                    errs.errors.push(err);
-                    if (reportDirectWithFileName) {
-                        err.report(reportDirectWithFileName);
-                    }
-                } else {
-                    throw err;
-                }
-            }
-            if (lineidx === -1) break;
-            p = lineidx + 1;
-            lineNumber++;
-        }
-
-        if (errs !== null && errs.errors.length !== 0) throw errs;
-
-        names += '\0';
-        return Buffer.concat([Buffer.from(names, 'utf-8'), generator.buffer()]);
+    export function compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):Uint8Array{
+        return asm().compile(source, defines, reportDirectWithFileName);
     }
 
     export function load(bin:Uint8Array):X64Assembler {
-
-        let p = 0;
-        function readVarUint():number {
-            let out = 0;
-            let shift = 0;
-            if (p >= bin.length) throw Error('Out of bounds');
-            const n = bin[p++];
-            for (;;) {
-                if (!(n&0x80)) return out | (n << shift);
-                out += (n & 0x7f) << shift;
-                shift += 7;
-            }
-        }
-
-        function readString():string|null {
-            const next = bin.indexOf(0, p);
-            if (next === p) {
-                p++;
-                return null;
-            }
-            if (next === -1) throw Error(`Invalid asm.bin`);
-            const name = decoder.decode(bin.subarray(p, next));
-            p = next + 1;
-            return name;
-        }
-
-        let memorySize = 0;
-
-        const decoder = new TextDecoder('utf-8');
-        const labels:Record<string, number> = {};
-
-        for (;;){
-            const name = readString();
-            if (name === null) break;
-
-            const size = readVarUint();
-            // '!' = dummy space
-            if (name !== '!') {
-                labels[name] = memorySize;
-            }
-            memorySize += size;
-        }
-        interface ExternInfo {
-            name:string;
-            offsets:number[];
-            size:OperationSize;
-        }
-        const externs:ExternInfo[] = [];
-        for (;;){
-            const name = readString();
-            if (name === null) break;
-
-            const size = readVarUint();
-            const offsets:number[] = [];
-            const info:ExternInfo = {name, offsets, size};
-            let offset = memorySize;
-            for (;;) {
-                const move = readVarUint();
-                if (move === 0) break;
-                offsets.push(offset);
-                offset += move;
-            }
-            externs.push(info);
-        }
-        const buf = bin.subarray(p);
-        const out = new X64Assembler(buf, buf.length);
-        for (const {name, offsets, size} of externs) {
-            out.load_externconst(name, offsets, size);
-        }
-        return out;
+        return X64Assembler.load(bin);
     }
     
-    export function loadFromFile(src:string, reportDirect:boolean = false):X64Assembler{
-        try {
-            const binpath = src.substr(0, src.lastIndexOf('.')+1)+'bin';
-            const binpathLower = binpath.toLowerCase();
-            if (writingMap.has(binpathLower)) throw Error(`${binpath} is writing!`);
-    
-            let buffer:Uint8Array;
-            if (checkModified(src, binpath)){
-                buffer = asm.compile(fs.readFileSync(src, 'utf-8'), reportDirect ? src : null);
-                writingMap.add(binpathLower);
-                fs.writeFile(binpath, buffer, ()=>{
-                    writingMap.delete(binpathLower);
-                });
-            } else {
-                buffer = fs.readFileSync(binpath);
-            }
-    
-            return asm.load(buffer);
-        } catch (err) {
-            if (err instanceof CompileError) {
-                err.sourcePath = path.resolve(src);
-            }
-            throw err;
+    export function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):X64Assembler{
+        const binpath = src.substr(0, src.lastIndexOf('.')+1)+'bin';
+
+        let buffer:Uint8Array;
+        if (checkModified(src, binpath)){
+            buffer = asm.compile(fs.readFileSync(src, 'utf-8'), defines, reportDirect ? src : null);
+            fs.writeFileSync(binpath, buffer);
+        } else {
+            buffer = fs.readFileSync(binpath);
         }
+
+        return asm.load(buffer);
     }
 
 }

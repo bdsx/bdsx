@@ -1,10 +1,10 @@
 
 // Low Level - API Hooking
-import { capi } from "bdsx";
+import { capi, RawTypeId } from "bdsx";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode } from "bdsx/bds/gamemode";
 import { TextPacket } from "bdsx/bds/packets";
-import { RawTypeId, SYMOPT_UNDNAME } from "bdsx/common";
+import { SYMOPT_UNDNAME } from "bdsx/common";
 import { pdb } from "bdsx/core";
 import { ProcHacker } from "bdsx/prochacker";
 

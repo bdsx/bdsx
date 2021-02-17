@@ -1,7 +1,8 @@
-import { abstract, RawTypeId } from "./common";
-import { makefunc, StaticPointer, VoidPointer } from "./core";
-import { NativeType, Type, uint32_t } from "./nativetype";
+import { abstract } from "./common";
+import { StaticPointer, VoidPointer } from "./core";
+import { makefunc, RawTypeId } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
+import { NativeType, Type, uint32_t } from "./nativetype";
 import { Singleton } from "./singleton";
 
 class RefCounter extends NativeClass {

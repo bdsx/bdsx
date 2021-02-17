@@ -1,7 +1,7 @@
 
-import { abstract, RawTypeId } from './common';
-import { cgate, StaticPointer, NativePointer, VoidPointer } from './core';
-import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType } from './makefunc';
+import { abstract } from './common';
+import { cgate, NativePointer, StaticPointer, VoidPointer } from './core';
+import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType, RawTypeId } from './makefunc';
 
 /**
  * Load external DLL
@@ -75,7 +75,7 @@ export class NativeModule extends VoidPointer {
     }
 }
 
-const getModuleHandle = makefunc.js(cgate.GetModuleHandleW, NativeModule, null, RawTypeId.StringUtf16);
+const getModuleHandle = makefunc.js(cgate.GetModuleHandleWPtr, NativeModule, null, RawTypeId.StringUtf16);
 
 export class ThreadHandle extends VoidPointer {
     close():boolean {
@@ -109,8 +109,8 @@ export class CriticalSection extends VoidPointer {
     }
 }
 
-NativeModule.prototype.getProcAddress = makefunc.js(cgate.GetProcAddress, NativePointer, { this: NativeModule }, RawTypeId.StringUtf8);
-NativeModule.prototype.getProcAddressByOrdinal = makefunc.js(cgate.GetProcAddress, NativePointer, { this: NativeModule }, RawTypeId.Int32);
+NativeModule.prototype.getProcAddress = makefunc.js(cgate.GetProcAddressPtr, NativePointer, { this: NativeModule }, RawTypeId.StringUtf8);
+NativeModule.prototype.getProcAddressByOrdinal = makefunc.js(cgate.GetProcAddressPtr, NativePointer, { this: NativeModule }, RawTypeId.Int32);
 
 export namespace dll {
     export namespace ntdll {
@@ -149,6 +149,8 @@ export namespace dll {
         export const ResumeThread = module.getFunction('ResumeThread', RawTypeId.Int32, null, VoidPointer);
         export const TlsAlloc = module.getFunction('TlsAlloc', RawTypeId.Int32);
         export const TlsFree = module.getFunction('TlsFree', RawTypeId.Boolean, null, RawTypeId.Int32);
+        export import GetProcAddress = cgate.GetProcAddress;
+        export import GetModuleHandleW = cgate.GetModuleHandleW;
     }
     export namespace ucrtbase {
         export const module = NativeModule.get('ucrtbase.dll');

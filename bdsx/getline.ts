@@ -1,9 +1,9 @@
 import { capi } from ".";
 import { asm, Register } from "./assembler";
 import { proc2 } from "./bds/proc";
-import { RawTypeId } from "./common";
-import { cgate, makefunc, StaticPointer, uv_async, VoidPointer } from "./core";
+import { cgate, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
+import { makefunc, RawTypeId } from "./makefunc";
 import { CxxString, NativeType } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 

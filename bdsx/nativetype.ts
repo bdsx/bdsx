@@ -1,6 +1,7 @@
 
-import { abstract, emptyFunc, RawTypeId } from './common';
-import { makefunc, pdb, StaticPointer, VoidPointer } from './core';
+import { abstract, emptyFunc } from './common';
+import { pdb, StaticPointer, VoidPointer } from './core';
+import { makefunc, RawTypeId } from './makefunc';
 import { Singleton } from './singleton';
 
 namespace NativeTypeFn

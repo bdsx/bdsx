@@ -1,6 +1,7 @@
-import { abstract, RawTypeId } from "bdsx/common";
-import { makefunc, VoidPointer } from "bdsx/core";
+import { abstract } from "bdsx/common";
+import { VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
+import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { NativeClass } from "bdsx/nativeclass";
 import { CxxString, NativeType, uint8_t } from "bdsx/nativetype";

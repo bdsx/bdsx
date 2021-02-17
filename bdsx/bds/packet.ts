@@ -1,4 +1,5 @@
-import { abstract, RawTypeId } from "bdsx/common";
+import { abstract } from "bdsx/common";
+import { RawTypeId } from "bdsx/makefunc";
 import { MantleClass, NativeClass } from "bdsx/nativeclass";
 import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";

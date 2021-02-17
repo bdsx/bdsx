@@ -2,8 +2,8 @@
 import child_process = require('child_process');
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
-import { RawTypeId } from './common';
 import { bedrock_server_exe, VoidPointer } from './core';
+import { RawTypeId } from './makefunc';
 
 export namespace serverControl
 {

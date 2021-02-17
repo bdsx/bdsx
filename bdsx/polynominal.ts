@@ -343,13 +343,17 @@ export namespace polynominal {
         return null;
     }
 
-    export function parse(text:string):Operand {
+    export function parse(text:string, lineNumber:number=0, offset:number=0):Operand {
         let i = 0;
 
         const ungettedOperators:Operator[] = [];
 
         function error(message:string, word:string):never {
-            throw new ParsingError(message, i-word.length, word.length); 
+            throw new ParsingError(message, {
+                column: offset + i-word.length, 
+                width: word.length, 
+                line: lineNumber
+            });
         }
     
         function skipSpace():void {
@@ -377,13 +381,13 @@ export namespace polynominal {
             }
             const opername = text.substring(from, i);
             const opers = OPERATORS.get(opername);
-            if (opers === undefined) throw new ParsingError(`Unexpected operator '${opername}'`, from, i-from);
+            if (opers === undefined) error(`Unexpected operator '${opername}'`, opername);
 
             for (const type of types) {
                 const oper = opers[type];
                 if (oper !== undefined) return oper;
             }
-            throw new ParsingError(`Unexpected operator '${opername}' for ${types.join(',')}`, from, i-from);
+            error(`Unexpected operator '${opername}' for ${types.join(',')}`, opername);
         }
 
         function ungetOperator(oper:Operator):void {
@@ -422,7 +426,9 @@ export namespace polynominal {
             let operand = readOperand();
             if (operand === null) {
                 const oper = readOperator('unaryPrefix');
-                if (oper.name === '(') {
+                if (oper === OPER_EOF) {
+                    error('unexpected end', '');
+                } else if (oper.name === '(') {
                     operand = readStatement(OPER_CLOSE.precedence);
                     const endoper = readOperator('unarySuffix');
                     if (endoper !== OPER_CLOSE) error(`Unexpected operator: '${oper}', expected: ')'`, endoper.name);

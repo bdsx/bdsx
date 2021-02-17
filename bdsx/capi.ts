@@ -1,7 +1,7 @@
 import { asm } from "./assembler";
-import { RawTypeId } from "./common";
 import { cgate, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
+import { RawTypeId } from "./makefunc";
 
 export namespace capi
 {

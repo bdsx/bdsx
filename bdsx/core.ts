@@ -1,5 +1,5 @@
 
-import { Bufferable, Encoding, RawTypeId, TypeFromEncoding } from "./common";
+import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 
 export interface VoidPointerConstructor
 {
@@ -618,14 +618,29 @@ export declare namespace cgate
      * the native function in kernal32.dll
      * HMODULE GetModuleHandleW(LPCWSTR lpModuleName)
      */
-    export const GetModuleHandleW: VoidPointer;
+    export const GetModuleHandleWPtr: VoidPointer;
 
     /**
      * the native function in kernal32.dll
      * FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName)
      */
-    export const GetProcAddress: VoidPointer;
+    export const GetProcAddressPtr: VoidPointer;
+
+    /**
+     * get NativeModule
+     */
+    export function GetModuleHandleW(name:string|null):VoidPointer;
     
+    /**
+     * get the function pointer from NativeModule
+     */
+    export function GetProcAddress(nativeModule:VoidPointer, name:string):VoidPointer;
+    
+    /**
+     * get the function pointer from NativeModule
+     */
+    export function GetProcAddressByOrdinal(nativeModule:VoidPointer, ordinal:number):VoidPointer;
+
     /**
      * native function
      * process node uv_loop

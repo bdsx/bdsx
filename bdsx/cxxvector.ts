@@ -1,7 +1,8 @@
 import { procHacker } from "./bds/proc";
-import { abstract, RawTypeId } from "./common";
+import { abstract } from "./common";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
+import { RawTypeId } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";

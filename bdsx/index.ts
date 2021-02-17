@@ -1,3 +1,4 @@
+
 import './externs';
 import './polyfill';
 import './bds/enumfiller';
@@ -11,15 +12,16 @@ import { ServerPlayer } from './bds/player';
 import { serverInstance } from './bds/server';
 import { bin } from "./bin";
 import { capi } from './capi';
-import { CANCEL, RawTypeId } from './common';
+import { CANCEL } from './common';
 import { NativeModule } from './dll';
 import { legacy } from './legacy';
+import { RawTypeId } from './makefunc';
 import { nethook } from './nethook';
 import { serverControl } from './servercontrol';
 import { SharedPtr } from './sharedpointer';
 import { hex } from './util';
-import makefuncModule = require('./makefunc');
 
+import makefuncModule = require('./makefunc');
 import core = require("./core");
 import netevent = require('./netevent');
 import chat = require('./chat');
@@ -63,7 +65,7 @@ declare module "./core"
     type ParamType = makefuncModule.ParamType;
 
     /**
-     * @deprecated use ParamType of 'bdsx/makefunc'
+     * @deprecated use ParamType in 'bdsx/makefunc'
      */
     type ReturnType = makefuncModule.ParamType;
 

@@ -1,8 +1,9 @@
 
 import { Register } from "bdsx/assembler";
-import { abstract, RawTypeId } from "bdsx/common";
+import { abstract } from "bdsx/common";
 import { dll } from "bdsx/dll";
 import { Hashable, HashSet } from "bdsx/hashset";
+import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { NativeClass } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
@@ -10,7 +11,7 @@ import { SharedPtr } from "bdsx/sharedpointer";
 import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
 import { CapsuledEvent, Event } from "krevent";
-import { makefunc, StaticPointer, VoidPointer } from "../core";
+import { StaticPointer, VoidPointer } from "../core";
 import { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { ServerPlayer } from "./player";

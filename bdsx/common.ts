@@ -61,6 +61,9 @@ export type TypedArrayBuffer = Uint8Array | Uint16Array | Uint32Array |
 	Float32Array | Float64Array;
 export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 
+/**
+ * @deprecated use RawTypeId in makefunc
+ */
 export enum RawTypeId {
 	Int32,
 	FloatAsInt64,

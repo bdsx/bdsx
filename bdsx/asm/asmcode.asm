@@ -23,66 +23,30 @@ const JsArrayBuffer 10
 const JsTypedArray 11
 const JsDataView 12
 
-externconst fn_asyncSize:byte
-externconst fn_runtimeErrorFire:byte
-externconst fn_getout:byte
-externconst fn_np2js_wrapper_nullable:byte
-externconst fn_np2js_wrapper:byte
-externconst fn_wrapper_js2np:byte
-externconst fn_stack_free_all:byte
-externconst fn_stack_ansi:byte
-externconst fn_stack_utf8:byte
-externconst fn_js2np_utf16:byte
-externconst fn_pointer_js2np:byte
-externconst fn_bin64:byte
-externconst fn_JsNumberToInt:byte
-externconst fn_JsBoolToBoolean:byte
-externconst fn_JsBooleanToBool:byte
-externconst fn_getout_invalid_parameter:byte
-externconst fn_JsIntToNumber:byte
-externconst fn_JsNumberToDouble:byte
-externconst fn_buffer_to_pointer:byte
-externconst fn_JsDoubleToNumber:byte
-externconst fn_JsPointerToString:byte
-externconst fn_np2js_ansi:byte
-externconst fn_np2js_utf8:byte
-externconst fn_np2js_utf16:byte
-externconst fn_pointer_np2js:byte
-externconst fn_pointer_np2js_nullable:byte
-externconst fn_getout_invalid_parameter_count:byte
-externconst fn_JsCallFunction:byte
-externconst fn_pointer_js_new:byte
-externconst fn_returnPoint:byte
-
-externconst asyncSize:byte;
-
-exportdef GetCurrentThreadId:qword
-exportdef bedrockLogNp:qword
-exportdef memcpy:qword
-exportdef asyncAlloc:qword
-exportdef asyncPost:qword
-exportdef sprintf:qword
-exportdef JsHasException:qword
-exportdef runtimeError.fire:qword
-exportdef JsSetException:qword
-exportdef JsCreateError:qword
-exportdef JsGetValueType:qword
-exportdef JsStringToPointer:qword
-exportdef JsGetArrayBufferStorage:qword
-exportdef JsGetTypedArrayStorage:qword
-exportdef JsGetDataViewStorage:qword
-exportdef stackutil.alloc:qword
-exportdef stackutil.from_ansi:qword
-exportdef strlen16:qword
-exportdef JsConstructObject:qword
-
-def :qword[16]
-def data:void
-def :qword[16]
+def GetCurrentThreadId:qword
+def bedrockLogNp:qword
+def memcpy:qword
+def asyncAlloc:qword
+def asyncPost:qword
+def sprintf:qword
+def JsHasException:qword
+def runtimeError.fire:qword
+def JsSetException:qword
+def JsCreateError:qword
+def JsGetValueType:qword
+def JsStringToPointer:qword
+def JsGetArrayBufferStorage:qword
+def JsGetTypedArrayStorage:qword
+def JsGetDataViewStorage:qword
+def stackutil.alloc:qword
+def stackutil.from_ansi:qword
+def strlen16:qword
+def JsConstructObject:qword
 def js_undefined:qword
 def js_null:qword
 def js_true:qword
 def nodeThreadId:dword
+def JsGetAndClearException:qword
 
 proc logHookAsyncCb
     mov r8, [rcx + asyncSize + 8]
@@ -123,12 +87,12 @@ endp
 
 # [[noreturn]]] makefunc_getout()
 proc makefunc_getout
-    mov rsp, [rdi + returnPoint]
+    mov rsp, [rdi + fn_returnPoint]
     and rsp, -2
     pop rcx
     pop rbp
     pop rsi
-    mov [rdi + returnPoint], rcx
+    mov [rdi + fn_returnPoint], rcx
     pop rdi
     xor eax, eax
     ret
@@ -137,13 +101,13 @@ endp
 # JsValueRef makeError(char16_t* string, size_t size)
 proc makeError
     sub rsp, 28h
-    lea r8, [rsp, 18h]
+    lea r8, [rsp + 18h]
     call [rdi + fn_JsPointerToString]
     mov rcx, [rsp + 18h]
-    lea_r_rp rdx, rsp, 18h
-    call_rp rdi, fn_JsCreateError
-    mov_r_rp rax, rsp, 18h
-    add_r_c rsp, 28h
+    lea rdx, [rsp + 18h]
+    call JsCreateError
+    mov rax, [rsp + 18h]
+    add rsp, 28h
     ret
 endp
 
@@ -152,10 +116,10 @@ proc getout_jserror
     sub rsp, 28h
     call JsSetException
     call [rdi + fn_stack_free_all]
-    mov rax, [rdi + returnPoint]
+    mov rax, [rdi + fn_returnPoint]
     and rax, 1
     jz runtimeError
-    call [rdi + fn_makefunc_getout]
+    call makefunc_getout
 runtimeError:
     call [rdi + fn_runtimeErrorFire]
 endp
@@ -165,12 +129,12 @@ proc getout_invalid_parameter
     sub rsp, 48h
     test rcx, rcx
     jg paramNum_is_number
-    mov rcx, "Invalid parameter at this"
+    lea rcx, "Invalid parameter at this"
     call makeError
     jmp paramNum_is_this
 paramNum_is_number:
-    mov r8, paramNum
-    mov rdx, "Invalid parameter at %d"
+    mov r8, rcx
+    lea rdx, "Invalid parameter at %d"
     lea rcx, [rsp + 20h]
     call sprintf
     lea rcx, [rsp + 0x20]
@@ -184,7 +148,7 @@ proc getout_invalid_parameter_count
     sub rsp, 68h
     mov r9, rcx
     mov r8, rdx
-    mov rdx, "Invalid parameter count (expected=%d, actual=%d)"
+    lea rdx, "Invalid parameter count (expected=%d, actual=%d)"
     lea rcx, [rsp + 20h]
     call makeError
     mov rcx, rax
@@ -196,7 +160,7 @@ endp
 proc getout
     sub rsp, 48h
     mov [rsp + 0x28], rcx
-    mov rax, [rdi + returnPoint]
+    mov rax, [rdi + fn_returnPoint]
     and rax, 1
     jz nocatch
     lea rcx, [rsp + 0x20]
@@ -206,18 +170,18 @@ proc getout
     movzx eax, byte ptr[rsp + 0x20]
     test eax, eax
     jnz nocatch
-    call stack_free_all
+    call [rdi + fn_stack_free_all]
     call makefunc_getout
 nocatch:
     lea rcx, [rsp + 0x20]
     call JsGetAndClearException
     jnz jserror
-    call stack_free_all
+    call [rdi + fn_stack_free_all]
     mov rcx, [rsp + 0x20]
     call runtimeError.fire
 jserror:
     mov r8, [rsp + 0x28]
-    mov rdx, "JsErrorCode: 0x%x"
+    lea rdx, "JsErrorCode: 0x%x"
     lea rcx, [rsp + 0x20]
     call sprintf
     lea rcx, [rsp + 0x20]
@@ -427,7 +391,7 @@ _failed:
 endp
 
 ; JsValueRef pointer_np2js_nullable(JsValueRef ctor, void* ptr) noexcept
-proc pointer_np2js
+proc pointer_np2js_nullable
     test rcx, rcx
     jz _null
     sub rsp, 38h
@@ -459,7 +423,7 @@ endp
 proc pointer_js_new
     sub rsp, 38h
     mov [rsp+48h], rdx
-    lea r9, rdx
+    mov r9, rdx
     mov r8, 1
     lea rdx, [rsp+28h]
     mov rax, js_undefined
@@ -533,7 +497,8 @@ endp
 proc wrapper_js2np
     sub rsp, 38h
     mov [rsp+30h], rdx
-    mov [rsp+28h], js_undefined
+    mov rax, js_undefined
+    mov [rsp+28h], rax
     lea r9, [rsp+20h]
     mov r8, 2
     lea rdx, [rsp+28h]

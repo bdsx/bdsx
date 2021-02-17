@@ -7,9 +7,11 @@ export class TextLineParser {
     private p = 0;
     public matchedWidth:number;
     public matchedIndex = 0;
-    private offset = 0;
 
-    constructor(private context:string) {
+    constructor(
+        private context:string, 
+        public readonly lineNumber:number,
+        private offset = 0) {
         this.matchedWidth = context.length;
     }
 
@@ -26,6 +28,63 @@ export class TextLineParser {
 
     eof():boolean {
         return this.p >= this.context.length;
+    }
+
+    nextIf(str:string):boolean {
+        if (!this.context.startsWith(str, this.p)) return false;
+        this.p += str.length;
+        return true;
+    }
+
+    readQuotedString():string|null {
+        this.skipSpaces();
+        const chr = this.context.charAt(this.p);
+        if (chr !== '"' && chr !== "'") return null;
+
+        let p = this.p+1;
+        
+        for (;;) {
+            const np = this.context.indexOf(chr, p);
+            if (np === -1) {
+                this.matchedIndex = this.p + this.offset;
+                this.matchedWidth = 1;
+                this.error('qouted string does not end');
+            }
+
+            let count = 0;
+            p = np;
+            for (;;) {
+                const chr = this.context.charAt(--p);
+                if (chr === '\\') {
+                    count ++;
+                    continue;
+                }
+                break;
+            }
+            if ((count&1) === 0) {
+                const out = this.context.substring(this.p, np+1);
+                this.matchedIndex = this.p + this.offset;
+                this.matchedWidth = out.length;
+                this.p = np+1;
+                try {
+                    return JSON.parse(out);
+                } catch (err) {
+                    this.error(err.message);
+                }
+            }
+            p = np+1;
+        }
+    }
+
+    skipSpaces():void {
+        const nonspace = /[^\s\uFEFF\xA0]/g;
+        nonspace.lastIndex = this.p;
+        const res = nonspace.exec(this.context);
+        if (res === null) {
+            this.p = this.context.length;
+            return;
+        }
+        this.p = res.index;
     }
 
     readToSpace():string {
@@ -60,7 +119,7 @@ export class TextLineParser {
         const oriindex = this.matchedIndex;
         const offset = this.offset;
         const spaceMatch = /[\s\uFEFF\xA0]+/g;
-        spaceMatch.lastIndex = this.matchedIndex;
+        spaceMatch.lastIndex = this.p;
 
         for (;;) {
             const res = spaceMatch.exec(context);
@@ -108,25 +167,6 @@ export class TextLineParser {
         return matched;
     }
 
-    enter(needle:string):[number, number, string]|null {
-        const context = this.context;
-        const idx = context.indexOf(needle, this.p);
-        if (idx === -1) return null;
-        const [matched, prespace, width] = TextLineParser.trim(context.substring(this.p, idx));
-        const offset = this.offset;
-        this.offset = this.matchedIndex = this.p + offset + prespace;
-        this.matchedWidth = width;
-        this.p = this.matchedIndex - this.offset;
-        this.context = matched;
-        return [idx + 1, offset, context];
-    }
-
-    leave(ctx:[number, number, string]):void {
-        this.p = ctx[0];
-        this.offset = ctx[1];
-        this.context = ctx[2];
-    }
-
     *split(needle:string):IterableIterator<string> {
         const context = this.context;
         if (this.p >= context.length) return;
@@ -152,28 +192,88 @@ export class TextLineParser {
     }
 
     error(message:string):never {
-        throw new ParsingError(message, this.matchedIndex, this.matchedWidth);
+        throw new ParsingError(message, {
+            column: this.matchedIndex, 
+            width: this.matchedWidth, 
+            line: this.lineNumber
+        });
+    }
+
+    getPosition():SourcePosition {
+        return {
+            line: this.lineNumber,
+            column: this.matchedIndex,
+            width: this.matchedWidth
+        };
     }
 }
 
-export class ParsingError extends Error {
-    public severity:'error'|'warning' = 'error';
-    public lineText?:string;
-    public line?:number;
+export interface SourcePosition {
+    line:number;
+    column:number;
+    width:number;
+}
+
+export class ErrorPosition {
 
     constructor(
-        message:string, 
-        public column:number, 
-        public width:number) {
-        super(message);
+        public readonly message:string, 
+        public readonly severity:'error'|'warning',
+        public readonly pos:SourcePosition|null) {
+    }
+    
+    report(sourcePath:string, lineText:string|null):void {
+        console.error();
+        const pos = this.pos;
+        if (pos !== null) {
+            console.error(`${colors.cyan(sourcePath)}:${colors.yellow(pos.line+'')}:${colors.yellow(pos.column+'')} - ${colors.red(this.severity)}: ${this.message}`);
+        
+            if (lineText !== null) {
+                const linestr = pos.line+'';
+                console.error(colors.black(colors.bgWhite(linestr))+` ${lineText}`);
+                console.error(colors.bgWhite(' '.repeat(linestr.length))+' '.repeat(pos.column+1)+colors.red('~'.repeat(Math.max(pos.width, 1))));
+            }
+        } else {
+            console.error(`${colors.cyan(sourcePath)} - ${colors.red(this.severity)}: ${this.message}`);
+            
+            if (lineText !== null) {
+                console.error(colors.bgWhite(' ')+` ${lineText}`);
+            }
+        }
+    }
+        
+}
+
+export class ParsingError extends Error {
+    public readonly errors:ErrorPosition[];
+
+    constructor(
+        message:string,
+        public readonly pos:SourcePosition|null
+    ) {
+        super(pos !== null ? `${message}, line:${pos.line}` : message);
+        this.errors.push(new ErrorPosition(message, 'error', pos));
     }
 
-    report(sourcePath:string):void {
-        console.error();
-        console.error(`${colors.cyan(sourcePath)}:${colors.yellow(this.line+'')}:${colors.yellow(this.column+'')} - ${colors.red(this.severity)}: ${this.message}`);
-        
-        const linestr = this.line+'';
-        console.error(colors.black(colors.bgWhite(linestr))+` ${this.lineText}`);
-        console.error(colors.bgWhite(' '.repeat(linestr.length))+' '.repeat(this.column+1)+colors.red('~'.repeat(Math.max(this.width, 1))));
+    report(sourcePath:string, lineText:string|null):void {
+        this.errors[0].report(sourcePath, lineText);
+    }
+
+    reportAll(sourcePath:string, sourceText:string):void {
+        for (const err of this.errors) {
+            err.report(sourcePath, sourceText);
+        }
+    }
+}
+
+export class ParsingErrorContainer {
+    public error:ParsingError|null = null;
+
+    add(error:ParsingError):void {
+        if (this.error !== null) {
+            this.error.errors.push(...error.errors);
+        } else {
+            this.error = error;
+        }
     }
 }
