@@ -117,12 +117,17 @@ export class CxxStringWrapper extends NativeClass {
             if (capacity >= 0x10) dll.ucrtbase.free(orivalue);
             this.setPointer(dest);
             if (dest === null) {
-                this.setString("[out of memory]");
+                this.setString("[out of memory]\0");
                 this.capacity = 15;
                 this.length = 15;
                 return;
             }
         }
+    }
+
+    resize(nsize:number):void {
+        this.reserve(nsize);
+        this.length = nsize;
     }
 }
 CxxStringWrapper.define({
