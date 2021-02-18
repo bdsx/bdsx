@@ -7,7 +7,8 @@ const UINT64_CAP = 0x10000000000000000;
 const INT64_CAP = 0x8000000000000000;
 
 export abstract class AbstractWriter {
-    abstract put(n:number):void;
+    abstract put(v:number):void;
+    abstract putRepeat(v:number, count:number):void;
     abstract write(values:Uint8Array):void;
     
     writeNullTerminatedString(text:string):void {

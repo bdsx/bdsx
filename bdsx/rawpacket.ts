@@ -22,11 +22,17 @@ export class RawPacket extends AbstractWriter {
         return this.packetId;
     }
 
-    put(n:number):void {
+    put(v:number):void {
         const str = this.data;
         const i = str.length;
         str.resize(i+1);
-        str.valueptr.setUint8(n, i);
+        str.valueptr.setUint8(v, i);
+    }
+    putRepeat(v:number, count:number):void {
+        const str = this.data;
+        const i = str.length;
+        str.resize(i + count);
+        str.valueptr.fill(v, count, i);
     }
     write(n:Uint8Array):void {
         const str = this.data;
