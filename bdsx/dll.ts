@@ -1,6 +1,7 @@
 
 import { abstract } from './common';
-import { cgate, NativePointer, StaticPointer, VoidPointer } from './core';
+import { AllocatedPointer, cgate, NativePointer, StaticPointer, VoidPointer } from './core';
+import { dllraw } from './dllraw';
 import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType, RawTypeId } from './makefunc';
 
 /**
@@ -86,11 +87,11 @@ export class ThreadHandle extends VoidPointer {
     }
 }
 
-export class CriticalSection extends VoidPointer {
+export class CriticalSection extends AllocatedPointer {
     private static readonly bytes = 40;
     
     constructor() {
-        super(dll.ucrtbase.malloc(CriticalSection.bytes));
+        super(CriticalSection.bytes);
         dll.kernel32.InitializeCriticalSection(this);
     }
 
@@ -108,7 +109,6 @@ export class CriticalSection extends VoidPointer {
 
     dispose():void {
         dll.kernel32.DeleteCriticalSection(this);
-        dll.ucrtbase.free(this);
     }
 }
 
@@ -124,7 +124,7 @@ export namespace dll {
             null : makefunc.js(wine_get_version_ptr, RawTypeId.StringUtf8);
     }
     export namespace kernel32 {
-        export const module = NativeModule.get('kernel32.dll');
+        export const module = dllraw.kernel32.module.as(NativeModule);
         export const LoadLibraryW = module.getFunction('LoadLibraryW', NativeModule, null, RawTypeId.StringUtf16);
         export const LoadLibraryExW = module.getFunction('LoadLibraryExW', NativeModule, null, RawTypeId.StringUtf16, VoidPointer, RawTypeId.Int32);
         export const FreeLibrary = module.getFunction('FreeLibrary', RawTypeId.Boolean, null, NativeModule);
@@ -138,7 +138,7 @@ export namespace dll {
         export const WaitForSingleObject = module.getFunction('WaitForSingleObject', RawTypeId.Int32, null, VoidPointer, RawTypeId.Int32);
         export const CreateEventW = module.getFunction('CreateEventW', VoidPointer, null, VoidPointer, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.StringUtf16);
         export const SetEvent = module.getFunction('SetEvent', RawTypeId.Boolean, null, VoidPointer);
-        export const GetCurrentThreadId = module.getFunction('GetCurrentThreadId', RawTypeId.Int32);
+        export const GetCurrentThreadId = makefunc.js(dllraw.kernel32.GetCurrentThreadId, RawTypeId.Int32);
         export const InitializeCriticalSection = module.getFunction('InitializeCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const DeleteCriticalSection = module.getFunction('DeleteCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const EnterCriticalSection = module.getFunction('EnterCriticalSection', RawTypeId.Void, null, CriticalSection);
@@ -167,10 +167,10 @@ export namespace dll {
         export const __stdio_common_vsprintf = module.getProcAddress('__stdio_common_vsprintf');
     }
     export namespace vcruntime140 {
-        export const module = NativeModule.load('vcruntime140.dll');
+        export const module = dllraw.vcruntime140.module.as(NativeModule);
         export const memset = module.getFunction('memset', RawTypeId.Void, null, VoidPointer, RawTypeId.Int32, RawTypeId.FloatAsInt64);
         export const memcmp = module.getFunction('memcmp', RawTypeId.Int32, null, VoidPointer, VoidPointer, RawTypeId.FloatAsInt64);
-        export const memcpy = module.getFunction('memcpy', RawTypeId.Void, null, VoidPointer, VoidPointer, RawTypeId.FloatAsInt64);
+        export const memcpy = makefunc.js(dllraw.vcruntime140.memcpy, RawTypeId.Void, null, VoidPointer, VoidPointer, RawTypeId.FloatAsInt64);
         export const memchr = module.getFunction('memchr', NativePointer, null, VoidPointer, RawTypeId.Int32, RawTypeId.FloatAsInt64);
     }
     export namespace msvcp140 {

@@ -30,23 +30,19 @@ def asyncAlloc:qword
 def asyncPost:qword
 def sprintf:qword
 def JsHasException:qword
-def runtimeError.fire:qword
-def JsSetException:qword
 def JsCreateError:qword
 def JsGetValueType:qword
 def JsStringToPointer:qword
 def JsGetArrayBufferStorage:qword
 def JsGetTypedArrayStorage:qword
 def JsGetDataViewStorage:qword
-def stackutil.alloc:qword
-def stackutil.from_ansi:qword
-def strlen16:qword
 def JsConstructObject:qword
 def js_undefined:qword
 def js_null:qword
 def js_true:qword
 def nodeThreadId:dword
 def JsGetAndClearException:qword
+def runtimeErrorFire:qword
 
 proc logHookAsyncCb
     mov r8, [rcx + asyncSize + 8]
@@ -73,16 +69,11 @@ async_post:
     mov [rax + asyncSize + 8], r8
     lea rcx, [rax + asyncSize + 10h]
     lea rdx, [rsp + 80h]
-    mov [rsp + 0x20], rax
+    mov [rsp + 20h], rax
     call memcpy
-    mov rcx, [rsp + 0x20]
+    mov rcx, [rsp + 20h]
     add rsp, 0x28
     jmp asyncPost
-endp
-
-proc getJsValueRef
-    mov rax, rcx    
-    ret
 endp
 
 # [[noreturn]]] makefunc_getout()
@@ -114,14 +105,14 @@ endp
 # [[noreturn]] getout_jserror(JsValueRef error)
 proc getout_jserror
     sub rsp, 28h
-    call JsSetException
+    call [rdi + fn_JsSetException]
     call [rdi + fn_stack_free_all]
     mov rax, [rdi + fn_returnPoint]
     and rax, 1
     jz runtimeError
     call makefunc_getout
 runtimeError:
-    call [rdi + fn_runtimeErrorFire]
+    call runtimeErrorFire
 endp
 
 # [[noreturn]] getout_invalid_parameter(uint32_t paramNum)
@@ -137,7 +128,7 @@ paramNum_is_number:
     lea rdx, "Invalid parameter at %d"
     lea rcx, [rsp + 20h]
     call sprintf
-    lea rcx, [rsp + 0x20]
+    lea rcx, [rsp + 20h]
     call makeError
 paramNum_is_this:
     call getout_jserror
@@ -163,28 +154,28 @@ proc getout
     mov rax, [rdi + fn_returnPoint]
     and rax, 1
     jz nocatch
-    lea rcx, [rsp + 0x20]
+    lea rcx, [rsp + 20h]
     call JsHasException
     test eax, eax
     jnz nocatch
-    movzx eax, byte ptr[rsp + 0x20]
+    movzx eax, byte ptr[rsp + 20h]
     test eax, eax
     jnz nocatch
     call [rdi + fn_stack_free_all]
     call makefunc_getout
 nocatch:
-    lea rcx, [rsp + 0x20]
+    lea rcx, [rsp + 20h]
     call JsGetAndClearException
     jnz jserror
     call [rdi + fn_stack_free_all]
-    mov rcx, [rsp + 0x20]
-    call runtimeError.fire
+    mov rcx, [rsp + 20h]
+    call runtimeErrorFire
 jserror:
     mov r8, [rsp + 0x28]
     lea rdx, "JsErrorCode: 0x%x"
-    lea rcx, [rsp + 0x20]
+    lea rcx, [rsp + 20h]
     call sprintf
-    lea rcx, [rsp + 0x20]
+    lea rcx, [rsp + 20h]
     call makeError
     mov rcx, rax
     call getout_jserror
@@ -300,8 +291,8 @@ endp
 ; const char16_t* utf16_js2np(JsValueRef value, uint32_t paramNum)
 proc utf16_js2np
     sub rsp, 28h
-    mov [rsp+38], rdx
-    mov [rsp+30], rcx
+    mov [rsp+38h], rdx
+    mov [rsp+30h], rcx
     lea rdx, [rsp+18h]
     call JsGetValueType
     test eax, eax
@@ -350,11 +341,18 @@ endp
 proc utf16_np2js
     sub rsp, 28h
     mov [rsp+38h], rdx
-    mov [rsp+30h], rcx
-    call strlen16
+
+    mov rdx, rcx
+_next:
+    movzx eax, word ptr[rdx]
+    add rdx, 2
+    test eax, eax
+    jz _next
+
+    sub rdx, rcx
+    shr rdx, 2
+
     lea r8, [rsp+18h]
-    mov rdx, rax
-    mov rcx, [rsp+20h]
     call [rdi+fn_JsPointerToString]
     test eax, eax
     jz _failed

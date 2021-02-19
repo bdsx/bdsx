@@ -102,6 +102,7 @@ function patchForStdio():void {
         if (logEvTarget.fire(line, color) === CANCEL) return;
         console.log(color(line));
     }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
+    asmcode.bedrockLogNp.setPointer(bedrockLogNp);
 
     
     procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, asmcode.logHook, Register.rdx, true, [

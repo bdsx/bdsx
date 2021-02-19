@@ -1,9 +1,10 @@
 import { asm, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
 import { Bufferable } from "./common";
-import { AllocatedPointer, cgate, NativePointer, StaticPointer, VoidPointer } from "./core";
+import { AllocatedPointer, cgate, chakraUtil, NativePointer, pdb, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import asmcode = require('./asm/asmcode');
 import { makefuncDefines } from "./makefunc_defines";
 import "./codealloc";
+import { dllraw } from "./dllraw";
 
 export enum RawTypeId {
 	Int32,
@@ -26,11 +27,10 @@ export type ParamType = RawTypeId | { new(): VoidPointer; };
 
 
 const functionMap = new AllocatedPointer(0x100);
-cgate.JsAddRef(functionMap);
+chakraUtil.JsAddRef(functionMap);
 const functionMapPtr = functionMap.add(0x80);
 
 function initFunctionMap():void {
-    const chakracore = cgate.GetModuleHandleW('ChakraCore.dll');
     function setFunctionMap(name:keyof typeof makefuncDefines, address:VoidPointer|null):void {
         if (address === undefined) throw Error(`Unexpected value for ${name}`);
         functionMap.setPointer(address, makefuncDefines[name] + 0x80);
@@ -40,39 +40,64 @@ function initFunctionMap():void {
         const constname = 'fn_'+funcName as keyof typeof makefuncDefines;
         const offset = makefuncDefines[constname];
         if (typeof offset !== 'number') throw Error(`${constname} not found`);
-        setFunctionMap(constname, cgate.GetProcAddress(chakracore, funcName));
+        setFunctionMap(constname, cgate.GetProcAddress(chakraCoreDll, funcName));
+    }
+
+    function chakraCoreToDef(funcName:keyof typeof asmcode):void {
+        asmcode[funcName].setPointer(cgate.GetProcAddress(chakraCoreDll, funcName));
     }
     
-    setFunctionMap('fn_runtimeErrorFire', null);
+    const chakraCoreDll = cgate.GetModuleHandleW('ChakraCore.dll');
+
     setFunctionMap('fn_getout', asmcode.getout);
     setFunctionMap('fn_wrapper_np2js_nullable', null);
-    setFunctionMap('fn_wrapper_np2js', null);
-    setFunctionMap('fn_wrapper_js2np', null);
-    setFunctionMap('fn_stack_free_all', cgate.stack_free_all);
-    setFunctionMap('fn_stack_ansi', null);
-    setFunctionMap('fn_stack_utf8', null);
-    setFunctionMap('fn_js2np_utf16', null);
-    setFunctionMap('fn_pointer_js2np', null);
-    setFunctionMap('fn_bin64', null);
+    setFunctionMap('fn_str_np2js', asmcode.str_np2js);
+    setFunctionMap('fn_str_js2np', asmcode.str_js2np);
+    setFunctionMap('fn_stack_free_all', chakraUtil.stack_free_all);
+    setFunctionMap('fn_utf16_js2np', asmcode.utf16_js2np);
+    setFunctionMap('fn_pointer_js2np', chakraUtil.pointer_js2np);
+    setFunctionMap('fn_bin64', asmcode.bin64);
     chakraCoreToMakeFuncMap('JsNumberToInt');
     chakraCoreToMakeFuncMap('JsBoolToBoolean');
     chakraCoreToMakeFuncMap('JsBooleanToBool');
-    setFunctionMap('fn_getout_invalid_parameter', null);
+    setFunctionMap('fn_getout_invalid_parameter', asmcode.getout_invalid_parameter);
     chakraCoreToMakeFuncMap('JsIntToNumber');
     chakraCoreToMakeFuncMap('JsNumberToDouble');
-    setFunctionMap('fn_buffer_to_pointer', null);
+    setFunctionMap('fn_buffer_to_pointer', asmcode.buffer_to_pointer);
     chakraCoreToMakeFuncMap('JsDoubleToNumber');
     chakraCoreToMakeFuncMap('JsPointerToString');
-    setFunctionMap('fn_np2js_ansi', null);
-    setFunctionMap('fn_np2js_utf8', null);
-    setFunctionMap('fn_np2js_utf16', null);
-    setFunctionMap('fn_np2js_pointer', null);
-    setFunctionMap('fn_np2js_pointer_nullable', null);
-    setFunctionMap('fn_getout_invalid_parameter_count', null);
+    setFunctionMap('fn_ansi_np2js', chakraUtil.from_ansi);
+    setFunctionMap('fn_utf8_np2js', chakraUtil.from_utf8);
+    setFunctionMap('fn_utf16_np2js', asmcode.utf16_np2js);
+    setFunctionMap('fn_pointer_np2js', asmcode.pointer_np2js);
+    setFunctionMap('fn_pointer_np2js_nullable', asmcode.pointer_np2js_nullable);
+    setFunctionMap('fn_getout_invalid_parameter_count', asmcode.getout_invalid_parameter_count);
     chakraCoreToMakeFuncMap('JsCallFunction');
-    setFunctionMap('fn_pointer_js_new', null);
+    setFunctionMap('fn_pointer_js_new', asmcode.pointer_js_new);
     chakraCoreToMakeFuncMap('JsSetException');
     setFunctionMap('fn_returnPoint', null);
+
+    const rawfunc = pdb.getList(pdb.coreCachePath, {}, ['sprintf']);
+    asmcode.GetCurrentThreadId.setPointer(dllraw.kernel32.GetCurrentThreadId);
+    asmcode.memcpy.setPointer(dllraw.vcruntime140.memcpy);
+    asmcode.asyncAlloc.setPointer(uv_async.alloc);
+    asmcode.asyncPost.setPointer(uv_async.post);
+    asmcode.sprintf.setPointer(rawfunc.sprintf);
+    
+    chakraCoreToDef('JsHasException');
+    chakraCoreToDef('JsCreateError');
+    chakraCoreToDef('JsGetValueType');
+    chakraCoreToDef('JsStringToPointer');
+    chakraCoreToDef('JsGetArrayBufferStorage');
+    chakraCoreToDef('JsGetTypedArrayStorage');
+    chakraCoreToDef('JsGetDataViewStorage');
+    chakraCoreToDef('JsConstructObject');
+    asmcode.js_undefined.setPointer(chakraUtil.asJsValueRef(undefined));
+    asmcode.js_null.setPointer(chakraUtil.asJsValueRef(null));
+    asmcode.js_true.setPointer(chakraUtil.asJsValueRef(true));
+    chakraCoreToDef('JsGetAndClearException');
+    asmcode.runtimeErrorFire.setPointer(runtimeError.fire);
+
 }
 initFunctionMap();
 
@@ -118,7 +143,7 @@ function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }): t is {
 }
 
 function pointerClassOrThrow(paramNum: number, type: any): void {
-    if (isBaseOf(type, VoidPointer)) {
+    if (!isBaseOf(type, VoidPointer)) {
         const name = type.name.toString();
         throwTypeError(paramNum, 'class', name, '*Pointer class required');
     }
@@ -313,7 +338,7 @@ class Maker extends X64Assembler {
     constructor(
         public readonly pi: ParamInfoMaker,
         public readonly stackSize: number,
-        private readonly useGetOut: boolean) {
+        useGetOut: boolean) {
         super(new Uint8Array(64), 0);
 
         this.push_r(Register.rdi);
@@ -470,33 +495,33 @@ class Maker extends X64Assembler {
         case RawTypeId_WrapperToNp:
         case RawTypeId_Pointer: {
             pointerClassOrThrow(info.numberOnMaking, info.type);
-            cgate.JsAddRef(info.type);
+            chakraUtil.JsAddRef(info.type);
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, true);
-            this.mov_r_c(Register.rdx, cgate.asJsValueRef(info.type));
+            this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(info.type));
             if (info.nullable) {
-                this.call_rp(Register.rdi, makefuncDefines.fn_np2js_pointer_nullable);
+                this.call_rp(Register.rdi, makefuncDefines.fn_pointer_np2js_nullable);
             } else {
-                this.call_rp(Register.rdi, makefuncDefines.fn_np2js_pointer);
+                this.call_rp(Register.rdi, makefuncDefines.fn_pointer_np2js);
             }
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         }
         case RawTypeId_WrapperToJs: {
             const np2js_fn = info.type[makefunc.np2js];
-            if (np2js_fn) cgate.JsAddRef(np2js_fn);
+            if (np2js_fn) chakraUtil.JsAddRef(np2js_fn);
 
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, true);
-            this.mov_r_c(Register.rdx, cgate.asJsValueRef(info.type));
+            this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(info.type));
             if (isBaseOf(info.type, VoidPointer)) {
-                cgate.JsAddRef(info.type);
-                this.mov_r_c(Register.r8, cgate.asJsValueRef(info.type));
+                chakraUtil.JsAddRef(info.type);
+                this.mov_r_c(Register.r8, chakraUtil.asJsValueRef(info.type));
             } else {
-                this.mov_r_c(Register.r8, cgate.asJsValueRef(NativePointer));
+                this.mov_r_c(Register.r8, chakraUtil.asJsValueRef(NativePointer));
             }
             if (info.nullable) {
                 this.call_rp(Register.rdi, makefuncDefines.fn_wrapper_np2js_nullable);
             } else {
-                this.call_rp(Register.rdi, makefuncDefines.fn_wrapper_np2js);
+                this.call_rp(Register.rdi, makefuncDefines.fn_str_np2js);
             }
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
@@ -564,19 +589,19 @@ class Maker extends X64Assembler {
         case RawTypeId.StringAnsi:
             this._mov_t_t(TARGET_1, source, info.typeId, true);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_np2js_ansi);
+            this.call_rp(Register.rdi, makefuncDefines.fn_ansi_np2js);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         case RawTypeId.StringUtf8:
             this._mov_t_t(TARGET_1, source, info.typeId, true);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_np2js_utf8);
+            this.call_rp(Register.rdi, makefuncDefines.fn_utf8_np2js);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         case RawTypeId.StringUtf16:
             this._mov_t_t(TARGET_1, source, info.typeId, true);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_np2js_utf16);
+            this.call_rp(Register.rdi, makefuncDefines.fn_utf16_np2js);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         case RawTypeId.Bin64: {
@@ -601,7 +626,7 @@ class Maker extends X64Assembler {
             this._mov_t_t(target, source, info.typeId, true);
             break;
         case RawTypeId.Void:
-            this._mov_t_c(target, cgate.asJsValueRef(undefined));
+            this._mov_t_c(target, chakraUtil.asJsValueRef(undefined));
             break;
         default:
             invalidParamType(info.typeId, info.numberOnUsing);
@@ -613,18 +638,18 @@ class Maker extends X64Assembler {
         case RawTypeId_StructureReturn: {
             this.lea_r_rp(Register.rdx, Register.rbp, this.offsetForStructureReturn);
 
-            cgate.JsAddRef(info.type);
-            this.mov_r_c(Register.rcx, cgate.asJsValueRef(info.type));
+            chakraUtil.JsAddRef(info.type);
+            this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
             this.call_rp(Register.rdi, makefuncDefines.fn_pointer_js_new);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         }
         case RawTypeId_WrapperToNp: {
-            cgate.JsAddRef(info.type);
+            chakraUtil.JsAddRef(info.type);
 
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, true);
-            this.mov_r_c(Register.rdx, cgate.asJsValueRef(info.type));
-            this.call_rp(Register.rdi, makefuncDefines.fn_wrapper_js2np);
+            this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(info.type));
+            this.call_rp(Register.rdi, makefuncDefines.fn_str_js2np);
             if (info.numberOnUsing === PARAMNUM_THIS) {
                 if (!this.pi.nullableThis) {
                     this.test_r_r(Register.rax, Register.rax);
@@ -715,21 +740,23 @@ class Maker extends X64Assembler {
         case RawTypeId.StringAnsi:
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_stack_ansi);
+            this.mov_r_c(Register.r8, chakraUtil.stack_ansi);
+            this.call_rp(Register.rdi, makefuncDefines.fn_str_js2np);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             this.useStackAllocator = true;
             break;
         case RawTypeId.StringUtf8:
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_stack_utf8);
+            this.mov_r_c(Register.r8, chakraUtil.stack_utf8);
+            this.call_rp(Register.rdi, makefuncDefines.fn_str_js2np);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             this.useStackAllocator = true;
             break;
         case RawTypeId.StringUtf16:
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_js2np_utf16);
+            this.call_rp(Register.rdi, makefuncDefines.fn_utf16_js2np);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             break;
         case RawTypeId.Buffer:
@@ -849,7 +876,7 @@ export namespace makefunc {
         returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer {
         const pimaker = new ParamInfoMaker(returnType, opts, params); // check param count also
     
-        cgate.JsAddRef(jsfunction);
+        chakraUtil.JsAddRef(jsfunction);
         checkTypeIsFunction(jsfunction, 1);
     
         const paramsSize = pimaker.countOnCalling * 8 + 8; // params + this
@@ -892,7 +919,7 @@ export namespace makefunc {
     
         let offset = 0;
         if (!pimaker.useThis) {
-            func._mov_t_c(TargetInfo.memory(Register.rsi, 0), cgate.asJsValueRef(global));
+            func._mov_t_c(TargetInfo.memory(Register.rsi, 0), chakraUtil.asJsValueRef(global));
         }
     
         for (let i = 0; i < pimaker.countOnCpp; i++) {
@@ -907,7 +934,7 @@ export namespace makefunc {
             offset += 8;
         }
     
-        func.mov_r_c(Register.rcx, cgate.asJsValueRef(jsfunction));
+        func.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(jsfunction));
         func.lea_r_rp(Register.rdx, Register.rsp, 0x20);
         func.mov_r_c(Register.r8, pimaker.countOnCalling + 1);
         func.mov_r_r(Register.r9, Register.rbp);
@@ -1002,7 +1029,7 @@ export namespace makefunc {
             }
     
             if (func.useStackAllocator) {
-                func.mov_r_c(Register.rax, cgate.stack_ptr);
+                func.mov_r_c(Register.rax, chakraUtil.stack_ptr);
                 func.or_rp_c(Register.rax, 0, 1);
             }
     
@@ -1052,7 +1079,7 @@ export namespace makefunc {
             }
     
             if (func.useStackAllocator) {
-                func.mov_r_c(Register.rax, cgate.stack_ptr);
+                func.mov_r_c(Register.rax, chakraUtil.stack_ptr);
                 func.or_rp_c(Register.rax, 0, 1);
             }
         }
@@ -1078,7 +1105,7 @@ export namespace makefunc {
                 }
                 returnTarget = TargetInfo.memory(Register.rbp, 0);
             }
-            func.mov_r_c(Register.rdx, cgate.stack_ptr);
+            func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);
             func.and_rp_c(Register.rdx, 0, -2);
             func.call_rp(Register.rdi, makefuncDefines.fn_stack_free_all);
         }
@@ -1091,11 +1118,11 @@ export namespace makefunc {
     
         func.end();
         const nativecode = func.alloc();
-        const funcout = cgate.JsCreateFunction(nativecode, null) as FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;
+        const funcout = chakraUtil.JsCreateFunction(nativecode, null) as FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;
         funcout.pointer = functionPointer;
         return funcout;
     }
-    export import asJsValueRef = cgate.asJsValueRef;
+    export import asJsValueRef = chakraUtil.asJsValueRef;
     export const js2np = Symbol('makefunc.js2np');
     export const np2js = Symbol('makefunc.np2js');
 }

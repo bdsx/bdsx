@@ -34,7 +34,7 @@ export namespace analyzer
     }
     
     export function analyze(ptr:VoidPointer, count:number=32):void {
-        const nptr = new NativePointer(ptr);
+        const nptr = ptr.add();
         loadMap();
         console.log(`[analyze: ${nptr}]`);
         try {

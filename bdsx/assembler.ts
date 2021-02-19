@@ -179,7 +179,7 @@ class AsmChunk extends BufferWriter {
     public prev:AsmChunk|null = null;
     public next:AsmChunk|null = null;
     public jump:SplitedJump|null = null;
-    public readonly labels:Label[] = [];
+    public readonly ids:AddressIdentifier[] = [];
     public readonly unresolved:UnresolvedConstant[] = [];
     
     constructor(array:Uint8Array, size:number) {
@@ -200,11 +200,11 @@ class AsmChunk extends BufferWriter {
         this.jump = chunk.jump;
         chunk.jump = null;
         
-        for (const label of chunk.labels) {
+        for (const label of chunk.ids) {
             label.chunk = this;
             label.offset += this.size;
         }
-        this.labels.push(...chunk.labels);
+        this.ids.push(...chunk.ids);
         for (const jump of chunk.unresolved) {
             jump.offset += this.size;
         }
@@ -216,7 +216,7 @@ class AsmChunk extends BufferWriter {
         if (next !== null) next.prev = this;
 
         chunk.unresolved.length = 0;
-        chunk.labels.length = 0;
+        chunk.ids.length = 0;
         chunk.next = null;
         chunk.prev = null;
         return true;
@@ -229,7 +229,7 @@ class AsmChunk extends BufferWriter {
             const size = unresolved.bytes;
             let offset = addr.offset - unresolved.offset - size;
             if (addr.chunk === MEMORY_INDICATE_CHUNK) {
-                offset -= addr.chunk!.size;
+                offset += this.size;
             } else  if (addr.chunk === null) {
                 throw new ParsingError(`${addr.name}: Label not found`, unresolved.pos);
             } else if (addr.chunk !== this) {
@@ -332,6 +332,7 @@ const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0);
 export class X64Assembler {
 
     private memoryChunkSize = 0;
+    private memoryChunkAlign = 1;
     private constChunk:AsmChunk|null = null;
     private chunk:AsmChunk;
     private readonly ids = new Map<string, Identifier>();
@@ -389,6 +390,14 @@ export class X64Assembler {
         this.chunk = new AsmChunk(buffer, size);
     }
 
+    getDefAreaSize():number {
+        return this.memoryChunkSize;
+    }
+
+    getDefAreaAlign():number {
+        return this.memoryChunkAlign;
+    }
+
     connect(cb:(asm:X64Assembler)=>this):this {
         return cb(this);
     }
@@ -428,6 +437,17 @@ export class X64Assembler {
         return labels;
     }
 
+    defs():Record<string, number> {
+        this._normalize();
+        const labels:Record<string, number> = {};
+        for (const [name, label] of this.ids) {
+            if (label instanceof Defination) {
+                labels[name] = label.offset;
+            }
+        }
+        return labels;
+    }
+
     exports():Record<string, number> {
         this._normalize();
         const labels:Record<string, number> = {};
@@ -441,7 +461,7 @@ export class X64Assembler {
 
     buffer():Uint8Array {
         this._normalize();
-        return new Uint8Array(this.chunk.array, this.chunk.array.byteOffset, this.chunk.size);
+        return this.chunk.buffer();
     }
 
     ret(): this {
@@ -465,19 +485,21 @@ export class X64Assembler {
         return this.write(0xcd, n & 0xff);
     }
 
-    private _target(opcode:number, r1:Register|FloatRegister, r3:Register|null, offset:number, oper:MovOper):this {
+    private _target(opcode:number, r1:Register|FloatRegister, r2:Register|FloatRegister|Operator|null, r3:Register|null, offset:number, oper:MovOper):this {
+        if (r2 !== null) {
+            opcode |= (r2 & 7) << 3;
+        }
         if (oper === MovOper.Register || oper === MovOper.Const) {
             if (offset !== 0) throw Error('Register operation with offset');
-            return this.write(opcode | 0xc0);
+            return this.write(opcode | (r1 & 7) | 0xc0);
         }
         if (offset !== (offset|0)) throw Error('need int32 offset');
         if (r3 !== null) {
-            this.write(opcode | 0x04);
             if (r1 === Register.rsp) {
                 throw Error('Invalid opcode');
             }
-        } else if (r1 === Register.rsp) {
-            this.write(0x24);
+            this.write(opcode | 0x04);
+            opcode |= (r3 & 7) << 3;
         }
         if (r1 === Register.rip) {
             this.write(opcode | 0x05);
@@ -491,6 +513,9 @@ export class X64Assembler {
             opcode |= 0x80;
         }
         this.write(opcode | (r1 & 7));
+        if (r1 === Register.rsp) {
+            this.write(0x24);
+        }
             
         if (opcode & 0x40) this.write(offset);
         else if (opcode & 0x80) {
@@ -530,7 +555,7 @@ export class X64Assembler {
         offset:number, value:Value64, 
         oper:MovOper, size:OperationSize):this {
         this._regex(r1, r2, r3, size);
-        let opcode = ((r2&7) << 3);
+        let opcode = 0;
 
         if (size === OperationSize.byte) {
             if (oper === MovOper.WriteConst) {
@@ -565,9 +590,9 @@ export class X64Assembler {
         }
     
         if (oper === MovOper.Const) {
-            this.write(opcode);
+            this.write(opcode | (r1 & 7));
         } else {
-            this._target(opcode, r1, r3, offset, oper);
+            this._target(opcode, r1, r2, r3, offset, oper);
         }
     
         if (oper === MovOper.WriteConst) {
@@ -581,7 +606,7 @@ export class X64Assembler {
     private _jmp(isCall:boolean, r:Register, offset:number, oper:MovOper):this {
         if (r >= Register.r8) this.write(0x41);
         this.write(0xff);
-        this._target(isCall ? 0x10 : 0x20, r, null, offset, oper);
+        this._target(isCall ? 0x10 : 0x20, r, null, null, offset, oper);
         return this;
     }
 
@@ -601,9 +626,13 @@ export class X64Assembler {
     }
 
     def(name:string, size:OperationSize, bytes:number, align:number):this {
-        if (this.chunk.prev !== null) throw Error("building asm cannot use def");
+        if (align < 1) align = 1;
+        const alignbit = Math.log2(align);
+        if ((alignbit|0) !== alignbit) throw Error('Invalid alignment '+align);
+        if (align > this.memoryChunkAlign) this.memoryChunkAlign = align;
+
         const memSize = this.memoryChunkSize;
-        const offset = align <= 1 ? memSize : ((memSize + bytes - 1) / align | 0) * align;
+        const offset = (memSize + align - 1) & ~(align-1);
         this.memoryChunkSize = offset + bytes;
         if (name === '') return this;
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
@@ -750,7 +779,7 @@ export class X64Assembler {
         let v = 0x28;
         if (oper === MovOper.Write) v |= 1;
         this.write(v);
-        this._target(((r2&7) << 3), r1, null, offset, oper);
+        this._target(0, r1, r2, null, offset, oper);
         return this;
     }
 
@@ -768,13 +797,13 @@ export class X64Assembler {
 
     movdqa_rp_f(dest:Register, offset:number, src:FloatRegister):this {
         this.write(0x66, 0x0f, 0x7f);
-        this._target((src&7) << 3, dest, null, offset, MovOper.Write);
+        this._target(0, dest, src, null, offset, MovOper.Write);
         return this;
     }
     
     movdqa_f_rp(dest:FloatRegister, src:Register, offset:number):this {
         this.write(0x66, 0x0f, 0x7f);
-        this._target((dest&7) << 3, src, null, offset, MovOper.Read);
+        this._target(0, src, dest, null, offset, MovOper.Read);
         return this;
     }
 
@@ -822,7 +851,7 @@ export class X64Assembler {
     push_rp(r:Register, offset:number):this {
         if (r >= Register.r8) this.write(0x41);
         this.write(0xff);
-        this._target(0x30, r, null, offset, MovOper.Write);
+        this._target(0x30, r, null, null, offset, MovOper.Write);
         return this;
     }
     pop_r(r:Register):this {
@@ -834,7 +863,7 @@ export class X64Assembler {
         this._regex(r1, r2, null, size);
         if (size === OperationSize.byte) this.write(0x84);
         else this.write(0x85);
-        this._target(((r2&7)<<3), r1, null, offset, oper);
+        this._target(0, r1, r2, null, offset, oper);
         return this;
     }
 
@@ -850,7 +879,7 @@ export class X64Assembler {
         this._regex(r1, r2, null, size);
         if (size === OperationSize.byte) this.write(0x86);
         else this.write(0x87);
-        this._target(((r2&7)<<3), r1, null, offset, oper);
+        this._target(0, r1, r2, null, offset, oper);
         return this;
     }
 
@@ -871,7 +900,7 @@ export class X64Assembler {
         let lowflag = size === OperationSize.byte ? 0 : 1;
         if (movoper === MovOper.Register) {
             this.write(lowflag | (oper << 3));
-            this._target(((src&7) << 3), dest, null, offset, movoper);
+            this._target(0, dest, src, null, offset, movoper);
         } else {
             const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
             if (!is8bits && size === OperationSize.byte) throw Error('need 8bits integer');
@@ -883,7 +912,7 @@ export class X64Assembler {
                     if (lowflag !== 0) lowflag = 3;
                 }
                 this.write(0x80 | lowflag);
-                this._target((oper << 3), dest, null, offset, movoper);
+                this._target(0, dest, oper, null, offset, movoper);
                 if (is8bits) this.write(chr);
                 else this.writeInt32(chr);
             }
@@ -1048,7 +1077,7 @@ export class X64Assembler {
         default:
             throw Error(`Invalid operand size, ${OperationSize[size] || size}`);
         }
-        return this._target(dest << 3, src, null, offset, MovOper.Read);
+        return this._target(0, src, dest, null, offset, MovOper.Read);
     }
     movsxd_r_rp(dest:Register, src:Register, offset:number):this {
         return this.movsx_r_rp(dest, src, offset, OperationSize.qword);
@@ -1058,7 +1087,7 @@ export class X64Assembler {
         this._regex(src, dest, null, OperationSize.qword);
         this.write(0x0f);
         this.write(0xb6);
-        return this._target(dest << 3, src, null, offset, MovOper.Read);
+        return this._target(0, src, dest, null, offset, MovOper.Read);
     }
 
     private _movsf(r1:Register|FloatRegister, r2:Register|FloatRegister, offset:number, oper:MovOper, foper:FloatOper, size:OperationSize, doublePrecision:boolean):this {
@@ -1076,7 +1105,7 @@ export class X64Assembler {
             else this.write(0x10);
             break;
         }
-        return this._target(r2 << 3, r1, null, offset, oper);
+        return this._target(0, r1, r2, null, offset, oper);
     }
 
     movsd_rp_r(dest:Register, offset:number, src:FloatRegister):this {
@@ -1146,7 +1175,7 @@ export class X64Assembler {
         label.chunk = this.chunk;
         label.offset = this.chunk.size;
         label.type = type;
-        this.chunk.labels.push(label);
+        this.chunk.ids.push(label);
 
         let now = this.chunk;
         let prev = now.prev!;
@@ -1334,21 +1363,24 @@ export class X64Assembler {
             prev = prev.prev;
         }
 
-        if (this.chunk.next !== null || this.chunk.prev !== null) {
+        const chunk = this.chunk;
+        if (chunk.next !== null || chunk.prev !== null) {
             throw Error(`All chunks don't merge. internal problem.`);
         }
 
-        let chunk = this.chunk;
         if (this.constChunk !== null) {
-            this.constChunk.connect(chunk);
-            chunk = this.constChunk;
+            chunk.connect(this.constChunk);
             this.constChunk = null;
             chunk.removeNext();
         }
-        
-        this.chunk = chunk;
+
+        const memalign = this.memoryChunkAlign;
+        const bufsize = (this.chunk.size + memalign - 1) & ~(memalign-1);
+        this.chunk.put();
+        bufsize - this.chunk.size
+
         try {
-            this.chunk.resolveAll();
+            chunk.resolveAll();
         } catch (err) {
             if (err instanceof ParsingError) {
                 errors.add(err);
@@ -1506,9 +1538,10 @@ export class X64Assembler {
                 const qoutedString = parser.readQuotedString();
                 if (qoutedString !== null) {
                     if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
-                    const id = new Defination('', this.constChunk, this.constChunk.size, OperationSize.void);
+                    const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
                     this.constChunk.write(Buffer.from(qoutedString, 'utf-8'));
                     this.constChunk.put(0);
+                    this.constChunk.ids.push(id);
                     command += '_rp';
                     callinfo.push('(register pointer)');
                     if (addressCommand) setSize(OperationSize.qword);
@@ -1699,8 +1732,8 @@ export class X64Assembler {
                 defs.push(id);
             }
         }
-        defs.sort((a,b)=>a.offset-b.offset);
         labels.sort((a,b)=>a.offset-b.offset);
+
 
         let address = 0;
         writeArray(labels, writeAddress);
@@ -1741,9 +1774,8 @@ export class X64Assembler {
             if (name === '') return null;
 
             const size = reader.readVarUint();
-            const offset = address;
             address += size;
-            return [name, offset];
+            return [name, address];
         }
 
         let address = 0;
@@ -2032,3 +2064,4 @@ export namespace asm
     }
 
 }
+

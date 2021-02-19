@@ -651,16 +651,32 @@ export declare namespace cgate
      */
     export const tester: VoidPointer;
 
-    export const stack_alloc:VoidPointer;
-    export const stack_free_all:VoidPointer;
-    export const stack_ptr:VoidPointer;
-
     /**
      * it will allocate a executable memory by VirtualAlloc
      */
     export function allocExecutableMemory(size:number, alignment?:number):StaticPointer;
 
     export function nodeLoopOnce():void;
+}
+
+export declare namespace chakraUtil {
+
+    // void* stack_alloc(size_t size)
+    export const stack_alloc:VoidPointer;
+    // void stack_free_all()
+    export const stack_free_all:VoidPointer;
+    // uintptr_t* last_allocate
+    export const stack_ptr:VoidPointer;
+    // char* stack_utf8(const char16_t* str, size_t size)
+    export const stack_utf8:VoidPointer;
+    // char* stack_ansi(const char16_t* str, size_t size)
+    export const stack_ansi:VoidPointer;
+    // JsErrorCode from_utf8(pcstr str, JsValueRef* out)
+    export const from_utf8:VoidPointer;
+    // JsErrorCode from_ansi(pcstr str, JsValueRef* out)
+    export const from_ansi:VoidPointer;
+    // void* pointer_js2np(JsValueRef value)
+    export const pointer_js2np:VoidPointer;
 
     export function JsCreateFunction(funcptr:VoidPointer, state:VoidPointer|null):(...args:any[])=>any;
 
