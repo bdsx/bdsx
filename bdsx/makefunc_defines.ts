@@ -8,7 +8,7 @@ export const makefuncDefines = {
     fn_str_js2np: -0x40,
     fn_stack_free_all: -0x38,
     fn_utf16_js2np: -0x30,
-    fn_pointer_js2np: -0x28,
+    fn_pointer_js2class: -0x28,
     fn_bin64: -0x20,
     fn_JsNumberToInt: -0x18,
     fn_JsBoolToBoolean: -0x10,

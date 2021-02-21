@@ -12,7 +12,7 @@ export namespace capi
     asmcode.nodeThreadId.setInt32(nodeThreadId);
 
     /**
-     * @deprecated use cgate.asJsValueRef
+     * @deprecated use chakraUtil.asJsValueRef
      */
     export const getJsValueRef:(value:any)=>VoidPointer = chakraUtil.asJsValueRef;
 

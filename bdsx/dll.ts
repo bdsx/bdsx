@@ -112,7 +112,7 @@ export class CriticalSection extends AllocatedPointer {
     }
 }
 
-NativeModule.prototype.getProcAddress = makefunc.js(cgate.GetProcAddressPtr, NativePointer, { this: NativeModule }, RawTypeId.StringUtf8);
+NativeModule.prototype.getProcAddress = makefunc.js(cgate.GetProcAddressPtr, NativePointer, { this: NativeModule, nativeDebugBreak: true }, RawTypeId.StringUtf8);
 NativeModule.prototype.getProcAddressByOrdinal = makefunc.js(cgate.GetProcAddressPtr, NativePointer, { this: NativeModule }, RawTypeId.Int32);
 
 export namespace dll {

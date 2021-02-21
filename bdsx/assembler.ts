@@ -1,9 +1,10 @@
 import { bin } from "./bin";
-import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { bin64_t } from "./nativetype";
 import { polynominal } from "./polynominal";
+import { remapStack } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
-import { getLineAt } from "./util";
+import { getLineAt, hex } from "./util";
+import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import fs = require('fs');
 
 export enum Register
@@ -225,7 +226,6 @@ class AsmChunk extends BufferWriter {
     resolveAll():void {
         for (const unresolved of this.unresolved) {
             const addr = unresolved.address;
-
             const size = unresolved.bytes;
             let offset = addr.offset - unresolved.offset - size;
             if (addr.chunk === MEMORY_INDICATE_CHUNK) {
@@ -333,6 +333,7 @@ export class X64Assembler {
 
     private memoryChunkSize = 0;
     private memoryChunkAlign = 1;
+    private memoryChunkAlignBit = 0;
     private constChunk:AsmChunk|null = null;
     private chunk:AsmChunk;
     private readonly ids = new Map<string, Identifier>();
@@ -402,6 +403,11 @@ export class X64Assembler {
         return cb(this);
     }
 
+    put(value:number):this {
+        this.chunk.put(value);
+        return this;
+    }
+
     write(...values:number[]):this {
         this.chunk.write(values);
         return this;
@@ -465,11 +471,11 @@ export class X64Assembler {
     }
 
     ret(): this {
-        return this.write(0xc3);
+        return this.put(0xc3);
     }
 
     nop(): this {
-        return this.write(0x90);
+        return this.put(0x90);
     }
 
     debugBreak():this {
@@ -477,32 +483,32 @@ export class X64Assembler {
     }
 
     int3():this {
-        return this.write(0xcc);
+        return this.put(0xcc);
     }
 
-    int(n:number):this {
+    int_c(n:number):this {
         if (n === 3) return this.int3();
         return this.write(0xcd, n & 0xff);
     }
 
-    private _target(opcode:number, r1:Register|FloatRegister, r2:Register|FloatRegister|Operator|null, r3:Register|null, offset:number, oper:MovOper):this {
+    private _target(opcode:number, r1:Register|FloatRegister, r2:Register|FloatRegister|Operator|null, r3:Register|null, targetRegister:Register|FloatRegister, offset:number, oper:MovOper):this {
         if (r2 !== null) {
             opcode |= (r2 & 7) << 3;
         }
         if (oper === MovOper.Register || oper === MovOper.Const) {
             if (offset !== 0) throw Error('Register operation with offset');
-            return this.write(opcode | (r1 & 7) | 0xc0);
+            return this.put(opcode | (r1 & 7) | 0xc0);
         }
-        if (offset !== (offset|0)) throw Error('need int32 offset');
+        if (offset !== (offset|0)) throw Error(`need int32 offset, offset=${offset}`);
         if (r3 !== null) {
             if (r1 === Register.rsp) {
                 throw Error('Invalid opcode');
             }
-            this.write(opcode | 0x04);
+            this.put(opcode | 0x04);
             opcode |= (r3 & 7) << 3;
         }
         if (r1 === Register.rip) {
-            this.write(opcode | 0x05);
+            this.put(opcode | 0x05);
             this.writeInt32(offset);
             return this;
         } else if (offset === 0 && r1 !== Register.rbp) {
@@ -512,33 +518,33 @@ export class X64Assembler {
         } else {
             opcode |= 0x80;
         }
-        this.write(opcode | (r1 & 7));
-        if (r1 === Register.rsp) {
-            this.write(0x24);
+        this.put(opcode | (r1 & 7));
+        if (targetRegister === Register.rsp) {
+            this.put(0x24);
         }
             
-        if (opcode & 0x40) this.write(offset);
+        if (opcode & 0x40) this.put(offset);
         else if (opcode & 0x80) {
             this.writeInt32(offset);
         }
         return this;
     }
 
-    private _regex(r1:Register|FloatRegister, r2:Register|FloatRegister, r3:Register|FloatRegister|null, size:OperationSize, qwordIsDefault:boolean = false):void {
-        if (size === OperationSize.word) this.write(0x66);
+    private _rex(r1:Register|FloatRegister, r2:Register|FloatRegister, r3:Register|FloatRegister|null, size:OperationSize):void {
+        if (size === OperationSize.word) this.put(0x66);
     
         let rex = 0x40;
         if (size === OperationSize.qword) rex |= 0x08;
         if (r1 >= Register.r8) rex |= 0x01;
         if (r2 >= Register.r8) rex |= 0x04;
         if (r3 !== null && r3 >= Register.r8) rex |= 0x02;
-        if (rex !== 0x40) this.write(rex);
+        if (rex !== 0x40) this.put(rex);
     }
 
     private _const(v:Value64, size:OperationSize):this {
         const [low32, high32] = split64bits(v);
         if (size === OperationSize.byte) {
-            this.write(low32 & 0xff);
+            this.put(low32 & 0xff);
         } else if (size === OperationSize.word) {
             this.writeInt16(low32 & 0xffff);
         } else if (size === OperationSize.qword) {
@@ -554,22 +560,22 @@ export class X64Assembler {
         r1:Register, r2:Register, r3:Register|null,
         offset:number, value:Value64, 
         oper:MovOper, size:OperationSize):this {
-        this._regex(r1, r2, r3, size);
+        this._rex(r1, r2, r3, size);
         let opcode = 0;
 
         if (size === OperationSize.byte) {
             if (oper === MovOper.WriteConst) {
-                this.write(0xc6);
+                this.put(0xc6);
             } else if (oper === MovOper.Const) {
                 opcode |= 0xb0;
             }
         } else {
             if (oper === MovOper.WriteConst) {
-                this.write(0xc7);
+                this.put(0xc7);
             } else if (oper === MovOper.Const) {
                 if (size === OperationSize.qword && is32Bits(value)) {
                     size = OperationSize.dword;
-                    this.write(0xc7);
+                    this.put(0xc7);
                     opcode |= 0xc0;
                 } else {
                     opcode |= 0xb8;
@@ -586,13 +592,13 @@ export class X64Assembler {
             if (oper === MovOper.Lea) memorytype |= 0x05;
             else if (oper === MovOper.Read) memorytype |= 0x02;
             if (size !== OperationSize.byte) memorytype |= 0x01;
-            this.write(memorytype);
+            this.put(memorytype);
         }
     
         if (oper === MovOper.Const) {
-            this.write(opcode | (r1 & 7));
+            this.put(opcode | (r1 & 7));
         } else {
-            this._target(opcode, r1, r2, r3, offset, oper);
+            this._target(opcode, r1, r2, r3, r1, offset, oper);
         }
     
         if (oper === MovOper.WriteConst) {
@@ -604,9 +610,9 @@ export class X64Assembler {
     }
 
     private _jmp(isCall:boolean, r:Register, offset:number, oper:MovOper):this {
-        if (r >= Register.r8) this.write(0x41);
-        this.write(0xff);
-        this._target(isCall ? 0x10 : 0x20, r, null, null, offset, oper);
+        if (r >= Register.r8) this.put(0x41);
+        this.put(0xff);
+        this._target(isCall ? 0x10 : 0x20, r, null, null, r, offset, oper);
         return this;
     }
 
@@ -614,22 +620,14 @@ export class X64Assembler {
         return this._jmp(isCall, r, 0, MovOper.Register);
     }
 
-    private _jmp_o(oper:JumpOperation, offset:number):this {
-        if (INT8_MIN <= offset && offset <= INT8_MAX) {
-            return this.write(0x70 | oper, offset);
-        } else {
-            this.write(0x0f);
-            this.write(0x80 | oper);
-            this.writeInt32(offset);
-        }
-        return this;
-    }
-
     def(name:string, size:OperationSize, bytes:number, align:number):this {
         if (align < 1) align = 1;
         const alignbit = Math.log2(align);
         if ((alignbit|0) !== alignbit) throw Error('Invalid alignment '+align);
-        if (align > this.memoryChunkAlign) this.memoryChunkAlign = align;
+        if (align > this.memoryChunkAlign) {
+            this.memoryChunkAlignBit = alignbit;
+            this.memoryChunkAlign = align;
+        }
 
         const memSize = this.memoryChunkSize;
         const offset = (memSize + align - 1) & ~(align-1);
@@ -641,7 +639,7 @@ export class X64Assembler {
     }
     
     lea_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this {
-        if (offset === 0) return this.mov_r_r(dest, src, size);
+        if (offset === 0 && src !== Register.rip) return this.mov_r_r(dest, src, size);
         return this._mov(src, dest, null, offset, 0, MovOper.Lea, size);
     }
 
@@ -761,25 +759,25 @@ export class X64Assembler {
         if (INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0xeb, offset);
         } else {
-            this.write(0xe9);
+            this.put(0xe9);
             this.writeInt32(offset);
             return this;
         }
     }
 
     call_c(offset:number):this {
-        this.write(0xe8);
+        this.put(0xe8);
         this.writeInt32(offset);
         return this;
     }
 
     private _movaps(r1:FloatRegister|Register, r2:FloatRegister, oper:MovOper, offset:number):this {
-        this._regex(r1, r2, null, OperationSize.dword);
-        this.write(0x0f);
+        this._rex(r1, r2, null, OperationSize.dword);
+        this.put(0x0f);
         let v = 0x28;
         if (oper === MovOper.Write) v |= 1;
-        this.write(v);
-        this._target(0, r1, r2, null, offset, oper);
+        this.put(v);
+        this._target(0, r1, r2, null, r1, offset, oper);
         return this;
     }
 
@@ -797,13 +795,24 @@ export class X64Assembler {
 
     movdqa_rp_f(dest:Register, offset:number, src:FloatRegister):this {
         this.write(0x66, 0x0f, 0x7f);
-        this._target(0, dest, src, null, offset, MovOper.Write);
+        this._target(0, dest, src, null, dest, offset, MovOper.Write);
         return this;
     }
     
     movdqa_f_rp(dest:FloatRegister, src:Register, offset:number):this {
         this.write(0x66, 0x0f, 0x7f);
-        this._target(0, src, dest, null, offset, MovOper.Read);
+        this._target(0, src, dest, null, src, offset, MovOper.Read);
+        return this;
+    }
+
+    private _jmp_o(oper:JumpOperation, offset:number):this {
+        if (INT8_MIN <= offset && offset <= INT8_MAX) {
+            return this.write(0x70 | oper, offset);
+        } else {
+            this.put(0x0f);
+            this.put(0x80 | oper);
+            this.writeInt32(offset);
+        }
         return this;
     }
 
@@ -826,12 +835,58 @@ export class X64Assembler {
     jle_c(offset:number):this { return this._jmp_o(JumpOperation.jle, offset); }
     jg_c(offset:number):this { return this._jmp_o(JumpOperation.jg, offset); }
 
+    private _cmov_o(jmpoper:JumpOperation, r1:Register, r2:Register, r3:Register|null, offset:number, oper:MovOper, size:OperationSize):this {
+        this._rex(r1, r2, r3, size);
+        this.put(0x0f);
+        this.put(0x40 | jmpoper);
+        this._target(0, r1, r2, r3, r2, offset, oper);
+        return this;
+    }
+
+    cmovz_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, 0, MovOper.Register, size); }
+    cmovnz_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, 0, MovOper.Register, size); }
+    cmovo_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jo, src, dest, null, 0, MovOper.Register, size); }
+    cmovno_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jno, src, dest, null, 0, MovOper.Register, size); }
+    cmovb_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jb, src, dest, null, 0, MovOper.Register, size); }
+    cmovae_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jae, src, dest, null, 0, MovOper.Register, size); }
+    cmove_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, 0, MovOper.Register, size); }
+    cmovne_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, 0, MovOper.Register, size); }
+    cmovbe_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jbe, src, dest, null, 0, MovOper.Register, size); }
+    cmova_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.ja, src, dest, null, 0, MovOper.Register, size); }
+    cmovs_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.js, src, dest, null, 0, MovOper.Register, size); }
+    cmovns_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jns, src, dest, null, 0, MovOper.Register, size); }
+    cmovp_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jp, src, dest, null, 0, MovOper.Register, size); }
+    cmovnp_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jnp, src, dest, null, 0, MovOper.Register, size); }
+    cmovl_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jl, src, dest, null, 0, MovOper.Register, size); }
+    cmovge_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jge, src, dest, null, 0, MovOper.Register, size); }
+    cmovle_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jle, src, dest, null, 0, MovOper.Register, size); }
+    cmovg_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jg, src, dest, null, 0, MovOper.Register, size); }
+
+    cmovz_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, 0, MovOper.Read, size); }
+    cmovnz_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, 0, MovOper.Read, size); }
+    cmovo_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jo, src, dest, null, 0, MovOper.Read, size); }
+    cmovno_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jno, src, dest, null, 0, MovOper.Read, size); }
+    cmovb_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jb, src, dest, null, 0, MovOper.Read, size); }
+    cmovae_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jae, src, dest, null, 0, MovOper.Read, size); }
+    cmove_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, 0, MovOper.Read, size); }
+    cmovne_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, 0, MovOper.Read, size); }
+    cmovbe_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jbe, src, dest, null, 0, MovOper.Read, size); }
+    cmova_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.ja, src, dest, null, 0, MovOper.Read, size); }
+    cmovs_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.js, src, dest, null, 0, MovOper.Read, size); }
+    cmovns_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jns, src, dest, null, 0, MovOper.Read, size); }
+    cmovp_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jp, src, dest, null, 0, MovOper.Read, size); }
+    cmovnp_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jnp, src, dest, null, 0, MovOper.Read, size); }
+    cmovl_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jl, src, dest, null, 0, MovOper.Read, size); }
+    cmovge_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jge, src, dest, null, 0, MovOper.Read, size); }
+    cmovle_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jle, src, dest, null, 0, MovOper.Read, size); }
+    cmovg_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jg, src, dest, null, 0, MovOper.Read, size); }
+
     /**
      * push register
      */
     push_r(register:Register):this {
-        if (register >= Register.r8) this.write(0x41);
-        this.write(0x50 | (register & 7));
+        if (register >= Register.r8) this.put(0x41);
+        this.put(0x50 | (register & 7));
         return this;
     }
     /**
@@ -840,30 +895,30 @@ export class X64Assembler {
     push_c(value:number):this {
         if (value !== (value|0)) throw Error('need int32 integer');
         if (INT8_MIN <= value && value <= INT8_MAX) {
-            this.write(0x6A);
-            this.write(value);
+            this.put(0x6A);
+            this.put(value);
         } else {
-            this.write(0x68);
+            this.put(0x68);
             this.writeInt32(value);
         }
         return this;
     }
     push_rp(r:Register, offset:number):this {
-        if (r >= Register.r8) this.write(0x41);
-        this.write(0xff);
-        this._target(0x30, r, null, null, offset, MovOper.Write);
+        if (r >= Register.r8) this.put(0x41);
+        this.put(0xff);
+        this._target(0x30, r, null, null, r, offset, MovOper.Write);
         return this;
     }
     pop_r(r:Register):this {
-        if (r >= Register.r8) this.write(0x41);
-        this.write(0x58 | (r&7));
+        if (r >= Register.r8) this.put(0x41);
+        this.put(0x58 | (r&7));
         return this;
     }
     private _test(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
-        this._regex(r1, r2, null, size);
-        if (size === OperationSize.byte) this.write(0x84);
-        else this.write(0x85);
-        this._target(0, r1, r2, null, offset, oper);
+        this._rex(r1, r2, null, size);
+        if (size === OperationSize.byte) this.put(0x84);
+        else this.put(0x85);
+        this._target(0, r1, r2, null, r1, offset, oper);
         return this;
     }
 
@@ -876,10 +931,10 @@ export class X64Assembler {
     }
 
     private _xchg(r1:Register, r2:Register, offset:number, size:OperationSize, oper:MovOper):this{
-        this._regex(r1, r2, null, size);
-        if (size === OperationSize.byte) this.write(0x86);
-        else this.write(0x87);
-        this._target(0, r1, r2, null, offset, oper);
+        this._rex(r1, r2, null, size);
+        if (size === OperationSize.byte) this.put(0x86);
+        else this.put(0x87);
+        this._target(0, r1, r2, null, r1, offset, oper);
         return this;
     }
 
@@ -892,28 +947,28 @@ export class X64Assembler {
     }
 
 
-    private _oper(movoper:MovOper, oper:Operator, dest:Register, src:Register, offset:number, chr:number, size:OperationSize):this {
+    private _oper(movoper:MovOper, oper:Operator, r1:Register, r2:Register, offset:number, chr:number, size:OperationSize):this {
         if (chr !== (chr|0)) throw Error('need 32bits integer');
 
-        this._regex(dest, 0, null, size);
+        this._rex(r1, r2, null, size);
 
         let lowflag = size === OperationSize.byte ? 0 : 1;
         if (movoper === MovOper.Register) {
-            this.write(lowflag | (oper << 3));
-            this._target(0, dest, src, null, offset, movoper);
+            this.put(lowflag | (oper << 3));
+            this._target(0, r1, r2, null, r1, offset, movoper);
         } else {
             const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
             if (!is8bits && size === OperationSize.byte) throw Error('need 8bits integer');
-            if (!is8bits && dest === Register.rax && movoper === MovOper.Const) {
-                this.write(0x04 | lowflag | (oper << 3));
+            if (!is8bits && r1 === Register.rax && movoper === MovOper.Const) {
+                this.put(0x04 | lowflag | (oper << 3));
                 this.writeInt32(chr);
             } else {
                 if (is8bits) {
                     if (lowflag !== 0) lowflag = 3;
                 }
-                this.write(0x80 | lowflag);
-                this._target(0, dest, oper, null, offset, movoper);
-                if (is8bits) this.write(chr);
+                this.put(0x80 | lowflag);
+                this._target(0, r1, oper, null, r1, offset, movoper);
+                if (is8bits) this.put(chr);
                 else this.writeInt32(chr);
             }
         }
@@ -1046,66 +1101,76 @@ export class X64Assembler {
     }
 
     shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
-        this._regex(dest, 0, null, size);
-        this.write(0xc1);
-        this.write(0xe8 | dest);
-        this.write(chr%128);
+        this._rex(dest, 0, null, size);
+        this.put(0xc1);
+        this.put(0xe8 | dest);
+        this.put(chr%128);
         return this;
     }
     shl_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
-        this._regex(dest, 0, null, size);
-        this.write(0xc1);
-        this.write(0xe0 | dest);
-        this.write(chr%128);
+        this._rex(dest, 0, null, size);
+        this.put(0xc1);
+        this.put(0xe0 | dest);
+        this.put(chr%128);
         return this;
     }
     
     movsx_r_rp(dest:Register, src:Register, offset:number, size:OperationSize):this {
-        this._regex(src, dest, null, OperationSize.qword);
+        this._rex(src, dest, null, OperationSize.qword);
         switch (size) {
         case OperationSize.byte:
-            this.write(0x0f);
-            this.write(0xbe);
+            this.put(0x0f);
+            this.put(0xbe);
             break;
         case OperationSize.word:
-            this.write(0x0f);
-            this.write(0xbf);
+            this.put(0x0f);
+            this.put(0xbf);
             break;
         case OperationSize.dword:
-            this.write(0x63);
+            this.put(0x63);
             break;
         default:
             throw Error(`Invalid operand size, ${OperationSize[size] || size}`);
         }
-        return this._target(0, src, dest, null, offset, MovOper.Read);
+        return this._target(0, src, dest, null, src, offset, MovOper.Read);
     }
     movsxd_r_rp(dest:Register, src:Register, offset:number):this {
-        return this.movsx_r_rp(dest, src, offset, OperationSize.qword);
+        return this.movsx_r_rp(dest, src, offset, OperationSize.dword);
     }
 
-    movzx_r_rp(dest:Register, src:Register, offset:number):this {
-        this._regex(src, dest, null, OperationSize.qword);
-        this.write(0x0f);
-        this.write(0xb6);
-        return this._target(0, src, dest, null, offset, MovOper.Read);
+    private _movzx(r1:Register, r2:Register, r3:Register|null, offset:number, size:OperationSize, oper:MovOper):this {
+        if (size == null) throw Error(`Need operand size`);
+        if (size >= OperationSize.dword) throw Error(`Unexpected operand size ${OperationSize[size]}`);
+        this._rex(r1, r2, null, OperationSize.dword);
+        this.put(0x0f);
+        let opcode = 0xb6;
+        if (size === OperationSize.word) opcode |= 1;
+        this.put(opcode);
+        return this._target(0, r1, r2, r3, r1, offset, oper);
+    }
+    movzx_r_r(dest:Register, src:Register, size:OperationSize):this {
+        return this._movzx(src, dest, null, 0, size, MovOper.Register);
+    }
+    movzx_r_rp(dest:Register, src:Register, offset:number, size:OperationSize):this {
+        return this._movzx(src, dest, null, offset, size, MovOper.Read);
     }
 
     private _movsf(r1:Register|FloatRegister, r2:Register|FloatRegister, offset:number, oper:MovOper, foper:FloatOper, size:OperationSize, doublePrecision:boolean):this {
-        if (doublePrecision) this.write(0xf2);
-        else this.write(0xf3);
-        this._regex(r1, r2, null, size);
-        this.write(0x0f);
+        if (doublePrecision) this.put(0xf2);
+        else this.put(0xf3);
+        this._rex(r1, r2, null, size);
+        this.put(0x0f);
         switch (foper) {
-        case FloatOper.ConvertPrecision: this.write(0x5a); break;
-        case FloatOper.ConvertTruncated_f2i: this.write(0x2c); break;
-        case FloatOper.Convert_f2i: this.write(0x2d); break;
-        case FloatOper.Convert_i2f: this.write(0x2a); break;
+        case FloatOper.ConvertPrecision: this.put(0x5a); break;
+        case FloatOper.ConvertTruncated_f2i: this.put(0x2c); break;
+        case FloatOper.Convert_f2i: this.put(0x2d); break;
+        case FloatOper.Convert_i2f: this.put(0x2a); break;
         default:
-            if (oper === MovOper.Write) this.write(0x11);
-            else this.write(0x10);
+            if (oper === MovOper.Write) this.put(0x11);
+            else this.put(0x10);
             break;
         }
-        return this._target(0, r1, r2, null, offset, oper);
+        return this._target(0, r1, r2, null, r1, offset, oper);
     }
 
     movsd_rp_r(dest:Register, offset:number, src:FloatRegister):this {
@@ -1188,6 +1253,17 @@ export class X64Assembler {
         return this;
     }
 
+    removeLabel(name:string):this {
+        const label = this.ids.get(name);
+        if (!label) return this;
+        if (!(label instanceof Label)) throw Error(`${name} is not label`);
+        this.ids.delete(name);
+        if (label.chunk !== null) {
+            label.chunk.ids.splice(label.chunk.ids.indexOf(label), 1);
+        }
+        return this;
+    }
+
     private _getJumpTarget(labelName:string):Label|Defination {
         const id = this.ids.get(labelName);
         if (id) {
@@ -1207,7 +1283,7 @@ export class X64Assembler {
         const label = this._getJumpTarget(labelName);
         if (label instanceof Defination) {
             this.jmp_rp(Register.rip, 0);
-            this._registerUnresolvedConstant(true, label);
+            this._registerUnresolvedConstant(label, 4);
             return this;
         }
         if (label.chunk === null) {
@@ -1219,16 +1295,16 @@ export class X64Assembler {
     call_label(labelName:string):this {
         const label = this._getJumpTarget(labelName);
         if (label instanceof Defination) {
-            this.jmp_rp(Register.rip, 0);
-            this._registerUnresolvedConstant(true, label);
+            this.call_rp(Register.rip, 0);
+            this._registerUnresolvedConstant(label, 4);
             return this;
         }
         if (label.chunk === null) {
             this.call_c(0);
-            this._registerUnresolvedConstant(true, label);
+            this._registerUnresolvedConstant(label, 4);
             return this;
         }
-        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.call_c_info, label, [], this.pos));
+        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.call_c_info, label, [], this.pos), true);
         return this;
     }
     private _jmp_o_label(oper:JumpOperation, labelName:string):this {
@@ -1241,27 +1317,28 @@ export class X64Assembler {
         return this;
     }
 
-    private _registerUnresolvedConstant(isDword:boolean, id:AddressIdentifier):void {
-        const size = isDword ? 4 : 1;
-        this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-size, size, id, this.pos));
+    private _registerUnresolvedConstant(id:AddressIdentifier, bytes:number):void {
+        this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-bytes, bytes, id, this.pos));
         this.pos = null;
     }
 
     private _resolveLabelSize(chunk:AsmChunk, jump:SplitedJump, dwordSize:boolean):void {
+        const orichunk = this.chunk;
+        this.chunk = chunk;
         if (dwordSize) {
-            jump.info.func.call(this, ...jump.args, 0);
-            chunk.unresolved.push(new UnresolvedConstant(chunk.size-1, 1, jump.label, jump.pos));
-        } else {
             jump.info.func.call(this, ...jump.args, INT32_MAX);
             chunk.unresolved.push(new UnresolvedConstant(chunk.size-4, 4, jump.label, jump.pos));
+        } else {
+            jump.info.func.call(this, ...jump.args, 0);
+            chunk.unresolved.push(new UnresolvedConstant(chunk.size-1, 1, jump.label, jump.pos));
         }
         chunk.removeNext();
         if (chunk.next === null) this.chunk = chunk;
+        else this.chunk = orichunk;
     }
 
     private _resolveLabelSizeBackward(jumpChunk:AsmChunk, jump:SplitedJump, dwordSize:boolean|null = null):void {
         if (jump.label.chunk === jumpChunk) {
-            if (this.chunk !== jumpChunk) throw Error('is not front chunk');
             let offset = jump.label.offset - jumpChunk.size;
             offset -= jump.info.byteSize;
             if (offset < INT8_MIN || offset > INT8_MAX) {
@@ -1297,12 +1374,11 @@ export class X64Assembler {
     private _resolveLabelSizeForward(jumpChunk:AsmChunk, jump:SplitedJump, dwordSize:boolean|null = null):void {
         if (jump.label.chunk === jumpChunk) throw Error(`cannot forward to self chunk`);
 
-        const orichunk = this.chunk;
-        this.chunk = jumpChunk;
-        
         if (dwordSize === null) {
             let chunk = jumpChunk.next!;
             if (chunk === jump.label.chunk) {
+                const orichunk = this.chunk;
+                this.chunk = jumpChunk;
                 jump.info.func.call(this, ...jump.args, jump.label.offset);
                 jumpChunk.removeNext();
                 if (jumpChunk.next === null) this.chunk = jumpChunk;
@@ -1327,6 +1403,7 @@ export class X64Assembler {
     }
 
     private _genChunk(info:JumpInfo, label:Label, args:any[]):this {
+
         let chunk = this.chunk;
         let totalsize = 0;
         for (;;) {
@@ -1335,8 +1412,7 @@ export class X64Assembler {
             totalsize += chunk.size + info.byteSize;
             chunk = prev;
             if (totalsize >= 127) {
-                this._resolveLabelSizeForward(chunk, chunk.jump!, true);
-                chunk.removeNext();
+                this._resolveLabelSize(chunk, chunk.jump!, true);
             }
         }
         chunk = this.chunk;
@@ -1349,7 +1425,65 @@ export class X64Assembler {
         return this;
     }
 
+    private _check(final:boolean):void {
+        const chunks = new WeakSet<AsmChunk>();
+        const ids = new WeakSet<AddressIdentifier>();
+        chunks.add(MEMORY_INDICATE_CHUNK);
+        if (this.constChunk !== null) {
+            chunks.add(this.constChunk);
+        }
+        const errors = new Map<string, string[]>();
+        function putError(name:string, message:string):void {
+            const arr = errors.get(name);
+            if (arr) arr.push(message);
+            else errors.set(name, [message]);
+        }
+
+        let chunk:AsmChunk|null = this.chunk;
+        if (chunk.next !== null) {
+            putError('[main chunk]', 'main chunk has the next chunk');
+        }
+        while (chunk !== null) {
+            chunks.add(chunk);
+            for (const id of chunk.ids) {
+                if (id.chunk !== chunk) {
+                    putError(id.name, 'Chunk does not matched');
+                }
+                ids.add(id);
+            }
+            chunk = chunk.prev;
+        }
+        chunk = this.chunk;
+        for (const id of this.ids.values()) {
+            if (id instanceof AddressIdentifier) {
+                if (id.chunk === null) {
+                    if (!final) continue;
+                    putError(id.name, 'Chunk is not defined');
+                    continue;
+                }
+                if (!ids.has(id)) {
+                    if (id.chunk === MEMORY_INDICATE_CHUNK) continue;
+                    putError(id.name, 'Unknown identifier');
+                }
+                if (!chunks.has(id.chunk)) {
+                    const jumpTarget = id.chunk.jump;
+                    putError(id.name, 'Unknown chunk, '+(jumpTarget === null ? '[??]' : jumpTarget.label.name));
+                }
+            }
+        }
+        if (errors.size !== 0) {
+            for (const [name, messages] of errors) {
+                for (const message of messages) {
+                    console.error(`${name}: ${message}`);
+                }
+            }
+            process.exit(-1);
+        }
+    }
+
     private _normalize():this {
+        this._check(true);
+
         const errors = new ParsingErrorContainer;
         let prev = this.chunk.prev;
         while (prev !== null) {
@@ -1362,22 +1496,26 @@ export class X64Assembler {
             }
             prev = prev.prev;
         }
+        this._check(true);
 
         const chunk = this.chunk;
         if (chunk.next !== null || chunk.prev !== null) {
             throw Error(`All chunks don't merge. internal problem.`);
         }
 
+        this._check(true);
         if (this.constChunk !== null) {
             chunk.connect(this.constChunk);
             this.constChunk = null;
             chunk.removeNext();
         }
 
+        this._check(true);
         const memalign = this.memoryChunkAlign;
         const bufsize = (this.chunk.size + memalign - 1) & ~(memalign-1);
-        this.chunk.put();
-        bufsize - this.chunk.size
+        this.chunk.putRepeat(0xcc, bufsize - this.chunk.size);
+
+
 
         try {
             chunk.resolveAll();
@@ -1418,6 +1556,8 @@ export class X64Assembler {
     }
 
     endp():this {
+        this._check(false);
+        
         for (const [labelName, label] of this.ids) {
             if (!(label instanceof Label)) continue;
             switch (label.type) {
@@ -1478,6 +1618,24 @@ export class X64Assembler {
             return {bytes: size!.bytes * Math.max(arraySize, 1), size:size!.size, align:size!.bytes, arraySize};
         }
 
+        const readConstString = (addressCommand:boolean, encoding:BufferEncoding):void=>{
+            const quotedString = parser.readQuotedStringTo('"');
+            if (quotedString === null) parser.error('Invalid quoted string');
+            if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
+            const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
+            this.constChunk.write(Buffer.from(quotedString+'\0', encoding));
+            this.constChunk.ids.push(id);
+            command += '_rp';
+            callinfo.push('(register pointer)');
+            if (addressCommand) setSize(OperationSize.qword);
+            else setSize(id.size);
+            args.push(Register.rip);
+            args.push(0);
+            unresolvedConstant = id;
+            unresolvedPos = parser.getPosition();
+            parser.skipSpaces();
+        };
+
         const command_base = parser.readToSpace();
         if (command_base === '') return;
         let command = command_base;
@@ -1526,33 +1684,21 @@ export class X64Assembler {
                     parser.error(err.message);
                 }
                 return;
-            } else if (command.startsWith('j')) {
+            } else if (command.startsWith('j') || command === 'call') {
                 jumpCommand = true;
             }
             
-            // TODO: parse string quot
-            // store string
-            
             while (!parser.eof()) {
+                parser.skipSpaces();
 
-                const qoutedString = parser.readQuotedString();
-                if (qoutedString !== null) {
-                    if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
-                    const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
-                    this.constChunk.write(Buffer.from(qoutedString, 'utf-8'));
-                    this.constChunk.put(0);
-                    this.constChunk.ids.push(id);
-                    command += '_rp';
-                    callinfo.push('(register pointer)');
-                    if (addressCommand) setSize(OperationSize.qword);
-                    else setSize(id.size);
-                    args.push(Register.rip);
-                    args.push(0);
-                    unresolvedConstant = id;
-                    unresolvedPos = parser.getPosition();
-                    parser.skipSpaces();
+                if (parser.nextIf('"')) {
+                    readConstString(addressCommand, 'utf8');
+                    continue;
+                } else if (parser.nextIf('u"')) {
+                    readConstString(addressCommand, 'utf16le');
                     continue;
                 }
+
                 const param = parser.readTo(',');
                 
                 const constval = polynominal.parseToNumber(param);
@@ -1673,6 +1819,7 @@ export class X64Assembler {
                 this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, unresolvedConstant, unresolvedPos));
             }
         } catch (err) {
+            console.log(remapStack(err.stack));
             parser.error(err.message);
         }
     }
@@ -1734,7 +1881,7 @@ export class X64Assembler {
         }
         labels.sort((a,b)=>a.offset-b.offset);
 
-
+        out.writeVarUint(this.memoryChunkAlignBit);
         let address = 0;
         writeArray(labels, writeAddress);
         address = 0;
@@ -1778,6 +1925,7 @@ export class X64Assembler {
             return [name, address];
         }
 
+        const memoryAlignBit = reader.readVarUint();
         let address = 0;
         const labels = readArray(readAddress);
         address = 0;
@@ -1786,6 +1934,7 @@ export class X64Assembler {
 
         const buf = reader.remaining();
         const out = new X64Assembler(buf, buf.length);
+        out.memoryChunkAlign = 1 << memoryAlignBit;
         out.memoryChunkSize = memorySize;
 
         for (const [name, offset] of labels) {
@@ -1795,10 +1944,12 @@ export class X64Assembler {
             label.offset = offset;
             label.type = LabelType.Proc;
             out.ids.set(name, label);
+            out.chunk.ids.push(label);
         }
         for (const [name, offset] of defs) {
             if (out.ids.has(name)) throw Error(`${name} is already defined`);
-            out.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, undefined));
+            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, undefined);
+            out.ids.set(name, def);
         }
         return out;
     }

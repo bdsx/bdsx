@@ -30,7 +30,7 @@ def asyncAlloc:qword
 def asyncPost:qword
 def sprintf:qword
 def JsHasException:qword
-def JsCreateError:qword
+def JsCreateTypeError:qword
 def JsGetValueType:qword
 def JsStringToPointer:qword
 def JsGetArrayBufferStorage:qword
@@ -89,16 +89,41 @@ proc makefunc_getout
     ret
 endp
 
-# JsValueRef makeError(char16_t* string, size_t size)
+# it uses rax, rdx only
+# size_t strlen(const char* string)
+proc strlen
+    lea rax, [rcx-1]
+_next:
+    add rax, 1
+    movzx edx, byte ptr[rax]
+    test rdx, rdx
+    jnz _next
+
+    sub rax, rcx
+endp
+
+# JsValueRef makeError(char* string, size_t size)
 proc makeError
-    sub rsp, 28h
-    lea r8, [rsp + 18h]
-    call [rdi + fn_JsPointerToString]
-    mov rcx, [rsp + 18h]
-    lea rdx, [rsp + 18h]
-    call JsCreateError
-    mov rax, [rsp + 18h]
-    add rsp, 28h
+    sub rsp, 88h
+    
+    lea r8, [rcx+rdx]
+    lea r9, [rsp+20h]
+_copy:
+    movzx eax, byte ptr[rcx]
+    mov word ptr[r9], ax
+    add rcx, 1
+    add r9, 2
+    cmp rcx, r8
+    jne _copy
+
+    lea rcx, [rsp+20h]
+    lea r8, [rsp+18h]
+    call [rdi+fn_JsPointerToString]
+    mov rcx, [rsp+18h]
+    lea rdx, [rsp+10h]
+    call JsCreateTypeError
+    mov rax, [rsp+10h]
+    add rsp, 88h
     ret
 endp
 
@@ -118,10 +143,10 @@ endp
 # [[noreturn]] getout_invalid_parameter(uint32_t paramNum)
 proc getout_invalid_parameter
     sub rsp, 48h
-    test rcx, rcx
+    test ecx, ecx
     jg paramNum_is_number
     lea rcx, "Invalid parameter at this"
-    call makeError
+    call strlen
     jmp paramNum_is_this
 paramNum_is_number:
     mov r8, rcx
@@ -129,8 +154,10 @@ paramNum_is_number:
     lea rcx, [rsp + 20h]
     call sprintf
     lea rcx, [rsp + 20h]
-    call makeError
 paramNum_is_this:
+    mov rdx, rax
+    call makeError
+    mov rcx, rax
     call getout_jserror
 endp
 
@@ -141,6 +168,9 @@ proc getout_invalid_parameter_count
     mov r8, rdx
     lea rdx, "Invalid parameter count (expected=%d, actual=%d)"
     lea rcx, [rsp + 20h]
+    call sprintf
+    lea rcx, [rsp + 20h]
+    mov rdx, rax
     call makeError
     mov rcx, rax
     add rsp, 68h
@@ -153,29 +183,30 @@ proc getout
     mov [rsp + 0x28], rcx
     mov rax, [rdi + fn_returnPoint]
     and rax, 1
-    jz nocatch
+    jz _crash
     lea rcx, [rsp + 20h]
     call JsHasException
     test eax, eax
-    jnz nocatch
+    jnz _codeerror
     movzx eax, byte ptr[rsp + 20h]
     test eax, eax
-    jnz nocatch
+    jz _codeerror
     call [rdi + fn_stack_free_all]
     call makefunc_getout
-nocatch:
+_crash:
     lea rcx, [rsp + 20h]
     call JsGetAndClearException
-    jnz jserror
+    jnz _codeerror
     call [rdi + fn_stack_free_all]
     mov rcx, [rsp + 20h]
     call runtimeErrorFire
-jserror:
+_codeerror:
     mov r8, [rsp + 0x28]
     lea rdx, "JsErrorCode: 0x%x"
     lea rcx, [rsp + 20h]
     call sprintf
     lea rcx, [rsp + 20h]
+    mov rdx, rax
     call makeError
     mov rcx, rax
     call getout_jserror
@@ -187,29 +218,29 @@ proc str_js2np
     mov [rsp+40h], r8
     mov [rsp+38h], rdx
     mov [rsp+30h], rcx
-    lea rdx, [rsp+18h]
+    lea rdx, [rsp+10h]
     call JsGetValueType
     test eax, eax
     jnz _failed
-    mov rax, [rsp+18h]
+    mov eax, [rsp+10h]
     sub rax, JsNull
     jz _null
     sub rax, 2
     jnz _failed
     lea r8, [rsp+20h]
     lea rdx, [rsp+18h]
-    mov rcx, [rsp+38h]
+    mov rcx, [rsp+30h]
     call JsStringToPointer
     test eax, eax
-    jz _failed
+    jnz _failed
     mov rcx, [rsp+18h]
-    mov rdx, [rcx+20h]
+    mov rdx, [rsp+20h]
     call [rsp+40h]
     add rsp, 28h
     ret
 _failed:
     mov rcx, [rsp+38h]
-    call getout_invalid_parameter
+    call [rdi+fn_getout_invalid_parameter]
 _null:
     add rsp, 28h
     xor eax, eax
@@ -225,25 +256,36 @@ proc buffer_to_pointer
     call JsGetValueType
     test eax, eax
     jnz _failed
-    mov rax, [rsp+10h]
-
+    mov eax, [rsp+10h]
     sub rax, JsNull ; JsNull 1
-    jnz _null
-    add rsp, 38h
-    xor eax,eax
-    ret
-_null:
-
+    jz _null
     sub rax, 4 ; JsObject 5
-    jnz _object
+    jz _object
+    sub rax, 5 ; JsArrayBuffer 10
+    jz _arrayBuffer
+    sub rax, 1 ; JsTypedArray 11
+    jz _typedArray
+    sub rax, 1 ; JsDataView 12
+    jz _dataView
+_failed:
+    mov rcx, [rsp+38h]
+    call [rdi+fn_getout_invalid_parameter]
+
+_null:
+    add rsp, 38h
+    xor eax, eax
+    ret
+
+_object:
     mov rcx, [rsp+40h]
-    call [rdi+fn_pointer_js2np]
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
+    mov rax, [rax+10h]
     add rsp, 38h
     ret
-_object:
 
-    sub rax, 5 ; JsArrayBuffer 10
-    jnz _arrayBuffer
+_arrayBuffer:
     lea r8, [rsp+18h]
     lea rdx, [rsp+10h]
     mov rcx, [rsp+40h]
@@ -253,10 +295,8 @@ _object:
     mov rax, [rsp+10h]
     add rsp, 38h
     ret
-_arrayBuffer:
 
-    sub rax, 1 ; JsTypedArray 11
-    jnz _typedArray
+_typedArray:
     lea r9, [rsp+30h]
     mov [rsp+20h], r9
     mov r8, r9
@@ -268,11 +308,8 @@ _arrayBuffer:
     mov rax, [rsp+28h]
     add rsp, 38h
     ret
-_typedArray:
 
-    sub rax, 1 ; JsDataView 12
-    jnz _dataView
-    jnz _arrayBuffer
+_dataView:
     lea r8, [rsp+18h]
     lea rdx, [rsp+10h]
     mov rcx, [rsp+40h]
@@ -282,10 +319,6 @@ _typedArray:
     mov rax, [rsp+10h]
     add rsp, 38h
     ret
-_dataView:
-_failed:
-    mov rcx, [rsp+38h]
-    call getout_invalid_parameter
 endp
 
 ; const char16_t* utf16_js2np(JsValueRef value, uint32_t paramNum)
@@ -293,23 +326,22 @@ proc utf16_js2np
     sub rsp, 28h
     mov [rsp+38h], rdx
     mov [rsp+30h], rcx
-    lea rdx, [rsp+18h]
+    lea rdx, [rsp+10h]
     call JsGetValueType
     test eax, eax
     jnz _failed
-
-    mov rax, [rsp+18h]
+    mov eax, [rsp+10h]
     sub rax, 1
     jz _null
     sub rax, 2
     jnz _failed
     lea r8, [rsp+20h]
     lea rdx, [rsp+18h]
-    mov rcx, [rsp+38h]
+    mov rcx, [rsp+30h]
     call JsStringToPointer
     test eax, eax
-    jz _failed
-    mov eax, [rsp+18h]
+    jnz _failed
+    mov rax, [rsp+18h]
     add rsp, 28h
     ret
 _null:
@@ -318,13 +350,13 @@ _null:
     ret
 _failed:
     mov rcx, [rsp+38h]
-    call getout_invalid_parameter
+    call [rdi+fn_getout_invalid_parameter]
 endp
 
 ; JsValueRef str_np2js(pcstr str, uint32_t paramNum, JsErrorCode(*converter)(const char*, JsValue))
 proc str_np2js
     sub rsp, 28h
-    mov [rsp+38], rdx
+    mov [rsp+38h], rdx
     lea rdx, [rsp+10h]
     call r8
     test eax, eax
@@ -334,7 +366,7 @@ proc str_np2js
     ret
 _failed:
     mov rcx, [rsp+38h]
-    call getout_invalid_parameter
+    call [rdi+fn_getout_invalid_parameter]
 endp
 
 ; JsValueRef utf16_np2js(pcstr16 str, uint32_t paramNum)
@@ -347,7 +379,7 @@ _next:
     movzx eax, word ptr[rdx]
     add rdx, 2
     test eax, eax
-    jz _next
+    jnz _next
 
     sub rdx, rcx
     shr rdx, 2
@@ -361,7 +393,7 @@ _next:
     ret
 _failed:
     mov rcx, [rsp+38h]
-    call getout_invalid_parameter
+    call [rdi+fn_getout_invalid_parameter]
 endp
 
 ; JsValueRef pointer_np2js(JsValueRef ctor, void* ptr)
@@ -377,9 +409,11 @@ proc pointer_np2js
     test eax, eax
     jnz _failed
     mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2np]    
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
     mov rcx, [rsp+48h]
-    mov [rax+8], rcx
+    mov [rax+10h], rcx
     mov rax, [rsp+20h]
     add rsp, 38h
     ret
@@ -403,9 +437,11 @@ proc pointer_np2js_nullable
     test eax, eax
     jnz _failed
     mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2np]    
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
     mov rcx, [rsp+48h]
-    mov [rax+8], rcx
+    mov [rax+10h], rcx
     mov rax, [rsp+20h]
     add rsp, 38h
     ret
@@ -433,8 +469,10 @@ proc pointer_js_new
     jnz _failed
     mov rax, [rsp+48h]
     mov rcx, [rax]
-    call [rdi+fn_pointer_js2np]
-    mov rax, [rax+8]
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
+    mov rax, [rax+10h]
     add rsp, 38h
     ret
 _failed:
@@ -452,7 +490,7 @@ proc bin64
     test eax, eax
     jnz _failed
 
-    xor eax,eax
+    xor eax, eax
     mov r8, [rsp+20h]
     test r8, r8
     jz _done
@@ -487,7 +525,7 @@ _done:
     ret
 _failed:
     mov rcx, [rsp+38h]
-    call getout_invalid_parameter
+    call [rdi+fn_getout_invalid_parameter]
 endp
 
 
@@ -504,7 +542,10 @@ proc wrapper_js2np
     test eax, eax
     jnz _failed
     mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2np]
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
+    mov rax, [rax+10h]
     add rsp, 38h
     ret
 _failed:
@@ -527,9 +568,11 @@ proc np2js_wrapper
     jnz _failed
     mov rcx, [rsp+20h]
     mov [rsp+30h], rcx
-    call [rdi+fn_pointer_js2np]    
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
     mov rcx, [rsp+48h]
-    mov [rax+8], rcx
+    mov [rax+10h], rcx
     lea r9, [rsp+20h]
     mov r8, 2
     lea rdx, [rsp+28h]
@@ -560,9 +603,11 @@ proc np2js_wrapper_nullable
     jnz _failed
     mov rcx, [rsp+20h]
     mov [rsp+30h], rcx
-    call [rdi+fn_pointer_js2np]    
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
     mov rcx, [rsp+48h]
-    mov [rax+8], rcx
+    mov [rax+10h], rcx
     lea r9, [rsp+20h]
     mov r8, 2
     lea rdx, [rsp+28h]

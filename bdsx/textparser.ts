@@ -36,11 +36,7 @@ export class TextLineParser {
         return true;
     }
 
-    readQuotedString():string|null {
-        this.skipSpaces();
-        const chr = this.context.charAt(this.p);
-        if (chr !== '"' && chr !== "'") return null;
-
+    readQuotedStringTo(chr:string):string|null {
         let p = this.p+1;
         
         for (;;) {
@@ -62,7 +58,7 @@ export class TextLineParser {
                 break;
             }
             if ((count&1) === 0) {
-                const out = this.context.substring(this.p, np+1);
+                const out = this.context.substring(this.p-1, np+1);
                 this.matchedIndex = this.p + this.offset;
                 this.matchedWidth = out.length;
                 this.p = np+1;
@@ -74,6 +70,13 @@ export class TextLineParser {
             }
             p = np+1;
         }
+    }
+
+    readQuotedString():string|null {
+        this.skipSpaces();
+        const chr = this.context.charAt(this.p);
+        if (chr !== '"' && chr !== "'") return null;
+        return this.readQuotedStringTo(chr);
     }
 
     skipSpaces():void {
@@ -245,7 +248,7 @@ export class ErrorPosition {
 }
 
 export class ParsingError extends Error {
-    public readonly errors:ErrorPosition[];
+    public readonly errors:ErrorPosition[] = [];
 
     constructor(
         message:string,

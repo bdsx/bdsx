@@ -2,9 +2,10 @@
 import { asm } from 'bdsx/assembler';
 import { StaticPointer } from 'bdsx/core';
 import { makefuncDefines } from 'bdsx/makefunc_defines';
+import { remapError } from 'bdsx/source-map-support';
+import { ParsingError } from 'bdsx/textparser';
 import "../codealloc";
 import path = require('path');
-import { remapError } from 'bdsx/source-map-support';
 
 
 let res:Record<string, StaticPointer>;
@@ -12,7 +13,9 @@ try {
     res = asm.loadFromFile(path.join(__dirname, '../bdsx/asm/asmcode.asm'), makefuncDefines, true).allocs();
     
 } catch (err) {
-    console.error(remapError(err).stack);
+    if (!(err instanceof ParsingError)) {
+        console.error(remapError(err).stack);
+    }
     process.exit(-1);
 } 
 export = res as {
@@ -37,7 +40,7 @@ export = res as {
     asyncPost:StaticPointer,
     sprintf:StaticPointer,
     JsHasException:StaticPointer,
-    JsCreateError:StaticPointer,
+    JsCreateTypeError:StaticPointer,
     JsGetValueType:StaticPointer,
     JsStringToPointer:StaticPointer,
     JsGetArrayBufferStorage:StaticPointer,

@@ -32,7 +32,8 @@ X64Assembler.prototype.allocs = function():Record<string, StaticPointer> {
     const buffer = this.buffer();
     const memsize = this.getDefAreaSize();
     const memalign = this.getDefAreaAlign();
-    const mem = cgate.allocExecutableMemory(buffer.length+memsize, memalign);
+    const buffersize = buffer.length;
+    const mem = cgate.allocExecutableMemory(buffersize+memsize, memalign);
     mem.setBuffer(buffer);
 
     const out:Record<string, StaticPointer> = {};
@@ -42,7 +43,7 @@ X64Assembler.prototype.allocs = function():Record<string, StaticPointer> {
     }
     const defs = this.defs();
     for (const name in defs) {
-        out[name] = mem.add(defs[name]);
+        out[name] = mem.add(defs[name] + buffersize);
     }
     return out;
 };

@@ -676,7 +676,7 @@ export declare namespace chakraUtil {
     // JsErrorCode from_ansi(pcstr str, JsValueRef* out)
     export const from_ansi:VoidPointer;
     // void* pointer_js2np(JsValueRef value)
-    export const pointer_js2np:VoidPointer;
+    export const pointer_js2class:VoidPointer;
 
     export function JsCreateFunction(funcptr:VoidPointer, state:VoidPointer|null):(...args:any[])=>any;
 
