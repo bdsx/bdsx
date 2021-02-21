@@ -12,6 +12,7 @@ import './net-rawpacket';
 import './net-disconnect';
 import './net-transferserver';
 import './net-sendhook';
+import './net-halfmove';
 import './lowlevel-dll';
 import './lowlevel-apihooking';
 import './lowlevel-nativeclass';
