@@ -283,19 +283,20 @@ export namespace nethook
                 const packetId = packet.getId();
                 if ((packetId>>>0) >= MAX_PACKET_ID) {
                     console.error(`onPacketSendAfter - Unexpected packetId: ${packetId}`);
-                    return;
+                    return 1;
                 }
 
                 const target = alltargets[packetId+SEND_AFTER_OFFSET] as Event<SendRawListener>;
                 if (target !== null && !target.isEmpty()) {
                     const ignore = target.fire(data.valueptr, data.length, ni, packetId) === CANCEL;
                     _tickCallback();
-                    if (ignore) return;
+                    if (ignore) return 0;
                 }
             } catch (err) {
                 remapAndPrintError(err);
             }
-        }, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
+            return 1;
+        }, RawTypeId.Int32, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
 
         const packetSendOriginalCode = [
             0x48, 0x8B, 0x81, 0x68, 0x02, 0x00, 0x00, // mov rax,qword ptr ds:[rcx+268]
@@ -347,9 +348,14 @@ export namespace nethook
             .sub_r_c(Register.rsp, 0x28)
             .call64(onPacketSendRaw, Register.rax)
             .add_r_c(Register.rsp, 0x28)
+            .test_r_r(Register.rax, Register.rax, OperationSize.dword)
+            .jz_label('skip')
             .mov_r_r(Register.rcx, Register.rsi)
             .mov_r_r(Register.rdx, Register.rbp)
             .jmp64(proc[`NetworkHandler::_getConnectionFromId`], Register.rax)
+            .label('skip')
+            .add_r_c(Register.rcx, 0x58)
+            .ret()
             .alloc(),
             Register.rax, true,
             [
