@@ -12,7 +12,7 @@ export class Level extends NativeClass {
     createDimension(id:DimensionId):Dimension {
         abstract();
     }
-    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor {
+    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor|null {
         abstract();
     }
 }

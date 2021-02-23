@@ -259,6 +259,7 @@ Tester.test({
                 sendpacket++;
             });
             netevent.sendRaw(i).on((ptr, size, ni, packetId)=>{
+                if (packetId !== sendidcheck) capi.debugBreak();
                 this.assert(size > 0, `packet size is too little`);
                 this.assert(packetId === sendidcheck, `different packetId on sendRaw. id=${packetId}`);
                 this.assert(packetId === (ptr.readVarUint()&0x3ff), `different packetId in buffer. id=${packetId}`);

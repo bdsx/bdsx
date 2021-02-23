@@ -19,6 +19,9 @@ try {
     process.exit(-1);
 } 
 export = res as {
+    wrapper_js2np:StaticPointer,
+    wrapper_np2js:StaticPointer,
+    wrapper_np2js_nullable:StaticPointer,
     logHookAsyncCb:StaticPointer,
     logHook:StaticPointer,
     getout:StaticPointer,

@@ -658,6 +658,10 @@ export class X64Assembler {
      * move const to register
      */
     mov_r_c(dest:Register, value:Value64, size = OperationSize.qword):this {
+        if (size === OperationSize.qword || size === OperationSize.dword) {
+            const [low, high] = split64bits(value);
+            if (low === 0 && high === 0) return this.xor_r_r(dest, dest, OperationSize.dword);
+        }
         return this._mov(dest, 0, null, 0, value, MovOper.Const, size);
     }
 
@@ -862,24 +866,24 @@ export class X64Assembler {
     cmovle_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jle, src, dest, null, 0, MovOper.Register, size); }
     cmovg_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jg, src, dest, null, 0, MovOper.Register, size); }
 
-    cmovz_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, 0, MovOper.Read, size); }
-    cmovnz_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, 0, MovOper.Read, size); }
-    cmovo_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jo, src, dest, null, 0, MovOper.Read, size); }
-    cmovno_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jno, src, dest, null, 0, MovOper.Read, size); }
-    cmovb_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jb, src, dest, null, 0, MovOper.Read, size); }
-    cmovae_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jae, src, dest, null, 0, MovOper.Read, size); }
-    cmove_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, 0, MovOper.Read, size); }
-    cmovne_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, 0, MovOper.Read, size); }
-    cmovbe_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jbe, src, dest, null, 0, MovOper.Read, size); }
-    cmova_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.ja, src, dest, null, 0, MovOper.Read, size); }
-    cmovs_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.js, src, dest, null, 0, MovOper.Read, size); }
-    cmovns_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jns, src, dest, null, 0, MovOper.Read, size); }
-    cmovp_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jp, src, dest, null, 0, MovOper.Read, size); }
-    cmovnp_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jnp, src, dest, null, 0, MovOper.Read, size); }
-    cmovl_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jl, src, dest, null, 0, MovOper.Read, size); }
-    cmovge_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jge, src, dest, null, 0, MovOper.Read, size); }
-    cmovle_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jle, src, dest, null, 0, MovOper.Read, size); }
-    cmovg_r_rp(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jg, src, dest, null, 0, MovOper.Read, size); }
+    cmovz_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, offset, MovOper.Read, size); }
+    cmovnz_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, offset, MovOper.Read, size); }
+    cmovo_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jo, src, dest, null, offset, MovOper.Read, size); }
+    cmovno_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jno, src, dest, null, offset, MovOper.Read, size); }
+    cmovb_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jb, src, dest, null, offset, MovOper.Read, size); }
+    cmovae_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jae, src, dest, null, offset, MovOper.Read, size); }
+    cmove_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.je, src, dest, null, offset, MovOper.Read, size); }
+    cmovne_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jne, src, dest, null, offset, MovOper.Read, size); }
+    cmovbe_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jbe, src, dest, null, offset, MovOper.Read, size); }
+    cmova_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.ja, src, dest, null, offset, MovOper.Read, size); }
+    cmovs_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.js, src, dest, null, offset, MovOper.Read, size); }
+    cmovns_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jns, src, dest, null, offset, MovOper.Read, size); }
+    cmovp_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jp, src, dest, null, offset, MovOper.Read, size); }
+    cmovnp_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jnp, src, dest, null, offset, MovOper.Read, size); }
+    cmovl_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jl, src, dest, null, offset, MovOper.Read, size); }
+    cmovge_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jge, src, dest, null, offset, MovOper.Read, size); }
+    cmovle_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jle, src, dest, null, offset, MovOper.Read, size); }
+    cmovg_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jg, src, dest, null, offset, MovOper.Read, size); }
 
     /**
      * push register
@@ -953,10 +957,7 @@ export class X64Assembler {
         this._rex(r1, r2, null, size);
 
         let lowflag = size === OperationSize.byte ? 0 : 1;
-        if (movoper === MovOper.Register) {
-            this.put(lowflag | (oper << 3));
-            this._target(0, r1, r2, null, r1, offset, movoper);
-        } else {
+        if (movoper === MovOper.WriteConst || movoper === MovOper.Const) {
             const is8bits = (INT8_MIN <= chr && chr <= INT8_MAX);
             if (!is8bits && size === OperationSize.byte) throw Error('need 8bits integer');
             if (!is8bits && r1 === Register.rax && movoper === MovOper.Const) {
@@ -971,6 +972,9 @@ export class X64Assembler {
                 if (is8bits) this.put(chr);
                 else this.writeInt32(chr);
             }
+        } else {
+            this.put(lowflag | (oper << 3));
+            this._target(0, r1, r2, null, r1, offset, movoper);
         }
         return this;
     }
@@ -1026,28 +1030,28 @@ export class X64Assembler {
     }
 
     cmp_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.cmp, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.cmp, dest, 0, offset, chr, size);
     }
     sub_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.sub, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.sub, dest, 0, offset, chr, size);
     }
     add_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.add, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.add, dest, 0, offset, chr, size);
     }
     sbb_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.sbb, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.sbb, dest, 0, offset, chr, size);
     }
     adc_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.adc, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.adc, dest, 0, offset, chr, size);
     }
     xor_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.xor, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.xor, dest, 0, offset, chr, size);
     }
     or_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.or, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.or, dest, 0, offset, chr, size);
     }
     and_rp_c(dest:Register, offset:number, chr:number, size = OperationSize.qword):this {
-        return this._oper(MovOper.Write, Operator.and, dest, 0, offset, chr, size);
+        return this._oper(MovOper.WriteConst, Operator.and, dest, 0, offset, chr, size);
     }
 
     cmp_r_rp(dest:Register, src:Register, offset:number, size:OperationSize = OperationSize.qword):this {
@@ -1253,14 +1257,31 @@ export class X64Assembler {
         return this;
     }
 
-    removeLabel(name:string):this {
+    remove_label(name:string):this {
         const label = this.ids.get(name);
         if (!label) return this;
         if (!(label instanceof Label)) throw Error(`${name} is not label`);
         this.ids.delete(name);
-        if (label.chunk !== null) {
-            label.chunk.ids.splice(label.chunk.ids.indexOf(label), 1);
+        label.name = '';
+        return this;
+    }
+
+    close_label(labelName:string):this {
+        const label = this.ids.get(labelName);
+        if (!(label instanceof Label)) throw Error(`${labelName} is not label`);
+        if (label.chunk !== null) throw Error(`${labelName} is already defined`);
+        label.chunk = this.chunk;
+        label.offset = this.chunk.size;
+        label.type = LabelType.Label;
+        this.chunk.ids.push(label);
+        let now = this.chunk;
+        let prev = now.prev!;
+        while (prev !== null && prev.jump!.label === label) {
+            this._resolveLabelSizeForward(prev, prev.jump!);
+            now = prev;
+            prev = now.prev!;
         }
+        this.ids.delete(labelName);
         return this;
     }
 

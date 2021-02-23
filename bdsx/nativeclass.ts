@@ -1,5 +1,6 @@
 import { abstract, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
-import { makefunc, NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
+import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
+import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 

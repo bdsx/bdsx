@@ -1,7 +1,7 @@
 import { capi } from ".";
 import { asm, Register } from "./assembler";
 import { proc2 } from "./bds/proc";
-import { cgate, StaticPointer, uv_async, VoidPointer } from "./core";
+import { cgate, chakraUtil, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc, RawTypeId } from "./makefunc";
 import { CxxString, NativeType } from "./nativetype";
@@ -107,7 +107,7 @@ export class GetLine {
             getLineThreadPointer = createGetLineThreadFunction();
         }
 
-        cgate.JsAddRef(this.online);
+        chakraUtil.JsAddRef(this.online);
     
         uv_async.open();
         const [handle] = capi.createThread(getLineThreadPointer, makefunc.asJsValueRef(this.online));
@@ -116,7 +116,7 @@ export class GetLine {
 
     close():void {
         dll.kernel32.TerminateThread(this.thread, 0);
-        cgate.JsRelease(this.online);
+        chakraUtil.JsRelease(this.online);
         uv_async.close();
     }
 }

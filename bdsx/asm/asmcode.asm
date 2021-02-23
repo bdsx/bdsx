@@ -37,7 +37,6 @@ def JsGetArrayBufferStorage:qword
 def JsGetTypedArrayStorage:qword
 def JsGetDataViewStorage:qword
 def JsConstructObject:qword
-def js_undefined:qword
 def js_null:qword
 def js_true:qword
 def nodeThreadId:dword
@@ -396,6 +395,14 @@ _failed:
     call [rdi+fn_getout_invalid_parameter]
 endp
 
+; JsValueRef pointer_np2js_nullable(JsValueRef ctor, void* ptr) noexcept
+proc pointer_np2js_nullable
+    test rdx, rdx
+    jnz pointer_np2js
+    mov rax, js_null
+    ret
+endp
+
 ; JsValueRef pointer_np2js(JsValueRef ctor, void* ptr)
 proc pointer_np2js
     sub rsp, 38h
@@ -403,50 +410,19 @@ proc pointer_np2js
     lea r9, [rsp+20h]
     mov r8, 1
     lea rdx, [rsp+28h]
-    mov rax, js_undefined
-    mov [rdx], rax
-    call JsConstructObject
-    test eax, eax
-    jnz _failed
-    mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rcx, [rsp+48h]
-    mov [rax+10h], rcx
-    mov rax, [rsp+20h]
-    add rsp, 38h
-    ret
-_failed:
-    mov rcx, rax
-    call getout
-endp
-
-; JsValueRef pointer_np2js_nullable(JsValueRef ctor, void* ptr) noexcept
-proc pointer_np2js_nullable
-    test rcx, rcx
-    jz _null
-    sub rsp, 38h
-    mov [rsp+48h], rdx
-    lea r9, [rsp+20h]
-    mov r8, 1
-    lea rdx, [rsp+28h]
-    mov rax, js_undefined
-    mov [rdx], rax
-    call JsConstructObject
-    test eax, eax
-    jnz _failed
-    mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rcx, [rsp+48h]
-    mov [rax+10h], rcx
-    mov rax, [rsp+20h]
-    add rsp, 38h
-    ret
-_null:
     mov rax, js_null
+    mov [rdx], rax
+    call JsConstructObject
+    test eax, eax
+    jnz _failed
+    mov rcx, [rsp+20h]
+    call [rdi+fn_pointer_js2class]
+    test rax, rax
+    jz _failed
+    mov rcx, [rsp+48h]
+    mov [rax+10h], rcx
+    mov rax, [rsp+20h]
+    add rsp, 38h
     ret
 _failed:
     mov rcx, rax
@@ -458,9 +434,9 @@ proc pointer_js_new
     sub rsp, 38h
     mov [rsp+48h], rdx
     mov r9, rdx
-    mov r8, 1
+    mov r8, 2
     lea rdx, [rsp+28h]
-    mov rax, js_undefined
+    mov rax, js_null
     mov [rdx], rax
     mov rax, js_true
     mov [rdx+8], rax
@@ -533,7 +509,7 @@ endp
 proc wrapper_js2np
     sub rsp, 38h
     mov [rsp+30h], rdx
-    mov rax, js_undefined
+    mov rax, js_null
     mov [rsp+28h], rax
     lea r9, [rsp+20h]
     mov r8, 2
@@ -553,65 +529,38 @@ _failed:
     call getout
 endp
 
-; JsValueRef np2js_wrapper(void* ptr, JsValueRef func, JsValueRef ctor)
-proc np2js_wrapper
-    sub rsp, 38h
-    mov [rsp+48h], rdx
-    mov [rsp+50h], r8
-    lea r9, [rsp+20h]
-    mov r8, 1
-    lea rdx, [rsp+28h]
-    mov rax, js_undefined
-    mov [rdx], rax
-    call JsConstructObject
-    test eax, eax
-    jnz _failed
-    mov rcx, [rsp+20h]
-    mov [rsp+30h], rcx
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rcx, [rsp+48h]
-    mov [rax+10h], rcx
-    lea r9, [rsp+20h]
-    mov r8, 2
-    lea rdx, [rsp+28h]
-    mov rcx, [rsp+50h]
-    call [rdi+fn_JsCallFunction]
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+20h]
-    add rsp, 38h
+; JsValueRef wrapper_np2js_nullable(void* ptr, JsValueRef func, JsValueRef ctor)
+proc wrapper_np2js_nullable
+    test rcx, rcx
+    jnz wrapper_np2js
+    mov rax, js_null
     ret
-_failed:
-    mov ecx, eax
-    call getout
 endp
 
-; JsValueRef np2js_wrapper_nullable(void* ptr, JsValueRef func, JsValueRef ctor) noexcept
-proc np2js_wrapper_nullable
+; JsValueRef wrapper_np2js(void* ptr, JsValueRef func, JsValueRef ctor)
+proc wrapper_np2js
     sub rsp, 38h
+    mov [rsp+50h], rcx
     mov [rsp+48h], rdx
-    mov [rsp+50h], r8
-    lea r9, [rsp+20h]
+    mov rcx, r8
+    lea r9, [rsp+30h]
     mov r8, 1
     lea rdx, [rsp+28h]
-    mov rax, js_undefined
+    mov rax, js_null
     mov [rdx], rax
     call JsConstructObject
     test eax, eax
     jnz _failed
-    mov rcx, [rsp+20h]
-    mov [rsp+30h], rcx
+    mov rcx, [rsp+30h]
     call [rdi+fn_pointer_js2class]
     test rax, rax
     jz _failed
-    mov rcx, [rsp+48h]
+    mov rcx, [rsp+50h]
     mov [rax+10h], rcx
     lea r9, [rsp+20h]
     mov r8, 2
     lea rdx, [rsp+28h]
-    mov rcx, [rsp+50h]
+    mov rcx, [rsp+48h]
     call [rdi+fn_JsCallFunction]
     test eax, eax
     jnz _failed

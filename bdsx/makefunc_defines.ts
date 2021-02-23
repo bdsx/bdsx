@@ -1,9 +1,11 @@
 import { uv_async } from "./core";
 
 export const makefuncDefines = {
-    fn_JsCreateError: -0x68,
-    fn_getout: -0x58,
-    fn_wrapper_np2js_nullable: -0x50,
+    fn_wrapper_np2js_nullable: -0x70,
+    fn_wrapper_np2js: -0x68,
+    fn_wrapper_js2np: -0x60,
+    fn_JsCreateError: -0x58,
+    fn_getout: -0x50,
     fn_str_np2js: -0x48,
     fn_str_js2np: -0x40,
     fn_stack_free_all: -0x38,

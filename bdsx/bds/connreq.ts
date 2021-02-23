@@ -108,6 +108,10 @@ export class JsonValue extends NativeClass {
             throw Error(`unexpected type: ${type}`);
         }
     }
+
+    valueOf():number {
+        return +this.value();
+    }
     
     toString():string {
         return this.value()+'';
