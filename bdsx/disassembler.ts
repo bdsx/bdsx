@@ -117,9 +117,17 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             rex = v;
             size = OperationSize.word;
             continue;
+        } else if (v === 0xcc) { // int3
+            return new asm.Operation(asm.code.int3, []);
+        } else if (v === 0xcd) { // int3
+            const code = ptr.readUint8();
+            return new asm.Operation(asm.code.int_c, [code]);
         } else if (v === 0xe8) { // call dword
             const value = ptr.readInt32();
             return new asm.Operation(asm.code.call_c, [value]);
+        } else if (v === 0xe9) { // jmp dword
+            const value = ptr.readInt32();
+            return new asm.Operation(asm.code.jmp_c, [value]);
         } else if ((v & 0xf0) === 0x50){ // push or pop
             const reg = (v & 0x7)|((rex & 0x1) << 3);
             if (v & 0x08) return new asm.Operation(asm.code.pop_r, [reg]);
@@ -260,7 +268,6 @@ export namespace disasm
         const buffer = typeof hexstr === 'string' ? unhex(hexstr) : hexstr;
         const ptr = new NativePointer;
         ptr.setAddressFromBuffer(buffer);
-        
         
         const opers:asm.Operation[] = [];
         if (!quiet) console.log();
