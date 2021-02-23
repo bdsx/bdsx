@@ -25,7 +25,7 @@
                 "<node_internals>/**"
             ],
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["${workspaceFolder}/bdsx/installer/installer.ts", "./bedrock_server", "-y"],
+            "args": ["${workspaceFolder}/bdsx/installer/index.ts", "./bedrock_server", "-y"],
             "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
         },

@@ -1,8 +1,5 @@
 /node_modules
 /bedrock_server/*
 /dist
-/bdsx/installer/zip
-/bdsx/installer/installer.js
-/bdsx/installer/installer.js.map
 /npm-debug.log
 /pdbcache_by_example.ini

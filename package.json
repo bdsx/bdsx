@@ -6,8 +6,8 @@
   "main": "./dist/bundle.dist.js",
   "author": "YOU!",
   "scripts": {
-    "postinstall": "ts-node ./bdsx/installer/installer ./bedrock_server",
-    "install_bds": "ts-node ./bdsx/installer/installer ./bedrock_server",
+    "postinstall": "ts-node ./bdsx/installer ./bedrock_server",
+    "install_bds": "ts-node ./bdsx/installer ./bedrock_server",
     "lint-bdsx": "eslint bdsx --ext ts",
     "tsc-no-emit": "tsc --noEmit",
     "watch": "if-tsb -w",
