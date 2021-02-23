@@ -320,7 +320,7 @@ export class X64Assembler {
         return this.write(0xcc);
     }
 
-    int(n:number):this {
+    int_c(n:number):this {
         if (n === 3) return this.int3();
         return this.write(0xcd, n & 0xff);
     }
