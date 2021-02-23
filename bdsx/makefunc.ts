@@ -1,10 +1,11 @@
 import { asm, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
-import { Bufferable } from "./common";
-import { AllocatedPointer, cgate, chakraUtil, NativePointer, pdb, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
-import asmcode = require('./asm/asmcode');
-import { makefuncDefines } from "./makefunc_defines";
+import { proc2 } from "./bds/symbols";
 import "./codealloc";
+import { Bufferable } from "./common";
+import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
+import { makefuncDefines } from "./makefunc_defines";
+import asmcode = require('./asm/asmcode');
 
 export enum RawTypeId {
 	Int32,
@@ -81,12 +82,11 @@ function initFunctionMap():void {
     chakraCoreToMakeFuncMap('JsSetException');
     setFunctionMap('fn_returnPoint', null);
 
-    const rawfunc = pdb.getList(pdb.coreCachePath, {}, ['sprintf']);
     asmcode.GetCurrentThreadId.setPointer(dllraw.kernel32.GetCurrentThreadId);
     asmcode.memcpy.setPointer(dllraw.vcruntime140.memcpy);
     asmcode.asyncAlloc.setPointer(uv_async.alloc);
     asmcode.asyncPost.setPointer(uv_async.post);
-    asmcode.sprintf.setPointer(rawfunc.sprintf);
+    asmcode.sprintf.setPointer(proc2.sprintf);
     
     chakraCoreToDef('JsHasException');
     chakraCoreToDef('JsCreateTypeError');
@@ -388,44 +388,46 @@ class Maker extends X64Assembler {
                         this.cvttsd2si_r_rp(temp, source.reg, source.offset);
                         this.mov_rp_r(target.reg, target.offset, temp);
                     }
-                } else if (type === RawTypeId.Boolean) {
-                    if (target === source) {
-                        // same
-                    } else {
-                        this.movzx_r_rp(temp, source.reg, source.offset, OperationSize.byte);
-                        this.mov_rp_r(target.reg, target.offset, temp, OperationSize.byte);
-                    }
-                } else if (type === RawTypeId.Int32) {
-                    if (target === source) {
-                        // same
-                    } else {
-                        this.movsxd_r_rp(temp, source.reg, source.offset);
-                        this.mov_rp_r(target.reg, target.offset, temp);
+                } else if (type === RawTypeId.Float32) {
+                    if (reverse) { // float32_t -> float64_t
+                        this.cvtss2sd_r_rp(ftemp, source.reg, source.offset);
+                        this.movsd_rp_r(target.reg, target.offset, ftemp);
+                    } else { // float64_t -> float32_t
+                        this.cvtsd2ss_r_rp(ftemp, source.reg, source.offset);
+                        this.movss_rp_r(target.reg, target.offset, ftemp);
                     }
                 } else {
                     if (target === source) {
                         // same
                     } else {
-                        this.mov_r_rp(temp, source.reg, source.offset);
-                        this.mov_rp_r(target.reg, target.offset, temp);
+                        if (type === RawTypeId.Boolean) {
+                            this.movzx_r_rp(temp, source.reg, source.offset, OperationSize.byte);
+                            this.mov_rp_r(target.reg, target.offset, temp, OperationSize.byte);
+                        } else if (type === RawTypeId.Int32) {
+                            this.movsxd_r_rp(temp, source.reg, source.offset);
+                            this.mov_rp_r(target.reg, target.offset, temp);
+                        } else {
+                            this.mov_r_rp(temp, source.reg, source.offset);
+                            this.mov_rp_r(target.reg, target.offset, temp);
+                        }
                     }
                 }
             } else {
                 if (type === RawTypeId.FloatAsInt64) {
-                    if (reverse) { // int64_t.float64_t
+                    if (reverse) { // int64_t -> float64_t
                         this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
                         this.movsd_rp_r(target.reg, target.offset, FloatRegister.xmm0);
-                    } else { // float64_t.int64_t
+                    } else { // float64_t -> int64_t
                         this.cvttsd2si_r_r(temp, source.freg);
                         this.mov_rp_r(target.reg, target.offset, temp);
                     }
                 } else if (type === RawTypeId.Float64) {
                     this.movsd_rp_r(target.reg, target.offset, source.freg);
                 } else if (type === RawTypeId.Float32) {
-                    if (reverse) { // float32_t.float64_t
+                    if (reverse) { // float32_t -> float64_t
                         this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
                         this.movsd_rp_r(target.reg, target.offset, FloatRegister.xmm0);
-                    } else { // float64_t.float32_t
+                    } else { // float64_t -> float32_t
                         this.cvtsd2ss_r_r(FloatRegister.xmm0, source.freg);
                         this.movss_rp_r(target.reg, target.offset, FloatRegister.xmm0);
                     }
@@ -438,17 +440,17 @@ class Maker extends X64Assembler {
         } else {
             if (source.memory) {
                 if (type === RawTypeId.FloatAsInt64) {
-                    if (reverse) {
+                    if (reverse) { // int64_t -> float64_t
                         this.cvtsi2sd_r_rp(target.freg, source.reg, source.offset);
-                    } else {
+                    } else { // float64_t -> int64_t
                         this.cvttsd2si_r_rp(target.reg, source.reg, source.offset);
                     }
                 } else if (type === RawTypeId.Float64) {
                     this.movsd_r_rp(target.freg, source.reg, source.offset);
                 } else if (type === RawTypeId.Float32) {
-                    if (reverse) { // float32_t.float64_t
+                    if (reverse) { // float32_t -> float64_t
                         this.cvtss2sd_r_rp(target.freg, source.reg, source.offset);
-                    } else { // float64_t.float32_t
+                    } else { // float64_t -> float32_t
                         this.cvtsd2ss_r_rp(target.freg, source.reg, source.offset);
                     }
                 } else if (type === RawTypeId.Boolean) {
@@ -465,16 +467,18 @@ class Maker extends X64Assembler {
                     } else {
                         this.cvttsd2si_r_r(target.reg, source.freg);
                     }
+                } else if (type === RawTypeId.Float32) {
+                    if (reverse) { // float32_t -> float64_t
+                        this.cvtss2sd_r_r(target.freg, source.freg);
+                    } else { // float64_t -> float32_t
+                        this.cvtsd2ss_r_r(target.freg, source.freg);
+                    }
                 } else {
-                    if (target !== source) {
+                    if (target === source) {
+                        // same
+                    } else {
                         if (type === RawTypeId.Float64) {
                             this.movsd_r_r(target.freg, source.freg);
-                        } else if (type === RawTypeId.Float32) {
-                            if (reverse) { // float32_t.float64_t
-                                this.cvtss2sd_r_r(target.freg, source.freg);
-                            } else { // float64_t.float32_t
-                                this.cvtsd2ss_r_r(target.freg, source.freg);
-                            }
                         } else {
                             this.mov_r_r(target.reg, source.reg);
                         }

@@ -7,6 +7,7 @@ import readline = require('readline');
 import ProgressBar = require('progress');
 import { https } from 'follow-redirects';
 import BDSX_CORE_VERSION = require('../version-bdsx.json');
+import BDS_VERSION = require('../version-bds.json');
 
 const BDSX_YES = process.env.BDSX_YES;
 if (BDSX_YES === 'skip') {
@@ -15,7 +16,6 @@ if (BDSX_YES === 'skip') {
 
 const sep = path.sep;
 
-const BDS_VERSION = '1.16.201.02';
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_VERSION}.zip`;
 const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
 

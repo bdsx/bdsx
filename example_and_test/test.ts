@@ -3,14 +3,16 @@
  */
 
 import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, serverControl, serverInstance } from "bdsx";
+import { asm, FloatRegister } from "bdsx/assembler";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
-import { proc2 } from "bdsx/bds/proc";
+import { proc2 } from "bdsx/bds/symbols";
 import { capi } from "bdsx/capi";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
+import { RawTypeId } from "bdsx/makefunc";
 import { bin64_t, NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
@@ -295,6 +297,13 @@ Tester.test({
         str.value = longcase;
         this.assert(str.value === longcase, 'failed with long text');
         str[NativeType.dtor]();
+    },
+
+    makefunc() {
+        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float64, null, RawTypeId.Float32);
+        this.assert(floatToDouble(123) === 123, 'float to double');
+        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float32, null, RawTypeId.Float64);
+        this.assert(doubleToFloat(123) === 123, 'double to float');
     },
     
     async command(){

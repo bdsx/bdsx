@@ -1,6 +1,7 @@
 
+import { proc2 } from './bds/symbols';
 import { abstract, emptyFunc } from './common';
-import { pdb, StaticPointer, VoidPointer } from './core';
+import { StaticPointer, VoidPointer } from './core';
 import { makefunc, RawTypeId } from './makefunc';
 import { Singleton } from './singleton';
 
@@ -282,14 +283,8 @@ export const float64_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setFloat64(v, offset));
 export type float64_t = number;
 
-const strfn = pdb.getList(pdb.coreCachePath, {}, [
-    '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ', 
-    '?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'
-]);
-pdb.close();
-
-const string_ctor = makefunc.js(strfn['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
-const string_dtor = makefunc.js(strfn['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], RawTypeId.Void, null, VoidPointer);
+const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
+const string_dtor = makefunc.js(proc2['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], RawTypeId.Void, null, VoidPointer);
 
 export const CxxString = new NativeType<string>(
     0x20, 8,
