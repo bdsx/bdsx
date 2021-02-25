@@ -102,7 +102,7 @@ export class TextLineParser {
             if (res === null) {
                 content = context.substr(this.p);
                 this.matchedWidth = content.length;
-                this.p = content.length;
+                this.p = this.context.length;
             } else {
                 if (res.index === 0) {
                     this.p = spaceMatch.lastIndex;
