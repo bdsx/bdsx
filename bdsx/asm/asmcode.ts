@@ -10,7 +10,7 @@ import path = require('path');
 
 let res:Record<string, StaticPointer>;
 try {
-    res = asm.loadFromFile(path.join(__dirname, '../bdsx/asm/asmcode.asm'), makefuncDefines, true).allocs();
+    res = asm.loadFromFile(path.join(__dirname, './asmcode.asm'), makefuncDefines, true).allocs();
     
 } catch (err) {
     if (!(err instanceof ParsingError)) {
