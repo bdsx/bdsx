@@ -3,8 +3,12 @@
 console.log("From Script> Hello, World!");
 
 import './test';
-import './addonscript';
+import './bedrockapi-system';
+import './bedrockapi-events';
+import './bedrockapi-executecommand';
+import './bedrockapi-inventory';
 import './customcommand';
+import './attribute';
 import './net-chat';
 import './net-login';
 import './net-printall';
@@ -16,4 +20,3 @@ import './net-halfmove';
 import './lowlevel-dll';
 import './lowlevel-apihooking';
 import './lowlevel-nativeclass';
-import './lowlevel-assembler';

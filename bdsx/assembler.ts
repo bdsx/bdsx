@@ -3,8 +3,9 @@ import { bin64_t } from "./nativetype";
 import { polynominal } from "./polynominal";
 import { remapStack } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
-import { getLineAt, hex } from "./util";
+import { getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
+import { ScriptWriter } from "./writer/scriptwriter";
 import fs = require('fs');
 
 export enum Register
@@ -77,7 +78,12 @@ export enum OperationSize
     xmmword
 }
 
-const sizemap = new Map<string, {bytes: number, size:OperationSize}>([
+interface TypeSize {
+    bytes: number;
+    size:OperationSize;
+}
+
+const sizemap = new Map<string, TypeSize>([
     ['void', {bytes: 0, size: OperationSize.void} ],
     ['byte', {bytes: 1, size: OperationSize.byte} ],
     ['word', {bytes: 2, size: OperationSize.word} ],
@@ -249,12 +255,6 @@ class AsmChunk extends BufferWriter {
     }
 }
 
-enum LabelType {
-    Unknown,
-    Label,
-    Proc,
-}
-
 class Identifier {
     constructor(
         public name:string) {
@@ -277,7 +277,6 @@ class AddressIdentifier extends Identifier {
 }
 
 class Label extends AddressIdentifier {
-    public type:LabelType = LabelType.Unknown;
     constructor(name:string) {
         super(name, null, 0);
     }
@@ -324,7 +323,6 @@ const SIZE_MAX_VAL:{[key in OperationSize]?:number|bin64_t}= {
     [OperationSize.word]: INT16_MAX,
     [OperationSize.dword]: INT32_MAX,
     [OperationSize.qword]: bin.make64(INT32_MAX, -1),
-    [OperationSize.qword]: bin.make64(INT32_MAX, -1),
 };
 
 const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0);
@@ -333,20 +331,24 @@ export class X64Assembler {
 
     private memoryChunkSize = 0;
     private memoryChunkAlign = 1;
-    private memoryChunkAlignBit = 0;
     private constChunk:AsmChunk|null = null;
     private chunk:AsmChunk;
     private readonly ids = new Map<string, Identifier>();
+    private readonly scopeStack:Set<string>[] = [];
+    private scope = new Set<string>();
 
     private pos:SourcePosition|null = null;
 
-    private _polynominalToAddress(text:string, offset:number, lineNumber:number):[Register|null, Register|null, number] {
+    private _polynominal(text:string, offset:number, lineNumber:number):polynominal.Operand {
         let res = polynominal.parse(text, lineNumber, offset);
         for (const [name, value] of this.ids) {
             if (!(value instanceof Constant)) continue;
             res = res.defineVariable(name, value.value);
         }
-        const poly = res.asAdditive();
+        return res;
+    }
+    private _polynominalToAddress(text:string, offset:number, lineNumber:number):[Register|null, Register|null, number] {
+        const poly = this._polynominal(text, offset, lineNumber).asAdditive();
         let varcount = 0;
 
         function error(message:string, column:number=0, width:number = text.length):never {
@@ -397,6 +399,13 @@ export class X64Assembler {
 
     getDefAreaAlign():number {
         return this.memoryChunkAlign;
+    }
+
+    setDefArea(size:number, align:number):void {
+        this.memoryChunkSize = size;
+        this.memoryChunkAlign = align;
+        const alignbit = Math.log2(align);
+        if ((alignbit|0) !== alignbit) throw Error('Invalid alignment '+align);
     }
 
     connect(cb:(asm:X64Assembler)=>this):this {
@@ -620,12 +629,11 @@ export class X64Assembler {
         return this._jmp(isCall, r, 0, MovOper.Register);
     }
 
-    def(name:string, size:OperationSize, bytes:number, align:number):this {
+    def(name:string, size:OperationSize, bytes:number, align:number, exportDef:boolean = false):this {
         if (align < 1) align = 1;
         const alignbit = Math.log2(align);
         if ((alignbit|0) !== alignbit) throw Error('Invalid alignment '+align);
         if (align > this.memoryChunkAlign) {
-            this.memoryChunkAlignBit = alignbit;
             this.memoryChunkAlign = align;
         }
 
@@ -635,11 +643,15 @@ export class X64Assembler {
         if (name === '') return this;
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
         this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, size));
+        if (!exportDef) this.scope.add(name);
         return this;
     }
     
     lea_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this {
-        if (offset === 0 && src !== Register.rip) return this.mov_r_r(dest, src, size);
+        if (offset === 0 && src !== Register.rip) {
+            if (dest === src) return this;
+            return this.mov_r_r(dest, src, size);
+        }
         return this._mov(src, dest, null, offset, 0, MovOper.Lea, size);
     }
 
@@ -1119,9 +1131,12 @@ export class X64Assembler {
         return this;
     }
     
-    movsx_r_rp(dest:Register, src:Register, offset:number, size:OperationSize):this {
-        this._rex(src, dest, null, OperationSize.qword);
-        switch (size) {
+    private _movsx(dest:Register, src:Register, offset:number, destsize:OperationSize, srcsize:OperationSize, oper:MovOper):this {
+        if (destsize == null || srcsize == null) throw Error(`Need operand size`);
+        if (srcsize > OperationSize.dword) throw Error(`Unexpected source operand size, ${OperationSize[destsize] || destsize}`);
+        if (destsize <= srcsize) throw Error(`Unexpected operand size, ${OperationSize[srcsize] || srcsize} to ${OperationSize[destsize] || destsize}`);
+        this._rex(src, dest, null, destsize);
+        switch (srcsize) {
         case OperationSize.byte:
             this.put(0x0f);
             this.put(0xbe);
@@ -1134,29 +1149,41 @@ export class X64Assembler {
             this.put(0x63);
             break;
         default:
-            throw Error(`Invalid operand size, ${OperationSize[size] || size}`);
+            throw Error(`Invalid destination operand size, ${OperationSize[srcsize] || srcsize}`);
         }
-        return this._target(0, src, dest, null, src, offset, MovOper.Read);
-    }
-    movsxd_r_rp(dest:Register, src:Register, offset:number):this {
-        return this.movsx_r_rp(dest, src, offset, OperationSize.dword);
+        return this._target(0, src, dest, null, src, offset, oper);
     }
 
-    private _movzx(r1:Register, r2:Register, r3:Register|null, offset:number, size:OperationSize, oper:MovOper):this {
-        if (size == null) throw Error(`Need operand size`);
-        if (size >= OperationSize.dword) throw Error(`Unexpected operand size ${OperationSize[size]}`);
-        this._rex(r1, r2, null, OperationSize.dword);
+    movsx_r_rp(dest:Register, src:Register, offset:number, destsize:OperationSize, srcsize:OperationSize):this {
+        return this._movsx(dest, src, offset, destsize, srcsize, MovOper.Read);
+    }
+    movsxd_r_rp(dest:Register, src:Register, offset:number):this {
+        return this.movsx_r_rp(dest, src, offset, OperationSize.qword, OperationSize.dword);
+    }
+    
+    movsx_r_r(dest:Register, src:Register, destsize:OperationSize, srcsize:OperationSize):this {
+        return this._movsx(dest, src, 0, destsize, srcsize, MovOper.Register);
+    }
+    movsxd_r_r(dest:Register, src:Register):this {
+        return this.movsx_r_r(dest, src, OperationSize.qword, OperationSize.dword);
+    }
+
+    private _movzx(r1:Register, r2:Register, r3:Register|null, offset:number, destsize:OperationSize, srcsize:OperationSize, oper:MovOper):this {
+        if (destsize == null || srcsize == null) throw Error(`Need operand size`);
+        if (srcsize >= OperationSize.dword) throw Error(`Unexpected source operand size, ${OperationSize[destsize]}`);
+        if (destsize <= srcsize) throw Error(`Unexpected operand size, ${OperationSize[srcsize]} to ${OperationSize[destsize]}`);
+        this._rex(r1, r2, null, destsize);
         this.put(0x0f);
         let opcode = 0xb6;
-        if (size === OperationSize.word) opcode |= 1;
+        if (srcsize === OperationSize.word) opcode |= 1;
         this.put(opcode);
         return this._target(0, r1, r2, r3, r1, offset, oper);
     }
-    movzx_r_r(dest:Register, src:Register, size:OperationSize):this {
-        return this._movzx(src, dest, null, 0, size, MovOper.Register);
+    movzx_r_r(dest:Register, src:Register, destsize:OperationSize, srcsize:OperationSize):this {
+        return this._movzx(src, dest, null, 0, destsize, srcsize, MovOper.Register);
     }
-    movzx_r_rp(dest:Register, src:Register, offset:number, size:OperationSize):this {
-        return this._movzx(src, dest, null, offset, size, MovOper.Read);
+    movzx_r_rp(dest:Register, src:Register, offset:number, destsize:OperationSize, srcsize:OperationSize):this {
+        return this._movzx(src, dest, null, offset, destsize, srcsize, MovOper.Read);
     }
 
     private _movsf(r1:Register|FloatRegister, r2:Register|FloatRegister, offset:number, oper:MovOper, foper:FloatOper, size:OperationSize, doublePrecision:boolean):this {
@@ -1236,15 +1263,15 @@ export class X64Assembler {
         return this._movsf(src, dest, offset, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword, false);
     }
 
-    label(labelName:string, type:LabelType = LabelType.Label):this {
+    label(labelName:string, exportDef:boolean = false):this {
         const label = this._getJumpTarget(labelName);
         if ((label instanceof Defination) || label.chunk !== null) {
             throw Error(`${labelName} is already defined`);
         }
         label.chunk = this.chunk;
         label.offset = this.chunk.size;
-        label.type = type;
         this.chunk.ids.push(label);
+        if (!exportDef) this.scope.add(labelName);
 
         let now = this.chunk;
         let prev = now.prev!;
@@ -1272,7 +1299,6 @@ export class X64Assembler {
         if (label.chunk !== null) throw Error(`${labelName} is already defined`);
         label.chunk = this.chunk;
         label.offset = this.chunk.size;
-        label.type = LabelType.Label;
         this.chunk.ids.push(label);
         let now = this.chunk;
         let prev = now.prev!;
@@ -1479,7 +1505,7 @@ export class X64Assembler {
             if (id instanceof AddressIdentifier) {
                 if (id.chunk === null) {
                     if (!final) continue;
-                    putError(id.name, 'Chunk is not defined');
+                    putError(id.name, 'Label is not defined');
                     continue;
                 }
                 if (!ids.has(id)) {
@@ -1536,8 +1562,6 @@ export class X64Assembler {
         const bufsize = (this.chunk.size + memalign - 1) & ~(memalign-1);
         this.chunk.putRepeat(0xcc, bufsize - this.chunk.size);
 
-
-
         try {
             chunk.resolveAll();
         } catch (err) {
@@ -1572,30 +1596,30 @@ export class X64Assembler {
     jle_label(label:string):this { return this._jmp_o_label(JumpOperation.jle, label); }
     jg_label(label:string):this { return this._jmp_o_label(JumpOperation.jg, label); }
 
-    proc(name:string):this {
-        return this.label(name, LabelType.Proc);
+    proc(name:string, exportDef:boolean = false):this {
+        this.label(name, exportDef);
+        this.scopeStack.push(this.scope);
+        this.scope = new Set;
+        return this;
     }
 
     endp():this {
+        if (this.scopeStack.length === 0) throw Error(`end of scope`);
+        const scope = this.scope;
+        this.scope = this.scopeStack.pop()!;
+
         this._check(false);
         
-        for (const [labelName, label] of this.ids) {
-            if (!(label instanceof Label)) continue;
-            switch (label.type) {
-            case LabelType.Label:
-                this.ids.delete(labelName);
-                break;
-            case LabelType.Unknown:
-                label.type = LabelType.Proc;
-                break;
-            }
+        for (const name of scope) {
+            this.ids.delete(name);
         }
         return this;
     }
 
-    const(name:string, value:number):this {
+    const(name:string, value:number, exportDef:boolean = false):this {
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
         this.ids.set(name, new Constant(name, value));
+        if (!exportDef) this.scope.add(name);
         return this;
     }
 
@@ -1603,14 +1627,27 @@ export class X64Assembler {
         const commentIdx = lineText.search(COMMENT_REGEXP);
         const parser = new TextLineParser(commentIdx === -1 ? lineText : lineText.substr(0, commentIdx), lineNumber);
 
+        let paramIdx = -1;
+        const sizes:(OperationSize|null)[] = [null, null];
+        let extendingCommand = false;
         function setSize(nsize:OperationSize|undefined):void {
             if (nsize === undefined) return;
-            if (size === null) {
-                size = nsize;
+
+            let idx = 0;
+            if (extendingCommand) {
+                idx = paramIdx;
+                if (idx >= 2) {
+                    throw parser.error(`Too many operand`);
+                }
+            }
+
+            const osize = sizes[idx];
+            if (osize === null) {
+                sizes[idx] = nsize;
                 return;
             }
-            if (size !== nsize) {
-                parser.error(`Operation size unmatched (${OperationSize[size]} != ${OperationSize[nsize]})`);
+            if (osize !== nsize) {
+                throw parser.error(`Operation size unmatched (${OperationSize[osize]} != ${OperationSize[nsize]})`);
             }
         }
 
@@ -1623,25 +1660,25 @@ export class X64Assembler {
                 type_base = type_base.substr(0, brace).trim();
                 brace++;
                 const braceEnd = type.indexOf(']', brace);
-                if (braceEnd === -1) parser.error(`brace end not found: '${type}'`);
+                if (braceEnd === -1) throw parser.error(`brace end not found: '${type}'`);
                 
                 const braceInner = type.substring(brace, braceEnd).trim();
                 const trails = type.substr(braceEnd+1).trim();
-                if (trails !== '') parser.error(`Unexpected characters '${trails}'`);
+                if (trails !== '') throw parser.error(`Unexpected characters '${trails}'`);
                 const res = polynominal.parseToNumber(braceInner);
-                if (res === null) parser.error(`Unexpected array length '${braceInner}'`);
+                if (res === null) throw parser.error(`Unexpected array length '${braceInner}'`);
                 arraySize = res!;
             }
 
             const size = sizemap.get(type_base);
-            if (size === undefined) parser.error(`Unexpected type name '${type}'`);
+            if (size === undefined) throw parser.error(`Unexpected type name '${type}'`);
 
-            return {bytes: size!.bytes * Math.max(arraySize, 1), size:size!.size, align:size!.bytes, arraySize};
+            return {bytes: size.bytes * Math.max(arraySize, 1), size:size.size, align:size.bytes, arraySize};
         }
 
         const readConstString = (addressCommand:boolean, encoding:BufferEncoding):void=>{
             const quotedString = parser.readQuotedStringTo('"');
-            if (quotedString === null) parser.error('Invalid quoted string');
+            if (quotedString === null) throw parser.error('Invalid quoted string');
             if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
             const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
             this.constChunk.write(Buffer.from(quotedString+'\0', encoding));
@@ -1657,59 +1694,101 @@ export class X64Assembler {
             parser.skipSpaces();
         };
 
+        const defining = (command:string, exportDef:boolean):boolean=>{
+            switch (command) {
+            case 'const': {
+                const [name, type] = parser.readToSpace().split(':');
+                let size:TypeSize|null|undefined = null;
+                if (type !== undefined) {
+                    size = sizemap.get(type);
+                    if (size === undefined) throw parser.error(`Unexpected type syntax '${type}'`);
+                }
+                const text = parser.readAll();
+                const value = this._polynominal(text, parser.lineNumber, parser.matchedIndex);
+                if (!(value instanceof polynominal.Constant)) {
+                    throw parser.error(`polynominal is not constant '${text}'`);
+                }
+                let valueNum = value.value;
+                if (size !== null) {
+                    switch (size.size) {
+                    case OperationSize.byte:
+                        valueNum = valueNum<<24>>24;
+                        break;
+                    case OperationSize.word:
+                        valueNum = valueNum<<16>>16;
+                        break;
+                    case OperationSize.dword:
+                        valueNum = valueNum|0;
+                        break;
+                    }
+                }
+                try {
+                    this.const(name, valueNum, exportDef);
+                } catch (err) {
+                    throw parser.error(err.message);
+                }
+                return true;
+            }
+            case 'def': {
+                const name = parser.readTo(':');
+                const type = parser.readAll();
+                const res = parseType(type);
+                try {
+                    this.def(name, res.size, res.bytes, res.align, exportDef);
+                } catch (err) {
+                    throw parser.error(err.message);
+                }
+                return true;
+            }
+            case 'proc':
+                try {
+                    this.proc(parser.readAll().trim(), exportDef);
+                } catch (err) {
+                    throw parser.error(err.message);
+                }
+                return true;
+            default: return false;
+            }
+        };
+
         const command_base = parser.readToSpace();
         if (command_base === '') return;
         let command = command_base;
         const callinfo:string[] = [command_base];
 
         const totalIndex = parser.matchedIndex;
-        let size:OperationSize|null = null;
 
         let unresolvedConstant:Identifier|null = null;
         let unresolvedPos:SourcePosition|null = null;
 
         const args:any[] = [];
         if (!parser.eof()){
-            let extendingCommand = false;
             let addressCommand = false;
             let jumpCommand = false;
-            if (command === 'const') {
-                const name = parser.readToSpace();
-                const value = parser.readToSpace();
-                const valueNum = polynominal.parseToNumber(value);
-                if (valueNum === null) parser.error(`Unexpected number syntax '${value}'`);
-                try {
-                    this.const(name, valueNum!);
-                } catch (err) {
-                    parser.error(err.message);
+            switch (command) {
+            case 'export':
+                if (!defining(parser.readToSpace(), true)) {
+                    throw parser.error(`non export-able syntax`);
                 }
                 return;
-            } else if (command === 'def') {
-                const name = parser.readTo(':');
-                const type = parser.readAll();
-                const res = parseType(type);
-                try {
-                    this.def(name, res.size, res.bytes, res.align);
-                } catch (err) {
-                    parser.error(err.message);
-                }
-                return;
-            } else if (command === 'movsx' || command === 'movzx') {
+            case 'movsx':
+            case 'movzx':
                 extendingCommand = true;
-            } else if (command === 'lea') {
+                break;
+            case 'lea':
                 addressCommand = true;
-            } else if (command === 'proc') {
-                try {
-                    this.proc(parser.readAll().trim());
-                } catch (err) {
-                    parser.error(err.message);
+                break;
+            default:
+                if (command.startsWith('j') || command === 'call') {
+                    jumpCommand = true;
                 }
-                return;
-            } else if (command.startsWith('j') || command === 'call') {
-                jumpCommand = true;
+                if (defining(command, false)) return;
+                break;
             }
             
             while (!parser.eof()) {
+                paramIdx++;
+
                 parser.skipSpaces();
 
                 if (parser.nextIf('"')) {
@@ -1725,29 +1804,28 @@ export class X64Assembler {
                 const constval = polynominal.parseToNumber(param);
                 if (constval !== null) { // number
                     if (isNaN(constval)) {
-                        return parser.error(`Unexpected number syntax ${callinfo.join(' ')}'`);
+                        throw parser.error(`Unexpected number syntax ${callinfo.join(' ')}'`);
                     }
                     command += '_c';
                     callinfo.push('(constant)');
                     args.push(constval);
                 } else if (param.endsWith(']')) { // memory access
                     let end = param.indexOf('[');
-                    if (end === null) parser.error(`Unexpected bracket syntax ${param}'`);
+                    if (end === null) throw parser.error(`Unexpected bracket syntax ${param}'`);
                     const iparser = new TextLineParser(param.substr(0, end), lineNumber, parser.matchedIndex);
                     
                     end++;
                     const bracketInnerStart = parser.matchedIndex + end + 1;
 
-
                     const words = [...iparser.splitWithSpaces()];
                     if (words.length !== 0) {
                         if ((words.length !== 2) || words[1] !== 'ptr') {
-                            parser.error(`Invalid address syntax: ${param}`);
+                            throw parser.error(`Invalid address syntax: ${param}`);
                         }
                         const sizename = words[0];
                         const size = sizemap.get(sizename);
                         if (size === undefined || size.size === OperationSize.void) {
-                            parser.error(`Unexpected size name: ${sizename}`);
+                            throw parser.error(`Unexpected size name: ${sizename}`);
                         }
                         if (addressCommand) setSize(OperationSize.qword);
                         else setSize(size!.size!);
@@ -1756,7 +1834,6 @@ export class X64Assembler {
                     const inner = param.substring(end, param.length-1);
                     const [r1, r2, c] = this._polynominalToAddress(inner, bracketInnerStart, lineNumber);
                     if (r1 === null) {
-
                         throw new ParsingError('need one register at least', {
                             column: bracketInnerStart,
                             width: inner.length, 
@@ -1778,11 +1855,7 @@ export class X64Assembler {
                     const type = regmap.get(param.toLowerCase());
                     if (type) {
                         const [name, reg, size]  = type;
-                        if (extendingCommand) {
-                            if (size < OperationSize.dword || size > OperationSize.qword) {
-                                parser.error(`Invalid operand size ${OperationSize[size] || size}`);
-                            }
-                        } else setSize(size);
+                        setSize(size);
                         command += '_'+name.short;
                         args.push(reg);
                         callinfo.push('('+name.name+')');
@@ -1795,7 +1868,7 @@ export class X64Assembler {
                         } else if (id instanceof Defination) {
                             command += '_rp';
                             callinfo.push('(register pointer)');
-                            if (id.size === OperationSize.void) parser.error(`Invalid operand type`);
+                            if (id.size === OperationSize.void) throw parser.error(`Invalid operand type`);
                             args.push(Register.rip);
                             args.push(0);
                             unresolvedConstant = id;
@@ -1825,11 +1898,16 @@ export class X64Assembler {
         }
 
         command = command.toLowerCase();
-        if (size !== null) args.push(size);
+        if (sizes[0] !== null) {
+            args.push(sizes[0]);
+            if (sizes[1] !== null) {
+                args.push(sizes[1]);
+            }
+        }
 
         const fn = (this as any)[command];
         if (typeof fn !== 'function') {
-            parser.error(`Unexpected command '${callinfo.join(' ')}'`);
+            throw parser.error(`Unexpected command '${callinfo.join(' ')}'`);
         }
         try {
             this.pos = unresolvedPos;
@@ -1841,11 +1919,11 @@ export class X64Assembler {
             }
         } catch (err) {
             console.log(remapStack(err.stack));
-            parser.error(err.message);
+            throw parser.error(err.message);
         }
     }
 
-    compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):Uint8Array{
+    compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):void{
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
@@ -1877,7 +1955,23 @@ export class X64Assembler {
         }
 
         if (errs !== null && errs.error !== null) throw errs.error;
+        
+        try {
+            this._normalize();
+        } catch (err) {
+            if (err instanceof ParsingError) {
+                if (reportDirectWithFileName) {
+                    err.report(reportDirectWithFileName, err.pos !== null ? getLineAt(source, err.pos.line-1) : null);
+                }
+                errs.add(err);
+                throw errs;
+            } else {
+                throw err;
+            }
+        }
+    }
 
+    save():Uint8Array {
         function writeArray<T>(array:T[], writer:(value:T)=>void):void {
             for (const item of array) {
                 writer(item);
@@ -1894,6 +1988,7 @@ export class X64Assembler {
         const labels:Label[] = [];
         const defs:Defination[] = [];
         for (const id of this.ids.values()) {
+            if (this.scope.has(id.name)) continue;
             if (id instanceof Label) {
                 labels.push(id);
             } else if (id instanceof Defination) {
@@ -1902,28 +1997,107 @@ export class X64Assembler {
         }
         labels.sort((a,b)=>a.offset-b.offset);
 
-        out.writeVarUint(this.memoryChunkAlignBit);
+        out.writeVarUint(Math.log2(this.memoryChunkAlign));
         let address = 0;
         writeArray(labels, writeAddress);
         address = 0;
         writeArray(defs, writeAddress);
         out.writeVarUint(this.memoryChunkSize - address);
+        out.write(this.buffer());
+        return out.buffer();
+    }
 
-        try {
-            out.write(this.buffer());
-            return out.buffer();
-        } catch (err) {
-            if (err instanceof ParsingError) {
-                if (reportDirectWithFileName) {
-                    err.report(reportDirectWithFileName, err.pos !== null ? getLineAt(source, err.pos.line-1) : null);
+    toTypeScript():string {
+        const buffer = this.buffer();
+        const script = new ScriptWriter;
+        script.writeln("import { cgate, VoidPointer, NativePointer } from 'bdsx/core';");
+        const n = buffer.length & ~1;
+        script.writeln(`const buffer = cgate.allocExecutableMemory(${buffer.length+this.memoryChunkSize}, ${this.memoryChunkAlign});`);
+
+        script.script += "buffer.setBin('";
+        for (let i=0;i<n;) {
+            const low = buffer[i++];
+            const high = buffer[i++];
+
+            const hex = ((high << 8) | low).toString(16);
+            const count = 4-hex.length;
+            script.script += '\\u';
+            if (count !== 0) script.script += '0'.repeat(count);
+            script.script += hex;
+        }
+        if (buffer.length !== n) {
+            const low = buffer[n];
+            const hex = ((0xcc << 8) | low).toString(16);
+            const count = 4-hex.length;
+            script.script += '\\u';
+            if (count !== 0) script.script += '0'.repeat(count);
+            script.script += hex;
+        }
+        script.writeln("');");
+        // script.writeln();
+        script.writeln('export = {');
+        script.tab(4);
+        
+        for (const id of this.ids.values()) {
+            if (this.scope.has(id.name)) continue;
+            if (id instanceof Label) {
+                script.writeln(`get ${id.name}():NativePointer{`);
+                script.writeln(`    return buffer.add(${id.offset});`);
+                script.writeln(`},`);
+            } else if (id instanceof Defination) {
+                const off = buffer.length + id.offset;
+                if (id.size === undefined) {
+                    script.writeln(`get ${id.name}():NativePointer{`);
+                    script.writeln(`    return buffer.add(${off});`);
+                    script.writeln(`},`);
+                } else {
+                    switch (id.size) {
+                    case OperationSize.byte:
+                        script.writeln(`get ${id.name}():number{`);
+                        script.writeln(`    return buffer.getUint8(${off});`);
+                        script.writeln(`},`);
+                        script.writeln(`set ${id.name}(n:number):number{`);
+                        script.writeln(`    buffer.setUint8(n, ${off});`);
+                        script.writeln(`},`);
+                        break;
+                    case OperationSize.word:
+                        script.writeln(`get ${id.name}():number{`);
+                        script.writeln(`    return buffer.getUint16(${off});`);
+                        script.writeln(`},`);
+                        script.writeln(`set ${id.name}(n:number){`);
+                        script.writeln(`    buffer.setUint16(n, ${off});`);
+                        script.writeln(`},`);
+                        break;
+                    case OperationSize.dword:
+                        script.writeln(`get ${id.name}():number{`);
+                        script.writeln(`    return buffer.getInt32(${off});`);
+                        script.writeln(`},`);
+                        script.writeln(`set ${id.name}(n:number){`);
+                        script.writeln(`    buffer.setInt32(n, ${off});`);
+                        script.writeln(`},`);
+                        break;
+                    case OperationSize.qword:
+                        script.writeln(`get ${id.name}():VoidPointer{`);
+                        script.writeln(`    return buffer.getPointer(${off});`);
+                        script.writeln(`},`);
+                        script.writeln(`set ${id.name}(n:VoidPointer){`);
+                        script.writeln(`    buffer.setPointer(n, ${off});`);
+                        script.writeln(`},`);
+                        break;
+                    default:
+                        script.writeln(`get ${id.name}():NativePointer{`);
+                        script.writeln(`    return buffer.add(${off});`);
+                        script.writeln(`},`);
+                        break;
+                    }
                 }
-                errs.add(err);
-                throw errs;
-            } else {
-                throw err;
             }
         }
+        script.tab(-4);
+        script.writeln('};');
+        return script.script;
     }
+    
     static load(bin:Uint8Array):X64Assembler {
 
         const reader = new BufferReader(bin);
@@ -1963,7 +2137,6 @@ export class X64Assembler {
             const label = new Label(name);
             label.chunk = out.chunk;
             label.offset = offset;
-            label.type = LabelType.Proc;
             out.ids.set(name, label);
             out.chunk.ids.push(label);
         }
@@ -2214,7 +2387,9 @@ export namespace asm
     }
 
     export function compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):Uint8Array{
-        return asm().compile(source, defines, reportDirectWithFileName);
+        const code = asm();
+        code.compile(source, defines, reportDirectWithFileName);
+        return code.save();
     }
 
     export function load(bin:Uint8Array):X64Assembler {
@@ -2222,18 +2397,19 @@ export namespace asm
     }
     
     export function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):X64Assembler{
-        const binpath = src.substr(0, src.lastIndexOf('.')+1)+'bin';
+        const basename = src.substr(0, src.lastIndexOf('.')+1);
+        const binpath = basename+'bin';
 
         let buffer:Uint8Array;
         if (checkModified(src, binpath)){
             buffer = asm.compile(fs.readFileSync(src, 'utf-8'), defines, reportDirect ? src : null);
             fs.writeFileSync(binpath, buffer);
+            console.log(`Please reload it`);
+            process.exit(0);
         } else {
             buffer = fs.readFileSync(binpath);
         }
-
         return asm.load(buffer);
     }
-
 }
 

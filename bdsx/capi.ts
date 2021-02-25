@@ -1,15 +1,15 @@
 import asmcode = require("./asm/asmcode");
-import { asm } from "./assembler";
 import { chakraUtil, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
-import { RawTypeId } from "./makefunc";
+import { makefunc, RawTypeId } from "./makefunc";
 
 export namespace capi
 {
     export const nodeThreadId = dll.kernel32.GetCurrentThreadId();
-    export const debugBreak = asm().debugBreak().ret().make(RawTypeId.Void);
     
-    asmcode.nodeThreadId.setInt32(nodeThreadId);
+    export const debugBreak = makefunc.js(asmcode.debugBreak, RawTypeId.Void);
+
+    asmcode.nodeThreadId = nodeThreadId;
 
     /**
      * @deprecated use chakraUtil.asJsValueRef

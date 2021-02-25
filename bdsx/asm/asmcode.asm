@@ -22,61 +22,33 @@ const JsSymbol 9
 const JsArrayBuffer 10
 const JsTypedArray 11
 const JsDataView 12
+const EXCEPTION_BREAKPOINT:dword 80000003h
 
-def GetCurrentThreadId:qword
-def bedrockLogNp:qword
-def memcpy:qword
-def asyncAlloc:qword
-def asyncPost:qword
-def sprintf:qword
-def JsHasException:qword
-def JsCreateTypeError:qword
-def JsGetValueType:qword
-def JsStringToPointer:qword
-def JsGetArrayBufferStorage:qword
-def JsGetTypedArrayStorage:qword
-def JsGetDataViewStorage:qword
-def JsConstructObject:qword
-def js_null:qword
-def js_true:qword
-def nodeThreadId:dword
-def JsGetAndClearException:qword
-def runtimeErrorFire:qword
-
-proc logHookAsyncCb
-    mov r8, [rcx + asyncSize + 8]
-    lea rdx, [rcx + asyncSize + 10h]
-    mov rcx, [rcx + asyncSize]
-    jmp bedrockLogNp
-endp
-
-proc logHook
-    call GetCurrentThreadId
-    cmp eax, nodeThreadId
-    jne async_post
-    lea rdx, [rsp + 58h]
-    mov rcx, rdi
-    mov r8, rbx
-    jmp bedrockLogNp
-async_post:
-    sub rsp, 28h
-    lea rdx, [rbx + 11h]
-    lea rcx, logHookAsyncCb
-    call asyncAlloc
-    mov [rax + asyncSize], rdi
-    lea r8, [rbx + 1]
-    mov [rax + asyncSize + 8], r8
-    lea rcx, [rax + asyncSize + 10h]
-    lea rdx, [rsp + 80h]
-    mov [rsp + 20h], rax
-    call memcpy
-    mov rcx, [rsp + 20h]
-    add rsp, 0x28
-    jmp asyncPost
-endp
+export def GetCurrentThreadId:qword
+export def bedrockLogNp:qword
+export def memcpy:qword
+export def asyncAlloc:qword
+export def asyncPost:qword
+export def sprintf:qword
+export def JsHasException:qword
+export def JsCreateTypeError:qword
+export def JsGetValueType:qword
+export def JsStringToPointer:qword
+export def JsGetArrayBufferStorage:qword
+export def JsGetTypedArrayStorage:qword
+export def JsGetDataViewStorage:qword
+export def JsConstructObject:qword
+export def js_null:qword
+export def js_true:qword
+export def nodeThreadId:dword
+export def JsGetAndClearException:qword
+export def runtimeErrorFire:qword
+export def runtimeErrorRaise:qword
+export def RtlCaptureContext:qword
+export def memset:qword
 
 # [[noreturn]]] makefunc_getout()
-proc makefunc_getout
+export proc makefunc_getout
     mov rsp, [rdi + fn_returnPoint]
     and rsp, -2
     pop rcx
@@ -90,7 +62,7 @@ endp
 
 # it uses rax, rdx only
 # size_t strlen(const char* string)
-proc strlen
+export proc strlen
     lea rax, [rcx-1]
 _next:
     add rax, 1
@@ -102,7 +74,7 @@ _next:
 endp
 
 # JsValueRef makeError(char* string, size_t size)
-proc makeError
+export proc makeError
     sub rsp, 88h
     
     lea r8, [rcx+rdx]
@@ -127,7 +99,7 @@ _copy:
 endp
 
 # [[noreturn]] getout_jserror(JsValueRef error)
-proc getout_jserror
+export proc getout_jserror
     sub rsp, 28h
     call [rdi + fn_JsSetException]
     call [rdi + fn_stack_free_all]
@@ -140,7 +112,7 @@ runtimeError:
 endp
 
 # [[noreturn]] getout_invalid_parameter(uint32_t paramNum)
-proc getout_invalid_parameter
+export proc getout_invalid_parameter
     sub rsp, 48h
     test ecx, ecx
     jg paramNum_is_number
@@ -161,7 +133,7 @@ paramNum_is_this:
 endp
 
 # [[noreturn]] getout_invalid_parameter_count(uint32_t actual, uint32_t expected)
-proc getout_invalid_parameter_count
+export proc getout_invalid_parameter_count
     sub rsp, 68h
     mov r9, rcx
     mov r8, rdx
@@ -177,7 +149,7 @@ proc getout_invalid_parameter_count
 endp
 
 # [[noreturn]] getout(JsErrorCode err)
-proc getout
+export proc getout
     sub rsp, 48h
     mov [rsp + 0x28], rcx
     mov rax, [rdi + fn_returnPoint]
@@ -212,7 +184,7 @@ _codeerror:
 endp
 
 # char* str_js2np(JsValueRef value, uint32_t paramNum, char*(*converter)(const char16_t*, size_t))
-proc str_js2np
+export proc str_js2np
     sub rsp, 28h
     mov [rsp+40h], r8
     mov [rsp+38h], rdx
@@ -247,7 +219,7 @@ _null:
 endp
 
 # void* buffer_to_pointer(JsValueRef value, uint32_t paramNum)
-proc buffer_to_pointer
+export proc buffer_to_pointer
     sub rsp, 38h
     mov [rsp+48h], rdx
     mov [rsp+40h], rcx
@@ -321,7 +293,7 @@ _dataView:
 endp
 
 ; const char16_t* utf16_js2np(JsValueRef value, uint32_t paramNum)
-proc utf16_js2np
+export proc utf16_js2np
     sub rsp, 28h
     mov [rsp+38h], rdx
     mov [rsp+30h], rcx
@@ -353,7 +325,7 @@ _failed:
 endp
 
 ; JsValueRef str_np2js(pcstr str, uint32_t paramNum, JsErrorCode(*converter)(const char*, JsValue))
-proc str_np2js
+export proc str_np2js
     sub rsp, 28h
     mov [rsp+38h], rdx
     lea rdx, [rsp+10h]
@@ -369,7 +341,7 @@ _failed:
 endp
 
 ; JsValueRef utf16_np2js(pcstr16 str, uint32_t paramNum)
-proc utf16_np2js
+export proc utf16_np2js
     sub rsp, 28h
     mov [rsp+38h], rdx
 
@@ -396,7 +368,7 @@ _failed:
 endp
 
 ; JsValueRef pointer_np2js_nullable(JsValueRef ctor, void* ptr) noexcept
-proc pointer_np2js_nullable
+export proc pointer_np2js_nullable
     test rdx, rdx
     jnz pointer_np2js
     mov rax, js_null
@@ -404,7 +376,7 @@ proc pointer_np2js_nullable
 endp
 
 ; JsValueRef pointer_np2js(JsValueRef ctor, void* ptr)
-proc pointer_np2js
+export proc pointer_np2js
     sub rsp, 38h
     mov [rsp+48h], rdx
     lea r9, [rsp+20h]
@@ -430,7 +402,7 @@ _failed:
 endp
 
 ; void* pointer_js_new(JsValueRef ctor, JsValueRef* out)
-proc pointer_js_new
+export proc pointer_js_new
     sub rsp, 38h
     mov [rsp+48h], rdx
     mov r9, rdx
@@ -457,7 +429,7 @@ _failed:
 endp
 
 ; int64_t bin64(JsValueRef value, uint32_t paramNum)
-proc bin64
+export proc bin64
     sub rsp, 28h
     mov [rsp+38h], rdx
     lea r8, [rsp+20h]
@@ -506,7 +478,7 @@ endp
 
 
 ; void* wrapper_js2np(JsValueRef func, JsValueRef ptr)
-proc wrapper_js2np
+export proc wrapper_js2np
     sub rsp, 38h
     mov [rsp+30h], rdx
     mov rax, js_null
@@ -530,7 +502,7 @@ _failed:
 endp
 
 ; JsValueRef wrapper_np2js_nullable(void* ptr, JsValueRef func, JsValueRef ctor)
-proc wrapper_np2js_nullable
+export proc wrapper_np2js_nullable
     test rcx, rcx
     jnz wrapper_np2js
     mov rax, js_null
@@ -538,7 +510,7 @@ proc wrapper_np2js_nullable
 endp
 
 ; JsValueRef wrapper_np2js(void* ptr, JsValueRef func, JsValueRef ctor)
-proc wrapper_np2js
+export proc wrapper_np2js
     sub rsp, 38h
     mov [rsp+50h], rcx
     mov [rsp+48h], rdx
@@ -571,3 +543,339 @@ _failed:
     mov ecx, eax
     call getout
 endp
+
+
+; codes for minecraft
+export def uv_async_call:qword
+
+
+export proc logHookAsyncCb
+    mov r8, [rcx + asyncSize + 8]
+    lea rdx, [rcx + asyncSize + 10h]
+    mov rcx, [rcx + asyncSize]
+    jmp bedrockLogNp
+endp
+
+export proc logHook
+    call GetCurrentThreadId
+    cmp eax, nodeThreadId
+    jne async_post
+    lea rdx, [rsp + 58h]
+    mov rcx, rdi
+    mov r8, rbx
+    jmp bedrockLogNp
+async_post:
+    sub rsp, 28h
+    lea rdx, [rbx + 11h]
+    lea rcx, logHookAsyncCb
+    call asyncAlloc
+    mov [rax + asyncSize], rdi
+    lea r8, [rbx + 1]
+    mov [rax + asyncSize + 8], r8
+    lea rcx, [rax + asyncSize + 10h]
+    lea rdx, [rsp + 80h]
+    mov [rsp + 20h], rax
+    call memcpy
+    mov rcx, [rsp + 20h]
+    add rsp, 0x28
+    jmp asyncPost
+endp
+
+; [[noreturn]] runtime_error(EXCEPTION_POINTERS* err)
+export proc runtime_error
+    mov rax, [rcx]
+    cmp dword ptr[rax], EXCEPTION_BREAKPOINT
+    je _ignore
+    jmp runtimeErrorRaise
+_ignore:
+    ret
+endp
+
+; [[noreturn]] handle_invalid_parameter()
+export proc handle_invalid_parameter
+    const sizeofEXCEPTION_RECORD 152
+    const sizeofCONTEXT 1232
+    const sizeofEXCEPTION_POINTERS 16
+    const stackSize (sizeofEXCEPTION_RECORD + sizeofCONTEXT + sizeofEXCEPTION_POINTERS)
+    const stackOffset (((stackSize + 7) & ~15)+8)
+    const STATUS_INVALID_PARAMETER:dword 0xC000000D
+
+    lea rsp, [rsp - stackOffset] ; exception_ptrs
+    lea rdx, [rsp+sizeofEXCEPTION_POINTERS] ; exception_record
+    lea rcx, [rdx+sizeofEXCEPTION_RECORD] ; exception_context
+    mov dword ptr[rdx], STATUS_INVALID_PARAMETER
+    mov [rsp], rdx; exception_ptrs.ExceptionRecord
+    mov [rsp+8], rcx; exception_ptrs.ContextRecord
+    
+    call RtlCaptureContext; RtlCaptureContext(&exception_context)
+
+    mov r8, sizeofEXCEPTION_RECORD
+    xor rdx, rdx
+    lea rcx, [rsp+sizeofEXCEPTION_POINTERS] ; exception_record
+    call memset
+
+    mov rcx, rsp ; exception_ptrs
+    jmp runtimeErrorRaise
+endp
+
+def serverInstance:qword
+
+export proc ServerInstance_startServerThread_hook
+    mov serverInstance, rcx
+ret
+
+export proc debugBreak
+    int3
+    ret
+endp
+
+export def commandHookCallback:qword
+export def MinecraftCommandsExecuteCommandAfter:qword
+
+export proc commandHook
+    mov rcx, rsp
+    sub rsp, 28h
+    call commandHookCallback
+    add rsp, 28h
+    test rax, rax
+    jz skip
+    pop rcx
+    jmp MinecraftCommandsExecuteCommandAfter
+skip:
+    mov [rbp-50h], rsi
+    mov rax, [rsi]
+    mov rcx, [rax+20h]
+    mov rax, [rcx]
+    ret
+endp
+
+export def CommandOutputSenderHookCallback:qword
+export proc CommandOutputSenderHook
+    sub rsp, 28h
+    mov rcx, r8
+    call CommandOutputSenderHookCallback
+    add rsp, 28h
+    ret
+endp
+
+export def commandQueue:qword
+export def MultiThreadQueueDequeue:qword
+export proc stdin_launchpad_hook
+    lea rdx, [rsp+30h]
+    sub rsp, 28h
+    mov rcx, commandQueue
+    call MultiThreadQueueDequeue
+    add rsp, 28h
+    ret
+endp
+
+def gamelambdaptr:qword
+export def gameThreadInner:qword ; void gamethread(void* lambda);
+export def free:qword
+export def SetEvent:qword
+export def evWaitGameThreadEnd:qword
+proc gameThreadEntry
+    sub rsp, 28h
+    mov rcx, gamelambdaptr
+    call gameThreadInner
+    mov rcx, evWaitGameThreadEnd
+    call SetEvent
+    add rsp, 28h
+    ret
+endp
+
+export def _Pad_Release:qword ; void std::_Pad::_Release(void* lambda);
+export def WaitForSingleObject:qword
+export def _Cnd_do_broadcast_at_thread_exit:qword
+
+export proc gameThreadHook
+    sub rsp, 28h
+    mov gamelambdaptr, rbx
+    call _Pad_Release
+    lea rcx, gameThreadEntry
+    call uv_async_call
+    mov rcx, evWaitGameThreadEnd
+    mov rdx, -1
+    call WaitForSingleObject
+    call _Cnd_do_broadcast_at_thread_exit
+    add rsp, 28h
+    ret
+endp
+
+export def runtimeErrorBeginHandler:qword
+export def bedrock_server_exe_args:qword
+export def bedrock_server_exe_argc:dword
+export def bedrock_server_exe_main:qword
+export def finishCallback:qword
+
+export proc wrapped_main
+    sub rsp, 28h
+    call runtimeErrorBeginHandler
+    mov ecx, bedrock_server_exe_argc
+    mov rdx, bedrock_server_exe_args
+    xor r8d, r8d
+    call bedrock_server_exe_main
+    add rsp, 28h
+    mov rcx, finishCallback
+    jmp uv_async_call
+    ; .jmp64(uv_async.call, Register.rax)
+endp
+
+export def cgateNodeLoop:qword
+export def updateEvTargetFire:qword
+
+export proc updateWithSleep
+    sub rsp, 28h
+    mov rcx, rbx
+    call cgateNodeLoop
+    add rsp, 28h
+    jmp updateEvTargetFire
+    ret
+endp
+
+
+export def removeActor:qword
+
+export proc actorDestructorHook
+    push rcx
+    call GetCurrentThreadId
+    pop rcx
+    cmp rax, nodeThreadId
+    jne skip_dtor
+    jmp removeActor
+skip_dtor:
+    ret
+endp
+
+export def NetworkIdentifierGetHash:qword
+
+export proc networkIdentifierHash
+    sub rsp, 8
+    call NetworkIdentifierGetHash
+    add rsp, 8
+    mov rcx, rax
+    shr rcx, 32
+    xor eax, ecx
+    ret
+endp
+
+
+export def onPacketRaw:qword
+export proc packetRawHook
+    sub rsp, 28h
+    mov rcx, rbp ; rbp
+    mov rdx, r15 ; packetId
+    mov r8, r13 ; Connection
+    call onPacketRaw
+    add rsp, 28h
+    ret
+endp
+
+export def onPacketBefore:qword
+export proc packetBeforeHook
+    sub rsp, 28h
+
+    ; original codes
+    mov rax,qword ptr[rcx]
+    lea r8,[rbp+1E0h]
+    lea rdx,[rbp+70h]
+    call qword ptr[rax+28h]
+
+    mov rcx, rax ; read result
+    mov rdx, rbp ; rbp
+    mov r8, r15 ; packetId
+    call onPacketBefore
+    add rsp, 28h
+    ret
+endp
+
+export def PacketViolationHandlerHandleViolationAfter:qword
+export proc packetBeforeCancelHandling
+    cmp r8, 7fh
+    jne violation
+    mov rax, [rsp+28h]
+    mov byte ptr[rax], 0
+    ret
+violation:
+    ; original codes
+    mov qword ptr[rsp+10h],rbx
+    push rbp
+    push rsi
+    push rdi
+    push r12
+    push r13
+    push r14
+    jmp PacketViolationHandlerHandleViolationAfter
+endp
+
+export def onPacketAfter:qword
+export proc packetAfterHook
+    sub rsp, 28h
+
+    ; orignal codes
+    mov rax,qword ptr[rcx]
+    lea r9,qword ptr[rbp+148h]
+    mov r8,rsi
+    mov rdx,r13
+    call qword ptr[rax+8h]
+    
+    mov rcx, rbp ; rbp
+    mov rdx, r15 ; packetId
+
+    call onPacketAfter
+    add rsp, 28h
+    ret
+endp
+
+export def onPacketSend:qword
+
+export proc packetSendHook
+
+    ; original codes
+    mov rbx,rcx
+    movzx ebp,r9b
+    mov rdi,r8
+    mov r14,rdx
+
+    sub rsp, 28h
+    call onPacketSend
+    add rsp, 28h
+    mov rax, [rbx+268h]
+    mov r8, rdi
+    ret
+endp
+
+export proc packetSendAllHook
+    mov r8, r14
+    mov rdx, rsi
+    mov rcx, r15
+    sub rsp, 28h
+    call onPacketSend
+    add rsp, 28h
+    mov rax, [r14]
+    lea rdx, [r15+208h]
+    mov rcx, r14
+    jmp qword ptr[rax+18h]
+    ret
+endp
+
+export def onPacketSendRaw:qword
+export def NetworkHandlerGetConnectionFromId:qword
+
+export proc packetSendInternalHook
+    mov r14, r9
+    mov rdi, r8
+    mov rbp, rdx
+    mov rsi, rcx
+    sub rsp, 28h
+    call onPacketSendRaw
+    add rsp, 28h
+    test eax, eax
+    jz skip
+    mov rcx, rsi
+    mov rdx, rbp
+    jmp NetworkHandlerGetConnectionFromId
+skip:
+    ret
+endp
+

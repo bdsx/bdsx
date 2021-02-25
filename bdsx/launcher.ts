@@ -12,7 +12,6 @@ import { CxxString, NativeType } from "./nativetype";
 import { nethook } from "./nethook";
 import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
 import { _tickCallback } from "./util";
-import { EXCEPTION_BREAKPOINT } from "./windows_h";
 
 import readline = require("readline");
 import colors = require('colors');
@@ -78,6 +77,10 @@ const commandQueueBuffer = new AllocatedPointer(0x20);
 CxxString[NativeType.ctor](commandQueueBuffer);
 
 function patchForStdio():void {
+    const RtlCaptureContext = dll.kernel32.module.getProcAddress('RtlCaptureContext');
+    asmcode.RtlCaptureContext = RtlCaptureContext;
+    asmcode.memset = dll.vcruntime140.memset.pointer;
+
     // hook bedrock log
     const bedrockLogNp = makefunc.np((severity, msgptr, size)=>{
         // void(*callback)(int severity, const char* msg, size_t size)
@@ -102,9 +105,8 @@ function patchForStdio():void {
         if (logEvTarget.fire(line, color) === CANCEL) return;
         console.log(color(line));
     }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
-    asmcode.bedrockLogNp.setPointer(bedrockLogNp);
+    asmcode.bedrockLogNp = bedrockLogNp;
 
-    
     procHacker.patching('hook-logging', 'BedrockLogOut', 0x8A, asmcode.logHook, Register.rdx, true, [
         0xB9, 0xF5, 0xFF, 0xFF, 0xFF,			//	| mov ecx,FFFFFFF5                                                    |
         0xFF, 0x15, 0x33, 0x1B, 0xE4, 0x00,		//	| call qword ptr ds:[<&GetStdHandle>]                                 |
@@ -131,19 +133,14 @@ function patchForStdio():void {
 
     // void(*callback)(const char* log, size_t size)
 
-    procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x1b3, asm()
-    .sub_r_c(Register.rsp, 0x28)
-    .mov_r_r(Register.rcx, Register.r8)
-    .call64(makefunc.np((bytes, ptr)=>{
+    asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
         const line = cmdOutputLiner.write(ptr.getString(bytes));
         if (line === null) return;
         if (commandOutputEvTarget.fire(line) !== CANCEL) {
             console.log(line);
         }
-    }, RawTypeId.Void, null, RawTypeId.FloatAsInt64, StaticPointer), Register.rax)
-    .add_r_c(Register.rsp, 0x28)
-    .ret()
-    .alloc(), Register.rax, true, [
+    }, RawTypeId.Void, null, RawTypeId.FloatAsInt64, StaticPointer);
+    procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x1b3, asmcode.CommandOutputSenderHook, Register.rax, true, [
         0xE8, 0xFF, 0xFF, 0xFF, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64,char const * __ptr64 const,uns>
         0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,   // lea rdx,qword ptr ds:[<class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::flush<char,struct std::char_traits<char> >(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64)>]
         0x48, 0x8B, 0xC8,                           // mov rcx,rax
@@ -153,15 +150,10 @@ function patchForStdio():void {
 
 
     // hook stdin
+    asmcode.commandQueue = commandQueue;
+    asmcode.MultiThreadQueueDequeue = MultiThreadQueue.dequeue;
     const stdin_launchpad = 'std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_cab8a9f6b80f4de6ca3785c051efa45e> >,std::default_delete<std::tuple<<lambda_cab8a9f6b80f4de6ca3785c051efa45e> > > > >::_Execute<0>';
-    procHacker.patching('hook-stdin-command', stdin_launchpad, 0x5f, asm()
-    .lea_r_rp(Register.rdx, Register.rsp, 0x30)
-    .sub_r_c(Register.rsp, 0x28)
-    .mov_r_c(Register.rcx, commandQueue)
-    .call64(MultiThreadQueue.dequeue, Register.rax)
-    .add_r_c(Register.rsp, 0x28)
-    .ret()
-    .alloc(), Register.rax, true, [
+    procHacker.patching('hook-stdin-command', stdin_launchpad, 0x5f, asmcode.stdin_launchpad_hook, Register.rax, true, [
         0x48, 0x8B, 0x1D, 0x00, 0x00, 0x00, 0x00,	// mov rbx,qword ptr ds:[<&?cin@std@@3V?$basic_istream@DU?$char_traits@D@std@@@1@A>]  
         0x48, 0x8B, 0x03,							// mov rax,qword ptr ds:[rbx]                                                         
         0x48, 0x63, 0x48, 0x04,						// movsxd rcx,dword ptr ds:[rax+4]                                                    
@@ -177,7 +169,6 @@ function patchForStdio():void {
         0xF6, 0x44, 0x02, 0x10, 0x06,				// test byte ptr ds:[rdx+rax+10],6
         0x0F, 0x85, 0xB1, 0x00, 0x00, 0x00,			// jne bedrock_server.7FF6C7A743AC
     ], [3, 7, 21, 25, 38, 42]);
-
 }
 
 function _launch(asyncResolve:()=>void):void {
@@ -195,9 +186,7 @@ function _launch(asyncResolve:()=>void):void {
         }
     });
 
-    const evWaitGameThreadEnd = dll.kernel32.CreateEventW(null, 0, 0, null);
-
-    const gamelambdaptr = dll.ucrtbase.malloc(8);
+    asmcode.evWaitGameThreadEnd = dll.kernel32.CreateEventW(null, 0, 0, null);
 
     uv_async.open();
 
@@ -210,41 +199,23 @@ function _launch(asyncResolve:()=>void):void {
     }
 
     // call game thread entry
-    const gameThreadEntry = asm()
-    .mov_r_c(Register.rcx, gamelambdaptr)
-    .push_rp(Register.rcx, 0)
-    .sub_r_c(Register.rsp, 0x20)
-    .call64(dll.ucrtbase.free.pointer, Register.rax)
-    .mov_r_rp(Register.rcx, Register.rsp, 0x20)
-    .call64(proc["<lambda_85c8d3d148027f864c62d97cac0c7e52>::operator()"], Register.rax) // void gamethread(void* lambda);
-    .mov_r_c(Register.rcx, evWaitGameThreadEnd)
-    .call64(dll.kernel32.SetEvent.pointer, Register.rax)
-    .add_r_c(Register.rsp, 0x28)
-    .ret()
-    .alloc();
+    asmcode.gameThreadInner = proc["<lambda_85c8d3d148027f864c62d97cac0c7e52>::operator()"];
+    asmcode.free = dll.ucrtbase.free.pointer;
+    asmcode.SetEvent = dll.kernel32.SetEvent.pointer;
 
     // hook game thread
+    asmcode._Pad_Release = proc["std::_Pad::_Release"];
+    asmcode.uv_async_call = uv_async.call;
+    asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
+    asmcode._Cnd_do_broadcast_at_thread_exit = dll.msvcp140._Cnd_do_broadcast_at_thread_exit;
+
     procHacker.patching(
         'hook-game-thread', 
         'std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_85c8d3d148027f864c62d97cac0c7e52> >,std::default_delete<std::tuple<<lambda_85c8d3d148027f864c62d97cac0c7e52> > > > >::_Go',
         0x1b,
-        asm()
-        .sub_r_c(Register.rsp, 0x28)
-        .mov_r_c(Register.r8, gamelambdaptr)
-        .mov_rp_r(Register.r8, 0, Register.rbx)
-        .call64(proc["std::_Pad::_Release"], Register.rax) // void std::_Pad::_Release(void* lambda);
-        .mov_r_c(Register.rcx, gameThreadEntry)
-        .call64(uv_async.call, Register.rax)
-        .mov_r_c(Register.rcx, evWaitGameThreadEnd)
-        .mov_r_c(Register.rdx, -1)
-        .call64(dll.kernel32.WaitForSingleObject.pointer, Register.rax)
-        .call64(dll.msvcp140._Cnd_do_broadcast_at_thread_exit, Register.rax)
-        .add_r_c(Register.rsp, 0x28)
-        .ret()
-        .alloc(),
+        asmcode.gameThreadHook,
         Register.rax,
-        true,
-        [
+        true, [
             0xE8, 0xff, 0xff, 0xff, 0xff,	// call <bedrock_server.public: void __cdecl std::_Pad::_Release(void) __ptr64>
             0x48, 0x8B, 0xCB,				// mov rcx,rbx
             0xE8, 0xff, 0xff, 0xff, 0xff	// call <bedrock_server.> // gamethread
@@ -253,53 +224,23 @@ function _launch(asyncResolve:()=>void):void {
     );
 
     // hook runtime error
-    const runtime_error_asm = asm()
-    .mov_r_rp(Register.rax, Register.rcx, 0)
-    .cmp_rp_c(Register.rax, 0, EXCEPTION_BREAKPOINT, OperationSize.dword)
-    .jne_c(1)
-    .ret()
-    .jmp64(runtimeError.raise, Register.rax)
-    .alloc();
-    procHacker.jumping('hook-runtime-error', 'google_breakpad::ExceptionHandler::HandleException', 0, runtime_error_asm, Register.rax, [
+    procHacker.jumping('hook-runtime-error', 'google_breakpad::ExceptionHandler::HandleException', 0, asmcode.runtime_error, Register.rax, [
         0x48, 0x89, 0x5C, 0x24, 0x08,   // mov qword ptr ss:[rsp+8],rbx
         0x57,                           // push rdi
         0x48, 0x83, 0xEC, 0x20,         // sub rsp,20
         0x48, 0x8B, 0xF9,               // mov rdi,rcx
     ], []);
-    // 	void (*onInvalidParameter)() = []() {
-    // 		EXCEPTION_RECORD exception_record = {};
-    // 		CONTEXT exception_context = {};
-    // 		EXCEPTION_POINTERS exception_ptrs = { &exception_record, &exception_context };
-    // 		::RtlCaptureContext(&exception_context);
-    // 		exception_record.ExceptionCode = STATUS_INVALID_PARAMETER;
-
-    // 		// We store pointers to the the expression and function strings,
-    // 		// and the line as exception parameters to make them easy to
-    // 		// access by the developer on the far side.
-    // 		exception_record.NumberParameters = 3;
-    // 		exception_record.ExceptionInformation[0] = 0;
-    // 		exception_record.ExceptionInformation[1] = 0;
-    // 		exception_record.ExceptionInformation[2] = 0;
-    // 		s_callback(&exception_ptrs);
-    // 	};
-    // 	{
-    // 		void* target = google_breakpad$ExceptionHandler$HandleInvalidParameter;
-    // 		Unprotector unpro(target, 12);
-    // 		CodeWriter code(target, 12);
-    // 		code.jump(onInvalidParameter, RAX);
-    // 	}
-    // };
-
+    procHacker.jumping('hook-invalid-parameter', 'google_breakpad::ExceptionHandler::HandleInvalidParameter', 0, asmcode.handle_invalid_parameter, Register.rax, [ 
+        0x40, 0x55, // push rbp
+        0x41, 0x54, // push r12
+        0x41, 0x55, // push r13
+        0x41, 0x56, // push r14
+        0x41, 0x57, // push r15
+        0x48, 0x8D, 0xAC, 0x24, 0x00, 0xF8, 0xFF, 0xFF, // lea rbp,qword ptr ss:[rsp-800]
+    ], []);
 
     // get server instance
-    const serverInstanceDest = new AllocatedPointer(8);
-    procHacker.hookingRawWithCallOriginal('ServerInstance::startServerThread', 
-        asm()
-        .mov_r_c(Register.rax, serverInstanceDest)
-        .mov_rp_r(Register.rax, 0, Register.rcx)
-        .ret()
-        .alloc(), 
-        [Register.rcx], []
+    procHacker.hookingRawWithCallOriginal('ServerInstance::startServerThread', asmcode.ServerInstance_startServerThread_hook, [Register.rcx], []
     );
 
     // it removes errors when run commands on shutdown.
@@ -364,17 +305,11 @@ function _launch(asyncResolve:()=>void):void {
     */
 
     // seh wrapped main
-    const wrapped_main = asm()
-    .sub_r_c(Register.rsp, 0x28)
-    .call64(runtimeError.beginHandler, Register.rax)
-    .mov_r_c(Register.rcx, bedrock_server_exe.argc, OperationSize.dword)
-    .mov_r_c(Register.rdx, bedrock_server_exe.args)
-    .xor_r_r(Register.r8, Register.r8, OperationSize.dword)
-    .call64(bedrock_server_exe.main, Register.rax)
-    .add_r_c(Register.rsp, 0x28)
-    .mov_r_c(Register.rcx, makefunc.np(finishCallback, RawTypeId.Void, null))
-    .jmp64(uv_async.call, Register.rax)
-    .alloc();
+    asmcode.runtimeErrorBeginHandler = runtimeError.beginHandler;
+    asmcode.bedrock_server_exe_args = bedrock_server_exe.args;
+    asmcode.bedrock_server_exe_argc = bedrock_server_exe.argc;
+    asmcode.bedrock_server_exe_main = bedrock_server_exe.main;
+    asmcode.finishCallback = makefunc.np(finishCallback, RawTypeId.Void, null);
 
     patchForStdio();
     require('./bds/implements');
@@ -382,7 +317,7 @@ function _launch(asyncResolve:()=>void):void {
     // call main as a new thread
     // main will create a game thread.
     // and bdsx will hijack the game thread and run it on the node thread.
-    const [threadHandle] = capi.createThread(wrapped_main, null);
+    const [threadHandle] = capi.createThread(asmcode.wrapped_main, null);
 
     // skip to create the console of BDS
     procHacker.nopping('skip-bedrock-console-object', 'ScriptEngine::initialize', 0x287, [
@@ -392,16 +327,11 @@ function _launch(asyncResolve:()=>void):void {
     ], [ 7, 11 ]);
 
     // hook on update
-    const updateWithSleep = asm()
-    .sub_r_c(Register.rsp, 0x28)
-    .mov_r_r(Register.rcx, Register.rbx)
-    .call64(cgate.nodeLoop, Register.rax)
-    .add_r_c(Register.rsp, 0x28)
-    .jmp64(makefunc.np(()=>updateEvTarget.fire(), RawTypeId.Void, null), Register.rax)
-    .ret()
-    .alloc();
+    asmcode.cgateNodeLoop = cgate.nodeLoop;
+    asmcode.updateEvTargetFire = makefunc.np(()=>updateEvTarget.fire(), RawTypeId.Void, null);
+
     procHacker.patching('update-hook', '<lambda_85c8d3d148027f864c62d97cac0c7e52>::operator()', 0x69e, 
-        updateWithSleep, Register.rcx, true, [
+        asmcode.updateWithSleep, Register.rcx, true, [
             0x7C, 0x4A, // jl bedrock_server.7FF7E450BB9A
             0xFF, 0x15, 0x92, 0xDA, 0xC1, 0x00, // call qword ptr ds:[<&_Query_perf_frequency>]
             0x48, 0x8B, 0xF8, // mov rdi,rax
@@ -438,7 +368,7 @@ function _launch(asyncResolve:()=>void):void {
             try {
                 cgate.nodeLoopOnce();
                 
-                bd_server.serverInstance = serverInstanceDest.getPointerAs(bd_server.ServerInstance);
+                bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
                 nimodule.networkHandler = bd_server.serverInstance.networkHandler;
                 openEvTarget.fire();
                 asyncResolve();
@@ -453,7 +383,7 @@ function _launch(asyncResolve:()=>void):void {
         }, RawTypeId.Void, null, VoidPointer), 
         [Register.rcx], []);
 
-    // keep ScriptEngine variables. idk why need it.
+    // keep ScriptEngine variables. idk why it needs.
     procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
 }
 

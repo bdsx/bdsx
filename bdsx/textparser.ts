@@ -44,7 +44,7 @@ export class TextLineParser {
             if (np === -1) {
                 this.matchedIndex = this.p + this.offset;
                 this.matchedWidth = 1;
-                this.error('qouted string does not end');
+                throw this.error('qouted string does not end');
             }
 
             let count = 0;
@@ -65,7 +65,7 @@ export class TextLineParser {
                 try {
                     return JSON.parse(out);
                 } catch (err) {
-                    this.error(err.message);
+                    throw this.error(err.message);
                 }
             }
             p = np+1;
@@ -194,8 +194,8 @@ export class TextLineParser {
         this.matchedIndex = oriindex;
     }
 
-    error(message:string):never {
-        throw new ParsingError(message, {
+    error(message:string):ParsingError {
+        return new ParsingError(message, {
             column: this.matchedIndex, 
             width: this.matchedWidth, 
             line: this.lineNumber

@@ -3,7 +3,7 @@
  */
 
 import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, serverControl, serverInstance } from "bdsx";
-import { asm, FloatRegister } from "bdsx/assembler";
+import { asm, FloatRegister, Register } from "bdsx/assembler";
 import { ActorType } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
 import { proc2 } from "bdsx/bds/symbols";
@@ -303,6 +303,10 @@ Tester.test({
         this.assert(floatToDouble(123) === 123, 'float to double');
         const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float32, null, RawTypeId.Float64);
         this.assert(doubleToFloat(123) === 123, 'double to float');
+        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(RawTypeId.Boolean);
+        this.assert(getbool() === false, 'bool return');
+        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(RawTypeId.Int32, null, RawTypeId.Boolean);
+        this.assert(bool2int(true) === 1, 'bool to int');
     },
     
     async command(){

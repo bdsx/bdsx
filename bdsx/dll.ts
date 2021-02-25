@@ -152,8 +152,8 @@ export namespace dll {
         // export const SetThreadContext = module.getFunction('SetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
         // export const SuspendThread = module.getFunction('SuspendThread', RawTypeId.Int32, null, VoidPointer);
         // export const ResumeThread = module.getFunction('ResumeThread', RawTypeId.Int32, null, VoidPointer);
-        export const TlsAlloc = module.getFunction('TlsAlloc', RawTypeId.Int32);
-        export const TlsFree = module.getFunction('TlsFree', RawTypeId.Boolean, null, RawTypeId.Int32);
+        // export const TlsAlloc = module.getFunction('TlsAlloc', RawTypeId.Int32);
+        // export const TlsFree = module.getFunction('TlsFree', RawTypeId.Boolean, null, RawTypeId.Int32);
         export import GetProcAddress = cgate.GetProcAddress;
         export import GetModuleHandleW = cgate.GetModuleHandleW;
     }

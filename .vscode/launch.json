@@ -38,6 +38,18 @@
             ],
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
             "args": ["${workspaceFolder}/bdsx/externs/bds-scripting/parser.ts"]
+        },
+        {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Assembly Compiler",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["${workspaceFolder}/bdsx/asm/compile.ts"],
+            "console": "integratedTerminal"
         }
     ]
 }

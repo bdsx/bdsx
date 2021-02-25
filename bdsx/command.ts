@@ -11,6 +11,7 @@ import { makefunc, RawTypeId } from './makefunc';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 import netevent = require('./netevent');
+import asmcode = require('./asm/asmcode');
 
 export function hookingForCommand(): void {
     function oncommand(commands: MinecraftCommands, res: MCRESULT, ctxptr: SharedPtr<CommandContext>, b: boolean): number {
@@ -27,7 +28,7 @@ export function hookingForCommand(): void {
             return 0;
         }
     }
-    const callback = makefunc.np(oncommand, RawTypeId.Int32, null, MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+    asmcode.commandHookCallback = makefunc.np(oncommand, RawTypeId.Int32, null, MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), RawTypeId.Boolean);
     // int32_t callback(MinecraftCommands* commands, MCRESULT* res, SharedPtr<CommandContext>* ctx, bool)
 
     const ORIGINAL_CODE = [
@@ -37,24 +38,8 @@ export function hookingForCommand(): void {
         0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
     ];
 
-    const newcode = asm()
-    .mov_r_r(Register.rcx, Register.rsp)
-    .sub_r_c(Register.rsp, 0x28)
-    .call64(callback, Register.rax)
-    .add_r_c(Register.rsp, 0x28)
-    .test_r_r(Register.rax, Register.rax)
-    .jz_label('skip')
-    .pop_r(Register.rcx)
-    .jmp64(proc['MinecraftCommands::executeCommand'].add(0x73b), Register.rax)
-    .label('skip')
-    .mov_rp_r(Register.rbp, -0x50, Register.rsi)
-    .mov_r_rp(Register.rax, Register.rsi, 0)
-    .mov_r_rp(Register.rcx, Register.rax, 0x20)
-    .mov_r_rp(Register.rax, Register.rcx, 0)
-    .ret()
-    .alloc();
-
-    procHacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, newcode, Register.rax, true, ORIGINAL_CODE, []);
+    asmcode.MinecraftCommandsExecuteCommandAfter = proc['MinecraftCommands::executeCommand'].add(0x73b);
+    procHacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, asmcode.commandHook, Register.rax, true, ORIGINAL_CODE, []);
 }
 
 // 	m_props.insert(u"execSync", JsFunction::makeT([](Text16 path, JsValue curdir) {

@@ -152,6 +152,23 @@ export namespace bin
         }
         return String.fromCharCode(...out);
     }
+    export function fromBuffer(buffer:Uint8Array, pad:number = 0):string {
+        const dest = new Uint16Array((buffer.length+1)>>1);
+        const words = buffer.length & ~1;
+        
+        let j = 0;
+        let i = 0;
+        for (;i!==words;) {
+            const low = buffer[i++];
+            const high = buffer[i++];
+            dest[j++] = (high << 16) | low;
+        }
+        if (i !== buffer.length) {
+            const low = buffer[i];
+            dest[j++] = (pad << 16) | low;
+        }
+        return String.fromCharCode(...dest);
+    }
     export function toString(v:string, radix = 10):string {
         let len = v.length;
         do {

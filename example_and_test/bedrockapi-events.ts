@@ -1,7 +1,8 @@
 
 // Addon Script
 import { Actor, AttributeId, DimensionId } from "bdsx";
-const system = server.registerSystem(0, 0);
+import { system } from "./bedrockapi-system";
+
 system.listenForEvent('minecraft:entity_created', ev => {
     console.log('entity created: ' + ev.data.entity.__identifier__);
 
@@ -18,4 +19,7 @@ system.listenForEvent('minecraft:entity_created', ev => {
             console.log('player IP: '+ni.getAddress());
         }
     }
+});
+system.listenForEvent('minecraft:entity_death', ev=>{
+    // on death
 });

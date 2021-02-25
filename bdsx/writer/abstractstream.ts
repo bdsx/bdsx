@@ -1,4 +1,4 @@
-import { floatbits } from "bdsx/floatbits";
+import { floatbits } from "../floatbits";
 import { TextDecoder, TextEncoder } from "util";
 
 

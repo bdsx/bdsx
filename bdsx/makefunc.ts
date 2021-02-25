@@ -47,7 +47,7 @@ function initFunctionMap():void {
     }
 
     function chakraCoreToDef(funcName:keyof typeof asmcode):void {
-        asmcode[funcName].setPointer(cgate.GetProcAddress(chakraCoreDll, funcName));
+        (asmcode as any)[funcName] = cgate.GetProcAddress(chakraCoreDll, funcName);
     }
     
     const chakraCoreDll = cgate.GetModuleHandleW('ChakraCore.dll');
@@ -82,11 +82,11 @@ function initFunctionMap():void {
     chakraCoreToMakeFuncMap('JsSetException');
     setFunctionMap('fn_returnPoint', null);
 
-    asmcode.GetCurrentThreadId.setPointer(dllraw.kernel32.GetCurrentThreadId);
-    asmcode.memcpy.setPointer(dllraw.vcruntime140.memcpy);
-    asmcode.asyncAlloc.setPointer(uv_async.alloc);
-    asmcode.asyncPost.setPointer(uv_async.post);
-    asmcode.sprintf.setPointer(proc2.sprintf);
+    asmcode.GetCurrentThreadId = dllraw.kernel32.GetCurrentThreadId;
+    asmcode.memcpy = dllraw.vcruntime140.memcpy;
+    asmcode.asyncAlloc = uv_async.alloc;
+    asmcode.asyncPost = uv_async.post;
+    asmcode.sprintf = proc2.sprintf;
     
     chakraCoreToDef('JsHasException');
     chakraCoreToDef('JsCreateTypeError');
@@ -96,10 +96,11 @@ function initFunctionMap():void {
     chakraCoreToDef('JsGetTypedArrayStorage');
     chakraCoreToDef('JsGetDataViewStorage');
     chakraCoreToDef('JsConstructObject');
-    asmcode.js_null.setPointer(nullValueRef);
-    asmcode.js_true.setPointer(chakraUtil.asJsValueRef(true));
+    asmcode.js_null = nullValueRef;
+    asmcode.js_true = chakraUtil.asJsValueRef(true);
     chakraCoreToDef('JsGetAndClearException');
-    asmcode.runtimeErrorFire.setPointer(runtimeError.fire);
+    asmcode.runtimeErrorFire = runtimeError.fire;
+    asmcode.runtimeErrorRaise = runtimeError.raise;
 
 }
 initFunctionMap();
@@ -401,7 +402,7 @@ class Maker extends X64Assembler {
                         // same
                     } else {
                         if (type === RawTypeId.Boolean) {
-                            this.movzx_r_rp(temp, source.reg, source.offset, OperationSize.byte);
+                            this.mov_r_rp(temp, source.reg, source.offset, OperationSize.byte);
                             this.mov_rp_r(target.reg, target.offset, temp, OperationSize.byte);
                         } else if (type === RawTypeId.Int32) {
                             this.movsxd_r_rp(temp, source.reg, source.offset);
@@ -454,7 +455,7 @@ class Maker extends X64Assembler {
                         this.cvtsd2ss_r_rp(target.freg, source.reg, source.offset);
                     }
                 } else if (type === RawTypeId.Boolean) {
-                    this.movzx_r_rp(target.reg, source.reg, source.offset, OperationSize.byte);
+                    this.movzx_r_rp(target.reg, source.reg, source.offset, OperationSize.qword, OperationSize.byte);
                 } else if (type === RawTypeId.Int32) {
                     this.movsxd_r_rp(target.reg, source.reg, source.offset);
                 } else {

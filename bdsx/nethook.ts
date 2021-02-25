@@ -14,6 +14,7 @@ import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError } from "./source-map-support";
 import { _tickCallback } from "./util";
+import asmcode = require ('./asm/asmcode');
 
 const MAX_PACKET_ID = 0x100;
 const EVENT_INDEX_COUNT = 0x500;
@@ -114,16 +115,9 @@ export namespace nethook
             }
         }
         
+        asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, RawTypeId.Int32, NetworkHandler.Connection);
         procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x2c9, 
-            asm()
-            .sub_r_c(Register.rsp, 0x28)
-            .mov_r_r(Register.rcx, Register.rbp) // rbp
-            .mov_r_r(Register.rdx, Register.r15) // packetId
-            .mov_r_r(Register.r8, Register.r13) // Connection
-            .call64(makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, RawTypeId.Int32, NetworkHandler.Connection), Register.rax)
-            .add_r_c(Register.rsp, 0x28)
-            .ret()
-            .alloc(), Register.rax, true,
+            asmcode.packetRawHook, Register.rax, true,
             [ 
                 0x41, 0x8B, 0xD7,                           // 	mov edx,r15d
                 0x48, 0x8D, 0x8D, 0x48, 0x01, 0x00, 0x00,   // 	lea rcx,qword ptr ss:[rbp+148]
@@ -172,17 +166,9 @@ export namespace nethook
         */
         const packetBeforeOriginalCode = [ 0x48, 0x8B, 0x01, 0x4C, 0x8D, 0x85, 0xE0, 0x01, 0x00, 0x00, 0x48, 0x8D, 0x55, 0x70, 0xFF, 0x50, 0x28 ];
 
+        asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, RawTypeId.Int32);
         procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x430, 
-            asm()
-            .sub_r_c(Register.rsp, 0x28)
-            .write(...packetBeforeOriginalCode)
-            .mov_r_r(Register.rcx, Register.rax) // read result
-            .mov_r_r(Register.rdx, Register.rbp) // rbp
-            .mov_r_r(Register.r8, Register.r15) // packetId
-            .call64(makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, RawTypeId.Int32), Register.rax)
-            .add_r_c(Register.rsp, 0x28)
-            .ret()
-            .alloc(),
+            asmcode.packetBeforeHook,
             Register.rax,
             true, 
             packetBeforeOriginalCode,
@@ -198,17 +184,9 @@ export namespace nethook
             0x41, 0x55, // push r13
             0x41, 0x56, // push r14
         ];
+        asmcode.PacketViolationHandlerHandleViolationAfter = proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length);
         procHacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0, 
-            asm()
-            .cmp_r_c(Register.r8, 0x7f)
-            .jne_label('violation')
-            .mov_r_rp(Register.rax, Register.rsp, 0x28)
-            .mov_rp_c(Register.rax, 0, 0, OperationSize.byte)
-            .ret()
-            .label('violation')
-            .write(...packetViolationOriginalCode)
-            .jmp64(proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length), Register.rax)
-            .alloc(), 
+            asmcode.packetBeforeCancelHandling, 
             Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24]);
                 
         /*
@@ -245,17 +223,9 @@ export namespace nethook
                 remapAndPrintError(err);
             }
         }
-        procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, 
-            asm()
-            .sub_r_c(Register.rsp, 0x28)
-            .write(...packetAfterOriginalCode)
-            .mov_r_r(Register.rcx, Register.rbp) // rbp
-            .mov_r_r(Register.rdx, Register.r15) // packetId
-            .call64(makefunc.np(onPacketAfter, RawTypeId.Void, null, OnPacketRBP, RawTypeId.Int32), Register.rax)
-            .add_r_c(Register.rsp, 0x28)
-            .ret()
-            .alloc(), 
-            Register.rax, true, packetAfterOriginalCode, []);
+
+        asmcode.onPacketAfter = makefunc.np(onPacketAfter, RawTypeId.Void, null, OnPacketRBP, RawTypeId.Int32);
+        procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x720, asmcode.packetAfterHook, Register.rax, true, packetAfterOriginalCode, []);
 
         const onPacketSend = makefunc.np((handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet)=>{
             try {
@@ -305,16 +275,8 @@ export namespace nethook
             0x49, 0x8B, 0xF8, // mov rdi,r8
             0x4C, 0x8B, 0xF2, // mov r14,rdx
         ];
-        procHacker.patching('hook-packet-send', 'NetworkHandler::send', 0x1A, 
-            asm()
-            .write(...packetSendOriginalCode.slice(7))
-            .sub_r_c(Register.rsp, 0x28)
-            .call64(onPacketSend, Register.rax)
-            .add_r_c(Register.rsp, 0x28)
-            .mov_r_rp(Register.rax, Register.rbx, 0x268)
-            .mov_r_r(Register.r8, Register.rdi)
-            .ret()
-            .alloc(),
+        asmcode.onPacketSend = onPacketSend;
+        procHacker.patching('hook-packet-send', 'NetworkHandler::send', 0x1A, asmcode.packetSendHook,
             Register.rax, true, packetSendOriginalCode, []);
 
         const packetSendAllOriginalCode = [
@@ -324,39 +286,13 @@ export namespace nethook
             0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
         ];
         procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0xf0,
-            asm()
-            .mov_r_r(Register.r8, Register.r14)
-            .mov_r_r(Register.rdx, Register.rsi)
-            .mov_r_r(Register.rcx, Register.r15)
-            .sub_r_c(Register.rsp, 0x28)
-            .call64(onPacketSend, Register.rax)
-            .add_r_c(Register.rsp, 0x28)
-            .mov_r_rp(Register.rax, Register.r14, 0)
-            .lea_r_rp(Register.rdx, Register.r15, 0x208)
-            .mov_r_r(Register.rcx, Register.r14)
-            .jmp_rp(Register.rax, 0x18)
-            .ret()
-            .alloc(),
+            asmcode.packetSendAllHook,
             Register.rax, true, packetSendAllOriginalCode, []);
         
+        asmcode.onPacketSendRaw = onPacketSendRaw;
+        asmcode.NetworkHandlerGetConnectionFromId = proc[`NetworkHandler::_getConnectionFromId`];
         procHacker.patching('hook-packet-send-after', 'NetworkHandler::_sendInternal', 0x14,
-            asm()
-            .mov_r_r(Register.r14, Register.r9)
-            .mov_r_r(Register.rdi, Register.r8)
-            .mov_r_r(Register.rbp, Register.rdx)
-            .mov_r_r(Register.rsi, Register.rcx)
-            .sub_r_c(Register.rsp, 0x28)
-            .call64(onPacketSendRaw, Register.rax)
-            .add_r_c(Register.rsp, 0x28)
-            .test_r_r(Register.rax, Register.rax, OperationSize.dword)
-            .jz_label('skip')
-            .mov_r_r(Register.rcx, Register.rsi)
-            .mov_r_r(Register.rdx, Register.rbp)
-            .jmp64(proc[`NetworkHandler::_getConnectionFromId`], Register.rax)
-            .label('skip')
-            .add_r_c(Register.rcx, 0x58)
-            .ret()
-            .alloc(),
+            asmcode.packetSendInternalHook,
             Register.rax, true,
             [
                 0x4D, 0x8B, 0xF1, // mov r14,r9

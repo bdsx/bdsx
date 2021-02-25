@@ -25,7 +25,9 @@ function method<A extends polynominal.Operand, B extends polynominal.Operand>(
 
 export namespace polynominal {
     export class Operand {
-
+        protected _constantOperating(oper:Operator, other:Operand):Constant|null {
+            return null;
+        }
         equals(other:Operand):boolean {
             return false;
         }
@@ -33,6 +35,8 @@ export namespace polynominal {
             return false;
         }
         add(other:Operand):Operand {
+            const res = this._constantOperating(operation.binaryPlus, other);
+            if (res !== null) return res;
             for (const [a, b, func] of operation.add) {
                 if (this instanceof a && other instanceof b) {
                     const res = func(this, other);
@@ -51,6 +55,8 @@ export namespace polynominal {
             return out;
         }
         multiply(other:Operand): Operand {
+            const res = this._constantOperating(operation.binaryMultiply, other);
+            if (res !== null) return res;
             for (const [a, b, func] of operation.multiply) {
                 if (this instanceof a && other instanceof b) {
                     const res = func(this, other);
@@ -69,13 +75,8 @@ export namespace polynominal {
             return out;
         }
         exponent(other:Operand): Operand {
-            for (const [a, b, func] of operation.exponent) {
-                if (this instanceof a && other instanceof b) {
-                    const res = func(this, other);
-                    if (res === null) continue;
-                    return res;
-                }
-            }
+            const res = this._constantOperating(operation.binaryExponent, other);
+            if (res !== null) return res;
             return new polynominal.Variable(this, other);
         }
         asAdditive():Additive {
@@ -95,6 +96,11 @@ export namespace polynominal {
     export class Constant extends Operand {
         constructor(public value:number) {
             super();
+        }
+        protected _constantOperating(oper:Operator, other:Operand):Constant|null {
+            if (!(other instanceof Constant)) return null;
+            this.value = oper.operationConst(this.value, other.value);
+            return this;
         }
         equals(other:Operand):boolean {
             if (!(other instanceof Constant)) return false;
@@ -307,13 +313,38 @@ export namespace polynominal {
             return `(${this.terms.join('+')}+${this.constant})`;
         }
     }
+    export class Operation extends Operand {
+        constructor(
+            public readonly oper:Operator,
+            public readonly operands:Operand[]) {
+            super();
+        }
+        toString():string {
+            return `(${this.operands.join(this.oper.name)})`;
+        }
+        
+        defineVariable(name:string, value:number):Operand {
+            const values:number[] = [];
+            for (let i=0;i<this.operands.length;i++) {
+                const operand = this.operands[i].defineVariable(name, value);
+                this.operands[i] = operand;
+                if (operand instanceof Constant) values.push(operand.value);
+            }
+            if (values.length === this.operands.length) return new Constant(this.oper.operationConst(...values));
+            return this;
+        }
+        
+    }
     export class Operator {
         public name:string;
         public type:keyof OperatorSet;
 
         constructor(
             public readonly precedence:number,
-            public readonly operation:(...args:Operand[])=>Operand) {
+            public readonly operationConst:(...args:number[])=>number,
+            public readonly operation:((this:Operator, ...args:Operand[])=>Operand) = function(...args){
+                return new Operation(this, args);
+            }) {
         }
 
         toString():string {
@@ -325,24 +356,32 @@ export namespace polynominal {
      * @return null if invalid
      */
     export function parseToNumber(text:string):number|null {
-        const firstchr = text.charCodeAt(0);
+
+        let i = 0;
+        let firstchr = text.charCodeAt(i);
         const minus = (firstchr === 0x2d);
         if (minus) {
-            text = text.substr(1).trim();
+            do {
+                firstchr = text.charCodeAt(++i);
+                if (isNaN(firstchr)) return null;
+            } while (firstchr === 0x20 || firstchr === 0x09 || firstchr === 0x0d || firstchr === 0x0a);
         }
         if (minus || (0x30 <= firstchr && firstchr <= 0x39)) { // number
             let n:number;
-            if (text.endsWith('h')) {
-                n = parseInt(text.substr(0, text.length-1), 16);
-            } else {
-                n = +text;
+            const suffix = text.charAt(text.length-1);
+            switch (suffix) {
+            case 'h':
+                n = parseInt(text.substr(i, text.length-1), 16);
+                break;
+            default:
+                n = +text.substr(i);
+                break;
             }
-            if (isNaN(n)) return NaN;
+            if (isNaN(n)) return null;
             return minus ? -n : n;
         }
         return null;
     }
-
     export function parse(text:string, lineNumber:number=0, offset:number=0):Operand {
         let i = 0;
 
@@ -443,12 +482,20 @@ export namespace polynominal {
                     return operand;
                 }
                 if (oper.type === 'unarySuffix') {
-                    operand = oper.operation(operand);
+                    if (operand instanceof Constant) {
+                        operand.value = oper.operationConst(operand.value);
+                    } else {
+                        operand = oper.operation(operand);
+                    }
                     continue;
                 }
                 
                 const operand2 = readStatement(oper.precedence);
-                operand = oper.operation(operand, operand2);
+                if ((operand instanceof Constant) && (operand2 instanceof Constant)) {
+                    operand.value = oper.operationConst(operand.value, operand2.value);
+                } else {
+                    operand = oper.operation(operand, operand2);
+                }
             }
         }
         
@@ -458,10 +505,6 @@ export namespace polynominal {
 
 namespace operation {
     export const add:[Constructor<polynominal.Operand>, Constructor<polynominal.Operand>, (a:polynominal.Operand, b:polynominal.Operand)=>(polynominal.Operand|null)][] = [
-        method(polynominal.Constant, polynominal.Constant, (a,b)=>{
-            a.value += b.value;
-            return a;
-        }),
         method(polynominal.Additive, polynominal.Constant, (a,b)=>{
             a.constant += b.value;
             return a.normalize();
@@ -482,9 +525,12 @@ namespace operation {
             a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
             return a.normalize();
         }),
+        method(polynominal.Additive, polynominal.Operand, (a,b)=>{
+            a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
+            return a.normalize();
+        }),
     ];
     export const multiply:[Constructor<polynominal.Operand>, Constructor<polynominal.Operand>, (a:polynominal.Operand, b:polynominal.Operand)=>(polynominal.Operand|null)][] = [
-        
         method(polynominal.Multiplicative, polynominal.Multiplicative, (a,b)=>{
             a.pushMultiplicative(b);
             return a.normalize();
@@ -501,10 +547,6 @@ namespace operation {
             a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
             return a.normalize();
         }),
-        method(polynominal.Constant, polynominal.Constant, (a,b)=>{
-            a.value *= b.value;
-            return a;
-        }),
         method(polynominal.Variable, polynominal.Operand, (a,b)=>{
             if (a.term.equals(b)) {
                 a.degree = a.degree.add(new polynominal.Constant(1));
@@ -520,13 +562,15 @@ namespace operation {
             out.add(new polynominal.Constant(a.constant).multiply(b));
             return out.normalize();
         }),
-    ];
-    export const exponent:[Constructor<polynominal.Operand>, Constructor<polynominal.Operand>, (a:polynominal.Operand, b:polynominal.Operand)=>(polynominal.Operand|null)][] = [
-        method(polynominal.Constant, polynominal.Constant, (a,b)=>{
-            a.value **= b.value;
-            return a;
+        method(polynominal.Multiplicative, polynominal.Operand, (a,b)=>{
+            a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
+            return a.normalize();
         }),
     ];
+
+    export const binaryPlus = new polynominal.Operator(14, (a,b)=>a+b, (a,b)=>a.add(b));
+    export const binaryMultiply = new polynominal.Operator(15, (a,b)=>a*b, (a,b)=>a.multiply(b));
+    export const binaryExponent = new polynominal.Operator(16, (a,b)=>a**b, (a,b)=>a.exponent(b));
 }
 
 
@@ -536,21 +580,37 @@ interface OperatorSet {
     binary?:polynominal.Operator;
 }
 const OPERATORS = new Map<string, OperatorSet>();
-OPERATORS.set('+', { unaryPrefix: new polynominal.Operator(17, v=>v) });
-OPERATORS.set('-', { unaryPrefix: new polynominal.Operator(17, v=>v.multiply(new polynominal.Constant(-1))) });
 
-OPERATORS.set('**', { binary: new polynominal.Operator(16 , (a,b)=>a.exponent(b)) });
-OPERATORS.set('^', { binary: new polynominal.Operator(16 , (a,b)=>a.exponent(b)) });
+OPERATORS.set('**', { 
+    binary: operation.binaryExponent
+});
 
-OPERATORS.set('*', { binary: new polynominal.Operator(15 , (a,b)=>a.multiply(b)) });
-OPERATORS.set('/', { binary: new polynominal.Operator(15 , (a,b)=>a.multiply(b.exponent(new polynominal.Constant(-1)))) });
+OPERATORS.set('*', { 
+    binary: operation.binaryMultiply
+});
+OPERATORS.set('/', { binary: new polynominal.Operator(15, (a,b)=>a/b, (a,b)=>a.multiply(b.exponent(new polynominal.Constant(-1)))) });
 
-OPERATORS.set('+', { binary: new polynominal.Operator(14 , (a,b)=>a.add(b)) });
-OPERATORS.set('-', { binary: new polynominal.Operator(14 , (a,b)=>a.add(b.multiply(new polynominal.Constant(-1)))) });
+OPERATORS.set('+', { 
+    unaryPrefix: new polynominal.Operator(17, v=>v, v=>v), 
+    binary: operation.binaryPlus
+});
+OPERATORS.set('-', { 
+    unaryPrefix: new polynominal.Operator(17, v=>-v, v=>v.multiply(new polynominal.Constant(-1))),
+    binary: new polynominal.Operator(14, (a,b)=>a-b, (a,b)=>a.add(b.multiply(new polynominal.Constant(-1))))
+});
+OPERATORS.set('~', { unaryPrefix: new polynominal.Operator(17, v=>~v) });
 
-OPERATORS.set('(', {unaryPrefix: new polynominal.Operator(0, unexpected) });
-OPERATORS.set(')', {unarySuffix: new polynominal.Operator(0, unexpected)});
-OPERATORS.set(';', {unarySuffix: new polynominal.Operator(0, unexpected)});
+OPERATORS.set('<<', { binary: new polynominal.Operator(13, (a,b)=>a<<b) });
+OPERATORS.set('>>', { binary: new polynominal.Operator(13, (a,b)=>a>>b) });
+OPERATORS.set('>>>', { binary: new polynominal.Operator(13, (a,b)=>a>>>b) });
+
+OPERATORS.set('&', { binary: new polynominal.Operator(10, (a,b)=>a&b) });
+OPERATORS.set('^', { binary: new polynominal.Operator(9, (a,b)=>a^b) });
+OPERATORS.set('|', { binary: new polynominal.Operator(8, (a,b)=>a|b) });
+
+OPERATORS.set('(', { unaryPrefix: new polynominal.Operator(0, unexpected, unexpected) });
+OPERATORS.set(')', { unarySuffix: new polynominal.Operator(0, unexpected, unexpected) });
+OPERATORS.set(';', { unarySuffix: new polynominal.Operator(0, unexpected, unexpected) });
 
 for (const [name, oper] of OPERATORS.entries()) {
     if (oper.unaryPrefix) {

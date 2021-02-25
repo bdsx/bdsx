@@ -1,11 +1,10 @@
-import { asm, Register } from "bdsx/assembler";
+import asmcode = require("bdsx/asm/asmcode");
+import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bds/commandorigin";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { capi } from "bdsx/capi";
 import { StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
-import { dll } from "bdsx/dll";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { CxxStringWrapper } from "bdsx/pointer";
@@ -194,19 +193,8 @@ procHacker.hookingRawWithCallOriginal(
     [Register.rcx, Register.rdx, Register.r8], []
 );
 
-procHacker.hookingRawWithCallOriginal('Actor::~Actor',
-    asm()
-    .push_r(Register.rcx)
-    .call64(dll.kernel32.GetCurrentThreadId.pointer, Register.rax)
-    .pop_r(Register.rcx)
-    .cmp_r_c(Register.rax, capi.nodeThreadId)
-    .jne_label('skip_dtor')
-    .jmp64(makefunc.np(_removeActor, RawTypeId.Void, null, Actor), Register.rax)
-    .label('skip_dtor')
-    .ret()
-    .alloc(),
-    [Register.rcx], []
-);
+asmcode.removeActor = makefunc.np(_removeActor, RawTypeId.Void, null, Actor);
+procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts
 ServerPlayer.abstract({
@@ -225,20 +213,10 @@ NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
     return ServerNetworkHandler$_getServerPlayer(serverInstance.minecraft.something.shandler, this, 0);
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", RawTypeId.Boolean, {this:NetworkIdentifier}, NetworkIdentifier);
-NetworkIdentifier.prototype.hash = makefunc.js(
-    asm()
-    .sub_r_c(Register.rsp, 8)
-    .call64(proc['NetworkIdentifier::getHash'], Register.rax)
-    .add_r_c(Register.rsp, 8)
-    .mov_r_c(Register.rcx, Register.rax)
-    .shr_r_c(Register.rcx, 32)
-    .xor_r_r(Register.rax, Register.rcx)
-    .ret()
-    .alloc(), RawTypeId.Int32, {this:NetworkIdentifier});
-// size_t NetworkIdentifier::getHash() const noexcept
-// {
-// 	return (this);
-// }
+
+asmcode.NetworkIdentifierGetHash = proc['NetworkIdentifier::getHash'];
+NetworkIdentifier.prototype.hash = makefunc.js(asmcode.networkIdentifierHash, RawTypeId.Int32, {this:NetworkIdentifier});
+
 NetworkHandler.Connection.abstract({
     networkIdentifier:NetworkIdentifier,
     u1:VoidPointer, // null
