@@ -13,8 +13,7 @@ system.listenForEvent('minecraft:entity_created', ev => {
         const level = actor.getAttribute(AttributeId.PlayerLevel);
         console.log('entity level: ' + level);
         
-        if (actor.isPlayer())
-        {
+        if (actor.isPlayer()) {
             const ni = actor.getNetworkIdentifier();
             console.log('player IP: '+ni.getAddress());
         }

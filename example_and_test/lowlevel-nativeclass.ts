@@ -9,8 +9,7 @@ import { int16_t, int32_t, int8_t } from "bdsx/nativetype";
  * All packets in packets.ts are NativeClass also
  */
 
-class SampleStructure extends NativeClass
-{
+class SampleStructure extends NativeClass {
     a:int32_t;
     b:int16_t;
     c:int8_t;

@@ -1,7 +1,7 @@
-import { capi } from ".";
 import { asm, Register } from "./assembler";
 import { proc2 } from "./bds/proc";
-import { cgate, chakraUtil, StaticPointer, uv_async, VoidPointer } from "./core";
+import { capi } from "./capi";
+import { chakraUtil, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc, RawTypeId } from "./makefunc";
 import { CxxString, NativeType } from "./nativetype";
