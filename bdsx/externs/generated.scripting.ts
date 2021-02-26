@@ -1432,7 +1432,7 @@ interface IVanillaServerSystem {
      * Allows you to register a query. A query will contain all entities that meet the filter requirement.No filters are added by default when you register a query so it will capture all entities.
      * @return An object containing the ID of the query
      */
-    registerQuery():void;
+    registerQuery():IQuery;
     /**
      * Allows you to register a query that will only show entities that have the given component and define which fields of that component will be used as a filter when getting the entities from the query. You can either provide just the component identifier, or the component identifier and the name of 3 properties on that component to be tested (If you do specify property names, you must specify 3).
      * @param Component This is the identifier of the component that will be used to filter entities when
@@ -1444,7 +1444,7 @@ interface IVanillaServerSystem {
      *    @default "z"
      * @return An object containing the ID of the query
      */
-    registerQuery(Component:string, ComponentField1?:string, ComponentField2?:string, ComponentField3?:string):void;
+    registerQuery(Component:string, ComponentField1?:string, ComponentField2?:string, ComponentField3?:string):IQuery;
     /**
      * Allows you to add filters to your query. The query will only contain entities that have all the components specified.By default no filters are added. This will allow queries to capture all entities.
      * @param Query The object containing the ID of the query that you want to apply the filter to
@@ -1456,7 +1456,7 @@ interface IVanillaServerSystem {
      * @param Query This is the query you registered earlier using registerQuery()
      * @return An array of EntityObjects representing the entities found within the query
      */
-    getEntitiesFromQuery(Query:IQuery):void;
+    getEntitiesFromQuery(Query:IQuery):IEntity[];
     /**
      * Allows you to fetch the entities captured by a query that was created with a component filter built-in. The only entities that will be returned are those entities that have the component that was defined when the query was registered and that have a value in the three fields on that component that were defined in the query within the values specified in the call to getEntitiesFromQuery.
      * @param Query This is the query you created earlier using registerQuery(...)
@@ -1468,7 +1468,7 @@ interface IVanillaServerSystem {
      * @param ComponentField3_Max The maximum value that the third component field needs to be on an entity for that entity to be included in the query
      * @return An array of EntityObjects representing the entities found within the query
      */
-    getEntitiesFromQuery(Query:IQuery, ComponentField1_Min:number, ComponentField2_Min:number, ComponentField3_Min:number, ComponentField1_Max:number, ComponentField2_Max:number, ComponentField3_Max:number):void;
+    getEntitiesFromQuery(Query:IQuery, ComponentField1_Min:number, ComponentField2_Min:number, ComponentField3_Min:number, ComponentField1_Max:number, ComponentField2_Max:number, ComponentField3_Max:number):IEntity[];
     /**
      * Allows you to get a block from the world when provided an x, y, and z position. The block must be within a ticking area.
      * @param TickingArea The ticking area the block is in
@@ -1480,14 +1480,14 @@ interface IVanillaServerSystem {
      *    The z position of the block you want
      * @return object
      */
-    getBlock(TickingArea:ITickingArea, x:number, y:number, z:number):void;
+    getBlock(TickingArea:ITickingArea, x:number, y:number, z:number):IBlock|null;
     /**
      * Allows you to get a block from the world when provided a JavaScript object containing a position. The block must be within a ticking area.
      * @param TickingArea The ticking area the block is in
      * @param PositionObject A JavaScript object with the x, y, and z position of the block you want
      * @return An object containing the block
      */
-    getBlock(TickingArea:ITickingArea, PositionObject:VectorXYZ):void;
+    getBlock(TickingArea:ITickingArea, PositionObject:VectorXYZ):IBlock|null;
     /**
      * Allows you to get an array of blocks from the world when provided a minimum and maximum x, y, and z position. The blocks must be within a ticking area. This call can be slow if given a lot of blocks, and should be used infrequently.
      * @param TickingArea The ticking area the blocks are in
@@ -1505,7 +1505,7 @@ interface IVanillaServerSystem {
      *    The maximum z position of the blocks you want
      * @return array
      */
-    getBlocks(TickingArea:ITickingArea, xMin:number, yMin:number, zMin:number, xMax:number, yMax:number, zMax:number):void;
+    getBlocks(TickingArea:ITickingArea, xMin:number, yMin:number, zMin:number, xMax:number, yMax:number, zMax:number):IBlock[][][]|null;
     /**
      * Allows you to get an array of blocks from the world when provided a minimum and maximum position. The blocks must be within a ticking area. This call can be slow if given a lot of blocks, and should be used infrequently.
      * @param TickingArea The ticking area the blocks are in
@@ -1513,7 +1513,7 @@ interface IVanillaServerSystem {
      * @param MaximumPositionObject A JavaScript object with the maximum x, y, and z position of the blocks you want
      * @return A 3D array of block objects. Indexs are the blocks positions relative to the min position given
      */
-    getBlocks(TickingArea:ITickingArea, MinimumPositionObject:VectorXYZ, MaximumPositionObject:VectorXYZ):void;
+    getBlocks(TickingArea:ITickingArea, MinimumPositionObject:VectorXYZ, MaximumPositionObject:VectorXYZ):IBlock[][][]|null;
 }
 
 }

@@ -7,6 +7,8 @@ import './bedrockapi-system';
 import './bedrockapi-events';
 import './bedrockapi-executecommand';
 import './bedrockapi-inventory';
+import './bedrockapi-components';
+import './bedrockapi-getblock';
 import './customcommand';
 import './attribute';
 import './net-chat';

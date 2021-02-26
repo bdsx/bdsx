@@ -40,8 +40,8 @@ export interface DocFixItem {
 }
 
 export interface DocFixMethod {
-    [key:string]:Record<string, string|DocFixItem>|string|boolean|undefined;
-    return?:string;
+    [key:string]:DocFixItem|string|boolean|undefined;
+    return?:string|DocFixItem;
     optional?:boolean;
     desc?:string;
 }
@@ -112,7 +112,7 @@ const PARAM = /^param([0-9]+):(.+)$/;
 
 export class DocMethod {
     public readonly params:DocField[] = [];
-    public return = DocType.inline('void');
+    public return:DocType|null = null;
     public deleted = false;
     public desc = '';
 
@@ -131,6 +131,9 @@ export class DocMethod {
                 if (reg === null) continue;
                 const fieldfix = DocType.fromDocFix(docfix[param] as DocFixItem);
                 method.params[+reg[1]] = new DocField(reg[2], fieldfix);
+            }
+            if (docfix.return !== undefined) {
+                method.return = DocType.fromDocFix(docfix.return);
             }
         }
         return method;
@@ -162,7 +165,8 @@ export class DocMethod {
             if (fixtype.optional) type.optional = true;
         }
         if (docfix.return !== null) {
-            this.return.patch(docfix.return);
+            if (this.return === null) this.return = docfix.return;
+            else this.return.patch(docfix.return);
         }
         if (docfix.deleted) this.deleted = true;
         if (docfix.desc) this.desc = docfix.desc;
@@ -368,7 +372,7 @@ export class DocType {
                 if (param.type.deleted) continue;
                 arr.push(`${param.type.stringify(tabi, param.name, {ignoreReadonly: true})}`);
             }
-            await writer.write(`${tabi}${method.name}(${arr.join(', ')}):${method.return.stringify(tabi, '')};\n`);
+            await writer.write(`${tabi}${method.name}(${arr.join(', ')}):${method.return === null ? 'void' : method.return.stringify(tabi, '')};\n`);
         }
         if (this.arrayWrapped) await writer.write(`}[]\n`);
         else await writer.write(`}\n\n`);

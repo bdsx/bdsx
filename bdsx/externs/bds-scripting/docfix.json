@@ -3,10 +3,10 @@
     "IVanillaServerSystem": {
         "method:log":null,
         "method:getBlock": {
-            "return": "IBlock"
+            "return": "IBlock|null"
         },
         "method:getBlocks": {
-            "return": "IBlock[][][]"
+            "return": "IBlock[][][]|null"
         },
         "method:registerQuery": {
             "param1:ComponentField1": {
