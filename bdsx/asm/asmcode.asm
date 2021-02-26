@@ -879,3 +879,72 @@ skip:
     ret
 endp
 
+export def getLineProcessTask:qword
+export def uv_async_alloc:qword
+export def std_cin:qword
+export def std_getline:qword
+export def uv_async_post:qword
+export def std_string_ctor:qword
+
+export proc getline
+    ; stack start
+    push rbx
+    push rsi
+    sub rsp, 18h
+    mov rbx, rcx
+
+_loop:
+    ; task = new AsyncTask
+    mov rcx, getLineProcessTask
+    lea rdx, [sizeOfCxxString+8]
+    call uv_async_alloc
+    mov [rax+asyncSize+sizeOfCxxString], rbx ; task.cb = cb
+    mov rsi, rax
+
+    ; task.string.constructor();
+    lea rcx, [rsi+asyncSize]
+    call std_string_ctor
+
+    ; std::getline(cin, task.string, '\n');
+    mov rcx, std_cin
+    mov rdx, rax
+    mov r8, 10; LF, \n
+    call std_getline
+
+    ; task.post();
+    mov rcx, rsi
+    call uv_async_post
+
+    ; goto _loop;
+    jmp _loop
+
+    ; stack end
+    add rsp, 18h
+    pop rsi
+    pop rbx
+    ret
+endp
+
+; no need to use
+;export proc getline_catch
+;    ; stack begin
+;    .mov_rp_r(Register.rsp, 8, Register.rcx) 
+;    .sub_r_c(Register.rsp, 0x18)
+;
+;    ; task = new AsyncTask
+;    mov rcx, endTask)
+;    mov rdx, 8)
+;    .call64(uv_async.alloc, Register.rax)
+;
+;    ; task.cb = cb
+;    .mov_r_rp(Register.rcx, Register.rsp, 0x20) 
+;    .mov_rp_r(Register.rax, asyncSize, Register.rcx)
+;
+;    ; task.post();
+;    mov rcx, rax
+;    .call64(uv_async.post, Register.rax)
+;
+;    ; stack end
+;    .add_r_c(Register.rsp, 0x18)
+;    ret
+;endp

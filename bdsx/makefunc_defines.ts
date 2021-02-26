@@ -33,4 +33,5 @@ export const makefuncDefines = {
     fn_returnPoint: 0x78, // if first bit is on, it's the native wrapper.need to go runtime error
     
     asyncSize: uv_async.sizeOfTask,
+    sizeOfCxxString: 0x20,
 };

@@ -7,6 +7,7 @@ import { getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
 import fs = require('fs');
+import colors = require('colors');
 
 export enum Register
 {
@@ -647,6 +648,10 @@ export class X64Assembler {
         return this;
     }
     
+    lea_r_cp(dest:Register, offset:number, size = OperationSize.qword):this {
+        return this.mov_r_c(dest, offset, size);
+    }
+
     lea_r_rp(dest:Register, src:Register, offset:number, size = OperationSize.qword):this {
         if (offset === 0 && src !== Register.rip) {
             if (dest === src) return this;
@@ -1521,7 +1526,7 @@ export class X64Assembler {
         if (errors.size !== 0) {
             for (const [name, messages] of errors) {
                 for (const message of messages) {
-                    console.error(`${name}: ${message}`);
+                    console.error(colors.red(`${name}: ${message}`));
                 }
             }
             process.exit(-1);
@@ -1834,21 +1839,18 @@ export class X64Assembler {
                     const inner = param.substring(end, param.length-1);
                     const [r1, r2, c] = this._polynominalToAddress(inner, bracketInnerStart, lineNumber);
                     if (r1 === null) {
-                        throw new ParsingError('need one register at least', {
-                            column: bracketInnerStart,
-                            width: inner.length, 
-                            line: lineNumber
-                        });
-                    }
-
-                    args.push(r1);
-                    if (r2 === null) {
-                        callinfo.push('(register pointer)');
-                        command += `_rp`;
+                        callinfo.push('(constant pointer)');
+                        command += `_cp`;
                     } else {
-                        callinfo.push('(2 register pointer)');
-                        command += `_rrp`;
-                        args.push(r2);
+                        args.push(r1);
+                        if (r2 === null) {
+                            callinfo.push('(register pointer)');
+                            command += `_rp`;
+                        } else {
+                            callinfo.push('(2 register pointer)');
+                            command += `_rrp`;
+                            args.push(r2);
+                        }
                     }
                     args.push(c);
                 } else {
