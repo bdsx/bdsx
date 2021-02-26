@@ -4,8 +4,7 @@ import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { TextPacket } from './bds/packets';
 import { CANCEL } from './common';
-import netevent = require('./netevent');
-
+import { nethook } from './nethook';
 
 interface ChatEvent
 {
@@ -55,17 +54,17 @@ class ChatManager extends EventEx<ChatListener> {
     };
 
     onStarted():void {
-        netevent.before(MinecraftPacketIds.Text).on(this.chatlistener);
+        nethook.before(MinecraftPacketIds.Text).on(this.chatlistener);
     }
     onCleared():void {
-        netevent.before(MinecraftPacketIds.Text).remove(this.chatlistener);
+        nethook.before(MinecraftPacketIds.Text).remove(this.chatlistener);
     }
 
-    /** @deprecated use netevent.before(MinecraftPacketIds.Text).on */
+    /** @deprecated use nethook.before(MinecraftPacketIds.Text).on */
     on(listener: ChatListener): void {
         super.on(listener);
     }
 }
 
-/** @deprecated use netevent.before(MinecraftPacketIds.Text).on */
+/** @deprecated use nethook.before(MinecraftPacketIds.Text).on */
 export = new ChatManager() as CapsuledEvent<ChatListener>;

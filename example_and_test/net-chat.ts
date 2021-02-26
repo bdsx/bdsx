@@ -1,7 +1,7 @@
 
 // Chat Listening
-import { CANCEL, MinecraftPacketIds, netevent } from '../bdsx';
-netevent.before(MinecraftPacketIds.Text).on(ev => {
+import { CANCEL, MinecraftPacketIds, nethook } from '../bdsx';
+nethook.before(MinecraftPacketIds.Text).on(ev => {
     if (ev.message === 'nochat')
     {
         return CANCEL; // canceling

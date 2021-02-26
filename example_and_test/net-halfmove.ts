@@ -4,14 +4,14 @@
  * CAUTION: this example is only works for two players. need to implement it more
  */
 
-import { CANCEL, MinecraftPacketIds, netevent, NetworkIdentifier } from "bdsx";
+import { CANCEL, MinecraftPacketIds, nethook, NetworkIdentifier } from "bdsx";
 
 
 interface Counter {
     counter:number;
 }
 const map = new WeakMap<NetworkIdentifier, Counter>();
-netevent.sendRaw(MinecraftPacketIds.MovePlayer).on((packet, size, ni)=>{
+nethook.sendRaw(MinecraftPacketIds.MovePlayer).on((packet, size, ni)=>{
     let field = map.get(ni);
     if (field === undefined) map.set(ni, field = {counter: 0});
 

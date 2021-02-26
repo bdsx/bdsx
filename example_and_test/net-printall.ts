@@ -1,4 +1,4 @@
-import { MinecraftPacketIds, netevent } from "bdsx";
+import { MinecraftPacketIds, nethook } from "bdsx";
 import { Packet } from "bdsx/bds/packet";
 import { NativeType } from "bdsx/nativetype";
 import { Tester } from "bdsx/tester";
@@ -21,15 +21,15 @@ const tooLoudFilter = new Set([
 for (let i = 2; i <= 0xe1; i++) {
     if (tooLoudFilter.has(i)) continue;
     
-    // netevent.raw uses serialized packets
-    netevent.raw(i).on((ptr, size, networkIdentifier, packetId) => {
+    // nethook.raw uses serialized packets
+    nethook.raw(i).on((ptr, size, networkIdentifier, packetId) => {
         if (Tester.errored) return; // stop logging if tests are failed
         const packetName = (MinecraftPacketIds[packetId] || '0x'+packetId.toString(16));
         console.log(`RECV ${packetName}: ${hex(ptr.readBuffer(Math.min(16, size)))}`);
     });
     
-    // netevent.send uses C++ packets
-    netevent.send<MinecraftPacketIds>(i).on((ptr, networkIdentifier, packetId) => {
+    // nethook.send uses C++ packets
+    nethook.send<MinecraftPacketIds>(i).on((ptr, networkIdentifier, packetId) => {
         if (Tester.errored) return; // stop logging if tests are failed
         const packetName = (MinecraftPacketIds[packetId] || '0x'+packetId.toString(16));
         const COMMON_AREA_SIZE = Packet[NativeType.size]!; // skip common area of the C++ packet

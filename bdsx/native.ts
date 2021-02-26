@@ -4,7 +4,6 @@
 
 import core = require('./core');
 import { Actor as ActorOrigin } from './bds/actor';
-import { HashedString } from './bds/hashedstring';
 import { NetworkIdentifier as NetworkIdentifierOrigin } from './bds/networkidentifier';
 import { capi } from './capi';
 import { CxxVector } from './cxxvector';
@@ -67,6 +66,9 @@ export const nethook = nethookOrigin;
  * @deprecated use bdsx.NetworkIdentifier
 */
 export const NetworkIdentifier = NetworkIdentifierOrigin;
+/**
+ * @deprecated use bdsx.NetworkIdentifier
+*/
 export type NetworkIdentifier = NetworkIdentifierOrigin;
 
 /**
@@ -92,12 +94,6 @@ export type Actor = ActorOrigin;
  */
 export const SharedPointer = SharedPointerOrigin;
 export type SharedPointer = SharedPointerOrigin;
-
-interface NativeFunction extends Function
-{
-    (...args: any[]): NativePointer;
-    address:NativePointer;
-}
 
 /**
  * @deprecated use bdsx.NativeModule

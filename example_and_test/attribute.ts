@@ -1,5 +1,4 @@
-import { AttributeId } from "bdsx";
-import { bedrockServer } from "bdsx/launcher";
+import { AttributeId, bedrockServer } from "bdsx";
 import { connectionList } from "./net-login";
 
 // Change attributes

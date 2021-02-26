@@ -1,6 +1,6 @@
 
 import Event, { CapsuledEvent, EventEx } from 'krevent';
-import { asm, Register } from './assembler';
+import { Register } from './assembler';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { CommandRequestPacket } from './bds/packets';
@@ -8,9 +8,9 @@ import { proc, procHacker } from './bds/proc';
 import { CommandContext, MCRESULT, MinecraftCommands } from './bds/server';
 import { CANCEL } from './common';
 import { makefunc, RawTypeId } from './makefunc';
+import { nethook } from './nethook';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
-import netevent = require('./netevent');
 import asmcode = require('./asm/asmcode');
 
 export function hookingForCommand(): void {
@@ -81,16 +81,24 @@ class UserCommandEvents extends EventEx<UserCommandListener> {
     };
 
     onStarted(): void {
-        netevent.before(MinecraftPacketIds.CommandRequest).on(this.listener);
+        nethook.before(MinecraftPacketIds.CommandRequest).on(this.listener);
     }
     onCleared(): void {
-        netevent.before(MinecraftPacketIds.CommandRequest).remove(this.listener);
+        nethook.before(MinecraftPacketIds.CommandRequest).remove(this.listener);
     }
 }
 
 const hookev = new Event<HookCommandListener>();
 
-/** @deprecated use netevent.before(MinecraftPacketIds.CommandRequest).on */
+/** @deprecated use nethook.before(MinecraftPacketIds.CommandRequest).on */
 export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
 
+export namespace command {
+
+    export const hook = hookev as CapsuledEvent<HookCommandListener>;
+}
+
+/**
+ * @deprecated use command.hook
+ */
 export const hook = hookev as CapsuledEvent<HookCommandListener>;

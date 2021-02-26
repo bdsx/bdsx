@@ -2,7 +2,7 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, netevent, NetworkIdentifier, serverControl, serverInstance } from "bdsx";
+import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook, NetworkIdentifier, serverInstance } from "bdsx";
 import { asm, FloatRegister, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { networkHandler } from "bdsx/bds/networkidentifier";
@@ -73,7 +73,7 @@ Tester.test({
     },
 
     chat() {
-        netevent.before(MinecraftPacketIds.Text).on((packet, ni) => {
+        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
             if (packet.message == "TEST YEY!") {
                 const MAX_CHAT = 5;
                 chatCancelCounter++;
@@ -81,7 +81,7 @@ Tester.test({
                 this.assert(connectedNi === ni, 'the network identifier does not matched');
                 if (chatCancelCounter === MAX_CHAT) {
                     this.log('> tested and stopping...');
-                    setTimeout(() => serverControl.stop(), 1000);
+                    setTimeout(() => bedrockServer.stop(), 1000);
                 }
                 return CANCEL;
             }
@@ -217,25 +217,25 @@ Tester.test({
         let idcheck = 0;
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
-            netevent.raw(i).on((ptr, size, ni, packetId) => {
+            nethook.raw(i).on((ptr, size, ni, packetId) => {
                 idcheck = packetId;
                 this.assert(size > 0, `packet size is too little`);
                 this.assert(packetId === (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
             });
-            netevent.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            nethook.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 this.assert(packetId === idcheck, `different packetId on before. id=${packetId}`);
                 this.assert(ptr.getId() === idcheck, `different class.packetId on before. id=${packetId}`);
             });
-            netevent.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            nethook.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 this.assert(packetId === idcheck, `different packetId on after. id=${packetId}`);
                 this.assert(ptr.getId() === idcheck, `different class.packetId on after. id=${packetId}`);
             });
-            netevent.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            nethook.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 sendidcheck = packetId;
                 this.assert(ptr.getId() === packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             });
-            netevent.sendRaw(i).on((ptr, size, ni, packetId) => {
+            nethook.sendRaw(i).on((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
                 this.assert(packetId === sendidcheck, `different packetId on sendRaw. id=${packetId}`);
                 this.assert(packetId === (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
@@ -244,7 +244,7 @@ Tester.test({
         }
 
         const conns = new Set<NetworkIdentifier>();
-        netevent.after(MinecraftPacketIds.Login).on((ptr, ni) => {
+        nethook.after(MinecraftPacketIds.Login).on((ptr, ni) => {
             this.assert(!conns.has(ni), '[test] logined without connected');
             conns.add(ni);
             setTimeout(() => {
@@ -314,10 +314,10 @@ Tester.test({
 let connectedNi: NetworkIdentifier;
 let connectedId: string;
 
-netevent.raw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
+nethook.raw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
-netevent.after(MinecraftPacketIds.Login).on(ptr => {
+nethook.after(MinecraftPacketIds.Login).on(ptr => {
     connectedId = ptr.connreq.cert.getId();
 });
 

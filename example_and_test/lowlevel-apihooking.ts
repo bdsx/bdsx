@@ -8,7 +8,6 @@ import { SYMOPT_UNDNAME } from "bdsx/common";
 import { pdb } from "bdsx/core";
 import { ProcHacker } from "bdsx/prochacker";
 
-
 if (!capi.isRunningOnWine()) { // Skip for Linux, pdb is not working on Wine.
     // the API hooking is possible on Wine with the generated cache.
 

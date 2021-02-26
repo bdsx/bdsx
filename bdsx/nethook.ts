@@ -1,6 +1,6 @@
 
-import Event from "krevent";
-import { asm, OperationSize, Register } from "./assembler";
+import Event, { CapsuledEvent } from "krevent";
+import { Register } from "./assembler";
 import { NetworkHandler, NetworkIdentifier } from "./bds/networkidentifier";
 import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "./bds/packet";
 import { MinecraftPacketIds } from "./bds/packetids";
@@ -13,7 +13,7 @@ import { NativeClass } from "./nativeclass";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError } from "./source-map-support";
-import { _tickCallback } from "./util";
+import { hex, _tickCallback } from "./util";
 import asmcode = require ('./asm/asmcode');
 
 const MAX_PACKET_ID = 0x100;
@@ -47,6 +47,25 @@ OnPacketRBP.abstract({
     connection: [NetworkHandler.Connection.ref(), -0xc8],
 });
 
+type AllEventTarget = Event<nethook.RawListener|nethook.BeforeListener<any>|nethook.AfterListener<any>|nethook.SendListener<any>|nethook.SendRawListener>;
+type AnyEventTarget = Event<nethook.RawListener&nethook.BeforeListener<any>&nethook.AfterListener<any>&nethook.SendListener<any>&nethook.SendRawListener>;
+
+const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
+for (let i=0;i<EVENT_INDEX_COUNT;i++) {
+    alltargets[i] = null;
+}
+
+function getNetEventTarget(type:nethook.EventType, packetId:MinecraftPacketIds):AnyEventTarget {
+    if ((packetId>>>0) >= MAX_PACKET_ID) {
+        throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
+    }
+    const id = type*MAX_PACKET_ID + packetId;
+    let target = alltargets[id];
+    if (target !== null) return target as AnyEventTarget;
+    alltargets[id] = target = new Event;
+    return target as AnyEventTarget;
+}
+
 export namespace nethook
 {
     export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
@@ -54,13 +73,6 @@ export namespace nethook
     export type AfterListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
     export type SendListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
     export type SendRawListener = (ptr:NativePointer, size:number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
-    type AllEventTarget = Event<RawListener|BeforeListener<any>|AfterListener<any>|SendListener<any>|SendRawListener>;
-    type AnyEventTarget = Event<RawListener&BeforeListener<any>&AfterListener<any>&SendListener<any>&SendRawListener>;
-    
-    const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
-    for (let i=0;i<EVENT_INDEX_COUNT;i++) {
-        alltargets[i] = null;
-    }
 
     export enum EventType
     {
@@ -323,15 +335,11 @@ export namespace nethook
         throw Error('LoginPacket does not have cert info');
     }
     
+    /**
+     * @deprecated use nethook.*
+     */
     export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AnyEventTarget {
-        if ((packetId>>>0) >= MAX_PACKET_ID) {
-            throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
-        }
-        const id = type*MAX_PACKET_ID + packetId;
-        let target = alltargets[id];
-        if (target !== null) return target as AnyEventTarget;
-        alltargets[id] = target = new Event;
-        return target as AnyEventTarget;
+        return getNetEventTarget(type, packetId);
     }
 
     /**
@@ -344,5 +352,76 @@ export namespace nethook
      */
     export function sendPacket(networkIdentifier:NetworkIdentifier, packet:StaticPointer, unknownarg:number=0):void {
         new Packet(packet).sendTo(networkIdentifier, 0);
+    }
+    
+    /**
+     * before 'before' and 'after'
+     * earliest event for the packet receiving.
+     * It will bring raw packet buffers before parsing
+     * It will cancel the packet if you return false
+     */
+    export function raw(id:MinecraftPacketIds):CapsuledEvent<nethook.RawListener> {
+        return nethook.getEventTarget(nethook.EventType.Raw, id);
+    }
+
+    /**
+     * after 'raw', before 'after'
+     * the event that before processing but after parsed from raw.
+     */
+    export function before<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.BeforeListener<ID>> {
+        return nethook.getEventTarget(nethook.EventType.Before, id);
+    }
+
+    /**
+     * after 'raw' and 'before'
+     * the event that after processing. some fields are assigned after the processing
+     */
+    export function after<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.AfterListener<ID>> {
+        return nethook.getEventTarget(nethook.EventType.After, id);
+    }
+
+    /**
+     * before serializing.
+     * it can modify class fields.
+     */
+    export function send<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.SendListener<ID>> {
+        return nethook.getEventTarget(nethook.EventType.Send, id);
+    }
+
+    /**
+     * after serializing. before sending.
+     * it can access serialized buffer.
+     */
+    export function sendRaw(id:number):CapsuledEvent<nethook.SendRawListener> {
+        return nethook.getEventTarget(nethook.EventType.SendRaw, id);
+    }
+
+    /** @deprecated use NetworkIdentifier.close */
+    export const close:CapsuledEvent<(networkIdentifier:NetworkIdentifier)=>void> = NetworkIdentifier.close;
+
+    /**
+     * Write all packets to console
+     */
+    export function watchAll(exceptions:MinecraftPacketIds[] = [
+        MinecraftPacketIds.ClientCacheBlobStatus,
+        MinecraftPacketIds.LevelChunk,
+        MinecraftPacketIds.ClientCacheMissResponse,
+        MinecraftPacketIds.MoveEntityDelta,
+        MinecraftPacketIds.SetEntityMotion,
+        MinecraftPacketIds.SetEntityData,
+    ]):void {
+        const ex = new Set(exceptions);
+        for (let i=1; i<=0x88; i++) {
+            if (ex.has(i)) continue;
+            before<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
+                console.log(`R ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);
+            });
+        }
+        for (let i=1; i<=0x88; i++) {
+            if (ex.has(i)) continue;
+            send<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
+                console.log(`S ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);
+            });
+        }
     }
 }

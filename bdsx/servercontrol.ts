@@ -1,34 +1,24 @@
+/**
+ * @deprecated combined to bedrockServer in launcher.ts
+ */
+import { bedrockServer } from './launcher';
 
-import child_process = require('child_process');
-import { procHacker } from './bds/proc';
-import { serverInstance } from './bds/server';
-import { bedrock_server_exe, VoidPointer } from './core';
-import { RawTypeId } from './makefunc';
-
+/**
+ * @deprecated use bedrockServer.*
+ */
 export namespace serverControl
 {
-    const stopfunc = procHacker.js('DedicatedServer::stop', RawTypeId.Void, null, VoidPointer);
-
     /**
-     * stop the BDS
-     * It will stop next tick
+     * @deprecated use bedrockServer.stop()
      */
     export function stop():void {
-        const server = serverInstance.server;
-        stopfunc(server.add(8));
+        bedrockServer.stop();
     }
 
     /**
-     * shutdown server and restart
+     * @deprecated use bedrockServer.restart()
      */
     export function restart(force?:boolean):void {
-        const argsLine = bedrock_server_exe.argsLine;
-        if (force) {
-            child_process.spawn(argsLine);
-            bedrock_server_exe.forceKill(-1);
-        } else {
-            child_process.spawn(argsLine);
-            stop();
-        }
+        bedrockServer.restart(force);
     }
 }

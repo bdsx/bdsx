@@ -20,12 +20,12 @@ import { nethook } from './nethook';
 import { serverControl } from './servercontrol';
 import { SharedPtr } from './sharedpointer';
 import { hex } from './util';
+import { bedrockServer } from './launcher';
 
 import makefuncModule = require('./makefunc');
 import core = require("./core");
 import netevent = require('./netevent');
 import chat = require('./chat');
-import command = require('./command');
 import nativetype = require('./nativetype');
 import native = require('./native');
 
@@ -39,6 +39,7 @@ export import sendPacket = nethook.sendPacket;
 
 /** @deprecated use MinecraftPacketIds, matching to the original name  */
 export import PacketId = MinecraftPacketIds;
+import { command } from './command';
 
 declare module "./core"
 {
@@ -134,10 +135,10 @@ export {
     ServerPlayer,
     MinecraftPacketIds,
     nethook,
-    serverControl,
-    netevent,
-    chat,
     command,
+    serverControl,
+    chat,
+    netevent,
     native,
     serverInstance,
     CANCEL,
@@ -150,6 +151,5 @@ export {
     capi,
     analyzer,
     RawTypeId,
+    bedrockServer,
 };
-
-

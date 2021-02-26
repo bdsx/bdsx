@@ -1,5 +1,5 @@
 import Event, { CapsuledEvent } from "krevent";
-import { asm, OperationSize, Register } from "./assembler";
+import { asm, Register } from "./assembler";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { hookingForCommand } from "./command";
@@ -12,6 +12,7 @@ import { CxxString, NativeType } from "./nativetype";
 import { nethook } from "./nethook";
 import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
 import { _tickCallback } from "./util";
+import child_process = require('child_process');
 
 import readline = require("readline");
 import colors = require('colors');
@@ -387,6 +388,8 @@ function _launch(asyncResolve:()=>void):void {
     procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
 }
 
+const stopfunc = procHacker.js('DedicatedServer::stop', RawTypeId.Void, null, VoidPointer);
+
 export namespace bedrockServer
 {
     export const open = openEvTarget as CapsuledEvent<()=>void>;
@@ -401,6 +404,31 @@ export namespace bedrockServer
     export const bedrockLog = logEvTarget as CapsuledEvent<(log:string, color:colors.Color)=>CANCEL|void>;
     export const commandOutput = commandOutputEvTarget as CapsuledEvent<(log:string)=>CANCEL|void>;
     
+    /**
+     * stop the BDS
+     * It will stop next tick
+     */
+    export function stop():void {
+        const server = bd_server.serverInstance.server;
+        stopfunc(server.add(8));
+    }
+
+    /**
+     * shutdown server and restart
+     */
+    export function restart(force?:boolean):void {
+        const argsLine = bedrock_server_exe.argsLine;
+        if (force) {
+            child_process.spawn(argsLine);
+            bedrock_server_exe.forceKill(-1);
+        } else {
+            stop();
+            close.on(()=>{
+                child_process.spawn(argsLine);
+            });
+        }
+    }
+
     export function launch():Promise<void> {
         return new Promise((resolve, reject)=>{
             if (launched) {
