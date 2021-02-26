@@ -50,13 +50,13 @@ export class Actor extends NativeClass {
 //     static fromPointer(ptr:StaticPointer):Actor;
 //     static fromUniqueId(_64bit_low:number, _64bit_high:number):Actor|null;
 
-    getDimensionId(out:Int32Array):void {
+    private _getDimensionId(out:Int32Array):void {
         abstract();
     }
     
     getDimension():DimensionId {
         const out = new Int32Array(1);
-        this.getDimensionId(out);
+        this._getDimensionId(out);
         return out[0];
     }
 
@@ -164,14 +164,14 @@ export class Actor extends NativeClass {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
     }
-    static [makefunc.np2js](ptr:StaticPointer):Actor {
+    static [makefunc.np2js](ptr:StaticPointer):Actor|null {
         return Actor._singletoning(ptr);
     }
     static all():IterableIterator<Actor> {
         abstract();
     }
 
-    private static _singletoning(ptr:StaticPointer):Actor {
+    private static _singletoning(ptr:StaticPointer):Actor|null {
         abstract();
     }
 }

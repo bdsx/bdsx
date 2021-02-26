@@ -40,13 +40,13 @@ export class CommandOrigin extends NativeClass {
     getWorldPosition(): Vec3 {
         abstract();
     }
-    getLevel(origin:CommandOrigin): Level {
+    getLevel(): Level {
         abstract();
     }
-    getDimension(origin:CommandOrigin): Dimension {
+    getDimension(): Dimension {
         abstract();
     }
-    getEntity(origin:CommandOrigin):Actor {
+    getEntity():Actor {
         abstract();
     }
 }

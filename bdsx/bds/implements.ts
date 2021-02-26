@@ -114,7 +114,8 @@ const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
 Actor.prototype.isPlayer = function() {
     return this.vftable.equals(ServerPlayer_vftable);
 };
-(Actor as any)._singletoning = function(ptr:StaticPointer):Actor {
+(Actor as any)._singletoning = function(ptr:StaticPointer):Actor|null {
+    if (ptr.isNull()) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
     if (actor) return actor;
@@ -141,7 +142,7 @@ Actor.abstract({
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 
 Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
-Actor.prototype.getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
+(Actor.prototype as any)._getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);  
