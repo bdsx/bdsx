@@ -345,13 +345,13 @@ class Maker extends X64Assembler {
         this.push_r(Register.rbp);
         this.mov_r_c(Register.rdi, functionMapPtr);
         if (useGetOut) {
-            this.mov_r_rp(Register.rax, Register.rdi, makefuncDefines.fn_returnPoint);
+            this.mov_r_rp(Register.rax, Register.rdi, 1, makefuncDefines.fn_returnPoint);
         }
         this.push_r(Register.rax);
 
         if (useGetOut) {
-            this.lea_r_rp(Register.rax, Register.rsp, 1);
-            this.mov_rp_r(Register.rdi, makefuncDefines.fn_returnPoint, Register.rax);
+            this.lea_r_rp(Register.rax, Register.rsp, 1, 1);
+            this.mov_rp_r(Register.rdi, 1, makefuncDefines.fn_returnPoint, Register.rax);
         }
     }
 
@@ -359,7 +359,7 @@ class Maker extends X64Assembler {
         this.add_r_c(Register.rsp, this.stackSize);
         this.pop_r(Register.rcx);
         this.pop_r(Register.rbp);
-        this.mov_rp_r(Register.rdi, makefuncDefines.fn_returnPoint, Register.rcx);
+        this.mov_rp_r(Register.rdi, 1, makefuncDefines.fn_returnPoint, Register.rcx);
         this.pop_r(Register.rsi);
         this.pop_r(Register.rdi);
         this.ret();
@@ -369,7 +369,7 @@ class Maker extends X64Assembler {
         if (target.memory) {
             const temp = target.reg !== Register.r10 ? Register.r10 : Register.r11;
             this.mov_r_c(temp, value);
-            this.mov_rp_r(target.reg, target.offset, temp);
+            this.mov_rp_r(target.reg, 1, target.offset, temp);
         } else {
             this.mov_r_c(target.reg, value);
         }
@@ -383,33 +383,33 @@ class Maker extends X64Assembler {
             if (source.memory) {
                 if (type === RawTypeId.FloatAsInt64) {
                     if (reverse) {
-                        this.cvtsi2sd_r_rp(ftemp, source.reg, source.offset);
-                        this.movsd_rp_r(target.reg, target.offset, ftemp);
+                        this.cvtsi2sd_r_rp(ftemp, source.reg, 1, source.offset);
+                        this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
                     } else {
-                        this.cvttsd2si_r_rp(temp, source.reg, source.offset);
-                        this.mov_rp_r(target.reg, target.offset, temp);
+                        this.cvttsd2si_r_rp(temp, source.reg, 1, source.offset);
+                        this.mov_rp_r(target.reg, 1, target.offset, temp);
                     }
                 } else if (type === RawTypeId.Float32) {
                     if (reverse) { // float32_t -> float64_t
-                        this.cvtss2sd_r_rp(ftemp, source.reg, source.offset);
-                        this.movsd_rp_r(target.reg, target.offset, ftemp);
+                        this.cvtss2sd_r_rp(ftemp, source.reg, 1, source.offset);
+                        this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
                     } else { // float64_t -> float32_t
-                        this.cvtsd2ss_r_rp(ftemp, source.reg, source.offset);
-                        this.movss_rp_r(target.reg, target.offset, ftemp);
+                        this.cvtsd2ss_r_rp(ftemp, source.reg, 1, source.offset);
+                        this.movss_rp_r(target.reg, 1, target.offset, ftemp);
                     }
                 } else {
                     if (target === source) {
                         // same
                     } else {
                         if (type === RawTypeId.Boolean) {
-                            this.mov_r_rp(temp, source.reg, source.offset, OperationSize.byte);
-                            this.mov_rp_r(target.reg, target.offset, temp, OperationSize.byte);
+                            this.mov_r_rp(temp, source.reg, 1, source.offset, OperationSize.byte);
+                            this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.byte);
                         } else if (type === RawTypeId.Int32) {
-                            this.movsxd_r_rp(temp, source.reg, source.offset);
-                            this.mov_rp_r(target.reg, target.offset, temp);
+                            this.movsxd_r_rp(temp, source.reg, 1, source.offset);
+                            this.mov_rp_r(target.reg, 1, target.offset, temp);
                         } else {
-                            this.mov_r_rp(temp, source.reg, source.offset);
-                            this.mov_rp_r(target.reg, target.offset, temp);
+                            this.mov_r_rp(temp, source.reg, 1, source.offset);
+                            this.mov_rp_r(target.reg, 1, target.offset, temp);
                         }
                     }
                 }
@@ -417,49 +417,49 @@ class Maker extends X64Assembler {
                 if (type === RawTypeId.FloatAsInt64) {
                     if (reverse) { // int64_t -> float64_t
                         this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
-                        this.movsd_rp_r(target.reg, target.offset, FloatRegister.xmm0);
+                        this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
                     } else { // float64_t -> int64_t
                         this.cvttsd2si_r_r(temp, source.freg);
-                        this.mov_rp_r(target.reg, target.offset, temp);
+                        this.mov_rp_r(target.reg, 1, target.offset, temp);
                     }
                 } else if (type === RawTypeId.Float64) {
-                    this.movsd_rp_r(target.reg, target.offset, source.freg);
+                    this.movsd_rp_r(target.reg, 1, target.offset, source.freg);
                 } else if (type === RawTypeId.Float32) {
                     if (reverse) { // float32_t -> float64_t
                         this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
-                        this.movsd_rp_r(target.reg, target.offset, FloatRegister.xmm0);
+                        this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
                     } else { // float64_t -> float32_t
                         this.cvtsd2ss_r_r(FloatRegister.xmm0, source.freg);
-                        this.movss_rp_r(target.reg, target.offset, FloatRegister.xmm0);
+                        this.movss_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
                     }
                 } else if (type === RawTypeId.Boolean) {
-                    this.mov_rp_r(target.reg, target.offset, source.reg, OperationSize.byte);
+                    this.mov_rp_r(target.reg, 1, target.offset, source.reg, OperationSize.byte);
                 } else {
-                    this.mov_rp_r(target.reg, target.offset, source.reg);
+                    this.mov_rp_r(target.reg, 1, target.offset, source.reg);
                 }
             }
         } else {
             if (source.memory) {
                 if (type === RawTypeId.FloatAsInt64) {
                     if (reverse) { // int64_t -> float64_t
-                        this.cvtsi2sd_r_rp(target.freg, source.reg, source.offset);
+                        this.cvtsi2sd_r_rp(target.freg, source.reg, 1, source.offset);
                     } else { // float64_t -> int64_t
-                        this.cvttsd2si_r_rp(target.reg, source.reg, source.offset);
+                        this.cvttsd2si_r_rp(target.reg, source.reg, 1, source.offset);
                     }
                 } else if (type === RawTypeId.Float64) {
-                    this.movsd_r_rp(target.freg, source.reg, source.offset);
+                    this.movsd_r_rp(target.freg, source.reg, 1, source.offset);
                 } else if (type === RawTypeId.Float32) {
                     if (reverse) { // float32_t -> float64_t
-                        this.cvtss2sd_r_rp(target.freg, source.reg, source.offset);
+                        this.cvtss2sd_r_rp(target.freg, source.reg, 1, source.offset);
                     } else { // float64_t -> float32_t
-                        this.cvtsd2ss_r_rp(target.freg, source.reg, source.offset);
+                        this.cvtsd2ss_r_rp(target.freg, source.reg, 1, source.offset);
                     }
                 } else if (type === RawTypeId.Boolean) {
-                    this.movzx_r_rp(target.reg, source.reg, source.offset, OperationSize.qword, OperationSize.byte);
+                    this.movzx_r_rp(target.reg, source.reg, 1, source.offset, OperationSize.qword, OperationSize.byte);
                 } else if (type === RawTypeId.Int32) {
-                    this.movsxd_r_rp(target.reg, source.reg, source.offset);
+                    this.movsxd_r_rp(target.reg, source.reg, 1, source.offset);
                 } else {
-                    this.mov_r_rp(target.reg, source.reg, source.offset);
+                    this.mov_r_rp(target.reg, source.reg, 1, source.offset);
                 }
             } else {
                 if (type === RawTypeId.FloatAsInt64) {
@@ -502,9 +502,9 @@ class Maker extends X64Assembler {
             this._mov_t_t(TARGET_2, source, RawTypeId.Void, true);
             this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
             if (info.nullable) {
-                this.call_rp(Register.rdi, makefuncDefines.fn_pointer_np2js_nullable);
+                this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
             } else {
-                this.call_rp(Register.rdi, makefuncDefines.fn_pointer_np2js);
+                this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
             }
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
@@ -522,9 +522,9 @@ class Maker extends X64Assembler {
                 this.mov_r_c(Register.r8, nativePointerValueRef);
             }
             if (info.nullable) {
-                this.call_rp(Register.rdi, makefuncDefines.fn_wrapper_np2js_nullable);
+                this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_np2js_nullable);
             } else {
-                this.call_rp(Register.rdi, makefuncDefines.fn_wrapper_np2js);
+                this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_np2js);
             }
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
@@ -532,12 +532,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Boolean: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, info.typeId, true);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsBoolToBoolean);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBoolToBoolean);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, RawTypeId.Void, true);
             break;
@@ -545,12 +545,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Int32: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, info.typeId, true);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsIntToNumber);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsIntToNumber);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, RawTypeId.Void, true);
             break;
@@ -558,12 +558,12 @@ class Maker extends X64Assembler {
         case RawTypeId.FloatAsInt64: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, info.typeId, true);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsDoubleToNumber);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, RawTypeId.Void, true);
             break;
@@ -571,12 +571,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Float64: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, info.typeId, true);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsDoubleToNumber);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, RawTypeId.Void, true);
             break;
@@ -584,12 +584,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Float32: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, info.typeId, true);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsDoubleToNumber);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, RawTypeId.Void, true);
             break;
@@ -597,36 +597,36 @@ class Maker extends X64Assembler {
         case RawTypeId.StringAnsi:
             this._mov_t_t(TARGET_1, source, info.typeId, true);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_ansi_np2js);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_ansi_np2js);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         case RawTypeId.StringUtf8:
             this._mov_t_t(TARGET_1, source, info.typeId, true);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_utf8_np2js);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         case RawTypeId.StringUtf16:
             this._mov_t_t(TARGET_1, source, info.typeId, true);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_utf16_np2js);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_np2js);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         case RawTypeId.Bin64: {
             const temp = target.tempPtr(source, TargetInfo.memory(Register.rbp, 8));
             if (source.memory) {
-                this.lea_r_rp(Register.rcx, source.reg, source.offset);
+                this.lea_r_rp(Register.rcx, source.reg, 1, source.offset);
             } else {
-                this.lea_r_rp(Register.rcx, Register.rbp, 8);
-                this.mov_rp_r(Register.rcx, 0, source.reg);
+                this.lea_r_rp(Register.rcx, Register.rbp, 1, 8);
+                this.mov_rp_r(Register.rcx, 1, 0, source.reg);
             }
             this.mov_r_c(Register.rdx, 4);
-            this.lea_r_rp(Register.r8, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsPointerToString);
+            this.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsPointerToString);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, RawTypeId.Void, true);
             break;
@@ -645,11 +645,11 @@ class Maker extends X64Assembler {
     jsToNative(info:ParamInfo, target:TargetInfo, source:TargetInfo):void {
         switch (info.typeId) {
         case RawTypeId_StructureReturn: {
-            this.lea_r_rp(Register.rdx, Register.rbp, this.offsetForStructureReturn);
+            this.lea_r_rp(Register.rdx, Register.rbp, 1, this.offsetForStructureReturn);
 
             chakraUtil.JsAddRef(info.type);
             this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
-            this.call_rp(Register.rdi, makefuncDefines.fn_pointer_js_new);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js_new);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
             break;
         }
@@ -659,7 +659,7 @@ class Maker extends X64Assembler {
 
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, true);
             this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(js2np));
-            this.call_rp(Register.rdi, makefuncDefines.fn_wrapper_js2np);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_js2np);
             this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, false);
             break;
         }
@@ -667,10 +667,10 @@ class Maker extends X64Assembler {
         case RawTypeId_Pointer: {
             pointerClassOrThrow(info.numberOnMaking, info.type);
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
-            this.call_rp(Register.rdi, makefuncDefines.fn_pointer_js2class);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js2class);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!'); // failed to use cmovnz
-            this.mov_r_rp(Register.rax, Register.rax, 0x10);
+            this.mov_r_rp(Register.rax, Register.rax, 1, 0x10);
             this.close_label('!');
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             break;
@@ -678,12 +678,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Boolean: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsBooleanToBool);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBooleanToBool);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, info.typeId, false);
             break;
@@ -691,12 +691,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Int32: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsNumberToInt);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToInt);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, info.typeId, false);
             break;
@@ -704,12 +704,12 @@ class Maker extends X64Assembler {
         case RawTypeId.FloatAsInt64: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsNumberToDouble);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, info.typeId, false);
             break;
@@ -717,12 +717,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Float64: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsNumberToDouble);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, info.typeId, false);
             break;
@@ -730,12 +730,12 @@ class Maker extends X64Assembler {
         case RawTypeId.Float32: {
             const temp = target.tempPtr();
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
-            this.lea_r_rp(Register.rdx, temp.reg, temp.offset);
-            this.call_rp(Register.rdi, makefuncDefines.fn_JsNumberToDouble);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!');
             this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
             this._mov_t_t(target, temp, info.typeId, false);
             break;
@@ -744,7 +744,7 @@ class Maker extends X64Assembler {
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.mov_r_c(Register.r8, chakraUtil.stack_ansi);
-            this.call_rp(Register.rdi, makefuncDefines.fn_str_js2np);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             this.useStackAllocator = true;
             break;
@@ -752,26 +752,26 @@ class Maker extends X64Assembler {
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.mov_r_c(Register.r8, chakraUtil.stack_utf8);
-            this.call_rp(Register.rdi, makefuncDefines.fn_str_js2np);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             this.useStackAllocator = true;
             break;
         case RawTypeId.StringUtf16:
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_utf16_js2np);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_js2np);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             break;
         case RawTypeId.Buffer:
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_buffer_to_pointer);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_buffer_to_pointer);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             break;
         case RawTypeId.Bin64:
             this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, makefuncDefines.fn_bin64);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_bin64);
             this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
             break;
         case RawTypeId.JsValueRef:
@@ -906,7 +906,7 @@ export namespace makefunc {
         const func = new Maker(pimaker, stackSize, false);
         // 0x20~0x28 - return address
         // 0x00~0x20 - pushed data
-        func.lea_r_rp(Register.rbp, Register.rsp, 0x28);
+        func.lea_r_rp(Register.rbp, Register.rsp, 1, 0x28);
     
         const activeRegisters = Math.min(pimaker.countOnCpp, 4);
         if (activeRegisters > 1) {
@@ -915,18 +915,18 @@ export namespace makefunc {
                 const typeId = pimaker.typeIds[i];
                 if (typeId === RawTypeId.Float64) {
                     const freg = fregMap[i];
-                    func.movsd_rp_r(Register.rbp, offset, freg);
+                    func.movsd_rp_r(Register.rbp, 1, offset, freg);
                 } else if (typeId === RawTypeId.Float32) {
                     const freg = fregMap[i];
-                    func.movss_rp_r(Register.rbp, offset, freg);
+                    func.movss_rp_r(Register.rbp, 1, offset, freg);
                 } else {
                     const reg = regMap[i];
-                    func.mov_rp_r(Register.rbp, offset, reg);
+                    func.mov_rp_r(Register.rbp, 1, offset, reg);
                 }
             }
         }
     
-        func.lea_r_rp(Register.rsi, Register.rsp, -func.stackSize + 0x20); // without calling stack
+        func.lea_r_rp(Register.rsi, Register.rsp, 1, -func.stackSize + 0x20); // without calling stack
         func.sub_r_c(Register.rsp, func.stackSize);
     
         let offset = 0;
@@ -947,15 +947,15 @@ export namespace makefunc {
         }
     
         func.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(jsfunction));
-        func.lea_r_rp(Register.rdx, Register.rsp, 0x20);
+        func.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
         func.mov_r_c(Register.r8, pimaker.countOnCalling + 1);
         func.mov_r_r(Register.r9, Register.rbp);
-        func.call_rp(Register.rdi, makefuncDefines.fn_JsCallFunction);
+        func.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
     
         func.test_r_r(Register.rax, Register.rax);
         func.jz_label('!');
         func.mov_r_r(Register.rcx, Register.rax);
-        func.call_rp(Register.rdi, makefuncDefines.fn_getout);
+        func.call_rp(Register.rdi, 1, makefuncDefines.fn_getout);
         func.close_label('!');
     
         func.jsToNative(pimaker.getInfo(-1), TARGET_RETURN, TargetInfo.memory(Register.rbp, 0));
@@ -1015,12 +1015,12 @@ export namespace makefunc {
             func.cmp_r_c(Register.r9, pimaker.countOnCalling + 1);
             func.jz_label('!');
             func.mov_r_c(Register.rdx, pimaker.countOnCalling);
-            func.lea_r_rp(Register.rcx, Register.r9, -1);
-            func.jmp_rp(Register.rdi, makefuncDefines.fn_getout_invalid_parameter_count);
+            func.lea_r_rp(Register.rcx, Register.r9, 1, -1);
+            func.jmp_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter_count);
             func.close_label('!');
         }
         func.mov_r_r(Register.rsi, Register.r8);
-        func.lea_r_rp(Register.rbp, Register.rsp, - func.stackSize + paramsSize);
+        func.lea_r_rp(Register.rbp, Register.rsp, 1, - func.stackSize + paramsSize);
     
         if (pimaker.structureReturn) {
             func.offsetForStructureReturn = func.stackSize - paramsSize - 8;
@@ -1044,42 +1044,42 @@ export namespace makefunc {
     
             if (func.useStackAllocator) {
                 func.mov_r_c(Register.rax, chakraUtil.stack_ptr);
-                func.or_rp_c(Register.rax, 0, 1);
+                func.or_rp_c(Register.rax, 1, 0, 1);
             }
     
             func.add_r_c(Register.rsp, stackSizeForConvert);
     
             // paramCountOnCpp >= 2
             if (pimaker.typeIds[0] === RawTypeId.Float64) {
-                func.movsd_r_rp(FloatRegister.xmm0, Register.rsp, 0);
+                func.movsd_r_rp(FloatRegister.xmm0, Register.rsp, 1, 0);
             } else if (pimaker.typeIds[0] === RawTypeId.Float32) {
-                func.movss_r_rp(FloatRegister.xmm0, Register.rsp, 0);
+                func.movss_r_rp(FloatRegister.xmm0, Register.rsp, 1, 0);
             } else {
-                func.mov_r_rp(Register.rcx, Register.rsp, 0);
+                func.mov_r_rp(Register.rcx, Register.rsp, 1, 0);
             }
             if (pimaker.countOnCpp >= 3) {
                 if (pimaker.typeIds[1] === RawTypeId.Float64) {
-                    func.movsd_r_rp(FloatRegister.xmm1, Register.rsp, 8);
+                    func.movsd_r_rp(FloatRegister.xmm1, Register.rsp, 1, 8);
                 } else if (pimaker.typeIds[1] === RawTypeId.Float32) {
-                    func.movss_r_rp(FloatRegister.xmm1, Register.rsp, 8);
+                    func.movss_r_rp(FloatRegister.xmm1, Register.rsp, 1, 8);
                 } else {
-                    func.mov_r_rp(Register.rdx, Register.rsp, 8);
+                    func.mov_r_rp(Register.rdx, Register.rsp, 1, 8);
                 }
                 if (pimaker.countOnCpp >= 4) {
                     if (pimaker.typeIds[2] === RawTypeId.Float64) {
-                        func.movsd_r_rp(FloatRegister.xmm2, Register.rsp, 16);
+                        func.movsd_r_rp(FloatRegister.xmm2, Register.rsp, 1, 16);
                     } else if (pimaker.typeIds[2] === RawTypeId.Float32) {
-                        func.movss_r_rp(FloatRegister.xmm2, Register.rsp, 16);
+                        func.movss_r_rp(FloatRegister.xmm2, Register.rsp, 1, 16);
                     } else {
-                        func.mov_r_rp(Register.r8, Register.rsp, 16);
+                        func.mov_r_rp(Register.r8, Register.rsp, 1, 16);
                     }
                     if (pimaker.countOnCpp >= 5) {
                         if (pimaker.typeIds[3] === RawTypeId.Float64) {
-                            func.movsd_r_rp(FloatRegister.xmm3, Register.rsp, 24);
+                            func.movsd_r_rp(FloatRegister.xmm3, Register.rsp, 1, 24);
                         } else if (pimaker.typeIds[3] === RawTypeId.Float32) {
-                            func.movss_r_rp(FloatRegister.xmm3, Register.rsp, 24);
+                            func.movss_r_rp(FloatRegister.xmm3, Register.rsp, 1, 24);
                         } else {
-                            func.mov_r_rp(Register.r9, Register.rsp, 24);
+                            func.mov_r_rp(Register.r9, Register.rsp, 1, 24);
                         }
                     }
                 }
@@ -1094,7 +1094,7 @@ export namespace makefunc {
     
             if (func.useStackAllocator) {
                 func.mov_r_c(Register.rax, chakraUtil.stack_ptr);
-                func.or_rp_c(Register.rax, 0, 1);
+                func.or_rp_c(Register.rax, 1, 0, 1);
             }
         }
     
@@ -1102,8 +1102,8 @@ export namespace makefunc {
             func.call64(targetfuncptr, Register.rax);
         } else {
             const thisoff = (functionPointer as number[])[1] || 0;
-            func.mov_r_rp(Register.rax, Register.rcx, thisoff);
-            func.call_rp(Register.rax, vfoff!);
+            func.mov_r_rp(Register.rax, Register.rcx, 1, thisoff);
+            func.call_rp(Register.rax, 1, vfoff!);
         }
     
         let returnTarget = TARGET_RETURN;
@@ -1111,21 +1111,21 @@ export namespace makefunc {
             if (!pimaker.structureReturn) {
                 const retTypeCode = getRawTypeId(PARAMNUM_RETURN, returnType);
                 if (retTypeCode === RawTypeId.Float64) {
-                    func.movsd_rp_r(Register.rbp, 0, FloatRegister.xmm0);
+                    func.movsd_rp_r(Register.rbp, 1, 0, FloatRegister.xmm0);
                 } else if (retTypeCode === RawTypeId.Float32) {
-                    func.movss_rp_r(Register.rbp, 0, FloatRegister.xmm0);
+                    func.movss_rp_r(Register.rbp, 1, 0, FloatRegister.xmm0);
                 } else {
-                    func.mov_rp_r(Register.rbp, 0, Register.rax);
+                    func.mov_rp_r(Register.rbp, 1, 0, Register.rax);
                 }
                 returnTarget = TargetInfo.memory(Register.rbp, 0);
             }
             func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);
-            func.and_rp_c(Register.rdx, 0, -2);
-            func.call_rp(Register.rdi, makefuncDefines.fn_stack_free_all);
+            func.and_rp_c(Register.rdx, 1, 0, -2);
+            func.call_rp(Register.rdi, 1, makefuncDefines.fn_stack_free_all);
         }
     
         if (pimaker.structureReturn) {
-            func.mov_r_rp(Register.rax, Register.rbp, func.stackSize - paramsSize - 8);
+            func.mov_r_rp(Register.rax, Register.rbp, 1, func.stackSize - paramsSize - 8);
         } else {
             func.nativeToJs(pimaker.getInfo(-1), TARGET_RETURN, returnTarget);
         }

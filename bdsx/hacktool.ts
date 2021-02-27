@@ -33,13 +33,13 @@ export namespace hacktool
         for (const r of keepRegister) {
             const off = registerOffsetMap[r];
             if (off == null) throw Error(`${Register[r]} is not the register of arguments`);
-            newcode.mov_rp_r(Register.rsp, off+fullsize, r);
+            newcode.mov_rp_r(Register.rsp, 1, off+fullsize, r);
         }
         if (keepFloatRegister.length !== 0) {
             newcode.sub_r_c(Register.rsp, 0x18);
             for (let i=0;i<keepFloatRegister.length;i++) {
                 if (i !== 0) newcode.sub_r_c(Register.rsp, 0x10);
-                newcode.movdqa_rp_f(Register.rsp, 0, keepFloatRegister[i]);
+                newcode.movdqa_rp_f(Register.rsp, 1, 0, keepFloatRegister[i]);
             }
     
             newcode
@@ -48,7 +48,7 @@ export namespace hacktool
             .add_r_c(Register.rsp, 0x30);
     
             for (let i=keepFloatRegister.length-1;i>=0;i--) {
-                newcode.movdqa_f_rp(keepFloatRegister[i], Register.rsp, 0);
+                newcode.movdqa_f_rp(keepFloatRegister[i], Register.rsp, 1, 0);
                 if (i !== 0) newcode.add_r_c(Register.rsp, 0x10);
             }
             newcode.sub_r_c(Register.rsp, 0x18);
@@ -60,7 +60,7 @@ export namespace hacktool
         }
         for (const r of keepRegister) {
             const off = registerOffsetMap[r]!;
-            newcode.mov_r_rp(r, Register.rsp, off+fullsize);
+            newcode.mov_r_rp(r, Register.rsp, 1, off+fullsize);
         }
         newcode.write(...from.getBuffer(originalCodeSize));
 

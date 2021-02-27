@@ -93,9 +93,10 @@ Tester.test({
         system.listenForEvent('minecraft:entity_created', ev => {
             try {
                 const uniqueId = ev.data.entity.__unique_id__;
-                const actor2 = Actor.fromUniqueId(uniqueId["64bit_low"], uniqueId["64bit_high"]);
                 const actor = Actor.fromEntity(ev.data.entity);
-                this.assert(actor === actor2, 'Actor.fromEntity is not matched');
+                if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                    this.assert(actor !== null, 'Actor.fromEntity of player is null');
+                }
 
                 if (actor !== null) {
                     this.assert(actor.getDimension() === DimensionId.Overworld, 'getDimension() is not overworld');

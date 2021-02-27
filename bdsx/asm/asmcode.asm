@@ -438,7 +438,6 @@ export proc bin64
     test eax, eax
     jnz _failed
 
-    xor eax, eax
     mov r8, [rsp+20h]
     test r8, r8
     jz _done
