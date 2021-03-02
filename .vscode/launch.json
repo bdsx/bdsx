@@ -36,8 +36,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["${workspaceFolder}/bdsx/externs/bds-scripting/parser.ts"]
+            "args": ["${workspaceFolder}/bdsx/externs/bds-scripting/parser.js"],
+			"preLaunchTask": "${defaultBuildTask}"
         },
         {
             "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
@@ -47,9 +47,9 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["${workspaceFolder}/bdsx/asm/compile.ts"],
-            "console": "integratedTerminal"
+            "args": ["${workspaceFolder}/bdsx/asm/compile.js"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
         }
     ]
 }

@@ -18,13 +18,6 @@
 			"group": "test",
 			"problemMatcher": "$eslint-stylish",
 			"label": "npm: lint-bdsx"
-		},
-		{
-			"type": "npm",
-			"script": "tsc-no-emit",
-			"group": "test",
-			"problemMatcher": "$tsc",
-			"label": "npm: tsc-no-emit"
 		}
 	]
 }
