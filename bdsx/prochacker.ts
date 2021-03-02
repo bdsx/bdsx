@@ -79,10 +79,10 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
-        const using = new Set<Register>();
-        const getUnusing = ():number|null=>{
-            for (const r of FREE_REGS) {
-                if (!using.has(r)) return r;
+        const freeregs = new Set<Register>(FREE_REGS);
+        const getUnusing = ():Register|null=>{
+            for (const r of freeregs.values()) {
+                return r;
             }
             return null;
         };
@@ -98,7 +98,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             pos += oper.size;
 
             for (const reg of oper.registers()) {
-                using.add(reg);
+                freeregs.delete(reg);
             }
 
             if ((basename.startsWith('j') || basename === 'call') && splits.length === 2 && splits[1] === 'c') {

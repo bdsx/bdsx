@@ -3,3 +3,5 @@
 /dist
 /npm-debug.log
 /pdbcache_by_example.ini
+*.js
+*.js.map

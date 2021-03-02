@@ -306,7 +306,6 @@ function _launch(asyncResolve:()=>void):void {
     */
 
     // seh wrapped main
-    asmcode.runtimeErrorBeginHandler = runtimeError.beginHandler;
     asmcode.bedrock_server_exe_args = bedrock_server_exe.args;
     asmcode.bedrock_server_exe_argc = bedrock_server_exe.argc;
     asmcode.bedrock_server_exe_main = bedrock_server_exe.main;
@@ -413,20 +412,8 @@ export namespace bedrockServer
         stopfunc(server.add(8));
     }
 
-    /**
-     * shutdown server and restart
-     */
-    export function restart(force?:boolean):void {
-        const argsLine = bedrock_server_exe.argsLine;
-        if (force) {
-            child_process.spawn(argsLine);
-            bedrock_server_exe.forceKill(-1);
-        } else {
-            stop();
-            close.on(()=>{
-                child_process.spawn(argsLine);
-            });
-        }
+    export function forceKill(exitCode:number):never {
+        bedrock_server_exe.forceKill(exitCode);
     }
 
     export function launch():Promise<void> {

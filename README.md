@@ -48,7 +48,7 @@ GIT
 run `./bdsx.bat` (on Windows)  
 run `./bdsx.sh` (on Linux)
 
-### by docker
+### Starting with Docker
 ```sh
 docker run karikera/bdsx
 ```

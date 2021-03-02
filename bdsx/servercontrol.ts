@@ -14,11 +14,4 @@ export namespace serverControl
     export function stop():void {
         bedrockServer.stop();
     }
-
-    /**
-     * @deprecated use bedrockServer.restart()
-     */
-    export function restart(force?:boolean):void {
-        bedrockServer.restart(force);
-    }
 }

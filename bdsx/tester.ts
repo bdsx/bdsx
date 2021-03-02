@@ -1,5 +1,5 @@
 
-import { remapError, remapStackLine } from "bdsx/source-map-support";
+import { remapError, remapStackLine } from "./source-map-support";
 import { getLineAt } from "./util";
 import colors = require('colors');
 
@@ -52,6 +52,17 @@ export class Tester {
 
     static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>):Promise<void> {
         await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
+        
+        // pass one tick, wait until result of the list command example
+        {
+            const system = server.registerSystem(0, 0);
+            await new Promise<void>(resolve=>{
+                system.update = ()=>{
+                    resolve();
+                    system.update = undefined;
+                };
+            });
+        }
     
         console.log(`[test] node: ${process.versions.node}`);
         console.log('[test] engine: '+process.jsEngine+'@'+process.versions[process.jsEngine!]);

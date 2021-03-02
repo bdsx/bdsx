@@ -3,19 +3,20 @@
   "version": "1.0.0",
   "description": "bdsx project",
   "private": true,
-  "main": "./dist/bundle.dist.js",
+  "main": "./launcher.js",
   "author": "YOU!",
   "scripts": {
     "postinstall": "ts-node ./bdsx/installer ./bedrock_server",
     "install_bds": "ts-node ./bdsx/installer ./bedrock_server",
     "lint-bdsx": "eslint bdsx --ext ts",
     "tsc-no-emit": "tsc --noEmit",
-    "watch": "if-tsb -w",
-    "build": "if-tsb"
+    "watch": "tsc -w",
+    "build": "tsc"
   },
   "dependencies": {
+    "bdsx": "file:bdsx",
     "colors": "^1.4.0",
-    "follow-redirects": "^1.13.2",
+    "follow-redirects": "^1.13.3",
     "krevent": "^2.2.0",
     "node-html-parser": "^3.0.3",
     "progress": "^2.0.3",
@@ -29,10 +30,9 @@
     "@types/node": "^12.20.4",
     "@types/progress": "^2.0.3",
     "@types/unzipper": "^0.10.3",
-    "@typescript-eslint/eslint-plugin": "^4.15.2",
-    "@typescript-eslint/parser": "^4.15.2",
-    "eslint": "^7.20.0",
-    "if-tsb": "^0.2.14",
+    "@typescript-eslint/eslint-plugin": "^4.16.1",
+    "@typescript-eslint/parser": "^4.16.1",
+    "eslint": "^7.21.0",
     "typescript": "^4.2.2"
   }
 }

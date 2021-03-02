@@ -11,6 +11,7 @@ import colors = require('colors');
 
 export enum Register
 {
+    absolute=-2,
     rip=-1,
     rax,
     rcx,
@@ -195,6 +196,16 @@ class AsmChunk extends BufferWriter {
         super(array, size);
     }
 
+    setInt32(n:number, offset:number):void {
+        if (this.size + 4 < offset) throw RangeError('Out of range');
+        
+        n |= 0;
+        this.array[n] = offset;
+        this.array[n+1] = offset>>8;
+        this.array[n+2] = offset>>16;
+        this.array[n+3] = offset>>24;
+    }
+
     connect(next:AsmChunk):void {
         if (this.next !== null) throw Error('Already connected chunk');
         if (next.prev !== null) throw Error('Already connected chunk');
@@ -334,6 +345,8 @@ export class X64Assembler {
     private memoryChunkAlign = 1;
     private constChunk:AsmChunk|null = null;
     private chunk:AsmChunk;
+    private sehUnwindCount = 0;
+    private sehFuncCount = 0;
     private readonly ids = new Map<string, Identifier>();
     private readonly scopeStack:Set<string>[] = [];
     private scope = new Set<string>();
@@ -394,7 +407,9 @@ export class X64Assembler {
             
             } else {
                 const identifier = this.ids.get(v.term.name);
-                if (!identifier) error(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
+                if (!identifier) {
+                    error(`identifier not found: ${v.term.name}`, v.term.column, v.term.length);
+                }
                 error(`Invalid identifier: ${v.term.name}`, v.term.column, v.term.length);
             }
         }
@@ -521,6 +536,26 @@ export class X64Assembler {
         return this.write(0xcd, n & 0xff);
     }
 
+    gs():this {
+        return this.put(0x65);
+    }
+    fs():this {
+        return this.put(0x64);
+    }
+    ds():this {
+        return this;
+    }
+
+    cs():this {
+        return this.put(0x2e);
+    }
+    es():this {
+        return this.put(0x26);
+    }
+    ss():this {
+        return this.put(0x36);
+    }
+
     private _target(opcode:number, r1:Register|FloatRegister, r2:Register|FloatRegister|Operator|null, r3:Register|null, 
         targetRegister:Register|FloatRegister, multiplying:AsmMultiplyConstant, offset:number, oper:MovOper):this {
         if (r2 !== null) {
@@ -531,7 +566,15 @@ export class X64Assembler {
             return this.put(opcode | (r1 & 7) | 0xc0);
         }
         if (offset !== (offset|0)) throw Error(`need int32 offset, offset=${offset}`);
-        if (r1 === Register.rip) {
+        if (r1 === Register.absolute) {
+            if (r3 !== null) {
+                throw Error('Invalid opcode');
+            }
+            this.put(opcode | 0x04);
+            this.put(0x25);
+            this.writeInt32(offset);
+            return this;
+        } else if (r1 === Register.rip) {
             if (r3 !== null) {
                 throw Error('Invalid opcode');
             }
@@ -1565,9 +1608,36 @@ export class X64Assembler {
         }
     }
 
-    private _normalize():this {
-        this._check(true);
+    private _makeSeh():void {
+        
+        const sehChunk = new AsmChunk(new Uint8Array(64), 0);
+        const UNW_VERSION = 0x01;
+        const UNW_FLAG_EHANDLER = 0x08;
 
+        for (;;) {
+            // UNWIND_INFO
+            sehChunk.writeInt32(UNW_VERSION | UNW_FLAG_EHANDLER);
+            sehChunk.writeInt32(0);
+        }
+
+        // let fnname = '';
+        // let fnstart = 0;
+        // for (const id of this.ids.values()) {
+        //     if (!(id instanceof Label)) continue;
+        //     if (fnname !== '') {
+        //         sehChunk.writeInt32(fnstart);
+        //         sehChunk.writeInt32(id.offset);
+        //         sehChunk.writeInt32(0);
+        //         continue;
+        //     }
+        //     fnname = id.name;
+        //     fnstart = id.offset;
+        // }
+
+    }
+
+    private _normalize():this {
+        
         const errors = new ParsingErrorContainer;
         let prev = this.chunk.prev;
         while (prev !== null) {
@@ -1580,21 +1650,18 @@ export class X64Assembler {
             }
             prev = prev.prev;
         }
-        this._check(true);
-
+        
         const chunk = this.chunk;
         if (chunk.next !== null || chunk.prev !== null) {
             throw Error(`All chunks don't merge. internal problem.`);
         }
 
-        this._check(true);
         if (this.constChunk !== null) {
             chunk.connect(this.constChunk);
             this.constChunk = null;
             chunk.removeNext();
         }
 
-        this._check(true);
         const memalign = this.memoryChunkAlign;
         const bufsize = (this.chunk.size + memalign - 1) & ~(memalign-1);
         this.chunk.putRepeat(0xcc, bufsize - this.chunk.size);
@@ -1645,8 +1712,6 @@ export class X64Assembler {
         const scope = this.scope;
         this.scope = this.scopeStack.pop()!;
 
-        this._check(false);
-        
         for (const name of scope) {
             this.ids.delete(name);
         }
@@ -1716,7 +1781,7 @@ export class X64Assembler {
         const readConstString = (addressCommand:boolean, encoding:BufferEncoding):void=>{
             const quotedString = parser.readQuotedStringTo('"');
             if (quotedString === null) throw parser.error('Invalid quoted string');
-            if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(0), 0);
+            if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(64), 0);
             const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
             this.constChunk.write(Buffer.from(quotedString+'\0', encoding));
             this.constChunk.ids.push(id);
@@ -1795,13 +1860,13 @@ export class X64Assembler {
 
         const totalIndex = parser.matchedIndex;
 
-        let unresolvedConstant:Identifier|null = null;
+        let unresolvedConstant:AddressIdentifier|null = null;
         let unresolvedPos:SourcePosition|null = null;
 
         const args:any[] = [];
         if (!parser.eof()){
             let addressCommand = false;
-            let jumpCommand = false;
+            let jumpOrCall = false;
             switch (command) {
             case 'export':
                 if (!defining(parser.readToSpace(), true)) {
@@ -1817,7 +1882,7 @@ export class X64Assembler {
                 break;
             default:
                 if (command.startsWith('j') || command === 'call') {
-                    jumpCommand = true;
+                    jumpOrCall = true;
                 }
                 if (defining(command, false)) return;
                 break;
@@ -1856,23 +1921,40 @@ export class X64Assembler {
 
                     const words = [...iparser.splitWithSpaces()];
                     if (words.length !== 0) {
-                        if ((words.length !== 2) || words[1] !== 'ptr') {
-                            throw parser.error(`Invalid address syntax: ${param}`);
+                        if (words[1] === 'ptr') {
+                            const sizename = words[0];
+                            const size = sizemap.get(sizename);
+                            if (size === undefined || size.size === OperationSize.void) {
+                                throw parser.error(`Unexpected size name: ${sizename}`);
+                            }
+                            if (addressCommand) setSize(OperationSize.qword);
+                            else setSize(size!.size!);
+                            words.splice(0, 2);
                         }
-                        const sizename = words[0];
-                        const size = sizemap.get(sizename);
-                        if (size === undefined || size.size === OperationSize.void) {
-                            throw parser.error(`Unexpected size name: ${sizename}`);
+                        if (words.length !== 0) {
+                            const segment = words.join('');
+                            if (!segment.endsWith(':')) {
+                                throw parser.error(`Invalid address syntax: ${segment}`);
+                            }
+                            switch (segment) {
+                            case 'gs:': this.gs(); break;
+                            case 'fs:': this.fs(); break;
+                            case 'ss:': this.ss(); break;
+                            case 'cs:': this.cs(); break;
+                            case 'es:': this.es(); break;
+                            case 'ds:': break;
+                            default:
+                                throw parser.error(`Unexpected segment: ${segment}`);
+                            }
                         }
-                        if (addressCommand) setSize(OperationSize.qword);
-                        else setSize(size!.size!);
                     }
 
                     const inner = param.substring(end, param.length-1);
                     const {r1, r2, multiply, offset} = this._polynominalToAddress(inner, bracketInnerStart, lineNumber);
                     if (r1 === null) {
+                        args.push(Register.absolute);
                         callinfo.push('(constant pointer)');
-                        command += '_cp';
+                        command += '_rp';
                     } else {
                         args.push(r1);
                         if (r2 === null) {
@@ -1883,8 +1965,8 @@ export class X64Assembler {
                             command += '_rrp';
                             args.push(r2);
                         }
-                        args.push(multiply);
                     }
+                    args.push(multiply);
                     args.push(offset);
                 } else {
                     const type = regmap.get(param.toLowerCase());
@@ -1908,17 +1990,25 @@ export class X64Assembler {
                             args.push(1);
                             args.push(0);
                             unresolvedConstant = id;
-                        } else if ((id instanceof Label) && !jumpCommand) {
+                        } else if (jumpOrCall) {
+                            command += '_label';
+                            args.push(param);
+                            callinfo.push('(label)');
+                        } else {
                             command += '_rp';
                             callinfo.push('(register pointer)');
                             args.push(Register.rip);
                             args.push(1);
                             args.push(0);
-                            unresolvedConstant = id;
-                        } else {
-                            command += '_label';
-                            args.push(param);
-                            callinfo.push('(label)');
+                            if (id instanceof Label) {
+                                unresolvedConstant = id;
+                            } else if (id !== undefined) {
+                                throw parser.error(`Unexpected identifier '${id.name}'`);
+                            } else {
+                                const label = new Label(param);
+                                unresolvedConstant = label;
+                                this.ids.set(param, label);
+                            }
                         }
                         unresolvedPos = parser.getPosition();
                     }
@@ -1949,9 +2039,7 @@ export class X64Assembler {
         try {
             this.pos = unresolvedPos;
             fn.apply(this, args);
-            if (unresolvedConstant instanceof Defination) {
-                this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, unresolvedConstant, unresolvedPos));
-            } else if (unresolvedConstant instanceof Label) {
+            if (unresolvedConstant !== null) {
                 this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, unresolvedConstant, unresolvedPos));
             }
         } catch (err) {
@@ -2384,10 +2472,12 @@ export namespace asm
                 case 'c':
                     argstr.push(shex(v));
                     break;
-                case 'rp':
+                case 'rp': {
                     ptridx.push(argstr.length);
-                    argstr.push(`[${Register[v]}${shex_o(args[i++])}]`);
+                    const multiply = args[i++];
+                    argstr.push(`[${Register[v]}${multiply !== 1 ? '*'+multiply : ''}${shex_o(args[i++])}]`);
                     break;
+                }
                 }
             }
             const size = args[i];

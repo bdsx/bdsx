@@ -49,12 +49,12 @@ export def memset:qword
 
 # [[noreturn]]] makefunc_getout()
 export proc makefunc_getout
-    mov rsp, [rdi + fn_returnPoint]
+    mov rsp, [rdi+fn_returnPoint]
     and rsp, -2
     pop rcx
     pop rbp
     pop rsi
-    mov [rdi + fn_returnPoint], rcx
+    mov [rdi+fn_returnPoint], rcx
     pop rdi
     xor eax, eax
     ret
@@ -103,7 +103,7 @@ export proc getout_jserror
     sub rsp, 28h
     call [rdi + fn_JsSetException]
     call [rdi + fn_stack_free_all]
-    mov rax, [rdi + fn_returnPoint]
+    mov rax, [rdi+fn_returnPoint]
     and rax, 1
     jz runtimeError
     call makefunc_getout
@@ -152,7 +152,7 @@ endp
 export proc getout
     sub rsp, 48h
     mov [rsp + 0x28], rcx
-    mov rax, [rdi + fn_returnPoint]
+    mov rax, [rdi+fn_returnPoint]
     and rax, 1
     jz _crash
     lea rcx, [rsp + 20h]
@@ -701,15 +701,14 @@ export proc gameThreadHook
     ret
 endp
 
-export def runtimeErrorBeginHandler:qword
 export def bedrock_server_exe_args:qword
 export def bedrock_server_exe_argc:dword
 export def bedrock_server_exe_main:qword
 export def finishCallback:qword
 
 export proc wrapped_main
+    ; TODO: implement seh table
     sub rsp, 28h
-    call runtimeErrorBeginHandler
     mov ecx, bedrock_server_exe_argc
     mov rdx, bedrock_server_exe_args
     xor r8d, r8d
@@ -717,7 +716,6 @@ export proc wrapped_main
     add rsp, 28h
     mov rcx, finishCallback
     jmp uv_async_call
-    ; .jmp64(uv_async.call, Register.rax)
 endp
 
 export def cgateNodeLoop:qword

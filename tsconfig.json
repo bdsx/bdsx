@@ -1,16 +1,6 @@
 {
-  "entry": "./launcher.ts",
-  "output": "./dist/bundle.dist.js",
-  "bundlerOptions": {
-    "clearConsole": true,
-    "checkCircularDependency": true,
-    "suppressDynamicImportErrors": true,
-    "faster": true,
-    "preimport": ["source-map", "colors", "krevent"],
-    "concurrency": 4
-  },
+  "exclude": ["bedrock_server/*"],
   "compilerOptions": {
-    "baseUrl": ".",
     "target": "es2017",
     "lib": [ "es2017" ],
     "module": "CommonJS",
@@ -20,10 +10,7 @@
     "strictNullChecks": true,
     "noImplicitThis": true,
     "resolveJsonModule": true,
-    "sourceMap": true,
-    "importHelpers": true,
-    "paths": {
-      "bdsx/*": ["./bdsx/*"]
-    }
+    "inlineSourceMap": true,
+    "importHelpers": true
   }
 }

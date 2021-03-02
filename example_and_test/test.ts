@@ -70,6 +70,7 @@ Tester.test({
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
         assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
         assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
+        assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]')
     },
 
     chat() {
@@ -321,5 +322,3 @@ nethook.raw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
 nethook.after(MinecraftPacketIds.Login).on(ptr => {
     connectedId = ptr.connreq.cert.getId();
 });
-
-

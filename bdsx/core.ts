@@ -536,9 +536,6 @@ export declare namespace runtimeError
      */
     export const fire:VoidPointer;
 
-    export const beginHandler: VoidPointer;
-    export const endHandler: VoidPointer;
-
     // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
 }
@@ -562,7 +559,7 @@ export declare namespace bedrock_server_exe
     /**
      * kill this process without any termination process
      */
-    export function forceKill(exitcode:number):void;
+    export function forceKill(exitcode:number):never;
 }
 
 export declare namespace uv_async
