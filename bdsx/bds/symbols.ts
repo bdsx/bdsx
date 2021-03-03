@@ -22,6 +22,7 @@ const symbols = [
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
     'Actor::getNameTag',
+    'Actor::getPos',
     'Actor::getUniqueID',
     'BaseAttributeMap::getMutableInstance',
     'ExtendedCertificate::getXuid',
