@@ -29,8 +29,11 @@ LoginPacket.abstract({
 // };
 
 export class PlayStatusPacket extends Packet {
-    // unknown
+    status:int32_t;
 }
+PlayStatusPacket.abstract({
+    status:[int32_t, 0x28]
+});
 
 export class ServerToClientHandshakePacket extends Packet {
     // unknown
