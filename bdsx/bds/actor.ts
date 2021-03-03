@@ -6,6 +6,7 @@ import { NativeClass } from "bdsx/nativeclass";
 import { bin64_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Vec3 } from "./blockpos";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";
 
@@ -81,7 +82,9 @@ export class Actor extends NativeClass {
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
     }
-
+    getPosition():Vec3 {
+        abstract();
+    }
     getUniqueIdLow():number {
         return this.getUniqueIdPointer().getInt32(0);
     }
