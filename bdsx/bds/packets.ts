@@ -538,8 +538,13 @@ export class ServerSettingsRequestPacket extends Packet {
 }
 
 export class ServerSettingsResponsePacket extends Packet {
-    // unknown
+    id:uint32_t;
+    content:CxxString;
 }
+ServerSettingsResponsePacket.abstract({
+    id: [uint32_t, 0x28],
+    content: [CxxString, 0x30],
+});
 
 export class ShowProfilePacket extends Packet {
     // unknown
