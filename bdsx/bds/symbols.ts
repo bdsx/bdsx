@@ -18,6 +18,7 @@ const symbols = [
     'Player::setName',
     'ServerNetworkHandler::_getServerPlayer',
     'ServerNetworkHandler::allowIncomingConnections',
+    'ServerNetworkHandler::disconnectClient',
     'ServerPlayer::openInventory',
     'ServerPlayer::sendNetworkPacket',
     'RakNet::SystemAddress::ToString',
