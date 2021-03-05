@@ -61,14 +61,14 @@ export class ServerNetworkHandler extends NativeClass {
         abstract();
     }
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
-        let _message = new CxxStringWrapper(true);
+        const _message = new CxxStringWrapper(true);
         _message[NativeType.ctor]();
         _message.value = message;
         this._disconnectClient(client, 0, _message, 0);
         _message[NativeType.dtor]();
     }
     setMotd(motd:string):void {
-        let _motd = new CxxStringWrapper(true);
+        const _motd = new CxxStringWrapper(true);
         _motd[NativeType.ctor]();
         _motd.value = motd;
         this._setMotd(_motd, true);
