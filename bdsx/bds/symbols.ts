@@ -15,6 +15,7 @@ const symbols = [
     'Level::createDimension',
     'Level::fetchEntity',
     'Crypto::Random::generateUUID',
+    'Player::setName',
     'ServerNetworkHandler::_getServerPlayer',
     'ServerPlayer::sendNetworkPacket',
     'RakNet::SystemAddress::ToString',
