@@ -54,6 +54,16 @@ class ServerNetworkHandler$Client extends NativeClass {
 ServerNetworkHandler$Client.abstract({});
 
 export class ServerNetworkHandler extends NativeClass {
+    protected _setMotd(motd: CxxStringWrapper, shown: boolean):void {
+        abstract();
+    }
+    setMotd(motd:string):void {
+        let _motd = new CxxStringWrapper(true);
+        _motd[NativeType.ctor]();
+        _motd.value = motd;
+        this._setMotd(_motd, true);
+        _motd[NativeType.dtor]();
+    }
 }
 ServerNetworkHandler.abstract({});
 
