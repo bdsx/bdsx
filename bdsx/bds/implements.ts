@@ -20,7 +20,7 @@ import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AttributeData, UpdateAttributesPacket } from "./packets";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
-import { ServerPlayer } from "./player";
+import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
@@ -200,9 +200,12 @@ asmcode.removeActor = makefunc.np(_removeActor, RawTypeId.Void, null, Actor);
 procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts
+(Player.prototype as any)._setName = procHacker.js("Player::setName", RawTypeId.Void, {this: Player}, CxxStringWrapper);
+
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9e8]
 });
+ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", RawTypeId.Void, {this: ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
@@ -259,6 +262,8 @@ Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {t
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js(
     "ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
+(ServerNetworkHandler.prototype as any)._setMotd = procHacker.js("ServerNetworkHandler::allowIncomingConnections", RawTypeId.Void, {this: ServerNetworkHandler}, CxxStringWrapper, RawTypeId.Boolean);
+(ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", RawTypeId.Void, {this: ServerNetworkHandler}, NetworkIdentifier, RawTypeId.Int32, CxxStringWrapper, RawTypeId.Int32);
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {
