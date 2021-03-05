@@ -200,6 +200,8 @@ asmcode.removeActor = makefunc.np(_removeActor, RawTypeId.Void, null, Actor);
 procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts
+(Player.prototype as any)._setName = procHacker.js("Player::setName", RawTypeId.Void, {this: Player}, CxxStringWrapper);
+
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9e8]
 });
