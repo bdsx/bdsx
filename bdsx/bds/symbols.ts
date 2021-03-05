@@ -17,6 +17,7 @@ const symbols = [
     'Crypto::Random::generateUUID',
     'Player::setName',
     'ServerNetworkHandler::_getServerPlayer',
+    'ServerNetworkHandler::allowIncomingConnections',
     'ServerPlayer::openInventory',
     'ServerPlayer::sendNetworkPacket',
     'RakNet::SystemAddress::ToString',
