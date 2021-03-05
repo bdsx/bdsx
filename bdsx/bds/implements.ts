@@ -205,6 +205,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9e8]
 });
+ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", RawTypeId.Void, {this: ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
