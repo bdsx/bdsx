@@ -10,7 +10,7 @@ export class Player extends Actor {
         abstract();
     }
     setName(name:string):void {
-        let _name = new CxxStringWrapper(true);
+        const _name = new CxxStringWrapper(true);
         _name[NativeType.ctor]();
         _name.value = name;
         this._setName(_name);
