@@ -54,8 +54,18 @@ class ServerNetworkHandler$Client extends NativeClass {
 ServerNetworkHandler$Client.abstract({});
 
 export class ServerNetworkHandler extends NativeClass {
+    protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxStringWrapper, d:number):void {
+        abstract();
+    }
     protected _setMotd(motd: CxxStringWrapper, shown: boolean):void {
         abstract();
+    }
+    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
+        let _message = new CxxStringWrapper(true);
+        _message[NativeType.ctor]();
+        _message.value = message;
+        this._disconnectClient(client, 0, _message, 0);
+        _message[NativeType.dtor]();
     }
     setMotd(motd:string):void {
         let _motd = new CxxStringWrapper(true);
