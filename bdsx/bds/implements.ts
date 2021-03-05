@@ -20,7 +20,7 @@ import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AttributeData, UpdateAttributesPacket } from "./packets";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
-import { ServerPlayer } from "./player";
+import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
