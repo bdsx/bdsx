@@ -21,6 +21,10 @@ export class Player extends Actor {
 export class ServerPlayer extends Player {
     networkIdentifier:NetworkIdentifier;
 
+    openInventory():void {
+        abstract();
+    }
+    
     sendNetworkPacket(packet:Packet):void {
         abstract();
     }
