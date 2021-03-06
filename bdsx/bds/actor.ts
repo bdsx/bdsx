@@ -87,7 +87,7 @@ export class Actor extends NativeClass {
      * @deprecated use actor.position
      */
     getPosition():Vec3 {
-        return actor.position;
+        return this.position;
     }
     getUniqueIdLow():number {
         return this.getUniqueIdPointer().getInt32(0);
