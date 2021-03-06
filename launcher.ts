@@ -31,7 +31,6 @@ console.log(colors.rainbow('       ///////////////'));
         }, 3000).unref();
     });
 
-    console.log('[BDSX-Plugins] Loading...');
     await loadAllPlugins();
 
     // launch BDS

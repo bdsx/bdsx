@@ -1,6 +1,6 @@
 {
-  "name": "@bdsx/plugin_example",
-  "version": "1.0.0",
+  "name": "@bdsx/plugin-example",
+  "version": "1.0.1",
   "description": "Example for bdsx plugin",
   "main": "index.js",
   "keywords": [],
