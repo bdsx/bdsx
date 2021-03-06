@@ -5,6 +5,10 @@ import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
 
+if (process.argv[2] === undefined) {
+    console.error(colors.red(`[BDSX-Plugins] Please provide the parameter for the target path`));
+    process.exit(-1);
+}
 const targetPath = path.resolve(process.argv[2]);
 if (fs.existsSync(targetPath)) {
     console.error(colors.red(`[BDSX-Plugins] '${targetPath}' already exists`));
