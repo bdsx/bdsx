@@ -4,7 +4,9 @@ import { NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { makefunc } from "bdsx/makefunc";
 import { NativeClass } from "bdsx/nativeclass";
 import { bin64_t } from "bdsx/nativetype";
+import { CxxStringWrapper } from "bdsx/pointer";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Vec3 } from "./blockpos";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";
 import { ServerPlayer } from "./player";
@@ -34,6 +36,10 @@ export class Actor extends NativeClass {
     attributes:BaseAttributeMap;
     runtimeId:ActorRuntimeID;
     dimension:Dimension;
+    
+    protected _getName():CxxStringWrapper {
+        abstract();
+    }
     
     protected _sendNetworkPacket(packet:VoidPointer):void {
         abstract();
@@ -71,10 +77,15 @@ export class Actor extends NativeClass {
     isPlayer():this is ServerPlayer {
         abstract();
     }
+    getName():string {
+        return this._getName().value;
+    }
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
     }
-
+    getPosition():Vec3 {
+        abstract();
+    }
     getUniqueIdLow():number {
         return this.getUniqueIdPointer().getInt32(0);
     }
