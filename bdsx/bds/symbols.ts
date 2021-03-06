@@ -54,6 +54,8 @@ const symbols = [
     'MinecraftServerScriptEngine::onServerUpdateEnd',
     'printf',
     'ServerNetworkHandler::_onPlayerLeft',
+    "ServerCommandOrigin::`vftable'",
+    "Minecraft::getLevel",
 ] as const;
 
 // decorated symbols
@@ -73,6 +75,8 @@ const symbols2 = [
     '??_7MinecraftServerScriptEngine@@6B@',
     '?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     'sprintf',
+    '??$make_shared@VCommandContext@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VServerCommandOrigin@@U?$default_delete@VServerCommandOrigin@@@std@@@3@AEBH@std@@YA?AV?$shared_ptr@VCommandContext@@@0@$$QEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@$$QEAV?$unique_ptr@VServerCommandOrigin@@U?$default_delete@VServerCommandOrigin@@@std@@@0@AEBH@Z',
+    '??$make_unique@VServerCommandOrigin@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVServerLevel@@$0A@@std@@YA?AV?$unique_ptr@VServerCommandOrigin@@U?$default_delete@VServerCommandOrigin@@@std@@@0@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@AEAVServerLevel@@@Z',
 ] as const;
 
 

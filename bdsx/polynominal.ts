@@ -472,7 +472,7 @@ export namespace polynominal {
                     const endoper = readOperator('unarySuffix');
                     if (endoper !== OPER_CLOSE) error(`Unexpected operator: '${oper}', expected: ')'`, endoper.name);
                 } else {
-                    return readStatement(oper.precedence);   
+                    return oper.operation(readStatement(oper.precedence));
                 }
             } 
             for (;;) {

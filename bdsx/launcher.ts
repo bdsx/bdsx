@@ -1,5 +1,8 @@
 import Event, { CapsuledEvent } from "krevent";
 import { asm, Register } from "./assembler";
+import { CommandContext, MCRESULT } from "./bds/command";
+import { ServerCommandOrigin } from "./bds/commandorigin";
+import { ServerLevel } from "./bds/level";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { hookingForCommand } from "./command";
@@ -10,9 +13,11 @@ import { GetLine } from "./getline";
 import { makefunc, RawTypeId } from "./makefunc";
 import { CxxString, NativeType } from "./nativetype";
 import { nethook } from "./nethook";
+import { CxxStringWrapper, Wrapper } from "./pointer";
+import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
 import { _tickCallback } from "./util";
-import child_process = require('child_process');
+import { EXCEPTION_ACCESS_VIOLATION, STATUS_INVALID_PARAMETER } from "./windows_h";
 
 import readline = require("readline");
 import colors = require('colors');
@@ -48,6 +53,8 @@ class Liner {
     }
 }
 
+const STATUS_NO_NODE_THREAD = (0xE0000001|0);
+
 // default runtime error handler
 runtimeError.setHandler(err=>{
     remapError(err);
@@ -56,6 +63,17 @@ runtimeError.setHandler(err=>{
     console.error('[ Native Crash ]');
     console.error(`Last Sender IP: ${lastSender}`);
     console.error('[ Native Stack ]');
+    switch (err.code) {
+    case STATUS_NO_NODE_THREAD:
+        console.error(`JS Accessing from the out of thread`);
+        break;
+    case EXCEPTION_ACCESS_VIOLATION:
+        console.error(`Accessing the invalid memory address`);
+        break;
+    case STATUS_INVALID_PARAMETER:
+        console.error(`Native function received wrong parameters`);
+        break;
+    }
     console.error(err.nativeStack);
     console.error('[ JS Stack ]');
     console.error(err.stack!);
@@ -78,10 +96,6 @@ const commandQueueBuffer = new AllocatedPointer(0x20);
 CxxString[NativeType.ctor](commandQueueBuffer);
 
 function patchForStdio():void {
-    const RtlCaptureContext = dll.kernel32.module.getProcAddress('RtlCaptureContext');
-    asmcode.RtlCaptureContext = RtlCaptureContext;
-    asmcode.memset = dll.vcruntime140.memset.pointer;
-
     // hook bedrock log
     const bedrockLogNp = makefunc.np((severity, msgptr, size)=>{
         // void(*callback)(int severity, const char* msg, size_t size)
@@ -389,10 +403,36 @@ function _launch(asyncResolve:()=>void):void {
 
 const stopfunc = procHacker.js('DedicatedServer::stop', RawTypeId.Void, null, VoidPointer);
 
+const createCommandContext = procHacker.js(
+    '??$make_shared@VCommandContext@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VServerCommandOrigin@@U?$default_delete@VServerCommandOrigin@@@std@@@3@AEBH@std@@YA?AV?$shared_ptr@VCommandContext@@@0@$$QEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@$$QEAV?$unique_ptr@VServerCommandOrigin@@U?$default_delete@VServerCommandOrigin@@@std@@@0@AEBH@Z',
+    SharedPtr.make(CommandContext),
+    {structureReturn: true},
+    CxxStringWrapper,
+    Wrapper.make(ServerCommandOrigin.ref()));
+    
+const createServerCommandOrigin = procHacker.js(
+    '??$make_unique@VServerCommandOrigin@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVServerLevel@@$0A@@std@@YA?AV?$unique_ptr@VServerCommandOrigin@@U?$default_delete@VServerCommandOrigin@@@std@@@0@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@AEAVServerLevel@@@Z',
+    Wrapper.make(ServerCommandOrigin.ref()),
+    {structureReturn: true},
+    CxxStringWrapper,
+    ServerLevel
+);
+
+const deleteServerCommandOrigin = makefunc.js([0, 0], RawTypeId.Void, {this:ServerCommandOrigin}, RawTypeId.Int32);
+ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
+
 export namespace bedrockServer
 {
+    /**
+     * after BDS launched
+     */
     export const open = openEvTarget as CapsuledEvent<()=>void>;
+    
+    /**
+     * after BDS closed
+     */
     export const close = closeEvTarget as CapsuledEvent<()=>void>;
+    
     export const update = updateEvTarget as CapsuledEvent<()=>void>;
 
     /**
@@ -427,11 +467,37 @@ export namespace bedrockServer
         });
     }
 
+    /**
+     * pass to stdin
+     */
     export function executeCommandOnConsole(command:string):void {
         commandQueueBuffer.setCxxString(command);
         commandQueue.enqueue(commandQueueBuffer);
     }
 
+    /**
+     * it does the same thing with executeCommandOnConsole
+     * but call the internal function directly
+     */
+    export function executeCommand(command:string):MCRESULT {
+        const str = new CxxStringWrapper(true);
+        str.construct();
+        str.value = 'Server';
+        
+        // I'm not sure it's always ServerLevel
+        const origin = createServerCommandOrigin(str, bd_server.serverInstance.minecraft.getLevel() as ServerLevel);
+    
+        str.value = command;
+        const ctx = createCommandContext(str, origin);
+        const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, false);
+    
+        ctx.destruct();
+        origin.destruct();
+        str.destruct();
+    
+        return res;
+    }
+    
     let stdInHandler:DefaultStdInHandler|null = null;
 
     export abstract class DefaultStdInHandler {

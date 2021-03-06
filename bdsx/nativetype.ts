@@ -31,10 +31,20 @@ export interface Type<T>
     [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void,
     [NativeTypeFn.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
     [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void;
-    [NativeTypeFn.size]:number|null;
+
+    /**
+     * nullable actually
+     */
+    [NativeTypeFn.size]:number;
     [NativeTypeFn.align]:number;
     [NativeTypeFn.isNativeClass]?:true;
 }
+
+export type GetFromType<T> = 
+    T extends Type<any> ? 
+    T extends {prototype:any} ? T['prototype'] :
+    T extends {[NativeTypeFn.getter](ptr:StaticPointer, offset?:number):infer RET} ? RET :
+    never : never;
 
 function defaultCopy(size:number):(to:StaticPointer, from:StaticPointer)=>void {
     return (to:StaticPointer, from:StaticPointer)=>{

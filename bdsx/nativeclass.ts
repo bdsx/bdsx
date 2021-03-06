@@ -106,10 +106,16 @@ export class NativeClass extends StructurePointer {
         builder.ctor_copy.code += `this${accessor(key)}[NativeType.ctor_copy](o${accessor(key)});\n`;
     }
 
+    /**
+     * alias of [NativeType.ctor]();
+     */
     construct():void {
         this[NativeType.ctor]();
     }
 
+    /**
+     * alias of [NativeType.dtor]();
+     */
     destruct():void {
         this[NativeType.dtor]();
     }
@@ -206,7 +212,7 @@ export class NativeClass extends StructurePointer {
         }
         clazz[StructurePointer.contentSize] = 
         this.prototype[NativeType.size] = 
-        clazz[NativeType.size] = defineSize != null ? defineSize : abstract ? null : size;
+        clazz[NativeType.size] = (defineSize != null ? defineSize : abstract ? null : size)!;
         clazz[NativeType.align] = align;
         
         Object.defineProperties(this.prototype, propmap.desc);
@@ -271,8 +277,8 @@ export interface NativeArrayType<T> extends Type<NativeArray<T>>
 export class NativeArray<T> extends PrivatePointer {
     [index:number]:T;
 
-    static [NativeType.getter]<THIS extends VoidPointer>(this:{new(ptr:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS {
-        return new this(offset ? ptr.add(offset, offset >> 31) : ptr);
+    static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS {
+        return ptr.addAs(this, offset, offset! >> 31);
     }
     static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void {
         throw Error("non assignable");

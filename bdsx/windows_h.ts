@@ -1,7 +1,7 @@
 import { bin } from "./bin";
-import { bin64_t, int32_t, NativeType, uint16_t, uint32_t, uint8_t } from "./nativetype";
-import { NativeArray, NativeClass } from "./nativeclass";
 import { VoidPointer } from "./core";
+import { NativeArray, NativeClass } from "./nativeclass";
+import { bin64_t, int32_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
 
 export const MAX_PATH = 260;
 
@@ -505,6 +505,8 @@ FILETIME.define({
 });
 
 export const EXCEPTION_BREAKPOINT = 0x80000003|0;
+export const EXCEPTION_ACCESS_VIOLATION = 0xC0000005|0;
+export const STATUS_INVALID_PARAMETER = 0xC000000D|0;
             
 export const FORMAT_MESSAGE_ALLOCATE_BUFFER  = 0x00000100;
 export const FORMAT_MESSAGE_IGNORE_INSERTS   = 0x00000200;

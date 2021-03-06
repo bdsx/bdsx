@@ -1,10 +1,11 @@
 import { asm, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
-import { proc2 } from "./bds/symbols";
+import { proc, proc2 } from "./bds/symbols";
 import "./codealloc";
 import { Bufferable } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { makefuncDefines } from "./makefunc_defines";
+import { isBaseOf } from "./util";
 import asmcode = require('./asm/asmcode');
 
 export enum RawTypeId {
@@ -82,6 +83,7 @@ function initFunctionMap():void {
     chakraCoreToMakeFuncMap('JsSetException');
     setFunctionMap('fn_returnPoint', null);
 
+    asmcode.printf = proc.printf;
     asmcode.GetCurrentThreadId = dllraw.kernel32.GetCurrentThreadId;
     asmcode.memcpy = dllraw.vcruntime140.memcpy;
     asmcode.asyncAlloc = uv_async.alloc;
@@ -103,6 +105,7 @@ function initFunctionMap():void {
     asmcode.runtimeErrorRaise = runtimeError.raise;
 
 }
+
 initFunctionMap();
 
 const PARAMNUM_RETURN = -1;
@@ -138,12 +141,6 @@ function checkTypeIsFunction(value: unknown, paramNum: number): void {
     if (type !== 'function') {
         throwTypeError(paramNum, 'type', type, 'function required');
     }
-}
-
-function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }): t is { new(...args: any[]): BASE } {
-    if (typeof t !== 'function') return false;
-    if (t === base) return true;
-    return t.prototype instanceof base;
 }
 
 function pointerClassOrThrow(paramNum: number, type: any): void {

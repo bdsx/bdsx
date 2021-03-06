@@ -7,6 +7,7 @@ import { bin64_t } from "bdsx/nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";
+import { ServerPlayer } from "./player";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -67,7 +68,7 @@ export class Actor extends NativeClass {
         return this.identifier;
     }
 
-    isPlayer():boolean {
+    isPlayer():this is ServerPlayer {
         abstract();
     }
     getNetworkIdentifier():NetworkIdentifier {

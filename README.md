@@ -67,6 +67,9 @@ docker run karikera/bdsx
 # Please start your own code from ./index.ts
 ```
 
+## BDSX Discussions
+https://github.com/bdsx/bdsx/discussions
+
 ## BDSX Wiki(Include JS API Reference)
 https://github.com/bdsx/bdsx/wiki
 

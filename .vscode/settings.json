@@ -1,3 +1,6 @@
 {
-    "debug.javascript.usePreview": false
+    "debug.javascript.usePreview": false,
+    "files.exclude": {
+        "**/*.js": { "when": "$(basename).ts"}
+    }
 }

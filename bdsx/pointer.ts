@@ -7,7 +7,12 @@ import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type 
 
 export interface WrapperType<T> extends Type<Wrapper<T>>
 {
-    new(ptr?:VoidPointer|boolean):Wrapper<T>;
+    /**
+     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
+     */
+    new(ptr:VoidPointer):Wrapper<T>;
+
+    new(ptr?:boolean):Wrapper<T>;
 }
 
 export abstract class Wrapper<T> extends NativeClass {

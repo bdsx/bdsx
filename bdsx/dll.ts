@@ -1,6 +1,7 @@
 
+import asmcode = require('./asm/asmcode');
 import { abstract } from './common';
-import { AllocatedPointer, cgate, NativePointer, StaticPointer, VoidPointer } from './core';
+import { AllocatedPointer, cgate, NativePointer, VoidPointer } from './core';
 import { dllraw } from './dllraw';
 import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType, RawTypeId } from './makefunc';
 
@@ -179,3 +180,7 @@ export namespace dll {
         export const std_cin = module.getProcAddress("?cin@std@@3V?$basic_istream@DU?$char_traits@D@std@@@1@A");
     }
 }
+
+const RtlCaptureContext = dll.kernel32.module.getProcAddress('RtlCaptureContext');
+asmcode.RtlCaptureContext = RtlCaptureContext;
+asmcode.memset = dll.vcruntime140.memset.pointer;

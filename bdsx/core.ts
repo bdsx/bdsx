@@ -439,6 +439,7 @@ export declare class NativePointer extends StaticPointer {
 
 export declare class RuntimeError extends Error {
     nativeStack?:string;
+    code?:number;
 }
 
 /**

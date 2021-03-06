@@ -50,6 +50,17 @@
             "args": ["${workspaceFolder}/bdsx/asm/compile.js"],
             "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Plugin Manager",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/pluginmgr/index.js"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
         }
     ]
 }

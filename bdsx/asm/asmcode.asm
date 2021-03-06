@@ -23,6 +23,8 @@ const JsArrayBuffer 10
 const JsTypedArray 11
 const JsDataView 12
 const EXCEPTION_BREAKPOINT:dword 80000003h
+const STATUS_INVALID_PARAMETER:dword 0xC000000D
+const STATUS_NO_NODE_THREAD:dword 0xE0000001
 
 export def GetCurrentThreadId:qword
 export def bedrockLogNp:qword
@@ -46,6 +48,7 @@ export def runtimeErrorFire:qword
 export def runtimeErrorRaise:qword
 export def RtlCaptureContext:qword
 export def memset:qword
+export def printf:qword
 
 # [[noreturn]]] makefunc_getout()
 export proc makefunc_getout
@@ -151,6 +154,9 @@ endp
 # [[noreturn]] getout(JsErrorCode err)
 export proc getout
     sub rsp, 48h
+    const JsErrorNoCurrentContext 0x10003
+    cmp rcx, JsErrorNoCurrentContext
+    je _noContext
     mov [rsp + 0x28], rcx
     mov rax, [rdi+fn_returnPoint]
     and rax, 1
@@ -164,6 +170,18 @@ export proc getout
     jz _codeerror
     call [rdi + fn_stack_free_all]
     call makefunc_getout
+
+_noContext:
+    call GetCurrentThreadId
+    cmp rax, nodeThreadId
+    je _nodeThread
+    mov ecx, STATUS_NO_NODE_THREAD
+    call raise_runtime_error
+
+_nodeThread:
+    lea rdx, "JS Context not found\n"
+    call printf
+
 _crash:
     lea rcx, [rsp + 20h]
     call JsGetAndClearException
@@ -171,6 +189,7 @@ _crash:
     call [rdi + fn_stack_free_all]
     mov rcx, [rsp + 20h]
     call runtimeErrorFire
+
 _codeerror:
     mov r8, [rsp + 0x28]
     lea rdx, "JsErrorCode: 0x%x"
@@ -590,31 +609,35 @@ _ignore:
     ret
 endp
 
-; [[noreturn]] handle_invalid_parameter()
-export proc handle_invalid_parameter
+export proc raise_runtime_error
     const sizeofEXCEPTION_RECORD 152
     const sizeofCONTEXT 1232
     const sizeofEXCEPTION_POINTERS 16
     const stackSize (sizeofEXCEPTION_RECORD + sizeofCONTEXT + sizeofEXCEPTION_POINTERS)
-    const stackOffset (((stackSize + 7) & ~15)+8)
-    const STATUS_INVALID_PARAMETER:dword 0xC000000D
+    const alignOffset 8
+    const stackOffset ((stackSize + 15) & ~15)+alignOffset
 
     lea rsp, [rsp - stackOffset] ; exception_ptrs
-    lea rdx, [rsp+sizeofEXCEPTION_POINTERS] ; exception_record
-    lea rcx, [rdx+sizeofEXCEPTION_RECORD] ; exception_context
-    mov dword ptr[rdx], STATUS_INVALID_PARAMETER
-    mov [rsp], rdx; exception_ptrs.ExceptionRecord
-    mov [rsp+8], rcx; exception_ptrs.ContextRecord
-    
-    call RtlCaptureContext; RtlCaptureContext(&exception_context)
+    lea rdx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset] ; ExceptionRecord
+    mov dword ptr[rdx], ecx ; ExceptionRecord.ExceptionCode
+    lea rcx, [rdx+sizeofEXCEPTION_RECORD] ; ContextRecord
+    mov [rsp+alignOffset], rdx; exception_ptrs.ExceptionRecord
+    mov [rsp+alignOffset+8], rcx; exception_ptrs.ContextRecord
+    call RtlCaptureContext; RtlCaptureContext(&ContextRecord)
 
-    mov r8, sizeofEXCEPTION_RECORD
+    lea r8, [sizeofEXCEPTION_RECORD-8]
     xor rdx, rdx
-    lea rcx, [rsp+sizeofEXCEPTION_POINTERS] ; exception_record
+    lea rcx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset+8] ; ExceptionRecord
     call memset
 
-    mov rcx, rsp ; exception_ptrs
-    jmp runtimeErrorRaise
+    lea rcx, [rsp+8] ; exception_ptrs
+    call runtimeErrorRaise
+endp
+
+; [[noreturn]] handle_invalid_parameter()
+export proc handle_invalid_parameter
+    mov ecx, STATUS_INVALID_PARAMETER
+    jmp raise_runtime_error
 endp
 
 def serverInstance:qword

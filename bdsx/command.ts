@@ -1,11 +1,11 @@
 
 import Event, { CapsuledEvent, EventEx } from 'krevent';
 import { Register } from './assembler';
+import { CommandContext, MCRESULT, MinecraftCommands } from './bds/command';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { CommandRequestPacket } from './bds/packets';
 import { proc, procHacker } from './bds/proc';
-import { CommandContext, MCRESULT, MinecraftCommands } from './bds/server';
 import { CANCEL } from './common';
 import { makefunc, RawTypeId } from './makefunc';
 import { nethook } from './nethook';

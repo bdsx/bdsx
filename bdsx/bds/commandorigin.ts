@@ -3,6 +3,7 @@ import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { mce } from "bdsx/mce";
 import { NativeClass } from "bdsx/nativeclass";
+import { CxxString } from "../nativetype";
 import { Actor } from "./actor";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
@@ -21,7 +22,11 @@ export class CommandOrigin extends NativeClass {
             super.construct();
         }
     }
-    
+
+    isServerCommandOrigin():this is ServerCommandOrigin {
+        abstract();
+    }
+
     /**
      * @deprecated use cmdorigin.destruct();
      */
@@ -60,4 +65,7 @@ export class ScriptCommandOrigin extends PlayerCommandOrigin {
     //     Level* (*getLevel)(ScriptCommandOrigin*);
     // };
     // VFTable* vftable;
+}
+export class ServerCommandOrigin extends CommandOrigin {
+    guid:CxxString;
 }

@@ -1,0 +1,13 @@
+{
+  "name": "@bdsx/plugin_example",
+  "version": "1.0.0",
+  "description": "Example for bdsx plugin",
+  "main": "index.js",
+  "keywords": [],
+  "author": "karikera <karikera3@hotmail.com> (https://rua.kr/)",
+  "license": "ISC",
+  "bdsxPlugin": true,
+  "devDependencies": {
+    "bdsx": "file:../bdsx"
+  }
+}

@@ -221,7 +221,7 @@ export class ErrorPosition {
 
     constructor(
         public readonly message:string, 
-        public readonly severity:'error'|'warning',
+        public readonly severity:'error'|'warning'|'info',
         public readonly pos:SourcePosition|null) {
     }
     

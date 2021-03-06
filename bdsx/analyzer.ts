@@ -25,6 +25,7 @@ export namespace analyzer
                 symbols = pdb.getAll(count=>{
                     progress.update(count / total);
                 });
+                progress.terminate();
             }
         }
         

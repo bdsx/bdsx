@@ -1,5 +1,8 @@
 {
-  "exclude": ["bedrock_server/*"],
+  "exclude": [
+    "node_modules",
+    "bedrock_server"
+  ],
   "compilerOptions": {
     "target": "es2017",
     "lib": [ "es2017" ],

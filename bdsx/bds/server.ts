@@ -1,13 +1,13 @@
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t, CxxString, uint32_t } from "bdsx/nativetype";
+import { CxxString } from "bdsx/nativetype";
 import { SharedPtr } from "bdsx/sharedpointer";
+import { abstract } from "../common";
 import { DimensionId } from "./actor";
-import { CommandOrigin } from "./commandorigin";
+import { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
-import { ServerLevel } from "./level";
+import { Level, ServerLevel } from "./level";
 import { NetworkHandler, ServerNetworkHandler } from "./networkidentifier";
 
 export class MinecraftEventing extends NativeClass {}
@@ -18,14 +18,6 @@ export class ServerMetrics extends NativeClass {}
 export class ServerMetricsImpl extends ServerMetrics {}
 export class VanilaServerGameplayEventListener extends NativeClass {}
 export class EntityRegistryOwned extends NativeClass {}
-
-export class MCRESULT extends NativeClass {
-    result:uint32_t;
-}
-
-
-export class CommandOutputSender extends NativeClass {
-}
 
 /**
  * unknown instance
@@ -57,6 +49,10 @@ export class Minecraft extends NativeClass {
     LoopbackPacketSender:LoopbackPacketSender;
     server:DedicatedServer;
     entityRegistryOwned:SharedPtr<EntityRegistryOwned>;
+
+    getLevel():Level {
+        abstract();
+    }
 }
 
 export class DedicatedServer extends NativeClass {
@@ -91,30 +87,6 @@ export class ServerInstance extends NativeClass {
 
     createDimension(id:DimensionId):Dimension {
         return this.minecraft.something.level.createDimension(id);
-    }
-}
-
-export class ServerCommandOrigin extends CommandOrigin {
-    guid:CxxString;
-}
-
-
-export class CommandContext extends NativeClass {
-    command:CxxString;
-    origin:ServerCommandOrigin;
-}
-
-export class MinecraftCommands extends NativeClass {
-    sender:CommandOutputSender;
-    u1:VoidPointer;
-    u2:bin64_t; //1
-    minecraft:Minecraft;
-
-    _executeCommand(ptr:SharedPtr<CommandContext>, b:boolean):MCRESULT {
-        abstract();
-    }
-    executeCommand(ctx:SharedPtr<CommandContext>, b:boolean):MCRESULT {
-        return this._executeCommand(ctx, b);
     }
 }
 

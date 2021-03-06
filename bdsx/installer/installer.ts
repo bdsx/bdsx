@@ -259,7 +259,7 @@ class InstallItem {
             await fs.mkdir(dirpath);
         }
 
-        await new Promise<unzipper.ParseStream>((resolve, reject)=>{
+        await new Promise<void>((resolve, reject)=>{
             https.get(url, (response)=>{
                 bar.total = +response.headers['content-length']!;
                 if (response.statusCode !== 200) {
@@ -300,7 +300,10 @@ class InstallItem {
                     
                     await mkdirRecursive(path.dirname(extractPath));
                     entry.pipe(fs_ori.createWriteStream(extractPath)).on('error', reject);
-                }).on('finish', resolve).on('error', reject);
+                }).on('finish', ()=>{
+                    resolve();
+                    bar.terminate();
+                }).on('error', reject);
             }).on('error', reject);
         });
         

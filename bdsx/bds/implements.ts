@@ -1,7 +1,7 @@
 import asmcode = require("bdsx/asm/asmcode");
 import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
-import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin } from "bdsx/bds/commandorigin";
+import { CommandOrigin, PlayerCommandOrigin, ScriptCommandOrigin, ServerCommandOrigin } from "bdsx/bds/commandorigin";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
@@ -12,6 +12,7 @@ import { SharedPtr } from "bdsx/sharedpointer";
 import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { CommandContext, CommandOutputSender, MCRESULT, MinecraftCommands } from "./command";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
@@ -24,7 +25,7 @@ import { ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
-import { CommandContext, CommandOutputSender, DedicatedServer, EntityRegistryOwned, MCRESULT, Minecraft, Minecraft$Something, MinecraftCommands, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, ServerCommandOrigin, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
+import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency
@@ -61,7 +62,6 @@ ServerLevel.abstract({
 });
 
 // commandorigin.ts
-
 CommandOrigin.define({
     vftable:VoidPointer,
     uuid:mce.UUID,
@@ -69,6 +69,11 @@ CommandOrigin.define({
 });
 PlayerCommandOrigin.abstract({});
 ScriptCommandOrigin.abstract({});
+
+const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
+ServerCommandOrigin.prototype.isServerCommandOrigin = function() {
+    return this.vftable.equals(ServerCommandOrigin_vftable);
+};
 
 // void destruct(CommandOrigin* origin);
 CommandOrigin.prototype.destruct = makefunc.js([0x00], RawTypeId.Void, {this: CommandOrigin});
@@ -106,7 +111,21 @@ CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: Com
 // Actor* getEntity(CommandOrigin* origin);
 CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOrigin});
 
-// .....
+// command.ts
+MCRESULT.define({
+    result:uint32_t
+});
+CommandContext.abstract({
+    command:CxxString,
+    origin:ServerCommandOrigin.ref(),
+});
+MinecraftCommands.abstract({
+    sender:CommandOutputSender.ref(),
+    u1:VoidPointer,
+    u2:bin64_t,
+    minecraft:Minecraft.ref(),
+});
+MinecraftCommands.prototype._executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();
@@ -301,27 +320,14 @@ BaseAttributeMap.abstract({});
 BaseAttributeMap.prototype.getMutableInstance = procHacker.js("BaseAttributeMap::getMutableInstance", AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, RawTypeId.Int32);
 
 // server.ts
-MCRESULT.define({
-    result:uint32_t
-});
 VanilaGameModuleServer.abstract({
     listener:[VanilaServerGameplayEventListener.ref(), 0x8]
-});
-CommandContext.abstract({
-    command:CxxString,
-    origin:ServerCommandOrigin.ref(),
 });
 DedicatedServer.abstract({});
 Minecraft$Something.abstract({
     network:NetworkHandler.ref(),
     level:ServerLevel.ref(),
     shandler:ServerNetworkHandler.ref(),
-});
-MinecraftCommands.abstract({
-    sender:CommandOutputSender.ref(),
-    u1:VoidPointer,
-    u2:bin64_t,
-    minecraft:Minecraft.ref(),
 });
 Minecraft.abstract({
     vftable:VoidPointer,
@@ -341,6 +347,7 @@ Minecraft.abstract({
     server:DedicatedServer.ref(),
     entityRegistryOwned:[SharedPtr.make(EntityRegistryOwned), 0xe0],
 });
+Minecraft.prototype.getLevel = procHacker.js("Minecraft::getLevel", Level, {this:Minecraft});
 ScriptFramework.abstract({
     vftable:VoidPointer,
 });
@@ -354,7 +361,6 @@ ServerInstance.abstract({
     networkHandler:[NetworkHandler.ref(), 0xa0],
     scriptEngine:[MinecraftServerScriptEngine.ref(), 0x208],
 });
-MinecraftCommands.prototype._executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {thisType: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
 
 // gamemode.ts
 GameMode.define({

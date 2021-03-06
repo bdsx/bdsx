@@ -1873,6 +1873,11 @@ export class X64Assembler {
                     throw parser.error(`non export-able syntax`);
                 }
                 return;
+            case 'buildtrace': {
+                const value = this._polynominal(parser.readAll(), parser.lineNumber, parser.matchedIndex);
+                console.log('buildtrace> '+ value);
+                return;
+            }
             case 'movsx':
             case 'movzx':
                 extendingCommand = true;

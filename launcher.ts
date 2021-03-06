@@ -11,6 +11,7 @@ import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
 
 import { bedrockServer } from "bdsx/launcher";
+import { loadAllPlugins } from "bdsx/plugins";
 import colors = require('colors');
 
 // prank
@@ -29,6 +30,9 @@ console.log(colors.rainbow('       ///////////////'));
             console.log('[BDSX] node.js is processing...');
         }, 3000).unref();
     });
+
+    console.log('[BDSX-Plugins] Loading...');
+    await loadAllPlugins();
 
     // launch BDS
     console.log('[BDSX] bedrockServer launching...');

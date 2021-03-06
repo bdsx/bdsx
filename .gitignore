@@ -1,4 +1,4 @@
-/node_modules
+node_modules
 /bedrock_server/*
 /dist
 /npm-debug.log
