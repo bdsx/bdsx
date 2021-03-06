@@ -35,6 +35,7 @@ export class Actor extends NativeClass {
     attributes:BaseAttributeMap;
     runtimeId:ActorRuntimeID;
     dimension:Dimension;
+    position:Vec3;
     
     protected _getName():CxxStringWrapper {
         abstract();
@@ -82,8 +83,11 @@ export class Actor extends NativeClass {
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
     }
+    /**
+     * @deprecated use actor.position
+     */
     getPosition():Vec3 {
-        abstract();
+        return actor.position;
     }
     getUniqueIdLow():number {
         return this.getUniqueIdPointer().getInt32(0);
