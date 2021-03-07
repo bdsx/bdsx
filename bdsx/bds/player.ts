@@ -9,12 +9,18 @@ export class Player extends Actor {
     protected _setName(name: CxxStringWrapper):void {
         abstract();
     }
+    changeDimension(dimensionId:number, respawn:boolean):void {
+        abstract();
+    }
     setName(name:string):void {
         const _name = new CxxStringWrapper(true);
         _name[NativeType.ctor]();
         _name.value = name;
         this._setName(_name);
         _name[NativeType.dtor]();
+    }
+    teleportTo(position:Vec3, checkForBlocks:boolean, c:number, d:number, actorId:ActorUniqueID):void {
+        abstract();
     }
 }
 
