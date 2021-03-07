@@ -1,7 +1,8 @@
 import { abstract } from "bdsx/common";
 import { NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
-import { Actor } from "./actor";
+import { Actor, ActorUniqueID } from "./actor";
+import { Vec3 } from "./blockpos";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 
