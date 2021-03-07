@@ -3,6 +3,7 @@ import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { CxxString } from "bdsx/nativetype";
 import { SharedPtr } from "bdsx/sharedpointer";
+import { NetworkIdentifier } from "bdsx";
 import { abstract } from "../common";
 import { DimensionId } from "./actor";
 import { MinecraftCommands } from "./command";
@@ -87,6 +88,12 @@ export class ServerInstance extends NativeClass {
 
     createDimension(id:DimensionId):Dimension {
         return this.minecraft.something.level.createDimension(id);
+    }
+    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected") {
+        return this.minecraft.something.shandler.disconnectClient(client, message);
+    }
+    setMotd(motd:string) {
+        return this.minecraft.something.shandler.setMotd(motd);
     }
 }
 
