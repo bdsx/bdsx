@@ -50,7 +50,7 @@ run `./bdsx.sh` (on Linux)
 
 ### Starting with Docker
 ```sh
-docker run karikera/bdsx
+docker run -ti karikera/bdsx
 ```
 
 ## File Structure
