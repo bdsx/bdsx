@@ -2,7 +2,7 @@ import { CxxVector } from "bdsx/cxxvector";
 import { MantleClass, NativeClass } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
-import { BlockPos } from "./blockpos";
+import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
@@ -15,8 +15,8 @@ export const NetworkBlockPosition = BlockPos;
 export type NetworkBlockPosition = BlockPos;
 
 export class LoginPacket extends Packet {
-	u5:uint32_t; //0x184
-	connreq:ConnectionRequest;
+    u5:uint32_t; //0x184
+    connreq:ConnectionRequest;
 }
 LoginPacket.abstract({
     u5:uint32_t,
@@ -118,8 +118,31 @@ export class MoveEntityPacket extends Packet {
 }
 
 export class MovePlayerPacket extends Packet {
-    // unknown
+    actorId: ActorRuntimeID;
+    pos: Vec3;
+    pitch: float32_t;
+    yaw: float32_t;
+    headYaw: float32_t;
+    mode: uint8_t;
+    onGround: bool_t;
+    ridingActorId: ActorRuntimeID;
+    teleportCause: int32_t;
+    teleportItem: int32_t;
+    tick: bin64_t;
 }
+MovePlayerPacket.abstract({
+    actorId: [ActorRuntimeID, 0x28],
+    pos: [Vec3, 0x30],
+    pitch: [float32_t, 0x3C],
+    yaw: [float32_t, 0x40],
+    headYaw: [float32_t, 0x44],
+    mode: [uint8_t, 0x48],
+    onGround: [bool_t, 0x49],
+    ridingActorId: [ActorRuntimeID, 0x50],
+    teleportCause: [int32_t, 0x58],
+    teleportItem: [int32_t, 0x5C],
+    tick: [bin64_t, 0x60]
+});
 
 export class RiderJumpPacket extends Packet {
     // unknown
@@ -160,8 +183,15 @@ export class BlockEventPacket extends Packet {
 }
 
 export class EntityEventPacket extends Packet {
-    // unknown
+    actorId: ActorRuntimeID;
+    event: uint8_t;
+    data: int32_t;
 }
+EntityEventPacket.define({
+    actorId: [ActorRuntimeID, 0x28],
+    event: [uint8_t, 0x30],
+    data: [int32_t, 0x34]
+});
 
 export class MobEffectPacket extends Packet {
     // unknown
@@ -468,8 +498,17 @@ TransferPacket.abstract({
 });
 
 export class PlaySoundPacket extends Packet {
-    // unknown
+    soundName:CxxString;
+    pos:BlockPos;
+    volume:float32_t;
+    pitch:float32_t;
 }
+PlaySoundPacket.abstract({
+    soundName:[CxxString, 0x30],
+    pos:[BlockPos, 0x40],
+    volume:[float32_t, 0x4C],
+    pitch:[float32_t, 0x50],
+});
 
 export class StopSoundPacket extends Packet {
     // unknown
@@ -713,8 +752,11 @@ export class NetworkSettingsPacket extends Packet {
 }
 
 export class PlayerAuthInputPacket extends Packet {
-    // unknown
+    pos: Vec3;
 }
+PlayerAuthInputPacket.abstract({
+    pos: [Vec3, 0x30]
+});
 
 export class CreativeContentPacket extends Packet {
     // unknown
