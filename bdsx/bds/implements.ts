@@ -16,7 +16,7 @@ import { CommandContext, CommandOutputSender, MCRESULT, MinecraftCommands } from
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
-import { ItemStack, PlayerInventory } from "./inventory";
+import { Item, ItemStack, PlayerInventory } from "./inventory";
 import { Level, ServerLevel } from "./level";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
@@ -379,11 +379,17 @@ GameMode.define({
 });
 
 // inventory.ts
+(Item.prototype as any)._getCommandName = procHacker.js("Item::getCommandName", CxxStringWrapper, {this:Item});
+Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", RawTypeId.Boolean, {this:Item});
+Item.prototype.isDamageable = procHacker.js("Item::isDamageable", RawTypeId.Boolean, {this:Item});
+Item.prototype.isFood = procHacker.js("Item::isFood", RawTypeId.Boolean, {this:Item});
+Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", RawTypeId.Void, {this:Item}, RawTypeId.Boolean);
 ItemStack.abstract({
     amount:[uint8_t, 0x22],
 });
 (ItemStack.prototype as any)._getId = procHacker.js("ItemStackBase::getId", RawTypeId.Int32, {this:ItemStack});
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
+ItemStack.prototype.getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});
 
