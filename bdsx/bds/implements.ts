@@ -9,13 +9,14 @@ import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
+import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { CommandContext, CommandOutputSender, MCRESULT, MinecraftCommands } from "./command";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
+import { ItemStack, PlayerInventory } from "./inventory";
 import { Level, ServerLevel } from "./level";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
@@ -222,6 +223,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 (Player.prototype as any)._setName = procHacker.js("Player::setName", RawTypeId.Void, {this: Player}, CxxStringWrapper);
 Player.prototype.changeDimension = procHacker.js("ServerPlayer::changeDimension", RawTypeId.Void, {this:Player}, RawTypeId.Int32, RawTypeId.Boolean);
 Player.prototype.teleportTo = procHacker.js("Player::teleportTo", RawTypeId.Void, {this:Player}, Vec3, RawTypeId.Boolean, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Bin64);
+Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9e8]
@@ -375,3 +377,14 @@ ServerInstance.abstract({
 GameMode.define({
     actor: [Actor.ref(), 8]
 });
+
+// inventory.ts
+ItemStack.abstract({
+    amount:[uint8_t, 0x22],
+});
+(ItemStack.prototype as any)._getId = procHacker.js("ItemStackBase::getId", RawTypeId.Int32, {this:ItemStack});
+(ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
+ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});
+
+PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
