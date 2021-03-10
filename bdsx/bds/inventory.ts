@@ -43,6 +43,9 @@ export class ItemStack extends NativeClass {
     protected _getId():number {
         abstract();
     }
+    protected _getItem():Item {
+        abstract();
+    }
     protected _setCustomName(name:CxxStringWrapper):void {
         abstract();
     }
@@ -62,8 +65,11 @@ export class ItemStack extends NativeClass {
         }
         return id;
     }
-    getItem():Item {
-        abstract();
+    getItem():Item|null {
+        if (this.isEmptyStack()) {
+            return null;
+        }
+        return this._getItem();
     }
     setCustomName(name:string):void {
         const _name = new CxxStringWrapper(true);
