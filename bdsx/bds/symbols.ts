@@ -64,6 +64,11 @@ const symbols = [
     'ServerNetworkHandler::_onPlayerLeft',
     "ServerCommandOrigin::`vftable'",
     "Minecraft::getLevel",
+    "ItemStackBase::getId",
+    "ItemStackBase::isBlock",
+    "ItemStackBase::isEmptyStack",
+    "ItemStackBase::setCustomName",
+    "PlayerInventory::getItem",
 ] as const;
 
 // decorated symbols
