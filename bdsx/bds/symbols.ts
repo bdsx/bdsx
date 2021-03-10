@@ -15,6 +15,7 @@ const symbols = [
     'Level::createDimension',
     'Level::fetchEntity',
     'Crypto::Random::generateUUID',
+    'Player::getSupplies',
     'Player::setName',
     'Player::teleportTo',
     'ServerNetworkHandler::_getServerPlayer',
