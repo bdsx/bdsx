@@ -13,6 +13,31 @@ export enum ContainerId {
     FixedInventory = 123,
     UI = 124
 }
+
+export class Item extends NativeClass {
+    protected _getCommandName():CxxStringWrapper {
+        abstract();
+    }
+    allowOffhand():boolean {
+        abstract();
+    }
+    getCommandName():string {
+        return this._getCommandName().value;
+    }
+    isDamageable():boolean {
+        abstract();
+    }
+    isFood():boolean {
+        abstract();
+    }
+    /**
+     * Will not affect client but allows /replaceitem
+     */
+    setAllowOffhand(value:boolean):void {
+        abstract();
+    }
+}
+
 export class ItemStack extends NativeClass {
     amount:uint8_t;
     protected _getId():number {
@@ -37,6 +62,9 @@ export class ItemStack extends NativeClass {
         }
         return id;
     }
+    getItem():Item {
+        abstract();
+    }
     setCustomName(name:string):void {
         const _name = new CxxStringWrapper(true);
         _name.construct();
@@ -45,6 +73,7 @@ export class ItemStack extends NativeClass {
         _name.destruct();
     }
 }
+
 export class PlayerInventory extends NativeClass {
     getItem(slot:number, containerId: ContainerId):ItemStack {
         abstract();
