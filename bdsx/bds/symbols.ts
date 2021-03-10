@@ -23,6 +23,7 @@ const symbols = [
     'ServerNetworkHandler::disconnectClient',
     'ServerPlayer::changeDimension',
     'ServerPlayer::openInventory',
+    'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
     'RakNet::SystemAddress::ToString',
     'std::_Allocate<16,std::_Default_allocate_traits,0>',
