@@ -3,6 +3,7 @@ import { NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { Actor, ActorUniqueID } from "./actor";
 import { Vec3 } from "./blockpos";
+import { PlayerInventory } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 
@@ -20,7 +21,10 @@ export class Player extends Actor {
         this._setName(_name);
         _name[NativeType.dtor]();
     }
-    teleportTo(position:Vec3, checkForBlocks:boolean, c:number, d:number, actorId:ActorUniqueID):void {
+    teleportTo(position:Vec3, checkForBlocks:boolean, c:number, actorType:number, actorId:ActorUniqueID):void {
+        abstract();
+    }
+    getInventory():PlayerInventory {
         abstract();
     }
 }

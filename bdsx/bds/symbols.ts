@@ -15,6 +15,7 @@ const symbols = [
     'Level::createDimension',
     'Level::fetchEntity',
     'Crypto::Random::generateUUID',
+    'Player::getSupplies',
     'Player::setName',
     'Player::teleportTo',
     'ServerNetworkHandler::_getServerPlayer',
@@ -64,6 +65,11 @@ const symbols = [
     'ServerNetworkHandler::_onPlayerLeft',
     "ServerCommandOrigin::`vftable'",
     "Minecraft::getLevel",
+    "ItemStackBase::getId",
+    "ItemStackBase::isBlock",
+    "ItemStackBase::isEmptyStack",
+    "ItemStackBase::setCustomName",
+    "PlayerInventory::getItem",
 ] as const;
 
 // decorated symbols
