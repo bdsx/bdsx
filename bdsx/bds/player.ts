@@ -32,6 +32,10 @@ export class Player extends Actor {
 export class ServerPlayer extends Player {
     networkIdentifier:NetworkIdentifier;
 
+    protected _sendInventory():void {
+        abstract();
+    }
+    
     openInventory():void {
         abstract();
     }
@@ -41,6 +45,8 @@ export class ServerPlayer extends Player {
     }
     
     sendInventory():void {
-        abstract();
+        setTimeout(() => {
+            this._sendInventory();
+        }, 50);
     }
 }
