@@ -39,4 +39,8 @@ export class ServerPlayer extends Player {
     sendNetworkPacket(packet:Packet):void {
         abstract();
     }
+    
+    sendInventory():void {
+        abstract();
+    }
 }
