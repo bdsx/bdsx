@@ -32,6 +32,7 @@ const symbols = [
     'Actor::getNameTag',
     'Actor::getPos',
     'Actor::getUniqueID',
+    'Actor::hasTag',
     'BaseAttributeMap::getMutableInstance',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
