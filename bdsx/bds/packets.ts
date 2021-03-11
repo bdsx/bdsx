@@ -604,8 +604,13 @@ export const ModalFormRequestPacket = ShowModalFormPacket;
 export type ModalFormRequestPacket = ShowModalFormPacket;
 
 export class ModalFormResponsePacket extends Packet {
-    // unknown
+    formId:uint32_t;
+    formData:CxxString;
 }
+ModalFormResponsePacket.abstract({
+    formId: [uint32_t,0x30],
+    formData: [CxxString,0x38],
+});
 
 export class ServerSettingsRequestPacket extends Packet {
     // unknown
