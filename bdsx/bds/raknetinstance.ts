@@ -8,5 +8,5 @@ export class RakNetInstance extends NativeClass {
 }
 RakNetInstance.abstract({
     vftable:VoidPointer,
-    peer:[RakNet.RakPeer.ref(), 0x1c8],
+    peer:[RakNet.RakPeer.ref(), 0x1e8],
 });

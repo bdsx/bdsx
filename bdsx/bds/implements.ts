@@ -69,6 +69,7 @@ CommandOrigin.define({
 });
 PlayerCommandOrigin.abstract({});
 ScriptCommandOrigin.abstract({});
+ServerCommandOrigin.abstract({}, 0x58);
 
 const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
 ServerCommandOrigin.prototype.isServerCommandOrigin = function() {
@@ -112,20 +113,13 @@ CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: Com
 CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOrigin});
 
 // command.ts
-MCRESULT.define({
-    result:uint32_t
-});
-CommandContext.abstract({
-    command:CxxString,
-    origin:ServerCommandOrigin.ref(),
-});
 MinecraftCommands.abstract({
     sender:CommandOutputSender.ref(),
     u1:VoidPointer,
     u2:bin64_t,
     minecraft:Minecraft.ref(),
 });
-MinecraftCommands.prototype._executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+MinecraftCommands.prototype._executeCommand = procHacker.js('MinecraftCommands::executeCommand', MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();
@@ -166,7 +160,7 @@ Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor});
 (Actor.prototype as any)._getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
 
 Actor.fromUniqueIdBin = function(bin) {
-    return serverInstance.minecraft.something.level.fetchEntity(bin, true);  
+    return serverInstance.minecraft.something.level.fetchEntity(bin, true);
 };
 
 const attribNames = [
@@ -208,7 +202,7 @@ function _removeActor(actor:Actor):void {
 }
 
 procHacker.hookingRawWithCallOriginal(
-    'Level::removeEntityReferences', 
+    'Level::removeEntityReferences',
     makefunc.np((level, actor, b)=>{
         _removeActor(actor);
     }, RawTypeId.Void, null, Level, Actor, RawTypeId.Boolean),
@@ -255,7 +249,7 @@ NetworkHandler.Connection.abstract({
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x30]
+    instance: [RakNetInstance.ref(), 0x48]
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
@@ -299,19 +293,16 @@ Certificate.prototype.getId = function():string {
     out.destruct();
     return id;
 };
-Certificate.prototype.getTitleId = function():number {
-    return getTitleId(this);
-};
 Certificate.prototype.getIdentity = function():mce.UUID {
     return getIdentity(this).value;
 };
 const getXuid = procHacker.js("ExtendedCertificate::getXuid", CxxStringWrapper, {structureReturn: true}, Certificate);
 const getIdentityName = procHacker.js("ExtendedCertificate::getIdentityName", CxxStringWrapper, {structureReturn: true}, Certificate);
-const getTitleId = procHacker.js("ExtendedCertificate::getTitleID", RawTypeId.Int32, null, Certificate);
 const getIdentity = procHacker.js("ExtendedCertificate::getIdentity", mce.UUIDWrapper, {structureReturn: true}, Certificate);
 ConnectionRequest.abstract({
     u1: VoidPointer,
-    cert:Certificate.ref()
+    cert:Certificate.ref(),
+    u2:VoidPointer,
 });
 
 // attribute.ts
@@ -365,10 +356,10 @@ MinecraftServerScriptEngine.abstract({
 });
 ServerInstance.abstract({
     vftable:VoidPointer,
-    server:[DedicatedServer.ref(), 0x90],
-    minecraft:[Minecraft.ref(), 0x98],
-    networkHandler:[NetworkHandler.ref(), 0xa0],
-    scriptEngine:[MinecraftServerScriptEngine.ref(), 0x208],
+    server:[DedicatedServer.ref(), 0x98],
+    minecraft:[Minecraft.ref(), 0xa0],
+    networkHandler:[NetworkHandler.ref(), 0xa8],
+    scriptEngine:[MinecraftServerScriptEngine.ref(), 0x210],
 });
 
 // gamemode.ts

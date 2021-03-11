@@ -42,7 +42,7 @@ console.log(colors.rainbow('       ///////////////'));
      * without this, you need to control stdin manually
      */
     bedrockServer.DefaultStdInHandler.install();
-    
+
     // run index
     require('./index');
 })().catch(remapAndPrintError);

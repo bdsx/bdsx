@@ -1,5 +1,6 @@
 {
     "debug.javascript.usePreview": false,
+    "files.trimTrailingWhitespace": true,
     "files.exclude": {
         "**/*.js": { "when": "$(basename).ts"}
     }

@@ -39,7 +39,7 @@ function initFunctionMap():void {
         if (address === undefined) throw Error(`Unexpected value for ${name}`);
         functionMap.setPointer(address, makefuncDefines[name] + 0x80);
     }
-    
+
     function chakraCoreToMakeFuncMap(funcName:string):void {
         const constname = 'fn_'+funcName as keyof typeof makefuncDefines;
         const offset = makefuncDefines[constname];
@@ -50,7 +50,7 @@ function initFunctionMap():void {
     function chakraCoreToDef(funcName:keyof typeof asmcode):void {
         (asmcode as any)[funcName] = cgate.GetProcAddress(chakraCoreDll, funcName);
     }
-    
+
     const chakraCoreDll = cgate.GetModuleHandleW('ChakraCore.dll');
 
     setFunctionMap('fn_wrapper_js2np', asmcode.wrapper_js2np);
@@ -89,7 +89,10 @@ function initFunctionMap():void {
     asmcode.asyncAlloc = uv_async.alloc;
     asmcode.asyncPost = uv_async.post;
     asmcode.sprintf = proc2.sprintf;
-    
+    asmcode.vsnprintf = proc2.vsnprintf;
+    asmcode.malloc = dllraw.ucrtbase.malloc;
+    asmcode.Sleep = dllraw.kernel32.Sleep;
+
     chakraCoreToDef('JsHasException');
     chakraCoreToDef('JsCreateTypeError');
     chakraCoreToDef('JsGetValueType');
@@ -200,8 +203,8 @@ class ParamInfoMaker {
     public readonly countOnCpp: number;
 
     constructor(
-        public readonly returnType:ParamType, 
-        opts:MakeFuncOptions<any>|null|undefined, 
+        public readonly returnType:ParamType,
+        opts:MakeFuncOptions<any>|null|undefined,
         public readonly params:ParamType[]) {
         if (opts != null) {
             this.structureReturn = !!opts.structureReturn;
@@ -813,13 +816,13 @@ interface TypeMap_js2np {
     [RawTypeId.Void]: void;
 }
 
-type TypeFrom_js2np<T extends ParamType|{new():VoidPointer|void}> = 
-    T extends RawTypeId ? TypeMap_js2np[T] : 
-    T extends { new(...args: any[]): infer V } ? (V|null) : 
+type TypeFrom_js2np<T extends ParamType|{new():VoidPointer|void}> =
+    T extends RawTypeId ? TypeMap_js2np[T] :
+    T extends { new(...args: any[]): infer V } ? (V|null) :
     never;
-type TypeFrom_np2js<T extends ParamType> = 
-    T extends RawTypeId ? TypeMap_np2js[T] : 
-    T extends { new(): infer V } ? V : 
+type TypeFrom_np2js<T extends ParamType> =
+    T extends RawTypeId ? TypeMap_np2js[T] :
+    T extends { new(): infer V } ? V :
     never;
 
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
@@ -854,8 +857,8 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      */
     nativeDebugBreak?:boolean;
 }
-type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> = 
-    OPTS extends MakeFuncOptions<infer THIS> ? 
+type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> =
+    OPTS extends MakeFuncOptions<infer THIS> ?
     THIS extends { new(): VoidPointer; } ? InstanceType<THIS> : void : void;
 
 
@@ -864,7 +867,7 @@ export type FunctionFromTypes_np<
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
     (this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_np2js<PARAMS>) => TypeFrom_js2np<RETURN>;
-    
+
 export type FunctionFromTypes_js<
     PTR extends VoidPointer|[number, number?],
     OPTS extends MakeFuncOptions<any>|null,
@@ -872,11 +875,15 @@ export type FunctionFromTypes_js<
     RETURN extends ParamType> =
     ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
 
+function symbolNotFound():never {
+    throw Error('symbol not found');
+}
+
 export namespace makefunc {
-        
+
     /**
      * make the JS function as a native function.
-     * 
+     *
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
      */
@@ -884,27 +891,27 @@ export namespace makefunc {
         jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
         returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer {
         const pimaker = new ParamInfoMaker(returnType, opts, params); // check param count also
-    
+
         chakraUtil.JsAddRef(jsfunction);
         checkTypeIsFunction(jsfunction, 1);
-    
+
         const paramsSize = pimaker.countOnCalling * 8 + 8; // params + this
         let stackSize = paramsSize;
         stackSize += 0x10; // temp space
         stackSize += 0x20; // calling space (use stack through ending)
         if (stackSize < 0x20) stackSize = 0x20; // minimal
-    
+
         // alignment
         const alignmentOffset = 8;
         stackSize -= alignmentOffset;
         stackSize = ((stackSize + 0xf) & ~0xf);
         stackSize += alignmentOffset;
-    
+
         const func = new Maker(pimaker, stackSize, false);
         // 0x20~0x28 - return address
         // 0x00~0x20 - pushed data
         func.lea_r_rp(Register.rbp, Register.rsp, 1, 0x28);
-    
+
         const activeRegisters = Math.min(pimaker.countOnCpp, 4);
         if (activeRegisters > 1) {
             for (let i = 1; i < activeRegisters; i++) {
@@ -922,83 +929,85 @@ export namespace makefunc {
                 }
             }
         }
-    
+
         func.lea_r_rp(Register.rsi, Register.rsp, 1, -func.stackSize + 0x20); // without calling stack
         func.sub_r_c(Register.rsp, func.stackSize);
-    
+
         let offset = 0;
         if (!pimaker.useThis) {
             func._mov_t_c(TargetInfo.memory(Register.rsi, 0), nullValueRef);
         }
-    
+
         for (let i = 0; i < pimaker.countOnCpp; i++) {
             const info = pimaker.getInfo(i);
             if (i === 0) {
                 func.nativeToJs(info, TargetInfo.memory(Register.rsi, info.numberOnUsing * 8), TARGET_1);
             } else {
-                func.nativeToJs(info, 
-                    TargetInfo.memory(Register.rsi, info.numberOnUsing * 8), 
+                func.nativeToJs(info,
+                    TargetInfo.memory(Register.rsi, info.numberOnUsing * 8),
                     TargetInfo.memory(Register.rbp, offset));
             }
             offset += 8;
         }
-    
+
         func.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(jsfunction));
         func.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
         func.mov_r_c(Register.r8, pimaker.countOnCalling + 1);
         func.mov_r_r(Register.r9, Register.rbp);
         func.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
-    
+
         func.test_r_r(Register.rax, Register.rax);
         func.jz_label('!');
         func.mov_r_r(Register.rcx, Register.rax);
         func.call_rp(Register.rdi, 1, makefuncDefines.fn_getout);
         func.close_label('!');
-    
+
         func.jsToNative(pimaker.getInfo(-1), TARGET_RETURN, TargetInfo.memory(Register.rbp, 0));
-    
+
         func.end();
         return func.alloc();
     }
     /**
      * make the native function as a JS function.
-     * 
+     *
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
-     * 
+     *
      * @param returnType RawTypeId or *Pointer
      * @param params RawTypeId or *Pointer
      */
     export function js<PTR extends VoidPointer|[number, number?], OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         functionPointer: PTR,
         returnType:RETURN,
-        opts?: OPTS, 
+        opts?: OPTS,
         ...params: PARAMS):
         FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> {
         const pimaker = new ParamInfoMaker(returnType, opts, params); // check param count also
-    
+
         let vfoff:number|undefined;
-        if (!(functionPointer instanceof VoidPointer)) {
-            vfoff = (functionPointer as any)[0];
+        if (functionPointer instanceof Array) {
+            vfoff = functionPointer[0];
             if (typeof vfoff !== 'number') {
                 throwTypeError(1, 'type', typeof functionPointer, '*Pointer or [number, number] required');
             }
+        } else if (!(functionPointer instanceof VoidPointer)) {
+            return symbolNotFound as (()=>never)&{pointer:PTR};
         }
-    
+
         // JsValueRef( * JsNativeFunction)(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState);
-    
+
         const paramsSize = pimaker.countOnCpp * 8;
         let stackSize = paramsSize;
         if (pimaker.structureReturn) stackSize += 0x8; // structureReturn space
         stackSize += 0x10; // temp space space
         if (stackSize < 0x20) stackSize = 0x20; // minimal
-    
+
         // alignment
         const alignmentOffset = 8;
         stackSize -= alignmentOffset;
         stackSize = ((stackSize + 0xf) & ~0xf);
         stackSize += alignmentOffset;
-    
+
         const func = new Maker(pimaker, stackSize, true);
         if (opts && opts.nativeDebugBreak) func.debugBreak();
 
@@ -1018,34 +1027,34 @@ export namespace makefunc {
         }
         func.mov_r_r(Register.rsi, Register.r8);
         func.lea_r_rp(Register.rbp, Register.rsp, 1, - func.stackSize + paramsSize);
-    
+
         if (pimaker.structureReturn) {
             func.offsetForStructureReturn = func.stackSize - paramsSize - 8;
         }
-    
+
         if (pimaker.countOnCpp > 1) {
             const stackSizeForConvert = 0x20;
             func.sub_r_c(Register.rsp, func.stackSize + stackSizeForConvert);
-    
+
             const last = pimaker.countOnCpp - 1;
             let offset = -paramsSize;
             for (let i = 0; i < pimaker.countOnCpp; i++) {
                 const info = pimaker.getInfo(i);
                 func.jsToNative(info,
-                    i !== last ? TargetInfo.memory(Register.rbp, offset) : i < 4 ? 
-                        TargetInfo.register(regMap[i], fregMap[i]) : 
+                    i !== last ? TargetInfo.memory(Register.rbp, offset) : i < 4 ?
+                        TargetInfo.register(regMap[i], fregMap[i]) :
                         TargetInfo.memory(Register.rbp, offset),
                     TargetInfo.memory(Register.rsi, info.numberOnUsing * 8));
                 offset += 8;
             }
-    
+
             if (func.useStackAllocator) {
                 func.mov_r_c(Register.rax, chakraUtil.stack_ptr);
                 func.or_rp_c(Register.rax, 1, 0, 1);
             }
-    
+
             func.add_r_c(Register.rsp, stackSizeForConvert);
-    
+
             // paramCountOnCpp >= 2
             if (pimaker.typeIds[0] === RawTypeId.Float64) {
                 func.movsd_r_rp(FloatRegister.xmm0, Register.rsp, 1, 0);
@@ -1083,18 +1092,18 @@ export namespace makefunc {
             }
         } else {
             func.sub_r_c(Register.rsp, func.stackSize);
-    
+
             if (pimaker.countOnCpp !== 0) {
                 const pi = pimaker.getInfo(0);
                 func.jsToNative(pi, TARGET_1, TargetInfo.memory(Register.rsi, pi.numberOnUsing * 8));
             }
-    
+
             if (func.useStackAllocator) {
                 func.mov_r_c(Register.rax, chakraUtil.stack_ptr);
                 func.or_rp_c(Register.rax, 1, 0, 1);
             }
         }
-    
+
         if (targetfuncptr !== null) {
             func.call64(targetfuncptr, Register.rax);
         } else {
@@ -1102,7 +1111,7 @@ export namespace makefunc {
             func.mov_r_rp(Register.rax, Register.rcx, 1, thisoff);
             func.call_rp(Register.rax, 1, vfoff!);
         }
-    
+
         let returnTarget = TARGET_RETURN;
         if (func.useStackAllocator) {
             if (!pimaker.structureReturn) {
@@ -1120,13 +1129,13 @@ export namespace makefunc {
             func.and_rp_c(Register.rdx, 1, 0, -2);
             func.call_rp(Register.rdi, 1, makefuncDefines.fn_stack_free_all);
         }
-    
+
         if (pimaker.structureReturn) {
             func.mov_r_rp(Register.rax, Register.rbp, 1, func.stackSize - paramsSize - 8);
         } else {
             func.nativeToJs(pimaker.getInfo(-1), TARGET_RETURN, returnTarget);
         }
-    
+
         func.end();
         const nativecode = func.alloc();
         const funcout = chakraUtil.JsCreateFunction(nativecode, null) as FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;

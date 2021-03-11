@@ -3,7 +3,6 @@ import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { mce } from "bdsx/mce";
 import { NativeClass } from "bdsx/nativeclass";
-import { CxxString } from "../nativetype";
 import { Actor } from "./actor";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
@@ -67,5 +66,4 @@ export class ScriptCommandOrigin extends PlayerCommandOrigin {
     // VFTable* vftable;
 }
 export class ServerCommandOrigin extends CommandOrigin {
-    guid:CxxString;
 }

@@ -1,3 +1,4 @@
+import { capi } from "./capi";
 import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
 import { makefunc, RawTypeId } from "./makefunc";
@@ -5,20 +6,25 @@ import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type, uint32_t } from "./nativetype";
 import { Singleton } from "./singleton";
 
-class RefCounter extends NativeClass {
+export class SharedPtrBase<T> extends NativeClass {
     vftable:VoidPointer;
     useRef:uint32_t;
     weakRef:uint32_t;
+    value:T;
 
+    [NativeType.ctor]():void {
+        this.useRef = 1;
+        this.weakRef = 1;
+    }
     addRef():void {
         this.interlockedIncrement32(8); // useRef
         this.interlockedIncrement32(16); // weakRef
     }
     release():void {
-        if (this.interlockedDecrement32(8) === 0) {
+        if (this.interlockedDecrement32(0x8) === 0) {
             this._Destroy();
         }
-        if (this.interlockedDecrement32(16) === 0) {
+        if (this.interlockedDecrement32(0xc) === 0) {
             this._DeleteThis();
         }
     }
@@ -28,20 +34,27 @@ class RefCounter extends NativeClass {
     _Destroy():void {
         abstract();
     }
+
+    static make<T>(type:Type<T>):NativeClassType<SharedPtrBase<T>> {
+        return sharedPtrBaseSingleton.newInstance(type, ()=>{
+            class SharedPtrBaseImpl extends SharedPtrBase<T> {
+            }
+            SharedPtrBaseImpl.define({value:type} as any);
+            return SharedPtrBaseImpl as NativeClassType<SharedPtrBase<T>>;
+        });
+    }
 }
-RefCounter.prototype._Destroy = makefunc.js([0], RawTypeId.Void, {this:RefCounter});
-RefCounter.prototype._DeleteThis = makefunc.js([8], RawTypeId.Void, {this:RefCounter});
-RefCounter.abstract({
+SharedPtrBase.prototype._Destroy = makefunc.js([0], RawTypeId.Void, {this:SharedPtrBase});
+SharedPtrBase.prototype._DeleteThis = makefunc.js([8], RawTypeId.Void, {this:SharedPtrBase});
+SharedPtrBase.define({
     vftable:VoidPointer,
     useRef:uint32_t,
     weakRef:uint32_t,
     // data?
 });
+const sharedPtrBaseSingleton = new Singleton<NativeClassType<SharedPtrBase<any>>>();
+const sizeOfSharedPtrBase = SharedPtrBase[NativeType.size];
 
-export interface SharedPtrType<T extends NativeClass> extends Type<SharedPtr<T>>
-{
-    new(ptr?:VoidPointer|boolean):SharedPtr<T>;
-}
 
 /**
  * wrapper for std::shared_ptr
@@ -50,7 +63,7 @@ export abstract class SharedPtr<T extends NativeClass> extends NativeClass {
     static readonly type:NativeClassType<any>;
 
     p:T|null;
-    ref:RefCounter|null;
+    ref:SharedPtrBase<T>|null;
 
     [NativeType.ctor]():void {
         this.p = null;
@@ -103,23 +116,34 @@ export abstract class SharedPtr<T extends NativeClass> extends NativeClass {
         }
         this.p = null;
     }
+    abstract create(vftable:VoidPointer):void;
 
-    static make<T extends NativeClass>(cls:{new():T, ref():any}):SharedPtrType<T> {
+    static make<T extends NativeClass>(cls:{new():T}):NativeClassType<SharedPtr<T>> {
+        const clazz = cls as NativeClassType<T>;
         return sharedPtrSingleton.newInstance(cls, ()=>{
+            const Base = SharedPtrBase.make(clazz);
             class TypedSharedPtr extends SharedPtr<NativeClass> {
+                create(vftable:VoidPointer):void {
+                    const size = Base[NativeType.size];
+                    if (size === null) throw Error(`cannot allocate the non sized class`);
+                    this.ref = capi.malloc(size).as(Base);
+                    this.ref.vftable = vftable;
+                    this.ref.construct();
+                    this.p = this.ref.addAs(clazz, sizeOfSharedPtrBase);
+                }
             }
             TypedSharedPtr.define({
-                p:cls.ref(),
-                ref:RefCounter.ref(),
+                p:clazz.ref(),
+                ref:Base.ref(),
             });
-            return TypedSharedPtr as SharedPtrType<T>;
+            return TypedSharedPtr as NativeClassType<SharedPtr<T>>;
         });
     }
 }
-const sharedPtrSingleton = new Singleton<SharedPtrType<any>>();
+const sharedPtrSingleton = new Singleton<NativeClassType<SharedPtr<any>>>();
 
 /**
- * @deprecated 
+ * @deprecated
  */
 export class SharedPointer extends StaticPointer {
     constructor(private readonly sharedptr:SharedPtr<any>) {

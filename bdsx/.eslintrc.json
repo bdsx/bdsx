@@ -7,12 +7,16 @@
     },
     "ignorePatterns": ["**/*.js"],
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "import"
     ],
     "extends": [
       "eslint:recommended",
       "plugin:@typescript-eslint/eslint-recommended",
-      "plugin:@typescript-eslint/recommended"
+      "plugin:@typescript-eslint/recommended",
+      "plugin:import/errors",
+      "plugin:import/warnings",
+      "plugin:import/typescript"
     ],
     "rules": {
         "@typescript-eslint/semi": "warn",
@@ -34,6 +38,7 @@
         "brace-style": ["warn", "1tbs", {"allowSingleLine": true}],
         "no-prototype-builtins": "off",
         "prefer-rest-params": "off",
-        "no-debugger": "warn"
+        "no-debugger": "warn",
+        "import/export": "off"
     }
 }

@@ -28,10 +28,10 @@ export class NativeModule extends VoidPointer {
 
     /**
      * get the procedure from DLL as a javascript method
-     * 
+     *
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
-     * 
+     *
      * @param name name of procedure
      * @param returnType RawTypeId or *Pointer
      * @param this RawTypeId or *Pointer, if it's non-null, it passes this parameter as first parameter.
@@ -54,7 +54,7 @@ export class NativeModule extends VoidPointer {
      * get NativeModule by name
      * wrapper of GetModuleHandleW
      * if you want to load the new module. Please use NativeModule.load instead
-     * @param name return exe module if null 
+     * @param name return exe module if null
      */
     static get(name: string|null): NativeModule {
         const module = getModuleHandle(name);
@@ -90,7 +90,7 @@ export class ThreadHandle extends VoidPointer {
 
 export class CriticalSection extends AllocatedPointer {
     private static readonly bytes = 40;
-    
+
     constructor() {
         super(CriticalSection.bytes);
         dll.kernel32.InitializeCriticalSection(this);
@@ -121,7 +121,7 @@ export namespace dll {
         export const module = NativeModule.get('ntdll.dll');
 
         const wine_get_version_ptr = module.getProcAddress('wine_get_version');
-        export const wine_get_version:(()=>string)|null = wine_get_version_ptr.isNull() ? 
+        export const wine_get_version:(()=>string)|null = wine_get_version_ptr.isNull() ?
             null : makefunc.js(wine_get_version_ptr, RawTypeId.StringUtf8);
     }
     export namespace kernel32 {
@@ -130,8 +130,6 @@ export namespace dll {
         export const LoadLibraryExW = module.getFunction('LoadLibraryExW', NativeModule, null, RawTypeId.StringUtf16, VoidPointer, RawTypeId.Int32);
         export const FreeLibrary = module.getFunction('FreeLibrary', RawTypeId.Boolean, null, NativeModule);
         export const VirtualProtect = module.getFunction('VirtualProtect', RawTypeId.Boolean, null, VoidPointer, RawTypeId.FloatAsInt64, RawTypeId.FloatAsInt64, RawTypeId.Buffer);
-        // export const Sleep = module.getFunction('Sleep', RawTypeId.Void, null, RawTypeId.Int32);
-        // export const SetCurrentDirectoryW = module.getFunction('SetCurrentDirectoryW', RawTypeId.Boolean, null, RawTypeId.StringUtf16);
         export const GetLastError = module.getFunction('GetLastError', RawTypeId.Int32);
         export const CreateThread = module.getFunction('CreateThread', ThreadHandle, null, VoidPointer, RawTypeId.FloatAsInt64, VoidPointer, VoidPointer, RawTypeId.Int32, RawTypeId.Buffer);
         export const TerminateThread = module.getFunction('TerminateThread', RawTypeId.Void, null, ThreadHandle, RawTypeId.Int32);
@@ -145,26 +143,18 @@ export namespace dll {
         export const EnterCriticalSection = module.getFunction('EnterCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const LeaveCriticalSection = module.getFunction('LeaveCriticalSection', RawTypeId.Void, null, CriticalSection);
         export const TryEnterCriticalSection = module.getFunction('TryEnterCriticalSection', RawTypeId.Boolean, null, CriticalSection);
-        // export const WaitForMultipleObjects = module.getProcAddress('WaitForMultipleObjects');
         export const FormatMessageW = module.getFunction('FormatMessageW', RawTypeId.Int32, null, RawTypeId.Int32, VoidPointer, RawTypeId.Int32, RawTypeId.Int32, VoidPointer, RawTypeId.Int32, VoidPointer);
         export const LocalFree = module.getFunction('LocalFree', VoidPointer, null, VoidPointer);
         export const SetDllDirectoryW = module.getFunction('SetDllDirectoryW', RawTypeId.Boolean, null, RawTypeId.StringUtf16);
-        // export const GetThreadContext = module.getFunction('GetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
-        // export const SetThreadContext = module.getFunction('SetThreadContext', RawTypeId.Boolean, null, VoidPointer, StaticPointer);
-        // export const SuspendThread = module.getFunction('SuspendThread', RawTypeId.Int32, null, VoidPointer);
-        // export const ResumeThread = module.getFunction('ResumeThread', RawTypeId.Int32, null, VoidPointer);
-        // export const TlsAlloc = module.getFunction('TlsAlloc', RawTypeId.Int32);
-        // export const TlsFree = module.getFunction('TlsFree', RawTypeId.Boolean, null, RawTypeId.Int32);
         export import GetProcAddress = cgate.GetProcAddress;
         export import GetModuleHandleW = cgate.GetModuleHandleW;
     }
     export namespace ucrtbase {
-        export const module = NativeModule.get('ucrtbase.dll');
-        // export const _get_initial_narrow_environment = module.getFunction('_get_initial_narrow_environment', StaticPointer);
+        export const module = dllraw.ucrtbase.module.as(NativeModule);
         export const _beginthreadex = module.getFunction('_beginthreadex', ThreadHandle, null, VoidPointer, RawTypeId.FloatAsInt64, VoidPointer, VoidPointer, RawTypeId.Int32, RawTypeId.Buffer);
 
         export const free = module.getFunction('free', RawTypeId.Void, null, VoidPointer);
-		export const malloc = module.getFunction('malloc', NativePointer, {nullableReturn:true}, RawTypeId.FloatAsInt64);
+		export const malloc = makefunc.js(dllraw.ucrtbase.malloc, NativePointer, {nullableReturn:true}, RawTypeId.FloatAsInt64);
         export const __stdio_common_vsprintf = module.getProcAddress('__stdio_common_vsprintf');
     }
     export namespace vcruntime140 {

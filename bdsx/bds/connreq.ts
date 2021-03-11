@@ -17,9 +17,6 @@ export class Certificate extends NativeClass {
     getIdentity():mce.UUID {
         abstract();
     }
-    getTitleId():number {
-        abstract();
-    }
     getIdentityString():string {
         return mce.UUID.toString(this.getIdentity());
     }
@@ -130,10 +127,11 @@ JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['Json::Value::~Value'], 
 export class ConnectionRequest extends NativeClass {
     u1:VoidPointer;
     cert:Certificate;
+    u2:VoidPointer;
 
     getJson():JsonValue|null {
         if (this.cert === null) return null;
-        const ptr = this.getNullablePointer(0x10);
+        const ptr = this.u2;
         if (ptr === null) return null;
         return ptr.addAs(JsonValue, 0x50);
     }

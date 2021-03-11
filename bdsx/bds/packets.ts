@@ -7,8 +7,6 @@ import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
 
-Packet.abstract({}, 0x28);
-
 /** @deprecated use BlockPos instead */
 export const NetworkBlockPosition = BlockPos;
 /** @deprecated use BlockPos instead */

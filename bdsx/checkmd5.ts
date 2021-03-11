@@ -2,7 +2,7 @@ import { analyzer } from "./analyzer";
 import { bedrock_server_exe } from "./core";
 import colors = require('colors');
 
-const MD5_HASH = '43F9F2C959B37F5601504CFC3C018B5F';
+const MD5_HASH = 'ECB1583B1E68650436DA0C8D2673CB20';
 if (bedrock_server_exe.md5 !== MD5_HASH) {
     console.error(colors.red('[BDSX] MD5 Hash does not Matched'));
     console.error(colors.red(`[BDSX] target MD5 = ${MD5_HASH}`));

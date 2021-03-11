@@ -67,7 +67,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         allocated.move(newcapBytes - newsizeBytes);
         this.setPointer(allocated, 16);
     }
-    
+
     set(idx:number, component:T):void {
         const type = this.componentType;
 
@@ -159,6 +159,9 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         }
     }
 
+    /**
+     * @deprecated use .destruct()
+     */
     dispose():void {
         this[NativeType.dtor]();
     }
@@ -213,7 +216,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                 class VectorImpl extends CxxVector<T> {
                     componentType:Type<T>;
                     static readonly componentType:Type<T> = type as any;
-                    
+
                     protected _move_alloc(allocated:NativePointer, oldptr:VoidPointer, movesize:number):void {
                         const compsize = this.componentType[NativeType.size]!;
                         const oldptrmove = oldptr.add();

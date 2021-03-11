@@ -456,6 +456,11 @@ export declare class MultiThreadQueue extends VoidPointer {
     dequeue(dest:VoidPointer):void;
 
     /**
+     * non blocking method
+     */
+    tryDequeue(dest:VoidPointer):void;
+
+    /**
      * native function
      * void enqueue(MultiThreadQueue*, void*)
      */
@@ -466,6 +471,12 @@ export declare class MultiThreadQueue extends VoidPointer {
      * void dequeue(MultiThreadQueue*, void*)
      */
     static readonly dequeue:VoidPointer;
+    /**
+     * native function
+     * non blocking method
+     * bool tryDequeue(MultiThreadQueue*, void*)
+     */
+    static readonly tryDequeue:VoidPointer;
 }
 
 /**
@@ -556,6 +567,11 @@ export declare namespace bedrock_server_exe
      * int main(int argc, char** args, char** env)
      */
     export const main: VoidPointer;
+
+    /**
+     * original bytes of main before hooked
+     */
+    export const mainOriginal12Bytes: VoidPointer;
 
     /**
      * kill this process without any termination process

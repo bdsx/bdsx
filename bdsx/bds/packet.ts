@@ -1,7 +1,7 @@
 import { abstract } from "bdsx/common";
 import { RawTypeId } from "bdsx/makefunc";
 import { MantleClass, NativeClass } from "bdsx/nativeclass";
-import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
+import { int32_t, uint32_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
 import { NetworkIdentifier } from "./networkidentifier";
@@ -79,18 +79,20 @@ export class Packet extends MantleClass {
         this[sharedptr_of_packet] = null;
     }
 
-    static create<T extends Packet>(this:{new():T, ID:number, ref():any}):T {
+    static create<T extends Packet>(this:{new(alloc?:boolean):T, ID:number, ref():any}):T {
         const id = this.ID;
         if (id === undefined) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
         const cls = SharedPtr.make(this);
         const sharedptr = new cls(true);
         createPacketRaw(sharedptr, id);
-        
+
         const packet = sharedptr.p as T;
         packet[sharedptr_of_packet] = sharedptr;
         return packet;
     }
 }
+Packet.abstract({}, 0x28);
+
 
 export const PacketSharedPtr = SharedPtr.make(Packet);
 export type PacketSharedPtr = SharedPtr<Packet>;
