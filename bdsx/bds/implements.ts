@@ -228,8 +228,8 @@ Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInven
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9e8]
 });
+(ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", RawTypeId.Void, {this:ServerPlayer});
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", RawTypeId.Void, {this: ServerPlayer});
-ServerPlayer.prototype.sendInventory = procHacker.js("ServerPlayer::sendInventory", RawTypeId.Void, {this:ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
