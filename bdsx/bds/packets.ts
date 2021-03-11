@@ -277,8 +277,11 @@ export class SetEntityLinkPacket extends Packet {
 }
 
 export class SetHealthPacket extends Packet {
-    // unknown
+    value:uint8_t;
 }
+SetHealthPacket.abstract({
+    value: [uint8_t, 0x28]
+});
 
 export class SetSpawnPositionPacket extends Packet {
     // unknown
@@ -441,8 +444,17 @@ export class CameraPacket extends Packet {
 }
 
 export class BossEventPacket extends Packet {
-    // unknown
+    uniqueId:bin64_t;
+    eventType:uint32_t;
+    Name:CxxString;
+    hp:float32_t;
 }
+BossEventPacket.abstract({
+    uniqueId:[bin64_t, 0x30],
+    eventType:[uint32_t, 0x40],
+    Name:[CxxString, 0x48],
+    hp:[float32_t, 0x68],
+});
 
 export class ShowCreditsPacket extends Packet {
     // unknown
@@ -597,8 +609,11 @@ export class SetDefaultGameTypePacket extends Packet {
 }
 
 export class RemoveObjectivePacket extends Packet {
-    // unknown
+    objectiveName:CxxString;
 }
+RemoveObjectivePacket.abstract({
+    objectiveName:[CxxString, 0x28]
+});
 
 export class SetDisplayObjectivePacket extends Packet {
     displaySlot:CxxString;
