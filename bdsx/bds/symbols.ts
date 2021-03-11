@@ -12,6 +12,7 @@ const symbols = [
     'Level::createDimension',
     'Level::fetchEntity',
     'Crypto::Random::generateUUID',
+    'Player::getSupplies',
     'Player::setName',
     'Player::teleportTo',
     'ServerNetworkHandler::_getServerPlayer',
@@ -19,6 +20,7 @@ const symbols = [
     'ServerNetworkHandler::disconnectClient',
     'ServerPlayer::changeDimension',
     'ServerPlayer::openInventory',
+    'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
     'RakNet::SystemAddress::ToString',
     'std::_Allocate<16,std::_Default_allocate_traits,0>',
@@ -66,6 +68,17 @@ const symbols = [
     'ConsoleInputReader::ConsoleInputReader',
     'ConsoleInputReader::~ConsoleInputReader',
     'ConsoleInputReader::unblockReading',
+    "Item::allowOffhand",
+    "Item::getCommandName",
+    "Item::isDamageable",
+    "Item::isFood",
+    "Item::setAllowOffhand",
+    "ItemStackBase::getId",
+    "ItemStackBase::getItem",
+    "ItemStackBase::isBlock",
+    "ItemStackBase::isEmptyStack",
+    "ItemStackBase::setCustomName",
+    "PlayerInventory::getItem",
 ] as const;
 
 // decorated symbols
