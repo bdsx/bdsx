@@ -60,7 +60,7 @@ export class ResourcePackClientResponsePacket extends Packet {
 
 export class TextPacket extends Packet {
     type:uint8_t;
-    needsTranslation:uint8_t;
+    needsTranslation:bool_t;
     name:string;
     message:string;
 }
@@ -68,12 +68,15 @@ TextPacket.abstract({
     type: uint8_t,
     name: CxxString,
     message: CxxString,
-    needsTranslation: [uint8_t, 0x90],
+    needsTranslation: [bool_t, 0x90],
 });
 
 export class SetTimePacket extends Packet {
-    // unknown
+    time:int32_t;
 }
+SetTimePacket.abstract({
+    time: int32_t,
+});
 
 export class LevelSettings extends MantleClass {
     seed:int32_t;
@@ -278,10 +281,10 @@ export class SetActorLinkPacket extends Packet {
 }
 
 export class SetHealthPacket extends Packet {
-    value:uint8_t;
+    health:uint8_t;
 }
 SetHealthPacket.abstract({
-    value: uint8_t
+    health: uint8_t
 });
 
 export class SetSpawnPositionPacket extends Packet {
@@ -446,19 +449,19 @@ export class CameraPacket extends Packet {
 
 export class BossEventPacket extends Packet {
     unknown:bin64_t;
+    entityUniqueId:bin64_t;
     unknown2:bin64_t;
-    uniqueId:bin64_t;
-    eventType:uint32_t;
-    Name:CxxString;
-    hp:float32_t;
+    type:uint32_t;
+    title:CxxString;
+    healthPercent:float32_t;
 }
 BossEventPacket.abstract({
     unknown:bin64_t,
-    uniqueId:bin64_t,
+    entityUniqueId:bin64_t,
     unknown2:bin64_t,
-    eventType:uint32_t,
-    Name:CxxString,
-    hp:float32_t,
+    type:uint32_t,
+    title:CxxString,
+    healthPercent:float32_t,
 });
 
 export class ShowCreditsPacket extends Packet {
@@ -560,8 +563,23 @@ export class SetLastHurtByPacket extends Packet {
 }
 
 export class BookEditPacket extends Packet {
-    // unknown
+    type:uint8_t;
+    inventorySlot:uint8_t;
+    pageNumber:uint8_t;
+    secondaryPageNumber:uint8_t;
+    text:CxxString;
+    author:CxxString;
+    xuid:CxxString;
 }
+BookEditPacket.abstract({
+    type: [uint8_t, 0x30],
+    inventorySlot: [uint8_t, 0x34],
+    pageNumber: [uint8_t, 0x38],
+    secondaryPageNumber: [uint8_t, 0x3c],
+    text: [CxxString, 0x40],
+    author: [CxxString, 0x60],
+    xuid: [CxxString, 0x80],
+});
 
 export class NpcRequestPacket extends Packet {
     // unknown

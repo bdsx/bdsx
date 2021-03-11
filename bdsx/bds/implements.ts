@@ -154,6 +154,8 @@ Actor.abstract({
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
 (Actor.prototype as any)._getName = procHacker.js("Actor::getNameTag", CxxStringWrapper, {this:Actor});
+(Actor.prototype as any)._addTag = procHacker.js("Actor::addTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
+(Actor.prototype as any)._hasTag = procHacker.js("Actor::hasTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 
@@ -222,8 +224,8 @@ Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInven
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9f0]
 });
+(ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", RawTypeId.Void, {this:ServerPlayer});
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", RawTypeId.Void, {this: ServerPlayer});
-ServerPlayer.prototype.sendInventory = procHacker.js("ServerPlayer::sendInventory", RawTypeId.Void, {this:ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
@@ -380,7 +382,7 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._getId = procHacker.js("ItemStackBase::getId", RawTypeId.Int32, {this:ItemStack});
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
-ItemStack.prototype.getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
+ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
 // not found in 1.16.210.05
 // ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});

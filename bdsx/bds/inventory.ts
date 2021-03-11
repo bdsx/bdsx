@@ -73,6 +73,12 @@ export class ItemStack extends NativeClass {
         // }
         return this._getItem();
     }
+    hasCustomName():boolean {
+        abstract();
+    }
+    setAmount(amount:number):void {
+        this.amount = amount;
+    }
     setCustomName(name:string):void {
         const _name = new CxxStringWrapper(true);
         _name.construct();

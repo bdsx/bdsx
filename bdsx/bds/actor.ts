@@ -40,6 +40,14 @@ export class Actor extends NativeClass {
     protected _getName():CxxStringWrapper {
         abstract();
     }
+
+    protected _addTag(tag:CxxStringWrapper):boolean {
+        abstract();
+    }
+    
+    protected _hasTag(tag:CxxStringWrapper):boolean {
+        abstract();
+    }
     
     protected _sendNetworkPacket(packet:VoidPointer):void {
         abstract();
@@ -148,6 +156,22 @@ export class Actor extends NativeClass {
             id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
         };
         return (this as any).entity = entity;
+    }
+    addTag(tag:string):boolean {
+        const _tag = new CxxStringWrapper(true);
+        _tag.construct();
+        _tag.value = tag;
+        const ret = this._addTag(_tag);
+        _tag.destruct();
+        return ret;
+    }
+    hasTag(tag:string):boolean {
+        const _tag = new CxxStringWrapper(true);
+        _tag.construct();
+        _tag.value = tag;
+        const ret = this._hasTag(_tag);
+        _tag.destruct();
+        return ret;
     }
 
 // float NativeActor::getAttribute(int attribute) noexcept
