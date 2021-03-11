@@ -12,7 +12,7 @@ nethook.after(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId) =>
     const cert = connreq.cert;
     const xuid = cert.getXuid();
     const username = cert.getId();
-    
+
     console.log(`${username}> IP=${ip}, XUID=${xuid}, OS=${DeviceOS[connreq.getDeviceOS()] || 'UNKNOWN'}`);
     if (username) connectionList.set(networkIdentifier, username);
 

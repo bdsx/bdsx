@@ -22,14 +22,12 @@ const symbols = [
     'ServerPlayer::openInventory',
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
-    'RakNet::SystemAddress::ToString',
     'std::_Allocate<16,std::_Default_allocate_traits,0>',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
     'Actor::getNameTag',
     'Actor::getPos',
     'Actor::getUniqueID',
-    'BaseAttributeMap::getMutableInstance',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
     'ExtendedCertificate::getIdentity',
@@ -76,13 +74,14 @@ const symbols = [
     "ItemStackBase::getId",
     "ItemStackBase::getItem",
     "ItemStackBase::isBlock",
-    "ItemStackBase::isEmptyStack",
+    // "ItemStackBase::isEmptyStack", // not found in 1.16.210.05
     "ItemStackBase::setCustomName",
     "PlayerInventory::getItem",
 ] as const;
 
 // decorated symbols
 const symbols2 = [
+    '?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z',
     '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ',
     '??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@',
     '??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@',
@@ -94,6 +93,7 @@ const symbols2 = [
     '??_7MinecraftServerScriptEngine@@6BScriptFramework@ScriptApi@@@',
     '??_7MinecraftServerScriptEngine@@6B@',
     '?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
+    '?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

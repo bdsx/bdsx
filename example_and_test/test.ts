@@ -7,6 +7,7 @@ import { asm, FloatRegister, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
 import { networkHandler } from "bdsx/bds/networkidentifier";
+import { PacketIdToType } from "bdsx/bds/packets";
 import { proc2 } from "bdsx/bds/symbols";
 import { capi } from "bdsx/capi";
 import { disasm } from "bdsx/disassembler";
@@ -339,6 +340,31 @@ Tester.test({
         });
     },
 
+    async checkPacketNames() {
+        const str = new CxxStringWrapper(true);
+        for (const id in PacketIdToType) {
+            const Packet = PacketIdToType[+id as keyof PacketIdToType];
+            const packet = Packet.create();
+
+            packet.getName(str);
+            this.assert(str.value === Packet.name, `JS name=${Packet.name}, C++ name=${str.value}`);
+            str.destruct();
+            this.assert(packet.getId() === Packet.ID, `JS id=${Packet.ID}, C++ id=${packet.getId()}`);
+
+            let name = Packet.name;
+            const idx = name.lastIndexOf('Packet');
+            if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
+            this.assert(MinecraftPacketIds[Packet.ID] === name, `MinecraftPacketIds.${MinecraftPacketIds[Packet.ID]} != ${name}`);
+
+            packet.dispose();
+        }
+
+        for (const id in MinecraftPacketIds) {
+            if (!/^[0-9]+$/.test(id)) continue;
+            const Packet = PacketIdToType[+id as keyof PacketIdToType];
+            this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
+        }
+    },
 });
 
 let connectedNi: NetworkIdentifier;

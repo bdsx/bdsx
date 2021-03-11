@@ -1,4 +1,4 @@
-
+// this is imported from ../index.ts
 // Console Output
 console.log("From Script> Hello, World!");
 

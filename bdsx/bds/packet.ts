@@ -87,11 +87,12 @@ export class Packet extends MantleClass {
         createPacketRaw(sharedptr, id);
 
         const packet = sharedptr.p as T;
+        if (packet === null) throw Error(`${this.name} is not created`);
         packet[sharedptr_of_packet] = sharedptr;
         return packet;
     }
 }
-Packet.abstract({}, 0x28);
+Packet.abstract({}, 0x30);
 
 
 export const PacketSharedPtr = SharedPtr.make(Packet);

@@ -39,7 +39,7 @@ GIT
 ### Starting with VSCode
 ```sh
 1. Open the project with VSCode
-2. Open a terminal(Ctrl+Shift+｀) 
+2. Open a terminal(Ctrl+Shift+｀)
 3. run `npm i` # install npm packages and BDS
 4. Press `F5` # build & run
 ```
@@ -59,8 +59,8 @@ docker run -ti karikera/bdsx
 ├ [bdsx] # Core Library
 ├ [example_and_test]
 ├ [bedrock_server] # Installed BDS
-├ launcher.ts # Script before launching BDS. 
-├ index.ts # Main entry point. 
+├ launcher.ts # Script before launching BDS.
+├ index.ts # Main entry point.
 ├ bdsx.sh # Executable for Linux
 └ bdsx.bat # Executable for Windows
 # ./launcher.ts imports ./index.ts after launching BDS

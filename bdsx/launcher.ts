@@ -149,7 +149,7 @@ function patchForStdio():void {
 
     // remove original stdin thread
     const justReturn = asm().ret();
-    procHacker.write('ConsoleInputReader::ConsoleInputReader', 0, asm().jmp64(asmcode.emptyConsoleInputReader, Register.rax));
+    procHacker.write('ConsoleInputReader::ConsoleInputReader', 0, justReturn);
     procHacker.write('ConsoleInputReader::~ConsoleInputReader', 0, justReturn);
     procHacker.write('ConsoleInputReader::unblockReading', 0, justReturn);
 }
@@ -247,7 +247,7 @@ function _launch(asyncResolve:()=>void):void {
         0x0F, 0x84, 0x2A, 0x01, 0x00, 0x00  // je bedrock_server.7FF7345226F3
     ], [1, 5, 16, 20, 28, 32]);
 
-    // patchForStdio();
+    patchForStdio();
     require('./bds/implements');
 
     // seh wrapped main

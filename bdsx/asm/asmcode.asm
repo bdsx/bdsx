@@ -806,12 +806,12 @@ endp
 
 export def onPacketBefore:qword
 export proc packetBeforeHook
+    lea rdx,[rsp+78h]
     sub rsp, 28h
 
     ; original codes
     mov rax,qword ptr[rcx]
     lea r8,[rbp+a0h]
-    lea rdx,[rbp+70h]
     call qword ptr[rax+20h]
 
     mov rcx, rax ; read result
@@ -846,10 +846,11 @@ export proc packetAfterHook
     sub rsp, 28h
 
     ; orignal codes
-    mov rbx,qword ptr[rax+38h]
-    mov rcx,qword ptr[rbp+58h]
-    mov rax,qword ptr[rcx]
-    call qword ptr[rax+8h]
+    mov rax,[rcx]
+    lea r9,[rbp+58h]
+    mov r8,rsi
+    mov rdx,r14
+    call [rax+8]
 
     mov rcx, rbp ; rbp
     mov rdx, r15 ; packetId
@@ -860,27 +861,10 @@ export proc packetAfterHook
 endp
 
 export def onPacketSend:qword
-
-export proc packetSendHook
-
-    ; original codes
-    mov r14,rcx
-    movzx ebx,r9b
-    mov rsi,r8
-    mov rbp,rdx
-
-    sub rsp, 28h
-    call onPacketSend
-    add rsp, 28h
-
-    lea rcx, [r14 + 220h]
-    ret
-endp
-
 export proc packetSendAllHook
-    mov r8, r14
-    mov rdx, rsi
-    mov rcx, r15
+    mov r8,r15
+    mov rdx,rbx
+    mov rcx,r14
     sub rsp, 28h
     call onPacketSend
     add rsp, 28h
@@ -936,11 +920,5 @@ _loop:
     add rsp, 18h
     pop rsi
     pop rbx
-    ret
-endp
-
-export proc emptyConsoleInputReader
-    mov dword ptr[rcx], 0
-    mov dword ptr[rcx+60h], 0
     ret
 endp

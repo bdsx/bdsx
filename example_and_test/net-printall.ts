@@ -7,27 +7,27 @@ import { hex } from "bdsx/util";
 // Network Hooking: Print all packets
 const tooLoudFilter = new Set([
     MinecraftPacketIds.UpdateBlock,
-    MinecraftPacketIds.ClientCacheBlobStatus, 
+    MinecraftPacketIds.ClientCacheBlobStatus,
     MinecraftPacketIds.LevelChunk,
     MinecraftPacketIds.ClientCacheMissResponse,
-    MinecraftPacketIds.MoveEntityDelta,
-    MinecraftPacketIds.SetEntityMotion,
-    MinecraftPacketIds.SetEntityData,
+    MinecraftPacketIds.MoveActorDelta,
+    MinecraftPacketIds.SetActorMotion,
+    MinecraftPacketIds.SetActorData,
     MinecraftPacketIds.NetworkChunkPublisherUpdate,
-    MinecraftPacketIds.EntityEvent,
+    MinecraftPacketIds.ActorEvent,
     MinecraftPacketIds.UpdateSoftEnum,
     MinecraftPacketIds.PlayerAuthInput,
 ]);
-for (let i = 2; i <= 0xe1; i++) {
+for (let i = 0; i <= 0xff; i++) {
     if (tooLoudFilter.has(i)) continue;
-    
+
     // nethook.raw uses serialized packets
     nethook.raw(i).on((ptr, size, networkIdentifier, packetId) => {
         if (Tester.errored) return; // stop logging if tests are failed
         const packetName = (MinecraftPacketIds[packetId] || '0x'+packetId.toString(16));
         console.log(`RECV ${packetName}: ${hex(ptr.readBuffer(Math.min(16, size)))}`);
     });
-    
+
     // nethook.send uses C++ packets
     nethook.send<MinecraftPacketIds>(i).on((ptr, networkIdentifier, packetId) => {
         if (Tester.errored) return; // stop logging if tests are failed

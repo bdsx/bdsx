@@ -5,22 +5,7 @@ import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { NativeClass } from "bdsx/nativeclass";
 import { CxxString, NativeType, uint8_t } from "bdsx/nativetype";
-import { proc, proc2 } from "./proc";
-
-export class Certificate extends NativeClass {
-    getXuid():string {
-        abstract();
-    }
-    getId():string {
-        abstract();
-    }
-    getIdentity():mce.UUID {
-        abstract();
-    }
-    getIdentityString():string {
-        return mce.UUID.toString(this.getIdentity());
-    }
-}
+import { proc, proc2, procHacker } from "./proc";
 
 export enum JsonValueType
 {
@@ -109,7 +94,7 @@ export class JsonValue extends NativeClass {
     valueOf():number {
         return +this.value();
     }
-    
+
     toString():string {
         return this.value()+'';
     }
@@ -124,16 +109,41 @@ JsonValue.prototype.isMember = makefunc.js(proc['Json::Value::isMember'], RawTyp
 JsonValue.prototype.size = makefunc.js(proc['Json::Value::size'], RawTypeId.Int32, {this:JsonValue});
 JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['Json::Value::~Value'], RawTypeId.Void, {this:JsonValue});
 
+
+export class Certificate extends NativeClass {
+    json:JsonValue;
+
+    getXuid():string {
+        abstract();
+    }
+    /**
+     * alias of getIdentityName
+     */
+    getId():string {
+        return this.getIdentityName();
+    }
+    getIdentityName():string {
+        abstract();
+    }
+    getIdentity():mce.UUID {
+        abstract();
+    }
+    getIdentityString():string {
+        return mce.UUID.toString(this.getIdentity());
+    }
+}
+Certificate.abstract({
+    json: [JsonValue, 0x50]
+});
+
 export class ConnectionRequest extends NativeClass {
-    u1:VoidPointer;
     cert:Certificate;
-    u2:VoidPointer;
+    something:Certificate;
 
     getJson():JsonValue|null {
-        if (this.cert === null) return null;
-        const ptr = this.u2;
+        const ptr = this.something;
         if (ptr === null) return null;
-        return ptr.addAs(JsonValue, 0x50);
+        return ptr.json;
     }
     getJsonValue():any {
         return this.getJson()?.value();
@@ -150,7 +160,6 @@ export class ConnectionRequest extends NativeClass {
         if (json === null) throw Error('Json object not found in ConnectionRequest');
         return +json.get('DeviceOS');
     }
-
 }
 
 /**

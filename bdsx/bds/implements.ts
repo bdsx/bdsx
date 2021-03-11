@@ -35,7 +35,7 @@ import { BinaryStream } from "./stream";
 RakNet.SystemAddress.define({
     systemIndex:[uint16_t, 130]
 }, 136);
-RakNet.SystemAddress.prototype.ToString = procHacker.js("RakNet::SystemAddress::ToString", RawTypeId.Void, {this: RakNet.SystemAddress}, RawTypeId.Boolean, RawTypeId.Buffer, RawTypeId.Int32);
+RakNet.SystemAddress.prototype.ToString = procHacker.js("?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z", RawTypeId.Void, {this: RakNet.SystemAddress}, RawTypeId.Boolean, RawTypeId.Buffer, RawTypeId.Int32);
 
 RakNet.RakNetGUID.define({
     g:bin64_t,
@@ -148,17 +148,17 @@ Actor.all = function():IterableIterator<Actor> {
 Actor.abstract({
     vftable: VoidPointer,
     dimension: [Dimension, 0x350],
-    identifier: [CxxString as NativeType<EntityId>, 0x450], // minecraft:player
-    attributes: [BaseAttributeMap.ref(), 0x478],
-    runtimeId: [ActorRuntimeID, 0x538],
+    identifier: [CxxString as NativeType<EntityId>, 0x458], // minecraft:player
+    attributes: [BaseAttributeMap.ref(), 0x480],
+    runtimeId: [ActorRuntimeID, 0x540],
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
 (Actor.prototype as any)._getName = procHacker.js("Actor::getNameTag", CxxStringWrapper, {this:Actor});
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 
-Actor.prototype.getTypeId = makefunc.js([0x508], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
-(Actor.prototype as any)._getDimensionId = makefunc.js([0x548], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getTypeId = makefunc.js([0x518], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
+(Actor.prototype as any)._getDimensionId = makefunc.js([0x568], RawTypeId.Void, {this:Actor}, RawTypeId.Buffer); // DimensionId* getDimensionId(DimensionId*)
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
@@ -220,7 +220,7 @@ Player.prototype.teleportTo = procHacker.js("Player::teleportTo", RawTypeId.Void
 Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
 
 ServerPlayer.abstract({
-    networkIdentifier:[NetworkIdentifier, 0x9e8]
+    networkIdentifier:[NetworkIdentifier, 0x9f0]
 });
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", RawTypeId.Void, {this: ServerPlayer});
 ServerPlayer.prototype.sendInventory = procHacker.js("ServerPlayer::sendInventory", RawTypeId.Void, {this:ServerPlayer});
@@ -290,7 +290,7 @@ Certificate.prototype.getXuid = function():string {
     out.destruct();
     return xuid;
 };
-Certificate.prototype.getId = function():string {
+Certificate.prototype.getIdentityName = function():string {
     const out = getIdentityName(this);
     const id = out.value;
     out.destruct();
@@ -303,9 +303,8 @@ const getXuid = procHacker.js("ExtendedCertificate::getXuid", CxxStringWrapper, 
 const getIdentityName = procHacker.js("ExtendedCertificate::getIdentityName", CxxStringWrapper, {structureReturn: true}, Certificate);
 const getIdentity = procHacker.js("ExtendedCertificate::getIdentity", mce.UUIDWrapper, {structureReturn: true}, Certificate);
 ConnectionRequest.abstract({
-    u1: VoidPointer,
-    cert:Certificate.ref(),
-    u2:VoidPointer,
+    cert:[Certificate.ref(), 0x08],
+    something:[Certificate.ref(), 0x10],
 });
 
 // attribute.ts
@@ -318,9 +317,8 @@ AttributeInstance.abstract({
     maxValue: [float32_t, 0x80],
     defaultValue: [float32_t, 0x78],
 });
-BaseAttributeMap.abstract({});
 
-BaseAttributeMap.prototype.getMutableInstance = procHacker.js("BaseAttributeMap::getMutableInstance", AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, RawTypeId.Int32);
+BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, RawTypeId.Int32);
 
 // server.ts
 VanilaGameModuleServer.abstract({
@@ -384,6 +382,7 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
 ItemStack.prototype.getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
-ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});
+// not found in 1.16.210.05
+// ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});
 
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
