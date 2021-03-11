@@ -29,6 +29,7 @@ const symbols = [
     'std::_Allocate<16,std::_Default_allocate_traits,0>',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
+    'Actor::addTag',
     'Actor::getNameTag',
     'Actor::getPos',
     'Actor::getUniqueID',
