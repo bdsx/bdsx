@@ -1,6 +1,6 @@
 
 // Chat Listening
-import { CANCEL, MinecraftPacketIds, nethook } from '../bdsx';
+import { CANCEL, MinecraftPacketIds, nethook } from 'bdsx';
 nethook.before(MinecraftPacketIds.Text).on(ev => {
     if (ev.message === 'nochat')
     {
