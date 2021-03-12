@@ -136,7 +136,7 @@ export abstract class SharedPtr<T extends NativeClass> extends NativeClass {
                 p:clazz.ref(),
                 ref:Base.ref(),
             });
-            return TypedSharedPtr as NativeClassType<SharedPtr<T>>;
+            return TypedSharedPtr as any;
         });
     }
 }

@@ -2470,29 +2470,29 @@ export namespace asm
 {
     export const code:Code = X64Assembler.prototype;
     export const splitTwo32Bits = Symbol('splitTwo32Bits');
-    interface ParameterBase {
+    export interface ParameterBase {
         argi:number;
         parami:number;
     }
-    interface ParameterRegister extends ParameterBase {
+    export interface ParameterRegister extends ParameterBase {
         type:'r';
         register:Register;
     }
-    interface ParameterRegisterPointer extends ParameterBase {
+    export interface ParameterRegisterPointer extends ParameterBase {
         type:'rp';
         register:Register;
         multiply:AsmMultiplyConstant;
         offset:number;
     }
-    interface ParameterFloatRegister extends ParameterBase {
+    export interface ParameterFloatRegister extends ParameterBase {
         type:'f';
         register:FloatRegister;
     }
-    interface ParameterConstant extends ParameterBase {
+    export interface ParameterConstant extends ParameterBase {
         type:'c';
         constant:number;
     }
-    interface ParameterLabel extends ParameterBase {
+    export interface ParameterLabel extends ParameterBase {
         type:'label';
         label:string;
     }

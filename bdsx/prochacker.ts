@@ -33,7 +33,7 @@ class AsmMover extends X64Assembler {
     asmFromOrigin(oper:asm.Operation):void {
         const splits = oper.splits;
         const basename = splits[0];
-        let ripDependedParam:asm.Parameter|null = null;
+        let ripDependedParam:asm.ParameterRegisterPointer|null = null;
         const params = oper.parameters();
         for (const info of params) {
             switch (info.type) {

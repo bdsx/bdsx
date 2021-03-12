@@ -47,7 +47,7 @@ export class NativeModule extends VoidPointer {
     }
 
     toString():string {
-        return `[${this.name}: 0x${super.toString()}]`;
+        return `[${this.name}: ${super.toString()}]`;
     }
 
     /**
