@@ -1,4 +1,17 @@
 
+declare global {
+    let bdsx:boolean|undefined;
+    namespace NodeJS {
+        interface Global {
+            bdsx?:boolean;
+        }
+    }
+}
+if (global.bdsx !== undefined) {
+    throw Error('bdsx is imported twice');
+}
+global.bdsx = true;
+
 import './externs';
 import './polyfill';
 import './bds/enumfiller';
@@ -50,7 +63,7 @@ declare module "./core"
          */
         readHex(size:number, nextLinePer?:number):string;
 
-        /** 
+        /**
          * @deprecated use analyzer.analyze(ptr)
          */
         analyze():void;
@@ -91,9 +104,9 @@ declare module "./core"
     type FunctionFromTypes_np<
         OPTS extends MakeFuncOptions<any>|null,
         PARAMS extends ParamType[],
-        RETURN extends ReturnType> = 
+        RETURN extends ReturnType> =
         makefuncModule.FunctionFromTypes_np<OPTS, PARAMS, RETURN>;
-        
+
     /**
      * @deprecated use 'bdsx/makefunc'
      */
