@@ -30,7 +30,7 @@ export class NetworkHandler extends NativeClass {
     sendInternal(ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
         abstract();
     }
-    
+
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
     }
@@ -130,7 +130,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         identifiers.add(ni);
         return ni;
     }
-    
+
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
@@ -150,5 +150,5 @@ procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', ma
     setTimeout(()=>{
         identifiers.delete(ni);
     }, 3000);
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
+}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);

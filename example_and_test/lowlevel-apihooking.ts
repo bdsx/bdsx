@@ -2,7 +2,7 @@
 // Low Level - API Hooking
 import { capi, RawTypeId } from "bdsx";
 import { BlockPos } from "bdsx/bds/blockpos";
-import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
+import { SurvivalMode } from "bdsx/bds/gamemode";
 import { TextPacket } from "bdsx/bds/packets";
 import { SYMOPT_UNDNAME } from "bdsx/common";
 import { pdb } from "bdsx/core";
@@ -17,7 +17,7 @@ if (!capi.isRunningOnWine()) { // Skip for Linux, pdb is not working on Wine.
     pdb.close(); // close the pdb to reduce the resource usage.
 
     let halfMiss = false;
-    function onDestroyBlock(gameMode:GameMode, blockPos:BlockPos, v:number):boolean {
+    function onDestroyBlock(gameMode:SurvivalMode, blockPos:BlockPos, v:number):boolean {
         halfMiss = !halfMiss;
         const ni = gameMode.actor.getNetworkIdentifier();
         const packet = TextPacket.create();
@@ -29,8 +29,7 @@ if (!capi.isRunningOnWine()) { // Skip for Linux, pdb is not working on Wine.
         return originalFunc(gameMode, blockPos, v);
     }
 
-    // bool GameMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
-    // public: virtual bool __cdecl (class BlockPos const & __ptr64,unsigned char) __ptr64
+    // bool SurvivalMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler.
     const originalFunc = hacker.hooking('SurvivalMode::destroyBlock', RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onDestroyBlock);
 }
 

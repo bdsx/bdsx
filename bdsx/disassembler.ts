@@ -138,6 +138,8 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             rex = v;
             size = OperationSize.word;
             continue;
+        } else if (v === 0x90) { // nop
+            return new asm.Operation(asm.code.nop, []);
         } else if (v === 0xcc) { // int3
             return new asm.Operation(asm.code.int3, []);
         } else if (v === 0xcd) { // int3
