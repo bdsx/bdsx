@@ -1,5 +1,5 @@
 
-import { proc2 } from './bds/symbols';
+import { proc, proc2 } from './bds/symbols';
 import { abstract, emptyFunc } from './common';
 import { StaticPointer, VoidPointer } from './core';
 import { makefunc, RawTypeId } from './makefunc';
@@ -294,7 +294,7 @@ export const float64_t = new NativeType<number>(
 export type float64_t = number;
 
 const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
-const string_dtor = makefunc.js(proc2['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], RawTypeId.Void, null, VoidPointer);
+const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], RawTypeId.Void, null, VoidPointer);
 
 export const CxxString = new NativeType<string>(
     0x20, 8,

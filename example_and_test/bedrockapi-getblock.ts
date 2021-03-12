@@ -1,6 +1,5 @@
 import { system } from "./bedrockapi-system";
 
-
 export function printBlock(entity:IEntity):void {
     const tickworld = system.getComponent(entity, 'minecraft:tick_world');
     if (tickworld === null) return; // mob does not have tick world
@@ -9,7 +8,7 @@ export function printBlock(entity:IEntity):void {
     if (pos === null) throw Error(`No position in ${entity.__identifier__}`);
 
     const tickingarea = tickworld.data.ticking_area;
-    
+
     const roundedpos = {x: Math.round(pos.data.x), y: Math.round(pos.data.y), z: Math.round(pos.data.z)};
     roundedpos.y --; // under foot
 

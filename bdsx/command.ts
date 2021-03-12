@@ -1,50 +1,34 @@
 
 import Event, { CapsuledEvent, EventEx } from 'krevent';
-import { Register } from './assembler';
 import { CommandContext, MCRESULT, MinecraftCommands } from './bds/command';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { CommandRequestPacket } from './bds/packets';
-import { proc, procHacker } from './bds/proc';
+import { procHacker } from './bds/proc';
 import { CANCEL } from './common';
-import { makefunc, RawTypeId } from './makefunc';
+import { RawTypeId } from './makefunc';
 import { nethook } from './nethook';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
-import asmcode = require('./asm/asmcode');
 
 export function hookingForCommand(): void {
-    function oncommand(commands: MinecraftCommands, res: MCRESULT, ctxptr: SharedPtr<CommandContext>, b: boolean): number {
-        const ctx = ctxptr.p!;
-        const name = ctx.origin.getName();
-        const resv = hookev.fire(ctxptr.p!.command, name, ctx);
-        switch (typeof resv) {
-        case 'number':
-            res.result = resv;
-            _tickCallback();
-            return 1;
-        default:
-            _tickCallback();
-            return 0;
-        }
-    }
-    asmcode.commandHookCallback = makefunc.np(oncommand, RawTypeId.Int32, null, MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), RawTypeId.Boolean);
-    // int32_t callback(MinecraftCommands* commands, MCRESULT* res, SharedPtr<CommandContext>* ctx, bool)
-
-    const ORIGINAL_CODE = [
-        0x4C, 0x89, 0x45, 0xB0, // mov qword ptr ss:[rbp-50],r8
-        0x49, 0x8B, 0x00, // mov rax,qword ptr ds:[r8]
-        0x48, 0x8B, 0x48, 0x20, // mov rcx,qword ptr ds:[rax+20]
-        0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-    ];
-
-    asmcode.MinecraftCommandsExecuteCommandAfter = proc['MinecraftCommands::executeCommand'].add(0x73b);
-    procHacker.patching('command-hook', 'MinecraftCommands::executeCommand', 0x40, asmcode.commandHook, Register.rax, true, ORIGINAL_CODE, []);
+    const executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
+        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), RawTypeId.Boolean)(
+        (cmd, res, ctxptr, b)=>{
+            const ctx = ctxptr.p!;
+            const name = ctx.origin.getName();
+            const resv = hookev.fire(ctxptr.p!.command, name, ctx);
+            switch (typeof resv) {
+            case 'number':
+                res.result = resv;
+                _tickCallback();
+                return res;
+            default:
+                _tickCallback();
+                return executeCommandOriginal(cmd, res, ctxptr, b);
+            }
+        });
 }
-
-// 	m_props.insert(u"execSync", JsFunction::makeT([](Text16 path, JsValue curdir) {
-// 		return (AText)shell(path, curdir != undefined ? curdir.cast<Text16>().data() : nullptr);
-// 		}));
 
 interface CommandEvent {
     readonly command: string;

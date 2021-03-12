@@ -204,7 +204,7 @@ export namespace polynominal {
 
                 for (let i=0;i<arr.length;i++) {
                     if (!arr[i].equals(v)) continue;
-                
+
                     const last = arr.length-1;
                     if (i !== last) {
                         arr[i] = arr.pop()!;
@@ -262,11 +262,11 @@ export namespace polynominal {
     export class Additive extends Operand {
         public readonly terms:Multiplicative[] = [];
         public constant:number = 0;
-    
+
         pushTerm(term:Multiplicative):void {
             for (let i=0;i<this.terms.length;i++){
                 const thisterm = this.terms[i];
-                if (!term.isSameVariables(thisterm)) continue;                
+                if (!term.isSameVariables(thisterm)) continue;
                 thisterm.pushMultiplicative(term);
                 if (thisterm.constant === 0) {
                     this.terms.splice(i, 1);
@@ -322,7 +322,7 @@ export namespace polynominal {
         toString():string {
             return `(${this.operands.join(this.oper.name)})`;
         }
-        
+
         defineVariable(name:string, value:number):Operand {
             const values:number[] = [];
             for (let i=0;i<this.operands.length;i++) {
@@ -333,7 +333,7 @@ export namespace polynominal {
             if (values.length === this.operands.length) return new Constant(this.oper.operationConst(...values));
             return this;
         }
-        
+
     }
     export class Operator {
         public name:string;
@@ -366,19 +366,19 @@ export namespace polynominal {
                 if (isNaN(firstchr)) return null;
             } while (firstchr === 0x20 || firstchr === 0x09 || firstchr === 0x0d || firstchr === 0x0a);
         }
-        if (minus || (0x30 <= firstchr && firstchr <= 0x39)) { // number
-            let n:number;
-            const suffix = text.charAt(text.length-1);
-            switch (suffix) {
-            case 'h':
-                n = parseInt(text.substr(i, text.length-1), 16);
-                break;
-            default:
-                n = +text.substr(i);
-                break;
+
+        if (text.charAt(text.length-1) === 'h') {
+            const numstr = text.substring(i, text.length-1);
+            if (/^[a-fA-F0-9]+$/.test(numstr)) {
+                return parseInt(numstr, 16);
             }
-            if (isNaN(n)) return null;
-            return minus ? -n : n;
+            return null;
+        } else {
+            if (0x30 <= firstchr && firstchr <= 0x39) { // number
+                const n = +text.substr(i);
+                if (isNaN(n)) return null;
+                return minus ? -n : n;
+            }
         }
         return null;
     }
@@ -389,12 +389,12 @@ export namespace polynominal {
 
         function error(message:string, word:string):never {
             throw new ParsingError(message, {
-                column: offset + i-word.length, 
-                width: word.length, 
+                column: offset + i-word.length,
+                width: word.length,
                 line: lineNumber
             });
         }
-    
+
         function skipSpace():void {
             for (;;) {
                 const code = text.charCodeAt(i);
@@ -402,7 +402,7 @@ export namespace polynominal {
                 i++;
             }
         }
-    
+
         function readOperator(...types:(keyof OperatorSet)[]):Operator {
             if (ungettedOperators.length !== 0) {
                 return ungettedOperators.shift()!;
@@ -432,7 +432,7 @@ export namespace polynominal {
         function ungetOperator(oper:Operator):void {
             ungettedOperators.push(oper);
         }
-    
+
         function parseOperand(word:string):polynominal.Name|polynominal.Constant {
             const n = polynominal.parseToNumber(word);
             let out:polynominal.Name|polynominal.Constant;
@@ -474,7 +474,7 @@ export namespace polynominal {
                 } else {
                     return oper.operation(readStatement(oper.precedence));
                 }
-            } 
+            }
             for (;;) {
                 const oper = readOperator('binary', 'unarySuffix');
                 if (oper.precedence <= endPrecedence) {
@@ -489,7 +489,7 @@ export namespace polynominal {
                     }
                     continue;
                 }
-                
+
                 const operand2 = readStatement(oper.precedence);
                 if ((operand instanceof Constant) && (operand2 instanceof Constant)) {
                     operand.value = oper.operationConst(operand.value, operand2.value);
@@ -498,7 +498,7 @@ export namespace polynominal {
                 }
             }
         }
-        
+
         return readStatement(-1);
     }
 }
@@ -575,26 +575,26 @@ namespace operation {
 
 
 interface OperatorSet {
-    unaryPrefix?:polynominal.Operator; 
+    unaryPrefix?:polynominal.Operator;
     unarySuffix?:polynominal.Operator;
     binary?:polynominal.Operator;
 }
 const OPERATORS = new Map<string, OperatorSet>();
 
-OPERATORS.set('**', { 
+OPERATORS.set('**', {
     binary: operation.binaryExponent
 });
 
-OPERATORS.set('*', { 
+OPERATORS.set('*', {
     binary: operation.binaryMultiply
 });
 OPERATORS.set('/', { binary: new polynominal.Operator(15, (a,b)=>a/b, (a,b)=>a.multiply(b.exponent(new polynominal.Constant(-1)))) });
 
-OPERATORS.set('+', { 
-    unaryPrefix: new polynominal.Operator(17, v=>v, v=>v), 
+OPERATORS.set('+', {
+    unaryPrefix: new polynominal.Operator(17, v=>v, v=>v),
     binary: operation.binaryPlus
 });
-OPERATORS.set('-', { 
+OPERATORS.set('-', {
     unaryPrefix: new polynominal.Operator(17, v=>-v, v=>v.multiply(new polynominal.Constant(-1))),
     binary: new polynominal.Operator(14, (a,b)=>a-b, (a,b)=>a.add(b.multiply(new polynominal.Constant(-1))))
 });

@@ -1,9 +1,9 @@
 import { abstract } from "bdsx/common";
 import { RawTypeId } from "bdsx/makefunc";
-import { defineNative, MantleClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { int32_t, uint32_t } from "bdsx/nativetype";
+import { nativeClass, MantleClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
+import { int32_t, uint32_t } from "../nativetype";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
@@ -29,7 +29,7 @@ export const StreamReadResult = int32_t.extends({
 });
 export type StreamReadResult = int32_t;
 
-@defineNative()
+@nativeClass()
 export class ExtendedStreamReadResult extends NativeClass {
     @nativeField(StreamReadResult)
 	streamReadResult:StreamReadResult;
@@ -40,11 +40,11 @@ export class ExtendedStreamReadResult extends NativeClass {
 
 const sharedptr_of_packet = Symbol('sharedptr');
 
-@defineNative(0x28)
+@nativeClass(0x30)
 export class Packet extends MantleClass {
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
-    
+
     /**
      * @deprecated use packet.destruct();
      */
@@ -78,18 +78,20 @@ export class Packet extends MantleClass {
         this[sharedptr_of_packet] = null;
     }
 
-    static create<T extends Packet>(this:{new():T, ID:number, ref():any}):T {
+    static create<T extends Packet>(this:{new(alloc?:boolean):T, ID:number, ref():any}):T {
         const id = this.ID;
         if (id === undefined) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
         const cls = SharedPtr.make(this);
         const sharedptr = new cls(true);
         createPacketRaw(sharedptr, id);
-        
+
         const packet = sharedptr.p as T;
+        if (packet === null) throw Error(`${this.name} is not created`);
         packet[sharedptr_of_packet] = sharedptr;
         return packet;
     }
 }
+
 
 export const PacketSharedPtr = SharedPtr.make(Packet);
 export type PacketSharedPtr = SharedPtr<Packet>;

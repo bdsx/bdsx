@@ -3,6 +3,7 @@ import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPoi
 import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
+import { isBaseOf } from "./util";
 
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
@@ -12,7 +13,7 @@ export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:a
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
 
 const isNativeClass = Symbol();
-const isInherited = Symbol();
+const isSealed = Symbol();
 const offsetmap = Symbol();
 
 function accessor(key:string|number):string {
@@ -23,24 +24,29 @@ function accessor(key:string|number):string {
 
 export interface NativeClassType<T extends NativeClass> extends Type<T>
 {
-    new():T;
+    new(alloc?:boolean):T;
     prototype:T;
     [StructurePointer.contentSize]:number|null;
     [offsetmap]:Record<keyof any, number>;
+    [isSealed]:boolean;
     [isNativeClass]:true;
-    [isInherited]:boolean;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
+    ref<T extends NativeClass>(this:{new():T}):NativeClassType<T>;
 }
 
 class StructureDefination {
     /**
      * end of fields
      */
-    eof:number|null = 0;
-    align:number = 1;
+    eof:number|null;
+    align:number;
     fields:Record<keyof any, [Type<any>, number]> = {};
 
+    constructor(supercls:NativeClassType<any>) {
+        this.eof = supercls[NativeType.size];
+        this.align = supercls[NativeType.align];
+    }
     define<T extends NativeClass>(clazz:NativeClassType<T>, size?:number|null):void {
         if (size == null) {
             if (size === null) {
@@ -59,8 +65,8 @@ class StructureDefination {
             clazz[NativeType.getter] = wrapperGetter;
             clazz[NativeType.descriptor] = wrapperDescriptor;
         }
-        setInherited(clazz);
-        
+        sealClass(clazz);
+
         const offsets:Record<string, number> = clazz[offsetmap] = {};
 
         const propmap = new NativeDescriptorBuilder;
@@ -73,7 +79,7 @@ class StructureDefination {
         if (propmap.ctor.code !== '') {
             const ctorfunc = new Function('NativeType', 'types', propmap.ctor.code);
             const superCtor = clazz.prototype[NativeType.ctor];
-            clazz.prototype[NativeType.ctor] = function(this:T){ 
+            clazz.prototype[NativeType.ctor] = function(this:T){
                 ctorfunc.call(this, NativeType, types);
                 superCtor.call(this);
             };
@@ -81,25 +87,54 @@ class StructureDefination {
         if (propmap.dtor.code !== '') {
             const dtorfunc = new Function('NativeType', 'types', propmap.dtor.code);
             const superDtor = clazz.prototype[NativeType.dtor];
-            clazz.prototype[NativeType.dtor] = function(this:T){ 
+            clazz.prototype[NativeType.dtor] = function(this:T){
                 dtorfunc.call(this, NativeType, types);
                 superDtor.call(this);
             };
         }
         if (propmap.ctor_copy.code !== '') {
             const copyfunc = new Function('NativeType', 'types', 'o', propmap.ctor_copy.code);
-            (clazz.prototype as any)._default_copy = function(this:T, o:T){ 
+            (clazz.prototype as any)._default_copy = function(this:T, o:T){
                 copyfunc.call(this, NativeType, types, o);
             };
         }
-        
-        clazz[StructurePointer.contentSize] = 
-        clazz.prototype[NativeType.size] = 
+
+        clazz[StructurePointer.contentSize] =
+        clazz.prototype[NativeType.size] =
         clazz[NativeType.size] = size!;
         clazz[NativeType.align] = this.align;
         Object.defineProperties(clazz.prototype, propmap.desc);
     }
 
+    field(key:string, type:Type<any>, fieldOffset?:number|null):void {
+        if (isBaseOf(type, NativeClass)) {
+            sealClass(type as NativeClassType<any>);
+        }
+
+        const alignofType = type[NativeType.align];
+        if (alignofType > this.align) this.align = alignofType;
+
+        let offset = 0;
+        if (fieldOffset != null) {
+            offset = fieldOffset;
+        } else {
+            if (this.eof === null) {
+                throw Error('Cannot set a field without the offset, if the sizeof previous field or super class is unknown');
+            }
+            offset = (((this.eof + alignofType - 1) / alignofType)|0)*alignofType;
+        }
+
+        this.fields[key] = [type, offset];
+        const sizeofType = type[NativeType.size];
+        if (sizeofType === null) {
+            this.eof = null;
+        } else {
+            offset += sizeofType;
+            if (this.eof !== null) {
+                if (offset !== null && offset > this.eof) this.eof = offset;
+            }
+        }
+    }
 }
 
 const structures = new WeakMap<{new():any}, StructureDefination>();
@@ -110,7 +145,7 @@ export class NativeClass extends StructurePointer {
     static readonly [StructurePointer.contentSize]:number = 0;
     static readonly [offsetmap]:Record<keyof any, number>;
     static readonly [isNativeClass] = true;
-    static readonly [isInherited] = true;
+    static readonly [isSealed] = true;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -215,49 +250,26 @@ export class NativeClass extends StructurePointer {
             clazz[NativeType.getter] = wrapperGetter;
             clazz[NativeType.descriptor] = wrapperDescriptor;
         }
-        const proto:NativeClassType<T> = (clazz as any).__proto__;
-        let eof:number|null = proto[NativeType.size];
-        const nullSizeExtending = eof === null;
-        let align:number = defineAlign != null ? defineAlign : proto[NativeType.align];
 
-        const def = new StructureDefination;
+        if (clazz.hasOwnProperty(isSealed)) {
+            throw Error('Cannot define the structure of the already used');
+        }
+
+        const superclass = (clazz as any).__proto__;
+        sealClass(superclass);
+        const def = new StructureDefination(superclass);
         structures.set(clazz, def);
-        const fieldmap = def.fields;
-        
+
         for (const key in fields) {
-            let type:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
-            let forceOffset = false;
-            let offset = 0;
+            const type:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
             if (type instanceof Array) {
-                offset = type[1];
-                type = type[0];
-                forceOffset = true;
+                def.field(key, type[0], type[1]);
             } else {
-                if (eof === null) {
-                    throw Error(nullSizeExtending ? 
-                        'Cannot set fields without offset when extends abstract class' : 
-                        'Cannot set fields without offset when sizeof previous field is abstract without size');
-                }
-                offset = eof;
-            }
-            const alignofType = type[NativeType.align];
-            if (!forceOffset) offset = (((offset + alignofType - 1) / alignofType)|0)*alignofType;
-            fieldmap[key] = [type, offset];
-
-            if (alignofType > align) align = alignofType;
-
-            const sizeofType = type[NativeType.size];
-            if (sizeofType === null) {
-                eof = null;
-            } else {
-                offset += sizeofType;
-                if (eof !== null) {
-                    if (offset !== null && offset > eof) eof = offset;
-                }
+                def.field(key, type);
             }
         }
-        def.eof = abstract ? null : eof;
-        if (defineAlign !== null) def.align = align;
+        if (abstract) def.eof = null;
+        if (defineAlign !== null) def.align = defineAlign;
         def.define(clazz, defineSize);
     }
 
@@ -283,54 +295,24 @@ export class NativeClass extends StructurePointer {
 
 NativeClass.prototype[NativeType.size] = 0;
 
-function setInherited(clazz:NativeClassType<any>):NativeClassType<any> {
-    if (clazz.hasOwnProperty(isInherited) && clazz[isInherited]) {
-        throw Error('Cannot define structure of already inherited NativeClass');
+function sealClass<T extends NativeClass>(cls:NativeClassType<T>):void {
+    let node = cls as any;
+    while (!node.hasOwnProperty(isSealed)) {
+        node[isSealed] = true;
+        node = node.__proto__;
     }
-
-    const proto:NativeClassType<any> = (clazz as any).__proto__;
-    {
-        let node = proto;
-        while (!node.hasOwnProperty(isInherited)) {
-            node[isInherited] = true;
-            node = (node as any).__proto__;
-        }
-    }
-    return proto;
 }
 
 export function nativeField<T>(type:Type<T>, fieldOffset?:number|null) {
     return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
-
         let def = structures.get(clazz);
-        if (def === undefined) structures.set(clazz, def = new StructureDefination);
-
-        const alignofType = type[NativeType.align];
-        if (alignofType > def.align) def.align = alignofType;
-
-        let offset = 0;
-        if (fieldOffset != null) {
-            offset = fieldOffset;
-        } else {
-            if (def.eof === null) {
-                throw Error((clazz as any).__proto__[NativeType.size] === null ? 
-                    'Cannot set fields without offset when extends abstract class' : 
-                    'Cannot set fields without offset when sizeof previous field is abstract without size');
-            }
-            offset = (((def.eof + alignofType - 1) / alignofType)|0)*alignofType;
-        }
-
-        def.fields[key] = [type, offset];
-        const sizeofType = type[NativeType.size];
-        if (sizeofType !== null && def.eof !== null) {
-            const eof = offset + sizeofType;
-            if (def.eof > eof) def.eof = eof;
-        }
+        if (def === undefined) structures.set(clazz, def = new StructureDefination((clazz as any).__proto__));
+        def.field(key, type, fieldOffset);
     };
 }
 
-export function defineNative(size?:number|null, align:number|null = null) {
+export function nativeClass(size?:number|null, align:number|null = null) {
     return <T extends NativeClass>(clazz:NativeClassType<T>):void=>{
         const def = structures.get(clazz);
         if (def === undefined) {
@@ -338,11 +320,12 @@ export function defineNative(size?:number|null, align:number|null = null) {
                 clazz[NativeType.getter] = wrapperGetter;
                 clazz[NativeType.descriptor] = wrapperDescriptor;
             }
-            setInherited(clazz);
-            clazz[StructurePointer.contentSize] = 
-            clazz.prototype[NativeType.size] = 
-            clazz[NativeType.size] = size!;
-            clazz[NativeType.align] = align || 1;
+            sealClass(clazz);
+            const superclass = (clazz as any).__proto__;
+            clazz[StructurePointer.contentSize] =
+            clazz.prototype[NativeType.size] =
+            clazz[NativeType.size] = size === undefined ? superclass[NativeType.size] : size!;
+            clazz[NativeType.align] = align == null ? superclass[NativeType.align] : align;
         } else {
             structures.delete(clazz);
             if (align !== null) def.align = align;
@@ -421,7 +404,7 @@ export class NativeArray<T> extends PrivatePointer {
 
         const propmap = new NativeDescriptorBuilder;
         propmap.desc.length = {value: count};
-        
+
         let off = 0;
         for (let i = 0; i < count; i++) {
             itemType[NativeType.descriptor](propmap, i, off);
@@ -508,7 +491,7 @@ export declare class MantleClass extends NativeClass {
     getBuffer(bytes: number, offset?: number): Uint8Array;
 
     setBuffer(buffer: Bufferable, offset?: number): void;
-    
+
     /**
      * Read memory as binary string.
      * It stores 2bytes per character
@@ -528,7 +511,7 @@ export declare class MantleClass extends NativeClass {
      * @param words 2bytes per word
      */
     setBin(v:string, offset?:number): void;
-    
+
     interlockedIncrement16(offset?:number):number;
     interlockedIncrement32(offset?:number):number;
     interlockedIncrement64(offset?:number):number;
@@ -539,7 +522,7 @@ export declare class MantleClass extends NativeClass {
     interlockedCompareExchange16(exchange:number, compare:number, offset?:number):number;
     interlockedCompareExchange32(exchange:number, compare:number, offset?:number):number;
     interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
-    
+
     getJsValueRef(offset?:number):any;
     setJsValueRef(value:unknown, offset?:number):void;
 }
@@ -551,6 +534,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
         static readonly [NativeType.size] = 8;
         static readonly [NativeType.align] = 8;
         static readonly [StructurePointer.contentSize]:number;
+        static readonly [isSealed] = true;
 
         constructor() {
             super();
@@ -583,7 +567,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
         }
     }
     Pointer[NativeType.descriptor] = NativeType.defaultDescriptor;
-    
+
     if (makefunc.np2js in type) Pointer[NativeType.getter] = wrapperGetterRef as any;
     if (makefunc.js2np in type) Pointer[NativeType.setter] = wrapperSetterRef;
     return Pointer as Type<T> as NativeClassType<T>;

@@ -2,14 +2,14 @@
 // Low Level - define C++ class or structure
 
 import { NativePointer } from "bdsx";
-import { nativeField, defineNative, NativeClass } from "bdsx/nativeclass";
+import { nativeField, nativeClass, NativeClass } from "bdsx/nativeclass";
 import { int16_t, int32_t, int8_t } from "bdsx/nativetype";
 
 /**
  * All packets in packets.ts are NativeClass also
  */
 
-@defineNative()
+@nativeClass()
 class SampleStructure extends NativeClass {
     @nativeField(int32_t)
     a:int32_t;

@@ -14,6 +14,85 @@ const FREE_REGS:Register[] = [
     Register.r11,
 ];
 
+class AsmMover extends X64Assembler {
+
+    constructor(public readonly origin:VoidPointer, public readonly codesize:number) {
+        super(new Uint8Array(32), 0);
+    }
+
+    public readonly freeregs = new Set<Register>(FREE_REGS);
+    public inpos = 0;
+
+    getUnusing():Register|null{
+        for (const r of this.freeregs.values()) {
+            return r;
+        }
+        return null;
+    }
+
+    asmFromOrigin(oper:asm.Operation):void {
+        const splits = oper.splits;
+        const basename = splits[0];
+        let ripDependedParam:asm.ParameterRegisterPointer|null = null;
+        const params = oper.parameters();
+        for (const info of params) {
+            switch (info.type) {
+            case 'r':
+                this.freeregs.delete(info.register);
+                break;
+            case 'rp':
+                this.freeregs.delete(info.register);
+                if (info.register === Register.rip) {
+                    ripDependedParam = info;
+                }
+                break;
+            }
+        }
+        if ((basename.startsWith('j') || basename === 'call') && splits.length === 2 && splits[1] === 'c') {
+            // jump
+            const offset = this.inpos + oper.args[0] + oper.size;
+            if (offset < 0 || offset > this.codesize) {
+                const tmpreg = this.getUnusing();
+                if (tmpreg === null) throw Error(`Not enough free registers`);
+                const jmp_r = (asm.code as any)[basename+'_r'];
+                if (jmp_r) {
+                    this.mov_r_c(tmpreg, this.origin.add(offset));
+                    jmp_r.call(this, tmpreg);
+                } else {
+                    const reversed = oper.reverseJump();
+                    (this as any)[reversed+'_label']('!');
+                    this.jmp64(this.origin.add(offset), tmpreg);
+                    this.close_label('!');
+                }
+                this.inpos += oper.size;
+                return;
+            } else {
+                // TOFIX: remap offset if the code size is changed when rewriting.
+            }
+        } else {
+            if (ripDependedParam !== null) {
+                const tmpreg = this.getUnusing();
+                if (tmpreg === null) throw Error(`Not enough free registers`);
+                oper.args[ripDependedParam.argi] = tmpreg;
+                oper.args[ripDependedParam.argi+2] = 0;
+                this.mov_r_c(tmpreg, this.origin.add(this.inpos + oper.size + ripDependedParam.offset));
+                (this as any)[oper.splits.join('_')](...oper.args);
+                this.inpos += oper.size;
+                return;
+            }
+        }
+        oper.code.apply(this, oper.args);
+        this.inpos += oper.size;
+    }
+
+    end():void {
+        const tmpreg = this.getUnusing();
+        const originend = this.origin.add(this.codesize);
+        if (tmpreg != null) this.jmp64(originend, tmpreg);
+        else this.jmp64_notemp(originend);
+    }
+}
+
 export class ProcHacker<T extends Record<string, NativePointer>> {
     constructor(public readonly map:T) {
     }
@@ -47,7 +126,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             return true;
         }
     }
-    
+
     /**
      * @param subject for printing on error
      * @param key target symbol name
@@ -79,54 +158,15 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
-        const freeregs = new Set<Register>(FREE_REGS);
-        const getUnusing = ():Register|null=>{
-            for (const r of freeregs.values()) {
-                return r;
-            }
-            return null;
-        };
-        let pos = 0;
-        let labelCounter = 0;
-        const out = asm();
+        const out = new AsmMover(origin, codes.size);
         for (const oper of codes.operations) {
-            const splits = oper.splits;
-            const basename = splits[0];
+            const basename = oper.splits[0];
             if (basename === 'ret' || basename === 'jmp' || basename === 'call') {
-                throw Error(`Too small area to patch, require=${REQUIRE_SIZE}, actual=${pos}`);
+                throw Error(`Too small area to patch, require=${REQUIRE_SIZE}, actual=${out.inpos}`);
             }
-            pos += oper.size;
-
-            for (const reg of oper.registers()) {
-                freeregs.delete(reg);
-            }
-
-            if ((basename.startsWith('j') || basename === 'call') && splits.length === 2 && splits[1] === 'c') {
-                // jump
-                const offset = pos + oper.args[0];
-                if (offset < 0 || offset > codes.size) {
-                    const tmpreg = getUnusing();
-                    if (tmpreg === null) throw Error(`Not enough free registers`);
-                    const jmp_r = (asm.code as any)[basename+'_r'];
-                    if (jmp_r) {
-                        out.mov_r_c(tmpreg, origin.add(offset));
-                        jmp_r.call(out, tmpreg);
-                    } else {
-                        const reversed = oper.reverseJump();
-                        const label = `label_`+labelCounter++;
-                        (out as any)[reversed+'_label'](label);
-                        out.jmp64(origin.add(offset), tmpreg);
-                        out.label(label);
-                    }
-                    continue;
-                }
-            }
-            oper.code.apply(out, oper.args);
+            out.asmFromOrigin(oper);
         }
-        const tmpreg = getUnusing();
-        const originend = origin.add(codes.size);
-        if (tmpreg != null) out.jmp64(originend, tmpreg);
-        else out.jmp64_notemp(originend);
+        out.end();
         const original = out.alloc();
 
         const unlock = new MemoryUnlocker(origin, codes.size);
@@ -140,19 +180,29 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      * @param to call address
      */
-    hookingRawWithCallOriginal(key:keyof T, to: VoidPointer, 
+    hookingRawWithCallOriginal(key:keyof T, to: VoidPointer,
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[]):void {
-        const ptr = this.map[key];
-        if (!ptr) throw Error(`${key} symbol not found`);
+        const origin = this.map[key];
+        if (!origin) throw Error(`${key} symbol not found`);
 
-        const code = disasm.process(ptr, 12);
-        for (const oper of code.operations) {
-            const basename = oper.splits[0];
-            if (basename.startsWith('j') || basename === 'call') throw Error(`It cannot handle jump/call codes`);
+        const REQUIRE_SIZE = 12;
+        const codes = disasm.process(origin, REQUIRE_SIZE);
+        const out = new AsmMover(origin, codes.size);
+        for (const reg of keepRegister) {
+            out.freeregs.add(reg);
         }
-        const unlock = new MemoryUnlocker(ptr, code.size);
-        hacktool.hookWithCallOriginal(ptr, to, code.size, keepRegister, keepFloatRegister);
+        out.saveAndCall(to, keepRegister, keepFloatRegister);
+        for (const oper of codes.operations) {
+            const basename = oper.splits[0];
+            if (basename === 'ret' ||  basename === 'jmp' || basename === 'call') {
+                throw Error(`Too small area to patch, require=${REQUIRE_SIZE}, actual=${out.inpos}`);
+            }
+            out.asmFromOrigin(oper);
+        }
+        out.end();
+        const unlock = new MemoryUnlocker(origin, codes.size);
+        hacktool.jump(origin, out.alloc(), Register.rax, codes.size);
         unlock.done();
     }
 
@@ -161,12 +211,12 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param to call address
      */
     hooking<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
-        key:keyof T, 
+        key:keyof T,
         returnType:RETURN,
-        opts?: OPTS, 
+        opts?: OPTS,
         ...params: PARAMS):
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
-        return callback=>{    
+        return callback=>{
             const to = makefunc.np(callback, returnType, opts, ...params);
             return makefunc.js(this.hookingRaw(key, to), returnType, opts, ...params);
         };
@@ -200,7 +250,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         }
         unlock.done();
     }
-    
+
     /**
      * @param subject for printing on error
      * @param key target symbol name
@@ -235,17 +285,17 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
     /**
      * make the native function as a JS function.
-     * 
+     *
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
-     * 
+     *
      * @param returnType RawTypeId or *Pointer
      * @param params RawTypeId or *Pointer
      */
     js<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         key: keyof T,
         returnType:RETURN,
-        opts?: OPTS, 
+        opts?: OPTS,
         ...params: PARAMS):
         FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN> {
         return makefunc.js(this.map[key], returnType, opts, ...params);

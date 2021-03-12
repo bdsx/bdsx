@@ -24,6 +24,8 @@ function readConstNumber(size:OperationSize, ptr:NativePointer):number {
 }
 function readConst(size:OperationSize, ptr:NativePointer):number|bin64_t {
     switch (size) {
+    case OperationSize.void:
+        return 0;
     case OperationSize.byte:
         return ptr.readInt8();
     case OperationSize.word:
@@ -46,29 +48,38 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
             return null;
         }
     }
+    if ((v & 0xc0) === 0) {
+        if (r1 === Register.rbp) {
+            return {
+                offset: OperationSize.dword,
+                r1:Register.rip,
+                r2
+            };
+        }
+    }
 
     switch (v & 0xc0) {
     case 0x40:
         return {
-            offset: OperationSize.byte, 
+            offset: OperationSize.byte,
             r1,
             r2,
         };
     case 0x80:
         return {
-            offset: OperationSize.dword, 
+            offset: OperationSize.dword,
             r1,
             r2,
         };
     case 0xc0:
         return {
-            offset: null, 
+            offset: null,
             r1,
             r2,
         };
     }
     return {
-        offset: 0, 
+        offset: OperationSize.void,
         r1,
         r2,
     };
@@ -107,7 +118,17 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
     let size:OperationSize = OperationSize.dword;
     for (;;) {
         const v = ptr.readUint8();
-        if ((v&0xf2) === 0x40){ // rex
+        if (v === 0x65) {
+            return new asm.Operation(asm.code.gs, []);
+        } else if (v === 0x64) {
+            return new asm.Operation(asm.code.fs, []);
+        } else if (v === 0x2e) {
+            return new asm.Operation(asm.code.cs, []);
+        } else if (v === 0x26) {
+            return new asm.Operation(asm.code.es, []);
+        } else if (v === 0x36) {
+            return new asm.Operation(asm.code.ss, []);
+        } else if ((v&0xf2) === 0x40){ // rex
             rex = v;
             size = (rex & 0x08) ? OperationSize.qword : OperationSize.dword;
             size = (rex & 0x08) ? OperationSize.qword : OperationSize.dword;
@@ -117,6 +138,8 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             rex = v;
             size = OperationSize.word;
             continue;
+        } else if (v === 0x90) { // nop
+            return new asm.Operation(asm.code.nop, []);
         } else if (v === 0xcc) { // int3
             return new asm.Operation(asm.code.int3, []);
         } else if (v === 0xcd) { // int3
@@ -154,7 +177,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             if (lowflag === 0) size = OperationSize.byte;
             let constsize = size === OperationSize.qword ? OperationSize.dword : size;
             if (lowflag === 3) constsize = OperationSize.byte;
-            
+
             const info = walk_offset(rex, ptr);
             if (info === null) break; // bad
 
@@ -184,13 +207,13 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 const oper = (v >> 3) & 7;
                 if ((v & 0x04) !== 0) {
                     if ((v&1) === 0) size = OperationSize.byte;
-    
+
                     const chr = ptr.readInt32();
                     return walk_oper_r_c(oper, Register.rax, chr, size);
                 }
                 const info = walk_offset(rex, ptr);
                 if (info === null) break; // bad
-                
+
                 return walk_addr_oper(Operator[oper], v & 1, v & 2, info, size, ptr, false);
             }
         } else if ((v & 0xfe) === 0xc6){ // mov rp c
@@ -217,7 +240,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             }
             if (v & 0x04) size = OperationSize.word;
             return walk_addr_oper('mov', v & 1, v & 2, info, size, ptr, false);
-        } else if ((v & 0xf0) === 0x70) { 
+        } else if ((v & 0xf0) === 0x70) {
             const jumpoper = v & 0xf;
             const offset = ptr.readInt8();
             return walk_ojmp(jumpoper, offset);
@@ -232,7 +255,7 @@ export namespace disasm
     export function walk(ptr:NativePointer):asm.Operation|null {
         const low = ptr.getAddressLow();
         const high = ptr.getAddressHigh();
-            
+
         const res = walk_raw(ptr);
         if (res !== null) {
             res.size = (ptr.getAddressHigh()-high)*0x100000000 + (ptr.getAddressLow()-low);
@@ -268,7 +291,7 @@ export namespace disasm
         const buffer = typeof hexstr === 'string' ? unhex(hexstr) : hexstr;
         const ptr = new NativePointer;
         ptr.setAddressFromBuffer(buffer);
-        
+
         const opers:asm.Operation[] = [];
         if (!quiet) console.log();
         let oper:asm.Operation|null = null;

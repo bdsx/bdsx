@@ -5,7 +5,9 @@
 import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook, NetworkIdentifier, serverInstance } from "bdsx";
 import { asm, FloatRegister, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
+import { CommandContext } from "bdsx/bds/command";
 import { networkHandler } from "bdsx/bds/networkidentifier";
+import { PacketIdToType } from "bdsx/bds/packets";
 import { proc2 } from "bdsx/bds/symbols";
 import { capi } from "bdsx/capi";
 import { disasm } from "bdsx/disassembler";
@@ -29,10 +31,10 @@ export function setRecentSendedPacketForTest(packetId: number): void {
 Tester.test({
     async globals() {
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
-        this.assert(serverInstance.vftable.equals(proc2["??_7ServerInstance@@6BAppPlatformListener@@@"]),
+        this.assert(serverInstance.vftable.equals(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
-        this.assert(networkHandler.vftable.equals(proc2["??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@"]),
+        this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
         const inst = networkHandler.instance;
         this.assert(!!inst && inst.isNotNull(), 'RaknetInstance not found');
@@ -40,7 +42,7 @@ Tester.test({
             'networkHandler.instance is not RaknetInstance');
 
         const rakpeer = inst.peer;
-        this.assert(!!rakpeer && rakpeer.isNotNull(), 'RakNet::RakPeer not found');
+        this.assert(!!rakpeer && rakpeer.isNotNull(), 'RakNet::RakPeer not found');;
         this.assert(rakpeer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
@@ -287,7 +289,7 @@ Tester.test({
 
     async command() {
         let passed = false;
-        command.hook.on((cmd, origin, ctx) => {
+        const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
                 ctx.origin.getDimension();
@@ -297,20 +299,72 @@ Tester.test({
                 this.assert(actor === null, 'origin.getEntity() is not null');
                 const size = ctx.origin.getLevel().players.size();
                 this.assert(size === 0, 'origin.getLevel().players.size is not zero');
+                command.hook.remove(cb);
             }
-        });
+        };
+        command.hook.on(cb);
         await new Promise<void>((resolve) => {
-            bedrockServer.commandOutput.on(output => {
+            const outputcb = (output:string) => {
                 if (output.startsWith('Unknown command: __dummy_command')) {
+                    bedrockServer.commandOutput.remove(outputcb);
                     if (passed) resolve();
-                    else this.error('command.hook.listener failed');
+                    else this.fail();
                     return CANCEL;
                 }
-            });
+            };
+            bedrockServer.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
-        })
+        });
     },
 
+    async command2() {
+        let passed = false;
+        const cb = (cmd:string, origin:string) => {
+            if (cmd === '/__dummy_command') {
+                passed = origin === 'Server';
+                command.hook.remove(cb);
+            }
+        };
+        command.hook.on(cb);
+        await new Promise<void>((resolve) => {
+            const outputcb = (output:string) => {
+                if (output.startsWith('Unknown command: __dummy_command')) {
+                    bedrockServer.commandOutput.remove(outputcb);
+                    if (passed) resolve();
+                    else this.fail();
+                    return CANCEL;
+                }
+            };
+            bedrockServer.commandOutput.on(outputcb);
+            bedrockServer.executeCommand('/__dummy_command');
+        });
+    },
+
+    async checkPacketNames() {
+        const str = new CxxStringWrapper(true);
+        for (const id in PacketIdToType) {
+            const Packet = PacketIdToType[+id as keyof PacketIdToType];
+            const packet = Packet.create();
+
+            packet.getName(str);
+            this.assert(str.value === Packet.name, `JS name=${Packet.name}, C++ name=${str.value}`);
+            str.destruct();
+            this.assert(packet.getId() === Packet.ID, `JS id=${Packet.ID}, C++ id=${packet.getId()}`);
+
+            let name = Packet.name;
+            const idx = name.lastIndexOf('Packet');
+            if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
+            this.assert(MinecraftPacketIds[Packet.ID] === name, `MinecraftPacketIds.${MinecraftPacketIds[Packet.ID]} != ${name}`);
+
+            packet.dispose();
+        }
+
+        for (const id in MinecraftPacketIds) {
+            if (!/^[0-9]+$/.test(id)) continue;
+            const Packet = PacketIdToType[+id as keyof PacketIdToType];
+            this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
+        }
+    },
 });
 
 let connectedNi: NetworkIdentifier;

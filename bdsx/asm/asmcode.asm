@@ -32,6 +32,8 @@ export def memcpy:qword
 export def asyncAlloc:qword
 export def asyncPost:qword
 export def sprintf:qword
+export def malloc:qword
+export def vsnprintf:qword
 export def JsHasException:qword
 export def JsCreateTypeError:qword
 export def JsGetValueType:qword
@@ -49,6 +51,7 @@ export def runtimeErrorRaise:qword
 export def RtlCaptureContext:qword
 export def memset:qword
 export def printf:qword
+export def Sleep:qword
 
 # [[noreturn]]] makefunc_getout()
 export proc makefunc_getout
@@ -79,7 +82,7 @@ endp
 # JsValueRef makeError(char* string, size_t size)
 export proc makeError
     sub rsp, 88h
-    
+
     lea r8, [rcx+rdx]
     lea r9, [rsp+20h]
 _copy:
@@ -416,7 +419,7 @@ export proc pointer_np2js
     add rsp, 38h
     ret
 _failed:
-    mov rcx, rax
+    mov ecx, eax
     call getout
 endp
 
@@ -443,7 +446,7 @@ export proc pointer_js_new
     add rsp, 38h
     ret
 _failed:
-    mov rcx, rax
+    mov ecx, eax
     call getout
 endp
 
@@ -463,12 +466,12 @@ export proc bin64
 
     mov rcx, [rsp+18h]
     lea r8, [rcx+r8*2]
-    
+
     movsx rax, word ptr[rcx]
     add rcx, 2
     cmp rcx, r8
     jz _done
-    
+
     movsx rdx, word ptr[rcx]
     shl rdx, 16
     or rax, rdx
@@ -562,41 +565,77 @@ _failed:
     call getout
 endp
 
-
 ; codes for minecraft
 export def uv_async_call:qword
 
-
 export proc logHookAsyncCb
-    mov r8, [rcx + asyncSize + 8]
+    mov r8, [rcx + asyncSize + 8h]
     lea rdx, [rcx + asyncSize + 10h]
     mov rcx, [rcx + asyncSize]
     jmp bedrockLogNp
 endp
 
-export proc logHook
-    call GetCurrentThreadId
-    cmp eax, nodeThreadId
-    jne async_post
-    lea rdx, [rsp + 58h]
-    mov rcx, rdi
-    mov r8, rbx
-    jmp bedrockLogNp
-async_post:
-    sub rsp, 28h
-    lea rdx, [rbx + 11h]
+export proc logHook ; (int severity, char* format, ...)
+    mov [rsp+8h],ecx ; severity
+    mov [rsp+10h],rdx ; format
+    mov [rsp+18h],r8 ; vl start
+    mov [rsp+20h],r9
+    push rbx
+    sub rsp, 20h
+
+    ; get the length of vsnprintf
+    lea r9, [rsp+40h] ; r9 = vl
+    mov r8, rdx ; r8 = format
+    xor edx, edx ; bufsize = null
+    mov ecx, edx ; out = null
+    call vsnprintf
+    test rax, rax
+    js _failed
+
+    ; alloc AsyncTask
+    mov rbx, rax
+    lea rdx, [rax + 11h]
     lea rcx, logHookAsyncCb
     call asyncAlloc
-    mov [rax + asyncSize], rdi
-    lea r8, [rbx + 1]
-    mov [rax + asyncSize + 8], r8
-    lea rcx, [rax + asyncSize + 10h]
-    lea rdx, [rsp + 80h]
-    mov [rsp + 20h], rax
-    call memcpy
-    mov rcx, [rsp + 20h]
-    add rsp, 0x28
-    jmp asyncPost
+    mov rcx, [rsp+30h] ; severity
+    mov [rax+asyncSize], rcx
+    mov [rax+asyncSize+8], rbx ; length
+
+    ; format with vsnprintf
+    lea r9, [rsp+40h] ; vl
+    mov r8, [rsp+38h] ; format
+    lea rdx, [rbx+1] ; bufsize
+    lea rcx, [rax+asyncSize+10h] ; text
+    mov rbx, rax
+    call vsnprintf
+
+    ; thread check and call
+    call GetCurrentThreadId
+    mov rcx, rbx
+    cmp eax, nodeThreadId
+    jne async_post
+    call logHookAsyncCb
+    jmp _out
+async_post:
+    call asyncPost
+_out:
+    add rsp, 20h
+    pop rbx
+    ret
+
+_failed:
+    mov rdx, 20h
+    lea rcx, logHookAsyncCb
+    call asyncAlloc
+    mov rdx, [rsp+30h] ; severity
+    mov [rax+asyncSize], rdx
+    mov [rax+asyncSize+8h], 15
+    lea rcx, "[format failed]"
+    mov rdx, [rcx]
+    mov [rax+asyncSize+10h], rdx
+    mov rdx, [rcx+8]
+    mov [rax+asyncSize+18h], rdx
+    jmp _out
 endp
 
 ; [[noreturn]] runtime_error(EXCEPTION_POINTERS* err)
@@ -617,7 +656,7 @@ export proc raise_runtime_error
     const alignOffset 8
     const stackOffset ((stackSize + 15) & ~15)+alignOffset
 
-    lea rsp, [rsp - stackOffset] ; exception_ptrs
+    sub rsp, stackOffset ; exception_ptrs
     lea rdx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset] ; ExceptionRecord
     mov dword ptr[rdx], ecx ; ExceptionRecord.ExceptionCode
     lea rcx, [rdx+sizeofEXCEPTION_RECORD] ; ContextRecord
@@ -626,7 +665,7 @@ export proc raise_runtime_error
     call RtlCaptureContext; RtlCaptureContext(&ContextRecord)
 
     lea r8, [sizeofEXCEPTION_RECORD-8]
-    xor rdx, rdx
+    xor edx, edx
     lea rcx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset+8] ; ExceptionRecord
     call memset
 
@@ -642,32 +681,12 @@ endp
 
 def serverInstance:qword
 
-export proc ServerInstance_startServerThread_hook
+export proc ServerInstance_ctor_hook
     mov serverInstance, rcx
 ret
 
 export proc debugBreak
     int3
-    ret
-endp
-
-export def commandHookCallback:qword
-export def MinecraftCommandsExecuteCommandAfter:qword
-
-export proc commandHook
-    mov rcx, rsp
-    sub rsp, 28h
-    call commandHookCallback
-    add rsp, 28h
-    test rax, rax
-    jz skip
-    pop rcx
-    jmp MinecraftCommandsExecuteCommandAfter
-skip:
-    mov [rbp-50h], rsi
-    mov rax, [rsi]
-    mov rcx, [rax+20h]
-    mov rax, [rcx]
     ret
 endp
 
@@ -681,14 +700,10 @@ export proc CommandOutputSenderHook
 endp
 
 export def commandQueue:qword
-export def MultiThreadQueueDequeue:qword
-export proc stdin_launchpad_hook
-    lea rdx, [rsp+30h]
-    sub rsp, 28h
+export def MultiThreadQueueTryDequeue:qword
+export proc ConsoleInputReader_getLine_hook
     mov rcx, commandQueue
-    call MultiThreadQueueDequeue
-    add rsp, 28h
-    ret
+    jmp MultiThreadQueueTryDequeue
 endp
 
 def gamelambdaptr:qword
@@ -706,22 +721,20 @@ proc gameThreadEntry
     ret
 endp
 
-export def _Pad_Release:qword ; void std::_Pad::_Release(void* lambda);
 export def WaitForSingleObject:qword
 export def _Cnd_do_broadcast_at_thread_exit:qword
 
 export proc gameThreadHook
     sub rsp, 28h
-    mov gamelambdaptr, rbx
-    call _Pad_Release
+    mov rbx, rcx
+    mov gamelambdaptr, rcx
     lea rcx, gameThreadEntry
     call uv_async_call
     mov rcx, evWaitGameThreadEnd
     mov rdx, -1
-    call WaitForSingleObject
-    call _Cnd_do_broadcast_at_thread_exit
+    call WaitForSingleObject ; use over 20h bytes of stack?
     add rsp, 28h
-    ret
+    jmp _Cnd_do_broadcast_at_thread_exit
 endp
 
 export def bedrock_server_exe_args:qword
@@ -745,12 +758,12 @@ export def cgateNodeLoop:qword
 export def updateEvTargetFire:qword
 
 export proc updateWithSleep
+    mov rcx, [rsp+20h]
     sub rsp, 28h
     mov rcx, rbx
     call cgateNodeLoop
     add rsp, 28h
     jmp updateEvTargetFire
-    ret
 endp
 
 
@@ -784,8 +797,8 @@ export def onPacketRaw:qword
 export proc packetRawHook
     sub rsp, 28h
     mov rcx, rbp ; rbp
-    mov rdx, r15 ; packetId
-    mov r8, r13 ; Connection
+    mov edx, r15d ; packetId
+    mov r8, r14 ; Connection
     call onPacketRaw
     add rsp, 28h
     ret
@@ -793,13 +806,13 @@ endp
 
 export def onPacketBefore:qword
 export proc packetBeforeHook
+    lea rdx,[rsp+78h]
     sub rsp, 28h
 
     ; original codes
     mov rax,qword ptr[rcx]
-    lea r8,[rbp+1E0h]
-    lea rdx,[rbp+70h]
-    call qword ptr[rax+28h]
+    lea r8,[rbp+a0h]
+    call qword ptr[rax+20h]
 
     mov rcx, rax ; read result
     mov rdx, rbp ; rbp
@@ -833,12 +846,12 @@ export proc packetAfterHook
     sub rsp, 28h
 
     ; orignal codes
-    mov rax,qword ptr[rcx]
-    lea r9,qword ptr[rbp+148h]
+    mov rax,[rcx]
+    lea r9,[rbp+58h]
     mov r8,rsi
-    mov rdx,r13
-    call qword ptr[rax+8h]
-    
+    mov rdx,r14
+    call [rax+8]
+
     mov rcx, rbp ; rbp
     mov rdx, r15 ; packetId
 
@@ -848,54 +861,19 @@ export proc packetAfterHook
 endp
 
 export def onPacketSend:qword
-
-export proc packetSendHook
-
-    ; original codes
-    mov rbx,rcx
-    movzx ebp,r9b
-    mov rdi,r8
-    mov r14,rdx
-
-    sub rsp, 28h
-    call onPacketSend
-    add rsp, 28h
-    mov rax, [rbx+268h]
-    mov r8, rdi
-    ret
-endp
-
 export proc packetSendAllHook
-    mov r8, r14
-    mov rdx, rsi
-    mov rcx, r15
+    mov r8,r15
+    mov rdx,rbx
+    mov rcx,r14
     sub rsp, 28h
     call onPacketSend
     add rsp, 28h
-    mov rax, [r14]
-    lea rdx, [r15+208h]
-    mov rcx, r14
+
+    ; original code
+    mov rax, [r15]
+    lea rdx, [r14+220h]
+    mov rcx, r15
     jmp qword ptr[rax+18h]
-    ret
-endp
-
-export def onPacketSendRaw:qword
-export def NetworkHandlerGetConnectionFromId:qword
-
-export proc packetSendInternalHook
-    mov r14, r9
-    mov rdi, r8
-    mov rbp, rdx
-    mov rsi, rcx
-    sub rsp, 28h
-    call onPacketSendRaw
-    add rsp, 28h
-    test eax, eax
-    jz skip
-    mov rcx, rsi
-    mov rdx, rbp
-    jmp NetworkHandlerGetConnectionFromId
-skip:
     ret
 endp
 
@@ -944,27 +922,3 @@ _loop:
     pop rbx
     ret
 endp
-
-; no need to use
-;export proc getline_catch
-;    ; stack begin
-;    .mov_rp_r(Register.rsp, 8, Register.rcx) 
-;    .sub_r_c(Register.rsp, 0x18)
-;
-;    ; task = new AsyncTask
-;    mov rcx, endTask)
-;    mov rdx, 8)
-;    .call64(uv_async.alloc, Register.rax)
-;
-;    ; task.cb = cb
-;    .mov_r_rp(Register.rcx, Register.rsp, 0x20) 
-;    .mov_rp_r(Register.rax, asyncSize, Register.rcx)
-;
-;    ; task.post();
-;    mov rcx, rax
-;    .call64(uv_async.post, Register.rax)
-;
-;    ; stack end
-;    .add_r_c(Register.rsp, 0x18)
-;    ret
-;endp

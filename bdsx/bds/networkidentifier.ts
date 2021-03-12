@@ -4,7 +4,7 @@ import { abstract } from "bdsx/common";
 import { dll } from "bdsx/dll";
 import { Hashable, HashSet } from "bdsx/hashset";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
-import { defineNative, NativeClass } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
@@ -30,7 +30,7 @@ export class NetworkHandler extends NativeClass {
     sendInternal(ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
         abstract();
     }
-    
+
     getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
         abstract();
     }
@@ -49,11 +49,11 @@ export namespace NetworkHandler
     }
 }
 
-@defineNative(null)
+@nativeClass(null)
 class ServerNetworkHandler$Client extends NativeClass {
 }
 
-@defineNative(null)
+@nativeClass(null)
 export class ServerNetworkHandler extends NativeClass {
     protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxStringWrapper, d:number):void {
         abstract();
@@ -85,7 +85,9 @@ export namespace ServerNetworkHandler
 const identifiers = new HashSet<NetworkIdentifier>();
 const closeEvTarget = new Event<(ni:NetworkIdentifier)=>void>();
 
+@nativeClass()
 export class NetworkIdentifier extends NativeClass implements Hashable {
+    @nativeField(RakNet.AddressOrGUID)
     public address:RakNet.AddressOrGUID;
 
     constructor(allocate?:boolean) {
@@ -130,7 +132,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         identifiers.add(ni);
         return ni;
     }
-    
+
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
@@ -150,5 +152,5 @@ procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', ma
     setTimeout(()=>{
         identifiers.delete(ni);
     }, 3000);
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper), 
+}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);

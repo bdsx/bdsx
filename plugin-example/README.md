@@ -7,7 +7,8 @@
 
 ### Publish the bdsx plugin
 1. Create an npm account if you don't have one yet. [NPM Sign Up](https://www.npmjs.com/signup)
-2. Login with the command line
+2. Request for joining `@bdsx` organization at `#npm-bdsx-org-member-request` channel of the discord server with npm ID or EMail
+3. Login with the command line
 ```sh
 > npm login
 npm notice Log in on https://registry.npmjs.org/
@@ -15,7 +16,7 @@ Username: # Enter Username
 Password: # Enter Password
 Email: (this IS public) # Enter Email
 ```
-3. Publish with the command line
+4. Publish with the command line
 ```sh
 > cd path/to/plugin # move to the plugin directory
 > npm publish --access=public # publish the plugin

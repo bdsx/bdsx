@@ -1,11 +1,11 @@
 import { VoidPointer } from "bdsx/core";
-import { defineNative, NativeClass, nativeField } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { RakNet } from "./raknet";
 
-@defineNative()
+@nativeClass()
 export class RakNetInstance extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    @nativeField(RakNet.RakPeer.ref(), 0x1c8)
+    @nativeField(RakNet.RakPeer.ref(), 0x1e8)
     peer:RakNet.RakPeer;
 }

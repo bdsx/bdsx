@@ -14,8 +14,7 @@ import { ServerPlayer } from "./player";
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
 
-export enum DimensionId // int32_t
-{
+export enum DimensionId { // int32_t
     Overworld = 0,
     Nether = 1,
     TheEnd = 2
@@ -25,7 +24,7 @@ export enum DimensionId // int32_t
 export class ActorRuntimeID extends VoidPointer {
 }
 
-export enum ActorType 
+export enum ActorType
 {
     Player = 0x13f,
 }
@@ -36,11 +35,19 @@ export class Actor extends NativeClass {
     attributes:BaseAttributeMap;
     runtimeId:ActorRuntimeID;
     dimension:Dimension;
-    
+
     protected _getName():CxxStringWrapper {
         abstract();
     }
-    
+
+    protected _addTag(tag:CxxStringWrapper):boolean {
+        abstract();
+    }
+
+    protected _hasTag(tag:CxxStringWrapper):boolean {
+        abstract();
+    }
+
     protected _sendNetworkPacket(packet:VoidPointer):void {
         abstract();
     }
@@ -60,7 +67,7 @@ export class Actor extends NativeClass {
     private _getDimensionId(out:Int32Array):void {
         abstract();
     }
-    
+
     getDimension():DimensionId {
         const out = new Int32Array(1);
         this._getDimensionId(out);
@@ -106,7 +113,7 @@ export class Actor extends NativeClass {
     getTypeId():ActorType {
         abstract();
     }
-    
+
     getAttribute(id:AttributeId):number {
         const attr = this.attributes.getMutableInstance(id);
         if (attr === null) return 0;
@@ -116,7 +123,7 @@ export class Actor extends NativeClass {
     setAttribute(id:AttributeId, value:number):void {
         if (id < 1) return;
         if (id > 15) return;
-    
+
         const attr = this.attributes.getMutableInstance(id);
         if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || 'Attribute'+id}`);
         attr.currentValue = value;
@@ -124,12 +131,12 @@ export class Actor extends NativeClass {
             this._sendAttributePacket(id, value, attr);
         }
     }
-    
+
     /**
      * @deprecated use actor.runtimeId
      */
     getRuntimeId():NativePointer {
-        return new NativePointer(this.runtimeId);
+        return this.runtimeId.add();
     }
 
     /**
@@ -148,6 +155,22 @@ export class Actor extends NativeClass {
             id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
         };
         return (this as any).entity = entity;
+    }
+    addTag(tag:string):boolean {
+        const _tag = new CxxStringWrapper(true);
+        _tag.construct();
+        _tag.value = tag;
+        const ret = this._addTag(_tag);
+        _tag.destruct();
+        return ret;
+    }
+    hasTag(tag:string):boolean {
+        const _tag = new CxxStringWrapper(true);
+        _tag.construct();
+        _tag.value = tag;
+        const ret = this._hasTag(_tag);
+        _tag.destruct();
+        return ret;
     }
 
 // float NativeActor::getAttribute(int attribute) noexcept

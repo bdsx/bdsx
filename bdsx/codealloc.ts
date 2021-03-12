@@ -1,7 +1,5 @@
 import { asm, X64Assembler } from "./assembler";
 import { cgate, chakraUtil, StaticPointer } from "./core";
-import { remapError } from "./source-map-support";
-import { ParsingError } from "./textparser";
 
 declare module "./assembler"
 {

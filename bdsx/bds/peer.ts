@@ -1,12 +1,12 @@
 import { VoidPointer } from "bdsx/core";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { defineNative, NativeClass, nativeField } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";
 import { abstract } from "bdsx/common";
 import { CxxStringWrapper } from "bdsx/pointer";
 
-@defineNative(null)
+@nativeClass(null)
 export class RaknetNetworkPeer extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
@@ -20,19 +20,19 @@ export class RaknetNetworkPeer extends NativeClass {
     addr:RakNet.AddressOrGUID;
 }
 
-@defineNative(null)
+@nativeClass(null)
 export class EncryptedNetworkPeer extends NativeClass {
     @nativeField(SharedPtr.make(RaknetNetworkPeer))
     peer:SharedPtr<RaknetNetworkPeer>;
 }
 
-@defineNative(null)
+@nativeClass(null)
 export class CompressedNetworkPeer extends NativeClass {
     @nativeField(EncryptedNetworkPeer.ref(), 0x48)
     peer:EncryptedNetworkPeer;
 }
 
-@defineNative(null)
+@nativeClass(null)
 export class BatchedNetworkPeer extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;

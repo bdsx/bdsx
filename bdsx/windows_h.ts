@@ -1,6 +1,6 @@
 import { bin } from "./bin";
 import { VoidPointer } from "./core";
-import { nativeField, NativeArray, defineNative, NativeClass } from "./nativeclass";
+import { nativeField, NativeArray, nativeClass, NativeClass } from "./nativeclass";
 import { bin64_t, int32_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
 
 export const MAX_PATH = 260;
@@ -49,7 +49,7 @@ export const MEM_PRESERVE_PLACEHOLDER =         0x00000002;
 export const MEM_DECOMMIT =                     0x00004000;
 export const MEM_RELEASE =                      0x00008000;
 export const MEM_FREE =                         0x00010000;
-    
+
 export const CHAR = uint8_t;
 export type CHAR = uint8_t;
 export const BYTE = uint8_t;
@@ -91,14 +91,14 @@ export const b64_LOW_WORD = bin.make(0xffff, 4);
 export function IMAGE_ORDINAL64(Ordinal:string):string { return (bin.bitand(Ordinal, b64_LOW_WORD)); }
 export function IMAGE_SNAP_BY_ORDINAL64(Ordinal:string):boolean { return (bin.bitand(Ordinal, IMAGE_ORDINAL_FLAG64) !== bin64_t.zero); }
 
-@defineNative()
+@nativeClass()
 export class IMAGE_DATA_DIRECTORY extends NativeClass {
     @nativeField(DWORD)
     VirtualAddress:DWORD;
     @nativeField(DWORD)
     Size:DWORD;
 }
-@defineNative()
+@nativeClass()
 export class IMAGE_DOS_HEADER extends NativeClass {
     @nativeField(WORD)
     e_magic: WORD;                     // Magic number
@@ -143,7 +143,7 @@ export class IMAGE_DOS_HEADER extends NativeClass {
     @nativeField(WORD)
     e_lfanew: LONG;                    // File address of new exe header
 }
-@defineNative()
+@nativeClass()
 export class IMAGE_FILE_HEADER extends NativeClass {
     @nativeField(WORD)
     Machine: WORD;
@@ -160,7 +160,7 @@ export class IMAGE_FILE_HEADER extends NativeClass {
     @nativeField(WORD)
     Characteristics: WORD;
 }
-@defineNative()
+@nativeClass()
 export class IMAGE_OPTIONAL_HEADER64 extends NativeClass {
     @nativeField(WORD)
     Magic: WORD;
@@ -223,7 +223,7 @@ export class IMAGE_OPTIONAL_HEADER64 extends NativeClass {
     @nativeField(NativeArray.make<IMAGE_DATA_DIRECTORY>(IMAGE_DATA_DIRECTORY, IMAGE_NUMBEROF_DIRECTORY_ENTRIES))
     DataDirectory: NativeArray<IMAGE_DATA_DIRECTORY>;
 }
-@defineNative()
+@nativeClass()
 export class IMAGE_NT_HEADERS64 extends NativeClass {
     @nativeField(DWORD)
     Signature: DWORD;
@@ -232,7 +232,7 @@ export class IMAGE_NT_HEADERS64 extends NativeClass {
     @nativeField(IMAGE_OPTIONAL_HEADER64)
     OptionalHeader: IMAGE_OPTIONAL_HEADER64;
 }
-@defineNative()
+@nativeClass()
 export class IMAGE_DEBUG_DIRECTORY extends NativeClass {
     @nativeField(DWORD)
     Characteristics: DWORD;
@@ -251,13 +251,13 @@ export class IMAGE_DEBUG_DIRECTORY extends NativeClass {
     @nativeField(DWORD)
     PointerToRawData: DWORD;
 }
-@defineNative()
+@nativeClass()
 export class IMAGE_IMPORT_DESCRIPTOR extends NativeClass {
     @nativeField(WORD)
     Characteristics:DWORD;                  // 0 for terminating null import descriptor
     @nativeField(WORD)
     OriginalFirstThunk:DWORD;               // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
-    
+
     @nativeField(DWORD)
     TimeDateStamp: DWORD;                   // 0 if not bound,
                                             // -1 if bound, and real date\time stamp
@@ -273,19 +273,19 @@ export class IMAGE_IMPORT_DESCRIPTOR extends NativeClass {
 }
 
 class IMAGE_THUNK_DATA64_union extends NativeClass {
-    ForwarderString:ULONGLONG;  // PBYTE 
+    ForwarderString:ULONGLONG;  // PBYTE
     Function:ULONGLONG;         // PDWORD
     Ordinal:ULONGLONG;
     AddressOfData:ULONGLONG;    // PIMAGE_IMPORT_BY_NAME
 }
 IMAGE_THUNK_DATA64_union.defineAsUnion({
-    ForwarderString:ULONGLONG,  // PBYTE 
+    ForwarderString:ULONGLONG,  // PBYTE
     Function:ULONGLONG,         // PDWORD
     Ordinal:ULONGLONG,
     AddressOfData:ULONGLONG,    // PIMAGE_IMPORT_BY_NAME
 });
 
-@defineNative()
+@nativeClass()
 export class IMAGE_THUNK_DATA64 extends NativeClass {
     @nativeField(IMAGE_THUNK_DATA64_union)
     u1:IMAGE_THUNK_DATA64_union;
@@ -301,7 +301,7 @@ IMAGE_SECTION_HEADER_Misc.defineAsUnion({
 });
 
 const IMAGE_SIZEOF_SHORT_NAME = 8;
-@defineNative()
+@nativeClass()
 export class IMAGE_SECTION_HEADER extends NativeClass {
     @nativeField(NativeArray.make(BYTE, IMAGE_SIZEOF_SHORT_NAME))
     Name: NativeArray<BYTE>;
@@ -327,21 +327,21 @@ export class IMAGE_SECTION_HEADER extends NativeClass {
 
 const EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
 
-@defineNative()
-export class EXCEPTION_RECORD extends NativeClass {    
-    @nativeField(DWORD) 
+@nativeClass()
+export class EXCEPTION_RECORD extends NativeClass {
+    @nativeField(DWORD)
     ExceptionCode:DWORD;
-    @nativeField(DWORD) 
+    @nativeField(DWORD)
     ExceptionFlags:DWORD;
-    @nativeField(VoidPointer) 
+    @nativeField(VoidPointer)
     ExceptionRecord:VoidPointer;
-    @nativeField(VoidPointer) 
+    @nativeField(VoidPointer)
     ExceptionAddress:VoidPointer;
-    @nativeField(DWORD) 
+    @nativeField(DWORD)
     NumberParameters:DWORD;
-    @nativeField(DWORD) 
+    @nativeField(DWORD)
     dummy:DWORD;
-    @nativeField(NativeArray.make(ULONG_PTR, EXCEPTION_MAXIMUM_PARAMETERS)) 
+    @nativeField(NativeArray.make(ULONG_PTR, EXCEPTION_MAXIMUM_PARAMETERS))
     ExceptionInformation:NativeArray<ULONG_PTR>;
 }
 
@@ -464,7 +464,7 @@ export class EXCEPTION_RECORD extends NativeClass {
 //     DWORD64 LastExceptionFromRip;
 // } CONTEXT, *PCONTEXT;
 
-@defineNative()
+@nativeClass()
 export class EXCEPTION_POINTERS extends NativeClass {
     @nativeField(EXCEPTION_RECORD.ref())
     ExceptionRecord:EXCEPTION_RECORD;
@@ -472,7 +472,7 @@ export class EXCEPTION_POINTERS extends NativeClass {
     ContextRecord:VoidPointer; // CONTEXT
 }
 
-@defineNative()
+@nativeClass()
 export class FILETIME extends NativeClass {
     @nativeField(DWORD)
     dwLowDateTime: DWORD;
@@ -483,7 +483,7 @@ export class FILETIME extends NativeClass {
 export const EXCEPTION_BREAKPOINT = 0x80000003|0;
 export const EXCEPTION_ACCESS_VIOLATION = 0xC0000005|0;
 export const STATUS_INVALID_PARAMETER = 0xC000000D|0;
-            
+
 export const FORMAT_MESSAGE_ALLOCATE_BUFFER  = 0x00000100;
 export const FORMAT_MESSAGE_IGNORE_INSERTS   = 0x00000200;
 export const FORMAT_MESSAGE_FROM_STRING      = 0x00000400;

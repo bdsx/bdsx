@@ -46,7 +46,7 @@ bedrockServer.open.on(()=>{
 bedrockServer.close.on(()=>{
     console.log('[plugin:${clsname}] closed');
 });
-    
+
 `;
     fs.writeFileSync(targetdir+'index.ts', exampleSource, 'utf-8');
 }
@@ -59,7 +59,7 @@ bedrockServer.close.on(()=>{
         "version": "1.0.0",
         "description": "",
         "main": "index.js",
-        "keywords": [],
+        "keywords": [] as string[],
         "author": "",
         "license": "ISC",
         "bdsxPlugin": true,

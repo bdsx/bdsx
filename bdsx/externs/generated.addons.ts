@@ -696,6 +696,7 @@ interface MinecraftDamageSourceMap {
     "fire_tick":void;
     "fireworks":void;
     "fly_into_wall":void;
+    "freezing":void;
     "lava":void;
     "lightning":void;
     "magic":void;

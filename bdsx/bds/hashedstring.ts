@@ -1,9 +1,9 @@
 import { VoidPointer } from "bdsx/core";
-import { defineNative, NativeClass, nativeField } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { CxxString, NativeType } from "bdsx/nativetype";
 import { procHacker } from "./proc";
 
-@defineNative()
+@nativeClass()
 export class HashedString extends NativeClass {
     @nativeField(VoidPointer)
     hash:VoidPointer|null;
@@ -13,7 +13,7 @@ export class HashedString extends NativeClass {
     [NativeType.ctor]():void {
         this.hash = null;
     }
-    
+
     set(str:string):void {
         this.str = str;
         this.hash = computeHash(this.add(str_offset));

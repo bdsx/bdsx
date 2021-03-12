@@ -6,7 +6,7 @@ import { bin, capi, StaticPointer, VoidPointer } from "bdsx";
 import { CommandPermissionLevel, CommandRegistry } from "bdsx/bds/command";
 import { serverInstance } from "bdsx/bds/server";
 import { makefunc } from "bdsx/makefunc";
-import { defineNative, NativeClass, NativeClassType, nativeField } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, NativeClassType, nativeField } from "bdsx/nativeclass";
 import { bin64_t, int32_t, NativeType } from "bdsx/nativetype";
 
 class Command extends NativeClass {
@@ -44,7 +44,7 @@ class CustomCommand extends Command {
 const COL_SIG_REV0 = 0;
 const COL_SIG_REV1 = 1;
 
-@defineNative()
+@nativeClass()
 class _s_RTTICompleteObjectLocator extends NativeClass {
     @nativeField(int32_t)
     signature:int32_t;
@@ -75,4 +75,3 @@ overload.u5 = bin64_t.zero;
 overload.u6 = -1;
 cmd.overloads.push(overload);
 cmdreg.registerOverloadInternal(cmd, overload);
- 
