@@ -9,10 +9,10 @@ import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { bin64_t, CxxString, float32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
+import { bin64_t, CxxString, float32_t, int32_t, NativeType, uint16_t, uint32_t } from "../nativetype";
 import { Actor, ActorRuntimeID } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { CommandContext, CommandOutputSender, MCRESULT, MinecraftCommands } from "./command";
+import { CommandContext, CommandOutputSender, CommandRegistry, MCRESULT, MinecraftCommands } from "./command";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
@@ -121,11 +121,32 @@ CommandContext.abstract({
 });
 MinecraftCommands.abstract({
     sender:CommandOutputSender.ref(),
-    u1:VoidPointer,
+    registry:CommandRegistry.ref(),
     u2:bin64_t,
     minecraft:Minecraft.ref(),
 });
-MinecraftCommands.prototype._executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+MinecraftCommands.prototype.executeCommand = procHacker.js("MinecraftCommands::executeCommand", MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+
+CommandRegistry.Signature.abstract({
+    command:CxxString,
+    description:CxxString,
+    overloads:CxxVector.make<CommandRegistry.Overload>(CommandRegistry.Overload),
+});
+
+CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', RawTypeId.Void, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
+
+(CommandRegistry.prototype as any)._registerCommand = procHacker.js("CommandRegistry::registerCommand", RawTypeId.Void, {this:CommandRegistry}, CxxStringWrapper, RawTypeId.StringUtf8, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
+
+(CommandRegistry.prototype as any)._findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry, nullableReturn: true}, CxxStringWrapper);
+
+CommandRegistry.Overload.define({
+    commandVersion:bin64_t,
+    allocator:VoidPointer,
+    u3:bin64_t,
+    u4:bin64_t,
+    u5:bin64_t,
+    u6:int32_t,
+}, 0x30);
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();

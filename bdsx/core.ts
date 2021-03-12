@@ -295,7 +295,7 @@ export declare class StructurePointer extends PrivatePointer {
  */
 export declare class NativePointer extends StaticPointer {
     move(lowBits: number, highBits?: number): void;
-    setAddressPointer(pointer?: VoidPointer): void;
+    setAddressPointer(pointer: VoidPointer): void;
     setAddress(lowBits: number, highBits: number): void;
     setAddressBin(bin:string):void;
     setAddressFromBuffer(buffer:Bufferable):void;

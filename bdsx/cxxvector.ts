@@ -163,7 +163,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         this[NativeType.dtor]();
     }
 
-    static make<T>(type:{new():T}|{[NativeType.getter]:T}):CxxVectorType<T> {
+    static make<T>(type:Type<T>):CxxVectorType<T> {
         return singleton.newInstance(type, ()=>{
             if ((type as any)[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
 

@@ -1,52 +1,47 @@
 import { VoidPointer } from "bdsx/core";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { NativeClass } from "bdsx/nativeclass";
+import { defineNative, NativeClass, nativeField } from "bdsx/nativeclass";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";
 import { abstract } from "bdsx/common";
 import { CxxStringWrapper } from "bdsx/pointer";
 
-
+@defineNative(null)
 export class RaknetNetworkPeer extends NativeClass {
+    @nativeField(VoidPointer)
     vftable:VoidPointer;
+    @nativeField(VoidPointer)
     u1:VoidPointer; // null
+    @nativeField(VoidPointer)
     u2:VoidPointer; // null
+    @nativeField(RakNet.RakPeer.ref())
     peer:RakNet.RakPeer;
+    @nativeField(RakNet.AddressOrGUID)
     addr:RakNet.AddressOrGUID;
 }
-RaknetNetworkPeer.abstract({
-    vftable:VoidPointer,
-    u1:VoidPointer,
-    u2:VoidPointer,
-    peer:RakNet.RakPeer.ref(),
-    addr:RakNet.AddressOrGUID
-});
 
+@defineNative(null)
 export class EncryptedNetworkPeer extends NativeClass {
+    @nativeField(SharedPtr.make(RaknetNetworkPeer))
     peer:SharedPtr<RaknetNetworkPeer>;
 }
-EncryptedNetworkPeer.abstract({
-    peer:SharedPtr,
-});
 
+@defineNative(null)
 export class CompressedNetworkPeer extends NativeClass {
+    @nativeField(EncryptedNetworkPeer.ref(), 0x48)
     peer:EncryptedNetworkPeer;
 }
-CompressedNetworkPeer.abstract({
-    peer:[EncryptedNetworkPeer.ref(), 0x48]
-});
 
+@defineNative(null)
 export class BatchedNetworkPeer extends NativeClass {
+    @nativeField(VoidPointer)
     vftable:VoidPointer;
+    @nativeField(CompressedNetworkPeer.ref())
     peer:CompressedNetworkPeer;
+    @nativeField(BinaryStream)
     stream:BinaryStream;
 
     sendPacket(data:CxxStringWrapper, reliability:number, n:number, n2:number, compressibility:number):void {
         abstract();
     }
 }
-BatchedNetworkPeer.abstract({
-    vftable:VoidPointer,
-    peer:CompressedNetworkPeer.ref(),
-    stream:BinaryStream,
-});

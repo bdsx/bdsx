@@ -9,7 +9,7 @@ import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { makefunc, RawTypeId } from "./makefunc";
-import { NativeClass } from "./nativeclass";
+import { defineNative, NativeClass, nativeField } from "./nativeclass";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError } from "./source-map-support";
@@ -19,7 +19,9 @@ import asmcode = require ('./asm/asmcode');
 const MAX_PACKET_ID = 0x100;
 const EVENT_INDEX_COUNT = 0x500;
 
+@defineNative(null)
 class ReadOnlyBinaryStream extends NativeClass {
+    @nativeField(CxxStringWrapper.ref(), 0x38)
     data:CxxStringWrapper;
 
     read(dest:VoidPointer, size:number):boolean {
@@ -27,25 +29,21 @@ class ReadOnlyBinaryStream extends NativeClass {
     }
 }
 
-ReadOnlyBinaryStream.abstract({
-    data:[CxxStringWrapper.ref(), 0x38]
-});
 ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], RawTypeId.Boolean, {this: ReadOnlyBinaryStream}, VoidPointer, RawTypeId.FloatAsInt64);
 
+@defineNative(null)
 class OnPacketRBP extends NativeClass {
+    @nativeField(SharedPtr.make(Packet), 0x148) 
     packet:SharedPtr<Packet>;
+    @nativeField(ReadOnlyBinaryStream, 0x1e0) 
     stream:ReadOnlyBinaryStream;
+    @nativeField(ExtendedStreamReadResult, 0x70) 
     readResult:ExtendedStreamReadResult;
+    @nativeField(NetworkHandler.ref(), -0xa8) 
     networkHandler:NetworkHandler;
+    @nativeField(NetworkHandler.Connection.ref(), -0xc8) 
     connection:NetworkHandler.Connection;
 }
-OnPacketRBP.abstract({
-    packet: [SharedPtr.make(Packet), 0x148],
-    stream: [ReadOnlyBinaryStream, 0x1e0],
-    readResult: [ExtendedStreamReadResult, 0x70],
-    networkHandler: [NetworkHandler.ref(), -0xa8],
-    connection: [NetworkHandler.Connection.ref(), -0xc8],
-});
 
 type AllEventTarget = Event<nethook.RawListener|nethook.BeforeListener<any>|nethook.AfterListener<any>|nethook.SendListener<any>|nethook.SendRawListener>;
 type AnyEventTarget = Event<nethook.RawListener&nethook.BeforeListener<any>&nethook.AfterListener<any>&nethook.SendListener<any>&nethook.SendRawListener>;

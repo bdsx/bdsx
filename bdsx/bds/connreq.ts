@@ -3,7 +3,7 @@ import { VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
-import { NativeClass } from "bdsx/nativeclass";
+import { defineNative, NativeClass, nativeField } from "bdsx/nativeclass";
 import { CxxString, NativeType, uint8_t } from "bdsx/nativetype";
 import { proc, proc2 } from "./proc";
 
@@ -37,7 +37,9 @@ export enum JsonValueType
     Object = 7,
 }
 
+@defineNative(0x10)
 export class JsonValue extends NativeClass {
+    @nativeField(uint8_t, 8)
     type:JsonValueType;
 
     [NativeType.ctor]():void {
@@ -117,9 +119,6 @@ export class JsonValue extends NativeClass {
         return this.value()+'';
     }
 }
-JsonValue.abstract({
-    type: [uint8_t, 8],
-}, 0x10);
 const jsonValueGetByInt = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, RawTypeId.Int32);
 const jsonValueGetByString = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, RawTypeId.StringUtf8);
 const jsonValueGetMemberNames = makefunc.js(proc['Json::Value::getMemberNames'], CxxVector.make(CxxString), {this: JsonValue, structureReturn: true});

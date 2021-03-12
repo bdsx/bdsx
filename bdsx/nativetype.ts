@@ -151,8 +151,8 @@ export class NativeType<T> implements Type<T> {
         const ntype = new NativeType(
             type[NativeType.size],
             type[NativeType.align],
-            (ptr) => type[NativeType.getter](ptr),
-            (ptr, v) => type[NativeType.setter](ptr, v),
+            (ptr, offset) => type[NativeType.getter](ptr, offset),
+            (ptr, v, offset) => type[NativeType.setter](ptr, v, offset),
         );
         if (fields) {
             for (const field in fields) {
@@ -312,8 +312,8 @@ export type CxxString = string;
 
 export const bin64_t = new NativeType<string>(
     8, 8,
-    (ptr)=>ptr.getBin64(), 
-    (ptr, v)=>ptr.setBin(v)
+    (ptr, offset)=>ptr.getBin64(offset), 
+    (ptr, v, offset)=>ptr.setBin(v, offset)
 ).extends({
     one:'\u0001\0\0\0',
     zero:'\0\0\0\0',

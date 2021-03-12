@@ -61,26 +61,6 @@ export type TypedArrayBuffer = Uint8Array | Uint16Array | Uint32Array |
 	Float32Array | Float64Array;
 export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 
-/**
- * @deprecated use RawTypeId in makefunc
- */
-export enum RawTypeId {
-	Int32,
-	FloatAsInt64,
-	Float32,
-	Float64,
-	StringAnsi,
-	StringUtf8,
-	StringUtf16,
-	Buffer,
-	Bin64,
-	Boolean,
-	JsValueRef,
-	Void,
-	/** @deprecated use Float64 */
-	Float = 3,
-}
-
 export function emptyFunc():void{
 	// empty
 }

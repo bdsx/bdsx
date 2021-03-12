@@ -26,18 +26,91 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     new():T;
     prototype:T;
     [StructurePointer.contentSize]:number|null;
-    [offsetmap]:Record<string, number>;
+    [offsetmap]:Record<keyof any, number>;
+    [isNativeClass]:true;
+    [isInherited]:boolean;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
 }
 
+class StructureDefination {
+    /**
+     * end of fields
+     */
+    eof:number|null = 0;
+    align:number = 1;
+    fields:Record<keyof any, [Type<any>, number]> = {};
+
+    define<T extends NativeClass>(clazz:NativeClassType<T>, size?:number|null):void {
+        if (size == null) {
+            if (size === null) {
+                this.eof = null;
+            } else {
+                size = this.eof !== null ? (((this.eof + this.align - 1) / this.align)|0)*this.align : null;
+            }
+        } else {
+            if (this.eof !== null) {
+                if (this.eof > size) throw Error(`field offsets are bigger than the class size. fields_end=${this.eof}, size=${size}`);
+            }
+            this.eof = size;
+        }
+
+        if (makefunc.np2js in clazz) {
+            clazz[NativeType.getter] = wrapperGetter;
+            clazz[NativeType.descriptor] = wrapperDescriptor;
+        }
+        setInherited(clazz);
+        
+        const offsets:Record<string, number> = clazz[offsetmap] = {};
+
+        const propmap = new NativeDescriptorBuilder;
+        for (const key in this.fields) {
+            const [type, offset] = this.fields[key]!;
+            type[NativeType.descriptor](propmap, key, offset);
+            offsets[key] = offset;
+        }
+        const types = propmap.types;
+        if (propmap.ctor.code !== '') {
+            const ctorfunc = new Function('NativeType', 'types', propmap.ctor.code);
+            const superCtor = clazz.prototype[NativeType.ctor];
+            clazz.prototype[NativeType.ctor] = function(this:T){ 
+                ctorfunc.call(this, NativeType, types);
+                superCtor.call(this);
+            };
+        }
+        if (propmap.dtor.code !== '') {
+            const dtorfunc = new Function('NativeType', 'types', propmap.dtor.code);
+            const superDtor = clazz.prototype[NativeType.dtor];
+            clazz.prototype[NativeType.dtor] = function(this:T){ 
+                dtorfunc.call(this, NativeType, types);
+                superDtor.call(this);
+            };
+        }
+        if (propmap.ctor_copy.code !== '') {
+            const copyfunc = new Function('NativeType', 'types', 'o', propmap.ctor_copy.code);
+            (clazz.prototype as any)._default_copy = function(this:T, o:T){ 
+                copyfunc.call(this, NativeType, types, o);
+            };
+        }
+        
+        clazz[StructurePointer.contentSize] = 
+        clazz.prototype[NativeType.size] = 
+        clazz[NativeType.size] = size!;
+        clazz[NativeType.align] = this.align;
+        Object.defineProperties(clazz.prototype, propmap.desc);
+    }
+
+}
+
+const structures = new WeakMap<{new():any}, StructureDefination>();
+
 export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static readonly [NativeType.align]:number = 1;
-    static [StructurePointer.contentSize]:number = 0;
+    static readonly [StructurePointer.contentSize]:number = 0;
+    static readonly [offsetmap]:Record<keyof any, number>;
     static readonly [isNativeClass] = true;
     static readonly [isInherited] = true;
-    static [offsetmap]:Record<string,number>;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -136,86 +209,56 @@ export class NativeClass extends StructurePointer {
         clazz.define(fields, defineSize, defineAlign, true);
     }
 
-    static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract:boolean=false):void {
+    static define<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, defineSize?:number|null, defineAlign:number|null = null, abstract:boolean=false):void {
         const clazz = this as NativeClassType<T>;
         if (makefunc.np2js in clazz) {
             clazz[NativeType.getter] = wrapperGetter;
             clazz[NativeType.descriptor] = wrapperDescriptor;
         }
-
-        if (this.hasOwnProperty(isInherited)) {
-            throw Error('Cannot define structure of already inherited NativeClass');
-        }
-
-        const proto = (this as any).__proto__;
-        {
-            let node = proto;
-            while (!node.hasOwnProperty(isInherited)) {
-                node[isInherited] = true;
-                node = node.__proto__;
-            }
-        }
-        let offset:number|null = proto[NativeType.size];
-        let size = offset;
+        const proto:NativeClassType<T> = (clazz as any).__proto__;
+        let eof:number|null = proto[NativeType.size];
+        const nullSizeExtending = eof === null;
         let align:number = defineAlign != null ? defineAlign : proto[NativeType.align];
 
-        const offmap:Record<string, number> = clazz[offsetmap] = {};
+        const def = new StructureDefination;
+        structures.set(clazz, def);
+        const fieldmap = def.fields;
         
-        const propmap = new NativeDescriptorBuilder;
         for (const key in fields) {
             let type:FieldMapItem = fields[key as KeysWithoutFunction<T>]!;
             let forceOffset = false;
+            let offset = 0;
             if (type instanceof Array) {
                 offset = type[1];
                 type = type[0];
                 forceOffset = true;
+            } else {
+                if (eof === null) {
+                    throw Error(nullSizeExtending ? 
+                        'Cannot set fields without offset when extends abstract class' : 
+                        'Cannot set fields without offset when sizeof previous field is abstract without size');
+                }
+                offset = eof;
             }
-            if (offset === null) throw Error('Cannot set fields without offset when extends abstract class');
             const alignofType = type[NativeType.align];
             if (!forceOffset) offset = (((offset + alignofType - 1) / alignofType)|0)*alignofType;
-            offmap[key] = offset;
+            fieldmap[key] = [type, offset];
 
-            type[NativeType.descriptor](propmap, key, offset);
+            if (alignofType > align) align = alignofType;
+
             const sizeofType = type[NativeType.size];
-            if (defineAlign == null && alignofType > align) align = alignofType;
-
-            if (sizeofType === null) offset = null;
-            else offset += sizeofType;
-
-            if (size !== null) {
-                if (offset !== null && offset > size) size = offset;
+            if (sizeofType === null) {
+                eof = null;
+            } else {
+                offset += sizeofType;
+                if (eof !== null) {
+                    if (offset !== null && offset > eof) eof = offset;
+                }
             }
         }
-
-        const types = propmap.types;
-        if (propmap.ctor.code !== '') {
-            const ctorfunc = new Function('NativeType', 'types', propmap.ctor.code);
-            const superCtor = clazz.prototype[NativeType.ctor];
-            clazz.prototype[NativeType.ctor] = function(this:T){ 
-                ctorfunc.call(this, NativeType, types);
-                superCtor.call(this);
-            };
-        }
-        if (propmap.dtor.code !== '') {
-            const dtorfunc = new Function('NativeType', 'types', propmap.dtor.code);
-            const superDtor = clazz.prototype[NativeType.dtor];
-            clazz.prototype[NativeType.dtor] = function(this:T){ 
-                dtorfunc.call(this, NativeType, types);
-                superDtor.call(this);
-            };
-        }
-        if (propmap.ctor_copy.code !== '') {
-            const copyfunc = new Function('NativeType', 'types', 'o', propmap.ctor_copy.code);
-            clazz.prototype._default_copy = function(this:T, o:T){ 
-                copyfunc.call(this, NativeType, types, o);
-            };
-        }
-        clazz[StructurePointer.contentSize] = 
-        this.prototype[NativeType.size] = 
-        clazz[NativeType.size] = (defineSize != null ? defineSize : abstract ? null : size)!;
-        clazz[NativeType.align] = align;
-        
-        Object.defineProperties(this.prototype, propmap.desc);
+        def.eof = abstract ? null : eof;
+        if (defineAlign !== null) def.align = align;
+        def.define(clazz, defineSize);
     }
 
     static defineAsUnion<T extends NativeClass>(this:{new():T}, fields:StructureFields<T>, abstract:boolean = false):void {
@@ -226,18 +269,87 @@ export class NativeClass extends StructurePointer {
                 fields[key as KeysWithoutFunction<T>] = [item, 0];
             }
         }
-        return clazz.define(fields, null, null, abstract);
+        return clazz.define(fields, undefined, undefined, abstract);
     }
 
     static ref<T extends NativeClass>(this:{new():T}):NativeClassType<T> {
         return refSingleton.newInstance(this, ()=>makeReference(this));
     }
 
-    static offsetOf<T>(this:{new():T}, field:KeysWithoutFunction<T>|symbol):number {
-        return (this as any)[offsetmap][field]!;
+    static offsetOf<T extends NativeClass>(this:{new():T}, field:KeysWithoutFunction<T>):number {
+        return (this as NativeClassType<T>)[offsetmap][field];
     }
 }
+
 NativeClass.prototype[NativeType.size] = 0;
+
+function setInherited(clazz:NativeClassType<any>):NativeClassType<any> {
+    if (clazz.hasOwnProperty(isInherited) && clazz[isInherited]) {
+        throw Error('Cannot define structure of already inherited NativeClass');
+    }
+
+    const proto:NativeClassType<any> = (clazz as any).__proto__;
+    {
+        let node = proto;
+        while (!node.hasOwnProperty(isInherited)) {
+            node[isInherited] = true;
+            node = (node as any).__proto__;
+        }
+    }
+    return proto;
+}
+
+export function nativeField<T>(type:Type<T>, fieldOffset?:number|null) {
+    return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
+        const clazz = obj.constructor as NativeClassType<any>;
+
+        let def = structures.get(clazz);
+        if (def === undefined) structures.set(clazz, def = new StructureDefination);
+
+        const alignofType = type[NativeType.align];
+        if (alignofType > def.align) def.align = alignofType;
+
+        let offset = 0;
+        if (fieldOffset != null) {
+            offset = fieldOffset;
+        } else {
+            if (def.eof === null) {
+                throw Error((clazz as any).__proto__[NativeType.size] === null ? 
+                    'Cannot set fields without offset when extends abstract class' : 
+                    'Cannot set fields without offset when sizeof previous field is abstract without size');
+            }
+            offset = (((def.eof + alignofType - 1) / alignofType)|0)*alignofType;
+        }
+
+        def.fields[key] = [type, offset];
+        const sizeofType = type[NativeType.size];
+        if (sizeofType !== null && def.eof !== null) {
+            const eof = offset + sizeofType;
+            if (def.eof > eof) def.eof = eof;
+        }
+    };
+}
+
+export function defineNative(size?:number|null, align:number|null = null) {
+    return <T extends NativeClass>(clazz:NativeClassType<T>):void=>{
+        const def = structures.get(clazz);
+        if (def === undefined) {
+            if (makefunc.np2js in clazz) {
+                clazz[NativeType.getter] = wrapperGetter;
+                clazz[NativeType.descriptor] = wrapperDescriptor;
+            }
+            setInherited(clazz);
+            clazz[StructurePointer.contentSize] = 
+            clazz.prototype[NativeType.size] = 
+            clazz[NativeType.size] = size!;
+            clazz[NativeType.align] = align || 1;
+        } else {
+            structures.delete(clazz);
+            if (align !== null) def.align = align;
+            def.define(clazz, size);
+        }
+    };
+}
 
 function wrapperGetter<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS{
     return (this as any)[makefunc.np2js](ptr.addAs(this, offset));

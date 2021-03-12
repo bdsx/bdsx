@@ -4,7 +4,7 @@ import { abstract } from "bdsx/common";
 import { dll } from "bdsx/dll";
 import { Hashable, HashSet } from "bdsx/hashset";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
-import { NativeClass } from "bdsx/nativeclass";
+import { defineNative, NativeClass } from "bdsx/nativeclass";
 import { NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
@@ -49,10 +49,11 @@ export namespace NetworkHandler
     }
 }
 
+@defineNative(null)
 class ServerNetworkHandler$Client extends NativeClass {
 }
-ServerNetworkHandler$Client.abstract({});
 
+@defineNative(null)
 export class ServerNetworkHandler extends NativeClass {
     protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxStringWrapper, d:number):void {
         abstract();
@@ -75,7 +76,6 @@ export class ServerNetworkHandler extends NativeClass {
         _motd[NativeType.dtor]();
     }
 }
-ServerNetworkHandler.abstract({});
 
 export namespace ServerNetworkHandler
 {

@@ -1,6 +1,6 @@
 import { bin } from "./bin";
 import { VoidPointer } from "./core";
-import { NativeArray, NativeClass } from "./nativeclass";
+import { nativeField, NativeArray, defineNative, NativeClass } from "./nativeclass";
 import { bin64_t, int32_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
 
 export const MAX_PATH = 260;
@@ -91,205 +91,185 @@ export const b64_LOW_WORD = bin.make(0xffff, 4);
 export function IMAGE_ORDINAL64(Ordinal:string):string { return (bin.bitand(Ordinal, b64_LOW_WORD)); }
 export function IMAGE_SNAP_BY_ORDINAL64(Ordinal:string):boolean { return (bin.bitand(Ordinal, IMAGE_ORDINAL_FLAG64) !== bin64_t.zero); }
 
+@defineNative()
 export class IMAGE_DATA_DIRECTORY extends NativeClass {
+    @nativeField(DWORD)
     VirtualAddress:DWORD;
+    @nativeField(DWORD)
     Size:DWORD;
 }
-IMAGE_DATA_DIRECTORY.define({
-    VirtualAddress: DWORD,
-    Size: DWORD,
-});
+@defineNative()
 export class IMAGE_DOS_HEADER extends NativeClass {
+    @nativeField(WORD)
     e_magic: WORD;                     // Magic number
+    @nativeField(WORD)
     e_cblp: WORD;                      // Bytes on last page of file
+    @nativeField(WORD)
     e_cp: WORD;                        // Pages in file
+    @nativeField(WORD)
     e_crlc: WORD;                      // Relocations
 
+    @nativeField(WORD)
     e_cparhdr: WORD;                   // Size of header in paragraphs
+    @nativeField(WORD)
     e_minalloc: WORD;                  // Minimum extra paragraphs needed
+    @nativeField(WORD)
     e_maxalloc: WORD;                  // Maximum extra paragraphs needed
+    @nativeField(WORD)
     e_ss: WORD;                        // Initial (relative) SS value
 
+    @nativeField(WORD)
     e_sp: WORD;                        // Initial SP value
+    @nativeField(WORD)
     e_csum: WORD;                      // Checksum
+    @nativeField(WORD)
     e_ip: WORD;                        // Initial IP value
+    @nativeField(WORD)
     e_cs: WORD;                        // Initial (relative) CS value
 
+    @nativeField(WORD)
     e_lfarlc: WORD;                    // File address of relocation table
+    @nativeField(WORD)
     e_ovno: WORD;                      // Overlay number
+    @nativeField(NativeArray.make(WORD, 4))
     e_res: NativeArray<WORD>;       // Reserved words
 
+    @nativeField(WORD)
     e_oemid: WORD;                     // OEM identifier (for e_oeminfo)
+    @nativeField(WORD)
     e_oeminfo: WORD;                   // OEM information; e_oemid specific
+    @nativeField(NativeArray.make(WORD, 10))
     e_res2: NativeArray<WORD>;     // Reserved words
+    @nativeField(WORD)
     e_lfanew: LONG;                    // File address of new exe header
 }
-IMAGE_DOS_HEADER.define({// DOS .EXE header
-    e_magic: WORD,                     // Magic number
-    e_cblp: WORD,                      // Bytes on last page of file
-    e_cp: WORD,                        // Pages in file
-    e_crlc: WORD,                      // Relocations
-
-    e_cparhdr: WORD,                   // Size of header in paragraphs
-    e_minalloc: WORD,                  // Minimum extra paragraphs needed
-    e_maxalloc: WORD,                  // Maximum extra paragraphs needed
-    e_ss: WORD,                        // Initial (relative) SS value
-
-    e_sp: WORD,                        // Initial SP value
-    e_csum: WORD,                      // Checksum
-    e_ip: WORD,                        // Initial IP value
-    e_cs: WORD,                        // Initial (relative) CS value
-
-    e_lfarlc: WORD,                    // File address of relocation table
-    e_ovno: WORD,                      // Overlay number
-    e_res: NativeArray.make(WORD, 4),       // Reserved words
-
-    e_oemid: WORD,                     // OEM identifier (for e_oeminfo)
-    e_oeminfo: WORD,                   // OEM information; e_oemid specific
-    e_res2: NativeArray.make(WORD, 10),     // Reserved words
-    e_lfanew: LONG,                    // File address of new exe header
-});
+@defineNative()
 export class IMAGE_FILE_HEADER extends NativeClass {
+    @nativeField(WORD)
     Machine: WORD;
+    @nativeField(WORD)
     NumberOfSections: WORD;
+    @nativeField(DWORD)
     TimeDateStamp: DWORD;
+    @nativeField(DWORD)
     PointerToSymbolTable: DWORD;
+    @nativeField(DWORD)
     NumberOfSymbols: DWORD;
+    @nativeField(WORD)
     SizeOfOptionalHeader: WORD;
+    @nativeField(WORD)
     Characteristics: WORD;
 }
-IMAGE_FILE_HEADER.define({
-    Machine: WORD,
-    NumberOfSections: WORD,
-    TimeDateStamp: DWORD,
-    PointerToSymbolTable: DWORD,
-    NumberOfSymbols: DWORD,
-    SizeOfOptionalHeader: WORD,
-    Characteristics: WORD,
-});
+@defineNative()
 export class IMAGE_OPTIONAL_HEADER64 extends NativeClass {
+    @nativeField(WORD)
     Magic: WORD;
+    @nativeField(BYTE)
     MajorLinkerVersion: BYTE;
+    @nativeField(BYTE)
     MinorLinkerVersion: BYTE;
+    @nativeField(DWORD)
     SizeOfCode: DWORD;
+    @nativeField(DWORD)
     SizeOfInitializedData: DWORD;
+    @nativeField(DWORD)
     SizeOfUninitializedData: DWORD;
+    @nativeField(DWORD)
     AddressOfEntryPoint: DWORD;
+    @nativeField(DWORD)
     BaseOfCode: DWORD;
+    @nativeField(ULONGLONG)
     ImageBase: ULONGLONG;
+    @nativeField(DWORD)
     SectionAlignment: DWORD;
+    @nativeField(DWORD)
     FileAlignment: DWORD;
+    @nativeField(WORD)
     MajorOperatingSystemVersion: WORD;
+    @nativeField(WORD)
     MinorOperatingSystemVersion: WORD;
+    @nativeField(WORD)
     MajorImageVersion: WORD;
+    @nativeField(WORD)
     MinorImageVersion: WORD;
+    @nativeField(WORD)
     MajorSubsystemVersion: WORD;
+    @nativeField(WORD)
     MinorSubsystemVersion: WORD;
+    @nativeField(DWORD)
     Win32VersionValue: DWORD;
+    @nativeField(DWORD)
     SizeOfImage: DWORD;
+    @nativeField(DWORD)
     SizeOfHeaders: DWORD;
+    @nativeField(DWORD)
     CheckSum: DWORD;
+    @nativeField(WORD)
     Subsystem: WORD;
+    @nativeField(WORD)
     DllCharacteristics: WORD;
+    @nativeField(ULONGLONG)
     SizeOfStackReserve: ULONGLONG;
+    @nativeField(ULONGLONG)
     SizeOfStackCommit: ULONGLONG;
+    @nativeField(ULONGLONG)
     SizeOfHeapReserve: ULONGLONG;
+    @nativeField(ULONGLONG)
     SizeOfHeapCommit: ULONGLONG;
+    @nativeField(DWORD)
     LoaderFlags: DWORD;
+    @nativeField(DWORD)
     NumberOfRvaAndSizes: DWORD;
+    @nativeField(NativeArray.make<IMAGE_DATA_DIRECTORY>(IMAGE_DATA_DIRECTORY, IMAGE_NUMBEROF_DIRECTORY_ENTRIES))
     DataDirectory: NativeArray<IMAGE_DATA_DIRECTORY>;
 }
-IMAGE_OPTIONAL_HEADER64.define({
-    Magic: WORD,
-    MajorLinkerVersion: BYTE,
-    MinorLinkerVersion: BYTE,
-    SizeOfCode: DWORD,
-    SizeOfInitializedData: DWORD,
-    SizeOfUninitializedData: DWORD,
-    AddressOfEntryPoint: DWORD,
-    BaseOfCode: DWORD,
-    ImageBase: ULONGLONG,
-    SectionAlignment: DWORD,
-    FileAlignment: DWORD,
-    MajorOperatingSystemVersion: WORD,
-    MinorOperatingSystemVersion: WORD,
-    MajorImageVersion: WORD,
-    MinorImageVersion: WORD,
-    MajorSubsystemVersion: WORD,
-    MinorSubsystemVersion: WORD,
-    Win32VersionValue: DWORD,
-    SizeOfImage: DWORD,
-    SizeOfHeaders: DWORD,
-    CheckSum: DWORD,
-    Subsystem: WORD,
-    DllCharacteristics: WORD,
-    SizeOfStackReserve: ULONGLONG,
-    SizeOfStackCommit: ULONGLONG,
-    SizeOfHeapReserve: ULONGLONG,
-    SizeOfHeapCommit: ULONGLONG,
-    LoaderFlags: DWORD,
-    NumberOfRvaAndSizes: DWORD,
-    DataDirectory: NativeArray.make<IMAGE_DATA_DIRECTORY>(IMAGE_DATA_DIRECTORY, IMAGE_NUMBEROF_DIRECTORY_ENTRIES),
-});
+@defineNative()
 export class IMAGE_NT_HEADERS64 extends NativeClass {
+    @nativeField(DWORD)
     Signature: DWORD;
+    @nativeField(IMAGE_FILE_HEADER)
     FileHeader: IMAGE_FILE_HEADER;
+    @nativeField(IMAGE_OPTIONAL_HEADER64)
     OptionalHeader: IMAGE_OPTIONAL_HEADER64;
 }
-IMAGE_NT_HEADERS64.define({
-    Signature: DWORD,
-    FileHeader: IMAGE_FILE_HEADER,
-    OptionalHeader: IMAGE_OPTIONAL_HEADER64,
-});
+@defineNative()
 export class IMAGE_DEBUG_DIRECTORY extends NativeClass {
+    @nativeField(DWORD)
     Characteristics: DWORD;
+    @nativeField(DWORD)
     TimeDateStamp: DWORD;
+    @nativeField(WORD)
     MajorVersion: WORD;
+    @nativeField(WORD)
     MinorVersion: WORD;
+    @nativeField(DWORD)
     Type: DWORD;
+    @nativeField(DWORD)
     SizeOfData: DWORD;
+    @nativeField(DWORD)
     AddressOfRawData: DWORD;
+    @nativeField(DWORD)
     PointerToRawData: DWORD;
 }
-IMAGE_DEBUG_DIRECTORY.define({
-    Characteristics: DWORD,
-    TimeDateStamp: DWORD,
-    MajorVersion: WORD,
-    MinorVersion: WORD,
-    Type: DWORD,
-    SizeOfData: DWORD,
-    AddressOfRawData: DWORD,
-    PointerToRawData: DWORD,
-});
+@defineNative()
 export class IMAGE_IMPORT_DESCRIPTOR extends NativeClass {
+    @nativeField(WORD)
     Characteristics:DWORD;                  // 0 for terminating null import descriptor
+    @nativeField(WORD)
     OriginalFirstThunk:DWORD;               // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
     
+    @nativeField(DWORD)
     TimeDateStamp: DWORD;                   // 0 if not bound,
                                             // -1 if bound, and real date\time stamp
                                             //     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
                                             // O.W. date/time stamp of DLL bound to (Old BIND)
 
+    @nativeField(DWORD)
     ForwarderChain: DWORD;                  // -1 if no forwarders
+    @nativeField(DWORD)
     Name: DWORD;
+    @nativeField(DWORD)
     FirstThunk: DWORD;                      // RVA to IAT (if bound this IAT has actual addresses)
-}
-IMAGE_IMPORT_DESCRIPTOR.define({
-    Characteristics:[DWORD, 0],              // 0 for terminating null import descriptor
-    OriginalFirstThunk:[DWORD, 0],           // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
-    
-    TimeDateStamp: DWORD,                   // 0 if not bound,
-                                            // -1 if bound, and real date\time stamp
-                                            //     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
-                                            // O.W. date/time stamp of DLL bound to (Old BIND)
-
-    ForwarderChain: DWORD,                  // -1 if no forwarders
-    Name: DWORD,
-    FirstThunk: DWORD,                      // RVA to IAT (if bound this IAT has actual addresses)
-});
-
-export class IMAGE_THUNK_DATA64 extends NativeClass {
-    u1:IMAGE_THUNK_DATA64_union;
 }
 
 class IMAGE_THUNK_DATA64_union extends NativeClass {
@@ -305,25 +285,12 @@ IMAGE_THUNK_DATA64_union.defineAsUnion({
     AddressOfData:ULONGLONG,    // PIMAGE_IMPORT_BY_NAME
 });
 
-IMAGE_THUNK_DATA64.define({
-    u1:IMAGE_THUNK_DATA64_union
-});
-
-
-const IMAGE_SIZEOF_SHORT_NAME = 8;
-
-export class IMAGE_SECTION_HEADER extends NativeClass {
-    Name: NativeArray<BYTE>;
-    Misc:IMAGE_SECTION_HEADER_Misc;
-    VirtualAddress:DWORD;
-    SizeOfRawData:DWORD;
-    PointerToRawData:DWORD;
-    PointerToRelocations:DWORD;
-    PointerToLinenumbers:DWORD;
-    NumberOfRelocations:WORD;
-    NumberOfLinenumbers:WORD;
-    Characteristics:DWORD;
+@defineNative()
+export class IMAGE_THUNK_DATA64 extends NativeClass {
+    @nativeField(IMAGE_THUNK_DATA64_union)
+    u1:IMAGE_THUNK_DATA64_union;
 }
+
 class IMAGE_SECTION_HEADER_Misc extends NativeClass {
     PhysicalAddress:DWORD;
     VirtualSize:DWORD;
@@ -333,39 +300,50 @@ IMAGE_SECTION_HEADER_Misc.defineAsUnion({
     VirtualSize:DWORD,
 });
 
-IMAGE_SECTION_HEADER.define({
-    Name: NativeArray.make(BYTE, IMAGE_SIZEOF_SHORT_NAME),
-    Misc:IMAGE_SECTION_HEADER_Misc,
-    VirtualAddress:DWORD,
-    SizeOfRawData:DWORD,
-    PointerToRawData:DWORD,
-    PointerToRelocations:DWORD,
-    PointerToLinenumbers:DWORD,
-    NumberOfRelocations:WORD,
-    NumberOfLinenumbers:WORD,
-    Characteristics:DWORD,
-});
+const IMAGE_SIZEOF_SHORT_NAME = 8;
+@defineNative()
+export class IMAGE_SECTION_HEADER extends NativeClass {
+    @nativeField(NativeArray.make(BYTE, IMAGE_SIZEOF_SHORT_NAME))
+    Name: NativeArray<BYTE>;
+    @nativeField(IMAGE_SECTION_HEADER_Misc)
+    Misc:IMAGE_SECTION_HEADER_Misc;
+    @nativeField(DWORD)
+    VirtualAddress:DWORD;
+    @nativeField(DWORD)
+    SizeOfRawData:DWORD;
+    @nativeField(DWORD)
+    PointerToRawData:DWORD;
+    @nativeField(DWORD)
+    PointerToRelocations:DWORD;
+    @nativeField(DWORD)
+    PointerToLinenumbers:DWORD;
+    @nativeField(WORD)
+    NumberOfRelocations:WORD;
+    @nativeField(WORD)
+    NumberOfLinenumbers:WORD;
+    @nativeField(DWORD)
+    Characteristics:DWORD;
+}
 
 const EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
 
+@defineNative()
 export class EXCEPTION_RECORD extends NativeClass {    
+    @nativeField(DWORD) 
     ExceptionCode:DWORD;
+    @nativeField(DWORD) 
     ExceptionFlags:DWORD;
+    @nativeField(VoidPointer) 
     ExceptionRecord:VoidPointer;
+    @nativeField(VoidPointer) 
     ExceptionAddress:VoidPointer;
+    @nativeField(DWORD) 
     NumberParameters:DWORD;
+    @nativeField(DWORD) 
     dummy:DWORD;
+    @nativeField(NativeArray.make(ULONG_PTR, EXCEPTION_MAXIMUM_PARAMETERS)) 
     ExceptionInformation:NativeArray<ULONG_PTR>;
 }
-EXCEPTION_RECORD.define({
-    ExceptionCode:DWORD,
-    ExceptionFlags:DWORD,
-    ExceptionRecord:VoidPointer,
-    ExceptionAddress:VoidPointer,
-    NumberParameters:DWORD,
-    dummy:DWORD,
-    ExceptionInformation:NativeArray.make(ULONG_PTR, EXCEPTION_MAXIMUM_PARAMETERS),
-});
 
 // typedef struct DECLSPEC_ALIGN(16) DECLSPEC_NOINITALL _CONTEXT {
 
@@ -486,23 +464,21 @@ EXCEPTION_RECORD.define({
 //     DWORD64 LastExceptionFromRip;
 // } CONTEXT, *PCONTEXT;
 
+@defineNative()
 export class EXCEPTION_POINTERS extends NativeClass {
+    @nativeField(EXCEPTION_RECORD.ref())
     ExceptionRecord:EXCEPTION_RECORD;
+    @nativeField(VoidPointer)
     ContextRecord:VoidPointer; // CONTEXT
 }
-EXCEPTION_POINTERS.define({
-    ExceptionRecord:EXCEPTION_RECORD.ref(),
-    ContextRecord:VoidPointer, // CONTEXT
-});
 
+@defineNative()
 export class FILETIME extends NativeClass {
+    @nativeField(DWORD)
     dwLowDateTime: DWORD;
+    @nativeField(DWORD)
     dwHighDateTime: DWORD;
 }
-FILETIME.define({
-    dwLowDateTime: DWORD,
-    dwHighDateTime: DWORD,
-});
 
 export const EXCEPTION_BREAKPOINT = 0x80000003|0;
 export const EXCEPTION_ACCESS_VIOLATION = 0xC0000005|0;

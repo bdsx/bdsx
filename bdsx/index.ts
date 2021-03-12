@@ -12,10 +12,10 @@ import { ServerPlayer } from './bds/player';
 import { serverInstance } from './bds/server';
 import { bin } from "./bin";
 import { capi } from './capi';
-import { CANCEL } from './common';
+import common = require('./common');
+import makefunc = require('./makefunc');
 import { NativeModule } from './dll';
 import { legacy } from './legacy';
-import { RawTypeId } from './makefunc';
 import { nethook } from './nethook';
 import { serverControl } from './servercontrol';
 import { SharedPtr } from './sharedpointer';
@@ -36,10 +36,24 @@ export import ipfilter = core.ipfilter;
 export import jshook = core.jshook;
 export import createPacket = nethook.createPacket;
 export import sendPacket = nethook.sendPacket;
+export import CANCEL = common.CANCEL;
+export import RawTypeId = makefunc.RawTypeId;
 
 /** @deprecated use MinecraftPacketIds, matching to the original name  */
 export import PacketId = MinecraftPacketIds;
 import { command } from './command';
+
+declare module './common' {
+    /**
+     * @deprecated use RawTypeId in makefunc
+     */
+    export type RawTypeId = makefunc.RawTypeId;
+    /**
+     * @deprecated use RawTypeId in makefunc
+     */
+    export let RawTypeId:typeof makefunc.RawTypeId;
+}
+common.RawTypeId = makefunc.RawTypeId;
 
 declare module "./core"
 {
@@ -141,7 +155,6 @@ export {
     netevent,
     native,
     serverInstance,
-    CANCEL,
     nativetype,
     NativeModule,
     bin,
@@ -150,6 +163,5 @@ export {
     SharedPtr,
     capi,
     analyzer,
-    RawTypeId,
     bedrockServer,
 };

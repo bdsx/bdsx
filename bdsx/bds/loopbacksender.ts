@@ -1,9 +1,8 @@
+import { defineNative, NativeClass, nativeField } from "../nativeclass";
 import { NetworkHandler } from "./networkidentifier";
-import { NativeClass } from "../nativeclass";
 
+@defineNative(null)
 export class LoopbackPacketSender extends NativeClass {
+    @nativeField(NetworkHandler.ref(), 8)
     networkHandler:NetworkHandler;
 }
-LoopbackPacketSender.abstract({
-    networkHandler:[NetworkHandler.ref(), 8]
-});

@@ -1,7 +1,7 @@
 import { abstract } from "bdsx/common";
 import { RawTypeId } from "bdsx/makefunc";
-import { MantleClass, NativeClass } from "bdsx/nativeclass";
-import { int32_t, NativeType, uint32_t } from "bdsx/nativetype";
+import { defineNative, MantleClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { int32_t, uint32_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
 import { NetworkIdentifier } from "./networkidentifier";
@@ -29,23 +29,22 @@ export const StreamReadResult = int32_t.extends({
 });
 export type StreamReadResult = int32_t;
 
+@defineNative()
 export class ExtendedStreamReadResult extends NativeClass {
+    @nativeField(StreamReadResult)
 	streamReadResult:StreamReadResult;
+    @nativeField(int32_t)
 	dummy:int32_t;
 	// array?
 }
-ExtendedStreamReadResult.abstract({
-    streamReadResult:StreamReadResult,
-    dummy:int32_t,
-	// array?
-});
 
 const sharedptr_of_packet = Symbol('sharedptr');
 
+@defineNative(0x28)
 export class Packet extends MantleClass {
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
-
+    
     /**
      * @deprecated use packet.destruct();
      */

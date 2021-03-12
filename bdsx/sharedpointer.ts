@@ -1,14 +1,19 @@
 import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
 import { makefunc, RawTypeId } from "./makefunc";
-import { NativeClass, NativeClassType } from "./nativeclass";
+import { defineNative, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { NativeType, Type, uint32_t } from "./nativetype";
 import { Singleton } from "./singleton";
 
+@defineNative(null)
 class RefCounter extends NativeClass {
+    @nativeField(VoidPointer)
     vftable:VoidPointer;
+    @nativeField(uint32_t)
     useRef:uint32_t;
+    @nativeField(uint32_t)
     weakRef:uint32_t;
+    // data?
 
     addRef():void {
         this.interlockedIncrement32(8); // useRef
@@ -31,12 +36,6 @@ class RefCounter extends NativeClass {
 }
 RefCounter.prototype._Destroy = makefunc.js([0], RawTypeId.Void, {this:RefCounter});
 RefCounter.prototype._DeleteThis = makefunc.js([8], RawTypeId.Void, {this:RefCounter});
-RefCounter.abstract({
-    vftable:VoidPointer,
-    useRef:uint32_t,
-    weakRef:uint32_t,
-    // data?
-});
 
 export interface SharedPtrType<T extends NativeClass> extends Type<SharedPtr<T>>
 {

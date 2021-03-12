@@ -14,6 +14,7 @@
     "noImplicitThis": true,
     "resolveJsonModule": true,
     "inlineSourceMap": true,
-    "importHelpers": true
+    "importHelpers": true,
+    "experimentalDecorators": true
   }
 }

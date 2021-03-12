@@ -224,6 +224,32 @@ declare global
             statusCode: number;
         }
     }
+    interface IExecuteCommandTestForCallback {
+        command: 'testfor';
+        data: {
+            victim:string[];
+            statusMessage: string;
+            statusCode: number;
+        }
+    }
+    interface IExecuteCommandTestForBlockCallback {
+        command: 'testforblock';
+        data: {
+            matches: boolean,
+            position: VectorXYZ,
+            statusMessage: string;
+            statusCode: number;
+        }
+    }
+    interface IExecuteCommandTestForBlocksCallback {
+        command: 'testforblocks';
+        data: {
+            compareCount: number;
+            matches: boolean,
+            statusMessage: string;
+            statusCode: number;
+        }
+    }
     interface IServer {
         registerSystem(majorVersion: number, minorVersion: number): IVanillaServerSystem;
         log(message: string): void;
@@ -237,18 +263,18 @@ declare global
          * This is the first method that gets called immediately after the system is registered. It will run as soon as the script loads at world start.
          * You can use this to set up the environment for your script: register custom components and events, sign up event listeners, etc. This will run BEFORE the world is ready and the player has been added to it, so you shouldn't try to spawn any entities here!
          */
-        initialize?(this: IVanillaServerSystem): void;
+        initialize?:((this: IVanillaServerSystem)=>void)|null;
     
         /**
          * This method gets called once every game tick. The server aims to be 200 times per second, while client aims to be 60, 
          * but neither one is guaranteed and can vary with performance. This is a good place to get, check, and react to component changes.
          */
-        update?(this: IVanillaServerSystem): void;
+        update?:((this: IVanillaServerSystem)=>void)|null;
     
         /**
          * This method gets called when the Minecraft Script Engine is shutting down. For the client this is when they leave the world; for the server this is after the last player has exited the world.
          */
-        shutdown?(this: IVanillaServerSystem): void;
+        shutdown?:((this: IVanillaServerSystem)=>void)|null;
     
         /**
          * Allows you to register a query that will only show entities that have the given component and define which fields of that component will be used as a filter when getting the entities from the query.
@@ -266,7 +292,23 @@ declare global
          * @param callback The JavaScript object that will be called after the command executes
          * 
          */
-        executeCommand(command: string, callback: (callback: IExecuteCommandCallback) => void): void;
+        executeCommand(command: `testfor ${string}`, callback: (callback: IExecuteCommandTestForCallback) => void): void;
+        
+        /**
+         * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
+         * @param command The slash command to run
+         * @param callback The JavaScript object that will be called after the command executes
+         * 
+         */
+         executeCommand(command: `testforblock ${string}`, callback: (callback: IExecuteCommandTestForBlockCallback) => void): void;
+        
+        /**
+         * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
+         * @param command The slash command to run
+         * @param callback The JavaScript object that will be called after the command executes
+         * 
+         */
+         executeCommand(command: `testforblocks ${string}`, callback: (callback: IExecuteCommandTestForBlocksCallback) => void): void;
         
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
@@ -275,6 +317,14 @@ declare global
          * 
          */
         executeCommand(command: 'list', callback: (callback: IExecuteCommandListCallback) => void): void;
+        
+        /**
+         * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
+         * @param command The slash command to run
+         * @param callback The JavaScript object that will be called after the command executes
+         * 
+         */
+        executeCommand(command: string, callback: (callback: IExecuteCommandCallback) => void): void;
         
         /**
          * Removes the specified component from the given entity. If the entity has the component, it will be removed. Currently this only works with custom components and can't be used to remove components defined for an entity in JSON.

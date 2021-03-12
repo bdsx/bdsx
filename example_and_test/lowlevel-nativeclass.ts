@@ -2,25 +2,24 @@
 // Low Level - define C++ class or structure
 
 import { NativePointer } from "bdsx";
-import { NativeClass } from "bdsx/nativeclass";
+import { nativeField, defineNative, NativeClass } from "bdsx/nativeclass";
 import { int16_t, int32_t, int8_t } from "bdsx/nativetype";
 
 /**
  * All packets in packets.ts are NativeClass also
  */
 
+@defineNative()
 class SampleStructure extends NativeClass {
+    @nativeField(int32_t)
     a:int32_t;
+    @nativeField(int16_t)
     b:int16_t;
+    @nativeField(int8_t)
     c:int8_t;
+    @nativeField(int32_t)
     d:int32_t;
 }
-SampleStructure.define({
-    a:int32_t,
-    b:int16_t,
-    c:int8_t,
-    d:int32_t,
-});
 /**
  * struct SampleStructure
  * {
@@ -44,12 +43,11 @@ console.assert(obj.a === -1);
 // &obj.a == (address of obj + 0);
 console.assert(obj.a === pointer.getInt32(0));
 
-// truncated without 8bits
+// int8_t/uint8_t will be truncated without 8bits
 obj.c = 0xffffff01;
 console.assert(obj.c === 1 && obj.c === pointer.getInt8(6));
 
 // &obj.d == (address of obj + 8);
-// alignment test
+// C/C++ field alignments
 obj.d = 123;
 console.assert(obj.d === pointer.getInt32(8));
-

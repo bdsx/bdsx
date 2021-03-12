@@ -61,7 +61,10 @@ const symbols = [
     'printf',
     'ServerNetworkHandler::_onPlayerLeft',
     "ServerCommandOrigin::`vftable'",
-    "Minecraft::getLevel",
+    'Minecraft::getLevel',
+    'CommandRegistry::registerCommand',
+    'CommandRegistry::findCommand',
+    'CommandRegistry::registerOverloadInternal',
 ] as const;
 
 // decorated symbols

@@ -1,20 +1,23 @@
-import { NativeClass } from "../nativeclass";
+import { nativeField, defineNative, NativeClass } from "../nativeclass";
 import { float32_t, int32_t, uint32_t } from "../nativetype";
 
+@defineNative()
 export class BlockPos extends NativeClass {
+    @nativeField(int32_t) 
     x:int32_t;
+    @nativeField(uint32_t) 
     y:uint32_t;
+    @nativeField(int32_t) 
     z:int32_t;
 }
-BlockPos.define({
-    x:int32_t,
-    y:uint32_t,
-    z:int32_t,
-});
 
+@defineNative()
 export class Vec3 extends NativeClass {
+    @nativeField(float32_t)
     x:float32_t;
+    @nativeField(float32_t)
     y:float32_t;
+    @nativeField(float32_t)
     z:float32_t;
 
     static create(x:number, y:number, z:number):Vec3 {
@@ -25,8 +28,3 @@ export class Vec3 extends NativeClass {
         return v;
     }
 }
-Vec3.define({
-    x:float32_t,
-    y:float32_t,
-    z:float32_t,
-});
