@@ -55,7 +55,7 @@ class BlockPlaceEvent implements IBlockPlaceEvent {
     }
 }
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
-    const event = new BlockPlaceEvent(actor as Player, blockPos);
+    const event = new BlockPlaceEvent(actor as Player, block, blockPos);
     if (events.blockPlace.fire(event) === CANCEL) {
         return false;
     } else {
