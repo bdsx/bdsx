@@ -12,8 +12,11 @@ const symbols = [
     'Level::createDimension',
     'Level::fetchEntity',
     'Crypto::Random::generateUUID',
+    'Player::attack',
+    'Player::drop',
     'Player::getSupplies',
     'Player::setName',
+    'Player::take',
     'Player::teleportTo',
     'ServerNetworkHandler::_getServerPlayer',
     'ServerNetworkHandler::allowIncomingConnections',
@@ -83,6 +86,9 @@ const symbols = [
     'CommandRegistry::registerCommand',
     'CommandRegistry::findCommand',
     'CommandRegistry::registerOverloadInternal',
+    'BlockSource::mayPlace',
+    'Gamemode::_creativeDestroyBlock',
+    'SurvivalMode::destroyBlock',
 ] as const;
 
 // decorated symbols
