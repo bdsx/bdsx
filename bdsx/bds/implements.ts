@@ -385,7 +385,6 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
-// not found in 1.16.210.05
-// ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", RawTypeId.Boolean, {this:ItemStack});
 
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
