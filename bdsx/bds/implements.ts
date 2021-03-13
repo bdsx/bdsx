@@ -28,6 +28,8 @@ import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
+import { Block } from "./block";
+import { HashedString } from "./hashedstring";
 
 // avoiding circular dependency
 
@@ -389,3 +391,7 @@ ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.
 ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", RawTypeId.Boolean, {this:ItemStack});
 
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
+
+// block.ts
+(Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
+Block.prototype.getCreativeCategory = procHacker.js("Block::getCreativeCategory", RawTypeId.Int32, {this:Block});
