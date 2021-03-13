@@ -75,6 +75,7 @@ const symbols = [
     'Item::getCommandName',
     'Item::isDamageable',
     'Item::isFood',
+    'Item::getCreativeCategory',
     'Item::setAllowOffhand',
     'ItemStackBase::getId',
     'ItemStackBase::getItem',
