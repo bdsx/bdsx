@@ -35,5 +35,7 @@ export class Block extends NativeClass {
 }
 
 export class BlockSource extends NativeClass {
-
+    getBlock(blockPos:BlockPos):Block {
+        abstract();
+    }
 }
