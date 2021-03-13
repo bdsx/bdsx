@@ -9,6 +9,7 @@ import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
 import { Player } from "bdsx/bds/player";
 import { ItemStack } from "bdsx/bds/inventory";
 import { procHacker } from "bdsx/bds/proc";
+import { Block, BlockSource } from "bdsx/bds/block";
 
 interface IBlockDestroyEvent {
     readonly player: Player,
@@ -42,16 +43,18 @@ const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBl
 
 interface IBlockPlaceEvent {
     readonly player: Player,
+    readonly block: Block,
     readonly blockPos: BlockPos;
 }
 class BlockPlaceEvent implements IBlockPlaceEvent {
     constructor(
         public player: Player,
+        public block: Block,
         public blockPos: BlockPos,
     ) {
     }
 }
-function onBlockPlace(blockSource:VoidPointer, block:VoidPointer, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
+function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
     const event = new BlockPlaceEvent(actor as Player, blockPos);
     if (events.blockPlace.fire(event) === CANCEL) {
         return false;
@@ -59,7 +62,7 @@ function onBlockPlace(blockSource:VoidPointer, block:VoidPointer, blockPos:Block
         return _onBlockPlace(blockSource, block, blockPos, v1, actor, v2);
     }
 }
-const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", RawTypeId.Boolean, null, VoidPointer, VoidPointer, BlockPos, RawTypeId.Int32, Actor, RawTypeId.Boolean)(onBlockPlace);
+const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", RawTypeId.Boolean, null, BlockSource, Block, BlockPos, RawTypeId.Int32, Actor, RawTypeId.Boolean)(onBlockPlace);
 
 interface IPlayerAttackEvent {
     readonly player: Player;
