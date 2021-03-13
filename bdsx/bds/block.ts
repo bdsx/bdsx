@@ -3,9 +3,16 @@ import { abstract } from "bdsx/common";
 import { HashedString } from "./hashedstring";
 
 export class BlockLegacy extends NativeClass {
+    protected _getCommandName(): CxxStringWrapper {
+        abstract();
+    }
+    getCommandName():string {
+        return this._getCommandName().value;
+    }
 }
 
 export class Block extends NativeClass {
+    blockLegacy: BlockLegacy;
     protected _getName():HashedString {
         abstract();
     }
