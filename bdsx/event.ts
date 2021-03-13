@@ -1,15 +1,14 @@
 
-import { Actor, MinecraftPacketIds, nethook } from "bdsx";
-import { RawTypeId } from "bdsx";
-import Event from "krevent";
-import { CANCEL } from "bdsx/common";
-import { VoidPointer } from "bdsx/core";
+import { Actor, MinecraftPacketIds, nethook, RawTypeId } from "bdsx";
+import { Block, BlockSource } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
-import { Player } from "bdsx/bds/player";
 import { ItemStack } from "bdsx/bds/inventory";
+import { Player } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
-import { Block, BlockSource } from "bdsx/bds/block";
+import { CANCEL } from "bdsx/common";
+import { VoidPointer } from "bdsx/core";
+import Event from "krevent";
 
 interface IBlockDestroyEvent {
     readonly player: Player,

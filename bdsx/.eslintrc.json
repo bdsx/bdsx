@@ -39,6 +39,7 @@
         "no-prototype-builtins": "off",
         "prefer-rest-params": "off",
         "no-debugger": "error",
-        "import/export": "off"
+        "import/export": "off",
+        "no-duplicate-imports": "error"
     }
 }
