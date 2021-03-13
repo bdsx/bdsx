@@ -44,18 +44,20 @@ const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBl
 interface IBlockPlaceEvent {
     readonly player: Player,
     readonly block: Block,
+    readonly blockSource: BlockSource,
     readonly blockPos: BlockPos;
 }
 class BlockPlaceEvent implements IBlockPlaceEvent {
     constructor(
         public player: Player,
         public block: Block,
+        public blockSource: BlockSource,
         public blockPos: BlockPos,
     ) {
     }
 }
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
-    const event = new BlockPlaceEvent(actor as Player, block, blockPos);
+    const event = new BlockPlaceEvent(actor as Player, block, blockSource, blockPos);
     if (events.blockPlace.fire(event) === CANCEL) {
         return false;
     } else {
