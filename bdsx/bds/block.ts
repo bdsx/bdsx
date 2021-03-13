@@ -2,7 +2,6 @@ import { NativeClass } from "bdsx/nativeclass";
 import { abstract } from "bdsx/common";
 import { HashedString } from "./hashedstring";
 import { CxxStringWrapper } from "bdsx/pointer";
-import { CreativeItemCategory } from "./inventory";
 
 export class BlockLegacy extends NativeClass {
     protected _getCommandName(): CxxStringWrapper {
