@@ -77,7 +77,7 @@ const symbols = [
     'ItemStackBase::getItem',
     'ItemStackBase::hasCustomHoverName',
     'ItemStackBase::isBlock',
-    // 'ItemStackBase::isEmptyStack', // not found in 1.16.210.05
+    'ItemStackBase::isNull',
     'ItemStackBase::setCustomName',
     'PlayerInventory::getItem',
     'CommandRegistry::registerCommand',
