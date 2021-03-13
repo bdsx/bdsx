@@ -89,6 +89,9 @@ export class ServerInstance extends NativeClass {
     createDimension(id:DimensionId):Dimension {
         return this.minecraft.something.level.createDimension(id);
     }
+    getActivePlayerCount():number {
+        return this.minecraft.something.level.getActivePlayerCount();
+    }
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
         return this.minecraft.something.shandler.disconnectClient(client, message);
     }

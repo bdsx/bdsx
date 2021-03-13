@@ -11,6 +11,7 @@ const symbols = [
     'ScriptEngine::initialize',
     'Level::createDimension',
     'Level::fetchEntity',
+    'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
     'Player::attack',
     'Player::drop',

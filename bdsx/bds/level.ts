@@ -15,6 +15,9 @@ export class Level extends NativeClass {
     fetchEntity(id:ActorUniqueID, unknown:boolean):Actor|null {
         abstract();
     }
+    getActivePlayerCount():number {
+        abstract();
+    }
 }
 export class ServerLevel extends Level {
     packetSender:LoopbackPacketSender;

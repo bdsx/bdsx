@@ -40,6 +40,7 @@ RakNet.RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.
 // level.ts
 Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimension, {this:Level}, RawTypeId.Int32);
 Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level, nullableReturn: true}, RawTypeId.Bin64, RawTypeId.Boolean);
+Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", RawTypeId.Int32, {this:Level});
 
 Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
 
