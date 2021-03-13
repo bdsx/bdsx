@@ -13,6 +13,15 @@ export class BlockLegacy extends NativeClass {
     getCreativeCategory():number {
         abstract();
     }
+    /**
+     * Will not affect actual destroy time but will affect the speed of cracks
+     */
+    setDestroyTime(time:number):void {
+        abstract();
+    }
+    getDestroyTime():number {
+        return this.getFloat32(0x12C);
+    }
 }
 
 export class Block extends NativeClass {
