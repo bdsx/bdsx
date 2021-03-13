@@ -14,6 +14,13 @@ export enum ContainerId {
     UI = 124
 }
 
+export enum CreativeCategory {
+    Construction = 1,
+    Nature = 2,
+    Items = 4,
+    Uncategorized = 5,
+}
+
 export class Item extends NativeClass {
     protected _getCommandName():CxxStringWrapper {
         abstract();
@@ -23,6 +30,9 @@ export class Item extends NativeClass {
     }
     getCommandName():string {
         return this._getCommandName().value;
+    }
+    getCreativeCategory():number {
+        abstract();
     }
     isDamageable():boolean {
         abstract();
@@ -70,6 +80,9 @@ export class ItemStack extends NativeClass {
             return null;
         }
         return this._getItem();
+    }
+    getName():string {
+        return "minecraft:" + this.getItem()?.getCommandName() ?? "air";
     }
     hasCustomName():boolean {
         abstract();
