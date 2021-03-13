@@ -90,6 +90,8 @@ const symbols = [
     'BlockSource::mayPlace',
     'GameMode::_creativeDestroyBlock',
     'SurvivalMode::destroyBlock',
+    'Block::getName',
+    'Block::getCreativeCategory',
 ] as const;
 
 // decorated symbols
