@@ -14,7 +14,7 @@ export enum ContainerId {
     UI = 124
 }
 
-export enum CreativeCategory {
+export enum CreativeItemCategory {
     Construction = 1,
     Nature = 2,
     Items = 4,
