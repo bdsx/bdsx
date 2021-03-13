@@ -88,6 +88,7 @@ const symbols = [
     'CommandRegistry::registerCommand',
     'CommandRegistry::findCommand',
     'CommandRegistry::registerOverloadInternal',
+    'BlockSource::getBlock',
     'BlockSource::mayPlace',
     'GameMode::_creativeDestroyBlock',
     'SurvivalMode::destroyBlock',
