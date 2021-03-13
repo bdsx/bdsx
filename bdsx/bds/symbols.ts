@@ -93,6 +93,7 @@ const symbols = [
     'Block::getName',
     'BlockLegacy::getCommandName',
     'BlockLegacy::getCreativeCategory',
+    'BlockLegacy::setDestroyTime',
 ] as const;
 
 // decorated symbols
