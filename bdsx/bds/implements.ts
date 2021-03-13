@@ -399,4 +399,3 @@ Block.abstract({
     blockLegacy: [BlockLegacy.ref(), 0x10],
 });
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
-Block.prototype.getCreativeCategory = procHacker.js("Block::getCreativeCategory", RawTypeId.Int32, {this:Block});
