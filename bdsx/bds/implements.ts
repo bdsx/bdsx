@@ -377,6 +377,7 @@ Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", RawTypeId.Bool
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", RawTypeId.Boolean, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", RawTypeId.Boolean, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", RawTypeId.Void, {this:Item}, RawTypeId.Boolean);
+Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", RawTypeId.Int32, {this:Item});
 ItemStack.abstract({
     amount:[uint8_t, 0x22],
 });
