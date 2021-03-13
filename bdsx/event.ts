@@ -159,4 +159,4 @@ export const events = {
     playerJoin: new Event<(event: PlayerJoinEvent) => void>(),
     /** Cancellable */
     playerPickupItem: new Event<(event: PlayerPickupItemEvent) => void | CANCEL>(),
-}
+};

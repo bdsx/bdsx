@@ -6,7 +6,7 @@ command.hook.on((command, originName, ctx)=>{
     if (!ctx.origin.isServerCommandOrigin()) { // no console
         console.log(`${originName}> ${command}`);
     }
-    
+
     if (command.startsWith('/tp ')) {
         return 0x10000; // MCRESULT_CommandNotFound
     } else if (command === '/close') {
