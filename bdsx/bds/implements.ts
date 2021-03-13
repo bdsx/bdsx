@@ -395,6 +395,7 @@ PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", It
 // block.ts
 (BlockLegacy.prototype as any)._getCommandName = procHacker.js("BlockLegacy::getCommandName", CxxStringWrapper, {this:BlockLegacy});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", RawTypeId.Int32, {this:Block});
+BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", RawTypeId.Void, {this:Block}, RawTypeId.Float32);
 Block.abstract({
     blockLegacy: [BlockLegacy.ref(), 0x10],
 });
