@@ -28,6 +28,8 @@ import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
+import { Block, BlockLegacy, BlockSource } from "./block";
+import { HashedString } from "./hashedstring";
 
 // avoiding circular dependency
 
@@ -162,6 +164,7 @@ Actor.abstract({
 (Actor.prototype as any)._addTag = procHacker.js("Actor::addTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 (Actor.prototype as any)._hasTag = procHacker.js("Actor::hasTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
+Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 
 Actor.prototype.getTypeId = makefunc.js([0x518], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
@@ -377,6 +380,7 @@ Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", RawTypeId.Bool
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", RawTypeId.Boolean, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", RawTypeId.Boolean, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", RawTypeId.Void, {this:Item}, RawTypeId.Boolean);
+Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", RawTypeId.Int32, {this:Item});
 ItemStack.abstract({
     amount:[uint8_t, 0x22],
 });
@@ -385,7 +389,16 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
-// not found in 1.16.210.05
-// ItemStack.prototype.isEmptyStack = procHacker.js("ItemStackBase::isEmptyStack", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", RawTypeId.Boolean, {this:ItemStack});
 
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
+
+// block.ts
+(BlockLegacy.prototype as any)._getCommandName = procHacker.js("BlockLegacy::getCommandName", CxxStringWrapper, {this:BlockLegacy});
+BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", RawTypeId.Int32, {this:Block});
+BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", RawTypeId.Void, {this:Block}, RawTypeId.Float32);
+Block.abstract({
+    blockLegacy: [BlockLegacy.ref(), 0x10],
+});
+(Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
+BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);

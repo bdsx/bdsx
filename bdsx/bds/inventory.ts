@@ -14,6 +14,13 @@ export enum ContainerId {
     UI = 124
 }
 
+export enum CreativeItemCategory {
+    Construction = 1,
+    Nature = 2,
+    Items = 4,
+    Uncategorized = 5,
+}
+
 export class Item extends NativeClass {
     protected _getCommandName():CxxStringWrapper {
         abstract();
@@ -23,6 +30,9 @@ export class Item extends NativeClass {
     }
     getCommandName():string {
         return this._getCommandName().value;
+    }
+    getCreativeCategory():number {
+        abstract();
     }
     isDamageable():boolean {
         abstract();
@@ -52,10 +62,9 @@ export class ItemStack extends NativeClass {
     isBlock():boolean {
         abstract();
     }
-    // not found in 1.16.210.05
-    // isEmptyStack():boolean {
-    //     abstract();
-    // }
+    isNull():boolean {
+         abstract();
+    }
     getAmount():number {
         return this.amount;
     }
@@ -67,11 +76,13 @@ export class ItemStack extends NativeClass {
         return id;
     }
     getItem():Item|null {
-        // not found in 1.16.210.05
-        // if (this.isEmptyStack()) {
-        //     return null;
-        // }
+        if (this.isNull()) {
+            return null;
+        }
         return this._getItem();
+    }
+    getName():string {
+        return "minecraft:" + this.getItem()?.getCommandName() ?? "air";
     }
     hasCustomName():boolean {
         abstract();
