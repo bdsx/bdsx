@@ -7,7 +7,7 @@ import { VoidPointer } from "bdsx/core";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
 import { Player } from "bdsx/bds/player";
-import { ItemActor, ItemStack } from "bdsx/bds/inventory";
+import { ItemStack } from "bdsx/bds/inventory";
 import { procHacker } from "bdsx/bds/proc";
 
 interface IBlockDestroyEvent {
@@ -131,7 +131,7 @@ class PlayerPickupItemEvent implements IPlayerPickupItemEvent {
     }
 }
 
-function onPlayerPickupItem(player:Player, itemActor:ItemActor, v1:number, v2:number):boolean {
+function onPlayerPickupItem(player:Player, itemActor:VoidPointer, v1:number, v2:number):boolean {
     const event = new PlayerPickupItemEvent(player/*, itemActor.itemStack*/);
     if (events.playerPickupItem.fire(event) === CANCEL) {
         return false;
@@ -139,7 +139,7 @@ function onPlayerPickupItem(player:Player, itemActor:ItemActor, v1:number, v2:nu
         return _onPlayerPickupItem(player, itemActor, v1, v2);
     }
 }
-const _onPlayerPickupItem = procHacker.hooking("Player::take", RawTypeId.Boolean, null, Player, ItemActor, RawTypeId.Int32, RawTypeId.Int32)(onPlayerPickupItem);
+const _onPlayerPickupItem = procHacker.hooking("Player::take", RawTypeId.Boolean, null, Player, VoidPointer, RawTypeId.Int32, RawTypeId.Int32)(onPlayerPickupItem);
 
 export const events = {
     /** Cancellable */
