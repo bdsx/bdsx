@@ -91,8 +91,8 @@ const symbols = [
     'GameMode::_creativeDestroyBlock',
     'SurvivalMode::destroyBlock',
     'Block::getName',
-    'Block::getCreativeCategory',
     'BlockLegacy::getCommandName',
+    'BlockLegacy::getCreativeCategory',
 ] as const;
 
 // decorated symbols
