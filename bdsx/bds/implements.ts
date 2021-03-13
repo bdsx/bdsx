@@ -28,7 +28,7 @@ import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
-import { Block, BlockLegacy } from "./block";
+import { Block, BlockLegacy, BlockSource } from "./block";
 import { HashedString } from "./hashedstring";
 
 // avoiding circular dependency
@@ -164,6 +164,7 @@ Actor.abstract({
 (Actor.prototype as any)._addTag = procHacker.js("Actor::addTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 (Actor.prototype as any)._hasTag = procHacker.js("Actor::hasTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
+Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 
 Actor.prototype.getTypeId = makefunc.js([0x518], RawTypeId.Int32, {this:Actor}); // ActorType getEntityTypeId()
@@ -400,3 +401,4 @@ Block.abstract({
     blockLegacy: [BlockLegacy.ref(), 0x10],
 });
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
+BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
