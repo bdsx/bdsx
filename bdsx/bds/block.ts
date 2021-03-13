@@ -2,6 +2,7 @@ import { NativeClass } from "bdsx/nativeclass";
 import { abstract } from "bdsx/common";
 import { HashedString } from "./hashedstring";
 import { CxxStringWrapper } from "bdsx/pointer";
+import { CreativeItemCategory } from "./inventory";
 
 export class BlockLegacy extends NativeClass {
     protected _getCommandName(): CxxStringWrapper {
@@ -9,6 +10,9 @@ export class BlockLegacy extends NativeClass {
     }
     getCommandName():string {
         return this._getCommandName().value;
+    }
+    getCreativeCategory():number {
+        abstract();
     }
 }
 
@@ -19,9 +23,6 @@ export class Block extends NativeClass {
     }
     getName():string {
         return this._getName().str;
-    }
-    getCreativeCategory():number {
-        abstract();
     }
 }
 
