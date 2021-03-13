@@ -63,7 +63,7 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     isNull():boolean {
-         abstract();
+        abstract();
     }
     getAmount():number {
         return this.amount;
