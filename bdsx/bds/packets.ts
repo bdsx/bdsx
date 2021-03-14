@@ -14,6 +14,8 @@ export type NetworkBlockPosition = BlockPos;
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
+    @nativeField(int32_t, 0x30)
+	protocol:int32_t;
     @nativeField(ConnectionRequest.ref(), 0x38)
 	connreq:ConnectionRequest;
 }
@@ -657,7 +659,10 @@ export type ModalFormRequestPacket = ShowModalFormPacket;
 
 @nativeClass(null)
 export class ModalFormResponsePacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    id:uint32_t;
+    @nativeField(CxxString)
+    response:CxxString;
 }
 
 @nativeClass(null)
