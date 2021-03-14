@@ -26,6 +26,12 @@ export class Player extends Actor {
     getInventory():PlayerInventory {
         abstract();
     }
+    getMainhandSlot():ItemStack {
+        abstract();
+    }
+    getOffhandSlot():ItemStack {
+        abstract();
+    }
 }
 
 export class ServerPlayer extends Player {
