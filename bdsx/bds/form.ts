@@ -1,4 +1,4 @@
-import { MinecraftPacketIds, nethook, NetworkIdentifier } from "bdsx"
+import { MinecraftPacketIds, nethook, NetworkIdentifier } from "bdsx";
 import { SetTitlePacket, ShowModalFormPacket } from "./packets";
 
 const formMaps = new Map<number, Form>();
@@ -57,7 +57,7 @@ export class FormSlider extends FormComponent {
     type = "slider";
     min: number;
     max: number;
-    step: number
+    step: number;
     default: number;
     constructor(text: string, min: number, max: number, step?: number, defaultValue?: number) {
         super(text);
@@ -129,7 +129,7 @@ class Form {
                 const pk = SetTitlePacket.create();
                 pk.sendTo(target);
                 pk.dispose();
-            }, 100)
+            }, 100);
         }
         return this.id;
     }
@@ -158,7 +158,7 @@ export class SimpleForm extends Form {
     getContent():string {
         return this.data.content as string;
     }
-    setContent(content:string) {
+    setContent(content:string):void {
         this.data.content = content;
     }
     addButton(button: FormButton, label?: string):void {
@@ -248,22 +248,23 @@ nethook.after(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     const response = JSON.parse(pk.response);
     if (form?.callback) {
         switch (form.data.type) {
-            case "form":
-                form.response = form.labels.get(response) ?? response;
-                form.callback(form, ni);
-                break;
-            case "modal":
-                form.response = response;
-                form.callback(form, ni);
-                break;
-            case "custom_form":
-                if (response !== null) {
-                    for (const [index, label] of form.labels) {
-                        response[label] = response[index];
-                    }
+        case "form":
+            form.response = form.labels.get(response) ?? response;
+            form.callback(form, ni);
+            break;
+        case "modal":
+            form.response = response;
+            form.callback(form, ni);
+            break;
+        case "custom_form":
+            if (response !== null) {
+                for (const [index, label] of form.labels) {
+                    response[label] = response[index];
                 }
-                form.response = response;
-                form.callback(form, ni);
+            }
+            form.response = response;
+            form.callback(form, ni);
+            break;
         }
     }
     formMaps.delete(pk.id);
