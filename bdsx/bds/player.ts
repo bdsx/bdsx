@@ -2,7 +2,7 @@ import { abstract } from "bdsx/common";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { Actor, ActorUniqueID } from "./actor";
 import { Vec3 } from "./blockpos";
-import { PlayerInventory } from "./inventory";
+import { ItemStack, PlayerInventory } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 
