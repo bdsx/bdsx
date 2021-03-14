@@ -357,7 +357,7 @@ function createServerCommandOrigin(name:CxxStringWrapper, level:ServerLevel, per
 
 const deleteServerCommandOrigin = makefunc.js([0, 0], RawTypeId.Void, {this:ServerCommandOrigin}, RawTypeId.Int32);
 ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
-function sessionIdGrabber() {
+function sessionIdGrabber(text: string) {
     const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d INFO\] Session ID (.*)$/);
     if(tmp) {
         bedrockServer.sessionId = tmp[1];
