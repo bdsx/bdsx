@@ -65,6 +65,8 @@ bedrockServer.close.on(()=>{
         "license": "ISC",
         "bdsxPlugin": true,
         "scripts": {
+            "build": "tsc",
+            "watch": "tsc -w",
             "prepare": "tsc"
         },
         "devDependencies": {
