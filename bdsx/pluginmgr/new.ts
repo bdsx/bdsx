@@ -103,6 +103,8 @@ process.chdir(targetdir);
 child_process.execSync('npm i', {stdio:'inherit'});
 
 process.chdir(currentdir);
-child_process.execSync(`npm i "${path.relative(currentdir, targetdir).replace(/\\/g, '/')}"`, {stdio:'inherit'});
+let rpath = path.relative(currentdir, targetdir).replace(/\\/g, '/');
+if (!rpath.startsWith('.')) rpath = './'+rpath;
+child_process.execSync(`npm i "${rpath}"`, {stdio:'inherit'});
 
 console.log(`[BDSX-Plugins] Generated at ${targetPath}`);

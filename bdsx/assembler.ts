@@ -791,16 +791,29 @@ export class X64Assembler {
         return this._mov(src, dest, null, multiply, offset, 0, MovOper.Read, size);
     }
 
-    /**
-     * move gs to register
-     */
-    mov_r_gs(register:Register, value:number):this {
-        if (register >= Register.r8) throw Error('unsupported');
-        return this.write(0x65, 0x48, 0x8b, 0x04 | (register<<3), 0x25,
-            value & 0xff,
-            (value >> 8) & 0xff,
-            (value >> 16) & 0xff,
-            (value >> 24) & 0xff);
+    private _imul(r1:Register, r2:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize, oper:MovOper):this {
+        if (size !== OperationSize.dword && size !== OperationSize.qword && size !== OperationSize.word) throw Error('unsupported');
+        this._rex(r1, r2, null, size);
+        this.write(0x0f, 0xaf);
+        this._target(0x00, r1, r2, null, r1, multiply, offset, oper);
+        return this;
+    }
+
+    imul_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
+        return this._imul(src, dest, 1, 0, size, MovOper.Register);
+    }
+
+    imul_rp_r(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:Register, size:OperationSize = OperationSize.qword):this {
+        return this._imul(src, dest, multiply, offset, size, MovOper.Write);
+    }
+
+    imul_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._imul(src, dest, multiply, offset, size, MovOper.Read);
+    }
+
+    idiv_r(src:Register, size:OperationSize = OperationSize.qword):this {
+        this._rex(src, null, null, size);
+        return this.write(0xf7, 0xf8 | src);
     }
 
     /**

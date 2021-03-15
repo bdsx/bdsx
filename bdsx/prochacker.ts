@@ -275,11 +275,26 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         unlock.done();
     }
 
-    write(key:keyof T, offset:number, asm:X64Assembler):void {
+    write(key:keyof T, offset:number, asm:X64Assembler, subject?:string, originalCode?:number[], ignoreArea?:number[]):void {
         const buffer = asm.buffer();
         const ptr = this.map[key].add(offset);
         const unlock = new MemoryUnlocker(ptr, buffer.length);
-        ptr.writeBuffer(buffer);
+        if (originalCode) {
+            if (subject == null) subject = key+'';
+            if (originalCode.length < buffer.length) {
+                console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: writing area is too small`));
+                unlock.done();
+                return;
+            }
+            if (!this.check(subject, key, offset, ptr, originalCode, ignoreArea || [])) {
+                unlock.done();
+                return;
+            }
+            ptr.writeBuffer(buffer);
+            ptr.fill(0x90, originalCode.length - buffer.length); // nop fill
+        } else {
+            ptr.writeBuffer(buffer);
+        }
         unlock.done();
     }
 
