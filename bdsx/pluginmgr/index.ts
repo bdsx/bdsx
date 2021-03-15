@@ -3,7 +3,6 @@
 import child_process = require('child_process');
 import blessed = require('blessed');
 import fs = require('fs');
-import { version } from 'typescript';
 
 const SELECTABLE_ITEM_STYLE = {
     fg: 'magenta',
@@ -11,6 +10,30 @@ const SELECTABLE_ITEM_STYLE = {
         bg: 'blue'
     }
 };
+
+interface PackageInfoJson {
+    name:string;
+    scope:string;
+    version:string;
+    description?:string;
+    date:string;
+    links: {
+        npm:string;
+    };
+    author?:{
+        name:string;
+        email:string;
+        url:string;
+    };
+    publisher:{
+        username:string;
+        email:string;
+    };
+    maintainers:{
+        username:string;
+        email:string;
+    }[];
+}
 
 function exec(command:string):Promise<string>{
     return new Promise((resolve, reject)=>{
@@ -26,26 +49,36 @@ function exec(command:string):Promise<string>{
     });
 }
 
+
+function execWithoutError(command:string):Promise<string>{
+    return new Promise((resolve, reject)=>{
+        child_process.exec(command, {
+            encoding: 'utf-8'
+        }, (err, output)=>{
+            resolve(output);
+        });
+    });
+}
+
 class PackageInfo {
     public readonly name: string;
     public readonly desc: string;
-    public readonly author: string[];
+    public readonly author: string;
     public readonly date: string;
     public readonly version: string;
     public readonly installed: string;
 
     private versions:string[]|null = null;
 
-    constructor(line: string, deps?:Record<string, {version:string}>) {
-        const [name, desc, author, date, version] = line.split('\t');
-        this.name = name;
-        this.desc = desc;
-        this.author = author.split(' ').map(v=>v.substr(1));
-        this.date = date;
-        this.version = version;
-        
-        const info = deps && deps[this.name];
-        this.installed = info && info.version || '';
+    constructor(info: PackageInfoJson, deps?:Record<string, {version:string}>) {
+        this.name = info.name;
+        this.desc = info.description || '';
+        this.author = info.publisher.username;
+        this.date = info.date;
+        this.version = info.version;
+
+        const installedInfo = deps && deps[this.name];
+        this.installed = installedInfo && installedInfo.version || '';
     }
 
     async getVersions():Promise<string[]> {
@@ -55,17 +88,15 @@ class PackageInfo {
     }
 
     static async search(name: string, deps?:Record<string, {version:string}>): Promise<PackageInfo[]> {
-        const output = await exec(`npm search --parseable "${name}"`);
-        const result = output.split('\n');
-        const last = result.pop();
-        if (last) result.push(last);
+        const output = await execWithoutError(`npm search --json "${name}"`);
+        const result = JSON.parse(output) as PackageInfoJson[];
         return result.map(item => new PackageInfo(item, deps));
     }
 
     toMenuString(): string[] {
-        const authors = this.author.join(' ');
+        const author = this.author;
         const MAX_LEN = 18;
-        return [this.installed || 'No', this.name, this.desc, authors.length > MAX_LEN ? authors.substr(0, MAX_LEN-3)+'...' : authors, this.date];
+        return [this.installed || 'No', this.name, this.desc, author.length > MAX_LEN ? author.substr(0, MAX_LEN-3)+'...' : author, this.date];
     }
 
     toString(): string {
@@ -116,7 +147,7 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
                 }
             },
         });
-        
+
         const table = blessed.listtable({
             border:'line',
             keys: true,
@@ -134,7 +165,7 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
             height: '100%-3',
             align: 'left',
         });
-        
+
         let packages:PackageInfo[] = [];
         let preparing = true;
         table.on('select item', (item, index)=>{
@@ -186,7 +217,7 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
                 scr.render();
             }
         }
-        
+
         function processInput():void {
             table.select(-1);
             scr.render();
@@ -197,7 +228,7 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
                     scr.render();
                     return;
                 }
-                
+
                 latestSearched = value;
                 searchText(prefix+value);
             });
@@ -213,7 +244,7 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
 function selectVersion(name:string, latestVersion:string, installedVersion:string, versions:string[]):Promise<(string|null)> {
     return new Promise(resolve=>{
         if (screen === null) throw Error('blessed.screen not found');
-        
+
         const vnames = versions.reverse().map(v=>`${name}@${v}`);
         let installed = false;
         for (let i=0;i<versions.length;i++) {
@@ -221,7 +252,7 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
             if (versions[i] === latestVersion) {
                 vnames[i] += ' (Latest)';
                 moveToTop = true;
-            } 
+            }
             if (versions[i] === installedVersion) {
                 vnames[i] += ' (Installed)';
                 moveToTop = true;
@@ -278,9 +309,9 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
 
         const packagejson = JSON.parse(fs.readFileSync('./package-lock.json', 'utf8'));
         const deps = packagejson.dependencies || {};
-    
+
         const plugin = await searchAndSelect('@bdsx/', deps);
-    
+
         const topbox = blessed.box({
             border:'line',
             width: '100%',
@@ -289,14 +320,14 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
         });
         screen.append(topbox);
         screen.render();
-    
+
         const versions = await loadingWrap('Loading...', plugin.getVersions());
         const version = await selectVersion(plugin.name, plugin.version, plugin.installed, versions);
         topbox.destroy();
         if (version === null) continue;
         screen.destroy();
         screen = null;
-        
+
         if (version === '') {
             child_process.execSync(`npm r ${plugin.name}`, {stdio:'inherit'});
         } else {
