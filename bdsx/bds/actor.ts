@@ -62,9 +62,6 @@ export class Actor extends NativeClass {
         this._sendNetworkPacket(packet);
     }
 
-//     static fromPointer(ptr:StaticPointer):Actor;
-//     static fromUniqueId(_64bit_low:number, _64bit_high:number):Actor|null;
-
     private _getDimensionId(out:Int32Array):void {
         abstract();
     }
@@ -186,12 +183,6 @@ export class Actor extends NativeClass {
 //     return attr->currentValue();
 // }
 
-// kr::JsValue NativeActor::fromPointer(StaticPointer* ptr) throws(JsException)
-// {
-//     if (ptr == nullptr) throw JsException(u"1st argument must be *Pointer");
-//     Actor* actor = (Actor*)ptr->getAddressRaw();
-//     return fromRaw(actor);
-// }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {
         abstract();
     }

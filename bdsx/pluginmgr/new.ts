@@ -4,6 +4,7 @@ import fs = require('fs');
 import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
+import os = require('os');
 
 if (process.argv[2] === undefined) {
     console.error(colors.red(`[BDSX-Plugins] Please provide the parameter for the target path`));
@@ -63,18 +64,23 @@ bedrockServer.close.on(()=>{
         "author": "",
         "license": "ISC",
         "bdsxPlugin": true,
+        "scripts": {
+            "prepare": "tsc"
+        },
         "devDependencies": {
-            "bdsx": `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`
+            "bdsx": `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`,
+            "@types/node": "^12.20.5",
+            "typescript": "^4.2.3"
         }
     };
-    fs.writeFileSync(targetdir+'package.json', JSON.stringify(examplejson, null, 2), 'utf-8');
+    fs.writeFileSync(targetdir+'package.json', JSON.stringify(examplejson, null, 2).replace(/\n/g, os.EOL), 'utf-8');
 }
 
 // tsconfig.json
 {
     const tsconfig = JSON.parse(fs.readFileSync('./tsconfig.json', 'utf-8'));
     delete tsconfig.exclude;
-    fs.writeFileSync(targetdir+'tsconfig.json', JSON.stringify(tsconfig, null, 2), 'utf-8');
+    fs.writeFileSync(targetdir+'tsconfig.json', JSON.stringify(tsconfig, null, 2).replace(/\n/g, os.EOL), 'utf-8');
 }
 
 // .npmignore
@@ -85,6 +91,24 @@ bedrockServer.close.on(()=>{
 *.ts
 `;
     fs.writeFileSync(targetdir+'.npmignore', npmignore, 'utf-8');
+}
+
+// .gitignore
+{
+    const gitignore = `
+/node_modules
+*.js
+`;
+    fs.writeFileSync(targetdir+'.gitignore', gitignore, 'utf-8');
+}
+
+// README.md
+{
+    const readme = `
+# ${basename} Plugin
+The plugin for bdsx
+`;
+    fs.writeFileSync(targetdir+'README.md', readme, 'utf-8');
 }
 
 function camelize(context:string):string {
