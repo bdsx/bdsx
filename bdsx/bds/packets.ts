@@ -951,7 +951,14 @@ export class CameraShakePacket extends Packet {
 
 @nativeClass(null)
 export class PlayerFogPacket extends Packet {
-    // unknown
+    @nativeField(float32_t)
+    intensity:float32_t;
+    @nativeField(float32_t)
+    duration:float32_t;
+    @nativeField(uint8_t)
+    shakeType:uint8_t;
+    @nativeField(uint8_t)
+    shakeAction:uint8_t;
 }
 
 @nativeClass(null)
