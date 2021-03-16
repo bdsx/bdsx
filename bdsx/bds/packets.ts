@@ -309,10 +309,10 @@ export class SetSpawnPositionPacket extends Packet {
 export class AnimatePacket extends Packet {
     @nativeField(ActorRuntimeID)
     actorId:ActorRuntimeID;
-    @nativeField(uint8_t)
-    action:uint8_t;
+    @nativeField(int32_t)
+    action:int32_t;
     @nativeField(float32_t)
-    unknown:float32_t;
+    rowingTime:float32_t;
 }
 
 @nativeClass(null)
