@@ -65,6 +65,27 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v
 }
 const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", RawTypeId.Boolean, null, BlockSource, Block, BlockPos, RawTypeId.Int32, Actor, RawTypeId.Boolean)(onBlockPlace);
 
+interface IEntityHurtEvent {
+    readonly entity: Actor;
+    readonly damage: number;
+}
+class EntityHurtEvent implements IEntityHurtEvent {
+    constructor(
+        public entity: Actor,
+        public damage: number,
+    ) {
+    }
+}
+function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: number, v1: boolean, v2: boolean):boolean {
+    const event = new EntityHurtEvent(entity, damage);
+    if (events.entityHurt.fire(event) === CANCEL) {
+        return false;
+    } else {
+        return _onEntityHurt(entity, actorDamageSource, damage, v1, v2);
+    }
+}
+const _onEntityHurt = procHacker.hooking("Actor::hurt", RawTypeId.Boolean, null, Actor, VoidPointer, RawTypeId.Int32, RawTypeId.Boolean, RawTypeId.Boolean)(onEntityHurt);
+
 interface IPlayerAttackEvent {
     readonly player: Player;
     readonly victim: Actor;
@@ -150,6 +171,8 @@ export const events = {
     blockDestroy: new Event<(event: BlockDestroyEvent) => void | CANCEL>(),
     /** Cancellable */
     blockPlace: new Event<(event: BlockPlaceEvent) => void | CANCEL>(),
+    /** Cancellable */
+    entityHurt: new Event<(event: EntityHurtEvent) => void | CANCEL>(),
     /** Cancellable */
     playerAttack: new Event<(event: PlayerAttackEvent) => void | CANCEL>(),
     /** Cancellable but only when player is in container screens*/
