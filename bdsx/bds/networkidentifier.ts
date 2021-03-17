@@ -80,7 +80,7 @@ export class ServerNetworkHandler extends NativeClass {
     }
     setMaxPlayers(count:number):void {
         this.setInt32(count, 0x2D0);
-        this.updateServerAnnouncement()
+        this.updateServerAnnouncement();
     }
     updateServerAnnouncement():void {
         abstract();
