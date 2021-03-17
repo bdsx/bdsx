@@ -285,10 +285,10 @@ Packet.prototype.read = makefunc.js([0x20], RawTypeId.Int32, {this:Packet}, Bina
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
 // Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});
 
-const ServerNetworkHandler$_getServerPlayer = procHacker.js(
-    "ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
+const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
 (ServerNetworkHandler.prototype as any)._setMotd = procHacker.js("ServerNetworkHandler::allowIncomingConnections", RawTypeId.Void, {this: ServerNetworkHandler}, CxxStringWrapper, RawTypeId.Boolean);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", RawTypeId.Void, {this: ServerNetworkHandler}, NetworkIdentifier, RawTypeId.Int32, CxxStringWrapper, RawTypeId.Int32);
+ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", RawTypeId.Void, {this:ServerNetworkHandler});
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {
