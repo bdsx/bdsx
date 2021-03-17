@@ -98,6 +98,12 @@ export class ServerInstance extends NativeClass {
     setMotd(motd:string):void {
         return this.minecraft.something.shandler.setMotd(motd);
     }
+    getMaxPlayers():number {
+        return this.minecraft.something.shandler.getMaxPlayers();
+    }
+    setMaxPlayers(count:number):void {
+        this.minecraft.something.shandler.setMaxPlayers(count);
+    }
 }
 
 export let serverInstance:ServerInstance;
