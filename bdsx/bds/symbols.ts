@@ -104,6 +104,7 @@ const symbols = [
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
     'RakNetServerLocator::announceServer',
+    'HealthAttributeDelegate::change',
 ] as const;
 
 // decorated symbols
