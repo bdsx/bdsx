@@ -758,9 +758,8 @@ export def cgateNodeLoop:qword
 export def updateEvTargetFire:qword
 
 export proc updateWithSleep
-    mov rcx, [rsp+20h]
+    mov rcx, [rsp+28h]
     sub rsp, 28h
-    mov rcx, rbx
     call cgateNodeLoop
     add rsp, 28h
     jmp updateEvTargetFire

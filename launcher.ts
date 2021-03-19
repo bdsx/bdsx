@@ -19,9 +19,6 @@ console.log(colors.rainbow('       ///////////////'));
 console.log(colors.rainbow('       //// BDSX2 ////'));
 console.log(colors.rainbow('       ///////////////'));
 
-// loads DLLs in mods directory, deprecated
-// require("bdsx/eminus").eminus_load_dlls_in_mods();
-
 (async()=>{
 
     bedrockServer.close.on(()=>{

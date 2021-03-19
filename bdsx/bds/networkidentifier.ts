@@ -81,6 +81,16 @@ export class ServerNetworkHandler extends NativeClass {
     updateServerAnnouncement():void {
         abstract();
     }
+    getMaxPlayers():number {
+        return this.getInt32(0x2D0);
+    }
+    setMaxPlayers(count:number):void {
+        this.setInt32(count, 0x2D0);
+        this.updateServerAnnouncement();
+    }
+    updateServerAnnouncement():void {
+        abstract();
+    }
 }
 
 export namespace ServerNetworkHandler

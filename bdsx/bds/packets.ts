@@ -14,6 +14,8 @@ export type NetworkBlockPosition = BlockPos;
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
+    @nativeField(int32_t, 0x30)
+	protocol:int32_t;
     @nativeField(ConnectionRequest.ref(), 0x38)
 	connreq:ConnectionRequest;
 }
@@ -309,10 +311,10 @@ export class SetSpawnPositionPacket extends Packet {
 export class AnimatePacket extends Packet {
     @nativeField(ActorRuntimeID)
     actorId:ActorRuntimeID;
-    @nativeField(uint8_t)
-    action:uint8_t;
+    @nativeField(int32_t)
+    action:int32_t;
     @nativeField(float32_t)
-    unknown:float32_t;
+    rowingTime:float32_t;
 }
 
 @nativeClass(null)
@@ -659,7 +661,10 @@ export type ModalFormRequestPacket = ShowModalFormPacket;
 
 @nativeClass(null)
 export class ModalFormResponsePacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    id:uint32_t;
+    @nativeField(CxxString)
+    response:CxxString;
 }
 
 @nativeClass(null)
@@ -943,7 +948,14 @@ export class AnimateEntityPacket extends Packet {
 
 @nativeClass(null)
 export class CameraShakePacket extends Packet {
-    // unknown
+    @nativeField(float32_t)
+    intensity:float32_t;
+    @nativeField(float32_t)
+    duration:float32_t;
+    @nativeField(uint8_t)
+    shakeType:uint8_t;
+    @nativeField(uint8_t)
+    shakeAction:uint8_t;
 }
 
 @nativeClass(null)
