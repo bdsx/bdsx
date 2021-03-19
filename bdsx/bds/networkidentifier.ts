@@ -5,7 +5,7 @@ import { dll } from "bdsx/dll";
 import { Hashable, HashSet } from "bdsx/hashset";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { NativeType } from "bdsx/nativetype";
+import { CxxString, int32_t, NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { remapAndPrintError } from "bdsx/source-map-support";
@@ -76,16 +76,6 @@ export class ServerNetworkHandler extends NativeClass {
     }
     setMaxPlayers(count:number):void {
         this.maxPlayers = count;
-        this.updateServerAnnouncement();
-    }
-    updateServerAnnouncement():void {
-        abstract();
-    }
-    getMaxPlayers():number {
-        return this.getInt32(0x2D0);
-    }
-    setMaxPlayers(count:number):void {
-        this.setInt32(count, 0x2D0);
         this.updateServerAnnouncement();
     }
     updateServerAnnouncement():void {
