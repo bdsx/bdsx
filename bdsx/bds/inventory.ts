@@ -101,6 +101,9 @@ export class ItemStack extends NativeClass {
         this._setCustomName(_name);
         _name.destruct();
     }
+    getUserData():CompoundTag {
+        abstract();
+    }
 }
 
 export class PlayerInventory extends NativeClass {
