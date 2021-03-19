@@ -38,6 +38,7 @@ const symbols = [
     'Actor::getRegionConst',
     'Actor::getUniqueID',
     'Actor::hasTag',
+    'Actor::setNameTag',
     'Actor::hurt',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
