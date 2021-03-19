@@ -7,6 +7,8 @@ import { Player } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
 import { CANCEL } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
+import { CxxStringWrapper } from "./pointer";
+import { bin64_t } from "./nativetype";
 import Event from "krevent";
 
 interface IBlockDestroyEvent {
