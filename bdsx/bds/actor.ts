@@ -81,7 +81,7 @@ export class Actor extends NativeClass {
         return this._getName().value;
     }
     setName(name:string):void {
-        let _name = new CxxStringWrapper(true);
+        const _name = new CxxStringWrapper(true);
         _name.construct();
         _name.value = name;
         this._setName(_name);
