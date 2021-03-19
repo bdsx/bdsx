@@ -23,6 +23,7 @@ const symbols = [
     'ServerNetworkHandler::_getServerPlayer',
     'ServerNetworkHandler::allowIncomingConnections',
     'ServerNetworkHandler::disconnectClient',
+    'ServerNetworkHandler::updateServerAnnouncement',
     'ServerPlayer::changeDimension',
     'ServerPlayer::openInventory',
     'ServerPlayer::sendInventory',
