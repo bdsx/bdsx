@@ -27,6 +27,7 @@ export class ActorRuntimeID extends VoidPointer {
 
 export enum ActorType
 {
+    Item = 0x40,
     Player = 0x13f,
 }
 
