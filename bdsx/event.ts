@@ -1,4 +1,4 @@
-import { Actor, MinecraftPacketIds, nethook, RawTypeId, serverInstance } from "bdsx";
+import { Actor, MinecraftPacketIds, NativePointer, nethook, RawTypeId, serverInstance } from "bdsx";
 import { Block, BlockSource } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
@@ -9,6 +9,7 @@ import { CANCEL } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { CxxStringWrapper } from "./pointer";
 import { bin64_t } from "./nativetype";
+import { AttributeId } from "./bds/attribute";
 import Event from "krevent";
 
 interface IBlockDestroyEvent {
