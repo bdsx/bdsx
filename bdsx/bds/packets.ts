@@ -63,6 +63,8 @@ export class TextPacket extends Packet {
     name:CxxString;
     @nativeField(CxxString)
     message:CxxString;
+    @nativeField(CxxVector.make(CxxString))
+    params:CxxVector<CxxString>;
     @nativeField(bool_t, 0x90)
     needsTranslation:bool_t;
 }
