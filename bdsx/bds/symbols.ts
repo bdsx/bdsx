@@ -85,6 +85,7 @@ const symbols = [
     'Item::setAllowOffhand',
     'ItemStackBase::getId',
     'ItemStackBase::getItem',
+    'ItemStackBase::getUserData',
     'ItemStackBase::hasCustomHoverName',
     'ItemStackBase::isBlock',
     'ItemStackBase::isNull',
