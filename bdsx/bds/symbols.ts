@@ -101,6 +101,7 @@ const symbols = [
     'BlockLegacy::getCommandName',
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
+    'RakNetServerLocator::announceServer',
 ] as const;
 
 // decorated symbols
