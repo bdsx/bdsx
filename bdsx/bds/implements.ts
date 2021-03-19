@@ -289,8 +289,8 @@ Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {t
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js(
     "ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
-(ServerNetworkHandler.prototype as any)._setMotd = procHacker.js("ServerNetworkHandler::allowIncomingConnections", RawTypeId.Void, {this: ServerNetworkHandler}, CxxStringWrapper, RawTypeId.Boolean);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", RawTypeId.Void, {this: ServerNetworkHandler}, NetworkIdentifier, RawTypeId.Int32, CxxStringWrapper, RawTypeId.Int32);
+ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", RawTypeId.Void, {this:ServerNetworkHandler});
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {
