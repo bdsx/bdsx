@@ -228,6 +228,8 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 Player.prototype.changeDimension = procHacker.js("ServerPlayer::changeDimension", RawTypeId.Void, {this:Player}, RawTypeId.Int32, RawTypeId.Boolean);
 Player.prototype.teleportTo = procHacker.js("Player::teleportTo", RawTypeId.Void, {this:Player}, Vec3, RawTypeId.Boolean, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Bin64);
 Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
+Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemStack, {this:Player});
+Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9f0]
@@ -286,7 +288,6 @@ Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {t
 // Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
-(ServerNetworkHandler.prototype as any)._setMotd = procHacker.js("ServerNetworkHandler::allowIncomingConnections", RawTypeId.Void, {this: ServerNetworkHandler}, CxxStringWrapper, RawTypeId.Boolean);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", RawTypeId.Void, {this: ServerNetworkHandler}, NetworkIdentifier, RawTypeId.Int32, CxxStringWrapper, RawTypeId.Int32);
 ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", RawTypeId.Void, {this:ServerNetworkHandler});
 

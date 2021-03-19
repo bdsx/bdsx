@@ -2,7 +2,7 @@ import { abstract } from "bdsx/common";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { Actor, ActorUniqueID } from "./actor";
 import { Vec3 } from "./blockpos";
-import { PlayerInventory } from "./inventory";
+import { ItemStack, PlayerInventory } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 
@@ -24,6 +24,12 @@ export class Player extends Actor {
         abstract();
     }
     getInventory():PlayerInventory {
+        abstract();
+    }
+    getMainhandSlot():ItemStack {
+        abstract();
+    }
+    getOffhandSlot():ItemStack {
         abstract();
     }
 }
