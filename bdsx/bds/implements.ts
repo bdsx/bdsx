@@ -30,6 +30,7 @@ import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, M
 import { BinaryStream } from "./stream";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { HashedString } from "./hashedstring";
+import { CompoundTag } from "./nbt";
 
 // avoiding circular dependency
 
@@ -162,6 +163,7 @@ Actor.abstract({
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
 (Actor.prototype as any)._getName = procHacker.js("Actor::getNameTag", CxxStringWrapper, {this:Actor});
+(Actor.prototype as any)._setName = procHacker.js("Actor::setNameTag", RawTypeId.Void, {this:Actor}, CxxStringWrapper);
 (Actor.prototype as any)._addTag = procHacker.js("Actor::addTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 (Actor.prototype as any)._hasTag = procHacker.js("Actor::hasTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
@@ -389,6 +391,7 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._getId = procHacker.js("ItemStackBase::getId", RawTypeId.Int32, {this:ItemStack});
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
+ItemStack.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStack});
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", RawTypeId.Boolean, {this:ItemStack});

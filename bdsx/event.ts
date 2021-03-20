@@ -1,4 +1,4 @@
-import { Actor, MinecraftPacketIds, nethook, RawTypeId, serverInstance } from "bdsx";
+import { Actor, MinecraftPacketIds, NativePointer, nethook, RawTypeId, serverInstance } from "bdsx";
 import { Block, BlockSource } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
@@ -9,6 +9,7 @@ import { CANCEL } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { CxxStringWrapper } from "./pointer";
 import { bin64_t } from "./nativetype";
+import { AttributeId } from "./bds/attribute";
 import Event from "krevent";
 
 interface IBlockDestroyEvent {
@@ -88,6 +89,32 @@ function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: num
     }
 }
 const _onEntityHurt = procHacker.hooking("Actor::hurt", RawTypeId.Boolean, null, Actor, VoidPointer, RawTypeId.Int32, RawTypeId.Boolean, RawTypeId.Boolean)(onEntityHurt);
+
+interface IEntityHealEvent {
+    entity: Actor;
+    readonly damage: number;
+}
+class EntityHealEvent implements IEntityHealEvent {
+    constructor(
+        public entity: Actor,
+        readonly damage: number,
+    ) {
+    }
+}
+function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, v:VoidPointer):boolean {
+    if (oldHealth < newHealth) {
+        const event = new EntityHurtEvent(attributeDelegate.getPointerAs(Actor, 0x20), newHealth - oldHealth);
+        if (events.entityHeal.fire(event) === CANCEL) {
+            event.entity.setAttribute(AttributeId.Health, oldHealth);
+            return false;
+        } else {
+            attributeDelegate.setPointer(event.entity, 0x20);
+            return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
+        }
+    }
+    return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
+}
+const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", RawTypeId.Boolean, null, NativePointer, RawTypeId.Float32, RawTypeId.Float32, VoidPointer)(onEntityHeal);
 
 interface IPlayerAttackEvent {
     player: Player;
@@ -201,6 +228,8 @@ export const events = {
     blockPlace: new Event<(event: BlockPlaceEvent) => void | CANCEL>(),
     /** Cancellable */
     entityHurt: new Event<(event: EntityHurtEvent) => void | CANCEL>(),
+    /** Cancellable */
+    entityHeal: new Event<(event: EntityHealEvent) => void | CANCEL>(),
     /** Cancellable */
     playerAttack: new Event<(event: PlayerAttackEvent) => void | CANCEL>(),
     /** Cancellable but only when player is in container screens*/

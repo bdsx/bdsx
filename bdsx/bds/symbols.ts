@@ -38,6 +38,7 @@ const symbols = [
     'Actor::getRegionConst',
     'Actor::getUniqueID',
     'Actor::hasTag',
+    'Actor::setNameTag',
     'Actor::hurt',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
@@ -85,6 +86,7 @@ const symbols = [
     'Item::setAllowOffhand',
     'ItemStackBase::getId',
     'ItemStackBase::getItem',
+    'ItemStackBase::getUserData',
     'ItemStackBase::hasCustomHoverName',
     'ItemStackBase::isBlock',
     'ItemStackBase::isNull',
@@ -102,6 +104,7 @@ const symbols = [
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
     'RakNetServerLocator::announceServer',
+    'HealthAttributeDelegate::change',
 ] as const;
 
 // decorated symbols
