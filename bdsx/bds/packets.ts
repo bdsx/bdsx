@@ -65,6 +65,8 @@ export class TextPacket extends Packet {
     name:CxxString;
     @nativeField(CxxString)
     message:CxxString;
+    @nativeField(CxxVector.make(CxxString))
+    params:CxxVector<CxxString>;
     @nativeField(bool_t, 0x90)
     needsTranslation:bool_t;
 }
@@ -309,10 +311,10 @@ export class SetSpawnPositionPacket extends Packet {
 export class AnimatePacket extends Packet {
     @nativeField(ActorRuntimeID)
     actorId:ActorRuntimeID;
-    @nativeField(uint8_t)
-    action:uint8_t;
+    @nativeField(int32_t)
+    action:int32_t;
     @nativeField(float32_t)
-    unknown:float32_t;
+    rowingTime:float32_t;
 }
 
 @nativeClass(null)
@@ -979,7 +981,14 @@ export class AnimateEntityPacket extends Packet {
 
 @nativeClass(null)
 export class CameraShakePacket extends Packet {
-    // unknown
+    @nativeField(float32_t)
+    intensity:float32_t;
+    @nativeField(float32_t)
+    duration:float32_t;
+    @nativeField(uint8_t)
+    shakeType:uint8_t;
+    @nativeField(uint8_t)
+    shakeAction:uint8_t;
 }
 
 @nativeClass(null)

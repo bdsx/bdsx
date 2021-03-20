@@ -95,8 +95,17 @@ export class ServerInstance extends NativeClass {
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
         return this.minecraft.something.shandler.disconnectClient(client, message);
     }
+    getMotd():string {
+        return this.minecraft.something.shandler.motd;
+    }
     setMotd(motd:string):void {
         return this.minecraft.something.shandler.setMotd(motd);
+    }
+    getMaxPlayers():number {
+        return this.minecraft.something.shandler.maxPlayers;
+    }
+    setMaxPlayers(count:number):void {
+        this.minecraft.something.shandler.setMaxPlayers(count);
     }
 }
 

@@ -28,6 +28,7 @@ import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
 import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
+import { CompoundTag } from "./nbt";
 
 // avoiding circular dependency
 
@@ -75,6 +76,7 @@ Actor.abstract({
 });
 (Actor.prototype as any)._sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", RawTypeId.Void, {this:Actor}, VoidPointer);
 (Actor.prototype as any)._getName = procHacker.js("Actor::getNameTag", CxxStringWrapper, {this:Actor});
+(Actor.prototype as any)._setName = procHacker.js("Actor::setNameTag", RawTypeId.Void, {this:Actor}, CxxStringWrapper);
 (Actor.prototype as any)._addTag = procHacker.js("Actor::addTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 (Actor.prototype as any)._hasTag = procHacker.js("Actor::hasTag", RawTypeId.Boolean, {this:Actor}, CxxStringWrapper);
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
@@ -141,6 +143,9 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 Player.prototype.changeDimension = procHacker.js("ServerPlayer::changeDimension", RawTypeId.Void, {this:Player}, RawTypeId.Int32, RawTypeId.Boolean);
 Player.prototype.teleportTo = procHacker.js("Player::teleportTo", RawTypeId.Void, {this:Player}, Vec3, RawTypeId.Boolean, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Bin64);
 Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
+Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemStack, {this:Player});
+Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
+Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", RawTypeId.Int32, {this:Player});
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9f0]
@@ -198,10 +203,9 @@ Packet.prototype.read = makefunc.js([0x20], RawTypeId.Int32, {this:Packet}, Bina
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
 // Packet.prototype.unknown = makefunc.js([0x30], RawTypeId.Boolean, {this:Packet});
 
-const ServerNetworkHandler$_getServerPlayer = procHacker.js(
-    "ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
-(ServerNetworkHandler.prototype as any)._setMotd = procHacker.js("ServerNetworkHandler::allowIncomingConnections", RawTypeId.Void, {this: ServerNetworkHandler}, CxxStringWrapper, RawTypeId.Boolean);
+const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, RawTypeId.Int32);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", RawTypeId.Void, {this: ServerNetworkHandler}, NetworkIdentifier, RawTypeId.Int32, CxxStringWrapper, RawTypeId.Int32);
+ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", RawTypeId.Void, {this:ServerNetworkHandler});
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {
@@ -301,6 +305,7 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._getId = procHacker.js("ItemStackBase::getId", RawTypeId.Int32, {this:ItemStack});
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
+ItemStack.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStack});
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", RawTypeId.Boolean, {this:ItemStack});

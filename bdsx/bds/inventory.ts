@@ -2,6 +2,7 @@ import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
 import { uint8_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
+import { CompoundTag } from "./nbt";
 
 export enum ContainerId {
     Inventory = 0,
@@ -82,7 +83,11 @@ export class ItemStack extends NativeClass {
         return this._getItem();
     }
     getName():string {
-        return `minecraft:${this.getItem()?.getCommandName() ?? "air"}`;
+        const item = this.getItem();
+        if (item) {
+            return "minecraft:" + item.getCommandName();
+        }
+        return "minecraft:air";
     }
     hasCustomName():boolean {
         abstract();
@@ -96,6 +101,9 @@ export class ItemStack extends NativeClass {
         _name.value = name;
         this._setCustomName(_name);
         _name.destruct();
+    }
+    getUserData():CompoundTag {
+        abstract();
     }
 }
 
