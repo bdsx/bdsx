@@ -20,6 +20,7 @@ const symbols = [
     'Player::setName',
     'Player::take',
     'Player::teleportTo',
+    'Player::getPlayerPermissionLevel',
     'ServerNetworkHandler::_getServerPlayer',
     'ServerNetworkHandler::allowIncomingConnections',
     'ServerNetworkHandler::disconnectClient',

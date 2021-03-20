@@ -232,6 +232,7 @@ Player.prototype.teleportTo = procHacker.js("Player::teleportTo", RawTypeId.Void
 Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
 Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemStack, {this:Player});
 Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
+Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", RawTypeId.Int32, {this:Player});
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9f0]
