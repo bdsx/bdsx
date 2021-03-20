@@ -1,5 +1,5 @@
 import { CxxVector } from "bdsx/cxxvector";
-import { nativeClass, MantleClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -502,9 +502,42 @@ export class ShowCreditsPacket extends Packet {
     // unknown
 }
 
+@nativeClass(0x68)
+class AvailableCommandsCommandData extends NativeClass {
+    @nativeField(CxxString)
+    name:CxxString;
+    @nativeField(CxxString)
+    description:CxxString;
+    @nativeField(uint8_t)
+    flags:uint8_t;
+    @nativeField(uint8_t)
+    permission:uint8_t;
+    @nativeField(CxxVector.make(CxxVector.make(CxxString)))
+    parameters:CxxVector<CxxVector<CxxString>>;
+    @nativeField(int32_t)
+    aliases:int32_t;
+}
+
+@nativeClass(0x38)
+class AvailableCommandsEnumData extends NativeClass{
+}
+
 @nativeClass(null)
 export class AvailableCommandsPacket extends Packet {
-    // unknown
+    @nativeField(CxxVector.make(CxxString))
+    enumValues:CxxVector<CxxString>;
+    @nativeField(CxxVector.make(CxxString))
+    postfixes:CxxVector<CxxString>;
+    @nativeField(CxxVector.make(AvailableCommandsEnumData))
+    enums:CxxVector<AvailableCommandsEnumData>;
+    @nativeField(CxxVector.make(AvailableCommandsCommandData))
+    commands:CxxVector<AvailableCommandsCommandData>;
+}
+export namespace AvailableCommandsPacket {
+    export type CommandData = AvailableCommandsCommandData;
+    export const CommandData = AvailableCommandsCommandData;
+    export type EnumData = AvailableCommandsEnumData;
+    export const EnumData = AvailableCommandsEnumData;
 }
 
 @nativeClass(null)

@@ -30,7 +30,7 @@ export namespace mce
             const u5 = hex.substr(20);
             return `${u1}-${u2}-${u3}-${u4}-${u5}`;
         },
-    });
+    }, 'UUID');
     export type UUID = string;
     /** @deprecated use UUIDWrapper */
     export const UUIDPointer = Pointer.make(mce.UUID);

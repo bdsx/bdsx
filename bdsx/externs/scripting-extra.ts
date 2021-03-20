@@ -34,15 +34,15 @@ declare global
          * The type of the object
          */
         readonly __type__: 'event_data';
-    
+
         /**
          * The identifier of the event
          */
         readonly __identifier__: string;
-    
+
         data: T;
     }
-    
+
     /**
      * not documented
      */
@@ -163,42 +163,42 @@ declare global
         respawn_anchor_charge:any;
         [key:string]:any;
     }
-    
+
     type VectorArray = [number, number, number];
-    
+
     interface VectorXYZ {
         x: number;
         y: number;
         z: number;
     }
-    
+
     interface Range {
         range_min: number;
         range_max: number;
     }
-    
+
     interface Int64 {
         "64bit_low": number;
         "64bit_high": number;
     }
-    
+
     interface MinecraftTrigger {
         event: string;
         filters: MinecraftFilter;
         target: string;
     }
-    
+
     interface MinecraftFilter {
         all_of?: MinecraftFilter[];
         any_of?: MinecraftFilter[];
-    
+
         test?: string;
         subject?: "other" | "parent" | "player" | "self" | "target";
         operator?: "!=" | "<" | "<=" | "<>" | "=" | "==" | ">" | ">=" | "equals" | "not";
         domain?: string;
         value?: any;
     }
-    
+
     type MinecraftDimension = 'overworld' | 'nether' | 'the end';
     type ILookAtComponent = ILookatComponent;
     type IDisplayChatParameters = IDisplayChatEventParameters;
@@ -254,7 +254,7 @@ declare global
         registerSystem(majorVersion: number, minorVersion: number): IVanillaServerSystem;
         log(message: string): void;
     }
-    
+
     /**
      * a utility interface that defines a system that is not being actively extended
      */
@@ -264,68 +264,68 @@ declare global
          * You can use this to set up the environment for your script: register custom components and events, sign up event listeners, etc. This will run BEFORE the world is ready and the player has been added to it, so you shouldn't try to spawn any entities here!
          */
         initialize?:((this: IVanillaServerSystem)=>void)|null;
-    
+
         /**
-         * This method gets called once every game tick. The server aims to be 200 times per second, while client aims to be 60, 
+         * This method gets called once every game tick. The server aims to be 200 times per second, while client aims to be 60,
          * but neither one is guaranteed and can vary with performance. This is a good place to get, check, and react to component changes.
          */
         update?:((this: IVanillaServerSystem)=>void)|null;
-    
+
         /**
          * This method gets called when the Minecraft Script Engine is shutting down. For the client this is when they leave the world; for the server this is after the last player has exited the world.
          */
         shutdown?:((this: IVanillaServerSystem)=>void)|null;
-    
+
         /**
          * Allows you to register a query that will only show entities that have the given component and define which fields of that component will be used as a filter when getting the entities from the query.
-         * 
+         *
          * This is the identifier of the component that will be used to filter entities when
          * @param componentField1 This is the name of the first field of the component that we want to filter entities by. By default this is set to x. If the component you used doesn't have the field you defined here, the field will be ignored
          * @param componentField2 This is the name of the second field of the component that we want to filter entities by. By default this is set to y. If the component you used doesn't have the field you defined here, the field will be ignored
          * @param componentField3 This is the name of the third field of the component that we want to filter entities by. By default this is set to z. If the component you used doesn't have the field you defined here, the field will be ignored
          */
         registerQuery(component: MinecraftComponentName, componentField1?: string, componentField2?: string, componentField3?: string): IQuery;
-        
+
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
          * @param command The slash command to run
          * @param callback The JavaScript object that will be called after the command executes
-         * 
+         *
          */
         executeCommand(command: `testfor ${string}`, callback: (callback: IExecuteCommandTestForCallback) => void): void;
-        
+
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
          * @param command The slash command to run
          * @param callback The JavaScript object that will be called after the command executes
-         * 
+         *
          */
          executeCommand(command: `testforblock ${string}`, callback: (callback: IExecuteCommandTestForBlockCallback) => void): void;
-        
+
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
          * @param command The slash command to run
          * @param callback The JavaScript object that will be called after the command executes
-         * 
+         *
          */
          executeCommand(command: `testforblocks ${string}`, callback: (callback: IExecuteCommandTestForBlocksCallback) => void): void;
-        
+
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
          * @param command The slash command to run
          * @param callback The JavaScript object that will be called after the command executes
-         * 
+         *
          */
         executeCommand(command: 'list', callback: (callback: IExecuteCommandListCallback) => void): void;
-        
+
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
          * @param command The slash command to run
          * @param callback The JavaScript object that will be called after the command executes
-         * 
+         *
          */
         executeCommand(command: string, callback: (callback: IExecuteCommandCallback) => void): void;
-        
+
         /**
          * Removes the specified component from the given entity. If the entity has the component, it will be removed. Currently this only works with custom components and can't be used to remove components defined for an entity in JSON.
          * @param entityObject The EntityObject that was retrieved from a call to createEntity() or retrieved from an event
@@ -335,7 +335,7 @@ declare global
          */
         destroyComponent<NAME extends MinecraftComponentName>(entityObject: MinecraftComponentTypeMap[NAME], componentIdentifier: NAME): true|null;
         destroyComponent(entityObject: IEntity|IBlock, componentIdentifier: string): true|null;
-    
+
         /**
          * Checks if the given entity has the specified component.
          * @param entityObject The EntityObject that was retrieved from a call to createEntity() or retrieved from an event
@@ -346,9 +346,9 @@ declare global
          */
         hasComponent<NAME extends MinecraftComponentName>(entityObject: MinecraftComponentTypeMap[NAME], componentIdentifier: NAME): boolean|null;
         hasComponent(entityObject: IEntity|IBlock, componentIdentifier: string): boolean|null;
-        
+
         /**
-         * Creates a component of the specified name and adds it to the entity. This should only be used with custom components which need 
+         * Creates a component of the specified name and adds it to the entity. This should only be used with custom components which need
          * to be registered first. If the entity already has the component, this will retrieve the component already there instead.
          * @param entity The EntityObject that was retrieved from a call to createEntity() or retrieved from an event
          * @param componentName The name of the component to add to the entity. This is either the name of a built-in component (check the Script Components section) or a custom component created with a call to registerComponent()
@@ -356,7 +356,7 @@ declare global
          */
         createComponent<NAME extends MinecraftComponentName>(entity: MinecraftComponentTypeMap[NAME], componentName: NAME): MinecraftComponentNameMap[NAME] | null;
         createComponent(entity: IEntity|IBlock, componentName: string): IComponent<any> | null;
-    
+
         /**
          * Looks for the specified component in the entity. If it exists, retrieves the data from the component and returns it.
          * @param entity The EntityObject that was retrieved from a call to createEntity() or retrieved from an event
@@ -365,9 +365,9 @@ declare global
          */
         getComponent<NAME extends MinecraftComponentName>(entity: MinecraftComponentTypeMap[NAME], componentName: NAME): MinecraftComponentNameMap[NAME] | null;
         getComponent(entity: IEntity|IBlock, componentName: string): IComponent<any> | null;
-    
+
         /**
-         * Creates a component of the specified name and adds it to the entity. This should only be used with custom components which need 
+         * Creates a component of the specified name and adds it to the entity. This should only be used with custom components which need
          * to be registered first. If the entity already has the component, this will retrieve the component already there instead.
          * @param entity The EntityObject that was retrieved from a call to createEntity() or retrieved from an event
          * @param componentName The name of the component to add to the entity. This is either the name of a built-in component (check the Script Components section) or a custom component created with a call to registerComponent()
@@ -375,28 +375,28 @@ declare global
          */
         applyComponentChanges<NAME extends MinecraftComponentName>(entity: MinecraftComponentTypeMap[NAME], componentName: NAME): boolean;
         applyComponentChanges(entity: IEntity|IBlock, componentName: string): boolean;
-    
+
         ////////////////////////////////////////////////
         // Entities
         ////////////////////////////////////////////////
 
         /**
          * Creates an object with all the required fields and default data for the specified event. If the event is a custom event, it needs to have been previously registered.
-         * 
-         * @param eventIdentifier This is the identifier of the custom event we are registering. The namespace is required and can't be set to minecraft. 
+         *
+         * @param eventIdentifier This is the identifier of the custom event we are registering. The namespace is required and can't be set to minecraft.
          */
         createEventData<EVENT extends MinecraftServerEventName>(eventIdentifier:EVENT):MinecraftServerEventNameMap[EVENT]|null;
         createEventData(eventIdentifier:string):IEventData<any>|null;
-    
+
         /**
-         * 
-         * @param eventIdentifier Allows you to trigger an event with the desired data from script. 
+         *
+         * @param eventIdentifier Allows you to trigger an event with the desired data from script.
          * Anything that signed up to listen for the event will be notified and the given data delivered to them.
          * @param eventData The data for the event. You can create a new JavaScript Object with the parameters you want to pass in to the listener and the engine will take care of delivering the data to them
          */
         broadcastEvent<EVENT extends MinecraftServerEventName>(eventIdentifier:EVENT, eventData: MinecraftServerEventNameMap[EVENT]): boolean | null;
         broadcastEvent(eventIdentifier:string, eventData: IEventData<any>): boolean | null;
-        
+
         /**
          * Allows you to register a JavaScript object that gets called whenever the specified event is broadcast. The event can either be a built-in event or an event specified in script.
          * @param eventIdentifier This is the name of the event to which we want to react. Can be the identifier of a built-in event or a custom one from script

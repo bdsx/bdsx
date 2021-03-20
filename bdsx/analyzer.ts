@@ -13,7 +13,7 @@ export namespace analyzer
         }
 
         for (const name in symbols) {
-            analyzeMap.set(symbols[name].toString(), name);
+            analyzeMap.set(symbols[name]+'', name);
         }
     }
 
@@ -27,7 +27,7 @@ export namespace analyzer
                 offset = '0'.repeat(Math.max(3-offset.length, 0)) + offset;
 
                 const addr = nptr.readPointer();
-                const addrstr = addr.toString();
+                const addrstr = addr+'';
 
                 const addrname = analyzeMap!.get(addrstr);
                 if (addrname) {
@@ -37,7 +37,7 @@ export namespace analyzer
 
                 try {
                     const addr2 = addr.getPointer();
-                    const addr2str = addr2.toString();
+                    const addr2str = addr2+'';
                     const addr2name = analyzeMap!.get(addr2str);
                     if (addr2name) {
                         console.log(`${offset}: ${addrstr}: ${addr2name}(${addr2str})`);

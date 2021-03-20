@@ -34,11 +34,12 @@
         "arrow-body-style": ["error", "as-needed"],
         "implicit-arrow-linebreak": ["error", "beside"],
         "no-empty": ["error", {"allowEmptyCatch": true}],
+        "no-trailing-spaces": "error",
         "indent": ["error", 4, {"ignoreComments": true, "MemberExpression": 0 }],
         "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
         "no-prototype-builtins": "off",
         "prefer-rest-params": "off",
-        "no-debugger": "error",
+        "no-debugger": "warn",
         "import/export": "off",
         "no-duplicate-imports": "error"
     }

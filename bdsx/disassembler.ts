@@ -85,13 +85,13 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
     };
 }
 function walk_oper_r_c(oper:Operator, register:Register, chr:number, size:OperationSize):asm.Operation {
-    return new asm.Operation(asm.code[Operator[oper]+'_r_c'], [register, chr, size]);
+    return new asm.Operation(asm.code[`${Operator[oper]}_r_c`], [register, chr, size]);
 }
 function walk_oper_rp_c(oper:Operator, register:Register, multiply:AsmMultiplyConstant, offset:number, chr:number, size:OperationSize):asm.Operation {
-    return new asm.Operation(asm.code[Operator[oper]+'_rp_c'], [register, multiply, offset, chr, size]);
+    return new asm.Operation(asm.code[`${Operator[oper]}_rp_c`], [register, multiply, offset, chr, size]);
 }
 function walk_ojmp(jumpoper:JumpOperation, offset:number):asm.Operation {
-    return new asm.Operation(asm.code[JumpOperation[jumpoper]+'_c'], [offset]);
+    return new asm.Operation(asm.code[`${JumpOperation[jumpoper]}_c`], [offset]);
 }
 function walk_addr_oper(opername:string, dwordBit:number, readBit:number, info:OffsetInfo, size:OperationSize, ptr:NativePointer, isFloat:boolean):asm.Operation {
     const sig = isFloat ? 'f' : 'r';
@@ -115,10 +115,20 @@ function walk_addr_oper(opername:string, dwordBit:number, readBit:number, info:O
 
 function walk_raw(ptr:NativePointer):asm.Operation|null {
     let rex = 0x40;
+    let wordoper = false;
+    let rexSetted = false;
     let size:OperationSize = OperationSize.dword;
     for (;;) {
         const v = ptr.readUint8();
-        if (v === 0x65) {
+        if (rexSetted && (v & 0xf8) === 0xb8) { // movabs
+            return new asm.Operation(asm.code.mov_r_c, [((rex&1) << 3) | (v&7), readConst(size, ptr)]);
+        } else if ((v & 0xfe) === 0xf2) { // rep
+            if ((v & 1) !== 0) {
+                return new asm.Operation(asm.code.repz, []);
+            } else {
+                return new asm.Operation(asm.code.repnz, []);
+            }
+        } else if (v === 0x65) {
             return new asm.Operation(asm.code.gs, []);
         } else if (v === 0x64) {
             return new asm.Operation(asm.code.fs, []);
@@ -130,21 +140,24 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             return new asm.Operation(asm.code.ss, []);
         } else if ((v&0xf2) === 0x40){ // rex
             rex = v;
-            size = (rex & 0x08) ? OperationSize.qword : OperationSize.dword;
-            size = (rex & 0x08) ? OperationSize.qword : OperationSize.dword;
+            rexSetted = true;
+            if (rex & 0x08) {
+                size = OperationSize.qword;
+            }
             continue;
-        }
-        if (v === 0x66){ // data16
-            rex = v;
+        } else if (v === 0x66){ // data16
+            wordoper = true;
             size = OperationSize.word;
             continue;
         } else if (v === 0x90) { // nop
             return new asm.Operation(asm.code.nop, []);
         } else if (v === 0xcc) { // int3
             return new asm.Operation(asm.code.int3, []);
-        } else if (v === 0xcd) { // int3
+        } else if (v === 0xcd) { // int
             const code = ptr.readUint8();
             return new asm.Operation(asm.code.int_c, [code]);
+        } else if (v === 0xc3) { // ret
+            return new asm.Operation(asm.code.ret, []);
         } else if (v === 0xe8) { // call dword
             const value = ptr.readInt32();
             return new asm.Operation(asm.code.call_c, [value]);
@@ -201,6 +214,15 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                         const info = walk_offset(rex, ptr);
                         if (info === null) break; // bad
                         return walk_addr_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
+                    } else if (v2 === 0x11) { // float operationx
+                        const info = walk_offset(rex, ptr);
+                        if (info === null) break; // bad
+                        if (info.offset === null) {
+                            return new asm.Operation(asm.code.movups_r_r, [info.r1, info. r2, size]);
+                        } else {
+                            const offset = readConst(info.offset, ptr);
+                            return new asm.Operation(asm.code.movups_r_rp, [info.r1, info. r2, 1, offset, size]);
+                        }
                     }
                 }
             } else {
@@ -299,7 +321,7 @@ export namespace disasm
         const size = buffer.length;
         while ((pos < size) && (oper = disasm.walk(ptr)) !== null) {
             const posend = pos + oper.size;
-            if (!quiet) console.log(oper.toString() + colors.gray(' // '+hex(buffer.subarray(pos, posend))));
+            if (!quiet) console.log(oper+'' + colors.gray(` // ${hex(buffer.subarray(pos, posend))}`));
             pos = posend;
             opers.push(oper);
         }

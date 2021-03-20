@@ -40,7 +40,7 @@ export class GetLine {
     private readonly thread:ThreadHandle;
     constructor(private readonly online:(line:string)=>void) {
         chakraUtil.JsAddRef(this.online);
-    
+
         uv_async.open();
         const [handle] = capi.createThread(asmcode.getline, makefunc.asJsValueRef(this.online));
         this.thread = handle;

@@ -1,13 +1,12 @@
 
-export interface CANCEL{ 
+export interface CANCEL {
     __CANCEL_OBJECT__?:void;
     toString():'CANCEL';
 }
 
 export const CANCEL:CANCEL = {toString(){ return 'CANCEL'; }};
 
-export enum AttributeName
-{
+export enum AttributeName {
 	ZombieSpawnReinforcementsChange="minecraft:zombie.spawn.reinforcements",
 	PlayerHunger="minecraft:player.hunger",
 	PlayerSaturation="minecraft:player.saturation",
@@ -26,8 +25,7 @@ export enum AttributeName
 }
 
 // https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
-export enum DeviceOS
-{
+export enum DeviceOS {
 	UNKNOWN = -1,
 	ANDROID = 1,
 	IOS = 2,
@@ -45,8 +43,7 @@ export enum DeviceOS
 	WINDOWS_PHONE = 14,
 }
 
-export enum Encoding
-{
+export enum Encoding {
 	Utf16=-2,
 	Buffer=-1,
 	Utf8=0,

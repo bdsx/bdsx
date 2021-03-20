@@ -58,7 +58,7 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
     keys():IterableIterator<T> {
         return this.values();
     }
-    
+
     *values():IterableIterator<T> {
         for (let item of this.array) {
             for (;;) {
@@ -111,7 +111,7 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
         for (;;) {
             const next = found![nextlink] as T;
             if (next === null) return false;
-            
+
             if (next[hashkey] === hash && next.equals(found)) {
                 found![nextlink] = next[nextlink];
                 next[nextlink] = null;

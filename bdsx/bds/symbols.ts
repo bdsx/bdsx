@@ -87,6 +87,7 @@ const symbols = [
     'ItemStackBase::setCustomName',
     'PlayerInventory::getItem',
     'CommandRegistry::registerCommand',
+    'CommandRegistry::registerAlias',
     'CommandRegistry::findCommand',
     'CommandRegistry::registerOverloadInternal',
     'BlockSource::getBlock',
@@ -97,6 +98,7 @@ const symbols = [
     'BlockLegacy::getCommandName',
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
+    'MinecraftCommands::getRegistry',
 ] as const;
 
 // decorated symbols

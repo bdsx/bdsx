@@ -91,13 +91,13 @@ namespace bedrock_types
          */
         TickWorld = "minecraft:tick_world"
     }
-    
+
     export enum MinecraftDimension {
         Overworld = "overworld",
         Nether = "nether",
         End = "the end"
     }
-    
+
     export enum MinecraftParticleEffect {
         /**
          * Beacon effects
@@ -277,7 +277,7 @@ namespace bedrock_types
          */
         WitchSpell = "minecraft:witchspell"
     }
-    
+
     export enum ReceiveFromMinecraftServer {
         /**
          * This event is triggered whenever a player starts to destroy a block.
@@ -356,7 +356,7 @@ namespace bedrock_types
          */
         WeatherChanged = "minecraft:weather_changed"
     }
-    
+
     export enum SendToMinecraftServer {
         /**
          * This event is used to send a chat message from the server to the players. The event data is the message being sent as a string. Special formatting is supported the same way it would be if a player was sending the message.

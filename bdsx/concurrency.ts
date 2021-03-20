@@ -27,14 +27,14 @@ export class ConcurrencyQueue {
     }
 
     private readonly _next:()=>(Promise<void>|void) = ()=>{
-        if (this.verbose) console.log('Task - '+'*'.repeat(this.getTaskCount()));
+        if (this.verbose) console.log(`Task - ${'*'.repeat(this.getTaskCount())}`);
 
         if (this.reserved.length === 0) {
             if (this.idles === 0 && this.idleResolve !== null) {
                 this.idleResolve();
                 this.idleResolve = null;
                 this.idleReject = null;
-                this.idlePromise = null;                
+                this.idlePromise = null;
             }
             this.idles++;
             this._fireEnd();
@@ -101,7 +101,7 @@ export class ConcurrencyQueue {
     run(task:()=>Promise<void>):Promise<void> {
         this.reserved.push(task);
         if (this.idles === 0) {
-            if (this.verbose) console.log('Task - '+'*'.repeat(this.getTaskCount()));
+            if (this.verbose) console.log(`Task - ${'*'.repeat(this.getTaskCount())}`);
 
             if (this.reserved.length > (this.concurrency>>1)) {
                 if (this.verbose) console.log('Task - Drain');

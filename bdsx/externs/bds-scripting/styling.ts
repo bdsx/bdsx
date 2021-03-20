@@ -13,10 +13,10 @@ export namespace styling {
         }
         return out;
     }
-    
+
     export function apiObjectNameToInterfaceName(id:string):string|null {
         if (!id.endsWith(API_OBJECT_SUFFIX)) return null;
-        return id = 'I'+id.substr(0, id.length-API_OBJECT_SUFFIX.length).replace(/ /g, '');
+        return id = `I${id.substr(0, id.length-API_OBJECT_SUFFIX.length).replace(/ /g, '')}`;
     }
 
     export function toFieldName(name:string):string {

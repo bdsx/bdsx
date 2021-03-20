@@ -30,7 +30,7 @@ export class BufferWriter extends AbstractWriter {
             this.array = narray;
         }
     }
-    
+
     buffer():Uint8Array {
         return this.array.subarray(0, this.size);
     }
@@ -52,7 +52,7 @@ export class BufferReader extends AbstractReader {
         if (reading > 0) values.set(this.array.subarray(this.p, this.p+length), offset);
         return reading;
     }
-    
+
     remaining():Uint8Array {
         const p = this.p;
         this.p = this.array.length;

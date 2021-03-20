@@ -2,7 +2,7 @@
 export class ScriptWriter {
     public script = '';
     private tabstr = '';
-    
+
     tab(n:number):void {
         if (n < 0) {
             this.tabstr = this.tabstr.substr(0, this.tabstr.length + n);

@@ -42,7 +42,7 @@ export class NativeModule extends VoidPointer {
         name: string, returnType: RETURN, opts?: OPTS|null, ...params: PARAMS):
         FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN>{
         const addr = this.getProcAddress(name);
-        if (addr.isNull()) throw Error(this.name + ': Cannot find procedure, ' + name);
+        if (addr.isNull()) throw Error(`${this.name}: Cannot find procedure, ${name}`);
         return makefunc.js(addr, returnType, opts, ...params);
     }
 
@@ -58,7 +58,7 @@ export class NativeModule extends VoidPointer {
      */
     static get(name: string|null): NativeModule {
         const module = getModuleHandle(name);
-        if (module.isNull()) throw Error(name + ': Cannot find module');
+        if (module.isNull()) throw Error(`${name}: Cannot find module`);
         module.name = name || '[exe]';
         return module;
     }
@@ -71,7 +71,7 @@ export class NativeModule extends VoidPointer {
         const module = dll.kernel32.LoadLibraryW(name);
         if (module.isNull()) {
             const errno = dll.kernel32.GetLastError();
-            const errobj:NodeJS.ErrnoException = Error(name + ': Cannot load module, errno='+errno);
+            const errobj:NodeJS.ErrnoException = Error(`${name}: Cannot load module, errno=${errno}`);
             errobj.errno = errno;
             throw errobj;
         }

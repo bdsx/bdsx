@@ -6,7 +6,7 @@ import { makefunc, RawTypeId } from "./makefunc";
 export namespace capi
 {
     export const nodeThreadId = dll.kernel32.GetCurrentThreadId();
-    
+
     export const debugBreak = makefunc.js(asmcode.debugBreak, RawTypeId.Void);
 
     asmcode.nodeThreadId = nodeThreadId;
@@ -21,7 +21,7 @@ export namespace capi
         const handle = dll.kernel32.CreateThread(null, stackSize, functionPointer, param, 0, out);
         return [handle, out[0]];
     }
-    
+
     export function beginThreadEx(functionPointer:VoidPointer, param:VoidPointer|null = null):[ThreadHandle, number] {
         const out = new Uint32Array(1);
         const handle = dll.ucrtbase._beginthreadex(null, 0, functionPointer, param, 0, out);

@@ -96,7 +96,7 @@ class PackageInfo {
     toMenuString(): string[] {
         const author = this.author;
         const MAX_LEN = 18;
-        return [this.installed || 'No', this.name, this.desc, author.length > MAX_LEN ? author.substr(0, MAX_LEN-3)+'...' : author, this.date];
+        return [this.installed || 'No', this.name, this.desc, author.length > MAX_LEN ? `${author.substr(0, MAX_LEN-3)}...` : author, this.date];
     }
 
     toString(): string {

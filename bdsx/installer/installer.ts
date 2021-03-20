@@ -42,22 +42,22 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
             output: process.stdout
         });
 
-        rl.question(question + ' ', async(answer)=>{
+        rl.question(`${question} `, async(answer)=>{
             rl.close();
 
             const cleaned = answer.trim().toLowerCase();
             if (cleaned === '' && defaultValue !== undefined)
                 return resolve(defaultValue);
-    
+
             if (yesValues.indexOf(cleaned) >= 0)
                 return resolve(true);
-                
+
             if (noValues.indexOf(cleaned) >= 0)
                 return resolve(false);
-    
+
             process.stdout.write('\nInvalid Response.\n');
-            process.stdout.write('Answer either yes : (' + yesValues.join(', ')+') \n');
-            process.stdout.write('Or no: (' + noValues.join(', ') + ') \n\n');
+            process.stdout.write(`Answer either yes : (${yesValues.join(', ')}) \n`);
+            process.stdout.write(`Or no: (${noValues.join(', ')}) \n\n`);
             resolve(yesno(question, defaultValue));
         });
     });
@@ -97,7 +97,7 @@ const fs = {
                 } else resolve();
             });
         });
-    }, 
+    },
     _processMkdirError(dirname:string, err:any):boolean {
         if (err.code === 'EEXIST') {
             return true;
@@ -241,11 +241,11 @@ class InstallItem {
         const url = this.opts.url;
         const dest = path.join(this.opts.targetPath);
         const writedFiles:string[] = [];
-        
+
         const zipfiledir = path.join(__dirname, 'zip');
         try { await fs.del(zipfiledir); } catch (err) {}
 
-        const bar = new ProgressBar(`${this.opts.name}: Install :bar :current/:total`, { 
+        const bar = new ProgressBar(`${this.opts.name}: Install :bar :current/:total`, {
             total: 1,
             width: 20,
         });
@@ -289,7 +289,7 @@ class InstallItem {
                         entry.autodrain();
                         return;
                     }
-            
+
                     if (this.opts.skipExists) {
                         const exists = await fs.exists(path.join(dest, entry.path));
                         if (exists) {
@@ -297,7 +297,7 @@ class InstallItem {
                             return;
                         }
                     }
-                    
+
                     await mkdirRecursive(path.dirname(extractPath));
                     entry.pipe(fs_ori.createWriteStream(extractPath)).on('error', reject);
                 }).on('finish', ()=>{
@@ -306,10 +306,10 @@ class InstallItem {
                 }).on('error', reject);
             }).on('error', reject);
         });
-        
+
         return writedFiles;
     }
-    
+
     private async _install():Promise<void> {
         const oldFiles = this.opts.oldFiles;
         if (oldFiles) {
@@ -328,7 +328,7 @@ class InstallItem {
         const postinstall = this.opts.postinstall;
         if (postinstall) await postinstall(writedFiles);
     }
-        
+
     async install():Promise<void> {
         await fs.mkdir(this.opts.targetPath);
         const name = this.opts.name;

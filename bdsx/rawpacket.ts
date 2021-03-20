@@ -60,7 +60,7 @@ export class RawPacket extends AbstractWriter {
         createPacketRaw(this.sharedptr, packetId);
         this.packet = this.sharedptr.p!;
         this.data.resize(0);
-        
+
         const unknown = this.packet.getUint8(0x10) & 3;
         const unknown2 = unknownarg & 3;
         this.writeVarUint((packetId & 0x3ff) | (unknown2 << 10) | (unknown << 12));

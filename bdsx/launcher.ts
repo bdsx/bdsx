@@ -248,7 +248,6 @@ function _launch(asyncResolve:()=>void):void {
     ], [1, 5, 16, 20, 28, 32]);
 
     patchForStdio();
-    require('./bds/implements');
 
     // seh wrapped main
     asmcode.bedrock_server_exe_args = bedrock_server_exe.args;
@@ -267,6 +266,7 @@ function _launch(asyncResolve:()=>void):void {
     // main will create a game thread.
     // and bdsx will hijack the game thread and run it on the node thread.
     const [threadHandle] = capi.createThread(asmcode.wrapped_main, null);
+    require('./bds/implements');
 
     // skip to create the console of BDS
     procHacker.write('ScriptApi::ScriptFramework::registerConsole', 0, asm().mov_r_c(Register.rax, 1).ret());
@@ -336,9 +336,9 @@ const commandContextRefCounterVftable = proc["std::_Ref_count_obj2<CommandContex
 const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
 const commandContextConstructor = procHacker.js('CommandContext::CommandContext', RawTypeId.Void, null,
     CommandContext, CxxStringWrapper, CommandOriginWrapper, RawTypeId.Int32);
-const CommandContextPtr = SharedPtr.make(CommandContext);
+const CommandContextSharedPtr = SharedPtr.make(CommandContext);
 function createCommandContext(command:CxxStringWrapper, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
-    const sharedptr = new CommandContextPtr(true);
+    const sharedptr = new CommandContextSharedPtr(true);
     sharedptr.create(commandContextRefCounterVftable);
     commandContextConstructor(sharedptr.p, command, commandOrigin, commandVersion);
     return sharedptr;
@@ -388,6 +388,11 @@ export namespace bedrockServer
     export const commandOutput = commandOutputEvTarget as CapsuledEvent<(log:string)=>CANCEL|void>;
 
     export let sessionId: string;
+
+    export function isLaunched():boolean {
+        return launched;
+    }
+
     /**
      * stop the BDS
      * It will stop next tick

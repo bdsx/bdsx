@@ -47,7 +47,7 @@ export interface VoidPointer {
      * or it retruns 0x0000000000000000 format.
      */
     toString(radix?:number):string;
-    
+
     as<T extends VoidPointer>(ctor:{new():T}): T;
     addAs<T extends VoidPointer>(ctor:{new():T}, lowBits?: number, highBits?: number): T;
     subAs<T extends VoidPointer>(ctor:{new():T}, lowBits?: number, highBits?: number): T;
@@ -133,7 +133,7 @@ export declare class PrivatePointer extends VoidPointer {
     protected getBuffer(bytes: number, offset?: number): Uint8Array;
 
     protected setBuffer(buffer: Bufferable, offset?: number): void;
-    
+
     /**
      * Read memory as binary string.
      * It stores 2bytes per character
@@ -239,7 +239,7 @@ export declare class StaticPointer extends PrivatePointer {
     getBuffer(bytes: number, offset?: number): Uint8Array;
 
     setBuffer(buffer: Bufferable, offset?: number): void;
-    
+
     /**
      * Read memory as binary string.
      * It stores 2bytes per character
@@ -259,7 +259,7 @@ export declare class StaticPointer extends PrivatePointer {
      * @param words 2bytes per word
      */
     setBin(v:string, offset?:number): void;
-    
+
     interlockedIncrement16(offset?:number):number;
     interlockedIncrement32(offset?:number):number;
     interlockedIncrement64(offset?:number):number;
@@ -276,7 +276,7 @@ export declare class StaticPointer extends PrivatePointer {
 }
 
 /**
- * this pointer has the buffer itself 
+ * this pointer has the buffer itself
  */
 export declare class AllocatedPointer extends StaticPointer {
     constructor(size:number);
@@ -285,7 +285,11 @@ export declare class AllocatedPointer extends StaticPointer {
 export declare class StructurePointer extends PrivatePointer {
     static readonly contentSize:unique symbol;
     static [StructurePointer.contentSize]:number;
-    constructor(pointerOrBufferItSelf?:VoidPointer|boolean|null);
+    constructor(allocateItSelf?:boolean);
+    /**
+     * @deprecated use ptr.as
+     */
+    constructor(pointerOrBufferItSelf:VoidPointer|null);
 }
 
 /**
@@ -382,7 +386,7 @@ export declare class NativePointer extends StaticPointer {
     readVarBin(): string;
 
     /**
-     * 
+     *
      * @param encoding default = Encoding.Utf8
      */
     readVarString(encoding?: Encoding): string;
@@ -419,7 +423,7 @@ export declare class NativePointer extends StaticPointer {
      * @param words 2bytes per word
      */
     readBin(words: number): string;
-    
+
     /**
      * is same with readBin(4).
      * It stores 2bytes per character for 64bits.
@@ -432,7 +436,7 @@ export declare class NativePointer extends StaticPointer {
      * @param words 2bytes per word
      */
     writeBin(v:string, words: number): string;
-    
+
     readJsValueRef():any;
     writeJsValueRef(value:unknown):void;
 }
@@ -500,7 +504,7 @@ export declare namespace pdb
      * @param dbghelpOptions
      */
     export function setOptions(dbghelpOptions:number):number;
-    
+
     /**
      * @deprecated use pdb.getList instead
      */
@@ -532,7 +536,7 @@ export declare namespace pdb
      * get all symbols
      */
     export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer>;
-    
+
 }
 
 /**
@@ -555,11 +559,11 @@ export declare namespace runtimeError
 export declare namespace bedrock_server_exe
 {
     export const md5:string;
-    
+
     export const argc: number;
 
     export const args: VoidPointer;
-    
+
     export const argsLine: string;
 
     /**
@@ -605,14 +609,14 @@ export declare namespace uv_async
      * size of the task instance
      */
     export const sizeOfTask:number;
-    
+
     /**
      * native function
      * allocate the task with a extra buffer for 'uv_async.post'
      * AsyncTask* alloc(void(*fn)(AsyncTask*), size_t extraSize)
      */
     export const alloc: VoidPointer;
-    
+
     /**
      * native function
      * send and execute the function to the main thread
@@ -642,12 +646,12 @@ export declare namespace cgate
      * get NativeModule
      */
     export function GetModuleHandleW(name:string|null):VoidPointer;
-    
+
     /**
      * get the function pointer from NativeModule
      */
     export function GetProcAddress(nativeModule:VoidPointer, name:string):VoidPointer;
-    
+
     /**
      * get the function pointer from NativeModule
      */
@@ -695,7 +699,7 @@ export declare namespace chakraUtil {
     export function JsCreateFunction(funcptr:VoidPointer, state:VoidPointer|null):(...args:any[])=>any;
 
     export function JsAddRef(value:unknown):number;
-    
+
     export function JsRelease(value:unknown):number;
 
     export function asJsValueRef(value:unknown):VoidPointer;
@@ -707,7 +711,7 @@ export declare namespace ipfilter
      * block ip
      * It does not store permanently
      * You need to re-add it on startup
-     * 
+     *
      * but it blocks packets on very early phase
      */
     export function add(ip:string, periodSeconds?:number):void;
@@ -728,7 +732,7 @@ export declare namespace ipfilter
     export function has(ip:string):boolean;
 
     /**
-     * get the un-blocking time in unix time stamp 
+     * get the un-blocking time in unix time stamp
      * 0 : permanent
      * -1 : not found
      */
@@ -744,7 +748,7 @@ export declare namespace ipfilter
      * it will block IP when it exceeds
      */
     export function setTrafficLimit(bytes:number):void;
-    
+
     /**
      * blocking period for setTrafficLimit
      */
@@ -764,7 +768,7 @@ export declare namespace ipfilter
 
     /**
      * all filtering IPs as Array with [IP, time] pairs
-     * time is for un-blocking in unix time stamp 
+     * time is for un-blocking in unix time stamp
      * time = 0 : permanent
      */
     export function entires():[string, number][];
@@ -792,7 +796,7 @@ export declare namespace cxxException
      * will not pass catch
      */
     export const cxxthrow:VoidPointer;
-    
+
     /**
      * void cxxthrowString(const char*);
      */

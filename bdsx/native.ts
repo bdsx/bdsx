@@ -26,7 +26,7 @@ export function setOnErrorListener(cb: ((err: Error) => void | boolean)|null): v
     if (cb) {
         core.jshook.setOnError(err=>{
             if (cb(err) !== false) {
-                console.error(err.stack || err.toString());
+                console.error(err.stack || (err+''));
             }
         });
     } else {

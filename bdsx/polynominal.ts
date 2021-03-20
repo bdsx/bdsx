@@ -179,7 +179,7 @@ export namespace polynominal {
             return this;
         }
         toString():string {
-            if (this.degree instanceof Constant && this.degree.value === 1) return this.term.toString();
+            if (this.degree instanceof Constant && this.degree.value === 1) return this.term+'';
             return `(${this.term}^${this.degree})`;
         }
     }
@@ -253,7 +253,7 @@ export namespace polynominal {
         toString():string {
             if (this.variables.length === 0) return this.constant+'';
             if (this.constant === 1) {
-                if (this.variables.length === 1) return this.variables[0].toString();
+                if (this.variables.length === 1) return this.variables[0]+'';
                 return `(${this.variables.join('*')})`;
             }
             return `(${this.variables.join('*')}*${this.constant})`;

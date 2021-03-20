@@ -97,7 +97,7 @@ export namespace htmlutil {
                 if (opt.id && node.id !== opt.id) return false;
                 if (opt.class && node.classNames.indexOf(opt.class) === -1) return false;
                 if (opt.tag && node.tagName !== opt.tag.toUpperCase()) return false;
-                return true;   
+                return true;
             }
         }
     }
@@ -105,7 +105,7 @@ export namespace htmlutil {
         if (!check(node, opt)) return null;
         return follow(node, ...opts);
     }
-    
+
     export function tableToObject(table:HTMLElement):HtmlSearcher.TableRow[] {
         const out:HtmlSearcher.TableRow[] = [];
 
@@ -138,7 +138,7 @@ export namespace htmlutil {
         }
         return out;
     }
-        
+
     export function wgetText(url:string):Promise<string> {
         return new Promise((resolve ,reject)=>{
             https.get(url, res=>{
@@ -153,7 +153,7 @@ export namespace htmlutil {
             }).on('error', reject);
         });
     }
-        
+
     export async function wgetElement(url:string, ...followFilter:Filter[]):Promise<HTMLElement|null> {
         const out = parseHtml(await wgetText(url));
         return follow(out, ...followFilter);

@@ -35,12 +35,12 @@ export function memdiff_contains(larger:number[], smaller:number[]):boolean {
 
         for (;;) {
             if (small_i === smaller_size) return true;
-            
+
             const small_from = smaller[small_i];
             if (small_from < large_from) return false;
             if (small_from > large_to) break;
             if (small_from === large_to) return false;
-            
+
             const small_to = smaller[small_i+1];
             if (small_to > large_to) return false;
             if (small_to === large_to) {
@@ -63,11 +63,11 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
     const size = values.length;
     if (size === 0) return '';
     if (nextLinePer === undefined) nextLinePer = size;
-    
+
     const out:number[] = [];
     for (let i=0;i<size;) {
         if (i !== 0 && (i % nextLinePer) === 0) out.push(10);
-        
+
         const v = values[i++];
         const n1 = (v >> 4);
         if (n1 < 10) out.push(n1+0x30);
@@ -121,7 +121,7 @@ export function removeLine(context:string, lineFrom:number, lineTo:number):strin
 export function getLineAt(context:string, lineIndex:number):string {
     const idx = indexOfLine(context, lineIndex);
     if (idx === -1) return context;
-    
+
     const next = context.indexOf('\n', idx);
     if (next === -1) return context.substr(idx);
     else return context.substring(idx, next);
@@ -217,7 +217,7 @@ export function anyToString(v:unknown):string {
     if (typeof v === 'object') {
         writeObject(v);
     } else {
-        return v+'';
+        return `${v}`;
     }
     return out;
 }

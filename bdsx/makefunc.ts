@@ -41,7 +41,7 @@ function initFunctionMap():void {
     }
 
     function chakraCoreToMakeFuncMap(funcName:string):void {
-        const constname = 'fn_'+funcName as keyof typeof makefuncDefines;
+        const constname = `fn_${funcName}` as keyof typeof makefuncDefines;
         const offset = makefuncDefines[constname];
         if (typeof offset !== 'number') throw Error(`${constname} not found`);
         setFunctionMap(constname, cgate.GetProcAddress(chakraCoreDll, funcName));
@@ -148,7 +148,7 @@ function checkTypeIsFunction(value: unknown, paramNum: number): void {
 
 function pointerClassOrThrow(paramNum: number, type: any): void {
     if (!isBaseOf(type, VoidPointer)) {
-        const name = type.name.toString();
+        const name = type.name+'';
         throwTypeError(paramNum, 'class', name, '*Pointer class required');
     }
 }

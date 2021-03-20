@@ -44,7 +44,7 @@ export namespace exehacker
     export function patching(subject:string, key:keyof proc, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
         procHacker.patching(subject, key, offset, newCode, tempRegister, call, originalCode, ignoreArea);
     }
-    
+
     /**
      * @deprecated use procHacker.jumping instead
      * @param subject for printing on error

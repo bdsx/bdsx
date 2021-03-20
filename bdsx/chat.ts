@@ -23,7 +23,7 @@ class ChatEventImpl implements ChatEvent {
     public isModified = false;
 
     constructor(
-        public name:string, 
+        public name:string,
         public message:string,
         public networkIdentifier:NetworkIdentifier
     ) {

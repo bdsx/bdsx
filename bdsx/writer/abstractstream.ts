@@ -10,20 +10,20 @@ export abstract class AbstractWriter {
     abstract put(v:number):void;
     abstract putRepeat(v:number, count:number):void;
     abstract write(values:Uint8Array):void;
-    
+
     writeNullTerminatedString(text:string):void {
         if (text.indexOf('\0') !== -1) throw Error('Cannot write null characters with writeNullTerminatedString');
         const encoder = new TextEncoder;
         this.write(encoder.encode(text));
         this.put(0);
     }
-    
+
     writeVarString(text:string):void {
         this.writeVarUint(text.length);
         const encoder = new TextEncoder;
         this.write(encoder.encode(text));
     }
-    
+
     writeVarUint(n:number):void {
         if (n < 0) throw Error('Number is not unsigned');
         for (;;) {
@@ -37,7 +37,7 @@ export abstract class AbstractWriter {
             }
         }
     }
-    
+
     writeVarInt(n:number):void {
         n |= 0;
         this.writeVarUint((n << 1) ^ (n >> 31));
@@ -47,26 +47,26 @@ export abstract class AbstractWriter {
         n |= 0;
         return this.put(n&0xff);
     }
-    
+
     writeInt8(n:number):void {
         n |= 0;
         return this.put(n&0xff);
     }
-    
+
     writeUint16(n:number):void {
         return this.writeInt16(n);
     }
-    
+
     writeInt16(n:number):void {
         n |= 0;
         this.put(n&0xff);
         this.put((n >> 8)&0xff);
     }
-    
+
     writeUint32(n:number):void {
         return this.writeInt32(n);
     }
-    
+
     writeInt32(n:number):void {
         n |= 0;
         this.put(n&0xff);
@@ -74,7 +74,7 @@ export abstract class AbstractWriter {
         this.put((n >> 16)&0xff);
         this.put((n >> 24)&0xff);
     }
-    
+
     writeUint64WithFloat(n:number):void {
         if (n < 0) {
             this.writeInt32(0);
@@ -87,7 +87,7 @@ export abstract class AbstractWriter {
             this.writeUint32(Math.floor(n / UINT32_CAP));
         }
     }
-    
+
     writeInt64WithFloat(n:number):void {
         if (n <= -INT64_CAP) {
             this.writeInt32(0);
@@ -125,7 +125,7 @@ export abstract class AbstractWriter {
     writeFloat32(n:number):void {
         this.writeInt32(floatbits.f32_to_bits(n));
     }
-    
+
     writeFloat64(n:number):void {
         const [low, high] = floatbits.f64_to_bits(n);
         this.writeInt32(low);
@@ -140,7 +140,7 @@ export abstract class AbstractWriter {
 export abstract class AbstractReader {
     abstract get():number;
     abstract read(values:Uint8Array, offset:number, length:number):number;
-    
+
     readVarUint():number {
         let out = 0;
         let shift = 1;

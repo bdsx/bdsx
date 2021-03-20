@@ -126,7 +126,7 @@ export class Actor extends NativeClass {
         if (id > 15) return;
 
         const attr = this.attributes.getMutableInstance(id);
-        if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || 'Attribute'+id}`);
+        if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || `Attribute${id}`}`);
         attr.currentValue = value;
         if (this.isPlayer()) {
             this._sendAttributePacket(id, value, attr);

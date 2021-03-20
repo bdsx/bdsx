@@ -34,15 +34,15 @@ export class ServerPlayer extends Player {
     protected _sendInventory():void {
         abstract();
     }
-    
+
     openInventory():void {
         abstract();
     }
-    
+
     sendNetworkPacket(packet:Packet):void {
         abstract();
     }
-    
+
     sendInventory():void {
         setTimeout(() => {
             this._sendInventory();

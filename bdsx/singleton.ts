@@ -1,3 +1,6 @@
+import { NativeClass } from "./nativeclass";
+
+const singleton = Symbol();
 
 export class Singleton<T> extends WeakMap<any, T> {
     newInstance<P>(param:P, allocator:()=>T):T {
@@ -5,5 +8,11 @@ export class Singleton<T> extends WeakMap<any, T> {
         if (instance) return instance;
         instance = allocator();
         return instance;
+    }
+
+    static newInstance<T>(base:{prototype:NativeClass,[singleton]?:Singleton<any>}, param:unknown, mapper:()=>T):T {
+        let map = base[singleton];
+        if (map === undefined) base[singleton] = map = new Singleton;
+        return map.newInstance(param, mapper);
     }
 }

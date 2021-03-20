@@ -218,14 +218,13 @@ function mapEvalOrigin(origin: string): string {
             line: +match[3],
             column: +match[4] - 1
         });
-        return 'eval at ' + match[1] + ' (' + position.source + ':' +
-            position.line + ':' + (position.column + 1) + ')';
+        return `eval at ${match[1]} (${position.source}:${position.line}:${position.column + 1})`;
     }
 
     // Parse nested eval() calls using recursion
     match = /^eval at ([^(]+) \((.+)\)$/.exec(origin);
     if (match) {
-        return 'eval at ' + match[1] + ' (' + mapEvalOrigin(match[2]) + ')';
+        return `eval at ${match[1]} (${mapEvalOrigin(match[2])})`;
     }
 
     // Make sure we still return useful information if we didn't find anything
@@ -311,7 +310,7 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
  */
 export function remapAndPrintError(err:{stack?:string}): void {
     if (err && err.stack) {
-        console.error(remapStack(err.stack + ''));
+        console.error(remapStack(err.stack));
     } else {
         console.error(err);
     }
@@ -341,8 +340,7 @@ export function getErrorSource(error: Error): string | null {
         if (contents) {
             const code = contents.split(/(?:\r\n|\r|\n)/)[line - 1];
             if (code) {
-                return source + ':' + line + '\n' + code + '\n' +
-                    new Array(column).join(' ') + '^';
+                return `${source}:${line}\n${code}\n${new Array(column).join(' ')}^`;
             }
         }
     }
@@ -406,6 +404,6 @@ export function install():void {
 
     console.trace = function(...messages:any[]): void {
         const err = remapStack(removeLine(Error(messages.map(anyToString).join(' ')).stack || '', 1, 2))!;
-        console.error('Trace'+err.substr(5));
+        console.error(`Trace${err.substr(5)}`);
     };
 }

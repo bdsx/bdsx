@@ -8,13 +8,14 @@ import { isBaseOf } from "./util";
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
 
+export type KeysFilter<T, FILTER> = {[key in keyof T]:T[key] extends FILTER ? never: key}[keyof T];
 export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:any[])=>any ? never: key}[keyof T];
 
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
 
 const isNativeClass = Symbol();
 const isSealed = Symbol();
-const offsetmap = Symbol();
+const fieldmap = Symbol();
 
 function accessor(key:string|number):string {
     if (typeof key === 'number') return `[${key}]`;
@@ -27,11 +28,12 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     new(alloc?:boolean):T;
     prototype:T;
     [StructurePointer.contentSize]:number|null;
-    [offsetmap]:Record<keyof any, number>;
+    [fieldmap]:Record<keyof any, [Type<any>, number]>;
     [isSealed]:boolean;
     [isNativeClass]:true;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
+    typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
     ref<T extends NativeClass>(this:{new():T}):NativeClassType<T>;
 }
 
@@ -67,36 +69,50 @@ class StructureDefination {
         }
         sealClass(clazz);
 
-        const offsets:Record<string, number> = clazz[offsetmap] = {};
+        clazz[fieldmap] = this.fields;
 
         const propmap = new NativeDescriptorBuilder;
         for (const key in this.fields) {
             const [type, offset] = this.fields[key]!;
             type[NativeType.descriptor](propmap, key, offset);
-            offsets[key] = offset;
         }
-        const types = propmap.types;
+        const params = propmap.params;
+        const supercls = (clazz as any).__proto__.prototype;
+        const idx = params.push(supercls) - 1;
+
         if (propmap.ctor.code !== '') {
-            const ctorfunc = new Function('NativeType', 'types', propmap.ctor.code);
-            const superCtor = clazz.prototype[NativeType.ctor];
+            const superfn = supercls[NativeType.ctor];
+            let manual = clazz.prototype[NativeType.ctor];
+            if (superfn === manual) manual = emptyFunc;
+            const func = new Function('NativeType', 'types', propmap.ctor.code);
             clazz.prototype[NativeType.ctor] = function(this:T){
-                ctorfunc.call(this, NativeType, types);
-                superCtor.call(this);
+                superfn.call(this);
+                func.call(this, NativeType, params);
+                manual.call(this);
             };
         }
         if (propmap.dtor.code !== '') {
-            const dtorfunc = new Function('NativeType', 'types', propmap.dtor.code);
-            const superDtor = clazz.prototype[NativeType.dtor];
+            const superfn = supercls[NativeType.dtor];
+            let manual = clazz.prototype[NativeType.dtor];
+            if (superfn === manual) manual = emptyFunc;
+            const func = new Function('NativeType', 'types', propmap.dtor.code);
             clazz.prototype[NativeType.dtor] = function(this:T){
-                dtorfunc.call(this, NativeType, types);
-                superDtor.call(this);
+                superfn.call(this);
+                func.call(this, NativeType, params);
+                manual.call(this);
             };
         }
         if (propmap.ctor_copy.code !== '') {
-            const copyfunc = new Function('NativeType', 'types', 'o', propmap.ctor_copy.code);
-            (clazz.prototype as any)._default_copy = function(this:T, o:T){
-                copyfunc.call(this, NativeType, types, o);
-            };
+            if (!clazz.prototype.hasOwnProperty(NativeType.ctor_copy)) {
+                let code = propmap.ctor_copy.code;
+                if (clazz.prototype[NativeType.ctor_copy] !== emptyFunc) {
+                    code = `types[${idx}][NativeType.ctor_copy].call(this);\n${code}`;
+                }
+                const func = new Function('NativeType', 'types', 'o', propmap.ctor_copy.code);
+                clazz.prototype[NativeType.ctor_copy] = function(this:T, o:T){
+                    func.call(this, NativeType, params, o);
+                };
+            }
         }
 
         clazz[StructurePointer.contentSize] =
@@ -143,16 +159,12 @@ export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static readonly [NativeType.align]:number = 1;
     static readonly [StructurePointer.contentSize]:number = 0;
-    static readonly [offsetmap]:Record<keyof any, number>;
+    static readonly [fieldmap]:Record<keyof any, [NativeType<any>, number]>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
-    }
-
-    constructor(ptr?:VoidPointer|boolean) {
-        super(ptr);
     }
 
     [NativeType.size]:number;
@@ -163,16 +175,13 @@ export class NativeClass extends StructurePointer {
     [NativeType.dtor]():void {
         // empty
     }
-    private _default_copy(from:NativeClass):void {
-        this.copyFrom(from, this[NativeType.size]);
+    [NativeType.ctor_copy](from:this):void {
+        // empty
     }
-    [NativeType.ctor_copy](from:NativeClass):void {
-        this._default_copy(from);
-    }
-    [NativeType.ctor_move](from:NativeClass):void {
+    [NativeType.ctor_move](from:this):void {
         this[NativeType.ctor_copy](from);
     }
-    [NativeType.setter](from:NativeClass):void {
+    [NativeType.setter](from:this):void {
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](from);
     }
@@ -183,10 +192,10 @@ export class NativeClass extends StructurePointer {
         ptr.as(this)[NativeType.dtor]();
     }
     static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void {
-        to.as(this)[NativeType.ctor_copy](new this(from));
+        to.as(this)[NativeType.ctor_copy](from.as(this));
     }
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
-        to.as(this)[NativeType.ctor_move](new this(from));
+        to.as(this)[NativeType.ctor_move](from.as(this));
     }
     static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:VoidPointer, value:THIS, offset?:number):void {
         const nptr = ptr.addAs(this, offset, (offset || 0) >> 31);
@@ -215,10 +224,14 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
-     * alias of [NativeType.ctor]();
+     * alias of [NativeType.ctor]() and [Native.ctor_copy]();
      */
-    construct():void {
-        this[NativeType.ctor]();
+    construct(copyFrom?:this|null):void {
+        if (copyFrom == null) {
+            this[NativeType.ctor]();
+        } else {
+            this[NativeType.ctor_copy](copyFrom);
+        }
     }
 
     /**
@@ -289,11 +302,18 @@ export class NativeClass extends StructurePointer {
     }
 
     static offsetOf<T extends NativeClass>(this:{new():T}, field:KeysWithoutFunction<T>):number {
-        return (this as NativeClassType<T>)[offsetmap][field];
+        return (this as NativeClassType<T>)[fieldmap][field][1];
+    }
+
+    static typeOf<T extends NativeClass, KEY extends KeysWithoutFunction<T>>(this:{new():T}, field:KEY):Type<T[KEY]> {
+        return (this as NativeClassType<T>)[fieldmap][field][0];
     }
 }
 
 NativeClass.prototype[NativeType.size] = 0;
+NativeClass.prototype[NativeType.ctor] = emptyFunc;
+NativeClass.prototype[NativeType.dtor] = emptyFunc;
+NativeClass.prototype[NativeType.ctor_copy] = emptyFunc;
 
 function sealClass<T extends NativeClass>(cls:NativeClassType<T>):void {
     let node = cls as any;
@@ -529,7 +549,7 @@ export declare class MantleClass extends NativeClass {
 exports.MantleClass = NativeClass;
 
 function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T> {
-    const Parent:{new():NativeClass} = type;
+    const Parent = type as any as NativeClassType<NativeClass>;
     class Pointer extends Parent {
         static readonly [NativeType.size] = 8;
         static readonly [NativeType.align] = 8;
@@ -540,17 +560,11 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
             super();
         }
 
-        static [NativeType.getter](ptr:StaticPointer, offset?:number):T|null {
-            return ptr.getNullablePointerAs(this, offset) as unknown as T;
+        static [NativeType.getter](ptr:StaticPointer, offset?:number):NativeClass {
+            return ptr.getNullablePointerAs(this as any, offset) as unknown as NativeClass;
         }
-        static [NativeType.setter](ptr:StaticPointer, value:T, offset?:number):void {
+        static [NativeType.setter](ptr:StaticPointer, value:NativeClass, offset?:number):void {
             ptr.setPointer(value, offset);
-        }
-        static [NativeType.ctor]():void {
-            // empty
-        }
-        static [NativeType.dtor]():void {
-            // empty
         }
         static [NativeType.ctor_copy](ptr:StaticPointer, from:VoidPointer):void {
             ptr.copyFrom(from, 8);
@@ -566,9 +580,11 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
             throw Error('Wrong call, does not need to define structure of pointer class');
         }
     }
+    Pointer.prototype[NativeType.ctor] = emptyFunc;
+    Pointer.prototype[NativeType.dtor] = emptyFunc;
     Pointer[NativeType.descriptor] = NativeType.defaultDescriptor;
 
     if (makefunc.np2js in type) Pointer[NativeType.getter] = wrapperGetterRef as any;
     if (makefunc.js2np in type) Pointer[NativeType.setter] = wrapperSetterRef;
-    return Pointer as Type<T> as NativeClassType<T>;
+    return Pointer as any;
 }

@@ -338,7 +338,7 @@ function onPacketAfter(rbp:OnPacketRBP, packetId:MinecraftPacketIds):void {
         if (target !== null && !target.isEmpty()) {
             const packet = rbp.packet.p!;
             const TypedPacket = PacketIdToType[packetId] || Packet;
-            const typedPacket = new TypedPacket(packet);
+            const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
                 try {
                     listener(typedPacket, nethook.lastSender, packetId);
@@ -363,7 +363,7 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
         const target = alltargets[packetId+SEND_OFFSET] as Event<nethook.SendListener<MinecraftPacketIds>>;
         if (target !== null && !target.isEmpty()) {
             const TypedPacket = PacketIdToType[packetId] || Packet;
-            const packetptr = new TypedPacket(packet);
+            const packetptr = packet.as(TypedPacket);
             const ignore = target.fire(packetptr, ni, packetId) === CANCEL;
             _tickCallback();
             if (ignore) return;

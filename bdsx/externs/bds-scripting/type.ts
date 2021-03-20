@@ -94,7 +94,7 @@ export class DocField {
                 } else switch (name) {
                 case 'ticking_area': ntype.inlineTypeName = 'ITickingArea'; break;
                 }
-            } 
+            }
         }
         if (defval) {
             desc += `\n@default ${defval}`;
@@ -383,7 +383,7 @@ export class DocType {
 
         if (name !== '') {
             name = styling.toFieldName(name);
-            if (!opts.ignoreReadonly && this.readonly) name = 'readonly '+name;
+            if (!opts.ignoreReadonly && this.readonly) name = `readonly ${name}`;
             if (!opts.ignoreOptional && this.optional) name += '?';
             name += ':';
         }
@@ -391,9 +391,9 @@ export class DocType {
         if (this.isVectorXYZ()) {
             out += 'VectorXYZ';
         } else {
-            const tabi = tab+ '    ';
+            const tabi = `${tab}    `;
             if (this.inlineTypeName) {
-                out += this.inlineTypeName.replace(/\n/g, '\n'+tabi);
+                out += this.inlineTypeName.replace(/\n/g, `\n${tabi}`);
             } else {
                 out +='{\n';
                 for (const field of this.fields) {

@@ -46,8 +46,8 @@ export function sendRaw(id:number):CapsuledEvent<nethook.SendRawListener> {
     return nethook.sendRaw(id);
 }
 
-/** 
- * @deprecated use NetworkIdentifier.close 
+/**
+ * @deprecated use NetworkIdentifier.close
  */
 export const close:CapsuledEvent<(networkIdentifier:NetworkIdentifier)=>void> = NetworkIdentifier.close;
 

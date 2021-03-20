@@ -61,13 +61,18 @@ enum MovOper
     Lea,
 }
 
-enum FloatOper
-{
+enum FloatOper {
     None,
     Convert_f2i,
     Convert_i2f,
     ConvertTruncated_f2i,
     ConvertPrecision,
+}
+
+enum FloatOperSize {
+    xmmword,
+    singlePrecision,
+    doublePrecision
 }
 
 export enum OperationSize
@@ -454,7 +459,7 @@ export class X64Assembler {
         this.memoryChunkSize = size;
         this.memoryChunkAlign = align;
         const alignbit = Math.log2(align);
-        if ((alignbit|0) !== alignbit) throw Error('Invalid alignment '+align);
+        if ((alignbit|0) !== alignbit) throw Error(`Invalid alignment ${align}`);
     }
 
     connect(cb:(asm:X64Assembler)=>this):this {
@@ -569,6 +574,13 @@ export class X64Assembler {
         return this.put(0x36);
     }
 
+    repz():this {
+        return this.write(0xf3);
+    }
+    repnz():this {
+        return this.write(0xf2);
+    }
+
     private _target(opcode:number, r1:Register|FloatRegister, r2:Register|FloatRegister|Operator|null, r3:Register|null,
         targetRegister:Register|FloatRegister, multiplying:AsmMultiplyConstant, offset:number, oper:MovOper):this {
         if (r2 !== null) {
@@ -611,7 +623,7 @@ export class X64Assembler {
             case 2: opcode |= 0x40; break;
             case 4: opcode |= 0x80; break;
             case 8: opcode |= 0xc0; break;
-            default: throw Error('Invalid multiplying '+multiplying);
+            default: throw Error(`Invalid multiplying ${multiplying}`);
             }
             this.put(opcode | 0x04);
             opcode |= (r3 & 7) << 3;
@@ -718,10 +730,16 @@ export class X64Assembler {
         return this._jmp(isCall, r, 1, 0, MovOper.Register);
     }
 
+    movabs_r_c(
+        dest:Register, value:Value64, size:OperationSize = OperationSize.qword):this {
+        if (size !== OperationSize.qword) throw Error(`Invalid operation size ${OperationSize[size]}`);
+        return this.mov_r_c(dest, value, size);
+    }
+
     def(name:string, size:OperationSize, bytes:number, align:number, exportDef:boolean = false):this {
         if (align < 1) align = 1;
         const alignbit = Math.log2(align);
-        if ((alignbit|0) !== alignbit) throw Error('Invalid alignment '+align);
+        if ((alignbit|0) !== alignbit) throw Error(`Invalid alignment ${align}`);
         if (align > this.memoryChunkAlign) {
             this.memoryChunkAlign = align;
         }
@@ -1333,9 +1351,12 @@ export class X64Assembler {
         return this._movzx(src, dest, null, multiply, offset, destsize, srcsize, MovOper.Read);
     }
 
-    private _movsf(r1:Register|FloatRegister, r2:Register|FloatRegister, r3:Register|null, multiply:AsmMultiplyConstant, offset:number, oper:MovOper, foper:FloatOper, size:OperationSize, doublePrecision:boolean):this {
-        if (doublePrecision) this.put(0xf2);
-        else this.put(0xf3);
+    private _movsf(r1:Register|FloatRegister, r2:Register|FloatRegister, r3:Register|null, multiply:AsmMultiplyConstant, offset:number, fsize:FloatOperSize, oper:MovOper, foper:FloatOper, size:OperationSize):this {
+        switch (fsize) {
+        case FloatOperSize.doublePrecision: this.put(0xf2); break;
+        case FloatOperSize.singlePrecision: this.put(0xf3); break;
+        case FloatOperSize.xmmword: break;
+        }
         this._rex(r1, r2, null, size);
         this.put(0x0f);
         switch (foper) {
@@ -1351,63 +1372,73 @@ export class X64Assembler {
         return this._target(0, r1, r2, r3, r1, multiply, offset, oper);
     }
 
+    movups_rp_r(dest:FloatRegister, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
+        return this._movsf(dest, src, null, multiply, offset, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
+    }
+    movups_r_rp(dest:FloatRegister, src:FloatRegister, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
+    }
+    movups_r_r(dest:FloatRegister, src:FloatRegister):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
+    }
+
     movsd_rp_r(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
-        return this._movsf(dest, src, null, multiply, offset, MovOper.Write, FloatOper.None, OperationSize.dword, true);
+        return this._movsf(dest, src, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Write, FloatOper.None, OperationSize.dword);
     }
     movsd_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._movsf(src, dest, null, 1, offset, MovOper.Read, FloatOper.None, OperationSize.dword, true);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.None, OperationSize.dword);
     }
     movsd_r_r(dest:FloatRegister, src:FloatRegister):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.None, OperationSize.dword, true);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
 
     movss_rp_r(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
-        return this._movsf(dest, src, null, multiply, offset, MovOper.Write, FloatOper.None, OperationSize.dword, false);
+        return this._movsf(dest, src, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Write, FloatOper.None, OperationSize.dword);
     }
     movss_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.None, OperationSize.dword, false);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.None, OperationSize.dword);
     }
     movss_r_r(dest:FloatRegister, src:FloatRegister):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.None, OperationSize.dword, false);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
 
     cvtsi2sd_r_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.Convert_i2f, size, true);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.Convert_i2f, size);
     }
     cvtsi2sd_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.Convert_i2f, size, true);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.Convert_i2f, size);
     }
     cvttsd2si_r_r(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.ConvertTruncated_f2i, size, true);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.ConvertTruncated_f2i, size);
     }
     cvttsd2si_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.ConvertTruncated_f2i, size, true);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.ConvertTruncated_f2i, size);
     }
 
     cvtsi2ss_r_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.Convert_i2f, size, false);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.Convert_i2f, size);
     }
     cvtsi2ss_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.Convert_i2f, size, false);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.Convert_i2f, size);
     }
     cvttss2si_r_r(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.ConvertTruncated_f2i, size, false);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.ConvertTruncated_f2i, size);
     }
     cvttss2si_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.ConvertTruncated_f2i, size, false);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.ConvertTruncated_f2i, size);
     }
 
     cvtsd2ss_r_r(dest:FloatRegister, src:FloatRegister):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword, true);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
     }
     cvtsd2ss_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword, true);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
     }
     cvtss2sd_r_r(dest:FloatRegister, src:FloatRegister):this {
-        return this._movsf(src, dest, null, 1, 0, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword, false);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
     }
     cvtss2sd_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._movsf(src, dest, null, multiply, offset, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword, false);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
     }
 
     label(labelName:string, exportDef:boolean = false):this {
@@ -1661,7 +1692,7 @@ export class X64Assembler {
                 }
                 if (!chunks.has(id.chunk)) {
                     const jumpTarget = id.chunk.jump;
-                    putError(id.name, 'Unknown chunk, '+(jumpTarget === null ? '[??]' : jumpTarget.label.name));
+                    putError(id.name, `Unknown chunk, ${(jumpTarget === null ? '[??]' : jumpTarget.label.name)}`);
                 }
             }
         }
@@ -1942,7 +1973,7 @@ export class X64Assembler {
                 return;
             case 'buildtrace': {
                 const value = this._polynominal(parser.readAll(), parser.lineNumber, parser.matchedIndex);
-                console.log('buildtrace> '+ value);
+                console.log(`buildtrace> ${value}`);
                 return;
             }
             case 'movsx':
@@ -2045,9 +2076,9 @@ export class X64Assembler {
                     if (type) {
                         const [name, reg, size]  = type;
                         setSize(size);
-                        command += '_'+name.short;
+                        command += `_${name.short}`;
                         args.push(reg);
-                        callinfo.push('('+name.name+')');
+                        callinfo.push(`(${name.name})`);
                     } else {
                         const id = this.ids.get(param);
                         if (id instanceof Constant) {
@@ -2355,14 +2386,14 @@ export function asm():X64Assembler {
 }
 
 function shex(v:number|bin64_t):string {
-    if (typeof v === 'string') return '0x'+bin.toString(v, 16);
-    if (v < 0) return '-0x'+(-v).toString(16);
-    else return '0x'+v.toString(16);
+    if (typeof v === 'string') return `0x${bin.toString(v, 16)}`;
+    if (v < 0) return `-0x${(-v).toString(16)}`;
+    else return `0x${v.toString(16)}`;
 }
 function shex_o(v:number|bin64_t):string {
-    if (typeof v === 'string') return '+0x'+bin.toString(v, 16);
-    if (v < 0) return '-0x'+(-v).toString(16);
-    else return '+0x'+v.toString(16);
+    if (typeof v === 'string') return `+0x${bin.toString(v, 16)}`;
+    if (v < 0) return `-0x${(-v).toString(16)}`;
+    else return `+0x${v.toString(16)}`;
 }
 
 const REVERSE_MAP:Record<string, string> = {
@@ -2601,7 +2632,7 @@ export namespace asm
                 case 'rp': {
                     ptridx.push(argstr.length);
                     const multiply = args[i++];
-                    argstr.push(`[${Register[v]}${multiply !== 1 ? '*'+multiply : ''}${shex_o(args[i++])}]`);
+                    argstr.push(`[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${shex_o(args[i++])}]`);
                     break;
                 }
                 }
@@ -2610,10 +2641,11 @@ export namespace asm
             if (size !== undefined) {
                 const sizestr = OperationSize[size];
                 for (const j of ptridx) {
-                    argstr[j] = sizestr+' ptr '+argstr[j];
+                    argstr[j] = `${sizestr} ptr ${argstr[j]}`;
                 }
             }
-            return cmd+' '+argstr.join(', ');
+            if (argstr.length === 0) return cmd;
+            return `${cmd} ${argstr.join(', ')}`;
         }
     }
     export class Operations {
@@ -2625,7 +2657,7 @@ export namespace asm
         toString():string {
             const out:string[] = [];
             for (const oper of this.operations) {
-                out.push(oper.toString());
+                out.push(oper+'');
             }
             return out.join('\n');
         }
@@ -2651,7 +2683,7 @@ export namespace asm
 
     export function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):X64Assembler{
         const basename = src.substr(0, src.lastIndexOf('.')+1);
-        const binpath = basename+'bin';
+        const binpath = `${basename}bin`;
 
         let buffer:Uint8Array;
         if (checkModified(src, binpath)){

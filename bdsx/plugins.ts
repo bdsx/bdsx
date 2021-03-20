@@ -48,7 +48,7 @@ export async function loadAllPlugins():Promise<void> {
         counter.ref();
         taskQueue.run(async()=>{
             try {
-                const jsonpath = require.resolve(name+'/package.json');
+                const jsonpath = require.resolve(`${name}/package.json`);
                 const json = JSON.parse(await fsp.readFile(jsonpath, 'utf-8'));
                 if (json.bdsxPlugin) {
                     await loadPackageJson(name, json, false);
@@ -166,6 +166,6 @@ export async function loadAllPlugins():Promise<void> {
             }
         }
     } catch (err) {
-        console.error(colors.red(`[BDSX-Plugins] `+err.message));
+        console.error(colors.red(`[BDSX-Plugins] ${err.message}`));
     }
 }

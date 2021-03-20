@@ -6,16 +6,19 @@ import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook
 import { asm, FloatRegister, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
+import { HashedString } from "bdsx/bds/hashedstring";
 import { networkHandler } from "bdsx/bds/networkidentifier";
-import { PacketIdToType } from "bdsx/bds/packets";
+import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
 import { proc2 } from "bdsx/bds/symbols";
 import { capi } from "bdsx/capi";
+import { CxxVector } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { RawTypeId } from "bdsx/makefunc";
-import { bin64_t, NativeType } from "bdsx/nativetype";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { bin64_t, CxxString, NativeType } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
@@ -69,6 +72,7 @@ Tester.test({
             const asmcode = disasm.check(hex, true).toString().replace(/\n/g, ';');
             this.assert(asmcode === code, `expected=${code}, actual=${asmcode}`);
         };
+        assert('f3 0f 11 89 a4 03 00 00', 'repz;movups rcx, dword ptr [rcx+0x3a4]');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
         assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
         assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
@@ -274,6 +278,16 @@ Tester.test({
         str.value = longcase;
         this.assert(str.value === longcase, 'failed with long text');
         str[NativeType.dtor]();
+
+        const hstr = new HashedString(true);
+        hstr.construct();
+        this.assert(hstr.str === '', 'Invalid string');
+        hstr.destruct();
+
+        const data = new AttributeData(true);
+        data.construct();
+        this.assert(data.name.str === '', 'Invalid string');
+        data.destruct();
     },
 
     makefunc() {
@@ -285,6 +299,42 @@ Tester.test({
         this.assert(getbool() === false, 'bool return');
         const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(RawTypeId.Int32, null, RawTypeId.Boolean);
         this.assert(bool2int(true) === 1, 'bool to int');
+    },
+
+    vectorcopy() {
+        @nativeClass()
+        class Class extends NativeClass {
+            @nativeField(CxxVector.make(CxxString))
+            vector:CxxVector<CxxString>;
+            @nativeField(CxxVector.make(CxxStringWrapper))
+            vector2:CxxVector<CxxStringWrapper>;
+        }
+
+        const a = new Class(true);
+        a.construct();
+        a.vector.push('test');
+        const str = new CxxStringWrapper(true);
+        str.construct();
+        str.value = 'test2';
+        a.vector2.push(str);
+        str.destruct();
+
+        this.assert(a.vector.size() === 1, 'a.vector, invalid size');
+        this.assert(a.vector2.size() === 1, 'a.vector2, invalid size');
+        this.assert(a.vector.get(0) === 'test', `a.vector, invalid value ${a.vector.get(0)}`);
+        this.assert(a.vector2.get(0)!.value === 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
+
+        const b = new Class(true);
+        b.construct(a);
+        this.assert(b.vector.size() === 1, 'b.vector, invalid size');
+        this.assert(b.vector2.size() === 1, 'b.vector2, invalid size');
+        this.assert(b.vector.get(0) === 'test', `b.vector, invalid value ${b.vector.get(0)}`);
+        this.assert(b.vector2.get(0)!.value === 'test2', `b.vector2, invalid value ${b.vector2.get(0)!.value}`);
+        b.vector.get(0);
+
+        b.destruct();
+
+        a.destruct();
     },
 
     async command() {

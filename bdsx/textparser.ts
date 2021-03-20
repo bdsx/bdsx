@@ -9,7 +9,7 @@ export class TextLineParser {
     public matchedIndex = 0;
 
     constructor(
-        private context:string, 
+        private context:string,
         public readonly lineNumber:number,
         private offset = 0) {
         this.matchedWidth = context.length;
@@ -38,7 +38,7 @@ export class TextLineParser {
 
     readQuotedStringTo(chr:string):string|null {
         let p = this.p+1;
-        
+
         for (;;) {
             const np = this.context.indexOf(chr, p);
             if (np === -1) {
@@ -115,7 +115,7 @@ export class TextLineParser {
             return content;
         }
     }
-    
+
     *splitWithSpaces():IterableIterator<string> {
         const context = this.context;
         if (this.p >= context.length) return;
@@ -186,7 +186,7 @@ export class TextLineParser {
             if (idx === -1) break;
             this.p = idx + 1;
         }
-        
+
         this.offset = offset;
         this.context = context;
         this.p = context.length;
@@ -196,8 +196,8 @@ export class TextLineParser {
 
     error(message:string):ParsingError {
         return new ParsingError(message, {
-            column: this.matchedIndex, 
-            width: this.matchedWidth, 
+            column: this.matchedIndex,
+            width: this.matchedWidth,
             line: this.lineNumber
         });
     }
@@ -220,31 +220,31 @@ export interface SourcePosition {
 export class ErrorPosition {
 
     constructor(
-        public readonly message:string, 
+        public readonly message:string,
         public readonly severity:'error'|'warning'|'info',
         public readonly pos:SourcePosition|null) {
     }
-    
+
     report(sourcePath:string, lineText:string|null):void {
         console.error();
         const pos = this.pos;
         if (pos !== null) {
             console.error(`${colors.cyan(sourcePath)}:${colors.yellow(pos.line+'')}:${colors.yellow(pos.column+'')} - ${colors.red(this.severity)}: ${this.message}`);
-        
+
             if (lineText !== null) {
                 const linestr = pos.line+'';
-                console.error(colors.black(colors.bgWhite(linestr))+` ${lineText}`);
+                console.error(`${colors.black(colors.bgWhite(linestr))} ${lineText}`);
                 console.error(colors.bgWhite(' '.repeat(linestr.length))+' '.repeat(pos.column+1)+colors.red('~'.repeat(Math.max(pos.width, 1))));
             }
         } else {
             console.error(`${colors.cyan(sourcePath)} - ${colors.red(this.severity)}: ${this.message}`);
-            
+
             if (lineText !== null) {
-                console.error(colors.bgWhite(' ')+` ${lineText}`);
+                console.error(`${colors.bgWhite(' ')} ${lineText}`);
             }
         }
     }
-        
+
 }
 
 export class ParsingError extends Error {
