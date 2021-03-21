@@ -286,6 +286,7 @@ ServerInstance.abstract({
     networkHandler:[NetworkHandler.ref(), 0xa8],
     scriptEngine:[MinecraftServerScriptEngine.ref(), 0x210],
 });
+(ServerInstance.prototype as any)._disconnectAllClients = procHacker.js("ServerInstance::disconnectAllClientsWithMessage", RawTypeId.Void, {this:ServerInstance}, CxxStringWrapper);
 
 // gamemode.ts
 GameMode.define({
