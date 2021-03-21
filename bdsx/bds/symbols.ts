@@ -51,6 +51,7 @@ const symbols = [
     'NetworkIdentifier::operator==',
     'CommandOutputSender::send',
     'ServerInstance::ServerInstance',
+    'ServerInstance::disconnectAllClientsWithMessage',
     'NetworkHandler::_getConnectionFromId',
     'NetworkHandler::send',
     'LoopbackPacketSender::sendToClients',
