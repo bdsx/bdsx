@@ -16,6 +16,7 @@ const symbols = [
     'Player::attack',
     'Player::drop',
     'Player::getCarriedItem',
+    'Player::getPlayerGameType',
     'Player::getSupplies',
     'Player::setName',
     'Player::take',
