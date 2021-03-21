@@ -1,7 +1,7 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
-import { ActorRuntimeID } from "./actor";
+import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
@@ -386,7 +386,18 @@ export class GuiDataPickItemPacket extends Packet {
 
 @nativeClass(null)
 export class AdventureSettingsPacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    flag1: uint32_t;
+    @nativeField(uint32_t)
+    commandPermission: uint32_t;
+    @nativeField(uint32_t, 0x38)
+    flag2: uint32_t;
+    @nativeField(uint32_t)
+    playerPermission: uint32_t;
+    @nativeField(ActorUniqueID)
+    actorId: ActorUniqueID;
+    @nativeField(uint32_t, 0x4C)
+    customFlag: uint32_t;
 }
 
 @nativeClass(null)
@@ -775,7 +786,8 @@ export class SetScoreboardIdentityPacket extends Packet {
 
 @nativeClass(null)
 export class SetLocalPlayerAsInitializedPacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    actorId: ActorRuntimeID;
 }
 
 @nativeClass(null)

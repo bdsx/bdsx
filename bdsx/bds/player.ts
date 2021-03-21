@@ -28,6 +28,10 @@ export class Player extends Actor {
         abstract();
     }
 
+    getGameType():GameType {
+        abstract();
+    }
+
     getInventory():PlayerInventory {
         abstract();
     }
@@ -65,6 +69,15 @@ export class ServerPlayer extends Player {
             this._sendInventory();
         }, 50);
     }
+}
+
+export enum GameType {
+    Survival,
+    Creative,
+    Adventure,
+    SurvivalSpectator,
+    CreativeSpectator,
+    Default
 }
 
 export enum PlayerPermission {
