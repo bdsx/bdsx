@@ -253,7 +253,12 @@ export class MobArmorEquipmentPacket extends Packet {
 
 @nativeClass(null)
 export class InteractPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    action:uint8_t;
+    @nativeField(ActorRuntimeID)
+    actorId:ActorRuntimeID;
+    @nativeField(Vec3)
+    pos:Vec3;
 }
 
 @nativeClass(null)
