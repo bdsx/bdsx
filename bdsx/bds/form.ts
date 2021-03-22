@@ -129,7 +129,7 @@ class Form {
                 const pk = SetTitlePacket.create();
                 pk.sendTo(target);
                 pk.dispose();
-            }, 100);
+            }, 1000);
         }
         return this.id;
     }
