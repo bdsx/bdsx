@@ -832,7 +832,18 @@ export class BiomeDefinitionList extends Packet {
 
 @nativeClass(null)
 export class LevelSoundEventPacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    sound: uint32_t;
+    @nativeField(Vec3)
+    pos: Vec3;
+    @nativeField(int32_t)
+    extraData: int32_t;
+    @nativeField(CxxString)
+    entityType: CxxString;
+    @nativeField(bool_t)
+    isBabyMob: bool_t;
+    @nativeField(bool_t)
+    disableRelativeVolume: bool_t;
 }
 
 @nativeClass(null)
@@ -922,8 +933,30 @@ export class NetworkSettingsPacket extends Packet {
 
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {
+    @nativeField(float32_t)
+    pitch: float32_t;
+    @nativeField(float32_t)
+    yaw: float32_t;
     @nativeField(Vec3)
     pos: Vec3;
+    @nativeField(float32_t)
+    moveX: float32_t;
+    @nativeField(float32_t)
+    moveZ: float32_t;
+    @nativeField(float32_t)
+    heaYaw: float32_t;
+    @nativeField(bin64_t)
+    inputFlags: bin64_t;
+    @nativeField(uint32_t)
+    inputMode: uint32_t;
+    @nativeField(uint32_t)
+    playMode: uint32_t;
+    @nativeField(Vec3)
+    vrGazeDirection: Vec3;
+    @nativeField(bin64_t)
+    tick: bin64_t;
+    @nativeField(Vec3)
+    delta: Vec3;
 }
 
 @nativeClass(null)
