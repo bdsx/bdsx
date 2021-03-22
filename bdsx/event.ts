@@ -167,11 +167,9 @@ class PlayerJoinEvent implements IPlayerJoinEvent {
     ) {
     }
 }
-nethook.send(MinecraftPacketIds.PlayStatus).on((pk, ni) =>{
-    if (pk.status === 3) {
-        const event = new PlayerJoinEvent(ni.getActor()!);
-        events.playerJoin.fire(event);
-    }
+nethook.before(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
+    const event = new PlayerJoinEvent(ni.getActor()!);
+    events.playerJoin.fire(event);
 });
 
 interface IPlayerPickupItemEvent {
