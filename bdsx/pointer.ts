@@ -24,6 +24,7 @@ export abstract class Wrapper<T> extends NativeClass {
             value:any;
             type:Type<T>;
         }
+        Object.defineProperty(TypedWrapper, 'name', {value: type.name});
         TypedWrapper.prototype.type = type;
         TypedWrapper.define({value:type});
         return TypedWrapper;

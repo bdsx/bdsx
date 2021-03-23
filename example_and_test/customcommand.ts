@@ -1,20 +1,54 @@
 
 // Custom Command
-import { command, bedrockServer } from "bdsx";
+import { bedrockServer, command } from "bdsx";
+import { RelativeFloat } from "bdsx/bds/blockpos";
+import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
 import { CxxString, int32_t } from "bdsx/nativetype";
 
 
-// Use the internal command parser
-command.register('aaa', 'bdsx command example').override(param=>{
-    console.log('bdsx command example>');
+///// Internal command parser
+
+// raw text
+command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
+    console.log(param.rawtext.text);
+}, { rawtext:CommandRawText });
+
+// optional
+command.register('bbb', 'optional param example').overload((param, origin, output)=>{
+    console.log(`optional param example> origin=${origin.getName()}`);
     console.log(`first: ${param.first}`);
-    if (param.secondIsSet) console.log(`second: ${param.second}`);
-}, ['first', int32_t], ['second', CxxString, 'secondIsSet']);
+    if (param.second !== undefined) console.log(`second: ${param.second}`);
+}, {
+    first: int32_t,
+    second: [CxxString, true],
+});
 
+// empty parameters
+command.register('ccc', 'empty params example').overload((param, origin, output)=>{
+    console.log(`empty params example> origin=${origin.getName()}`);
+}, {});
 
+// relative float, /ccc ~~~
+command.register('ddd', 'relative float example').overload((param, origin, output)=>{
+    console.log(`relative float example> origin=${origin.getName()}`);
+    console.log(param.x.value, param.x.is_relative);
+    console.log(param.y.value, param.y.is_relative);
+    console.log(param.z.value, param.z.is_relative);
+}, {
+    x: RelativeFloat,
+    y: RelativeFloat,
+    z: RelativeFloat,
+});
 
-// Parse it directly
+// entity, incompleted
+command.register('eee', 'entity example').overload((param, origin, output)=>{
+    console.log(`entity example> origin=${origin.getName()}`);
+    console.log(param.target); // unknown yet
+}, {
+    target: ActorWildcardCommandSelector,
+});
 
+///// Parse it directly
 // this hooks all commands, but it cannot be executed by command blocks
 command.hook.on((command, originName, ctx)=>{
     if (!ctx.origin.isServerCommandOrigin()) { // no console

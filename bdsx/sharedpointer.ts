@@ -5,6 +5,7 @@ import { makefunc, RawTypeId } from "./makefunc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { NativeType, Type, uint32_t } from "./nativetype";
 import { Singleton } from "./singleton";
+import { templateName } from "./templatename";
 
 @nativeClass()
 export class SharedPtrBase<T> extends NativeClass {
@@ -129,10 +130,12 @@ export abstract class SharedPtr<T extends NativeClass> extends NativeClass {
                     this.p = this.ref.addAs(clazz, sizeOfSharedPtrBase);
                 }
             }
+            Object.defineProperty(TypedSharedPtr, 'name', {value:templateName('std::shared_ptr', clazz.name)});
             TypedSharedPtr.define({
                 p:clazz.ref(),
                 ref:Base.ref(),
             });
+
             return TypedSharedPtr as any;
         });
     }

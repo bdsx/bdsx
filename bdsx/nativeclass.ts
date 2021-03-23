@@ -80,28 +80,33 @@ class StructureDefination {
         const supercls = (clazz as any).__proto__.prototype;
         const idx = params.push(supercls) - 1;
 
-        if (propmap.ctor.code !== '') {
-            const superfn = supercls[NativeType.ctor];
-            let manual = clazz.prototype[NativeType.ctor];
-            if (superfn === manual) manual = emptyFunc;
-            const func = new Function('NativeType', 'types', propmap.ctor.code);
-            clazz.prototype[NativeType.ctor] = function(this:T){
-                superfn.call(this);
-                func.call(this, NativeType, params);
-                manual.call(this);
-            };
+        function override(ctx:NativeDescriptorBuilder.UseContext, type:typeof NativeType.ctor|typeof NativeType.dtor):void {
+            const superfn = supercls[type];
+            const manual = clazz.prototype[type];
+            if (ctx.code !== '') {
+                const func = new Function('NativeType', 'types', ctx.code);
+                if (superfn === manual) {
+                    clazz.prototype[type] = function(this:T){
+                        superfn.call(this);
+                        func.call(this, NativeType, params);
+                    };
+                } else {
+                    clazz.prototype[type] = function(this:T){
+                        superfn.call(this);
+                        func.call(this, NativeType, params);
+                        manual.call(this);
+                    };
+                }
+            } else if (superfn !== manual) {
+                clazz.prototype[type] = function(this:T){
+                    superfn.call(this);
+                    manual.call(this);
+                };
+            }
         }
-        if (propmap.dtor.code !== '') {
-            const superfn = supercls[NativeType.dtor];
-            let manual = clazz.prototype[NativeType.dtor];
-            if (superfn === manual) manual = emptyFunc;
-            const func = new Function('NativeType', 'types', propmap.dtor.code);
-            clazz.prototype[NativeType.dtor] = function(this:T){
-                superfn.call(this);
-                func.call(this, NativeType, params);
-                manual.call(this);
-            };
-        }
+
+        override(propmap.ctor, NativeType.ctor);
+        override(propmap.dtor, NativeType.dtor);
         if (propmap.ctor_copy.code !== '') {
             if (!clazz.prototype.hasOwnProperty(NativeType.ctor_copy)) {
                 let code = propmap.ctor_copy.code;
@@ -580,6 +585,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeClassType<T>
             throw Error('Wrong call, does not need to define structure of pointer class');
         }
     }
+    Object.defineProperty(Pointer, 'name', {value:type.name+'*'});
     Pointer.prototype[NativeType.ctor] = emptyFunc;
     Pointer.prototype[NativeType.dtor] = emptyFunc;
     Pointer[NativeType.descriptor] = NativeType.defaultDescriptor;

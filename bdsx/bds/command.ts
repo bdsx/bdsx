@@ -1,7 +1,7 @@
 import { asm } from "../assembler";
 import { bin } from "../bin";
 import { capi } from "../capi";
-import { abstract, SYMOPT_UNDNAME } from "../common";
+import { abstract, SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../common";
 import { chakraUtil, NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { makefunc, RawTypeId } from "../makefunc";
@@ -9,6 +9,9 @@ import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } fr
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
+import { templateName } from "../templatename";
+import { Actor } from "./actor";
+import { RelativeFloat } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { procHacker } from "./proc";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
@@ -29,6 +32,32 @@ export enum CommandFlag {
 export class MCRESULT extends NativeClass {
     @nativeField(uint32_t)
     result:uint32_t;
+}
+
+@nativeClass(0xc0)
+export class CommandSelectorBase extends NativeClass {
+}
+CommandSelectorBase.prototype[NativeType.ctor] = procHacker.js('CommandSelectorBase::CommandSelectorBase', RawTypeId.Void, {this:CommandSelectorBase});
+
+@nativeClass()
+export class WildcardCommandSelector<T> extends CommandSelectorBase {
+
+    static make<T>(type:Type<T>):NativeClassType<WildcardCommandSelector<T>> {
+        class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
+        }
+        Object.defineProperty(WildcardCommandSelectorImpl, 'name', {value: templateName('WildcardCommandSelector', type.name)});
+        WildcardCommandSelectorImpl.define({});
+
+        return WildcardCommandSelectorImpl;
+    }
+}
+
+export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
+
+@nativeClass()
+export class CommandRawText extends NativeClass {
+    @nativeField(CxxString)
+    text:CxxString;
 }
 
 @nativeClass(0x30)
@@ -301,10 +330,10 @@ export namespace CommandRegistry {
 }
 
 function loadParserFromPdb(types:Type<any>[]):void {
-    const symbols = types.map(type=>`CommandRegistry::parse<${type.name.endsWith('>') ? type.name+' ' : type.name}>`);
+    const symbols = types.map(type=>templateName('CommandRegistry::parse', type.name));
 
-    pdb.setOptions(SYMOPT_UNDNAME);
-    const addrs = pdb.getList(pdb.coreCachePath, {}, symbols);
+    pdb.setOptions(SYMOPT_PUBLICS_ONLY); // i don't know why but CommandRegistry::parse<bool> does not found without it.
+    const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
     pdb.setOptions(0);
 
     for (let i=0;i<symbols.length;i++) {
@@ -314,7 +343,7 @@ function loadParserFromPdb(types:Type<any>[]):void {
     }
 }
 
-const types = [int32_t, float32_t, CxxString];
+const types = [int32_t, float32_t, bool_t, CxxString, ActorWildcardCommandSelector, RelativeFloat, CommandRawText];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 
@@ -325,3 +354,35 @@ CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegis
 (CommandRegistry.prototype as any)._registerCommand = procHacker.js("CommandRegistry::registerCommand", RawTypeId.Void, {this:CommandRegistry}, CxxStringWrapper, RawTypeId.StringUtf8, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
 (CommandRegistry.prototype as any)._registerAlias = procHacker.js("CommandRegistry::registerAlias", RawTypeId.Void, {this:CommandRegistry}, CxxStringWrapper, CxxStringWrapper);
 (CommandRegistry.prototype as any)._findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry, nullableReturn: true}, CxxStringWrapper);
+
+'CommandRegistry::parse<AutomaticID<Dimension,int> >';
+'CommandRegistry::parse<Block const * __ptr64>';
+'CommandRegistry::parse<CommandFilePath>';
+'CommandRegistry::parse<CommandIntegerRange>';
+'CommandRegistry::parse<CommandItem>';
+'CommandRegistry::parse<CommandMessage>';
+'CommandRegistry::parse<CommandPosition>';
+'CommandRegistry::parse<CommandPositionFloat>';
+'CommandRegistry::parse<CommandRawText>';
+'CommandRegistry::parse<CommandSelector<Actor> >';
+'CommandRegistry::parse<CommandSelector<Player> >';
+'CommandRegistry::parse<CommandWildcardInt>';
+'CommandRegistry::parse<Json::Value>';
+'CommandRegistry::parse<MobEffect const * __ptr64>';
+'CommandRegistry::parse<std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > >';
+'CommandRegistry::parse<std::unique_ptr<Command,struct std::default_delete<Command> > >';
+'CommandRegistry::parse<AgentCommand::Mode>';
+'CommandRegistry::parse<AgentCommands::CollectCommand::CollectionSpecification>';
+'CommandRegistry::parse<AgentCommands::Direction>';
+'CommandRegistry::parse<AnimationMode>';
+'CommandRegistry::parse<AreaType>';
+'CommandRegistry::parse<BlockSlot>';
+'CommandRegistry::parse<CodeBuilderCommand::Action>';
+'CommandRegistry::parse<CommandOperator>';
+'CommandRegistry::parse<Enchant::Type>';
+'CommandRegistry::parse<EquipmentSlot>';
+'CommandRegistry::parse<GameType>';
+'CommandRegistry::parse<Mirror>';
+'CommandRegistry::parse<ObjectiveSortOrder>';
+'CommandRegistry::parse<Rotation>';
+'CommandRegistry::parse<ActorDefinitionIdentifier const * __ptr64>';

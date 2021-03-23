@@ -92,7 +92,7 @@ export class CustomCommand extends Command {
         this.vftable = this.self_vftable;
     }
 
-    execute():void {
+    execute(origin:CommandOrigin, output:CommandOutput):void {
         // empty
     }
 }
@@ -113,7 +113,10 @@ export class CustomCommandFactory {
         public readonly name:string) {
     }
 
-    override<KEY extends string, ITEM extends [KEY, Type<any>, KEY?], PARAMS extends ITEM[]>(callback:(command:ParamsToObject<PARAMS>)=>void, ...parameters:PARAMS):this {
+    /**
+     * @deprecated use overload, naming mistake
+     */
+    override<KEY extends string, ITEM extends [KEY, Type<any>, KEY?], PARAMS extends ITEM[]>(callback:(command:ParamsToObject<PARAMS>, origin:CommandOrigin, output:CommandOutput)=>void, ...parameters:PARAMS):this {
         const fields:Record<string, Type<any>> = {};
         for (const [name, type, optkey] of parameters) {
             if (name in fields) throw Error(`${name}: field name dupplicated`);
@@ -127,15 +130,15 @@ export class CustomCommandFactory {
             [NativeType.ctor]():void {
                 this.self_vftable.execute = customCommandExecute;
             }
-            execute():void {
-                callback(this as any);
+            execute(origin:CommandOrigin, output:CommandOutput):void {
+                callback(this as any, origin, output);
             }
         }
         CustomCommandImpl.define(fields);
 
-        const customCommandExecute = makefunc.np(function(this:CustomCommandImpl){
-            this.execute();
-        }, RawTypeId.Void, {this:CustomCommandImpl}, RawTypeId.Int32, CommandOrigin, CommandOutput);
+        const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
+            this.execute(origin, output);
+        }, RawTypeId.Void, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
 
         const params:CommandParameterData[] = [];
         for (const [name, type, optkey] of parameters) {
@@ -145,6 +148,65 @@ export class CustomCommandFactory {
                 params.push(CustomCommandImpl.mandatory(name as keyof CustomCommandImpl, null));
             }
         }
+
+        this.registry.registerOverload(this.name, CustomCommandImpl, params);
+        return this;
+    }
+
+    overload<PARAMS extends Record<string, Type<any>|[Type<any>, boolean]>>(
+        callback:(params:{
+            [key in keyof PARAMS]:PARAMS[key] extends [Type<infer F>, infer V] ?
+                (V extends true ? F|undefined : F) :
+                (PARAMS[key] extends {prototype:infer F} ? F : PARAMS[key] extends Type<infer F> ? F : never)
+            }, origin:CommandOrigin, output:CommandOutput)=>void,
+        parameters:PARAMS):this {
+
+        const paramNames:[keyof CustomCommandImpl, (keyof CustomCommandImpl)?][] = [];
+        class CustomCommandImpl extends CustomCommand {
+            [NativeType.ctor]():void {
+                this.self_vftable.execute = customCommandExecute;
+            }
+            execute(origin:CommandOrigin, output:CommandOutput):void {
+                const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
+                for (const [name, optkey] of paramNames) {
+                    if (optkey === undefined || this[optkey]) {
+                        nobj[name] = this[name];
+                    }
+                }
+                callback(nobj as any, origin, output);
+            }
+        }
+
+        const fields:Record<string, Type<any>> = {};
+        for (const name in parameters) {
+            let optional = false;
+            let type:Type<any>|[Type<any>,boolean] = parameters[name];
+            if (type instanceof Array) {
+                optional = type[1];
+                type = type[0];
+            }
+            if (name in fields) throw Error(`${name}: field name dupplicated`);
+            fields[name] = type;
+            if (optional) {
+                const optkey = name+'__set';
+                if (optkey in fields) throw Error(`${optkey}: field name dupplicated`);
+                fields[optkey] = bool_t;
+                paramNames.push([name as keyof CustomCommandImpl, optkey as keyof CustomCommandImpl]);
+            } else {
+                paramNames.push([name as keyof CustomCommandImpl]);
+            }
+        }
+
+        const params:CommandParameterData[] = [];
+        CustomCommandImpl.define(fields);
+        for (const [name, optkey] of paramNames) {
+            if (optkey !== undefined) params.push(CustomCommandImpl.optional(name, optkey));
+            else params.push(CustomCommandImpl.mandatory(name, null));
+        }
+
+        const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
+            this.execute(origin, output);
+        }, RawTypeId.Void, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
 
         this.registry.registerOverload(this.name, CustomCommandImpl, params);
         return this;

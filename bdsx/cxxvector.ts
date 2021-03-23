@@ -6,6 +6,7 @@ import { RawTypeId } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
+import { templateName } from "./templatename";
 
 export interface CxxVectorType<T> extends Type<CxxVector<T>>
 {
@@ -302,6 +303,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         type[NativeType.setter](ptr, from);
                     }
                 }
+                Object.defineProperty(VectorImpl, 'name', {value:templateName('std::vector', type.name, templateName('std::allocator', type.name))});
                 VectorImpl.prototype.componentType = type as any;
                 VectorImpl.abstract({}, VECTOR_SIZE);
                 return VectorImpl as any;

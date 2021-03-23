@@ -300,7 +300,7 @@ declare global
          * @param callback The JavaScript object that will be called after the command executes
          *
          */
-         executeCommand(command: `testforblock ${string}`, callback: (callback: IExecuteCommandTestForBlockCallback) => void): void;
+        executeCommand(command: `testforblock ${string}`, callback: (callback: IExecuteCommandTestForBlockCallback) => void): void;
 
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.
@@ -308,7 +308,7 @@ declare global
          * @param callback The JavaScript object that will be called after the command executes
          *
          */
-         executeCommand(command: `testforblocks ${string}`, callback: (callback: IExecuteCommandTestForBlocksCallback) => void): void;
+        executeCommand(command: `testforblocks ${string}`, callback: (callback: IExecuteCommandTestForBlocksCallback) => void): void;
 
         /**
          * Allows you to execute a Slash Command on the server. The command will be queried and executed at the end of the current frame. All data output from the command will be compiled on a JavaScript Object and sent to the Callback object specified in the second parameter.

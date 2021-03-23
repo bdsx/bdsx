@@ -1,10 +1,11 @@
-import { SYMOPT_UNDNAME } from "../common";
+import { UNDNAME_NAME_ONLY } from "../common";
 import { NativePointer, pdb } from "../core";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
 import { Wrapper } from "../pointer";
+import { templateName } from "../templatename";
 
 @nativeClass()
 export class typeid_t<T> extends NativeClass{
@@ -48,13 +49,11 @@ export function type_id<T, BASE extends HasTypeId>(base:typeof HasTypeId&{new():
 
 export namespace type_id {
     export function pdbimport(base:typeof HasTypeId, types:Type<any>[]):void {
-        const symbols = types.map(v=>`type_id<${base.name},${v.name.endsWith('>') ? v.name+' ' : v.name}>`);
-        const counter = `typeid_t<${base.name}>::count`;
+        const symbols = types.map(v=>templateName('type_id', base.name, v.name));
+        const counter = templateName('typeid_t', base.name)+'::count';
         symbols.push(counter);
 
-        pdb.setOptions(SYMOPT_UNDNAME);
-        const addrs = pdb.getList(pdb.coreCachePath, {}, symbols);
-        pdb.setOptions(0);
+        const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
 
         symbols.pop();
 

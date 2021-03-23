@@ -1,5 +1,5 @@
-import { SYMOPT_UNDNAME } from "bdsx/common";
 import { pdb } from "bdsx/core";
+import { UNDNAME_NAME_ONLY } from "../common";
 
 const symbols = [
     'ScriptEngine::~ScriptEngine',
@@ -108,6 +108,7 @@ const symbols = [
     'RakNetServerLocator::announceServer',
     'HealthAttributeDelegate::change',
     'MinecraftCommands::getRegistry',
+    'CommandSelectorBase::CommandSelectorBase',
 ] as const;
 
 // decorated symbols
@@ -130,11 +131,9 @@ const symbols2 = [
 ] as const;
 
 
-pdb.setOptions(SYMOPT_UNDNAME);
-export const proc = pdb.getList(pdb.coreCachePath, {}, symbols);
+export const proc = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
 /** @deprecated use typeof proc */
 export type proc = typeof proc;
-pdb.setOptions(0);
 
 export const proc2 = pdb.getList(pdb.coreCachePath, {}, symbols2);
 /** @deprecated use typeof proc2 */

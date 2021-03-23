@@ -322,8 +322,9 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     /**
      * get symbols from cache.
      * if symbols don't exist in cache. it reads pdb.
+     * @param undecorate if it's set with UNDNAME_*, it uses undecorated(demangled) symbols
      */
-    static load<KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, names:KEYS):ProcHacker<{[key in KEYS[number]]: NativePointer}> {
-        return new ProcHacker(pdb.getList(cacheFilePath, {}, names));
+    static load<KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, names:KEYS, undecorate?:number):ProcHacker<{[key in KEYS[number]]: NativePointer}> {
+        return new ProcHacker(pdb.getList(cacheFilePath, {}, names, false, undecorate));
     }
 }
