@@ -2,6 +2,11 @@ import { ipfilter, NetworkIdentifier } from "bdsx";
 import { promises as fs } from 'fs';
 
 /**
+ * ipfilter blocks at the earliest phase of the program.
+ * It will never show the messages to the users
+ */
+
+/**
  * load the ban list from the file
  */
 async function load():Promise<void> {
