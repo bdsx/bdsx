@@ -17,6 +17,7 @@ const tooLoudFilter = new Set([
     MinecraftPacketIds.ActorEvent,
     MinecraftPacketIds.UpdateSoftEnum,
     MinecraftPacketIds.PlayerAuthInput,
+    MinecraftPacketIds.UpdateAttributes,
 ]);
 for (let i = 0; i <= 0xff; i++) {
     if (tooLoudFilter.has(i)) continue;

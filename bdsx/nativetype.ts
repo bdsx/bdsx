@@ -165,7 +165,7 @@ export class NativeType<T> implements Type<T> {
     }
 
     ref():NativeType<T> {
-        return refSingleton.newInstance(this, ()=>makeReference(this));
+        return Singleton.newInstance(NativeType, this, ()=>makeReference(this));
     }
 
     [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void {
@@ -195,8 +195,6 @@ export class NativeType<T> implements Type<T> {
     }
 }
 NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
-
-const refSingleton = new Singleton<NativeType<any>>();
 
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(

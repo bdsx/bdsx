@@ -36,8 +36,19 @@ export class MCRESULT extends NativeClass {
 
 @nativeClass(0xc0)
 export class CommandSelectorBase extends NativeClass {
+    private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
+        abstract();
+    }
+    newResults(origin:CommandOrigin):Actor[] {
+        const list = this._newResults(origin);
+        const actors = list.p!.toArray();
+        list.dispose();
+        return actors;
+    }
 }
-CommandSelectorBase.prototype[NativeType.ctor] = procHacker.js('CommandSelectorBase::CommandSelectorBase', RawTypeId.Void, {this:CommandSelectorBase});
+const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', RawTypeId.Void, null, CommandSelectorBase, RawTypeId.Boolean);
+CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', RawTypeId.Void, {this:CommandSelectorBase});
+(CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
 
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
@@ -53,6 +64,9 @@ export class WildcardCommandSelector<T> extends CommandSelectorBase {
 }
 
 export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
+ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
+    CommandSelectorBaseCtor(this, false);
+};
 
 @nativeClass()
 export class CommandRawText extends NativeClass {

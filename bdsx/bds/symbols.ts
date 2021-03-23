@@ -111,6 +111,8 @@ const symbols = [
     'HealthAttributeDelegate::change',
     'MinecraftCommands::getRegistry',
     'CommandSelectorBase::CommandSelectorBase',
+    'CommandSelectorBase::~CommandSelectorBase',
+    'CommandSelectorBase::newResults',
 ] as const;
 
 // decorated symbols

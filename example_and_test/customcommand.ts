@@ -43,7 +43,9 @@ command.register('ddd', 'relative float example').overload((param, origin, outpu
 // entity, incompleted
 command.register('eee', 'entity example').overload((param, origin, output)=>{
     console.log(`entity example> origin=${origin.getName()}`);
-    console.log(param.target); // unknown yet
+    for (const actor of param.target.newResults(origin)) {
+        console.log(actor.getName());
+    }
 }, {
     target: ActorWildcardCommandSelector,
 });
