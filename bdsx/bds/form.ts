@@ -93,8 +93,8 @@ export class FormDropdown extends FormComponent {
 export class FormInput extends FormComponent {
     type = "input";
     placeholder: string;
-    default: boolean;
-    constructor(text: string, placeholder?: string, defaultValue?: boolean) {
+    default: string;
+    constructor(text: string, placeholder?: string, defaultValue?: string) {
         super(text);
         if (placeholder) this.placeholder = placeholder;
         if (defaultValue) this.default = defaultValue;
@@ -129,7 +129,7 @@ class Form {
                 const pk = SetTitlePacket.create();
                 pk.sendTo(target);
                 pk.dispose();
-            }, 100);
+            }, 1000);
         }
         return this.id;
     }

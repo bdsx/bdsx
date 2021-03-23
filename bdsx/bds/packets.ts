@@ -1,7 +1,7 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
-import { ActorRuntimeID } from "./actor";
+import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
@@ -253,7 +253,12 @@ export class MobArmorEquipmentPacket extends Packet {
 
 @nativeClass(null)
 export class InteractPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    action:uint8_t;
+    @nativeField(ActorRuntimeID)
+    actorId:ActorRuntimeID;
+    @nativeField(Vec3)
+    pos:Vec3;
 }
 
 @nativeClass(null)
@@ -381,7 +386,18 @@ export class GuiDataPickItemPacket extends Packet {
 
 @nativeClass(null)
 export class AdventureSettingsPacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    flag1: uint32_t;
+    @nativeField(uint32_t)
+    commandPermission: uint32_t;
+    @nativeField(uint32_t, 0x38)
+    flag2: uint32_t;
+    @nativeField(uint32_t)
+    playerPermission: uint32_t;
+    @nativeField(ActorUniqueID)
+    actorId: ActorUniqueID;
+    @nativeField(uint32_t, 0x4C)
+    customFlag: uint32_t;
 }
 
 @nativeClass(null)
@@ -770,7 +786,8 @@ export class SetScoreboardIdentityPacket extends Packet {
 
 @nativeClass(null)
 export class SetLocalPlayerAsInitializedPacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    actorId: ActorRuntimeID;
 }
 
 @nativeClass(null)
@@ -815,7 +832,18 @@ export class BiomeDefinitionList extends Packet {
 
 @nativeClass(null)
 export class LevelSoundEventPacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    sound: uint32_t;
+    @nativeField(Vec3)
+    pos: Vec3;
+    @nativeField(int32_t)
+    extraData: int32_t;
+    @nativeField(CxxString)
+    entityType: CxxString;
+    @nativeField(bool_t)
+    isBabyMob: bool_t;
+    @nativeField(bool_t)
+    disableRelativeVolume: bool_t;
 }
 
 @nativeClass(null)
@@ -905,8 +933,30 @@ export class NetworkSettingsPacket extends Packet {
 
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {
+    @nativeField(float32_t)
+    pitch: float32_t;
+    @nativeField(float32_t)
+    yaw: float32_t;
     @nativeField(Vec3)
     pos: Vec3;
+    @nativeField(float32_t)
+    moveX: float32_t;
+    @nativeField(float32_t)
+    moveZ: float32_t;
+    @nativeField(float32_t)
+    heaYaw: float32_t;
+    @nativeField(bin64_t)
+    inputFlags: bin64_t;
+    @nativeField(uint32_t)
+    inputMode: uint32_t;
+    @nativeField(uint32_t)
+    playMode: uint32_t;
+    @nativeField(Vec3)
+    vrGazeDirection: Vec3;
+    @nativeField(bin64_t)
+    tick: bin64_t;
+    @nativeField(Vec3)
+    delta: Vec3;
 }
 
 @nativeClass(null)
