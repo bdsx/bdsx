@@ -279,7 +279,7 @@ export class PlayerActionPacket extends Packet {
     face: int32_t;
     @nativeField(int32_t)
     action: int32_t;
-    @nativeField(ActorRuntimeID, 0x48)
+    @nativeField(ActorRuntimeID)
     actorId: ActorRuntimeID;
 }
 
