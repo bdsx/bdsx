@@ -41,6 +41,7 @@
         "prefer-rest-params": "off",
         "no-debugger": "warn",
         "import/export": "off",
-        "no-duplicate-imports": "error"
+        "no-duplicate-imports": "error",
+        "eol-last": "error"
     }
 }
