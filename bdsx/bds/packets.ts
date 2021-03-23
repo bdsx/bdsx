@@ -273,7 +273,14 @@ export class ActorPickRequestPacket extends Packet {
 
 @nativeClass(null)
 export class PlayerActionPacket extends Packet {
-    // unknown
+    @nativeField(BlockPos)
+    pos: BlockPos;
+    @nativeField(int32_t)
+    face: int32_t;
+    @nativeField(int32_t)
+    action: int32_t;
+    @nativeField(ActorRuntimeID)
+    actorId: ActorRuntimeID;
 }
 
 @nativeClass(null)
