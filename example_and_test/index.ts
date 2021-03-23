@@ -10,6 +10,7 @@ import './bedrockapi-inventory';
 import './bedrockapi-components';
 import './bedrockapi-getblock';
 import './customcommand';
+import './form';
 import './attribute';
 import './net-chat';
 import './net-login';

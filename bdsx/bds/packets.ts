@@ -703,9 +703,7 @@ export class ShowModalFormPacket extends Packet {
     content:CxxString;
 }
 
-/** @deprecated use ShowModalFormPacket, matching to official name */
 export const ModalFormRequestPacket = ShowModalFormPacket;
-/** @deprecated use ShowModalFormPacket, matching to official name */
 export type ModalFormRequestPacket = ShowModalFormPacket;
 
 @nativeClass(null)
