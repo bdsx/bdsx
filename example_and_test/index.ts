@@ -12,6 +12,7 @@ import './bedrockapi-getblock';
 import './customcommand';
 import './form';
 import './attribute';
+import './ipban';
 import './net-chat';
 import './net-login';
 import './net-printall';

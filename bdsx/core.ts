@@ -717,9 +717,18 @@ export declare namespace ipfilter
      * It does not store permanently
      * You need to re-add it on startup
      *
-     * but it blocks packets on very early phase
+     * it blocks packets on very early phase
      */
     export function add(ip:string, periodSeconds?:number):void;
+
+    /**
+     * block ip
+     * It does not store permanently
+     * You need to re-add it on startup
+     *
+     * it blocks packets on very early phase
+     */
+     export function addAt(ip:string, unixTimeStamp?:number):void;
 
     /**
      * un-block ip
@@ -772,9 +781,9 @@ export declare namespace ipfilter
     export function init(callbackOnExceeded:(ip:string)=>void):void;
 
     /**
-     * all filtering IPs as Array with [IP, time] pairs
-     * time is for un-blocking in unix time stamp
-     * time = 0 : permanent
+     * all filtering IPs as Array with [IP, time] pairs.
+     * time is for expiring in unix time stamp.
+     * if time is 0, it's permanent.
      */
     export function entires():[string, number][];
 }
