@@ -506,6 +506,11 @@ export declare namespace pdb
     export function setOptions(dbghelpOptions:number):number;
 
     /**
+     * undecorate the decorated symbol
+     */
+    export function undecorate(decorated:string, flags:number):string;
+
+    /**
      * @deprecated use pdb.getList instead
      */
     export function getProcAddresses<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
@@ -515,7 +520,7 @@ export declare namespace pdb
      * if symbols don't exist in cache. it reads pdb.
      * @returns 'out' the first parameter.
      */
-    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean):{[key in KEYS[number]]: NativePointer} & OLD;
+    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean, undecorateFlags?:number):{[key in KEYS[number]]: NativePointer} & OLD;
 
     /**
      * get all symbols

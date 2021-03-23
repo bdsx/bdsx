@@ -1,5 +1,5 @@
-import { nativeField, nativeClass, NativeClass } from "../nativeclass";
-import { float32_t, int32_t, uint32_t } from "../nativetype";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, float32_t, int32_t, uint32_t } from "../nativetype";
 
 @nativeClass()
 export class BlockPos extends NativeClass {
@@ -27,4 +27,15 @@ export class Vec3 extends NativeClass {
         v.z = z;
         return v;
     }
+}
+
+@nativeClass()
+export class RelativeFloat extends NativeClass {
+    @nativeField(float32_t)
+    value:float32_t;
+    @nativeField(bool_t)
+    is_relative:bool_t;
+
+    @nativeField(bin64_t, 0)
+    bin_value:bin64_t;
 }

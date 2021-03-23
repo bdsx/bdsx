@@ -107,4 +107,4 @@ CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrig
 CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
 
 // Actor* getEntity(CommandOrigin* origin);
-CommandOrigin.prototype.getEntity = makefunc.js([0x30], Actor, {this: CommandOrigin});
+CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin});

@@ -4,16 +4,14 @@ import { capi, RawTypeId } from "bdsx";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { SurvivalMode } from "bdsx/bds/gamemode";
 import { TextPacket } from "bdsx/bds/packets";
-import { SYMOPT_UNDNAME } from "bdsx/common";
+import { UNDNAME_NAME_ONLY } from "bdsx/common";
 import { pdb } from "bdsx/core";
 import { ProcHacker } from "bdsx/prochacker";
 
 if (!capi.isRunningOnWine()) { // Skip for Linux, pdb is not working on Wine.
     // the API hooking is possible on Wine with the generated cache.
 
-    pdb.setOptions(SYMOPT_UNDNAME); // use undecorated symbol names. without this, ProcHacker.load will use mangled names
-    const hacker = ProcHacker.load('../pdbcache_by_example.ini', ['SurvivalMode::destroyBlock']);
-    pdb.setOptions(0); // reset the option
+    const hacker = ProcHacker.load('../pdbcache_by_example.ini', ['SurvivalMode::destroyBlock'], UNDNAME_NAME_ONLY);
     pdb.close(); // close the pdb to reduce the resource usage.
 
     let halfMiss = false;

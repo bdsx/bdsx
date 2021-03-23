@@ -8,6 +8,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
+import { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";
 import { ServerPlayer } from "./player";
@@ -112,6 +113,9 @@ export class Actor extends NativeClass {
         abstract();
     }
     getTypeId():ActorType {
+        abstract();
+    }
+    getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
     getAttribute(id:AttributeId):number {
