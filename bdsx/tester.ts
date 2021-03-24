@@ -50,6 +50,10 @@ export class Tester {
         if (!cond) this.error(message, 3);
     }
 
+    equals<T>(actual:T, expected:T, message:string='', toString:(v:T)=>string=v=>v+''):void {
+        if (actual !== expected) this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}, ${message}`, 3);
+    }
+
     static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>):Promise<void> {
         await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
 

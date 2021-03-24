@@ -6,13 +6,6 @@ It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supp
 * Basic Minecraft features as usual.
 * node.js features [(?)](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules)
 * [Debug with Visual Studio Code (You can debug addons too)](https://github.com/bdsx/bdsx/wiki/Debug-with-VSCode)
-* Hijack chatting
-```ts
-import { chat } from 'bdsx';
-chat.on(ev=>{
-    ev.setMessage(ev.message.toUpperCase()+" YEY!");
-});
-```
 * Hijack network packet + Get IP Address & XUID
 ```ts
 import { nethook, MinecraftPacketIds } from "bdsx";
