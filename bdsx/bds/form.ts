@@ -1,7 +1,7 @@
 import { MinecraftPacketIds, nethook, NetworkIdentifier } from "bdsx";
 import { SetTitlePacket, ShowModalFormPacket } from "./packets";
 
-const formMaps = new Map<number, SendedForm>();
+const formMaps = new Map<number, SentForm>();
 
 // rua.kr: I could not find the internal form id counter, It seems BDS does not use the form.
 //         But I set the minimum for the unexpected situation.
@@ -10,7 +10,7 @@ const MAXIMUM_FORM_ID = 0x7fffffff; // 32bit signed integer maximum
 
 let formIdCounter = MINIMUM_FORM_ID;
 
-class SendedForm {
+class SentForm {
     public readonly id: number;
 
     constructor(
@@ -213,7 +213,7 @@ export class Form<DATA extends FormData> {
 
     static sendTo<T extends FormData['type']>(target:NetworkIdentifier, data:FormData&{type:T}):Promise<FormResponse<T>> {
         return new Promise((resolve:(res:FormResponse<T>)=>void, reject)=>{
-            const submitted = new SendedForm(target, resolve, reject);
+            const submitted = new SentForm(target, resolve, reject);
             const pk = ShowModalFormPacket.create();
             pk.id = submitted.id;
             pk.content = JSON.stringify(data);
@@ -241,7 +241,7 @@ export class Form<DATA extends FormData> {
     }
 
     sendTo(target:NetworkIdentifier, callback?: (form: Form<DATA>, networkIdentifier: NetworkIdentifier) => any):number {
-        const submitted = new SendedForm(target, res=>{
+        const submitted = new SentForm(target, res=>{
             if (callback === undefined) return;
             switch (this.data.type) {
             case "form":
@@ -391,15 +391,15 @@ export class CustomForm extends Form<FormDataCustom> {
 }
 
 nethook.after(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
-    const sended = formMaps.get(pk.id);
-    if (sended === undefined) return;
-    if (sended.networkIdentifier !== ni) return; // other user is responsing
+    const sent = formMaps.get(pk.id);
+    if (sent === undefined) return;
+    if (sent.networkIdentifier !== ni) return; // other user is responsing
     formMaps.delete(pk.id);
 
     try {
         const response = JSON.parse(pk.response);
-        sended.resolve(response);
+        sent.resolve(response);
     } catch (err) {
-        sended.reject(err);
+        sent.reject(err);
     }
 });
