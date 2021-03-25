@@ -57,6 +57,9 @@ export class ItemStack extends NativeClass {
     protected _getItem():Item {
         abstract();
     }
+    protected _getCustomName():CxxStringWrapper {
+        abstract();
+    }
     protected _setCustomName(name:CxxStringWrapper):void {
         abstract();
     }
@@ -68,6 +71,9 @@ export class ItemStack extends NativeClass {
     }
     getAmount():number {
         return this.amount;
+    }
+    setAmount(amount:number):void {
+        this.amount = amount;
     }
     getId():number {
         const id = this._getId();
@@ -92,8 +98,8 @@ export class ItemStack extends NativeClass {
     hasCustomName():boolean {
         abstract();
     }
-    setAmount(amount:number):void {
-        this.amount = amount;
+    getCustomName(): string {
+        return this._getCustomName().value;
     }
     setCustomName(name:string):void {
         const _name = new CxxStringWrapper(true);
