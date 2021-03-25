@@ -70,7 +70,7 @@ Tester.test({
     disasm() {
         const assert = (hex: string, code: string) => {
             const asmcode = disasm.check(hex, true).toString().replace(/\n/g, ';');
-            this.assert(asmcode === code, `expected=${code}, actual=${asmcode}`);
+            this.equals(asmcode, code, ``);
         };
         assert('f3 0f 11 89 a4 03 00 00', 'repz;movups rcx, dword ptr [rcx+0x3a4]');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
@@ -85,7 +85,7 @@ Tester.test({
                 const MAX_CHAT = 5;
                 chatCancelCounter++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.assert(connectedNi === ni, 'the network identifier does not matched');
+                this.equals(connectedNi, ni, 'the network identifier does not matched');
                 if (chatCancelCounter === MAX_CHAT) {
                     this.log('> tested and stopping...');
                     setTimeout(() => bedrockServer.stop(), 1000);
@@ -106,19 +106,19 @@ Tester.test({
                 }
 
                 if (actor !== null) {
-                    this.assert(actor.getDimension() === DimensionId.Overworld, 'getDimension() is not overworld');
+                    this.equals(actor.getDimension(), DimensionId.Overworld, 'getDimension() is not overworld');
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
-                    this.assert(actualId === expectedId,
+                    this.equals(actualId, expectedId,
                         `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
 
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
-                        this.assert(name === connectedId, 'id does not matched');
-                        this.assert(actor.getTypeId() === ActorType.Player, 'player type does not matched');
+                        this.equals(name, connectedId, 'id does not matched');
+                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
                         this.assert(actor.isPlayer(), 'player is not the player');
-                        this.assert(connectedNi === actor.getNetworkIdentifier(), 'the network identifier does not matched');
+                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
                     } else {
                         this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
                     }
@@ -130,31 +130,40 @@ Tester.test({
     },
 
     bin() {
-        this.assert(bin.make64(1, 0) === bin64_t.one, '[test] bin.make64(1, 0) failed');
-        this.assert(bin.make64(0, 0) === bin64_t.zero, '[test] bin.make64(0, 0) failed');
-        this.assert(bin.make64(-1, -1) === bin64_t.minus_one, '[test] bin.make64(-1, -1) failed');
+        this.equals(bin.make64(1, 0), bin64_t.one, 'bin.make64(1, 0)', bin.toString);
+        this.equals(bin.make64(0, 0), bin64_t.zero, 'bin.make64(0, 0)', bin.toString);
+        this.equals(bin.make64(-1, -1), bin64_t.minus_one, 'bin.make64(-1, -1)', bin.toString);
         const small = bin.make64(0x100, 0);
-        this.assert(small === '\u0100\0\0\0', '[test] bin.make64(0x100, 0) failed');
+        this.equals(small, '\u0100\0\0\0', 'bin.make64(0x100, 0)', bin.toString);
         const big = bin.make64(0x10002, 0);
-        this.assert(big === '\u0002\u0001\0\0', '[test] bin.make64(0x10002, 0) failed');
-        this.assert(bin.sub(big, small) === '\uff02\0\0\0', '[test] bin.sub() failed');
+        this.equals(big, '\u0002\u0001\0\0', 'bin.make64(0x10002, 0)', bin.toString);
+        this.equals(bin.sub(big, small), '\uff02\0\0\0', 'bin.sub()', bin.toString);
         const big2 = bin.add(big, bin.add(big, small));
-        this.assert(big2 === '\u0104\u0002\0\0', '[test] bin.add() failed');
+        this.equals(big2, '\u0104\u0002\0\0', 'bin.add()', bin.toString);
         const bigbig = bin.add(bin.add(bin.muln(big2, 0x100000000), small), bin64_t.one);
-        this.assert(bigbig === '\u0101\u0000\u0104\u0002', '[test] bin.muln() failed');
+        this.equals(bigbig, '\u0101\u0000\u0104\u0002', 'bin.muln()', bin.toString);
         const dived = bin.divn(bigbig, 2);
-        this.assert(dived[0] === '\u0080\u0000\u0082\u0001', '[test] bin.divn() failed');
-        this.assert(dived[1] === 1, '[test] bin.divn() failed');
-        this.assert(bin.toString(dived[0], 16) === '1008200000080', '[test] bin.toString() failed');
+        this.equals(dived[0], '\u0080\u0000\u0082\u0001', 'bin.divn()', bin.toString);
+        this.equals(dived[1], 1, 'bin.divn()');
+        this.equals(bin.toString(dived[0], 16), '1008200000080', 'bin.toString()');
 
         const ptr = capi.malloc(10);
         try {
             const bignum = bin.makeVar(123456789012345);
             ptr.add().writeVarBin(bignum);
-            this.assert(ptr.add().readVarBin() === bignum, '[test] writevarbin / readvarbin failed');
+            this.equals(ptr.add().readVarBin(), bignum, 'writevarbin / readvarbin', bin.toString);
         } finally {
             capi.free(ptr);
         }
+
+        this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 0), '\u1000\u0100\u0010\u1001', 'bin.bitshl(0)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 0), '\u1001\u0100\u0010\u0001', 'bin.bitshr(0)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 4), '\u0000\u1001\u0100\u0010', 'bin.bitshl(4)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 4), '\u0100\u0010\u1001\u0000', 'bin.bitshr(4)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 16), '\u0000\u1000\u0100\u0010', 'bin.bitshl(16)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 16), '\u0100\u0010\u0001\u0000', 'bin.bitshr(16)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 20), '\u0000\u0000\u1001\u0100', 'bin.bitshl(20)', v=>bin.toString(v, 16));
+        this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 20), '\u0010\u1001\u0000\u0000', 'bin.bitshr(20)', v=>bin.toString(v, 16));
     },
 
     hashset() {
@@ -217,7 +226,7 @@ Tester.test({
         ptr.setAddressFromBuffer(dest);
         dll.vcruntime140.memset(ptr, 1, 12);
         for (const v of dest) {
-            this.assert(v === 1, 'wrong value: ' + v);
+            this.equals(v, 1, 'wrong value: ' + v);
         }
     },
 
@@ -228,25 +237,25 @@ Tester.test({
             nethook.raw(i).on((ptr, size, ni, packetId) => {
                 idcheck = packetId;
                 this.assert(size > 0, `packet size is too little`);
-                this.assert(packetId === (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
             });
             nethook.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
-                this.assert(packetId === idcheck, `different packetId on before. id=${packetId}`);
-                this.assert(ptr.getId() === idcheck, `different class.packetId on before. id=${packetId}`);
+                this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
             });
             nethook.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
-                this.assert(packetId === idcheck, `different packetId on after. id=${packetId}`);
-                this.assert(ptr.getId() === idcheck, `different class.packetId on after. id=${packetId}`);
+                this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
             });
             nethook.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 sendidcheck = packetId;
-                this.assert(ptr.getId() === packetId, `different class.packetId on send. id=${packetId}`);
+                this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             });
             nethook.sendRaw(i).on((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
-                this.assert(packetId === sendidcheck, `different packetId on sendRaw. id=${packetId}`);
-                this.assert(packetId === (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             });
         }
@@ -269,36 +278,36 @@ Tester.test({
     cxxstring() {
         const str = new CxxStringWrapper(true);
         str[NativeType.ctor]();
-        this.assert(str.length === 0, 'std::string invalid constructor');
-        this.assert(str.capacity === 15, 'std::string invalid constructor');
+        this.equals(str.length, 0, 'std::string invalid constructor');
+        this.equals(str.capacity, 15, 'std::string invalid constructor');
         const shortcase = '111';
         const longcase = '123123123123123123123123';
         str.value = shortcase;
-        this.assert(str.value === shortcase, 'failed with short text');
+        this.equals(str.value, shortcase, 'failed with short text');
         str.value = longcase;
-        this.assert(str.value === longcase, 'failed with long text');
+        this.equals(str.value, longcase, 'failed with long text');
         str[NativeType.dtor]();
 
         const hstr = new HashedString(true);
         hstr.construct();
-        this.assert(hstr.str === '', 'Invalid string');
+        this.equals(hstr.str, '', 'Invalid string');
         hstr.destruct();
 
         const data = new AttributeData(true);
         data.construct();
-        this.assert(data.name.str === '', 'Invalid string');
+        this.equals(data.name.str, '', 'Invalid string');
         data.destruct();
     },
 
     makefunc() {
         const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float64, null, RawTypeId.Float32);
-        this.assert(floatToDouble(123) === 123, 'float to double');
+        this.equals(floatToDouble(123), 123, 'float to double');
         const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float32, null, RawTypeId.Float64);
-        this.assert(doubleToFloat(123) === 123, 'double to float');
+        this.equals(doubleToFloat(123), 123, 'double to float');
         const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(RawTypeId.Boolean);
-        this.assert(getbool() === false, 'bool return');
+        this.equals(getbool(), false, 'bool return');
         const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(RawTypeId.Int32, null, RawTypeId.Boolean);
-        this.assert(bool2int(true) === 1, 'bool to int');
+        this.equals(bool2int(true), 1, 'bool to int');
     },
 
     vectorcopy() {
@@ -319,17 +328,17 @@ Tester.test({
         a.vector2.push(str);
         str.destruct();
 
-        this.assert(a.vector.size() === 1, 'a.vector, invalid size');
-        this.assert(a.vector2.size() === 1, 'a.vector2, invalid size');
-        this.assert(a.vector.get(0) === 'test', `a.vector, invalid value ${a.vector.get(0)}`);
-        this.assert(a.vector2.get(0)!.value === 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
+        this.equals(a.vector.size(), 1, 'a.vector, invalid size');
+        this.equals(a.vector2.size(), 1, 'a.vector2, invalid size');
+        this.equals(a.vector.get(0), 'test', `a.vector, invalid value ${a.vector.get(0)}`);
+        this.equals(a.vector2.get(0)!.value, 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
 
         const b = new Class(true);
         b.construct(a);
-        this.assert(b.vector.size() === 1, 'b.vector, invalid size');
-        this.assert(b.vector2.size() === 1, 'b.vector2, invalid size');
-        this.assert(b.vector.get(0) === 'test', `b.vector, invalid value ${b.vector.get(0)}`);
-        this.assert(b.vector2.get(0)!.value === 'test2', `b.vector2, invalid value ${b.vector2.get(0)!.value}`);
+        this.equals(b.vector.size(), 1, 'b.vector, invalid size');
+        this.equals(b.vector2.size(), 1, 'b.vector2, invalid size');
+        this.equals(b.vector.get(0), 'test', `b.vector, invalid value ${b.vector.get(0)}`);
+        this.equals(b.vector2.get(0)!.value, 'test2', `b.vector2, invalid value ${b.vector2.get(0)!.value}`);
         b.vector.get(0);
 
         b.destruct();
@@ -397,14 +406,14 @@ Tester.test({
             const packet = Packet.create();
 
             packet.getName(str);
-            this.assert(str.value === Packet.name, `JS name=${Packet.name}, C++ name=${str.value}`);
+            this.equals(str.value, Packet.name);
             str.destruct();
-            this.assert(packet.getId() === Packet.ID, `JS id=${Packet.ID}, C++ id=${packet.getId()}`);
+            this.equals(packet.getId(), Packet.ID);
 
             let name = Packet.name;
             const idx = name.lastIndexOf('Packet');
             if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
-            this.assert(MinecraftPacketIds[Packet.ID] === name, `MinecraftPacketIds.${MinecraftPacketIds[Packet.ID]} != ${name}`);
+            this.equals(MinecraftPacketIds[Packet.ID], name);
 
             packet.dispose();
         }

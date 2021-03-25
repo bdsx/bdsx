@@ -3,7 +3,7 @@ SCRIPT=$(readlink -f "$0")
 cd $(dirname "$SCRIPT")
 
 echo ""
-if ! command -v npm &> /dev/null
+if ! [ -x "$(command -v npm)" ]
 then
     echo 'Error: bdsx requires npm. Please install node.js first' >&2
     exit $?

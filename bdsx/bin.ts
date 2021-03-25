@@ -350,6 +350,56 @@ export namespace bin
         }
         return String.fromCharCode(...out);
     }
+    /**
+     * bitwise shift right
+     */
+    export function bitshr(a:string, shift:number):string {
+        const len = a.length;
+        const values:number[] = new Array(len);
+
+        let srci = (shift+15) >> 4;
+        shift -= (srci << 4) - 16;
+
+        const ishift = 16 - shift;
+        let dsti=0;
+        let v = 0;
+        if (srci !== 0) {
+            v = a.charCodeAt(srci-1) >> shift;
+        }
+        while (srci<len) {
+            const c = a.charCodeAt(srci++);
+            v |= c << ishift;
+            values[dsti++] = v;
+            v <<= 16;
+            v |= c >> shift;
+        }
+        while (dsti<len) {
+            values[dsti++] = 0;
+        }
+        return String.fromCharCode(...values);
+    }
+    /**
+     * bitwise shift right
+     */
+    export function bitshl(a:string, shift:number):string {
+        const len = a.length;
+        const values:number[] = new Array(len);
+
+        let dsti = shift >> 4;
+        shift &= 0xf;
+
+        let srci=0;
+        let v = 0;
+        for (let i=0;i<dsti;i++) {
+            values[i++] = 0;
+        }
+        while (dsti<len) {
+            v |= a.charCodeAt(srci++) << shift;
+            values[dsti++] = v;
+            v >>= 16;
+        }
+        return String.fromCharCode(...values);
+    }
     export function neg(a:string):string {
         const n = a.length;
         if (n === 0) return a;

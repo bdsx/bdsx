@@ -11,10 +11,10 @@ if [ $? != 0 ]; then exit $?; fi
 npm run -s build
 if [ $? != 0 ]; then exit $?; fi
 
-if command -v wine &> /dev/null
+if [ -x "$(command -v wine)" ]
 then
   WINE=wine
-elif command -v wine64 &> /dev/null
+elif [ -x "$(command -v wine64)" ]
 then
   WINE=wine64
 else
