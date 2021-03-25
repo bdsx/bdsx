@@ -57,6 +57,9 @@ export class ItemStack extends NativeClass {
     protected _getItem():Item {
         abstract();
     }
+    protected _getCustomName():CxxStringWrapper {
+        abstract();
+    }
     protected _setCustomName(name:CxxStringWrapper):void {
         abstract();
     }
@@ -69,12 +72,11 @@ export class ItemStack extends NativeClass {
     getAmount():number {
         return this.amount;
     }
+    setAmount(amount:number):void {
+        this.amount = amount;
+    }
     getId():number {
-        const id = this._getId();
-        if (id > 32767) {
-            return 255 + (65536 - id); // TODO: Fix this when there is a wrapper for Short
-        }
-        return id;
+        return this._getId() << 16 >> 16; // TODO: Fix this when there is a wrapper for Short
     }
     getItem():Item|null {
         if (this.isNull()) {
@@ -92,8 +94,11 @@ export class ItemStack extends NativeClass {
     hasCustomName():boolean {
         abstract();
     }
-    setAmount(amount:number):void {
-        this.amount = amount;
+    getCustomName(): string {
+        const name = this._getCustomName();
+        const out = name.value;
+        name.destruct();
+        return out;
     }
     setCustomName(name:string):void {
         const _name = new CxxStringWrapper(true);
