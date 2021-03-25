@@ -76,11 +76,7 @@ export class ItemStack extends NativeClass {
         this.amount = amount;
     }
     getId():number {
-        const id = this._getId();
-        if (id > 32767) {
-            return 255 + (65536 - id); // TODO: Fix this when there is a wrapper for Short
-        }
-        return id;
+        return this._getId() << 16 >> 16; // TODO: Fix this when there is a wrapper for Short
     }
     getItem():Item|null {
         if (this.isNull()) {
@@ -99,7 +95,10 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     getCustomName(): string {
-        return this._getCustomName().value;
+        const name = this._getCustomName();
+        const out = name.value;;
+        name.destruct();
+        return out;
     }
     setCustomName(name:string):void {
         const _name = new CxxStringWrapper(true);
