@@ -96,7 +96,7 @@ export class ItemStack extends NativeClass {
     }
     getCustomName(): string {
         const name = this._getCustomName();
-        const out = name.value;;
+        const out = name.value;
         name.destruct();
         return out;
     }
