@@ -61,6 +61,19 @@
             "args": ["${workspaceFolder}/bdsx/pluginmgr/index.js"],
             "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "cwd": "${workspaceFolder}/bedrock_server",
+            "type": "node",
+            "request": "launch",
+            "name": "Launch PDB Parser",
+            "args": ["${workspaceFolder}/bdsx/pdbparser"],
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
         }
     ]
 }

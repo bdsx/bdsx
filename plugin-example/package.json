@@ -7,6 +7,11 @@
   "author": "karikera <karikera3@hotmail.com> (https://rua.kr/)",
   "license": "ISC",
   "bdsxPlugin": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prepare": "tsc"
+  },
   "devDependencies": {
     "bdsx": "file:../bdsx"
   }

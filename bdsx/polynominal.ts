@@ -1,20 +1,9 @@
-import { ParsingError } from "./textparser";
-
-
-function str2set(str:string):Set<number>{
-    const out = new Set<number>();
-    for (let i=0;i<str.length;i++) {
-        out.add(str.charCodeAt(i));
-    }
-    return out;
-}
+import { LanguageParser, ParsingError, TextParser } from "./textparser";
+import { str2set } from "./util";
 
 function unexpected():never {
     throw Error('Unexpected operation');
 }
-
-const OPERATOR_CHRS = str2set('!@#%^&*()+-=`~[]{};\':",./<>?');
-const SPACES = str2set(' \t\r\n');
 
 type Constructor<T> = {new(...args:any[]):T};
 
@@ -383,42 +372,26 @@ export namespace polynominal {
         return null;
     }
     export function parse(text:string, lineNumber:number=0, offset:number=0):Operand {
-        let i = 0;
-
+        const parser = new LanguageParser(text);
         const ungettedOperators:Operator[] = [];
 
         function error(message:string, word:string):never {
             throw new ParsingError(message, {
-                column: offset + i-word.length,
+                column: offset + parser.i-word.length,
                 width: word.length,
                 line: lineNumber
             });
-        }
-
-        function skipSpace():void {
-            for (;;) {
-                const code = text.charCodeAt(i);
-                if (!SPACES.has(code)) break;
-                i++;
-            }
         }
 
         function readOperator(...types:(keyof OperatorSet)[]):Operator {
             if (ungettedOperators.length !== 0) {
                 return ungettedOperators.shift()!;
             }
-            skipSpace();
-            const from = i;
-            if (from >= text.length) return OPER_EOF;
-            let out = '';
-            for (;;) {
-                const code = text.charCodeAt(i);
-                if (!OPERATOR_CHRS.has(code)) break;
-                out += String.fromCharCode(code);
-                if (out.length !== 1 && !OPERATORS.has(out)) break;
-                i++;
+            const opername = parser.readOperator(OPERATORS);
+            if (opername === null) {
+                return OPER_EOF;
             }
-            const opername = text.substring(from, i);
+
             const opers = OPERATORS.get(opername);
             if (opers === undefined) error(`Unexpected operator '${opername}'`, opername);
 
@@ -433,32 +406,21 @@ export namespace polynominal {
             ungettedOperators.push(oper);
         }
 
-        function parseOperand(word:string):polynominal.Name|polynominal.Constant {
-            const n = polynominal.parseToNumber(word);
-            let out:polynominal.Name|polynominal.Constant;
+        function readOperand():Operand|null {
+            const word = parser.readIdentifier();
+            if (word === null) return null;
+            const n = parseToNumber(word);
+            let out:Name|Constant;
 
             if (n === null) {
-                out = new polynominal.Name(word);
-                out.column = i-word.length;
+                out = new Name(word);
+                out.column = parser.i-word.length;
                 out.length = word.length;
             } else {
                 if (isNaN(n)) throw error(`Unexpected number: ${word}`, word);
-                out = new polynominal.Constant(n);
+                out = new Constant(n);
             }
             return out;
-        }
-
-        function readOperand():Operand|null {
-            skipSpace();
-            const from = i;
-            for (;;) {
-                if (i >= text.length) break;
-                const code = text.charCodeAt(i);
-                if (OPERATOR_CHRS.has(code) || SPACES.has(code)) break;
-                i++;
-            }
-            if (from === i) return null;
-            return parseOperand(text.substring(from, i));
         }
 
         function readStatement(endPrecedence:number):Operand {

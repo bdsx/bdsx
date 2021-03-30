@@ -83,6 +83,7 @@ bedrockServer.close.on(()=>{
 {
     const tsconfig = JSON.parse(fs.readFileSync('./tsconfig.json', 'utf-8'));
     delete tsconfig.exclude;
+    tsconfig.declaration = true;
     fs.writeFileSync(`${targetdir}tsconfig.json`, JSON.stringify(tsconfig, null, 2).replace(/\n/g, os.EOL), 'utf-8');
 }
 
@@ -101,6 +102,7 @@ bedrockServer.close.on(()=>{
     const gitignore = `
 /node_modules
 *.js
+*.d.ts
 `;
     fs.writeFileSync(`${targetdir}.gitignore`, gitignore, 'utf-8');
 }
