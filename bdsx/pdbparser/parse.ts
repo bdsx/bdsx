@@ -4,6 +4,7 @@ import fs = require('fs');
 import path = require('path');
 import { PdbCache } from "./pdbcache";
 import ProgressBar = require('progress');
+import { mkdir } from "node:fs";
 
 const OPERATORS = new Set<string>([
     '::',
@@ -552,10 +553,15 @@ function getFiltered(filter:(id:Identifier)=>boolean):Identifier[] {
     return filted;
 }
 
+const globalDir = path.join(__dirname, 'globals')
+if (!fs.existsSync(globalDir)) {
+    fs.mkdirSync(globalDir)
+}
+
 function writeAs(name:string, filter:(id:Identifier)=>boolean):void {
     const filted = getFiltered(filter);
     filted.sort();
-    fs.writeFileSync(path.join(__dirname, 'globals', name), filted.join('\n'));
+    fs.writeFileSync(path.join(globalDir, name), filted.join('\n'));
 }
 
 const defInstance = global.get('DefinitionInstance');
