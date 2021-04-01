@@ -553,9 +553,9 @@ function getFiltered(filter:(id:Identifier)=>boolean):Identifier[] {
     return filted;
 }
 
-const globalDir = path.join(__dirname, 'globals')
+const globalDir = path.join(__dirname, 'globals');
 if (!fs.existsSync(globalDir)) {
-    fs.mkdirSync(globalDir)
+    fs.mkdirSync(globalDir);
 }
 
 function writeAs(name:string, filter:(id:Identifier)=>boolean):void {
