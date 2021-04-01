@@ -4,7 +4,6 @@ import fs = require('fs');
 import path = require('path');
 import { PdbCache } from "./pdbcache";
 import ProgressBar = require('progress');
-import { mkdir } from "node:fs";
 
 const OPERATORS = new Set<string>([
     '::',
