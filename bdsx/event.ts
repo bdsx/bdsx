@@ -11,6 +11,7 @@ import { CxxStringWrapper } from "./pointer";
 import { bin64_t } from "./nativetype";
 import { AttributeId } from "./bds/attribute";
 import Event from "krevent";
+import { ScriptCustomEventPacket } from "./bds/packets";
 
 interface IBlockDestroyEvent {
     player: Player,
@@ -43,6 +44,26 @@ function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):
 }
 const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onBlockDestroy);
 const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onBlockDestroyCreative);
+
+interface IentitySneakEvent {
+    entity: Actor,
+    isSneaking: boolean;
+}
+class entitySneakEvent implements IentitySneakEvent {
+    constructor(
+        public entity: Actor,
+        public isSneaking: boolean,
+    ) {
+    }
+}
+
+function onEntitySneak(Script:ScriptCustomEventPacket,actor:Actor, bool:boolean):boolean {
+    const event = new entitySneakEvent(actor, bool);
+    events.entitySneak.fire(event);
+    return originalFunc(Script, actor, bool);
+}
+
+const originalFunc = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', RawTypeId.Boolean, null, ScriptCustomEventPacket, Actor, RawTypeId.Boolean)(onEntitySneak)
 
 interface IBlockPlaceEvent {
     player: Player,
@@ -232,6 +253,8 @@ export const events = {
     playerAttack: new Event<(event: PlayerAttackEvent) => void | CANCEL>(),
     /** Cancellable but only when player is in container screens*/
     playerDropItem: new Event<(event: PlayerDropItemEvent) => void | CANCEL>(),
+    /** Not cancellable */
+    entitySneak: new Event<(event: entitySneakEvent) => void>(),
     /** Not cancellable */
     playerJoin: new Event<(event: PlayerJoinEvent) => void>(),
     /** Cancellable */
