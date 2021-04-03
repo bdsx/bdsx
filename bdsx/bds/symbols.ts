@@ -114,6 +114,7 @@ const symbols = [
     'CommandSelectorBase::CommandSelectorBase',
     'CommandSelectorBase::~CommandSelectorBase',
     'CommandSelectorBase::newResults',
+    'ScriptServerActorEventListener::onActorSneakChanged'
 ] as const;
 
 // decorated symbols
