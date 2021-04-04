@@ -14,7 +14,7 @@ import Event from "krevent";
 import { ScriptCustomEventPacket } from "./bds/packets";
 
 interface IBlockDestroyEvent {
-    player: Player,
+    player: Player;
     blockPos: BlockPos;
 }
 class BlockDestroyEvent implements IBlockDestroyEvent {
