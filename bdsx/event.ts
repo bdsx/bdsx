@@ -45,11 +45,11 @@ function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):
 const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onBlockDestroy);
 const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onBlockDestroyCreative);
 
-interface IentitySneakEvent {
-    entity: Actor,
+interface IEntitySneakEvent {
+    entity: Actor;
     isSneaking: boolean;
 }
-class entitySneakEvent implements IentitySneakEvent {
+class entitySneakEvent implements IEntitySneakEvent {
     constructor(
         public entity: Actor,
         public isSneaking: boolean,
@@ -60,10 +60,10 @@ class entitySneakEvent implements IentitySneakEvent {
 function onEntitySneak(Script:ScriptCustomEventPacket,actor:Actor, bool:boolean):boolean {
     const event = new entitySneakEvent(actor, bool);
     events.entitySneak.fire(event);
-    return originalFunc(Script, actor, bool);
+    return _onEntitySneak(Script, actor, bool);
 }
 
-const originalFunc = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', RawTypeId.Boolean, null, ScriptCustomEventPacket, Actor, RawTypeId.Boolean)(onEntitySneak)
+const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', RawTypeId.Boolean, null, ScriptCustomEventPacket, Actor, RawTypeId.Boolean)(onEntitySneak);
 
 interface IBlockPlaceEvent {
     player: Player,
