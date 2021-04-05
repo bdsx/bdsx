@@ -3,6 +3,7 @@
 ```sh
 > npm run newplugin ./path/to/plugin 
 # it will install the generated plugin as a local package
+# Please execute this on the bdsx directory
 ```
 
 ### Build the plugin

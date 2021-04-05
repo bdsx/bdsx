@@ -1,17 +1,115 @@
 
 import colors = require('colors');
+import { str2set } from './util';
 
 const SPACE_REG = /^([\s\uFEFF\xA0]*)(.*[^\s\uFEFF\xA0])[\s\uFEFF\xA0]*$/;
+const DEFAULT_SEPERATOR = str2set('!@#%^&*()+-=`~[]{};\':",./<>?');
 
-export class TextLineParser {
-    private p = 0;
+const SPACES = str2set(' \t\r\n\uFEFF\xa0');
+
+export class TextParser {
+    public i = 0;
+    constructor(
+        public context:string) {
+    }
+
+    getFrom(from:number):string {
+        return this.context.substring(from, this.i);
+    }
+
+    eof():boolean {
+        return this.i >= this.context.length;
+    }
+
+    peek():string {
+        return this.context.charAt(this.i);
+    }
+
+    endsWith(str:string):boolean {
+        return this.context.endsWith(str, this.i);
+    }
+
+    nextIf(str:string):boolean {
+        if (!this.context.startsWith(str, this.i)) return false;
+        this.i += str.length;
+        return true;
+    }
+
+    skipSpaces():void {
+        const nonspace = /[^\s\uFEFF\xA0]/g;
+        nonspace.lastIndex = this.i;
+        const res = nonspace.exec(this.context);
+        if (res === null) {
+            this.i = this.context.length;
+            return;
+        }
+        this.i = res.index;
+    }
+
+}
+
+export class LanguageParser extends TextParser {
+
+    constructor(
+        context:string,
+        public readonly seperators:Set<number> = DEFAULT_SEPERATOR) {
+        super(context);
+        for (const chr of SPACES) {
+            this.seperators.add(chr);
+        }
+    }
+
+    readIdentifier():string|null {
+        this.skipSpaces();
+        const from = this.i;
+        for (;;) {
+            if (this.i >= this.context.length) break;
+            const code = this.context.charCodeAt(this.i);
+            if (this.seperators.has(code)) break;
+            this.i++;
+        }
+        if (from === this.i) return null;
+        return this.context.substring(from, this.i);
+    }
+
+    readOperator(operators:{has(key:string):boolean}):string|null {
+        this.skipSpaces();
+        const from = this.i;
+        if (from >= this.context.length) return null;
+        let out = '';
+        for (;;) {
+            const code = this.context.charCodeAt(this.i);
+            if (!this.seperators.has(code)) break;
+            out += String.fromCharCode(code);
+            if (out.length !== 1 && !operators.has(out)) break;
+            this.i++;
+        }
+        return this.context.substring(from, this.i);
+    }
+
+    readTo(needle:string):string {
+        const context = this.context;
+        const idx = context.indexOf(needle, this.i);
+        const matched = (idx === -1 ? context.substr(this.i) : context.substring(this.i, idx)).trim();
+        this.i = idx === -1 ? context.length : idx + 1;
+        return matched;
+    }
+
+    readAll():string {
+        return this.context.substr(this.i).trim();
+    }
+
+}
+
+export class TextLineParser extends TextParser {
     public matchedWidth:number;
     public matchedIndex = 0;
 
     constructor(
-        private context:string,
+        context:string,
         public readonly lineNumber:number,
         private offset = 0) {
+        super(context);
         this.matchedWidth = context.length;
     }
 
@@ -26,23 +124,13 @@ export class TextLineParser {
         return [res, matched[1].length, res.length];
     }
 
-    eof():boolean {
-        return this.p >= this.context.length;
-    }
-
-    nextIf(str:string):boolean {
-        if (!this.context.startsWith(str, this.p)) return false;
-        this.p += str.length;
-        return true;
-    }
-
     readQuotedStringTo(chr:string):string|null {
-        let p = this.p+1;
+        let p = this.i+1;
 
         for (;;) {
             const np = this.context.indexOf(chr, p);
             if (np === -1) {
-                this.matchedIndex = this.p + this.offset;
+                this.matchedIndex = this.i + this.offset;
                 this.matchedWidth = 1;
                 throw this.error('qouted string does not end');
             }
@@ -58,10 +146,10 @@ export class TextLineParser {
                 break;
             }
             if ((count&1) === 0) {
-                const out = this.context.substring(this.p-1, np+1);
-                this.matchedIndex = this.p + this.offset;
+                const out = this.context.substring(this.i-1, np+1);
+                this.matchedIndex = this.i + this.offset;
                 this.matchedWidth = out.length;
-                this.p = np+1;
+                this.i = np+1;
                 try {
                     return JSON.parse(out);
                 } catch (err) {
@@ -74,43 +162,32 @@ export class TextLineParser {
 
     readQuotedString():string|null {
         this.skipSpaces();
-        const chr = this.context.charAt(this.p);
+        const chr = this.context.charAt(this.i);
         if (chr !== '"' && chr !== "'") return null;
         return this.readQuotedStringTo(chr);
-    }
-
-    skipSpaces():void {
-        const nonspace = /[^\s\uFEFF\xA0]/g;
-        nonspace.lastIndex = this.p;
-        const res = nonspace.exec(this.context);
-        if (res === null) {
-            this.p = this.context.length;
-            return;
-        }
-        this.p = res.index;
     }
 
     readToSpace():string {
         const context = this.context;
         const spaceMatch = /[\s\uFEFF\xA0]+/g;
-        spaceMatch.lastIndex = this.p;
+        spaceMatch.lastIndex = this.i;
 
         for (;;) {
             const res = spaceMatch.exec(context);
             let content:string;
-            this.matchedIndex = this.p + this.offset;
+            this.matchedIndex = this.i + this.offset;
             if (res === null) {
-                content = context.substr(this.p);
+                content = context.substr(this.i);
                 this.matchedWidth = content.length;
-                this.p = this.context.length;
+                this.i = this.context.length;
             } else {
                 if (res.index === 0) {
-                    this.p = spaceMatch.lastIndex;
+                    this.i = spaceMatch.lastIndex;
                     continue;
                 }
-                content = context.substring(this.p, res.index);
+                content = context.substring(this.i, res.index);
                 this.matchedWidth = content.length;
-                this.p = spaceMatch.lastIndex;
+                this.i = spaceMatch.lastIndex;
             }
             return content;
         }
@@ -118,78 +195,78 @@ export class TextLineParser {
 
     *splitWithSpaces():IterableIterator<string> {
         const context = this.context;
-        if (this.p >= context.length) return;
+        if (this.i >= context.length) return;
         const oriindex = this.matchedIndex;
         const offset = this.offset;
         const spaceMatch = /[\s\uFEFF\xA0]+/g;
-        spaceMatch.lastIndex = this.p;
+        spaceMatch.lastIndex = this.i;
 
         for (;;) {
             const res = spaceMatch.exec(context);
 
             let content:string;
             if (res === null) {
-                content = context.substr(this.p);
+                content = context.substr(this.i);
             } else {
                 if (res.index === 0) {
-                    this.p = spaceMatch.lastIndex;
+                    this.i = spaceMatch.lastIndex;
                     continue;
                 }
-                content = context.substring(this.p, res.index);
+                content = context.substring(this.i, res.index);
             }
-            this.offset = this.matchedIndex = this.p + offset;
+            this.offset = this.matchedIndex = this.i + offset;
             this.matchedWidth = content.length;
-            this.p = 0;
+            this.i = 0;
             yield this.context = content;
             if (res === null) break;
-            this.p = spaceMatch.lastIndex;
+            this.i = spaceMatch.lastIndex;
         }
 
         this.offset = offset;
         this.context = context;
-        this.p = context.length;
+        this.i = context.length;
         this.matchedWidth = this.matchedIndex + this.matchedWidth - oriindex;
         this.matchedIndex = oriindex;
     }
 
     readTo(needle:string):string {
         const context = this.context;
-        const idx = context.indexOf(needle, this.p);
-        const [matched, prespace, width] = TextLineParser.trim(idx === -1 ? context.substr(this.p) : context.substring(this.p, idx));
-        this.matchedIndex = this.offset + this.p + prespace;
+        const idx = context.indexOf(needle, this.i);
+        const [matched, prespace, width] = TextLineParser.trim(idx === -1 ? context.substr(this.i) : context.substring(this.i, idx));
+        this.matchedIndex = this.offset + this.i + prespace;
         this.matchedWidth = width;
-        this.p = idx === -1 ? context.length : idx + 1;
+        this.i = idx === -1 ? context.length : idx + 1;
         return matched;
     }
 
     readAll():string {
-        const [matched, prespace, width] = TextLineParser.trim(this.context.substr(this.p));
-        this.matchedIndex = this.p + prespace;
+        const [matched, prespace, width] = TextLineParser.trim(this.context.substr(this.i));
+        this.matchedIndex = this.i + prespace;
         this.matchedWidth = width;
-        this.p = this.context.length;
+        this.i = this.context.length;
         return matched;
     }
 
     *split(needle:string):IterableIterator<string> {
         const context = this.context;
-        if (this.p >= context.length) return;
+        if (this.i >= context.length) return;
         const oriindex = this.matchedIndex;
         const offset = this.offset;
 
         for (;;) {
-            const idx = context.indexOf(needle, this.p);
-            const [matched, prespace, width] = TextLineParser.trim(idx === -1 ? context.substr(this.p) : context.substring(this.p, idx));
-            this.offset = this.matchedIndex = this.p + prespace + offset;
+            const idx = context.indexOf(needle, this.i);
+            const [matched, prespace, width] = TextLineParser.trim(idx === -1 ? context.substr(this.i) : context.substring(this.i, idx));
+            this.offset = this.matchedIndex = this.i + prespace + offset;
             this.matchedWidth = width;
-            this.p = 0;
+            this.i = 0;
             yield this.context = matched;
             if (idx === -1) break;
-            this.p = idx + 1;
+            this.i = idx + 1;
         }
 
         this.offset = offset;
         this.context = context;
-        this.p = context.length;
+        this.i = context.length;
         this.matchedWidth = this.matchedIndex + this.matchedWidth - oriindex;
         this.matchedIndex = oriindex;
     }

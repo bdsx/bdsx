@@ -8,8 +8,8 @@ import { FileWriter } from './writer';
 const DOCURL_SCRIPTING = 'https://bedrock.dev/docs/stable/Scripting';
 const DOCURL_ADDONS = 'https://bedrock.dev/docs/stable/Addons';
 
-const OUT_SCRIPTING = path.join(__dirname, '../generated.scripting.ts');
-const OUT_ADDONS = path.join(__dirname, '../generated.addons.ts');
+const OUT_SCRIPTING = path.join(__dirname, '../generated.scripting.d.ts');
+const OUT_ADDONS = path.join(__dirname, '../generated.addons.d.ts');
 
 const docfixRaw = require('./docfix.json') as Record<string, DocFixItem|string|null>;
 const docfix = new Map<string, DocType>();
