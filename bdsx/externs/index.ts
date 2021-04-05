@@ -1,5 +1,5 @@
-import "./node";
-import "./generated.scripting";
-import "./generated.addons";
-import "./scripting-extra";
-import "./particle";
+import type {} from "./node";
+import type {} from "./generated.scripting";
+import type {} from "./generated.addons";
+import type {} from "./scripting-extra";
+import type {} from "./particle";

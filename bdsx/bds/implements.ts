@@ -2,7 +2,7 @@ import asmcode = require("bdsx/asm/asmcode");
 import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
@@ -19,6 +19,7 @@ import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { Item, ItemStack, PlayerInventory } from "./inventory";
 import { Level, ServerLevel } from "./level";
+import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AttributeData, UpdateAttributesPacket } from "./packets";
@@ -28,7 +29,6 @@ import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
 import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
 import { BinaryStream } from "./stream";
-import { CompoundTag } from "./nbt";
 
 // avoiding circular dependency
 

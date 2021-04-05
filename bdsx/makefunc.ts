@@ -329,6 +329,15 @@ class TargetInfo {
 const TARGET_RETURN = TargetInfo.register(Register.rax, FloatRegister.xmm0);
 const TARGET_1 = TargetInfo.register(Register.rcx, FloatRegister.xmm0);
 const TARGET_2 = TargetInfo.register(Register.rdx, FloatRegister.xmm1);
+const TARGET_3 = TargetInfo.register(Register.r8, FloatRegister.xmm2);
+const TARGET_4 = TargetInfo.register(Register.r9, FloatRegister.xmm3);
+
+enum TConvert
+{
+    js2np,
+    np2js,
+    np2np,
+}
 
 class Maker extends X64Assembler {
     public offsetForStructureReturn: number;
@@ -375,14 +384,17 @@ class Maker extends X64Assembler {
         }
     }
 
-    _mov_t_t(target: TargetInfo, source: TargetInfo, type: RawTypeId, reverse: boolean): void {
+    _mov_t_t(target: TargetInfo, source: TargetInfo, type: RawTypeId, cvt: TConvert): void {
+        if (cvt === TConvert.np2np && type === RawTypeId.FloatAsInt64) {
+            type = RawTypeId.Void; // 64 to 64
+        }
         if (target.memory) {
             const temp = target.reg !== Register.r10 ? Register.r10 : Register.r11;
             const ftemp = target.freg !== FloatRegister.xmm5 ? FloatRegister.xmm5 : FloatRegister.xmm6;
 
             if (source.memory) {
                 if (type === RawTypeId.FloatAsInt64) {
-                    if (reverse) {
+                    if (cvt === TConvert.np2js) {
                         this.cvtsi2sd_r_rp(ftemp, source.reg, 1, source.offset);
                         this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
                     } else {
@@ -390,7 +402,7 @@ class Maker extends X64Assembler {
                         this.mov_rp_r(target.reg, 1, target.offset, temp);
                     }
                 } else if (type === RawTypeId.Float32) {
-                    if (reverse) { // float32_t -> float64_t
+                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
                         this.cvtss2sd_r_rp(ftemp, source.reg, 1, source.offset);
                         this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
                     } else { // float64_t -> float32_t
@@ -415,7 +427,7 @@ class Maker extends X64Assembler {
                 }
             } else {
                 if (type === RawTypeId.FloatAsInt64) {
-                    if (reverse) { // int64_t -> float64_t
+                    if (cvt === TConvert.np2js) { // int64_t -> float64_t
                         this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
                         this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
                     } else { // float64_t -> int64_t
@@ -425,7 +437,7 @@ class Maker extends X64Assembler {
                 } else if (type === RawTypeId.Float64) {
                     this.movsd_rp_r(target.reg, 1, target.offset, source.freg);
                 } else if (type === RawTypeId.Float32) {
-                    if (reverse) { // float32_t -> float64_t
+                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
                         this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
                         this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
                     } else { // float64_t -> float32_t
@@ -441,7 +453,7 @@ class Maker extends X64Assembler {
         } else {
             if (source.memory) {
                 if (type === RawTypeId.FloatAsInt64) {
-                    if (reverse) { // int64_t -> float64_t
+                    if (cvt === TConvert.np2js) { // int64_t -> float64_t
                         this.cvtsi2sd_r_rp(target.freg, source.reg, 1, source.offset);
                     } else { // float64_t -> int64_t
                         this.cvttsd2si_r_rp(target.reg, source.reg, 1, source.offset);
@@ -449,7 +461,7 @@ class Maker extends X64Assembler {
                 } else if (type === RawTypeId.Float64) {
                     this.movsd_r_rp(target.freg, source.reg, 1, source.offset);
                 } else if (type === RawTypeId.Float32) {
-                    if (reverse) { // float32_t -> float64_t
+                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
                         this.cvtss2sd_r_rp(target.freg, source.reg, 1, source.offset);
                     } else { // float64_t -> float32_t
                         this.cvtsd2ss_r_rp(target.freg, source.reg, 1, source.offset);
@@ -463,13 +475,13 @@ class Maker extends X64Assembler {
                 }
             } else {
                 if (type === RawTypeId.FloatAsInt64) {
-                    if (reverse) {
+                    if (cvt === TConvert.np2js) {
                         this.cvtsi2sd_r_r(target.freg, source.reg);
                     } else {
                         this.cvttsd2si_r_r(target.reg, source.freg);
                     }
                 } else if (type === RawTypeId.Float32) {
-                    if (reverse) { // float32_t -> float64_t
+                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
                         this.cvtss2sd_r_r(target.freg, source.freg);
                     } else { // float64_t -> float32_t
                         this.cvtsd2ss_r_r(target.freg, source.freg);
@@ -489,31 +501,35 @@ class Maker extends X64Assembler {
         }
     }
 
+    _mov_t_t_nocvt(target: TargetInfo, source: TargetInfo):void {
+        this._mov_t_t(target, source, RawTypeId.Void, TConvert.np2np);
+    }
+
     nativeToJs(info:ParamInfo, target:TargetInfo, source:TargetInfo):void {
         switch (info.typeId) {
         case RawTypeId_StructureReturn: {
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         }
         case RawTypeId_WrapperToNp:
         case RawTypeId_Pointer: {
             pointerClassOrThrow(info.numberOnMaking, info.type);
             chakraUtil.JsAddRef(info.type);
-            this._mov_t_t(TARGET_2, source, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(TARGET_2, source);
             this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
             if (info.nullable) {
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
             } else {
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
             }
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         }
         case RawTypeId_WrapperToJs: {
             const np2js_fn = info.type[makefunc.np2js];
             if (np2js_fn) chakraUtil.JsAddRef(np2js_fn);
 
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(np2js_fn));
             if (isBaseOf(info.type, VoidPointer)) {
                 chakraUtil.JsAddRef(info.type);
@@ -526,12 +542,12 @@ class Maker extends X64Assembler {
             } else {
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_np2js);
             }
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         }
         case RawTypeId.Boolean: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBoolToBoolean);
             this.test_r_r(Register.rax, Register.rax);
@@ -539,12 +555,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, temp);
             break;
         }
         case RawTypeId.Int32: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsIntToNumber);
             this.test_r_r(Register.rax, Register.rax);
@@ -552,12 +568,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, temp);
             break;
         }
         case RawTypeId.FloatAsInt64: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
@@ -565,12 +581,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, temp);
             break;
         }
         case RawTypeId.Float64: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
@@ -578,12 +594,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, temp);
             break;
         }
         case RawTypeId.Float32: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
             this.test_r_r(Register.rax, Register.rax);
@@ -591,26 +607,26 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, temp);
             break;
         }
         case RawTypeId.StringAnsi:
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_ansi_np2js);
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         case RawTypeId.StringUtf8:
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         case RawTypeId.StringUtf16:
-            this._mov_t_t(TARGET_1, source, info.typeId, true);
+            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_np2js);
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         case RawTypeId.Bin64: {
             const temp = target.tempPtr(source, TargetInfo.memory(Register.rbp, 8));
@@ -628,11 +644,11 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, temp);
             break;
         }
         case RawTypeId.JsValueRef:
-            this._mov_t_t(target, source, info.typeId, true);
+            this._mov_t_t(target, source, info.typeId, TConvert.np2js);
             break;
         case RawTypeId.Void:
             this._mov_t_c(target, chakraUtil.asJsValueRef(undefined));
@@ -650,34 +666,34 @@ class Maker extends X64Assembler {
             chakraUtil.JsAddRef(info.type);
             this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js_new);
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         }
         case RawTypeId_WrapperToNp: {
             const js2np = info.type[makefunc.js2np];
             chakraUtil.JsAddRef(js2np);
 
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, true);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(js2np));
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_js2np);
-            this._mov_t_t(target, TARGET_RETURN, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(target, TARGET_RETURN);
             break;
         }
         case RawTypeId_WrapperToJs:
         case RawTypeId_Pointer: {
             pointerClassOrThrow(info.numberOnMaking, info.type);
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js2class);
             this.test_r_r(Register.rax, Register.rax);
             this.jz_label('!'); // failed to use cmovnz
             this.mov_r_rp(Register.rax, Register.rax, 1, 0x10);
             this.close_label('!');
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
+            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
             break;
         }
         case RawTypeId.Boolean: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBooleanToBool);
             this.test_r_r(Register.rax, Register.rax);
@@ -685,12 +701,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, false);
+            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
             break;
         }
         case RawTypeId.Int32: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToInt);
             this.test_r_r(Register.rax, Register.rax);
@@ -698,12 +714,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, false);
+            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
             break;
         }
         case RawTypeId.FloatAsInt64: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
@@ -711,12 +727,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, false);
+            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
             break;
         }
         case RawTypeId.Float64: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
@@ -724,12 +740,12 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, false);
+            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
             break;
         }
         case RawTypeId.Float32: {
             const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
             this.test_r_r(Register.rax, Register.rax);
@@ -737,45 +753,45 @@ class Maker extends X64Assembler {
             this.mov_r_c(Register.rcx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
             this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, false);
+            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
             break;
         }
         case RawTypeId.StringAnsi:
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.mov_r_c(Register.r8, chakraUtil.stack_ansi);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
+            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
             this.useStackAllocator = true;
             break;
         case RawTypeId.StringUtf8:
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.mov_r_c(Register.r8, chakraUtil.stack_utf8);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
+            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
             this.useStackAllocator = true;
             break;
         case RawTypeId.StringUtf16:
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_js2np);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
+            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
             break;
         case RawTypeId.Buffer:
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_buffer_to_pointer);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
+            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
             break;
         case RawTypeId.Bin64:
-            this._mov_t_t(TARGET_1, source, RawTypeId.Void, false);
+            this._mov_t_t_nocvt(TARGET_1, source);
             this.mov_r_c(Register.rdx, info.numberOnUsing);
             this.call_rp(Register.rdi, 1, makefuncDefines.fn_bin64);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, false);
+            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
             break;
         case RawTypeId.JsValueRef:
-            this._mov_t_t(target, source, info.typeId, false);
+            this._mov_t_t(target, source, info.typeId, TConvert.js2np);
             break;
         case RawTypeId.Void:
             if (target === TARGET_RETURN) break;
@@ -1056,37 +1072,13 @@ export namespace makefunc {
             func.add_r_c(Register.rsp, stackSizeForConvert);
 
             // paramCountOnCpp >= 2
-            if (pimaker.typeIds[0] === RawTypeId.Float64) {
-                func.movsd_r_rp(FloatRegister.xmm0, Register.rsp, 1, 0);
-            } else if (pimaker.typeIds[0] === RawTypeId.Float32) {
-                func.movss_r_rp(FloatRegister.xmm0, Register.rsp, 1, 0);
-            } else {
-                func.mov_r_rp(Register.rcx, Register.rsp, 1, 0);
-            }
+            func._mov_t_t(TARGET_1, TargetInfo.memory(Register.rsp, 0x00), pimaker.typeIds[0], TConvert.np2np);
             if (pimaker.countOnCpp >= 3) {
-                if (pimaker.typeIds[1] === RawTypeId.Float64) {
-                    func.movsd_r_rp(FloatRegister.xmm1, Register.rsp, 1, 8);
-                } else if (pimaker.typeIds[1] === RawTypeId.Float32) {
-                    func.movss_r_rp(FloatRegister.xmm1, Register.rsp, 1, 8);
-                } else {
-                    func.mov_r_rp(Register.rdx, Register.rsp, 1, 8);
-                }
+                func._mov_t_t(TARGET_2, TargetInfo.memory(Register.rsp, 0x08), pimaker.typeIds[1], TConvert.np2np);
                 if (pimaker.countOnCpp >= 4) {
-                    if (pimaker.typeIds[2] === RawTypeId.Float64) {
-                        func.movsd_r_rp(FloatRegister.xmm2, Register.rsp, 1, 16);
-                    } else if (pimaker.typeIds[2] === RawTypeId.Float32) {
-                        func.movss_r_rp(FloatRegister.xmm2, Register.rsp, 1, 16);
-                    } else {
-                        func.mov_r_rp(Register.r8, Register.rsp, 1, 16);
-                    }
+                    func._mov_t_t(TARGET_3, TargetInfo.memory(Register.rsp, 0x10), pimaker.typeIds[2], TConvert.np2np);
                     if (pimaker.countOnCpp >= 5) {
-                        if (pimaker.typeIds[3] === RawTypeId.Float64) {
-                            func.movsd_r_rp(FloatRegister.xmm3, Register.rsp, 1, 24);
-                        } else if (pimaker.typeIds[3] === RawTypeId.Float32) {
-                            func.movss_r_rp(FloatRegister.xmm3, Register.rsp, 1, 24);
-                        } else {
-                            func.mov_r_rp(Register.r9, Register.rsp, 1, 24);
-                        }
+                        func._mov_t_t(TARGET_4, TargetInfo.memory(Register.rsp, 0x18), pimaker.typeIds[3], TConvert.np2np);
                     }
                 }
             }

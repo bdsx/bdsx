@@ -126,7 +126,6 @@ export class NativeType<T> implements Type<T> {
     public readonly [NativeTypeFn.size]:number;
     public readonly [NativeTypeFn.align]:number;
 
-
     constructor(
         public readonly name:string,
         size:number,

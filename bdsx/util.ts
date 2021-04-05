@@ -221,3 +221,11 @@ export function anyToString(v:unknown):string {
     }
     return out;
 }
+
+export function str2set(str:string):Set<number>{
+    const out = new Set<number>();
+    for (let i=0;i<str.length;i++) {
+        out.add(str.charCodeAt(i));
+    }
+    return out;
+}

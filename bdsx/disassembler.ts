@@ -158,12 +158,23 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             return new asm.Operation(asm.code.int_c, [code]);
         } else if (v === 0xc3) { // ret
             return new asm.Operation(asm.code.ret, []);
-        } else if (v === 0xe8) { // call dword
+        } else if (v === 0xff) {
+            const v = ptr.readUint8();
+            const reg = (v & 0x7)|((rex & 0x1) << 3);
+            if (v === 0xe0) { // jmp register
+                return new asm.Operation(asm.code.jmp_r, [reg]);
+            } else if (v === 0xd0) { // call register
+                return new asm.Operation(asm.code.call_r, [reg]);
+            } else {
+                // bad
+            }
+        } else if ((v&0xfe) === 0xe8) { // jmp or call dword
             const value = ptr.readInt32();
-            return new asm.Operation(asm.code.call_c, [value]);
-        } else if (v === 0xe9) { // jmp dword
-            const value = ptr.readInt32();
-            return new asm.Operation(asm.code.jmp_c, [value]);
+            if (v & 1) { // jmp
+                return new asm.Operation(asm.code.jmp_c, [value]);
+            } else { // call
+                return new asm.Operation(asm.code.call_c, [value]);
+            }
         } else if ((v & 0xf0) === 0x50){ // push or pop
             const reg = (v & 0x7)|((rex & 0x1) << 3);
             if (v & 0x08) return new asm.Operation(asm.code.pop_r, [reg]);

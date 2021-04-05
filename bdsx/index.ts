@@ -12,7 +12,7 @@ if (global.bdsx !== undefined) {
 }
 global.bdsx = true;
 
-import './externs';
+import type {} from './externs';
 import './polyfill';
 import './bds/enumfiller';
 
