@@ -24,7 +24,7 @@ class BlockDestroyEvent implements IBlockDestroyEvent {
     }
 }
 function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, v:number):boolean {
-    const event = new BlockDestroyEvent(survivalMode.actor as Player, blockPos);
+    const event = new BlockDestroyEvent(survivalMode.actor.as(Player), blockPos);
     if (events.blockDestroy.fire(event) === CANCEL) {
         return false;
     } else {
@@ -33,7 +33,7 @@ function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, v:number):
     }
 }
 function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):boolean {
-    const event = new BlockDestroyEvent(gameMode.actor as Player, blockPos);
+    const event = new BlockDestroyEvent(gameMode.actor.as(Player), blockPos);
     if (events.blockDestroy.fire(event) === CANCEL) {
         return false;
     } else {
@@ -60,7 +60,7 @@ class BlockPlaceEvent implements IBlockPlaceEvent {
     }
 }
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
-    const event = new BlockPlaceEvent(actor as Player, block, blockSource, blockPos);
+    const event = new BlockPlaceEvent(actor.as(Player), block, blockSource, blockPos);
     if (events.blockPlace.fire(event) === CANCEL) {
         return false;
     } else {
