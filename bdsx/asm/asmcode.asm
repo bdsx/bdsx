@@ -796,7 +796,7 @@ export def onPacketRaw:qword
 export proc packetRawHook
     sub rsp, 28h
     mov rcx, rbp ; rbp
-    mov edx, r15d ; packetId
+    mov edx, esi ; packetId
     mov r8, r14 ; Connection
     call onPacketRaw
     add rsp, 28h
@@ -805,7 +805,7 @@ endp
 
 export def onPacketBefore:qword
 export proc packetBeforeHook
-    lea rdx,[rsp+78h]
+    lea rdx,[rsp+80h]
     sub rsp, 28h
 
     ; original codes
@@ -815,7 +815,7 @@ export proc packetBeforeHook
 
     mov rcx, rax ; read result
     mov rdx, rbp ; rbp
-    mov r8, r15 ; packetId
+    mov r8d, esi ; packetId
     call onPacketBefore
     add rsp, 28h
     ret
@@ -846,13 +846,13 @@ export proc packetAfterHook
 
     ; orignal codes
     mov rax,[rcx]
-    lea r9,[rbp+58h]
+    lea r9,[rbp+50h]
     mov r8,rsi
     mov rdx,r14
     call [rax+8]
 
     mov rcx, rbp ; rbp
-    mov rdx, r15 ; packetId
+    mov edx, esi ; packetId
 
     call onPacketAfter
     add rsp, 28h

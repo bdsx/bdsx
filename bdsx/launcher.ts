@@ -199,10 +199,10 @@ function _launch(asyncResolve:()=>void):void {
         Register.rax,
         true, [
             0x48, 0x8B, 0xD9, // mov rbx,rcx
-            0xE8, 0xF2, 0x56, 0x01, 0x00, // call <bedrock_server.<lambda_8914ed82e3ef519cb2a85824fbe333d8>::operator()>
-            0xE8, 0xF8, 0x3B, 0xB5, 0x00, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server.<lambda_8914ed82e3ef519cb2a85824fbe333d8>::operator()>
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
         ],
-        []
+        [4, 8, 9, 13]
     );
 
     // 1.16.210.05 - no google breakpad now
@@ -277,9 +277,9 @@ function _launch(asyncResolve:()=>void):void {
 
     procHacker.patching('update-hook', '<lambda_8914ed82e3ef519cb2a85824fbe333d8>::operator()', 0x5f3,
         asmcode.updateWithSleep, Register.rcx, true, [
-            0xE8, 0x3D, 0xDF, 0xB3, 0x00,  // call <bedrock_server._Query_perf_frequency>
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server._Query_perf_frequency>
             0x48, 0x8B, 0xD8,  // mov rbx,rax
-            0xE8, 0x2F, 0xDF, 0xB3, 0x00,  // call <bedrock_server._Query_perf_counter>
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server._Query_perf_counter>
             0x48, 0x99,  // cqo
             0x48, 0xF7, 0xFB,  // idiv rbx
             0x48, 0x69, 0xC8, 0x00, 0xCA, 0x9A, 0x3B,  // imul rcx,rax,3B9ACA00
@@ -292,9 +292,9 @@ function _launch(asyncResolve:()=>void):void {
             0x48, 0x3D, 0x88, 0x13, 0x00, 0x00,  // cmp rax,1388
             0x7C, 0x0B,  // jl bedrock_server.7FF733FDEE76
             0x48, 0x8D, 0x4C, 0x24, 0x20,  // lea rcx,qword ptr ss:[rsp+20]
-            0xE8, 0x4B, 0xAA, 0xC6, 0xFF,  // call <bedrock_server.void __cdecl std::this_thread::sleep_until<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct std::ratio<1,1000000000> > >(class std::chrono::time_point<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct s>
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server.void __cdecl std::this_thread::sleep_until<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct std::ratio<1,1000000000> > >(class std::chrono::time_point<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct s>
             0x90,  // nop
-        ], []);
+        ], [1, 5, 9, 13, 62, 66]);
 
     nethook.hooking(err=>{
         err.stack = remapStack(err.stack);

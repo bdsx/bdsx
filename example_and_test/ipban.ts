@@ -1,5 +1,6 @@
 import { ipfilter, NetworkIdentifier } from "bdsx";
 import { promises as fs } from 'fs';
+import path = require('path');
 
 /**
  * ipfilter blocks at the earliest phase of the program.
@@ -11,7 +12,7 @@ import { promises as fs } from 'fs';
  */
 async function load():Promise<void> {
     try {
-        const entires = JSON.parse(await fs.readFile('../ipban.json', 'utf-8'));
+        const entires = JSON.parse(await fs.readFile(path.join(__dirname, '../ipban.json'), 'utf-8'));
         for (const [name, period] of entires) {
             ipfilter.addAt(name, period); // restore from the json file
         }
