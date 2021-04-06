@@ -113,7 +113,7 @@ async function parseScriptingDoc():Promise<void> {
                         try {
                             await s.each('Types', node=>{
                                 if (node.innerHTML === 'Parameters') return true; // doc bug, 'addFilterToQuery' has not anchor
-                                return htmlutil.checks(node, {tag:'h3', class:'anchored-heading'}, {tag: 'span', class:'anchor'});
+                                return htmlutil.checks(node, {tag:'h3', class:'anchored-heading'}, {tag: 'span'});
                             }, node=>{
                                 const span = htmlutil.follow(node, 'span');
                                 const id = span !== null ? span.id : node.innerHTML;

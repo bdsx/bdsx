@@ -132,6 +132,13 @@ export class DocMethod {
                 const fieldfix = DocType.fromDocFix(docfix[param] as DocFixItem);
                 method.params[+reg[1]] = new DocField(reg[2], fieldfix);
             }
+            for (let i=0;i<method.params.length;i++) {
+                if (!method.params[i]) {
+                    console.error(`${method.name}: ${i+1} parameter is not provided`);
+                    method.params.length = i;
+                    break;
+                }
+            }
             if (docfix.return !== undefined) {
                 method.return = DocType.fromDocFix(docfix.return);
             }

@@ -602,6 +602,7 @@ interface EntityIdMap {
     "minecraft:fishing_hook":void;
     "minecraft:fox":void;
     "minecraft:ghast":void;
+    "minecraft:glow_squid":void;
     "minecraft:goat":void;
     "minecraft:guardian":void;
     "minecraft:hoglin":void;
@@ -705,6 +706,8 @@ interface MinecraftDamageSourceMap {
     "override":void;
     "piston":void;
     "projectile":void;
+    "stalactite":void;
+    "stalagmite":void;
     "starve":void;
     "suffocation":void;
     "suicide":void;
