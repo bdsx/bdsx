@@ -36,6 +36,8 @@ class PromCounter {
 
 const BDSX_SCOPE = '@bdsx/';
 
+export const loadedPlugins: string[] = [];
+
 export async function loadAllPlugins():Promise<void> {
     let packagejsonModified = false;
     const projpath = path.resolve(process.cwd(), process.argv[1]);
@@ -157,6 +159,7 @@ export async function loadAllPlugins():Promise<void> {
             let index = 0;
             for (const name of loaded) {
                 try {
+                    loadedPlugins.push(name);
                     console.log(colors.green(`[BDSX-Plugins] (${++index}/${loaded.size}) ${name}`));
                     require(name);
                 } catch (err) {
