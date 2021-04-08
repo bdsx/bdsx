@@ -3,7 +3,6 @@ import { NativeClass } from "bdsx/nativeclass";
 import { uint8_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { ServerPlayer } from "..";
-import { Vec3 } from "./blockpos";
 import { CompoundTag } from "./nbt";
 
 export enum ContainerId {
