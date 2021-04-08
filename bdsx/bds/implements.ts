@@ -2,7 +2,7 @@ import asmcode = require("bdsx/asm/asmcode");
 import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { StaticPointer, VoidPointer } from "bdsx/core";
+import { AllocatedPointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc, RawTypeId } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
@@ -308,10 +308,17 @@ ItemStack.abstract({
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 (ItemStack.prototype as any)._getCustomName = procHacker.js("ItemStackBase::getName", CxxStringWrapper, {this:ItemStack, structureReturn:true});
 (ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
+// (ItemStack.prototype as any)._setCustomLore = procHacker.js("ItemStackBase::setCustomLore", RawTypeId.Void, {this:ItemStack}, RawTypeId.Int32, CxxStringWrapper);
 ItemStack.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStack});
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", RawTypeId.Boolean, {this:ItemStack});
 ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.getEnchantValue = procHacker.js("ItemStackBase::getEnchantValue", RawTypeId.Int32, {this:ItemStack});
+ItemStack.prototype.isEnchanted = procHacker.js("ItemStackBase::isEnchanted", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamageValue", RawTypeId.Void, {this:ItemStack}, RawTypeId.Int32);
+ItemStack.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", RawTypeId.Void, {this:ItemStack}, ServerPlayer);
+ItemStack.prototype.load = procHacker.js("ItemStackBase::load", RawTypeId.Void, {this:ItemStack}, CompoundTag);
+ItemStack.prototype.sameItem = procHacker.js("ItemStackBase::sameItem", RawTypeId.Boolean, {this:ItemStack}, ItemStack);
 
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
 

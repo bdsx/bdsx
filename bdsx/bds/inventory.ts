@@ -2,6 +2,8 @@ import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
 import { uint8_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
+import { ServerPlayer } from "..";
+import { Vec3 } from "./blockpos";
 import { CompoundTag } from "./nbt";
 
 export enum ContainerId {
@@ -63,6 +65,9 @@ export class ItemStack extends NativeClass {
     protected _setCustomName(name:CxxStringWrapper):void {
         abstract();
     }
+    protected _setCustomLore(num:number, name:CxxStringWrapper):void {
+        abstract();
+    }
     isBlock():boolean {
         abstract();
     }
@@ -108,6 +113,31 @@ export class ItemStack extends NativeClass {
         _name.destruct();
     }
     getUserData():CompoundTag {
+        abstract();
+    }
+    getEnchantValue(): number {
+        abstract();
+    }
+    isEnchanted(): boolean {
+        abstract();
+    }
+    // setCustomLore(lore:string, num:number):void {
+    //     abstract();
+    // }
+
+    /**
+     * Value is applied only to Damageable items
+     */
+    setDamageValue(value:number):void {
+        abstract();
+    }
+    startCoolDown(player:ServerPlayer):void {
+        abstract();
+    }
+    load(compoundTag:CompoundTag):void {
+        abstract();
+    }
+    sameItem(item:ItemStack):boolean {
         abstract();
     }
 }
