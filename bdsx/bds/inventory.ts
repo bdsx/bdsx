@@ -51,6 +51,10 @@ export class Item extends NativeClass {
     }
 }
 
+export class ComponentItem extends NativeClass {
+}
+
+
 export class ItemStack extends NativeClass {
     amount:uint8_t;
     protected _getId():number {
@@ -140,7 +144,66 @@ export class ItemStack extends NativeClass {
     sameItem(item:ItemStack):boolean {
         abstract();
     }
+    isStackedByData():boolean {
+        abstract();
+    }
+    isStackable():boolean {
+        abstract();
+    }
+    isPotionItem():boolean {
+        abstract();
+    }
+    isPattern():boolean {
+        abstract();
+    }
+    isMusicDiscItem():boolean {
+        abstract();
+    }
+    isLiquidClipItem():boolean {
+        abstract();
+    }
+    isHorseArmorItem():boolean {
+        abstract();
+    }
+    isGlint():boolean {
+        abstract();
+    }
+    isFullStack():boolean {
+        abstract();
+    }
+    isFireResistant():boolean {
+        abstract();
+    }
+    isExplodable():boolean {
+        abstract();
+    }
+    isDamaged():boolean {
+        abstract();
+    }
+    isDamageableItem():boolean {
+        abstract();
+    }
+    isArmorItem():boolean {
+        abstract();
+    }
+    isWearableItem():boolean {
+        abstract();
+    }
+    getMaxDamage():number {
+        abstract();
+    }
+    getComponentItem():ComponentItem {
+        abstract();
+    }
+    getDamageValue():number {
+        abstract();
+    }
+    getAttackDamage():number {
+        abstract();
+    }
 }
+
+
 
 export class PlayerInventory extends NativeClass {
     getItem(slot:number, containerId: ContainerId):ItemStack {

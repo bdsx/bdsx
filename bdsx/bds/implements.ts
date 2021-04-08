@@ -17,7 +17,7 @@ import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
-import { Item, ItemStack, PlayerInventory } from "./inventory";
+import { ComponentItem, Item, ItemStack, PlayerInventory } from "./inventory";
 import { Level, ServerLevel } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -319,6 +319,25 @@ ItemStack.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamageValu
 ItemStack.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", RawTypeId.Void, {this:ItemStack}, ServerPlayer);
 ItemStack.prototype.load = procHacker.js("ItemStackBase::load", RawTypeId.Void, {this:ItemStack}, CompoundTag);
 ItemStack.prototype.sameItem = procHacker.js("ItemStackBase::sameItem", RawTypeId.Boolean, {this:ItemStack}, ItemStack);
+ItemStack.prototype.isStackedByData = procHacker.js("ItemStackBase::isStackedByData", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isStackable = procHacker.js("ItemStackBase::isStackable", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isPotionItem = procHacker.js("ItemStackBase::isPotionItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isPattern = procHacker.js("ItemStackBase::isPattern", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isMusicDiscItem = procHacker.js("ItemStackBase::isMusicDiscItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isLiquidClipItem = procHacker.js("ItemStackBase::isLiquidClipItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isHorseArmorItem = procHacker.js("ItemStackBase::isHorseArmorItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isGlint = procHacker.js("ItemStackBase::isGlint", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isFullStack = procHacker.js("ItemStackBase::isFullStack", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isFireResistant = procHacker.js("ItemStackBase::isFireResistant", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isExplodable = procHacker.js("ItemStackBase::isExplodable", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isDamaged = procHacker.js("ItemStackBase::isDamaged", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isDamageableItem = procHacker.js("ItemStackBase::isDamageableItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.isArmorItem = procHacker.js("ItemStackBase::isArmorItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.getComponentItem = procHacker.js("ItemStackBase::getComponentItem", ComponentItem, {this:ItemStack});
+ItemStack.prototype.getMaxDamage = procHacker.js("ItemStackBase::getMaxDamage", RawTypeId.Int32, {this:ItemStack});
+ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValue", RawTypeId.Int32, {this:ItemStack});
+ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", RawTypeId.Boolean, {this:ItemStack});
+ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", RawTypeId.Int32, {this:ItemStack});
 
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, RawTypeId.Int32, RawTypeId.Int32);
 
