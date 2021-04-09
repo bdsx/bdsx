@@ -24,3 +24,4 @@ import './net-halfmove';
 import './lowlevel-dll';
 import './lowlevel-apihooking';
 import './lowlevel-nativeclass';
+import './lowlevel-string-and-vector';
