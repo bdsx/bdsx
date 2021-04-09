@@ -8,10 +8,10 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
-import { CommandPermissionLevel } from "./command";
+import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
-import { NetworkIdentifier } from "./networkidentifier";
-import { ServerPlayer } from "./player";
+import type { NetworkIdentifier } from "./networkidentifier";
+import type { ServerPlayer } from "./player";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;

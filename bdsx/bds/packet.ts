@@ -4,7 +4,7 @@ import { nativeClass, MantleClass, NativeClass, nativeField } from "bdsx/nativec
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
 import { int32_t, uint32_t } from "../nativetype";
-import { NetworkIdentifier } from "./networkidentifier";
+import type { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
 import { BinaryStream } from "./stream";

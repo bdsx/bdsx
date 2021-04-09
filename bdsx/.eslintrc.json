@@ -28,6 +28,7 @@
         "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
         "@typescript-eslint/no-this-alias": "off",
         "@typescript-eslint/no-var-requires": "off",
+        "import/no-cycle": "error",
         "eqeqeq": ["error", "always", {"null": "ignore"}],
         "no-throw-literal": "error",
         "semi": "error",

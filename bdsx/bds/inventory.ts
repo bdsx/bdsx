@@ -2,7 +2,7 @@ import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
 import { uint8_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
-import { ServerPlayer } from "./player";
+import type { ServerPlayer } from "./player";
 import { CompoundTag } from "./nbt";
 
 export enum ContainerId {

@@ -6,7 +6,7 @@ import { SharedPtr } from "bdsx/sharedpointer";
 import { NetworkIdentifier } from "bdsx";
 import { abstract } from "../common";
 import { DimensionId } from "./actor";
-import { MinecraftCommands } from "./command";
+import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, ServerNetworkHandler } from "./networkidentifier";
@@ -59,18 +59,6 @@ export class Minecraft extends NativeClass {
 
 export class DedicatedServer extends NativeClass {
 }
-
-// struct DedicatedServer :ScriptCommandOrigin
-// {
-//     struct Something
-//     {
-//         Vector<VoidPointer> vector1;
-//         Vector<VoidPointer> vector2;
-//         VoidPointer u1;
-//         VoidPointer u2;
-//     };
-//     DedicatedServer() = delete;
-
 
 export class ScriptFramework extends NativeClass {
     vftable:VoidPointer;
