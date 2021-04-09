@@ -2,6 +2,7 @@ import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
 import { uint8_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
+import { ServerPlayer } from "./player";
 import { CompoundTag } from "./nbt";
 
 export enum ContainerId {
@@ -49,6 +50,10 @@ export class Item extends NativeClass {
     }
 }
 
+export class ComponentItem extends NativeClass {
+}
+
+
 export class ItemStack extends NativeClass {
     amount:uint8_t;
     protected _getId():number {
@@ -61,6 +66,9 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     protected _setCustomName(name:CxxStringWrapper):void {
+        abstract();
+    }
+    protected _setCustomLore(num:number, name:CxxStringWrapper):void {
         abstract();
     }
     isBlock():boolean {
@@ -110,7 +118,91 @@ export class ItemStack extends NativeClass {
     getUserData():CompoundTag {
         abstract();
     }
+    getEnchantValue(): number {
+        abstract();
+    }
+    isEnchanted(): boolean {
+        abstract();
+    }
+    // setCustomLore(lore:string, num:number):void {
+    //     abstract();
+    // }
+
+    /**
+     * Value is applied only to Damageable items
+     */
+    setDamageValue(value:number):void {
+        abstract();
+    }
+    startCoolDown(player:ServerPlayer):void {
+        abstract();
+    }
+    load(compoundTag:CompoundTag):void {
+        abstract();
+    }
+    sameItem(item:ItemStack):boolean {
+        abstract();
+    }
+    isStackedByData():boolean {
+        abstract();
+    }
+    isStackable():boolean {
+        abstract();
+    }
+    isPotionItem():boolean {
+        abstract();
+    }
+    isPattern():boolean {
+        abstract();
+    }
+    isMusicDiscItem():boolean {
+        abstract();
+    }
+    isLiquidClipItem():boolean {
+        abstract();
+    }
+    isHorseArmorItem():boolean {
+        abstract();
+    }
+    isGlint():boolean {
+        abstract();
+    }
+    isFullStack():boolean {
+        abstract();
+    }
+    isFireResistant():boolean {
+        abstract();
+    }
+    isExplodable():boolean {
+        abstract();
+    }
+    isDamaged():boolean {
+        abstract();
+    }
+    isDamageableItem():boolean {
+        abstract();
+    }
+    isArmorItem():boolean {
+        abstract();
+    }
+    isWearableItem():boolean {
+        abstract();
+    }
+    getMaxDamage():number {
+        abstract();
+    }
+    getComponentItem():ComponentItem {
+        abstract();
+    }
+    getDamageValue():number {
+        abstract();
+    }
+    getAttackDamage():number {
+        abstract();
+    }
 }
+
+
 
 export class PlayerInventory extends NativeClass {
     getItem(slot:number, containerId: ContainerId):ItemStack {
