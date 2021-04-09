@@ -1,9 +1,10 @@
 import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
-import { uint8_t } from "bdsx/nativetype";
+import { CxxString, uint8_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { ServerPlayer } from "./player";
 import { CompoundTag } from "./nbt";
+import { CxxVector } from "../cxxvector";
 
 export enum ContainerId {
     Inventory = 0,
@@ -53,7 +54,7 @@ export class Item extends NativeClass {
 export class ComponentItem extends NativeClass {
 }
 
-
+const CxxVectorString = CxxVector.make(CxxString);
 export class ItemStack extends NativeClass {
     amount:uint8_t;
     protected _getId():number {
@@ -68,7 +69,7 @@ export class ItemStack extends NativeClass {
     protected _setCustomName(name:CxxStringWrapper):void {
         abstract();
     }
-    protected _setCustomLore(num:number, name:CxxStringWrapper):void {
+    protected _setCustomLore(name:CxxVector<string>):void {
         abstract();
     }
     isBlock():boolean {
@@ -124,9 +125,18 @@ export class ItemStack extends NativeClass {
     isEnchanted(): boolean {
         abstract();
     }
-    // setCustomLore(lore:string, num:number):void {
-    //     abstract();
-    // }
+    setCustomLore(lores:string[]|string):void {
+        const cxxvector = new CxxVectorString(true);
+        cxxvector.construct();
+        if (typeof lores === "string") {
+            cxxvector.push(lores);
+        } else lores.forEach((v)=>{
+            cxxvector.push(v);
+        });
+        this._setCustomLore(cxxvector);
+        cxxvector.destruct();
+
+    }
 
     /**
      * Value is applied only to Damageable items
