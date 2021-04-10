@@ -1,6 +1,5 @@
 import { UNDNAME_NAME_ONLY } from "../common";
 import { NativePointer, pdb } from "../core";
-import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
@@ -34,14 +33,15 @@ export function type_id<T, BASE extends HasTypeId>(base:typeof HasTypeId&{new():
         return typeid;
     }
 
-    if (!bedrockServer.isLaunched()) throw Error('Cannot make type_id before launch');
+    const counter = base[counterWrapper];
+    if (counter.value === 0) throw Error('Cannot make type_id before launch');
     if (typeid !== undefined) {
         const newid = makefunc.js(typeid, typeid_t, {structureReturn: true})();
         map.set(type, newid);
         return newid;
     } else {
         const newid = new typeid_t<BASE>(true);
-        newid.id = base[counterWrapper].value++;
+        newid.id = counter.value++;
         map.set(type, newid);
         return newid;
     }

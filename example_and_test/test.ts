@@ -277,7 +277,7 @@ Tester.test({
 
     cxxstring() {
         const str = new CxxStringWrapper(true);
-        str[NativeType.ctor]();
+        str.construct();
         this.equals(str.length, 0, 'std::string invalid constructor');
         this.equals(str.capacity, 15, 'std::string invalid constructor');
         const shortcase = '111';
@@ -286,7 +286,7 @@ Tester.test({
         this.equals(str.value, shortcase, 'failed with short text');
         str.value = longcase;
         this.equals(str.value, longcase, 'failed with long text');
-        str[NativeType.dtor]();
+        str.destruct();
 
         const hstr = new HashedString(true);
         hstr.construct();

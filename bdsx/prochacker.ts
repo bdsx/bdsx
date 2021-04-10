@@ -85,6 +85,23 @@ class AsmMover extends X64Assembler {
         this.inpos += oper.size;
     }
 
+    moveCode(codes:asm.Operations, key:keyof any, required:number):void {
+        let ended = false;
+        for (const oper of codes.operations) {
+            const basename = oper.splits[0];
+            if (ended) {
+                if (oper.code === asm.code.nop || oper.code === asm.code.int3) {
+                    continue;
+                }
+                throw Error(`Failed to hook ${String(key)}, Too small area to patch, require=${required}, actual=${this.inpos}`);
+            }
+            if (basename === 'ret' || basename === 'jmp' || basename === 'call') {
+                ended = true;
+            }
+            this.asmFromOrigin(oper);
+        }
+    }
+
     end():void {
         const tmpreg = this.getUnusing();
         const originend = this.origin.add(this.codesize);
@@ -157,18 +174,12 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     hookingRaw(key:keyof T, to: VoidPointer):VoidPointer {
         const origin = this.map[key];
-        if (!origin) throw Error(`${key} symbol not found`);
+        if (!origin) throw Error(`${String(key)} symbol not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
         const out = new AsmMover(origin, codes.size);
-        for (const oper of codes.operations) {
-            const basename = oper.splits[0];
-            if (basename === 'ret' || basename === 'jmp' || basename === 'call') {
-                throw Error(`Too small area to patch, require=${REQUIRE_SIZE}, actual=${out.inpos}`);
-            }
-            out.asmFromOrigin(oper);
-        }
+        out.moveCode(codes, key, REQUIRE_SIZE);
         out.end();
         const original = out.alloc();
 
@@ -187,7 +198,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[]):void {
         const origin = this.map[key];
-        if (!origin) throw Error(`${key} symbol not found`);
+        if (!origin) throw Error(`${String(key)} symbol not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
@@ -196,13 +207,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             out.freeregs.add(reg);
         }
         out.saveAndCall(to, keepRegister, keepFloatRegister);
-        for (const oper of codes.operations) {
-            const basename = oper.splits[0];
-            if (basename === 'ret' ||  basename === 'jmp' || basename === 'call') {
-                throw Error(`Too small area to patch, require=${REQUIRE_SIZE}, actual=${out.inpos}`);
-            }
-            out.asmFromOrigin(oper);
-        }
+        out.moveCode(codes, key, REQUIRE_SIZE);
         out.end();
         const unlock = new MemoryUnlocker(origin, codes.size);
         hacktool.jump(origin, out.alloc(), Register.rax, codes.size);

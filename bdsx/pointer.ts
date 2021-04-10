@@ -1,7 +1,6 @@
 import { abstract } from "./common";
-import { NativePointer, VoidPointer } from "./core";
+import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { StaticPointer } from "./native";
 import { NativeClass } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 
