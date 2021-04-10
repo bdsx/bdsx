@@ -4,13 +4,13 @@ import { NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { makefunc } from "bdsx/makefunc";
 import { NativeClass } from "bdsx/nativeclass";
 import { bin64_t } from "bdsx/nativetype";
-import { CxxStringWrapper } from "bdsx/pointer";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";
+import { Packet } from "./packet";
 import { ServerPlayer } from "./player";
 
 export const ActorUniqueID = bin64_t.extends();
@@ -39,27 +39,12 @@ export class Actor extends NativeClass {
     runtimeId:ActorRuntimeID;
     dimension:Dimension;
 
-    protected _getName():CxxStringWrapper {
-        abstract();
-    }
-    protected _setName(name:CxxStringWrapper):void {
-        abstract();
-    }
-    protected _addTag(tag:CxxStringWrapper):boolean {
-        abstract();
-    }
-    protected _hasTag(tag:CxxStringWrapper):boolean {
-        abstract();
-    }
-    protected _sendNetworkPacket(packet:VoidPointer):void {
-        abstract();
-    }
     protected _sendAttributePacket(id:AttributeId, value:number, attr:AttributeInstance):void {
         abstract();
     }
-    sendPacket(packet:StaticPointer):void {
+    sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
-        this._sendNetworkPacket(packet);
+        this.sendNetworkPacket(packet);
     }
     private _getDimensionId(out:Int32Array):void {
         abstract();
@@ -79,14 +64,10 @@ export class Actor extends NativeClass {
         abstract();
     }
     getName():string {
-        return this._getName().value;
+        abstract();
     }
     setName(name:string):void {
-        const _name = new CxxStringWrapper(true);
-        _name.construct();
-        _name.value = name;
-        this._setName(_name);
-        _name.destruct();
+        abstract();
     }
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
@@ -158,20 +139,10 @@ export class Actor extends NativeClass {
         return (this as any).entity = entity;
     }
     addTag(tag:string):boolean {
-        const _tag = new CxxStringWrapper(true);
-        _tag.construct();
-        _tag.value = tag;
-        const ret = this._addTag(_tag);
-        _tag.destruct();
-        return ret;
+        abstract();
     }
     hasTag(tag:string):boolean {
-        const _tag = new CxxStringWrapper(true);
-        _tag.construct();
-        _tag.value = tag;
-        const ret = this._hasTag(_tag);
-        _tag.destruct();
-        return ret;
+        abstract();
     }
 // float NativeActor::getAttribute(int attribute) noexcept
 // {
@@ -191,13 +162,13 @@ export class Actor extends NativeClass {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
     }
-    static [makefunc.np2js](ptr:StaticPointer):Actor|null {
+    static [makefunc.np2js](ptr:Actor|null):Actor|null {
         return Actor._singletoning(ptr);
     }
     static all():IterableIterator<Actor> {
         abstract();
     }
-    private static _singletoning(ptr:StaticPointer):Actor|null {
+    private static _singletoning(ptr:Actor|null):Actor|null {
         abstract();
     }
 }

@@ -2,13 +2,12 @@ import { procHacker } from "./bds/proc";
 import { abstract } from "./common";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { RawTypeId } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
-import { NativeType, Type } from "./nativetype";
+import { int64_as_float_t, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
 
-export interface CxxVectorType<T> extends Type<CxxVector<T>>
+export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>>
 {
     new(address?:VoidPointer|boolean):CxxVector<T>;
     componentType:Type<any>;
@@ -316,4 +315,4 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     }
 }
 
-(CxxVector as any)._alloc16 = procHacker.js("std::_Allocate<16,std::_Default_allocate_traits,0>", NativePointer, null, RawTypeId.FloatAsInt64);
+CxxVector._alloc16 = procHacker.js("std::_Allocate<16,std::_Default_allocate_traits,0>", NativePointer, null, int64_as_float_t);

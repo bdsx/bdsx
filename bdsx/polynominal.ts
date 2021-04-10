@@ -1,5 +1,4 @@
-import { LanguageParser, ParsingError, TextParser } from "./textparser";
-import { str2set } from "./util";
+import { LanguageParser, ParsingError } from "./textparser";
 
 function unexpected():never {
     throw Error('Unexpected operation');

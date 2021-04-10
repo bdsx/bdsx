@@ -23,14 +23,11 @@ export enum CreativeItemCategory {
 }
 
 export class Item extends NativeClass {
-    protected _getCommandName():CxxStringWrapper {
-        abstract();
-    }
     allowOffhand():boolean {
         abstract();
     }
     getCommandName():string {
-        return this._getCommandName().value;
+        abstract();
     }
     getCreativeCategory():number {
         abstract();
@@ -51,16 +48,7 @@ export class Item extends NativeClass {
 
 export class ItemStack extends NativeClass {
     amount:uint8_t;
-    protected _getId():number {
-        abstract();
-    }
     protected _getItem():Item {
-        abstract();
-    }
-    protected _getCustomName():CxxStringWrapper {
-        abstract();
-    }
-    protected _setCustomName(name:CxxStringWrapper):void {
         abstract();
     }
     isBlock():boolean {
@@ -76,7 +64,7 @@ export class ItemStack extends NativeClass {
         this.amount = amount;
     }
     getId():number {
-        return this._getId() << 16 >> 16; // TODO: Fix this when there is a wrapper for Short
+        abstract();
     }
     getItem():Item|null {
         if (this.isNull()) {
@@ -95,17 +83,10 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     getCustomName(): string {
-        const name = this._getCustomName();
-        const out = name.value;
-        name.destruct();
-        return out;
+        abstract();
     }
     setCustomName(name:string):void {
-        const _name = new CxxStringWrapper(true);
-        _name.construct();
-        _name.value = name;
-        this._setCustomName(_name);
-        _name.destruct();
+        abstract();
     }
     getUserData():CompoundTag {
         abstract();

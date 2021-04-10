@@ -554,6 +554,16 @@ export class X64Assembler {
         return this.write(0xcd, n & 0xff);
     }
 
+    cbw():this {
+        return this.write(0x66, 0x98);
+    }
+    cwde():this {
+        return this.write(0x98);
+    }
+    cdqe():this {
+        return this.write(0x48, 0x98);
+    }
+
     gs():this {
         return this.put(0x65);
     }

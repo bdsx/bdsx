@@ -3,7 +3,7 @@
  */
 
 import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook, NetworkIdentifier, serverInstance } from "bdsx";
-import { asm, FloatRegister, Register } from "bdsx/assembler";
+import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
 import { HashedString } from "bdsx/bds/hashedstring";
@@ -16,9 +16,8 @@ import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
-import { RawTypeId } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, CxxString, NativeType } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, NativeType, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
@@ -77,56 +76,6 @@ Tester.test({
         assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
         assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
         assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]')
-    },
-
-    chat() {
-        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
-            if (packet.message == "TEST YEY!") {
-                const MAX_CHAT = 5;
-                chatCancelCounter++;
-                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.equals(connectedNi, ni, 'the network identifier does not matched');
-                if (chatCancelCounter === MAX_CHAT) {
-                    this.log('> tested and stopping...');
-                    setTimeout(() => bedrockServer.stop(), 1000);
-                }
-                return CANCEL;
-            }
-        });
-    },
-
-    actor() {
-        const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', ev => {
-            try {
-                const uniqueId = ev.data.entity.__unique_id__;
-                const actor = Actor.fromEntity(ev.data.entity);
-                if (ev.data.entity.__identifier__ === 'minecraft:player') {
-                    this.assert(actor !== null, 'Actor.fromEntity of player is null');
-                }
-
-                if (actor !== null) {
-                    this.equals(actor.getDimension(), DimensionId.Overworld, 'getDimension() is not overworld');
-
-                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
-                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
-                    this.equals(actualId, expectedId,
-                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
-
-                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
-                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
-                        this.equals(name, connectedId, 'id does not matched');
-                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
-                        this.assert(actor.isPlayer(), 'player is not the player');
-                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
-                    } else {
-                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
-                    }
-                }
-            } catch (err) {
-                this.processError(err);
-            }
-        });
     },
 
     bin() {
@@ -230,51 +179,6 @@ Tester.test({
         }
     },
 
-    nethook() {
-        let idcheck = 0;
-        let sendpacket = 0;
-        for (let i = 0; i < 255; i++) {
-            nethook.raw(i).on((ptr, size, ni, packetId) => {
-                idcheck = packetId;
-                this.assert(size > 0, `packet size is too little`);
-                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
-            });
-            nethook.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
-                this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
-                this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
-            });
-            nethook.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
-                this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
-                this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
-            });
-            nethook.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
-                sendidcheck = packetId;
-                this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
-                sendpacket++;
-            });
-            nethook.sendRaw(i).on((ptr, size, ni, packetId) => {
-                this.assert(size > 0, `packet size is too little`);
-                this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
-                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
-                sendpacket++;
-            });
-        }
-
-        const conns = new Set<NetworkIdentifier>();
-        nethook.after(MinecraftPacketIds.Login).on((ptr, ni) => {
-            this.assert(!conns.has(ni), '[test] logined without connected');
-            conns.add(ni);
-            setTimeout(() => {
-                if (sendpacket === 0) {
-                    this.error('[test] no send packet');
-                }
-            }, 1000);
-        });
-        NetworkIdentifier.close.on(ni => {
-            this.assert(conns.delete(ni), '[test] disconnected without connected');
-        });
-    },
-
     cxxstring() {
         const str = new CxxStringWrapper(true);
         str[NativeType.ctor]();
@@ -300,14 +204,22 @@ Tester.test({
     },
 
     makefunc() {
-        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float64, null, RawTypeId.Float32);
+        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float32, null, RawTypeId.Float64);
+        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
-        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(RawTypeId.Boolean);
+        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(bool_t);
         this.equals(getbool(), false, 'bool return');
-        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(RawTypeId.Int32, null, RawTypeId.Boolean);
+        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, null, bool_t);
         this.equals(bool2int(true), 1, 'bool to int');
+        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int32_t, null, int32_t);
+        this.equals(int2short_as_int(-1), 0xffff, 'int to short old');
+        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int16_t, null, int32_t);
+        this.equals(int2short(-1), -1, 'int to short');
+        this.equals(int2short(0xffff), -1, 'int to short');
+        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(uint16_t, null, int32_t);
+        this.equals(int2ushort(-1), 0xffff, 'int to ushort');
+        this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
     },
 
     vectorcopy() {
@@ -400,17 +312,20 @@ Tester.test({
     },
 
     async checkPacketNames() {
-        const str = new CxxStringWrapper(true);
+        if (capi.isRunningOnWine()) {
+            this.skip('Skip packet check on the Wine system, almost failed');
+            return;
+        }
         for (const id in PacketIdToType) {
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             const packet = Packet.create();
 
-            packet.getName(str);
-            this.equals(str.value, Packet.name);
-            str.destruct();
+            const cxxname = packet.getName();
+            let name = Packet.name;
+
+            this.equals(cxxname, name);
             this.equals(packet.getId(), Packet.ID);
 
-            let name = Packet.name;
             const idx = name.lastIndexOf('Packet');
             if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
             this.equals(MinecraftPacketIds[Packet.ID], name);
@@ -424,6 +339,103 @@ Tester.test({
             this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
         }
     },
+
+    nethook() {
+        let idcheck = 0;
+        let sendpacket = 0;
+        for (let i = 0; i < 255; i++) {
+            nethook.raw(i).on((ptr, size, ni, packetId) => {
+                idcheck = packetId;
+                this.assert(size > 0, `packet size is too little`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+            });
+            nethook.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+                this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
+            });
+            nethook.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+                this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
+            });
+            nethook.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+                sendidcheck = packetId;
+                this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
+                sendpacket++;
+            });
+            nethook.sendRaw(i).on((ptr, size, ni, packetId) => {
+                this.assert(size > 0, `packet size is too little`);
+                this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                sendpacket++;
+            });
+        }
+
+        const conns = new Set<NetworkIdentifier>();
+        nethook.after(MinecraftPacketIds.Login).on((ptr, ni) => {
+            this.assert(!conns.has(ni), '[test] logined without connected');
+            conns.add(ni);
+            setTimeout(() => {
+                if (sendpacket === 0) {
+                    this.error('[test] no send packet');
+                }
+            }, 1000);
+        });
+        NetworkIdentifier.close.on(ni => {
+            this.assert(conns.delete(ni), '[test] disconnected without connected');
+        });
+    },
+
+    actor() {
+        const system = server.registerSystem(0, 0);
+        system.listenForEvent('minecraft:entity_created', ev => {
+            try {
+                const uniqueId = ev.data.entity.__unique_id__;
+                const actor = Actor.fromEntity(ev.data.entity);
+                if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                    this.assert(actor !== null, 'Actor.fromEntity of player is null');
+                }
+
+                if (actor !== null) {
+                    actor.getName();
+                    this.equals(actor.getDimension(), DimensionId.Overworld, 'getDimension() is not overworld');
+
+                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
+                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
+                    this.equals(actualId, expectedId,
+                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
+
+                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
+                        this.equals(name, connectedId, 'id does not matched');
+                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
+                        this.assert(actor.isPlayer(), 'player is not the player');
+                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
+                    } else {
+                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
+                    }
+                }
+            } catch (err) {
+                this.processError(err);
+            }
+        });
+    },
+
+    chat() {
+        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
+            if (packet.message == "TEST YEY!") {
+                const MAX_CHAT = 5;
+                chatCancelCounter++;
+                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
+                this.equals(connectedNi, ni, 'the network identifier does not matched');
+                if (chatCancelCounter === MAX_CHAT) {
+                    this.log('> tested and stopping...');
+                    setTimeout(() => bedrockServer.stop(), 1000);
+                }
+                return CANCEL;
+            }
+        });
+    },
+
 });
 
 let connectedNi: NetworkIdentifier;

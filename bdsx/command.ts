@@ -8,30 +8,39 @@ import { CommandRequestPacket } from './bds/packets';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { CANCEL } from './common';
-import { makefunc, RawTypeId } from './makefunc';
+import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
-import { bool_t, NativeType, Type } from './nativetype';
+import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
 import { nethook } from './nethook';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 
+
+let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
+function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t):MCRESULT {
+    const ctx = ctxptr.p!;
+    const name = ctx.origin.getName();
+    const resv = hookev.fire(ctxptr.p!.command, name, ctx);
+    switch (typeof resv) {
+    case 'number':
+        res.result = resv;
+        _tickCallback();
+        return res;
+    default:
+        _tickCallback();
+        return executeCommandOriginal(cmd, res, ctxptr, b);
+    }
+}
+
+MinecraftCommands.prototype.executeCommand = function(ctx, b) {
+    const res = new MCRESULT(true);
+    return executeCommand(this, res, ctx, b);
+};
+procHacker.js('MinecraftCommands::executeCommand', MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), bool_t);
+
 export function hookingForCommand(): void {
-    const executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
-        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), RawTypeId.Boolean)(
-        (cmd, res, ctxptr, b)=>{
-            const ctx = ctxptr.p!;
-            const name = ctx.origin.getName();
-            const resv = hookev.fire(ctxptr.p!.command, name, ctx);
-            switch (typeof resv) {
-            case 'number':
-                res.result = resv;
-                _tickCallback();
-                return res;
-            default:
-                _tickCallback();
-                return executeCommandOriginal(cmd, res, ctxptr, b);
-            }
-        });
+    executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
+        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), bool_t)(executeCommand);
 }
 
 interface CommandEvent {
@@ -138,7 +147,7 @@ export class CustomCommandFactory {
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
             this.execute(origin, output);
-        }, RawTypeId.Void, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
+        }, void_t, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
 
         const params:CommandParameterData[] = [];
         for (const [name, type, optkey] of parameters) {
@@ -206,7 +215,7 @@ export class CustomCommandFactory {
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
             this.execute(origin, output);
-        }, RawTypeId.Void, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
+        }, void_t, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
 
         this.registry.registerOverload(this.name, CustomCommandImpl, params);
         return this;
@@ -242,5 +251,5 @@ export const hook = hookev as CapsuledEvent<HookCommandListener>;
 
 const customCommandDtor = makefunc.np(function(){
     this[NativeType.dtor]();
-}, RawTypeId.Void, {this:CustomCommand}, RawTypeId.Int32);
+}, void_t, {this:CustomCommand}, int32_t);
 

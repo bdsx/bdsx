@@ -3,8 +3,8 @@ import { proc2 } from "./bds/proc";
 import { capi } from "./capi";
 import { chakraUtil, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
-import { makefunc, RawTypeId } from "./makefunc";
-import { CxxString, NativeType } from "./nativetype";
+import { makefunc } from "./makefunc";
+import { CxxString, NativeType, void_t } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 
 type GetLineCallback = (line:string|null)=>void;
@@ -26,7 +26,7 @@ asmcode.getLineProcessTask = makefunc.np((asyncTask:StaticPointer)=>{
     str[NativeType.dtor]();
     const cb:GetLineCallback = asyncTask.getJsValueRef(uv_async.sizeOfTask+string_size);
     cb(value);
-}, RawTypeId.Void, null, StaticPointer);
+}, void_t, null, StaticPointer);
 asmcode.std_getline = getline;
 asmcode.uv_async_post = uv_async.post;
 asmcode.std_string_ctor = string_ctor;
@@ -34,7 +34,7 @@ asmcode.std_string_ctor = string_ctor;
 // const endTask = makefunc.np((asyncTask:StaticPointer)=>{
 //     const cb:GetLineCallback = asyncTask.getJsValueRef(uv_async.sizeOfTask);
 //     cb(null);
-// }, RawTypeId.Void, null, StaticPointer);
+// }, void_t, null, StaticPointer);
 
 export class GetLine {
     private readonly thread:ThreadHandle;

@@ -138,11 +138,12 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param ignoreArea pair offsets to ignore of originalCode
      */
     nopping(subject:string, key:keyof T, offset:number, originalCode:number[], ignoreArea:number[]):void {
-        const ptr = this.map[key].add(offset);
+        let ptr:StaticPointer = this.map[key];
         if (!ptr) {
             console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
             return;
         }
+        ptr = ptr.add(offset);
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (this.check(subject, key, offset, ptr, originalCode, ignoreArea)) {
@@ -307,8 +308,8 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
      *
-     * @param returnType RawTypeId or *Pointer
-     * @param params RawTypeId or *Pointer
+     * @param returnType *_t or *Pointer
+     * @param params *_t or *Pointer
      */
     js<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         key: keyof T,

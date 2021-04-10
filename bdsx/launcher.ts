@@ -11,8 +11,8 @@ import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { GetLine } from "./getline";
-import { makefunc, RawTypeId } from "./makefunc";
-import { CxxString, NativeType } from "./nativetype";
+import { makefunc } from "./makefunc";
+import { CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { nethook } from "./nethook";
 import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
@@ -120,7 +120,7 @@ function patchForStdio():void {
         }
         if (logEvTarget.fire(line, color) === CANCEL) return;
         console.log(color(line));
-    }, RawTypeId.Void, null, RawTypeId.Int32, StaticPointer, RawTypeId.FloatAsInt64);
+    }, void_t, null, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
@@ -130,7 +130,7 @@ function patchForStdio():void {
         if (commandOutputEvTarget.fire(line) !== CANCEL) {
             console.log(line);
         }
-    }, RawTypeId.Void, null, RawTypeId.FloatAsInt64, StaticPointer);
+    }, void_t, null, int64_as_float_t, StaticPointer);
     procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x217, asmcode.CommandOutputSenderHook, Register.rax, true, [
         0xE8, 0xFF, 0xFF, 0xFF, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64,char const * __ptr64 const,uns>
         0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,   // lea rdx,qword ptr ds:[<class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::flush<char,struct std::char_traits<char> >(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64)>]
@@ -253,7 +253,7 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.bedrock_server_exe_args = bedrock_server_exe.args;
     asmcode.bedrock_server_exe_argc = bedrock_server_exe.argc;
     asmcode.bedrock_server_exe_main = bedrock_server_exe.main;
-    asmcode.finishCallback = makefunc.np(finishCallback, RawTypeId.Void, null);
+    asmcode.finishCallback = makefunc.np(finishCallback, void_t, null);
 
     {
         // restore main
@@ -273,7 +273,7 @@ function _launch(asyncResolve:()=>void):void {
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
-    asmcode.updateEvTargetFire = makefunc.np(()=>updateEvTarget.fire(), RawTypeId.Void, null);
+    asmcode.updateEvTargetFire = makefunc.np(()=>updateEvTarget.fire(), void_t, null);
 
     procHacker.patching('update-hook', '<lambda_8914ed82e3ef519cb2a85824fbe333d8>::operator()', 0x5f3,
         asmcode.updateWithSleep, Register.rcx, true, [
@@ -316,38 +316,38 @@ function _launch(asyncResolve:()=>void):void {
                 asyncResolve();
                 _tickCallback();
 
-                procHacker.js('ScriptEngine::_processSystemInitialize', RawTypeId.Void, null, VoidPointer)(scriptEngine);
+                procHacker.js('ScriptEngine::_processSystemInitialize', void_t, null, VoidPointer)(scriptEngine);
                 _tickCallback();
                 cgate.nodeLoopOnce();
             } catch (err) {
                 remapAndPrintError(err);
             }
-        }, RawTypeId.Void, null, VoidPointer),
+        }, void_t, null, VoidPointer),
         [Register.rcx], []);
 
     // keep ScriptEngine variables. idk why it needs.
     procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
 }
 
-const stopfunc = procHacker.js('DedicatedServer::stop', RawTypeId.Void, null, VoidPointer);
+const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointer);
 
 const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
 const commandContextRefCounterVftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
 const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
-const commandContextConstructor = procHacker.js('CommandContext::CommandContext', RawTypeId.Void, null,
-    CommandContext, CxxStringWrapper, CommandOriginWrapper, RawTypeId.Int32);
+const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
+    CommandContext, CxxString, CommandOriginWrapper, int32_t);
 const CommandContextSharedPtr = SharedPtr.make(CommandContext);
-function createCommandContext(command:CxxStringWrapper, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
+function createCommandContext(command:CxxString, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
     const sharedptr = new CommandContextSharedPtr(true);
     sharedptr.create(commandContextRefCounterVftable);
     commandContextConstructor(sharedptr.p, command, commandOrigin, commandVersion);
     return sharedptr;
 }
 
-const serverCommandOriginConstructor = procHacker.js('ServerCommandOrigin::ServerCommandOrigin', RawTypeId.Void, null,
-    ServerCommandOrigin, CxxStringWrapper, ServerLevel, RawTypeId.Int32, Dimension);
+const serverCommandOriginConstructor = procHacker.js('ServerCommandOrigin::ServerCommandOrigin', void_t, null,
+    ServerCommandOrigin, CxxString, ServerLevel, int32_t, Dimension);
 
-function createServerCommandOrigin(name:CxxStringWrapper, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):Wrapper<CommandOrigin> {
+function createServerCommandOrigin(name:CxxString, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):Wrapper<CommandOrigin> {
     const wrapper = new CommandOriginWrapper(true);
     const origin = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
     wrapper.value = origin;
@@ -355,7 +355,7 @@ function createServerCommandOrigin(name:CxxStringWrapper, level:ServerLevel, per
     return wrapper;
 }
 
-const deleteServerCommandOrigin = makefunc.js([0, 0], RawTypeId.Void, {this:ServerCommandOrigin}, RawTypeId.Int32);
+const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
 ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
 function sessionIdGrabber(text: string): void {
     const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d INFO\] Session ID (.*)$/);
@@ -431,22 +431,16 @@ export namespace bedrockServer
      * but call the internal function directly
      */
     export function executeCommand(command:string, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
-        const str = new CxxStringWrapper(true);
-        str.construct();
-        str.value = 'Server';
-
-        const origin = createServerCommandOrigin(str,
+        const origin = createServerCommandOrigin('Server',
             bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
 
-        str.value = command;
-        const ctx = createCommandContext(str, origin);
+        const ctx = createCommandContext(command, origin);
         const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, false);
 
         ctx.destruct();
         origin.destruct();
-        str.destruct();
 
         return res;
     }

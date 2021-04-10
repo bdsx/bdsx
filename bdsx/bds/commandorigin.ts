@@ -3,8 +3,8 @@ import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { mce } from "bdsx/mce";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { makefunc, RawTypeId } from "../makefunc";
-import { CxxStringWrapper } from "../pointer";
+import { makefunc } from "../makefunc";
+import { CxxString, void_t } from "../nativetype";
 import { Actor } from "./actor";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
@@ -35,17 +35,11 @@ export class CommandOrigin extends NativeClass {
     destructor():void {
         abstract();
     }
-    getRequestId():string {
-        const p = getRequestId.call(this) as CxxStringWrapper;
-        const str = p.value;
-        p.destruct();
-        return str;
+    getRequestId():CxxString {
+        abstract();
     }
     getName():string {
-        const p = getName.call(this) as CxxStringWrapper;
-        const str = p.value;
-        p.destruct();
-        return str;
+        abstract();
     }
     getBlockPosition(): BlockPos {
         abstract();
@@ -86,13 +80,13 @@ export class ServerCommandOrigin extends CommandOrigin {
 const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
 
 // void destruct(CommandOrigin* origin);
-CommandOrigin.prototype.destruct = makefunc.js([0x00], RawTypeId.Void, {this: CommandOrigin});
+CommandOrigin.prototype.destruct = makefunc.js([0x00], void_t, {this: CommandOrigin});
 
 // std::string CommandOrigin::getRequestId();
-const getRequestId = makefunc.js([0x08], CxxStringWrapper, {this: CommandOrigin, structureReturn: true});
+CommandOrigin.prototype.getRequestId = makefunc.js([0x08], CxxString, {this: CommandOrigin, structureReturn: true});
 
 // std::string CommandOrigin::getName();
-const getName = makefunc.js([0x10], CxxStringWrapper, {this: CommandOrigin, structureReturn: true});
+CommandOrigin.prototype.getName = makefunc.js([0x10], CxxString, {this: CommandOrigin, structureReturn: true});
 
 // BlockPos CommandOrigin::getBlockPosition();
 CommandOrigin.prototype.getBlockPosition = makefunc.js([0x18], BlockPos, {this: CommandOrigin, structureReturn: true});
@@ -107,4 +101,4 @@ CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrig
 CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
 
 // Actor* getEntity(CommandOrigin* origin);
-CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin});
+CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin, nullableReturn: true});

@@ -1,13 +1,13 @@
 import { asm } from "../assembler";
 import { bin } from "../bin";
 import { capi } from "../capi";
-import { abstract, SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../common";
+import { abstract } from "../common";
 import { chakraUtil, NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { makefunc, RawTypeId } from "../makefunc";
+import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
+import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t } from "../nativetype";
-import { CxxStringWrapper } from "../pointer";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
 import { templateName } from "../templatename";
 import { Actor } from "./actor";
@@ -46,8 +46,8 @@ export class CommandSelectorBase extends NativeClass {
         return actors;
     }
 }
-const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', RawTypeId.Void, null, CommandSelectorBase, RawTypeId.Boolean);
-CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', RawTypeId.Void, {this:CommandSelectorBase});
+const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
+CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
 (CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
 
 @nativeClass()
@@ -234,29 +234,11 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
-    protected _registerCommand(command:CxxStringWrapper, description:string, level:CommandPermissionLevel, flag1:CommandFlag, flag2:CommandFlag):void {
-        abstract();
-    }
     registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandFlag, flag2:CommandFlag):void {
-        const commandstr = new CxxStringWrapper(true);
-        commandstr.construct();
-        commandstr.value = command;
-        this._registerCommand(commandstr, description, level, flag1, flag2);
-        commandstr.destruct();
-    }
-    protected _registerAlias(command:CxxStringWrapper, alias:CxxStringWrapper):void {
         abstract();
     }
     registerAlias(command:string, alias:string):void {
-        const commandstr = new CxxStringWrapper(true);
-        commandstr.construct();
-        commandstr.value = command;
-        const aliasstr = new CxxStringWrapper(true);
-        aliasstr.construct();
-        aliasstr.value = alias;
-        this._registerAlias(commandstr, aliasstr);
-        commandstr.destruct();
-        aliasstr.destruct();
+        abstract();
     }
 
     /**
@@ -296,16 +278,8 @@ export class CommandRegistry extends HasTypeId {
     registerOverloadInternal(signature:CommandRegistry.Signature, overload: CommandRegistry.Overload):void{
         abstract();
     }
-    protected _findCommand(command:CxxStringWrapper):CommandRegistry.Signature|null {
-        abstract();
-    }
     findCommand(command:string):CommandRegistry.Signature|null {
-        const commandstr = new CxxStringWrapper(true);
-        commandstr.construct();
-        commandstr.value = command;
-        const sig = this._findCommand(commandstr);
-        commandstr.destruct();
-        return sig;
+        abstract();
     }
 
     static getParser<T>(type:Type<T>):VoidPointer {
@@ -361,13 +335,13 @@ const types = [int32_t, float32_t, bool_t, CxxString, ActorWildcardCommandSelect
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 
-MinecraftCommands.prototype.executeCommand = procHacker.js('MinecraftCommands::executeCommand', MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), RawTypeId.Boolean);
+// MinecraftCommands.prototype.executeCommand is defined at command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this: MinecraftCommands });
 
-CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', RawTypeId.Void, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
-(CommandRegistry.prototype as any)._registerCommand = procHacker.js("CommandRegistry::registerCommand", RawTypeId.Void, {this:CommandRegistry}, CxxStringWrapper, RawTypeId.StringUtf8, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Int32);
-(CommandRegistry.prototype as any)._registerAlias = procHacker.js("CommandRegistry::registerAlias", RawTypeId.Void, {this:CommandRegistry}, CxxStringWrapper, CxxStringWrapper);
-(CommandRegistry.prototype as any)._findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry, nullableReturn: true}, CxxStringWrapper);
+CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
+CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
+CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
+CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry, nullableReturn: true}, CxxString);
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';

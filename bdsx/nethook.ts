@@ -7,8 +7,9 @@ import { LoginPacket, PacketIdToType } from "./bds/packets";
 import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL, emptyFunc } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
-import { makefunc, RawTypeId } from "./makefunc";
+import { makefunc } from "./makefunc";
 import { nativeClass, NativeClass, nativeField } from "./nativeclass";
+import { bool_t, int32_t, int64_as_float_t, void_t } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError } from "./source-map-support";
@@ -28,7 +29,7 @@ class ReadOnlyBinaryStream extends NativeClass {
     }
 }
 
-ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], RawTypeId.Boolean, {this: ReadOnlyBinaryStream}, VoidPointer, RawTypeId.FloatAsInt64);
+ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnlyBinaryStream}, VoidPointer, int64_as_float_t);
 
 @nativeClass(null)
 class OnPacketRBP extends NativeClass {
@@ -39,22 +40,21 @@ class OnPacketRBP extends NativeClass {
 }
 
 type AllEventTarget = Event<nethook.RawListener|nethook.BeforeListener<any>|nethook.AfterListener<any>|nethook.SendListener<any>|nethook.SendRawListener>;
-type AnyEventTarget = Event<nethook.RawListener&nethook.BeforeListener<any>&nethook.AfterListener<any>&nethook.SendListener<any>&nethook.SendRawListener>;
 
 const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
 for (let i=0;i<EVENT_INDEX_COUNT;i++) {
     alltargets[i] = null;
 }
 
-function getNetEventTarget(type:nethook.EventType, packetId:MinecraftPacketIds):AnyEventTarget {
+function getNetEventTarget(type:nethook.EventType, packetId:MinecraftPacketIds):AllEventTarget {
     if ((packetId>>>0) >= MAX_PACKET_ID) {
         throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
     }
     const id = type*MAX_PACKET_ID + packetId;
     let target = alltargets[id];
-    if (target !== null) return target as AnyEventTarget;
+    if (target !== null) return target as AllEventTarget;
     alltargets[id] = target = new Event;
-    return target as AnyEventTarget;
+    return target;
 }
 
 let errorListener:(err:any)=>void = emptyFunc;
@@ -81,7 +81,7 @@ export namespace nethook
         errorListener = fireError;
 
         // hook raw
-        asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, RawTypeId.Int32, NetworkHandler.Connection);
+        asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
         procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x1ff,
             asmcode.packetRawHook, Register.rax, true, [
                 0x41, 0x8B, 0xD7,               // mov edx,r15d
@@ -90,7 +90,7 @@ export namespace nethook
             ], []);
 
         // hook before
-        asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, RawTypeId.Int32);
+        asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, int32_t);
         procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2e8,
             asmcode.packetBeforeHook, // original code depended
             Register.rax,
@@ -117,7 +117,7 @@ export namespace nethook
             Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24]);
 
         // hook after
-        asmcode.onPacketAfter = makefunc.np(onPacketAfter, RawTypeId.Void, null, OnPacketRBP, RawTypeId.Int32);
+        asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP, int32_t);
         procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x43a,
             asmcode.packetAfterHook, // original code depended
             Register.rax, true, [
@@ -128,7 +128,7 @@ export namespace nethook
                 0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
             ], []);
 
-        const onPacketSendNp = makefunc.np(onPacketSend, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet);
+        const onPacketSendNp = makefunc.np(onPacketSend, void_t, null, NetworkHandler, NetworkIdentifier, Packet);
         asmcode.onPacketSend = onPacketSendNp;
         procHacker.hookingRawWithCallOriginal('NetworkHandler::send', onPacketSendNp, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
         procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0x90,
@@ -140,7 +140,7 @@ export namespace nethook
                 0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
             ], []);
 
-        sendInternalOriginal = procHacker.hooking('NetworkHandler::_sendInternal', RawTypeId.Void, null,
+        sendInternalOriginal = procHacker.hooking('NetworkHandler::_sendInternal', void_t, null,
             NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper)(onPacketSendInternal);
     }
 
@@ -166,7 +166,7 @@ export namespace nethook
     /**
      * @deprecated use nethook.*
      */
-    export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AnyEventTarget {
+    export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AllEventTarget {
         return getNetEventTarget(type, packetId);
     }
 
@@ -239,13 +239,13 @@ export namespace nethook
         MinecraftPacketIds.SetActorData,
     ]):void {
         const ex = new Set(exceptions);
-        for (let i=1; i<=0x88; i++) {
+        for (let i=1; i<=0xa3; i++) {
             if (ex.has(i)) continue;
             before<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
                 console.log(`R ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);
             });
         }
-        for (let i=1; i<=0x88; i++) {
+        for (let i=1; i<=0xa3; i++) {
             if (ex.has(i)) continue;
             send<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
                 console.log(`S ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);

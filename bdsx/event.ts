@@ -1,4 +1,4 @@
-import { Actor, MinecraftPacketIds, NativePointer, nethook, RawTypeId, serverInstance } from "bdsx";
+import { Actor, MinecraftPacketIds, NativePointer, nethook, serverInstance } from "bdsx";
 import { Block, BlockSource } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
@@ -7,10 +7,10 @@ import { Player } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
 import { CANCEL } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
-import { CxxStringWrapper } from "./pointer";
-import { bin64_t } from "./nativetype";
-import { AttributeId } from "./bds/attribute";
 import Event from "krevent";
+import { AttributeId } from "./bds/attribute";
+import { bin64_t, bool_t, float32_t, int32_t } from "./nativetype";
+import { CxxStringWrapper } from "./pointer";
 
 interface IBlockDestroyEvent {
     player: Player,
@@ -41,8 +41,8 @@ function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):
         return _onBlockDestroyCreative(gameMode, event.blockPos, v);
     }
 }
-const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onBlockDestroy);
-const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", RawTypeId.Boolean, null, SurvivalMode, BlockPos, RawTypeId.Int32)(onBlockDestroyCreative);
+const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroy);
+const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroyCreative);
 
 interface IBlockPlaceEvent {
     player: Player,
@@ -67,7 +67,7 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v
         return _onBlockPlace(event.blockSource, event.block, event.blockPos, v1, event.player, v2);
     }
 }
-const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", RawTypeId.Boolean, null, BlockSource, Block, BlockPos, RawTypeId.Int32, Actor, RawTypeId.Boolean)(onBlockPlace);
+const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
 interface IEntityHurtEvent {
     entity: Actor;
@@ -88,7 +88,7 @@ function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: num
         return _onEntityHurt(event.entity, actorDamageSource, event.damage, v1, v2);
     }
 }
-const _onEntityHurt = procHacker.hooking("Actor::hurt", RawTypeId.Boolean, null, Actor, VoidPointer, RawTypeId.Int32, RawTypeId.Boolean, RawTypeId.Boolean)(onEntityHurt);
+const _onEntityHurt = procHacker.hooking("Actor::hurt", bool_t, null, Actor, VoidPointer, int32_t, bool_t, bool_t)(onEntityHurt);
 
 interface IEntityHealEvent {
     entity: Actor;
@@ -114,7 +114,7 @@ function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHea
     }
     return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
 }
-const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", RawTypeId.Boolean, null, NativePointer, RawTypeId.Float32, RawTypeId.Float32, VoidPointer)(onEntityHeal);
+const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHeal);
 
 interface IPlayerAttackEvent {
     player: Player;
@@ -135,7 +135,7 @@ function onPlayerAttack(player:Player, victim:Actor):boolean {
         return _onPlayerAttack(event.player, event.victim);
     }
 }
-const _onPlayerAttack = procHacker.hooking("Player::attack", RawTypeId.Boolean, null, Player, Actor)(onPlayerAttack);
+const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
 
 interface IPlayerDropItemEvent {
     player: Player;
@@ -156,7 +156,7 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean
         return _onPlayerDropItem(event.player, event.itemStack, v);
     }
 }
-const _onPlayerDropItem = procHacker.hooking("Player::drop", RawTypeId.Boolean, null, Player, ItemStack, RawTypeId.Boolean)(onPlayerDropItem);
+const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
 
 interface IPlayerJoinEvent {
     readonly player: Player;
@@ -192,7 +192,7 @@ function onPlayerPickupItem(player:Player, itemActor:VoidPointer, v1:number, v2:
         return _onPlayerPickupItem(event.player, itemActor, v1, v2);
     }
 }
-const _onPlayerPickupItem = procHacker.hooking("Player::take", RawTypeId.Boolean, null, Player, VoidPointer, RawTypeId.Int32, RawTypeId.Int32)(onPlayerPickupItem);
+const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, VoidPointer, int32_t, int32_t)(onPlayerPickupItem);
 
 interface IQueryRegenerateEvent {
     motd: string,
@@ -217,7 +217,7 @@ function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrap
     levelname.value = event.levelname;
     return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, v);
 }
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", RawTypeId.Bin64, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, RawTypeId.Int32, RawTypeId.Int32, RawTypeId.Boolean)(onQueryRegenerate);
+const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
 
 export const events = {
     /** Cancellable */

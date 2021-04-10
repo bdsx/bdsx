@@ -149,6 +149,10 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             wordoper = true;
             size = OperationSize.word;
             continue;
+        } else if (v === 0x98) {
+            if (wordoper) return new asm.Operation(asm.code.cbw, []);
+            if (size === OperationSize.qword) return new asm.Operation(asm.code.cdqe, []);
+            return new asm.Operation(asm.code.cwde, []);
         } else if (v === 0x90) { // nop
             return new asm.Operation(asm.code.nop, []);
         } else if (v === 0xcc) { // int3

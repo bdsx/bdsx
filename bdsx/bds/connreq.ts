@@ -1,9 +1,9 @@
 import { abstract } from "bdsx/common";
 import { CxxVector } from "bdsx/cxxvector";
-import { makefunc, RawTypeId } from "bdsx/makefunc";
+import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { CxxString, NativeType, uint8_t } from "bdsx/nativetype";
+import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { proc, proc2 } from "./proc";
 
 export enum JsonValueType
@@ -100,12 +100,12 @@ export class JsonValue extends NativeClass {
         return this.value()+'';
     }
 }
-const jsonValueGetByInt = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, RawTypeId.Int32);
-const jsonValueGetByString = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, RawTypeId.StringUtf8);
+const jsonValueGetByInt = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, int32_t);
+const jsonValueGetByString = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, makefunc.Utf8);
 const jsonValueGetMemberNames = makefunc.js(proc['Json::Value::getMemberNames'], CxxVector.make(CxxString), {this: JsonValue, structureReturn: true});
-JsonValue.prototype.isMember = makefunc.js(proc['Json::Value::isMember'], RawTypeId.Boolean, {this: JsonValue}, RawTypeId.StringUtf8);
-JsonValue.prototype.size = makefunc.js(proc['Json::Value::size'], RawTypeId.Int32, {this:JsonValue});
-JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['Json::Value::~Value'], RawTypeId.Void, {this:JsonValue});
+JsonValue.prototype.isMember = makefunc.js(proc['Json::Value::isMember'], bool_t, {this: JsonValue}, makefunc.Utf8);
+JsonValue.prototype.size = makefunc.js(proc['Json::Value::size'], int32_t, {this:JsonValue});
+JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['Json::Value::~Value'], void_t, {this:JsonValue});
 
 
 @nativeClass(null)

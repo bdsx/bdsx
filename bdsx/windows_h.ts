@@ -480,6 +480,10 @@ export class FILETIME extends NativeClass {
     dwHighDateTime: DWORD;
 }
 
+export function IMAGE_FIRST_SECTION(ntheader:IMAGE_NT_HEADERS64):IMAGE_SECTION_HEADER {
+    return ntheader.addAs(IMAGE_SECTION_HEADER, IMAGE_NT_HEADERS64.offsetOf('OptionalHeader') + ntheader.FileHeader.SizeOfOptionalHeader);
+}
+
 export const EXCEPTION_BREAKPOINT = 0x80000003|0;
 export const EXCEPTION_ACCESS_VIOLATION = 0xC0000005|0;
 export const STATUS_INVALID_PARAMETER = 0xC000000D|0;

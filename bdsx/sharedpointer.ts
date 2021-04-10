@@ -1,9 +1,9 @@
 import { capi } from "./capi";
 import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
-import { makefunc, RawTypeId } from "./makefunc";
+import { makefunc } from "./makefunc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
-import { NativeType, Type, uint32_t } from "./nativetype";
+import { NativeType, Type, uint32_t, void_t } from "./nativetype";
 import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
 
@@ -49,8 +49,8 @@ export class SharedPtrBase<T> extends NativeClass {
         });
     }
 }
-SharedPtrBase.prototype._Destroy = makefunc.js([0], RawTypeId.Void, {this:SharedPtrBase});
-SharedPtrBase.prototype._DeleteThis = makefunc.js([8], RawTypeId.Void, {this:SharedPtrBase});
+SharedPtrBase.prototype._Destroy = makefunc.js([0], void_t, {this:SharedPtrBase});
+SharedPtrBase.prototype._DeleteThis = makefunc.js([8], void_t, {this:SharedPtrBase});
 const sizeOfSharedPtrBase = SharedPtrBase[NativeType.size];
 
 /**

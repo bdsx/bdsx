@@ -284,6 +284,8 @@ export declare class AllocatedPointer extends StaticPointer {
 
 export declare class StructurePointer extends PrivatePointer {
     static readonly contentSize:unique symbol;
+    static readonly nativeCtor:unique symbol;
+    static readonly nativeDtor:unique symbol;
     static [StructurePointer.contentSize]:number;
     constructor(allocateItSelf?:boolean);
     /**
@@ -303,6 +305,7 @@ export declare class NativePointer extends StaticPointer {
     setAddress(lowBits: number, highBits: number): void;
     setAddressBin(bin:string):void;
     setAddressFromBuffer(buffer:Bufferable):void;
+    setAddressFromString(str:string):void;
     setAddressWithFloat(value:number):void;
 
 
@@ -541,6 +544,24 @@ export declare namespace pdb
      * get all symbols
      */
     export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer>;
+
+    export interface SymbolInfo {
+        typeIndex:number;
+        index:number;
+        size:number;
+        flags:number;
+        value:NativePointer;
+        address:NativePointer;
+        register:number;
+        scope:number;
+        tag:number;
+        name:string;
+    }
+    /**
+     * get all symbols.
+     * @param read calbacked per 100ms, stop the looping if it returns false
+     */
+    export function getAllEx(read?:(data:SymbolInfo[])=>boolean|void):void;
 
 }
 
