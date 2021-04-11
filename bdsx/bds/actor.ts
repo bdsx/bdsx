@@ -7,11 +7,11 @@ import { bin64_t } from "bdsx/nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
-import { CommandPermissionLevel } from "./command";
+import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
-import { ServerPlayer } from "./player";
+import type { ServerPlayer } from "./player";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -144,14 +144,6 @@ export class Actor extends NativeClass {
     hasTag(tag:string):boolean {
         abstract();
     }
-// float NativeActor::getAttribute(int attribute) noexcept
-// {
-//     if (attribute < 1) return 0;
-//     if ((uint)attribute > countof(attribNames)) return 0;
-//     AttributeInstance* attr = ptr()->getAttribute((AttributeId)attribute);
-//     if (!attr) return 0;
-//     return attr->currentValue();
-// }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {
         abstract();
     }

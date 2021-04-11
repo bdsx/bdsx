@@ -34,6 +34,8 @@
             "allowSingleExtends": true
           }
         ],
+        "prefer-arrow-callback": "error",
+        "import/no-cycle": "error",
         "eqeqeq": ["error", "always", {"null": "ignore"}],
         "no-throw-literal": "error",
         "semi": "error",

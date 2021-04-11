@@ -2,8 +2,8 @@ import { abstract } from "bdsx/common";
 import { Actor, ActorUniqueID } from "./actor";
 import { Vec3 } from "./blockpos";
 import { ItemStack, PlayerInventory } from "./inventory";
-import { NetworkIdentifier } from "./networkidentifier";
-import { Packet } from "./packet";
+import type { NetworkIdentifier } from "./networkidentifier";
+import type { Packet } from "./packet";
 
 export class Player extends Actor {
 

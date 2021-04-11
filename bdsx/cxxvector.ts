@@ -39,7 +39,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     [NativeType.ctor_copy](from:CxxVector<T>):void {
         const sizeBytes = from.sizeBytes();
         const ptr = dll.ucrtbase.malloc(sizeBytes);
-        const compsize = this.componentType[NativeType.size]!;
+        const compsize = this.componentType[NativeType.size];
         const size = sizeBytes / compsize | 0;
         const srcptr = from.getPointer(0);
         this.setPointer(ptr, 0);
@@ -60,7 +60,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     protected abstract _copy(to:NativePointer, from:T, index:number):void;
 
     private _resize(newsizeBytes:number, newcapBytes:number, oldptr:NativePointer, oldsizeBytes:number):void {
-        const compsize = this.componentType[NativeType.size]!;
+        const compsize = this.componentType[NativeType.size];
         const allocated = CxxVector._alloc16(newcapBytes);
         this.setPointer(allocated, 0);
 
@@ -80,7 +80,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     set(idx:number, component:T):void {
         const type = this.componentType;
 
-        const compsize = type[NativeType.size]!;
+        const compsize = type[NativeType.size];
         let begptr = this.getPointer(0);
         const oldsizeBytes = this.getPointer(8).subptr(begptr);
         if (idx * compsize < oldsizeBytes) {
@@ -104,7 +104,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     get(idx:number):T|null {
         const beginptr = this.getPointer(0);
         const endptr = this.getPointer(8);
-        const compsize = this.componentType[NativeType.size]!;
+        const compsize = this.componentType[NativeType.size];
         const size = endptr.subptr(beginptr) / compsize | 0;
         if (idx < 0 || idx >= size) return null;
         beginptr.move(idx * compsize);
@@ -115,7 +115,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         const begptr = this.getPointer(0);
         const endptr = this.getPointer(8);
         if (endptr.equals(begptr)) return false;
-        const compsize = this.componentType[NativeType.size]!;
+        const compsize = this.componentType[NativeType.size];
         endptr.move(-compsize, -1);
 
         const idx = endptr.subptr(begptr) / compsize | 0;
@@ -127,7 +127,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     push(component:T):void {
         let begptr = this.getPointer(0);
         const endptr = this.getPointer(8);
-        const compsize = this.componentType[NativeType.size]!;
+        const compsize = this.componentType[NativeType.size];
         const idx = endptr.subptr(begptr) / compsize | 0;
         const capptr = this.getPointer(16);
         if (capptr.equals(endptr)) {
@@ -178,7 +178,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     size():number {
         const beginptr = this.getPointer(0);
         const endptr = this.getPointer(8);
-        return endptr.subptr(beginptr) / this.componentType[NativeType.size]! | 0;
+        return endptr.subptr(beginptr) / this.componentType[NativeType.size] | 0;
     }
 
     sizeBytes():number {
@@ -190,7 +190,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     capacity():number {
         const beginptr = this.getPointer(0);
         const endptr = this.getPointer(16);
-        return endptr.subptr(beginptr) / this.componentType[NativeType.size]! | 0;
+        return endptr.subptr(beginptr) / this.componentType[NativeType.size] | 0;
     }
 
     toArray():T[] {
@@ -226,7 +226,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
 
     static make<T>(type:Type<T>):CxxVectorType<T> {
         return Singleton.newInstance<CxxVectorType<T>>(CxxVector, type, ()=>{
-            if ((type as any)[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
+            if (type[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
 
             if (NativeClass.isNativeClassType(type)) {
                 class VectorImpl extends CxxVector<NativeClass> {
@@ -236,7 +236,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
 
                     protected _move_alloc(allocated:NativePointer, oldptr:VoidPointer, movesize:number):void {
                         const clazz = this.componentType;
-                        const compsize = this.componentType[NativeType.size]!;
+                        const compsize = this.componentType[NativeType.size];
                         const oldptrmove = oldptr.add();
                         for (let i=0;i<movesize;i++) {
                             const new_item:NativeClass = allocated.as(clazz);
@@ -276,7 +276,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                     static readonly componentType:Type<T> = type as any;
 
                     protected _move_alloc(allocated:NativePointer, oldptr:VoidPointer, movesize:number):void {
-                        const compsize = this.componentType[NativeType.size]!;
+                        const compsize = this.componentType[NativeType.size];
                         const oldptrmove = oldptr.add();
                         for (let i=0;i<movesize;i++) {
                             this.componentType[NativeType.ctor_move](allocated, oldptrmove);

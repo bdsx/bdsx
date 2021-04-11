@@ -243,7 +243,6 @@ class ParamInfoMaker {
         for (let i=0;i<params.length;i++) {
             const info = new makefunc.ParamInfo;
             info.offsetForLocalSpace = null;
-            info.indexOnCpp = i;
             info.nullable = false;
             info.needDestruction = false;
 
@@ -388,7 +387,6 @@ export namespace makefunc {
 
     export class ParamInfo {
         offsetForLocalSpace:null|number;
-        indexOnCpp: number;
         numberOnMaking: number;
         numberOnUsing: number;
         type: Paramable;
@@ -811,20 +809,20 @@ export namespace makefunc {
             const wrapper = info.type[np2js];
             if (wrapper) {
                 chakraUtil.JsAddRef(wrapper);
-                this.qmov_t_t(makefunc.Target.memory(Register.rsp, -0x08), source);
-                this.mov_r_c(Register.rax, nullValueRef);
-                this.mov_rp_r(Register.rsp, 1, -0x10, Register.rax);
 
                 const temp = target.tempPtr();
                 this.sub_r_c(Register.rsp, 0x30);
+                info.type[makefunc.np2jsAsm](this, makefunc.Target.memory(Register.rsp, 0x28), source, info);
+                this.mov_r_c(Register.rax, nullValueRef);
+                this.mov_rp_r(Register.rsp, 1, 0x20, Register.rax);
                 this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(wrapper));
                 this.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
                 this.mov_r_c(Register.r8, 2);
                 this.lea_r_rp(Register.r9, temp.reg, 1, temp.offset);
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
+                this.throwIfNonZero(info);
                 this.add_r_c(Register.rsp, 0x30);
-
-                info.type[makefunc.np2jsAsm](this, target, temp, info);
+                this.qmov_t_t(target, temp);
             } else {
                 info.type[makefunc.np2jsAsm](this, target, source, info);
             }
@@ -850,17 +848,18 @@ export namespace makefunc {
             if (wrapper) {
                 chakraUtil.JsAddRef(wrapper);
 
+                const temp = target.tempPtr();
                 this.sub_r_c(Register.rsp, 0x30);
                 info.type[makefunc.js2npAsm](this, makefunc.Target.memory(Register.rsp, 0x28), source, info);
                 this.mov_r_c(Register.rax, nullValueRef);
                 this.mov_rp_r(Register.rsp, 1, 0x20, Register.rax);
 
-                const temp = target.tempPtr();
                 this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(wrapper));
                 this.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
                 this.mov_r_c(Register.r8, 2);
                 this.lea_r_rp(Register.r9, temp.reg, 1, temp.offset);
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
+                this.throwIfNonZero(info);
                 this.add_r_c(Register.rsp, 0x30);
                 this.qmov_t_t(target, temp);
             } else {
@@ -897,6 +896,7 @@ export namespace makefunc {
         const spaceForFunctionCalling = 0x20;
         const paramsSize = pimaker.countOnCalling * 8 + 8; // params + this
         const func = new Maker(pimaker, paramsSize, false);
+        if (opts && opts.nativeDebugBreak) func.debugBreak();
         func.stackSize += spaceForTemp; // space for tempPtr()
         func.stackSize += spaceForOutput;  // space for the output of JsCallFunction
         func.stackSize += spaceForFunctionCalling; // space for the function calling
@@ -1004,6 +1004,8 @@ export namespace makefunc {
 
         const paramsSize = pimaker.countOnCpp * 8;
         const func = new Maker(pimaker, paramsSize, true);
+        if (opts && opts.nativeDebugBreak) func.debugBreak();
+
         const spaceForTemp = 0x10;
         const spaceForCalling = 0x20;
         func.stackSize += spaceForTemp; // space for tempPtr()
@@ -1043,7 +1045,6 @@ export namespace makefunc {
             }
         }
 
-        if (opts && opts.nativeDebugBreak) func.debugBreak();
         let targetfuncptr:VoidPointer|null;
         if (vfoff === undefined) {
             targetfuncptr = functionPointer as VoidPointer;
@@ -1110,25 +1111,29 @@ export namespace makefunc {
         func.sub_r_c(Register.rsp, spaceForCalling);
 
         let returnTarget = makefunc.Target.return;
+        let returnInMemory:Target|null = null;
         if (func.useStackAllocator) {
-            if (!pimaker.structureReturn) {
-                returnTarget = Target.memory(Register.rbp, 0);
-                returnTypeResolved[np2npAsm](func, returnTarget, Target.return, pimaker.return);
-            }
-            func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);
-            func.and_rp_c(Register.rdx, 1, 0, -2);
-            func.call_rp(Register.rdi, 1, makefuncDefines.fn_stack_free_all);
+            returnTarget = Target.memory(Register.rbp, 0);
         }
-
         if (pimaker.structureReturn) {
             if (pimaker.return.offsetForLocalSpace !== null) {
                 func.lea_t_rp(makefunc.Target[0], Register.rbp, 1, pimaker.return.offsetForLocalSpace);
                 func.nativeToJs(pimaker.return, returnTarget, makefunc.Target[0]);
             } else {
-                func.qmov_t_t(makefunc.Target.return, Target.memory(Register.rbp, func.offsetForStructureReturn));
+                returnInMemory = Target.memory(Register.rbp, func.offsetForStructureReturn);
             }
         } else {
-            func.nativeToJs(pimaker.return, makefunc.Target.return, returnTarget);
+            func.nativeToJs(pimaker.return, returnTarget, makefunc.Target.return);
+        }
+        if (func.useStackAllocator) {
+            func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);
+            func.and_rp_c(Register.rdx, 1, 0, -2);
+            func.call_rp(Register.rdi, 1, makefuncDefines.fn_stack_free_all);
+        }
+        if (returnInMemory !== null) {
+            func.qmov_t_t(Target.return, returnInMemory);
+        } else if (func.useStackAllocator) {
+            func.qmov_t_t(Target.return, returnTarget);
         }
 
         func.end();

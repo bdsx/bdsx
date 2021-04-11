@@ -267,8 +267,7 @@ export const void_t = new NativeType<void>(
     emptyFunc,
     emptyFunc,
     (asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo)=>{
-        if (target !== makefunc.Target.return) throw Error(`void_t cannot be the parameter`);
-        asm.qmov_t_t(target, source);
+        if (info.numberOnUsing !== -1) throw Error(`void_t cannot be the parameter`);
         asm.qmov_t_c(target, undefValueRef);
     },
     emptyFunc);
@@ -499,10 +498,10 @@ export const CxxString = new NativeType<string>(
         asm.mov_r_rp(Register.rax, Register.rcx, 1, 0x18);
         asm.cmp_r_c(Register.rax, 15);
         asm.cmova_r_rp(Register.rcx, Register.rcx, 1, 0);
+        asm.add_r_r(Register.rdx, Register.rcx);
 
         const temp = target.tempPtr(source, sourceTemp);
         asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
-        asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
         asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
         asm.throwIfNonZero(info);
 

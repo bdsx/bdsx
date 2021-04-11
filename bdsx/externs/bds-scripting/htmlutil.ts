@@ -237,7 +237,7 @@ export class HtmlSearcher {
     }
 
     minecraftDocHeader(name:string, headerTag:string, inner:(node:HTMLElement, id:string)=>(void|Promise<void>)):Promise<void> {
-        return this.each(name, node=>htmlutil.checks(node, {tag:headerTag, class:'anchored-heading'}, {tag:'span', class: 'anchor'}), async(node)=>{
+        return this.each(name, node=>htmlutil.checks(node, {tag:headerTag, class:'anchored-heading'}, {tag:'span'}), async(node)=>{
             const id = htmlutil.follow(node, 'span')!.id;
             await inner(node, id);
         });

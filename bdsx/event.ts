@@ -9,11 +9,12 @@ import { CANCEL } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import Event from "krevent";
 import { AttributeId } from "./bds/attribute";
+import { ScriptCustomEventPacket } from "./bds/packets";
 import { bin64_t, bool_t, float32_t, int32_t } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 
 interface IBlockDestroyEvent {
-    player: Player,
+    player: Player;
     blockPos: BlockPos;
 }
 class BlockDestroyEvent implements IBlockDestroyEvent {
@@ -43,6 +44,26 @@ function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):
 }
 const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroy);
 const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroyCreative);
+
+interface IEntitySneakEvent {
+    entity: Actor;
+    isSneaking: boolean;
+}
+class entitySneakEvent implements IEntitySneakEvent {
+    constructor(
+        public entity: Actor,
+        public isSneaking: boolean,
+    ) {
+    }
+}
+
+function onEntitySneak(Script:ScriptCustomEventPacket,actor:Actor, bool:boolean):boolean {
+    const event = new entitySneakEvent(actor, bool);
+    events.entitySneak.fire(event);
+    return _onEntitySneak(Script, actor, bool);
+}
+
+const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
 
 interface IBlockPlaceEvent {
     player: Player,
@@ -232,6 +253,8 @@ export const events = {
     playerAttack: new Event<(event: PlayerAttackEvent) => void | CANCEL>(),
     /** Cancellable but only when player is in container screens*/
     playerDropItem: new Event<(event: PlayerDropItemEvent) => void | CANCEL>(),
+    /** Not cancellable */
+    entitySneak: new Event<(event: entitySneakEvent) => void>(),
     /** Not cancellable */
     playerJoin: new Event<(event: PlayerJoinEvent) => void>(),
     /** Cancellable */

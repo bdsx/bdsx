@@ -1,5 +1,4 @@
 import { bin } from "./bin";
-import { bin64_t } from "./nativetype";
 import { polynominal } from "./polynominal";
 import { remapStack } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
@@ -335,7 +334,7 @@ interface TypeInfo {
     arraySize:number;
 }
 
-const SIZE_MAX_VAL:{[key in OperationSize]?:number|bin64_t}= {
+const SIZE_MAX_VAL:{[key in OperationSize]?:number|string}= {
     [OperationSize.byte]: INT8_MAX,
     [OperationSize.word]: INT16_MAX,
     [OperationSize.dword]: INT32_MAX,
@@ -2395,12 +2394,12 @@ export function asm():X64Assembler {
     return new X64Assembler(new Uint8Array(64), 0);
 }
 
-function shex(v:number|bin64_t):string {
+function shex(v:number|string):string {
     if (typeof v === 'string') return `0x${bin.toString(v, 16)}`;
     if (v < 0) return `-0x${(-v).toString(16)}`;
     else return `0x${v.toString(16)}`;
 }
-function shex_o(v:number|bin64_t):string {
+function shex_o(v:number|string):string {
     if (typeof v === 'string') return `+0x${bin.toString(v, 16)}`;
     if (v < 0) return `-0x${(-v).toString(16)}`;
     else return `+0x${v.toString(16)}`;

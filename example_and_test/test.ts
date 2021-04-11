@@ -181,7 +181,7 @@ Tester.test({
 
     cxxstring() {
         const str = new CxxStringWrapper(true);
-        str[NativeType.ctor]();
+        str.construct();
         this.equals(str.length, 0, 'std::string invalid constructor');
         this.equals(str.capacity, 15, 'std::string invalid constructor');
         const shortcase = '111';
@@ -190,7 +190,7 @@ Tester.test({
         this.equals(str.value, shortcase, 'failed with short text');
         str.value = longcase;
         this.equals(str.value, longcase, 'failed with long text');
-        str[NativeType.dtor]();
+        str.destruct();
 
         const hstr = new HashedString(true);
         hstr.construct();
@@ -220,6 +220,9 @@ Tester.test({
         const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(uint16_t, null, int32_t);
         this.equals(int2ushort(-1), 0xffff, 'int to ushort');
         this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
+        const string2string = asm().mov_r_r(Register.rax, Register.rcx).ret().make(CxxString, null, CxxString);
+        this.equals(string2string('test'), 'test', 'string to string');
+        this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
     },
 
     vectorcopy() {
@@ -267,7 +270,7 @@ Tester.test({
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
-                this.assert(actor === null, 'origin.getEntity() is not null');
+                this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const size = ctx.origin.getLevel().players.size();
                 this.assert(size === 0, 'origin.getLevel().players.size is not zero');
                 command.hook.remove(cb);
