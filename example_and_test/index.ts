@@ -1,6 +1,6 @@
 // this is imported from ../index.ts
 // Console Output
-console.log("From Script> Hello, World!");
+console.log("[example/index] Hello, World!");
 
 import './test';
 import './bedrockapi-system';
@@ -25,3 +25,4 @@ import './lowlevel-dll';
 import './lowlevel-apihooking';
 import './lowlevel-nativeclass';
 import './lowlevel-string-and-vector';
+import './lowlevel-asm';

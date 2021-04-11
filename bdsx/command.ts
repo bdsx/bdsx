@@ -36,7 +36,6 @@ MinecraftCommands.prototype.executeCommand = function(ctx, b) {
     const res = new MCRESULT(true);
     return executeCommand(this, res, ctx, b);
 };
-procHacker.js('MinecraftCommands::executeCommand', MCRESULT, {this: MinecraftCommands, structureReturn:true }, SharedPtr.make(CommandContext), bool_t);
 
 export function hookingForCommand(): void {
     executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
