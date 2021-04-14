@@ -82,7 +82,7 @@ Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor})
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 Actor.prototype.getTypeId = makefunc.js([0x518], int32_t, {this:Actor}); // ActorType getEntityTypeId()
-(Actor.prototype as any)._getDimensionId = makefunc.js([0x568], void_t, {this:Actor}, makefunc.Buffer); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getDimension = Actor.prototype.getDimensionId = makefunc.js([0x568], int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
 Actor.prototype.getCommandPermissionLevel = makefunc.js([0x620], int32_t, {this:Actor});
 
 Actor.fromUniqueIdBin = function(bin) {

@@ -50,6 +50,10 @@ export class CommandOrigin extends NativeClass {
     getLevel(): Level {
         abstract();
     }
+
+    /**
+     * actually, it's nullable when the server is just started without any joining
+     */
     getDimension(): Dimension {
         abstract();
     }
@@ -98,7 +102,7 @@ CommandOrigin.prototype.getWorldPosition = makefunc.js([0x20], Vec3, {this: Comm
 CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrigin});
 
 // Dimension* (*getDimension)(CommandOrigin* origin);
-CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
+CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin, nullableReturn: true});
 
 // Actor* getEntity(CommandOrigin* origin);
 CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin, nullableReturn: true});

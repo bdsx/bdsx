@@ -130,6 +130,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public readonly [makefunc.js2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
     public readonly [makefunc.np2jsAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
     public readonly [makefunc.np2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public readonly [makefunc.js2npLocalSize]:number;
 
     constructor(
         name:string,
@@ -153,6 +154,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         this[NativeType.dtor] = dtor;
         this[NativeType.ctor_copy] = ctor_copy;
         this[NativeType.ctor_move] = ctor_move;
+        this[makefunc.js2npLocalSize] = size;
     }
 
     extends<FIELDS>(fields?:FIELDS, name?:string):NativeType<T>&FIELDS {
@@ -520,8 +522,8 @@ export const CxxString = new NativeType<string>(
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
+CxxString[makefunc.pointerReturn] = true;
 export type CxxString = string;
-CxxString[makefunc.js2npLocalSize] = 0x20;
 
 export const bin64_t = new NativeType<string>(
     'unsigned __int64',
