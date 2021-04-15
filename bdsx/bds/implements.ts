@@ -90,7 +90,7 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
     const alloc = new AllocatedPointer(0x80);
     _computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
     _applyTarget(this, alloc);
-}
+};
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
