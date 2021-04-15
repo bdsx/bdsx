@@ -304,15 +304,9 @@ ItemStack.abstract({
 });
 ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
-<<<<<<< HEAD
-(ItemStack.prototype as any)._getCustomName = procHacker.js("ItemStackBase::getName", CxxStringWrapper, {this:ItemStack, structureReturn:true});
-(ItemStack.prototype as any)._setCustomName = procHacker.js("ItemStackBase::setCustomName", RawTypeId.Void, {this:ItemStack}, CxxStringWrapper);
-(ItemStack.prototype as any)._setCustomLore = procHacker.js("ItemStackBase::setCustomLore", RawTypeId.Void, {this:ItemStack}, CxxVector.make(CxxStringWrapper));
-=======
 ItemStack.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxString, {this:ItemStack, structureReturn:true});
 ItemStack.prototype.setCustomName = procHacker.js("ItemStackBase::setCustomName", void_t, {this:ItemStack}, CxxString);
 (ItemStack.prototype as any)._setCustomLore = procHacker.js("ItemStackBase::setCustomLore", void_t, {this:ItemStack}, CxxVector.make(CxxStringWrapper));
->>>>>>> 48c19ec3f75f9278839da1a6caa7a6a9fe189c12
 ItemStack.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStack});
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", bool_t, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", bool_t, {this:ItemStack});

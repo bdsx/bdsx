@@ -57,15 +57,6 @@ export class ItemStack extends NativeClass {
     protected _getItem():Item {
         abstract();
     }
-<<<<<<< HEAD
-    protected _getCustomName():CxxStringWrapper {
-        abstract();
-    }
-    protected _setCustomName(name:CxxStringWrapper):void {
-        abstract();
-    }
-=======
->>>>>>> 48c19ec3f75f9278839da1a6caa7a6a9fe189c12
     protected _setCustomLore(name:CxxVector<string>):void {
         abstract();
     }
