@@ -356,6 +356,7 @@ export namespace makefunc {
     export const np2jsAsm = Symbol('makefunc.np2jsAsm');
     export const np2npAsm = Symbol('makefunc.np2npAsm');
     export const js2npLocalSize = Symbol('makefunc.js2npLocalSize');
+    export const pointerReturn = Symbol('makefunc.pointerReturn');
 
     export interface Paramable {
         name:string;
@@ -365,6 +366,7 @@ export namespace makefunc {
         [np2js]?(ptr:any):any;
         [js2np]?(ptr:any):any;
         [js2npLocalSize]?:number;
+        [pointerReturn]?:boolean;
     }
     export interface ParamableT<T> extends Paramable {
         new():T;
@@ -1110,20 +1112,24 @@ export namespace makefunc {
         }
         func.sub_r_c(Register.rsp, spaceForCalling);
 
-        let returnTarget = makefunc.Target.return;
+        let returnTarget = Target.return;
         let returnInMemory:Target|null = null;
         if (func.useStackAllocator) {
             returnTarget = Target.memory(Register.rbp, 0);
         }
         if (pimaker.structureReturn) {
             if (pimaker.return.offsetForLocalSpace !== null) {
-                func.lea_t_rp(makefunc.Target[0], Register.rbp, 1, pimaker.return.offsetForLocalSpace);
-                func.nativeToJs(pimaker.return, returnTarget, makefunc.Target[0]);
+                if (pimaker.return.type[pointerReturn]) {
+                    func.lea_t_rp(Target[0], Register.rbp, 1, pimaker.return.offsetForLocalSpace);
+                } else {
+                    pimaker.return.type[np2npAsm](func, Target[0], Target.memory(Register.rbp, pimaker.return.offsetForLocalSpace), pimaker.return);
+                }
+                func.nativeToJs(pimaker.return, returnTarget, Target[0]);
             } else {
                 returnInMemory = Target.memory(Register.rbp, func.offsetForStructureReturn);
             }
         } else {
-            func.nativeToJs(pimaker.return, returnTarget, makefunc.Target.return);
+            func.nativeToJs(pimaker.return, returnTarget, Target.return);
         }
         if (func.useStackAllocator) {
             func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);

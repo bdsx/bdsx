@@ -204,6 +204,8 @@ Tester.test({
     },
 
     makefunc() {
+        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, {structureReturn:true});
+        this.equals(test(), 1, 'structureReturn int32_t');
         const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
         const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
@@ -266,7 +268,7 @@ Tester.test({
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                ctx.origin.getDimension();
+                this.equals(ctx.origin.getDimension(), null, 'dimension id');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
@@ -400,7 +402,7 @@ Tester.test({
 
                 if (actor !== null) {
                     actor.getName();
-                    this.equals(actor.getDimension(), DimensionId.Overworld, 'getDimension() is not overworld');
+                    this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];

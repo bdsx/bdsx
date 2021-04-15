@@ -46,13 +46,14 @@ export class Actor extends NativeClass {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
-    private _getDimensionId(out:Int32Array):void {
+    /**
+     * @deprecated use getDimensionId(), follow the original function name
+     */
+    getDimension():DimensionId {
         abstract();
     }
-    getDimension():DimensionId {
-        const out = new Int32Array(1);
-        this._getDimensionId(out);
-        return out[0];
+    getDimensionId():DimensionId {
+        abstract();
     }
     /**
      * @deprecated use actor.identifier
