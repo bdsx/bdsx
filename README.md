@@ -1,6 +1,6 @@
 # BDSX 2.0 : BDS + node.js
 ![logo](bdsx/icon/icon.png)  
-It's Minecraft Bedrock Dedicated Server with [node.js](https://nodejs.org/) supports.  
+Minecraft Bedrock Dedicated Server that supports [node.js](https://nodejs.org/).  
 
 * OS: Windows & Linux(with Wine)
 * Basic Minecraft features as usual.
@@ -63,10 +63,10 @@ docker run -ti karikera/bdsx
 ## BDSX Discussions
 https://github.com/bdsx/bdsx/discussions
 
-## BDSX Wiki(Include JS API Reference)
+## BDSX Wiki (Include JS API Reference)
 https://github.com/bdsx/bdsx/wiki
 
-## Bug Report or Q&A
+## Bug Report and Q&A
 https://github.com/bdsx/bdsx/issues
 
 ## Discord for Q&A
