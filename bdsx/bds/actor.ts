@@ -145,6 +145,9 @@ export class Actor extends NativeClass {
     hasTag(tag:string):boolean {
         abstract();
     }
+    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
+        abstract();
+    }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {
         abstract();
     }

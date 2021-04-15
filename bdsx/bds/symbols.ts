@@ -141,7 +141,9 @@ const symbols = [
     'CommandSelectorBase::~CommandSelectorBase',
     'CommandSelectorBase::newResults',
     'ScriptServerActorEventListener::onActorSneakChanged',
-    'Dimension::getDimensionId'
+    'Dimension::getDimensionId',
+    'TeleportCommand::computeTarget',
+    'TeleportCommand::applyTarget',
 ] as const;
 
 // decorated symbols

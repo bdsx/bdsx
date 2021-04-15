@@ -9,7 +9,7 @@ import { mce } from "bdsx/mce";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { Actor, ActorRuntimeID } from "./actor";
+import { Actor, ActorRuntimeID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -84,6 +84,13 @@ Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticP
 Actor.prototype.getTypeId = makefunc.js([0x518], int32_t, {this:Actor}); // ActorType getEntityTypeId()
 Actor.prototype.getDimension = Actor.prototype.getDimensionId = makefunc.js([0x568], int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
 Actor.prototype.getCommandPermissionLevel = makefunc.js([0x620], int32_t, {this:Actor});
+const _computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
+const _applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
+Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld) {
+    const alloc = new AllocatedPointer(0x80);
+    _computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
+    _applyTarget(this, alloc);
+}
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
