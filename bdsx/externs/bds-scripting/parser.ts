@@ -3,7 +3,7 @@ import path = require('path');
 import { HtmlSearcher, htmlutil } from './htmlutil';
 import { styling } from './styling';
 import { DocField, DocFixItem, DocMethod, DocType as DocType } from './type';
-import { FileWriter } from './writer';
+import { FileWriter } from '../../writer/filewriter';
 
 const DOCURL_SCRIPTING = 'https://bedrock.dev/docs/stable/Scripting';
 const DOCURL_ADDONS = 'https://bedrock.dev/docs/stable/Addons';

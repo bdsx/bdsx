@@ -3,7 +3,7 @@
  */
 
 import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook, NetworkIdentifier, serverInstance } from "bdsx";
-import { asm, FloatRegister, Register } from "bdsx/assembler";
+import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
 import { HashedString } from "bdsx/bds/hashedstring";
@@ -16,9 +16,8 @@ import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
-import { RawTypeId } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, CxxString, NativeType } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, NativeType, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
@@ -77,56 +76,6 @@ Tester.test({
         assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
         assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
         assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]')
-    },
-
-    chat() {
-        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
-            if (packet.message == "TEST YEY!") {
-                const MAX_CHAT = 5;
-                chatCancelCounter++;
-                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.equals(connectedNi, ni, 'the network identifier does not matched');
-                if (chatCancelCounter === MAX_CHAT) {
-                    this.log('> tested and stopping...');
-                    setTimeout(() => bedrockServer.stop(), 1000);
-                }
-                return CANCEL;
-            }
-        });
-    },
-
-    actor() {
-        const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', ev => {
-            try {
-                const uniqueId = ev.data.entity.__unique_id__;
-                const actor = Actor.fromEntity(ev.data.entity);
-                if (ev.data.entity.__identifier__ === 'minecraft:player') {
-                    this.assert(actor !== null, 'Actor.fromEntity of player is null');
-                }
-
-                if (actor !== null) {
-                    this.equals(actor.getDimension(), DimensionId.Overworld, 'getDimension() is not overworld');
-
-                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
-                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
-                    this.equals(actualId, expectedId,
-                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
-
-                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
-                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
-                        this.equals(name, connectedId, 'id does not matched');
-                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
-                        this.assert(actor.isPlayer(), 'player is not the player');
-                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
-                    } else {
-                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
-                    }
-                }
-            } catch (err) {
-                this.processError(err);
-            }
-        });
     },
 
     bin() {
@@ -230,6 +179,172 @@ Tester.test({
         }
     },
 
+    cxxstring() {
+        const str = new CxxStringWrapper(true);
+        str.construct();
+        this.equals(str.length, 0, 'std::string invalid constructor');
+        this.equals(str.capacity, 15, 'std::string invalid constructor');
+        const shortcase = '111';
+        const longcase = '123123123123123123123123';
+        str.value = shortcase;
+        this.equals(str.value, shortcase, 'failed with short text');
+        str.value = longcase;
+        this.equals(str.value, longcase, 'failed with long text');
+        str.destruct();
+
+        const hstr = new HashedString(true);
+        hstr.construct();
+        this.equals(hstr.str, '', 'Invalid string');
+        hstr.destruct();
+
+        const data = new AttributeData(true);
+        data.construct();
+        this.equals(data.name.str, '', 'Invalid string');
+        data.destruct();
+    },
+
+    makefunc() {
+        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, {structureReturn:true});
+        this.equals(test(), 1, 'structureReturn int32_t');
+        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
+        this.equals(floatToDouble(123), 123, 'float to double');
+        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
+        this.equals(doubleToFloat(123), 123, 'double to float');
+        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(bool_t);
+        this.equals(getbool(), false, 'bool return');
+        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, null, bool_t);
+        this.equals(bool2int(true), 1, 'bool to int');
+        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int32_t, null, int32_t);
+        this.equals(int2short_as_int(-1), 0xffff, 'int to short old');
+        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int16_t, null, int32_t);
+        this.equals(int2short(-1), -1, 'int to short');
+        this.equals(int2short(0xffff), -1, 'int to short');
+        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(uint16_t, null, int32_t);
+        this.equals(int2ushort(-1), 0xffff, 'int to ushort');
+        this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
+        const string2string = asm().mov_r_r(Register.rax, Register.rcx).ret().make(CxxString, null, CxxString);
+        this.equals(string2string('test'), 'test', 'string to string');
+        this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
+    },
+
+    vectorcopy() {
+        @nativeClass()
+        class Class extends NativeClass {
+            @nativeField(CxxVector.make(CxxString))
+            vector:CxxVector<CxxString>;
+            @nativeField(CxxVector.make(CxxStringWrapper))
+            vector2:CxxVector<CxxStringWrapper>;
+        }
+
+        const a = new Class(true);
+        a.construct();
+        a.vector.push('test');
+        const str = new CxxStringWrapper(true);
+        str.construct();
+        str.value = 'test2';
+        a.vector2.push(str);
+        str.destruct();
+
+        this.equals(a.vector.size(), 1, 'a.vector, invalid size');
+        this.equals(a.vector2.size(), 1, 'a.vector2, invalid size');
+        this.equals(a.vector.get(0), 'test', `a.vector, invalid value ${a.vector.get(0)}`);
+        this.equals(a.vector2.get(0)!.value, 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
+
+        const b = new Class(true);
+        b.construct(a);
+        this.equals(b.vector.size(), 1, 'b.vector, invalid size');
+        this.equals(b.vector2.size(), 1, 'b.vector2, invalid size');
+        this.equals(b.vector.get(0), 'test', `b.vector, invalid value ${b.vector.get(0)}`);
+        this.equals(b.vector2.get(0)!.value, 'test2', `b.vector2, invalid value ${b.vector2.get(0)!.value}`);
+        b.vector.get(0);
+
+        b.destruct();
+
+        a.destruct();
+    },
+
+    async command() {
+        let passed = false;
+        const cb = (cmd:string, origin:string, ctx:CommandContext) => {
+            if (cmd === '/__dummy_command') {
+                passed = origin === 'Server';
+                this.equals(ctx.origin.getDimension(), null, 'dimension id');
+                const pos = ctx.origin.getWorldPosition();
+                this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
+                const actor = ctx.origin.getEntity();
+                this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
+                const size = ctx.origin.getLevel().players.size();
+                this.assert(size === 0, 'origin.getLevel().players.size is not zero');
+                command.hook.remove(cb);
+            }
+        };
+        command.hook.on(cb);
+        await new Promise<void>((resolve) => {
+            const outputcb = (output:string) => {
+                if (output.startsWith('Unknown command: __dummy_command')) {
+                    bedrockServer.commandOutput.remove(outputcb);
+                    if (passed) resolve();
+                    else this.fail();
+                    return CANCEL;
+                }
+            };
+            bedrockServer.commandOutput.on(outputcb);
+            bedrockServer.executeCommandOnConsole('__dummy_command');
+        });
+    },
+
+    async command2() {
+        let passed = false;
+        const cb = (cmd:string, origin:string) => {
+            if (cmd === '/__dummy_command') {
+                passed = origin === 'Server';
+                command.hook.remove(cb);
+            }
+        };
+        command.hook.on(cb);
+        await new Promise<void>((resolve) => {
+            const outputcb = (output:string) => {
+                if (output.startsWith('Unknown command: __dummy_command')) {
+                    bedrockServer.commandOutput.remove(outputcb);
+                    if (passed) resolve();
+                    else this.fail();
+                    return CANCEL;
+                }
+            };
+            bedrockServer.commandOutput.on(outputcb);
+            bedrockServer.executeCommand('/__dummy_command');
+        });
+    },
+
+    async checkPacketNames() {
+        if (capi.isRunningOnWine()) {
+            this.skip('Skip packet check on the Wine system, almost failed');
+            return;
+        }
+        for (const id in PacketIdToType) {
+            const Packet = PacketIdToType[+id as keyof PacketIdToType];
+            const packet = Packet.create();
+
+            const cxxname = packet.getName();
+            let name = Packet.name;
+
+            this.equals(cxxname, name);
+            this.equals(packet.getId(), Packet.ID);
+
+            const idx = name.lastIndexOf('Packet');
+            if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
+            this.equals(MinecraftPacketIds[Packet.ID], name);
+
+            packet.dispose();
+        }
+
+        for (const id in MinecraftPacketIds) {
+            if (!/^[0-9]+$/.test(id)) continue;
+            const Packet = PacketIdToType[+id as keyof PacketIdToType];
+            this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
+        }
+    },
+
     nethook() {
         let idcheck = 0;
         let sendpacket = 0;
@@ -275,155 +390,57 @@ Tester.test({
         });
     },
 
-    cxxstring() {
-        const str = new CxxStringWrapper(true);
-        str.construct();
-        this.equals(str.length, 0, 'std::string invalid constructor');
-        this.equals(str.capacity, 15, 'std::string invalid constructor');
-        const shortcase = '111';
-        const longcase = '123123123123123123123123';
-        str.value = shortcase;
-        this.equals(str.value, shortcase, 'failed with short text');
-        str.value = longcase;
-        this.equals(str.value, longcase, 'failed with long text');
-        str.destruct();
-
-        const hstr = new HashedString(true);
-        hstr.construct();
-        this.equals(hstr.str, '', 'Invalid string');
-        hstr.destruct();
-
-        const data = new AttributeData(true);
-        data.construct();
-        this.equals(data.name.str, '', 'Invalid string');
-        data.destruct();
-    },
-
-    makefunc() {
-        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float64, null, RawTypeId.Float32);
-        this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(RawTypeId.Float32, null, RawTypeId.Float64);
-        this.equals(doubleToFloat(123), 123, 'double to float');
-        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(RawTypeId.Boolean);
-        this.equals(getbool(), false, 'bool return');
-        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(RawTypeId.Int32, null, RawTypeId.Boolean);
-        this.equals(bool2int(true), 1, 'bool to int');
-    },
-
-    vectorcopy() {
-        @nativeClass()
-        class Class extends NativeClass {
-            @nativeField(CxxVector.make(CxxString))
-            vector:CxxVector<CxxString>;
-            @nativeField(CxxVector.make(CxxStringWrapper))
-            vector2:CxxVector<CxxStringWrapper>;
-        }
-
-        const a = new Class(true);
-        a.construct();
-        a.vector.push('test');
-        const str = new CxxStringWrapper(true);
-        str.construct();
-        str.value = 'test2';
-        a.vector2.push(str);
-        str.destruct();
-
-        this.equals(a.vector.size(), 1, 'a.vector, invalid size');
-        this.equals(a.vector2.size(), 1, 'a.vector2, invalid size');
-        this.equals(a.vector.get(0), 'test', `a.vector, invalid value ${a.vector.get(0)}`);
-        this.equals(a.vector2.get(0)!.value, 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
-
-        const b = new Class(true);
-        b.construct(a);
-        this.equals(b.vector.size(), 1, 'b.vector, invalid size');
-        this.equals(b.vector2.size(), 1, 'b.vector2, invalid size');
-        this.equals(b.vector.get(0), 'test', `b.vector, invalid value ${b.vector.get(0)}`);
-        this.equals(b.vector2.get(0)!.value, 'test2', `b.vector2, invalid value ${b.vector2.get(0)!.value}`);
-        b.vector.get(0);
-
-        b.destruct();
-
-        a.destruct();
-    },
-
-    async command() {
-        let passed = false;
-        const cb = (cmd:string, origin:string, ctx:CommandContext) => {
-            if (cmd === '/__dummy_command') {
-                passed = origin === 'Server';
-                ctx.origin.getDimension();
-                const pos = ctx.origin.getWorldPosition();
-                this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
-                const actor = ctx.origin.getEntity();
-                this.assert(actor === null, 'origin.getEntity() is not null');
-                const size = ctx.origin.getLevel().players.size();
-                this.assert(size === 0, 'origin.getLevel().players.size is not zero');
-                command.hook.remove(cb);
-            }
-        };
-        command.hook.on(cb);
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output.startsWith('Unknown command: __dummy_command')) {
-                    bedrockServer.commandOutput.remove(outputcb);
-                    if (passed) resolve();
-                    else this.fail();
-                    return CANCEL;
+    actor() {
+        const system = server.registerSystem(0, 0);
+        system.listenForEvent('minecraft:entity_created', ev => {
+            try {
+                const uniqueId = ev.data.entity.__unique_id__;
+                const actor = Actor.fromEntity(ev.data.entity);
+                if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                    this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
-            };
-            bedrockServer.commandOutput.on(outputcb);
-            bedrockServer.executeCommandOnConsole('__dummy_command');
+
+                if (actor !== null) {
+                    actor.getName();
+                    this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
+
+                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
+                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
+                    this.equals(actualId, expectedId,
+                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
+
+                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
+                        this.equals(name, connectedId, 'id does not matched');
+                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
+                        this.assert(actor.isPlayer(), 'player is not the player');
+                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
+                    } else {
+                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
+                    }
+                }
+            } catch (err) {
+                this.processError(err);
+            }
         });
     },
 
-    async command2() {
-        let passed = false;
-        const cb = (cmd:string, origin:string) => {
-            if (cmd === '/__dummy_command') {
-                passed = origin === 'Server';
-                command.hook.remove(cb);
-            }
-        };
-        command.hook.on(cb);
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output.startsWith('Unknown command: __dummy_command')) {
-                    bedrockServer.commandOutput.remove(outputcb);
-                    if (passed) resolve();
-                    else this.fail();
-                    return CANCEL;
+    chat() {
+        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
+            if (packet.message == "TEST YEY!") {
+                const MAX_CHAT = 5;
+                chatCancelCounter++;
+                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
+                this.equals(connectedNi, ni, 'the network identifier does not matched');
+                if (chatCancelCounter === MAX_CHAT) {
+                    this.log('> tested and stopping...');
+                    setTimeout(() => bedrockServer.stop(), 1000);
                 }
-            };
-            bedrockServer.commandOutput.on(outputcb);
-            bedrockServer.executeCommand('/__dummy_command');
+                return CANCEL;
+            }
         });
     },
 
-    async checkPacketNames() {
-        const str = new CxxStringWrapper(true);
-        for (const id in PacketIdToType) {
-            const Packet = PacketIdToType[+id as keyof PacketIdToType];
-            const packet = Packet.create();
-
-            packet.getName(str);
-            this.equals(str.value, Packet.name);
-            str.destruct();
-            this.equals(packet.getId(), Packet.ID);
-
-            let name = Packet.name;
-            const idx = name.lastIndexOf('Packet');
-            if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
-            this.equals(MinecraftPacketIds[Packet.ID], name);
-
-            packet.dispose();
-        }
-
-        for (const id in MinecraftPacketIds) {
-            if (!/^[0-9]+$/.test(id)) continue;
-            const Packet = PacketIdToType[+id as keyof PacketIdToType];
-            this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
-        }
-    },
 });
 
 let connectedNi: NetworkIdentifier;

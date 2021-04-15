@@ -1,35 +1,49 @@
-import { asm, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
+import { asm, AsmMultiplyConstant, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
 import { proc, proc2 } from "./bds/symbols";
 import "./codealloc";
-import { Bufferable } from "./common";
+import { abstract, Bufferable } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { makefuncDefines } from "./makefunc_defines";
-import { isBaseOf } from "./util";
+import { remapStack } from "./source-map-support";
+import { isBaseOf, removeLine } from "./util";
 import asmcode = require('./asm/asmcode');
 
+/**
+ * @deprecated use NativeType (int32_t, float32_t, float64_t, ...)
+ */
 export enum RawTypeId {
+    /** @deprecated use int32_t */
 	Int32,
+    /** @deprecated use int64_as_float_t */
 	FloatAsInt64,
+    /** @deprecated use float32_t */
 	Float32,
+    /** @deprecated use float64_t */
 	Float64,
+    /** @deprecated use makefunc.Ansi */
 	StringAnsi,
+    /** @deprecated use makefunc.Utf8 */
 	StringUtf8,
+    /** @deprecated use makefunc.Utf16 */
 	StringUtf16,
+    /** @deprecated use makefunc.Buffer */
 	Buffer,
+    /** @deprecated use bin64_t */
 	Bin64,
+    /** @deprecated use bool_t */
 	Boolean,
+    /** @deprecated use makefunc.JsValueRef */
 	JsValueRef,
+    /** @deprecated use void_t */
 	Void,
-	/** @deprecated use Float64 */
+    /** @deprecated use float64_t */
 	Float = 3,
 }
 
-export type ParamType = RawTypeId | { new(): VoidPointer; };
-
+export type ParamType = RawTypeId | makefunc.Paramable;
 
 const nullValueRef = chakraUtil.asJsValueRef(null);
-const nativePointerValueRef = chakraUtil.asJsValueRef(NativePointer);
 const functionMap = new AllocatedPointer(0x100);
 chakraUtil.JsAddRef(functionMap);
 const functionMapPtr = functionMap.add(0x80);
@@ -53,9 +67,6 @@ function initFunctionMap():void {
 
     const chakraCoreDll = cgate.GetModuleHandleW('ChakraCore.dll');
 
-    setFunctionMap('fn_wrapper_js2np', asmcode.wrapper_js2np);
-    setFunctionMap('fn_wrapper_np2js', asmcode.wrapper_np2js);
-    setFunctionMap('fn_wrapper_np2js_nullable', asmcode.wrapper_np2js_nullable);
     setFunctionMap('fn_getout', asmcode.getout);
     setFunctionMap('fn_str_np2js', asmcode.str_np2js);
     setFunctionMap('fn_str_js2np', asmcode.str_js2np);
@@ -72,6 +83,7 @@ function initFunctionMap():void {
     setFunctionMap('fn_buffer_to_pointer', asmcode.buffer_to_pointer);
     chakraCoreToMakeFuncMap('JsDoubleToNumber');
     chakraCoreToMakeFuncMap('JsPointerToString');
+    chakraCoreToMakeFuncMap('JsStringToPointer');
     setFunctionMap('fn_ansi_np2js', chakraUtil.from_ansi);
     setFunctionMap('fn_utf8_np2js', chakraUtil.from_utf8);
     setFunctionMap('fn_utf16_np2js', asmcode.utf16_np2js);
@@ -115,14 +127,6 @@ const PARAMNUM_RETURN = -1;
 const PARAMNUM_THIS = 0;
 
 const PARAM_OFFSET = 3;
-const RawTypeId_StructureReturn = 12;
-const RawTypeId_WrapperToNp = 13;
-const RawTypeId_WrapperToJs = 14;
-const RawTypeId_Pointer = 15;
-
-function getNameFromRawType(type: RawTypeId): string {
-    return RawTypeId[type] || 'RawTypeId.[invalid]';
-}
 
 function throwTypeError(paramNum: number, name: string, value: string, detail: string): never {
     let out = '';
@@ -133,10 +137,6 @@ function throwTypeError(paramNum: number, name: string, value: string, detail: s
     if (paramNum > 0) out += ` at ${paramNum}`;
     out += `, ${detail}`;
     throw Error(out);
-}
-
-function invalidParamType(typeId: RawTypeId, paramNum: number): never {
-    throwTypeError(paramNum, 'type', getNameFromRawType(typeId), 'Out of RawTypeId value');
 }
 
 function checkTypeIsFunction(value: unknown, paramNum: number): void {
@@ -153,59 +153,53 @@ function pointerClassOrThrow(paramNum: number, type: any): void {
     }
 }
 
-function getRawTypeId(paramNum: number, typeValue: any): RawTypeId {
-    const jstype = typeof typeValue;
-    switch (jstype) {
-    case 'function':
-        if (typeof typeValue[makefunc.js2np] === 'function') {
-            return RawTypeId_WrapperToNp;
-        } else if (typeof typeValue[makefunc.np2js] === 'function') {
-            return RawTypeId_WrapperToJs;
-        } else {
-            pointerClassOrThrow(paramNum, typeValue);
-            return RawTypeId_Pointer;
+const makefuncTypeMap:makefunc.Paramable[] = [];
+function remapType(type:ParamType):makefunc.Paramable {
+    if (typeof type === 'number') {
+
+        if (makefuncTypeMap.length === 0) {
+            const { bool_t, int32_t, int64_as_float_t, float64_t, float32_t, bin64_t, void_t } = require('./nativetype') as typeof import('./nativetype');
+            makefuncTypeMap[RawTypeId.Boolean] = bool_t;
+            makefuncTypeMap[RawTypeId.Int32] = int32_t;
+            makefuncTypeMap[RawTypeId.FloatAsInt64] = int64_as_float_t;
+            makefuncTypeMap[RawTypeId.Float64] = float64_t;
+            makefuncTypeMap[RawTypeId.Float32] = float32_t;
+            makefuncTypeMap[RawTypeId.StringAnsi] = makefunc.Ansi;
+            makefuncTypeMap[RawTypeId.StringUtf8] = makefunc.Utf8;
+            makefuncTypeMap[RawTypeId.StringUtf16] = makefunc.Utf16;
+            makefuncTypeMap[RawTypeId.Buffer] = makefunc.Buffer;
+            makefuncTypeMap[RawTypeId.Bin64] = bin64_t;
+            makefuncTypeMap[RawTypeId.JsValueRef] = makefunc.JsValueRef;
+            makefuncTypeMap[RawTypeId.Void] = void_t;
         }
-    case 'number':
-        return typeValue as number;
-    case 'object':
-        if (typeof typeValue[makefunc.js2np] === 'function') {
-            return RawTypeId_WrapperToNp;
-        } else if (typeof typeValue[makefunc.np2js] === 'function') {
-            return RawTypeId_WrapperToJs;
-        }
-    // fall through
-    default:
-        throwTypeError(paramNum, 'type', jstype, 'RawTypeId or *Pointer class required');
+        const res = makefuncTypeMap[type];
+        if (!res) throw Error(`Invalid RawTypeId: ${type}`);
+        return res;
     }
+    return type;
 }
 
-const regMap: Register[] = [Register.rcx, Register.rdx, Register.r8, Register.r9];
-const fregMap: FloatRegister[] = [FloatRegister.xmm0, FloatRegister.xmm1, FloatRegister.xmm2, FloatRegister.xmm3];
-
-class ParamInfo {
-    indexOnCpp: number;
-    numberOnMaking: number;
-    numberOnUsing: number;
-    type: ParamType & {[makefunc.np2js]?():void, [makefunc.js2np]?():void};
-    typeId: RawTypeId;
-    nullable: boolean;
+function qwordMove(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target):void {
+    asm.qmov_t_t(target, source);
 }
+
 
 class ParamInfoMaker {
     public readonly structureReturn: boolean;
     public readonly nullableReturn: boolean;
     public readonly useThis: boolean;
     public readonly nullableParams: boolean;
-    public readonly thisType: { new(): VoidPointer; };
+    public readonly thisType: makefunc.Paramable;
 
-    public readonly typeIds: RawTypeId[] = [];
+    public readonly return: makefunc.ParamInfo;
+    public readonly params: makefunc.ParamInfo[] = [];
     public readonly countOnCalling: number;
     public readonly countOnCpp: number;
 
     constructor(
-        public readonly returnType:ParamType,
+        returnType:makefunc.Paramable,
         opts:MakeFuncOptions<any>|null|undefined,
-        public readonly params:ParamType[]) {
+        params:makefunc.Paramable[]) {
         if (opts != null) {
             this.structureReturn = !!opts.structureReturn;
             this.thisType = opts.this;
@@ -232,614 +226,57 @@ class ParamInfoMaker {
         this.countOnCalling = params.length;
         this.countOnCpp = this.countOnCalling + (+this.useThis) + (+this.structureReturn);
 
-        if (this.useThis) this.typeIds.push(getRawTypeId(2, this.thisType));
-        if (this.structureReturn) this.typeIds.push(RawTypeId_StructureReturn);
-        for (let i = 0; i < params.length; i++) {
-            const type: RawTypeId = getRawTypeId(i + PARAM_OFFSET + 1, params[i]);
-            this.typeIds.push(type);
-        }
-    }
+        if (this.structureReturn) params.unshift(StructureReturnAllocation);
+        if (this.useThis) params.unshift(this.thisType);
 
-    getInfo(indexOnCpp: number): ParamInfo {
-        const info = new ParamInfo;
-        info.indexOnCpp = indexOnCpp;
-        info.nullable = false;
-
-        if (indexOnCpp === -1) {
-            info.type = this.returnType;
+        {
+            const info = new makefunc.ParamInfo;
+            info.offsetForLocalSpace = null;
+            info.type = returnType;
             info.numberOnMaking = 2;
-            info.typeId = getRawTypeId(2, info.type);
             info.numberOnUsing = PARAMNUM_RETURN;
             info.nullable = this.nullableReturn;
-            return info;
-        } else if (this.useThis && indexOnCpp === 0) {
-            info.type = this.thisType;
-            info.numberOnMaking = 3;
-            info.typeId = this.typeIds[0];
-            info.numberOnUsing = PARAMNUM_THIS;
+            info.needDestruction = this.structureReturn;
+            this.return = info;
+        }
+
+        for (let i=0;i<params.length;i++) {
+            const info = new makefunc.ParamInfo;
+            info.offsetForLocalSpace = null;
             info.nullable = false;
-            return info;
-        }
-        if (this.structureReturn && indexOnCpp === +this.useThis) {
-            info.type = this.returnType;
-            info.numberOnMaking = 2;
-            info.typeId = RawTypeId_StructureReturn;
-            info.numberOnUsing = PARAMNUM_RETURN;
-            info.nullable = false;
-            return info;
-        }
-        const indexOnUsing = indexOnCpp - +this.structureReturn - +this.useThis;
-        const indexOnMaking = PARAM_OFFSET + indexOnUsing;
-        info.type = this.params[indexOnUsing];
-        info.numberOnMaking = indexOnMaking + 1;
-        info.numberOnUsing = indexOnUsing + 1;
-        info.typeId = this.typeIds[indexOnCpp];
-        info.nullable = this.nullableParams;
-        return info;
-    }
-}
+            info.needDestruction = false;
 
-class TargetInfo {
-    reg: Register;
-    freg: FloatRegister;
-    offset: number;
-    memory: boolean;
-
-    equals(other: TargetInfo): boolean {
-        if (this.memory) {
-            return other.memory && this.reg === other.reg && this.offset === other.offset;
-        }
-        return !other.memory && this.reg === other.reg;
-    }
-
-    static register(reg: Register, freg: FloatRegister): TargetInfo {
-        const ti = new TargetInfo;
-        ti.reg = reg;
-        ti.freg = freg;
-        ti.memory = false;
-        return ti;
-    }
-    static memory(reg: Register, offset: number): TargetInfo {
-        const ti = new TargetInfo;
-        ti.reg = reg;
-        ti.offset = offset;
-        ti.memory = true;
-        return ti;
-    }
-
-    tempPtr(...sources:TargetInfo[]): TargetInfo {
-        if (this.memory) return this;
-        let offsets = 0;
-        for (const src of sources) {
-            if (src.memory && src.reg === Register.rbp) {
-                console.assert(src.offset%8 === 0);
-                offsets |= 1 << (src.offset>>3);
-                continue;
-            }
-        }
-        let offset = 0;
-        while ((offsets & 1) !== 0) {
-            offsets >>>= 1;
-            offset += 8;
-        }
-        return TargetInfo.memory(Register.rbp, offset);
-    }
-}
-
-const TARGET_RETURN = TargetInfo.register(Register.rax, FloatRegister.xmm0);
-const TARGET_1 = TargetInfo.register(Register.rcx, FloatRegister.xmm0);
-const TARGET_2 = TargetInfo.register(Register.rdx, FloatRegister.xmm1);
-const TARGET_3 = TargetInfo.register(Register.r8, FloatRegister.xmm2);
-const TARGET_4 = TargetInfo.register(Register.r9, FloatRegister.xmm3);
-
-enum TConvert
-{
-    js2np,
-    np2js,
-    np2np,
-}
-
-class Maker extends X64Assembler {
-    public offsetForStructureReturn: number;
-    public useStackAllocator = false;
-
-    constructor(
-        public readonly pi: ParamInfoMaker,
-        public readonly stackSize: number,
-        useGetOut: boolean) {
-        super(new Uint8Array(64), 0);
-
-        this.push_r(Register.rdi);
-        this.push_r(Register.rsi);
-        this.push_r(Register.rbp);
-        this.mov_r_c(Register.rdi, functionMapPtr);
-        if (useGetOut) {
-            this.mov_r_rp(Register.rax, Register.rdi, 1, makefuncDefines.fn_returnPoint);
-        }
-        this.push_r(Register.rax);
-
-        if (useGetOut) {
-            this.lea_r_rp(Register.rax, Register.rsp, 1, 1);
-            this.mov_rp_r(Register.rdi, 1, makefuncDefines.fn_returnPoint, Register.rax);
-        }
-    }
-
-    end(): void {
-        this.add_r_c(Register.rsp, this.stackSize);
-        this.pop_r(Register.rcx);
-        this.pop_r(Register.rbp);
-        this.mov_rp_r(Register.rdi, 1, makefuncDefines.fn_returnPoint, Register.rcx);
-        this.pop_r(Register.rsi);
-        this.pop_r(Register.rdi);
-        this.ret();
-    }
-
-    _mov_t_c(target: TargetInfo, value: Value64): void {
-        if (target.memory) {
-            const temp = target.reg !== Register.r10 ? Register.r10 : Register.r11;
-            this.mov_r_c(temp, value);
-            this.mov_rp_r(target.reg, 1, target.offset, temp);
-        } else {
-            this.mov_r_c(target.reg, value);
-        }
-    }
-
-    _mov_t_t(target: TargetInfo, source: TargetInfo, type: RawTypeId, cvt: TConvert): void {
-        if (cvt === TConvert.np2np && type === RawTypeId.FloatAsInt64) {
-            type = RawTypeId.Void; // 64 to 64
-        }
-        if (target.memory) {
-            const temp = target.reg !== Register.r10 ? Register.r10 : Register.r11;
-            const ftemp = target.freg !== FloatRegister.xmm5 ? FloatRegister.xmm5 : FloatRegister.xmm6;
-
-            if (source.memory) {
-                if (type === RawTypeId.FloatAsInt64) {
-                    if (cvt === TConvert.np2js) {
-                        this.cvtsi2sd_r_rp(ftemp, source.reg, 1, source.offset);
-                        this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
-                    } else {
-                        this.cvttsd2si_r_rp(temp, source.reg, 1, source.offset);
-                        this.mov_rp_r(target.reg, 1, target.offset, temp);
-                    }
-                } else if (type === RawTypeId.Float32) {
-                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
-                        this.cvtss2sd_r_rp(ftemp, source.reg, 1, source.offset);
-                        this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
-                    } else { // float64_t -> float32_t
-                        this.cvtsd2ss_r_rp(ftemp, source.reg, 1, source.offset);
-                        this.movss_rp_r(target.reg, 1, target.offset, ftemp);
-                    }
-                } else {
-                    if (target === source) {
-                        // same
-                    } else {
-                        if (type === RawTypeId.Boolean) {
-                            this.mov_r_rp(temp, source.reg, 1, source.offset, OperationSize.byte);
-                            this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.byte);
-                        } else if (type === RawTypeId.Int32) {
-                            this.movsxd_r_rp(temp, source.reg, 1, source.offset);
-                            this.mov_rp_r(target.reg, 1, target.offset, temp);
-                        } else {
-                            this.mov_r_rp(temp, source.reg, 1, source.offset);
-                            this.mov_rp_r(target.reg, 1, target.offset, temp);
-                        }
-                    }
-                }
+            if (this.useThis && i === 0) {
+                info.type = this.thisType;
+                info.numberOnMaking = 3;
+                info.type = params[0];
+                info.numberOnUsing = PARAMNUM_THIS;
+                info.nullable = false;
+            } else if (this.structureReturn && i === +this.useThis) {
+                info.type = this.return.type;
+                info.numberOnMaking = 2;
+                info.type = StructureReturnAllocation;
+                info.numberOnUsing = PARAMNUM_RETURN;
+                info.nullable = false;
             } else {
-                if (type === RawTypeId.FloatAsInt64) {
-                    if (cvt === TConvert.np2js) { // int64_t -> float64_t
-                        this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
-                        this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
-                    } else { // float64_t -> int64_t
-                        this.cvttsd2si_r_r(temp, source.freg);
-                        this.mov_rp_r(target.reg, 1, target.offset, temp);
-                    }
-                } else if (type === RawTypeId.Float64) {
-                    this.movsd_rp_r(target.reg, 1, target.offset, source.freg);
-                } else if (type === RawTypeId.Float32) {
-                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
-                        this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
-                        this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
-                    } else { // float64_t -> float32_t
-                        this.cvtsd2ss_r_r(FloatRegister.xmm0, source.freg);
-                        this.movss_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
-                    }
-                } else if (type === RawTypeId.Boolean) {
-                    this.mov_rp_r(target.reg, 1, target.offset, source.reg, OperationSize.byte);
-                } else {
-                    this.mov_rp_r(target.reg, 1, target.offset, source.reg);
-                }
+                const indexOnUsing = i - +this.structureReturn - +this.useThis;
+                const indexOnMaking = PARAM_OFFSET + indexOnUsing;
+                info.numberOnMaking = indexOnMaking + 1;
+                info.numberOnUsing = indexOnUsing + 1;
+                info.type = params[i];
+                info.nullable = this.nullableParams;
             }
-        } else {
-            if (source.memory) {
-                if (type === RawTypeId.FloatAsInt64) {
-                    if (cvt === TConvert.np2js) { // int64_t -> float64_t
-                        this.cvtsi2sd_r_rp(target.freg, source.reg, 1, source.offset);
-                    } else { // float64_t -> int64_t
-                        this.cvttsd2si_r_rp(target.reg, source.reg, 1, source.offset);
-                    }
-                } else if (type === RawTypeId.Float64) {
-                    this.movsd_r_rp(target.freg, source.reg, 1, source.offset);
-                } else if (type === RawTypeId.Float32) {
-                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
-                        this.cvtss2sd_r_rp(target.freg, source.reg, 1, source.offset);
-                    } else { // float64_t -> float32_t
-                        this.cvtsd2ss_r_rp(target.freg, source.reg, 1, source.offset);
-                    }
-                } else if (type === RawTypeId.Boolean) {
-                    this.movzx_r_rp(target.reg, source.reg, 1, source.offset, OperationSize.qword, OperationSize.byte);
-                } else if (type === RawTypeId.Int32) {
-                    this.movsxd_r_rp(target.reg, source.reg, 1, source.offset);
-                } else {
-                    this.mov_r_rp(target.reg, source.reg, 1, source.offset);
-                }
-            } else {
-                if (type === RawTypeId.FloatAsInt64) {
-                    if (cvt === TConvert.np2js) {
-                        this.cvtsi2sd_r_r(target.freg, source.reg);
-                    } else {
-                        this.cvttsd2si_r_r(target.reg, source.freg);
-                    }
-                } else if (type === RawTypeId.Float32) {
-                    if (cvt === TConvert.np2js) { // float32_t -> float64_t
-                        this.cvtss2sd_r_r(target.freg, source.freg);
-                    } else { // float64_t -> float32_t
-                        this.cvtsd2ss_r_r(target.freg, source.freg);
-                    }
-                } else {
-                    if (target === source) {
-                        // same
-                    } else {
-                        if (type === RawTypeId.Float64) {
-                            this.movsd_r_r(target.freg, source.freg);
-                        } else {
-                            this.mov_r_r(target.reg, source.reg);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    _mov_t_t_nocvt(target: TargetInfo, source: TargetInfo):void {
-        this._mov_t_t(target, source, RawTypeId.Void, TConvert.np2np);
-    }
-
-    nativeToJs(info:ParamInfo, target:TargetInfo, source:TargetInfo):void {
-        switch (info.typeId) {
-        case RawTypeId_StructureReturn: {
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        }
-        case RawTypeId_WrapperToNp:
-        case RawTypeId_Pointer: {
-            pointerClassOrThrow(info.numberOnMaking, info.type);
-            chakraUtil.JsAddRef(info.type);
-            this._mov_t_t_nocvt(TARGET_2, source);
-            this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
-            if (info.nullable) {
-                this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
-            } else {
-                this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
-            }
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        }
-        case RawTypeId_WrapperToJs: {
-            const np2js_fn = info.type[makefunc.np2js];
-            if (np2js_fn) chakraUtil.JsAddRef(np2js_fn);
-
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(np2js_fn));
-            if (isBaseOf(info.type, VoidPointer)) {
-                chakraUtil.JsAddRef(info.type);
-                this.mov_r_c(Register.r8, chakraUtil.asJsValueRef(info.type));
-            } else {
-                this.mov_r_c(Register.r8, nativePointerValueRef);
-            }
-            if (info.nullable) {
-                this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_np2js_nullable);
-            } else {
-                this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_np2js);
-            }
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        }
-        case RawTypeId.Boolean: {
-            const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBoolToBoolean);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t_nocvt(target, temp);
-            break;
-        }
-        case RawTypeId.Int32: {
-            const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsIntToNumber);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t_nocvt(target, temp);
-            break;
-        }
-        case RawTypeId.FloatAsInt64: {
-            const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t_nocvt(target, temp);
-            break;
-        }
-        case RawTypeId.Float64: {
-            const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t_nocvt(target, temp);
-            break;
-        }
-        case RawTypeId.Float32: {
-            const temp = target.tempPtr();
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t_nocvt(target, temp);
-            break;
-        }
-        case RawTypeId.StringAnsi:
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_ansi_np2js);
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        case RawTypeId.StringUtf8:
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        case RawTypeId.StringUtf16:
-            this._mov_t_t(TARGET_1, source, info.typeId, TConvert.np2js);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_np2js);
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        case RawTypeId.Bin64: {
-            const temp = target.tempPtr(source, TargetInfo.memory(Register.rbp, 8));
-            if (source.memory) {
-                this.lea_r_rp(Register.rcx, source.reg, 1, source.offset);
-            } else {
-                this.lea_r_rp(Register.rcx, Register.rbp, 1, 8);
-                this.mov_rp_r(Register.rcx, 1, 0, source.reg);
-            }
-            this.mov_r_c(Register.rdx, 4);
-            this.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsPointerToString);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t_nocvt(target, temp);
-            break;
-        }
-        case RawTypeId.JsValueRef:
-            this._mov_t_t(target, source, info.typeId, TConvert.np2js);
-            break;
-        case RawTypeId.Void:
-            this._mov_t_c(target, chakraUtil.asJsValueRef(undefined));
-            break;
-        default:
-            invalidParamType(info.typeId, info.numberOnUsing);
-        }
-    }
-
-    jsToNative(info:ParamInfo, target:TargetInfo, source:TargetInfo):void {
-        switch (info.typeId) {
-        case RawTypeId_StructureReturn: {
-            this.lea_r_rp(Register.rdx, Register.rbp, 1, this.offsetForStructureReturn);
-
-            chakraUtil.JsAddRef(info.type);
-            this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js_new);
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        }
-        case RawTypeId_WrapperToNp: {
-            const js2np = info.type[makefunc.js2np];
-            chakraUtil.JsAddRef(js2np);
-
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, chakraUtil.asJsValueRef(js2np));
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_wrapper_js2np);
-            this._mov_t_t_nocvt(target, TARGET_RETURN);
-            break;
-        }
-        case RawTypeId_WrapperToJs:
-        case RawTypeId_Pointer: {
-            pointerClassOrThrow(info.numberOnMaking, info.type);
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js2class);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!'); // failed to use cmovnz
-            this.mov_r_rp(Register.rax, Register.rax, 1, 0x10);
-            this.close_label('!');
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
-            break;
-        }
-        case RawTypeId.Boolean: {
-            const temp = target.tempPtr();
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBooleanToBool);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
-            break;
-        }
-        case RawTypeId.Int32: {
-            const temp = target.tempPtr();
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToInt);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
-            break;
-        }
-        case RawTypeId.FloatAsInt64: {
-            const temp = target.tempPtr();
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
-            break;
-        }
-        case RawTypeId.Float64: {
-            const temp = target.tempPtr();
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
-            break;
-        }
-        case RawTypeId.Float32: {
-            const temp = target.tempPtr();
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
-            this.test_r_r(Register.rax, Register.rax);
-            this.jz_label('!');
-            this.mov_r_c(Register.rcx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
-            this.close_label('!');
-            this._mov_t_t(target, temp, info.typeId, TConvert.js2np);
-            break;
-        }
-        case RawTypeId.StringAnsi:
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.mov_r_c(Register.r8, chakraUtil.stack_ansi);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
-            this.useStackAllocator = true;
-            break;
-        case RawTypeId.StringUtf8:
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.mov_r_c(Register.r8, chakraUtil.stack_utf8);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
-            this.useStackAllocator = true;
-            break;
-        case RawTypeId.StringUtf16:
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_js2np);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
-            break;
-        case RawTypeId.Buffer:
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_buffer_to_pointer);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
-            break;
-        case RawTypeId.Bin64:
-            this._mov_t_t_nocvt(TARGET_1, source);
-            this.mov_r_c(Register.rdx, info.numberOnUsing);
-            this.call_rp(Register.rdi, 1, makefuncDefines.fn_bin64);
-            this._mov_t_t(target, TARGET_RETURN, info.typeId, TConvert.js2np);
-            break;
-        case RawTypeId.JsValueRef:
-            this._mov_t_t(target, source, info.typeId, TConvert.js2np);
-            break;
-        case RawTypeId.Void:
-            if (target === TARGET_RETURN) break;
-            // fall through
-        default:
-            invalidParamType(info.typeId, info.numberOnMaking);
+            this.params.push(info);
         }
     }
 }
 
-interface TypeMap_np2js {
-    [RawTypeId.Int32]: number;
-    [RawTypeId.FloatAsInt64]: number;
-    [RawTypeId.Float32]: number;
-    [RawTypeId.Float64]: number;
-    [RawTypeId.StringAnsi]: string;
-    [RawTypeId.StringUtf8]: string;
-    [RawTypeId.StringUtf16]: string;
-    [RawTypeId.Buffer]: void;
-    [RawTypeId.Bin64]: string;
-    [RawTypeId.Boolean]: boolean;
-    [RawTypeId.JsValueRef]: any;
-    [RawTypeId.Void]: void;
-}
+type InstanceTypeOnly<T> = T extends {new():infer V} ? V : never;
 
-interface TypeMap_js2np {
-    [RawTypeId.Int32]: number;
-    [RawTypeId.FloatAsInt64]: number;
-    [RawTypeId.Float32]: number;
-    [RawTypeId.Float64]: number;
-    [RawTypeId.StringAnsi]: string|null;
-    [RawTypeId.StringUtf8]: string|null;
-    [RawTypeId.StringUtf16]: string|null;
-    [RawTypeId.Buffer]: VoidPointer|Bufferable|null;
-    [RawTypeId.Bin64]: string;
-    [RawTypeId.Boolean]: boolean;
-    [RawTypeId.JsValueRef]: any;
-    [RawTypeId.Void]: void;
-}
-
-type TypeFrom_js2np<T extends ParamType|{new():VoidPointer|void}> =
-    T extends RawTypeId ? TypeMap_js2np[T] :
-    T extends { new(...args: any[]): infer V } ? (V|null) :
-    never;
+type TypeFrom_js2np<T extends ParamType> =
+    T extends RawTypeId ? any : InstanceTypeOnly<T>|null;
 type TypeFrom_np2js<T extends ParamType> =
-    T extends RawTypeId ? TypeMap_np2js[T] :
-    T extends { new(): infer V } ? V :
-    never;
+    T extends RawTypeId ? any : InstanceTypeOnly<T>;
 
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_js2np<T[key]> : T[key];
@@ -895,7 +332,551 @@ function symbolNotFound():never {
     throw Error('symbol not found');
 }
 
+class DupCheck {
+    private readonly map = new Map<string, string>();
+
+    check(target:unknown):void {
+        const str = String(target);
+        const oldstack = this.map.get(str);
+        if (oldstack !== undefined) {
+            console.error(`Dupplicated ${str}`);
+            console.error(remapStack(oldstack));
+            return;
+        }
+        this.map.set(str, removeLine(Error().stack!, 0, 1));
+    }
+}
+
+// const dupcheck = new DupCheck;
+
 export namespace makefunc {
+    export const js2np = Symbol('makefunc.js2np');
+    export const np2js = Symbol('makefunc.np2js');
+    export const js2npAsm = Symbol('makefunc.js2npAsm');
+    export const np2jsAsm = Symbol('makefunc.np2jsAsm');
+    export const np2npAsm = Symbol('makefunc.np2npAsm');
+    export const js2npLocalSize = Symbol('makefunc.js2npLocalSize');
+    export const pointerReturn = Symbol('makefunc.pointerReturn');
+
+    export interface Paramable {
+        name:string;
+        [js2npAsm](asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo): void;
+        [np2jsAsm](asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo): void;
+        [np2npAsm](asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo): void;
+        [np2js]?(ptr:any):any;
+        [js2np]?(ptr:any):any;
+        [js2npLocalSize]?:number;
+        [pointerReturn]?:boolean;
+    }
+    export interface ParamableT<T> extends Paramable {
+        new():T;
+    }
+    export class ParamableT<T> {
+        constructor(
+            public readonly name:string,
+            _js2npAsm:(asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo)=>void,
+            _np2jsAsm:(asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo)=>void,
+            _np2npAsm:(asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo)=>void,
+            _np2js?:(ptr:T|null)=>T|null,
+            _js2np?:(ptr:T|null)=>T|null) {
+            this[js2npAsm] = _js2npAsm;
+            this[np2jsAsm] = _np2jsAsm;
+            this[np2npAsm] = _np2npAsm;
+            this[np2js] = _np2js;
+            this[js2np] = _js2np;
+        }
+    }
+
+    export class ParamInfo {
+        offsetForLocalSpace:null|number;
+        numberOnMaking: number;
+        numberOnUsing: number;
+        type: Paramable;
+        nullable: boolean;
+        needDestruction:boolean;
+    }
+
+    export class Target {
+        reg: Register;
+        freg: FloatRegister;
+        offset: number;
+        memory: boolean;
+
+        equals(other: Target): boolean {
+            if (this.memory) {
+                return other.memory && this.reg === other.reg && this.offset === other.offset;
+            }
+            return !other.memory && this.reg === other.reg;
+        }
+
+        getTemp():Register {
+            return this.reg !== Register.r10 ? Register.r10 : Register.r11;
+        }
+
+        getFTemp():FloatRegister {
+            return this.freg !== FloatRegister.xmm5 ? FloatRegister.xmm5 : FloatRegister.xmm6;
+        }
+
+        static register(reg: Register, freg: FloatRegister): Target {
+            const ti = new Target;
+            ti.reg = reg;
+            ti.freg = freg;
+            ti.memory = false;
+            return ti;
+        }
+
+        static memory(reg: Register, offset: number): Target {
+            const ti = new Target;
+            ti.reg = reg;
+            ti.offset = offset;
+            ti.memory = true;
+            return ti;
+        }
+
+        tempPtr(...sources:Target[]): Target {
+            if (this.memory) return this;
+            return Target.tempPtr(...sources);
+        }
+
+        static tempPtr(...sources:Target[]):Target {
+            let offsets = 0;
+            for (const src of sources) {
+                if (src.memory && src.reg === Register.rbp) {
+                    console.assert(src.offset%8 === 0);
+                    offsets |= 1 << (src.offset>>3);
+                    continue;
+                }
+            }
+            let offset = 0;
+            while ((offsets & 1) !== 0) {
+                offsets >>>= 1;
+                offset += 8;
+            }
+            return Target.memory(Register.rbp, offset);
+        }
+
+        static readonly return = Target.register(Register.rax, FloatRegister.xmm0);
+        static readonly [0] = Target.register(Register.rcx, FloatRegister.xmm0);
+        static readonly [1] = Target.register(Register.rdx, FloatRegister.xmm1);
+        static readonly [2] = Target.register(Register.r8, FloatRegister.xmm2);
+        static readonly [3] = Target.register(Register.r9, FloatRegister.xmm3);
+    }
+
+    export class Maker extends X64Assembler {
+        public offsetForStructureReturn: number;
+        public useStackAllocator = false;
+
+        constructor(
+            public readonly pi: ParamInfoMaker,
+            public stackSize: number,
+            useGetOut: boolean) {
+            super(new Uint8Array(64), 0);
+
+            this.push_r(Register.rdi);
+            this.push_r(Register.rsi);
+            this.push_r(Register.rbp);
+            this.mov_r_c(Register.rdi, functionMapPtr);
+            if (useGetOut) {
+                this.mov_r_rp(Register.rax, Register.rdi, 1, makefuncDefines.fn_returnPoint);
+            }
+            this.push_r(Register.rax);
+
+            if (useGetOut) {
+                this.lea_r_rp(Register.rax, Register.rsp, 1, 1);
+                this.mov_rp_r(Register.rdi, 1, makefuncDefines.fn_returnPoint, Register.rax);
+            }
+        }
+
+        calculateStackSize():void {
+            // align
+            const alignmentOffset = 8;
+            this.stackSize -= alignmentOffset;
+            this.stackSize = ((this.stackSize + 0xf) & ~0xf);
+            this.stackSize += alignmentOffset;
+        }
+
+        end(): void {
+            this.add_r_c(Register.rsp, this.stackSize);
+            this.pop_r(Register.rcx);
+            this.pop_r(Register.rbp);
+            this.mov_rp_r(Register.rdi, 1, makefuncDefines.fn_returnPoint, Register.rcx);
+            this.pop_r(Register.rsi);
+            this.pop_r(Register.rdi);
+            this.ret();
+        }
+
+        qmov_t_c(target: Target, value: Value64): void {
+            if (target.memory) {
+                const temp = target.reg !== Register.r10 ? Register.r10 : Register.r11;
+                this.mov_r_c(temp, value);
+                this.mov_rp_r(target.reg, 1, target.offset, temp);
+            } else {
+                this.mov_r_c(target.reg, value);
+            }
+        }
+
+        qmov_t_t(target:Target, source:Target):void {
+            if (target.memory) {
+                if (source.memory) {
+                    if (target === source) {
+                        // same
+                    } else {
+                        const temp = target.getTemp();
+                        this.mov_r_rp(temp, source.reg, 1, source.offset, OperationSize.qword);
+                        this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.qword);
+                    }
+                } else {
+                    this.mov_rp_r(target.reg, 1, target.offset, source.reg, OperationSize.qword);
+                }
+            } else {
+                if (source.memory) {
+                    this.mov_r_rp(target.reg, source.reg, 1, source.offset, OperationSize.qword);
+                } else {
+                    if (target === source) {
+                        // same
+                    } else {
+                        this.mov_r_r(target.reg, source.reg, OperationSize.qword);
+                    }
+                }
+            }
+        }
+
+        lea_t_rp(target:Target, source:Register, multiply:AsmMultiplyConstant, offset:number):void {
+            if (target.memory) {
+                if (offset === 0) {
+                    this.mov_rp_r(target.reg, 1, target.offset, source, OperationSize.qword);
+                } else {
+                    const temp = target.getTemp();
+                    this.lea_r_rp(temp, source, multiply, offset, OperationSize.qword);
+                    this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.qword);
+                }
+            } else {
+                if (offset === 0 && target.reg === source) return;
+                this.lea_r_rp(target.reg, source, multiply, offset, OperationSize.qword);
+            }
+        }
+
+        mov_t_t(target:Target, source:Target, size:OperationSize):void {
+            if (size === OperationSize.void) return;
+            if (size > OperationSize.qword) throw Error('Unexpected operation size: '+OperationSize[size]);
+            if (size === OperationSize.qword) return this.qmov_t_t(target, source);
+            if (target.memory) {
+                if (source.memory) {
+                    if (target === source) {
+                        // same
+                    } else {
+                        const temp = target.getTemp();
+                        if (size >= OperationSize.dword) {
+                            this.mov_r_rp(temp, source.reg, 1, source.offset, size);
+                        } else {
+                            this.movzx_r_rp(temp, source.reg, 1, source.offset, OperationSize.dword, size);
+                        }
+                        this.mov_rp_r(target.reg, 1, target.offset, temp, size);
+                    }
+                } else {
+                    this.mov_rp_r(target.reg, 1, target.offset, source.reg, size);
+                }
+            } else {
+                if (source.memory) {
+                    if (size >= OperationSize.dword) {
+                        this.mov_r_rp(target.reg, source.reg, 1, source.offset, size);
+                    } else {
+                        this.movzx_r_rp(target.reg, source.reg, 1, source.offset, OperationSize.dword, size);
+                    }
+                } else {
+                    if (target === source) {
+                        // same
+                    } else {
+                        this.mov_r_r(target.reg, source.reg, OperationSize.dword);
+                    }
+                }
+            }
+        }
+
+        mov2dw_t_t(target:Target, source:Target, size:OperationSize, signed:boolean):void {
+            if (size === OperationSize.void) return;
+            if (size > OperationSize.qword) throw Error('Unexpected operation size: '+OperationSize[size]);
+            if (target.memory) {
+                if (source.memory) {
+                    if (target === source) {
+                        // same
+                    } else {
+                        const temp = target.getTemp();
+                        if (size >= OperationSize.dword) {
+                            this.mov_r_rp(temp, source.reg, 1, source.offset, size);
+                        } else {
+                            if (signed) this.movsx_r_rp(temp, source.reg, 1, source.offset, OperationSize.dword, size);
+                            else this.movzx_r_rp(temp, source.reg, 1, source.offset, OperationSize.dword, size);
+                        }
+                        this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.dword);
+                    }
+                } else {
+                    this.mov_rp_r(target.reg, 1, target.offset, source.reg, OperationSize.dword);
+                }
+            } else {
+                if (source.memory) {
+                    if (size >= OperationSize.dword) {
+                        this.mov_r_rp(target.reg, source.reg, 1, source.offset, size);
+                    } else {
+                        if (signed) this.movsx_r_rp(target.reg, source.reg, 1, source.offset, OperationSize.dword, size);
+                        else this.movzx_r_rp(target.reg, source.reg, 1, source.offset, OperationSize.dword, size);
+                    }
+                } else {
+                    if (size >= OperationSize.dword) {
+                        if (target === source) {
+                            // same
+                        } else {
+                            this.mov_r_r(target.reg, source.reg, OperationSize.dword);
+                        }
+                    } else {
+                        if (signed) this.movsx_r_r(target.reg, source.reg, OperationSize.dword, size);
+                        else this.movzx_r_r(target.reg, source.reg, OperationSize.dword, size);
+                    }
+                }
+            }
+        }
+
+        /**
+         * int64_t -> float64_t
+         */
+        cvtsi2sd_t_t(target: Target, source: Target): void {
+            if (target.memory) {
+                if (source.memory) {
+                    const ftemp = target.getFTemp();
+                    this.cvtsi2sd_r_rp(ftemp, source.reg, 1, source.offset);
+                    this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
+                } else {
+                    this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
+                    this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                }
+            } else {
+                if (source.memory) {
+                    this.cvtsi2sd_r_rp(target.freg, source.reg, 1, source.offset);
+                } else {
+                    this.cvtsi2sd_r_r(target.freg, source.reg);
+                }
+            }
+        }
+
+        /**
+         * float64_t -> int64_t
+         */
+        cvttsd2si_t_t(target: Target, source: Target): void {
+            if (target.memory) {
+                const temp = target.getTemp();
+                if (source.memory) {
+                    this.cvttsd2si_r_rp(temp, source.reg, 1, source.offset);
+                    this.mov_rp_r(target.reg, 1, target.offset, temp);
+                } else {
+                    this.cvttsd2si_r_r(temp, source.freg);
+                    this.mov_rp_r(target.reg, 1, target.offset, temp);
+                }
+            } else {
+                if (source.memory) {
+                    this.cvttsd2si_r_rp(target.reg, source.reg, 1, source.offset);
+                } else {
+                    this.cvttsd2si_r_r(target.reg, source.freg);
+                }
+            }
+        }
+
+        /**
+         * float32_t -> float64_t
+         */
+        cvtss2sd_t_t(target:Target, source:Target): void {
+            if (target.memory) {
+                if (source.memory) {
+                    const ftemp = target.getFTemp();
+                    this.cvtss2sd_r_rp(ftemp, source.reg, 1, source.offset);
+                    this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
+                } else {
+                    this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
+                    this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                }
+            } else {
+                if (source.memory) {
+                    this.cvtss2sd_r_rp(target.freg, source.reg, 1, source.offset);
+                } else {
+                    this.cvtss2sd_r_r(target.freg, source.freg);
+                }
+            }
+        }
+
+        /**
+         * float64_t -> float32_t
+         */
+        cvtsd2ss_t_t(target:Target, source:Target): void {
+            if (target.memory) {
+                if (source.memory) {
+                    const ftemp = target.getFTemp();
+                    this.cvtsd2ss_r_rp(ftemp, source.reg, 1, source.offset);
+                    this.movss_rp_r(target.reg, 1, target.offset, ftemp);
+                } else {
+                    this.cvtsd2ss_r_r(FloatRegister.xmm0, source.freg);
+                    this.movss_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                }
+            } else {
+                if (source.memory) {
+                    this.cvtsd2ss_r_rp(target.freg, source.reg, 1, source.offset);
+                } else {
+                    this.cvtsd2ss_r_r(target.freg, source.freg);
+                }
+            }
+        }
+
+        movss_t_t(target:Target, source:Target):void {
+            if (target.memory) {
+                if (source.memory) {
+                    if (target === source) {
+                        // same
+                    } else {
+                        const temp = target.getTemp();
+                        this.mov_r_rp(temp, source.reg, 1, source.offset, OperationSize.dword);
+                        this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.dword);
+                    }
+                } else {
+                    this.movss_rp_r(target.reg, 1, target.offset, source.freg);
+                }
+            } else {
+                if (source.memory) {
+                    this.movss_r_rp(target.freg, source.reg, 1, source.offset);
+                } else {
+                    if (target === source) {
+                        // same
+                    } else {
+                        this.movss_r_r(target.freg, source.freg);
+                    }
+                }
+            }
+        }
+
+        movsd_t_t(target:Target, source:Target):void {
+            if (target.memory) {
+                if (source.memory) {
+                    if (target === source) {
+                        // same
+                    } else {
+                        const temp = target.getTemp();
+                        this.mov_r_rp(temp, source.reg, 1, source.offset);
+                        this.mov_rp_r(target.reg, 1, target.offset, temp);
+                    }
+                } else {
+                    this.movsd_rp_r(target.reg, 1, target.offset, source.freg);
+                }
+            } else {
+                if (source.memory) {
+                    this.movsd_r_rp(target.freg, source.reg, 1, source.offset);
+                } else {
+                    if (target === source) {
+                        // same
+                    } else {
+                        this.movsd_r_r(target.freg, source.freg);
+                    }
+                }
+            }
+        }
+
+        jsNumberToInt(target:Target, source:Target, size:OperationSize, info:ParamInfo):void {
+            const temp = target.tempPtr();
+            this.qmov_t_t(makefunc.Target[0], source);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToInt);
+            this.throwIfNonZero(info);
+            this.mov_t_t(target, temp, size);
+        }
+
+        jsUintToNumber(target:Target, source:Target, size:OperationSize, info:ParamInfo):void {
+            const temp = target.tempPtr();
+            this.mov2dw_t_t(makefunc.Target[0], source, size, false);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsIntToNumber);
+            this.throwIfNonZero(info);
+            this.qmov_t_t(target, temp);
+        }
+
+        jsIntToNumber(target:Target, source:Target, size:OperationSize, info:ParamInfo, signed:boolean):void {
+            const temp = target.tempPtr();
+            this.mov2dw_t_t(makefunc.Target[0], source, size, signed);
+            this.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsIntToNumber);
+            this.throwIfNonZero(info);
+            this.qmov_t_t(target, temp);
+        }
+
+        nativeToJs(info:ParamInfo, target:Target, source:Target):void {
+            if (info.type === StructureReturnAllocation) {
+                throw Error('Unsupported');
+                // this.pi.returnType[np2jsAsm](this, target, source, info);
+            }
+            const wrapper = info.type[np2js];
+            if (wrapper) {
+                chakraUtil.JsAddRef(wrapper);
+
+                const temp = target.tempPtr();
+                this.sub_r_c(Register.rsp, 0x30);
+                info.type[makefunc.np2jsAsm](this, makefunc.Target.memory(Register.rsp, 0x28), source, info);
+                this.mov_r_c(Register.rax, nullValueRef);
+                this.mov_rp_r(Register.rsp, 1, 0x20, Register.rax);
+                this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(wrapper));
+                this.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
+                this.mov_r_c(Register.r8, 2);
+                this.lea_r_rp(Register.r9, temp.reg, 1, temp.offset);
+                this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
+                this.throwIfNonZero(info);
+                this.add_r_c(Register.rsp, 0x30);
+                this.qmov_t_t(target, temp);
+            } else {
+                info.type[makefunc.np2jsAsm](this, target, source, info);
+            }
+        }
+
+        jsToNative(info:ParamInfo, target:Target, source:Target):void {
+            if (info.type === StructureReturnAllocation) {
+                if (this.pi.return.offsetForLocalSpace !== null) {
+                    this.lea_t_rp(target, Register.rbp, 1, this.pi.return.offsetForLocalSpace);
+                } else if ('prototype' in this.pi.return.type) {
+                    chakraUtil.JsAddRef(this.pi.return.type);
+                    this.lea_r_rp(Register.rdx, Register.rbp, 1, this.offsetForStructureReturn);
+                    this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(this.pi.return.type));
+                    this.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js_new);
+                    this.qmov_t_t(target, makefunc.Target.return);
+                } else {
+                    throw Error(`${this.pi.return.type.name} is not constructible`);
+                }
+                return;
+            }
+
+            const wrapper = info.type[js2np];
+            if (wrapper) {
+                chakraUtil.JsAddRef(wrapper);
+
+                const temp = target.tempPtr();
+                this.sub_r_c(Register.rsp, 0x30);
+                info.type[makefunc.js2npAsm](this, makefunc.Target.memory(Register.rsp, 0x28), source, info);
+                this.mov_r_c(Register.rax, nullValueRef);
+                this.mov_rp_r(Register.rsp, 1, 0x20, Register.rax);
+
+                this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(wrapper));
+                this.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
+                this.mov_r_c(Register.r8, 2);
+                this.lea_r_rp(Register.r9, temp.reg, 1, temp.offset);
+                this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
+                this.throwIfNonZero(info);
+                this.add_r_c(Register.rsp, 0x30);
+                this.qmov_t_t(target, temp);
+            } else {
+                info.type[makefunc.js2npAsm](this, target, source, info);
+            }
+        }
+
+        throwIfNonZero(info:ParamInfo):void {
+            this.test_r_r(Register.rax, Register.rax, OperationSize.dword);
+            this.jz_label('!');
+            this.mov_r_c(Register.rcx, info.numberOnUsing);
+            this.call_rp(Register.rdi, 1, makefuncDefines.fn_getout_invalid_parameter);
+            this.close_label('!');
+        }
+    }
 
     /**
      * make the JS function as a native function.
@@ -906,62 +887,70 @@ export namespace makefunc {
     export function np<RETURN extends ParamType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
         jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
         returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer {
-        const pimaker = new ParamInfoMaker(returnType, opts, params); // check param count also
+        const pimaker = new ParamInfoMaker(remapType(returnType), opts, params.map(remapType)); // check param count also
+        if (pimaker.structureReturn) throw Error(`makefunc.np does not support structureReturn:true`); // TODO: support
 
         chakraUtil.JsAddRef(jsfunction);
         checkTypeIsFunction(jsfunction, 1);
 
+        const spaceForTemp = 0x10;
+        const spaceForOutput = 0x8;
+        const spaceForFunctionCalling = 0x20;
         const paramsSize = pimaker.countOnCalling * 8 + 8; // params + this
-        let stackSize = paramsSize;
-        stackSize += 0x10; // temp space
-        stackSize += 0x20; // calling space (use stack through ending)
-        if (stackSize < 0x20) stackSize = 0x20; // minimal
+        const func = new Maker(pimaker, paramsSize, false);
+        if (opts && opts.nativeDebugBreak) func.debugBreak();
+        func.stackSize += spaceForTemp; // space for tempPtr()
+        func.stackSize += spaceForOutput;  // space for the output of JsCallFunction
+        func.stackSize += spaceForFunctionCalling; // space for the function calling
 
-        // alignment
-        const alignmentOffset = 8;
-        stackSize -= alignmentOffset;
-        stackSize = ((stackSize + 0xf) & ~0xf);
-        stackSize += alignmentOffset;
+        // calculate local space size
+        {
+            const localSize = pimaker.return.type[js2npLocalSize];
+            if (localSize) func.stackSize += localSize;
+        }
+        func.calculateStackSize();
 
-        const func = new Maker(pimaker, stackSize, false);
-        // 0x20~0x28 - return address
-        // 0x00~0x20 - pushed data
-        func.lea_r_rp(Register.rbp, Register.rsp, 1, 0x28);
+        // local spaces
+        const argStackOffset = 0x28;
+        let offset = paramsSize+spaceForTemp+spaceForOutput+spaceForFunctionCalling-func.stackSize-argStackOffset;
+        {
+            const localSize = pimaker.return.type[js2npLocalSize];
+            if (localSize) {
+                pimaker.return.offsetForLocalSpace = offset;
+                offset += localSize;
+            }
+        }
+
+        // 0x28~ - js arguments
+        // 0x20~0x28 - space for the output for JsCallFunction
+        // 0x00~0x20 - parameters for JsCallFunction
+        func.lea_r_rp(Register.rbp, Register.rsp, 1, argStackOffset);
 
         const activeRegisters = Math.min(pimaker.countOnCpp, 4);
         if (activeRegisters > 1) {
             for (let i = 1; i < activeRegisters; i++) {
-                const offset = i * 8;
-                const typeId = pimaker.typeIds[i];
-                if (typeId === RawTypeId.Float64) {
-                    const freg = fregMap[i];
-                    func.movsd_rp_r(Register.rbp, 1, offset, freg);
-                } else if (typeId === RawTypeId.Float32) {
-                    const freg = fregMap[i];
-                    func.movss_rp_r(Register.rbp, 1, offset, freg);
-                } else {
-                    const reg = regMap[i];
-                    func.mov_rp_r(Register.rbp, 1, offset, reg);
-                }
+                const param = pimaker.params[i];
+                param.type[np2npAsm](func, Target.memory(Register.rbp, i * 8), Target[i as 0|1|2|3], param);
             }
         }
 
         func.lea_r_rp(Register.rsi, Register.rsp, 1, -func.stackSize + 0x20); // without calling stack
         func.sub_r_c(Register.rsp, func.stackSize);
 
-        let offset = 0;
+        offset = 0;
         if (!pimaker.useThis) {
-            func._mov_t_c(TargetInfo.memory(Register.rsi, 0), nullValueRef);
+            func.mov_r_c(Register.rax, nullValueRef);
+            func.mov_rp_r(Register.rsi, 1, 0, Register.rax);
         }
 
         for (let i = 0; i < pimaker.countOnCpp; i++) {
-            const info = pimaker.getInfo(i);
+            const info = pimaker.params[i];
             if (i === 0) {
-                func.nativeToJs(info, TargetInfo.memory(Register.rsi, info.numberOnUsing * 8), TARGET_1);
+                func.nativeToJs(info, Target.memory(Register.rsi, info.numberOnUsing * 8), Target[0]);
             } else {
                 func.nativeToJs(info,
-                    TargetInfo.memory(Register.rsi, info.numberOnUsing * 8),
-                    TargetInfo.memory(Register.rbp, offset));
+                    Target.memory(Register.rsi, info.numberOnUsing * 8),
+                    Target.memory(Register.rbp, offset));
             }
             offset += 8;
         }
@@ -978,7 +967,7 @@ export namespace makefunc {
         func.call_rp(Register.rdi, 1, makefuncDefines.fn_getout);
         func.close_label('!');
 
-        func.jsToNative(pimaker.getInfo(-1), TARGET_RETURN, TargetInfo.memory(Register.rbp, 0));
+        func.jsToNative(pimaker.return, makefunc.Target.return, Target.memory(Register.rbp, 0));
 
         func.end();
         return func.alloc();
@@ -989,8 +978,8 @@ export namespace makefunc {
      * wrapper codes are not deleted permanently.
      * do not use it dynamically.
      *
-     * @param returnType RawTypeId or *Pointer
-     * @param params RawTypeId or *Pointer
+     * @param returnType *_t or *Pointer
+     * @param params *_t or *Pointer
      */
     export function js<PTR extends VoidPointer|[number, number?], OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         functionPointer: PTR,
@@ -998,7 +987,12 @@ export namespace makefunc {
         opts?: OPTS,
         ...params: PARAMS):
         FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> {
-        const pimaker = new ParamInfoMaker(returnType, opts, params); // check param count also
+        // if (functionPointer instanceof VoidPointer) {
+        //     dupcheck.check(functionPointer);
+        // }
+
+        const returnTypeResolved = remapType(returnType);
+        const pimaker = new ParamInfoMaker(returnTypeResolved, opts, params.map(remapType)); // check param count also
 
         let vfoff:number|undefined;
         if (functionPointer instanceof Array) {
@@ -1010,22 +1004,48 @@ export namespace makefunc {
             return symbolNotFound as (()=>never)&{pointer:PTR};
         }
 
-        // JsValueRef( * JsNativeFunction)(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState);
-
         const paramsSize = pimaker.countOnCpp * 8;
-        let stackSize = paramsSize;
-        if (pimaker.structureReturn) stackSize += 0x8; // structureReturn space
-        stackSize += 0x10; // temp space space
-        if (stackSize < 0x20) stackSize = 0x20; // minimal
-
-        // alignment
-        const alignmentOffset = 8;
-        stackSize -= alignmentOffset;
-        stackSize = ((stackSize + 0xf) & ~0xf);
-        stackSize += alignmentOffset;
-
-        const func = new Maker(pimaker, stackSize, true);
+        const func = new Maker(pimaker, paramsSize, true);
         if (opts && opts.nativeDebugBreak) func.debugBreak();
+
+        const spaceForTemp = 0x10;
+        const spaceForCalling = 0x20;
+        func.stackSize += spaceForTemp; // space for tempPtr()
+        func.stackSize += spaceForCalling;
+        if (pimaker.structureReturn) {
+            func.stackSize += 8; // structureReturn space
+            const localSize = pimaker.return.type[js2npLocalSize];
+            if (localSize) func.stackSize += localSize;
+        }
+
+        // calculate local space size
+        for (const param of pimaker.params) {
+            const localSize = param.type[js2npLocalSize];
+            if (localSize) func.stackSize += localSize;
+        }
+        func.calculateStackSize();
+
+        // structure return space
+        let offset = spaceForTemp;
+        if (pimaker.structureReturn) {
+            func.offsetForStructureReturn = offset;
+            offset += 8;
+
+            const localSize = pimaker.return.type[js2npLocalSize];
+            if (localSize) {
+                pimaker.return.offsetForLocalSpace = offset;
+                offset += localSize;
+            }
+        }
+
+        // local spaces
+        for (const param of pimaker.params) {
+            const localSize = param.type[js2npLocalSize];
+            if (localSize) {
+                param.offsetForLocalSpace = offset;
+                offset += localSize;
+            }
+        }
 
         let targetfuncptr:VoidPointer|null;
         if (vfoff === undefined) {
@@ -1042,25 +1062,20 @@ export namespace makefunc {
             func.close_label('!');
         }
         func.mov_r_r(Register.rsi, Register.r8);
-        func.lea_r_rp(Register.rbp, Register.rsp, 1, - func.stackSize + paramsSize);
-
-        if (pimaker.structureReturn) {
-            func.offsetForStructureReturn = func.stackSize - paramsSize - 8;
-        }
+        func.lea_r_rp(Register.rbp, Register.rsp, 1, - func.stackSize + paramsSize + spaceForCalling);
+        func.sub_r_c(Register.rsp, func.stackSize);
 
         if (pimaker.countOnCpp > 1) {
-            const stackSizeForConvert = 0x20;
-            func.sub_r_c(Register.rsp, func.stackSize + stackSizeForConvert);
 
             const last = pimaker.countOnCpp - 1;
             let offset = -paramsSize;
             for (let i = 0; i < pimaker.countOnCpp; i++) {
-                const info = pimaker.getInfo(i);
+                const info = pimaker.params[i];
                 func.jsToNative(info,
-                    i !== last ? TargetInfo.memory(Register.rbp, offset) : i < 4 ?
-                        TargetInfo.register(regMap[i], fregMap[i]) :
-                        TargetInfo.memory(Register.rbp, offset),
-                    TargetInfo.memory(Register.rsi, info.numberOnUsing * 8));
+                    i !== last ? Target.memory(Register.rbp, offset) : i < 4 ?
+                        Target[i as 0|1|2|3] :
+                        Target.memory(Register.rbp, offset),
+                    Target.memory(Register.rsi, info.numberOnUsing * 8));
                 offset += 8;
             }
 
@@ -1069,25 +1084,16 @@ export namespace makefunc {
                 func.or_rp_c(Register.rax, 1, 0, 1);
             }
 
-            func.add_r_c(Register.rsp, stackSizeForConvert);
-
             // paramCountOnCpp >= 2
-            func._mov_t_t(TARGET_1, TargetInfo.memory(Register.rsp, 0x00), pimaker.typeIds[0], TConvert.np2np);
-            if (pimaker.countOnCpp >= 3) {
-                func._mov_t_t(TARGET_2, TargetInfo.memory(Register.rsp, 0x08), pimaker.typeIds[1], TConvert.np2np);
-                if (pimaker.countOnCpp >= 4) {
-                    func._mov_t_t(TARGET_3, TargetInfo.memory(Register.rsp, 0x10), pimaker.typeIds[2], TConvert.np2np);
-                    if (pimaker.countOnCpp >= 5) {
-                        func._mov_t_t(TARGET_4, TargetInfo.memory(Register.rsp, 0x18), pimaker.typeIds[3], TConvert.np2np);
-                    }
-                }
+            const n = Math.min(pimaker.countOnCpp-1, 4);
+            for (let i=0;i<n;i++) {
+                pimaker.params[i].type[np2npAsm](func, makefunc.Target[i as 0|1|2|3], Target.memory(Register.rsp, 8*i+spaceForCalling), pimaker.params[i]);
             }
-        } else {
-            func.sub_r_c(Register.rsp, func.stackSize);
 
+        } else {
             if (pimaker.countOnCpp !== 0) {
-                const pi = pimaker.getInfo(0);
-                func.jsToNative(pi, TARGET_1, TargetInfo.memory(Register.rsi, pi.numberOnUsing * 8));
+                const pi = pimaker.params[0];
+                func.jsToNative(pi, makefunc.Target[0], Target.memory(Register.rsi, pi.numberOnUsing * 8));
             }
 
             if (func.useStackAllocator) {
@@ -1096,6 +1102,7 @@ export namespace makefunc {
             }
         }
 
+        func.add_r_c(Register.rsp, spaceForCalling);
         if (targetfuncptr !== null) {
             func.call64(targetfuncptr, Register.rax);
         } else {
@@ -1103,29 +1110,36 @@ export namespace makefunc {
             func.mov_r_rp(Register.rax, Register.rcx, 1, thisoff);
             func.call_rp(Register.rax, 1, vfoff!);
         }
+        func.sub_r_c(Register.rsp, spaceForCalling);
 
-        let returnTarget = TARGET_RETURN;
+        let returnTarget = Target.return;
+        let returnInMemory:Target|null = null;
         if (func.useStackAllocator) {
-            if (!pimaker.structureReturn) {
-                const retTypeCode = getRawTypeId(PARAMNUM_RETURN, returnType);
-                if (retTypeCode === RawTypeId.Float64) {
-                    func.movsd_rp_r(Register.rbp, 1, 0, FloatRegister.xmm0);
-                } else if (retTypeCode === RawTypeId.Float32) {
-                    func.movss_rp_r(Register.rbp, 1, 0, FloatRegister.xmm0);
+            returnTarget = Target.memory(Register.rbp, 0);
+        }
+        if (pimaker.structureReturn) {
+            if (pimaker.return.offsetForLocalSpace !== null) {
+                if (pimaker.return.type[pointerReturn]) {
+                    func.lea_t_rp(Target[0], Register.rbp, 1, pimaker.return.offsetForLocalSpace);
                 } else {
-                    func.mov_rp_r(Register.rbp, 1, 0, Register.rax);
+                    pimaker.return.type[np2npAsm](func, Target[0], Target.memory(Register.rbp, pimaker.return.offsetForLocalSpace), pimaker.return);
                 }
-                returnTarget = TargetInfo.memory(Register.rbp, 0);
+                func.nativeToJs(pimaker.return, returnTarget, Target[0]);
+            } else {
+                returnInMemory = Target.memory(Register.rbp, func.offsetForStructureReturn);
             }
+        } else {
+            func.nativeToJs(pimaker.return, returnTarget, Target.return);
+        }
+        if (func.useStackAllocator) {
             func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);
             func.and_rp_c(Register.rdx, 1, 0, -2);
             func.call_rp(Register.rdi, 1, makefuncDefines.fn_stack_free_all);
         }
-
-        if (pimaker.structureReturn) {
-            func.mov_r_rp(Register.rax, Register.rbp, 1, func.stackSize - paramsSize - 8);
-        } else {
-            func.nativeToJs(pimaker.getInfo(-1), TARGET_RETURN, returnTarget);
+        if (returnInMemory !== null) {
+            func.qmov_t_t(Target.return, returnInMemory);
+        } else if (func.useStackAllocator) {
+            func.qmov_t_t(Target.return, returnTarget);
         }
 
         func.end();
@@ -1135,9 +1149,101 @@ export namespace makefunc {
         return funcout;
     }
     export import asJsValueRef = chakraUtil.asJsValueRef;
-    export const js2np = Symbol('makefunc.js2np');
-    export const np2js = Symbol('makefunc.np2js');
+
+    export const Ansi = new ParamableT<string>(
+        'Ansi',
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            asm.qmov_t_t(Target[0], source);
+            asm.xor_r_r(Register.r9, Register.r9, OperationSize.dword);
+            asm.mov_r_c(Register.r8, chakraUtil.stack_ansi);
+            asm.mov_r_c(Register.rdx, info.numberOnUsing);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
+            asm.qmov_t_t(target, Target.return);
+            asm.useStackAllocator = true;
+        },
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            const temp = target.tempPtr();
+            asm.qmov_t_t(Target[0], source);
+            asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
+            asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_ansi_np2js);
+            asm.throwIfNonZero(info);
+            asm.qmov_t_t(target, temp);
+        },
+        qwordMove
+    );
+
+    export const Utf8 = new ParamableT<string>(
+        'Utf8',
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            asm.qmov_t_t(Target[0], source);
+            asm.xor_r_r(Register.r9, Register.r9, OperationSize.dword);
+            asm.mov_r_c(Register.r8, chakraUtil.stack_utf8);
+            asm.mov_r_c(Register.rdx, info.numberOnUsing);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
+            asm.qmov_t_t(target, Target.return);
+            asm.useStackAllocator = true;
+        },
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            const temp = target.tempPtr();
+            asm.qmov_t_t(Target[0], source);
+            asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
+            asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
+            asm.throwIfNonZero(info);
+            asm.qmov_t_t(target, temp);
+        },
+        qwordMove
+    );
+
+    export const Utf16 = new ParamableT<string>(
+        'Utf16',
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            asm.qmov_t_t(Target[0], source);
+            asm.mov_r_c(Register.rdx, info.numberOnUsing);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_js2np);
+            asm.qmov_t_t(target, Target.return);
+        },
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            asm.qmov_t_t(Target[0], source);
+            asm.mov_r_c(Register.rdx, info.numberOnUsing);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_np2js);
+            asm.qmov_t_t(target, Target.return);
+        },
+        qwordMove,
+    );
+
+    export const Buffer = new ParamableT<VoidPointer|Bufferable>(
+        'Buffer',
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            asm.qmov_t_t(Target[0], source);
+            asm.mov_r_c(Register.rdx, info.numberOnUsing);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_buffer_to_pointer);
+            asm.qmov_t_t(target, Target.return);
+        },
+        (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
+            asm.qmov_t_t(Target[0], source);
+            asm.mov_r_c(Register.rdx, info.numberOnUsing);
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf16_np2js);
+            asm.qmov_t_t(target, Target.return);
+        },
+        qwordMove
+    );
+
+    export const JsValueRef = new ParamableT<any>(
+        'JsValueRef',
+        qwordMove,
+        qwordMove,
+        qwordMove
+    );
 }
+
+const StructureReturnAllocation = new makefunc.ParamableT<VoidPointer>(
+    'StructureReturnAllocation',
+    abstract,
+    abstract,
+    qwordMove
+);
 
 declare module "./assembler"
 {
@@ -1154,6 +1260,8 @@ declare module "./assembler"
 }
 declare module "./core"
 {
+    interface VoidPointerConstructor extends makefunc.Paramable{
+    }
     interface VoidPointer
     {
         [asm.splitTwo32Bits]():[number, number];
@@ -1166,6 +1274,30 @@ declare global
         [asm.splitTwo32Bits]():[number, number];
     }
 }
+
+VoidPointer[makefunc.js2npAsm] = function(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo) {
+    pointerClassOrThrow(info.numberOnMaking, info.type);
+    asm.qmov_t_t(makefunc.Target[0], source);
+    asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js2class);
+    asm.test_r_r(Register.rax, Register.rax);
+    asm.jz_label('!'); // cannot use cmovnz
+    asm.mov_r_rp(Register.rax, Register.rax, 1, 0x10);
+    asm.close_label('!');
+    asm.qmov_t_t(target, makefunc.Target.return);
+};
+VoidPointer[makefunc.np2jsAsm] = function(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo) {
+    pointerClassOrThrow(info.numberOnMaking, info.type);
+    chakraUtil.JsAddRef(info.type);
+    asm.qmov_t_t(makefunc.Target[1], source);
+    asm.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
+    if (info.nullable) {
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
+    } else {
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
+    }
+    asm.qmov_t_t(target, makefunc.Target.return);
+};
+VoidPointer[makefunc.np2npAsm] = qwordMove;
 
 VoidPointer.prototype[asm.splitTwo32Bits] = function() {
     return [this.getAddressLow(), this.getAddressHigh()];

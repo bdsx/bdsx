@@ -1,6 +1,6 @@
 import { HtmlSearcher } from "./htmlutil";
 import { styling } from "./styling";
-import { FileWriter } from "./writer";
+import { FileWriter } from "../../writer/filewriter";
 
 const READONLY = /^READ ONLY. /;
 const WILL_BE = / Will be: (.+)\.$/;

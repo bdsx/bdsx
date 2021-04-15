@@ -1,8 +1,10 @@
 
+import { OperationSize, Register } from './assembler';
 import { proc, proc2 } from './bds/symbols';
 import { abstract, emptyFunc } from './common';
-import { StaticPointer, VoidPointer } from './core';
-import { makefunc, RawTypeId } from './makefunc';
+import { chakraUtil, StaticPointer, VoidPointer } from './core';
+import { makefunc } from './makefunc';
+import { makefuncDefines } from './makefunc_defines';
 import { Singleton } from './singleton';
 
 namespace NativeTypeFn {
@@ -21,7 +23,7 @@ namespace NativeTypeFn {
 /**
  * native type information
  */
-export interface Type<T> {
+export interface Type<T> extends makefunc.Paramable {
     name:string;
 
     [NativeTypeFn.getter](ptr:StaticPointer, offset?:number):T;
@@ -105,7 +107,7 @@ export namespace NativeDescriptorBuilder {
     }
 }
 
-export class NativeType<T> implements Type<T> {
+export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly getter:typeof NativeTypeFn.getter = NativeTypeFn.getter;
     public static readonly setter:typeof NativeTypeFn.setter = NativeTypeFn.setter;
     public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
@@ -125,17 +127,25 @@ export class NativeType<T> implements Type<T> {
     public readonly [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void;
     public readonly [NativeTypeFn.size]:number;
     public readonly [NativeTypeFn.align]:number;
+    public readonly [makefunc.js2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public readonly [makefunc.np2jsAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public readonly [makefunc.np2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public readonly [makefunc.js2npLocalSize]:number;
 
     constructor(
-        public readonly name:string,
+        name:string,
         size:number,
         align:number,
         get:(ptr:StaticPointer, offset?:number)=>T,
         set:(ptr:StaticPointer, v:T, offset?:number)=>void,
+        js2npAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
+        np2jsAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
+        np2npAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
         ctor:(ptr:StaticPointer)=>void = emptyFunc,
         dtor:(ptr:StaticPointer)=>void = emptyFunc,
         ctor_copy:(to:StaticPointer, from:StaticPointer)=>void = defaultCopy(size),
         ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy) {
+        super(name, js2npAsm, np2jsAsm, np2npAsm);
         this[NativeType.size] = size;
         this[NativeType.align] = align;
         this[NativeType.getter] = get;
@@ -144,6 +154,7 @@ export class NativeType<T> implements Type<T> {
         this[NativeType.dtor] = dtor;
         this[NativeType.ctor_copy] = ctor_copy;
         this[NativeType.ctor_move] = ctor_move;
+        this[makefunc.js2npLocalSize] = size;
     }
 
     extends<FIELDS>(fields?:FIELDS, name?:string):NativeType<T>&FIELDS {
@@ -152,8 +163,15 @@ export class NativeType<T> implements Type<T> {
             name ?? this.name,
             type[NativeType.size],
             type[NativeType.align],
-            (ptr, offset) => type[NativeType.getter](ptr, offset),
-            (ptr, v, offset) => type[NativeType.setter](ptr, v, offset),
+            type[NativeType.getter],
+            type[NativeType.setter],
+            type[makefunc.js2npAsm],
+            type[makefunc.np2jsAsm],
+            type[makefunc.np2npAsm],
+            type[NativeType.ctor],
+            type[NativeType.dtor],
+            type[NativeType.ctor_copy],
+            type[NativeType.ctor_move],
         );
         if (fields) {
             for (const field in fields) {
@@ -198,10 +216,12 @@ NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
         `${type.name}*`,
-        8,
-        8,
+        8, 8,
         (ptr)=>type[NativeType.getter](ptr.getPointer()),
         (ptr, v)=>type[NativeType.setter](ptr.getPointer(), v),
+        type[makefunc.js2npAsm],
+        type[makefunc.np2jsAsm],
+        type[makefunc.np2npAsm],
     );
 }
 
@@ -240,93 +260,260 @@ VoidPointer[NativeType.ctor_move] = function(to:StaticPointer, from:StaticPointe
 };
 VoidPointer[NativeType.descriptor] = NativeType.defaultDescriptor;
 
+const undefValueRef = chakraUtil.asJsValueRef(undefined);
+
+export const void_t = new NativeType<void>(
+    'void',
+    0, 1,
+    emptyFunc,
+    emptyFunc,
+    emptyFunc,
+    (asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo)=>{
+        if (info.numberOnUsing !== -1) throw Error(`void_t cannot be the parameter`);
+        asm.qmov_t_c(target, undefValueRef);
+    },
+    emptyFunc);
+
+export type void_t = void;
 export const bool_t = new NativeType<boolean>(
     'bool',
     1, 1,
     (ptr, offset)=>ptr.getBoolean(offset),
-    (ptr, v, offset)=>ptr.setBoolean(v, offset));
+    (ptr, v, offset)=>ptr.setBoolean(v, offset),
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBooleanToBool);
+        asm.throwIfNonZero(info);
+        asm.mov_t_t(target, temp, OperationSize.byte);
+    },
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.mov_t_t(makefunc.Target[0], source, OperationSize.byte);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsBoolToBoolean);
+        asm.throwIfNonZero(info);
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.byte));
 export type bool_t = boolean;
 export const uint8_t = new NativeType<number>(
     'unsigned char',
     1, 1,
     (ptr, offset)=>ptr.getInt8(offset),
-    (ptr, v, offset)=>ptr.setInt8(v, offset));
+    (ptr, v, offset)=>ptr.setInt8(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.byte, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.byte, info, false),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.byte));
 export type uint8_t = number;
 export const uint16_t = new NativeType<number>(
     'unsigned short',
     2, 2,
     (ptr, offset)=>ptr.getInt16(offset),
-    (ptr, v, offset)=>ptr.setInt16(v, offset));
+    (ptr, v, offset)=>ptr.setInt16(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.word, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.word, info, false),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.word));
 export type uint16_t = number;
 export const uint32_t = new NativeType<number>(
     'unsigned int',
     4, 4,
     (ptr, offset)=>ptr.getUint32(offset),
-    (ptr, v, offset)=>ptr.setUint32(v, offset));
+    (ptr, v, offset)=>ptr.setUint32(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.dword, info, false),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.dword));
 export type uint32_t = number;
 export const ulong_t = new NativeType<number>(
     'unsigned long',
     4, 4,
     (ptr, offset)=>ptr.getUint32(offset),
-    (ptr, v, offset)=>ptr.setUint32(v, offset));
+    (ptr, v, offset)=>ptr.setUint32(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.dword, info, false),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.dword));
 export type ulong_t = number;
 export const uint64_as_float_t = new NativeType<number>(
-    'unsigned long long',
+    'unsigned __int64',
     8, 8,
     (ptr, offset)=>ptr.getUint64AsFloat(offset),
-    (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
+    (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset),
+    (asm, target, source, info)=>{
+        // TODO: negative number to higher number
+        const temp = target.tempPtr();
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
+        asm.throwIfNonZero(info);
+        asm.cvttsd2si_t_t(target, temp);
+    },
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.cvtsi2sd_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
+        asm.throwIfNonZero(info);
+        asm.qmov_t_t(target, temp);
+        // TODO: negative number to zero
+    },
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.qword));
 export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
     'char',
     1, 1,
     (ptr, offset)=>ptr.getUint8(offset),
-    (ptr, v, offset)=>ptr.setUint8(v, offset));
+    (ptr, v, offset)=>ptr.setUint8(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.byte, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.byte, info, true),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.byte));
 export type int8_t = number;
 export const int16_t = new NativeType<number>(
     'short',
     2, 2,
     (ptr, offset)=>ptr.getUint16(offset),
-    (ptr, v, offset)=>ptr.setUint16(v, offset));
+    (ptr, v, offset)=>ptr.setUint16(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.word, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.word, info, true),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.word));
 export type int16_t = number;
 export const int32_t = new NativeType<number>(
     'int',
     4, 4,
     (ptr, offset)=>ptr.getInt32(offset),
-    (ptr, v, offset)=>ptr.setInt32(v, offset));
+    (ptr, v, offset)=>ptr.setInt32(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.dword, info, true),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.dword));
 export type int32_t = number;
 export const long_t = new NativeType<number>(
     'long',
     4, 4,
     (ptr, offset)=>ptr.getInt32(offset),
-    (ptr, v, offset)=>ptr.setInt32(v, offset));
+    (ptr, v, offset)=>ptr.setInt32(v, offset),
+    (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
+    (asm, target, source, info)=>asm.jsIntToNumber(target, source, OperationSize.dword, info, true),
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.dword));
 export type long_t = number;
 export const int64_as_float_t = new NativeType<number>(
-    'long long',
+    '__int64',
     8, 8,
     (ptr, offset)=>ptr.getInt64AsFloat(offset),
-    (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset));
+    (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset),
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
+        asm.throwIfNonZero(info);
+        asm.cvttsd2si_t_t(target, temp);
+    },
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.cvtsi2sd_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
+        asm.throwIfNonZero(info);
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.mov_t_t(target, source, OperationSize.qword));
 export type int64_as_float_t = number;
 export const float32_t = new NativeType<number>(
     'float',
     4, 4,
     (ptr, offset)=>ptr.getFloat32(offset),
-    (ptr, v, offset)=>ptr.setFloat32(v, offset));
+    (ptr, v, offset)=>ptr.setFloat32(v, offset),
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
+        asm.throwIfNonZero(info);
+        asm.cvtsd2ss_t_t(target, temp);
+    },
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.cvtss2sd_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
+        asm.throwIfNonZero(info);
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.movss_t_t(target, source));
 export type float32_t = number;
 export const float64_t = new NativeType<number>(
     'double',
     8, 8,
     (ptr, offset)=>ptr.getFloat64(offset),
-    (ptr, v, offset)=>ptr.setFloat64(v, offset));
+    (ptr, v, offset)=>ptr.setFloat64(v, offset),
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsNumberToDouble);
+        asm.throwIfNonZero(info);
+        asm.movsd_t_t(target, temp);
+    },
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr();
+        asm.movsd_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.rdx, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsDoubleToNumber);
+        asm.throwIfNonZero(info);
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.movsd_t_t(target, source));
 export type float64_t = number;
 
-const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], RawTypeId.Void, null, VoidPointer);
-const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], RawTypeId.Void, null, VoidPointer);
+const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
+const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], void_t, null, VoidPointer);
 
 export const CxxString = new NativeType<string>(
     'std::basic_string<char,std::char_traits<char>,std::allocator<char> >',
     0x20, 8,
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
+    (asm, target, source, info)=>{
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.r9, Register.rbp, 1, info.offsetForLocalSpace!+0x10);
+        asm.mov_r_c(Register.r8, chakraUtil.stack_utf8);
+        asm.mov_r_c(Register.rdx, info.numberOnUsing);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
+
+        asm.mov_r_rp(Register.rcx, Register.rbp, 1, info.offsetForLocalSpace!+0x10);
+        asm.cmp_r_c(Register.rcx, 15);
+        asm.ja_label('!');
+        asm.mov_r_rp(Register.rax, Register.rax, 1, 0);
+        asm.mov_r_c(Register.rcx, 15);
+        asm.close_label('!');
+        asm.mov_rp_r(Register.rbp, 1, info.offsetForLocalSpace!, Register.rax);
+        asm.mov_rp_r(Register.rbp, 1, info.offsetForLocalSpace!+0x18, Register.rcx);
+        asm.lea_t_rp(target, Register.rbp, 1, info.offsetForLocalSpace!);
+
+        asm.useStackAllocator = true;
+    },
+    (asm, target, source, info)=>{
+        const sourceTemp = source.tempPtr();
+        if (info.needDestruction) asm.qmov_t_t(sourceTemp, source);
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.mov_r_rp(Register.rdx, Register.rcx, 1, 0x10);
+        asm.mov_r_rp(Register.rax, Register.rcx, 1, 0x18);
+        asm.cmp_r_c(Register.rax, 15);
+        asm.cmova_r_rp(Register.rcx, Register.rcx, 1, 0);
+        asm.add_r_r(Register.rdx, Register.rcx);
+
+        const temp = target.tempPtr(source, sourceTemp);
+        asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
+        asm.throwIfNonZero(info);
+
+        if (info.needDestruction) {
+            asm.qmov_t_t(makefunc.Target[0], sourceTemp);
+            asm.call64(string_dtor.pointer, Register.rax);
+        }
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.qmov_t_t(target, source),
     string_ctor,
     string_dtor,
     (to, from)=>{
@@ -335,13 +522,34 @@ export const CxxString = new NativeType<string>(
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
+CxxString[makefunc.pointerReturn] = true;
 export type CxxString = string;
 
 export const bin64_t = new NativeType<string>(
-    'unsigned long long',
+    'unsigned __int64',
     8, 8,
     (ptr, offset)=>ptr.getBin64(offset),
-    (ptr, v, offset)=>ptr.setBin(v, offset)
+    (ptr, v, offset)=>ptr.setBin(v, offset),
+    (asm, target, source, info)=>{
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.mov_r_c(Register.rdx, info.numberOnUsing);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_bin64);
+        asm.qmov_t_t(target, makefunc.Target.return);
+    },
+    (asm, target, source, info)=>{
+        const temp = target.tempPtr(source);
+        const sourceTemp = source.tempPtr(target, temp);
+        asm.lea_r_rp(Register.rcx, sourceTemp.reg, 1, sourceTemp.offset);
+        if (source.memory) {
+            asm.mov_rp_r(Register.rcx, 1, 0, source.reg);
+        }
+        asm.mov_r_c(Register.rdx, 4);
+        asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_JsPointerToString);
+        asm.throwIfNonZero(info);
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.qmov_t_t(target, source),
 ).extends({
     one:'\u0001\0\0\0',
     zero:'\0\0\0\0',
@@ -353,7 +561,10 @@ export const bin128_t = new NativeType<string>(
     'unsigned __int128',
     16, 8,
     (ptr)=>ptr.getBin(8),
-    (ptr, v)=>ptr.setBin(v)
+    (ptr, v)=>ptr.setBin(v),
+    ()=>{ throw Error('bin128_t is not supported for the function type'); },
+    ()=>{ throw Error('bin128_t is not supported for the function type'); },
+    ()=>{ throw Error('bin128_t is not supported for the function type'); }
 ).extends({
     one:'\u0001\0\0\0',
     zero:'\0\0\0\0',

@@ -31,8 +31,6 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     [fieldmap]:Record<keyof any, [Type<any>, number]>;
     [isSealed]:boolean;
     [isNativeClass]:true;
-    [makefunc.np2js]?:(ptr:T|null)=>T;
-    [makefunc.js2np]?:(ptr:T|null)=>VoidPointer;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
     typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
@@ -169,6 +167,7 @@ export class NativeClass extends StructurePointer {
     static readonly [fieldmap]:Record<keyof any, [NativeType<any>, number]>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
+    static readonly [makefunc.pointerReturn] = true;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -388,8 +387,9 @@ export interface NativeArrayType<T> extends Type<NativeArray<T>>
     new(ptr?:VoidPointer):NativeArray<T>;
 }
 
-export class NativeArray<T> extends PrivatePointer {
-    [index:number]:T;
+export abstract class NativeArray<T> extends PrivatePointer implements Iterable<T> {
+    abstract length:number;
+    abstract componentType:Type<T>;
 
     static [NativeType.getter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, offset?:number):THIS {
         return ptr.addAs(this, offset, offset! >> 31);
@@ -398,7 +398,7 @@ export class NativeArray<T> extends PrivatePointer {
         throw Error("non assignable");
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void {
-        const type = this;
+        const type = this as any;
         builder.desc[key] = {
             configurable: true,
             get(this:VoidPointer) {
@@ -417,6 +417,27 @@ export class NativeArray<T> extends PrivatePointer {
     }
     static readonly [NativeType.align]:number = 1;
 
+    get(i:number):T {
+        const offset = i*this.componentType[NativeType.size];
+        return this.componentType[NativeType.getter](this as any, offset);
+    }
+
+    toArray():T[] {
+        const n = this.length;
+        const out:T[] = new Array(n);
+        for (let i=0;i<n;i++) {
+            out[i] = this.get(i);
+        }
+        return out;
+    }
+
+    *[Symbol.iterator]():IterableIterator<T> {
+        const n = this.length;
+        for (let i=0;i<n;i++) {
+            yield this.get(i);
+        }
+    }
+
     static make<T>(itemType:Type<T>, count:number):NativeArrayType<T> {
         const itemSize = itemType[NativeType.size];
         if (itemSize === null) throw Error('Unknown size of item. NativeArray needs item size');
@@ -434,14 +455,17 @@ export class NativeArray<T> extends PrivatePointer {
             static readonly [StructurePointer.contentSize] = off;
             static readonly [NativeType.align] = itemType[NativeType.align];
             [NativeType.size]:number;
+            length:number;
+            componentType:Type<T>;
         }
         NativeArrayImpl.prototype[NativeType.size] = off;
+        NativeArrayImpl.prototype.length = count;
+        NativeArrayImpl.prototype.componentType = itemType;
 
         Object.defineProperties(NativeArrayImpl.prototype, propmap.desc);
         return NativeArrayImpl;
     }
 }
-
 
 export declare class MantleClass extends NativeClass {
     getBoolean(offset?: number): boolean;
@@ -551,7 +575,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     const clazz = type as NativeClassType<T>;
 
     function wrapperGetterRef(ptr:StaticPointer, offset?:number):T{
-        return clazz[makefunc.np2js]!(ptr.getNullablePointerAs(clazz, offset));
+        return clazz[makefunc.np2js]!(ptr.getNullablePointerAs(clazz, offset))!;
     }
     function wrapperSetterRef(ptr:StaticPointer, value:T, offset?:number):void{
         ptr.setPointer(clazz[makefunc.js2np]!(value), offset);
@@ -566,5 +590,9 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     const getter = makefunc.np2js in type ? wrapperGetterRef : getterRef;
     const setter = makefunc.js2np in type ? wrapperSetterRef : setterRef;
 
-    return new NativeType<T>(type.name+'*', 8, 8, getter, setter);
+    return new NativeType<T>(type.name+'*', 8, 8,
+        getter, setter,
+        clazz[makefunc.js2npAsm],
+        clazz[makefunc.np2jsAsm],
+        clazz[makefunc.np2npAsm]);
 }

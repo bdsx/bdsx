@@ -1,5 +1,5 @@
 import Event, { CapsuledEvent } from "krevent";
-import { Register } from "./assembler";
+import { asm, Register } from "./assembler";
 import { NetworkHandler, NetworkIdentifier } from "./bds/networkidentifier";
 import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "./bds/packet";
 import { MinecraftPacketIds } from "./bds/packetids";
@@ -7,8 +7,9 @@ import { LoginPacket, PacketIdToType } from "./bds/packets";
 import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL, emptyFunc } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
-import { makefunc, RawTypeId } from "./makefunc";
+import { makefunc } from "./makefunc";
 import { nativeClass, NativeClass, nativeField } from "./nativeclass";
+import { bool_t, int32_t, int64_as_float_t, void_t } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError } from "./source-map-support";
@@ -28,7 +29,7 @@ class ReadOnlyBinaryStream extends NativeClass {
     }
 }
 
-ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], RawTypeId.Boolean, {this: ReadOnlyBinaryStream}, VoidPointer, RawTypeId.FloatAsInt64);
+ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnlyBinaryStream}, VoidPointer, int64_as_float_t);
 
 @nativeClass(null)
 class OnPacketRBP extends NativeClass {
@@ -38,23 +39,22 @@ class OnPacketRBP extends NativeClass {
     stream:ReadOnlyBinaryStream;
 }
 
-type AllEventTarget = Event<nethook.RawListener|nethook.BeforeListener<any>|nethook.AfterListener<any>|nethook.SendListener<any>|nethook.SendRawListener>;
-type AnyEventTarget = Event<nethook.RawListener&nethook.BeforeListener<any>&nethook.AfterListener<any>&nethook.SendListener<any>&nethook.SendRawListener>;
+type AllEventTarget = Event<nethook.RawListener|nethook.PacketListener<any>|nethook.SendRawListener>;
 
 const alltargets = new Array<AllEventTarget|null>(EVENT_INDEX_COUNT);
 for (let i=0;i<EVENT_INDEX_COUNT;i++) {
     alltargets[i] = null;
 }
 
-function getNetEventTarget(type:nethook.EventType, packetId:MinecraftPacketIds):AnyEventTarget {
+function getNetEventTarget(type:nethook.EventType, packetId:MinecraftPacketIds):AllEventTarget {
     if ((packetId>>>0) >= MAX_PACKET_ID) {
         throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
     }
     const id = type*MAX_PACKET_ID + packetId;
     let target = alltargets[id];
-    if (target !== null) return target as AnyEventTarget;
+    if (target !== null) return target as AllEventTarget;
     alltargets[id] = target = new Event;
-    return target as AnyEventTarget;
+    return target;
 }
 
 let errorListener:(err:any)=>void = emptyFunc;
@@ -63,9 +63,10 @@ let sendInternalOriginal:(handler:NetworkHandler, ni:NetworkIdentifier, packet:P
 export namespace nethook
 {
     export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
-    export type BeforeListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
-    export type AfterListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
-    export type SendListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type PacketListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type BeforeListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
+    export type AfterListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
+    export type SendListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
     export type SendRawListener = (ptr:NativePointer, size:number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
 
     export enum EventType
@@ -81,7 +82,7 @@ export namespace nethook
         errorListener = fireError;
 
         // hook raw
-        asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, RawTypeId.Int32, NetworkHandler.Connection);
+        asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
         procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x1fd,
             asmcode.packetRawHook, Register.rax, true, [
                 0x8B, 0xD6,                     // mov edx,esi
@@ -91,7 +92,7 @@ export namespace nethook
             ], [7, 11]);
 
         // hook before
-        asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, RawTypeId.Int32);
+        asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, int32_t);
         procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2e9,
             asmcode.packetBeforeHook, // original code depended
             Register.rax,
@@ -118,7 +119,7 @@ export namespace nethook
             Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24]);
 
         // hook after
-        asmcode.onPacketAfter = makefunc.np(onPacketAfter, RawTypeId.Void, null, OnPacketRBP, RawTypeId.Int32);
+        asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP, int32_t);
         procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x43d,
             asmcode.packetAfterHook, // original code depended
             Register.rax, true, [
@@ -129,7 +130,7 @@ export namespace nethook
                 0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
             ], []);
 
-        const onPacketSendNp = makefunc.np(onPacketSend, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, Packet);
+        const onPacketSendNp = makefunc.np(onPacketSend, void_t, null, NetworkHandler, NetworkIdentifier, Packet);
         asmcode.onPacketSend = onPacketSendNp;
         procHacker.hookingRawWithCallOriginal('NetworkHandler::send', onPacketSendNp, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
         procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0x90,
@@ -141,7 +142,7 @@ export namespace nethook
                 0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
             ], []);
 
-        sendInternalOriginal = procHacker.hooking('NetworkHandler::_sendInternal', RawTypeId.Void, null,
+        sendInternalOriginal = procHacker.hooking('NetworkHandler::_sendInternal', void_t, null,
             NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper)(onPacketSendInternal);
     }
 
@@ -167,7 +168,7 @@ export namespace nethook
     /**
      * @deprecated use nethook.*
      */
-    export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AnyEventTarget {
+    export function getEventTarget(type:EventType, packetId:MinecraftPacketIds):AllEventTarget {
         return getNetEventTarget(type, packetId);
     }
 
@@ -197,7 +198,7 @@ export namespace nethook
      * after 'raw', before 'after'
      * the event that before processing but after parsed from raw.
      */
-    export function before<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.BeforeListener<ID>> {
+    export function before<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.PacketListener<ID>> {
         return getNetEventTarget(nethook.EventType.Before, id);
     }
 
@@ -205,7 +206,7 @@ export namespace nethook
      * after 'raw' and 'before'
      * the event that after processing. some fields are assigned after the processing
      */
-    export function after<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.AfterListener<ID>> {
+    export function after<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.PacketListener<ID>> {
         return getNetEventTarget(nethook.EventType.After, id);
     }
 
@@ -213,7 +214,7 @@ export namespace nethook
      * before serializing.
      * it can modify class fields.
      */
-    export function send<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.SendListener<ID>> {
+    export function send<ID extends MinecraftPacketIds>(id:ID):CapsuledEvent<nethook.PacketListener<ID>> {
         return getNetEventTarget(nethook.EventType.Send, id);
     }
 
@@ -240,13 +241,13 @@ export namespace nethook
         MinecraftPacketIds.SetActorData,
     ]):void {
         const ex = new Set(exceptions);
-        for (let i=1; i<=0x88; i++) {
+        for (let i=1; i<=0xa3; i++) {
             if (ex.has(i)) continue;
             before<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
                 console.log(`R ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);
             });
         }
-        for (let i=1; i<=0x88; i++) {
+        for (let i=1; i<=0xa3; i++) {
             if (ex.has(i)) continue;
             send<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
                 console.log(`S ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);

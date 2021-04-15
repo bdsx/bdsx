@@ -1,16 +1,15 @@
+import { NetworkIdentifier } from "bdsx";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { CxxString } from "bdsx/nativetype";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { NetworkIdentifier } from "bdsx";
 import { abstract } from "../common";
 import { DimensionId } from "./actor";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, ServerNetworkHandler } from "./networkidentifier";
-import { CxxStringWrapper } from "../pointer";
 
 export class MinecraftEventing extends NativeClass {}
 export class ResourcePackManager extends NativeClass {}
@@ -75,7 +74,7 @@ export class ServerInstance extends NativeClass {
     networkHandler:NetworkHandler;
     scriptEngine:MinecraftServerScriptEngine;
 
-    protected _disconnectAllClients(message:CxxStringWrapper):void {
+    protected _disconnectAllClients(message:CxxString):void {
         abstract();
     }
 
@@ -86,11 +85,7 @@ export class ServerInstance extends NativeClass {
         return this.minecraft.something.level.getActivePlayerCount();
     }
     disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
-        const _message = new CxxStringWrapper(true);
-        _message.construct();
-        _message.value = message;
-        this._disconnectAllClients(_message);
-        _message.destruct();
+        this._disconnectAllClients(message);
     }
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
         return this.minecraft.something.shandler.disconnectClient(client, message);

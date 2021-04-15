@@ -28,6 +28,12 @@
         "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
         "@typescript-eslint/no-this-alias": "off",
         "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-empty-interface": [
+          "error",
+          {
+            "allowSingleExtends": true
+          }
+        ],
         "prefer-arrow-callback": "error",
         "import/no-cycle": "error",
         "eqeqeq": ["error", "always", {"null": "ignore"}],

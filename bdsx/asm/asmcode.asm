@@ -205,9 +205,10 @@ _codeerror:
     call getout_jserror
 endp
 
-# char* str_js2np(JsValueRef value, uint32_t paramNum, char*(*converter)(const char16_t*, size_t))
+# char* str_js2np(JsValueRef value, uint32_t paramNum, char*(*converter)(const char16_t*, size_t), size_t* outsize)
 export proc str_js2np
     sub rsp, 28h
+    mov [rsp+48h], r9
     mov [rsp+40h], r8
     mov [rsp+38h], rdx
     mov [rsp+30h], rcx
@@ -226,6 +227,7 @@ export proc str_js2np
     call JsStringToPointer
     test eax, eax
     jnz _failed
+    mov r8, [rsp+48h]
     mov rcx, [rsp+18h]
     mov rdx, [rsp+20h]
     call [rsp+40h]
@@ -497,73 +499,6 @@ _failed:
     call [rdi+fn_getout_invalid_parameter]
 endp
 
-
-; void* wrapper_js2np(JsValueRef func, JsValueRef ptr)
-export proc wrapper_js2np
-    sub rsp, 38h
-    mov [rsp+30h], rdx
-    mov rax, js_null
-    mov [rsp+28h], rax
-    lea r9, [rsp+20h]
-    mov r8, 2
-    lea rdx, [rsp+28h]
-    call [rdi+fn_JsCallFunction]
-    test eax, eax
-    jnz _failed
-    mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rax, [rax+10h]
-    add rsp, 38h
-    ret
-_failed:
-    mov ecx, eax
-    call getout
-endp
-
-; JsValueRef wrapper_np2js_nullable(void* ptr, JsValueRef func, JsValueRef ctor)
-export proc wrapper_np2js_nullable
-    test rcx, rcx
-    jnz wrapper_np2js
-    mov rax, js_null
-    ret
-endp
-
-; JsValueRef wrapper_np2js(void* ptr, JsValueRef func, JsValueRef ctor)
-export proc wrapper_np2js
-    sub rsp, 38h
-    mov [rsp+50h], rcx
-    mov [rsp+48h], rdx
-    mov rcx, r8
-    lea r9, [rsp+30h]
-    mov r8, 1
-    lea rdx, [rsp+28h]
-    mov rax, js_null
-    mov [rdx], rax
-    call JsConstructObject
-    test eax, eax
-    jnz _failed
-    mov rcx, [rsp+30h]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rcx, [rsp+50h]
-    mov [rax+10h], rcx
-    lea r9, [rsp+20h]
-    mov r8, 2
-    lea rdx, [rsp+28h]
-    mov rcx, [rsp+48h]
-    call [rdi+fn_JsCallFunction]
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+20h]
-    add rsp, 38h
-    ret
-_failed:
-    mov ecx, eax
-    call getout
-endp
 
 ; codes for minecraft
 export def uv_async_call:qword

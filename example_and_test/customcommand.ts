@@ -40,7 +40,7 @@ command.register('ddd', 'relative float example').overload((param, origin, outpu
     z: RelativeFloat,
 });
 
-// entity, incompleted
+// entity
 command.register('eee', 'entity example').overload((param, origin, output)=>{
     console.log(`entity example> origin=${origin.getName()}`);
     for (const actor of param.target.newResults(origin)) {

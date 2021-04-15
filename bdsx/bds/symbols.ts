@@ -140,7 +140,8 @@ const symbols = [
     'CommandSelectorBase::CommandSelectorBase',
     'CommandSelectorBase::~CommandSelectorBase',
     'CommandSelectorBase::newResults',
-    'ScriptServerActorEventListener::onActorSneakChanged'
+    'ScriptServerActorEventListener::onActorSneakChanged',
+    'Dimension::getDimensionId'
 ] as const;
 
 // decorated symbols

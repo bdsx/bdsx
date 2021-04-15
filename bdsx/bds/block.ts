@@ -1,15 +1,11 @@
-import { NativeClass } from "bdsx/nativeclass";
 import { abstract } from "bdsx/common";
-import { HashedString } from "./hashedstring";
-import { CxxStringWrapper } from "bdsx/pointer";
+import { NativeClass } from "bdsx/nativeclass";
 import { BlockPos } from "./blockpos";
+import { HashedString } from "./hashedstring";
 
 export class BlockLegacy extends NativeClass {
-    protected _getCommandName(): CxxStringWrapper {
-        abstract();
-    }
     getCommandName():string {
-        return this._getCommandName().value;
+        abstract();
     }
     getCreativeCategory():number {
         abstract();

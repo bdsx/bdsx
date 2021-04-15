@@ -1,8 +1,8 @@
 import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, uint16_t } from "bdsx/nativetype";
-import { makefunc, RawTypeId } from "../makefunc";
+import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "bdsx/nativetype";
+import { makefunc } from "../makefunc";
 import { procHacker } from "./proc";
 
 const portDelineator = '|'.charCodeAt(0);
@@ -67,6 +67,6 @@ export namespace RakNet
         }
     }
 
-    SystemAddress.prototype.ToString = procHacker.js("?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z", RawTypeId.Void, {this: RakNet.SystemAddress}, RawTypeId.Boolean, RawTypeId.Buffer, RawTypeId.Int32);
-    RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, RawTypeId.Int32);
+    SystemAddress.prototype.ToString = procHacker.js("?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z", void_t, {this: RakNet.SystemAddress}, bool_t, makefunc.Buffer, int32_t);
+    RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, int32_t);
 }

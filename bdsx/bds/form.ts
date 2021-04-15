@@ -223,17 +223,15 @@ export class Form<DATA extends FormData> {
             const formdata:FormData = data;
             if (formdata.type === 'form') {
                 if (formdata.buttons !== undefined) {
-                    let externalLoading = false;
                     for (const button of formdata.buttons) {
-                        if (button.image?.type === "url") externalLoading = true;
-                    }
-
-                    if (externalLoading) {
-                        setTimeout(() => {
-                            const pk = SetTitlePacket.create();
-                            pk.sendTo(target);
-                            pk.dispose();
-                        }, 1000);
+                        if (button.image?.type === "url") {
+                            setTimeout(() => {
+                                const pk = SetTitlePacket.create();
+                                pk.sendTo(target);
+                                pk.dispose();
+                            }, 1000);
+                            break;
+                        }
                     }
                 }
             }

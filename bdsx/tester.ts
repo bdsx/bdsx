@@ -4,6 +4,7 @@ import { getLineAt } from "./util";
 import colors = require('colors');
 
 let passed = 0;
+let skipped = 0;
 let testnum = 1;
 let testcount = 0;
 
@@ -11,6 +12,7 @@ export class Tester {
     subject = '';
     errored = false;
     done = false;
+    skipped = false;
 
     public static errored = false;
 
@@ -23,10 +25,12 @@ export class Tester {
         console.error(colors.red(errorpos));
         if (!this.errored) {
             if (this.done) {
-                passed--;
+                if (this.skipped) skipped--;
+                else passed--;
                 console.error(colors.red(`[test] FAILED (${passed}/${testcount})`));
             }
             this.errored = true;
+            this.skipped = false;
             Tester.errored = true;
         }
     }
@@ -52,6 +56,11 @@ export class Tester {
 
     equals<T>(actual:T, expected:T, message:string='', toString:(v:T)=>string=v=>v+''):void {
         if (actual !== expected) this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}, ${message}`, 3);
+    }
+
+    skip(message:string):void {
+        this.skipped = true;
+        this.log(message);
     }
 
     static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>):Promise<void> {
@@ -81,12 +90,19 @@ export class Tester {
                 tester.subject = subject;
                 tester.errored = false;
                 await test.call(tester);
-                if (!tester.errored) passed++;
+                if (tester.skipped) skipped++;
+                else if (!tester.errored) passed++;
                 tester.done = true;
             } catch (err) {
                 tester.processError(err);
             }
         }
+
+        if (skipped !== 0) {
+            console.error(colors.yellow(`[test] SKIPPED (${skipped}/${testcount})`));
+            testcount -= skipped;
+        }
+
         if (passed !== testcount) {
             console.error(colors.red(`[test] FAILED (${passed}/${testcount})`));
         } else {

@@ -1,10 +1,8 @@
 import { abstract } from "bdsx/common";
-import { RawTypeId } from "bdsx/makefunc";
-import { nativeClass, MantleClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { CxxStringWrapper } from "bdsx/pointer";
+import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
-import { int32_t, uint32_t } from "../nativetype";
-import type { NetworkIdentifier } from "./networkidentifier";
+import { CxxString, int32_t, uint32_t } from "../nativetype";
+import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
 import { BinaryStream } from "./stream";
@@ -54,7 +52,7 @@ export class Packet extends MantleClass {
     getId():MinecraftPacketIds {
         abstract();
     }
-    getName(name:CxxStringWrapper):void {
+    getName():CxxString {
         abstract();
     }
     write(stream:BinaryStream):void {
@@ -105,4 +103,4 @@ export function createPacket(packetId:MinecraftPacketIds):SharedPointer {
     return new SharedPointer(p);
 }
 
-export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, RawTypeId.Int32);
+export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, int32_t);

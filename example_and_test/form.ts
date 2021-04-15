@@ -10,7 +10,7 @@ command.register('form', 'form example').overload(async(param, origin, output)=>
         title: 'Form Example',
         content: 'Open more forms',
         button1: 'yes',
-        button2: 'no'
+        button2: 'no',
     });
     if (isYes) {
         const res = await Form.sendTo(ni, {

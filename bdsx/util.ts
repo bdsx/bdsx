@@ -229,3 +229,19 @@ export function str2set(str:string):Set<number>{
     }
     return out;
 }
+
+export function arrayEquals(arr1:any[], arr2:any[], count:number):boolean {
+    for (let i=0;i<count;i++) {
+        if (arr1[i] !== arr2[i]) return false;
+    }
+    return true;
+}
+
+export function makeSignature(sig:string):number {
+    if (sig.length > 4) throw Error('too long');
+    let out = 0;
+    for (let i=0;i<4;i++) {
+        out += sig.charCodeAt(i) << (i*8);
+    }
+    return out;
+}

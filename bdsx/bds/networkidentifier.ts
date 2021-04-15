@@ -3,18 +3,18 @@ import { Register } from "bdsx/assembler";
 import { abstract } from "bdsx/common";
 import { dll } from "bdsx/dll";
 import { Hashable, HashSet } from "bdsx/hashset";
-import { makefunc, RawTypeId } from "bdsx/makefunc";
+import { makefunc } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { CxxString, int32_t, NativeType } from "bdsx/nativetype";
+import { CxxString, int32_t, NativeType, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
 import { CapsuledEvent, Event } from "krevent";
 import { StaticPointer, VoidPointer } from "../core";
-import { Packet } from "./packet";
+import type { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
-import { ServerPlayer } from "./player";
+import type { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
@@ -60,15 +60,11 @@ export class ServerNetworkHandler extends NativeClass {
     @nativeField(int32_t, 0x2D0)
     maxPlayers: int32_t;
 
-    protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxStringWrapper, d:number):void {
+    protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxString, d:number):void {
         abstract();
     }
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
-        const _message = new CxxStringWrapper(true);
-        _message[NativeType.ctor]();
-        _message.value = message;
-        this._disconnectClient(client, 0, _message, 0);
-        _message[NativeType.dtor]();
+        this._disconnectClient(client, 0, message, 0);
     }
     setMotd(motd:string):void {
         this.motd = motd;
@@ -158,5 +154,5 @@ procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', ma
     setTimeout(()=>{
         identifiers.delete(ni);
     }, 3000);
-}, RawTypeId.Void, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
+}, void_t, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
