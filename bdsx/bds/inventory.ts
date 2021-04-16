@@ -193,10 +193,47 @@ export class ItemStack extends NativeClass {
     }
 }
 
-
-
 export class PlayerInventory extends NativeClass {
-    getItem(slot:number, containerId: ContainerId):ItemStack {
+    addItem(itemStack:ItemStack, v:boolean):boolean {
+        abstract();
+    }
+    clearSlot(slot:number, containerId:ContainerId):void {
+        abstract();
+    }
+    getContainerSize(containerId:ContainerId):number {
+        abstract();
+    }
+    getFirstEmptySlot():number {
+        abstract();
+    }
+    getHotbarSize():number {
+        abstract();
+    }
+    getItem(slot:number, containerId:ContainerId):ItemStack {
+        abstract();
+    }
+    getSelectedItem():ItemStack {
+        abstract();
+    }
+    getSelectedSlot():number {
+        return this.getInt8(0x10);
+    }
+    getSlotWithItem(itemStack:ItemStack, v2:boolean, v3:boolean):number {
+        abstract();
+    }
+    getSlots():CxxVector<ItemStack> {
+        abstract();
+    }
+    selectSlot(slot:number, containerId:ContainerId):void {
+        abstract();
+    }
+    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, v:boolean):void {
+        abstract();
+    }
+    setSelectedItem(itemStack:ItemStack):void {
+        abstract();
+    }
+    swapSlots(primarySlot:number, secondarySlot:number):void {
         abstract();
     }
 }
