@@ -9,6 +9,18 @@ export class BlockPos extends NativeClass {
     y:uint32_t;
     @nativeField(int32_t)
     z:int32_t;
+
+    static create(x:number, y:number, z:number):BlockPos {
+        const v = new BlockPos(true);
+        v.x = x;
+        v.y = y;
+        v.z = z;
+        return v;
+    }
+
+    toJSON():VectorXYZ {
+        return {x:this.x, y:this.y, z:this.z};
+    }
 }
 
 @nativeClass()
@@ -26,6 +38,10 @@ export class Vec3 extends NativeClass {
         v.y = y;
         v.z = z;
         return v;
+    }
+
+    toJSON():VectorXYZ {
+        return {x:this.x, y:this.y, z:this.z};
     }
 }
 
