@@ -82,6 +82,7 @@ runtimeError.setHandler(err=>{
 });
 
 let launched = false;
+let openIsFired = false;
 
 const bedrockLogLiner = new Liner;
 const cmdOutputLiner = new Liner;
@@ -312,7 +313,9 @@ function _launch(asyncResolve:()=>void):void {
 
                 bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
                 nimodule.networkHandler = bd_server.serverInstance.networkHandler;
+                openIsFired = true;
                 openEvTarget.fire();
+                openEvTarget.clear(); // it will never fire, clear it
                 asyncResolve();
                 _tickCallback();
 
@@ -388,6 +391,16 @@ export namespace bedrockServer
     export const commandOutput = commandOutputEvTarget as CapsuledEvent<(log:string)=>CANCEL|void>;
 
     export let sessionId: string;
+
+    export function afterOpen():Promise<void> {
+        return new Promise(resolve=>{
+            if (openIsFired) {
+                resolve();
+            } else {
+                openEvTarget.on(resolve);
+            }
+        });
+    }
 
     export function isLaunched():boolean {
         return launched;
