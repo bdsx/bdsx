@@ -224,6 +224,7 @@ Tester.test({
         this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
         const string2string = asm().mov_r_r(Register.rax, Register.rcx).ret().make(CxxString, null, CxxString);
         this.equals(string2string('test'), 'test', 'string to string');
+        this.equals(string2string('testtesta'), 'testtesta', 'test string over 8 bytes');
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
     },
 
