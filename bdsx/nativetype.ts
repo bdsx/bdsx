@@ -483,6 +483,8 @@ export const CxxString = new NativeType<string>(
         asm.mov_r_rp(Register.rcx, Register.rbp, 1, info.offsetForLocalSpace!+0x10);
         asm.cmp_r_c(Register.rcx, 15);
         asm.ja_label('!');
+        asm.mov_r_rp(Register.rdx, Register.rax, 1, 8);
+        asm.mov_rp_r(Register.rbp, 1, info.offsetForLocalSpace!+0x08, Register.rdx);
         asm.mov_r_rp(Register.rax, Register.rax, 1, 0);
         asm.mov_r_c(Register.rcx, 15);
         asm.close_label('!');
