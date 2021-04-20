@@ -430,14 +430,14 @@ export namespace bedrockServer
      * it does the same thing with executeCommandOnConsole
      * but call the internal function directly
      */
-    export function executeCommand(command:string, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
+    export function executeCommand(command:string, callback:boolean=false ,permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
         const origin = createServerCommandOrigin('Server',
             bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
 
         const ctx = createCommandContext(command, origin);
-        const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, false);
+        const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, !callback); //Nobody wants the console to be flooded with this
 
         ctx.destruct();
         origin.destruct();
