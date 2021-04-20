@@ -431,18 +431,22 @@ export namespace bedrockServer
      * but call the internal function directly
      */
     export function executeCommand(command:string, mute:boolean=true ,permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
-        const origin = createServerCommandOrigin('Server',
-            bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
-            permissionLevel,
-            dimension);
+        try {
+            const origin = createServerCommandOrigin('Server',
+                bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
+                permissionLevel,
+                dimension);
 
-        const ctx = createCommandContext(command, origin);
-        const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, mute);
+            const ctx = createCommandContext(command, origin);
+            const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, mute);
 
-        ctx.destruct();
-        origin.destruct();
+            ctx.destruct();
+            origin.destruct();
 
-        return res;
+            return res;
+        } catch {
+            return new MCRESULT();
+        }
     }
 
     let stdInHandler:DefaultStdInHandler|null = null;
