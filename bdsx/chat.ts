@@ -4,7 +4,7 @@ import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { TextPacket } from './bds/packets';
 import { CANCEL } from './common';
-import { nethook } from './nethook';
+import { events } from './event';
 
 interface ChatEvent
 {
@@ -54,10 +54,10 @@ class ChatManager extends EventEx<ChatListener> {
     };
 
     onStarted():void {
-        nethook.before(MinecraftPacketIds.Text).on(this.chatlistener);
+        events.packetBefore(MinecraftPacketIds.Text).on(this.chatlistener);
     }
     onCleared():void {
-        nethook.before(MinecraftPacketIds.Text).remove(this.chatlistener);
+        events.packetBefore(MinecraftPacketIds.Text).remove(this.chatlistener);
     }
 
     /** @deprecated use nethook.before(MinecraftPacketIds.Text).on */

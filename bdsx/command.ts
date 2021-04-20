@@ -1,5 +1,5 @@
 
-import Event, { CapsuledEvent, EventEx } from 'krevent';
+import { CapsuledEvent, EventEx } from 'krevent';
 import { Command, CommandContext, CommandFlag, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { NetworkIdentifier } from './bds/networkidentifier';
@@ -8,10 +8,11 @@ import { CommandRequestPacket } from './bds/packets';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { CANCEL } from './common';
+import { events } from './event';
+import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
 import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
-import { nethook } from './nethook';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 
@@ -20,7 +21,7 @@ let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPt
 function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t):MCRESULT {
     const ctx = ctxptr.p!;
     const name = ctx.origin.getName();
-    const resv = hookev.fire(ctxptr.p!.command, name, ctx);
+    const resv = events.command.fire(ctxptr.p!.command, name, ctx);
     switch (typeof resv) {
     case 'number':
         res.result = resv;
@@ -37,9 +38,11 @@ MinecraftCommands.prototype.executeCommand = function(ctx, b) {
     return executeCommand(this, res, ctx, b);
 };
 
+/**
+ * @deprecated why are you using it?
+ */
 export function hookingForCommand(): void {
-    executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
-        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), bool_t)(executeCommand);
+    // it will be called with the event callback
 }
 
 interface CommandEvent {
@@ -64,7 +67,6 @@ class CommandEventImpl implements CommandEvent {
     }
 }
 type UserCommandListener = (ev: CommandEvent) => void | CANCEL;
-type HookCommandListener = (command: string, originName: string, ctx: CommandContext) => void | number;
 
 class UserCommandEvents extends EventEx<UserCommandListener> {
     private readonly listener = (ptr: CommandRequestPacket, networkIdentifier: NetworkIdentifier, packetId: MinecraftPacketIds):void|CANCEL => {
@@ -77,14 +79,12 @@ class UserCommandEvents extends EventEx<UserCommandListener> {
     };
 
     onStarted(): void {
-        nethook.before(MinecraftPacketIds.CommandRequest).on(this.listener);
+        events.packetBefore(MinecraftPacketIds.CommandRequest).on(this.listener);
     }
     onCleared(): void {
-        nethook.before(MinecraftPacketIds.CommandRequest).remove(this.listener);
+        events.packetBefore(MinecraftPacketIds.CommandRequest).remove(this.listener);
     }
 }
-
-const hookev = new Event<HookCommandListener>();
 
 /** @deprecated use nethook.before(MinecraftPacketIds.CommandRequest).on */
 export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
@@ -228,7 +228,10 @@ export class CustomCommandFactory {
 
 export namespace command {
 
-    export const hook = hookev as CapsuledEvent<HookCommandListener>;
+    /**
+     * @deprecated use events.command
+     */
+    export const hook = events.command;
 
     export function register(name:string,
         description:string,
@@ -244,11 +247,16 @@ export namespace command {
 }
 
 /**
- * @deprecated use command.hook
+ * @deprecated use events.command
  */
-export const hook = hookev as CapsuledEvent<HookCommandListener>;
+export const hook = events.command;
 
 const customCommandDtor = makefunc.np(function(){
     this[NativeType.dtor]();
 }, void_t, {this:CustomCommand}, int32_t);
 
+
+bedrockServer.withLoading().then(()=>{
+    executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
+        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), bool_t)(executeCommand);
+});

@@ -1,4 +1,4 @@
-import Event, { CapsuledEvent } from "krevent";
+import { CapsuledEvent } from "krevent";
 import { asm, Register } from "./assembler";
 import { CommandContext, MCRESULT } from "./bds/command";
 import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
@@ -6,14 +6,13 @@ import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
-import { hookingForCommand } from "./command";
 import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
+import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
-import { nethook } from "./nethook";
 import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
@@ -82,17 +81,11 @@ runtimeError.setHandler(err=>{
 });
 
 let launched = false;
+let loadingIsFired = false;
 let openIsFired = false;
 
 const bedrockLogLiner = new Liner;
 const cmdOutputLiner = new Liner;
-
-const openEvTarget = new Event<()=>void>();
-const updateEvTarget = new Event<()=>void>();
-const errorEvTarget = new Event<(err:Error)=>CANCEL|void>();
-const closeEvTarget = new Event<()=>void>();
-const logEvTarget = new Event<(log:string, color:colors.Color)=>CANCEL|void>();
-const commandOutputEvTarget = new Event<(log:string)=>CANCEL|void>();
 
 const commandQueue = new MultiThreadQueue(CxxString[NativeType.size]);
 const commandQueueBuffer = new CxxStringWrapper(true);
@@ -119,7 +112,7 @@ function patchForStdio():void {
             color = colors.brightRed;
             break;
         }
-        if (logEvTarget.fire(line, color) === CANCEL) return;
+        if (events.serverLog.fire(line, color) === CANCEL) return;
         console.log(color(line));
     }, void_t, null, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
@@ -128,7 +121,7 @@ function patchForStdio():void {
         // void(*callback)(const char* log, size_t size)
         const line = cmdOutputLiner.write(ptr.getString(bytes));
         if (line === null) return;
-        if (commandOutputEvTarget.fire(line) !== CANCEL) {
+        if (events.commandOutput.fire(line) !== CANCEL) {
             console.log(line);
         }
     }, void_t, null, int64_as_float_t, StaticPointer);
@@ -162,7 +155,7 @@ function _launch(asyncResolve:()=>void):void {
     jshook.init(err=>{
         if (err instanceof Error) {
             err.stack = remapStack(err.stack);
-            if (errorEvTarget.fire(err) !== CANCEL) {
+            if (events.error.fire(err) !== CANCEL) {
                 console.error(err.stack);
             }
         } else {
@@ -178,7 +171,8 @@ function _launch(asyncResolve:()=>void):void {
     function finishCallback():void {
         uv_async.close();
         threadHandle.close();
-        closeEvTarget.fire();
+        events.serverClose.fire();
+        events.serverClose.clear();
         _tickCallback();
     }
 
@@ -267,15 +261,20 @@ function _launch(asyncResolve:()=>void):void {
     // main will create a game thread.
     // and bdsx will hijack the game thread and run it on the node thread.
     const [threadHandle] = capi.createThread(asmcode.wrapped_main, null);
+
     require('./bds/implements');
-    require('./event');
+    require('./event_impl');
+
+    loadingIsFired = true;
+    events.serverLoading.fire();
+    events.serverLoading.clear();
 
     // skip to create the console of BDS
     procHacker.write('ScriptApi::ScriptFramework::registerConsole', 0, asm().mov_r_c(Register.rax, 1).ret());
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
-    asmcode.updateEvTargetFire = makefunc.np(()=>updateEvTarget.fire(), void_t, null);
+    asmcode.updateEvTargetFire = makefunc.np(()=>events.serverUpdate.fire(), void_t, null);
 
     procHacker.patching('update-hook', '<lambda_8914ed82e3ef519cb2a85824fbe333d8>::operator()', 0x5f3,
         asmcode.updateWithSleep, Register.rcx, true, [
@@ -298,14 +297,6 @@ function _launch(asyncResolve:()=>void):void {
             0x90,  // nop
         ], [1, 5, 9, 13, 62, 66]);
 
-    nethook.hooking(err=>{
-        err.stack = remapStack(err.stack);
-        if (errorEvTarget.fire(err) !== CANCEL) {
-            console.error(err.stack);
-        }
-    });
-    hookingForCommand();
-
     // hook on script starting
     procHacker.hookingRawWithCallOriginal('ScriptEngine::startScriptLoading',
         makefunc.np((scriptEngine:VoidPointer)=>{
@@ -315,8 +306,8 @@ function _launch(asyncResolve:()=>void):void {
                 bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
                 nimodule.networkHandler = bd_server.serverInstance.networkHandler;
                 openIsFired = true;
-                openEvTarget.fire();
-                openEvTarget.clear(); // it will never fire, clear it
+                events.serverOpen.fire();
+                events.serverOpen.clear(); // it will never fire, clear it
                 asyncResolve();
                 _tickCallback();
 
@@ -361,44 +352,70 @@ function createServerCommandOrigin(name:CxxString, level:ServerLevel, permission
 
 const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
 ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
+
 function sessionIdGrabber(text: string): void {
     const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d INFO\] Session ID (.*)$/);
     if(tmp) {
         bedrockServer.sessionId = tmp[1];
-        logEvTarget.remove(sessionIdGrabber);
+        events.serverLog.remove(sessionIdGrabber);
     }
 }
-logEvTarget.on(sessionIdGrabber);
+events.serverLog.on(sessionIdGrabber);
+
 export namespace bedrockServer
 {
     /**
-     * after BDS launched
+     * @deprecated use events.serverLoading
      */
-    export const open = openEvTarget as CapsuledEvent<()=>void>;
+    export const loading = events.serverLoading as CapsuledEvent<()=>void>;
 
     /**
-     * after BDS closed
+     * @deprecated use events.serverOpen
      */
-    export const close = closeEvTarget as CapsuledEvent<()=>void>;
-
-    export const update = updateEvTarget as CapsuledEvent<()=>void>;
+    export const open = events.serverOpen as CapsuledEvent<()=>void>;
 
     /**
-    * global error listeners
-    * if returns CANCEL, then default error printing is disabled
-    */
-    export const error = errorEvTarget as CapsuledEvent<(err:Error)=>CANCEL|void>;
-    export const bedrockLog = logEvTarget as CapsuledEvent<(log:string, color:colors.Color)=>CANCEL|void>;
-    export const commandOutput = commandOutputEvTarget as CapsuledEvent<(log:string)=>CANCEL|void>;
+     * @deprecated use events.serverClose
+     */
+    export const close = events.serverClose as CapsuledEvent<()=>void>;
+
+    /**
+     * @deprecated use events.serverUpdate
+     */
+    export const update = events.serverUpdate as CapsuledEvent<()=>void>;
+
+    /**
+     * @deprecated use events.error
+     */
+    export const error = events.error as CapsuledEvent<(err:Error)=>CANCEL|void>;
+
+    /**
+     * @deprecated use events.serverLog
+     */
+    export const bedrockLog = events.serverLog as CapsuledEvent<(log:string, color:colors.Color)=>CANCEL|void>;
+
+    /**
+     * @deprecated use events.serverLog
+     */
+    export const commandOutput = events.commandOutput as CapsuledEvent<(log:string)=>CANCEL|void>;
 
     export let sessionId: string;
 
+    export function withLoading():Promise<void> {
+        return new Promise(resolve=>{
+            if (loadingIsFired) {
+                resolve();
+            } else {
+                events.serverLoading.on(resolve);
+            }
+        });
+    }
     export function afterOpen():Promise<void> {
         return new Promise(resolve=>{
             if (openIsFired) {
                 resolve();
             } else {
-                openEvTarget.on(resolve);
+                events.serverOpen.on(resolve);
             }
         });
     }
@@ -492,7 +509,7 @@ export namespace bedrockServer
             super();
 
             this.rl.on('line', line=>this.online(line));
-            close.on(this.onclose);
+            events.serverClose.on(this.onclose);
         }
 
         close():void {
@@ -509,7 +526,7 @@ export namespace bedrockServer
         private readonly getline = new GetLine(line=>this.online(line));
         constructor() {
             super();
-            close.on(this.onclose);
+            events.serverClose.on(this.onclose);
         }
 
         close():void {

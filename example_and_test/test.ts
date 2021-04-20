@@ -2,7 +2,7 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook, NetworkIdentifier, serverInstance } from "bdsx";
+import { Actor, bin, CANCEL, MinecraftPacketIds, NativePointer, NetworkIdentifier, serverInstance } from "bdsx";
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
@@ -14,10 +14,11 @@ import { capi } from "bdsx/capi";
 import { CxxVector } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
+import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, NativeType, uint16_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
@@ -276,20 +277,20 @@ Tester.test({
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const size = ctx.origin.getLevel().players.size();
                 this.assert(size === 0, 'origin.getLevel().players.size is not zero');
-                command.hook.remove(cb);
+                events.command.remove(cb);
             }
         };
-        command.hook.on(cb);
+        events.command.on(cb);
         await new Promise<void>((resolve) => {
             const outputcb = (output:string) => {
                 if (output.startsWith('Unknown command: __dummy_command')) {
-                    bedrockServer.commandOutput.remove(outputcb);
+                    events.commandOutput.remove(outputcb);
                     if (passed) resolve();
                     else this.fail();
                     return CANCEL;
                 }
             };
-            bedrockServer.commandOutput.on(outputcb);
+            events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
         });
     },
@@ -299,20 +300,20 @@ Tester.test({
         const cb = (cmd:string, origin:string) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                command.hook.remove(cb);
+                events.command.remove(cb);
             }
         };
-        command.hook.on(cb);
+        events.command.on(cb);
         await new Promise<void>((resolve) => {
             const outputcb = (output:string) => {
                 if (output.startsWith('Unknown command: __dummy_command')) {
-                    bedrockServer.commandOutput.remove(outputcb);
+                    events.commandOutput.remove(outputcb);
                     if (passed) resolve();
                     else this.fail();
                     return CANCEL;
                 }
             };
-            bedrockServer.commandOutput.on(outputcb);
+            events.commandOutput.on(outputcb);
             bedrockServer.executeCommand('/__dummy_command');
         });
     },
@@ -350,25 +351,25 @@ Tester.test({
         let idcheck = 0;
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
-            nethook.raw(i).on((ptr, size, ni, packetId) => {
+            events.packetRaw(i).on((ptr, size, ni, packetId) => {
                 idcheck = packetId;
                 this.assert(size > 0, `packet size is too little`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
             });
-            nethook.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
             });
-            nethook.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            events.packetAfter<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
             });
-            nethook.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            events.packetSend<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 sendidcheck = packetId;
                 this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             });
-            nethook.sendRaw(i).on((ptr, size, ni, packetId) => {
+            events.packetSendRaw(i).on((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
                 this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
@@ -377,7 +378,7 @@ Tester.test({
         }
 
         const conns = new Set<NetworkIdentifier>();
-        nethook.after(MinecraftPacketIds.Login).on((ptr, ni) => {
+        events.packetAfter(MinecraftPacketIds.Login).on((ptr, ni) => {
             this.assert(!conns.has(ni), '[test] logined without connected');
             conns.add(ni);
             setTimeout(() => {
@@ -427,7 +428,7 @@ Tester.test({
     },
 
     chat() {
-        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
+        events.packetBefore(MinecraftPacketIds.Text).on((packet, ni) => {
             if (packet.message == "TEST YEY!") {
                 const MAX_CHAT = 5;
                 chatCancelCounter++;
@@ -447,9 +448,9 @@ Tester.test({
 let connectedNi: NetworkIdentifier;
 let connectedId: string;
 
-nethook.raw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
+events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
-nethook.after(MinecraftPacketIds.Login).on(ptr => {
+events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
     connectedId = ptr.connreq.cert.getId();
 });

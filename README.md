@@ -8,8 +8,9 @@ Minecraft Bedrock Dedicated Server that supports [node.js](https://nodejs.org/).
 * [Debug with Visual Studio Code (You can debug addons too)](https://github.com/bdsx/bdsx/wiki/Debug-with-VSCode)
 * Hijack network packet + Get IP Address & XUID
 ```ts
-import { nethook, MinecraftPacketIds } from "bdsx";
-nethook.after(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId)=>{
+import { events } from "bdsx/events";
+import { MinecraftPacketIds } from 'bdsx/bds/packetids';
+events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId)=>{
     const ip = networkIdentifier.getAddress();
     const cert = ptr.connreq.cert;
     const xuid = cert.getXuid();

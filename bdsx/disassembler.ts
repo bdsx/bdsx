@@ -163,14 +163,25 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
         } else if (v === 0xc3) { // ret
             return new asm.Operation(asm.code.ret, []);
         } else if (v === 0xff) {
-            const v = ptr.readUint8();
-            const reg = (v & 0x7)|((rex & 0x1) << 3);
-            if (v === 0xe0) { // jmp register
-                return new asm.Operation(asm.code.jmp_r, [reg]);
-            } else if (v === 0xd0) { // call register
-                return new asm.Operation(asm.code.call_r, [reg]);
-            } else {
+            const info = walk_offset(rex, ptr);
+            if (info === null) {
                 // bad
+            } else {
+                if (info.r2 === 4) {
+                    if (info.offset === null) {
+                        return new asm.Operation(asm.code.jmp_r, [info.r1]);
+                    } else {
+                        return new asm.Operation(asm.code.jmp_rp, [info.r1, 1, info.offset]);
+                    }
+                } else if (info.r2 === 2) {
+                    if (info.offset === null) {
+                        return new asm.Operation(asm.code.call_r, [info.r1]);
+                    } else {
+                        return new asm.Operation(asm.code.call_rp, [info.r1, 1, info.offset]);
+                    }
+                } else {
+                    // bad
+                }
             }
         } else if ((v&0xfe) === 0xe8) { // jmp or call dword
             const value = ptr.readInt32();
