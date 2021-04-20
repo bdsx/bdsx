@@ -1,15 +1,15 @@
-import { bedrockServer } from "bdsx";
+import { events } from "bdsx/event";
 
 
 console.log('[ExamplePlugin] allocated');
 // before BDS launching
 
-bedrockServer.open.on(()=>{
+events.serverOpen.on(()=>{
     console.log('[ExamplePlugin] launched');
     // after BDS launched
 });
 
-bedrockServer.close.on(()=>{
+events.serverClose.on(()=>{
     console.log('[ExamplePlugin] closed');
     // after BDS closed
 });

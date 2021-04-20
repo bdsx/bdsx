@@ -37,15 +37,15 @@ const targetdir = targetPath+path.sep;
 {
     const clsname = camelize(basename);
     const exampleSource = `
-import { bedrockServer } from "bdsx";
+import { events } from "bdsx/event";
 
 console.log('[plugin:${clsname}] allocated');
 
-bedrockServer.open.on(()=>{
+events.open.on(()=>{
     console.log('[plugin:${clsname}] launching');
 });
 
-bedrockServer.close.on(()=>{
+events.close.on(()=>{
     console.log('[plugin:${clsname}] closed');
 });
 

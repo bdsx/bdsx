@@ -10,8 +10,9 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { remapAndPrintError } from "bdsx/source-map-support";
 import { _tickCallback } from "bdsx/util";
-import { CapsuledEvent, Event } from "krevent";
+import { CapsuledEvent } from "krevent";
 import { StaticPointer, VoidPointer } from "../core";
+import { events } from "../event";
 import type { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import type { ServerPlayer } from "./player";
@@ -85,7 +86,6 @@ export namespace ServerNetworkHandler
 }
 
 const identifiers = new HashSet<NetworkIdentifier>();
-const closeEvTarget = new Event<(ni:NetworkIdentifier)=>void>();
 
 @nativeClass()
 export class NetworkIdentifier extends NativeClass implements Hashable {
@@ -122,7 +122,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         return this.getAddress();
     }
 
-    static readonly close:CapsuledEvent<(ni:NetworkIdentifier)=>void> = closeEvTarget;
+    static readonly close:CapsuledEvent<(ni:NetworkIdentifier)=>void> = events.networkDisconnected;
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
@@ -144,7 +144,7 @@ export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
     try {
-        closeEvTarget.fire(ni);
+        events.networkDisconnected.fire(ni);
         _tickCallback();
     } catch (err) {
         remapAndPrintError(err);

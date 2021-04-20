@@ -13,6 +13,7 @@ import 'bdsx/checkmd5';
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
 import colors = require('colors');
+import { events } from "bdsx/event";
 
 // prank
 console.log(colors.rainbow('       ///////////////'));
@@ -21,7 +22,7 @@ console.log(colors.rainbow('       ///////////////'));
 
 (async()=>{
 
-    bedrockServer.close.on(()=>{
+    events.serverClose.on(()=>{
         console.log('[BDSX] bedrockServer is Closed');
         setTimeout(()=>{
             console.log('[BDSX] node.js is processing...');

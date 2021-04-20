@@ -1,4 +1,5 @@
 import { MinecraftPacketIds, nethook, NetworkIdentifier } from "bdsx";
+import { events } from "../event";
 import { SetTitlePacket, ShowModalFormPacket } from "./packets";
 
 const formMaps = new Map<number, SentForm>();
@@ -388,7 +389,7 @@ export class CustomForm extends Form<FormDataCustom> {
     }
 }
 
-nethook.after(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
+events.packetAfter(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     const sent = formMaps.get(pk.id);
     if (sent === undefined) return;
     if (sent.networkIdentifier !== ni) return; // other user is responsing
