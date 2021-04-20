@@ -121,7 +121,20 @@ const symbols = [
     'ItemStackBase::getMaxDamage',
     'ItemStackBase::getDamageValue',
     'ItemStackBase::getAttackDamage',
+    'PlayerInventory::add',
+    'PlayerInventory::clearSlot',
+    'PlayerInventory::getContainerSize',
+    'PlayerInventory::getFirstEmptySlot',
+    'PlayerInventory::getHotbarSize',
     'PlayerInventory::getItem',
+    'PlayerInventory::getSelectedItem',
+    'PlayerInventory::getSlotWithItem',
+    'PlayerInventory::getSlots',
+    'PlayerInventory::removeItem',
+    'PlayerInventory::selectSlot',
+    'PlayerInventory::setItem',
+    'PlayerInventory::setSelectedItem',
+    'PlayerInventory::swapSlots',
     'CommandRegistry::registerCommand',
     'CommandRegistry::registerAlias',
     'CommandRegistry::findCommand',
@@ -141,7 +154,9 @@ const symbols = [
     'CommandSelectorBase::~CommandSelectorBase',
     'CommandSelectorBase::newResults',
     'ScriptServerActorEventListener::onActorSneakChanged',
-    'Dimension::getDimensionId'
+    'Dimension::getDimensionId',
+    'TeleportCommand::computeTarget',
+    'TeleportCommand::applyTarget',
 ] as const;
 
 // decorated symbols
