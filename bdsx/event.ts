@@ -1,4 +1,4 @@
-import { Actor, MinecraftPacketIds, NativePointer, nethook, serverInstance } from "bdsx";
+import { Actor, bedrockServer, MinecraftPacketIds, NativePointer, nethook, serverInstance } from "bdsx";
 import { Block, BlockSource } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
@@ -24,46 +24,6 @@ class BlockDestroyEvent implements IBlockDestroyEvent {
     ) {
     }
 }
-function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, v:number):boolean {
-    const event = new BlockDestroyEvent(survivalMode.actor as Player, blockPos);
-    if (events.blockDestroy.fire(event) === CANCEL) {
-        return false;
-    } else {
-        survivalMode.actor = event.player;
-        return _onBlockDestroy(survivalMode, event.blockPos, v);
-    }
-}
-function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):boolean {
-    const event = new BlockDestroyEvent(gameMode.actor as Player, blockPos);
-    if (events.blockDestroy.fire(event) === CANCEL) {
-        return false;
-    } else {
-        gameMode.actor = event.player;
-        return _onBlockDestroyCreative(gameMode, event.blockPos, v);
-    }
-}
-const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroy);
-const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroyCreative);
-
-interface IEntitySneakEvent {
-    entity: Actor;
-    isSneaking: boolean;
-}
-class entitySneakEvent implements IEntitySneakEvent {
-    constructor(
-        public entity: Actor,
-        public isSneaking: boolean,
-    ) {
-    }
-}
-
-function onEntitySneak(Script:ScriptCustomEventPacket,actor:Actor, bool:boolean):boolean {
-    const event = new entitySneakEvent(actor, bool);
-    events.entitySneak.fire(event);
-    return _onEntitySneak(Script, actor, bool);
-}
-
-const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
 
 interface IBlockPlaceEvent {
     player: Player,
@@ -80,15 +40,6 @@ class BlockPlaceEvent implements IBlockPlaceEvent {
     ) {
     }
 }
-function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
-    const event = new BlockPlaceEvent(actor as Player, block, blockSource, blockPos);
-    if (events.blockPlace.fire(event) === CANCEL) {
-        return false;
-    } else {
-        return _onBlockPlace(event.blockSource, event.block, event.blockPos, v1, event.player, v2);
-    }
-}
-const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
 interface IEntityHurtEvent {
     entity: Actor;
@@ -101,15 +52,6 @@ class EntityHurtEvent implements IEntityHurtEvent {
     ) {
     }
 }
-function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: number, v1: boolean, v2: boolean):boolean {
-    const event = new EntityHurtEvent(entity, damage);
-    if (events.entityHurt.fire(event) === CANCEL) {
-        return false;
-    } else {
-        return _onEntityHurt(event.entity, actorDamageSource, event.damage, v1, v2);
-    }
-}
-const _onEntityHurt = procHacker.hooking("Actor::hurt", bool_t, null, Actor, VoidPointer, int32_t, bool_t, bool_t)(onEntityHurt);
 
 interface IEntityHealEvent {
     entity: Actor;
@@ -122,20 +64,18 @@ class EntityHealEvent implements IEntityHealEvent {
     ) {
     }
 }
-function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, v:VoidPointer):boolean {
-    if (oldHealth < newHealth) {
-        const event = new EntityHurtEvent(attributeDelegate.getPointerAs(Actor, 0x20), newHealth - oldHealth);
-        if (events.entityHeal.fire(event) === CANCEL) {
-            event.entity.setAttribute(AttributeId.Health, oldHealth);
-            return false;
-        } else {
-            attributeDelegate.setPointer(event.entity, 0x20);
-            return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
-        }
-    }
-    return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
+
+interface IEntitySneakEvent {
+    entity: Actor;
+    isSneaking: boolean;
 }
-const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHeal);
+class EntitySneakEvent implements IEntitySneakEvent {
+    constructor(
+        public entity: Actor,
+        public isSneaking: boolean,
+    ) {
+    }
+}
 
 interface IPlayerAttackEvent {
     player: Player;
@@ -148,15 +88,6 @@ class PlayerAttackEvent implements IPlayerAttackEvent {
     ) {
     }
 }
-function onPlayerAttack(player:Player, victim:Actor):boolean {
-    const event = new PlayerAttackEvent(player, victim);
-    if (events.playerAttack.fire(event) === CANCEL) {
-        return false;
-    } else {
-        return _onPlayerAttack(event.player, event.victim);
-    }
-}
-const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
 
 interface IPlayerDropItemEvent {
     player: Player;
@@ -169,15 +100,6 @@ class PlayerDropItemEvent implements IPlayerDropItemEvent {
     ) {
     }
 }
-function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean {
-    const event = new PlayerDropItemEvent(player, itemStack);
-    if (events.playerDropItem.fire(event) === CANCEL) {
-        return false;
-    } else {
-        return _onPlayerDropItem(event.player, event.itemStack, v);
-    }
-}
-const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
 
 interface IPlayerJoinEvent {
     readonly player: Player;
@@ -188,32 +110,20 @@ class PlayerJoinEvent implements IPlayerJoinEvent {
     ) {
     }
 }
-nethook.before(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
-    const event = new PlayerJoinEvent(ni.getActor()!);
-    events.playerJoin.fire(event);
-});
 
 interface IPlayerPickupItemEvent {
     player: Player;
+    itemActor: Actor;
     //itemStack: ItemStack;
 }
 class PlayerPickupItemEvent implements IPlayerPickupItemEvent {
     constructor(
         public player: Player,
+        public itemActor: Actor,
         //public itemStack: ItemStack, // should be from 0x688 at ItemActor but unexpected undefined value
     ) {
     }
 }
-
-function onPlayerPickupItem(player:Player, itemActor:VoidPointer, v1:number, v2:number):boolean {
-    const event = new PlayerPickupItemEvent(player/*, itemActor.itemStack*/);
-    if (events.playerPickupItem.fire(event) === CANCEL) {
-        return false;
-    } else {
-        return _onPlayerPickupItem(event.player, itemActor, v1, v2);
-    }
-}
-const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, VoidPointer, int32_t, int32_t)(onPlayerPickupItem);
 
 interface IQueryRegenerateEvent {
     motd: string,
@@ -231,14 +141,6 @@ class QueryRegenerateEvent implements IQueryRegenerateEvent {
     ) {
     }
 }
-function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, v: boolean):bin64_t {
-    const event = new QueryRegenerateEvent(motd.value, levelname.value, currentPlayers, maxPlayers);
-    events.queryRegenerate.fire(event);
-    motd.value = event.motd;
-    levelname.value = event.levelname;
-    return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, v);
-}
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
 
 export const events = {
     /** Cancellable */
@@ -254,7 +156,7 @@ export const events = {
     /** Cancellable but only when player is in container screens*/
     playerDropItem: new Event<(event: PlayerDropItemEvent) => void | CANCEL>(),
     /** Not cancellable */
-    entitySneak: new Event<(event: entitySneakEvent) => void>(),
+    entitySneak: new Event<(event: EntitySneakEvent) => void>(),
     /** Not cancellable */
     playerJoin: new Event<(event: PlayerJoinEvent) => void>(),
     /** Cancellable */
@@ -263,4 +165,113 @@ export const events = {
     queryRegenerate: new Event<(event: QueryRegenerateEvent) => void>(),
 };
 
-serverInstance.minecraft.something.shandler.updateServerAnnouncement();
+bedrockServer.open.on(() => {
+    function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, v:number):boolean {
+        const event = new BlockDestroyEvent(survivalMode.actor as Player, blockPos);
+        if (events.blockDestroy.fire(event) === CANCEL) {
+            return false;
+        } else {
+            survivalMode.actor = event.player;
+            return _onBlockDestroy(survivalMode, event.blockPos, v);
+        }
+    }
+    function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, v:number):boolean {
+        const event = new BlockDestroyEvent(gameMode.actor as Player, blockPos);
+        if (events.blockDestroy.fire(event) === CANCEL) {
+            return false;
+        } else {
+            gameMode.actor = event.player;
+            return _onBlockDestroyCreative(gameMode, event.blockPos, v);
+        }
+    }
+    const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroy);
+    const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroyCreative);
+
+    function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v1:number, actor:Actor, v2:boolean):boolean {
+        const event = new BlockPlaceEvent(actor as Player, block, blockSource, blockPos);
+        if (events.blockPlace.fire(event) === CANCEL) {
+            return false;
+        } else {
+            return _onBlockPlace(event.blockSource, event.block, event.blockPos, v1, event.player, v2);
+        }
+    }
+    const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
+
+    function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: number, v1: boolean, v2: boolean):boolean {
+        const event = new EntityHurtEvent(entity, damage);
+        if (events.entityHurt.fire(event) === CANCEL) {
+            return false;
+        } else {
+            return _onEntityHurt(event.entity, actorDamageSource, event.damage, v1, v2);
+        }
+    }
+    const _onEntityHurt = procHacker.hooking("Actor::hurt", bool_t, null, Actor, VoidPointer, int32_t, bool_t, bool_t)(onEntityHurt);
+
+    function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, v:VoidPointer):boolean {
+        if (oldHealth < newHealth) {
+            const event = new EntityHurtEvent(attributeDelegate.getPointerAs(Actor, 0x20), newHealth - oldHealth);
+            if (events.entityHeal.fire(event) === CANCEL) {
+                event.entity.setAttribute(AttributeId.Health, oldHealth);
+                return false;
+            } else {
+                attributeDelegate.setPointer(event.entity, 0x20);
+                return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
+            }
+        }
+        return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
+    }
+    const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHeal);
+
+    function onEntitySneak(Script:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
+        const event = new EntitySneakEvent(entity, isSneaking);
+        events.entitySneak.fire(event);
+        return _onEntitySneak(Script, event.entity, event.isSneaking);
+    }
+    const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
+
+    function onPlayerAttack(player:Player, victim:Actor):boolean {
+        const event = new PlayerAttackEvent(player, victim);
+        if (events.playerAttack.fire(event) === CANCEL) {
+            return false;
+        } else {
+            return _onPlayerAttack(event.player, event.victim);
+        }
+    }
+    const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
+
+    function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean {
+        const event = new PlayerDropItemEvent(player, itemStack);
+        if (events.playerDropItem.fire(event) === CANCEL) {
+            return false;
+        } else {
+            return _onPlayerDropItem(event.player, event.itemStack, v);
+        }
+    }
+    const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
+
+    nethook.before(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
+        const event = new PlayerJoinEvent(ni.getActor()!);
+        events.playerJoin.fire(event);
+    });
+
+    function onPlayerPickupItem(player:Player, itemActor:Actor, v1:number, v2:number):boolean {
+        const event = new PlayerPickupItemEvent(player, itemActor);
+        if (events.playerPickupItem.fire(event) === CANCEL) {
+            return false;
+        } else {
+            return _onPlayerPickupItem(event.player, itemActor, v1, v2);
+        }
+    }
+    const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, Actor, int32_t, int32_t)(onPlayerPickupItem);
+
+    function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, v: boolean):bin64_t {
+        const event = new QueryRegenerateEvent(motd.value, levelname.value, currentPlayers, maxPlayers);
+        events.queryRegenerate.fire(event);
+        motd.value = event.motd;
+        levelname.value = event.levelname;
+        return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, v);
+    }
+    const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
+
+    serverInstance.minecraft.something.shandler.updateServerAnnouncement();
+});
