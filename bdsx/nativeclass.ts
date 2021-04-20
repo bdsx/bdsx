@@ -28,7 +28,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     new(alloc?:boolean):T;
     prototype:T;
     [StructurePointer.contentSize]:number|null;
-    [fieldmap]:Record<keyof any, [Type<any>, number]>;
+    [fieldmap]:Record<keyof any, [Type<any>, number, [number, number]|null]>;
     [isSealed]:boolean;
     [isNativeClass]:true;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
@@ -43,7 +43,9 @@ class StructureDefination {
      */
     eof:number|null;
     align:number;
-    fields:Record<keyof any, [Type<any>, number]> = {};
+    bitoffset = 0;
+    bitTargetSize = 0;
+    fields:Record<keyof any, [Type<any>, number, [number, number]|null]> = {};
 
     constructor(supercls:NativeClassType<any>) {
         this.eof = supercls[NativeType.size];
@@ -70,11 +72,12 @@ class StructureDefination {
         sealClass(clazz);
 
         clazz[fieldmap] = this.fields;
+        Object.freeze(this.fields);
 
         const propmap = new NativeDescriptorBuilder;
         for (const key in this.fields) {
-            const [type, offset] = this.fields[key]!;
-            type[NativeType.descriptor](propmap, key, offset);
+            const [type, offset, bitmask] = this.fields[key]!;
+            type[NativeType.descriptor](propmap, key, offset, bitmask);
         }
         const params = propmap.params;
         const supercls = (clazz as any).__proto__.prototype;
@@ -127,7 +130,7 @@ class StructureDefination {
         Object.defineProperties(clazz.prototype, propmap.desc);
     }
 
-    field(key:string, type:Type<any>, fieldOffset?:number|null):void {
+    field(key:string, type:Type<any>, fieldOffset?:number|null, bitField?:number|null):void {
         if (isBaseOf(type, NativeClass)) {
             sealClass(type as NativeClassType<any>);
         }
@@ -145,14 +148,45 @@ class StructureDefination {
             offset = (((this.eof + alignofType - 1) / alignofType)|0)*alignofType;
         }
 
-        this.fields[key] = [type, offset];
         const sizeofType = type[NativeType.size];
         if (sizeofType === null) {
+            if (bitField != null) {
+                throw Error(`${type.name} does not support the bit mask`);
+            }
+            this.fields[key] = [type, offset, null];
             this.eof = null;
         } else {
-            offset += sizeofType;
-            if (this.eof !== null) {
-                if (offset !== null && offset > this.eof) this.eof = offset;
+            let bitmaskinfo:[number, number]|null = null;
+            let nextOffset = offset;
+            if (bitField != null) {
+                if (!(type instanceof NativeType) || !type.supportsBitMask()) {
+                    throw Error(`${type.name} does not support the bit mask`);
+                }
+
+                const maxBits = sizeofType * 8;
+                if (bitField >= maxBits) throw Error(`Too big bit mask, ${type.name} maximum is ${maxBits}`);
+                const nextBitOffset = this.bitoffset + bitField;
+                let shift = 0;
+                if (this.bitoffset === 0 || this.bitTargetSize !== sizeofType || nextBitOffset > maxBits) {
+                    // next bit field
+                    this.bitoffset = bitField;
+                    nextOffset = offset + sizeofType;
+                } else {
+                    offset -= sizeofType;
+                    shift = this.bitoffset;
+                    this.bitoffset = nextBitOffset;
+                }
+                this.bitTargetSize = sizeofType;
+                const mask = ((1 << bitField) - 1) << shift;
+                bitmaskinfo = [shift, mask];
+            } else {
+                this.bitoffset = 0;
+                this.bitTargetSize = 0;
+                nextOffset = offset + sizeofType;
+            }
+            this.fields[key] = [type, offset, bitmaskinfo];
+            if (this.eof !== null && nextOffset > this.eof) {
+                this.eof = nextOffset;
             }
         }
     }
@@ -164,7 +198,7 @@ export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static readonly [NativeType.align]:number = 1;
     static readonly [StructurePointer.contentSize]:number = 0;
-    static readonly [fieldmap]:Record<keyof any, [NativeType<any>, number]>;
+    static readonly [fieldmap]:Record<keyof any, [NativeType<any>, number, [number, number]|null]>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
     static readonly [makefunc.pointerReturn] = true;
@@ -329,12 +363,12 @@ function sealClass<T extends NativeClass>(cls:NativeClassType<T>):void {
     }
 }
 
-export function nativeField<T>(type:Type<T>, fieldOffset?:number|null) {
+export function nativeField<T>(type:Type<T>, fieldOffset?:number|null, bitMask?:number|null) {
     return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
         let def = structures.get(clazz);
         if (def === undefined) structures.set(clazz, def = new StructureDefination((clazz as any).__proto__));
-        def.field(key, type, fieldOffset);
+        def.field(key, type, fieldOffset, bitMask);
     };
 }
 
@@ -447,7 +481,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
 
         let off = 0;
         for (let i = 0; i < count; i++) {
-            itemType[NativeType.descriptor](propmap, i, off);
+            itemType[NativeType.descriptor](propmap, i, off, null);
             off += itemSize;
         }
         class NativeArrayImpl extends NativeArray<T> {

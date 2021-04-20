@@ -2,7 +2,7 @@
 // Low Level - define C++ class or structure
 
 import { NativePointer } from "bdsx";
-import { nativeField, nativeClass, NativeClass } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { int16_t, int32_t, int8_t } from "bdsx/nativetype";
 
 /**
@@ -19,6 +19,12 @@ class SampleStructure extends NativeClass {
     c:int8_t;
     @nativeField(int32_t)
     d:int32_t;
+    @nativeField(int32_t, null, 1)
+    bitfield1:int32_t;
+    @nativeField(int32_t, null, 1)
+    bitfield2:int32_t;
+    @nativeField(int32_t, null, 30)
+    bitfield3:int32_t;
 }
 /**
  * struct SampleStructure
@@ -27,6 +33,8 @@ class SampleStructure extends NativeClass {
  *     int16_t b;
  *     int8_t c;
  *     int32_t d;
+ *     int8_t bitfield1:1;
+ *     int8_t bitfield2:1;
  * };
  */
 
@@ -43,11 +51,19 @@ console.assert(obj.a === -1);
 // &obj.a == (address of obj + 0);
 console.assert(obj.a === pointer.getInt32(0));
 
-// int8_t/uint8_t will be truncated without 8bits
+// int8_t/uint8_t will be truncated within 8bits
 obj.c = 0xffffff01;
 console.assert(obj.c === 1 && obj.c === pointer.getInt8(6));
 
-// &obj.d == (address of obj + 8);
-// C/C++ field alignments
-obj.d = 123;
-console.assert(obj.d === pointer.getInt32(8));
+console.assert(SampleStructure.offsetOf('a') === 0); // the a offset is 0
+console.assert(SampleStructure.offsetOf('b') === 4); // the b offset is 4
+console.assert(SampleStructure.offsetOf('d') === 8); // the b offset is 8 by C/C++ field alignments
+
+pointer.setInt32(SampleStructure.offsetOf('bitfield1'), 0);
+
+obj.bitfield1 = 1;
+obj.bitfield2 = 0xfffffffe;
+console.assert(obj.bitfield2 === 0); // all is masked without the first bit
+obj.bitfield3 = 1;
+const bitfield = pointer.getInt32(SampleStructure.offsetOf('bitfield1'));
+console.assert(bitfield === 0b101); // bitfield = 101(2)

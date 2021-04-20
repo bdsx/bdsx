@@ -1,7 +1,7 @@
 import { bin } from "./bin";
-import { VoidPointer } from "./core";
-import { nativeField, NativeArray, nativeClass, NativeClass } from "./nativeclass";
-import { bin64_t, int32_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
+import { NativePointer, VoidPointer } from "./core";
+import { NativeArray, nativeClass, NativeClass, nativeField } from "./nativeclass";
+import { bin64_t, int32_t, NativeType, uint16_t, uint32_t, uint8_t } from "./nativetype";
 
 export const MAX_PATH = 260;
 
@@ -483,6 +483,77 @@ export class FILETIME extends NativeClass {
 export function IMAGE_FIRST_SECTION(ntheader:IMAGE_NT_HEADERS64):IMAGE_SECTION_HEADER {
     return ntheader.addAs(IMAGE_SECTION_HEADER, IMAGE_NT_HEADERS64.offsetOf('OptionalHeader') + ntheader.FileHeader.SizeOfOptionalHeader);
 }
+
+@nativeClass()
+export class RUNTIME_FUNCTION extends NativeClass {
+    @nativeField(DWORD)
+    BeginAddress:DWORD;
+    @nativeField(DWORD)
+    EndAddress:DWORD;
+    @nativeField(DWORD)
+    UnwindInfoAddress:DWORD;
+}
+
+const UBYTE = uint8_t;
+type UBYTE = uint8_t;
+const USHORT = uint16_t;
+type USHORT = uint16_t;
+const ULONG = uint32_t;
+type ULONG = uint32_t;
+
+@nativeClass()
+class UNWIND_CODE extends NativeClass {
+    @nativeField(UBYTE)
+    CodeOffset:UBYTE;
+
+    @nativeField(USHORT, null, 4)
+    UnwindOp:UBYTE;
+    @nativeField(USHORT, null, 4)
+    OpInfo:UBYTE;
+
+    @nativeField(USHORT, 0)
+    FrameOffset:USHORT;
+}
+
+@nativeClass()
+export class UNWIND_INFO extends NativeClass {
+    @nativeField(UBYTE, null, 3)
+    Version : UBYTE;
+    @nativeField(UBYTE, null, 5)
+    Flags : UBYTE;
+    @nativeField(UBYTE)
+    SizeOfProlog:UBYTE;
+    @nativeField(UBYTE)
+    CountOfCodes:UBYTE;
+    @nativeField(UBYTE, null, 4)
+    FrameRegister:UBYTE;
+    @nativeField(UBYTE, null, 4)
+    FrameOffset:UBYTE;
+    @nativeField(UNWIND_CODE)
+    UnwindCode_first:UNWIND_CODE;
+    /*  UNWIND_CODE MoreUnwindCode[((CountOfCodes + 1) & ~1) - 1];
+    *   union {
+    *       OPTIONAL ULONG ExceptionHandler;
+    *       OPTIONAL ULONG FunctionEntry;
+    *   };
+    *   OPTIONAL ULONG ExceptionData[]; */
+
+    getUnwindCode(i:number):UNWIND_CODE {
+        return this.addAs(UNWIND_CODE, UNWIND_CODE_SIZE*i + UNWIND_CODE_OFFSET);
+    }
+
+    getExceptionHandler():ULONG {
+        return this.getUint32(((this.CountOfCodes + 1) & ~1) * UNWIND_CODE_SIZE + UNWIND_CODE_OFFSET);
+    }
+    getFunctionEntry():ULONG {
+        return this.getUint32(((this.CountOfCodes + 1) & ~1) * UNWIND_CODE_SIZE + UNWIND_CODE_OFFSET);
+    }
+    getExceptionData():NativePointer {
+        return this.add(((this.CountOfCodes + 1) & ~1) * UNWIND_CODE_SIZE + UNWIND_CODE_OFFSET + 4);
+    }
+}
+const UNWIND_CODE_SIZE = UNWIND_INFO[NativeType.size];
+const UNWIND_CODE_OFFSET = UNWIND_INFO.offsetOf('UnwindCode_first');
 
 export const EXCEPTION_BREAKPOINT = 0x80000003|0;
 export const EXCEPTION_ACCESS_VIOLATION = 0xC0000005|0;
