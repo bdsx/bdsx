@@ -267,6 +267,7 @@ function _launch(asyncResolve:()=>void):void {
     // and bdsx will hijack the game thread and run it on the node thread.
     const [threadHandle] = capi.createThread(asmcode.wrapped_main, null);
     require('./bds/implements');
+    require('./event');
 
     // skip to create the console of BDS
     procHacker.write('ScriptApi::ScriptFramework::registerConsole', 0, asm().mov_r_c(Register.rax, 1).ret());
