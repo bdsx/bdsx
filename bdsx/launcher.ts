@@ -462,7 +462,7 @@ export namespace bedrockServer
      * but call the internal function directly
      */
     export function executeCommand(command:string, mute:boolean=true ,permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
-        let server = bd_server.serverInstance.minecraft;
+        const server = bd_server.serverInstance.minecraft;
         if (!(server instanceof bd_server.Minecraft)) return new MCRESULT();
         const origin = createServerCommandOrigin('Server',
                 server.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
