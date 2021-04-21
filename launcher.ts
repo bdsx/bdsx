@@ -9,6 +9,7 @@ installSourceMapSupport();
 
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
+import 'bdsx/checkmodules';
 
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
