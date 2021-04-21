@@ -320,7 +320,7 @@ Tester.test({
 
     async checkPacketNames() {
         if (capi.isRunningOnWine()) {
-            this.skip('Skip packet check on the Wine system, almost failed');
+            this.skip('Skip packet check on the Wine system, as it usually fails');
             return;
         }
         for (const id in PacketIdToType) {
@@ -353,7 +353,7 @@ Tester.test({
         for (let i = 0; i < 255; i++) {
             events.packetRaw(i).on((ptr, size, ni, packetId) => {
                 idcheck = packetId;
-                this.assert(size > 0, `packet size is too little`);
+                this.assert(size > 0, `packet is too small (< 0)`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
             });
             events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
@@ -379,16 +379,16 @@ Tester.test({
 
         const conns = new Set<NetworkIdentifier>();
         events.packetAfter(MinecraftPacketIds.Login).on((ptr, ni) => {
-            this.assert(!conns.has(ni), '[test] logined without connected');
+            this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
             setTimeout(() => {
                 if (sendpacket === 0) {
-                    this.error('[test] no send packet');
+                    this.error('[test] no packet was sent');
                 }
             }, 1000);
         });
         NetworkIdentifier.close.on(ni => {
-            this.assert(conns.delete(ni), '[test] disconnected without connected');
+            this.assert(conns.delete(ni), '[test] disconnection without connection');
         });
     },
 
@@ -409,16 +409,16 @@ Tester.test({
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
                     this.equals(actualId, expectedId,
-                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
+                        `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
 
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
-                        this.equals(name, connectedId, 'id does not matched');
-                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
+                        this.equals(name, connectedId, 'id does not match');
+                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
-                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
+                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                     } else {
-                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
+                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
                     }
                 }
             } catch (err) {
@@ -433,7 +433,7 @@ Tester.test({
                 const MAX_CHAT = 5;
                 chatCancelCounter++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.equals(connectedNi, ni, 'the network identifier does not matched');
+                this.equals(connectedNi, ni, 'the network identifier does not match');
                 if (chatCancelCounter === MAX_CHAT) {
                     this.log('> tested and stopping...');
                     setTimeout(() => bedrockServer.stop(), 1000);

@@ -77,8 +77,8 @@ export class Tester {
             });
         }
 
-        console.log(`[test] node: ${process.versions.node}`);
-        console.log(`[test] engine: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
+        console.log(`[test] node version: ${process.versions.node}`);
+        console.log(`[test] engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
 
         const testlist = Object.entries(tests);
         testcount += testlist.length;

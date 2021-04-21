@@ -137,10 +137,10 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         const buffer = ptr.getBuffer(originalCode.length);
         const diff = memdiff(buffer, originalCode);
         if (!memdiff_contains(ignoreArea, diff)) {
-            console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: code unmatch`));
+            console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: code does not match`));
             console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
             console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
-            console.error(colors.red(`${subject}: skip `));
+            console.error(colors.red(`${subject}: skip`));
             return false;
         } else {
             return true;
@@ -157,7 +157,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     nopping(subject:string, key:keyof T, offset:number, originalCode:number[], ignoreArea:number[]):void {
         let ptr:StaticPointer = this.map[key];
         if (!ptr) {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }
         ptr = ptr.add(offset);
@@ -175,7 +175,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     hookingRaw(key:keyof T, to: VoidPointer):VoidPointer {
         const origin = this.map[key];
-        if (!origin) throw Error(`${String(key)} symbol not found`);
+        if (!origin) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
@@ -199,7 +199,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[]):void {
         const origin = this.map[key];
-        if (!origin) throw Error(`${String(key)} symbol not found`);
+        if (!origin) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
@@ -244,7 +244,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     patching(subject:string, key:keyof T, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
         let ptr:NativePointer = this.map[key];
         if (!ptr) {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }
         ptr = ptr.add(offset);
@@ -272,7 +272,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     jumping(subject:string, key:keyof T, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void {
         let ptr:NativePointer = this.map[key];
         if (!ptr) {
-            console.error(colors.red(`${subject}: skip, ${key} symbol not found`));
+            console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }
         ptr = ptr.add(offset);
@@ -291,7 +291,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         if (originalCode) {
             if (subject == null) subject = key+'';
             if (originalCode.length < buffer.length) {
-                console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: writing area is too small`));
+                console.error(colors.red(`${subject}: ${key}+0x${offset.toString(16)}: writing space is too small`));
                 unlock.done();
                 return;
             }

@@ -4,7 +4,7 @@ import Event from "krevent";
 import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
-import type { BlockDestroyEvent, BlockPlaceEvent } from "./event_impl/blockevent";
+import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerPickupItemEvent } from "./event_impl/entityevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -37,6 +37,8 @@ export namespace events {
     export const blockDestroy = new Event<(event: BlockDestroyEvent) => void | CANCEL>();
     /** Cancellable */
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const pistonMove = new Event<(event: PistonMoveEvent) => void>();
 
     ////////////////////////////////////////////////////////
     // Entity events
@@ -159,7 +161,7 @@ export namespace events {
     * global error listeners
     * if returns CANCEL, then default error printing is disabled
     */
-    export const error = new Event<(err:Error)=>CANCEL|void>();
+    export const error = new Event<(err:any)=>CANCEL|void>();
 
      /**
       * command console outputs

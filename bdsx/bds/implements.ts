@@ -300,7 +300,7 @@ GameMode.define({
 });
 
 // inventory.ts
-(Item.prototype as any)._getCommandName = procHacker.js("Item::getCommandName", CxxStringWrapper, {this:Item});
+Item.prototype.getCommandName = procHacker.js("Item::getCommandName", CxxString, {this:Item});
 Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});

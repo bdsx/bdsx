@@ -186,7 +186,7 @@ async function parseScriptingDoc():Promise<void> {
 
     } catch (err) {
         if (err === HtmlSearcher.EOF) return;
-        console.error(err.stack || err);
+        console.error(err && (err.stack || err));
     } finally {
         await compMap.writeTo('MinecraftComponentNameMap', writer);
         await triggerEvents.writeTo('MinecraftServerEventNameMap', writer);
@@ -245,7 +245,7 @@ async function parseAddonsDoc():Promise<void> {
         });
     } catch (err) {
         if (err === HtmlSearcher.EOF) return;
-        console.error(err.stack || err);
+        console.error(err && (err.stack || err));
     } finally {
         await writer.write('}\n');
         await writer.write('export {};\n');

@@ -1681,7 +1681,7 @@ export class X64Assembler {
             chunks.add(chunk);
             for (const id of chunk.ids) {
                 if (id.chunk !== chunk) {
-                    putError(id.name, 'Chunk does not matched');
+                    putError(id.name, 'Chunk does not match');
                 }
                 ids.add(id);
             }

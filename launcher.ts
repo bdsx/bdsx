@@ -9,6 +9,7 @@ installSourceMapSupport();
 
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
+import 'bdsx/checkmodules';
 
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
@@ -23,7 +24,7 @@ console.log(colors.rainbow('       ///////////////'));
 (async()=>{
 
     events.serverClose.on(()=>{
-        console.log('[BDSX] bedrockServer is Closed');
+        console.log('[BDSX] bedrockServer closed');
         setTimeout(()=>{
             console.log('[BDSX] node.js is processing...');
         }, 3000).unref();
@@ -32,7 +33,7 @@ console.log(colors.rainbow('       ///////////////'));
     await loadAllPlugins();
 
     // launch BDS
-    console.log('[BDSX] bedrockServer launching...');
+    console.log('[BDSX] bedrockServer is launching...');
     await bedrockServer.launch();
 
     /**
