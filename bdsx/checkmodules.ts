@@ -85,12 +85,12 @@ for (const name in requiredDeps) {
         needUpdate = true;
     }
     if (installedVersion !== requiredVersion) {
-        console.error(colors.red(`${name}: version is not matched (installed=${installedVersion}, required=${requiredVersion})`));
+        console.error(colors.red(`${name}: version does not match (installed=${installedVersion}, required=${requiredVersion})`));
         needUpdate = true;
     }
 }
 
 if (needUpdate) {
-    console.error(colors.yellow(`Please use 'npm i' to update it`));
+    console.error(colors.yellow(`Please use 'npm i' or '${process.platform === 'win32' ? "update.bat" : "update.sh"}' to update`));
     process.exit(-1);
 }
