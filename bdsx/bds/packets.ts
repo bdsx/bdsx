@@ -817,7 +817,7 @@ export class StopSoundPacket extends Packet {
 export class SetTitlePacket extends Packet {
     @nativeField(int32_t)
     type:int32_t;
-    @nativeField(CxxString, 0x38)
+    @nativeField(CxxString)
     text:CxxString;
     @nativeField(int32_t)
     fadeInTime:int32_t;
