@@ -68,21 +68,25 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v
 }
 const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
+enum PistonAction {
+    Extend = 1,
+    Retract = 3,
+}
 interface IPistonMoveEvent {
     blockPos: BlockPos;
     blockSource: BlockSource;
-    readonly action: "extend" | "retract";
+    readonly action: PistonAction;
 }
 export class PistonMoveEvent implements IPistonMoveEvent {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
-        public action: "extend" | "retract",
+        public action: PistonAction,
     ) {
     }
 }
 function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):void_t {
-    const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0) === 1 ? "extend" : "retract");
+    const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
     events.pistonMove.fire(event);
     return _onPistonMove(pistonBlockActor, event.blockSource);
 }
