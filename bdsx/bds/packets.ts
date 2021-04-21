@@ -87,7 +87,7 @@ export namespace TextPacket {
         Announcement,
         ObjectWhisper,
         Object,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -196,11 +196,11 @@ export namespace UpdateBlockPacket {
         NoGraphic,
         Priority = 8,
         AllPriority = 11,
-    };
+    }
     export enum DataLayerIds {
         Normal,
         Liquid,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -294,7 +294,7 @@ export namespace ActorEventPacket {
         AgentSummon,
         ChargedCrossbow,
         Fall,
-    };
+    }
 }
 
 /** @deprecated use ActorEventPacket, matching to official name */
@@ -367,7 +367,7 @@ export namespace InteractPacket {
         Mouseover,
         OpenNPC,
         OpenInventory,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -437,7 +437,7 @@ export namespace PlayerActionPacket {
         InteractBlock,
         PredictDestroyBlock,
         ContinueDestroyBlock,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -493,7 +493,7 @@ export namespace AnimatePacket {
         MagicCriticalHit,
         RowRight = 128,
         RowLeft,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -641,7 +641,7 @@ export class SpawnExperienceOrbPacket extends Packet {
     @nativeField(Vec3)
     pos:Vec3;
     @nativeField(int32_t)
-    amount:int32_t
+    amount:int32_t;
 }
 
 @nativeClass(null)
@@ -702,7 +702,7 @@ export namespace BossEventPacket {
         UnregisterPlayer,
         HealthPercent,
         Title,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -834,7 +834,7 @@ export namespace SetTitlePacket {
         Subtitle,
         Actionbar,
         AnimationTimes,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -903,7 +903,7 @@ export namespace BookEditPacket {
         DeletePage,
         SwapPages,
         SignBook,
-    };
+    }
 }
 
 @nativeClass(null)
@@ -1263,7 +1263,7 @@ export namespace CameraShakePacket {
     export enum ShakeType {
         Positional,
         Rotational,
-    };
+    }
     export enum ShakeAction {
         Add,
         Stop,
