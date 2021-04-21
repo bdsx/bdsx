@@ -69,6 +69,25 @@ export class TextPacket extends Packet {
     params:CxxVector<CxxString>;
     @nativeField(bool_t, 0x90)
     needsTranslation:bool_t;
+    @nativeField(CxxString, 0x98)
+    xboxUserId:CxxString;
+    @nativeField(CxxString)
+    platformChatId:CxxString;
+}
+export namespace TextPacket {
+    export enum Types {
+        Raw,
+        Chat,
+        Translated,
+        Popup,
+        JukeboxPopup,
+        Tip,
+        System,
+        Whisper,
+        Announcement,
+        ObjectWhisper,
+        Object,
+    }
 }
 
 @nativeClass(null)
@@ -143,6 +162,14 @@ export class MovePlayerPacket extends Packet {
     @nativeField(bin64_t)
     tick: bin64_t;
 }
+export namespace MovePlayerPacket {
+    export enum Modes {
+        Normal,
+        Reset,
+        Teleport,
+        Pitch,
+    }
+}
 
 @nativeClass(null)
 export class RiderJumpPacket extends Packet {
@@ -159,6 +186,21 @@ export class UpdateBlockPacket extends Packet {
     flags: uint8_t;
     @nativeField(uint32_t)
     dataLayerId: uint32_t;
+}
+export namespace UpdateBlockPacket {
+    export enum Flags {
+        None,
+        Neighbors,
+        Network,
+        All,
+        NoGraphic,
+        Priority = 8,
+        AllPriority = 11,
+    }
+    export enum DataLayerIds {
+        Normal,
+        Liquid,
+    }
 }
 
 @nativeClass(null)
@@ -194,6 +236,65 @@ export class ActorEventPacket extends Packet {
     event: uint8_t;
     @nativeField(int32_t)
     data: int32_t;
+}
+export namespace ActorEventPacket {
+    export enum Events {
+        Jump = 1,
+        HurtAnimation,
+        DeathAnimation,
+        ArmSwing,
+        StopAttack,
+        TameFail,
+        TameSuccess,
+        ShakeWet,
+        UseItem,
+        EatGrassAnimation,
+        FishHookBubble,
+        FishHookPosition,
+        FishHookHook,
+        FishHookTease,
+        SquidInkCloud,
+        ZombieVillagerCure,
+        AmbientSound,
+        Respawn,
+        IronGolemOfferFlower,
+        IronGolemWithdrawFlower,
+        LoveParticles,
+        VillagerAngry,
+        VillagerHappy,
+        WitchSpellParticles,
+        FireworkParticles,
+        InLoveParticles,
+        SilverfishSpawnAnimation,
+        GuardianAttack,
+        WitchDrinkPotion,
+        WitchThrowPotion,
+        MinecartTntPrimeFuse,
+        CreeperPrimeFuse,
+        AirSupplyExpired,
+        PlayerAddXpLevels,
+        ElderGuardianCurse,
+        AgentArmSwing,
+        EnderDragonDeath,
+        DustParticles,
+        ArrowShake,
+        EatingItem = 57,
+        BabyAnimalFeed = 60,
+        DeathSmokeCloud,
+        CompleteTrade,
+        RemoveLeash,
+        ConsumeTotem = 65,
+        PlayerCheckTreasureHunterAchievement,
+        EntitySpawn,
+        DragonPuke,
+        ItemEntityMerge,
+        StartSwim,
+        BalloonPop,
+        TreasureHunt,
+        AgentSummon,
+        ChargedCrossbow,
+        Fall,
+    }
 }
 
 /** @deprecated use ActorEventPacket, matching to official name */
@@ -260,6 +361,14 @@ export class InteractPacket extends Packet {
     @nativeField(Vec3)
     pos:Vec3;
 }
+export namespace InteractPacket {
+    export enum Actions {
+        LeaveVehicle = 3,
+        Mouseover,
+        OpenNPC,
+        OpenInventory,
+    }
+}
 
 @nativeClass(null)
 export class BlockPickRequestPacket extends Packet {
@@ -281,6 +390,54 @@ export class PlayerActionPacket extends Packet {
     action: int32_t;
     @nativeField(ActorRuntimeID)
     actorId: ActorRuntimeID;
+}
+export namespace PlayerActionPacket {
+    export enum Actions {
+        /** @deprecated */
+        StartBreak,
+        /** @deprecated */
+        AbortBreak,
+        /** @deprecated */
+        StopBreak,
+        GetUpdatedBlock,
+        /** @deprecated */
+        DropItem,
+        StartSleeping,
+        StopSleeping,
+        Respawn,
+        /** @deprecated */
+        Jump,
+        /** @deprecated */
+        StartSprint,
+        /** @deprecated */
+        StopSprint,
+        /** @deprecated */
+        StartSneak,
+        /** @deprecated */
+        StopSneak,
+        CreativePlayerDestroyBlock,
+        DimensionChangeAck,
+        /** @deprecated */
+        StartGlide,
+        /** @deprecated */
+        StopGlide,
+        /** @deprecated */
+        BuildDenied,
+        CrackBreak,
+        /** @deprecated */
+        ChangeSkin,
+        /** @deprecated */
+        SetEnchantmentSeed,
+        /** @deprecated */
+        StartSwimming,
+        /** @deprecated */
+        StopSwimming,
+        StartSpinAttack,
+        StopSpinAttack,
+        InteractBlock,
+        PredictDestroyBlock,
+        ContinueDestroyBlock,
+    }
 }
 
 @nativeClass(null)
@@ -328,6 +485,16 @@ export class AnimatePacket extends Packet {
     @nativeField(float32_t)
     rowingTime:float32_t;
 }
+export namespace AnimatePacket {
+    export enum Actions {
+        SwingArm = 1,
+        WakeUp = 3,
+        CriticalHit,
+        MagicCriticalHit,
+        RowRight = 128,
+        RowLeft,
+    }
+}
 
 @nativeClass(null)
 export class RespawnPacket extends Packet {
@@ -348,7 +515,10 @@ export class ContainerOpenPacket extends Packet {
 
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    windowId:uint8_t;
+    @nativeField(bool_t)
+    server:bool_t;
 }
 
 @nativeClass(null)
@@ -468,7 +638,10 @@ export class TelemetryEventPacket extends Packet {
 
 @nativeClass(null)
 export class SpawnExperienceOrbPacket extends Packet {
-    // unknown
+    @nativeField(Vec3)
+    pos:Vec3;
+    @nativeField(int32_t)
+    amount:int32_t;
 }
 
 @nativeClass(null)
@@ -520,6 +693,16 @@ export class BossEventPacket extends Packet {
     title:CxxString;
     @nativeField(float32_t)
     healthPercent:float32_t;
+}
+export namespace BossEventPacket {
+    export enum Types {
+        Show,
+        RegisterPlayer,
+        Hide,
+        UnregisterPlayer,
+        HealthPercent,
+        Title,
+    }
 }
 
 @nativeClass(null)
@@ -624,12 +807,34 @@ export class PlaySoundPacket extends Packet {
 
 @nativeClass(null)
 export class StopSoundPacket extends Packet {
-    // unknown
+    @nativeField(CxxString)
+    soundName:CxxString;
+    @nativeField(bool_t)
+    stopAll:bool_t;
 }
 
 @nativeClass(null)
 export class SetTitlePacket extends Packet {
-    // unknown
+    @nativeField(int32_t)
+    type:int32_t;
+    @nativeField(CxxString)
+    text:CxxString;
+    @nativeField(int32_t)
+    fadeInTime:int32_t;
+    @nativeField(int32_t)
+    stayTime:int32_t;
+    @nativeField(int32_t)
+    fadeOutTime:int32_t;
+}
+export namespace SetTitlePacket {
+    export enum Types {
+        Clear,
+        Reset,
+        Title,
+        Subtitle,
+        Actionbar,
+        AnimationTimes,
+    }
 }
 
 @nativeClass(null)
@@ -676,7 +881,7 @@ export class SetLastHurtByPacket extends Packet {
 export class BookEditPacket extends Packet {
     // it seems fields have weird empty spaces.
     // I'm not sure how it implemented actually.
-    @nativeField(uint8_t, 0x30)
+    @nativeField(uint8_t)
     type:uint8_t;
     @nativeField(uint8_t, 0x34)
     inventorySlot:uint8_t;
@@ -686,10 +891,19 @@ export class BookEditPacket extends Packet {
     secondaryPageNumber:uint8_t;
     @nativeField(CxxString, 0x40)
     text:CxxString;
-    @nativeField(CxxString, 0x60)
+    @nativeField(CxxString)
     author:CxxString;
-    @nativeField(CxxString, 0x80)
+    @nativeField(CxxString)
     xuid:CxxString;
+}
+export namespace BookEditPacket {
+    export enum Types {
+        ReplacePage,
+        AddPage,
+        DeletePage,
+        SwapPages,
+        SignBook,
+    }
 }
 
 @nativeClass(null)
@@ -1044,6 +1258,16 @@ export class CameraShakePacket extends Packet {
     shakeType:uint8_t;
     @nativeField(uint8_t)
     shakeAction:uint8_t;
+}
+export namespace CameraShakePacket {
+    export enum ShakeType {
+        Positional,
+        Rotational,
+    }
+    export enum ShakeAction {
+        Add,
+        Stop,
+    }
 }
 
 @nativeClass(null)
