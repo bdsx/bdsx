@@ -68,7 +68,7 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, v
 }
 const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
-enum PistonAction {
+export enum PistonAction {
     Extend = 1,
     Retract = 3,
 }
