@@ -409,14 +409,14 @@ Tester.test({
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
                     this.equals(actualId, expectedId,
-                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
+                        `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
 
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
-                        this.equals(name, connectedId, 'id does not matched');
-                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
+                        this.equals(name, connectedId, 'id does not match');
+                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
-                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
+                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                     } else {
                         this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
                     }
@@ -433,7 +433,7 @@ Tester.test({
                 const MAX_CHAT = 5;
                 chatCancelCounter++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.equals(connectedNi, ni, 'the network identifier does not matched');
+                this.equals(connectedNi, ni, 'the network identifier does not match');
                 if (chatCancelCounter === MAX_CHAT) {
                     this.log('> tested and stopping...');
                     setTimeout(() => bedrockServer.stop(), 1000);
