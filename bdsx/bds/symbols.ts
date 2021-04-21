@@ -174,6 +174,7 @@ const symbols2 = [
     '??_7MinecraftServerScriptEngine@@6B@',
     '?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z',
+    '?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;
