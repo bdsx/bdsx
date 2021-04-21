@@ -155,13 +155,42 @@ function _launch(asyncResolve:()=>void):void {
     jshook.init(err=>{
         if (err instanceof Error) {
             err.stack = remapStack(err.stack);
-            if (events.error.fire(err) !== CANCEL) {
-                console.error(err.stack);
-            }
-        } else {
-            console.error(err);
+        }
+        if (events.error.fire(err) !== CANCEL) {
+            console.error(err && (err.stack || err));
         }
     });
+    const oldSetInterval = setInterval;
+    global.setInterval = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
+        return oldSetInterval((...args:any[])=>{
+            try {
+                callback(...args);
+            } catch (err) {
+                if (err instanceof Error) {
+                    err.stack = remapStack(err.stack);
+                }
+                if (events.error.fire(err) !== CANCEL) {
+                    console.error(err && (err.stack || err));
+                }
+            }
+        }, ms, args);
+    };
+    const oldSetTimeout = setTimeout;
+    global.setTimeout = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
+        return oldSetTimeout((...args:any[])=>{
+            try {
+                callback(...args);
+            } catch (err) {
+                if (err instanceof Error) {
+                    err.stack = remapStack(err.stack);
+                }
+                if (events.error.fire(err) !== CANCEL) {
+                    console.error(err && (err.stack || err));
+                }
+            }
+        }, ms, args);
+    } as any;
+    setTimeout.__promisify__ = oldSetTimeout.__promisify__;
 
     asmcode.evWaitGameThreadEnd = dll.kernel32.CreateEventW(null, 0, 0, null);
 

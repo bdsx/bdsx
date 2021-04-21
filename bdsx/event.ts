@@ -157,7 +157,7 @@ export namespace events {
     * global error listeners
     * if returns CANCEL, then default error printing is disabled
     */
-    export const error = new Event<(err:Error)=>CANCEL|void>();
+    export const error = new Event<(err:any)=>CANCEL|void>();
 
      /**
       * command console outputs
