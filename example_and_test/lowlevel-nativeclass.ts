@@ -57,7 +57,7 @@ console.assert(obj.c === 1 && obj.c === pointer.getInt8(6));
 
 console.assert(SampleStructure.offsetOf('a') === 0); // the a offset is 0
 console.assert(SampleStructure.offsetOf('b') === 4); // the b offset is 4
-console.assert(SampleStructure.offsetOf('d') === 8); // the b offset is 8 by C/C++ field alignments
+console.assert(SampleStructure.offsetOf('d') === 8); // the d offset is 8 by C/C++ field alignments
 
 pointer.setInt32(SampleStructure.offsetOf('bitfield1'), 0);
 
@@ -66,4 +66,4 @@ obj.bitfield2 = 0xfffffffe;
 console.assert(obj.bitfield2 === 0); // all is masked without the first bit
 obj.bitfield3 = 1;
 const bitfield = pointer.getInt32(SampleStructure.offsetOf('bitfield1'));
-console.assert(bitfield === 0b101); // bitfield = 101(2)
+console.assert(bitfield === 0b101); // bitfield = 101 (2)
