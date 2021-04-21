@@ -7,7 +7,7 @@ import child_process = require('child_process');
 import os = require('os');
 
 if (process.argv[2] === undefined) {
-    console.error(colors.red(`[BDSX-Plugins] Please provide one argument for the target path of the new plugin`));
+    console.error(colors.red(`[BDSX-Plugins] Please provide an argument for the target path of the new plugin`));
     process.exit(-1);
 }
 const targetPath = path.resolve(process.argv[2]);
