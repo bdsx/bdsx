@@ -15,7 +15,7 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
     const cert = ptr.connreq.cert;
     const xuid = cert.getXuid();
     const username = cert.getId();
-    console.log(`${username}> IP=${ip}, XUID=${xuid}`);
+    console.log(`Connection: ${username}> IP=${ip}, XUID=${xuid}`);
 });
 ```
 * [Command hooking](https://github.com/bdsx/bdsx/wiki/Command-Hooking)

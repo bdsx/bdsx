@@ -315,7 +315,7 @@ export namespace disasm
         while (size !== 0) {
             try {
                 console.error(colors.red('disasm.walk: unimplemented opcode, failed'));
-                console.error(colors.red('disasm.walk: Please tell rua.kr about it'));
+                console.error(colors.red('disasm.walk: Please send rua.kr this error'));
                 console.trace(colors.red(`opcode: ${hex(ptr.getBuffer(size))}`));
                 break;
             } catch (err) {

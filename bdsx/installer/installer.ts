@@ -369,11 +369,11 @@ const bds = new InstallItem({
     keyFile: 'bedrock_server.exe',
     skipExists: true,
     async confirm() {
-        console.log(`It will download and install Bedrock Dedicated Server to '${path.resolve(bdsPath)}'`);
+        console.log(`This will download and install Bedrock Dedicated Server to '${path.resolve(bdsPath)}'`);
         console.log(`BDS Version: ${BDS_VERSION}`);
         console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
         console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
-        const ok = await yesno("Would you like to agree it?(Y/n)");
+        const ok = await yesno("Do you agree to the terms above? (y/n)");
         if (!ok) throw new MessageError("Canceled");
     },
     async preinstall() {
