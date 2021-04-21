@@ -1,4 +1,3 @@
-import { NativePointer } from "..";
 import { Actor } from "../bds/actor";
 import { Block, BlockSource } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
@@ -6,6 +5,7 @@ import { GameMode, SurvivalMode } from "../bds/gamemode";
 import { Player } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
+import { NativePointer } from "../core";
 import { events } from "../event";
 import { bool_t, int32_t, void_t } from "../nativetype";
 

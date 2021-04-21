@@ -8,6 +8,7 @@ import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { events } from "../event";
+import { NativeClass } from "../nativeclass";
 import { bool_t, float32_t, int32_t } from "../nativetype";
 
 
@@ -46,6 +47,33 @@ export class EntitySneakEvent implements IEntitySneakEvent {
     ) {
     }
 }
+
+interface IEntityCreatedEvent {
+    entity: Actor;
+}
+export class EntityCreatedEvent implements IEntityCreatedEvent {
+    constructor(
+        public entity: Actor
+    ) {
+    }
+}
+
+class ActorDamageSource extends NativeClass{
+}
+
+// interface IEntityDeathEvent {
+//     entity: Actor;
+//     damageSource: ActorDamageSource;
+//     ActorType: number;
+// }
+// export class EntityDeathEvent implements IEntityDeathEvent {
+//     constructor(
+//         public entity: Actor,
+//         public damageSource: ActorDamageSource,
+//         public ActorType: number
+//     ) {
+//     }
+// }
 
 interface IPlayerAttackEvent {
     player: Player;
@@ -126,6 +154,22 @@ function onEntitySneak(Script:ScriptCustomEventPacket, entity:Actor, isSneaking:
     return _onEntitySneak(Script, event.entity, event.isSneaking);
 }
 const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
+
+function onEntityCreated(Script:ScriptCustomEventPacket, entity:Actor):boolean {
+    const event = new EntityCreatedEvent(entity);
+    events.entityCreated.fire(event);
+    return _onEntityCreated(Script, event.entity);
+}
+const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onActorCreated', bool_t, null, ScriptCustomEventPacket, Actor)(onEntityCreated);
+
+
+// function onEntityDeath(Script:ScriptCustomEventPacket, entity:Actor, actorDamageSource:ActorDamageSource, ActorType:number):boolean {
+//     const event = new EntityDeathEvent(entity, actorDamageSource, ActorType);
+//     console.log(`${entity} ${actorDamageSource} ${ActorType}`)
+//     events.entityCreated.fire(event);
+//     return _onEntityDeath(Script, event.entity, event.damageSource, event.ActorType);
+// }
+// const _onEntityDeath = procHacker.hooking('ScriptServerActorEventListener::onActorDeath', bool_t, null, ScriptCustomEventPacket, Actor, ActorDamageSource, int32_t)(onEntityDeath);
 
 function onPlayerAttack(player:Player, victim:Actor):boolean {
     const event = new PlayerAttackEvent(player, victim);
