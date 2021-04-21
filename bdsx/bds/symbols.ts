@@ -9,6 +9,7 @@ const symbols = [
     'ConsoleInputReader::getLine',
     '<lambda_8914ed82e3ef519cb2a85824fbe333d8>::operator()',
     'ScriptEngine::initialize',
+    'ScriptEngine::shutdown',
     'Level::createDimension',
     'Level::fetchEntity',
     'Level::getActivePlayerCount',

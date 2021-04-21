@@ -9,7 +9,6 @@ import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t } from "../nativetype";
-import { nethook } from "../nethook";
 
 
 interface IEntityHurtEvent {
@@ -148,7 +147,7 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
 
-nethook.before(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
+events.packetBefore(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
     const event = new PlayerJoinEvent(ni.getActor()!);
     events.playerJoin.fire(event);
 });

@@ -1,12 +1,13 @@
 
 // Network Hooking: Get login IP and XUID
-import { nethook, NetworkIdentifier, MinecraftPacketIds } from "bdsx";
+import { MinecraftPacketIds, NetworkIdentifier } from "bdsx";
 import { TextPacket } from "bdsx/bds/packets";
 import { DeviceOS } from "bdsx/common";
+import { events } from "bdsx/event";
 
 export const connectionList = new Map<NetworkIdentifier, string>();
 
-nethook.after(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId) => {
+events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId) => {
     const ip = networkIdentifier.getAddress();
     const connreq = ptr.connreq;
     const cert = connreq.cert;

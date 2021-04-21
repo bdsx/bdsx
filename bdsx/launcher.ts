@@ -349,6 +349,15 @@ function _launch(asyncResolve:()=>void):void {
         }, void_t, null, VoidPointer),
         [Register.rcx], []);
 
+    procHacker.hookingRawWithCallOriginal('ScriptEngine::shutdown',
+        makefunc.np(()=>{
+            try {
+                events.serverStop.fire();
+            } catch (err) {
+                remapAndPrintError(err);
+            }
+        }, void_t), [Register.rcx], []);
+
     // keep ScriptEngine variables. idk why it needs.
     procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
 }

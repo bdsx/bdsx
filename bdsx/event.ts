@@ -77,6 +77,11 @@ export namespace events {
     export const serverUpdate = new Event<()=>void>();
 
     /**
+     * before system.shutdown, Minecraft is alive yet
+     */
+    export const serverStop = new Event<()=>void>();
+
+    /**
      * after BDS closed
      */
     export const serverClose = new Event<()=>void>();
