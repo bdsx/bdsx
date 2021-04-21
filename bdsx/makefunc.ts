@@ -339,7 +339,7 @@ class DupCheck {
         const str = String(target);
         const oldstack = this.map.get(str);
         if (oldstack !== undefined) {
-            console.error(`Dupplicated ${str}`);
+            console.error(`Duplicated ${str}`);
             console.error(remapStack(oldstack));
             return;
         }
