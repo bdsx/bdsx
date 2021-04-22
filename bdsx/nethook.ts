@@ -151,13 +151,13 @@ export namespace nethook
         const ex = new Set(exceptions);
         for (let i=1; i<=0xa3; i++) {
             if (ex.has(i)) continue;
-            before<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
+            events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
                 console.log(`R ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);
             });
         }
         for (let i=1; i<=0xa3; i++) {
             if (ex.has(i)) continue;
-            send<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
+            events.packetSend<MinecraftPacketIds>(i).on((ptr, ni, id)=>{
                 console.log(`S ${MinecraftPacketIds[id]}(${id}) ${hex(ptr.getBuffer(0x10, 0x28))}`);
             });
         }
@@ -167,9 +167,9 @@ export namespace nethook
 function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
     try {
         const target = events.packetEvent(events.PacketEventType.Raw, packetId) as Event<nethook.RawListener>;
+        const ni = conn.networkIdentifier;
+        nethook.lastSender = ni;
         if (target !== null && !target.isEmpty()) {
-            const ni = conn.networkIdentifier;
-            nethook.lastSender = ni;
             const s = rbp.stream;
             const data = s.data;
             const rawpacketptr = data.valueptr;
@@ -202,7 +202,7 @@ function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packet
             const packet = rbp.packet.p!;
             const ni = nethook.lastSender;
             const TypedPacket = PacketIdToType[packetId] || Packet;
-            const typedPacket = new TypedPacket(packet);
+            const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
                 try {
                     if (listener(typedPacket, ni, packetId) === CANCEL) {
