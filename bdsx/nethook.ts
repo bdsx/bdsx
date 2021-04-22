@@ -38,13 +38,6 @@ class OnPacketRBP extends NativeClass {
     stream:ReadOnlyBinaryStream;
 }
 
-function fireError(err:any):void {
-    err.stack = remapStack(err.stack);
-    if (events.error.fire(err) !== CANCEL) {
-        console.error(err.stack);
-    }
-}
-
 let sendInternalOriginal:(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>void;
 
 export namespace nethook
@@ -182,7 +175,7 @@ function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkH
                         return null;
                     }
                 } catch (err) {
-                    fireError(err);
+                    events.errorFire(err);
                 }
             }
             _tickCallback();
@@ -211,7 +204,7 @@ function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packet
                         return result;
                     }
                 } catch (err) {
-                    fireError(err);
+                    events.errorFire(err);
                 }
             }
             _tickCallback();
@@ -234,7 +227,7 @@ function onPacketAfter(rbp:OnPacketRBP):void {
                 try {
                     if (listener(typedPacket, ni, packetId) === CANCEL) break;
                 } catch (err) {
-                    fireError(err);
+                    events.errorFire(err);
                 }
             }
             _tickCallback();
@@ -257,7 +250,7 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
                         return;
                     }
                 } catch (err) {
-                    fireError(err);
+                    events.errorFire(err);
                 }
             }
         }
@@ -277,7 +270,7 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
                         return;
                     }
                 } catch (err) {
-                    fireError(err);
+                    events.errorFire(err);
                 }
             }
         }

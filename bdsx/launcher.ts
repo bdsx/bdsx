@@ -63,21 +63,27 @@ runtimeError.setHandler(err=>{
     const lastSender = ipfilter.getLastSender();
     console.error('[ Native Crash ]');
     console.error(`Last packet from IP: ${lastSender}`);
-    console.error('[ Native Stack ]');
-    switch (err.code) {
-    case STATUS_NO_NODE_THREAD:
-        console.error(`JS Accessing from the out of threads`);
-        break;
-    case EXCEPTION_ACCESS_VIOLATION:
-        console.error(`Accessing an invalid memory address`);
-        break;
-    case STATUS_INVALID_PARAMETER:
-        console.error(`Native function received wrong parameters`);
-        break;
+    if (err.code || err.nativeStack) {
+        console.error('[ Native Stack ]');
+        switch (err.code) {
+        case STATUS_NO_NODE_THREAD:
+            console.error(`JS Accessing from the out of threads`);
+            break;
+        case EXCEPTION_ACCESS_VIOLATION:
+            console.error(`Accessing an invalid memory address`);
+            break;
+        case STATUS_INVALID_PARAMETER:
+            console.error(`Native function received wrong parameters`);
+            break;
+        }
+        console.error(err.nativeStack);
     }
-    console.error(err.nativeStack);
     console.error('[ JS Stack ]');
-    console.error(err.stack!);
+    try {
+        if ((err instanceof Error) && !err.stack) throw err;
+    } catch (err) {
+    }
+    console.error(err.stack || err.message);
 });
 
 let launched = false;
@@ -152,26 +158,14 @@ function _launch(asyncResolve:()=>void):void {
     ipfilter.init(ip=>{
         console.error(`[BDSX] traffic exceeded threshold for IP: ${ip}`);
     });
-    jshook.init(err=>{
-        if (err instanceof Error) {
-            err.stack = remapStack(err.stack);
-        }
-        if (events.error.fire(err) !== CANCEL) {
-            console.error(err && (err.stack || err));
-        }
-    });
+    jshook.init(events.errorFire);
     const oldSetInterval = setInterval;
     global.setInterval = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
         return oldSetInterval((...args:any[])=>{
             try {
                 callback(...args);
             } catch (err) {
-                if (err instanceof Error) {
-                    err.stack = remapStack(err.stack);
-                }
-                if (events.error.fire(err) !== CANCEL) {
-                    console.error(err && (err.stack || err));
-                }
+                events.errorFire(err);
             }
         }, ms, args);
     };
@@ -181,12 +175,7 @@ function _launch(asyncResolve:()=>void):void {
             try {
                 callback(...args);
             } catch (err) {
-                if (err instanceof Error) {
-                    err.stack = remapStack(err.stack);
-                }
-                if (events.error.fire(err) !== CANCEL) {
-                    console.error(err && (err.stack || err));
-                }
+                events.errorFire(err);
             }
         }, ms, args);
     } as any;

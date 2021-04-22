@@ -175,13 +175,17 @@ export class CustomCommandFactory {
                 this.self_vftable.execute = customCommandExecute;
             }
             execute(origin:CommandOrigin, output:CommandOutput):void {
-                const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
-                for (const [name, optkey] of paramNames) {
-                    if (optkey === undefined || this[optkey]) {
-                        nobj[name] = this[name];
+                try {
+                    const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
+                    for (const [name, optkey] of paramNames) {
+                        if (optkey === undefined || this[optkey]) {
+                            nobj[name] = this[name];
+                        }
                     }
+                    callback(nobj as any, origin, output);
+                } catch (err) {
+                    events.errorFire(err);
                 }
-                callback(nobj as any, origin, output);
             }
         }
 

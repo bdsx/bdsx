@@ -8,6 +8,7 @@ import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./even
 import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerPickupItemEvent } from "./event_impl/entityevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
+import { remapStack } from "./source-map-support";
 
 const PACKET_ID_COUNT = 0x100;
 const PACKET_EVENT_COUNT = 0x500;
@@ -168,6 +169,15 @@ export namespace events {
     */
     export const error = new Event<(err:any)=>CANCEL|void>();
 
+    export function errorFire(err:unknown):void {
+        if (err instanceof Error) {
+            err.stack = remapStack(err.stack);
+        }
+        if (events.error.fire(err) !== CANCEL) {
+            console.error(err && ((err as any).stack || err));
+        }
+    }
+
      /**
       * command console outputs
       */
@@ -180,9 +190,9 @@ export namespace events {
     export const command = new Event<(command: string, originName: string, ctx: CommandContext) => void | number>();
 
 
-     /**
+    /**
       * network identifier disconnected
       */
-     export const networkDisconnected = new Event<(ni:NetworkIdentifier)=>void>();
+    export const networkDisconnected = new Event<(ni:NetworkIdentifier)=>void>();
 
 }

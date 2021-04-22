@@ -8,6 +8,7 @@ import { CxxString, int32_t } from "bdsx/nativetype";
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
     console.log(param.rawtext.text);
+    throw Error('test');
 }, { rawtext:CommandRawText });
 
 // optional
