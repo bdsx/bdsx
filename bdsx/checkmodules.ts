@@ -8,6 +8,11 @@ function checkVersion(pkgname:string, installed:string, required:string|undefine
     if (required === '*') return true;
     if (required === undefined) return true;
 
+    switch (required.charAt(0)) {
+    case '~': case '^':
+        required = required.substr(1);
+        break;
+    }
     const matched = installed.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
     if (matched === null) {
         throw Error(`${pkgname}: Invalid installed version string (${installed})`);
@@ -37,55 +42,27 @@ function checkVersion(pkgname:string, installed:string, required:string|undefine
     return true;
 }
 
-function comparePackageLock(packagejson:any, locked:any):boolean {
-    let needUpdate = false;
-    const deps = packagejson.dependencies;
-    for (const pkgname in deps) {
-        let installed = locked.packages[pkgname];
-        if (!installed) {
-            console.error(colors.red(`${pkgname}: not installed`));
-            needUpdate = true;
-            continue;
-        }
-        while (installed.link) {
-            installed = locked.packages[installed.resolved];
-            if (!installed) {
-                console.error(colors.red(`${pkgname}: Linked package (${installed.resolved}) not found`));
-                needUpdate = true;
-                continue;
-            }
-        }
-
-        const required = deps[pkgname];
-        if (!checkVersion(pkgname, installed.version, required.version)) {
-            console.error(colors.red(`${pkgname}: Outdated, (required=${required.version}, installed=${installed.version})`));
-            needUpdate = true;
-            continue;
-        }
-
-    }
-    return needUpdate;
-}
-
 const bdsxPath = path.join(__dirname, '..')+path.sep;
-
 const packagejson = JSON.parse(fs.readFileSync(bdsxPath+'package.json', 'utf-8'));
-const locked = JSON.parse(fs.readFileSync(bdsxPath+'package-lock.json', 'utf-8'));
 
 let needUpdate = false;
 
-const installedDeps = locked.packages[''].dependencies;
 const requiredDeps = packagejson.dependencies;
 
 for (const name in requiredDeps) {
-    const installedVersion = installedDeps[name];
-    const requiredVersion = requiredDeps[name];
-    if (installedVersion === undefined) {
+    try {
+        const installed = require(`${name}/package.json`);
+        const installedVersion = installed.version;
+        const requiredVersion = requiredDeps[name];
+        if (!checkVersion(name, installedVersion, requiredVersion)) {
+            console.error(colors.red(`${name}: version does not match (installed=${installedVersion}, required=${requiredVersion})`));
+            needUpdate = true;
+        }
+    } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+            throw err;
+        }
         console.error(colors.red(`${name}: not installed`));
-        needUpdate = true;
-    }
-    if (installedVersion !== requiredVersion) {
-        console.error(colors.red(`${name}: version does not match (installed=${installedVersion}, required=${requiredVersion})`));
         needUpdate = true;
     }
 }
