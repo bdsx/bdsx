@@ -1,4 +1,4 @@
-import { UNDNAME_NAME_ONLY } from "../common";
+import { UNDNAME_NAME_ONLY } from "../dbghelp";
 import { NativePointer, pdb } from "../core";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
