@@ -52,6 +52,7 @@ Actor.prototype.isPlayer = function() {
 };
 (Actor as any)._singletoning = function(ptr:StaticPointer|null):Actor|null {
     if (ptr === null) return null;
+    if (ptr.isNull()) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
     if (actor) return actor;

@@ -314,7 +314,7 @@ Tester.test({
                 }
             };
             events.commandOutput.on(outputcb);
-            bedrockServer.executeCommand('/__dummy_command');
+            bedrockServer.executeCommand('/__dummy_command', false);
         });
     },
 
