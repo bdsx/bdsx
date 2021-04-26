@@ -127,6 +127,10 @@ export class ItemStack extends NativeClass {
     getUserData():CompoundTag {
         abstract();
     }
+    /**
+     * it returns the enchantability.
+     * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
+     */
     getEnchantValue(): number {
         abstract();
     }
