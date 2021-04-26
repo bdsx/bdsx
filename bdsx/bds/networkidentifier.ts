@@ -122,6 +122,9 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         return this.getAddress();
     }
 
+    /**
+     * @deprecated use events.networkDisconnected
+     */
     static readonly close:CapsuledEvent<(ni:NetworkIdentifier)=>void> = events.networkDisconnected;
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;

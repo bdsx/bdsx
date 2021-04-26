@@ -86,8 +86,8 @@ function checkVersionSyntax(pkgname:string, installed:string, requireds:string):
     return false;
 }
 
-const bdsxPath = path.join(__dirname, '..')+path.sep;
-const packagejson = JSON.parse(fs.readFileSync(bdsxPath+'package.json', 'utf-8'));
+const packagejsonPath = path.resolve(process.cwd(), process.argv[1], 'package.json');
+const packagejson = JSON.parse(fs.readFileSync(packagejsonPath, 'utf-8'));
 
 let needUpdate = false;
 

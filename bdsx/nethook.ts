@@ -127,7 +127,9 @@ export namespace nethook
         return events.packetSendRaw(id);
     }
 
-    /** @deprecated use NetworkIdentifier.close */
+    /**
+     * @deprecated use events.networkDisconnected
+     */
     export const close:CapsuledEvent<(networkIdentifier:NetworkIdentifier)=>void> = NetworkIdentifier.close;
 
     /**
