@@ -1,4 +1,5 @@
-import { AttributeId, bedrockServer } from "bdsx";
+import { AttributeId } from "bdsx";
+import { events } from "bdsx/event";
 import { connectionList } from "./net-login";
 
 // Change attributes
@@ -15,6 +16,6 @@ const interval = setInterval(()=>{
 }, 100);
 
 // without this code, bdsx does not end even after BDS closed
-bedrockServer.close.on(()=>{
+events.serverStop.on(()=>{
     clearInterval(interval);
 });

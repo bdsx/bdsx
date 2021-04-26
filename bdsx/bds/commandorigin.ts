@@ -57,7 +57,10 @@ export class CommandOrigin extends NativeClass {
     getDimension(): Dimension {
         abstract();
     }
-    getEntity():Actor {
+    /**
+     * it returns null if the command origin is the console
+     */
+    getEntity():Actor|null {
         abstract();
     }
 }

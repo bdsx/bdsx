@@ -1,20 +1,47 @@
 import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
 import { CxxString, uint8_t } from "bdsx/nativetype";
-import { CxxStringWrapper } from "bdsx/pointer";
-import type { ServerPlayer } from "./player";
-import { CompoundTag } from "./nbt";
 import { CxxVector } from "../cxxvector";
+import { CompoundTag } from "./nbt";
+import type { ServerPlayer } from "./player";
 
 export enum ContainerId {
     Inventory = 0,
+    /**
+     * @deprecated
+     */
     First = 1,
+    /**
+     * @deprecated
+     */
     Last = 100,
+    /**
+     * @deprecated
+     */
     Offhand = 119,
+    /**
+     * @deprecated
+     */
     Armor = 120,
+    /**
+     * @deprecated
+     */
     Hotbar = 122,
+    /**
+     * @deprecated
+     */
     FixedInventory = 123,
+    /**
+     * @deprecated
+     */
     UI = 124
+}
+
+export enum ArmorSlot {
+    Head,
+    Chest,
+    Legs,
+    Feet
 }
 
 export enum CreativeItemCategory {

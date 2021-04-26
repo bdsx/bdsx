@@ -9,6 +9,7 @@ import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
+import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -22,12 +23,10 @@ export enum DimensionId { // int32_t
     TheEnd = 2
 }
 
-
 export class ActorRuntimeID extends VoidPointer {
 }
 
-export enum ActorType
-{
+export enum ActorType {
     Item = 0x40,
     Player = 0x13f,
 }
@@ -146,6 +145,9 @@ export class Actor extends NativeClass {
         abstract();
     }
     teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
+        abstract();
+    }
+    getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {

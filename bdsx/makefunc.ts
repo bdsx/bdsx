@@ -1252,6 +1252,10 @@ declare module "./assembler"
 {
     interface X64Assembler
     {
+        /**
+         * asm.alloc + makefunc.js
+         * allocates it on the executable memory. and make it as a JS function.
+         */
         make<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
             returnType: RETURN, opts?: OPTS, ...params: PARAMS):
             FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN>;

@@ -91,6 +91,7 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
     _computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
     _applyTarget(this, alloc);
 };
+Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);

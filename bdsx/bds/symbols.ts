@@ -43,6 +43,7 @@ const symbols = [
     'Actor::hasTag',
     'Actor::setNameTag',
     'Actor::hurt',
+    'Actor::getArmor',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
     'ExtendedCertificate::getIdentity',
