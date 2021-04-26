@@ -792,7 +792,7 @@ export class X64Assembler {
     mov_r_c(dest:Register, value:Value64, size = OperationSize.qword):this {
         if (size === OperationSize.qword || size === OperationSize.dword) {
             const [low, high] = split64bits(value);
-            if (low === 0 && high === 0) return this.xor_r_r(dest, dest, OperationSize.dword);
+            if (low === 0 && high === 0) return this.xor_r_r(dest, dest);
         }
         return this._mov(dest, 0, null, 1, 0, value, MovOper.Const, size);
     }
@@ -1181,6 +1181,7 @@ export class X64Assembler {
         return this._oper(MovOper.Register, Operator.adc, dest, src, 1, 0, 0, size);
     }
     xor_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
+        if (dest === src && size === OperationSize.qword) size = OperationSize.dword;
         return this._oper(MovOper.Register, Operator.xor, dest, src, 1, 0, 0, size);
     }
     or_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {

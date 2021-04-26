@@ -186,9 +186,7 @@ function qwordMove(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.T
 
 class ParamInfoMaker {
     public readonly structureReturn: boolean;
-    public readonly nullableReturn: boolean;
     public readonly useThis: boolean;
-    public readonly nullableParams: boolean;
     public readonly thisType: makefunc.Paramable;
 
     public readonly return: makefunc.ParamInfo;
@@ -204,24 +202,14 @@ class ParamInfoMaker {
             this.structureReturn = !!opts.structureReturn;
             this.thisType = opts.this;
             this.useThis = !!this.thisType;
-            this.nullableReturn = !!opts.nullableReturn;
-            this.nullableParams = !!opts.nullableParams;
             if (this.useThis) {
                 if (!isBaseOf(this.thisType, VoidPointer)) {
                     throw Error('Non pointer at this');
                 }
             }
-            if (this.nullableReturn) {
-                if (!isBaseOf(returnType, VoidPointer)) throw Error('Invalid options.nullableReturn with non pointer type');
-            }
-            if (this.nullableReturn && this.structureReturn) {
-                throw Error('Invalid options.nullableReturn with structureReturn');
-            }
         } else {
             this.structureReturn = false;
             this.useThis = false;
-            this.nullableReturn = false;
-            this.nullableParams = false;
         }
         this.countOnCalling = params.length;
         this.countOnCpp = this.countOnCalling + (+this.useThis) + (+this.structureReturn);
@@ -235,7 +223,6 @@ class ParamInfoMaker {
             info.type = returnType;
             info.numberOnMaking = 2;
             info.numberOnUsing = PARAMNUM_RETURN;
-            info.nullable = this.nullableReturn;
             info.needDestruction = this.structureReturn;
             this.return = info;
         }
@@ -243,7 +230,6 @@ class ParamInfoMaker {
         for (let i=0;i<params.length;i++) {
             const info = new makefunc.ParamInfo;
             info.offsetForLocalSpace = null;
-            info.nullable = false;
             info.needDestruction = false;
 
             if (this.useThis && i === 0) {
@@ -251,20 +237,17 @@ class ParamInfoMaker {
                 info.numberOnMaking = 3;
                 info.type = params[0];
                 info.numberOnUsing = PARAMNUM_THIS;
-                info.nullable = false;
             } else if (this.structureReturn && i === +this.useThis) {
                 info.type = this.return.type;
                 info.numberOnMaking = 2;
                 info.type = StructureReturnAllocation;
                 info.numberOnUsing = PARAMNUM_RETURN;
-                info.nullable = false;
             } else {
                 const indexOnUsing = i - +this.structureReturn - +this.useThis;
                 const indexOnMaking = PARAM_OFFSET + indexOnUsing;
                 info.numberOnMaking = indexOnMaking + 1;
                 info.numberOnUsing = indexOnUsing + 1;
                 info.type = params[i];
-                info.nullable = this.nullableParams;
             }
             this.params.push(info);
         }
@@ -297,12 +280,18 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * if this is defined, it allocates at the second parameter.
      */
     structureReturn?:boolean;
+    /**
+     * @deprecated nullable is default now
+     */
     nullableReturn?:boolean;
 
     /**
      * @deprecated meaningless. 'this' should be alawys *Pointer on JS
      */
     nullableThis?:boolean;
+    /**
+     * @deprecated nullable is default now
+     */
     nullableParams?:boolean;
 
     /**
@@ -357,6 +346,7 @@ export namespace makefunc {
     export const np2npAsm = Symbol('makefunc.np2npAsm');
     export const js2npLocalSize = Symbol('makefunc.js2npLocalSize');
     export const pointerReturn = Symbol('makefunc.pointerReturn');
+    export const nullAlsoInstance = Symbol('makefunc.nullAlsoInstance');
 
     export interface Paramable {
         name:string;
@@ -365,8 +355,22 @@ export namespace makefunc {
         [np2npAsm](asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo): void;
         [np2js]?(ptr:any):any;
         [js2np]?(ptr:any):any;
+
+        /**
+         * the local space for storing it
+         */
         [js2npLocalSize]?:number;
+
+        /**
+         * if it has the local space. the value is the pointer that indicates the stored data.
+         * or it's read from the stored data
+         */
         [pointerReturn]?:boolean;
+
+        /**
+         * the null pointer also can be the JS instance
+         */
+        [nullAlsoInstance]?:boolean;
     }
     export interface ParamableT<T> extends Paramable {
         new():T;
@@ -392,7 +396,6 @@ export namespace makefunc {
         numberOnMaking: number;
         numberOnUsing: number;
         type: Paramable;
-        nullable: boolean;
         needDestruction:boolean;
     }
 
@@ -1154,7 +1157,7 @@ export namespace makefunc {
         'Ansi',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
-            asm.xor_r_r(Register.r9, Register.r9, OperationSize.dword);
+            asm.xor_r_r(Register.r9, Register.r9);
             asm.mov_r_c(Register.r8, chakraUtil.stack_ansi);
             asm.mov_r_c(Register.rdx, info.numberOnUsing);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
@@ -1165,7 +1168,7 @@ export namespace makefunc {
             const temp = target.tempPtr();
             asm.qmov_t_t(Target[0], source);
             asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
-            asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
+            asm.xor_r_r(Register.rdx, Register.rdx);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_ansi_np2js);
             asm.throwIfNonZero(info);
             asm.qmov_t_t(target, temp);
@@ -1177,7 +1180,7 @@ export namespace makefunc {
         'Utf8',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
-            asm.xor_r_r(Register.r9, Register.r9, OperationSize.dword);
+            asm.xor_r_r(Register.r9, Register.r9);
             asm.mov_r_c(Register.r8, chakraUtil.stack_utf8);
             asm.mov_r_c(Register.rdx, info.numberOnUsing);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
@@ -1188,7 +1191,7 @@ export namespace makefunc {
             const temp = target.tempPtr();
             asm.qmov_t_t(Target[0], source);
             asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
-            asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
+            asm.xor_r_r(Register.rdx, Register.rdx);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
             asm.throwIfNonZero(info);
             asm.qmov_t_t(target, temp);
@@ -1290,10 +1293,10 @@ VoidPointer[makefunc.np2jsAsm] = function(asm:makefunc.Maker, target:makefunc.Ta
     chakraUtil.JsAddRef(info.type);
     asm.qmov_t_t(makefunc.Target[1], source);
     asm.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
-    if (info.nullable) {
-        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
-    } else {
+    if (info.type[makefunc.nullAlsoInstance] || (info.numberOnUsing === PARAMNUM_RETURN && asm.pi.structureReturn)) {
         asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
+    } else {
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
     }
     asm.qmov_t_t(target, makefunc.Target.return);
 };

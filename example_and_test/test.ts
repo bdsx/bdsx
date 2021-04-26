@@ -227,6 +227,8 @@ Tester.test({
         this.equals(string2string('test'), 'test', 'string to string');
         this.equals(string2string('testtesta'), 'testtesta', 'test string over 8 bytes');
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
+        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).ret().make(NativePointer);
+        this.equals(nullreturn(), null, 'nullreturn does not return null');
     },
 
     vectorcopy() {
@@ -387,7 +389,7 @@ Tester.test({
                 }
             }, 1000);
         });
-        NetworkIdentifier.close.on(ni => {
+        events.networkDisconnected.on(ni => {
             this.assert(conns.delete(ni), '[test] disconnection without connection');
         });
     },

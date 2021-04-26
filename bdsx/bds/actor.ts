@@ -168,4 +168,3 @@ export class Actor extends NativeClass {
         abstract();
     }
 }
-

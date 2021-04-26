@@ -102,7 +102,7 @@ CommandOrigin.prototype.getWorldPosition = makefunc.js([0x20], Vec3, {this: Comm
 CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrigin});
 
 // Dimension* (*getDimension)(CommandOrigin* origin);
-CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin, nullableReturn: true});
+CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
 
 // Actor* getEntity(CommandOrigin* origin);
-CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin, nullableReturn: true});
+CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin});

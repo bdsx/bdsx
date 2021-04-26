@@ -43,7 +43,7 @@ export class NativeModule extends VoidPointer {
         name: string, returnType: RETURN, opts?: OPTS|null, ...params: PARAMS):
         FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN>{
         const addr = this.getProcAddress(name);
-        if (addr.isNull()) throw Error(`${this.name}: Cannot find procedure, ${name}`);
+        if (addr === null) throw Error(`${this.name}: Cannot find procedure, ${name}`);
         return makefunc.js(addr, returnType, opts, ...params);
     }
 
@@ -59,7 +59,7 @@ export class NativeModule extends VoidPointer {
      */
     static get(name: string|null): NativeModule {
         const module = getModuleHandle(name);
-        if (module.isNull()) throw Error(`${name}: Cannot find module`);
+        if (module === null) throw Error(`${name}: Cannot find module`);
         module.name = name || '[exe]';
         return module;
     }
@@ -70,7 +70,7 @@ export class NativeModule extends VoidPointer {
      */
     static load(name: string): NativeModule {
         const module = dll.kernel32.LoadLibraryW(name);
-        if (module.isNull()) {
+        if (module === null) {
             const errno = dll.kernel32.GetLastError();
             const errobj:NodeJS.ErrnoException = Error(`${name}: Cannot load module, errno=${errno}`);
             errobj.errno = errno;
@@ -123,7 +123,7 @@ export namespace dll {
         export const module = NativeModule.get('ntdll.dll');
 
         const wine_get_version_ptr = module.getProcAddress('wine_get_version');
-        export const wine_get_version:(()=>string)|null = wine_get_version_ptr.isNull() ?
+        export const wine_get_version:(()=>string)|null = wine_get_version_ptr === null ?
             null : makefunc.js(wine_get_version_ptr, makefunc.Utf8);
     }
     export namespace kernel32 {

@@ -34,7 +34,7 @@ import { BinaryStream } from "./stream";
 
 // level.ts
 Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimension, {this:Level}, int32_t);
-Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level, nullableReturn: true}, bin64_t, bool_t);
+Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level}, bin64_t, bool_t);
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
 
 Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
@@ -52,7 +52,6 @@ Actor.prototype.isPlayer = function() {
 };
 (Actor as any)._singletoning = function(ptr:StaticPointer|null):Actor|null {
     if (ptr === null) return null;
-    if (ptr.isNull()) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
     if (actor) return actor;
@@ -249,7 +248,7 @@ AttributeInstance.abstract({
     defaultValue: [float32_t, 0x78],
 });
 
-BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, int32_t);
+BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap}, int32_t);
 
 // server.ts
 VanilaGameModuleServer.abstract({
