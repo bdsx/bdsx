@@ -55,7 +55,10 @@ export class Tester {
     }
 
     equals<T>(actual:T, expected:T, message:string='', toString:(v:T)=>string=v=>v+''):void {
-        if (actual !== expected) this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}, ${message}`, 3);
+        if (actual !== expected) {
+            if (message !== '') message = ', ' + message;
+            this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}${message}`, 3);
+        }
     }
 
     skip(message:string):void {

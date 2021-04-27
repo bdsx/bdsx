@@ -646,17 +646,17 @@ export namespace makefunc {
             if (target.memory) {
                 if (source.memory) {
                     const ftemp = target.getFTemp();
-                    this.cvtsi2sd_r_rp(ftemp, source.reg, 1, source.offset);
-                    this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
+                    this.cvtsi2sd_f_rp(ftemp, source.reg, 1, source.offset);
+                    this.movsd_rp_f(target.reg, 1, target.offset, ftemp);
                 } else {
-                    this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
-                    this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                    this.cvtsi2sd_f_r(FloatRegister.xmm0, source.reg);
+                    this.movsd_rp_f(target.reg, 1, target.offset, FloatRegister.xmm0);
                 }
             } else {
                 if (source.memory) {
-                    this.cvtsi2sd_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.cvtsi2sd_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
-                    this.cvtsi2sd_r_r(target.freg, source.reg);
+                    this.cvtsi2sd_f_r(target.freg, source.reg);
                 }
             }
         }
@@ -671,14 +671,14 @@ export namespace makefunc {
                     this.cvttsd2si_r_rp(temp, source.reg, 1, source.offset);
                     this.mov_rp_r(target.reg, 1, target.offset, temp);
                 } else {
-                    this.cvttsd2si_r_r(temp, source.freg);
+                    this.cvttsd2si_r_f(temp, source.freg);
                     this.mov_rp_r(target.reg, 1, target.offset, temp);
                 }
             } else {
                 if (source.memory) {
                     this.cvttsd2si_r_rp(target.reg, source.reg, 1, source.offset);
                 } else {
-                    this.cvttsd2si_r_r(target.reg, source.freg);
+                    this.cvttsd2si_r_f(target.reg, source.freg);
                 }
             }
         }
@@ -690,17 +690,17 @@ export namespace makefunc {
             if (target.memory) {
                 if (source.memory) {
                     const ftemp = target.getFTemp();
-                    this.cvtss2sd_r_rp(ftemp, source.reg, 1, source.offset);
-                    this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
+                    this.cvtss2sd_f_rp(ftemp, source.reg, 1, source.offset);
+                    this.movsd_rp_f(target.reg, 1, target.offset, ftemp);
                 } else {
-                    this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
-                    this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                    this.cvtss2sd_f_f(FloatRegister.xmm0, source.freg);
+                    this.movsd_rp_f(target.reg, 1, target.offset, FloatRegister.xmm0);
                 }
             } else {
                 if (source.memory) {
-                    this.cvtss2sd_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.cvtss2sd_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
-                    this.cvtss2sd_r_r(target.freg, source.freg);
+                    this.cvtss2sd_f_f(target.freg, source.freg);
                 }
             }
         }
@@ -712,17 +712,17 @@ export namespace makefunc {
             if (target.memory) {
                 if (source.memory) {
                     const ftemp = target.getFTemp();
-                    this.cvtsd2ss_r_rp(ftemp, source.reg, 1, source.offset);
-                    this.movss_rp_r(target.reg, 1, target.offset, ftemp);
+                    this.cvtsd2ss_f_rp(ftemp, source.reg, 1, source.offset);
+                    this.movss_rp_f(target.reg, 1, target.offset, ftemp);
                 } else {
-                    this.cvtsd2ss_r_r(FloatRegister.xmm0, source.freg);
-                    this.movss_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                    this.cvtsd2ss_f_f(FloatRegister.xmm0, source.freg);
+                    this.movss_rp_f(target.reg, 1, target.offset, FloatRegister.xmm0);
                 }
             } else {
                 if (source.memory) {
-                    this.cvtsd2ss_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.cvtsd2ss_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
-                    this.cvtsd2ss_r_r(target.freg, source.freg);
+                    this.cvtsd2ss_f_f(target.freg, source.freg);
                 }
             }
         }
@@ -738,16 +738,16 @@ export namespace makefunc {
                         this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.dword);
                     }
                 } else {
-                    this.movss_rp_r(target.reg, 1, target.offset, source.freg);
+                    this.movss_rp_f(target.reg, 1, target.offset, source.freg);
                 }
             } else {
                 if (source.memory) {
-                    this.movss_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.movss_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
                     if (target === source) {
                         // same
                     } else {
-                        this.movss_r_r(target.freg, source.freg);
+                        this.movss_f_f(target.freg, source.freg);
                     }
                 }
             }
@@ -764,16 +764,16 @@ export namespace makefunc {
                         this.mov_rp_r(target.reg, 1, target.offset, temp);
                     }
                 } else {
-                    this.movsd_rp_r(target.reg, 1, target.offset, source.freg);
+                    this.movsd_rp_f(target.reg, 1, target.offset, source.freg);
                 }
             } else {
                 if (source.memory) {
-                    this.movsd_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.movsd_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
                     if (target === source) {
                         // same
                     } else {
-                        this.movsd_r_r(target.freg, source.freg);
+                        this.movsd_f_f(target.freg, source.freg);
                     }
                 }
             }

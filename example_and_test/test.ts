@@ -72,11 +72,12 @@ Tester.test({
             const asmcode = disasm.check(hex, true).toString().replace(/\n/g, ';');
             this.equals(asmcode, code, ``);
         };
-        assert('f3 0f 11 89 a4 03 00 00', 'repz;movups rcx, dword ptr [rcx+0x3a4]');
+        assert('f3 0f 11 89 a4 03 00 00', 'movss dword ptr [rcx+0x3a4], xmm1');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
         assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
         assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
-        assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]')
+        assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]');
+        assert('0F 10 02 48 8D 59 08 48 8D 54 24 20 48 8B CB', 'movups xmm0, xmmword ptr [rdx];lea rbx, qword ptr [rcx+0x8];lea rdx, qword ptr [rsp+0x20];mov rcx, rbx');
     },
 
     bin() {
@@ -207,9 +208,9 @@ Tester.test({
     makefunc() {
         const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, {structureReturn:true});
         this.equals(test(), 1, 'structureReturn int32_t');
-        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
+        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
+        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
         const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(bool_t);
         this.equals(getbool(), false, 'bool return');
