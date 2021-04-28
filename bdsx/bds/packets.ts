@@ -1085,6 +1085,7 @@ export class ClientCacheStatusPacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
 export class OnScreenTextureAnimationPacket extends Packet {
     @nativeField(int32_t)
     animationType: int32_t;
