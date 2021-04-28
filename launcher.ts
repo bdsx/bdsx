@@ -16,10 +16,16 @@ import { loadAllPlugins } from "bdsx/plugins";
 import colors = require('colors');
 import { events } from "bdsx/event";
 
-// prank
-console.log(colors.rainbow('       ///////////////'));
-console.log(colors.rainbow('       //// BDSX2 ////'));
-console.log(colors.rainbow('       ///////////////'));
+console.log(
+"  _____      _____ \n".green +
+"  \\    \\    /    / \n".green +
+"   \\".green + "___ ".white + "\\".green + "__".white + "/".green + " ___".white + "/  \n".green +
+"   | _ )   \\/ __|  \n".white +
+"   | _ \\ |) \\__ \\  \n".white +
+"   |___/___/|___/  \n".white +
+"   /    /  \\    \\  \n".green +
+"  /____/    \\____\\ \n".green
+);
 
 (async()=>{
 
