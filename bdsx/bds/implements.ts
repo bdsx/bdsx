@@ -9,7 +9,7 @@ import { mce } from "bdsx/mce";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
-import { Actor, ActorRuntimeID } from "./actor";
+import { Actor, ActorRuntimeID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -34,7 +34,7 @@ import { BinaryStream } from "./stream";
 
 // level.ts
 Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimension, {this:Level}, int32_t);
-Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level, nullableReturn: true}, bin64_t, bool_t);
+Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level}, bin64_t, bool_t);
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
 
 Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
@@ -82,8 +82,16 @@ Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor})
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 Actor.prototype.getTypeId = makefunc.js([0x518], int32_t, {this:Actor}); // ActorType getEntityTypeId()
-(Actor.prototype as any)._getDimensionId = makefunc.js([0x568], void_t, {this:Actor}, makefunc.Buffer); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getDimension = Actor.prototype.getDimensionId = makefunc.js([0x568], int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
 Actor.prototype.getCommandPermissionLevel = makefunc.js([0x620], int32_t, {this:Actor});
+const _computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
+const _applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
+Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld) {
+    const alloc = new AllocatedPointer(0x80);
+    _computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
+    _applyTarget(this, alloc);
+};
+Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
@@ -152,7 +160,7 @@ Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermission
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9f0]
 });
-(ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer});
+(ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", void_t, {this: ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", void_t, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
@@ -241,7 +249,7 @@ AttributeInstance.abstract({
     defaultValue: [float32_t, 0x78],
 });
 
-BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap, nullableReturn: true}, int32_t);
+BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap}, int32_t);
 
 // server.ts
 VanilaGameModuleServer.abstract({
@@ -293,7 +301,7 @@ GameMode.define({
 });
 
 // inventory.ts
-(Item.prototype as any)._getCommandName = procHacker.js("Item::getCommandName", CxxStringWrapper, {this:Item});
+Item.prototype.getCommandName = procHacker.js("Item::getCommandName", CxxString, {this:Item});
 Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
@@ -337,7 +345,18 @@ ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValu
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
 
+PlayerInventory.prototype.addItem = procHacker.js("PlayerInventory::add", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
+PlayerInventory.prototype.clearSlot = procHacker.js("PlayerInventory::clearSlot", void_t, {this:PlayerInventory}, int32_t, int32_t);
+PlayerInventory.prototype.getContainerSize = procHacker.js("PlayerInventory::getContainerSize", int32_t, {this:PlayerInventory}, int32_t);
+PlayerInventory.prototype.getFirstEmptySlot = procHacker.js("PlayerInventory::getFirstEmptySlot", int32_t, {this:PlayerInventory});
+PlayerInventory.prototype.getHotbarSize = procHacker.js("PlayerInventory::getHotbarSize", int32_t, {this:PlayerInventory});
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, int32_t, int32_t);
+PlayerInventory.prototype.getSelectedItem = procHacker.js("PlayerInventory::getSelectedItem", ItemStack, {this:PlayerInventory});
+PlayerInventory.prototype.getSlots = procHacker.js("PlayerInventory::getSlots", CxxVector.make(ItemStack.ref()), {this:PlayerInventory, structureReturn:true});
+PlayerInventory.prototype.selectSlot = procHacker.js("PlayerInventory::selectSlot", void_t, {this:PlayerInventory}, int32_t, int32_t);
+PlayerInventory.prototype.setItem = procHacker.js("PlayerInventory::setItem", void_t, {this:PlayerInventory}, int32_t, ItemStack, int32_t, bool_t);
+PlayerInventory.prototype.setSelectedItem = procHacker.js("PlayerInventory::setSelectedItem", void_t, {this:PlayerInventory}, ItemStack);
+PlayerInventory.prototype.swapSlots = procHacker.js("PlayerInventory::swapSlots", void_t, {this:PlayerInventory}, int32_t, int32_t);
 
 // block.ts
 BlockLegacy.prototype.getCommandName = procHacker.js("BlockLegacy::getCommandName", CxxString, {this:BlockLegacy});

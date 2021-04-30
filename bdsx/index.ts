@@ -176,5 +176,5 @@ export {
     SharedPtr,
     capi,
     analyzer,
-    bedrockServer,
+    bedrockServer
 };

@@ -7,13 +7,13 @@ import child_process = require('child_process');
 import os = require('os');
 
 if (process.argv[2] === undefined) {
-    console.error(colors.red(`[BDSX-Plugins] Please provide the parameter for the target path`));
+    console.error(colors.red(`[BDSX-Plugins] Please provide an argument for the target path of the new plugin`));
     process.exit(-1);
 }
 const targetPath = path.resolve(process.argv[2]);
 if (fs.existsSync(targetPath)) {
     console.error(colors.red(`[BDSX-Plugins] '${targetPath}' directory already exists`));
-    console.error(colors.red(`[BDSX-Plugins] Please execute it with the new path`));
+    console.error(colors.red(`[BDSX-Plugins] Please execute it with a new path`));
     process.exit(0);
 }
 
@@ -37,15 +37,15 @@ const targetdir = targetPath+path.sep;
 {
     const clsname = camelize(basename);
     const exampleSource = `
-import { bedrockServer } from "bdsx";
+import { events } from "bdsx/event";
 
 console.log('[plugin:${clsname}] allocated');
 
-bedrockServer.open.on(()=>{
+events.open.on(()=>{
     console.log('[plugin:${clsname}] launching');
 });
 
-bedrockServer.close.on(()=>{
+events.close.on(()=>{
     console.log('[plugin:${clsname}] closed');
 });
 

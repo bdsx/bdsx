@@ -346,16 +346,16 @@ function shimEmitUncaughtException():void {
     process.emit = function (type: string, ...args:any[]) {
         if (type === 'uncaughtException') {
             const err = args[0];
-            const hasStack = (err && err.stack);
-            const hasListeners = (this.listeners(type).length > 0);
-
-            if (hasStack && !hasListeners) {
+            if (err && err.stack) {
                 err.stack = remapStack(err.stack);
-                return printErrorAndExit(err);
+                const hasListeners = (this.listeners(type).length > 0);
+                if (!hasListeners) {
+                    return printErrorAndExit(err);
+                }
             }
         } else if (type === 'unhandledRejection') {
             const err = args[0];
-            err.stack = remapStack(err.stack);
+            if (err && err.stack) err.stack = remapStack(err.stack);
         }
 
         return origEmit.apply(this, arguments);

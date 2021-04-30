@@ -9,20 +9,28 @@ installSourceMapSupport();
 
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
+import 'bdsx/checkmodules';
 
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
 import colors = require('colors');
+import { events } from "bdsx/event";
 
-// prank
-console.log(colors.rainbow('       ///////////////'));
-console.log(colors.rainbow('       //// BDSX2 ////'));
-console.log(colors.rainbow('       ///////////////'));
+console.log(
+"  _____      _____ \n".green +
+"  \\    \\    /    / \n".green +
+"   \\".green + "___ ".white + "\\".green + "__".white + "/".green + " ___".white + "/  \n".green +
+"   | _ )   \\/ __|  \n".white +
+"   | _ \\ |) \\__ \\  \n".white +
+"   |___/___/|___/  \n".white +
+"   /    /  \\    \\  \n".green +
+"  /____/    \\____\\ \n".green
+);
 
 (async()=>{
 
-    bedrockServer.close.on(()=>{
-        console.log('[BDSX] bedrockServer is Closed');
+    events.serverClose.on(()=>{
+        console.log('[BDSX] bedrockServer closed');
         setTimeout(()=>{
             console.log('[BDSX] node.js is processing...');
         }, 3000).unref();
@@ -31,7 +39,7 @@ console.log(colors.rainbow('       ///////////////'));
     await loadAllPlugins();
 
     // launch BDS
-    console.log('[BDSX] bedrockServer launching...');
+    console.log('[BDSX] bedrockServer is launching...');
     await bedrockServer.launch();
 
     /**

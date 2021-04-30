@@ -143,13 +143,11 @@ CxxStringWrapper.define({
     length:[int64_as_float_t, 0x10],
     capacity:[int64_as_float_t, 0x18]
 });
-const strctor = CxxString[NativeType.ctor];
-const strdtor = CxxString[NativeType.dtor];
-const strctor_copy = CxxString[NativeType.ctor_copy];
-CxxStringWrapper.prototype[NativeType.ctor] = function(this:CxxStringWrapper) { return strctor(this as any); };
-CxxStringWrapper.prototype[NativeType.dtor] = function(this:CxxStringWrapper) { return strdtor(this as any); };
+
+CxxStringWrapper.prototype[NativeType.ctor] = function(this:CxxStringWrapper) { return CxxString[NativeType.ctor](this as any); };
+CxxStringWrapper.prototype[NativeType.dtor] = function(this:CxxStringWrapper) { return CxxString[NativeType.dtor](this as any); };
 CxxStringWrapper.prototype[NativeType.ctor_copy] = function(this:CxxStringWrapper, other:CxxStringWrapper) {
-    return strctor_copy(this as any, other as any);
+    return CxxString[NativeType.ctor_copy](this as any, other as any);
 };
 
 /** @deprecated renamed to CxxStringWrapper */

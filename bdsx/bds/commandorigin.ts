@@ -50,10 +50,17 @@ export class CommandOrigin extends NativeClass {
     getLevel(): Level {
         abstract();
     }
+
+    /**
+     * actually, it's nullable when the server is just started without any joining
+     */
     getDimension(): Dimension {
         abstract();
     }
-    getEntity():Actor {
+    /**
+     * it returns null if the command origin is the console
+     */
+    getEntity():Actor|null {
         abstract();
     }
 }
@@ -101,4 +108,4 @@ CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrig
 CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
 
 // Actor* getEntity(CommandOrigin* origin);
-CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin, nullableReturn: true});
+CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin});

@@ -118,15 +118,21 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
     let wordoper = false;
     let rexSetted = false;
     let size:OperationSize = OperationSize.dword;
+    let foperSize:OperationSize = OperationSize.void;
     for (;;) {
         const v = ptr.readUint8();
         if (rexSetted && (v & 0xf8) === 0xb8) { // movabs
             return new asm.Operation(asm.code.mov_r_c, [((rex&1) << 3) | (v&7), readConst(size, ptr)]);
         } else if ((v & 0xfe) === 0xf2) { // rep
-            if ((v & 1) !== 0) {
-                return new asm.Operation(asm.code.repz, []);
-            } else {
-                return new asm.Operation(asm.code.repnz, []);
+            if (ptr.getUint8() === 0x0f) { // double or float operation
+                foperSize = ((v & 1) !== 0) ? OperationSize.dword : OperationSize.qword;
+                continue;
+            } else { // rep
+                if ((v & 1) !== 0) {
+                    return new asm.Operation(asm.code.repz, []);
+                } else {
+                    return new asm.Operation(asm.code.repnz, []);
+                }
             }
         } else if (v === 0x65) {
             return new asm.Operation(asm.code.gs, []);
@@ -163,16 +169,29 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
         } else if (v === 0xc3) { // ret
             return new asm.Operation(asm.code.ret, []);
         } else if (v === 0xff) {
-            const v = ptr.readUint8();
-            const reg = (v & 0x7)|((rex & 0x1) << 3);
-            if (v === 0xe0) { // jmp register
-                return new asm.Operation(asm.code.jmp_r, [reg]);
-            } else if (v === 0xd0) { // call register
-                return new asm.Operation(asm.code.call_r, [reg]);
-            } else {
+            const info = walk_offset(rex, ptr);
+            if (info === null) {
                 // bad
+            } else {
+                if (info.r2 === 4) {
+                    if (info.offset === null) {
+                        return new asm.Operation(asm.code.jmp_r, [info.r1]);
+                    } else {
+                        const offset = readConstNumber(info.offset, ptr);
+                        return new asm.Operation(asm.code.jmp_rp, [info.r1, 1, offset]);
+                    }
+                } else if (info.r2 === 2) {
+                    if (info.offset === null) {
+                        return new asm.Operation(asm.code.call_r, [info.r1]);
+                    } else {
+                        const offset = readConstNumber(info.offset, ptr);
+                        return new asm.Operation(asm.code.call_rp, [info.r1, 1, offset]);
+                    }
+                } else {
+                    // bad
+                }
             }
-        } else if ((v&0xfe) === 0xe8) { // jmp or call dword
+        } else if ((v & 0xfe) === 0xe8) { // jmp or call dword
             const value = ptr.readInt32();
             if (v & 1) { // jmp
                 return new asm.Operation(asm.code.jmp_c, [value]);
@@ -190,7 +209,8 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 if (info.offset === null) {
                     return new asm.Operation(asm.code.xchg_r_r, [info.r1, info. r2, size]);
                 } else {
-                    return new asm.Operation(asm.code.xchg_r_rp, [info.r1, info. r2, 1, info.offset, size]);
+                    const offset = readConstNumber(info.offset, ptr);
+                    return new asm.Operation(asm.code.xchg_r_rp, [info.r1, info. r2, 1, offset, size]);
                 }
             } else { // test
                 if (info.offset === null) {
@@ -225,18 +245,77 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                         const jumpoper = v2 & 0xf;
                         const offset = ptr.readInt32();
                         return walk_ojmp(jumpoper, offset);
-                    } else if (v2 === 0x29) { // movaps
+                    } else {
                         const info = walk_offset(rex, ptr);
-                        if (info === null) break; // bad
-                        return walk_addr_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
-                    } else if (v2 === 0x11) { // float operationx
-                        const info = walk_offset(rex, ptr);
-                        if (info === null) break; // bad
-                        if (info.offset === null) {
-                            return new asm.Operation(asm.code.movups_r_r, [info.r1, info. r2, size]);
+                        if (info === null) { // xmm operations
+                            // bad
+                        } else if ((v2 & 0xfe) === 0x28) { // movaps read
+                            if (foperSize === OperationSize.qword) {
+                                // bad
+                            } else if (foperSize === OperationSize.dword) {
+                                // bad
+                            } else { // packed
+                                return walk_addr_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
+                            }
+                        } else if ((v2 & 0xfe) === 0x10) { // read
+                            const readbit = (v2&1)^1;
+                            if (foperSize === OperationSize.qword) {
+                                return walk_addr_oper('movsd', 1, readbit, info, OperationSize.qword, ptr, true);
+                            } else if (foperSize === OperationSize.dword) {
+                                return walk_addr_oper('movss', 1, readbit, info, OperationSize.dword, ptr, true);
+                            } else { // packed
+                                return walk_addr_oper('movups', 1, readbit, info, OperationSize.xmmword, ptr, true);
+                            }
+                        } else if (v2 === 0x5a) { // convert precision
+                            if (foperSize === OperationSize.qword) {
+                                return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.qword, ptr, true);
+                            } else if (foperSize === OperationSize.dword) {
+                                return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.dword, ptr, true);
+                            } else {
+                                if (wordoper) {
+                                    return walk_addr_oper('cvtpd2ps', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                } else {
+                                    return walk_addr_oper('cvtps2pd', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                }
+                            }
+                        } else if (v2 === 0x2c) { // truncated f2i
+                            if (foperSize === OperationSize.qword) {
+                                return walk_addr_oper('cvttsd2si', 1, 1, info, OperationSize.qword, ptr, true);
+                            } else if (foperSize === OperationSize.dword) {
+                                return walk_addr_oper('cvttss2si', 1, 1, info, OperationSize.qword, ptr, true);
+                            } else {
+                                if (wordoper) {
+                                    return walk_addr_oper('cvttpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                } else {
+                                    return walk_addr_oper('cvttps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                }
+                            }
+                        } else if (v2 === 0x2d) { // f2i
+                            if (foperSize === OperationSize.qword) {
+                                return walk_addr_oper('cvtsd2si', 1, 1, info, OperationSize.qword, ptr, true);
+                            } else if (foperSize === OperationSize.dword) {
+                                return walk_addr_oper('cvtss2si', 1, 1, info, OperationSize.dword, ptr, true);
+                            } else {
+                                if (wordoper) {
+                                    return walk_addr_oper('cvtpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                } else {
+                                    return walk_addr_oper('cvtps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                }
+                            }
+                        } else if (v2 === 0x2a) { // i2f
+                            if (foperSize === OperationSize.qword) {
+                                return walk_addr_oper('cvtsi2sd', 1, 1, info, size, ptr, true);
+                            } else if (foperSize === OperationSize.dword) {
+                                return walk_addr_oper('cvtsi2ss', 1, 1, info, size, ptr, true);
+                            } else {
+                                if (wordoper) {
+                                    return walk_addr_oper('cvtpi2pd', 1, 1, info, OperationSize.mmword, ptr, true);
+                                } else {
+                                    return walk_addr_oper('cvtpi2ps', 1, 1, info, OperationSize.mmword, ptr, true);
+                                }
+                            }
                         } else {
-                            const offset = readConst(info.offset, ptr);
-                            return new asm.Operation(asm.code.movups_r_rp, [info.r1, info. r2, 1, offset, size]);
+                            // bad
                         }
                     }
                 }
@@ -304,7 +383,7 @@ export namespace disasm
         while (size !== 0) {
             try {
                 console.error(colors.red('disasm.walk: unimplemented opcode, failed'));
-                console.error(colors.red('disasm.walk: Please tell rua.kr about it'));
+                console.error(colors.red('disasm.walk: Please send rua.kr this error'));
                 console.trace(colors.red(`opcode: ${hex(ptr.getBuffer(size))}`));
                 break;
             } catch (err) {

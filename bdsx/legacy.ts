@@ -35,7 +35,7 @@ export namespace legacy
                 defmsg = onRuntimeError(err.stack!, err.nativeStack || '', lastSender) !== false;
             } catch (err) {
                 const errstr = err.stack!;
-                console.log("[onRuntimeError callback has error]");
+                console.log("[Error in onRuntimeError callback]");
                 console.log(errstr);
             }
         }

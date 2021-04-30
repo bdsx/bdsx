@@ -1,20 +1,47 @@
 import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
 import { CxxString, uint8_t } from "bdsx/nativetype";
-import { CxxStringWrapper } from "bdsx/pointer";
-import type { ServerPlayer } from "./player";
-import { CompoundTag } from "./nbt";
 import { CxxVector } from "../cxxvector";
+import { CompoundTag } from "./nbt";
+import type { ServerPlayer } from "./player";
 
 export enum ContainerId {
     Inventory = 0,
+    /**
+     * @deprecated
+     */
     First = 1,
+    /**
+     * @deprecated
+     */
     Last = 100,
+    /**
+     * @deprecated
+     */
     Offhand = 119,
+    /**
+     * @deprecated
+     */
     Armor = 120,
+    /**
+     * @deprecated
+     */
     Hotbar = 122,
+    /**
+     * @deprecated
+     */
     FixedInventory = 123,
+    /**
+     * @deprecated
+     */
     UI = 124
+}
+
+export enum ArmorSlot {
+    Head,
+    Chest,
+    Legs,
+    Feet
 }
 
 export enum CreativeItemCategory {
@@ -100,6 +127,10 @@ export class ItemStack extends NativeClass {
     getUserData():CompoundTag {
         abstract();
     }
+    /**
+     * it returns the enchantability.
+     * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
+     */
     getEnchantValue(): number {
         abstract();
     }
@@ -193,10 +224,47 @@ export class ItemStack extends NativeClass {
     }
 }
 
-
-
 export class PlayerInventory extends NativeClass {
-    getItem(slot:number, containerId: ContainerId):ItemStack {
+    addItem(itemStack:ItemStack, v:boolean):boolean {
+        abstract();
+    }
+    clearSlot(slot:number, containerId:ContainerId):void {
+        abstract();
+    }
+    getContainerSize(containerId:ContainerId):number {
+        abstract();
+    }
+    getFirstEmptySlot():number {
+        abstract();
+    }
+    getHotbarSize():number {
+        abstract();
+    }
+    getItem(slot:number, containerId:ContainerId):ItemStack {
+        abstract();
+    }
+    getSelectedItem():ItemStack {
+        abstract();
+    }
+    getSelectedSlot():number {
+        return this.getInt8(0x10);
+    }
+    getSlotWithItem(itemStack:ItemStack, v2:boolean, v3:boolean):number {
+        abstract();
+    }
+    getSlots():CxxVector<ItemStack> {
+        abstract();
+    }
+    selectSlot(slot:number, containerId:ContainerId):void {
+        abstract();
+    }
+    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, v:boolean):void {
+        abstract();
+    }
+    setSelectedItem(itemStack:ItemStack):void {
+        abstract();
+    }
+    swapSlots(primarySlot:number, secondarySlot:number):void {
         abstract();
     }
 }

@@ -71,7 +71,7 @@ export async function loadAllPlugins():Promise<void> {
                         }
                     }
                 }
-                console.error(colors.red(`[BDSX-Plugins] Failed to get '${name}/package.json'`));
+                console.error(colors.red(`[BDSX-Plugins] Failed to read '${name}/package.json'`));
             }
             counter.unref();
         });
@@ -99,7 +99,7 @@ export async function loadAllPlugins():Promise<void> {
     } catch (err) {
         console.error(colors.red(`[BDSX-Plugins] Failed to load`));
         if (err.code === 'ENOENT') {
-            console.error(colors.red(`[BDSX-Plugins] 'package.json' not found. please set the entry point as package.json directory`));
+            console.error(colors.red(`[BDSX-Plugins] 'package.json' not found. Please set the entry point to the directory containing package.json`));
         } else {
             console.error(colors.red(`[BDSX-Plugins] Failed to read package.json. ${err.message}`));
         }
@@ -125,14 +125,14 @@ export async function loadAllPlugins():Promise<void> {
             try {
                 const json = JSON.parse(await fsp.readFile(`${pluginspath}${path.sep}${plugin}${path.sep}package.json`, 'utf-8'));
                 if (json.name !== fullname) {
-                    console.error(colors.red(`[BDSX-Plugins] Wrong plugin name. name in 'package.json' must be '${fullname}' but '${json.name}'`));
+                    console.error(colors.red(`[BDSX-Plugins] Wrong plugin name. Name in 'package.json' must be '${fullname}' but was '${json.name}'`));
                     continue;
                 }
             } catch (err) {
                 if (err.code === 'ENOENT') {
-                    console.error(colors.red(`[BDSX-Plugins] 'plugins/${plugin}/package.json' not found. plugins need 'package.json'`));
+                    console.error(colors.red(`[BDSX-Plugins] 'plugins/${plugin}/package.json' not found. Plugins need 'package.json'`));
                 } else {
-                    console.error(colors.red(`[BDSX-Plugins] Failed to read 'plugins/${plugin}/packagge.json'. ${err.message}`));
+                    console.error(colors.red(`[BDSX-Plugins] Failed to read 'plugins/${plugin}/package.json'. ${err.message}`));
                 }
             }
             console.log(colors.green(`[BDSX-Plugins] ${fullname}: added`));
@@ -160,7 +160,7 @@ export async function loadAllPlugins():Promise<void> {
             for (const name of loaded) {
                 try {
                     loadedPlugins.push(name);
-                    console.log(colors.green(`[BDSX-Plugins] (${++index}/${loaded.size}) ${name}`));
+                    console.log(colors.green(`[BDSX-Plugins] Loading ${name} (${++index}/${loaded.size})`));
                     require(name);
                 } catch (err) {
                     console.error(colors.red(`[BDSX-Plugins] Failed to load ${name}`));

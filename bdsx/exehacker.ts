@@ -17,7 +17,7 @@ export namespace exehacker
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    export function nopping(subject:string, key:keyof proc, offset:number, originalCode:number[], ignoreArea:number[]):void {
+    export function nopping(subject:string, key:keyof typeof proc, offset:number, originalCode:number[], ignoreArea:number[]):void {
         procHacker.nopping(subject, key, offset, originalCode, ignoreArea);
     }
 
@@ -26,7 +26,7 @@ export namespace exehacker
      * @param key target symbol name
      * @param to call address
      */
-    export function hooking(dummy:string, key:keyof proc, to: VoidPointer, ignore?:unknown, ignore2?:unknown):void {
+    export function hooking(dummy:string, key:keyof typeof proc, to: VoidPointer, ignore?:unknown, ignore2?:unknown):void {
         procHacker.hookingRawWithCallOriginal(key, to, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
     }
 
@@ -41,7 +41,7 @@ export namespace exehacker
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    export function patching(subject:string, key:keyof proc, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
+    export function patching(subject:string, key:keyof typeof proc, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
         procHacker.patching(subject, key, offset, newCode, tempRegister, call, originalCode, ignoreArea);
     }
 
@@ -55,7 +55,7 @@ export namespace exehacker
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    export function jumping(subject:string, key:keyof proc, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void {
+    export function jumping(subject:string, key:keyof typeof proc, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void {
         procHacker.jumping(subject, key, offset, jumpTo, tempRegister, originalCode, ignoreArea);
     }
 

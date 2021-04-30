@@ -580,6 +580,8 @@ export declare namespace runtimeError
 
     // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
+
+	export function addFunctionTable(baseptr:VoidPointer, unwindcount:number, fncount:number):void;
 }
 
 export declare namespace bedrock_server_exe

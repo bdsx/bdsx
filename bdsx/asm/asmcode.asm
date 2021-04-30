@@ -107,13 +107,17 @@ endp
 # [[noreturn]] getout_jserror(JsValueRef error)
 export proc getout_jserror
     sub rsp, 28h
-    call [rdi + fn_JsSetException]
+    mov [rsp+20h], rcx
     call [rdi + fn_stack_free_all]
     mov rax, [rdi+fn_returnPoint]
     and rax, 1
     jz runtimeError
+
+    mov rcx, [rsp+20h]
+    call [rdi + fn_JsSetException]
     call makefunc_getout
 runtimeError:
+    mov rcx, [rsp+20h]
     call runtimeErrorFire
 endp
 
@@ -150,8 +154,7 @@ export proc getout_invalid_parameter_count
     mov rdx, rax
     call makeError
     mov rcx, rax
-    add rsp, 68h
-    jmp getout_jserror
+    call getout_jserror
 endp
 
 # [[noreturn]] getout(JsErrorCode err)
@@ -188,6 +191,7 @@ _nodeThread:
 _crash:
     lea rcx, [rsp + 20h]
     call JsGetAndClearException
+    test eax, eax
     jnz _codeerror
     call [rdi + fn_stack_free_all]
     mov rcx, [rsp + 20h]

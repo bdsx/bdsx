@@ -81,6 +81,7 @@ export enum OperationSize
     word,
     dword,
     qword,
+    mmword,
     xmmword
 }
 
@@ -792,7 +793,7 @@ export class X64Assembler {
     mov_r_c(dest:Register, value:Value64, size = OperationSize.qword):this {
         if (size === OperationSize.qword || size === OperationSize.dword) {
             const [low, high] = split64bits(value);
-            if (low === 0 && high === 0) return this.xor_r_r(dest, dest, OperationSize.dword);
+            if (low === 0 && high === 0) return this.xor_r_r(dest, dest);
         }
         return this._mov(dest, 0, null, 1, 0, value, MovOper.Const, size);
     }
@@ -1181,6 +1182,7 @@ export class X64Assembler {
         return this._oper(MovOper.Register, Operator.adc, dest, src, 1, 0, 0, size);
     }
     xor_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
+        if (dest === src && size === OperationSize.qword) size = OperationSize.dword;
         return this._oper(MovOper.Register, Operator.xor, dest, src, 1, 0, 0, size);
     }
     or_r_r(dest:Register, src:Register, size:OperationSize = OperationSize.qword):this {
@@ -1381,73 +1383,141 @@ export class X64Assembler {
         return this._target(0, r1, r2, r3, r1, multiply, offset, oper);
     }
 
-    movups_rp_r(dest:FloatRegister, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
+    movups_rp_f(dest:FloatRegister, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
         return this._movsf(dest, src, null, multiply, offset, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
-    movups_r_rp(dest:FloatRegister, src:FloatRegister, multiply:AsmMultiplyConstant, offset:number):this {
+    movups_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
-    movups_r_r(dest:FloatRegister, src:FloatRegister):this {
+    movups_f_f(dest:FloatRegister, src:FloatRegister):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
 
-    movsd_rp_r(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
+    movsd_rp_f(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
         return this._movsf(dest, src, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Write, FloatOper.None, OperationSize.dword);
     }
-    movsd_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
+    movsd_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.None, OperationSize.dword);
     }
-    movsd_r_r(dest:FloatRegister, src:FloatRegister):this {
+    movsd_f_f(dest:FloatRegister, src:FloatRegister):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
 
-    movss_rp_r(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
+    movss_rp_f(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
         return this._movsf(dest, src, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Write, FloatOper.None, OperationSize.dword);
     }
-    movss_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
+    movss_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.None, OperationSize.dword);
     }
-    movss_r_r(dest:FloatRegister, src:FloatRegister):this {
+    movss_f_f(dest:FloatRegister, src:FloatRegister):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.None, OperationSize.dword);
     }
 
-    cvtsi2sd_r_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
+    cvtsi2sd_f_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.Convert_i2f, size);
     }
-    cvtsi2sd_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+    cvtsi2sd_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.Convert_i2f, size);
     }
-    cvttsd2si_r_r(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+    cvtpi2ps_f_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Convert_i2f, size);
+    }
+    cvtpi2ps_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.Convert_i2f, size);
+    }
+    cvtpi2pd_f_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Convert_i2f, size);
+    }
+    cvtpi2pd_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.Convert_i2f, size);
+    }
+    cvtsd2si_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.Convert_f2i, size);
+    }
+    cvtsd2si_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.Convert_f2i, size);
+    }
+    cvtpd2pi_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Convert_f2i, size);
+    }
+    cvtpd2pi_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.Convert_f2i, size);
+    }
+    cvtps2pi_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Convert_f2i, size);
+    }
+    cvtps2pi_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.Convert_f2i, size);
+    }
+    cvttsd2si_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.ConvertTruncated_f2i, size);
     }
     cvttsd2si_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.ConvertTruncated_f2i, size);
     }
+    cvttps2pi_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.ConvertTruncated_f2i, size);
+    }
+    cvttps2pi_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.ConvertTruncated_f2i, size);
+    }
+    cvttpd2pi_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.ConvertTruncated_f2i, size);
+    }
+    cvttpd2pi_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.ConvertTruncated_f2i, size);
+    }
 
-    cvtsi2ss_r_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
+    cvtsi2ss_f_r(dest:FloatRegister, src:Register, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.Convert_i2f, size);
     }
-    cvtsi2ss_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+    cvtsi2ss_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.Convert_i2f, size);
     }
-    cvttss2si_r_r(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+    cvttss2si_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.ConvertTruncated_f2i, size);
     }
     cvttss2si_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.ConvertTruncated_f2i, size);
     }
+    cvtss2si_r_f(dest:Register, src:FloatRegister, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.Convert_f2i, size);
+    }
+    cvtss2si_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.Convert_f2i, size);
+    }
 
-    cvtsd2ss_r_r(dest:FloatRegister, src:FloatRegister):this {
+    cvtsd2ss_f_f(dest:FloatRegister, src:FloatRegister):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
     }
-    cvtsd2ss_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
+    cvtsd2ss_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.doublePrecision, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
     }
-    cvtss2sd_r_r(dest:FloatRegister, src:FloatRegister):this {
+    cvtss2sd_f_f(dest:FloatRegister, src:FloatRegister):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.singlePrecision, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
     }
-    cvtss2sd_r_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
+    cvtss2sd_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
+    }
+    cvtps2pd_f_f(dest:FloatRegister, src:FloatRegister):this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
+    }
+    cvtps2pd_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
+    }
+    cvtpd2ps_f_f(dest:FloatRegister, src:FloatRegister):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
+    }
+    cvtpd2ps_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        this.write(0x66);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
     }
 
     label(labelName:string, exportDef:boolean = false):this {
@@ -1681,7 +1751,7 @@ export class X64Assembler {
             chunks.add(chunk);
             for (const id of chunk.ids) {
                 if (id.chunk !== chunk) {
-                    putError(id.name, 'Chunk does not matched');
+                    putError(id.name, 'Chunk does not match');
                 }
                 ids.add(id);
             }
@@ -2519,9 +2589,32 @@ function checkModified(ori:string, out:string):boolean{
     }
 }
 
+const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
+
 export namespace asm
 {
     export const code:Code = X64Assembler.prototype;
+    defaultOperationSize.set(code.movss_f_f, OperationSize.dword);
+    defaultOperationSize.set(code.movss_f_rp, OperationSize.dword);
+    defaultOperationSize.set(code.movss_rp_f, OperationSize.dword);
+    defaultOperationSize.set(code.movsd_f_f, OperationSize.qword);
+    defaultOperationSize.set(code.movsd_f_rp, OperationSize.qword);
+    defaultOperationSize.set(code.movsd_rp_f, OperationSize.qword);
+    defaultOperationSize.set(code.cvtsi2sd_f_r, OperationSize.qword);
+    defaultOperationSize.set(code.cvtsi2sd_f_rp, OperationSize.qword);
+    defaultOperationSize.set(code.cvtsd2si_r_f, OperationSize.qword);
+    defaultOperationSize.set(code.cvtsd2si_r_rp, OperationSize.qword);
+    defaultOperationSize.set(code.cvttsd2si_r_f, OperationSize.qword);
+    defaultOperationSize.set(code.cvttsd2si_r_rp, OperationSize.qword);
+    defaultOperationSize.set(code.cvtsi2ss_f_r, OperationSize.dword);
+    defaultOperationSize.set(code.cvtsi2ss_f_rp, OperationSize.dword);
+    defaultOperationSize.set(code.cvtss2si_r_f, OperationSize.dword);
+    defaultOperationSize.set(code.cvtss2si_r_rp, OperationSize.dword);
+    defaultOperationSize.set(code.cvttss2si_r_f, OperationSize.dword);
+    defaultOperationSize.set(code.cvttss2si_r_rp, OperationSize.dword);
+    defaultOperationSize.set(code.movups_f_f, OperationSize.xmmword);
+    defaultOperationSize.set(code.movups_f_rp, OperationSize.xmmword);
+    defaultOperationSize.set(code.movups_rp_f, OperationSize.xmmword);
     export const splitTwo32Bits = Symbol('splitTwo32Bits');
     export interface ParameterBase {
         argi:number;
@@ -2641,13 +2734,14 @@ export namespace asm
                 case 'rp': {
                     ptridx.push(argstr.length);
                     const multiply = args[i++];
-                    argstr.push(`[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${shex_o(args[i++])}]`);
+                    const offset = args[i++];
+                    argstr.push(`[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${offset !== 0 ? shex_o(offset) : ''}]`);
                     break;
                 }
                 }
             }
-            const size = args[i];
-            if (size !== undefined) {
+            const size = defaultOperationSize.get(code) ?? args[i];
+            if (size != null) {
                 const sizestr = OperationSize[size];
                 for (const j of ptridx) {
                     argstr[j] = `${sizestr} ptr ${argstr[j]}`;
@@ -2666,7 +2760,7 @@ export namespace asm
         toString():string {
             const out:string[] = [];
             for (const oper of this.operations) {
-                out.push(oper+'');
+                out.push(oper.toString());
             }
             return out.join('\n');
         }

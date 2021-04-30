@@ -2,7 +2,7 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, command, MinecraftPacketIds, NativePointer, nethook, NetworkIdentifier, serverInstance } from "bdsx";
+import { Actor, bin, CANCEL, MinecraftPacketIds, NativePointer, NetworkIdentifier, serverInstance } from "bdsx";
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
@@ -14,10 +14,11 @@ import { capi } from "bdsx/capi";
 import { CxxVector } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
+import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, NativeType, uint16_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
@@ -71,11 +72,12 @@ Tester.test({
             const asmcode = disasm.check(hex, true).toString().replace(/\n/g, ';');
             this.equals(asmcode, code, ``);
         };
-        assert('f3 0f 11 89 a4 03 00 00', 'repz;movups rcx, dword ptr [rcx+0x3a4]');
+        assert('f3 0f 11 89 a4 03 00 00', 'movss dword ptr [rcx+0x3a4], xmm1');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
         assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
         assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
-        assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]')
+        assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]');
+        assert('0F 10 02 48 8D 59 08 48 8D 54 24 20 48 8B CB', 'movups xmm0, xmmword ptr [rdx];lea rbx, qword ptr [rcx+0x8];lea rdx, qword ptr [rsp+0x20];mov rcx, rbx');
     },
 
     bin() {
@@ -204,9 +206,11 @@ Tester.test({
     },
 
     makefunc() {
-        const floatToDouble = asm().cvtss2sd_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
+        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, {structureReturn:true});
+        this.equals(test(), 1, 'structureReturn int32_t');
+        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_r_r(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
+        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
         const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(bool_t);
         this.equals(getbool(), false, 'bool return');
@@ -222,7 +226,10 @@ Tester.test({
         this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
         const string2string = asm().mov_r_r(Register.rax, Register.rcx).ret().make(CxxString, null, CxxString);
         this.equals(string2string('test'), 'test', 'string to string');
+        this.equals(string2string('testtesta'), 'testtesta', 'test string over 8 bytes');
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
+        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).ret().make(NativePointer);
+        this.equals(nullreturn(), null, 'nullreturn does not return null');
     },
 
     vectorcopy() {
@@ -266,27 +273,27 @@ Tester.test({
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                ctx.origin.getDimension();
+                this.equals(ctx.origin.getDimension(), null, 'dimension id');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const size = ctx.origin.getLevel().players.size();
                 this.assert(size === 0, 'origin.getLevel().players.size is not zero');
-                command.hook.remove(cb);
+                events.command.remove(cb);
             }
         };
-        command.hook.on(cb);
+        events.command.on(cb);
         await new Promise<void>((resolve) => {
             const outputcb = (output:string) => {
                 if (output.startsWith('Unknown command: __dummy_command')) {
-                    bedrockServer.commandOutput.remove(outputcb);
+                    events.commandOutput.remove(outputcb);
                     if (passed) resolve();
                     else this.fail();
                     return CANCEL;
                 }
             };
-            bedrockServer.commandOutput.on(outputcb);
+            events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
         });
     },
@@ -296,27 +303,27 @@ Tester.test({
         const cb = (cmd:string, origin:string) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                command.hook.remove(cb);
+                events.command.remove(cb);
             }
         };
-        command.hook.on(cb);
+        events.command.on(cb);
         await new Promise<void>((resolve) => {
             const outputcb = (output:string) => {
                 if (output.startsWith('Unknown command: __dummy_command')) {
-                    bedrockServer.commandOutput.remove(outputcb);
+                    events.commandOutput.remove(outputcb);
                     if (passed) resolve();
                     else this.fail();
                     return CANCEL;
                 }
             };
-            bedrockServer.commandOutput.on(outputcb);
-            bedrockServer.executeCommand('/__dummy_command');
+            events.commandOutput.on(outputcb);
+            bedrockServer.executeCommand('/__dummy_command', false);
         });
     },
 
     async checkPacketNames() {
         if (capi.isRunningOnWine()) {
-            this.skip('Skip packet check on the Wine system, almost failed');
+            this.skip('Skip packet check on the Wine system, as it usually fails');
             return;
         }
         for (const id in PacketIdToType) {
@@ -347,25 +354,25 @@ Tester.test({
         let idcheck = 0;
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
-            nethook.raw(i).on((ptr, size, ni, packetId) => {
+            events.packetRaw(i).on((ptr, size, ni, packetId) => {
                 idcheck = packetId;
-                this.assert(size > 0, `packet size is too little`);
+                this.assert(size > 0, `packet is too small (< 0)`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
             });
-            nethook.before<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
             });
-            nethook.after<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            events.packetAfter<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
             });
-            nethook.send<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            events.packetSend<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
                 sendidcheck = packetId;
                 this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             });
-            nethook.sendRaw(i).on((ptr, size, ni, packetId) => {
+            events.packetSendRaw(i).on((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
                 this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
@@ -374,17 +381,17 @@ Tester.test({
         }
 
         const conns = new Set<NetworkIdentifier>();
-        nethook.after(MinecraftPacketIds.Login).on((ptr, ni) => {
-            this.assert(!conns.has(ni), '[test] logined without connected');
+        events.packetAfter(MinecraftPacketIds.Login).on((ptr, ni) => {
+            this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
             setTimeout(() => {
                 if (sendpacket === 0) {
-                    this.error('[test] no send packet');
+                    this.error('[test] no packet was sent');
                 }
             }, 1000);
         });
-        NetworkIdentifier.close.on(ni => {
-            this.assert(conns.delete(ni), '[test] disconnected without connected');
+        events.networkDisconnected.on(ni => {
+            this.assert(conns.delete(ni), '[test] disconnection without connection');
         });
     },
 
@@ -400,21 +407,21 @@ Tester.test({
 
                 if (actor !== null) {
                     actor.getName();
-                    this.equals(actor.getDimension(), DimensionId.Overworld, 'getDimension() is not overworld');
+                    this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
                     this.equals(actualId, expectedId,
-                        `Actor uniqueId is not matched (actual=${actualId}, expected=${expectedId})`);
+                        `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
 
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
-                        this.equals(name, connectedId, 'id does not matched');
-                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not matched');
+                        this.equals(name, connectedId, 'id does not match');
+                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
-                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not matched');
+                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                     } else {
-                        this.assert(!actor.isPlayer(), `no player is the player(identifier:${ev.data.entity.__identifier__})`);
+                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
                     }
                 }
             } catch (err) {
@@ -424,12 +431,12 @@ Tester.test({
     },
 
     chat() {
-        nethook.before(MinecraftPacketIds.Text).on((packet, ni) => {
+        events.packetBefore(MinecraftPacketIds.Text).on((packet, ni) => {
             if (packet.message == "TEST YEY!") {
                 const MAX_CHAT = 5;
                 chatCancelCounter++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                this.equals(connectedNi, ni, 'the network identifier does not matched');
+                this.equals(connectedNi, ni, 'the network identifier does not match');
                 if (chatCancelCounter === MAX_CHAT) {
                     this.log('> tested and stopping...');
                     setTimeout(() => bedrockServer.stop(), 1000);
@@ -444,9 +451,9 @@ Tester.test({
 let connectedNi: NetworkIdentifier;
 let connectedId: string;
 
-nethook.raw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
+events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
-nethook.after(MinecraftPacketIds.Login).on(ptr => {
+events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
     connectedId = ptr.connreq.cert.getId();
 });

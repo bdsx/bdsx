@@ -9,6 +9,7 @@ import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
+import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -22,12 +23,10 @@ export enum DimensionId { // int32_t
     TheEnd = 2
 }
 
-
 export class ActorRuntimeID extends VoidPointer {
 }
 
-export enum ActorType
-{
+export enum ActorType {
     Item = 0x40,
     Player = 0x13f,
 }
@@ -46,13 +45,14 @@ export class Actor extends NativeClass {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
-    private _getDimensionId(out:Int32Array):void {
+    /**
+     * @deprecated use getDimensionId(), follow the original function name
+     */
+    getDimension():DimensionId {
         abstract();
     }
-    getDimension():DimensionId {
-        const out = new Int32Array(1);
-        this._getDimensionId(out);
-        return out[0];
+    getDimensionId():DimensionId {
+        abstract();
     }
     /**
      * @deprecated use actor.identifier
@@ -144,6 +144,12 @@ export class Actor extends NativeClass {
     hasTag(tag:string):boolean {
         abstract();
     }
+    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
+        abstract();
+    }
+    getArmor(slot:ArmorSlot):ItemStack {
+        abstract();
+    }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {
         abstract();
     }
@@ -164,4 +170,3 @@ export class Actor extends NativeClass {
         abstract();
     }
 }
-

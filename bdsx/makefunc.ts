@@ -186,9 +186,7 @@ function qwordMove(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.T
 
 class ParamInfoMaker {
     public readonly structureReturn: boolean;
-    public readonly nullableReturn: boolean;
     public readonly useThis: boolean;
-    public readonly nullableParams: boolean;
     public readonly thisType: makefunc.Paramable;
 
     public readonly return: makefunc.ParamInfo;
@@ -204,24 +202,14 @@ class ParamInfoMaker {
             this.structureReturn = !!opts.structureReturn;
             this.thisType = opts.this;
             this.useThis = !!this.thisType;
-            this.nullableReturn = !!opts.nullableReturn;
-            this.nullableParams = !!opts.nullableParams;
             if (this.useThis) {
                 if (!isBaseOf(this.thisType, VoidPointer)) {
                     throw Error('Non pointer at this');
                 }
             }
-            if (this.nullableReturn) {
-                if (!isBaseOf(returnType, VoidPointer)) throw Error('Invalid options.nullableReturn with non pointer type');
-            }
-            if (this.nullableReturn && this.structureReturn) {
-                throw Error('Invalid options.nullableReturn with structureReturn');
-            }
         } else {
             this.structureReturn = false;
             this.useThis = false;
-            this.nullableReturn = false;
-            this.nullableParams = false;
         }
         this.countOnCalling = params.length;
         this.countOnCpp = this.countOnCalling + (+this.useThis) + (+this.structureReturn);
@@ -235,7 +223,6 @@ class ParamInfoMaker {
             info.type = returnType;
             info.numberOnMaking = 2;
             info.numberOnUsing = PARAMNUM_RETURN;
-            info.nullable = this.nullableReturn;
             info.needDestruction = this.structureReturn;
             this.return = info;
         }
@@ -243,7 +230,6 @@ class ParamInfoMaker {
         for (let i=0;i<params.length;i++) {
             const info = new makefunc.ParamInfo;
             info.offsetForLocalSpace = null;
-            info.nullable = false;
             info.needDestruction = false;
 
             if (this.useThis && i === 0) {
@@ -251,20 +237,17 @@ class ParamInfoMaker {
                 info.numberOnMaking = 3;
                 info.type = params[0];
                 info.numberOnUsing = PARAMNUM_THIS;
-                info.nullable = false;
             } else if (this.structureReturn && i === +this.useThis) {
                 info.type = this.return.type;
                 info.numberOnMaking = 2;
                 info.type = StructureReturnAllocation;
                 info.numberOnUsing = PARAMNUM_RETURN;
-                info.nullable = false;
             } else {
                 const indexOnUsing = i - +this.structureReturn - +this.useThis;
                 const indexOnMaking = PARAM_OFFSET + indexOnUsing;
                 info.numberOnMaking = indexOnMaking + 1;
                 info.numberOnUsing = indexOnUsing + 1;
                 info.type = params[i];
-                info.nullable = this.nullableParams;
             }
             this.params.push(info);
         }
@@ -297,12 +280,18 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * if this is defined, it allocates at the second parameter.
      */
     structureReturn?:boolean;
+    /**
+     * @deprecated nullable is default now
+     */
     nullableReturn?:boolean;
 
     /**
      * @deprecated meaningless. 'this' should be alawys *Pointer on JS
      */
     nullableThis?:boolean;
+    /**
+     * @deprecated nullable is default now
+     */
     nullableParams?:boolean;
 
     /**
@@ -339,7 +328,7 @@ class DupCheck {
         const str = String(target);
         const oldstack = this.map.get(str);
         if (oldstack !== undefined) {
-            console.error(`Dupplicated ${str}`);
+            console.error(`Duplicated ${str}`);
             console.error(remapStack(oldstack));
             return;
         }
@@ -356,6 +345,8 @@ export namespace makefunc {
     export const np2jsAsm = Symbol('makefunc.np2jsAsm');
     export const np2npAsm = Symbol('makefunc.np2npAsm');
     export const js2npLocalSize = Symbol('makefunc.js2npLocalSize');
+    export const pointerReturn = Symbol('makefunc.pointerReturn');
+    export const nullAlsoInstance = Symbol('makefunc.nullAlsoInstance');
 
     export interface Paramable {
         name:string;
@@ -364,7 +355,22 @@ export namespace makefunc {
         [np2npAsm](asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo): void;
         [np2js]?(ptr:any):any;
         [js2np]?(ptr:any):any;
+
+        /**
+         * the local space for storing it
+         */
         [js2npLocalSize]?:number;
+
+        /**
+         * if it has the local space. the value is the pointer that indicates the stored data.
+         * or it's read from the stored data
+         */
+        [pointerReturn]?:boolean;
+
+        /**
+         * the null pointer also can be the JS instance
+         */
+        [nullAlsoInstance]?:boolean;
     }
     export interface ParamableT<T> extends Paramable {
         new():T;
@@ -390,7 +396,6 @@ export namespace makefunc {
         numberOnMaking: number;
         numberOnUsing: number;
         type: Paramable;
-        nullable: boolean;
         needDestruction:boolean;
     }
 
@@ -641,17 +646,17 @@ export namespace makefunc {
             if (target.memory) {
                 if (source.memory) {
                     const ftemp = target.getFTemp();
-                    this.cvtsi2sd_r_rp(ftemp, source.reg, 1, source.offset);
-                    this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
+                    this.cvtsi2sd_f_rp(ftemp, source.reg, 1, source.offset);
+                    this.movsd_rp_f(target.reg, 1, target.offset, ftemp);
                 } else {
-                    this.cvtsi2sd_r_r(FloatRegister.xmm0, source.reg);
-                    this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                    this.cvtsi2sd_f_r(FloatRegister.xmm0, source.reg);
+                    this.movsd_rp_f(target.reg, 1, target.offset, FloatRegister.xmm0);
                 }
             } else {
                 if (source.memory) {
-                    this.cvtsi2sd_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.cvtsi2sd_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
-                    this.cvtsi2sd_r_r(target.freg, source.reg);
+                    this.cvtsi2sd_f_r(target.freg, source.reg);
                 }
             }
         }
@@ -666,14 +671,14 @@ export namespace makefunc {
                     this.cvttsd2si_r_rp(temp, source.reg, 1, source.offset);
                     this.mov_rp_r(target.reg, 1, target.offset, temp);
                 } else {
-                    this.cvttsd2si_r_r(temp, source.freg);
+                    this.cvttsd2si_r_f(temp, source.freg);
                     this.mov_rp_r(target.reg, 1, target.offset, temp);
                 }
             } else {
                 if (source.memory) {
                     this.cvttsd2si_r_rp(target.reg, source.reg, 1, source.offset);
                 } else {
-                    this.cvttsd2si_r_r(target.reg, source.freg);
+                    this.cvttsd2si_r_f(target.reg, source.freg);
                 }
             }
         }
@@ -685,17 +690,17 @@ export namespace makefunc {
             if (target.memory) {
                 if (source.memory) {
                     const ftemp = target.getFTemp();
-                    this.cvtss2sd_r_rp(ftemp, source.reg, 1, source.offset);
-                    this.movsd_rp_r(target.reg, 1, target.offset, ftemp);
+                    this.cvtss2sd_f_rp(ftemp, source.reg, 1, source.offset);
+                    this.movsd_rp_f(target.reg, 1, target.offset, ftemp);
                 } else {
-                    this.cvtss2sd_r_r(FloatRegister.xmm0, source.freg);
-                    this.movsd_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                    this.cvtss2sd_f_f(FloatRegister.xmm0, source.freg);
+                    this.movsd_rp_f(target.reg, 1, target.offset, FloatRegister.xmm0);
                 }
             } else {
                 if (source.memory) {
-                    this.cvtss2sd_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.cvtss2sd_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
-                    this.cvtss2sd_r_r(target.freg, source.freg);
+                    this.cvtss2sd_f_f(target.freg, source.freg);
                 }
             }
         }
@@ -707,17 +712,17 @@ export namespace makefunc {
             if (target.memory) {
                 if (source.memory) {
                     const ftemp = target.getFTemp();
-                    this.cvtsd2ss_r_rp(ftemp, source.reg, 1, source.offset);
-                    this.movss_rp_r(target.reg, 1, target.offset, ftemp);
+                    this.cvtsd2ss_f_rp(ftemp, source.reg, 1, source.offset);
+                    this.movss_rp_f(target.reg, 1, target.offset, ftemp);
                 } else {
-                    this.cvtsd2ss_r_r(FloatRegister.xmm0, source.freg);
-                    this.movss_rp_r(target.reg, 1, target.offset, FloatRegister.xmm0);
+                    this.cvtsd2ss_f_f(FloatRegister.xmm0, source.freg);
+                    this.movss_rp_f(target.reg, 1, target.offset, FloatRegister.xmm0);
                 }
             } else {
                 if (source.memory) {
-                    this.cvtsd2ss_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.cvtsd2ss_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
-                    this.cvtsd2ss_r_r(target.freg, source.freg);
+                    this.cvtsd2ss_f_f(target.freg, source.freg);
                 }
             }
         }
@@ -733,16 +738,16 @@ export namespace makefunc {
                         this.mov_rp_r(target.reg, 1, target.offset, temp, OperationSize.dword);
                     }
                 } else {
-                    this.movss_rp_r(target.reg, 1, target.offset, source.freg);
+                    this.movss_rp_f(target.reg, 1, target.offset, source.freg);
                 }
             } else {
                 if (source.memory) {
-                    this.movss_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.movss_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
                     if (target === source) {
                         // same
                     } else {
-                        this.movss_r_r(target.freg, source.freg);
+                        this.movss_f_f(target.freg, source.freg);
                     }
                 }
             }
@@ -759,16 +764,16 @@ export namespace makefunc {
                         this.mov_rp_r(target.reg, 1, target.offset, temp);
                     }
                 } else {
-                    this.movsd_rp_r(target.reg, 1, target.offset, source.freg);
+                    this.movsd_rp_f(target.reg, 1, target.offset, source.freg);
                 }
             } else {
                 if (source.memory) {
-                    this.movsd_r_rp(target.freg, source.reg, 1, source.offset);
+                    this.movsd_f_rp(target.freg, source.reg, 1, source.offset);
                 } else {
                     if (target === source) {
                         // same
                     } else {
-                        this.movsd_r_r(target.freg, source.freg);
+                        this.movsd_f_f(target.freg, source.freg);
                     }
                 }
             }
@@ -1113,20 +1118,24 @@ export namespace makefunc {
         }
         func.sub_r_c(Register.rsp, spaceForCalling);
 
-        let returnTarget = makefunc.Target.return;
+        let returnTarget = Target.return;
         let returnInMemory:Target|null = null;
         if (func.useStackAllocator) {
             returnTarget = Target.memory(Register.rbp, 0);
         }
         if (pimaker.structureReturn) {
             if (pimaker.return.offsetForLocalSpace !== null) {
-                func.lea_t_rp(makefunc.Target[0], Register.rbp, 1, pimaker.return.offsetForLocalSpace);
-                func.nativeToJs(pimaker.return, returnTarget, makefunc.Target[0]);
+                if (pimaker.return.type[pointerReturn]) {
+                    func.lea_t_rp(Target[0], Register.rbp, 1, pimaker.return.offsetForLocalSpace);
+                } else {
+                    pimaker.return.type[np2npAsm](func, Target[0], Target.memory(Register.rbp, pimaker.return.offsetForLocalSpace), pimaker.return);
+                }
+                func.nativeToJs(pimaker.return, returnTarget, Target[0]);
             } else {
                 returnInMemory = Target.memory(Register.rbp, func.offsetForStructureReturn);
             }
         } else {
-            func.nativeToJs(pimaker.return, returnTarget, makefunc.Target.return);
+            func.nativeToJs(pimaker.return, returnTarget, Target.return);
         }
         if (func.useStackAllocator) {
             func.mov_r_c(Register.rdx, chakraUtil.stack_ptr);
@@ -1151,7 +1160,7 @@ export namespace makefunc {
         'Ansi',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
-            asm.xor_r_r(Register.r9, Register.r9, OperationSize.dword);
+            asm.xor_r_r(Register.r9, Register.r9);
             asm.mov_r_c(Register.r8, chakraUtil.stack_ansi);
             asm.mov_r_c(Register.rdx, info.numberOnUsing);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
@@ -1162,7 +1171,7 @@ export namespace makefunc {
             const temp = target.tempPtr();
             asm.qmov_t_t(Target[0], source);
             asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
-            asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
+            asm.xor_r_r(Register.rdx, Register.rdx);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_ansi_np2js);
             asm.throwIfNonZero(info);
             asm.qmov_t_t(target, temp);
@@ -1174,7 +1183,7 @@ export namespace makefunc {
         'Utf8',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
-            asm.xor_r_r(Register.r9, Register.r9, OperationSize.dword);
+            asm.xor_r_r(Register.r9, Register.r9);
             asm.mov_r_c(Register.r8, chakraUtil.stack_utf8);
             asm.mov_r_c(Register.rdx, info.numberOnUsing);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
@@ -1185,7 +1194,7 @@ export namespace makefunc {
             const temp = target.tempPtr();
             asm.qmov_t_t(Target[0], source);
             asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
-            asm.xor_r_r(Register.rdx, Register.rdx, OperationSize.dword);
+            asm.xor_r_r(Register.rdx, Register.rdx);
             asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
             asm.throwIfNonZero(info);
             asm.qmov_t_t(target, temp);
@@ -1246,6 +1255,10 @@ declare module "./assembler"
 {
     interface X64Assembler
     {
+        /**
+         * asm.alloc + makefunc.js
+         * allocates it on the executable memory. and make it as a JS function.
+         */
         make<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
             returnType: RETURN, opts?: OPTS, ...params: PARAMS):
             FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN>;
@@ -1287,10 +1300,10 @@ VoidPointer[makefunc.np2jsAsm] = function(asm:makefunc.Maker, target:makefunc.Ta
     chakraUtil.JsAddRef(info.type);
     asm.qmov_t_t(makefunc.Target[1], source);
     asm.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(info.type));
-    if (info.nullable) {
-        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
-    } else {
+    if (info.type[makefunc.nullAlsoInstance] || (info.numberOnUsing === PARAMNUM_RETURN && asm.pi.structureReturn)) {
         asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
+    } else {
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
     }
     asm.qmov_t_t(target, makefunc.Target.return);
 };

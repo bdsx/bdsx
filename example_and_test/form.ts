@@ -3,6 +3,10 @@ import { CustomForm, Form, FormLabel } from "bdsx/bds/form";
 
 command.register('form', 'form example').overload(async(param, origin, output)=>{
     const actor = origin.getEntity();
+    if (actor === null) {
+        console.log("it's the command for players");
+        return;
+    }
     const ni = actor.getNetworkIdentifier();
 
     const isYes = await Form.sendTo(ni, {
