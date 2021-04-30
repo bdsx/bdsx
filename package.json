@@ -19,9 +19,9 @@
     "bdsx": "file:bdsx",
     "blessed": "^0.1.81",
     "colors": "^1.4.0",
-    "follow-redirects": "^1.13.3",
+    "follow-redirects": "^1.14.0",
     "krevent": "^2.3.1",
-    "node-html-parser": "^3.1.5",
+    "node-html-parser": "^3.2.0",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
     "ts-node": "^9.1.1",
@@ -36,7 +36,7 @@
     "@types/unzipper": "^0.10.3",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
-    "eslint": "^7.24.0",
+    "eslint": "^7.25.0",
     "eslint-plugin-import": "^2.22.1",
     "typescript": "^4.2.4"
   }
