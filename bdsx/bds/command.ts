@@ -335,7 +335,7 @@ const types = [int32_t, float32_t, bool_t, CxxString, ActorWildcardCommandSelect
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 
-// MinecraftCommands.prototype.executeCommand is defined at command.ts
+// MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this: MinecraftCommands });
 
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);

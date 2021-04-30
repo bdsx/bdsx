@@ -8,4 +8,5 @@ system.executeCommand('list', result => {
 });
 
 // with bdsx API
+// it executes the command on the console
 bedrockServer.executeCommand('list');

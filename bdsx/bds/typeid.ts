@@ -1,5 +1,5 @@
-import { UNDNAME_NAME_ONLY } from "../common";
 import { NativePointer, pdb } from "../core";
+import { UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";

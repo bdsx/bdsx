@@ -34,7 +34,7 @@ console.assert(func_return_1_js() === 1);
 const func_call_printf = asm()
 .sub_r_c(Register.rsp, 0x28) // sub rsp, 0x28; make a stack frame, 0x20 for the parameters space and 8 for the alignment
 .mov_r_r(Register.r8, Register.rdx) // mov rdx, rcx; set the 3rd parameter from the 2nd parameter
-.mov_r_r(Register.rdx, Register.rcx) // mov rdx, rcx; set the 2nd parameter from the 1th parameter
+.mov_r_r(Register.rdx, Register.rcx) // mov rdx, rcx; set the 2nd parameter from the 1st parameter
 .mov_r_c(Register.rcx, asm.const_str('[example/lowlevel-asm] %s, %s!\n')) // mov rcx, '...'; set the 1st parameter
 .call64(printf, Register.rax)  // mov rax, printf; call rax;
 .add_r_c(Register.rsp, 0x28) // add rsp, 0x28; remove a stack frame
@@ -46,7 +46,7 @@ func_call_printf_js('Hello', 'World');
 
 // 0xffff as short = -1
 const ffff_as_short = asm()
-.mov_r_c(Register.rax, 0xffff)
+.mov_r_c(Register.rax, 0xffff) // mov rax, 0xffff
 .ret()
 .alloc();
 

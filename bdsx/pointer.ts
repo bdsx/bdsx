@@ -18,14 +18,14 @@ export abstract class Wrapper<T> extends NativeClass {
     abstract value:T;
     abstract type:Type<T>;
 
-    static make<T>(type:Type<T>):WrapperType<T>{
+    static make<T>(type:{new():T}|NativeType<T>):WrapperType<T>{
         class TypedWrapper extends Wrapper<T>{
             value:any;
             type:Type<T>;
         }
         Object.defineProperty(TypedWrapper, 'name', {value: type.name});
-        TypedWrapper.prototype.type = type;
-        TypedWrapper.define({value:type});
+        TypedWrapper.prototype.type = type as any;
+        TypedWrapper.define({value:type as any});
         return TypedWrapper;
     }
 
@@ -68,14 +68,14 @@ export type PointerType<T> = WrapperType<T>;
 export abstract class Pointer<T> extends Wrapper<T> {
     p:T;
 
-    static make<T>(type:Type<T>):PointerType<T> {
+    static make<T>(type:{new():T}|NativeType<T>):PointerType<T> {
         class TypedPointer extends Pointer<T> {
             p:any;
             value:any;
             type:Type<T>;
         }
-        TypedPointer.prototype.type = type;
-        TypedPointer.defineAsUnion({p:type, value:type});
+        TypedPointer.prototype.type = type as any;
+        TypedPointer.defineAsUnion({p:type as any, value:type as any});
         return TypedPointer;
     }
 }

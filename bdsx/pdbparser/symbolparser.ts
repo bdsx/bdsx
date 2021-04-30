@@ -50,13 +50,25 @@ export class PdbIdentifier {
     public modifier:string|null = null;
     public isVirtualFunction = false;
     public isNamespaceLike = false;
+    public isNamespace = false;
     public isClassLike = false;
+    public isFunction = false;
+    public isFunctionBase = false;
+    public isTemplateFunctionBase = false;
+    public isMemberPointer = false;
+    public isEnum = false;
     public isTemplate = false;
     public isPrivate = false;
     public isLambda = false;
     public isType = false;
+    public arraySize:number|null = null;
+    public isFunctionType = false;
     public isDecoedType = false;
-    public isMemberPointer = false;
+    public isBasicType = false;
+    public isRedirectType = false;
+    public deco = '';
+    public decoedFrom:PdbIdentifier|null = null;
+    public memberPointerBase:PdbIdentifier|null = null;
     public isValue = false;
     public isConstant = false;
     public callingConvension:string|null = null;
@@ -68,10 +80,13 @@ export class PdbIdentifier {
     public functionBase:PdbIdentifier|null = null;
     public returnType:PdbIdentifier|null = null;
     public readonly children = new Map<string, PdbIdentifier>();
-    public type:PdbIdentifier.Type = 0;
     public arguments:PdbIdentifier[] = [];
     public specialized:PdbIdentifier[] = [];
+    public overloads:PdbIdentifier[] = [];
     public address = 0;
+    public redirectTo:PdbIdentifier|null = null;
+    public redirectedFrom:PdbIdentifier|null = null;
+    public source = '';
 
     private argumentsSet = false;
 
@@ -79,16 +94,111 @@ export class PdbIdentifier {
         public name:string) {
     }
 
+    getTemplateTypes():PdbIdentifier[] {
+        if (this.specialized.length === 0) throw Error('No template');
+        const specialized = this.specialized[0];
+        return specialized.arguments.map(item=>{
+            if (item.isClassLike) return typename;
+            if (item.isBasicType) return typename;
+            if (item.isConstant) {
+                debugger;
+                return typename;
+            }
+            if (item.isValue) {
+                debugger;
+                return typename;
+            }
+            return typename;
+        });
+    }
+
+    union(other:PdbIdentifier):PdbIdentifier{
+        if (this === other) return this;
+        debugger;
+        return this;
+    }
+
+    unionParameters(to:PdbIdentifier[]|null):PdbIdentifier[]|null {
+        if (to === null) return this.arguments.slice();
+
+        const n = Math.max(to.length, this.arguments.length);
+        for (let i=0;i<n;i++) {
+            const a = to[i];
+            const b = this.arguments[i];
+            to[i] = (a && b) ? a.union(b) : (a || b);
+        }
+        return to;
+    }
+
+    hasArrayParam():boolean {
+        for (const param of this.arguments) {
+            if (param.getArraySize() !== null) return true;
+        }
+        return false;
+    }
+
+    *allOverloads(isStatic:boolean):IterableIterator<PdbIdentifier> {
+        if (this.isTemplate) {
+            for (const s of this.specialized) {
+                for (const o of s.overloads) {
+                    if (o.isStatic !== isStatic) continue;
+                    if (o.hasArrayParam()) continue;
+                    yield o;
+                }
+            }
+        } else if (this.isFunctionBase) {
+            for (const o of this.overloads) {
+                if (o.isStatic !== isStatic) continue;
+                yield o;
+            }
+        }
+    }
+
+    isPointerLike():boolean {
+        if (this.deco === '&' || this.deco === '*') return true;
+        if (this.decoedFrom !== null) return this.decoedFrom.isPointerLike();
+        return false;
+    }
+
+    decorate(deco:string, from:number):PdbIdentifier {
+        let name = this.name;
+        if (/^[a-zA-z]/.test(deco)) {
+            name += ' ';
+        }
+        name += deco;
+        const id = this.parent!.get(name);
+        if (id === this) throw Error(`self deco linked (deco:${deco})`);
+        id.isType = true;
+        id.isDecoedType = true;
+        id.deco = deco;
+        id.decoedFrom = this;
+        id.source = parser.getFrom(from);
+        return id;
+    }
+
+    getArraySize():number|null {
+        let node:PdbIdentifier = this;
+        for (;;) {
+            if (node.decoedFrom === null) return null;
+            if (node.arraySize !== null) return node.arraySize;
+            node = node.decoedFrom;
+        }
+    }
+
     decay():PdbIdentifier {
         let id:PdbIdentifier = this;
         for (;;) {
-            if (!id.isDecoedType) return id;
-            id = id.parent!;
+            if (id.decoedFrom === null) return id;
+            id = id.decoedFrom;
         }
     }
 
     removeParameters():PdbIdentifier {
         return this.functionBase || this;
+    }
+
+    removeTemplateParameters():PdbIdentifier {
+        return this.templateBase || this;
     }
 
     get(name:string):PdbIdentifier {
@@ -127,12 +237,16 @@ export class PdbIdentifier {
     }
 
     setAsNamespace():void {
-        this.type = PdbIdentifier.Type.Namespace;
         this.isNamespaceLike = true;
+        this.isNamespace = true;
+    }
+
+    setAsBasicType():void {
+        this.isType = true;
+        this.isBasicType = true;
     }
 
     setAsClass():void {
-        this.type = PdbIdentifier.Type.Class;
         this.isClassLike = true;
         this.isType = true;
         this.isNamespaceLike = true;
@@ -142,22 +256,15 @@ export class PdbIdentifier {
         }
     }
 
-    setAsStruct():void {
-        this.type = PdbIdentifier.Type.Struct;
-        this.isClassLike = true;
-        this.isType = true;
-        this.isNamespaceLike = true;
-    }
-
     setAsEnum():void {
-        this.type = PdbIdentifier.Type.Enum;
+        this.isEnum = true;
         this.isClassLike = true;
         this.isType = true;
         this.isNamespaceLike = true;
     }
 
     setAsFunction():void {
-        this.type = PdbIdentifier.Type.Function;
+        this.isFunction = true;
     }
 
     getTypeOfIt():PdbIdentifier {
@@ -171,24 +278,32 @@ export class PdbIdentifier {
         return PdbIdentifier.global.get('typename');
     }
 
+    redirect(target:PdbIdentifier):void {
+        this.redirectTo = target;
+        target.redirectedFrom = this;
+        this.isRedirectType = true;
+    }
+
     public static global = new PdbIdentifier('');
     public static std = PdbIdentifier.global.get('std');
 }
 
-export namespace PdbIdentifier {
-    export enum Type {
-        Unknown,
-        Namespace,
-        Function,
-        FunctionBase,
-        Type,
-        Enum,
-        Class,
-        Struct,
-    }
-}
 PdbIdentifier.global.setAsNamespace();
 PdbIdentifier.std.setAsNamespace();
+PdbIdentifier.global.get('__int64').setAsBasicType();
+PdbIdentifier.global.get('__int64 unsigned').setAsBasicType();
+PdbIdentifier.global.get('int').setAsBasicType();
+PdbIdentifier.global.get('int unsigned').setAsBasicType();
+PdbIdentifier.global.get('long').setAsBasicType();
+PdbIdentifier.global.get('long unsigned').setAsBasicType();
+PdbIdentifier.global.get('short').setAsBasicType();
+PdbIdentifier.global.get('short unsigned').setAsBasicType();
+PdbIdentifier.global.get('char').setAsBasicType();
+PdbIdentifier.global.get('char unsigned').setAsBasicType();
+PdbIdentifier.global.get('float').setAsBasicType();
+PdbIdentifier.global.get('double').setAsBasicType();
+const void_t = PdbIdentifier.global.get('void');
+void_t.setAsBasicType();
 const typename = PdbIdentifier.global.get('typename');
 typename.isType = true;
 
@@ -211,7 +326,30 @@ function must(next:string, id?:PdbIdentifier):void {
     throw Error(`unexpected character(Expected=${next}, Actual=${parser.peek()})`);
 }
 
-function parseParameters(id:PdbIdentifier, returnType:PdbIdentifier):PdbIdentifier {
+function setAsFunction(func:PdbIdentifier, funcbase:PdbIdentifier, args:PdbIdentifier[], returnType:PdbIdentifier, isType:boolean):void {
+    if (args.length === 1 && args[0] === void_t) {
+        args.length = 0;
+    }
+    func.setArguments(args);
+    funcbase.overloads.push(func);
+
+    func.returnType = returnType;
+    if (isType) {
+        func.isType = true;
+        func.isFunctionType = true;
+    } else {
+        func.setAsFunction();
+        func.functionBase = funcbase;
+        funcbase.isFunctionBase = true;
+        const templateBase = funcbase.templateBase;
+        if (templateBase !== null)  {
+            templateBase.isTemplateFunctionBase = true;
+            func.templateBase = templateBase;
+        }
+    }
+}
+
+function parseParameters(funcbase:PdbIdentifier, returnType:PdbIdentifier, isType:boolean):PdbIdentifier {
     const prev = parser.i-1;
     const args:PdbIdentifier[] = [];
     for (;;) {
@@ -230,20 +368,40 @@ function parseParameters(id:PdbIdentifier, returnType:PdbIdentifier):PdbIdentifi
         }
         break;
     }
-    const funcTempl = id;
-    id = id.parent!.get(funcTempl.name + parser.getFrom(prev));
-    funcTempl.type = PdbIdentifier.Type.FunctionBase;
-    id.functionBase = funcTempl;
-    id.type = PdbIdentifier.Type.Function;
-    id.returnType = returnType;
+    const id = funcbase.parent!.get(funcbase.name + parser.getFrom(prev));
+    setAsFunction(id, funcbase, args, returnType, isType);
     return id;
 }
 
+abstract class Deco {
+    chain:Deco|null = null;
+    abstract apply(id:PdbIdentifier):PdbIdentifier;
+
+    add(chain:Deco):void {
+        chain.chain = this.chain;
+        this.chain = chain;
+    }
+
+    clear():void {
+        this.chain = null;
+    }
+}
+
+class DecoRoot extends Deco {
+    apply(id:PdbIdentifier):PdbIdentifier {
+        if (this.chain === null) return id;
+        return this.chain.apply(id);
+    }
+}
+
 function parseDeco(
+    base:PdbIdentifier,
     info:ParsingInfo,
-    id:PdbIdentifier,
     from:number,
+    sourceFrom:number,
     eof:string):PdbIdentifier {
+
+    const deco = new DecoRoot;
 
     for (;;) {
         const prev = parser.i;
@@ -253,7 +411,7 @@ function parseDeco(
                 printParserState();
                 throw Error(`Unexpected end`);
             }
-            return id;
+            return deco.apply(base);
         } else if (oper === '' || oper === '`' || oper === '<') {
             if (oper !== '') {
                 parser.i = prev;
@@ -261,8 +419,11 @@ function parseDeco(
             const beforeKeyword = parser.i;
             const keyword = parser.readIdentifier();
             if (keyword === 'const') {
-                id = id.get(keyword);
-                id.type = PdbIdentifier.Type.Type;
+                const decoed = base.decorate(keyword, sourceFrom);
+                if (base.isFunction) {
+                    setAsFunction(decoed, base.functionBase!, base.arguments.slice(), base.returnType!, base.isType);
+                }
+                base = decoed;
             } else if (keyword === '__cdecl' || keyword === '__stdcall') {
                 info.callingConvension = keyword;
                 info.isFunction = true;
@@ -270,63 +431,76 @@ function parseDeco(
                 // do nothing
             } else {
                 parser.i = beforeKeyword;
-                const fn = parseIdentity(info.isFunction ? '(' : eof, {isTypeInside: true});
-                const returnType = id;
+                const fnOrThisType = parseIdentity(info.isFunction ? '(' : eof, {isTypeInside: true});
+                const returnType = deco.apply(base);
+                deco.clear();
 
                 if (parser.endsWith('(')) {
-                    id = parseParameters(fn, returnType);
+                    base = parseParameters(fnOrThisType, returnType, false);
+                    base.source = parser.getFrom(sourceFrom);
                     info.isFunction = false;
                 } else if (parser.endsWith('*')) {
-                    id = fn.get('*').get(returnType.toString());
-                    id.isDecoedType = true;
-                    id.isMemberPointer = true;
-                    id.isType = true;
+                    base = PdbIdentifier.global.get(returnType+' '+fnOrThisType+'::*');
+                    base.isMemberPointer = true;
+                    base.memberPointerBase = fnOrThisType;
+                    base.returnType = returnType;
+                    base.isType = true;
+                    base.source = parser.getFrom(sourceFrom);
                 } else {
                     if (info.isFunction) {
                         // vcall, code chunk?
                     }
-                    id = fn;
-                    id.returnType = returnType;
-                    return id;
+                    base = fnOrThisType;
+                    base.returnType = returnType;
+                    base.source = parser.getFrom(sourceFrom);
+                    return base;
                 }
             }
         } else if (eof.indexOf(oper) !== -1) {
-            return id;
+            return base;
         } else if (oper === '&' || oper === '*') {
-            id = id.get(oper);
-            id.type = PdbIdentifier.Type.Type;
-            id.isDecoedType = true;
+            base = base.decorate(oper, sourceFrom);
         } else if (oper === '(') {
             if (info.isFunction) {
-                id = parseParameters(id, id);
-                id.isType = true;
+                const baseType = base.isMemberPointer ? base.memberPointerBase! : base;
+                const returnType = base.isMemberPointer ? base.returnType! : base;
+                base = parseParameters(baseType, returnType, true);
                 info.isFunction = false;
+                if (base.isMemberPointer) {
+                    base.isType = true;
+                    base.isFunctionType = true;
+                }
             } else {
-                id = parseDeco(info, id, from, ')');
+                base = parseDeco(base, info, from, sourceFrom, ')');
             }
         } else if (oper === '[') {
             const number = parser.readIdentifier();
             if (number === null) {
-                printParserState(id);
+                printParserState(base);
                 throw Error(`Invalid number ${number}`);
             }
             if (!/^[0-9]+$/.test(number)) {
-                printParserState(id);
+                printParserState(base);
                 throw Error(`Unexpected index ${number}`);
             }
             must(']');
-            id = id.get(`[${number}]`);
-            id.type = PdbIdentifier.Type.Type;
+
+            base = base.decorate(`[${number}]`, sourceFrom);
+            base.arraySize = +number;
+            +number;
         } else {
             parser.i--;
-            printParserState(id);
+            printParserState(base);
             throw Error(`Unexpected operator ${oper}`);
         }
     }
 }
 
-function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdentifier, type?:PdbIdentifier.Type} = {}, scope:PdbIdentifier=PdbIdentifier.global):PdbIdentifier {
+function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdentifier, isClassLike?:boolean} = {}, scope:PdbIdentifier=PdbIdentifier.global):PdbIdentifier {
     if (info.isTypeInside === undefined) info.isTypeInside = false;
+    parser.skipSpaces();
+    const sourceFrom = parser.i;
+
     for (;;) {
         parser.skipSpaces();
         const from = parser.i;
@@ -350,13 +524,16 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                     const lambdaName = parser.getFrom(from);
                     if (innerText === 'lambda_invoker_cdecl') {
                         id = scope.get(lambdaName);
-                        id.type = PdbIdentifier.Type.Function;
+                        id.setAsFunction();
+                        id.source = parser.getFrom(sourceFrom);
                     } else if (/^lambda_[a-z0-9]+$/.test(innerText)) {
                         id = scope.get(lambdaName);
                         id.isLambda = true;
+                        id.source = parser.getFrom(sourceFrom);
                         id.setAsClass();
                     } else if (/^unnamed-type-.+$/.test(innerText)) {
                         id = scope.get(lambdaName);
+                        id.source = parser.getFrom(sourceFrom);
                     } else {
                         printParserState();
                         throw Error(`Unexpected name <${innerText}>`);
@@ -375,8 +552,10 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 } else if (oper === '&') {
                     id = parseSymbol(eof);
                     id.isValue = true;
-                    id = id.get('&');
+                    id.source = parser.getFrom(sourceFrom);
+                    id = id.decorate('&', from);
                     id.isValue = true;
+                    id.source = parser.getFrom(sourceFrom);
                     return id;
                 } else if (oper === '`') {
                     _idfind:{
@@ -415,6 +594,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                             id = scope.get(parser.getFrom(from));
                             id.isPrivate = true;
                             id.setArguments([arg]);
+                            id.source = parser.getFrom(sourceFrom);
                         }
                     }
                 }  else {
@@ -423,12 +603,16 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                     throw Error(`Unexpected operator ${oper}`);
                 }
             } else {
-                let isUnsigned = false;
+                let isUnsigned = 0;
 
                 if (scope === PdbIdentifier.global && /^[0-9]+$/.test(idname)) {
                     id = PdbIdentifier.global.constVal(idname);
                 } else if (idname === '__cdecl' || idname === '__stdcall') {
-                    id = scope.get('[type]');
+                    if (scope === PdbIdentifier.global) {
+                        id = void_t;
+                    } else {
+                        throw Error(`Invalid scope(${scope}) for ${idname}`);
+                    }
                     parser.i = from;
                     break;
                 } else if (idname === 'const') {
@@ -437,13 +621,13 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                     id.isConstant = true;
                     return id;
                 } else if (idname === 'enum') {
-                    id = parseIdentity(eof, {type: PdbIdentifier.Type.Enum});
+                    id = parseIdentity(eof, {isClassLike: true});
                     return id;
                 } else if (idname === 'class') {
-                    id = parseIdentity(eof, {type: PdbIdentifier.Type.Class});
+                    id = parseIdentity(eof, {isClassLike: true});
                     return id;
                 } else if (idname === 'struct') {
-                    return parseIdentity(eof, {type: PdbIdentifier.Type.Struct});
+                    return parseIdentity(eof, {isClassLike: true});
                 } else if(idname === 'operator') {
                     const oi = parser.i;
                     const oper = parser.readOperator(OPERATORS_FOR_OPERATOR);
@@ -457,13 +641,13 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                         idname += oper;
                     }
                 } else if(idname === 'unsigned') {
-                    isUnsigned = true;
+                    isUnsigned = 1;
                     idname = parser.readIdentifier();
                     if (idname === null) {
                         idname = 'int';
                     }
                 } else if(idname === 'signed') {
-                    isUnsigned = true;
+                    isUnsigned = 2;
                     idname = parser.readIdentifier();
                     if (idname === null) {
                         idname = 'int';
@@ -478,7 +662,14 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                     }
                 }
                 id = scope.get(idname);
-                if (isUnsigned) id = id.get('unsigned');
+                if (isUnsigned !== 0) {
+                    id = id.decorate((isUnsigned === 1 ? 'unsigned' : 'signed'), sourceFrom);
+                    id.setAsBasicType();
+                }
+                if (idname.startsWith('~')) {
+                    id.parent!.setAsClass();
+                }
+                id.source = parser.getFrom(sourceFrom);
             }
             break;
         }
@@ -498,6 +689,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 printParserState();
                 throw Error(`Invalid adjustor ${adjustor}`);
             }
+            id.source = parser.getFrom(sourceFrom);
         }
 
         while (parser.nextIf('<')) {
@@ -520,6 +712,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
             id = id.parent!.get(templateName(template.name, ...args.map(id=>id.toString())));
             id.setArguments(args);
             id.templateBase = template;
+            id.source = parser.getFrom(sourceFrom);
             template.specialized.push(id);
         }
 
@@ -528,18 +721,18 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
             id.isNamespaceLike = true;
             scope = id;
         } else {
-            switch (info.type) {
-            case PdbIdentifier.Type.Class: id.setAsClass(); break;
-            case PdbIdentifier.Type.Struct: id.setAsClass(); break;
-            case PdbIdentifier.Type.Enum: id.setAsClass(); break;
+            if (info.isClassLike) {
+                id.setAsClass();
             }
-            return parseDeco({callingConvension: null, isFunction: false},id, from, eof);
+            id.source = parser.getFrom(sourceFrom);
+            return parseDeco(id, {callingConvension: null, isFunction: false}, from, sourceFrom, eof);
         }
     }
 
 }
 
 function parseSymbol(eof:string, isFunction:boolean = false):PdbIdentifier {
+    const from = parser.i;
     let modifier:string|null = null;
     const isThunk = parser.nextIf('[thunk]:');
     if (parser.nextIf('public:')) {
@@ -556,18 +749,19 @@ function parseSymbol(eof:string, isFunction:boolean = false):PdbIdentifier {
     const id = parseIdentity(eof, {isTypeInside:isFunction});
     if (modifier !== null) {
         id.modifier = modifier;
-        id.decay().parent!.isClassLike = true;
+        id.decay().parent!.setAsClass();
     }
     if (virtualFunction) {
-        id.type = PdbIdentifier.Type.Function;
+        id.setAsFunction();
         id.isVirtualFunction = true;
-        id.decay().parent!.isClassLike = true;
+        id.decay().parent!.setAsClass();
     }
     if (isStatic) {
         id.isStatic = true;
-        id.decay().parent!.isClassLike = true;
+        id.decay().parent!.setAsClass();
     }
     id.isThunk = isThunk;
+    id.source = parser.getFrom(from);
     return id;
 }
 
@@ -585,14 +779,30 @@ function parse(from:number = 0, to?:number):void {
         parser.i = 0;
         const id = parseSymbol('');
         id.address = address;
+        id.source = parser.context;
         if (index >= to) break;
     }
     bar.terminate();
     cache.close();
 }
 
+PdbIdentifier.global.get('bool').isBasicType = true;
+PdbIdentifier.global.get('void').isBasicType = true;
+PdbIdentifier.global.get('float').isBasicType = true;
+PdbIdentifier.global.get('double').isBasicType = true;
+PdbIdentifier.global.get('char').isBasicType = true;
+PdbIdentifier.global.get('char unsigned').isBasicType = true;
+PdbIdentifier.global.get('short').isBasicType = true;
+PdbIdentifier.global.get('short unsigned').isBasicType = true;
+PdbIdentifier.global.get('int').isBasicType = true;
+PdbIdentifier.global.get('int unsigned').isBasicType = true;
+PdbIdentifier.global.get('__int64').isBasicType = true;
+PdbIdentifier.global.get('__int64 unsigned').isBasicType = true;
+PdbIdentifier.global.get('typename').isBasicType = true;
+PdbIdentifier.global.get('void*').isBasicType = true;
+
 // parser.context = "class Block const * __ptr64 const __ptr64 VanillaBlocks::mElement104";
 // parseSymbol('');
 
 // if (Math.random() < 2) process.exit(0);
-parse(0, 10000);
+parse(0, 1000);

@@ -2,7 +2,7 @@ import { asm, AsmMultiplyConstant, FloatRegister, OperationSize, Register, Value
 import { proc, proc2 } from "./bds/symbols";
 import "./codealloc";
 import { abstract, Bufferable } from "./common";
-import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
+import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { makefuncDefines } from "./makefunc_defines";
 import { remapStack } from "./source-map-support";
@@ -1014,6 +1014,9 @@ export namespace makefunc {
             func.stackSize += 8; // structureReturn space
             const localSize = pimaker.return.type[js2npLocalSize];
             if (localSize) func.stackSize += localSize;
+            else if ((pimaker.return.type as any)[StructurePointer.contentSize] == null){
+                throw Error(`unknown size, need the size for structureReturn:true (${pimaker.return.type.name})`);
+            }
         }
 
         // calculate local space size

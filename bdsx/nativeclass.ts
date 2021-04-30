@@ -454,6 +454,9 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
             static readonly [StructurePointer.contentSize] = off;
             static readonly [NativeType.align] = itemType[NativeType.align];
             [NativeType.size]:number;
+            static isTypeOf<T>(this:{new():T}, v:unknown):v is T {
+                return v instanceof NativeArrayImpl;
+            }
             length:number;
             componentType:Type<T>;
         }
@@ -590,6 +593,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     const setter = makefunc.js2np in type ? wrapperSetterRef : setterRef;
 
     return new NativeType<T>(type.name+'*', 8, 8,
+        clazz.isTypeOf,
         getter, setter,
         clazz[makefunc.js2npAsm],
         clazz[makefunc.np2jsAsm],

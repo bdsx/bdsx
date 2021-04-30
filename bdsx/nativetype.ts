@@ -18,6 +18,8 @@ namespace NativeTypeFn {
     export const ctor_move = Symbol('ctor_move');
     export const isNativeClass = Symbol('isNativeClass');
     export const descriptor = Symbol('descriptor');
+    export const vftable = Symbol('vftable');
+    export const scalar_deleting_destructor = Symbol('scalar_deleting_destructor');
 }
 
 /**
@@ -25,6 +27,7 @@ namespace NativeTypeFn {
  */
 export interface Type<T> extends makefunc.Paramable {
     name:string;
+    isTypeOf(v:unknown):v is T;
 
     [NativeTypeFn.getter](ptr:StaticPointer, offset?:number):T;
     [NativeTypeFn.setter](ptr:StaticPointer, value:T, offset?:number):void;
@@ -117,24 +120,29 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly size:typeof NativeTypeFn.size = NativeTypeFn.size;
     public static readonly align:typeof NativeTypeFn.align = NativeTypeFn.align;
     public static readonly descriptor:typeof NativeTypeFn.descriptor = NativeTypeFn.descriptor;
+    public static readonly vftable:typeof NativeTypeFn.vftable = NativeTypeFn.vftable;
+    public static readonly scalar_deleting_destructor:typeof NativeTypeFn.scalar_deleting_destructor = NativeTypeFn.scalar_deleting_destructor;
 
-
-    public readonly [NativeTypeFn.getter]:(ptr:StaticPointer, offset?:number)=>T;
-    public readonly [NativeTypeFn.setter]:(ptr:StaticPointer, v:T, offset?:number)=>void;
-    public readonly [NativeTypeFn.ctor]:(ptr:StaticPointer)=>void;
-    public readonly [NativeTypeFn.dtor]:(ptr:StaticPointer)=>void;
-    public readonly [NativeTypeFn.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
-    public readonly [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void;
-    public readonly [NativeTypeFn.size]:number;
-    public readonly [NativeTypeFn.align]:number;
-    public readonly [makefunc.js2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
-    public readonly [makefunc.np2jsAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
-    public readonly [makefunc.np2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public [NativeTypeFn.getter]:(ptr:StaticPointer, offset?:number)=>T;
+    public [NativeTypeFn.setter]:(ptr:StaticPointer, v:T, offset?:number)=>void;
+    public [NativeTypeFn.ctor]:(ptr:StaticPointer)=>void;
+    public [NativeTypeFn.dtor]:(ptr:StaticPointer)=>void;
+    public [NativeTypeFn.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
+    public [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void;
+    public [NativeTypeFn.size]:number;
+    public [NativeTypeFn.align]:number;
+    public [makefunc.js2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public [makefunc.np2jsAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public [makefunc.np2npAsm]:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void;
+    public [NativeTypeFn.vftable]?:VoidPointer;
+    public [NativeTypeFn.scalar_deleting_destructor]?(n:number):VoidPointer;
+    public isTypeOf:(v:unknown)=>v is T;
 
     constructor(
         name:string,
         size:number,
         align:number,
+        isTypeOf:(v:unknown)=>boolean,
         get:(ptr:StaticPointer, offset?:number)=>T,
         set:(ptr:StaticPointer, v:T, offset?:number)=>void,
         js2npAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
@@ -147,6 +155,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         super(name, js2npAsm, np2jsAsm, np2npAsm);
         this[NativeType.size] = size;
         this[NativeType.align] = align;
+        this.isTypeOf = isTypeOf as any;
         this[NativeType.getter] = get;
         this[NativeType.setter] = set;
         this[NativeType.ctor] = ctor;
@@ -161,6 +170,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
             name ?? this.name,
             type[NativeType.size],
             type[NativeType.align],
+            type.isTypeOf,
             type[NativeType.getter],
             type[NativeType.setter],
             type[makefunc.js2npAsm],
@@ -208,6 +218,17 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         builder.ctor_copy.setPtrOffset(offset);
         builder.ctor_copy.code += `types[${typeidx}][NativeType.ctor_copy](ptr, optr);\n`;
     }
+
+    static definePointedProperty<KEY extends keyof any, T>(target:{[key in KEY]:T}, key:KEY, pointer:StaticPointer, type:Type<T>):void {
+        Object.defineProperty(target, key, {
+            get():T {
+                return type[NativeType.getter](pointer);
+            },
+            set(value:T):void {
+                return type[NativeType.setter](pointer, value);
+            }
+        });
+    }
 }
 NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
 
@@ -215,6 +236,7 @@ function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
         `${type.name}*`,
         8, 8,
+        type.isTypeOf,
         (ptr)=>type[NativeType.getter](ptr.getPointer()),
         (ptr, v)=>type[NativeType.setter](ptr.getPointer(), v),
         type[makefunc.js2npAsm],
@@ -237,6 +259,7 @@ declare module './core'
         [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void;
         [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void;
         [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number):void;
+        isTypeOf<T>(this:{new():T}, v:unknown):v is T;
     }
 }
 
@@ -257,12 +280,16 @@ VoidPointer[NativeType.ctor_move] = function(to:StaticPointer, from:StaticPointe
     this[NativeType.ctor_copy](to, from);
 };
 VoidPointer[NativeType.descriptor] = NativeType.defaultDescriptor;
+VoidPointer.isTypeOf = function<T>(this:{new():T}, v:unknown):v is T {
+    return v instanceof this;
+};
 
 const undefValueRef = chakraUtil.asJsValueRef(undefined);
 
 export const void_t = new NativeType<void>(
     'void',
     0, 1,
+    v=>v === undefined,
     emptyFunc,
     emptyFunc,
     emptyFunc,
@@ -276,6 +303,7 @@ export type void_t = void;
 export const bool_t = new NativeType<boolean>(
     'bool',
     1, 1,
+    v=>v === undefined,
     (ptr, offset)=>ptr.getBoolean(offset),
     (ptr, v, offset)=>ptr.setBoolean(v, offset),
     (asm, target, source, info)=>{
@@ -299,6 +327,7 @@ export type bool_t = boolean;
 export const uint8_t = new NativeType<number>(
     'unsigned char',
     1, 1,
+    v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xff,
     (ptr, offset)=>ptr.getInt8(offset),
     (ptr, v, offset)=>ptr.setInt8(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.byte, info),
@@ -308,6 +337,7 @@ export type uint8_t = number;
 export const uint16_t = new NativeType<number>(
     'unsigned short',
     2, 2,
+    v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xffff,
     (ptr, offset)=>ptr.getInt16(offset),
     (ptr, v, offset)=>ptr.setInt16(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.word, info),
@@ -317,6 +347,7 @@ export type uint16_t = number;
 export const uint32_t = new NativeType<number>(
     'unsigned int',
     4, 4,
+    v=>typeof v === 'number' && (v>>>0) === v,
     (ptr, offset)=>ptr.getUint32(offset),
     (ptr, v, offset)=>ptr.setUint32(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
@@ -326,6 +357,7 @@ export type uint32_t = number;
 export const ulong_t = new NativeType<number>(
     'unsigned long',
     4, 4,
+    v=>typeof v === 'number' && (v>>>0) === v,
     (ptr, offset)=>ptr.getUint32(offset),
     (ptr, v, offset)=>ptr.setUint32(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
@@ -335,6 +367,7 @@ export type ulong_t = number;
 export const uint64_as_float_t = new NativeType<number>(
     'unsigned __int64',
     8, 8,
+    v=>typeof v === 'number' && Math.round(v) === v && 0 <= v && v < 0x10000000000000000,
     (ptr, offset)=>ptr.getUint64AsFloat(offset),
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset),
     (asm, target, source, info)=>{
@@ -360,6 +393,7 @@ export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
     'char',
     1, 1,
+    v=>typeof v === 'number' && (v|0) === v && -0x80 <= v && v <= 0x7f,
     (ptr, offset)=>ptr.getUint8(offset),
     (ptr, v, offset)=>ptr.setUint8(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.byte, info),
@@ -369,6 +403,7 @@ export type int8_t = number;
 export const int16_t = new NativeType<number>(
     'short',
     2, 2,
+    v=>typeof v === 'number' && (v|0) === v && -0x8000 <= v && v <= 0x7fff,
     (ptr, offset)=>ptr.getUint16(offset),
     (ptr, v, offset)=>ptr.setUint16(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.word, info),
@@ -378,6 +413,7 @@ export type int16_t = number;
 export const int32_t = new NativeType<number>(
     'int',
     4, 4,
+    v=>typeof v === 'number' && (v|0) === v,
     (ptr, offset)=>ptr.getInt32(offset),
     (ptr, v, offset)=>ptr.setInt32(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
@@ -387,6 +423,7 @@ export type int32_t = number;
 export const long_t = new NativeType<number>(
     'long',
     4, 4,
+    v=>typeof v === 'number' && (v|0) === v,
     (ptr, offset)=>ptr.getInt32(offset),
     (ptr, v, offset)=>ptr.setInt32(v, offset),
     (asm, target, source, info)=>asm.jsNumberToInt(target, source, OperationSize.dword, info),
@@ -396,6 +433,7 @@ export type long_t = number;
 export const int64_as_float_t = new NativeType<number>(
     '__int64',
     8, 8,
+    v=>typeof v === 'number' && Math.round(v) === v && -0x8000000000000000 <= v && v < 0x8000000000000000,
     (ptr, offset)=>ptr.getInt64AsFloat(offset),
     (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset),
     (asm, target, source, info)=>{
@@ -419,6 +457,7 @@ export type int64_as_float_t = number;
 export const float32_t = new NativeType<number>(
     'float',
     4, 4,
+    v=>typeof v === 'number',
     (ptr, offset)=>ptr.getFloat32(offset),
     (ptr, v, offset)=>ptr.setFloat32(v, offset),
     (asm, target, source, info)=>{
@@ -442,6 +481,7 @@ export type float32_t = number;
 export const float64_t = new NativeType<number>(
     'double',
     8, 8,
+    v=>typeof v === 'number',
     (ptr, offset)=>ptr.getFloat64(offset),
     (ptr, v, offset)=>ptr.setFloat64(v, offset),
     (asm, target, source, info)=>{
@@ -469,6 +509,7 @@ const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<ch
 export const CxxString = new NativeType<string>(
     'std::basic_string<char,std::char_traits<char>,std::allocator<char> >',
     0x20, 8,
+    v=>typeof v === 'string',
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
     (asm, target, source, info)=>{
@@ -526,6 +567,7 @@ CxxString[makefunc.js2npLocalSize] = 0x20;
 export const bin64_t = new NativeType<string>(
     'unsigned __int64',
     8, 8,
+    v=>typeof v === 'string' && v.length === 4,
     (ptr, offset)=>ptr.getBin64(offset),
     (ptr, v, offset)=>ptr.setBin(v, offset),
     (asm, target, source, info)=>{
@@ -558,6 +600,7 @@ export type bin64_t = string;
 export const bin128_t = new NativeType<string>(
     'unsigned __int128',
     16, 8,
+    v=>typeof v === 'string' && v.length === 8,
     (ptr)=>ptr.getBin(8),
     (ptr, v)=>ptr.setBin(v),
     ()=>{ throw Error('bin128_t is not supported for the function type'); },
