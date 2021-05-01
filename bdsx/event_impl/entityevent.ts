@@ -1,6 +1,6 @@
 import { Actor } from "../bds/actor";
 import { AttributeId } from "../bds/attribute";
-import { ItemStackBase } from "../bds/inventory";
+import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { ScriptCustomEventPacket } from "../bds/packets";
 import { Player } from "../bds/player";
@@ -89,12 +89,12 @@ export class PlayerAttackEvent implements IPlayerAttackEvent {
 
 interface IPlayerDropItemEvent {
     player: Player;
-    itemStackBase: ItemStackBase;
+    ItemStack: ItemStack;
 }
 export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     constructor(
         public player: Player,
-        public itemStackBase: ItemStackBase,
+        public ItemStack: ItemStack,
     ) {
     }
 }
@@ -181,15 +181,15 @@ function onPlayerAttack(player:Player, victim:Actor):boolean {
 }
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
 
-function onPlayerDropItem(player:Player, itemStackBase:ItemStackBase, v:boolean):boolean {
-    const event = new PlayerDropItemEvent(player, itemStackBase);
+function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean {
+    const event = new PlayerDropItemEvent(player, itemStack);
     if (events.playerDropItem.fire(event) === CANCEL) {
         return false;
     } else {
-        return _onPlayerDropItem(event.player, event.itemStackBase, v);
+        return _onPlayerDropItem(event.player, event.ItemStack, v);
     }
 }
-const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStackBase, bool_t)(onPlayerDropItem);
+const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
 
 events.packetBefore(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
     const event = new PlayerJoinEvent(ni.getActor()!);

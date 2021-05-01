@@ -9,7 +9,7 @@ import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
-import { ArmorSlot, ItemStackBase } from "./inventory";
+import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -147,7 +147,7 @@ export class Actor extends NativeClass {
     teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
         abstract();
     }
-    getArmor(slot:ArmorSlot):ItemStackBase {
+    getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {

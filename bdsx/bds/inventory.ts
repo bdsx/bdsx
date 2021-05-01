@@ -90,38 +90,9 @@ export class ComponentItem extends NativeClass {
     // public: static bool CompoundItem::isCompoundItem(class ItemStackBase const &)
 }
 
-// export class ItemStack extends NativeClass {
-
-//     TODO:
-//     public: ItemStack::ItemStack(void)
-//     public: ItemStack::ItemStack(class gsl::basic_string_span<char const, -1>, int, int, class CompoundTag const *)
-//     ItemStack::ItemStack(class ItemStack const &)
-//     ItemStack::ItemStack(class BlockLegacy const &, int)
-//     ItemStack::ItemStack(class Block const &, int, class CompoundTag const *)
-//     public: virtual ItemStack::~ItemStack(void)
-//     public: bool ItemStack::useOn(class Actor &, int, int, int, unsigned char, float, float, float)
-//     public: void ItemStack::useAsFuel(void)
-//     public: virtual class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>> ItemStack::toString(void)
-//     public: virtual class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>> ItemStack::toDebugString(void)
-//     public: virtual void ItemStack::setNull(void)
-//     public: void ItemStack::serverInitNetId(void)
-//     public: bool ItemStack::sameItemAndAuxAndBlockData(class ItemStack const &)
-//     public: virtual void ItemStack::reinit(class gsl::basic_string_span<char const, -1>, int, int)
-//     public: virtual void ItemStack::reinit(class Item const &, int, int)
-//     public: virtual void ItemStack::reinit(class BlockLegacy const &, int)
-//     public: class ItemStack & ItemStack::operator=(class ItemStack const &)
-//     public: bool ItemStack::matchesNetIdVariant(class ItemStack const &)
-//     public: bool ItemStack::matchesAndNetIdVariantMatches(class ItemStack const &)
-//     public: class ItemStack ItemStack::getStrippedNetworkItem(void)
-//     public: static class ItemStack ItemStack::fromTag(class CompoundTag const &, class Level &)
-//     public: static class ItemStack ItemStack::fromTag(class CompoundTag const &)
-//     public: void ItemStack::clientInitRequestId(class TypedClientNetId<struct ItemStackRequestIdTag, int, 0> const &)
-//     public: void ItemStack::_assignNetIdVariant(class ItemStack const &)
-//     public: void ItemStack::__autoclassinit2(unsigned __int64)
-// }
 
 
-export class ItemStackBase extends NativeClass {
+export class ItemStack extends NativeClass {
     amount:uint8_t;
     protected _getItem():Item {
         abstract();
@@ -324,12 +295,36 @@ export class ItemStackBase extends NativeClass {
     // 'public: bool ItemStackBase::matchesEitherWearableCase(class CompoundTag const *)',
     // 'public: bool ItemStackBase::matches(class ItemStackBase const &)',
     // 'public: bool ItemStackBase::isOneOfInstances(class std::vector<class HashedString, class std::allocator<class HashedString>>, bool)',
+    //     public: ItemStack::ItemStack(void)
+    //     public: ItemStack::ItemStack(class gsl::basic_string_span<char const, -1>, int, int, class CompoundTag const *)
+    //     ItemStack::ItemStack(class ItemStack const &)
+    //     ItemStack::ItemStack(class BlockLegacy const &, int)
+    //     ItemStack::ItemStack(class Block const &, int, class CompoundTag const *)
+    //     public: virtual ItemStack::~ItemStack(void)
+    //     public: bool ItemStack::useOn(class Actor &, int, int, int, unsigned char, float, float, float)
+    //     public: void ItemStack::useAsFuel(void)
+    //     public: virtual class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>> ItemStack::toString(void)
+    //     public: virtual class std::basic_string<char, struct std::char_traits<char>, class std::allocator<char>> ItemStack::toDebugString(void)
+    //     public: virtual void ItemStack::setNull(void)
+    //     public: void ItemStack::serverInitNetId(void)
+    //     public: bool ItemStack::sameItemAndAuxAndBlockData(class ItemStack const &)
+    //     public: virtual void ItemStack::reinit(class gsl::basic_string_span<char const, -1>, int, int)
+    //     public: virtual void ItemStack::reinit(class Item const &, int, int)
+    //     public: virtual void ItemStack::reinit(class BlockLegacy const &, int)
+    //     public: class ItemStack & ItemStack::operator=(class ItemStack const &)
+    //     public: bool ItemStack::matchesNetIdVariant(class ItemStack const &)
+    //     public: bool ItemStack::matchesAndNetIdVariantMatches(class ItemStack const &)
+    //     public: class ItemStack ItemStack::getStrippedNetworkItem(void)
+    //     public: static class ItemStack ItemStack::fromTag(class CompoundTag const &, class Level &)
+    //     public: static class ItemStack ItemStack::fromTag(class CompoundTag const &)
+    //     public: void ItemStack::clientInitRequestId(class TypedClientNetId<struct ItemStackRequestIdTag, int, 0> const &)
+    //     public: void ItemStack::_assignNetIdVariant(class ItemStack const &)
+    //     public: void ItemStack::__autoclassinit2(unsigned __int64)
 }
 
-export const ItemStack = ItemStackBase;
 
 export class PlayerInventory extends NativeClass {
-    addItem(ItemStackBase:ItemStackBase, v:boolean):boolean {
+    addItem(ItemStackBase:ItemStack, v:boolean):boolean {
         abstract();
     }
     clearSlot(slot:number, containerId:ContainerId):void {
@@ -344,28 +339,28 @@ export class PlayerInventory extends NativeClass {
     getHotbarSize():number {
         abstract();
     }
-    getItem(slot:number, containerId:ContainerId):ItemStackBase {
+    getItem(slot:number, containerId:ContainerId):ItemStack {
         abstract();
     }
-    getSelectedItem():ItemStackBase {
+    getSelectedItem():ItemStack {
         abstract();
     }
     getSelectedSlot():number {
         return this.getInt8(0x10);
     }
-    getSlotWithItem(ItemStackBase:ItemStackBase, v2:boolean, v3:boolean):number {
+    getSlotWithItem(ItemStackBase:ItemStack, v2:boolean, v3:boolean):number {
         abstract();
     }
-    getSlots():CxxVector<ItemStackBase> {
+    getSlots():CxxVector<ItemStack> {
         abstract();
     }
     selectSlot(slot:number, containerId:ContainerId):void {
         abstract();
     }
-    setItem(slot:number, ItemStackBase:ItemStackBase, containerId:ContainerId, v:boolean):void {
+    setItem(slot:number, ItemStackBase:ItemStack, containerId:ContainerId, v:boolean):void {
         abstract();
     }
-    setSelectedItem(ItemStackBase:ItemStackBase):void {
+    setSelectedItem(ItemStackBase:ItemStack):void {
         abstract();
     }
     swapSlots(primarySlot:number, secondarySlot:number):void {
