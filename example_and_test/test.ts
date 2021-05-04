@@ -22,6 +22,7 @@ import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uin
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
+import { hex } from "bdsx/util";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -68,16 +69,23 @@ Tester.test({
     },
 
     disasm() {
-        const assert = (hex: string, code: string) => {
-            const asmcode = disasm.check(hex, true).toString().replace(/\n/g, ';');
-            this.equals(asmcode, code, ``);
+        const assert = (hexcode: string, asmcode: string, nonsamehex:boolean = false) => {
+            const opers = disasm.check(hexcode, true);
+            const disasem = opers.toString().replace(/\n/g, ';');
+            this.equals(disasem, asmcode, ``);
+            if (!nonsamehex) this.equals(hex(opers.asm().buffer()), hexcode.toUpperCase());
         };
+
         assert('f3 0f 11 89 a4 03 00 00', 'movss dword ptr [rcx+0x3a4], xmm1');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
-        assert('80 79 48 00 48 8B D9 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;mov rbx, rcx;je 0x18;add rcx, 0x38');
-        assert('0F 29 74 24 20 49 8B D8 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;mov rbx, r8;call -0x1f273');
+        assert('80 79 48 00 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;je 0x18;add rcx, 0x38');
+        assert('48 8B D9', 'mov rbx, rcx', true);
+        assert('0F 29 74 24 20 E8 8D 0D FE FF', 'movaps xmmword ptr [rsp+0x20], xmm6;call -0x1f273');
+        assert('49 8B D8', 'mov rbx, r8', true);
         assert('48 8d 40 01', 'lea rax, qword ptr [rax+0x1]');
-        assert('0F 10 02 48 8D 59 08 48 8D 54 24 20 48 8B CB', 'movups xmm0, xmmword ptr [rdx];lea rbx, qword ptr [rcx+0x8];lea rdx, qword ptr [rsp+0x20];mov rcx, rbx');
+        assert('0F 10 02 48 8D 59 08 48 8D 54 24 20', 'movups xmm0, xmmword ptr [rdx];lea rbx, qword ptr [rcx+0x8];lea rdx, qword ptr [rsp+0x20]');
+        assert('48 8B CB', 'mov rcx, rbx', true);
+        assert('0F 10 02', 'movups xmm0, xmmword ptr [rdx]');
     },
 
     bin() {
