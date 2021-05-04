@@ -19,7 +19,7 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
 
     // sendPacket
     setTimeout(()=>{
-        if (connectionList.has(networkIdentifier)) return;
+        if (!connectionList.has(networkIdentifier)) return;
         const textPacket = TextPacket.create();
         textPacket.message = '[message packet from bdsx]';
         textPacket.sendTo(networkIdentifier);

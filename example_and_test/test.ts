@@ -350,7 +350,7 @@ Tester.test({
         }
     },
 
-    nethook() {
+    packetEvents() {
         let idcheck = 0;
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
