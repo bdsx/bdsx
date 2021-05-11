@@ -268,7 +268,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                     }
                 }
                 VectorImpl.prototype.componentType = type as any;
-                VectorImpl.abstract({}, VECTOR_SIZE);
+                VectorImpl.abstract({}, VECTOR_SIZE, 8);
                 return VectorImpl as any;
             } else {
                 class VectorImpl extends CxxVector<T> {
@@ -304,7 +304,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                 }
                 Object.defineProperty(VectorImpl, 'name', {value:templateName('std::vector', type.name, templateName('std::allocator', type.name))});
                 VectorImpl.prototype.componentType = type as any;
-                VectorImpl.abstract({}, VECTOR_SIZE);
+                VectorImpl.abstract({}, VECTOR_SIZE, 8);
                 return VectorImpl as any;
             }
         });

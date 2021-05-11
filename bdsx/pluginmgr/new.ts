@@ -41,11 +41,11 @@ import { events } from "bdsx/event";
 
 console.log('[plugin:${clsname}] allocated');
 
-events.open.on(()=>{
+events.serverOpen.on(()=>{
     console.log('[plugin:${clsname}] launching');
 });
 
-events.close.on(()=>{
+events.serverClose.on(()=>{
     console.log('[plugin:${clsname}] closed');
 });
 

@@ -1,6 +1,7 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint64_as_float_t, uint8_t } from "bdsx/nativetype";
+import { bin } from "../bin";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
@@ -967,20 +968,78 @@ export class RemoveObjectivePacket extends Packet {
 @nativeClass(null)
 export class SetDisplayObjectivePacket extends Packet {
     @nativeField(CxxString)
-    displaySlot:CxxString;
+    displaySlot:'list'|'sidebar'|'belowname'|'';
     @nativeField(CxxString)
     objectiveName:CxxString;
     @nativeField(CxxString)
     displayName:CxxString;
     @nativeField(CxxString)
-    criteriaName:CxxString;
+    criteriaName:'dummy'|'';
+    @nativeField(uint8_t)
+    sortOrder:SetDisplayObjectivePacket.Sort;
+}
+export namespace SetDisplayObjectivePacket {
+    export enum Sort {
+        ASCENDING = 0,
+        DESCENDING = 1,
+    }
+}
+
+@nativeClass()
+export class ScoreboardId extends NativeClass {
+    @nativeField(bin64_t)
+    id:bin64_t;
+    @nativeField(int64_as_float_t, 0)
+    idAsNumber:int64_as_float_t;
+
+    /**
+     * unknown
+     */
+    @nativeField(bin64_t)
+    u:bin64_t;
+}
+
+@nativeClass()
+export class ScorePacketInfo extends NativeClass {
+    @nativeField(ScoreboardId)
+    scoreboardId:ScoreboardId;
+    @nativeField(CxxString)
+    objectiveName:CxxString;
+
     @nativeField(int32_t)
-    sortOrder:int32_t;
+    score:int32_t;
+    @nativeField(uint8_t)
+    type:ScorePacketInfo.Type;
+    @nativeField(bin64_t)
+    playerEntityUniqueId:bin64_t;
+    @nativeField(bin64_t)
+    entityUniqueId:bin64_t;
+    @nativeField(CxxString)
+    customName:CxxString;
+}
+
+export namespace ScorePacketInfo {
+    export enum Type {
+        PLAYER = 1,
+        ENTITY = 2,
+        FAKE_PLAYER = 3,
+    }
 }
 
 @nativeClass(null)
 export class SetScorePacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    type:uint8_t;
+
+    @nativeField(CxxVector.make(ScorePacketInfo))
+    entries:CxxVector<ScorePacketInfo>;
+}
+
+export namespace SetScorePacket {
+    export enum Type {
+        CHANGE = 0,
+        REMOVE = 1,
+    }
 }
 
 @nativeClass(null)

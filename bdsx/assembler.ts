@@ -976,11 +976,11 @@ export class X64Assembler {
         return this._movaps(src, dest, MovOper.Register, 1, 0);
     }
 
-    movaps_f_rp(dest:FloatRegister, src:FloatRegister, multiply:AsmMultiplyConstant, offset:number):this {
+    movaps_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
         return this._movaps(src, dest, MovOper.Read, multiply, offset);
     }
 
-    movaps_rp_f(dest:FloatRegister, src:FloatRegister, multiply:AsmMultiplyConstant, offset:number):this {
+    movaps_rp_f(dest:Register, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
         return this._movaps(dest, src, MovOper.Write, multiply, offset);
     }
 
@@ -1384,10 +1384,10 @@ export class X64Assembler {
     }
 
     movups_rp_f(dest:FloatRegister, multiply:AsmMultiplyConstant, offset:number, src:FloatRegister):this {
-        return this._movsf(dest, src, null, multiply, offset, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
+        return this._movsf(dest, src, null, multiply, offset, FloatOperSize.xmmword, MovOper.Write, FloatOper.None, OperationSize.dword);
     }
     movups_f_rp(dest:FloatRegister, src:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);
+        return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.None, OperationSize.dword);
     }
     movups_f_f(dest:FloatRegister, src:FloatRegister):this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.None, OperationSize.dword);

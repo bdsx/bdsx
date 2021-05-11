@@ -94,10 +94,11 @@ let needUpdate = false;
 const requiredDeps = packagejson.dependencies;
 
 for (const name in requiredDeps) {
+    const requiredVersion = requiredDeps[name];
+    if (requiredVersion.startsWith('file:./plugins/')) continue;
     try {
         const installed = require(`${name}/package.json`);
         const installedVersion = installed.version;
-        const requiredVersion = requiredDeps[name];
         if (!checkVersionSyntax(name, installedVersion, requiredVersion)) {
             console.error(colors.red(`${name}: version does not match (installed=${installedVersion}, required=${requiredVersion})`));
             needUpdate = true;
