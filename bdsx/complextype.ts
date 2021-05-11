@@ -1,4 +1,4 @@
-import { VoidPointer } from "./core";
+import { VoidPointer, VoidPointerConstructor } from "./core";
 import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { Type } from "./nativetype";
@@ -6,23 +6,40 @@ import { Type } from "./nativetype";
 
 export interface OverloadedFunction {
     (...args:any[]):any;
-    overload(fn:(...args:any[])=>any, ...type:Type<any>[]):this;
+    overload(fn:(...args:any[])=>any, opts?:{this?:Type<any>}|null, ...type:Type<any>[]):this;
+}
+
+class OverloadedEntry {
+    constructor(
+        public readonly thisType:Type<any>|null,
+        public readonly args:Type<any>[],
+        public readonly func:(...args:any[])=>any
+    ) {
+    }
+
+    check(thisv:unknown, args:unknown[]):boolean {
+        if (this.thisType !== null) {
+            if (!this.thisType.isTypeOf(thisv)) return false;
+        }
+        for (let i=0;i<args.length;i++) {
+            if (this.args[i].isTypeOf(args[i])) return false;
+        }
+        return true;
+    }
 }
 
 export namespace OverloadedFunction {
     export function make():OverloadedFunction {
-        const overloads:[Type<any>[], (...args:any[])=>any][] = [];
+        const overloads:OverloadedEntry[] = [];
         const tfunc = function(this:unknown, ...args:any[]):void {
-            for (const [types, fn] of overloads) {
-                for (let i=0;i<args.length;i++) {
-                    types[i].isTypeOf(args[i]);
-                }
-                return fn.apply(this, args);
+            for (const entry of overloads) {
+                if (!entry.check(this, args)) continue;
+                return entry.func.apply(this, args);
             }
             throw Error(`template function not found`);
         } as OverloadedFunction;
-        tfunc.overload = function(this:OverloadedFunction, fn:(...args:any[])=>any, ...args:Type<any>[]):OverloadedFunction {
-            overloads.push([args, fn]);
+        tfunc.overload = function(this:OverloadedFunction, fn:(...args:any[])=>any, opts:{this?:Type<any>} = {}, ...args:Type<any>[]):OverloadedFunction {
+            overloads.push(new OverloadedEntry(opts.this || null, args, fn));
             return this;
         };
         return tfunc;
@@ -30,12 +47,11 @@ export namespace OverloadedFunction {
 }
 
 export class NativeTemplateClass extends NativeClass {
-    static make<T extends NativeTemplateClass, ITEMS extends any[]>(this:{new():T}, ...items:ITEMS):NativeClassType<T> {
-        const base = this as NativeClassType<T>;
-        class SpecializedTemplateClass extends (this as {new():NativeClass}) {
+    static make<This extends {new():NativeTemplateClass}, Class extends NativeClass>(this:This, ...items:any[]):NativeClassType<Class>&This {
+        class SpecializedTemplateClass extends (this as {new():NativeTemplateClass}) {
         }
-        Object.defineProperty(SpecializedTemplateClass, 'name', {value: `${base.name}<${items.map(item=>item.name || item.toString()).join(',')}>`});
-        return base;
+        Object.defineProperty(SpecializedTemplateClass, 'name', {value: `${this.name}<${items.map(item=>item.name || item.toString()).join(',')}>`});
+        return SpecializedTemplateClass as any;
     }
 }
 
@@ -70,15 +86,14 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeCl
     }
 }
 
+export interface MemberPointerType<B, T> extends VoidPointerConstructor {
+}
 
-export class MemberPointer<B, T> {
+export class MemberPointer<B, T> extends VoidPointer {
     base:Type<B>;
     type:Type<T>;
 
-    constructor(public readonly offset:number) {
-    }
-
-    static make<B, T>(base:Type<B>, type:Type<T>):{new(offset:number):MemberPointer<B, T>} {
+    static make<B, T>(base:Type<B>, type:Type<T>):MemberPointerType<B, T> {
         class MemberPointerImpl extends MemberPointer<B, T> {
         }
         MemberPointerImpl.prototype.base = base;

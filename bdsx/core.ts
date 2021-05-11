@@ -8,6 +8,15 @@ export interface VoidPointerConstructor
      */
     new(pointer: VoidPointer|null|undefined):VoidPointer;
     new():VoidPointer;
+
+    /**
+     * @deprecated not implemented yet
+     */
+    fromAddress<T extends VoidPointer>(this:{new():T}, addressLow:number, addressHigh?:number):T;
+    /**
+     * @deprecated not implemented yet
+     */
+    fromAddressBin<T extends VoidPointer>(this:{new():T}, addressBin:string):T;
 }
 
 export declare const VoidPointer:VoidPointerConstructor;
@@ -17,8 +26,7 @@ export declare const VoidPointer:VoidPointerConstructor;
  */
 export interface VoidPointer {
     equals(ptr: VoidPointer): boolean;
-    /** @deprecated use ptr.as(NativePointer) or ptr.add() */
-    clone():NativePointer;
+
     /**
      * make cloned pointer with offset
      */
