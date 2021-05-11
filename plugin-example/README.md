@@ -11,7 +11,9 @@
 Ctrl+Shift+B -> tsc: watch
 
 * With the command line
-npm run watch
+```sh
+> npm run watch
+```
 
 ### Publish the plugin
 1. Create an npm account if you don't have one yet. [NPM Sign Up](https://www.npmjs.com/signup)
