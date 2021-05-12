@@ -15,7 +15,7 @@ export namespace Tag {
 
 @nativeClass(0x10)
 export class CompoundTag extends Tag {
-    putInt(name: string, val:number) {
+    putInt(name: string, val:number): number {
         abstract();
     }
     getInt(name: string): number {
@@ -96,35 +96,35 @@ export class CompoundTag extends Tag {
         abstract();
     }
     // ?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z
-    put(name: string, value: Tag) {
+    put(name: string, value: Tag): Tag {
         abstract();
     }
     //?putBoolean@CompoundTag@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z
-    putBoolean(name: string, value: boolean) {
+    putBoolean(name: string, value: boolean): void {
         abstract();
     }
-    putByte(name: string, value: number) {
+    putByte(name: string, value: number): number {
         abstract();
     }
-    putByteArray(name: string, value: VoidPointer) {
+    putByteArray(name: string, value: VoidPointer): VoidPointer {
         abstract();
     }
-    putCompound(name: string, value: CompoundTag) {
+    putCompound(name: string, value: CompoundTag): CompoundTag {
         abstract();
     }
-    putFloat(name: string, value: number) {
+    putFloat(name: string, value: number): number {
         abstract();
     }
-    putInt64(name: string, value: number) {
+    putInt64(name: string, value: number): number {
         abstract();
     }
-    putShort(name: string, value: number) {
+    putShort(name: string, value: number): number {
         abstract();
     }
-    putString(name: string, value: string) {
+    putString(name: string, value: string): string {
         abstract();
     }
-    remove(name: string) {
+    remove(name: string): boolean {
         abstract();
     }
 }
