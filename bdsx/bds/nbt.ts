@@ -38,13 +38,9 @@ export class CompoundTag extends Tag {
         tag.construct();
         return tag;
     }
-    // not done
-    // ?clone@CompoundTag@@QEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ
     clone(): CompoundTag {
         abstract();
     }
-    // ?contains@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@W4Type@Tag@@@Z
-    // ?contains@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z
     contains(name: string, type?: Tag.Type): boolean {
         if(!type) return this._containsAll(name);
         return this._containsType(name, type);
@@ -55,51 +51,39 @@ export class CompoundTag extends Tag {
     _containsType(name: string, type: Tag.Type): boolean {
         abstract();
     }
-    // ?copy@CompoundTag@@UEBA?AV?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@std@@XZ
     copy(): CompoundTag {
         abstract();
     }
-    // ?deepCopy@CompoundTag@@QEAAXAEBV1@@Z
-    deepCopy(other: CompoundTag) {
+    deepCopy(other: CompoundTag): void {
         abstract();
     }
-    // ?equals@CompoundTag@@UEBA_NAEBVTag@@@Z
     equals(other: Tag): boolean {
         abstract();
     }
-    // ?getBoolean@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z
     getBooleanValue(name: string): boolean {
         abstract();
     }
-    // ?getByteArray@CompoundTag@@QEBAAEBUTagMemoryChunk@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z
     getByteArray(name: string): VoidPointer {
         abstract();
     }
-    // ?getCompound@CompoundTag@@QEAAPEAV1@V?$basic_string_span@$$CBD$0?0@gsl@@@Z
     getCompound(name: string): CompoundTag {
         abstract();
     }
-    // ?getFloat@CompoundTag@@QEBAMV?$basic_string_span@$$CBD$0?0@gsl@@@Z
     getFloat(name: string): number {
         abstract();
     }
-    // ?getInt64@CompoundTag@@QEBA_JV?$basic_string_span@$$CBD$0?0@gsl@@@Z
     getInt64(name: string): number {
         abstract();
     }
-    // ?getList@CompoundTag@@QEAAPEAVListTag@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z
     getList(name: string): ListTag {
         abstract();
     }
-    // ?isEmpty@CompoundTag@@QEBA_NXZ
     isEmpty(): boolean {
         abstract();
     }
-    // ?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z
     put(name: string, value: Tag): Tag {
         abstract();
     }
-    //?putBoolean@CompoundTag@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z
     putBoolean(name: string, value: boolean): void {
         abstract();
     }
