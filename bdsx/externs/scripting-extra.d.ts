@@ -212,6 +212,7 @@ declare global
         data: {
             statusMessage: string;
             statusCode: number;
+            [key:string]:any;
         }
     }
     interface IExecuteCommandListCallback {
