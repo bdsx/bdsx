@@ -2,7 +2,7 @@
 import { OperationSize, Register } from './assembler';
 import { proc, proc2 } from './bds/symbols';
 import { abstract, emptyFunc } from './common';
-import { chakraUtil, StaticPointer, VoidPointer } from './core';
+import { AllocatedPointer, chakraUtil, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
 import { makefuncDefines } from './makefunc_defines';
 import { Singleton } from './singleton';
@@ -625,7 +625,44 @@ export const CxxString = new NativeType<string>(
 CxxString[makefunc.pointerReturn] = true;
 Object.freeze(CxxString);
 export type CxxString = string;
+export const basic_string_span = new NativeType<string>(
+    'basic_string_span<char_const_,-1>',
+    0x10, 8,
+    v=>typeof v === 'string',
+    (ptr, offset)=>{
+        const newptr = ptr.add(offset);
+        const length = newptr.getInt64AsFloat();
+        return newptr.getPointer(8).getString(length);
+    },
+    (ptr, v, offset)=>{
+        const newptr = ptr.add(offset);
+        newptr.setInt64WithFloat(v.length);
+        const strObj = new AllocatedPointer(v.length);
+        strObj.setString(v);
+        newptr.setPointer(strObj, 8);
+    },
+    (asm, target, source, info)=>{
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.r9, Register.rbp, 1, info.offsetForLocalSpace!+0x10);
+        asm.mov_r_c(Register.r8, chakraUtil.stack_utf8);
+        asm.mov_r_c(Register.rdx, info.numberOnUsing);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
 
+        asm.mov_r_rp(Register.rcx, Register.rbp, 1, info.offsetForLocalSpace!+0x10);
+        asm.mov_rp_r(Register.rbp, 1, info.offsetForLocalSpace!+0x08, Register.rax);
+        asm.mov_rp_r(Register.rbp, 1, info.offsetForLocalSpace!, Register.rcx);
+        asm.lea_t_rp(target, Register.rbp, 1, info.offsetForLocalSpace!);
+    },
+    (asm, target, source, info)=>{
+        throw new Error("np2js for gsl::basic_string_span is not supported");
+        // TODO: implement np2js
+        // currently no functions are in use that return basic_string_span so it is unnecessary
+    },
+    (asm, target, source)=>asm.qmov_t_t(target, source)
+);
+basic_string_span[makefunc.pointerReturn] = true;
+Object.freeze(basic_string_span);
+export type basic_string_span = string;
 export const bin64_t = new NativeType<string>(
     'unsigned __int64',
     8, 8,
