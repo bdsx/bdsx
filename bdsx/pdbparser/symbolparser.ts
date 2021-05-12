@@ -46,6 +46,37 @@ const SPECIAL_NAMES:[string, boolean][] = [
     ["RTTI Type Descriptor'", false],
 ];
 
+const FIELD_FOR_CLASS = new Set<string>([
+    "`vector deleting destructor'",
+    "`scalar deleting destructor'",
+]);
+
+// "operator=",
+// "operator+",
+// "operator-",
+// "operator*",
+// "operator/",
+// "operator%",
+
+// "operator()",
+// "operator[]",
+
+// "operator==",
+// "operator!=",
+// "operator>=",
+// "operator<=",
+// "operator>",
+// "operator<",
+
+// "operator+=",
+// "operator-=",
+// "operator*=",
+// "operator/=",
+// "operator%=",
+
+// "operator>>",
+// "operator<<",
+
 export class PdbIdentifier {
     public modifier:string|null = null;
     public isVirtualFunction = false;
@@ -66,6 +97,7 @@ export class PdbIdentifier {
     public isDecoedType = false;
     public isBasicType = false;
     public isRedirectType = false;
+    public isConstructor = false;
     public deco = '';
     public decoedFrom:PdbIdentifier|null = null;
     public memberPointerBase:PdbIdentifier|null = null;
@@ -75,6 +107,7 @@ export class PdbIdentifier {
     public isDestructor = false;
     public isStatic = false;
     public isThunk = false;
+    public isVFTable = false;
     public parent:PdbIdentifier|null = null;
     public templateBase:PdbIdentifier|null = null;
     public functionBase:PdbIdentifier|null = null;
@@ -87,11 +120,24 @@ export class PdbIdentifier {
     public redirectTo:PdbIdentifier|null = null;
     public redirectedFrom:PdbIdentifier|null = null;
     public source = '';
+    public constFunction:PdbIdentifier|null = null;
+    public ref = 0;
 
     private argumentsSet = false;
 
     constructor (
         public name:string) {
+    }
+
+    addRef():void {
+        this.ref++;
+    }
+
+    release():void {
+        this.ref--;
+        if (this.ref === 0) {
+            this.parent!.children.delete(this.name);
+        }
     }
 
     getTemplateTypes():PdbIdentifier[] {
@@ -137,18 +183,18 @@ export class PdbIdentifier {
         return false;
     }
 
-    *allOverloads(isStatic:boolean):IterableIterator<PdbIdentifier> {
+    *allOverloads():IterableIterator<PdbIdentifier> {
         if (this.isTemplate) {
             for (const s of this.specialized) {
                 for (const o of s.overloads) {
-                    if (o.isStatic !== isStatic) continue;
                     if (o.hasArrayParam()) continue;
+                    if (o.address === 0) continue;
                     yield o;
                 }
             }
         } else if (this.isFunctionBase) {
             for (const o of this.overloads) {
-                if (o.isStatic !== isStatic) continue;
+                if (o.address === 0) continue;
                 yield o;
             }
         }
@@ -222,7 +268,7 @@ export class PdbIdentifier {
         else name = this.parent.toString() + '::' + this.name.toString();
         if (this.returnType !== null) {
             if (!this.isType) {
-                return this.returnType.toString() + '  '+ name;
+                return this.returnType.toString() + ' ' + name;
             }
         }
         return name;
@@ -421,7 +467,9 @@ function parseDeco(
             if (keyword === 'const') {
                 const decoed = base.decorate(keyword, sourceFrom);
                 if (base.isFunction) {
+                    base.constFunction = decoed;
                     setAsFunction(decoed, base.functionBase!, base.arguments.slice(), base.returnType!, base.isType);
+                    decoed.isType = false;
                 }
                 base = decoed;
             } else if (keyword === '__cdecl' || keyword === '__stdcall') {
@@ -560,6 +608,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 } else if (oper === '`') {
                     _idfind:{
                         if (parser.nextIf("vftable'") || parser.nextIf("vbtable'")) {
+                            scope.setAsClass();
                             if (parser.nextIf('{for `')) {
                                 const arg = parseSymbol("'");
                                 must('}');
@@ -568,6 +617,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                             } else {
                                 id = scope.get(parser.getFrom(from));
                             }
+                            id.isVFTable = true;
                         } else if (parser.nextIf("vcall'")) {
                             const arg = parser.readTo("'");
                             parser.readTo("'");
@@ -674,14 +724,21 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
             break;
         }
 
+        if(FIELD_FOR_CLASS.has(idname)) {
+            if (id.parent === PdbIdentifier.std) debugger;
+            id.parent!.setAsClass();
+        }
+
+        id.addRef();
         if (parser.nextIf('`')) {
+            id.release();
             const adjustor = parser.readTo("'");
             let matched:RegExpMatchArray|null;
             if ((matched = adjustor.match(/^adjustor{([0-9]+)}$/))) {
-                id = id.get(adjustor);
+                id = scope.get(id.name+adjustor);
                 id.arguments.push(PdbIdentifier.global.constVal(matched[1]));
             } else if ((matched = adjustor.match(/^vtordisp{([0-9]+),([0-9]+)}$/))) {
-                id = id.get(adjustor);
+                id = scope.get(id.name+adjustor);
                 const v1 = PdbIdentifier.global.constVal(matched[1]);
                 const v2 = PdbIdentifier.global.constVal(matched[2]);
                 id.arguments.push(v1, v2);
@@ -707,6 +764,11 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                     }
                     break;
                 }
+            }
+            const base = id.parent!.templateBase;
+            if (base !== null && base.name === id.name) {
+                // template constructor base
+                id.parent!.children.delete(id.name);
             }
             const template = id;
             id = id.parent!.get(templateName(template.name, ...args.map(id=>id.toString())));
@@ -804,5 +866,4 @@ PdbIdentifier.global.get('void*').isBasicType = true;
 // parser.context = "class Block const * __ptr64 const __ptr64 VanillaBlocks::mElement104";
 // parseSymbol('');
 
-// if (Math.random() < 2) process.exit(0);
-parse(0, 1000);
+parse(0, 10000);

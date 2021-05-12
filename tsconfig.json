@@ -1,7 +1,8 @@
 {
   "exclude": [
     "node_modules",
-    "bedrock_server"
+    "bedrock_server",
+    "bdsx/pdbparser/globals"
   ],
   "compilerOptions": {
     "target": "es2017",
