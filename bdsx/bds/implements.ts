@@ -6,12 +6,12 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
-import { basic_string_span, bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint64_as_float_t, uint8_t, void_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { Actor, ActorRuntimeID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
+import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
@@ -19,7 +19,7 @@ import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, Item, ItemStack, PlayerInventory } from "./inventory";
 import { Level, ServerLevel } from "./level";
-import { CompoundTag, ListTag, Tag } from "./nbt";
+import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AttributeData, UpdateAttributesPacket } from "./packets";
@@ -367,42 +367,3 @@ Block.abstract({
 });
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
-BlockSource.prototype.getBlockEntity = procHacker.js("?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z", BlockActor, {this:BlockSource}, BlockPos);
-
-CompoundTag.prototype[NativeType.ctor] = procHacker.js("??0CompoundTag@@QEAA@XZ", void_t, {this:CompoundTag});
-// Broken, crashes when used
-// CompoundTag.prototype[NativeType.dtor] = procHacker.js("??1CompoundTag@@UEAA@XZ", void_t, {this:CompoundTag});
-CompoundTag.prototype.get = procHacker.js("?get@CompoundTag@@QEAAPEAVTag@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z", CompoundTag, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getInt = procHacker.js("?getInt@CompoundTag@@QEBAHV?$basic_string_span@$$CBD$0?0@gsl@@@Z", int32_t, {this:CompoundTag}, basic_string_span);
-// CompoundTag::getString is defined in PrivatePointer so use getStringValue instead
-CompoundTag.prototype.getStringValue = procHacker.js("?getString@CompoundTag@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z", CxxString, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getShort = procHacker.js("?getShort@CompoundTag@@QEBAFV?$basic_string_span@$$CBD$0?0@gsl@@@Z", int16_t, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getByte = procHacker.js("?getByte@CompoundTag@@QEBAEV?$basic_string_span@$$CBD$0?0@gsl@@@Z", int8_t, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.putInt = procHacker.js("?putInt@CompoundTag@@QEAAAEAHV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@H@Z", int32_t, {this:CompoundTag}, CxxString, int32_t);
-CompoundTag.prototype.clone = procHacker.js("?clone@CompoundTag@@QEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ", CompoundTag, {this:CompoundTag});
-CompoundTag.prototype._containsAll = procHacker.js("?contains@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z", bool_t, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype._containsType = procHacker.js("?contains@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@W4Type@Tag@@@Z", bool_t, {this:CompoundTag}, basic_string_span, int32_t);
-CompoundTag.prototype.copy = procHacker.js("?copy@CompoundTag@@UEBA?AV?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@std@@XZ", CompoundTag, {this:CompoundTag});
-CompoundTag.prototype.deepCopy = procHacker.js("?deepCopy@CompoundTag@@QEAAXAEBV1@@Z", CompoundTag, {this:CompoundTag}, CompoundTag);
-CompoundTag.prototype.equals = procHacker.js("?equals@CompoundTag@@UEBA_NAEBVTag@@@Z", bool_t, {this:CompoundTag}, Tag);
-// CompoundTag::getBoolean is defined in PrivatePointer so use getBooleanValue instead
-CompoundTag.prototype.getBooleanValue = procHacker.js("?getBoolean@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z", bool_t, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getByteArray = procHacker.js("?getByteArray@CompoundTag@@QEBAAEBUTagMemoryChunk@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z", VoidPointer /* TagMemoryChunk */, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getCompound = procHacker.js("?getCompound@CompoundTag@@QEAAPEAV1@V?$basic_string_span@$$CBD$0?0@gsl@@@Z", CompoundTag, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getFloat = procHacker.js("?getFloat@CompoundTag@@QEBAMV?$basic_string_span@$$CBD$0?0@gsl@@@Z", float32_t, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getInt64 = procHacker.js("?getInt64@CompoundTag@@QEBA_JV?$basic_string_span@$$CBD$0?0@gsl@@@Z", int64_as_float_t, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.getList = procHacker.js("?getList@CompoundTag@@QEAAPEAVListTag@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z", ListTag, {this:CompoundTag}, basic_string_span);
-CompoundTag.prototype.isEmpty = procHacker.js("?isEmpty@CompoundTag@@QEBA_NXZ", bool_t, {this:CompoundTag});
-CompoundTag.prototype.put = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
-CompoundTag.prototype.putBoolean = procHacker.js("?putBoolean@CompoundTag@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z", void_t, {this:CompoundTag}, CxxString, bool_t);
-CompoundTag.prototype.putByte = procHacker.js("?putByte@CompoundTag@@QEAAAEAEV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@E@Z", uint8_t, {this:CompoundTag}, CxxString, uint8_t);
-CompoundTag.prototype.putByteArray = procHacker.js("?putByteArray@CompoundTag@@QEAAAEAUTagMemoryChunk@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@U2@@Z", VoidPointer /* TagMemoryChunk */, {this:CompoundTag}, CxxString, VoidPointer /* TagMemoryChunk */);
-CompoundTag.prototype.putCompound = procHacker.js("?putCompound@CompoundTag@@QEAAAEAV1@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V1@@Z", CompoundTag, {this:CompoundTag}, CxxString, CompoundTag);
-CompoundTag.prototype.putFloat = procHacker.js("?putFloat@CompoundTag@@QEAAAEAMV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@M@Z", float32_t, {this:CompoundTag}, CxxString, float32_t);
-CompoundTag.prototype.putInt64 = procHacker.js("?putInt64@CompoundTag@@QEAAAEA_JV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_J@Z", int64_as_float_t, {this:CompoundTag}, CxxString, int64_as_float_t);
-CompoundTag.prototype.putShort = procHacker.js("?putShort@CompoundTag@@QEAAAEAFV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@F@Z", int16_t, {this:CompoundTag}, CxxString, int16_t);
-CompoundTag.prototype.putString = procHacker.js("?putString@CompoundTag@@QEAAAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V23@0@Z", CxxString, {this:CompoundTag}, CxxString, CxxString);
-CompoundTag.prototype.remove = procHacker.js("?remove@CompoundTag@@QEAA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z", bool_t, {this:CompoundTag}, basic_string_span);
-
-ListTag.prototype.getCompound = procHacker.js("?getCompound@ListTag@@QEBAPEBVCompoundTag@@_K@Z", CompoundTag, {this:ListTag}, uint64_as_float_t);
-ListTag.prototype.size = procHacker.js("?size@ListTag@@QEBAHXZ", int32_t, {this:ListTag});

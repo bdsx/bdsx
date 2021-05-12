@@ -27,4 +27,3 @@ import './lowlevel-apihooking';
 import './lowlevel-nativeclass';
 import './lowlevel-string-and-vector';
 import './lowlevel-asm';
-import './nbt';
