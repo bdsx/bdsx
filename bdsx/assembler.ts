@@ -1075,7 +1075,12 @@ export class X64Assembler {
     /**
      * push register
      */
-    push_r(register:Register):this {
+    push_r(register:Register, size:OperationSize = OperationSize.qword):this {
+        if (size === OperationSize.word) {
+            this.put(0x66);
+        } else {
+            if (size !== OperationSize.qword) throw Error(`Operand size mismatch for push: ${OperationSize[size]}`);
+        }
         if (register >= Register.r8) this.put(0x41);
         this.put(0x50 | (register & 7));
         return this;
@@ -1100,7 +1105,12 @@ export class X64Assembler {
         this._target(0x30, r, null, null, r, multiply, offset, MovOper.Write);
         return this;
     }
-    pop_r(r:Register):this {
+    pop_r(r:Register, size:OperationSize = OperationSize.qword):this {
+        if (size === OperationSize.word) {
+            this.put(0x66);
+        } else {
+            if (size !== OperationSize.qword) throw Error(`Operand size mismatch for push: ${OperationSize[size]}`);
+        }
         if (r >= Register.r8) this.put(0x41);
         this.put(0x58 | (r&7));
         return this;
@@ -2578,6 +2588,11 @@ const regmap = new Map<string, [ArgName, Register, OperationSize]>([
     ['r15b', [ArgName.Register, Register.r15, OperationSize.byte]],
 ]);
 
+const regnamemap:string[] = [];
+for (const [name, [type, reg, size]] of regmap) {
+    regnamemap[reg | (size << 4)] = name;
+}
+
 function checkModified(ori:string, out:string):boolean{
     const ostat = fs.statSync(ori);
 
@@ -2716,14 +2731,34 @@ export namespace asm
             const name = code.name;
             const splited = name.split('_');
             const cmd = splited.shift()!;
+
             let i=0;
-            const ptridx:number[] = [];
+            for (const item of splited) {
+                switch (item) {
+                case 'r':
+                case 'f':
+                case 'c':
+                    i ++;
+                    break;
+                case 'rp': {
+                    i += 3;
+                    break;
+                }
+                }
+            }
+
+            let sizei = i;
+            const size:OperationSize|null|undefined = defaultOperationSize.get(code) ?? args[sizei];
+            i = 0;
+
             const argstr:string[] = [];
             for (const item of splited) {
+
+                const nsize:OperationSize|null|undefined = args[sizei++] ?? size;
                 const v = args[i++];
                 switch (item) {
                 case 'r':
-                    argstr.push(Register[v]);
+                    argstr.push(getRegisterName(v, nsize));
                     break;
                 case 'f':
                     argstr.push(FloatRegister[v]);
@@ -2732,19 +2767,15 @@ export namespace asm
                     argstr.push(shex(v));
                     break;
                 case 'rp': {
-                    ptridx.push(argstr.length);
                     const multiply = args[i++];
                     const offset = args[i++];
-                    argstr.push(`[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${offset !== 0 ? shex_o(offset) : ''}]`);
+                    let str = `[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${offset !== 0 ? shex_o(offset) : ''}]`;
+                    if (nsize != null) {
+                        str = `${OperationSize[nsize]} ptr ${str}`;
+                    }
+                    argstr.push(str);
                     break;
                 }
-                }
-            }
-            const size = defaultOperationSize.get(code) ?? args[i];
-            if (size != null) {
-                const sizestr = OperationSize[size];
-                for (const j of ptridx) {
-                    argstr[j] = `${sizestr} ptr ${argstr[j]}`;
                 }
             }
             if (argstr.length === 0) return cmd;
@@ -2798,6 +2829,11 @@ export namespace asm
             buffer = fs.readFileSync(binpath);
         }
         return asm.load(buffer);
+    }
+
+    export function getRegisterName(register:Register, size:OperationSize|null|undefined):string {
+        if (size == null) size = OperationSize.qword;
+        return regnamemap[register | (size << 4)] || `invalid_R${register}_S${size}`;
     }
 }
 

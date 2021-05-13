@@ -122,7 +122,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
     for (;;) {
         const v = ptr.readUint8();
         if (rexSetted && (v & 0xf8) === 0xb8) { // movabs
-            return new asm.Operation(asm.code.mov_r_c, [((rex&1) << 3) | (v&7), readConst(size, ptr)]);
+            return new asm.Operation(asm.code.movabs_r_c, [((rex&1) << 3) | (v&7), readConst(size, ptr)]);
         } else if ((v & 0xfe) === 0xf2) { // rep
             if (ptr.getUint8() === 0x0f) { // double or float operation
                 foperSize = ((v & 1) !== 0) ? OperationSize.dword : OperationSize.qword;
@@ -133,6 +133,13 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 } else {
                     return new asm.Operation(asm.code.repnz, []);
                 }
+            }
+        } else if (v === 0x63) {
+            const info = walk_offset(rex, ptr);
+            if (info === null) {
+                // bad
+            } else {
+                return walk_addr_oper('movsxd', 1, 0, info, size, ptr, false);
             }
         } else if (v === 0x65) {
             return new asm.Operation(asm.code.gs, []);
@@ -191,55 +198,9 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                     // bad
                 }
             }
-        } else if ((v & 0xfe) === 0xe8) { // jmp or call dword
-            const value = ptr.readInt32();
-            if (v & 1) { // jmp
-                return new asm.Operation(asm.code.jmp_c, [value]);
-            } else { // call
-                return new asm.Operation(asm.code.call_c, [value]);
-            }
-        } else if ((v & 0xf0) === 0x50){ // push or pop
-            const reg = (v & 0x7)|((rex & 0x1) << 3);
-            if (v & 0x08) return new asm.Operation(asm.code.pop_r, [reg]);
-            else return new asm.Operation(asm.code.push_r, [reg]);
-        } else if ((v & 0xfc) === 0x84) { // test or xchg
-            const info = walk_offset(rex, ptr);
-            if (info === null) break; // bad
-            if ((v & 0x2) !== 0) { // xchg
-                if (info.offset === null) {
-                    return new asm.Operation(asm.code.xchg_r_r, [info.r1, info. r2, size]);
-                } else {
-                    const offset = readConstNumber(info.offset, ptr);
-                    return new asm.Operation(asm.code.xchg_r_rp, [info.r1, info. r2, 1, offset, size]);
-                }
-            } else { // test
-                if (info.offset === null) {
-                    return new asm.Operation(asm.code.test_r_r, [info.r1, info. r2, size]);
-                } else {
-                    return new asm.Operation(asm.code.test_r_rp, [info.r1, info. r2, 1, info.offset, size]);
-                }
-            }
-        } else if ((v & 0xfc) === 0x80) { // const operation
-            const lowflag = v&3;
-            if (lowflag === 2) break; // bad
-            if (lowflag === 0) size = OperationSize.byte;
-            let constsize = size === OperationSize.qword ? OperationSize.dword : size;
-            if (lowflag === 3) constsize = OperationSize.byte;
-
-            const info = walk_offset(rex, ptr);
-            if (info === null) break; // bad
-
-            if (info.offset === null) {
-                const chr = readConstNumber(constsize, ptr);
-                return walk_oper_r_c(info.r2 & 7, info.r1, chr, size);
-            } else {
-                const offset = readConstNumber(info.offset, ptr);
-                const chr = readConstNumber(constsize, ptr);
-                return walk_oper_rp_c(info.r2 & 7, info.r1, 1, offset, chr, size);
-            }
         } else if ((v & 0xc0) === 0x00){ // operation
             if ((v&6) === 6) {
-                if (v === 0x0f) {
+                if (v === 0x0f) { // 0x0f
                     const v2 = ptr.readUint8();
                     if ((v2 & 0xf0) === 0x80) {
                         const jumpoper = v2 & 0xf;
@@ -257,6 +218,16 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                             } else { // packed
                                 return walk_addr_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
                             }
+                        } else if ((v2 & 0xfe) === 0xbe) { // movsx
+                            const wordbit = (v2&1);
+                            const oper = walk_addr_oper('movsx', 1, 1, info, size, ptr, false);
+                            oper.args.push(wordbit !== 0 ? OperationSize.word : OperationSize.byte);
+                            return oper;
+                        } else if ((v2 & 0xfe) === 0xb6) { // movzx
+                            const wordbit = (v2&1);
+                            const oper = walk_addr_oper('movzx', 1, 1, info, size, ptr, false);
+                            oper.args.push(wordbit !== 0 ? OperationSize.word : OperationSize.byte);
+                            return oper;
                         } else if ((v2 & 0xfe) === 0x10) { // read
                             const readbit = (v2&1)^1;
                             if (foperSize === OperationSize.qword) {
@@ -314,8 +285,6 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                                     return walk_addr_oper('cvtpi2ps', 1, 1, info, OperationSize.mmword, ptr, true);
                                 }
                             }
-                        } else {
-                            // bad
                         }
                     }
                 }
@@ -331,6 +300,53 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 if (info === null) break; // bad
 
                 return walk_addr_oper(Operator[oper], v & 1, v & 2, info, size, ptr, false);
+            }
+        } else if ((v & 0xfe) === 0xe8) { // jmp or call dword
+            const value = ptr.readInt32();
+            if (v & 1) { // jmp
+                return new asm.Operation(asm.code.jmp_c, [value]);
+            } else { // call
+                return new asm.Operation(asm.code.call_c, [value]);
+            }
+        } else if ((v & 0xf0) === 0x50){ // push or pop
+            const reg = (v & 0x7)|((rex & 0x1) << 3);
+            if (size === OperationSize.dword) size = OperationSize.qword;
+            if (v & 0x08) return new asm.Operation(asm.code.pop_r, [reg, size]);
+            else return new asm.Operation(asm.code.push_r, [reg, size]);
+        } else if ((v & 0xfc) === 0x84) { // test or xchg
+            const info = walk_offset(rex, ptr);
+            if (info === null) break; // bad
+            if ((v & 0x2) !== 0) { // xchg
+                if (info.offset === null) {
+                    return new asm.Operation(asm.code.xchg_r_r, [info.r1, info. r2, size]);
+                } else {
+                    const offset = readConstNumber(info.offset, ptr);
+                    return new asm.Operation(asm.code.xchg_r_rp, [info.r1, info. r2, 1, offset, size]);
+                }
+            } else { // test
+                if (info.offset === null) {
+                    return new asm.Operation(asm.code.test_r_r, [info.r1, info. r2, size]);
+                } else {
+                    return new asm.Operation(asm.code.test_r_rp, [info.r1, info. r2, 1, info.offset, size]);
+                }
+            }
+        } else if ((v & 0xfc) === 0x80) { // const operation
+            const lowflag = v&3;
+            if (lowflag === 2) break; // bad
+            if (lowflag === 0) size = OperationSize.byte;
+            let constsize = size === OperationSize.qword ? OperationSize.dword : size;
+            if (lowflag === 3) constsize = OperationSize.byte;
+
+            const info = walk_offset(rex, ptr);
+            if (info === null) break; // bad
+
+            if (info.offset === null) {
+                const chr = readConstNumber(constsize, ptr);
+                return walk_oper_r_c(info.r2 & 7, info.r1, chr, size);
+            } else {
+                const offset = readConstNumber(info.offset, ptr);
+                const chr = readConstNumber(constsize, ptr);
+                return walk_oper_rp_c(info.r2 & 7, info.r1, 1, offset, chr, size);
             }
         } else if ((v & 0xfe) === 0xc6){ // mov rp c
             const info = walk_offset(rex, ptr);

@@ -86,6 +86,13 @@ Tester.test({
         assert('0F 10 02 48 8D 59 08 48 8D 54 24 20', 'movups xmm0, xmmword ptr [rdx];lea rbx, qword ptr [rcx+0x8];lea rdx, qword ptr [rsp+0x20]');
         assert('48 8B CB', 'mov rcx, rbx', true);
         assert('0F 10 02', 'movups xmm0, xmmword ptr [rdx]');
+        assert('48 0f b6 c1', 'movzx rax, cl');
+        assert('0f b6 c1', 'movzx eax, cl');
+        assert('0f b7 c0', 'movzx eax, ax');
+        assert('0f b6 c0', 'movzx eax, al');
+        assert('0f bf c0', 'movsx eax, ax');
+        assert('0f be 00', 'movsx eax, byte ptr [rax]');
+        assert('44 0F B6 C1 49 BA B3 01 00 00 00 01 00 00', 'movzx r8d, cl;movabs r10, 0x100000001b3');
     },
 
     bin() {
