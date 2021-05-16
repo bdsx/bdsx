@@ -9,7 +9,18 @@ export class Tag extends NativeClass {}
 
 export namespace Tag {
     export enum Type {
-        CompoundTag = 10
+        EndTag,
+        ByteTag,
+        ShortTag,
+        IntTag,
+        Int64Tag,
+        FloatTag,
+        DoubleTag,
+        ByteArrayTag,
+        StringTag,
+        ListTag,
+        CompoundTag,
+        IntArrayTag
     }
 }
 
@@ -113,12 +124,42 @@ export class CompoundTag extends Tag {
     }
 }
 
-@nativeClass(null)
+@nativeClass(0x10)
 export class ListTag extends Tag {
-    getCompound(index: int32_t): CompoundTag | null {
+    size(): number {
         abstract();
     }
-    size(): number {
+    append(tag: Tag): void {
+        abstract();
+    }
+    copy(): Tag {
+        abstract();
+    }
+    copyList(): ListTag {
+        abstract();
+    }
+    deleteChildren(): void {
+        abstract();
+    }
+    equals(other: Tag): boolean {
+        abstract();
+    }
+    get(index: number): Tag {
+        abstract();
+    }
+    getCompound(index: number): CompoundTag {
+        abstract();
+    }
+    getDouble(index: number): number {
+        abstract();
+    }
+    getFloat(index: number): number {
+        abstract();
+    }
+    getInt(index: number): number {
+        abstract();
+    }
+    getStringValue(index: number): string {
         abstract();
     }
 }
