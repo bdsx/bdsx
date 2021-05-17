@@ -41,6 +41,7 @@ const symbols = [
     'Actor::getRegionConst',
     'Actor::getUniqueID',
     'Actor::hasTag',
+    'Actor::removeTag',
     'Actor::setNameTag',
     'Actor::hurt',
     'Actor::getArmor',
