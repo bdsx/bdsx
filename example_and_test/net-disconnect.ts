@@ -1,9 +1,9 @@
 
 // Network Hooking: disconnected
-import { NetworkIdentifier } from "bdsx";
+import { events } from "bdsx/event";
 import { connectionList } from "./net-login";
 
-NetworkIdentifier.close.on(networkIdentifier => {
+events.networkDisconnected.on(networkIdentifier => {
     const id = connectionList.get(networkIdentifier);
     connectionList.delete(networkIdentifier);
     console.log(`${id}> disconnected`);
