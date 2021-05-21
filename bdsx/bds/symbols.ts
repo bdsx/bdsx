@@ -21,6 +21,7 @@ const symbols = [
     'Player::getSupplies',
     'Player::setName',
     'Player::take',
+    'Player::_crit',
     'Player::teleportTo',
     'Player::getPlayerPermissionLevel',
     'ServerNetworkHandler::_getServerPlayer',
@@ -45,6 +46,8 @@ const symbols = [
     'Actor::setNameTag',
     'Actor::hurt',
     'Actor::getArmor',
+    'Actor::burn',
+    'Actor::setSneaking',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
     'ExtendedCertificate::getIdentity',
@@ -163,6 +166,7 @@ const symbols = [
     'Dimension::getDimensionId',
     'TeleportCommand::computeTarget',
     'TeleportCommand::applyTarget',
+    'ActorCommandOrigin::ActorCommandOrigin'
 ] as const;
 
 // decorated symbols

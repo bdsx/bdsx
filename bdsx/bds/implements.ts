@@ -6,7 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int8_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { Actor, ActorRuntimeID, DimensionId } from "./actor";
@@ -93,6 +93,8 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
     _applyTarget(this, alloc);
 };
 Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
+
+Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
