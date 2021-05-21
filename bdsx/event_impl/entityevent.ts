@@ -9,7 +9,7 @@ import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { events } from "../event";
 import { NativeClass } from "../nativeclass";
-import { bool_t, float32_t, int32_t } from "../nativetype";
+import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 
 
 interface IEntityHurtEvent {
@@ -122,6 +122,22 @@ export class PlayerPickupItemEvent implements IPlayerPickupItemEvent {
     ) {
     }
 }
+interface IPlayerCritEvent {
+    player: Player;
+}
+export class PlayerCritEvent implements IPlayerCritEvent {
+    constructor(
+        public player: Player
+    ) {
+    }
+}
+
+function onPlayerCrit(player: Player):void {
+    const event = new PlayerCritEvent(player);
+    events.playerCrit.fire(event);
+    return _onPlayerCrit(event.player);
+}
+const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
 
 function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: number, v1: boolean, v2: boolean):boolean {
     const event = new EntityHurtEvent(entity, damage);

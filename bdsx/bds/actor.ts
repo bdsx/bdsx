@@ -153,6 +153,9 @@ export class Actor extends NativeClass {
     getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
+    setSneaking(bool:boolean):void {
+        abstract();
+    }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {
         abstract();
     }
