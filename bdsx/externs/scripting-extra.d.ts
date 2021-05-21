@@ -374,8 +374,8 @@ declare global
          * @param componentName The name of the component to add to the entity. This is either the name of a built-in component (check the Script Components section) or a custom component created with a call to registerComponent()
          * @returns An object with all the fields as defined in the component, or null if something went wrong when creating the component
          */
-        applyComponentChanges<NAME extends MinecraftComponentName>(entity: MinecraftComponentTypeMap[NAME], componentName: NAME): boolean;
-        applyComponentChanges(entity: IEntity|IBlock, componentName: string): boolean;
+        applyComponentChanges(entity: IEntity|IBlock, component: MinecraftComponentNameMap[keyof MinecraftComponentNameMap]): boolean;
+        applyComponentChanges(entity: IEntity|IBlock, component: IComponent<any>): boolean;
 
         ////////////////////////////////////////////////
         // Entities
