@@ -51,12 +51,6 @@ export enum CreativeItemCategory {
     Uncategorized = 5,
 }
 
-export namespace EnderChestContainer {
-    export function startOpen(player:Player): void{
-        abstract();
-    }
-}
-
 export class Item extends NativeClass {
     allowOffhand():boolean {
         abstract();
