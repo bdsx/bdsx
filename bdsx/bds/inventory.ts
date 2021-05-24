@@ -111,7 +111,9 @@ export class ItemStack extends NativeClass {
     getName():string {
         const item = this.getItem();
         if (item) {
-            return "minecraft:" + item.getCommandName();
+            const Name = item.getCommandName();
+            if (Name.includes(":")) return item.getCommandName();
+            else return "minecraft:" + item.getCommandName();
         }
         return "minecraft:air";
     }
