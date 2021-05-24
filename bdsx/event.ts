@@ -5,7 +5,7 @@ import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerPickupItemEvent } from "./event_impl/entityevent";
+import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerPickupItemEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
@@ -61,6 +61,8 @@ export namespace events {
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
+    /** Not cancellable */
+    export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
 
     ////////////////////////////////////////////////////////
     // Server events
