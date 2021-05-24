@@ -17,7 +17,7 @@ import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, Item, ItemStack, PlayerInventory } from "./inventory";
+import { ComponentItem, EnderChestContainer, Item, ItemStack, PlayerInventory } from "./inventory";
 import { Level, ServerLevel } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -95,6 +95,8 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
 Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
+Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
+Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
 
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
@@ -159,6 +161,11 @@ Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInven
 Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemStack, {this:Player});
 Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
+Player.prototype.startCooldown = procHacker.js("Player::startCooldown", void_t, {this:Player}, Item);
+Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player}, float32_t, float32_t);
+Player.prototype.setSleeping = procHacker.js("Player::setSleeping", void_t, {this:Player}, bool_t);
+Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:Player});
+Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0x9f0]

@@ -3,7 +3,7 @@ import { NativeClass } from "bdsx/nativeclass";
 import { CxxString, uint8_t } from "bdsx/nativetype";
 import { CxxVector } from "../cxxvector";
 import { CompoundTag } from "./nbt";
-import type { ServerPlayer } from "./player";
+import type { Player, ServerPlayer } from "./player";
 
 export enum ContainerId {
     Inventory = 0,
@@ -49,6 +49,12 @@ export enum CreativeItemCategory {
     Nature = 2,
     Items = 4,
     Uncategorized = 5,
+}
+
+export namespace EnderChestContainer {
+    export function startOpen(player:Player): void{
+        abstract();
+    }
 }
 
 export class Item extends NativeClass {
