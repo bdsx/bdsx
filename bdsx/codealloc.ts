@@ -1,4 +1,4 @@
-import { asm, X64Assembler } from "./assembler";
+import { asm, Register, X64Assembler } from "./assembler";
 import { cgate, chakraUtil, StaticPointer } from "./core";
 
 declare module "./assembler"
@@ -19,12 +19,24 @@ asm.const_str = function(str:string, encoding:BufferEncoding='utf-8'):Buffer {
     return buf;
 };
 
+let reportGenerating = false;
+function report(size:number):void {
+    if (reportGenerating) return;
+    reportGenerating = true;
+    setTimeout(()=>{
+        reportGenerating = false;
+        console.log(`[BDSX] Generated Machine Code: ${size} bytes`);
+    }, 10).unref();
+}
+
 X64Assembler.prototype.alloc = function():StaticPointer {
     const buffer = this.buffer();
     const memsize = this.getDefAreaSize();
     const memalign = this.getDefAreaAlign();
-    const mem = cgate.allocExecutableMemory(buffer.length+memsize, memalign);
+    const totalsize = buffer.length+memsize;
+    const mem = cgate.allocExecutableMemory(totalsize, memalign);
     mem.setBuffer(buffer);
+    report(totalsize);
     return mem;
 };
 
@@ -33,8 +45,10 @@ X64Assembler.prototype.allocs = function():Record<string, StaticPointer> {
     const memsize = this.getDefAreaSize();
     const memalign = this.getDefAreaAlign();
     const buffersize = buffer.length;
-    const mem = cgate.allocExecutableMemory(buffersize+memsize, memalign);
+    const totalsize = buffersize+memsize;
+    const mem = cgate.allocExecutableMemory(totalsize, memalign);
     mem.setBuffer(buffer);
+    report(totalsize);
 
     const out:Record<string, StaticPointer> = {};
     const labels = this.labels();

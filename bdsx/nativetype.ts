@@ -147,18 +147,52 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public isTypeOf:(v:unknown)=>v is T;
 
     constructor(
+        /**
+         * pdb symbol name. it's used by type_id.pdbimport
+         */
         name:string,
         size:number,
         align:number,
+        /**
+         * js type checker for overloaded functions
+         */
         isTypeOf:(v:unknown)=>boolean,
+        /**
+         * getter with the pointer
+         */
         get:(ptr:StaticPointer, offset?:number)=>T,
+        /**
+         * setter with the pointer
+         */
         set:(ptr:StaticPointer, v:T, offset?:number)=>void,
+        /**
+         * assembly for casting the js value to the native value
+         */
         js2npAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
+        /**
+         * assembly for casting the native value to the js value
+         */
         np2jsAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
+        /**
+         * assembly for moving the native value to the native value
+         */
         np2npAsm:(asm:makefunc.Maker, target: makefunc.Target, source: makefunc.Target, info:makefunc.ParamInfo)=>void,
+        /**
+         * constructor
+         */
         ctor:(ptr:StaticPointer)=>void = emptyFunc,
+        /**
+         * destructor
+         */
         dtor:(ptr:StaticPointer)=>void = emptyFunc,
+        /**
+         * copy constructor, https://en.cppreference.com/w/cpp/language/copy_constructor
+         */
         ctor_copy:(to:StaticPointer, from:StaticPointer)=>void = defaultCopy(size),
+        /**
+         * move constructor, https://en.cppreference.com/w/cpp/language/move_constructor
+         * it uses the copy constructor by default
+         */
         ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy) {
         super(name, js2npAsm, np2jsAsm, np2npAsm);
         this[NativeType.size] = size;
@@ -666,9 +700,9 @@ export const bin128_t = new NativeType<string>(
     v=>typeof v === 'string' && v.length === 8,
     (ptr)=>ptr.getBin(8),
     (ptr, v)=>ptr.setBin(v),
-    ()=>{ throw Error('bin128_t is not supported for the function type'); },
-    ()=>{ throw Error('bin128_t is not supported for the function type'); },
-    ()=>{ throw Error('bin128_t is not supported for the function type'); }
+    ()=>{ throw Error('bin128_t does not support the function type'); },
+    ()=>{ throw Error('bin128_t does not support the function type'); },
+    ()=>{ throw Error('bin128_t does not support the function type'); }
 ).extends({
     one:'\u0001\0\0\0',
     zero:'\0\0\0\0',
