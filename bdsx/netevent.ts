@@ -2,9 +2,9 @@
  * @deprecated combined to nethook.ts
  */
 
-import { CapsuledEvent } from "krevent";
 import { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
+import { CapsuledEvent } from "./eventtarget";
 import { nethook } from "./nethook";
 
 import readLoginPacket = nethook.readLoginPacket;

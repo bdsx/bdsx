@@ -13,7 +13,7 @@ import 'bdsx/checkmodules';
 
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
-import colors = require('colors');
+import 'colors';
 import { events } from "bdsx/event";
 
 console.log(

@@ -245,3 +245,14 @@ export function makeSignature(sig:string):number {
     }
     return out;
 }
+
+export function checkPowOf2(n:number):void {
+    let mask = n - 1;
+    mask |= (mask >> 16);
+    mask |= (mask >> 8);
+    mask |= (mask >> 4);
+    mask |= (mask >> 2);
+    mask |= (mask >> 1);
+    mask ++;
+    if (mask !== n) throw Error(`${n} is not pow of 2`);
+}

@@ -55,8 +55,11 @@ export class Item extends NativeClass {
     allowOffhand():boolean {
         abstract();
     }
+    /**
+     * @deprecated not implemented, removed
+     */
     getCommandName():string {
-        abstract();
+        throw Error('not implemented');
     }
     getCreativeCategory():number {
         abstract();

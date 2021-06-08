@@ -6,6 +6,6 @@ import { RakNet } from "./raknet";
 export class RakNetInstance extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    @nativeField(RakNet.RakPeer.ref(), 0x1e8)
+    @nativeField(RakNet.RakPeer.ref(), 0x1f8)
     peer:RakNet.RakPeer;
 }

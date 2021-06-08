@@ -63,7 +63,6 @@ export proc makefunc_getout
     mov [rdi+fn_returnPoint], rcx
     pop rdi
     xor eax, eax
-    ret
 endp
 
 # it uses rax, rdx only
@@ -81,8 +80,7 @@ endp
 
 # JsValueRef makeError(char* string, size_t size)
 export proc makeError
-    sub rsp, 88h
-
+    stack 88h
     lea r8, [rcx+rdx]
     lea r9, [rsp+20h]
 _copy:
@@ -100,13 +98,11 @@ _copy:
     lea rdx, [rsp+10h]
     call JsCreateTypeError
     mov rax, [rsp+10h]
-    add rsp, 88h
-    ret
 endp
 
 # [[noreturn]] getout_jserror(JsValueRef error)
 export proc getout_jserror
-    sub rsp, 28h
+    stack 28h
     mov [rsp+20h], rcx
     call [rdi + fn_stack_free_all]
     mov rax, [rdi+fn_returnPoint]
@@ -123,7 +119,7 @@ endp
 
 # [[noreturn]] getout_invalid_parameter(uint32_t paramNum)
 export proc getout_invalid_parameter
-    sub rsp, 48h
+    stack 48h
     test ecx, ecx
     jg paramNum_is_number
     lea rcx, "Invalid parameter at this"
@@ -144,7 +140,7 @@ endp
 
 # [[noreturn]] getout_invalid_parameter_count(uint32_t actual, uint32_t expected)
 export proc getout_invalid_parameter_count
-    sub rsp, 68h
+    stack 68h
     mov r9, rcx
     mov r8, rdx
     lea rdx, "Invalid parameter count (expected=%d, actual=%d)"
@@ -159,7 +155,7 @@ endp
 
 # [[noreturn]] getout(JsErrorCode err)
 export proc getout
-    sub rsp, 48h
+    stack 48h
     const JsErrorNoCurrentContext 0x10003
     cmp rcx, JsErrorNoCurrentContext
     je _noContext
@@ -211,7 +207,7 @@ endp
 
 # char* str_js2np(JsValueRef value, uint32_t paramNum, char*(*converter)(const char16_t*, size_t), size_t* outsize)
 export proc str_js2np
-    sub rsp, 28h
+    stack 28h
     mov [rsp+48h], r9
     mov [rsp+40h], r8
     mov [rsp+38h], rdx
@@ -235,20 +231,16 @@ export proc str_js2np
     mov rcx, [rsp+18h]
     mov rdx, [rsp+20h]
     call [rsp+40h]
-    add rsp, 28h
-    ret
+    jmp _eof
 _failed:
     mov rcx, [rsp+38h]
     call [rdi+fn_getout_invalid_parameter]
 _null:
-    add rsp, 28h
-    xor eax, eax
-    ret
 endp
 
 # void* buffer_to_pointer(JsValueRef value, uint32_t paramNum)
 export proc buffer_to_pointer
-    sub rsp, 38h
+    stack 38h
     mov [rsp+48h], rdx
     mov [rsp+40h], rcx
     lea rdx, [rsp+10h]
@@ -271,9 +263,8 @@ _failed:
     call [rdi+fn_getout_invalid_parameter]
 
 _null:
-    add rsp, 38h
     xor eax, eax
-    ret
+    jmp _eof
 
 _object:
     mov rcx, [rsp+40h]
@@ -281,8 +272,7 @@ _object:
     test rax, rax
     jz _failed
     mov rax, [rax+10h]
-    add rsp, 38h
-    ret
+    jmp _eof
 
 _arrayBuffer:
     lea r8, [rsp+18h]
@@ -292,8 +282,7 @@ _arrayBuffer:
     test eax, eax
     jnz _failed
     mov rax, [rsp+10h]
-    add rsp, 38h
-    ret
+    jmp _eof
 
 _typedArray:
     lea r9, [rsp+30h]
@@ -305,8 +294,7 @@ _typedArray:
     test eax, eax
     jnz _failed
     mov rax, [rsp+28h]
-    add rsp, 38h
-    ret
+    jmp _eof
 
 _dataView:
     lea r8, [rsp+18h]
@@ -316,13 +304,11 @@ _dataView:
     test eax, eax
     jnz _failed
     mov rax, [rsp+10h]
-    add rsp, 38h
-    ret
 endp
 
 ; const char16_t* utf16_js2np(JsValueRef value, uint32_t paramNum)
 export proc utf16_js2np
-    sub rsp, 28h
+    stack 28h
     mov [rsp+38h], rdx
     mov [rsp+30h], rcx
     lea rdx, [rsp+10h]
@@ -341,12 +327,10 @@ export proc utf16_js2np
     test eax, eax
     jnz _failed
     mov rax, [rsp+18h]
-    add rsp, 28h
-    ret
+    jmp _eof
 _null:
-    add rsp, 28h
     xor eax, eax
-    ret
+    jmp _eof
 _failed:
     mov rcx, [rsp+38h]
     call [rdi+fn_getout_invalid_parameter]
@@ -354,15 +338,14 @@ endp
 
 ; JsValueRef str_np2js(pcstr str, uint32_t paramNum, JsErrorCode(*converter)(const char*, JsValue))
 export proc str_np2js
-    sub rsp, 28h
+    stack 28h
     mov [rsp+38h], rdx
     lea rdx, [rsp+10h]
     call r8
     test eax, eax
     jnz _failed
     mov rax, [rsp+10h]
-    add rsp, 28h
-    ret
+    jmp _eof
 _failed:
     mov rcx, [rsp+38h]
     call [rdi+fn_getout_invalid_parameter]
@@ -370,7 +353,7 @@ endp
 
 ; JsValueRef utf16_np2js(pcstr16 str, uint32_t paramNum)
 export proc utf16_np2js
-    sub rsp, 28h
+    stack 28h
     mov [rsp+38h], rdx
 
     mov rdx, rcx
@@ -388,8 +371,7 @@ _next:
     test eax, eax
     jz _failed
     mov rax, [rsp+18h]
-    add rsp, 28h
-    ret
+    jmp _eof
 _failed:
     mov rcx, [rsp+38h]
     call [rdi+fn_getout_invalid_parameter]
@@ -400,12 +382,11 @@ export proc pointer_np2js_nullable
     test rdx, rdx
     jnz pointer_np2js
     mov rax, js_null
-    ret
 endp
 
 ; JsValueRef pointer_np2js(JsValueRef ctor, void* ptr)
 export proc pointer_np2js
-    sub rsp, 38h
+    stack 38h
     mov [rsp+48h], rdx
     lea r9, [rsp+20h]
     mov r8, 1
@@ -422,8 +403,7 @@ export proc pointer_np2js
     mov rcx, [rsp+48h]
     mov [rax+10h], rcx
     mov rax, [rsp+20h]
-    add rsp, 38h
-    ret
+    jmp _eof
 _failed:
     mov ecx, eax
     call getout
@@ -431,7 +411,7 @@ endp
 
 ; void* pointer_js_new(JsValueRef ctor, JsValueRef* out)
 export proc pointer_js_new
-    sub rsp, 38h
+    stack 38h
     mov [rsp+48h], rdx
     mov r9, rdx
     mov r8, 2
@@ -449,8 +429,7 @@ export proc pointer_js_new
     test rax, rax
     jz _failed
     mov rax, [rax+10h]
-    add rsp, 38h
-    ret
+    jmp _eof
 _failed:
     mov ecx, eax
     call getout
@@ -458,7 +437,7 @@ endp
 
 ; int64_t bin64(JsValueRef value, uint32_t paramNum)
 export proc bin64
-    sub rsp, 28h
+    stack 28h
     mov [rsp+38h], rdx
     lea r8, [rsp+20h]
     lea rdx, [rsp+18h]
@@ -468,7 +447,7 @@ export proc bin64
 
     mov r8, [rsp+20h]
     test r8, r8
-    jz _done
+    jz _eof
 
     mov rcx, [rsp+18h]
     lea r8, [rcx+r8*2]
@@ -476,28 +455,26 @@ export proc bin64
     movsx rax, word ptr[rcx]
     add rcx, 2
     cmp rcx, r8
-    jz _done
+    jz _eof
 
     movsx rdx, word ptr[rcx]
     shl rdx, 16
     or rax, rdx
     add rcx, 2
     cmp rcx, r8
-    jz _done
+    jz _eof
 
     movsx rdx, word ptr[rcx]
     shl rdx, 32
     or rax, rdx
     add rcx, 2
     cmp rcx, r8
-    jz _done
+    jz _eof
 
     movsx rdx, word ptr[rcx]
     shl rdx, 48
     or rax, rdx
-_done:
-    add rsp, 28h
-    ret
+    jmp _eof
 _failed:
     mov rcx, [rsp+38h]
     call [rdi+fn_getout_invalid_parameter]
@@ -515,12 +492,12 @@ export proc logHookAsyncCb
 endp
 
 export proc logHook ; (int severity, char* format, ...)
-    mov [rsp+8h],ecx ; severity
-    mov [rsp+10h],rdx ; format
-    mov [rsp+18h],r8 ; vl start
-    mov [rsp+20h],r9
-    push rbx
-    sub rsp, 20h
+    keep rbx
+    stack 20h
+    mov [rsp+30h],ecx ; severity
+    mov [rsp+38h],rdx ; format
+    mov [rsp+40h],r8 ; vl start
+    mov [rsp+48h],r9
 
     ; get the length of vsnprintf
     lea r9, [rsp+40h] ; r9 = vl
@@ -554,13 +531,10 @@ export proc logHook ; (int severity, char* format, ...)
     cmp eax, nodeThreadId
     jne async_post
     call logHookAsyncCb
-    jmp _out
+    jmp _eof
 async_post:
     call asyncPost
-_out:
-    add rsp, 20h
-    pop rbx
-    ret
+    jmp _eof
 
 _failed:
     mov rdx, 20h
@@ -574,7 +548,7 @@ _failed:
     mov [rax+asyncSize+10h], rdx
     mov rdx, [rcx+8]
     mov [rax+asyncSize+18h], rdx
-    jmp _out
+
 endp
 
 ; [[noreturn]] runtime_error(EXCEPTION_POINTERS* err)
@@ -584,7 +558,6 @@ export proc runtime_error
     je _ignore
     jmp runtimeErrorRaise
 _ignore:
-    ret
 endp
 
 export proc raise_runtime_error
@@ -595,7 +568,8 @@ export proc raise_runtime_error
     const alignOffset 8
     const stackOffset ((stackSize + 15) & ~15)+alignOffset
 
-    sub rsp, stackOffset ; exception_ptrs
+    stack stackOffset ; exception_ptrs
+
     lea rdx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset] ; ExceptionRecord
     mov dword ptr[rdx], ecx ; ExceptionRecord.ExceptionCode
     lea rcx, [rdx+sizeofEXCEPTION_RECORD] ; ContextRecord
@@ -618,24 +592,21 @@ export proc handle_invalid_parameter
     jmp raise_runtime_error
 endp
 
-def serverInstance:qword
+export def serverInstance:qword
 
 export proc ServerInstance_ctor_hook
     mov serverInstance, rcx
-ret
+endp
 
 export proc debugBreak
     int3
-    ret
 endp
 
 export def CommandOutputSenderHookCallback:qword
 export proc CommandOutputSenderHook
-    sub rsp, 28h
+    stack 28h
     mov rcx, r8
     call CommandOutputSenderHookCallback
-    add rsp, 28h
-    ret
 endp
 
 export def commandQueue:qword
@@ -651,20 +622,18 @@ export def free:qword
 export def SetEvent:qword
 export def evWaitGameThreadEnd:qword
 proc gameThreadEntry
-    sub rsp, 28h
+    stack 28h
     mov rcx, gamelambdaptr
     call gameThreadInner
     mov rcx, evWaitGameThreadEnd
     call SetEvent
-    add rsp, 28h
-    ret
 endp
 
 export def WaitForSingleObject:qword
 export def _Cnd_do_broadcast_at_thread_exit:qword
 
 export proc gameThreadHook
-    sub rsp, 28h
+    stack 28h
     mov rbx, rcx
     mov gamelambdaptr, rcx
     lea rcx, gameThreadEntry
@@ -672,7 +641,7 @@ export proc gameThreadHook
     mov rcx, evWaitGameThreadEnd
     mov rdx, -1
     call WaitForSingleObject ; use over 20h bytes of stack?
-    add rsp, 28h
+    unwind
     jmp _Cnd_do_broadcast_at_thread_exit
 endp
 
@@ -682,13 +651,12 @@ export def bedrock_server_exe_main:qword
 export def finishCallback:qword
 
 export proc wrapped_main
-    ; TODO: implement seh table
-    sub rsp, 28h
+    stack 28h
     mov ecx, bedrock_server_exe_argc
     mov rdx, bedrock_server_exe_args
     xor r8d, r8d
     call bedrock_server_exe_main
-    add rsp, 28h
+    unwind
     mov rcx, finishCallback
     jmp uv_async_call
 endp
@@ -697,10 +665,10 @@ export def cgateNodeLoop:qword
 export def updateEvTargetFire:qword
 
 export proc updateWithSleep
-    mov rcx, [rsp+28h]
-    sub rsp, 28h
+    stack 28h
+    mov rcx, [rsp+50h]
     call cgateNodeLoop
-    add rsp, 28h
+    unwind
     jmp updateEvTargetFire
 endp
 
@@ -708,9 +676,9 @@ endp
 export def removeActor:qword
 
 export proc actorDestructorHook
-    push rcx
+    stack 8
     call GetCurrentThreadId
-    pop rcx
+    unwind
     cmp rax, nodeThreadId
     jne skip_dtor
     jmp removeActor
@@ -721,47 +689,42 @@ endp
 export def NetworkIdentifierGetHash:qword
 
 export proc networkIdentifierHash
-    sub rsp, 8
+    stack 8
     call NetworkIdentifierGetHash
-    add rsp, 8
     mov rcx, rax
     shr rcx, 32
     xor eax, ecx
-    ret
 endp
 
 
 export def onPacketRaw:qword
 export proc packetRawHook
-    sub rsp, 28h
+    stack 28h
     mov rcx, rbp ; rbp
     mov edx, esi ; packetId
     mov r8, r14 ; Connection
     call onPacketRaw
-    add rsp, 28h
-    ret
 endp
 
 export def onPacketBefore:qword
 export proc packetBeforeHook
-    lea rdx,[rsp+80h]
-    sub rsp, 28h
+    stack 28h
 
     ; original codes
     mov rax,qword ptr[rcx]
-    lea r8,[rbp+a0h]
+    lea r8,[rbp+c0h]
+    lea rdx,[rbp-60h]
     call qword ptr[rax+20h]
 
     mov rcx, rax ; read result
     mov rdx, rbp ; rbp
     mov r8d, esi ; packetId
     call onPacketBefore
-    add rsp, 28h
-    ret
 endp
 
 export def PacketViolationHandlerHandleViolationAfter:qword
 export proc packetBeforeCancelHandling
+    unwind
     cmp r8, 7fh
     jne violation
     mov rax, [rsp+28h]
@@ -781,11 +744,11 @@ endp
 
 export def onPacketAfter:qword
 export proc packetAfterHook
-    sub rsp, 28h
+    stack 28h
 
     ; orignal codes
     mov rax,[rcx]
-    lea r9,[rbp+50h]
+    lea r9,[rbp+78h]
     mov r8,rsi
     mov rdx,r14
     call [rax+8]
@@ -794,25 +757,22 @@ export proc packetAfterHook
     mov edx, esi ; packetId
 
     call onPacketAfter
-    add rsp, 28h
-    ret
 endp
 
 export def onPacketSend:qword
 export proc packetSendAllHook
+    stack 28h
     mov r8,r15
     mov rdx,rbx
     mov rcx,r14
-    sub rsp, 28h
     call onPacketSend
-    add rsp, 28h
 
     ; original code
     mov rax, [r15]
-    lea rdx, [r14+220h]
+    lea rdx, [r14+230h]
     mov rcx, r15
+    unwind
     jmp qword ptr[rax+18h]
-    ret
 endp
 
 export def getLineProcessTask:qword
@@ -824,9 +784,9 @@ export def std_string_ctor:qword
 
 export proc getline
     ; stack start
-    push rbx
-    push rsi
-    sub rsp, 18h
+    keep rbx
+    keep rsi
+    stack 18h
     mov rbx, rcx
 
 _loop:
@@ -853,10 +813,4 @@ _loop:
 
     ; goto _loop;
     jmp _loop
-
-    ; stack end
-    add rsp, 18h
-    pop rsi
-    pop rbx
-    ret
 endp

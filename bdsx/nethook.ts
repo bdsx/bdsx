@@ -1,4 +1,3 @@
-import Event, { CapsuledEvent } from "krevent";
 import { Register } from "./assembler";
 import { NetworkHandler, NetworkIdentifier } from "./bds/networkidentifier";
 import { createPacket as createPacketOld, createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "./bds/packet";
@@ -8,13 +7,14 @@ import { proc, procHacker } from "./bds/proc";
 import { abstract, CANCEL } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { events } from "./event";
+import { CapsuledEvent, Event } from "./eventtarget";
 import { bedrockServer } from "./launcher";
 import { makefunc } from "./makefunc";
 import { nativeClass, NativeClass, nativeField } from "./nativeclass";
 import { bool_t, int32_t, int64_as_float_t, void_t } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
-import { remapAndPrintError, remapStack } from "./source-map-support";
+import { remapAndPrintError } from "./source-map-support";
 import { hex, _tickCallback } from "./util";
 import asmcode = require ('./asm/asmcode');
 
@@ -32,9 +32,9 @@ ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnly
 
 @nativeClass(null)
 class OnPacketRBP extends NativeClass {
-    @nativeField(SharedPtr.make(Packet), 0x50)
+    @nativeField(SharedPtr.make(Packet), 0x78)
     packet:SharedPtr<Packet>;
-    @nativeField(ReadOnlyBinaryStream, 0xa0)
+    @nativeField(ReadOnlyBinaryStream, 0xc0)
     stream:ReadOnlyBinaryStream;
 }
 
@@ -285,23 +285,23 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
 bedrockServer.withLoading().then(()=>{
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x1fd,
+    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x240,
         asmcode.packetRawHook, Register.rax, true, [
             0x8B, 0xD6,                     // mov edx,esi
-            0x48, 0x8D, 0x4D, 0x50,         // lea rcx,qword ptr ss:[rbp+50]
+            0x48, 0x8D, 0x4D, 0x78,         // lea rcx,qword ptr ss:[rbp+78]
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF,   // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
             0x90                            // nop
         ], [7, 11]);
 
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2e9,
+    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x328,
         asmcode.packetBeforeHook, // original code depended
         Register.rax,
         true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-            0x4C, 0x8D, 0x85, 0xA0, 0x00, 0x00, 0x00,  // lea r8,qword ptr ss:[rbp+A0]
-            0x48, 0x8D, 0x54, 0x24, 0x78,  // lea rdx,qword ptr ss:[rsp+78]
+            0x4C, 0x8D, 0x85, 0xC0, 0x00, 0x00, 0x00, // lea r8,qword ptr ss:[rbp+C0]
+            0x48, 0x8D, 0x55, 0xA0, //lea rdx,qword ptr ss:[rbp-60]
             0xFF, 0x50, 0x20, // call qword ptr ds:[rax+20]
         ], []);
 
@@ -322,11 +322,11 @@ bedrockServer.withLoading().then(()=>{
 
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x43d,
+    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x48d,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-            0x4C, 0x8D, 0x4D, 0x50, // lea r9,qword ptr ss:[rbp+50]
+            0x4C, 0x8D, 0x4D, 0x78, // lea r9,qword ptr ss:[rbp+78]
             0x4C, 0x8B, 0xC6, // mov r8,rsi
             0x49, 0x8B, 0xD6, // mov rdx,r14
             0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
@@ -339,7 +339,7 @@ bedrockServer.withLoading().then(()=>{
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
             0x49, 0x8B, 0x07, // mov rax,qword ptr ds:[r15]
-            0x49, 0x8D, 0x96, 0x20, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r14+220]
+            0x49, 0x8D, 0x96, 0x30, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r14+230]
             0x49, 0x8B, 0xCF, // mov rcx,r15
             0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
         ], []);

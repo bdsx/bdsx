@@ -1,6 +1,6 @@
 import { bin } from "bdsx/bin";
 import { abstract } from "bdsx/common";
-import { NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { StaticPointer, VoidPointer } from "bdsx/core";
 import { makefunc } from "bdsx/makefunc";
 import { NativeClass } from "bdsx/nativeclass";
 import { bin64_t } from "bdsx/nativetype";
@@ -34,21 +34,21 @@ export enum ActorType {
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
-    attributes:BaseAttributeMap;
-    runtimeId:ActorRuntimeID;
-    dimension:Dimension;
-
-    protected _sendAttributePacket(id:AttributeId, value:number, attr:AttributeInstance):void {
-        abstract();
+    /** @deprecated use getRuntimeID */
+    get runtimeId():ActorRuntimeID {
+        return this.getRuntimeID();
     }
+    /** @deprecated use getDimension */
+    get demension():Dimension {
+        return this.getDimension();
+    }
+
     sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
-    /**
-     * @deprecated use getDimensionId(), follow the original function name
-     */
-    getDimension():DimensionId {
+
+    getDimension():Dimension {
         abstract();
     }
     getDimensionId():DimensionId {
@@ -61,6 +61,9 @@ export class Actor extends NativeClass {
         return this.identifier;
     }
     isPlayer():this is ServerPlayer {
+        abstract();
+    }
+    getAttributes():BaseAttributeMap {
         abstract();
     }
     getName():string {
@@ -93,33 +96,41 @@ export class Actor extends NativeClass {
     getUniqueIdPointer():StaticPointer {
         abstract();
     }
+
+    /**
+     * @deprecated renamed to getEntityTypeId
+     */
     getTypeId():ActorType {
+        abstract();
+    }
+    getEntityTypeId():ActorType {
         abstract();
     }
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
     getAttribute(id:AttributeId):number {
-        const attr = this.attributes.getMutableInstance(id);
+        const attr = this.getAttributes().getMutableInstance(id);
         if (attr === null) return 0;
         return attr.currentValue;
     }
-    setAttribute(id:AttributeId, value:number):void {
-        if (id < 1) return;
-        if (id > 15) return;
+    setAttribute(id:AttributeId, value:number):AttributeInstance|null {
+        if (id < 1) return null;
+        if (id > 15) return null;
 
-        const attr = this.attributes.getMutableInstance(id);
+        const attr = this.getAttributes().getMutableInstance(id);
         if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || `Attribute${id}`}`);
         attr.currentValue = value;
-        if (this.isPlayer()) {
-            this._sendAttributePacket(id, value, attr);
-        }
+        return attr;
     }
     /**
-     * @deprecated use actor.runtimeId
+     * @deprecated use actor.getRuntimeID
      */
-    getRuntimeId():NativePointer {
-        return this.runtimeId.add();
+    getRuntimeId():ActorRuntimeID {
+        abstract();
+    }
+    getRuntimeID():ActorRuntimeID {
+        abstract();
     }
     /**
      * @deprecated Need more implement

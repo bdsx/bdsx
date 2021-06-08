@@ -1,7 +1,7 @@
 import { procHacker } from "./bds/proc";
+import { bin } from "./bin";
 import { bin128_t, bin64_t, uint16_t, uint32_t } from "./nativetype";
 import { Pointer, Wrapper } from "./pointer";
-import { bin } from "./bin";
 
 export namespace mce
 {

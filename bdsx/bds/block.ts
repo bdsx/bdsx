@@ -4,8 +4,11 @@ import { BlockPos } from "./blockpos";
 import { HashedString } from "./hashedstring";
 
 export class BlockLegacy extends NativeClass {
+    /**
+     * @deprecated not implemented, removed
+     */
     getCommandName():string {
-        abstract();
+        throw Error('not implemented');
     }
     getCreativeCategory():number {
         abstract();

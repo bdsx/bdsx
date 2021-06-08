@@ -35,21 +35,13 @@ export class VanilaGameModuleServer extends NativeClass {
 
 export class Minecraft extends NativeClass {
     vftable:VoidPointer;
-    serverInstance:ServerInstance;
-    minecraftEventing:MinecraftEventing;
-    resourcePackManager:ResourcePackManager;
     offset_20:VoidPointer;
     vanillaGameModuleServer:SharedPtr<VanilaGameModuleServer>; // VanilaGameModuleServer
-    whitelist:Whitelist;
-    permissionsJsonFileName:CxxString;
-    privateKeyManager:PrivateKeyManager;
-    serverMetrics:ServerMetrics;
     commands:MinecraftCommands;
     something:Minecraft$Something;
     network:NetworkHandler;
     LoopbackPacketSender:LoopbackPacketSender;
     server:DedicatedServer;
-    entityRegistryOwned:SharedPtr<EntityRegistryOwned>;
 
     getLevel():Level {
         abstract();
@@ -64,7 +56,6 @@ export class ScriptFramework extends NativeClass {
 }
 
 export class MinecraftServerScriptEngine extends ScriptFramework {
-    scriptEngineVftable:VoidPointer;
 }
 
 export class ServerInstance extends NativeClass {
@@ -72,7 +63,6 @@ export class ServerInstance extends NativeClass {
     server:DedicatedServer;
     minecraft:Minecraft;
     networkHandler:NetworkHandler;
-    scriptEngine:MinecraftServerScriptEngine;
 
     protected _disconnectAllClients(message:CxxString):void {
         abstract();

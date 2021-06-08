@@ -11,7 +11,7 @@ export namespace legacy
 {
 
     /**
-     * @deprecated just catch it from bedrockServer.launch()
+     * @deprecated use runtimeError.setHandler
      */
     export function setOnRuntimeErrorListener(cb: ((jsStack:string, nativeStack:string, lastSender:string) => void | boolean)|null): void {
         onRuntimeError = cb;

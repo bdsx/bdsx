@@ -1,5 +1,5 @@
 import { asm, X64Assembler } from "./assembler";
-import { cgate, chakraUtil, StaticPointer } from "./core";
+import { cgate, chakraUtil, runtimeError, StaticPointer } from "./core";
 
 declare module "./assembler"
 {
@@ -19,12 +19,19 @@ asm.const_str = function(str:string, encoding:BufferEncoding='utf-8'):Buffer {
     return buf;
 };
 
+const SIZE_OF_RF = 4 * 3;
+
 X64Assembler.prototype.alloc = function():StaticPointer {
     const buffer = this.buffer();
     const memsize = this.getDefAreaSize();
     const memalign = this.getDefAreaAlign();
     const mem = cgate.allocExecutableMemory(buffer.length+memsize, memalign);
     mem.setBuffer(buffer);
+    const table = this.getLabelOffset('#runtime_function_table');
+    if (table !== -1) {
+        const size = buffer.length - table;
+        runtimeError.addFunctionTable(mem.add(table), size / SIZE_OF_RF | 0, mem);
+    }
     return mem;
 };
 
@@ -44,6 +51,12 @@ X64Assembler.prototype.allocs = function():Record<string, StaticPointer> {
     const defs = this.defs();
     for (const name in defs) {
         out[name] = mem.add(defs[name] + buffersize);
+    }
+
+    const table = labels['#runtime_function_table'];
+    if (table != null) {
+        const size = buffer.length - table;
+        runtimeError.addFunctionTable(mem.add(table), size / SIZE_OF_RF | 0, mem);
     }
     return out;
 };
