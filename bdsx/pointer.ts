@@ -1,10 +1,10 @@
 import { abstract } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { NativeClass } from "./nativeclass";
+import { NativeClass, NativeClassType } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 
-export interface WrapperType<T> extends Type<Wrapper<T>>
+export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
 {
     /**
      * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers

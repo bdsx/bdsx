@@ -1056,8 +1056,9 @@ export class X64Assembler {
     }
 
     /**
-     * mov tmpreg, 64bits
-     * call tmpreg
+     * just combine of 'mov' and 'call'.
+     * mov tmpreg, value;
+     * call tmpreg;
      */
     call64(value:Value64, tempRegister:Register):this {
         this.mov_r_c(tempRegister, value);

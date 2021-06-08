@@ -2,7 +2,7 @@ import { abstract } from "bdsx/common";
 import { Actor, ActorUniqueID } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Vec3 } from "./blockpos";
-import { ItemStack, PlayerInventory } from "./inventory";
+import { Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 
@@ -37,6 +37,26 @@ export class Player extends Actor {
     }
 
     getPermissionLevel(): PlayerPermission {
+        abstract();
+    }
+
+    startCooldown(Item:Item):void{
+        abstract();
+    }
+
+    setSize(v1:number, v2:number):void{
+        abstract();
+    }
+
+    setSleeping(bool:boolean):void{
+        abstract();
+    }
+
+    isSleeping():boolean{
+        abstract();
+    }
+
+    isJumping():boolean{
         abstract();
     }
 }

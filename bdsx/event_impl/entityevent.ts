@@ -132,6 +132,47 @@ export class PlayerCritEvent implements IPlayerCritEvent {
     }
 }
 
+interface IPlayerUseItemEvent {
+    player: Player;
+    useMethod: number;
+    itemStack: ItemStack;
+}
+export class PlayerUseItemEvent implements IPlayerUseItemEvent {
+    constructor(
+        public player: Player,
+        public useMethod: number,
+        public itemStack: ItemStack
+    ) {
+    }
+}
+
+
+interface IPlayerJumpEvent {
+    player: Player;
+}
+export class PlayerJumpEvent implements IPlayerJumpEvent {
+    constructor(
+        public player: Player
+    ) {
+    }
+}
+
+// function onPlayerJump(player: Player):void {
+//     const event = new PlayerJumpEvent(player);
+//     console.log(player.getName());
+//     // events.playerUseItem.fire(event);    Not work yet
+//     return _onPlayerJump(event.player);
+// }
+// const _onPlayerJump = procHacker.hooking('Player::jumpFromGround', void_t, null, Player)(onPlayerJump);
+
+
+function onPlayerUseItem(player: Player, item:ItemStack, useMethod:number, v:boolean):void {
+    const event = new PlayerUseItemEvent(player, useMethod, item);
+    events.playerUseItem.fire(event);
+    return _onPlayerUseItem(event.player, event.itemStack, event.useMethod, v);
+}
+const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Player, ItemStack, int32_t, bool_t)(onPlayerUseItem);
+
 function onPlayerCrit(player: Player):void {
     const event = new PlayerCritEvent(player);
     events.playerCrit.fire(event);

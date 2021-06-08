@@ -317,6 +317,12 @@ export type FunctionFromTypes_js<
     RETURN extends ParamType> =
     ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
 
+export type FunctionFromTypes_js_without_pointer<
+OPTS extends MakeFuncOptions<any>|null,
+PARAMS extends ParamType[],
+RETURN extends ParamType> =
+((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
+
 function symbolNotFound():never {
     throw Error('symbol not found');
 }
@@ -824,6 +830,7 @@ export namespace makefunc {
                 this.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
                 this.mov_r_c(Register.r8, 2);
                 this.lea_r_rp(Register.r9, temp.reg, 1, temp.offset);
+                // JsError JsCallFunction(JsValueRef jsfunc, JsValueRef* args, int argn, JsValueRef* out);
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
                 this.throwIfNonZero(info);
                 this.add_r_c(Register.rsp, 0x30);
@@ -863,6 +870,7 @@ export namespace makefunc {
                 this.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
                 this.mov_r_c(Register.r8, 2);
                 this.lea_r_rp(Register.r9, temp.reg, 1, temp.offset);
+                // JsError JsCallFunction(JsValueRef jsfunc, JsValueRef* args, int argn, JsValueRef* out);
                 this.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
                 this.throwIfNonZero(info);
                 this.add_r_c(Register.rsp, 0x30);
@@ -962,6 +970,7 @@ export namespace makefunc {
         func.lea_r_rp(Register.rdx, Register.rsp, 1, 0x20);
         func.mov_r_c(Register.r8, pimaker.countOnCalling + 1);
         func.mov_r_r(Register.r9, Register.rbp);
+        // JsError JsCallFunction(JsValueRef jsfunc, JsValueRef* args, int argn, JsValueRef* out);
         func.call_rp(Register.rdi, 1, makefuncDefines.fn_JsCallFunction);
 
         func.test_r_r(Register.rax, Register.rax);

@@ -3,7 +3,7 @@ import { NativeClass } from "bdsx/nativeclass";
 import { CxxString, uint8_t } from "bdsx/nativetype";
 import { CxxVector } from "../cxxvector";
 import { CompoundTag } from "./nbt";
-import type { ServerPlayer } from "./player";
+import type { Player, ServerPlayer } from "./player";
 
 export enum ContainerId {
     Inventory = 0,
@@ -114,7 +114,9 @@ export class ItemStack extends NativeClass {
     getName():string {
         const item = this.getItem();
         if (item) {
-            return "minecraft:" + item.getCommandName();
+            const Name = item.getCommandName();
+            if (Name.includes(":")) return Name;
+            else return "minecraft:" + Name;
         }
         return "minecraft:air";
     }

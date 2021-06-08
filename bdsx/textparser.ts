@@ -59,6 +59,11 @@ export class LanguageParser extends TextParser {
         }
     }
 
+    unget(str:string):void {
+        this.i = this.context.lastIndexOf(str, this.i-1);
+        if (this.i === -1) throw Error(`${str} not found in '${this.context}'`);
+    }
+
     readIdentifier():string|null {
         this.skipSpaces();
         const from = this.i;

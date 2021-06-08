@@ -167,6 +167,12 @@ export class Actor extends NativeClass {
     setSneaking(bool:boolean):void {
         abstract();
     }
+    getHealth():number {
+        abstract();
+    }
+    getMaxHealth():number {
+        abstract();
+    }
     static fromUniqueIdBin(bin:bin64_t):Actor|null {
         abstract();
     }
