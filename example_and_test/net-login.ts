@@ -1,6 +1,7 @@
 
 // Network Hooking: Get login IP and XUID
-import { MinecraftPacketIds, NetworkIdentifier } from "bdsx";
+import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { TextPacket } from "bdsx/bds/packets";
 import { DeviceOS } from "bdsx/common";
 import { events } from "bdsx/event";

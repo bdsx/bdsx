@@ -1,7 +1,8 @@
 
 // Parse raw packet
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/MovePlayerPacket.php
-import { bin, MinecraftPacketIds } from "bdsx";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
+import { bin } from "bdsx/bin";
 import { events } from "bdsx/event";
 import { RawPacket } from "bdsx/rawpacket";
 import { setRecentSendedPacketForTest } from "./test";

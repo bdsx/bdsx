@@ -2,15 +2,19 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, MinecraftPacketIds, NativePointer, NetworkIdentifier, serverInstance } from "bdsx";
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
-import { ActorType, DimensionId } from "bdsx/bds/actor";
+import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { networkHandler } from "bdsx/bds/networkidentifier";
+import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
+import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
+import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
+import { CANCEL } from "bdsx/common";
+import { NativePointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";

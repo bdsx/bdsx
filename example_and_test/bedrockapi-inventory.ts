@@ -1,5 +1,5 @@
-import { command } from "bdsx";
 import { ArmorSlot } from "bdsx/bds/inventory";
+import { command } from "bdsx/command";
 import { system } from "./bedrockapi-system";
 
 // with bedrock API

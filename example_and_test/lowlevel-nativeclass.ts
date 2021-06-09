@@ -1,7 +1,7 @@
 
 // Low Level - define C++ class or structure
 
-import { NativePointer } from "bdsx";
+import { NativePointer } from "bdsx/core";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { int16_t, int32_t, int8_t } from "bdsx/nativetype";
 

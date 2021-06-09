@@ -4,7 +4,9 @@
  * CAUTION: this example is only works for two players. need to implement it more
  */
 
-import { CANCEL, MinecraftPacketIds, NetworkIdentifier } from "bdsx";
+import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
+import { CANCEL } from "bdsx/common";
 import { events } from "bdsx/event";
 
 

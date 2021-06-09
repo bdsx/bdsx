@@ -1,4 +1,3 @@
-import { NetworkIdentifier } from "bdsx";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
@@ -9,7 +8,7 @@ import { DimensionId } from "./actor";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
-import { NetworkHandler, ServerNetworkHandler } from "./networkidentifier";
+import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 
 export class MinecraftEventing extends NativeClass {}
 export class ResourcePackManager extends NativeClass {}

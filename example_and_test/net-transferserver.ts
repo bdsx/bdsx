@@ -1,6 +1,6 @@
 
 // Transfer Server
-import { NetworkIdentifier } from "bdsx";
+import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { TransferPacket } from "bdsx/bds/packets";
 
 export function transferServer(networkIdentifier:NetworkIdentifier, address:string, port:number):void {

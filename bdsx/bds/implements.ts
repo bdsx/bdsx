@@ -27,7 +27,7 @@ import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
-import { DedicatedServer, Minecraft, Minecraft$Something, MinecraftServerScriptEngine, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
+import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency

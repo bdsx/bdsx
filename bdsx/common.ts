@@ -1,4 +1,17 @@
 
+declare global {
+    let bdsx:boolean|undefined;
+    namespace NodeJS {
+        interface Global {
+            bdsx?:boolean;
+        }
+    }
+}
+if (global.bdsx != null) {
+    throw Error('bdsx is imported twice');
+}
+global.bdsx = true;
+
 export interface CANCEL {
     __CANCEL_OBJECT__?:void;
     toString():'CANCEL';

@@ -1,4 +1,4 @@
-import { AttributeId } from "bdsx";
+import { AttributeId } from "bdsx/bds/attribute";
 import { events } from "bdsx/event";
 import { connectionList } from "./net-login";
 
@@ -19,3 +19,5 @@ const interval = setInterval(()=>{
 events.serverStop.on(()=>{
     clearInterval(interval);
 });
+
+

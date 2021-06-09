@@ -1,6 +1,7 @@
 
 // Addon Script
-import { Actor, AttributeId, DimensionId } from "bdsx";
+import { Actor, DimensionId } from "bdsx/bds/actor";
+import { AttributeId } from "bdsx/bds/attribute";
 import { system } from "./bedrockapi-system";
 
 system.listenForEvent('minecraft:entity_created', ev => {

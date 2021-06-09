@@ -1,5 +1,5 @@
-import { MinecraftPacketIds } from "bdsx";
 import { Packet } from "bdsx/bds/packet";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { events } from "bdsx/event";
 import { NativeType } from "bdsx/nativetype";
 import { Tester } from "bdsx/tester";

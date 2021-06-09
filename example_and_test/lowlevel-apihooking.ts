@@ -1,10 +1,9 @@
 
 // Low Level - API Hooking
-import { capi } from "bdsx";
-import { asm } from "bdsx/assembler";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { SurvivalMode } from "bdsx/bds/gamemode";
 import { TextPacket } from "bdsx/bds/packets";
+import { capi } from "bdsx/capi";
 import { pdb } from "bdsx/core";
 import { UNDNAME_NAME_ONLY } from "bdsx/dbghelp";
 import { bool_t, int32_t } from "bdsx/nativetype";

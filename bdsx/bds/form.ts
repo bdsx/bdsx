@@ -1,5 +1,6 @@
-import { MinecraftPacketIds, nethook, NetworkIdentifier } from "bdsx";
 import { events } from "../event";
+import { NetworkIdentifier } from "./networkidentifier";
+import { MinecraftPacketIds } from "./packetids";
 import { SetTitlePacket, ShowModalFormPacket } from "./packets";
 
 const formMaps = new Map<number, SentForm>();

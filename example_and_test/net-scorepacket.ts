@@ -1,5 +1,5 @@
-import { command } from "bdsx";
 import { ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket } from "bdsx/bds/packets";
+import { command } from "bdsx/command";
 
 command.register('example_score', 'score packet example').overload((params, origin, output)=>{
     const actor = origin.getEntity();

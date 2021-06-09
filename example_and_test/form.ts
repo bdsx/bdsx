@@ -1,5 +1,5 @@
-import { command } from "bdsx";
 import { CustomForm, Form, FormLabel } from "bdsx/bds/form";
+import { command } from "bdsx/command";
 
 command.register('form', 'form example').overload(async(param, origin, output)=>{
     const actor = origin.getEntity();

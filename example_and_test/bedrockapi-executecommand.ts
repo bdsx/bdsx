@@ -1,4 +1,4 @@
-import { bedrockServer } from "bdsx";
+import { bedrockServer } from "bdsx/launcher";
 import { system } from "./bedrockapi-system";
 
 // with bedrock API
