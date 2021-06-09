@@ -12,6 +12,8 @@ if (global.bdsx != null) {
 }
 global.bdsx = true;
 
+import type {} from './externs';
+
 export interface CANCEL {
     __CANCEL_OBJECT__?:void;
     toString():'CANCEL';
