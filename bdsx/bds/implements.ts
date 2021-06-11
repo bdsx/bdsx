@@ -306,6 +306,7 @@ Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
+Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxString), {this:Item, structureReturn: true});
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 ItemStack.abstract({
     amount:[uint8_t, 0x22],
@@ -359,6 +360,7 @@ PlayerInventory.prototype.setSelectedItem = procHacker.js("PlayerInventory::setS
 PlayerInventory.prototype.swapSlots = procHacker.js("PlayerInventory::swapSlots", void_t, {this:PlayerInventory}, int32_t, int32_t);
 
 // block.ts
+BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CxxString), {this:Item, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:Block});
 BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", void_t, {this:Block}, float32_t);
 Block.abstract({

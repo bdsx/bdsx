@@ -2,6 +2,7 @@ import { procHacker } from "./bds/proc";
 import { abstract } from "./common";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
+import { makefunc } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { int64_as_float_t, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
@@ -51,6 +52,10 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         }
         this.setPointer(ptr, 8);
         this.setPointer(ptr, 16);
+    }
+    [NativeType.ctor_move](from:CxxVector<T>):void {
+        dll.vcruntime140.memcpy(this, from, VECTOR_SIZE);
+        dll.vcruntime140.memset(from, 0, VECTOR_SIZE);
     }
 
     protected abstract _move_alloc(allocated:NativePointer, oldptr:VoidPointer, movesize:number):void;
@@ -302,7 +307,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         type[NativeType.setter](ptr, from);
                     }
                 }
-                Object.defineProperty(VectorImpl, 'name', {value:templateName('std::vector', type.name, templateName('std::allocator', type.name))});
+                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(type)});
                 VectorImpl.prototype.componentType = type as any;
                 VectorImpl.abstract({}, VECTOR_SIZE, 8);
                 return VectorImpl as any;
@@ -315,4 +320,43 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     }
 }
 
+function getVectorName(type:Type<any>):string {
+    return templateName('std::vector', type.name, templateName('std::allocator', type.name));
+}
+
 CxxVector._alloc16 = procHacker.js("std::_Allocate<16,std::_Default_allocate_traits,0>", NativePointer, null, int64_as_float_t);
+
+
+class CxxVectorToArray<T> extends NativeType<T[]> {
+    public readonly type:CxxVectorType<T>;
+    public [makefunc.pointerReturn]:boolean;
+
+    private constructor(public readonly compType:Type<T>) {
+        super(getVectorName(compType), VECTOR_SIZE, 8, v=>v instanceof Array,
+            (ptr, offset)=>ptr.addAs(this.type, offset, offset! >> 31).toArray(),
+            (ptr, v, offset)=>ptr.addAs(this.type, offset, offset! >> 31).setFromArray(v),
+            (asm, target, source, info)=>{
+                // TODO: implement
+                throw Error(`not implemented`);
+            },
+            (asm, target, source, info)=>{
+                // TODO: implement
+                throw Error(`not implemented`);
+            },
+            (asm, target, source)=>asm.qmov_t_t(target, source),
+            ptr=>dll.vcruntime140.memset(ptr, 0, VECTOR_SIZE),
+            ptr=>dll.ucrtbase.free(ptr),
+            (to, from)=>to.as(this.type)[NativeType.ctor_copy](from.as(this.type)),
+            (to, from)=>{
+                dll.vcruntime140.memcpy(to, from, VECTOR_SIZE);
+                dll.vcruntime140.memset(from, 0, VECTOR_SIZE);
+            }
+        );
+        this.type = CxxVector.make(this.compType);
+    }
+
+    static make<T>(compType:Type<T>):CxxVectorToArray<T> {
+        return Singleton.newInstance<CxxVectorToArray<T>>(CxxVectorToArray, compType, ()=>new CxxVectorToArray<T>(compType));
+    }
+}
+CxxVectorToArray.prototype[makefunc.pointerReturn] = true;

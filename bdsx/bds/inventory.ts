@@ -55,11 +55,15 @@ export class Item extends NativeClass {
     allowOffhand():boolean {
         abstract();
     }
-    /**
-     * @deprecated not implemented, removed
-     */
     getCommandName():string {
-        throw Error('not implemented');
+        const names = this.getCommandNames();
+        const name = names.get(0);
+        names.destruct();
+        if (name === null) throw Error(`item has not any names`);
+        return name;
+    }
+    getCommandNames():CxxVector<string> {
+        abstract();
     }
     getCreativeCategory():number {
         abstract();
