@@ -206,6 +206,7 @@ const symbols2 = [
     '?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z',
     '?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z',
     '??_7OverworldDimension@@6BLevelListener@@@',
+    '??_7ServerLevel@@6BILevel@@@',
     'sprintf',
     'vsnprintf',
 ] as const;

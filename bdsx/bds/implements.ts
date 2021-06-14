@@ -37,7 +37,10 @@ Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimens
 Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level}, bin64_t, bool_t);
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
 
-Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
+Level.abstract({
+    vftable: VoidPointer,
+    players:[CxxVector.make(ServerPlayer.ref()), 0x58],
+});
 
 ServerLevel.abstract({
     packetSender:[LoopbackPacketSender.ref(), 0x830],

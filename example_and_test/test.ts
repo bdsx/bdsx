@@ -293,8 +293,11 @@ Tester.test({
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
-                const size = ctx.origin.getLevel().players.size();
+                const level = ctx.origin.getLevel();
+                this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
+                const size = level.players.size();
                 this.assert(size === 0, 'origin.getLevel().players.size is not zero');
+                this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
                 events.command.remove(cb);
             }
         };
@@ -421,7 +424,8 @@ Tester.test({
                 }
 
                 if (actor !== null) {
-                    actor.getName();
+                    this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
+                        'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
