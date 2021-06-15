@@ -20,7 +20,7 @@
     "blessed": "^0.1.81",
     "colors": "^1.4.0",
     "follow-redirects": "^1.14.0",
-    "node-html-parser": "^3.2.0",
+    "node-html-parser": "^3.3.5",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
     "ts-node": "^9.1.1",
