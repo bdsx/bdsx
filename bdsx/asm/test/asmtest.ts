@@ -12,9 +12,9 @@ install();
 
 
 Tester.test({
-    asmtest() {
+    async asmtest() {
         const filepath = path.join(__dirname, 'asmtest.asm');
-        const code = asm().compile(fs.readFileSync(filepath, 'utf8'), null, filepath);
+        const code = asm().compile(await fs.promises.readFile(filepath, 'utf8'), null, filepath);
         const codebuf = code.allocs();
         this.assert(codebuf.retvalue != null, 'retvalue not found');
         this.assert(codebuf.retvalue2 != null, 'retvalue not found');

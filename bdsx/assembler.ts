@@ -1,4 +1,5 @@
 import { bin } from "./bin";
+import { fsutil } from "./fsutil";
 import { polynominal } from "./polynominal";
 import { remapStack } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
@@ -2890,17 +2891,6 @@ for (const [name, [type, reg, size]] of regmap) {
     regnamemap[reg | (size << 4)] = name;
 }
 
-function checkModified(ori:string, out:string):boolean{
-    const ostat = fs.statSync(ori);
-
-    try{
-        const nstat = fs.statSync(out);
-        return ostat.mtimeMs >= nstat.mtimeMs;
-    } catch (err){
-        return true;
-    }
-}
-
 const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
 
 export namespace asm
@@ -3125,18 +3115,18 @@ export namespace asm
         return X64Assembler.load(bin);
     }
 
-    export function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):X64Assembler{
+    export async function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):Promise<X64Assembler>{
         const basename = src.substr(0, src.lastIndexOf('.')+1);
         const binpath = `${basename}bin`;
 
         let buffer:Uint8Array;
-        if (checkModified(src, binpath)){
-            buffer = asm.compile(fs.readFileSync(src, 'utf-8'), defines, reportDirect ? src : null);
-            fs.writeFileSync(binpath, buffer);
+        if (await fsutil.checkModified(src, binpath)){
+            buffer = asm.compile(await fs.promises.readFile(src, 'utf-8'), defines, reportDirect ? src : null);
+            await fs.promises.writeFile(binpath, buffer);
             console.log(`Please reload it`);
             process.exit(0);
         } else {
-            buffer = fs.readFileSync(binpath);
+            buffer = await fs.promises.readFile(binpath);
         }
         return asm.load(buffer);
     }
