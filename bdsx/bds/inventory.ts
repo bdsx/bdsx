@@ -56,6 +56,13 @@ export class Item extends NativeClass {
         abstract();
     }
     getCommandName():string {
+        const names = this.getCommandNames();
+        const name = names.get(0);
+        names.destruct();
+        if (name === null) throw Error(`item has not any names`);
+        return name;
+    }
+    getCommandNames():CxxVector<string> {
         abstract();
     }
     getCreativeCategory():number {

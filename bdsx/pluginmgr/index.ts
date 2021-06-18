@@ -307,7 +307,7 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
             screen.key(['q', 'C-c'], (ch, key)=>process.exit(0));
         }
 
-        const packagejson = JSON.parse(fs.readFileSync('./package-lock.json', 'utf8'));
+        const packagejson = JSON.parse(await fs.promises.readFile('./package-lock.json', 'utf8'));
         const deps = packagejson.dependencies || {};
 
         const plugin = await searchAndSelect('@bdsx/', deps);

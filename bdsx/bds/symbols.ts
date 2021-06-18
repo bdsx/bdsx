@@ -99,7 +99,6 @@ const symbols = [
     'ConsoleInputReader::~ConsoleInputReader',
     'ConsoleInputReader::unblockReading',
     'Item::allowOffhand',
-    'Item::getCommandName',
     'Item::isDamageable',
     'Item::isFood',
     'Item::getCreativeCategory',
@@ -138,6 +137,7 @@ const symbols = [
     'ItemStackBase::getMaxDamage',
     'ItemStackBase::getDamageValue',
     'ItemStackBase::getAttackDamage',
+    'Item::getCommandNames',
     'PlayerInventory::add',
     'PlayerInventory::clearSlot',
     'PlayerInventory::getContainerSize',
@@ -161,9 +161,9 @@ const symbols = [
     'GameMode::_creativeDestroyBlock',
     'SurvivalMode::destroyBlock',
     'Block::getName',
-    'BlockLegacy::getCommandName',
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
+    'BlockLegacy::getCommandNames',
     'RakNetServerLocator::announceServer',
     'HealthAttributeDelegate::change',
     'MinecraftCommands::getRegistry',
@@ -177,7 +177,16 @@ const symbols = [
     'Dimension::getDimensionId',
     'TeleportCommand::computeTarget',
     'TeleportCommand::applyTarget',
-    'ActorCommandOrigin::ActorCommandOrigin'
+    'ActorCommandOrigin::ActorCommandOrigin',
+    "MinecraftCommands::`vftable'",
+    "CommandOutputSender::`vftable'",
+    "Minecraft::`vftable'",
+    'Actor::getCommandPermissionLevel',
+    'Player::getCommandPermissionLevel',
+    'Actor::getDimension',
+    'Actor::getDimensionId',
+    'Actor::getAttributes',
+    'Actor::getRuntimeID',
 ] as const;
 
 // decorated symbols
@@ -196,6 +205,8 @@ const symbols2 = [
     '?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z',
     '?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z',
+    '??_7OverworldDimension@@6BLevelListener@@@',
+    '??_7ServerLevel@@6BILevel@@@',
     'sprintf',
     'vsnprintf',
 ] as const;

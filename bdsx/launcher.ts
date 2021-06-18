@@ -1,4 +1,3 @@
-import { CapsuledEvent } from "krevent";
 import { asm, Register } from "./assembler";
 import { CommandContext, MCRESULT } from "./bds/command";
 import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
@@ -10,12 +9,13 @@ import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { events } from "./event";
+import { CapsuledEvent } from "./eventtarget";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
-import { remapAndPrintError, remapError, remapStack } from "./source-map-support";
+import { remapAndPrintError, remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { _tickCallback } from "./util";
 import { EXCEPTION_ACCESS_VIOLATION, STATUS_INVALID_PARAMETER } from "./windows_h";
@@ -63,15 +63,17 @@ runtimeError.setHandler(err=>{
     const lastSender = ipfilter.getLastSender();
     console.error('[ Native Crash ]');
     console.error(`Last packet from IP: ${lastSender}`);
-    if (err.code || err.nativeStack) {
+    if (err.code && err.nativeStack && err.exceptionInfos) {
         console.error('[ Native Stack ]');
         switch (err.code) {
         case STATUS_NO_NODE_THREAD:
             console.error(`JS Accessing from the out of threads`);
             break;
-        case EXCEPTION_ACCESS_VIOLATION:
-            console.error(`Accessing an invalid memory address`);
+        case EXCEPTION_ACCESS_VIOLATION: {
+            const info = err.exceptionInfos;
+            console.error(`Accessing an invalid memory address (${info[1].toString(16)})`);
             break;
+        }
         case STATUS_INVALID_PARAMETER:
             console.error(`Native function received wrong parameters`);
             break;
@@ -246,19 +248,19 @@ function _launch(asyncResolve:()=>void):void {
 
     // enable script
     procHacker.nopping('force-enable-script', 'MinecraftServerScriptEngine::onServerThreadStarted', 0x38, [
-        0xE8, 0x43, 0x61, 0xB1, 0xFF,       // call <bedrock_server.public: static bool __cdecl ScriptEngine::isScriptingEnabled(void)>
+        0xE8, 0xFF, 0xFF, 0xFF, 0xFF,       // call <bedrock_server.public: static bool __cdecl ScriptEngine::isScriptingEnabled(void)>
         0x84, 0xC0,                         // test al,al
-        0x0F, 0x84, 0x4E, 0x01, 0x00, 0x00, // je bedrock_server.7FF7345226F3
-        0x48, 0x8B, 0x17,                   // mov rdx,qword ptr ds:[rdi]
-        0x48, 0x8B, 0xCF,                   // mov rcx,rdi
-        0xFF, 0x92, 0x70, 0x04, 0x00, 0x00, // call qword ptr ds:[rdx+470]
+        0x0F, 0x84, 0xFF, 0xFF, 0xFF, 0xFF, // je bedrock_server.7FF7345226F3
+        0x48, 0x8B, 0x13,                   // mov rdx,qword ptr ds:[rbx]                                                                                                                                                                                                                                                                          | rdx:&"졧\\직\x7F", rbx:L"뛠펇ǳ"
+        0x48, 0x8B, 0xCB,                   // mov rcx,rbx                                                                                                                                                                                                                                                                                         | rbx:L"뛠펇ǳ"
+        0xFF, 0x92, 0x78, 0x04, 0x00, 0x00, // call qword ptr ds:[rdx+478]
         0x48, 0x8B, 0xC8,                   // mov rcx,rax
-        0xE8, 0xE7, 0x28, 0x15, 0x00,       // call <bedrock_server.public: class Experiments const & __ptr64 __cdecl LevelData::getExperiments(void)const __ptr64>
+        0xE8, 0x27, 0x32, 0x19, 0x00,       // call <bedrock_server.public: class Experiments & __ptr64 __cdecl LevelData::getExperiments(void) __ptr64>
         0x48, 0x8B, 0xC8,                   // mov rcx,rax
-        0xE8, 0x4F, 0x66, 0x19, 0x00,       // call <bedrock_server.public: bool __cdecl Experiments::Scripting(void)const __ptr64>
+        0xE8, 0xAF, 0x75, 0x26, 0x00,       // call <bedrock_server.public: bool __cdecl Experiments::Scripting(void)const __ptr64>
         0x84, 0xC0,                         // test al,al
-        0x0F, 0x84, 0x2A, 0x01, 0x00, 0x00  // je bedrock_server.7FF7345226F3
-    ], [1, 5, 16, 20, 28, 32]);
+        0x0F, 0x84, 0x06, 0x01, 0x00, 0x00, //je bedrock_server.7FF7C1CE94EF
+    ], [1, 5, 9, 13, 16, 20, 28, 32]);
 
     patchForStdio();
 
@@ -333,6 +335,7 @@ function _launch(asyncResolve:()=>void):void {
                 _tickCallback();
                 cgate.nodeLoopOnce();
             } catch (err) {
+                events.errorFire(err);
                 remapAndPrintError(err);
             }
         }, void_t, null, VoidPointer),

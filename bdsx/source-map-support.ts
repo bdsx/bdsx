@@ -224,21 +224,35 @@ export function remapStack(stack?: string): string | undefined {
 
     const state: StackState = { nextPosition: null, curPosition: null };
     const frames = stack.split('\n');
+    const nframes:string[] = [];
+
     let i = frames.length - 1;
     for (; i >= 1; i--) {
         const frame = remapStackLine(frames[i], state);
         if (frame.internal) continue;
-        frames.length = i + 1;
-        frames[i] = frame.stackLine;
+        nframes.push(frame.stackLine);
         state.nextPosition = state.curPosition;
+        i--;
         break;
     }
+
+    let showFirstInternal = true;
     for (; i >= 1; i--) {
         const frame = remapStackLine(frames[i], state);
-        frames[i] = frame.stackLine;
+        if (frame.internal) {
+            if (showFirstInternal) {
+                showFirstInternal = false;
+            } else {
+                continue;
+            }
+        } else {
+            showFirstInternal = true;
+        }
+        nframes.push(frame.stackLine);
         state.nextPosition = state.curPosition;
     }
-    return frames.join('\n');
+    nframes.push(frames[0]);
+    return nframes.reverse().join('\n');
 }
 
 /**

@@ -2,15 +2,19 @@
  * These are unit tests for bdsx
  */
 
-import { Actor, bin, CANCEL, MinecraftPacketIds, NativePointer, NetworkIdentifier, serverInstance } from "bdsx";
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
-import { ActorType, DimensionId } from "bdsx/bds/actor";
+import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { networkHandler } from "bdsx/bds/networkidentifier";
+import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
-import { proc2 } from "bdsx/bds/symbols";
+import { serverInstance } from "bdsx/bds/server";
+import { proc, proc2 } from "bdsx/bds/symbols";
+import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
+import { CANCEL } from "bdsx/common";
+import { NativePointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
@@ -40,21 +44,15 @@ Tester.test({
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
         this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
-        const inst = networkHandler.instance;
-        this.assert(!!inst && inst.isNotNull(), 'RaknetInstance not found');
-        this.assert(inst.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
+        this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
+        this.assert(serverInstance.minecraft.commands.vftable.equals(proc["MinecraftCommands::`vftable'"]), 'commands is not MinecraftCommands');
+        this.assert(serverInstance.minecraft.commands.sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+
+        this.assert(networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
-        const rakpeer = inst.peer;
-        this.assert(!!rakpeer && rakpeer.isNotNull(), 'RakNet::RakPeer not found');;
-        this.assert(rakpeer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
+        this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
-
-        this.assert(serverInstance.scriptEngine.vftable.equals(proc2['??_7MinecraftServerScriptEngine@@6BScriptFramework@ScriptApi@@@']),
-            'serverInstance.scriptEngine is not ScriptFrameWork');
-
-        this.assert(serverInstance.scriptEngine.scriptEngineVftable.equals(proc2['??_7MinecraftServerScriptEngine@@6B@']),
-            'serverInstance.scriptEngine wrong vftable offset');
     },
 
     async nexttick() {
@@ -93,6 +91,8 @@ Tester.test({
         assert('0f bf c0', 'movsx eax, ax');
         assert('0f be 00', 'movsx eax, byte ptr [rax]');
         assert('44 0F B6 C1 49 BA B3 01 00 00 00 01 00 00', 'movzx r8d, cl;movabs r10, 0x100000001b3');
+        assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]')
+        assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]')
     },
 
     bin() {
@@ -288,13 +288,16 @@ Tester.test({
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                this.equals(ctx.origin.getDimension(), null, 'dimension id');
+                this.assert(ctx.origin.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'unexpected dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
-                const size = ctx.origin.getLevel().players.size();
+                const level = ctx.origin.getLevel();
+                this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
+                const size = level.players.size();
                 this.assert(size === 0, 'origin.getLevel().players.size is not zero');
+                this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
                 events.command.remove(cb);
             }
         };
@@ -371,7 +374,7 @@ Tester.test({
         for (let i = 0; i < 255; i++) {
             events.packetRaw(i).on((ptr, size, ni, packetId) => {
                 idcheck = packetId;
-                this.assert(size > 0, `packet is too small (< 0)`);
+                this.assert(size > 0, `packet is too small (size = ${size})`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
             });
             events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
@@ -421,7 +424,8 @@ Tester.test({
                 }
 
                 if (actor !== null) {
-                    actor.getName();
+                    this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
+                        'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
@@ -432,7 +436,7 @@ Tester.test({
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
                         this.equals(name, connectedId, 'id does not match');
-                        this.equals(actor.getTypeId(), ActorType.Player, 'player type does not match');
+                        this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
                         this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                     } else {
@@ -461,7 +465,7 @@ Tester.test({
         });
     },
 
-});
+}, true);
 
 let connectedNi: NetworkIdentifier;
 let connectedId: string;

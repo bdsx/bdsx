@@ -52,6 +52,18 @@
 			"preLaunchTask": "${defaultBuildTask}"
         },
         {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Assembly Tests",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/asm/test/asmtest.js"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch Plugin Manager",

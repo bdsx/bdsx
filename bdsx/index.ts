@@ -1,39 +1,31 @@
 
-declare global {
-    let bdsx:boolean|undefined;
-    namespace NodeJS {
-        interface Global {
-            bdsx?:boolean;
-        }
-    }
-}
-if (global.bdsx !== undefined) {
-    throw Error('bdsx is imported twice');
-}
-global.bdsx = true;
-
-import type {} from './externs';
-import './polyfill';
-import './bds/enumfiller';
+/**
+ * @deprecated bdsx/index.ts will be deleted
+ */
 
 import { analyzer } from './analyzer';
 import { Actor, DimensionId } from './bds/actor';
 import { AttributeId } from './bds/attribute';
+import './bds/enumfiller';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { ServerPlayer } from './bds/player';
 import { serverInstance } from './bds/server';
 import { bin } from "./bin";
 import { capi } from './capi';
-import common = require('./common');
-import makefunc = require('./makefunc');
+import { command } from './command';
 import { NativeModule } from './dll';
+import type { } from './externs';
+import { bedrockServer } from './launcher';
 import { legacy } from './legacy';
 import { nethook } from './nethook';
+import './polyfill';
 import { serverControl } from './servercontrol';
 import { SharedPtr } from './sharedpointer';
 import { hex } from './util';
-import { bedrockServer } from './launcher';
+
+import common = require('./common');
+import makefunc = require('./makefunc');
 
 import makefuncModule = require('./makefunc');
 import core = require("./core");
@@ -41,6 +33,7 @@ import netevent = require('./netevent');
 import chat = require('./chat');
 import nativetype = require('./nativetype');
 import native = require('./native');
+import colors = require('colors');
 
 export import VoidPointer = core.VoidPointer;
 export import StaticPointer = core.StaticPointer;
@@ -54,7 +47,6 @@ export import RawTypeId = makefunc.RawTypeId;
 
 /** @deprecated use MinecraftPacketIds, matching to the original name  */
 export import PacketId = MinecraftPacketIds;
-import { command } from './command';
 
 declare module './common' {
     /**
@@ -159,3 +151,6 @@ export {
     analyzer,
     bedrockServer
 };
+
+
+console.trace(colors.red(`[BDSX] bdsx/index.ts will be deleted. please import directly`));

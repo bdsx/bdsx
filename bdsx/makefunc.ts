@@ -838,7 +838,7 @@ export namespace makefunc {
             if (info.type === StructureReturnAllocation) {
                 if (this.pi.return.offsetForLocalSpace !== null) {
                     this.lea_t_rp(target, Register.rbp, 1, this.pi.return.offsetForLocalSpace);
-                } else if ('prototype' in this.pi.return.type) {
+                } else if (isBaseOf(this.pi.return.type, StructurePointer)) {
                     chakraUtil.JsAddRef(this.pi.return.type);
                     this.lea_r_rp(Register.rdx, Register.rbp, 1, this.offsetForStructureReturn);
                     this.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(this.pi.return.type));
@@ -1311,7 +1311,7 @@ VoidPointer[makefunc.np2jsAsm] = function(asm:makefunc.Maker, target:makefunc.Ta
     asm.qmov_t_t(target, makefunc.Target.return);
 };
 VoidPointer[makefunc.np2npAsm] = qwordMove;
-
+VoidPointer[makefunc.js2npLocalSize] = 8;
 VoidPointer.prototype[asm.splitTwo32Bits] = function() {
     return [this.getAddressLow(), this.getAddressHigh()];
 };

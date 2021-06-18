@@ -66,11 +66,11 @@ export class Tester {
         this.log(message);
     }
 
-    static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>):Promise<void> {
+    static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>, waitOneTick?:boolean):Promise<void> {
         await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
 
         // pass one tick, wait until result of the list command example
-        {
+        if (waitOneTick) {
             const system = server.registerSystem(0, 0);
             await new Promise<void>(resolve=>{
                 system.update = ()=>{

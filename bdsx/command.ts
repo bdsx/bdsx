@@ -1,5 +1,4 @@
 
-import { CapsuledEvent, EventEx } from 'krevent';
 import { Command, CommandContext, CommandFlag, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { NetworkIdentifier } from './bds/networkidentifier';
@@ -9,6 +8,7 @@ import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { CANCEL } from './common';
 import { events } from './event';
+import { CapsuledEvent, EventEx } from './eventtarget';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
@@ -19,17 +19,23 @@ import { _tickCallback } from './util';
 
 let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
 function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t):MCRESULT {
-    const ctx = ctxptr.p!;
-    const name = ctx.origin.getName();
-    const resv = events.command.fire(ctxptr.p!.command, name, ctx);
-    switch (typeof resv) {
-    case 'number':
-        res.result = resv;
-        _tickCallback();
+    try {
+        const ctx = ctxptr.p!;
+        const name = ctx.origin.getName();
+        const resv = events.command.fire(ctxptr.p!.command, name, ctx);
+        switch (typeof resv) {
+        case 'number':
+            res.result = resv;
+            _tickCallback();
+            return res;
+        default:
+            _tickCallback();
+            return executeCommandOriginal(cmd, res, ctxptr, b);
+        }
+    } catch (err) {
+        events.errorFire(err);
+        res.result = -1;
         return res;
-    default:
-        _tickCallback();
-        return executeCommandOriginal(cmd, res, ctxptr, b);
     }
 }
 

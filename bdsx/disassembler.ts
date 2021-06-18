@@ -7,8 +7,10 @@ import colors = require('colors');
 
 interface OffsetInfo {
     offset:OperationSize|null;
+    multiply:AsmMultiplyConstant;
     r1:Register;
     r2:Register;
+    r3:Register|null;
 }
 function readConstNumber(size:OperationSize, ptr:NativePointer):number {
     switch (size) {
@@ -40,21 +42,40 @@ function readConst(size:OperationSize, ptr:NativePointer):number|bin64_t {
 }
 function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
     const v = ptr.readUint8();
-    const r1 = (v & 0x7) | ((rex & 1) << 3);
+    let r1 = (v & 0x7) | ((rex & 1) << 3);
     const r2 = ((v >> 3) & 0x7) | ((rex & 4) << 1);
+    let r3:Register|null = null;
+    let multiply:AsmMultiplyConstant = 1;
 
     if ((v & 0xc0) !== 0xc0) {
-        if (r1 === Register.rsp && ptr.readUint8() !== 0x24) {
-            return null;
+        if (r1 === Register.rsp) {
+            const next = ptr.readUint8();
+            if (next !== 0x24) {
+                r1 = next & 0x7;
+                r3 = (next >> 3) & 0x7;
+                multiply = 1 << (next >> 6) as AsmMultiplyConstant;
+            }
         }
     }
     if ((v & 0xc0) === 0) {
         if (r1 === Register.rbp) {
-            return {
-                offset: OperationSize.dword,
-                r1:Register.rip,
-                r2
-            };
+            if (r3 !== null) {
+                return {
+                    offset: OperationSize.dword,
+                    r1: r3,
+                    r2,
+                    r3: null,
+                    multiply,
+                };
+            } else {
+                return {
+                    offset: OperationSize.dword,
+                    r1: r3 !== null ? r1 : Register.rip,
+                    r2,
+                    r3,
+                    multiply,
+                };
+            }
         }
     }
 
@@ -64,24 +85,32 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
             offset: OperationSize.byte,
             r1,
             r2,
+            r3,
+            multiply,
         };
     case 0x80:
         return {
             offset: OperationSize.dword,
             r1,
             r2,
+            r3,
+            multiply,
         };
     case 0xc0:
         return {
             offset: null,
             r1,
             r2,
+            r3,
+            multiply,
         };
     }
     return {
         offset: OperationSize.void,
         r1,
         r2,
+        r3,
+        multiply,
     };
 }
 function walk_oper_r_c(oper:Operator, register:Register, chr:number, size:OperationSize):asm.Operation {
@@ -365,10 +394,14 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
 
             const info = walk_offset(rex, ptr);
             if (info === null) break; // bad
-            if (v === 0x8d){ // lea rp_c
+            if (v === 0x8d){ // lea
                 if (info.offset === null) break; // bad
                 const offset = readConst(info.offset, ptr);
-                return new asm.Operation(asm.code.lea_r_rp, [info.r2, info.r1, 1, offset, size]);
+                if (info.r3 !== null) {
+                    return new asm.Operation(asm.code.lea_r_rrp, [info.r2, info.r1, info.r3, info.multiply, offset, size]);
+                } else {
+                    return new asm.Operation(asm.code.lea_r_rp, [info.r2, info.r1, info.multiply, offset, size]);
+                }
             }
             if (v & 0x04) size = OperationSize.word;
             return walk_addr_oper('mov', v & 1, v & 2, info, size, ptr, false);

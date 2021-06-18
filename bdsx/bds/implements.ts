@@ -27,7 +27,7 @@ import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
-import { DedicatedServer, EntityRegistryOwned, Minecraft, Minecraft$Something, MinecraftEventing, MinecraftServerScriptEngine, PrivateKeyManager, ResourcePackManager, ScriptFramework, serverInstance, ServerInstance, ServerMetrics, VanilaGameModuleServer, VanilaServerGameplayEventListener, Whitelist } from "./server";
+import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency
@@ -37,7 +37,10 @@ Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimens
 Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level}, bin64_t, bool_t);
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
 
-Level.abstract({players:[CxxVector.make(ServerPlayer.ref()), 0x58]});
+Level.abstract({
+    vftable: VoidPointer,
+    players:[CxxVector.make(ServerPlayer.ref()), 0x58],
+});
 
 ServerLevel.abstract({
     packetSender:[LoopbackPacketSender.ref(), 0x830],
@@ -69,11 +72,10 @@ Actor.all = function():IterableIterator<Actor> {
 
 Actor.abstract({
     vftable: VoidPointer,
-    dimension: [Dimension, 0x350],
     identifier: [CxxString as NativeType<EntityId>, 0x458], // minecraft:player
-    attributes: [BaseAttributeMap.ref(), 0x480],
     runtimeId: [ActorRuntimeID, 0x540],
 });
+Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
 Actor.prototype.setName = procHacker.js("Actor::setNameTag", void_t, {this:Actor}, CxxString);
 Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, CxxString);
@@ -82,9 +84,11 @@ Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Acto
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
-Actor.prototype.getTypeId = makefunc.js([0x518], int32_t, {this:Actor}); // ActorType getEntityTypeId()
-Actor.prototype.getDimension = Actor.prototype.getDimensionId = makefunc.js([0x568], int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
-Actor.prototype.getCommandPermissionLevel = makefunc.js([0x620], int32_t, {this:Actor});
+Actor.prototype.getTypeId = Actor.prototype.getEntityTypeId = makefunc.js([0x520], int32_t, {this:Actor}); // ActorType getEntityTypeId()
+Actor.prototype.getRuntimeId = Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
+Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
+Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
 const _computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const _applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
 Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld) {
@@ -119,9 +123,11 @@ const attribNames = [
     "minecraft:luck",
     "minecraft:horse.jump_strength",
 ];
-(Actor.prototype as any)._sendAttributePacket = function(this:Actor, id:AttributeId, value:number, attr:AttributeInstance):void {
+ServerPlayer.prototype.setAttribute = function(this:Actor, id:AttributeId, value:number):AttributeInstance|null {
+    const attr = Actor.prototype.setAttribute.call(this, id, value);
+    if (attr === null) return null;
     const packet = UpdateAttributesPacket.create();
-    packet.actorId = this.runtimeId;
+    packet.actorId = this.getRuntimeID();
     const data = new AttributeData(true);
     data.construct();
     data.name.set(attribNames[id - 1]);
@@ -135,6 +141,7 @@ const attribNames = [
         this.sendNetworkPacket(packet);
     }
     packet.dispose();
+    return attr;
 };
 
 function _removeActor(actor:Actor):void {
@@ -160,6 +167,7 @@ Player.prototype.getGameType = procHacker.js("Player::getPlayerGameType", int32_
 Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
 Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemStack, {this:Player});
 Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
+Player.prototype.getCommandPermissionLevel = procHacker.js('Player::getCommandPermissionLevel', int32_t, {this:Actor});
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
 Player.prototype.startCooldown = procHacker.js("Player::startCooldown", void_t, {this:Player}, Item);
 Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player}, float32_t, float32_t);
@@ -168,7 +176,7 @@ Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:
 Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
 
 ServerPlayer.abstract({
-    networkIdentifier:[NetworkIdentifier, 0x9f0]
+    networkIdentifier:[NetworkIdentifier, 0xa98]
 });
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", void_t, {this: ServerPlayer});
@@ -197,7 +205,7 @@ NetworkHandler.Connection.abstract({
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x48]
+    instance: [RakNetInstance.ref(), 0x58]
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
@@ -221,7 +229,6 @@ Packet.prototype.getName = makefunc.js([0x10], CxxString, {this:Packet, structur
 Packet.prototype.write = makefunc.js([0x18], void_t, {this:Packet}, BinaryStream);
 Packet.prototype.read = makefunc.js([0x20], int32_t, {this:Packet}, BinaryStream);
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
-// Packet.prototype.unknown = makefunc.js([0x30], bool_t, {this:Packet});
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, int32_t);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", void_t, {this: ServerNetworkHandler}, NetworkIdentifier, int32_t, CxxString, int32_t);
@@ -273,35 +280,22 @@ Minecraft$Something.abstract({
 });
 Minecraft.abstract({
     vftable:VoidPointer,
-    serverInstance:ServerInstance.ref(),
-    minecraftEventing:MinecraftEventing.ref(),
-    resourcePackManager:ResourcePackManager.ref(),
-    offset_20:VoidPointer,
     vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
-    whitelist:Whitelist.ref(),
-    permissionsJsonFileName:CxxString.ref(),
-    privateKeyManager:PrivateKeyManager.ref(),
-    serverMetrics:[ServerMetrics.ref(), 0x78],
-    commands:[MinecraftCommands.ref(), 0xa0],
+    commands:[MinecraftCommands.ref(), 0xb0],
     something:Minecraft$Something.ref(),
-    network:[NetworkHandler.ref(), 0xc0],
+    network:[NetworkHandler.ref(), 0xe0],
     LoopbackPacketSender:LoopbackPacketSender.ref(),
     server:DedicatedServer.ref(),
-    entityRegistryOwned:[SharedPtr.make(EntityRegistryOwned), 0xe0],
 });
 Minecraft.prototype.getLevel = procHacker.js("Minecraft::getLevel", Level, {this:Minecraft});
 ScriptFramework.abstract({
     vftable:VoidPointer,
-});
-MinecraftServerScriptEngine.abstract({
-    scriptEngineVftable:[VoidPointer, 0x428]
 });
 ServerInstance.abstract({
     vftable:VoidPointer,
     server:[DedicatedServer.ref(), 0x98],
     minecraft:[Minecraft.ref(), 0xa0],
     networkHandler:[NetworkHandler.ref(), 0xa8],
-    scriptEngine:[MinecraftServerScriptEngine.ref(), 0x210],
 });
 (ServerInstance.prototype as any)._disconnectAllClients = procHacker.js("ServerInstance::disconnectAllClientsWithMessage", void_t, {this:ServerInstance}, CxxString);
 
@@ -311,11 +305,11 @@ GameMode.define({
 });
 
 // inventory.ts
-Item.prototype.getCommandName = procHacker.js("Item::getCommandName", CxxString, {this:Item});
 Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
+Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxString), {this:Item, structureReturn: true});
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 ItemStack.abstract({
     amount:[uint8_t, 0x22],
@@ -369,7 +363,7 @@ PlayerInventory.prototype.setSelectedItem = procHacker.js("PlayerInventory::setS
 PlayerInventory.prototype.swapSlots = procHacker.js("PlayerInventory::swapSlots", void_t, {this:PlayerInventory}, int32_t, int32_t);
 
 // block.ts
-BlockLegacy.prototype.getCommandName = procHacker.js("BlockLegacy::getCommandName", CxxString, {this:BlockLegacy});
+BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CxxString), {this:Item, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:Block});
 BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", void_t, {this:Block}, float32_t);
 Block.abstract({

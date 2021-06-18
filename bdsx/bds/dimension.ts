@@ -1,11 +1,15 @@
-import { NativeClass } from "bdsx/nativeclass";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { abstract } from "../common";
-import { makefunc } from "../makefunc";
+import { VoidPointer } from "../core";
 import { int32_t } from "../nativetype";
 import type { DimensionId } from "./actor";
 import { procHacker } from "./proc";
 
+@nativeClass(null)
 export class Dimension extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+
     getDimensionId():DimensionId {
         abstract();
     }

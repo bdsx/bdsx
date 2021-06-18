@@ -10,6 +10,7 @@ import './bedrockapi-inventory';
 import './bedrockapi-components';
 import './bedrockapi-getblock';
 import './customcommand';
+import './inventory';
 import './form';
 import './attribute';
 import './ipban';

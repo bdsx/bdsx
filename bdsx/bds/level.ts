@@ -2,11 +2,13 @@ import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
 import { abstract } from "bdsx/common";
 import { CxxVector } from "bdsx/cxxvector";
 import { NativeClass } from "bdsx/nativeclass";
+import { VoidPointer } from "../core";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";
 
 export class Level extends NativeClass {
+    vftable:VoidPointer;
     players:CxxVector<ServerPlayer>;
 
     createDimension(id:DimensionId):Dimension {

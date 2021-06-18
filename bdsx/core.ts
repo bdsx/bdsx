@@ -9,14 +9,11 @@ export interface VoidPointerConstructor
     new(pointer: VoidPointer|null|undefined):VoidPointer;
     new():VoidPointer;
 
-    /**
-     * @deprecated not implemented yet
-     */
     fromAddress<T extends VoidPointer>(this:{new():T}, addressLow:number, addressHigh?:number):T;
-    /**
-     * @deprecated not implemented yet
-     */
     fromAddressBin<T extends VoidPointer>(this:{new():T}, addressBin:string):T;
+    fromAddressBuffer<T extends VoidPointer>(this:{new():T}, buffer:Bufferable):T;
+    fromAddressString<T extends VoidPointer>(this:{new():T}, str:string):T;
+    fromAddressFloat<T extends VoidPointer>(this:{new():T}, value:number):T;
 }
 
 export declare const VoidPointer:VoidPointerConstructor;
@@ -455,6 +452,7 @@ export declare class NativePointer extends StaticPointer {
 export declare class RuntimeError extends Error {
     nativeStack?:string;
     code?:number;
+    exceptionInfos?:number[];
 }
 
 /**
@@ -589,7 +587,7 @@ export declare namespace runtimeError
     // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
 
-	export function addFunctionTable(baseptr:VoidPointer, unwindcount:number, fncount:number):void;
+	export function addFunctionTable(functionTable:VoidPointer, entryCount:number, baseAddress:VoidPointer):void;
 }
 
 export declare namespace bedrock_server_exe

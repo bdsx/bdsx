@@ -1,10 +1,19 @@
 import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
+import { CxxVector } from "../cxxvector";
+import { CxxString } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { HashedString } from "./hashedstring";
 
 export class BlockLegacy extends NativeClass {
     getCommandName():string {
+        const names = this.getCommandNames();
+        const name = names.get(0);
+        names.destruct();
+        if (name === null) throw Error(`block has not any names`);
+        return name;
+    }
+    getCommandNames():CxxVector<CxxString> {
         abstract();
     }
     getCreativeCategory():number {

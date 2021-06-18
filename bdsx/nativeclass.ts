@@ -1,6 +1,8 @@
+import { Register } from "./assembler";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
-import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
+import { chakraUtil, NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
+import { makefuncDefines } from "./makefunc_defines";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
@@ -202,6 +204,7 @@ export class NativeClass extends StructurePointer {
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
     static readonly [makefunc.pointerReturn] = true;
+    static readonly [makefunc.js2npLocalSize] = 0;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -627,10 +630,33 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     const getter = makefunc.np2js in type ? wrapperGetterRef : getterRef;
     const setter = makefunc.js2np in type ? wrapperSetterRef : setterRef;
 
+    function js2npAsm(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo):void {
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_js2class);
+        asm.test_r_r(Register.rax, Register.rax);
+        asm.jz_label('!'); // cannot use cmovnz
+        asm.mov_r_rp(Register.rax, Register.rax, 1, 0x10);
+        asm.close_label('!');
+        asm.qmov_t_t(target, makefunc.Target.return);
+    }
+    function np2jsAsm(asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo):void {
+        chakraUtil.JsAddRef(clazz);
+        asm.qmov_t_t(makefunc.Target[1], source);
+        asm.mov_r_c(Register.rcx, chakraUtil.asJsValueRef(clazz));
+        if (info.type[makefunc.nullAlsoInstance] || (info.numberOnUsing === -1 && asm.pi.structureReturn)) {
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js);
+        } else {
+            asm.call_rp(Register.rdi, 1, makefuncDefines.fn_pointer_np2js_nullable);
+        }
+        asm.qmov_t_t(target, makefunc.Target.return);
+    }
+
+
     return new NativeType<T>(type.name+'*', 8, 8,
         clazz.isTypeOf,
         getter, setter,
-        clazz[makefunc.js2npAsm],
-        clazz[makefunc.np2jsAsm],
+        js2npAsm,
+        np2jsAsm,
         clazz[makefunc.np2npAsm]);
 }
+

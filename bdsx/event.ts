@@ -1,9 +1,9 @@
 import { CANCEL } from "bdsx/common";
 import { Color } from "colors";
-import Event from "krevent";
 import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
+import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerPickupItemEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
@@ -171,7 +171,7 @@ export namespace events {
     * global error listeners
     * if returns CANCEL, then default error printing is disabled
     */
-    export const error = new Event<(err:any)=>CANCEL|void>();
+    export const error = Event.errorHandler;
 
     export function errorFire(err:unknown):void {
         if (err instanceof Error) {

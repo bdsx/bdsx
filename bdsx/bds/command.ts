@@ -88,10 +88,14 @@ export class CommandOutput extends NativeClass {
 
 @nativeClass(null)
 export class CommandOutputSender extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
 }
 
 @nativeClass(null)
 export class MinecraftCommands extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
     @nativeField(CommandOutputSender.ref())
     sender:CommandOutputSender;
 

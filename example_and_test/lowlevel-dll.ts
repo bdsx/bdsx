@@ -1,6 +1,7 @@
 
 // Call Native Functions
-import { NativeModule, VoidPointer } from "bdsx";
+import { VoidPointer } from "bdsx/core";
+import { NativeModule } from "bdsx/dll";
 import { makefunc } from "bdsx/makefunc";
 import { void_t } from "bdsx/nativetype";
 

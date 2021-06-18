@@ -1,8 +1,8 @@
 
 // Custom Command
-import { command } from "bdsx";
 import { RelativeFloat } from "bdsx/bds/blockpos";
 import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
+import { command } from "bdsx/command";
 import { CxxString, int32_t } from "bdsx/nativetype";
 
 // raw text

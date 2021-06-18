@@ -1,4 +1,5 @@
-import { ipfilter, NetworkIdentifier } from "bdsx";
+import { NetworkIdentifier } from 'bdsx/bds/networkidentifier';
+import { ipfilter } from 'bdsx/core';
 import { promises as fs } from 'fs';
 import path = require('path');
 

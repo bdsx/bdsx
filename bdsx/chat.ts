@@ -1,10 +1,10 @@
 
-import { CapsuledEvent, EventEx } from 'krevent';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { MinecraftPacketIds } from './bds/packetids';
 import { TextPacket } from './bds/packets';
 import { CANCEL } from './common';
 import { events } from './event';
+import { CapsuledEvent, EventEx } from './eventtarget';
 
 interface ChatEvent
 {

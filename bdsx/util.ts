@@ -1,6 +1,4 @@
 
-import fs = require('fs');
-
 export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
     const size = src.length;
     if (dst.length !== size) throw Error(`size unmatched(dst[${dst.length}] != src[${src.length}])`);
@@ -127,22 +125,6 @@ export function getLineAt(context:string, lineIndex:number):string {
     else return context.substring(idx, next);
 }
 
-export function isDirectory(file:string):boolean {
-    try {
-        return fs.statSync(file).isDirectory();
-    } catch (err) {
-        return false;
-    }
-}
-
-export function isFile(filepath:string):boolean {
-    try {
-        return fs.statSync(filepath).isFile();
-    } catch (err) {
-        return false;
-    }
-}
-
 export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }): t is { new(...args: any[]): BASE } {
     if (typeof t !== 'function') return false;
     if (t === base) return true;
@@ -256,4 +238,15 @@ export function makeSignature(sig:string):number {
         out += sig.charCodeAt(i) << (i*8);
     }
     return out;
+}
+
+export function checkPowOf2(n:number):void {
+    let mask = n - 1;
+    mask |= (mask >> 16);
+    mask |= (mask >> 8);
+    mask |= (mask >> 4);
+    mask |= (mask >> 2);
+    mask |= (mask >> 1);
+    mask ++;
+    if (mask !== n) throw Error(`${n} is not pow of 2`);
 }

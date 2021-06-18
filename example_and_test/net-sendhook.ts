@@ -1,4 +1,4 @@
-import { MinecraftPacketIds } from "bdsx";
+import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { events } from "bdsx/event";
 
 // Network Hooking: hook the sending StartGamePacket and hiding seeds

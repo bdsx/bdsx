@@ -1,8 +1,9 @@
 import { bin } from "./bin";
+import { fsutil } from "./fsutil";
 import { polynominal } from "./polynominal";
 import { remapStack } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
-import { getLineAt } from "./util";
+import { checkPowOf2, getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
 import fs = require('fs');
@@ -197,7 +198,7 @@ class AsmChunk extends BufferWriter {
     public readonly ids:AddressIdentifier[] = [];
     public readonly unresolved:UnresolvedConstant[] = [];
 
-    constructor(array:Uint8Array, size:number) {
+    constructor(array:Uint8Array, size:number, public align:number) {
         super(array, size);
     }
 
@@ -275,7 +276,7 @@ class AsmChunk extends BufferWriter {
 
 class Identifier {
     constructor(
-        public name:string) {
+        public name:string|null) {
     }
 }
 
@@ -287,16 +288,93 @@ class Constant extends Identifier {
 
 class AddressIdentifier extends Identifier {
     constructor(
-        name:string,
+        name:string|null,
         public chunk:AsmChunk|null,
         public offset:number) {
         super(name);
     }
+
+    sameAddressWith(other:AddressIdentifier):boolean {
+        return this.chunk === other.chunk && this.offset === other.offset;
+    }
 }
 
 class Label extends AddressIdentifier {
-    constructor(name:string) {
+    public UnwindCodes:(UNWIND_CODE|number)[]|null = null;
+    public exceptionHandler:Label|null = null;
+
+    isProc():boolean {
+        return this.UnwindCodes !== null;
+    }
+
+    constructor(name:string|null) {
         super(name, null, 0);
+    }
+
+    allocStack(label:Label, bytes:number):void {
+        if (this.UnwindCodes === null) throw Error(`${this.name} is not proc`);
+        if (bytes <= 0) throw TypeError(`too small (bytes=${bytes})`);
+        const qcount = bytes>>3;
+        if ((qcount << 3) !== bytes) throw TypeError(`is not 8 bytes aligned (bytes=${bytes})`);
+        if (bytes <= 128) {
+            this.UnwindCodes.push(new UNWIND_CODE(label, UWOP_ALLOC_SMALL, qcount-1));
+        } else {
+            if (qcount <= 0xffff) {
+                this.UnwindCodes.push(new UNWIND_CODE(label, UWOP_ALLOC_LARGE, 0));
+                this.UnwindCodes.push(qcount);
+            } else {
+                this.UnwindCodes.push(new UNWIND_CODE(label, UWOP_ALLOC_LARGE, 1));
+                this.UnwindCodes.push(bytes & 0xffff);
+                this.UnwindCodes.push(bytes >>> 16);
+            }
+        }
+    }
+
+    pushRegister(label:Label, register:Register):void {
+        if (this.UnwindCodes === null) throw Error(`${this.name} is not proc`);
+        this.UnwindCodes.push(new UNWIND_CODE(label, UWOP_PUSH_NONVOL, register));
+    }
+
+    private _getLastUnwindCode():UNWIND_CODE|null {
+        if (this.UnwindCodes === null) throw Error(`${this.name} is not proc`);
+        for (let i=this.UnwindCodes.length-1;i>=0;i--) {
+            const code = this.UnwindCodes[i];
+            if (typeof code === 'number') continue;
+            return code;
+        }
+        return null;
+    }
+
+    getUnwindInfoSize():number {
+        if (this.UnwindCodes === null) throw Error(`${this.name} is not proc`);
+        const unwindCodeSize = (((this.UnwindCodes.length + 1) & ~1) - 1) * 2;
+        return unwindCodeSize + 8;
+    }
+
+    writeUnwindInfoTo(chunk:AsmChunk, functionBegin:number):void {
+        if (this.UnwindCodes === null) throw Error(`${this.name} is not proc`);
+        const flags = this.exceptionHandler !== null ? UNW_FLAG_EHANDLER : UNW_FLAG_NHANDLER;
+        chunk.writeUint8(UNW_VERSION | (flags << 3)); // Version 3 bits, Flags 5 bits
+
+        const last = this._getLastUnwindCode();
+        const SizeOfProlog = last === null ? 0 : last.label.offset - functionBegin;
+        chunk.writeUint8(SizeOfProlog); // SizeOfProlog
+        chunk.writeUint8(this.UnwindCodes.length); // CountOfUnwindCodes
+        chunk.writeUint8(0); // FrameRegister 4 bits, FrameRegisterOffset 4 bits
+        for (const code of this.UnwindCodes) {
+            if (typeof code === 'number') {
+                chunk.writeUint16(code);
+            } else {
+                code.writeTo(functionBegin, chunk);
+            }
+        }
+        if ((this.UnwindCodes.length & 1) !== 0) {
+            chunk.writeInt16(0);
+        }
+        // Exception Handler or Chained Unwind Info
+        if (this.exceptionHandler !== null) {
+            chunk.writeInt32(this.exceptionHandler.offset); // ExceptionHandler
+        }
     }
 }
 
@@ -342,7 +420,7 @@ const SIZE_MAX_VAL:{[key in OperationSize]?:number|string}= {
     [OperationSize.qword]: bin.make64(INT32_MAX, -1),
 };
 
-const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0);
+const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0, 1);
 
 const PARAM_REG_OFFSETS:(number|null)[] = [
     null, // rax,
@@ -357,17 +435,59 @@ const PARAM_REG_OFFSETS:(number|null)[] = [
     -0x18, // r9,
 ];
 
+
+const UNW_VERSION = 0x01;
+const UNW_FLAG_NHANDLER = 0x0;
+const UNW_FLAG_EHANDLER = 0x1; // The function has an exception handler that should be called when looking for functions that need to examine exceptions.
+const UNW_FLAG_UHANDLER = 0x2; // The function has a termination handler that should be called when unwinding an exception.
+const UNW_FLAG_CHAININFO = 0x4;
+
+const UWOP_PUSH_NONVOL = 0;     /* info == register number */
+const UWOP_ALLOC_LARGE = 1;     /* no info, alloc size in next 2 slots */
+const UWOP_ALLOC_SMALL = 2;     /* info == size of allocation / 8 - 1 */
+const UWOP_SET_FPREG = 3;       /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
+const UWOP_SAVE_NONVOL = 4;     /* info == register number, offset in next slot */
+const UWOP_SAVE_NONVOL_FAR = 5; /* info == register number, offset in next 2 slots */
+const UWOP_SAVE_XMM128 = 8;     /* info == XMM reg number, offset in next slot */
+const UWOP_SAVE_XMM128_FAR = 9; /* info == XMM reg number, offset in next 2 slots */
+const UWOP_PUSH_MACHFRAME = 10; /* info == 0: no error-code, 1: error-code */
+
+class UNWIND_CODE {
+    constructor(public label:Label, public UnwindOp:number, public OpInfo:number) {
+        if (this.OpInfo < 0) throw TypeError(`Too small (OpInfo=${OpInfo})`);
+        if (this.OpInfo > 0xf) throw TypeError(`Too large (OpInfo=${OpInfo})`);
+        if (this.UnwindOp < 0) throw TypeError(`Too small (UnwindOp=${UnwindOp})`);
+        if (this.UnwindOp > 0xf) throw TypeError(`Too large (UnwindOp=${UnwindOp})`);
+    }
+
+    writeTo(functionBegin:number, buf:AsmChunk):void {
+        buf.writeUint8(this.label.offset - functionBegin); // CodeOffset
+        buf.writeUint8(this.UnwindOp | (this.OpInfo << 4)); // UnwindOp 4 bits, OpInfo 4 bits
+    }
+}
+
+
+export interface RUNTIME_FUNCTION {
+    BeginAddress:number;
+    EndAddress:number;
+    UnwindData:number;
+}
+
 export class X64Assembler {
 
     private memoryChunkSize = 0;
     private memoryChunkAlign = 1;
+    private codeAlign = 1;
     private constChunk:AsmChunk|null = null;
     private chunk:AsmChunk;
-    private sehUnwindCount = 0;
-    private sehFuncCount = 0;
     private readonly ids = new Map<string, Identifier>();
     private readonly scopeStack:Set<string>[] = [];
     private scope = new Set<string>();
+    private currentProc:Label|null = null;
+    private unwinded = false;
+    private normalized = false;
+
+    private prologueAnchor:Label|null = null;
 
     private pos:SourcePosition|null = null;
 
@@ -443,8 +563,50 @@ export class X64Assembler {
         };
     }
 
-    constructor(buffer:Uint8Array, size:number) {
-        this.chunk = new AsmChunk(buffer, size);
+    constructor(buffer:Uint8Array, size:number, align:number = 1) {
+        this.chunk = new AsmChunk(buffer, size, align);
+    }
+
+    private _checkPrologue():Label {
+        if (this.currentProc === null) {
+            throw Error(`not in proc`);
+        }
+        if (this.prologueAnchor === null || this.prologueAnchor.chunk !== this.chunk || this.prologueAnchor.offset !== this.chunk.size) {
+            throw Error(`not in prologue`);
+        }
+        return this.currentProc;
+    }
+
+    /**
+     * push with unwind info
+     */
+    keep_r(register:Register):void {
+        const proc = this._checkPrologue();
+        this.push_r(register);
+        this.prologueAnchor = this.makeLabel(null);
+        proc.pushRegister(this.prologueAnchor, register);
+    }
+
+    /**
+     * push with unwind info
+     */
+    stack_c(size:number):void {
+        const proc = this._checkPrologue();
+        this.sub_r_c(Register.rsp, size);
+        this.prologueAnchor = this.makeLabel(null);
+        proc.allocStack(this.prologueAnchor, size);
+    }
+
+    /**
+     * aligns end of buffer
+     */
+    alignWith(align:number):this {
+        checkPowOf2(align);
+        if (align > this.codeAlign) this.codeAlign = align;
+        this._normalize();
+        const n = this.chunk.size;
+        this.chunk.resize((n + align - 1) & ~(align-1));
+        return this;
     }
 
     getDefAreaSize():number {
@@ -456,10 +618,10 @@ export class X64Assembler {
     }
 
     setDefArea(size:number, align:number):void {
+        checkPowOf2(align);
         this.memoryChunkSize = size;
         this.memoryChunkAlign = align;
-        const alignbit = Math.log2(align);
-        if ((alignbit|0) !== alignbit) throw Error(`Invalid alignment ${align}`);
+        if (align > this.codeAlign) this.codeAlign = align;
     }
 
     connect(cb:(asm:X64Assembler)=>this):this {
@@ -481,18 +643,26 @@ export class X64Assembler {
         return this;
     }
 
+    writeUint8(value:number):this {
+        this.chunk.writeUint8(value);
+        return this;
+    }
+
     writeInt16(value:number):this {
-        return this.write(
-            value&0xff,
-            (value>>>8)&0xff);
+        this.chunk.writeInt16(value);
+        return this;
     }
 
     writeInt32(value:number):this {
-        return this.write(
-            value&0xff,
-            (value>>>8)&0xff,
-            (value>>>16)&0xff,
-            (value>>>24));
+        this.chunk.writeInt32(value);
+        return this;
+    }
+
+    getLabelOffset(name:string):number {
+        this._normalize();
+        const label = this.ids.get(name);
+        if (!(label instanceof AddressIdentifier)) return -1;
+        return label.offset;
     }
 
     labels():Record<string, number> {
@@ -624,23 +794,38 @@ export class X64Assembler {
         } else {
             opcode |= 0x80;
         }
+
         if (r3 !== null) {
-            if (r1 === Register.rsp) {
-                throw Error(`Invalid operation r1=rsp, r3=${Register[r3]}`);
-            }
-            switch (multiplying) {
-            case 1: break;
-            case 2: opcode |= 0x40; break;
-            case 4: opcode |= 0x80; break;
-            case 8: opcode |= 0xc0; break;
-            default: throw Error(`Invalid multiplying ${multiplying}`);
+            if (r3 === Register.rsp) {
+                throw Error(`Invalid operation r3=rsp, r1=${Register[r1]}`);
             }
             this.put(opcode | 0x04);
-            opcode |= (r3 & 7) << 3;
-        }
-        this.put((r1 & 7) | opcode);
-        if (targetRegister === Register.rsp) {
-            this.put(0x24);
+            let second = (r1 & 7) | (r3 & 7) << 3;
+            switch (multiplying) {
+            case 1: break;
+            case 2: second |= 0x40; break;
+            case 4: second |= 0x80; break;
+            case 8: second |= 0xc0; break;
+            default: throw Error(`Invalid multiplying ${multiplying}`);
+            }
+            this.put(second);
+        } else {
+            if (multiplying !== 1) {
+                this.put(opcode | 0x04);
+                let second = ((r1 & 7) << 3) | 0x05;
+                switch (multiplying) {
+                case 2: second |= 0x40; break;
+                case 4: second |= 0x80; break;
+                case 8: second |= 0xc0; break;
+                default: throw Error(`Invalid multiplying ${multiplying}`);
+                }
+                this.put(second);
+            } else {
+                this.put((r1 & 7) | opcode);
+                if (targetRegister === Register.rsp) {
+                    this.put(0x24);
+                }
+            }
         }
 
         if (opcode & 0x40) this.put(offset);
@@ -748,8 +933,7 @@ export class X64Assembler {
 
     def(name:string, size:OperationSize, bytes:number, align:number, exportDef:boolean = false):this {
         if (align < 1) align = 1;
-        const alignbit = Math.log2(align);
-        if ((alignbit|0) !== alignbit) throw Error(`Invalid alignment ${align}`);
+        checkPowOf2(align);
         if (align > this.memoryChunkAlign) {
             this.memoryChunkAlign = align;
         }
@@ -1531,24 +1715,49 @@ export class X64Assembler {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.xmmword, MovOper.Read, FloatOper.ConvertPrecision, OperationSize.dword);
     }
 
-    label(labelName:string, exportDef:boolean = false):this {
-        const label = this._getJumpTarget(labelName);
-        if ((label instanceof Defination) || label.chunk !== null) {
-            throw Error(`${labelName} is already defined`);
+    makeLabel(labelName:string|null, exportDef:boolean = false, isProc:boolean = false):Label{
+        let label:Label;
+        if (labelName !== null) {
+            const exists = this.ids.get(labelName);
+            if (exists != null) {
+                if (exists instanceof Defination) {
+                    throw Error(`${labelName} is already defined`);
+                }
+                if (!(exists instanceof Label)) throw Error(`${labelName} is not label`);
+                if (exists.chunk !== null) {
+                    throw Error(`${labelName} is already defined`);
+                }
+                label = exists;
+            } else {
+                label = new Label(labelName);
+                this.ids.set(labelName, label);
+            }
+        } else {
+            label = new Label(labelName);
         }
+        if (isProc) label.UnwindCodes = [];
+
         label.chunk = this.chunk;
         label.offset = this.chunk.size;
         this.chunk.ids.push(label);
-        if (!exportDef) this.scope.add(labelName);
 
-        let now = this.chunk;
-        let prev = now.prev!;
+        if (labelName !== null) {
+            if (!exportDef) this.scope.add(labelName);
 
-        while (prev !== null && prev.jump!.label === label) {
-            this._resolveLabelSizeForward(prev, prev.jump!);
-            now = prev;
-            prev = now.prev!;
+            let now = this.chunk;
+            let prev = now.prev!;
+
+            while (prev !== null && prev.jump!.label === label) {
+                this._resolveLabelSizeForward(prev, prev.jump!);
+                now = prev;
+                prev = now.prev!;
+            }
         }
+        return label;
+    }
+
+    label(labelName:string, exportDef:boolean = false):this {
+        this.makeLabel(labelName, exportDef);
         return this;
     }
 
@@ -1564,10 +1773,9 @@ export class X64Assembler {
     close_label(labelName:string):this {
         const label = this.ids.get(labelName);
         if (!(label instanceof Label)) throw Error(`${labelName} is not label`);
-        if (label.chunk !== null) throw Error(`${labelName} is already defined`);
+        if (label.chunk !== null) throw Error(`${label} is already defined`);
         label.chunk = this.chunk;
         label.offset = this.chunk.size;
-        this.chunk.ids.push(label);
         let now = this.chunk;
         let prev = now.prev!;
         while (prev !== null && prev.jump!.label === label) {
@@ -1579,18 +1787,22 @@ export class X64Assembler {
         return this;
     }
 
-    private _getJumpTarget(labelName:string):Label|Defination {
-        const id = this.ids.get(labelName);
-        if (id) {
-            if (id instanceof Defination) {
-                if (id.size !== OperationSize.qword) throw Error(`${labelName} size unmatched`);
+    private _getJumpTarget(labelName:string|null):Label|Defination {
+        if (labelName !== null) {
+            const id = this.ids.get(labelName);
+            if (id) {
+                if (id instanceof Defination) {
+                    if (id.size !== OperationSize.qword) throw Error(`${labelName} size unmatched`);
+                    return id;
+                }
+                if (!(id instanceof Label)) throw Error(`${labelName} is not label`);
                 return id;
             }
-            if (!(id instanceof Label)) throw Error(`${labelName} is not label`);
-            return id;
         }
         const label = new Label(labelName);
-        this.ids.set(labelName, label);
+        if (labelName !== null) {
+            this.ids.set(labelName, label);
+        }
         return label;
     }
 
@@ -1733,7 +1945,7 @@ export class X64Assembler {
         chunk = this.chunk;
         chunk.jump = new SplitedJump(info, label, args, this.pos);
         this.pos = null;
-        const nbuf = new AsmChunk(new Uint8Array(64), 0);
+        const nbuf = new AsmChunk(new Uint8Array(64), 0, 1);
         chunk.next = nbuf;
         nbuf.prev = chunk;
         this.chunk = nbuf;
@@ -1762,7 +1974,7 @@ export class X64Assembler {
             chunks.add(chunk);
             for (const id of chunk.ids) {
                 if (id.chunk !== chunk) {
-                    putError(id.name, 'Chunk does not match');
+                    putError(id.name || '[anonymous label]', 'Chunk does not match');
                 }
                 ids.add(id);
             }
@@ -1773,16 +1985,16 @@ export class X64Assembler {
             if (id instanceof AddressIdentifier) {
                 if (id.chunk === null) {
                     if (!final) continue;
-                    putError(id.name, 'Label is not defined');
+                    putError(id.name || '[anonymous label]', 'Label is not defined');
                     continue;
                 }
                 if (!ids.has(id)) {
                     if (id.chunk === MEMORY_INDICATE_CHUNK) continue;
-                    putError(id.name, 'Unknown identifier');
+                    putError(id.name || '[anonymous label]', 'Unknown identifier');
                 }
                 if (!chunks.has(id.chunk)) {
                     const jumpTarget = id.chunk.jump;
-                    putError(id.name, `Unknown chunk, ${(jumpTarget === null ? '[??]' : jumpTarget.label.name)}`);
+                    putError(id.name || '[anonymous label]', `Unknown chunk, ${(jumpTarget === null ? '[??]' : jumpTarget.label.name)}`);
                 }
             }
         }
@@ -1796,36 +2008,11 @@ export class X64Assembler {
         }
     }
 
-    private _makeSeh():void {
-
-        const sehChunk = new AsmChunk(new Uint8Array(64), 0);
-        const UNW_VERSION = 0x01;
-        const UNW_FLAG_EHANDLER = 0x08;
-
-        for (;;) {
-            // UNWIND_INFO
-            sehChunk.writeInt32(UNW_VERSION | UNW_FLAG_EHANDLER);
-            sehChunk.writeInt32(0);
-        }
-
-        // let fnname = '';
-        // let fnstart = 0;
-        // for (const id of this.ids.values()) {
-        //     if (!(id instanceof Label)) continue;
-        //     if (fnname !== '') {
-        //         sehChunk.writeInt32(fnstart);
-        //         sehChunk.writeInt32(id.offset);
-        //         sehChunk.writeInt32(0);
-        //         continue;
-        //     }
-        //     fnname = id.name;
-        //     fnstart = id.offset;
-        // }
-
-    }
-
     private _normalize():this {
+        if (this.normalized) return this;
+        this.normalized = true;
 
+        // resolving labels
         const errors = new ParsingErrorContainer;
         let prev = this.chunk.prev;
         while (prev !== null) {
@@ -1841,19 +2028,56 @@ export class X64Assembler {
 
         const chunk = this.chunk;
         if (chunk.next !== null || chunk.prev !== null) {
-            throw Error(`All chunks don't merge. internal problem.`);
+            throw Error(`All chunks didn't merge. internal problem`);
         }
 
+        // attach const chunk
         if (this.constChunk !== null) {
             chunk.connect(this.constChunk);
             this.constChunk = null;
             chunk.removeNext();
         }
 
+        // write runtime table
+        const last = chunk.size;
+
+        let lastFunction:RUNTIME_FUNCTION|null = null;
+        const functions:RUNTIME_FUNCTION[] = [];
+
+        for (const proc of this.ids.values()) {
+            if (!(proc instanceof Label)) continue;
+            if (proc.UnwindCodes === null) continue;
+            if (lastFunction !== null) {
+                lastFunction.EndAddress = proc.offset;
+            }
+            const unwindinfo = chunk.size;
+            proc.writeUnwindInfoTo(chunk, proc.offset);
+            lastFunction = {
+                BeginAddress: proc.offset,
+                EndAddress: 0,
+                UnwindData: unwindinfo,
+            };
+            functions.push(lastFunction);
+        }
+        if (lastFunction !== null) {
+            lastFunction.EndAddress = last;
+        }
+
+        if (functions.length !== 0) {
+            this.label('#runtime_function_table', true);
+            for (const func of functions) {
+                chunk.writeInt32(func.BeginAddress);
+                chunk.writeInt32(func.EndAddress);
+                chunk.writeInt32(func.UnwindData);
+            }
+        }
+
+        // align memory area
         const memalign = this.memoryChunkAlign;
         const bufsize = (this.chunk.size + memalign - 1) & ~(memalign-1);
         this.chunk.putRepeat(0xcc, bufsize - this.chunk.size);
 
+        // resolve def addresses
         try {
             chunk.resolveAll();
         } catch (err) {
@@ -1866,6 +2090,7 @@ export class X64Assembler {
         if (errors.error !== null) {
             throw errors.error;
         }
+
         return this;
     }
 
@@ -1889,20 +2114,85 @@ export class X64Assembler {
     jg_label(label:string):this { return this._jmp_o_label(JumpOperation.jg, label); }
 
     proc(name:string, exportDef:boolean = false):this {
-        this.label(name, exportDef);
+        this.currentProc = this.makeLabel(name, exportDef, true);
         this.scopeStack.push(this.scope);
         this.scope = new Set;
+        this.prologueAnchor = this.makeLabel(null);
+        return this;
+    }
+
+    runtime_error_handler():this {
+        if (this.currentProc === null) {
+            throw Error(`not in proc`);
+        }
+        if (!this.unwinded) {
+            this.label('_eof');
+            this.unwind();
+            this.ret();
+        }
+        this.currentProc.exceptionHandler = this.makeLabel(null);
+        return this;
+    }
+
+    unwind():this {
+        if (this.currentProc === null) throw Error(`not in proc`);
+        const codes = this.currentProc.UnwindCodes;
+        if (codes === null) throw Error(`currentProc is not proc`);
+        for (let i=codes.length-1;i>=0;i--) {
+            const code = codes[i];
+            if (typeof code === 'number') continue;
+            switch (code.UnwindOp) {
+            case UWOP_PUSH_NONVOL:
+                this.pop_r(code.OpInfo);
+                break;
+            case UWOP_ALLOC_SMALL:
+                this.add_r_c(Register.rsp, code.OpInfo*8+8);
+                break;
+            case UWOP_ALLOC_LARGE:
+                if (code.OpInfo === 0) {
+                    const n = codes[i+1];
+                    if (typeof n !== 'number') throw Error(`number expected after UWOP_ALLOC_LARGE`);
+                    this.add_r_c(Register.rsp, n * 8);
+                } else if (code.OpInfo === 1) {
+                    const n = codes[i+1];
+                    if (typeof n !== 'number') throw Error(`number expected after UWOP_ALLOC_LARGE`);
+                    const n2 = codes[i+2];
+                    if (typeof n2 !== 'number') throw Error(`number expected after UWOP_ALLOC_LARGE`);
+                    this.add_r_c(Register.rsp, (n2 << 16) | n);
+                } else {
+                    throw Error(`Unexpected OpInfo of UWOP_ALLOC_LARGE (${code.OpInfo})`);
+                }
+                break;
+            default:
+                throw Error(`Unexpected unwindop (${code.UnwindOp})`);
+            }
+        }
+        this.unwinded = true;
         return this;
     }
 
     endp():this {
-        if (this.scopeStack.length === 0) throw Error(`end of scope`);
+        if (this.scopeStack.length === 0) {
+            throw Error(`end of scope`);
+        }
+        if (this.currentProc === null) {
+            throw Error(`not in proc`);
+        }
+
+        if (!this.unwinded) {
+            this.label('_eof');
+            this.unwind();
+            this.ret();
+        }
+
         const scope = this.scope;
         this.scope = this.scopeStack.pop()!;
-
         for (const name of scope) {
             this.ids.delete(name);
         }
+        this.prologueAnchor = null;
+        this.currentProc = null;
+        this.unwinded = false;
         return this;
     }
 
@@ -1969,7 +2259,7 @@ export class X64Assembler {
         const readConstString = (addressCommand:boolean, encoding:BufferEncoding):void=>{
             const quotedString = parser.readQuotedStringTo('"');
             if (quotedString === null) throw parser.error('Invalid quoted string');
-            if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(64), 0);
+            if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(64), 0, 1);
             const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
             this.constChunk.write(Buffer.from(quotedString+'\0', encoding));
             this.constChunk.ids.push(id);
@@ -2032,7 +2322,8 @@ export class X64Assembler {
             }
             case 'proc':
                 try {
-                    this.proc(parser.readAll().trim(), exportDef);
+                    const name = parser.readAll().trim();
+                    this.proc(name, exportDef);
                 } catch (err) {
                     throw parser.error(err.message);
                 }
@@ -2213,7 +2504,12 @@ export class X64Assembler {
         parser.matchedWidth = parser.matchedIndex + parser.matchedWidth - totalIndex;
 
         if (command.endsWith(':')) {
-            this.label(command.substr(0, command.length-1).trim());
+            try {
+                this.label(command.substr(0, command.length-1).trim());
+            } catch (err) {
+                console.log(remapStack(err.stack));
+                throw parser.error(err.message);
+            }
             return;
         }
 
@@ -2241,7 +2537,7 @@ export class X64Assembler {
         }
     }
 
-    compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):void{
+    compile(source:string, defines?:Record<string, number>|null, reportDirectWithFileName?:string|null):this{
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
@@ -2287,6 +2583,7 @@ export class X64Assembler {
                 throw err;
             }
         }
+        return this;
     }
 
     save():Uint8Array {
@@ -2297,7 +2594,7 @@ export class X64Assembler {
             out.put(0);
         }
         function writeAddress(id:AddressIdentifier):void {
-            out.writeNullTerminatedString(id.name);
+            out.writeNullTerminatedString(id.name!);
             out.writeVarUint(id.offset - address);
             address = id.offset;
         }
@@ -2306,14 +2603,13 @@ export class X64Assembler {
         const labels:Label[] = [];
         const defs:Defination[] = [];
         for (const id of this.ids.values()) {
-            if (this.scope.has(id.name)) continue;
+            if (this.scope.has(id.name!)) continue;
             if (id instanceof Label) {
                 labels.push(id);
             } else if (id instanceof Defination) {
                 defs.push(id);
             }
         }
-        labels.sort((a,b)=>a.offset-b.offset);
 
         out.writeVarUint(Math.log2(this.memoryChunkAlign));
         let address = 0;
@@ -2357,7 +2653,8 @@ export class X64Assembler {
         script.tab(4);
 
         for (const id of this.ids.values()) {
-            if (this.scope.has(id.name)) continue;
+            if (this.scope.has(id.name!)) continue;
+            if (id.name === null || id.name.startsWith('#')) continue;
             if (id instanceof Label) {
                 script.writeln(`get ${id.name}():NativePointer{`);
                 script.writeln(`    return buffer.add(${id.offset});`);
@@ -2594,17 +2891,6 @@ for (const [name, [type, reg, size]] of regmap) {
     regnamemap[reg | (size << 4)] = name;
 }
 
-function checkModified(ori:string, out:string):boolean{
-    const ostat = fs.statSync(ori);
-
-    try{
-        const nstat = fs.statSync(out);
-        return ostat.mtimeMs >= nstat.mtimeMs;
-    } catch (err){
-        return true;
-    }
-}
-
 const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
 
 export namespace asm
@@ -2741,10 +3027,12 @@ export namespace asm
                 case 'c':
                     i ++;
                     break;
-                case 'rp': {
+                case 'rp':
                     i += 3;
                     break;
-                }
+                case 'rrp':
+                    i += 4;
+                    break;
                 }
             }
 
@@ -2771,6 +3059,17 @@ export namespace asm
                     const multiply = args[i++];
                     const offset = args[i++];
                     let str = `[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${offset !== 0 ? shex_o(offset) : ''}]`;
+                    if (nsize != null) {
+                        str = `${OperationSize[nsize]} ptr ${str}`;
+                    }
+                    argstr.push(str);
+                    break;
+                }
+                case 'rrp': {
+                    const r2 = args[i++];
+                    const multiply = args[i++];
+                    const offset = args[i++];
+                    let str = `[${Register[v]}+${Register[r2]}${multiply !== 1 ? `*${multiply}` : ''}${offset !== 0 ? shex_o(offset) : ''}]`;
                     if (nsize != null) {
                         str = `${OperationSize[nsize]} ptr ${str}`;
                     }
@@ -2816,18 +3115,18 @@ export namespace asm
         return X64Assembler.load(bin);
     }
 
-    export function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):X64Assembler{
+    export async function loadFromFile(src:string, defines?:Record<string, number>|null, reportDirect:boolean = false):Promise<X64Assembler>{
         const basename = src.substr(0, src.lastIndexOf('.')+1);
         const binpath = `${basename}bin`;
 
         let buffer:Uint8Array;
-        if (checkModified(src, binpath)){
-            buffer = asm.compile(fs.readFileSync(src, 'utf-8'), defines, reportDirect ? src : null);
-            fs.writeFileSync(binpath, buffer);
+        if (await fsutil.checkModified(src, binpath)){
+            buffer = asm.compile(await fs.promises.readFile(src, 'utf-8'), defines, reportDirect ? src : null);
+            await fs.promises.writeFile(binpath, buffer);
             console.log(`Please reload it`);
             process.exit(0);
         } else {
-            buffer = fs.readFileSync(binpath);
+            buffer = await fs.promises.readFile(binpath);
         }
         return asm.load(buffer);
     }
