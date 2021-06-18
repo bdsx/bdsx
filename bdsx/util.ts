@@ -237,6 +237,18 @@ export function arrayEquals(arr1:any[], arr2:any[], count:number):boolean {
     return true;
 }
 
+/**
+ * check elements are same
+ */
+export function arraySame(array:unknown[]):boolean {
+    if (array.length === 0) return true;
+    const first = array[0];
+    for (let i=1;i<array.length;i++) {
+        if (array[i] !== first) return false;
+    }
+    return true;
+}
+
 export function makeSignature(sig:string):number {
     if (sig.length > 4) throw Error('too long');
     let out = 0;

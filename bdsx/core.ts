@@ -25,7 +25,7 @@ export declare const VoidPointer:VoidPointerConstructor;
  * the root of all pointer-based classes
  */
 export interface VoidPointer {
-    equals(ptr: VoidPointer): boolean;
+    equals(ptr: VoidPointer|null): boolean;
 
     /**
      * make cloned pointer with offset

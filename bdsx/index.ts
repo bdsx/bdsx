@@ -100,36 +100,17 @@ declare module "./core"
     /**
      * @deprecated use 'bdsx/makefunc'
      */
-    type TypesFromParamIds_js2np<T extends ParamType[]> = makefuncModule.TypesFromParamIds_js2np<T>;
+    type MakeFuncOptions<THIS> = any;
 
     /**
      * @deprecated use 'bdsx/makefunc'
      */
-    type TypesFromParamIds_np2js<T extends ParamType[]> = makefuncModule.TypesFromParamIds_np2js<T>;
+    type FunctionFromTypes_np<OPTS,PARAMS,RETURN> = any;
 
     /**
      * @deprecated use 'bdsx/makefunc'
      */
-    type MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> = makefuncModule.MakeFuncOptions<THIS>;
-
-    /**
-     * @deprecated use 'bdsx/makefunc'
-     */
-    type FunctionFromTypes_np<
-        OPTS extends MakeFuncOptions<any>|null,
-        PARAMS extends ParamType[],
-        RETURN extends ReturnType> =
-        makefuncModule.FunctionFromTypes_np<OPTS, PARAMS, RETURN>;
-
-    /**
-     * @deprecated use 'bdsx/makefunc'
-     */
-    type FunctionFromTypes_js<
-        PTR extends VoidPointer|[number, number?],
-        OPTS extends MakeFuncOptions<any>|null,
-        PARAMS extends ParamType[],
-        RETURN extends ReturnType> =
-        makefuncModule.FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN>;
+    type FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> = any;
 }
 NativePointer.prototype.readHex = function(size:number, nextLinePer:number = 16) {
     return hex(this.readBuffer(size), nextLinePer);

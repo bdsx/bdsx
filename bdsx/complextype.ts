@@ -114,7 +114,7 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
             if (ptr != null) return ptr;
             warn();
             console.log(`a function(${ptr}) is allocated.`);
-            return func[makefunc_np] = makefunc.np(func, returnType, opts, ...params);
+            return func[makefunc_np] = makefunc.np(func as any, returnType, opts, ...params);
         }
         function getJs(ptr:VoidPointer):Func {
             warn();

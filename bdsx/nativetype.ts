@@ -340,7 +340,21 @@ VoidPointer.isTypeOf = function<T>(this:{new():T}, v:unknown):v is T {
 };
 
 const undefValueRef = chakraUtil.asJsValueRef(undefined);
+const nullValueRef = chakraUtil.asJsValueRef(null);
 
+export const nullptr_t = new NativeType<void>(
+    'nullptr_t',
+    0, 1,
+    v=>v == null,
+    emptyFunc,
+    emptyFunc,
+    emptyFunc,
+    (asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo)=>{
+        asm.qmov_t_c(target, nullValueRef);
+    },
+    emptyFunc);
+Object.freeze(nullptr_t);
+export type nullptr_t = null;
 export const void_t = new NativeType<void>(
     'void',
     0, 1,
@@ -349,7 +363,6 @@ export const void_t = new NativeType<void>(
     emptyFunc,
     emptyFunc,
     (asm:makefunc.Maker, target:makefunc.Target, source:makefunc.Target, info:makefunc.ParamInfo)=>{
-        if (info.numberOnUsing !== -1) throw Error(`void_t cannot be the parameter`);
         asm.qmov_t_c(target, undefValueRef);
     },
     emptyFunc);
@@ -710,3 +723,11 @@ export const bin128_t = new NativeType<string>(
 });
 export type bin128_t = string;
 Object.freeze(bin128_t);
+
+export type WrapArrayToTypeArray<T extends any[]> = {[P in keyof T]: P extends keyof any[] ? T[P] : Type<T[P]>};
+export type UnwrapTypeArrayToArray<T extends Type<any>[]> = {[P in keyof T]: T[P] extends Type<infer V> ? V : T[P]};
+export type UnwrapType<T> = T extends Type<infer V> ? V : T extends Type<any>[] ? UnwrapTypeArrayToArray<T> : T;
+
+export function templateArgs<ARGS extends (string|number|Type<any>)[]>(...args:ARGS):ARGS{
+    return args;
+}

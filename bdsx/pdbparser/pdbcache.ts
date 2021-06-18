@@ -7,6 +7,7 @@ import { SYMOPT_PUBLICS_ONLY, UNDNAME_COMPLETE, UNDNAME_NAME_ONLY } from '../dbg
 
 const cachepath = path.join(__dirname, 'pdbcachedata.bin');
 const VERSION = 0;
+const EOF = {};
 
 function makePdbCache():number {
     if (fs.existsSync(cachepath)) {
@@ -129,15 +130,27 @@ export class PdbCache implements Iterable<SymbolInfo> {
         fs.closeSync(this.fd);
     }
 
-    private _readMore():void {
+    private _need(need?:number):void {
         const remained = this.bufsize - this.offset;
-        this.buffer.set(this.buffer.subarray(this.offset));
-        this.bufsize = fs.readSync(this.fd, this.buffer, remained, BUFFER_SIZE - remained, null) + remained;
+        if (need != null && remained >= need) return;
+
+        this.buffer.set(this.buffer.subarray(this.offset, this.bufsize));
+        const readed = fs.readSync(this.fd, this.buffer, remained, BUFFER_SIZE - remained, null);
+        this.bufsize = readed + remained;
         this.offset = 0;
+        if (need != null) {
+            if (this.bufsize < need) {
+                throw EOF;
+            }
+        } else {
+            if (readed <= 0) {
+                throw EOF;
+            }
+        }
     }
 
     private _readInt():number {
-        if (this.bufsize - this.offset < 4) this._readMore();
+        this._need(4);
         const n = this.buffer.readInt32LE(this.offset);
         this.offset += 4;
         return n;
@@ -145,10 +158,13 @@ export class PdbCache implements Iterable<SymbolInfo> {
 
     private _readString():string {
         let nullend = this.buffer.indexOf(0, this.offset);
-        if (nullend === -1) {
-            this._readMore();
-            nullend = this.buffer.indexOf(0, this.offset);
-            if (nullend === -1) throw Error(`Null character not found`);
+        if (nullend === -1 || nullend >= this.bufsize) {
+            const lastidx = this.bufsize - this.offset;
+            this._need();
+            nullend = this.buffer.indexOf(0, lastidx);
+            if (nullend === -1|| nullend >= this.bufsize) {
+                throw Error(`Null character not found, (bufsize=${this.bufsize})`);
+            }
         }
 
         const str = this.buffer.subarray(this.offset, nullend).toString('utf8');
@@ -157,12 +173,16 @@ export class PdbCache implements Iterable<SymbolInfo> {
     }
 
     *[Symbol.iterator]():IterableIterator<SymbolInfo> {
-        for (;;) {
-            const address = this._readInt();
-            const tag = this._readInt();
-            const flags = this._readInt();
-            const name = this._readString();
-            yield {address, tag, flags, name};
+        try {
+            for (;;) {
+                const address = this._readInt();
+                const tag = this._readInt();
+                const flags = this._readInt();
+                const name = this._readString();
+                yield {address, tag, flags, name};
+            }
+        } catch (err) {
+            if (err !== EOF) throw err;
         }
     }
 }

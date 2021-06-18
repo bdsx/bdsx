@@ -254,20 +254,14 @@ class ParamInfoMaker {
     }
 }
 
-type InstanceTypeOnly<T> = T extends {new():infer V} ? V : never;
+type InstanceTypeOnly<T, NULLABLE extends boolean> = T extends {new():infer V} ? NULLABLE extends true ? V extends number|boolean ? V : V|null : V : never;
 
-type TypeFrom_js2np<T extends ParamType> =
-    T extends RawTypeId ? any : InstanceTypeOnly<T>|null;
-type TypeFrom_np2js<T extends ParamType> =
-    T extends RawTypeId ? any : InstanceTypeOnly<T>;
+type TypeFrom<T extends ParamType, NULLABLE extends boolean> =
+    T extends RawTypeId ? any : InstanceTypeOnly<T, NULLABLE>;
 
-export type TypesFromParamIds_js2np<T extends ParamType[]> = {
-    [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_js2np<T[key]> : T[key];
+type TypesFromParamIds<T extends ParamType[], NULLABLE extends boolean> = {
+    [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom<T[key], NULLABLE> : T[key];
 };
-export type TypesFromParamIds_np2js<T extends ParamType[]> = {
-    [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_np2js<T[key]> : T[key];
-};
-
 
 export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
 {
@@ -308,20 +302,20 @@ export type FunctionFromTypes_np<
     OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
-    (this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_np2js<PARAMS>) => TypeFrom_js2np<RETURN>;
+    (this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds<PARAMS, false>) => TypeFrom<RETURN, true>;
 
 export type FunctionFromTypes_js<
     PTR extends VoidPointer|[number, number?],
     OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
-    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
+    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds<PARAMS, true>) => TypeFrom<RETURN, false>)& {pointer:PTR};
 
 export type FunctionFromTypes_js_without_pointer<
-OPTS extends MakeFuncOptions<any>|null,
-PARAMS extends ParamType[],
-RETURN extends ParamType> =
-((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
+    OPTS extends MakeFuncOptions<any>|null,
+    PARAMS extends ParamType[],
+    RETURN extends ParamType> =
+    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds<PARAMS, true>) => TypeFrom<RETURN, false>);
 
 function symbolNotFound():never {
     throw Error('symbol not found');
