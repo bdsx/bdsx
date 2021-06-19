@@ -2,9 +2,9 @@
 import fs = require('fs');
 
 export namespace fsutil {
-    export async function isDirectory(file:string):Promise<boolean> {
+    export async function isDirectory(filepath:string):Promise<boolean> {
         try {
-            return (await fs.promises.stat(file)).isDirectory();
+            return (await fs.promises.stat(filepath)).isDirectory();
         } catch (err) {
             return false;
         }
@@ -16,9 +16,9 @@ export namespace fsutil {
             return false;
         }
     }
-    export function isDirectorySync(file:string):boolean {
+    export function isDirectorySync(filepath:string):boolean {
         try {
-            return fs.statSync(file).isDirectory();
+            return fs.statSync(filepath).isDirectory();
         } catch (err) {
             return false;
         }
