@@ -91,8 +91,9 @@ Tester.test({
         assert('0f bf c0', 'movsx eax, ax');
         assert('0f be 00', 'movsx eax, byte ptr [rax]');
         assert('44 0F B6 C1 49 BA B3 01 00 00 00 01 00 00', 'movzx r8d, cl;movabs r10, 0x100000001b3');
-        assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]')
-        assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]')
+        assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]');
+        assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]');
+        assert('0f 90 c0 0f 90 c1 0f 91 c0 0f 91 c1 0f 91 00', 'seto al;seto cl;setno al;setno cl;setno byte ptr [rax]');
     },
 
     bin() {

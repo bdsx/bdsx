@@ -1257,6 +1257,112 @@ export class X64Assembler {
     cmovle_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jle, src, dest, null, multiply, offset, MovOper.Read, size); }
     cmovg_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this { return this._cmov_o(JumpOperation.jg, src, dest, null, multiply, offset, MovOper.Read, size); }
 
+    private _set_o(jmpoper:JumpOperation, r1:Register, r3:Register|null, multiply:AsmMultiplyConstant, offset:number, oper:MovOper):this {
+        this.put(0x0f);
+        this.put(0x90 | jmpoper);
+        this._target(0, r1, null, r3, r1, multiply, offset, oper);
+        return this;
+    }
+
+    seto_r(r:Register):this {
+        return this._set_o(JumpOperation.jo, r, null, 1, 0, MovOper.Register);
+    }
+    setno_r(r:Register):this {
+        return this._set_o(JumpOperation.jno, r, null, 1, 0, MovOper.Register);
+    }
+    setb_r(r:Register):this {
+        return this._set_o(JumpOperation.jb, r, null, 1, 0, MovOper.Register);
+    }
+    setae_r(r:Register):this {
+        return this._set_o(JumpOperation.jae, r, null, 1, 0, MovOper.Register);
+    }
+    sete_r(r:Register):this {
+        return this._set_o(JumpOperation.je, r, null, 1, 0, MovOper.Register);
+    }
+    setne_r(r:Register):this {
+        return this._set_o(JumpOperation.jne, r, null, 1, 0, MovOper.Register);
+    }
+    setbe_r(r:Register):this {
+        return this._set_o(JumpOperation.jbe, r, null, 1, 0, MovOper.Register);
+    }
+    seta_r(r:Register):this {
+        return this._set_o(JumpOperation.ja, r, null, 1, 0, MovOper.Register);
+    }
+    sets_r(r:Register):this {
+        return this._set_o(JumpOperation.js, r, null, 1, 0, MovOper.Register);
+    }
+    setns_r(r:Register):this {
+        return this._set_o(JumpOperation.jns, r, null, 1, 0, MovOper.Register);
+    }
+    setp_r(r:Register):this {
+        return this._set_o(JumpOperation.jp, r, null, 1, 0, MovOper.Register);
+    }
+    setnp_r(r:Register):this {
+        return this._set_o(JumpOperation.jnp, r, null, 1, 0, MovOper.Register);
+    }
+    setl_r(r:Register):this {
+        return this._set_o(JumpOperation.jl, r, null, 1, 0, MovOper.Register);
+    }
+    setge_r(r:Register):this {
+        return this._set_o(JumpOperation.jge, r, null, 1, 0, MovOper.Register);
+    }
+    setle_r(r:Register):this {
+        return this._set_o(JumpOperation.jle, r, null, 1, 0, MovOper.Register);
+    }
+    setg_r(r:Register):this {
+        return this._set_o(JumpOperation.jg, r, null, 1, 0, MovOper.Register);
+    }
+
+    seto_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jo, r, null, multiply, offset, MovOper.Read);
+    }
+    setno_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jno, r, null, multiply, offset, MovOper.Read);
+    }
+    setb_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jb, r, null, multiply, offset, MovOper.Read);
+    }
+    setae_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jae, r, null, multiply, offset, MovOper.Read);
+    }
+    sete_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.je, r, null, multiply, offset, MovOper.Read);
+    }
+    setne_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jne, r, null, multiply, offset, MovOper.Read);
+    }
+    setbe_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jbe, r, null, multiply, offset, MovOper.Read);
+    }
+    seta_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.ja, r, null, multiply, offset, MovOper.Read);
+    }
+    sets_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.js, r, null, multiply, offset, MovOper.Read);
+    }
+    setns_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jns, r, null, multiply, offset, MovOper.Read);
+    }
+    setp_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jp, r, null, multiply, offset, MovOper.Read);
+    }
+    setnp_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jnp, r, null, multiply, offset, MovOper.Read);
+    }
+    setl_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jl, r, null, multiply, offset, MovOper.Read);
+    }
+    setge_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jge, r, null, multiply, offset, MovOper.Read);
+    }
+    setle_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jle, r, null, multiply, offset, MovOper.Read);
+    }
+    setg_rp(r:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._set_o(JumpOperation.jg, r, null, multiply, offset, MovOper.Read);
+    }
+
+
     /**
      * push register
      */
@@ -2917,6 +3023,11 @@ export namespace asm
     defaultOperationSize.set(code.movups_f_f, OperationSize.xmmword);
     defaultOperationSize.set(code.movups_f_rp, OperationSize.xmmword);
     defaultOperationSize.set(code.movups_rp_f, OperationSize.xmmword);
+    for (let i=0;i<16;i++) {
+        const jumpoper = JumpOperation[i].substr(1);
+        defaultOperationSize.set(code[`set${jumpoper}_r`], OperationSize.byte);
+        defaultOperationSize.set(code[`set${jumpoper}_rp`], OperationSize.byte);
+    }
     export const splitTwo32Bits = Symbol('splitTwo32Bits');
     export interface ParameterBase {
         argi:number;

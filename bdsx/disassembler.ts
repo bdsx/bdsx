@@ -235,11 +235,25 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                         const jumpoper = v2 & 0xf;
                         const offset = ptr.readInt32();
                         return walk_ojmp(jumpoper, offset);
+                    } else if ((v2 & 0xf0) === 0x90) {
+                        const jumpoper = v2 & 0xf;
+                        const info = walk_offset(rex, ptr);
+                        if (info === null) { // xmm operations
+                            // bad
+                        } else {
+                            const opername = 'set'+JumpOperation[jumpoper].substr(1);
+                            if (info.offset !== null) {
+                                return new asm.Operation(asm.code[`${opername}_rp`], [info.r1, info.multiply, info.offset]);
+                            } else {
+                                return new asm.Operation(asm.code[`${opername}_r`], [info.r1]);
+                            }
+                        }
                     } else {
                         const info = walk_offset(rex, ptr);
                         if (info === null) { // xmm operations
                             // bad
-                        } else if ((v2 & 0xfe) === 0x28) { // movaps read
+                        } else switch (v2 & 0xfe) {
+                        case 0x28: // movaps read
                             if (foperSize === OperationSize.qword) {
                                 // bad
                             } else if (foperSize === OperationSize.dword) {
@@ -247,17 +261,20 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                             } else { // packed
                                 return walk_addr_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
                             }
-                        } else if ((v2 & 0xfe) === 0xbe) { // movsx
+                            break;
+                        case 0xbe: { // movsx
                             const wordbit = (v2&1);
                             const oper = walk_addr_oper('movsx', 1, 1, info, size, ptr, false);
                             oper.args.push(wordbit !== 0 ? OperationSize.word : OperationSize.byte);
                             return oper;
-                        } else if ((v2 & 0xfe) === 0xb6) { // movzx
+                        }
+                        case 0xb6: { // movzx
                             const wordbit = (v2&1);
                             const oper = walk_addr_oper('movzx', 1, 1, info, size, ptr, false);
                             oper.args.push(wordbit !== 0 ? OperationSize.word : OperationSize.byte);
                             return oper;
-                        } else if ((v2 & 0xfe) === 0x10) { // read
+                        }
+                        case 0x10: { // read
                             const readbit = (v2&1)^1;
                             if (foperSize === OperationSize.qword) {
                                 return walk_addr_oper('movsd', 1, readbit, info, OperationSize.qword, ptr, true);
@@ -266,54 +283,58 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                             } else { // packed
                                 return walk_addr_oper('movups', 1, readbit, info, OperationSize.xmmword, ptr, true);
                             }
-                        } else if (v2 === 0x5a) { // convert precision
-                            if (foperSize === OperationSize.qword) {
-                                return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.qword, ptr, true);
-                            } else if (foperSize === OperationSize.dword) {
-                                return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.dword, ptr, true);
-                            } else {
-                                if (wordoper) {
-                                    return walk_addr_oper('cvtpd2ps', 1, 1, info, OperationSize.xmmword, ptr, true);
+                        }
+                        default:
+                            if (v2 === 0x5a) { // convert precision
+                                if (foperSize === OperationSize.qword) {
+                                    return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.qword, ptr, true);
+                                } else if (foperSize === OperationSize.dword) {
+                                    return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.dword, ptr, true);
                                 } else {
-                                    return walk_addr_oper('cvtps2pd', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    if (wordoper) {
+                                        return walk_addr_oper('cvtpd2ps', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    } else {
+                                        return walk_addr_oper('cvtps2pd', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    }
+                                }
+                            } else if (v2 === 0x2c) { // truncated f2i
+                                if (foperSize === OperationSize.qword) {
+                                    return walk_addr_oper('cvttsd2si', 1, 1, info, OperationSize.qword, ptr, true);
+                                } else if (foperSize === OperationSize.dword) {
+                                    return walk_addr_oper('cvttss2si', 1, 1, info, OperationSize.qword, ptr, true);
+                                } else {
+                                    if (wordoper) {
+                                        return walk_addr_oper('cvttpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    } else {
+                                        return walk_addr_oper('cvttps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    }
+                                }
+                            } else if (v2 === 0x2d) { // f2i
+                                if (foperSize === OperationSize.qword) {
+                                    return walk_addr_oper('cvtsd2si', 1, 1, info, OperationSize.qword, ptr, true);
+                                } else if (foperSize === OperationSize.dword) {
+                                    return walk_addr_oper('cvtss2si', 1, 1, info, OperationSize.dword, ptr, true);
+                                } else {
+                                    if (wordoper) {
+                                        return walk_addr_oper('cvtpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    } else {
+                                        return walk_addr_oper('cvtps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    }
+                                }
+                            } else if (v2 === 0x2a) { // i2f
+                                if (foperSize === OperationSize.qword) {
+                                    return walk_addr_oper('cvtsi2sd', 1, 1, info, size, ptr, true);
+                                } else if (foperSize === OperationSize.dword) {
+                                    return walk_addr_oper('cvtsi2ss', 1, 1, info, size, ptr, true);
+                                } else {
+                                    if (wordoper) {
+                                        return walk_addr_oper('cvtpi2pd', 1, 1, info, OperationSize.mmword, ptr, true);
+                                    } else {
+                                        return walk_addr_oper('cvtpi2ps', 1, 1, info, OperationSize.mmword, ptr, true);
+                                    }
                                 }
                             }
-                        } else if (v2 === 0x2c) { // truncated f2i
-                            if (foperSize === OperationSize.qword) {
-                                return walk_addr_oper('cvttsd2si', 1, 1, info, OperationSize.qword, ptr, true);
-                            } else if (foperSize === OperationSize.dword) {
-                                return walk_addr_oper('cvttss2si', 1, 1, info, OperationSize.qword, ptr, true);
-                            } else {
-                                if (wordoper) {
-                                    return walk_addr_oper('cvttpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
-                                } else {
-                                    return walk_addr_oper('cvttps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
-                                }
-                            }
-                        } else if (v2 === 0x2d) { // f2i
-                            if (foperSize === OperationSize.qword) {
-                                return walk_addr_oper('cvtsd2si', 1, 1, info, OperationSize.qword, ptr, true);
-                            } else if (foperSize === OperationSize.dword) {
-                                return walk_addr_oper('cvtss2si', 1, 1, info, OperationSize.dword, ptr, true);
-                            } else {
-                                if (wordoper) {
-                                    return walk_addr_oper('cvtpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
-                                } else {
-                                    return walk_addr_oper('cvtps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
-                                }
-                            }
-                        } else if (v2 === 0x2a) { // i2f
-                            if (foperSize === OperationSize.qword) {
-                                return walk_addr_oper('cvtsi2sd', 1, 1, info, size, ptr, true);
-                            } else if (foperSize === OperationSize.dword) {
-                                return walk_addr_oper('cvtsi2ss', 1, 1, info, size, ptr, true);
-                            } else {
-                                if (wordoper) {
-                                    return walk_addr_oper('cvtpi2pd', 1, 1, info, OperationSize.mmword, ptr, true);
-                                } else {
-                                    return walk_addr_oper('cvtpi2ps', 1, 1, info, OperationSize.mmword, ptr, true);
-                                }
-                            }
+                            break;
                         }
                     }
                 }
