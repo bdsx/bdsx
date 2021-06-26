@@ -77,7 +77,7 @@ function checkVersionSyntax(pkgname:string, installed:string, requireds:string):
 
     for (const reqs of requireds.split(/ *\|\| */)) {
         const [req1, req2] = reqs.split(/ *- */, 2);
-        if (req2 !== undefined) {
+        if (req2 != null) {
             if (checkVersion(installedNums, req1) && checkVersion(installedNums, '<='+req2)) return true;
         } else {
             if (checkVersion(installedNums, req1)) return true;

@@ -124,6 +124,18 @@ class StructureDefination {
                 };
             }
         }
+        if (propmap.ctor_move.code !== '') {
+            if (!clazz.prototype.hasOwnProperty(NativeType.ctor_move)) {
+                let code = propmap.ctor_move.code;
+                if (clazz.prototype[NativeType.ctor_move] !== emptyFunc) {
+                    code = `types[${idx}][NativeType.ctor_move].call(this);\n${code}`;
+                }
+                const func = new Function('NativeType', 'types', 'o', propmap.ctor_move.code);
+                clazz.prototype[NativeType.ctor_move] = function(this:T, o:T){
+                    func.call(this, NativeType, params, o);
+                };
+            }
+        }
 
         clazz[StructurePointer.contentSize] =
         clazz.prototype[NativeType.size] =
@@ -205,6 +217,7 @@ export class NativeClass extends StructurePointer {
     static readonly [isSealed] = true;
     static readonly [makefunc.pointerReturn] = true;
     static readonly [makefunc.js2npLocalSize] = 0;
+    static readonly symbol?:string;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -222,7 +235,7 @@ export class NativeClass extends StructurePointer {
         // empty
     }
     [NativeType.ctor_move](from:this):void {
-        this[NativeType.ctor_copy](from);
+        // empty
     }
     [NativeType.setter](from:this):void {
         this[NativeType.dtor]();
@@ -264,6 +277,7 @@ export class NativeClass extends StructurePointer {
             builder.dtor.code += `this${accessor(key)}[NativeType.dtor]();\n`;
         }
         builder.ctor_copy.code += `this${accessor(key)}[NativeType.ctor_copy](o${accessor(key)});\n`;
+        builder.ctor_move.code += `this${accessor(key)}[NativeType.ctor_move](o${accessor(key)});\n`;
     }
 
     /**
@@ -370,7 +384,7 @@ export function nativeField<T>(type:Type<T>, fieldOffset?:number|null, bitMask?:
     return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
         let def = structures.get(clazz);
-        if (def === undefined) structures.set(clazz, def = new StructureDefination((clazz as any).__proto__));
+        if (def == null) structures.set(clazz, def = new StructureDefination((clazz as any).__proto__));
         def.field(key, type, fieldOffset, bitMask);
     };
 }
@@ -378,7 +392,7 @@ export function nativeField<T>(type:Type<T>, fieldOffset?:number|null, bitMask?:
 export function nativeClass(size?:number|null, align:number|null = null) {
     return <T extends NativeClass>(clazz:NativeClassType<T>):void=>{
         const def = structures.get(clazz);
-        if (def === undefined) {
+        if (def == null) {
             if (makefunc.np2js in clazz) {
                 clazz[NativeType.getter] = wrapperGetter;
                 clazz[NativeType.descriptor] = wrapperDescriptor;
@@ -417,6 +431,7 @@ function wrapperDescriptor<THIS extends NativeClass>(this:{new():THIS}, builder:
         builder.dtor.code += `this${accessor(key)}[NativeType.dtor]();\n`;
     }
     builder.ctor_copy.code += `this${accessor(key)}[NativeType.ctor_copy](o${accessor(key)});\n`;
+    builder.ctor_move.code += `this${accessor(key)}[NativeType.ctor_move](o${accessor(key)});\n`;
 }
 
 export interface NativeArrayType<T> extends Type<NativeArray<T>>
@@ -451,6 +466,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
             builder.dtor.code += `this${accessor(key)}[NativeType.dtor]();\n`;
         }
         builder.ctor_copy.code += `this${accessor(key)}[NativeType.ctor_copy](o${accessor(key)});\n`;
+        builder.ctor_move.code += `this${accessor(key)}[NativeType.ctor_move](o${accessor(key)});\n`;
     }
     static readonly [NativeType.align]:number = 1;
 
@@ -660,3 +676,19 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
         clazz[makefunc.np2npAsm]);
 }
 
+export namespace nativeClassUtil {
+    export function bindump(object:NativeClass):void {
+        const size = object[NativeType.size];
+        const ptr = object.as(NativePointer);
+        for (let i=0;i<size;i+=8) {
+            const remaining = Math.min(size - i, 8);
+            let str = '';
+            for (let i=0;i<remaining;i++) {
+                let b = ptr.readUint8().toString(16);
+                if (b.length === 1) b = '0'+b;
+                str = b + str;
+            }
+            console.log(str);
+        }
+    }
+}

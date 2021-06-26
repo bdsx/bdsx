@@ -135,7 +135,7 @@ export class CustomCommandFactory {
         for (const [name, type, optkey] of parameters) {
             if (name in fields) throw Error(`${name}: field name dupplicated`);
             fields[name] = type;
-            if (optkey !== undefined) {
+            if (optkey != null) {
                 if (optkey in fields) throw Error(`${optkey}: field name dupplicated`);
                 fields[optkey] = bool_t;
             }
@@ -184,7 +184,7 @@ export class CustomCommandFactory {
                 try {
                     const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
                     for (const [name, optkey] of paramNames) {
-                        if (optkey === undefined || this[optkey]) {
+                        if (optkey == null || this[optkey]) {
                             nobj[name] = this[name];
                         }
                     }
@@ -218,7 +218,7 @@ export class CustomCommandFactory {
         const params:CommandParameterData[] = [];
         CustomCommandImpl.define(fields);
         for (const [name, optkey] of paramNames) {
-            if (optkey !== undefined) params.push(CustomCommandImpl.optional(name, optkey));
+            if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey));
             else params.push(CustomCommandImpl.mandatory(name, null));
         }
 

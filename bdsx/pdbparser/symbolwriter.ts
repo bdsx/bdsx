@@ -688,7 +688,7 @@ class TsFile extends TsFileBase {
 
         const remapped = specialNameRemap.get(name);
         let matched:RegExpMatchArray|null;
-        if (remapped !== undefined) {
+        if (remapped != null) {
             name = remapped;
         } else if (name.startsWith("`vector deleting destructor'")) {
             name = '__vector_deleting_destructor_'+item.adjustors.join('_');
@@ -782,7 +782,7 @@ class TsFile extends TsFileBase {
             const basename = this._getVarName(args[i]);
             let name = basename;
             const info = names.get(name);
-            if (info === undefined) {
+            if (info == null) {
                 names.set(name, {index:i, counter:1});
             } else {
                 if (info.counter === 1) {

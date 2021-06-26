@@ -27,6 +27,8 @@ namespace NativeTypeFn {
  */
 export interface Type<T> extends makefunc.Paramable {
     name:string;
+    symbol?:string;
+
     isTypeOf(v:unknown):v is T;
 
     [NativeTypeFn.getter](ptr:StaticPointer, offset?:number):T;
@@ -64,6 +66,7 @@ export class NativeDescriptorBuilder {
     public readonly ctor = new NativeDescriptorBuilder.UseContextCtor;
     public readonly dtor = new NativeDescriptorBuilder.UseContextDtor;
     public readonly ctor_copy = new NativeDescriptorBuilder.UseContextCtorCopy;
+    public readonly ctor_move = new NativeDescriptorBuilder.UseContextCtorCopy;
 }
 export namespace NativeDescriptorBuilder {
     export abstract class UseContext {
@@ -272,6 +275,8 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         }
         builder.ctor_copy.setPtrOffset(offset);
         builder.ctor_copy.code += `types[${typeidx}][NativeType.ctor_copy](ptr, optr);\n`;
+        builder.ctor_move.setPtrOffset(offset);
+        builder.ctor_move.code += `types[${typeidx}][NativeType.ctor_move](ptr, optr);\n`;
     }
 
     static definePointedProperty<KEY extends keyof any, T>(target:{[key in KEY]:T}, key:KEY, pointer:StaticPointer, type:Type<T>):void {
@@ -358,7 +363,7 @@ export type void_t = void;
 export const bool_t = new NativeType<boolean>(
     'bool',
     1, 1,
-    v=>v === undefined,
+    v=>typeof v === 'boolean',
     (ptr, offset)=>ptr.getBoolean(offset),
     (ptr, v, offset)=>ptr.setBoolean(v, offset),
     (asm, target, source, info)=>{

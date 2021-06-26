@@ -58,6 +58,9 @@ const STATUS_NO_NODE_THREAD = (0xE0000001|0);
 
 // default runtime error handler
 runtimeError.setHandler(err=>{
+    if (!err) {
+        err = Error(`Native crash without error object, (result=${err})`);
+    }
     remapError(err);
 
     const lastSender = ipfilter.getLastSender();

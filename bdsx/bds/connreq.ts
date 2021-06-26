@@ -20,6 +20,8 @@ export enum JsonValueType
 
 @nativeClass(0x10)
 export class JsonValue extends NativeClass {
+    static readonly symbol = 'Json::Value';
+
     @nativeField(uint8_t, 8)
     type:JsonValueType;
 

@@ -13,6 +13,7 @@ import { templateName } from "../templatename";
 import { Actor } from "./actor";
 import { RelativeFloat } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
+import { JsonValue } from "./connreq";
 import { procHacker } from "./proc";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
@@ -288,8 +289,8 @@ export class CommandRegistry extends HasTypeId {
 
     static getParser<T>(type:Type<T>):VoidPointer {
         const parser = parsers.get(type);
-        if (parser !== undefined) return parser;
-        throw Error(`${type.name} parser not found`);
+        if (parser != null) return parser;
+        throw Error(`${type.symbol || type.name} parser not found`);
     }
 }
 
@@ -322,20 +323,29 @@ export namespace CommandRegistry {
 }
 
 function loadParserFromPdb(types:Type<any>[]):void {
-    const symbols = types.map(type=>templateName('CommandRegistry::parse', type.name));
+    const symbols = types.map(type=>templateName('CommandRegistry::parse', type.symbol || type.name));
 
-    pdb.setOptions(SYMOPT_PUBLICS_ONLY); // i don't know why but CommandRegistry::parse<bool> does not found without it.
+    pdb.setOptions(SYMOPT_PUBLICS_ONLY); // XXX: CommandRegistry::parse<bool> does not found without it.
     const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
     pdb.setOptions(0);
 
     for (let i=0;i<symbols.length;i++) {
         const addr = addrs[symbols[i]];
-        if (addr === undefined) continue;
+        if (addr == null) continue;
         parsers.set(types[i], addr);
     }
 }
 
-const types = [int32_t, float32_t, bool_t, CxxString, ActorWildcardCommandSelector, RelativeFloat, CommandRawText];
+const types = [
+    int32_t,
+    float32_t,
+    bool_t,
+    CxxString,
+    ActorWildcardCommandSelector,
+    RelativeFloat,
+    CommandRawText,
+    JsonValue
+];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 

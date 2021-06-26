@@ -17,7 +17,7 @@ export class NativeModule extends VoidPointer {
      * @deprecated use NativeModule.load(moduleName)
      */
     constructor(moduleNameOrPtr?:string|VoidPointer) {
-        super(moduleNameOrPtr !== undefined ? moduleNameOrPtr instanceof VoidPointer ? moduleNameOrPtr : dll.kernel32.LoadLibraryW(moduleNameOrPtr) : undefined);
+        super(moduleNameOrPtr != null ? moduleNameOrPtr instanceof VoidPointer ? moduleNameOrPtr : dll.kernel32.LoadLibraryW(moduleNameOrPtr) : undefined);
     }
 
     getProcAddress(name: string): NativePointer {

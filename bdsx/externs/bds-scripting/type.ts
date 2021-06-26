@@ -139,7 +139,7 @@ export class DocMethod {
                     break;
                 }
             }
-            if (docfix.return !== undefined) {
+            if (docfix.return != null) {
                 method.return = DocType.fromDocFix(docfix.return);
             }
         }
@@ -295,8 +295,8 @@ export class DocType {
             this.fields.length = 0;
             this.methods.length = 0;
         }
-        if (docfix.optional !== undefined) this.optional = docfix.optional;
-        if (docfix.readonly !== undefined) this.readonly = docfix.readonly;
+        if (docfix.optional != null) this.optional = docfix.optional;
+        if (docfix.readonly != null) this.readonly = docfix.readonly;
         if (docfix.wrapToArray) {
             const inner = new DocType;
             inner.set(this);

@@ -333,7 +333,7 @@ class DupCheck {
     check(target:unknown):void {
         const str = String(target);
         const oldstack = this.map.get(str);
-        if (oldstack !== undefined) {
+        if (oldstack != null) {
             console.error(`Duplicated ${str}`);
             console.error(remapStack(oldstack));
             return;
@@ -1063,7 +1063,7 @@ export namespace makefunc {
         }
 
         let targetfuncptr:VoidPointer|null;
-        if (vfoff === undefined) {
+        if (vfoff == null) {
             targetfuncptr = functionPointer as VoidPointer;
         } else {
             targetfuncptr = null;

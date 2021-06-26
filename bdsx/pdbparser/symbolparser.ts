@@ -853,7 +853,7 @@ function parseDeco(
 }
 
 function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdentifier, isClassLike?:boolean} = {}, scope:PdbIdentifier=PdbIdentifier.global):PdbIdentifier {
-    if (info.isTypeInside === undefined) info.isTypeInside = false;
+    if (info.isTypeInside == null) info.isTypeInside = false;
     parser.skipSpaces();
     const sourceFrom = parser.i;
 
@@ -1167,7 +1167,7 @@ function parseSymbol(eof:string, isFunction:boolean = false):PdbIdentifier {
 function parse(from:number = 0, to?:number):void {
 
     const cache = new PdbCache;
-    if (to === undefined) to = cache.total;
+    if (to == null) to = cache.total;
 
     const bar = new ProgressBar('loading [:bar] :current/:total', to-from);
     symbolIndex = -1;

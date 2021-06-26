@@ -110,6 +110,19 @@ class AsmMover extends X64Assembler {
     }
 }
 
+class SavedCode {
+    constructor(private buffer:Uint8Array, private readonly ptr:StaticPointer) {
+    }
+
+    restore():void {
+        const unlock = new MemoryUnlocker(this.ptr, this.buffer.length);
+        const oribuf = this.ptr.getBuffer(this.buffer.length);
+        this.ptr.setBuffer(this.buffer);
+        this.buffer = oribuf;
+        unlock.done();
+    }
+}
+
 /**
  * Procedure hacker
  */
@@ -284,8 +297,8 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         unlock.done();
     }
 
-    write(key:keyof T, offset:number, asm:X64Assembler, subject?:string, originalCode?:number[], ignoreArea?:number[]):void {
-        const buffer = asm.buffer();
+    write(key:keyof T, offset:number, asm:X64Assembler|Uint8Array, subject?:string, originalCode?:number[], ignoreArea?:number[]):void {
+        const buffer = asm instanceof Uint8Array ? asm : asm.buffer();
         const ptr = this.map[key].add(offset);
         const unlock = new MemoryUnlocker(ptr, buffer.length);
         if (originalCode) {
@@ -305,6 +318,14 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             ptr.writeBuffer(buffer);
         }
         unlock.done();
+    }
+
+    saveAndWrite(key:keyof T, offset:number, asm:X64Assembler|Uint8Array):SavedCode {
+        const buffer = asm instanceof Uint8Array ? asm : asm.buffer();
+        const ptr = this.map[key].add(offset);
+        const code = new SavedCode(buffer, ptr);
+        code.restore();
+        return code;
     }
 
     /**

@@ -13,7 +13,7 @@ export class RawPacket extends AbstractWriter {
         super();
         this.data.construct();
 
-        if (packetId !== undefined) {
+        if (packetId != null) {
             this.reset(packetId);
         }
     }

@@ -392,11 +392,11 @@ export namespace polynominal {
             }
 
             const opers = OPERATORS.get(opername);
-            if (opers === undefined) error(`Unexpected operator '${opername}'`, opername);
+            if (opers == null) error(`Unexpected operator '${opername}'`, opername);
 
             for (const type of types) {
                 const oper = opers[type];
-                if (oper !== undefined) return oper;
+                if (oper != null) return oper;
             }
             error(`Unexpected operator '${opername}' for ${types.join(',')}`, opername);
         }

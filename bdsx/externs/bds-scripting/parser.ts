@@ -124,7 +124,7 @@ async function parseScriptingDoc():Promise<void> {
                                     const nfields:DocField[] = [];
                                     for (const field of fields) {
                                         const fieldIndex = paramNameMap.get(field.name);
-                                        if (fieldIndex === undefined) {
+                                        if (fieldIndex == null) {
                                             console.error(`param name not found: ${field.name}`);
                                             continue;
                                         }

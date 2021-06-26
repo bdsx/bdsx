@@ -1,7 +1,7 @@
 
-import { makefuncDefines } from '../makefunc_defines';
 import { asm } from '../assembler';
-import { remapError } from '../source-map-support';
+import { makefuncDefines } from '../makefunc_defines';
+import { remapAndPrintError } from '../source-map-support';
 import { ParsingError } from '../textparser';
 import path = require('path');
 import fs = require('fs');
@@ -15,7 +15,7 @@ try {
     console.log(`[bdsx-asm] done. no errors`);
 } catch (err) {
     if (!(err instanceof ParsingError)) {
-        console.error(remapError(err).stack);
+        remapAndPrintError(err);
     } else {
         console.log(`[bdsx-asm] failed`);
     }

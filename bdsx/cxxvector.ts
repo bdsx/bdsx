@@ -245,12 +245,11 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         const oldptrmove = oldptr.add();
                         for (let i=0;i<movesize;i++) {
                             const new_item:NativeClass = allocated.as(clazz);
-                            const old_item = this._get(allocated, i);
-                            this.cache![i] = new_item;
+                            const old_item = this._get(oldptrmove, i);
+                            this.cache[i] = new_item;
+
                             new_item[NativeType.ctor_move](old_item);
                             old_item[NativeType.dtor]();
-
-                            this.componentType[NativeType.ctor_move](allocated, oldptrmove);
                             allocated.move(compsize);
                             oldptrmove.move(compsize);
                         }
@@ -258,7 +257,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
 
                     protected _get(ptr:NativePointer, index:number):NativeClass{
                         const item = this.cache[index];
-                        if (item !== undefined) return item;
+                        if (item != null) return item;
                         const type = this.componentType;
                         return this.cache[index] = ptr.as(type);
                     }
@@ -285,6 +284,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         const oldptrmove = oldptr.add();
                         for (let i=0;i<movesize;i++) {
                             this.componentType[NativeType.ctor_move](allocated, oldptrmove);
+                            this.componentType[NativeType.dtor](oldptrmove);
                             allocated.move(compsize);
                             oldptrmove.move(compsize);
                         }

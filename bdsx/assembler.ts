@@ -2317,7 +2317,7 @@ export class X64Assembler {
         const sizes:(OperationSize|null)[] = [null, null];
         let extendingCommand = false;
         function setSize(nsize:OperationSize|undefined):void {
-            if (nsize === undefined) return;
+            if (nsize == null) return;
 
             let idx = 0;
             if (extendingCommand) {
@@ -2357,7 +2357,7 @@ export class X64Assembler {
             }
 
             const size = sizemap.get(type_base);
-            if (size === undefined) throw parser.error(`Unexpected type name '${type}'`);
+            if (size == null) throw parser.error(`Unexpected type name '${type}'`);
 
             return {bytes: size.bytes * Math.max(arraySize, 1), size:size.size, align:size.bytes, arraySize};
         }
@@ -2385,9 +2385,9 @@ export class X64Assembler {
             case 'const': {
                 const [name, type] = parser.readToSpace().split(':');
                 let size:TypeSize|null|undefined = null;
-                if (type !== undefined) {
+                if (type != null) {
                     size = sizemap.get(type);
-                    if (size === undefined) throw parser.error(`Unexpected type syntax '${type}'`);
+                    if (size == null) throw parser.error(`Unexpected type syntax '${type}'`);
                 }
                 const text = parser.readAll();
                 const value = this._polynominal(text, parser.lineNumber, parser.matchedIndex);
@@ -2514,7 +2514,7 @@ export class X64Assembler {
                         if (words[1] === 'ptr') {
                             const sizename = words[0];
                             const size = sizemap.get(sizename);
-                            if (size === undefined || size.size === OperationSize.void) {
+                            if (size == null || size.size === OperationSize.void) {
                                 throw parser.error(`Unexpected size name: ${sizename}`);
                             }
                             if (addressCommand) setSize(OperationSize.qword);
@@ -2592,7 +2592,7 @@ export class X64Assembler {
                             args.push(0);
                             if (id instanceof Label) {
                                 unresolvedConstant = id;
-                            } else if (id !== undefined) {
+                            } else if (id != null) {
                                 throw parser.error(`Unexpected identifier '${id.name}'`);
                             } else {
                                 const label = new Label(param);
@@ -2767,7 +2767,7 @@ export class X64Assembler {
                 script.writeln(`},`);
             } else if (id instanceof Defination) {
                 const off = buffer.length + id.offset;
-                if (id.size === undefined) {
+                if (id.size == null) {
                     script.writeln(`get ${id.name}():NativePointer{`);
                     script.writeln(`    return buffer.add(${off});`);
                     script.writeln(`},`);

@@ -168,7 +168,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             if (info === null) {
                 // bad
             } else {
-                return walk_addr_oper('movsxd', 1, 0, info, size, ptr, false);
+                return walk_addr_oper('movsxd', 1, 1, info, size, ptr, false);
             }
         } else if (v === 0x65) {
             return new asm.Operation(asm.code.gs, []);

@@ -46,7 +46,7 @@ function yesno(question:string, defaultValue?:boolean):Promise<boolean> {
             rl.close();
 
             const cleaned = answer.trim().toLowerCase();
-            if (cleaned === '' && defaultValue !== undefined)
+            if (cleaned === '' && defaultValue != null)
                 return resolve(defaultValue);
 
             if (yesValues.indexOf(cleaned) >= 0)
@@ -333,7 +333,7 @@ class InstallItem {
         await fs.mkdir(this.opts.targetPath);
         const name = this.opts.name;
         const key = this.opts.key;
-        if (installInfo[key] === undefined) {
+        if (installInfo[key] == null) {
             const keyFile = this.opts.keyFile;
             if (keyFile && await fs.exists(path.join(this.opts.targetPath, keyFile))) {
                 if (await yesno(`${name}: Would you like to use what already installed?`)) {
