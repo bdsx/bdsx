@@ -176,28 +176,9 @@ export class Command extends NativeClass {
         name:string = key as string):CommandParameterData {
         const cmdclass = this as NativeClassType<any>;
         const paramType = cmdclass.typeOf(key as string);
-        const param = new CommandParameterData(true);
-        param.construct();
-        param.tid.id = type_id(CommandRegistry, paramType).id;
-        param.parser = CommandRegistry.getParser(paramType);
-        param.name = name;
-        param.type = type;
-        if (desc != null) {
-            const descbuf = Buffer.from(desc, 'utf-8');
-            chakraUtil.JsAddRef(descbuf);
-            const ptr = new NativePointer;
-            ptr.setAddressFromBuffer(descbuf);
-            param.desc = ptr;
-        } else {
-            param.desc = null;
-        }
-
-        param.unk56 = -1;
-        param.offset = cmdclass.offsetOf(key as string);
-        param.flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        param.optional = false;
-        param.pad73 = false;
-        return param;
+        const offset = cmdclass.offsetOf(key as string);
+        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
+        return Command.manual(name, paramType, offset, flag_offset, false, desc, type);
     }
     static optional<CMD extends Command,
         KEY extends keyof CMD,
@@ -210,6 +191,18 @@ export class Command extends NativeClass {
         name:string = key as string):CommandParameterData {
         const cmdclass = this as NativeClassType<any>;
         const paramType = cmdclass.typeOf(key as string);
+        const offset = cmdclass.offsetOf(key as string);
+        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
+        return Command.manual(name, paramType, offset, flag_offset, true, desc, type);
+    }
+    static manual(
+        name:string,
+        paramType:Type<any>,
+        offset:number,
+        flag_offset:number = -1,
+        optional:boolean = false,
+        desc?:string|null,
+        type:CommandParameterDataType = CommandParameterDataType.NORMAL):CommandParameterData {
         const param = new CommandParameterData(true);
         param.construct();
         param.tid.id = type_id(CommandRegistry, paramType).id;
@@ -225,9 +218,9 @@ export class Command extends NativeClass {
         }
 
         param.unk56 = -1;
-        param.offset = cmdclass.offsetOf(key as string);
-        param.flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        param.optional = true;
+        param.offset = offset;
+        param.flag_offset = flag_offset;
+        param.optional = optional;
         param.pad73 = false;
         return param;
     }
@@ -272,7 +265,7 @@ export class CommandRegistry extends HasTypeId {
         overload.parameters.setFromArray(params);
         overload.u6 = -1;
         sig.overloads.push(overload);
-        this.registerOverloadInternal(sig, overload);
+        this.registerOverloadInternal(sig, sig.overloads.back()!);
         overload.destruct();
 
         for (const param of params) {

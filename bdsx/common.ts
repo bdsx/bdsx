@@ -13,6 +13,7 @@ if (global.bdsx != null) {
 global.bdsx = true;
 
 import type {} from './externs';
+import './polyfill';
 
 export interface CANCEL {
     __CANCEL_OBJECT__?:void;

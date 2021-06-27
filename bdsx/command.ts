@@ -157,7 +157,7 @@ export class CustomCommandFactory {
         const params:CommandParameterData[] = [];
         for (const [name, type, optkey] of parameters) {
             if (optkey !== undefined) {
-                params.push(CustomCommandImpl.optional(name as keyof CustomCommandImpl, optkey as keyof CustomCommandImpl));
+                params.push(CustomCommandImpl.optional(name as keyof CustomCommandImpl, optkey as any));
             } else {
                 params.push(CustomCommandImpl.mandatory(name as keyof CustomCommandImpl, null));
             }
@@ -218,7 +218,7 @@ export class CustomCommandFactory {
         const params:CommandParameterData[] = [];
         CustomCommandImpl.define(fields);
         for (const [name, optkey] of paramNames) {
-            if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey));
+            if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any));
             else params.push(CustomCommandImpl.mandatory(name, null));
         }
 

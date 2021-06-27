@@ -9,7 +9,6 @@ if not exist "bedrock_server" call update.bat
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 call npm run -s build
-if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd bedrock_server
 bedrock_server.exe ..

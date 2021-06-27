@@ -9,7 +9,6 @@ if [ ! -d "./bedrock_server" ]; then ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
 npm run -s build
-if [ $? != 0 ]; then exit $?; fi
 
 if [ -x "$(command -v wine)" ]
 then

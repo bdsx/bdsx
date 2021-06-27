@@ -5,3 +5,4 @@ node_modules
 /npm-debug.log
 /pdbcache_by_example.ini
 *.js
+!/bdsx/index.js

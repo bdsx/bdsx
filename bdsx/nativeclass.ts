@@ -10,7 +10,7 @@ import { isBaseOf } from "./util";
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
 
-export type KeysFilter<T, FILTER> = {[key in keyof T]:T[key] extends FILTER ? never: key}[keyof T];
+export type KeysFilter<T, FILTER> = {[key in keyof T]:T[key] extends FILTER ? key: never}[keyof T];
 export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:any[])=>any ? never: key}[keyof T];
 
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};

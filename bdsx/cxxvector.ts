@@ -116,6 +116,17 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         return this._get(beginptr, idx);
     }
 
+    back():T|null {
+        const beginptr = this.getPointer(0);
+        const endptr = this.getPointer(8);
+        if (beginptr.equals(endptr)) return null;
+        const compsize = this.componentType[NativeType.size];
+        endptr.move(-compsize, -1);
+        const bytes = endptr.subptr(beginptr);
+        const idx = bytes / compsize | 0;
+        return this._get(endptr, idx);
+    }
+
     pop():boolean {
         const begptr = this.getPointer(0);
         const endptr = this.getPointer(8);
