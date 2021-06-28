@@ -139,20 +139,3 @@ export abstract class SharedPtr<T extends NativeClass> extends NativeClass {
         });
     }
 }
-
-/**
- * @deprecated
- */
-export class SharedPointer extends StaticPointer {
-    constructor(private readonly sharedptr:SharedPtr<any>) {
-        super(sharedptr.p);
-    }
-
-    assignTo(dest:StaticPointer):void {
-        this.assignTo(dest);
-    }
-
-    dispose():void {
-        this.sharedptr.dispose();
-    }
-}

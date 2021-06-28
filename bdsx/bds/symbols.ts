@@ -1,5 +1,5 @@
-import { pdb } from "bdsx/core";
-import { UNDNAME_NAME_ONLY } from "../common";
+import { pdb } from "../core";
+import { UNDNAME_NAME_ONLY } from "../dbghelp";
 
 const symbols = [
     'ScriptEngine::~ScriptEngine',
@@ -213,11 +213,6 @@ const symbols2 = [
 
 
 export const proc = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
-/** @deprecated use typeof proc */
-export type proc = typeof proc;
-
 export const proc2 = pdb.getList(pdb.coreCachePath, {}, symbols2);
-/** @deprecated use typeof proc2 */
-export type proc2 = typeof proc2;
 
 pdb.close();

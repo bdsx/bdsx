@@ -29,12 +29,6 @@ export class CommandOrigin extends NativeClass {
         return this.vftable.equals(ServerCommandOrigin_vftable);
     }
 
-    /**
-     * @deprecated use cmdorigin.destruct();
-     */
-    destructor():void {
-        abstract();
-    }
     getRequestId():CxxString {
         abstract();
     }

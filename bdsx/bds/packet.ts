@@ -1,6 +1,6 @@
 import { abstract } from "bdsx/common";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { SharedPointer, SharedPtr } from "bdsx/sharedpointer";
+import { SharedPtr } from "bdsx/sharedpointer";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
@@ -43,12 +43,6 @@ export class Packet extends MantleClass {
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
 
-    /**
-     * @deprecated use packet.destruct();
-     */
-    destructor():void {
-        abstract();
-    }
     getId():MinecraftPacketIds {
         abstract();
     }
@@ -93,14 +87,5 @@ export class Packet extends MantleClass {
 
 export const PacketSharedPtr = SharedPtr.make(Packet);
 export type PacketSharedPtr = SharedPtr<Packet>;
-
-/**
- * @deprecated use *Packet.create() instead
- */
-export function createPacket(packetId:MinecraftPacketIds):SharedPointer {
-    const p = new PacketSharedPtr(true);
-    createPacketRaw(p, packetId);
-    return new SharedPointer(p);
-}
 
 export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, int32_t);

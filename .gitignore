@@ -6,3 +6,9 @@ node_modules
 /pdbcache_by_example.ini
 *.js
 !/bdsx/index.js
+!/bdsx/legacy.js
+!/bdsx/chat.js
+!/bdsx/exehacker.js
+!/bdsx/servercontrol.js
+!/bdsx/native.js
+!/bdsx/netevent.js

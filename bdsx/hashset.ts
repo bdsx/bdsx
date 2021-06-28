@@ -48,13 +48,6 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
         return this.keys();
     }
 
-    /**
-     * @deprecated use values() or keys()
-     */
-    entires():IterableIterator<T> {
-        return this.keys();
-    }
-
     keys():IterableIterator<T> {
         return this.values();
     }

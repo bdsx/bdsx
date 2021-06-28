@@ -9,39 +9,7 @@ import { remapStack } from "./source-map-support";
 import { isBaseOf, removeLine } from "./util";
 import asmcode = require('./asm/asmcode');
 
-/**
- * @deprecated use NativeType (int32_t, float32_t, float64_t, ...)
- */
-export enum RawTypeId {
-    /** @deprecated use int32_t */
-	Int32,
-    /** @deprecated use int64_as_float_t */
-	FloatAsInt64,
-    /** @deprecated use float32_t */
-	Float32,
-    /** @deprecated use float64_t */
-	Float64,
-    /** @deprecated use makefunc.Ansi */
-	StringAnsi,
-    /** @deprecated use makefunc.Utf8 */
-	StringUtf8,
-    /** @deprecated use makefunc.Utf16 */
-	StringUtf16,
-    /** @deprecated use makefunc.Buffer */
-	Buffer,
-    /** @deprecated use bin64_t */
-	Bin64,
-    /** @deprecated use bool_t */
-	Boolean,
-    /** @deprecated use makefunc.JsValueRef */
-	JsValueRef,
-    /** @deprecated use void_t */
-	Void,
-    /** @deprecated use float64_t */
-	Float = 3,
-}
-
-export type ParamType = RawTypeId | makefunc.Paramable;
+export type ParamType = makefunc.Paramable;
 
 const nullValueRef = chakraUtil.asJsValueRef(null);
 const functionMap = new AllocatedPointer(0x100);
@@ -156,8 +124,8 @@ function pointerClassOrThrow(paramNum: number, type: any): void {
 const makefuncTypeMap:makefunc.Paramable[] = [];
 function remapType(type:ParamType):makefunc.Paramable {
     if (typeof type === 'number') {
-
         if (makefuncTypeMap.length === 0) {
+            const { RawTypeId } = require('./legacy');
             const { bool_t, int32_t, int64_as_float_t, float64_t, float32_t, bin64_t, void_t } = require('./nativetype') as typeof import('./nativetype');
             makefuncTypeMap[RawTypeId.Boolean] = bool_t;
             makefuncTypeMap[RawTypeId.Int32] = int32_t;
@@ -256,10 +224,8 @@ class ParamInfoMaker {
 
 type InstanceTypeOnly<T> = T extends {new():infer V} ? V : never;
 
-type TypeFrom_js2np<T extends ParamType> =
-    T extends RawTypeId ? any : InstanceTypeOnly<T>|null;
-type TypeFrom_np2js<T extends ParamType> =
-    T extends RawTypeId ? any : InstanceTypeOnly<T>;
+type TypeFrom_js2np<T extends ParamType> = InstanceTypeOnly<T>|null;
+type TypeFrom_np2js<T extends ParamType> = InstanceTypeOnly<T>;
 
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_js2np<T[key]> : T[key];
@@ -280,19 +246,6 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * if this is defined, it allocates at the second parameter.
      */
     structureReturn?:boolean;
-    /**
-     * @deprecated nullable is default now
-     */
-    nullableReturn?:boolean;
-
-    /**
-     * @deprecated meaningless. 'this' should be alawys *Pointer on JS
-     */
-    nullableThis?:boolean;
-    /**
-     * @deprecated nullable is default now
-     */
-    nullableParams?:boolean;
 
     /**
      * Option for native debugging

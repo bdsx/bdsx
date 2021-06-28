@@ -34,14 +34,6 @@ export enum ActorType {
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
-    /** @deprecated use getRuntimeID */
-    get runtimeId():ActorRuntimeID {
-        return this.getRuntimeID();
-    }
-    /** @deprecated use getDimension */
-    get demension():Dimension {
-        return this.getDimension();
-    }
 
     sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
@@ -55,7 +47,7 @@ export class Actor extends NativeClass {
         abstract();
     }
     /**
-     * @deprecated use actor.identifier
+     * it's same with this.identifier
      */
     getIdentifier():string {
         return this.identifier;
@@ -97,12 +89,6 @@ export class Actor extends NativeClass {
         abstract();
     }
 
-    /**
-     * @deprecated renamed to getEntityTypeId
-     */
-    getTypeId():ActorType {
-        abstract();
-    }
     getEntityTypeId():ActorType {
         abstract();
     }
@@ -123,12 +109,6 @@ export class Actor extends NativeClass {
         attr.currentValue = value;
         return attr;
     }
-    /**
-     * @deprecated use actor.getRuntimeID
-     */
-    getRuntimeId():ActorRuntimeID {
-        abstract();
-    }
     getRuntimeID():ActorRuntimeID {
         abstract();
     }
@@ -144,7 +124,7 @@ export class Actor extends NativeClass {
                 "64bit_high": this.getUniqueIdHigh()
             },
             __identifier__:this.identifier,
-            __type__:(this.getTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
+            __type__:(this.getEntityTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
             id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
         };
         return (this as any).entity = entity;

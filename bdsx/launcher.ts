@@ -397,41 +397,6 @@ events.serverLog.on(sessionIdGrabber);
 
 export namespace bedrockServer
 {
-    /**
-     * @deprecated use events.serverLoading
-     */
-    export const loading = events.serverLoading as CapsuledEvent<()=>void>;
-
-    /**
-     * @deprecated use events.serverOpen
-     */
-    export const open = events.serverOpen as CapsuledEvent<()=>void>;
-
-    /**
-     * @deprecated use events.serverClose
-     */
-    export const close = events.serverClose as CapsuledEvent<()=>void>;
-
-    /**
-     * @deprecated use events.serverUpdate
-     */
-    export const update = events.serverUpdate as CapsuledEvent<()=>void>;
-
-    /**
-     * @deprecated use events.error
-     */
-    export const error = events.error as CapsuledEvent<(err:Error)=>CANCEL|void>;
-
-    /**
-     * @deprecated use events.serverLog
-     */
-    export const bedrockLog = events.serverLog as CapsuledEvent<(log:string, color:colors.Color)=>CANCEL|void>;
-
-    /**
-     * @deprecated use events.serverLog
-     */
-    export const commandOutput = events.commandOutput as CapsuledEvent<(log:string)=>CANCEL|void>;
-
     export let sessionId: string;
 
     export function withLoading():Promise<void> {
@@ -551,7 +516,7 @@ export namespace bedrockServer
             stdInHandler = null;
             this.rl.close();
             this.rl.removeAllListeners();
-            close.remove(this.onclose);
+            events.serverClose.remove(this.onclose);
         }
     }
 

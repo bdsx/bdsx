@@ -1,23 +1,26 @@
 
 import asmcode = require('./asm/asmcode');
 import { abstract } from './common';
-import { AllocatedPointer, cgate, NativePointer, VoidPointer } from './core';
+import { AllocatedPointer, cgate, NativePointer, VoidPointer, VoidPointerConstructor } from './core';
 import { dllraw } from './dllraw';
 import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType } from './makefunc';
 import { bool_t, int32_t, int64_as_float_t, void_t } from './nativetype';
+
+interface VoidPointerConstructorEx extends VoidPointerConstructor {
+    new(param?:VoidPointer|null):VoidPointer;
+}
+
+const VoidPointerEx:VoidPointerConstructorEx = VoidPointer;
 
 /**
  * Load external DLL
  * You can call native functions by name
  */
-export class NativeModule extends VoidPointer {
+export class NativeModule extends VoidPointerEx {
     public name = '[undefined]';
 
-    /**
-     * @deprecated use NativeModule.load(moduleName)
-     */
-    constructor(moduleNameOrPtr?:string|VoidPointer) {
-        super(moduleNameOrPtr != null ? moduleNameOrPtr instanceof VoidPointer ? moduleNameOrPtr : dll.kernel32.LoadLibraryW(moduleNameOrPtr) : undefined);
+    constructor() {
+        super(arguments[0] != null ? arguments[0] instanceof VoidPointer ? arguments[0] : dll.kernel32.LoadLibraryW(arguments[0]) : undefined);
     }
 
     getProcAddress(name: string): NativePointer {
@@ -155,7 +158,7 @@ export namespace dll {
         export const _beginthreadex = module.getFunction('_beginthreadex', ThreadHandle, null, VoidPointer, int64_as_float_t, VoidPointer, VoidPointer, int32_t, makefunc.Buffer);
 
         export const free = module.getFunction('free', void_t, null, VoidPointer);
-		export const malloc = makefunc.js(dllraw.ucrtbase.malloc, NativePointer, {nullableReturn:true}, int64_as_float_t);
+		export const malloc = makefunc.js(dllraw.ucrtbase.malloc, NativePointer, null, int64_as_float_t);
         export const __stdio_common_vsprintf = module.getProcAddress('__stdio_common_vsprintf');
     }
     export namespace vcruntime140 {

@@ -44,56 +44,12 @@ MinecraftCommands.prototype.executeCommand = function(ctx, b) {
     return executeCommand(this, res, ctx, b);
 };
 
-/**
- * @deprecated why are you using it?
- */
-export function hookingForCommand(): void {
-    // it will be called with the event callback
-}
-
 interface CommandEvent {
     readonly command: string;
     readonly networkIdentifier: NetworkIdentifier;
 
     setCommand(command: string): void;
 }
-
-class CommandEventImpl implements CommandEvent {
-    public isModified = false;
-
-    constructor(
-        public command: string,
-        public networkIdentifier: NetworkIdentifier
-    ) {
-    }
-
-    setCommand(command: string): void {
-        this.isModified = true;
-        this.command = command;
-    }
-}
-type UserCommandListener = (ev: CommandEvent) => void | CANCEL;
-
-class UserCommandEvents extends EventEx<UserCommandListener> {
-    private readonly listener = (ptr: CommandRequestPacket, networkIdentifier: NetworkIdentifier, packetId: MinecraftPacketIds):void|CANCEL => {
-        const command = ptr.command;
-        const ev = new CommandEventImpl(command, networkIdentifier);
-        if (this.fire(ev) === CANCEL) return CANCEL;
-        if (ev.isModified) {
-            ptr.command = ev.command;
-        }
-    };
-
-    onStarted(): void {
-        events.packetBefore(MinecraftPacketIds.CommandRequest).on(this.listener);
-    }
-    onCleared(): void {
-        events.packetBefore(MinecraftPacketIds.CommandRequest).remove(this.listener);
-    }
-}
-
-/** @deprecated use nethook.before(MinecraftPacketIds.CommandRequest).on */
-export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
 
 @nativeClass()
 export class CustomCommand extends Command {
@@ -126,47 +82,6 @@ export class CustomCommandFactory {
         public readonly registry:CommandRegistry,
         public readonly name:string) {
     }
-
-    /**
-     * @deprecated use overload, naming mistake
-     */
-    override<KEY extends string, ITEM extends [KEY, Type<any>, KEY?], PARAMS extends ITEM[]>(callback:(command:ParamsToObject<PARAMS>, origin:CommandOrigin, output:CommandOutput)=>void, ...parameters:PARAMS):this {
-        const fields:Record<string, Type<any>> = {};
-        for (const [name, type, optkey] of parameters) {
-            if (name in fields) throw Error(`${name}: field name dupplicated`);
-            fields[name] = type;
-            if (optkey != null) {
-                if (optkey in fields) throw Error(`${optkey}: field name dupplicated`);
-                fields[optkey] = bool_t;
-            }
-        }
-        class CustomCommandImpl extends CustomCommand {
-            [NativeType.ctor]():void {
-                this.self_vftable.execute = customCommandExecute;
-            }
-            execute(origin:CommandOrigin, output:CommandOutput):void {
-                callback(this as any, origin, output);
-            }
-        }
-        CustomCommandImpl.define(fields);
-
-        const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
-            this.execute(origin, output);
-        }, void_t, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
-
-        const params:CommandParameterData[] = [];
-        for (const [name, type, optkey] of parameters) {
-            if (optkey !== undefined) {
-                params.push(CustomCommandImpl.optional(name as keyof CustomCommandImpl, optkey as any));
-            } else {
-                params.push(CustomCommandImpl.mandatory(name as keyof CustomCommandImpl, null));
-            }
-        }
-
-        this.registry.registerOverload(this.name, CustomCommandImpl, params);
-        return this;
-    }
-
     overload<PARAMS extends Record<string, Type<any>|[Type<any>, boolean]>>(
         callback:(params:{
             [key in keyof PARAMS]:PARAMS[key] extends [Type<infer F>, infer V] ?
@@ -238,11 +153,6 @@ export class CustomCommandFactory {
 
 export namespace command {
 
-    /**
-     * @deprecated use events.command
-     */
-    export const hook = events.command;
-
     export function register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
@@ -255,11 +165,6 @@ export namespace command {
         return new CustomCommandFactory(registry, name);
     }
 }
-
-/**
- * @deprecated use events.command
- */
-export const hook = events.command;
 
 const customCommandDtor = makefunc.np(function(){
     this[NativeType.dtor]();

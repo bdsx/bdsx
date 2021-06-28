@@ -12,11 +12,6 @@ export namespace capi
 
     asmcode.nodeThreadId = nodeThreadId;
 
-    /**
-     * @deprecated use chakraUtil.asJsValueRef
-     */
-    export const getJsValueRef:(value:any)=>VoidPointer = chakraUtil.asJsValueRef;
-
     export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null, stackSize:number = 0):[ThreadHandle, number] {
         const out = new Uint32Array(1);
         const handle = dll.kernel32.CreateThread(null, stackSize, functionPointer, param, 0, out);

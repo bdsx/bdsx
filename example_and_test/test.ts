@@ -153,7 +153,7 @@ Tester.test({
         const n = new PseudoRandom(12345);
         const hashset = new HashSet<HashItem>();
         let count = 0;
-        for (const v of hashset.entires()) {
+        for (const v of hashset.values()) {
             count++;
         }
         if (count !== 0) this.error(`empty hashset is not empty`);
@@ -314,29 +314,6 @@ Tester.test({
             };
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
-        });
-    },
-
-    async command2() {
-        let passed = false;
-        const cb = (cmd:string, origin:string) => {
-            if (cmd === '/__dummy_command') {
-                passed = origin === 'Server';
-                events.command.remove(cb);
-            }
-        };
-        events.command.on(cb);
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output.startsWith('Unknown command: __dummy_command')) {
-                    events.commandOutput.remove(outputcb);
-                    if (passed) resolve();
-                    else this.fail();
-                    return CANCEL;
-                }
-            };
-            events.commandOutput.on(outputcb);
-            bedrockServer.executeCommand('/__dummy_command', false);
         });
     },
 

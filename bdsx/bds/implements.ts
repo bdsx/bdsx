@@ -73,7 +73,6 @@ Actor.all = function():IterableIterator<Actor> {
 Actor.abstract({
     vftable: VoidPointer,
     identifier: [CxxString as NativeType<EntityId>, 0x458], // minecraft:player
-    runtimeId: [ActorRuntimeID, 0x540],
 });
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
@@ -84,8 +83,8 @@ Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Acto
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
-Actor.prototype.getTypeId = Actor.prototype.getEntityTypeId = makefunc.js([0x520], int32_t, {this:Actor}); // ActorType getEntityTypeId()
-Actor.prototype.getRuntimeId = Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
+Actor.prototype.getEntityTypeId = makefunc.js([0x520], int32_t, {this:Actor}); // ActorType getEntityTypeId()
+Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
 Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
 Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
 Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
@@ -230,7 +229,7 @@ Packet.prototype.write = makefunc.js([0x18], void_t, {this:Packet}, BinaryStream
 Packet.prototype.read = makefunc.js([0x20], int32_t, {this:Packet}, BinaryStream);
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
 
-const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {nullableReturn:true}, ServerNetworkHandler, NetworkIdentifier, int32_t);
+const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, int32_t);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", void_t, {this: ServerNetworkHandler}, NetworkIdentifier, int32_t, CxxString, int32_t);
 ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", void_t, {this:ServerNetworkHandler});
 

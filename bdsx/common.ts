@@ -1,16 +1,8 @@
 
-declare global {
-    let bdsx:boolean|undefined;
-    namespace NodeJS {
-        interface Global {
-            bdsx?:boolean;
-        }
-    }
-}
-if (global.bdsx != null) {
+if ((global as any).bdsx != null) {
     throw Error('bdsx is imported twice');
 }
-global.bdsx = true;
+(global as any).bdsx = true;
 
 import type {} from './externs';
 import './polyfill';
@@ -81,10 +73,3 @@ export function emptyFunc():void{
 export function abstract():never {
     throw Error('abstract');
 }
-
-/** @deprecated use `bdsx/dbghelp` */
-export const SYMOPT_UNDNAME                   = 0x00000002;
-/** @deprecated use `bdsx/dbghelp` */
-export const UNDNAME_COMPLETE                 = 0x0000;  // Enable full undecoration
-/** @deprecated use `bdsx/dbghelp` */
-export const UNDNAME_NAME_ONLY                = 0x1000;  // Crack only the name for primary declaration;

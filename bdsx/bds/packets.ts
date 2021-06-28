@@ -1,17 +1,11 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint64_as_float_t, uint8_t } from "bdsx/nativetype";
-import { bin } from "../bin";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
-
-/** @deprecated use BlockPos instead */
-export const NetworkBlockPosition = BlockPos;
-/** @deprecated use BlockPos instead */
-export type NetworkBlockPosition = BlockPos;
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
@@ -297,11 +291,6 @@ export namespace ActorEventPacket {
         Fall,
     }
 }
-
-/** @deprecated use ActorEventPacket, matching to official name */
-export const EntityEventPacket = ActorEventPacket;
-/** @deprecated use ActorEventPacket, matching to official name */
-export type EntityEventPacket = ActorEventPacket;
 
 @nativeClass(null)
 export class MobEffectPacket extends Packet {

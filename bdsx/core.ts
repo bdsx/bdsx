@@ -3,10 +3,6 @@ import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 
 export interface VoidPointerConstructor
 {
-    /**
-     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
-     */
-    new(pointer: VoidPointer|null|undefined):VoidPointer;
     new():VoidPointer;
 
     fromAddress<T extends VoidPointer>(this:{new():T}, addressLow:number, addressHigh?:number):T;
@@ -293,10 +289,6 @@ export declare class StructurePointer extends PrivatePointer {
     static readonly nativeDtor:unique symbol;
     static [StructurePointer.contentSize]:number;
     constructor(allocateItSelf?:boolean);
-    /**
-     * @deprecated use ptr.as
-     */
-    constructor(pointerOrBufferItSelf:VoidPointer|null);
 }
 
 /**
@@ -499,10 +491,6 @@ export declare namespace pdb
 {
     export const coreCachePath:string;
 
-    /**
-     * @deprecated it's do nothing now. pdb methods will open itself.
-     */
-    export function open():void;
     export function close():void;
 
     export function getOptions():number;
@@ -518,11 +506,6 @@ export declare namespace pdb
      * undecorate the decorated symbol
      */
     export function undecorate(decorated:string, flags:number):string;
-
-    /**
-     * @deprecated use pdb.getList instead
-     */
-    export function getProcAddresses<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
 
     /**
      * get symbols from cache.

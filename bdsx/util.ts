@@ -238,18 +238,3 @@ export function checkPowOf2(n:number):void {
     mask ++;
     if (mask !== n) throw Error(`${n} is not pow of 2`);
 }
-
-import { fsutil } from './fsutil';
-
-/**
- * @deprecated use fsutil.isDirectorySync
- */
-export function isDirectory(filepath:string):boolean {
-    return fsutil.isDirectorySync(filepath);
-}
-/**
- * @deprecated use fsutil.isFileSync
- */
-export function isFile(filepath:string):boolean {
-    return fsutil.isDirectorySync(filepath);
-}

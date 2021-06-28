@@ -6,11 +6,6 @@ import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type 
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
 {
-    /**
-     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
-     */
-    new(ptr:VoidPointer):Wrapper<T>;
-
     new(ptr?:boolean):Wrapper<T>;
 }
 
@@ -61,25 +56,6 @@ export abstract class Wrapper<T> extends NativeClass {
     }
 }
 
-/** @deprecated renamed to WrapperType<T> */
-export type PointerType<T> = WrapperType<T>;
-
-/** @deprecated renamed to Wrapper<T> */
-export abstract class Pointer<T> extends Wrapper<T> {
-    p:T;
-
-    static make<T>(type:{new():T}|NativeType<T>):PointerType<T> {
-        class TypedPointer extends Pointer<T> {
-            p:any;
-            value:any;
-            type:Type<T>;
-        }
-        TypedPointer.prototype.type = type as any;
-        TypedPointer.defineAsUnion({p:type as any, value:type as any});
-        return TypedPointer;
-    }
-}
-
 export class CxxStringWrapper extends NativeClass {
     length:number;
     capacity:number;
@@ -94,13 +70,6 @@ export class CxxStringWrapper extends NativeClass {
 
     [NativeType.ctor_copy](other:CxxStringWrapper):void {
         abstract();
-    }
-
-    /**
-     * @deprecated use .destruct
-     */
-    dispose():void {
-        this.destruct();
     }
 
     get value():string {
@@ -150,12 +119,3 @@ CxxStringWrapper.prototype[NativeType.ctor_copy] = function(this:CxxStringWrappe
     return CxxString[NativeType.ctor_copy](this as any, other as any);
 };
 
-/** @deprecated renamed to CxxStringWrapper */
-export type CxxStringStructure = CxxStringWrapper;
-/** @deprecated renamed to CxxStringWrapper */
-export const CxxStringStructure = CxxStringWrapper;
-
-/** @deprecated use CxxStringWrapper */
-export const CxxStringPointer = Wrapper.make(CxxString);
-/** @deprecated use CxxStringWrapper */
-export type CxxStringPointer = Wrapper<CxxString>;

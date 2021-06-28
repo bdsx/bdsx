@@ -1,7 +1,7 @@
 import { procHacker } from "./bds/proc";
 import { bin } from "./bin";
 import { bin128_t, bin64_t, uint16_t, uint32_t } from "./nativetype";
-import { Pointer, Wrapper } from "./pointer";
+import { Wrapper } from "./pointer";
 
 export namespace mce
 {
@@ -32,8 +32,6 @@ export namespace mce
         },
     }, 'UUID');
     export type UUID = string;
-    /** @deprecated use UUIDWrapper */
-    export const UUIDPointer = Pointer.make(mce.UUID);
     export const UUIDWrapper = Wrapper.make(mce.UUID);
 }
 

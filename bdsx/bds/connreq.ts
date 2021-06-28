@@ -53,7 +53,7 @@ export class JsonValue extends NativeClass {
     getMemberNames():string[] {
         const members:CxxVector<CxxString> = jsonValueGetMemberNames.call(this);
         const array = members.toArray();
-        members.dispose();
+        members.destruct();
         return array;
     }
 
@@ -160,12 +160,3 @@ export class ConnectionRequest extends NativeClass {
         return +json.get('DeviceOS');
     }
 }
-
-/**
- * @deprecated typo!
- */
-export const ConnectionReqeust = ConnectionRequest;
-/**
- * @deprecated typo!
- */
-export type ConnectionReqeust = ConnectionRequest;
