@@ -205,7 +205,7 @@ NetworkHandler.Connection.abstract({
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x58]
+    instance: [RakNetInstance.ref(), 0x48]
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)

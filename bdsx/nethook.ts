@@ -339,7 +339,7 @@ bedrockServer.withLoading().then(()=>{
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
             0x49, 0x8B, 0x07, // mov rax,qword ptr ds:[r15]
-            0x49, 0x8D, 0x96, 0x30, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r14+230]
+            0x49, 0x8D, 0x96, 0x20, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r14+220]
             0x49, 0x8B, 0xCF, // mov rcx,r15
             0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
         ], []);

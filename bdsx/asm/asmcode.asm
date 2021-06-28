@@ -769,7 +769,7 @@ export proc packetSendAllHook
 
     ; original code
     mov rax, [r15]
-    lea rdx, [r14+230h]
+    lea rdx, [r14+220h]
     mov rcx, r15
     unwind
     jmp qword ptr[rax+18h]
