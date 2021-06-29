@@ -1,8 +1,10 @@
+//@ts-check
 /**
- * @deprecated bdsx/index.ts will be deleted
+ * @deprecated
  */
 "use strict";
 
+const colors = require("colors");
 console.trace(colors.red(`[BDSX] bdsx/index.js will be deleted. please import from each modules`));
 
 const { analyzer } = require("./analyzer");
@@ -11,7 +13,6 @@ const { Actor, DimensionId } = require("./bds/actor");
 exports.Actor = Actor;
 exports.DimensionId = DimensionId;
 exports.AttributeId = require("./bds/attribute").AttributeId;
-require("./bds/enumfiller");
 exports.NetworkIdentifier = require("./bds/networkidentifier").NetworkIdentifier;
 const { MinecraftPacketIds } = require("./bds/packetids");
 exports.MinecraftPacketIds = MinecraftPacketIds;
@@ -36,15 +37,17 @@ exports.chat = require("./chat");
 exports.nativetype = require("./nativetype");
 const native = require("./native");
 exports.native = native;
-const colors = require("colors");
 exports.VoidPointer = core.VoidPointer;
 exports.StaticPointer = core.StaticPointer;
 exports.NativePointer = core.NativePointer;
 exports.ipfilter = core.ipfilter;
 exports.jshook = core.jshook;
+//@ts-ignore
 exports.createPacket = nethook.createPacket;
+//@ts-ignore
 exports.sendPacket = nethook.sendPacket;
 exports.CANCEL = common.CANCEL;
+//@ts-ignore
 exports.RawTypeId = makefunc.RawTypeId;
 exports.PacketId = MinecraftPacketIds;
 exports.NativePointer.prototype['readHex'] = function (size, nextLinePer = 16) {
