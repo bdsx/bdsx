@@ -94,6 +94,8 @@ Tester.test({
         assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]');
         assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]');
         assert('0f 90 c0 0f 90 c1 0f 91 c0 0f 91 c1 0f 91 00', 'seto al;seto cl;setno al;setno cl;setno byte ptr [rax]');
+        assert('ff 81 c0 07 00 00 48 ff c0 48 ff 00 48 ff 08 48 ff c0 ff 18 ff 10 ff 28 ff e0',
+            'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
     },
 
     bin() {

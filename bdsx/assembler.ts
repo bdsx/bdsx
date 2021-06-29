@@ -466,6 +466,15 @@ class UNWIND_CODE {
     }
 }
 
+export enum FFOperation {
+    inc,
+    dec,
+    call,
+    call_far,
+    jmp,
+    jmp_far,
+    push
+}
 
 export interface RUNTIME_FUNCTION {
     BeginAddress:number;
@@ -914,17 +923,6 @@ export class X64Assembler {
         return this;
     }
 
-    private _jmp(isCall:boolean, r:Register, multiply:AsmMultiplyConstant, offset:number, oper:MovOper):this {
-        if (r >= Register.r8) this.put(0x41);
-        this.put(0xff);
-        this._target(isCall ? 0x10 : 0x20, r, null, null, r, multiply, offset, oper);
-        return this;
-    }
-
-    private _jmp_r(isCall:boolean, r:Register):this {
-        return this._jmp(isCall, r, 1, 0, MovOper.Register);
-    }
-
     movabs_r_c(
         dest:Register, value:Value64, size:OperationSize = OperationSize.qword):this {
         if (size !== OperationSize.qword) throw Error(`Invalid operation size ${OperationSize[size]}`);
@@ -1032,28 +1030,66 @@ export class X64Assembler {
      * jump with register
      */
     jmp_r(register:Register):this {
-        return this._jmp_r(false, register);
+        return this._ffoper_r(FFOperation.jmp, register, OperationSize.dword);
+    }
+
+    private _ffoper(ffoper:FFOperation, r:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize, oper:MovOper):this {
+        if (r >= Register.r8) this.put(0x41);
+        this._rex(r, null, null, size);
+        this.put(0xff);
+        this._target(ffoper << 3, r, null, null, r, multiply, offset, oper);
+        return this;
+    }
+    private _ffoper_r(ffoper:FFOperation, r:Register, size:OperationSize):this {
+        return this._ffoper(ffoper, r, 1, 0, size, MovOper.Register);
+    }
+
+    inc_r(r:Register, size:OperationSize = OperationSize.qword):this {
+        return this._ffoper_r(FFOperation.inc, r, size);
+    }
+    inc_rp(r:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._ffoper(FFOperation.inc, r, multiply, offset, size, MovOper.Write);
+    }
+    dec_r(r:Register, size:OperationSize = OperationSize.qword):this {
+        return this._ffoper_r(FFOperation.dec, r, size);
+    }
+    dec_rp(r:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
+        return this._ffoper(FFOperation.dec, r, multiply, offset, size, MovOper.Write);
     }
 
     /**
      * call with register
      */
     call_r(register:Register):this {
-        return this._jmp_r(true, register);
+        return this._ffoper_r(FFOperation.call, register, OperationSize.dword);
     }
 
     /**
      * jump with register pointer
      */
     jmp_rp(register:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._jmp(false, register, multiply, offset, MovOper.Read);
+        return this._ffoper(FFOperation.jmp, register, multiply, offset, OperationSize.dword, MovOper.Read);
     }
 
     /**
      * call with register pointer
      */
     call_rp(register:Register, multiply:AsmMultiplyConstant, offset:number):this {
-        return this._jmp(true, register, multiply, offset, MovOper.Read);
+        return this._ffoper(FFOperation.call, register, multiply, offset, OperationSize.dword, MovOper.Read);
+    }
+
+    /**
+     * jump far pointer
+     */
+    jmp_fp(register:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._ffoper(FFOperation.jmp_far, register, multiply, offset, OperationSize.dword, MovOper.Read);
+    }
+
+    /**
+     * call far pointer
+     */
+    call_fp(register:Register, multiply:AsmMultiplyConstant, offset:number):this {
+        return this._ffoper(FFOperation.call_far, register, multiply, offset, OperationSize.dword, MovOper.Read);
     }
 
     /**
@@ -3002,6 +3038,8 @@ const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
 export namespace asm
 {
     export const code:Code = X64Assembler.prototype;
+    defaultOperationSize.set(code.call_rp, OperationSize.qword);
+    defaultOperationSize.set(code.jmp_rp, OperationSize.qword);
     defaultOperationSize.set(code.movss_f_f, OperationSize.dword);
     defaultOperationSize.set(code.movss_f_rp, OperationSize.dword);
     defaultOperationSize.set(code.movss_rp_f, OperationSize.dword);
@@ -3043,6 +3081,19 @@ export namespace asm
         multiply:AsmMultiplyConstant;
         offset:number;
     }
+    export interface ParameterRegisterRegisterPointer extends ParameterBase {
+        type:'rrp';
+        register:Register;
+        register2:Register;
+        multiply:AsmMultiplyConstant;
+        offset:number;
+    }
+    export interface ParameterFarPointer extends ParameterBase {
+        type:'fp';
+        register:Register;
+        multiply:AsmMultiplyConstant;
+        offset:number;
+    }
     export interface ParameterFloatRegister extends ParameterBase {
         type:'f';
         register:FloatRegister;
@@ -3055,7 +3106,7 @@ export namespace asm
         type:'label';
         label:string;
     }
-    export type Parameter = ParameterRegister | ParameterRegisterPointer | ParameterFloatRegister | ParameterConstant | ParameterLabel;
+    export type Parameter = ParameterRegister | ParameterRegisterPointer | ParameterRegisterRegisterPointer | ParameterFloatRegister | ParameterFarPointer | ParameterConstant | ParameterLabel;
 
     export class Operation {
         public size = -1;
@@ -3091,7 +3142,7 @@ export namespace asm
                     out.push({
                         type, argi: argi_ori, parami:i, register: r
                     });
-                } else if (type === 'rp') {
+                } else if (type === 'rp' || type === 'fp') {
                     const r = this.args[argi++];
                     if (typeof r !== 'number' || r < -1 || r >= 16) {
                         throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
@@ -3139,6 +3190,7 @@ export namespace asm
                     i ++;
                     break;
                 case 'rp':
+                case 'fp':
                     i += 3;
                     break;
                 case 'rrp':
@@ -3166,11 +3218,14 @@ export namespace asm
                 case 'c':
                     argstr.push(shex(v));
                     break;
-                case 'rp': {
+                case 'rp':
+                case 'fp': {
                     const multiply = args[i++];
                     const offset = args[i++];
                     let str = `[${Register[v]}${multiply !== 1 ? `*${multiply}` : ''}${offset !== 0 ? shex_o(offset) : ''}]`;
-                    if (nsize != null) {
+                    if (item === 'fp') {
+                        str = `fword ptr ${str}`;
+                    } else if (nsize != null) {
                         str = `${OperationSize[nsize]} ptr ${str}`;
                     }
                     argstr.push(str);
