@@ -1,3 +1,4 @@
+import { asmcode } from "./asm/asmcode";
 import { asm, AsmMultiplyConstant, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
 import { proc, proc2 } from "./bds/symbols";
 import "./codealloc";
@@ -7,7 +8,6 @@ import { dllraw } from "./dllraw";
 import { makefuncDefines } from "./makefunc_defines";
 import { remapStack } from "./source-map-support";
 import { isBaseOf, removeLine } from "./util";
-import asmcode = require('./asm/asmcode');
 
 export type ParamType = makefunc.Paramable;
 

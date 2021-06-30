@@ -2763,7 +2763,7 @@ export class X64Assembler {
         return out.buffer();
     }
 
-    toTypeScript():string {
+    toTypeScript(exportName?:string):string {
         const buffer = this.buffer();
         const script = new ScriptWriter;
         script.writeln("import { cgate, VoidPointer, NativePointer } from 'bdsx/core';");
@@ -2791,7 +2791,11 @@ export class X64Assembler {
         }
         script.writeln("');");
         // script.writeln();
-        script.writeln('export = {');
+        if (exportName != null) {
+            script.writeln(`export const ${exportName} = {`);
+        } else {
+            script.writeln('export = {');
+        }
         script.tab(4);
 
         for (const id of this.ids.values()) {

@@ -27,6 +27,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
+import { JsonValue } from "../bdsx/bds/connreq";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -200,8 +201,7 @@ Tester.test({
     },
 
     cxxstring() {
-        const str = new CxxStringWrapper(true);
-        str.construct();
+        const str = CxxStringWrapper.construct();
         this.equals(str.length, 0, 'std::string invalid constructor');
         this.equals(str.capacity, 15, 'std::string invalid constructor');
         const shortcase = '111';
@@ -212,13 +212,11 @@ Tester.test({
         this.equals(str.value, longcase, 'failed with long text');
         str.destruct();
 
-        const hstr = new HashedString(true);
-        hstr.construct();
+        const hstr = HashedString.construct();
         this.equals(hstr.str, '', 'Invalid string');
         hstr.destruct();
 
-        const data = new AttributeData(true);
-        data.construct();
+        const data = AttributeData.construct();
         this.equals(data.name.str, '', 'Invalid string');
         data.destruct();
     },
@@ -284,6 +282,15 @@ Tester.test({
         b.destruct();
 
         a.destruct();
+    },
+
+    json() {
+        const v = new JsonValue(true);
+        v.constructWith({test:0, test2:'a', test3:true});
+        this.equals(v.get('test').value(), 0, 'json int');
+        this.equals(v.get('test2').value(), 'a', 'json string');
+        this.equals(v.get('test3').value(), true, 'json boolean');
+        v.destruct();
     },
 
     async command() {

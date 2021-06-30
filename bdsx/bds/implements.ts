@@ -1,4 +1,3 @@
-import asmcode = require("bdsx/asm/asmcode");
 import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
@@ -9,6 +8,7 @@ import { mce } from "bdsx/mce";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
+import { asmcode } from "../asm/asmcode";
 import { Actor, ActorRuntimeID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
@@ -127,8 +127,7 @@ ServerPlayer.prototype.setAttribute = function(this:Actor, id:AttributeId, value
     if (attr === null) return null;
     const packet = UpdateAttributesPacket.create();
     packet.actorId = this.getRuntimeID();
-    const data = new AttributeData(true);
-    data.construct();
+    const data = AttributeData.construct();
     data.name.set(attribNames[id - 1]);
     data.current = value;
     data.min = attr.minValue;

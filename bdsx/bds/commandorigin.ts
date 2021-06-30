@@ -3,9 +3,11 @@ import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { mce } from "bdsx/mce";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { capi } from "../capi";
 import { makefunc } from "../makefunc";
-import { CxxString, void_t } from "../nativetype";
+import { CxxString, NativeType, void_t } from "../nativetype";
 import { Actor } from "./actor";
+import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { proc } from "./symbols";
@@ -60,6 +62,17 @@ export class CommandOrigin extends NativeClass {
     getEntity():Actor|null {
         abstract();
     }
+
+    /**
+     * return the command result
+     */
+    handleCommandOutputCallback(value:unknown & IExecuteCommandCallback['data']):void {
+        const v = capi.malloc(JsonValue[NativeType.size]).as(JsonValue);
+        v.constructWith(value);
+        handleCommandOutputCallback.call(this, v);
+        v.destruct();
+        capi.free(v);
+    }
 }
 
 @nativeClass(null)
@@ -107,3 +120,6 @@ CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: Com
 
 // Actor* getEntity(CommandOrigin* origin);
 CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin});
+
+// void handleCommandOutputCallback(Json::Value &&);
+const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);

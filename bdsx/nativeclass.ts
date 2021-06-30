@@ -33,6 +33,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     [fieldmap]:Record<keyof any, [Type<any>, number, [number, number]|null]>;
     [isSealed]:boolean;
     [isNativeClass]:true;
+    construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
     typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
@@ -296,6 +297,18 @@ export class NativeClass extends StructurePointer {
      */
     destruct():void {
         this[NativeType.dtor]();
+    }
+
+    /**
+     * Combiation of allocating and constructing.
+     *
+     * const inst = new Class(true);
+     * inst.construct();
+     */
+    static construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T {
+        const inst = new this(true);
+        inst.construct(copyFrom);
+        return inst;
     }
 
     static next<T extends NativeClass>(this:{new():T}, ptr:T, count:number):T {

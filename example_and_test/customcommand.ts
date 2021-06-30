@@ -1,17 +1,16 @@
 
 // Custom Command
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, CommandOutput, CommandRawText } from "bdsx/bds/command";
 import { command } from "bdsx/command";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
 import { JsonValue } from "../bdsx/bds/connreq";
+import { serverInstance } from "../bdsx/bds/server";
 import { events } from "../bdsx/event";
-import { system } from "./bedrockapi-system";
 
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
     console.log(param.rawtext.text);
-    throw Error('test');
 }, { rawtext:CommandRawText });
 
 // optional
@@ -70,7 +69,7 @@ command.register('ggg', 'json example').overload((param, origin, output)=>{
 // hook direct
 events.command.on((cmd, origin, ctx)=>{
     switch (cmd) {
-    case 'whoami':
+    case '/whoami':
         if (ctx.origin.isServerCommandOrigin()) {
             console.log('You are the server console');
         } else if (ctx.origin.isScriptCommandOrigin()) {

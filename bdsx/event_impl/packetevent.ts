@@ -1,4 +1,4 @@
-import asmcode = require("../asm/asmcode");
+import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
 import { NetworkHandler, NetworkIdentifier } from "../bds/networkidentifier";
 import { createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "../bds/packet";

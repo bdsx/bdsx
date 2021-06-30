@@ -1,3 +1,4 @@
+import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
 import { CommandContext, MCRESULT } from "./bds/command";
 import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
@@ -9,7 +10,6 @@ import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { events } from "./event";
-import { CapsuledEvent } from "./eventtarget";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
@@ -24,7 +24,6 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
-import asmcode = require("./asm/asmcode");
 
 declare module 'colors'
 {
@@ -452,7 +451,7 @@ export namespace bedrockServer
     export function executeCommandOnConsole(command:string):void {
         commandQueueBuffer.construct();
         commandQueueBuffer.value = command;
-        commandQueue.enqueue(commandQueueBuffer);
+        commandQueue.enqueue(commandQueueBuffer); // assumes the string is moved, and does not have the buffer anymore.
     }
 
     /**
