@@ -5,6 +5,8 @@ import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
 import { command } from "bdsx/command";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
 import { JsonValue } from "../bdsx/bds/connreq";
+import { events } from "../bdsx/event";
+import { system } from "./bedrockapi-system";
 
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
@@ -63,4 +65,21 @@ command.register('ggg', 'json example').overload((param, origin, output)=>{
     console.log(`value: ${JSON.stringify(param.json.value())}`);
 }, {
     json: JsonValue,
+});
+
+// hook direct
+events.command.on((cmd, origin, ctx)=>{
+    switch (cmd) {
+    case 'whoami':
+        if (ctx.origin.isServerCommandOrigin()) {
+            console.log('You are the server console');
+        } else if (ctx.origin.isScriptCommandOrigin()) {
+            console.log('You are the script engine');
+        } else {
+            console.log('You are '+origin);
+		}
+        break;
+    default: return; // process the default command
+	}
+    return 0; // suppress the command, It will mute 'Unknown command' message.
 });

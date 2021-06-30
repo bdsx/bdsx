@@ -88,6 +88,7 @@ const symbols = [
     'MinecraftServerScriptEngine::onServerUpdateEnd',
     'printf',
     "ServerCommandOrigin::`vftable'",
+    "ScriptCommandOrigin::`vftable'",
     'Minecraft::getLevel',
     'std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate',
     "std::_Ref_count_obj2<CommandContext>::`vftable'",

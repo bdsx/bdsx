@@ -28,6 +28,9 @@ export class CommandOrigin extends NativeClass {
     isServerCommandOrigin():boolean {
         return this.vftable.equals(ServerCommandOrigin_vftable);
     }
+    isScriptCommandOrigin():boolean {
+        return this.vftable.equals(ScriptCommandOrigin_vftable);
+    }
 
     getRequestId():CxxString {
         abstract();
@@ -79,6 +82,7 @@ export class ServerCommandOrigin extends CommandOrigin {
 }
 
 const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
+const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 
 // void destruct(CommandOrigin* origin);
 CommandOrigin.prototype.destruct = makefunc.js([0x00], void_t, {this: CommandOrigin});
