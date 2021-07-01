@@ -14,6 +14,7 @@ const symbols = [
     'Level::fetchEntity',
     'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
+    'Player::addLevels',
     'Player::attack',
     'Player::drop',
     'Player::getCarriedItem',
@@ -22,6 +23,7 @@ const symbols = [
     'Player::setName',
     'Player::take',
     'Player::_crit',
+    'Player::respawn',
     'Player::teleportTo',
     'Player::startCooldown',
     'Player::getPlayerPermissionLevel',
@@ -41,6 +43,7 @@ const symbols = [
     'ServerPlayer::openInventory',
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
+    'ServerPlayer::setPlayerGameType',
     'std::_Allocate<16,std::_Default_allocate_traits,0>',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
@@ -191,6 +194,14 @@ const symbols = [
     'Actor::getDimensionId',
     'Actor::getAttributes',
     'Actor::getRuntimeID',
+    'Mob::die',
+    'Abilities::getCommandPermissions',
+    'Abilities::getPlayerPermissions',
+    'Abilities::setCommandPermissions',
+    'Abilities::setPlayerPermissions',
+    'Abilities::getAbility',
+    'Ability::getBool',
+    'Ability::getFloat',
 ] as const;
 
 // decorated symbols
@@ -214,6 +225,7 @@ const symbols2 = [
     '??_7OverworldDimension@@6BLevelListener@@@',
     '??_7ServerLevel@@6BILevel@@@',
     '??0CommandOutput@@QEAA@W4CommandOutputType@@@Z',
+    '?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

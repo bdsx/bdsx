@@ -5,7 +5,8 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerPickupItemEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
+import type { LevelExplodeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
@@ -47,10 +48,18 @@ export namespace events {
     export const entityHurt = new Event<(event: EntityHurtEvent) => void | CANCEL>();
     /** Cancellable */
     export const entityHeal = new Event<(event: EntityHealEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const entityDie = new Event<(event: EntityDieEvent) => void>();
     /** Cancellable */
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
     /** Cancellable but only when player is in container screens*/
     export const playerDropItem = new Event<(event: PlayerDropItemEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const playerRespawn = new Event<(event: PlayerRespawnEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const playerLevelUp = new Event<(event: PlayerLevelUpEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
     /** Not cancellable */
     export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
     /** Not cancellable */
