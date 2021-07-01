@@ -1,8 +1,7 @@
 import { abstract } from "../common";
 import { NativeClass } from "../nativeclass";
-import { int32_t } from "../nativetype";
-import { CommandPermissionLevel } from "./command";
-import { PlayerPermission } from "./player";
+import type { CommandPermissionLevel } from "./command";
+import type { PlayerPermission } from "./player";
 
 export class Abilities extends NativeClass {
     getCommandPermissionLevel():CommandPermissionLevel {
