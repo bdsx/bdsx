@@ -11,4 +11,10 @@ export class Abilities extends NativeClass {
     getPlayerPermissionLevel():PlayerPermission {
         abstract();
     }
+    setCommandPermissionLevel(commandPermissionLevel:CommandPermissionLevel):void {
+        abstract();
+    }
+    setPlayerPermissionLevel(playerPermissionLevel:PlayerPermission):void {
+        abstract();
+    }
 }

@@ -376,5 +376,7 @@ Block.abstract({
 BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
 
 // abilties.ts
-Abilities.prototype.getCommandPermissions = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});
-Abilities.prototype.getPlayerPermissions = procHacker.js("Abilities::getPlayerPermissions", int32_t, {this:Abilities});
+Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});
+Abilities.prototype.getPlayerPermissionLevel = procHacker.js("Abilities::getPlayerPermissions", int32_t, {this:Abilities});
+Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCommandPermissions", void_t, {this:Abilities}, int32_t);
+Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);

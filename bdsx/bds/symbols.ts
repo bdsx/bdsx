@@ -197,6 +197,8 @@ const symbols = [
     'Mob::die',
     'Abilities::getCommandPermissions',
     'Abilities::getPlayerPermissions',
+    'Abilities::setCommandPermissions',
+    'Abilities::setPlayerPermissions',
 ] as const;
 
 // decorated symbols
