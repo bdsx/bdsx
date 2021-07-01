@@ -1,13 +1,11 @@
 import { Actor } from "../bds/actor";
-import { BlockSource, Block } from "../bds/block";
-import { BlockPos, Vec3 } from "../bds/blockpos";
+import { BlockSource } from "../bds/block";
+import { Vec3 } from "../bds/blockpos";
 import { Level } from "../bds/level";
-import { Player } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { events } from "../event";
-import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
-import { BlockPlaceEvent } from "./blockevent";
+import { bool_t, float32_t, void_t } from "../nativetype";
 
 interface ILevelExplodeEvent {
     level: Level;
