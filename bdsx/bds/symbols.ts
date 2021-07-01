@@ -195,6 +195,8 @@ const symbols = [
     'Actor::getAttributes',
     'Actor::getRuntimeID',
     'Mob::die',
+    'Abilities::getCommandPermissions',
+    'Abilities::getPlayerPermissions',
 ] as const;
 
 // decorated symbols
