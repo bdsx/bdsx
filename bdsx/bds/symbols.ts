@@ -193,6 +193,7 @@ const symbols = [
     'Actor::getDimensionId',
     'Actor::getAttributes',
     'Actor::getRuntimeID',
+    'Mob::die',
 ] as const;
 
 // decorated symbols

@@ -1,4 +1,4 @@
-import { Actor } from "../bds/actor";
+import { Actor, ActorDamageSource } from "../bds/actor";
 import { AttributeId } from "../bds/attribute";
 import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
@@ -8,7 +8,6 @@ import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { events } from "../event";
-import { NativeClass } from "../nativeclass";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 
 
@@ -36,6 +35,17 @@ export class EntityHealEvent implements IEntityHealEvent {
     }
 }
 
+interface IEntityDieEvent {
+    entity: Actor;
+    damageSource: ActorDamageSource;
+}
+export class EntityDieEvent implements IEntityDieEvent {
+    constructor(
+        public entity: Actor,
+        public damageSource: ActorDamageSource,
+    ) {
+    }
+}
 interface IEntitySneakEvent {
     entity: Actor;
     isSneaking: boolean;
@@ -56,9 +66,6 @@ export class EntityCreatedEvent implements IEntityCreatedEvent {
         public entity: Actor
     ) {
     }
-}
-
-class ActorDamageSource extends NativeClass{
 }
 
 // interface IEntityDeathEvent {
@@ -202,7 +209,7 @@ function onPlayerCrit(player: Player):void {
 }
 const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
 
-function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: number, v1: boolean, v2: boolean):boolean {
+function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, v1: boolean, v2: boolean):boolean {
     const event = new EntityHurtEvent(entity, damage);
     if (events.entityHurt.fire(event) === CANCEL) {
         return false;
@@ -210,7 +217,7 @@ function onEntityHurt(entity: Actor, actorDamageSource: VoidPointer, damage: num
         return _onEntityHurt(event.entity, actorDamageSource, event.damage, v1, v2);
     }
 }
-const _onEntityHurt = procHacker.hooking("Actor::hurt", bool_t, null, Actor, VoidPointer, int32_t, bool_t, bool_t)(onEntityHurt);
+const _onEntityHurt = procHacker.hooking("Actor::hurt", bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
 
 function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, v:VoidPointer):boolean {
     if (oldHealth < newHealth) {
@@ -226,6 +233,13 @@ function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHea
     return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
 }
 const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHeal);
+
+function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
+    const event = new EntityDieEvent(entity, damageSource);
+    events.entityDie.fire(event);
+    return _onEntityDie(event.entity, event.damageSource);
+}
+const _onEntityDie = procHacker.hooking('Mob::die', bool_t, null, Actor, ActorDamageSource)(onEntityDie);
 
 function onEntitySneak(Script:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
     const event = new EntitySneakEvent(entity, isSneaking);
