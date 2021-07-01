@@ -5,7 +5,7 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
+import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -52,6 +52,8 @@ export namespace events {
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
     /** Cancellable but only when player is in container screens*/
     export const playerDropItem = new Event<(event: PlayerDropItemEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const playerRespawn = new Event<(event: PlayerRespawnEvent) => void | CANCEL>();
     /** Cancellable */
     export const playerLevelUp = new Event<(event: PlayerLevelUpEvent) => void | CANCEL>();
     /** Cancellable */

@@ -23,6 +23,7 @@ const symbols = [
     'Player::setName',
     'Player::take',
     'Player::_crit',
+    'Player::respawn',
     'Player::teleportTo',
     'Player::startCooldown',
     'Player::getPlayerPermissionLevel',

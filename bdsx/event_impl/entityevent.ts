@@ -99,6 +99,16 @@ export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     }
 }
 
+interface IPlayerRespawnEvent {
+    player: Player;
+}
+export class PlayerRespawnEvent implements IPlayerRespawnEvent {
+    constructor(
+        public player: Player,
+    ) {
+    }
+}
+
 interface IPlayerLevelUpEvent {
     player: Player;
     levels: number;
@@ -259,6 +269,13 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean
     }
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
+
+function onPlayerRespawn(player:Player):void {
+    const event = new PlayerRespawnEvent(player);
+    events.playerRespawn.fire(event);
+    return _onPlayerRespawn(event.player);
+}
+const _onPlayerRespawn = procHacker.hooking("Player::respawn", void_t, null, Player)(onPlayerRespawn);
 
 function onPlayerLevelUp(player:Player, levels:int32_t):void {
     const event = new PlayerLevelUpEvent(player, levels);
