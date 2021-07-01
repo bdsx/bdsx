@@ -14,6 +14,7 @@ const symbols = [
     'Level::fetchEntity',
     'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
+    'Player::addLevels',
     'Player::attack',
     'Player::drop',
     'Player::getCarriedItem',
@@ -214,6 +215,7 @@ const symbols2 = [
     '??_7OverworldDimension@@6BLevelListener@@@',
     '??_7ServerLevel@@6BILevel@@@',
     '??0CommandOutput@@QEAA@W4CommandOutputType@@@Z',
+    '?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

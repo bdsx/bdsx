@@ -99,6 +99,19 @@ export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     }
 }
 
+interface IPlayerLevelUpEvent {
+    player: Player;
+    levels: number;
+}
+export class PlayerLevelUpEvent implements IPlayerLevelUpEvent {
+    constructor(
+        public player: Player,
+        /** Amount of levels upgraded */
+        public levels: number,
+    ) {
+    }
+}
+
 interface IPlayerJoinEvent {
     readonly player: Player;
 }
@@ -145,7 +158,6 @@ export class PlayerUseItemEvent implements IPlayerUseItemEvent {
     ) {
     }
 }
-
 
 interface IPlayerJumpEvent {
     player: Player;
@@ -247,6 +259,14 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean
     }
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
+
+function onPlayerLevelUp(player:Player, levels:int32_t):void {
+    const event = new PlayerLevelUpEvent(player, levels);
+    if (events.playerLevelUp.fire(event) !== CANCEL) {
+        return _onPlayerLevelUp(event.player, event.levels);
+    }
+}
+const _onPlayerLevelUp = procHacker.hooking("Player::addLevels", void_t, null, Player, int32_t)(onPlayerLevelUp);
 
 events.packetBefore(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
     const event = new PlayerJoinEvent(ni.getActor()!);
