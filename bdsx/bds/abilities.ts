@@ -23,24 +23,24 @@ export class Abilities extends NativeClass {
 }
 
 export enum AbilitiesIndex {
-    build,
-    mine,
-    doorsandswitches,
-    opencontainers,
-    attackplayers,
-    attackmobs,
-    op,
-    teleport,
-    invulnerable,
-    flying,
-    mayfly,
-    instabuild,
-    lightning,
-    flySpeed,
-    walkSpeed,
-    mute,
-    worldbuilder,
-    noclip
+    Build,
+    Mine,
+    Doorsandswitches,
+    Opencontainers,
+    Attackplayers,
+    Attackmobs,
+    Op,
+    Teleport,
+    Invulnerable,
+    Flying,
+    Mayfly,
+    Instabuild,
+    Lightning,
+    Flyspeed,
+    Walkspeed,
+    Mute,
+    Worldbuilder,
+    Noclip
 }
 
 export class Ability extends NativeClass {
