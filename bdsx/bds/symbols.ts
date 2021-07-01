@@ -199,6 +199,9 @@ const symbols = [
     'Abilities::getPlayerPermissions',
     'Abilities::setCommandPermissions',
     'Abilities::setPlayerPermissions',
+    'Abilities::getAbility',
+    'Ability::getBool',
+    'Ability::getFloat',
 ] as const;
 
 // decorated symbols

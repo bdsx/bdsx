@@ -9,7 +9,7 @@ import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, ui
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { asmcode } from "../asm/asmcode";
-import { Abilities } from "./abilities";
+import { Abilities, Ability } from "./abilities";
 import { Actor, ActorRuntimeID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
@@ -380,3 +380,7 @@ Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCom
 Abilities.prototype.getPlayerPermissionLevel = procHacker.js("Abilities::getPlayerPermissions", int32_t, {this:Abilities});
 Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCommandPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
+Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
+
+Ability.prototype.getBool = procHacker.js("Ability::getBool", bool_t, {this:Ability});
+Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this:Ability});
