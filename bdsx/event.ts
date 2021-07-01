@@ -6,7 +6,7 @@ import { MinecraftPacketIds } from "./bds/packetids";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityHealEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
-import { LevelExplodeEvent } from "./event_impl/levelevent";
+import type { LevelExplodeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
