@@ -40,15 +40,19 @@ export class Player extends Actor {
         abstract();
     }
 
-    startCooldown(Item:Item):void{
+    startCooldown(item:Item):void{
         abstract();
     }
 
-    setSize(v1:number, v2:number):void{
+    setGameType(gameType:GameType):void {
         abstract();
     }
 
-    setSleeping(bool:boolean):void{
+    setSize(width:number, height:number):void{
+        abstract();
+    }
+
+    setSleeping(value:boolean):void{
         abstract();
     }
 

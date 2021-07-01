@@ -168,6 +168,7 @@ Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemSta
 Player.prototype.getCommandPermissionLevel = procHacker.js('Player::getCommandPermissionLevel', int32_t, {this:Actor});
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
 Player.prototype.startCooldown = procHacker.js("Player::startCooldown", void_t, {this:Player}, Item);
+Player.prototype.setGameType = procHacker.js("ServerPlayer::setPlayerGameType", void_t, {this:Player}, int32_t);
 Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player}, float32_t, float32_t);
 Player.prototype.setSleeping = procHacker.js("Player::setSleeping", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:Player});
