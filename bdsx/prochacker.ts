@@ -206,6 +206,31 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
     /**
      * @param key target symbol name
+     */
+    hookingRawWithOriginal(key:keyof T): (callback: (asm: X64Assembler, original: VoidPointer) => void) => VoidPointer {
+        const origin = this.map[key];
+        if (!origin) throw Error(`Symbol ${String(key)} not found`);
+
+        const REQUIRE_SIZE = 12;
+        const codes = disasm.process(origin, REQUIRE_SIZE);
+        const out = new AsmMover(origin, codes.size);
+        out.moveCode(codes, key, REQUIRE_SIZE);
+        out.end();
+        const original = out.alloc();
+
+        return callback => {
+            const data = asm();
+            callback(data, original);
+            const ptr = data.alloc();
+            const unlock = new MemoryUnlocker(origin, codes.size);
+            hacktool.jump(origin, ptr, Register.rax, codes.size);
+            unlock.done();
+            return ptr;
+        };
+    }
+
+    /**
+     * @param key target symbol name
      * @param to call address
      */
     hookingRawWithCallOriginal(key:keyof T, to: VoidPointer,
