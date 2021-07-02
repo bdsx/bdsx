@@ -1,4 +1,3 @@
-import asmcode = require("bdsx/asm/asmcode");
 import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
@@ -9,6 +8,8 @@ import { mce } from "bdsx/mce";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
+import { asmcode } from "../asm/asmcode";
+import { Abilities, Ability } from "./abilities";
 import { Actor, ActorRuntimeID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
@@ -127,8 +128,7 @@ ServerPlayer.prototype.setAttribute = function(this:Actor, id:AttributeId, value
     if (attr === null) return null;
     const packet = UpdateAttributesPacket.create();
     packet.actorId = this.getRuntimeID();
-    const data = new AttributeData(true);
-    data.construct();
+    const data = AttributeData.construct();
     data.name.set(attribNames[id - 1]);
     data.current = value;
     data.min = attr.minValue;
@@ -159,6 +159,9 @@ asmcode.removeActor = makefunc.np(_removeActor, void_t, null, Actor);
 procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts
+Player.abstract({
+    abilities:[Abilities, 0x948],
+});
 Player.prototype.setName = procHacker.js("Player::setName", void_t, {this: Player}, CxxString);
 Player.prototype.changeDimension = procHacker.js("ServerPlayer::changeDimension", void_t, {this:Player}, int32_t, bool_t);
 Player.prototype.teleportTo = procHacker.js("Player::teleportTo", void_t, {this:Player}, Vec3, bool_t, int32_t, int32_t, bin64_t);
@@ -169,6 +172,7 @@ Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemSta
 Player.prototype.getCommandPermissionLevel = procHacker.js('Player::getCommandPermissionLevel', int32_t, {this:Actor});
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
 Player.prototype.startCooldown = procHacker.js("Player::startCooldown", void_t, {this:Player}, Item);
+Player.prototype.setGameType = procHacker.js("ServerPlayer::setPlayerGameType", void_t, {this:Player}, int32_t);
 Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player}, float32_t, float32_t);
 Player.prototype.setSleeping = procHacker.js("Player::setSleeping", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:Player});
@@ -370,3 +374,13 @@ Block.abstract({
 });
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
+
+// abilties.ts
+Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});
+Abilities.prototype.getPlayerPermissionLevel = procHacker.js("Abilities::getPlayerPermissions", int32_t, {this:Abilities});
+Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCommandPermissions", void_t, {this:Abilities}, int32_t);
+Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
+Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
+
+Ability.prototype.getBool = procHacker.js("Ability::getBool", bool_t, {this:Ability});
+Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this:Ability});

@@ -2,8 +2,8 @@ import { bin } from "bdsx/bin";
 import { abstract } from "bdsx/common";
 import { StaticPointer, VoidPointer } from "bdsx/core";
 import { makefunc } from "bdsx/makefunc";
-import { NativeClass } from "bdsx/nativeclass";
-import { bin64_t } from "bdsx/nativetype";
+import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { bin64_t, int32_t } from "bdsx/nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
@@ -29,6 +29,43 @@ export class ActorRuntimeID extends VoidPointer {
 export enum ActorType {
     Item = 0x40,
     Player = 0x13f,
+}
+
+@nativeClass(null)
+export class ActorDamageSource extends NativeClass{
+    @nativeField(int32_t, 0x08)
+    cause: int32_t;
+}
+
+export enum ActorDamageCause {
+    /** The kill command */
+    None,
+    Contact,
+    EntityAttack,
+    Projectile,
+    Suffoocation,
+    Fall,
+    Fire,
+    FireTick,
+    Lava,
+    Drowning,
+    BlockExplosion,
+    EntityExplosion,
+    Void,
+    Magic = 0x0E,
+    Wither,
+    Starve,
+    Anvil,
+    Thorns,
+    FallingBlock,
+    Piston,
+    FlyIntoWall,
+    Magma,
+    Fireworks,
+    Lightning,
+    Charging,
+    Temperature = 0x1A,
+    All = 0x1F,
 }
 
 export class Actor extends NativeClass {

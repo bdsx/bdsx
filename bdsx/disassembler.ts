@@ -1,4 +1,4 @@
-import { asm, AsmMultiplyConstant, JumpOperation, OperationSize, Operator, Register } from "./assembler";
+import { asm, AsmMultiplyConstant, FFOperation, JumpOperation, OperationSize, Operator, Register } from "./assembler";
 import { NativePointer, VoidPointer } from "./core";
 import { bin64_t } from "./nativetype";
 import { hex, unhex } from "./util";
@@ -122,24 +122,48 @@ function walk_oper_rp_c(oper:Operator, register:Register, multiply:AsmMultiplyCo
 function walk_ojmp(jumpoper:JumpOperation, offset:number):asm.Operation {
     return new asm.Operation(asm.code[`${JumpOperation[jumpoper]}_c`], [offset]);
 }
-function walk_addr_oper(opername:string, dwordBit:number, readBit:number, info:OffsetInfo, size:OperationSize, ptr:NativePointer, isFloat:boolean):asm.Operation {
+function walk_addr_binary_oper(opername:string, dwordBit:number, readBit:number, info:OffsetInfo, size:OperationSize, ptr:NativePointer, isFloat:boolean):asm.Operation {
     const sig = isFloat ? 'f' : 'r';
     if (dwordBit === 0) size = OperationSize.byte;
-    if (readBit){ // reverse
+    let name:string;
+    let args:any[];
+    if (readBit !== 0){ // reverse
         if (info.offset === null){ // mov_r_r
-            return new asm.Operation(asm.code[`${opername}_${sig}_${sig}`], [info.r2, info.r1, size]);
+            name = `${opername}_${sig}_${sig}`;
+            args = [info.r2, info.r1];
         } else {
             const offset = readConst(info.offset, ptr);
-            return new asm.Operation(asm.code[`${opername}_${sig}_rp`], [info.r2, info.r1, 1, offset, size]);
+            name = `${opername}_${sig}_rp`;
+            args = [info.r2, info.r1, 1, offset];
         }
     } else {
         if (info.offset === null){ // mov_r_r
-            return new asm.Operation(asm.code[`${opername}_${sig}_${sig}`], [info.r1, info.r2, size]);
+            name = `${opername}_${sig}_${sig}`;
+            args = [info.r1, info.r2];
         } else {
             const offset = readConst(info.offset, ptr);
-            return new asm.Operation(asm.code[`${opername}_rp_${sig}`], [info.r1, 1, offset, info.r2, size]);
+            name = `${opername}_rp_${sig}`;
+            args = [info.r1, 1, offset, info.r2];
         }
     }
+    if (size !== null) args.push(size);
+    return new asm.Operation(asm.code[name], args);
+}
+function walk_addr_unary_oper(opername:string, dwordBit:number, info:OffsetInfo, size:OperationSize|null, ptr:NativePointer, isFloat:boolean):asm.Operation {
+    const sig = isFloat ? 'f' : 'r';
+    if (dwordBit === 0) size = OperationSize.byte;
+    let name:string;
+    let args:any[];
+    if (info.offset === null){ // mov_r_r
+        name = `${opername}_${sig}`;
+        args = [info.r1];
+    } else {
+        name = `${opername}_rp`;
+        const offset = readConst(info.offset, ptr);
+        args = [info.r1, 1, offset];
+    }
+    if (size !== null) args.push(size);
+    return new asm.Operation(asm.code[name], args);
 }
 
 function walk_raw(ptr:NativePointer):asm.Operation|null {
@@ -168,7 +192,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             if (info === null) {
                 // bad
             } else {
-                return walk_addr_oper('movsxd', 1, 1, info, size, ptr, false);
+                return walk_addr_binary_oper('movsxd', 1, 1, info, size, ptr, false);
             }
         } else if (v === 0x65) {
             return new asm.Operation(asm.code.gs, []);
@@ -209,22 +233,35 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             if (info === null) {
                 // bad
             } else {
-                if (info.r2 === 4) {
-                    if (info.offset === null) {
-                        return new asm.Operation(asm.code.jmp_r, [info.r1]);
-                    } else {
-                        const offset = readConstNumber(info.offset, ptr);
-                        return new asm.Operation(asm.code.jmp_rp, [info.r1, 1, offset]);
+                switch (info.r2 as number) {
+                case FFOperation.inc:
+                    return walk_addr_unary_oper('inc', 1, info, size, ptr, false);
+                case FFOperation.dec:
+                    return walk_addr_unary_oper('dec', 1, info, size, ptr, false);
+                case FFOperation.call:
+                    return walk_addr_unary_oper('call', 1, info, null, ptr, false);
+                case FFOperation.call_far: {
+                    if (info.offset === null){
+                        break; // bad
                     }
-                } else if (info.r2 === 2) {
-                    if (info.offset === null) {
-                        return new asm.Operation(asm.code.call_r, [info.r1]);
-                    } else {
-                        const offset = readConstNumber(info.offset, ptr);
-                        return new asm.Operation(asm.code.call_rp, [info.r1, 1, offset]);
+                    const offset = readConst(info.offset, ptr);
+                    const args = [info.r1, 1, offset];
+                    if (size !== null) args.push(size);
+                    return new asm.Operation(asm.code.call_fp, args);
+                }
+                case FFOperation.jmp:
+                    return walk_addr_unary_oper('jmp', 1, info, null, ptr, false);
+                case FFOperation.jmp_far: {
+                    if (info.offset === null){
+                        break; // bad
                     }
-                } else {
-                    // bad
+                    const offset = readConst(info.offset, ptr);
+                    const args = [info.r1, 1, offset];
+                    if (size !== null) args.push(size);
+                    return new asm.Operation(asm.code.jmp_fp, args);
+                }
+                case FFOperation.push:
+                    return walk_addr_unary_oper('push', 1, info, null, ptr, false);
                 }
             }
         } else if ((v & 0xc0) === 0x00){ // operation
@@ -242,11 +279,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                             // bad
                         } else {
                             const opername = 'set'+JumpOperation[jumpoper].substr(1);
-                            if (info.offset !== null) {
-                                return new asm.Operation(asm.code[`${opername}_rp`], [info.r1, info.multiply, info.offset]);
-                            } else {
-                                return new asm.Operation(asm.code[`${opername}_r`], [info.r1]);
-                            }
+                            return walk_addr_unary_oper(opername, 1, info, null, ptr, false);
                         }
                     } else {
                         const info = walk_offset(rex, ptr);
@@ -259,78 +292,78 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                             } else if (foperSize === OperationSize.dword) {
                                 // bad
                             } else { // packed
-                                return walk_addr_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
+                                return walk_addr_binary_oper('movaps', 1, (v2&1)^1, info, OperationSize.xmmword, ptr, true);
                             }
                             break;
                         case 0xbe: { // movsx
                             const wordbit = (v2&1);
-                            const oper = walk_addr_oper('movsx', 1, 1, info, size, ptr, false);
+                            const oper = walk_addr_binary_oper('movsx', 1, 1, info, size, ptr, false);
                             oper.args.push(wordbit !== 0 ? OperationSize.word : OperationSize.byte);
                             return oper;
                         }
                         case 0xb6: { // movzx
                             const wordbit = (v2&1);
-                            const oper = walk_addr_oper('movzx', 1, 1, info, size, ptr, false);
+                            const oper = walk_addr_binary_oper('movzx', 1, 1, info, size, ptr, false);
                             oper.args.push(wordbit !== 0 ? OperationSize.word : OperationSize.byte);
                             return oper;
                         }
                         case 0x10: { // read
                             const readbit = (v2&1)^1;
                             if (foperSize === OperationSize.qword) {
-                                return walk_addr_oper('movsd', 1, readbit, info, OperationSize.qword, ptr, true);
+                                return walk_addr_binary_oper('movsd', 1, readbit, info, OperationSize.qword, ptr, true);
                             } else if (foperSize === OperationSize.dword) {
-                                return walk_addr_oper('movss', 1, readbit, info, OperationSize.dword, ptr, true);
+                                return walk_addr_binary_oper('movss', 1, readbit, info, OperationSize.dword, ptr, true);
                             } else { // packed
-                                return walk_addr_oper('movups', 1, readbit, info, OperationSize.xmmword, ptr, true);
+                                return walk_addr_binary_oper('movups', 1, readbit, info, OperationSize.xmmword, ptr, true);
                             }
                         }
                         default:
                             if (v2 === 0x5a) { // convert precision
                                 if (foperSize === OperationSize.qword) {
-                                    return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.qword, ptr, true);
+                                    return walk_addr_binary_oper('cvtsd2ss', 1, 1, info, OperationSize.qword, ptr, true);
                                 } else if (foperSize === OperationSize.dword) {
-                                    return walk_addr_oper('cvtsd2ss', 1, 1, info, OperationSize.dword, ptr, true);
+                                    return walk_addr_binary_oper('cvtsd2ss', 1, 1, info, OperationSize.dword, ptr, true);
                                 } else {
                                     if (wordoper) {
-                                        return walk_addr_oper('cvtpd2ps', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        return walk_addr_binary_oper('cvtpd2ps', 1, 1, info, OperationSize.xmmword, ptr, true);
                                     } else {
-                                        return walk_addr_oper('cvtps2pd', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        return walk_addr_binary_oper('cvtps2pd', 1, 1, info, OperationSize.xmmword, ptr, true);
                                     }
                                 }
                             } else if (v2 === 0x2c) { // truncated f2i
                                 if (foperSize === OperationSize.qword) {
-                                    return walk_addr_oper('cvttsd2si', 1, 1, info, OperationSize.qword, ptr, true);
+                                    return walk_addr_binary_oper('cvttsd2si', 1, 1, info, OperationSize.qword, ptr, true);
                                 } else if (foperSize === OperationSize.dword) {
-                                    return walk_addr_oper('cvttss2si', 1, 1, info, OperationSize.qword, ptr, true);
+                                    return walk_addr_binary_oper('cvttss2si', 1, 1, info, OperationSize.qword, ptr, true);
                                 } else {
                                     if (wordoper) {
-                                        return walk_addr_oper('cvttpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        return walk_addr_binary_oper('cvttpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
                                     } else {
-                                        return walk_addr_oper('cvttps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        return walk_addr_binary_oper('cvttps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
                                     }
                                 }
                             } else if (v2 === 0x2d) { // f2i
                                 if (foperSize === OperationSize.qword) {
-                                    return walk_addr_oper('cvtsd2si', 1, 1, info, OperationSize.qword, ptr, true);
+                                    return walk_addr_binary_oper('cvtsd2si', 1, 1, info, OperationSize.qword, ptr, true);
                                 } else if (foperSize === OperationSize.dword) {
-                                    return walk_addr_oper('cvtss2si', 1, 1, info, OperationSize.dword, ptr, true);
+                                    return walk_addr_binary_oper('cvtss2si', 1, 1, info, OperationSize.dword, ptr, true);
                                 } else {
                                     if (wordoper) {
-                                        return walk_addr_oper('cvtpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        return walk_addr_binary_oper('cvtpd2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
                                     } else {
-                                        return walk_addr_oper('cvtps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        return walk_addr_binary_oper('cvtps2pi', 1, 1, info, OperationSize.xmmword, ptr, true);
                                     }
                                 }
                             } else if (v2 === 0x2a) { // i2f
                                 if (foperSize === OperationSize.qword) {
-                                    return walk_addr_oper('cvtsi2sd', 1, 1, info, size, ptr, true);
+                                    return walk_addr_binary_oper('cvtsi2sd', 1, 1, info, size, ptr, true);
                                 } else if (foperSize === OperationSize.dword) {
-                                    return walk_addr_oper('cvtsi2ss', 1, 1, info, size, ptr, true);
+                                    return walk_addr_binary_oper('cvtsi2ss', 1, 1, info, size, ptr, true);
                                 } else {
                                     if (wordoper) {
-                                        return walk_addr_oper('cvtpi2pd', 1, 1, info, OperationSize.mmword, ptr, true);
+                                        return walk_addr_binary_oper('cvtpi2pd', 1, 1, info, OperationSize.mmword, ptr, true);
                                     } else {
-                                        return walk_addr_oper('cvtpi2ps', 1, 1, info, OperationSize.mmword, ptr, true);
+                                        return walk_addr_binary_oper('cvtpi2ps', 1, 1, info, OperationSize.mmword, ptr, true);
                                     }
                                 }
                             }
@@ -342,14 +375,13 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 const oper = (v >> 3) & 7;
                 if ((v & 0x04) !== 0) {
                     if ((v&1) === 0) size = OperationSize.byte;
-
                     const chr = ptr.readInt32();
                     return walk_oper_r_c(oper, Register.rax, chr, size);
                 }
                 const info = walk_offset(rex, ptr);
                 if (info === null) break; // bad
 
-                return walk_addr_oper(Operator[oper], v & 1, v & 2, info, size, ptr, false);
+                return walk_addr_binary_oper(Operator[oper], v & 1, v & 2, info, size, ptr, false);
             }
         } else if ((v & 0xfe) === 0xe8) { // jmp or call dword
             const value = ptr.readInt32();
@@ -377,7 +409,8 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 if (info.offset === null) {
                     return new asm.Operation(asm.code.test_r_r, [info.r1, info. r2, size]);
                 } else {
-                    return new asm.Operation(asm.code.test_r_rp, [info.r1, info. r2, 1, info.offset, size]);
+                    const offset = readConstNumber(info.offset, ptr);
+                    return new asm.Operation(asm.code.test_r_rp, [info.r1, info. r2, 1, offset, size]);
                 }
             }
         } else if ((v & 0xfc) === 0x80) { // const operation
@@ -425,7 +458,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 }
             }
             if (v & 0x04) size = OperationSize.word;
-            return walk_addr_oper('mov', v & 1, v & 2, info, size, ptr, false);
+            return walk_addr_binary_oper('mov', v & 1, v & 2, info, size, ptr, false);
         } else if ((v & 0xf0) === 0x70) {
             const jumpoper = v & 0xf;
             const offset = ptr.readInt8();

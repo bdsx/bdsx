@@ -2,7 +2,7 @@ import { asm } from "../assembler";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { abstract } from "../common";
-import { chakraUtil, NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
+import { NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
@@ -83,8 +83,19 @@ export class CommandContext extends NativeClass {
     origin:CommandOrigin;
 }
 
+export enum CommandOutputType {
+    Type3 = 3, // user / server console / command block
+    ScriptEngine = 4,
+}
+
 @nativeClass(null)
 export class CommandOutput extends NativeClass {
+    getType():CommandOutputType {
+        abstract();
+    }
+    constructAs(type:CommandOutputType):void {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -99,7 +110,9 @@ export class MinecraftCommands extends NativeClass {
     vftable:VoidPointer;
     @nativeField(CommandOutputSender.ref())
     sender:CommandOutputSender;
-
+    handleOutput(origin:CommandOrigin, output:CommandOutput):void {
+        abstract();
+    }
     executeCommand(ctx:SharedPtr<CommandContext>, b:boolean):MCRESULT {
         abstract();
     }
@@ -203,8 +216,7 @@ export class Command extends NativeClass {
         optional:boolean = false,
         desc?:string|null,
         type:CommandParameterDataType = CommandParameterDataType.NORMAL):CommandParameterData {
-        const param = new CommandParameterData(true);
-        param.construct();
+        const param = CommandParameterData.construct();
         param.tid.id = type_id(CommandRegistry, paramType).id;
         param.parser = CommandRegistry.getParser(paramType);
         param.name = name;
@@ -258,8 +270,7 @@ export class CommandRegistry extends HasTypeId {
         const sig = this.findCommand(name);
         if (sig === null) throw Error(`${name}: command not found`);
 
-        const overload = new CommandRegistry.Overload(true);
-        overload.construct();
+        const overload = CommandRegistry.Overload.construct();
         overload.commandVersion = bin.make64(1, 0x7fffffff);
         overload.allocator = allocator;
         overload.parameters.setFromArray(params);
@@ -342,6 +353,11 @@ const types = [
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 
+
+CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
+CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
+
+MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this: MinecraftCommands });
 

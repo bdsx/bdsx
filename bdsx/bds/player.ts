@@ -1,4 +1,5 @@
 import { abstract } from "bdsx/common";
+import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Vec3 } from "./blockpos";
@@ -7,6 +8,7 @@ import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 
 export class Player extends Actor {
+    abilities:Abilities;
 
     changeDimension(dimensionId:number, respawn:boolean):void {
         abstract();
@@ -40,15 +42,19 @@ export class Player extends Actor {
         abstract();
     }
 
-    startCooldown(Item:Item):void{
+    startCooldown(item:Item):void{
         abstract();
     }
 
-    setSize(v1:number, v2:number):void{
+    setGameType(gameType:GameType):void {
         abstract();
     }
 
-    setSleeping(bool:boolean):void{
+    setSize(width:number, height:number):void{
+        abstract();
+    }
+
+    setSleeping(value:boolean):void{
         abstract();
     }
 

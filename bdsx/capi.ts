@@ -1,4 +1,4 @@
-import asmcode = require("./asm/asmcode");
+import { asmcode } from "./asm/asmcode";
 import { chakraUtil, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc } from "./makefunc";

@@ -33,7 +33,7 @@ class AsmMover extends X64Assembler {
     asmFromOrigin(oper:asm.Operation):void {
         const splits = oper.splits;
         const basename = splits[0];
-        let ripDependedParam:asm.ParameterRegisterPointer|null = null;
+        let ripDependedParam:asm.ParameterRegisterPointer|asm.ParameterRegisterRegisterPointer|asm.ParameterFarPointer|null = null;
         const params = oper.parameters();
         for (const info of params) {
             switch (info.type) {
@@ -41,10 +41,15 @@ class AsmMover extends X64Assembler {
                 this.freeregs.delete(info.register);
                 break;
             case 'rp':
+            case 'fp':
                 this.freeregs.delete(info.register);
                 if (info.register === Register.rip) {
                     ripDependedParam = info;
                 }
+                break;
+            case 'rrp':
+                this.freeregs.delete(info.register);
+                this.freeregs.delete(info.register2);
                 break;
             }
         }

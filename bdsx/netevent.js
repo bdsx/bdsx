@@ -1,4 +1,7 @@
 //@ts-check
+/**
+ * @deprecated
+ */
 "use strict";
 
 const { events } = require('./event');

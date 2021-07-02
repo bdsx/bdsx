@@ -27,6 +27,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
+import { JsonValue } from "../bdsx/bds/connreq";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -94,6 +95,8 @@ Tester.test({
         assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]');
         assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]');
         assert('0f 90 c0 0f 90 c1 0f 91 c0 0f 91 c1 0f 91 00', 'seto al;seto cl;setno al;setno cl;setno byte ptr [rax]');
+        assert('ff 81 c0 07 00 00 48 ff c0 48 ff 00 48 ff 08 48 ff c0 ff 18 ff 10 ff 28 ff e0',
+            'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
     },
 
     bin() {
@@ -198,8 +201,7 @@ Tester.test({
     },
 
     cxxstring() {
-        const str = new CxxStringWrapper(true);
-        str.construct();
+        const str = CxxStringWrapper.construct();
         this.equals(str.length, 0, 'std::string invalid constructor');
         this.equals(str.capacity, 15, 'std::string invalid constructor');
         const shortcase = '111';
@@ -210,13 +212,11 @@ Tester.test({
         this.equals(str.value, longcase, 'failed with long text');
         str.destruct();
 
-        const hstr = new HashedString(true);
-        hstr.construct();
+        const hstr = HashedString.construct();
         this.equals(hstr.str, '', 'Invalid string');
         hstr.destruct();
 
-        const data = new AttributeData(true);
-        data.construct();
+        const data = AttributeData.construct();
         this.equals(data.name.str, '', 'Invalid string');
         data.destruct();
     },
@@ -282,6 +282,15 @@ Tester.test({
         b.destruct();
 
         a.destruct();
+    },
+
+    json() {
+        const v = new JsonValue(true);
+        v.constructWith({test:0, test2:'a', test3:true});
+        this.equals(v.get('test').value(), 0, 'json int');
+        this.equals(v.get('test2').value(), 'a', 'json string');
+        this.equals(v.get('test3').value(), true, 'json boolean');
+        v.destruct();
     },
 
     async command() {

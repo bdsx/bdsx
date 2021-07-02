@@ -1,4 +1,4 @@
-import asmcode = require("./asm/asmcode");
+import { asmcode } from "./asm/asmcode";
 import { proc2 } from "./bds/proc";
 import { capi } from "./capi";
 import { chakraUtil, StaticPointer, uv_async, VoidPointer } from "./core";

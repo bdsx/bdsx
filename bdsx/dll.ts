@@ -1,5 +1,5 @@
 
-import asmcode = require('./asm/asmcode');
+import { asmcode } from './asm/asmcode';
 import { abstract } from './common';
 import { AllocatedPointer, cgate, NativePointer, VoidPointer, VoidPointerConstructor } from './core';
 import { dllraw } from './dllraw';

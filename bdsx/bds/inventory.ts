@@ -148,8 +148,7 @@ export class ItemStack extends NativeClass {
     }
     setCustomLore(lores:string[]|string):void {
         const CxxVectorString = CxxVector.make(CxxString);
-        const cxxvector = new CxxVectorString(true);
-        cxxvector.construct();
+        const cxxvector = CxxVectorString.construct();
         if (typeof lores === "string") {
             cxxvector.push(lores);
         } else lores.forEach((v)=>{

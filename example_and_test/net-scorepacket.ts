@@ -15,8 +15,7 @@ command.register('example_score', 'score packet example').overload((params, orig
         displaypacket.dispose();
 
         // SetScorePacket
-        const entry = new ScorePacketInfo(true);
-        entry.construct();
+        const entry = ScorePacketInfo.construct();
         entry.scoreboardId.idAsNumber = 1;
         entry.objectiveName = 'objective';
         entry.customName = 'custom';
