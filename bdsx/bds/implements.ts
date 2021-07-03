@@ -1,7 +1,7 @@
 import { Register } from "bdsx/assembler";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { AllocatedPointer, StaticPointer, VoidPointer } from "bdsx/core";
+import { AllocatedPointer, NativePointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
@@ -10,7 +10,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { asmcode } from "../asm/asmcode";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorRuntimeID, DimensionId } from "./actor";
+import { Actor, ActorRuntimeID, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -19,11 +19,11 @@ import { Dimension } from "./dimension";
 import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, Item, ItemStack, PlayerInventory } from "./inventory";
-import { Level, ServerLevel } from "./level";
+import { AdventureSettings, Level, ServerLevel } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AttributeData, UpdateAttributesPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, UpdateAttributesPacket } from "./packets";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
@@ -37,6 +37,7 @@ import { BinaryStream } from "./stream";
 Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimension, {this:Level}, int32_t);
 Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level}, bin64_t, bool_t);
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
+Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
 
 Level.abstract({
     vftable: VoidPointer,
@@ -177,6 +178,12 @@ Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player
 Player.prototype.setSleeping = procHacker.js("Player::setSleeping", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
+const _fillAdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
+Player.prototype.syncAbilties = function() {
+    const pk = AdventureSettingsPacket.create();
+    _fillAdventureSettingsPacket(pk, serverInstance.minecraft.something.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
+    this.sendPacket(pk);
+}
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0xa98]
@@ -382,6 +389,8 @@ Abilities.prototype.getPlayerPermissionLevel = procHacker.js("Abilities::getPlay
 Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCommandPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
+Abilities.prototype.setAbility = procHacker.js("Abilities::setAbility", void_t, {this:Abilities}, uint8_t, bool_t);
 
 Ability.prototype.getBool = procHacker.js("Ability::getBool", bool_t, {this:Ability});
 Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this:Ability});
+Ability.prototype.setBool = procHacker.js("Ability::setBool", void_t, {this:Ability}, bool_t);

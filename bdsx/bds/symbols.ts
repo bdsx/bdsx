@@ -201,8 +201,12 @@ const symbols = [
     'Abilities::setCommandPermissions',
     'Abilities::setPlayerPermissions',
     'Abilities::getAbility',
+    'Abilities::setAbility',
     'Ability::getBool',
     'Ability::getFloat',
+    'Ability::setBool',
+    'AdventureSettingsPacket::AdventureSettingsPacket',
+    'Level::getAdventureSettings',
 ] as const;
 
 // decorated symbols

@@ -51,21 +51,26 @@ export class Player extends Actor {
         abstract();
     }
 
-    setSize(width:number, height:number):void{
+    setSize(width:number, height:number):void {
         abstract();
     }
 
-    setSleeping(value:boolean):void{
+    setSleeping(value:boolean):void {
         abstract();
     }
 
-    isSleeping():boolean{
+    isSleeping():boolean {
         abstract();
     }
 
-    isJumping():boolean{
+    isJumping():boolean {
         abstract();
     }
+
+    syncAbilties():void {
+        abstract();
+    }
+
 }
 
 export class ServerPlayer extends Player {
