@@ -63,6 +63,8 @@ const symbols = [
     'Actor::getArmor',
     'Actor::burn',
     'Actor::setSneaking',
+    'Actor::setScoreTag',
+    'Actor::getScoreTag',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
     'ExtendedCertificate::getIdentity',
