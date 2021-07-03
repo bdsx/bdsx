@@ -101,6 +101,12 @@ export class Actor extends NativeClass {
     setName(name:string):void {
         abstract();
     }
+    setScoreTag(text:string):void{
+        abstract();
+    }
+    getScoreTag():string{
+        abstract();
+    }
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
     }
