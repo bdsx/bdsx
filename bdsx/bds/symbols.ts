@@ -208,8 +208,10 @@ const symbols = [
     'Ability::getFloat',
     'Ability::setBool',
     'AdventureSettingsPacket::AdventureSettingsPacket',
+    'TextPacket::createTranslated',
     'Level::getAdventureSettings',
     'Level::updateWeather',
+    'Level::save',
 ] as const;
 
 // decorated symbols

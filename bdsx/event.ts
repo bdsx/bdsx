@@ -6,7 +6,7 @@ import { MinecraftPacketIds } from "./bds/packetids";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
-import type { LevelExplodeEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
+import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
@@ -81,6 +81,8 @@ export namespace events {
 
     /** Cancellable */
     export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
+    /** Cancellable but you won't be able to stop the server */
+    export const levelSave = new Event<(event: LevelSaveEvent) => void | CANCEL>();
     /** Cancellable */
     export const levelWeatherChange = new Event<(event: LevelWeatherChangeEvent) => void | CANCEL>();
 

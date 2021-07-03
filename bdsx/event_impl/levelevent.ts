@@ -37,6 +37,16 @@ export class LevelExplodeEvent implements ILevelExplodeEvent {
     }
 }
 
+interface ILevelSaveEvent {
+    level: Level;
+}
+export class LevelSaveEvent implements ILevelSaveEvent {
+    constructor(
+        public level: Level,
+    ) {
+    }
+}
+
 interface ILevelWeatherChangeEvent {
     level: Level;
     rainLevel: number;
@@ -62,6 +72,14 @@ function onLevelExplode(level:Level, blockSource:BlockSource, entity:Actor, posi
     }
 }
 const _onLevelExplode = procHacker.hooking("?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z", void_t, null, Level, BlockSource, Actor, Vec3, float32_t, bool_t, bool_t, float32_t, bool_t)(onLevelExplode);
+
+function onLevelSave(level:Level):void {
+    const event = new LevelSaveEvent(level);
+    if (events.levelSave.fire(event) !== CANCEL) {
+        return _onLevelSave(event.level);
+    }
+}
+const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLevelSave);
 
 function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
