@@ -183,7 +183,7 @@ Player.prototype.syncAbilties = function() {
     const pk = AdventureSettingsPacket.create();
     _fillAdventureSettingsPacket(pk, serverInstance.minecraft.something.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
     this.sendPacket(pk);
-}
+};
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0xa98]

@@ -53,7 +53,7 @@ export class Ability extends NativeClass {
     getFloat():number {
         abstract();
     }
-    setBool(value:boolean) {
+    setBool(value:boolean):void {
         abstract();
     }
 }
