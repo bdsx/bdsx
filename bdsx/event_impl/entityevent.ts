@@ -14,23 +14,29 @@ import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 interface IEntityHurtEvent {
     entity: Actor;
     damage: number;
+    knock: boolean,
+    ignite: boolean,
 }
 export class EntityHurtEvent implements IEntityHurtEvent {
     constructor(
         public entity: Actor,
         public damage: number,
+        public knock: boolean,
+        public ignite: boolean,
     ) {
     }
 }
 
-interface IEntityHealEvent {
+interface IEntityHeathChangeEvent {
     entity: Actor;
-    readonly damage: number;
+    readonly oldHealth: number;
+    readonly newHealth: number;
 }
-export class EntityHealEvent implements IEntityHealEvent {
+export class EntityHeathChangeEvent implements IEntityHeathChangeEvent {
     constructor(
         public entity: Actor,
-        readonly damage: number,
+        readonly oldHealth: number,
+        readonly newHealth: number,
     ) {
     }
 }
@@ -165,12 +171,14 @@ export class PlayerCritEvent implements IPlayerCritEvent {
 interface IPlayerUseItemEvent {
     player: Player;
     useMethod: number;
+    consumeItem: boolean;
     itemStack: ItemStack;
 }
 export class PlayerUseItemEvent implements IPlayerUseItemEvent {
     constructor(
         public player: Player,
         public useMethod: number,
+        public consumeItem: boolean,
         public itemStack: ItemStack
     ) {
     }
@@ -195,10 +203,10 @@ export class PlayerJumpEvent implements IPlayerJumpEvent {
 // const _onPlayerJump = procHacker.hooking('Player::jumpFromGround', void_t, null, Player)(onPlayerJump);
 
 
-function onPlayerUseItem(player: Player, item:ItemStack, useMethod:number, v:boolean):void {
-    const event = new PlayerUseItemEvent(player, useMethod, item);
+function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, consumeItem:boolean):void {
+    const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
     events.playerUseItem.fire(event);
-    return _onPlayerUseItem(event.player, event.itemStack, event.useMethod, v);
+    return _onPlayerUseItem(event.player, event.itemStack, event.useMethod, event.consumeItem);
 }
 const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Player, ItemStack, int32_t, bool_t)(onPlayerUseItem);
 
@@ -209,30 +217,23 @@ function onPlayerCrit(player: Player):void {
 }
 const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
 
-function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, v1: boolean, v2: boolean):boolean {
-    const event = new EntityHurtEvent(entity, damage);
+function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean):boolean {
+    const event = new EntityHurtEvent(entity, damage, knock, ignite);
     if (events.entityHurt.fire(event) === CANCEL) {
         return false;
     } else {
-        return _onEntityHurt(event.entity, actorDamageSource, event.damage, v1, v2);
+        return _onEntityHurt(event.entity, actorDamageSource, event.damage, knock, ignite);
     }
 }
-const _onEntityHurt = procHacker.hooking("Actor::hurt", bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
+const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
 
-function onEntityHeal(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, v:VoidPointer):boolean {
-    if (oldHealth < newHealth) {
-        const event = new EntityHurtEvent(attributeDelegate.getPointerAs(Actor, 0x20), newHealth - oldHealth);
-        if (events.entityHeal.fire(event) === CANCEL) {
-            event.entity.setAttribute(AttributeId.Health, oldHealth);
-            return false;
-        } else {
-            attributeDelegate.setPointer(event.entity, 0x20);
-            return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
-        }
-    }
-    return _onEntityHeal(attributeDelegate, oldHealth, newHealth, v);
+function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, attributeBuffInfo:VoidPointer):boolean {
+    const event = new EntityHeathChangeEvent(attributeDelegate.getPointerAs(Actor, 0x20), oldHealth, newHealth);
+    events.entityHealthChange.fire(event);
+    attributeDelegate.setPointer(event.entity, 0x20);
+    return _onEntityHealthChange(attributeDelegate, oldHealth, newHealth, attributeBuffInfo);
 }
-const _onEntityHeal = procHacker.hooking("HealthAttributeDelegate::change", bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHeal);
+const _onEntityHealthChange = procHacker.hooking('HealthAttributeDelegate::change', bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHealthChange);
 
 function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
     const event = new EntityDieEvent(entity, damageSource);
@@ -274,12 +275,12 @@ function onPlayerAttack(player:Player, victim:Actor):boolean {
 }
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
 
-function onPlayerDropItem(player:Player, itemStack:ItemStack, v:boolean):boolean {
+function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
     const event = new PlayerDropItemEvent(player, itemStack);
     if (events.playerDropItem.fire(event) === CANCEL) {
         return false;
     } else {
-        return _onPlayerDropItem(event.player, event.itemStack, v);
+        return _onPlayerDropItem(event.player, event.itemStack, randomly);
     }
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
@@ -304,12 +305,12 @@ events.packetBefore(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) 
     events.playerJoin.fire(event);
 });
 
-function onPlayerPickupItem(player:Player, itemActor:Actor, v1:number, v2:number):boolean {
+function onPlayerPickupItem(player:Player, itemActor:Actor, orgCount:number, favoredSlot:number):boolean {
     const event = new PlayerPickupItemEvent(player, itemActor);
     if (events.playerPickupItem.fire(event) === CANCEL) {
         return false;
     } else {
-        return _onPlayerPickupItem(event.player, itemActor, v1, v2);
+        return _onPlayerPickupItem(event.player, itemActor, orgCount, favoredSlot);
     }
 }
 const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, Actor, int32_t, int32_t)(onPlayerPickupItem);

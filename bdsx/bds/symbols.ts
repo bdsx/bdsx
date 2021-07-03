@@ -40,6 +40,7 @@ const symbols = [
     'ServerNetworkHandler::disconnectClient',
     'ServerNetworkHandler::updateServerAnnouncement',
     'ServerPlayer::changeDimension',
+    'ServerPlayer::knockback',
     'ServerPlayer::openInventory',
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',

@@ -1,4 +1,5 @@
 import { abstract } from "bdsx/common";
+import { float32_t, int32_t } from "../nativetype";
 import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -18,7 +19,7 @@ export class Player extends Actor {
         abstract();
     }
 
-    teleportTo(position:Vec3, checkForBlocks:boolean, c:number, actorType:number, actorId:ActorUniqueID):void {
+    teleportTo(position:Vec3, shouldStopRiding:boolean, cause:number, sourceEntityType:number, sourceActorId:ActorUniqueID):void {
         abstract();
     }
 
@@ -70,7 +71,11 @@ export class Player extends Actor {
 export class ServerPlayer extends Player {
     networkIdentifier:NetworkIdentifier;
 
-    protected _sendInventory(b:boolean):void {
+    protected _sendInventory(shouldSelectSlot:boolean):void {
+        abstract();
+    }
+
+    knockback(source: Actor, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
     }
 
@@ -82,9 +87,9 @@ export class ServerPlayer extends Player {
         abstract();
     }
 
-    sendInventory(b:boolean = false):void {
+    sendInventory(shouldSelectSlot:boolean = false):void {
         setTimeout(() => {
-            this._sendInventory(b);
+            this._sendInventory(shouldSelectSlot);
         }, 50);
     }
 
