@@ -1,6 +1,6 @@
 import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
-import { CxxString, uint8_t } from "bdsx/nativetype";
+import { CxxString, int32_t, uint8_t } from "bdsx/nativetype";
 import { CxxVector } from "../cxxvector";
 import { CompoundTag } from "./nbt";
 import type { Player, ServerPlayer } from "./player";
@@ -86,7 +86,7 @@ export class ComponentItem extends NativeClass {
 }
 
 
-export class ItemStack extends NativeClass {
+export class ItemStackBase extends NativeClass {
     amount:uint8_t;
     protected _getItem():Item {
         abstract();
@@ -170,7 +170,7 @@ export class ItemStack extends NativeClass {
     load(compoundTag:CompoundTag):void {
         abstract();
     }
-    sameItem(item:ItemStack):boolean {
+    sameItem(item:ItemStackBase):boolean {
         abstract();
     }
     isStackedByData():boolean {
@@ -232,8 +232,17 @@ export class ItemStack extends NativeClass {
     }
 }
 
+export class ItemStack extends ItemStackBase {
+    /**
+     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted
+     */
+    static create(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0): ItemStack {
+        abstract();
+    }
+}
+
 export class PlayerInventory extends NativeClass {
-    addItem(itemStack:ItemStack, v:boolean):boolean {
+    addItem(itemStack:ItemStackBase, v:boolean):boolean {
         abstract();
     }
     clearSlot(slot:number, containerId:ContainerId):void {
@@ -248,28 +257,28 @@ export class PlayerInventory extends NativeClass {
     getHotbarSize():number {
         abstract();
     }
-    getItem(slot:number, containerId:ContainerId):ItemStack {
+    getItem(slot:number, containerId:ContainerId):ItemStackBase {
         abstract();
     }
-    getSelectedItem():ItemStack {
+    getSelectedItem():ItemStackBase {
         abstract();
     }
     getSelectedSlot():number {
         return this.getInt8(0x10);
     }
-    getSlotWithItem(itemStack:ItemStack, v2:boolean, v3:boolean):number {
+    getSlotWithItem(itemStack:ItemStackBase, v2:boolean, v3:boolean):number {
         abstract();
     }
-    getSlots():CxxVector<ItemStack> {
+    getSlots():CxxVector<ItemStackBase> {
         abstract();
     }
     selectSlot(slot:number, containerId:ContainerId):void {
         abstract();
     }
-    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, v:boolean):void {
+    setItem(slot:number, itemStack:ItemStackBase, containerId:ContainerId, v:boolean):void {
         abstract();
     }
-    setSelectedItem(itemStack:ItemStack):void {
+    setSelectedItem(itemStack:ItemStackBase):void {
         abstract();
     }
     swapSlots(primarySlot:number, secondarySlot:number):void {

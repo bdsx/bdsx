@@ -23,6 +23,9 @@ export class Level extends NativeClass {
     getAdventureSettings():AdventureSettings {
         abstract();
     }
+    getTagRegistry():TagRegistry {
+        abstract();
+    }
 }
 export class ServerLevel extends Level {
     packetSender:LoopbackPacketSender;
@@ -30,4 +33,7 @@ export class ServerLevel extends Level {
 }
 
 export class AdventureSettings extends NativeClass {
+}
+
+export class TagRegistry extends NativeClass {
 }

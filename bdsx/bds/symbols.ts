@@ -212,6 +212,7 @@ const symbols = [
     'Level::getAdventureSettings',
     'Level::updateWeather',
     'Level::save',
+    'CommandUtils::createItemStack',
 ] as const;
 
 // decorated symbols
