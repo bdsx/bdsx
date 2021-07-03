@@ -52,6 +52,32 @@ export class EntityDieEvent implements IEntityDieEvent {
     ) {
     }
 }
+interface IEntityStartRidingEvent {
+    entity: Actor;
+    ride: Actor;
+}
+export class EntityStartRidingEvent implements IEntityStartRidingEvent {
+    constructor(
+        public entity: Actor,
+        public ride: Actor,
+    ) {
+    }
+}
+interface IEntityStopRidingEvent {
+    entity: Actor;
+    exitFromRider: boolean;
+    actorIsBeingDestroyed: boolean;
+    switchingRides: boolean;
+}
+export class EntityStopRidingEvent implements IEntityStopRidingEvent {
+    constructor(
+        public entity: Actor,
+        public exitFromRider: boolean,
+        public actorIsBeingDestroyed: boolean,
+        public switchingRides: boolean,
+    ) {
+    }
+}
 interface IEntitySneakEvent {
     entity: Actor;
     isSneaking: boolean;
@@ -221,9 +247,8 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
     const event = new EntityHurtEvent(entity, damage, knock, ignite);
     if (events.entityHurt.fire(event) === CANCEL) {
         return false;
-    } else {
-        return _onEntityHurt(event.entity, actorDamageSource, event.damage, knock, ignite);
     }
+    return _onEntityHurt(event.entity, actorDamageSource, event.damage, knock, ignite);
 }
 const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
 
@@ -241,6 +266,23 @@ function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
     return _onEntityDie(event.entity, event.damageSource);
 }
 const _onEntityDie = procHacker.hooking('Mob::die', bool_t, null, Actor, ActorDamageSource)(onEntityDie);
+
+function onEntityStartRiding(entity:Actor, ride:Actor):boolean {
+    const event = new EntityStartRidingEvent(entity, ride);
+    if (events.entityStartRiding.fire(event) === CANCEL) {
+        return false;
+    }
+    return _onEntityStartRiding(event.entity, event.ride);
+}
+const _onEntityStartRiding = procHacker.hooking('Actor::startRiding', bool_t, null, Actor, Actor)(onEntityStartRiding);
+
+function onEntityStopRiding(entity:Actor, exitFromRider:boolean, actorIsBeingDestroyed:boolean, switchingRides:boolean):void {
+    const event = new EntityStopRidingEvent(entity, exitFromRider, actorIsBeingDestroyed, switchingRides);
+    if (events.entityStopRiding.fire(event) !== CANCEL) {
+        return _onEntityStopRiding(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
+    }
+}
+const _onEntityStopRiding = procHacker.hooking('Actor::stopRiding', void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
 function onEntitySneak(Script:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
     const event = new EntitySneakEvent(entity, isSneaking);
@@ -269,9 +311,8 @@ function onPlayerAttack(player:Player, victim:Actor):boolean {
     const event = new PlayerAttackEvent(player, victim);
     if (events.playerAttack.fire(event) === CANCEL) {
         return false;
-    } else {
-        return _onPlayerAttack(event.player, event.victim);
     }
+    return _onPlayerAttack(event.player, event.victim);
 }
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
 
@@ -279,9 +320,8 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):
     const event = new PlayerDropItemEvent(player, itemStack);
     if (events.playerDropItem.fire(event) === CANCEL) {
         return false;
-    } else {
-        return _onPlayerDropItem(event.player, event.itemStack, randomly);
     }
+    return _onPlayerDropItem(event.player, event.itemStack, randomly);
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
 
@@ -309,8 +349,7 @@ function onPlayerPickupItem(player:Player, itemActor:Actor, orgCount:number, fav
     const event = new PlayerPickupItemEvent(player, itemActor);
     if (events.playerPickupItem.fire(event) === CANCEL) {
         return false;
-    } else {
-        return _onPlayerPickupItem(event.player, itemActor, orgCount, favoredSlot);
     }
+    return _onPlayerPickupItem(event.player, itemActor, orgCount, favoredSlot);
 }
 const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, Actor, int32_t, int32_t)(onPlayerPickupItem);
