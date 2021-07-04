@@ -1,11 +1,8 @@
 
-// AttributeInstance* getMutableInstance(AttributeId type) noexcept;
-
 import { abstract } from "bdsx/common";
 import { VoidPointer } from "bdsx/core";
 import { NativeClass } from "bdsx/nativeclass";
 import { float32_t } from "bdsx/nativetype";
-import { makefunc } from "../makefunc";
 
 export enum AttributeId
 {
