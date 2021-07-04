@@ -40,6 +40,7 @@ const symbols = [
     'ServerNetworkHandler::disconnectClient',
     'ServerNetworkHandler::updateServerAnnouncement',
     'ServerPlayer::changeDimension',
+    'ServerPlayer::knockback',
     'ServerPlayer::openInventory',
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
@@ -62,6 +63,8 @@ const symbols = [
     'Actor::getArmor',
     'Actor::burn',
     'Actor::setSneaking',
+    'Actor::setScoreTag',
+    'Actor::getScoreTag',
     'ExtendedCertificate::getXuid',
     'ExtendedCertificate::getIdentityName',
     'ExtendedCertificate::getIdentity',
@@ -200,8 +203,12 @@ const symbols = [
     'Abilities::setCommandPermissions',
     'Abilities::setPlayerPermissions',
     'Abilities::getAbility',
+    'Abilities::setAbility',
     'Ability::getBool',
     'Ability::getFloat',
+    'Ability::setBool',
+    'AdventureSettingsPacket::AdventureSettingsPacket',
+    'Level::getAdventureSettings',
 ] as const;
 
 // decorated symbols

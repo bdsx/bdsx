@@ -20,6 +20,9 @@ export class Abilities extends NativeClass {
     getAbility(abilityIndex:AbilitiesIndex):Ability {
         abstract();
     }
+    setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
+        abstract();
+    }
 }
 
 export enum AbilitiesIndex {
@@ -48,6 +51,9 @@ export class Ability extends NativeClass {
         abstract();
     }
     getFloat():number {
+        abstract();
+    }
+    setBool(value:boolean):void {
         abstract();
     }
 }
