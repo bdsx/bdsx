@@ -1,5 +1,5 @@
 import { abstract } from "bdsx/common";
-import { float32_t, int32_t } from "../nativetype";
+import { CxxString, float32_t, int32_t } from "../nativetype";
 import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -99,6 +99,10 @@ export class ServerPlayer extends Player {
     }
 
     setAttribute(id:AttributeId, value:number):AttributeInstance|null {
+        abstract();
+    }
+
+    sendTranslatedMessage(message:CxxString, params:string[] = []):void {
         abstract();
     }
 }

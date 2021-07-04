@@ -24,7 +24,7 @@ export class NetworkHandler extends NativeClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
 
-    send(ni:NetworkIdentifier, packet:Packet, u:number):void {
+    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void {
         abstract();
     }
 

@@ -1,6 +1,6 @@
 import { abstract } from "bdsx/common";
 import { NativeClass } from "bdsx/nativeclass";
-import { CxxString, uint8_t } from "bdsx/nativetype";
+import { CxxString, int32_t, uint8_t } from "bdsx/nativetype";
 import { CxxVector } from "../cxxvector";
 import { CompoundTag } from "./nbt";
 import type { Player, ServerPlayer } from "./player";
@@ -88,6 +88,12 @@ export class ComponentItem extends NativeClass {
 
 export class ItemStack extends NativeClass {
     amount:uint8_t;
+    /**
+     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted
+     */
+    static create(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0): ItemStack {
+        abstract();
+    }
     protected _getItem():Item {
         abstract();
     }
@@ -231,6 +237,7 @@ export class ItemStack extends NativeClass {
         abstract();
     }
 }
+
 
 export class PlayerInventory extends NativeClass {
     addItem(itemStack:ItemStack, v:boolean):boolean {

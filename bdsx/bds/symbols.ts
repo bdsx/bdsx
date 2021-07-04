@@ -197,6 +197,8 @@ const symbols = [
     'Actor::getDimensionId',
     'Actor::getAttributes',
     'Actor::getRuntimeID',
+    'Actor::startRiding',
+    'Actor::stopRiding',
     'Mob::die',
     'Abilities::getCommandPermissions',
     'Abilities::getPlayerPermissions',
@@ -208,7 +210,11 @@ const symbols = [
     'Ability::getFloat',
     'Ability::setBool',
     'AdventureSettingsPacket::AdventureSettingsPacket',
+    'TextPacket::createTranslated',
     'Level::getAdventureSettings',
+    'Level::updateWeather',
+    'Level::save',
+    'CommandUtils::createItemStack',
 ] as const;
 
 // decorated symbols

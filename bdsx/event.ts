@@ -5,8 +5,8 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
-import type { LevelExplodeEvent } from "./event_impl/levelevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
+import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
@@ -44,12 +44,19 @@ export namespace events {
 
     ////////////////////////////////////////////////////////
     // Entity events
+
     /** Cancellable */
     export const entityHurt = new Event<(event: EntityHurtEvent) => void | CANCEL>();
     /** Not cancellable */
     export const entityHealthChange = new Event<(event: EntityHeathChangeEvent) => void>();
     /** Not cancellable */
     export const entityDie = new Event<(event: EntityDieEvent) => void>();
+    /** Not cancellable */
+    export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
+    /** Cancellable */
+    export const entityStartRiding = new Event<(event: EntityStartRidingEvent) => void | CANCEL>();
+    /** Cancellable but the client is still exiting though it will automatically ride again after rejoin */
+    export const entityStopRiding = new Event<(event: EntityStopRidingEvent) => void | CANCEL>();
     /** Cancellable */
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
     /** Cancellable but only when player is in container screens*/
@@ -58,10 +65,6 @@ export namespace events {
     export const playerRespawn = new Event<(event: PlayerRespawnEvent) => void | CANCEL>();
     /** Cancellable */
     export const playerLevelUp = new Event<(event: PlayerLevelUpEvent) => void | CANCEL>();
-    /** Cancellable */
-    export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
-    /** Not cancellable */
-    export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
     /** Not cancellable */
     export const entityCreated = new Event<(event: EntityCreatedEvent) => void>();
     /** Not cancellable */
@@ -72,6 +75,16 @@ export namespace events {
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
     /** Not cancellable */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
+
+    ////////////////////////////////////////////////////////
+    // Level events
+
+    /** Cancellable */
+    export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
+    /** Cancellable but you won't be able to stop the server */
+    export const levelSave = new Event<(event: LevelSaveEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const levelWeatherChange = new Event<(event: LevelWeatherChangeEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Server events

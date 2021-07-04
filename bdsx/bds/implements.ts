@@ -23,7 +23,7 @@ import { AdventureSettings, Level, ServerLevel } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, UpdateAttributesPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, TextPacket, UpdateAttributesPacket } from "./packets";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
@@ -92,12 +92,12 @@ Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntime
 Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
 Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
 Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
-const _computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
-const _applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
+const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
+const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
 Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld) {
     const alloc = new AllocatedPointer(0x80);
-    _computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
-    _applyTarget(this, alloc);
+    TeleportCommand$computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
+    TeleportCommand$applyTarget(this, alloc);
 };
 Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 
@@ -180,11 +180,12 @@ Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player
 Player.prototype.setSleeping = procHacker.js("Player::setSleeping", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
-const _fillAdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
+const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
 Player.prototype.syncAbilties = function() {
     const pk = AdventureSettingsPacket.create();
-    _fillAdventureSettingsPacket(pk, serverInstance.minecraft.something.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
+    AdventureSettingsPacket$AdventureSettingsPacket(pk, serverInstance.minecraft.something.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
     this.sendPacket(pk);
+    pk.dispose();
 };
 
 ServerPlayer.abstract({
@@ -196,6 +197,18 @@ ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventor
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", void_t, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
+};
+const CxxStringVector = CxxVector.make(CxxString);
+const TextPacket$createTranslated = procHacker.js("TextPacket::createTranslated", TextPacket, null, TextPacket, CxxString, CxxStringVector);
+ServerPlayer.prototype.sendTranslatedMessage = function(message:CxxString, params:string[] = []) {
+    const pk = TextPacket.create();
+    const _params = new CxxStringVector(true);
+    _params.construct();
+    params.forEach(e => _params.push(e));
+    TextPacket$createTranslated(pk, message, _params);
+    this.sendNetworkPacket(pk);
+    _params.destruct();
+    pk.dispose();
 };
 
 // networkidentifier.ts
@@ -326,7 +339,7 @@ Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVecto
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 ItemStack.abstract({
     amount:[uint8_t, 0x22],
-});
+}, 0x89);
 ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 ItemStack.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxString, {this:ItemStack, structureReturn:true});
@@ -361,6 +374,13 @@ ItemStack.prototype.getMaxDamage = procHacker.js("ItemStackBase::getMaxDamage", 
 ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValue", int32_t, {this:ItemStack});
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
+const CommandUtils$createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
+ItemStack.create = function (itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
+    const itemStack = new ItemStack(true);
+    itemStack.construct();
+    CommandUtils$createItemStack(itemStack, itemName, amount, data);
+    return itemStack;
+};
 
 PlayerInventory.prototype.addItem = procHacker.js("PlayerInventory::add", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
 PlayerInventory.prototype.clearSlot = procHacker.js("PlayerInventory::clearSlot", void_t, {this:PlayerInventory}, int32_t, int32_t);
