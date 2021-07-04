@@ -86,8 +86,14 @@ export class ComponentItem extends NativeClass {
 }
 
 
-export class ItemStackBase extends NativeClass {
+export class ItemStack extends NativeClass {
     amount:uint8_t;
+    /**
+     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted
+     */
+    static create(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0): ItemStack {
+        abstract();
+    }
     protected _getItem():Item {
         abstract();
     }
@@ -170,7 +176,7 @@ export class ItemStackBase extends NativeClass {
     load(compoundTag:CompoundTag):void {
         abstract();
     }
-    sameItem(item:ItemStackBase):boolean {
+    sameItem(item:ItemStack):boolean {
         abstract();
     }
     isStackedByData():boolean {
@@ -232,17 +238,9 @@ export class ItemStackBase extends NativeClass {
     }
 }
 
-export class ItemStack extends ItemStackBase {
-    /**
-     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted
-     */
-    static create(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0): ItemStack {
-        abstract();
-    }
-}
 
 export class PlayerInventory extends NativeClass {
-    addItem(itemStack:ItemStackBase, v:boolean):boolean {
+    addItem(itemStack:ItemStack, v:boolean):boolean {
         abstract();
     }
     clearSlot(slot:number, containerId:ContainerId):void {
@@ -257,28 +255,28 @@ export class PlayerInventory extends NativeClass {
     getHotbarSize():number {
         abstract();
     }
-    getItem(slot:number, containerId:ContainerId):ItemStackBase {
+    getItem(slot:number, containerId:ContainerId):ItemStack {
         abstract();
     }
-    getSelectedItem():ItemStackBase {
+    getSelectedItem():ItemStack {
         abstract();
     }
     getSelectedSlot():number {
         return this.getInt8(0x10);
     }
-    getSlotWithItem(itemStack:ItemStackBase, v2:boolean, v3:boolean):number {
+    getSlotWithItem(itemStack:ItemStack, v2:boolean, v3:boolean):number {
         abstract();
     }
-    getSlots():CxxVector<ItemStackBase> {
+    getSlots():CxxVector<ItemStack> {
         abstract();
     }
     selectSlot(slot:number, containerId:ContainerId):void {
         abstract();
     }
-    setItem(slot:number, itemStack:ItemStackBase, containerId:ContainerId, v:boolean):void {
+    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, v:boolean):void {
         abstract();
     }
-    setSelectedItem(itemStack:ItemStackBase):void {
+    setSelectedItem(itemStack:ItemStack):void {
         abstract();
     }
     swapSlots(primarySlot:number, secondarySlot:number):void {
