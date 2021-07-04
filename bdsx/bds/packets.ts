@@ -6,6 +6,7 @@ import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { Packet } from "./packet";
+import { ObjectiveSortOrder, Scoreboard, ScoreboardId } from "./scoreboard";
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
@@ -965,27 +966,7 @@ export class SetDisplayObjectivePacket extends Packet {
     @nativeField(CxxString)
     criteriaName:'dummy'|'';
     @nativeField(uint8_t)
-    sortOrder:SetDisplayObjectivePacket.Sort;
-}
-export namespace SetDisplayObjectivePacket {
-    export enum Sort {
-        ASCENDING = 0,
-        DESCENDING = 1,
-    }
-}
-
-@nativeClass()
-export class ScoreboardId extends NativeClass {
-    @nativeField(bin64_t)
-    id:bin64_t;
-    @nativeField(int64_as_float_t, 0)
-    idAsNumber:int64_as_float_t;
-
-    /**
-     * unknown
-     */
-    @nativeField(bin64_t)
-    u:bin64_t;
+    sortOrder:ObjectiveSortOrder;
 }
 
 @nativeClass()

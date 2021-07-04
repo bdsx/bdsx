@@ -212,9 +212,21 @@ const symbols = [
     'AdventureSettingsPacket::AdventureSettingsPacket',
     'TextPacket::createTranslated',
     'Level::getAdventureSettings',
+    'Level::getScoreboard',
     'Level::updateWeather',
     'Level::save',
     'CommandUtils::createItemStack',
+    'Scoreboard::addObjective',
+    'Scoreboard::getCriteria',
+    'Scoreboard::getDisplayObjective',
+    'Scoreboard::getObjective',
+    'Scoreboard::getObjectiveNames',
+    'Scoreboard::getObjectives',
+    'Scoreboard::removeObjective',
+    'ServerScoreboard::clearDisplayObjective',
+    'ServerScoreboard::setDisplayObjective',
+    'Objective::getPlayers',
+    'Objective::getPlayerScore',
 ] as const;
 
 // decorated symbols
@@ -239,6 +251,7 @@ const symbols2 = [
     '??_7ServerLevel@@6BILevel@@@',
     '??0CommandOutput@@QEAA@W4CommandOutputType@@@Z',
     '?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z',
+    '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;
