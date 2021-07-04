@@ -426,10 +426,12 @@ Scoreboard.prototype.addObjective = procHacker.js("Scoreboard::addObjective", Ob
 Scoreboard.prototype.getCriteria = procHacker.js("Scoreboard::getCriteria", ObjectiveCriteria, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getDisplayObjective = procHacker.js("Scoreboard::getDisplayObjective", DisplayObjective, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getObjective = procHacker.js("Scoreboard::getObjective", Objective, {this:Scoreboard}, CxxString);
+Scoreboard.prototype.getActorScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVActor@@@Z", ScoreboardId, {this:Scoreboard}, Actor);
+Scoreboard.prototype.getFakePlayerScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", ScoreboardId, {this:Scoreboard}, CxxString);
+Scoreboard.prototype.getPlayerScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z", ScoreboardId, {this:Scoreboard}, Player);
 Scoreboard.prototype.removeObjective = procHacker.js("Scoreboard::removeObjective", bool_t, {this:Scoreboard}, Objective);
 (Scoreboard.prototype as any)._getObjectiveNames = procHacker.js("Scoreboard::getObjectiveNames", CxxVector.make(CxxString), {this:Scoreboard, structureReturn: true});
 (Scoreboard.prototype as any)._getObjectives = procHacker.js("Scoreboard::getObjectives", CxxVector.make(Objective.ref()), {this:Scoreboard, structureReturn: true});
 
 (Objective.prototype as any)._getPlayers = procHacker.js("Objective::getPlayers", CxxVector.make(ScoreboardId.ref()), {this:Objective, structureReturn: true});
-//Objective.prototype.getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective}, ScoreboardId);
-//Objective.prototype.getPlayerScoreId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z", ScoreboardId, {this:Objective, structureReturn: true}, Player);
+(Objective.prototype as any)._getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective}, ScoreInfo, ScoreboardId);
