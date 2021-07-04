@@ -2,6 +2,7 @@ import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
+import { Actor } from "./actor";
 import { Player } from "./player";
 
 export class Scoreboard extends NativeClass {
@@ -40,6 +41,18 @@ export class Scoreboard extends NativeClass {
         return this._getObjectives().toArray();
     }
 
+    getActorScoreboardId(actor:Actor):ScoreboardId {
+        abstract();
+    }
+
+    getFakePlayerScoreboardId(name:string):ScoreboardId {
+        abstract();
+    }
+
+    getPlayerScoreboardId(player:Player):ScoreboardId {
+        abstract();
+    }
+
     removeObjective(objective:Objective):boolean {
         abstract();
     }
@@ -63,17 +76,18 @@ export class Objective extends NativeClass {
         abstract();
     }
 
+    protected _getPlayerScore(info:ScoreInfo, id:ScoreboardId):ScoreInfo {
+        abstract();
+    }
+
     getPlayers():ScoreboardId[] {
         return this._getPlayers().toArray();
     }
 
-    // getPlayerScore(id:ScoreboardId):ScoreInfo {
-    //     abstract();
-    // }
+    getPlayerScore(id:ScoreboardId):ScoreInfo {
+        return this._getPlayerScore(new ScoreInfo(true), id);
+    }
 
-    // getPlayerScoreId(player:Player):ScoreboardId {
-    //     abstract();
-    // }
 }
 
 export class DisplayObjective extends NativeClass {
@@ -82,7 +96,7 @@ export class DisplayObjective extends NativeClass {
 export class ObjectiveCriteria extends NativeClass {
 }
 
-@nativeClass(null)
+@nativeClass()
 export class ScoreboardId extends NativeClass {
     @nativeField(bin64_t)
     id:bin64_t;
@@ -92,16 +106,14 @@ export class ScoreboardId extends NativeClass {
     identityDef:bin64_t;
 }
 
-@nativeClass(null)
+@nativeClass()
 export class ScoreInfo extends NativeClass {
     @nativeField(Objective.ref())
-    objective:Objective;
+    objective:Objective|null;
     @nativeField(bool_t, 0x08)
     valid:bool_t;
     @nativeField(int32_t, 0x0C)
     value:int32_t;
-    @nativeField(ScoreboardId.ref(), 0x10)
-    id:ScoreboardId;
 }
 
 export enum DisplaySlot {
