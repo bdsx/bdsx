@@ -5,7 +5,6 @@
 "use strict";
 
 const colors = require("colors");
-console.trace(colors.red(`[BDSX] bdsx/index.js will be deleted. please import from each modules`));
 
 const { analyzer } = require("./analyzer");
 exports.analyzer = analyzer;
