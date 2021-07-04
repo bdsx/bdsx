@@ -6,6 +6,7 @@ import { VoidPointer } from "../core";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";
+import { Scoreboard } from "./scoreboard";
 
 export class Level extends NativeClass {
     vftable:VoidPointer;
@@ -21,6 +22,9 @@ export class Level extends NativeClass {
         abstract();
     }
     getAdventureSettings():AdventureSettings {
+        abstract();
+    }
+    getScoreboard():Scoreboard {
         abstract();
     }
     getTagRegistry():TagRegistry {

@@ -5,7 +5,7 @@ import { AllocatedPointer, NativePointer, StaticPointer, VoidPointer } from "bds
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int8_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { asmcode } from "../asm/asmcode";
@@ -28,6 +28,7 @@ import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
+import { DisplayObjective, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreInfo } from "./scoreboard";
 import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { BinaryStream } from "./stream";
 
@@ -38,6 +39,7 @@ Level.prototype.createDimension = procHacker.js("Level::createDimension", Dimens
 Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:Level}, bin64_t, bool_t);
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
+Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Scoreboard});
 
 Level.abstract({
     vftable: VoidPointer,
@@ -416,3 +418,18 @@ Abilities.prototype.setAbility = procHacker.js("Abilities::setAbility", void_t, 
 Ability.prototype.getBool = procHacker.js("Ability::getBool", bool_t, {this:Ability});
 Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this:Ability});
 Ability.prototype.setBool = procHacker.js("Ability::setBool", void_t, {this:Ability}, bool_t);
+
+// scoreboard.ts
+Scoreboard.prototype.clearDisplayObjective = procHacker.js("ServerScoreboard::clearDisplayObjective", Objective, {this:Scoreboard}, CxxString);
+Scoreboard.prototype.setDisplayObjective = procHacker.js("ServerScoreboard::setDisplayObjective", DisplayObjective, {this:Scoreboard}, CxxString, Objective, int8_t);
+Scoreboard.prototype.addObjective = procHacker.js("Scoreboard::addObjective", Objective, {this:Scoreboard}, CxxString, CxxString, ObjectiveCriteria);
+Scoreboard.prototype.getCriteria = procHacker.js("Scoreboard::getCriteria", ObjectiveCriteria, {this:Scoreboard}, CxxString);
+Scoreboard.prototype.getDisplayObjective = procHacker.js("Scoreboard::getDisplayObjective", DisplayObjective, {this:Scoreboard}, CxxString);
+Scoreboard.prototype.getObjective = procHacker.js("Scoreboard::getObjective", Objective, {this:Scoreboard}, CxxString);
+Scoreboard.prototype.removeObjective = procHacker.js("Scoreboard::removeObjective", bool_t, {this:Scoreboard}, Objective);
+(Scoreboard.prototype as any)._getObjectiveNames = procHacker.js("Scoreboard::getObjectiveNames", CxxVector.make(CxxString), {this:Scoreboard, structureReturn: true});
+(Scoreboard.prototype as any)._getObjectives = procHacker.js("Scoreboard::getObjectives", CxxVector.make(Objective.ref()), {this:Scoreboard, structureReturn: true});
+
+(Objective.prototype as any)._getPlayers = procHacker.js("Objective::getPlayers", CxxVector.make(ScoreboardId.ref()), {this:Objective, structureReturn: true});
+//Objective.prototype.getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective}, ScoreboardId);
+//Objective.prototype.getPlayerScoreId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z", ScoreboardId, {this:Objective, structureReturn: true}, Player);
