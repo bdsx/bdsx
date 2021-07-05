@@ -4,8 +4,6 @@
  */
 "use strict";
 
-const colors = require("colors");
-
 const { analyzer } = require("./analyzer");
 exports.analyzer = analyzer;
 const { Actor, DimensionId } = require("./bds/actor");
