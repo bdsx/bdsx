@@ -298,7 +298,7 @@ export enum InventorySourceFlags {
     NoFlag,
 }
 
-@nativeClass(0xB)
+@nativeClass()
 export class InventorySource extends NativeClass {
     @nativeField(int32_t)
     type:InventorySourceType;
