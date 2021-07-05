@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "prepare": "tsc"
+    "prepare": "tsc || exit 0"
   },
   "devDependencies": {
     "bdsx": "file:../bdsx"

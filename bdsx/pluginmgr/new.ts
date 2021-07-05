@@ -68,7 +68,7 @@ events.serverClose.on(()=>{
         "scripts": {
             "build": "tsc",
             "watch": "tsc -w",
-            "prepare": "tsc"
+            "prepare": "tsc || exit 0"
         },
         "devDependencies": {
             "bdsx": `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`,
