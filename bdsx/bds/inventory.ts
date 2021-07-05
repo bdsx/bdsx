@@ -373,5 +373,5 @@ export class ComplexInventoryTransaction extends NativeClass {
     @nativeField(uint8_t, 0x08)
     type:uint8_t;
     @nativeField(InventoryTransaction, 0x10)
-    transaction:InventoryTransaction;
+    data:InventoryTransaction;
 }
