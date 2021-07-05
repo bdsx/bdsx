@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, int8_t, uint32_t } from "../nativetype";
 import { Actor } from "./actor";
 import { Player } from "./player";
 
@@ -14,14 +14,22 @@ export class Scoreboard extends NativeClass {
         abstract();
     }
 
-    addObjective(name:CxxString, displayName:CxxString, criteria:ObjectiveCriteria):Objective {
+    // protected _modifyPlayerScore(success:boolean, id:ScoreboardId, objective:Objective, value:number, action:PlayerScoreSetFunction):number {
+    //     abstract();
+    // }
+
+    // sync(id:ScoreboardId, objective:Objective):void {
+    //     abstract();
+    // }
+
+    addObjective(name:string, displayName:string, criteria:ObjectiveCriteria):Objective {
         abstract();
     }
 
     /**
      *  @param name currently only 'dummy'
      */
-    getCriteria(name:CxxString):ObjectiveCriteria|null {
+    getCriteria(name:string):ObjectiveCriteria|null {
         abstract();
     }
 
@@ -33,7 +41,7 @@ export class Scoreboard extends NativeClass {
         return this._getObjectiveNames().toArray();
     }
 
-    getObjective(name:CxxString):Objective|null {
+    getObjective(name:string):Objective|null {
         abstract();
     }
 
@@ -53,20 +61,36 @@ export class Scoreboard extends NativeClass {
         abstract();
     }
 
+    getScoreboardIdentityRef(id:ScoreboardId):ScoreboardIdentityRef {
+        abstract();
+    }
+
     removeObjective(objective:Objective):boolean {
         abstract();
     }
 
-    clearDisplayObjective(displaySlot:CxxString):Objective|null {
+    clearDisplayObjective(displaySlot:string):Objective|null {
         abstract();
     }
 
     setDisplayObjective(displaySlot:DisplaySlot, objective:Objective, order:ObjectiveSortOrder):DisplayObjective|null {
         abstract();
     }
+    resetPlayerScore(id:ScoreboardId, objective:Objective):void {
+        abstract();
+    }
+    // setPlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
+    //     return this._modifyPlayerScore(false, id, objective, value, PlayerScoreSetFunction.Set);
+    // }
+    // addPlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
+    //     return this._modifyPlayerScore(false, id, objective, value, PlayerScoreSetFunction.Add);
+    // }
+    // removePlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
+    //     return this._modifyPlayerScore(false, id, objective, value, PlayerScoreSetFunction.Subtract);
+    // }
 }
 
-@nativeClass(null)
+@nativeClass()
 export class Objective extends NativeClass {
     @nativeField(CxxString, 0x40)
     name:CxxString;
@@ -90,7 +114,12 @@ export class Objective extends NativeClass {
 
 }
 
+@nativeClass()
 export class DisplayObjective extends NativeClass {
+    @nativeField(Objective.ref())
+    objective:Objective|null;
+    @nativeField(int8_t, 0x08)
+    order:ObjectiveSortOrder;
 }
 
 export class ObjectiveCriteria extends NativeClass {
@@ -116,6 +145,19 @@ export class ScoreInfo extends NativeClass {
     value:int32_t;
 }
 
+
+@nativeClass()
+export class ScoreboardIdentityRef extends NativeClass {
+    @nativeField(uint32_t)
+    objectiveReferences:uint32_t;
+    @nativeField(ScoreboardId.ref(), 0x08)
+    scoreboardId:ScoreboardId;
+
+    // modifyScoreInObjective(result:number, objective:Objective, score:number, action:PlayerScoreSetFunction):boolean {
+    //     abstract();
+    // }
+}
+
 export enum DisplaySlot {
     BelowName = "belowname",
     List = "list",
@@ -131,4 +173,16 @@ export enum PlayerScoreSetFunction {
     Set,
     Add,
     Subtract,
+}
+
+export enum ScoreCommandOperator {
+    Equals = 1,
+    PlusEquals,
+    MinusEquals,
+    TimesEquals,
+    DivideEquals,
+    ModEquals,
+    MinEquals,
+    MaxEquals,
+    Swap,
 }

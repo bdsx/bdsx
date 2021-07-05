@@ -34,6 +34,13 @@ export class Level extends NativeClass {
 export class ServerLevel extends Level {
     packetSender:LoopbackPacketSender;
     actors:CxxVector<Actor>;
+
+    setCommandsEnabled(value:boolean):void {
+        abstract();
+    }
+    setShouldSendSleepMessage(value:boolean):void {
+        abstract();
+    }
 }
 
 export class AdventureSettings extends NativeClass {
