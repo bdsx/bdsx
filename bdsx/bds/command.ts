@@ -26,9 +26,31 @@ export enum CommandPermissionLevel {
 	Admin,
 }
 
-export enum CommandFlag {
-    None        = 0x00,
+export enum CommandCheatFlag {
+    Cheat,
+    NoCheat = 0x40,
+    None = 0,
 }
+
+/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
+export enum CommandVisibilityFlag {
+    Visible,
+    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
+    HiddenFromCommandBlockOrigin = 2,
+    HiddenFromPlayerOrigin = 4,
+    /** Still visible to console */
+    Hidden = 6,
+}
+
+export enum CommandUsageFlag {
+    Normal,
+    Test,
+    /** Any larger than 1 is hidden */
+    Hidden,
+}
+
+/** @deprecated **/
+export const CommandFlag = CommandCheatFlag;
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
@@ -245,7 +267,7 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
-    registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandFlag, flag2:CommandFlag):void {
+    registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
     }
     registerAlias(command:string, alias:string):void {
