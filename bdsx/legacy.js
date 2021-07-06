@@ -24,6 +24,7 @@ const { HashSet } = require("./hashset");
 const { CommandOutput } = require("./bds/command");
 const { asm, Register } = require("./assembler");
 const { hacktool } = require('./hacktool');
+const { ScoreboardId } = require("./bds/scoreboard");
 const core = require('./core');
 const packet = require("./bds/packet");
 const command = require('./command');
@@ -32,6 +33,7 @@ const connreq = require('./bds/connreq');
 const pointer = require('./pointer');
 const util = require('./util');
 const packets = require('./bds/packets');
+const sharedpointer = require('./sharedpointer');
 const CANCEL = common.CANCEL;
 const abstract = common.abstract;
 //@ts-ignore
@@ -64,7 +66,6 @@ exports.legacy = {
 };
 
 // sharedpointer
-const sharedpointer = require('./sharedpointer');
 class SharedPointer extends core.StaticPointer {
     constructor(sharedptr) {
         //@ts-ignore
@@ -320,6 +321,8 @@ SendToMinecraftServer["SpawnParticleInWorld"] = "minecraft:spawn_particle_in_wor
 packets.NetworkBlockPosition = BlockPos;
 //@ts-ignore
 packets.EntityEventPacket = packets.ActorEventPacket;
+//@ts-ignore
+packets.ScoreboardId = ScoreboardId;
 
 // bds/connreq
 //@ts-ignore

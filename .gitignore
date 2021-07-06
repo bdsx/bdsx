@@ -12,3 +12,5 @@ node_modules
 !/bdsx/servercontrol.js
 !/bdsx/native.js
 !/bdsx/netevent.js
+/package-lock.json
+/plugin-example/package-lock.json
