@@ -59,6 +59,7 @@ export enum AbilitiesIndex {
 export class Ability extends NativeClass {
     type:Ability.Type;
     value:Ability.Value;
+    options:Ability.Options;
 
     getBool():boolean {
         abstract();
@@ -102,7 +103,28 @@ export namespace Ability {
         Bool,
         Float,
     }
-    @nativeClass()
+
+    export enum Options {
+        None,
+        NoSave,
+        CommandExposed = 2,
+        PermissionsInterfaceExposed = 4,
+        WorldbuilderOverrides = 8,
+
+        NoSaveCommandExposed = 3,
+        NoSavePermissionsInterfaceExposed = 5,
+        CommandExposedPermissionsInterfaceExposed = 6,
+        NoSaveCommandExposedPermissionsInterfaceExposed = 7,
+        NoSaveWorldbuilderOverrides = 9,
+        CommandExposedWorldbuilderOverrides = 10,
+        NoSaveCommandExposedWorldbuilderOverrides = 11,
+        PermissionsInterfaceExposedWorldbuilderOverrides = 12,
+        NoSavePermissionsInterfaceExposedWorldbuilderOverrides = 13,
+        CommandExposedPermissionsInterfaceExposedWorldbuilderOverrides = 14,
+        All = 15,
+    }
+
+    @nativeClass(0x04)
     export class Value extends NativeClass {
         @nativeField(bool_t, 0x00)
         boolVal:bool_t;
