@@ -419,7 +419,7 @@ Abilities.prototype.getPlayerPermissionLevel = procHacker.js("Abilities::getPlay
 Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCommandPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
-Abilities.prototype.setAbility = procHacker.js("Abilities::setAbility", void_t, {this:Abilities}, uint8_t, bool_t);
+(Abilities.prototype as any)._setAbility = procHacker.js("Abilities::setAbility", void_t, {this:Abilities}, uint8_t, bool_t);
 
 Ability.prototype.getBool = procHacker.js("Ability::getBool", bool_t, {this:Ability});
 Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this:Ability});

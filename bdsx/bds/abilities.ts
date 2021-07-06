@@ -1,6 +1,6 @@
 import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { int32_t } from "../nativetype";
+import { bool_t, float32_t, int32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
 
@@ -56,10 +56,9 @@ export enum AbilitiesIndex {
     Noclip
 }
 
-@nativeClass(null)
 export class Ability extends NativeClass {
-    @nativeField(int32_t)
     type:Ability.Type;
+    value:Ability.Value;
 
     getBool():boolean {
         abstract();
@@ -80,20 +79,18 @@ export class Ability extends NativeClass {
         case Ability.Type.Unset:
             return undefined;
         case Ability.Type.Bool:
-            return this.getBoolean(0x04);
+            return this.getBool();
         case Ability.Type.Float:
-            return this.getFloat32(0x04);
+            return this.getFloat();
         }
     }
     setValue(value:boolean|number):void {
         switch (typeof value) {
         case "boolean":
-            this.type = Ability.Type.Bool;
-            this.setBoolean(value, 0x04);
+            this.setBool(value);
             break;
         case "number":
-            this.type = Ability.Type.Float;
-            this.setFloat32(value, 0x04);
+            this.setFloat(value);
             break;
         }
     }
@@ -105,4 +102,16 @@ export namespace Ability {
         Bool,
         Float,
     }
+    @nativeClass()
+    export class Value extends NativeClass {
+        @nativeField(bool_t, 0x00)
+        boolVal:bool_t;
+        @nativeField(float32_t, 0x00)
+        floatVal:float32_t;
+    }
 }
+
+Ability.abstract({
+    type: int32_t,
+    value: Ability.Value
+});
