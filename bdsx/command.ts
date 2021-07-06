@@ -1,5 +1,5 @@
 
-import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { NetworkIdentifier } from './bds/networkidentifier';
 import { procHacker } from './bds/proc';
@@ -152,8 +152,8 @@ export namespace command {
     export function register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
-        flags1:CommandCheatFlag = CommandCheatFlag.NoCheat,
-        flags2:CommandUsageFlag = CommandUsageFlag.Normal):CustomCommandFactory {
+        flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NoCheat,
+        flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag.Normal):CustomCommandFactory {
         const registry = serverInstance.minecraft.commands.getRegistry();
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);
