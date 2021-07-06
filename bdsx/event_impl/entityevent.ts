@@ -340,7 +340,7 @@ function onPlayerLevelUp(player:Player, levels:int32_t):void {
 }
 const _onPlayerLevelUp = procHacker.hooking("Player::addLevels", void_t, null, Player, int32_t)(onPlayerLevelUp);
 
-events.packetBefore(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
+events.packetAfter(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
     const event = new PlayerJoinEvent(ni.getActor()!);
     events.playerJoin.fire(event);
 });
