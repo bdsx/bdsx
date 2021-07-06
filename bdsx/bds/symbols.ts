@@ -164,6 +164,7 @@ const symbols = [
     'CommandRegistry::registerAlias',
     'CommandRegistry::findCommand',
     'CommandRegistry::registerOverloadInternal',
+    'CommandRegistry::serializeAvailableCommands',
     'BlockSource::getBlock',
     'BlockSource::mayPlace',
     'GameMode::_creativeDestroyBlock',

@@ -91,6 +91,11 @@ export class ServerInstance extends NativeClass {
     setMaxPlayers(count:number):void {
         this.minecraft.something.shandler.setMaxPlayers(count);
     }
+    updateCommandList():void {
+        for (const player of this.minecraft.something.level.players.toArray()) {
+            player.sendNetworkPacket(this.minecraft.commands.getRegistry().serializeAvailableCommands());
+        }
+    }
 }
 
 export let serverInstance:ServerInstance;
