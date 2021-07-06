@@ -5,6 +5,9 @@ import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
 
 export class Abilities extends NativeClass {
+    protected _setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
+        abstract();
+    }
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
@@ -20,8 +23,15 @@ export class Abilities extends NativeClass {
     getAbility(abilityIndex:AbilitiesIndex):Ability {
         abstract();
     }
-    setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
-        abstract();
+    setAbility(abilityIndex:AbilitiesIndex, value:boolean|number):void {
+        switch (typeof value) {
+        case "boolean":
+            this._setAbility(abilityIndex, value);
+            break;
+        case "number":
+            this.getAbility(abilityIndex).setFloat(value);
+            break;
+        }
     }
 }
 
