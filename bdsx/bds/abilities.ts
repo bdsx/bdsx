@@ -38,22 +38,22 @@ export class Abilities extends NativeClass {
 export enum AbilitiesIndex {
     Build,
     Mine,
-    Doorsandswitches,
-    Opencontainers,
-    Attackplayers,
-    Attackmobs,
-    Op,
+    DoorsAndSwitches,
+    OpenContainers,
+    AttackPlayers,
+    AttackMobs,
+    OperatorCommands,
     Teleport,
-    Invulnerable,
+    ExposedAbilityCount,
     Flying,
-    Mayfly,
+    MayFly,
     Instabuild,
     Lightning,
-    Flyspeed,
-    Walkspeed,
-    Mute,
-    Worldbuilder,
-    Noclip
+    FlySpeed,
+    WalkSpeed,
+    Muted,
+    WorldBuilder,
+    NoClip,
 }
 
 export class Ability extends NativeClass {
@@ -110,8 +110,3 @@ export namespace Ability {
         floatVal:float32_t;
     }
 }
-
-Ability.abstract({
-    type: int32_t,
-    value: Ability.Value
-});
