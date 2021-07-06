@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, int8_t, uint32_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, int8_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor } from "./actor";
 import { Player } from "./player";
 
@@ -90,12 +90,24 @@ export class Scoreboard extends NativeClass {
     // }
 }
 
-@nativeClass()
+@nativeClass(null)
+export class ObjectiveCriteria extends NativeClass {
+    @nativeField(CxxString)
+    name:CxxString;
+    @nativeField(bool_t)
+    readOnly:bool_t;
+    @nativeField(uint8_t)
+    renderType:uint8_t;
+}
+
+@nativeClass(null)
 export class Objective extends NativeClass {
     @nativeField(CxxString, 0x40)
     name:CxxString;
-    @nativeField(CxxString, 0x60)
+    @nativeField(CxxString)
     displayName:CxxString;
+    @nativeField(ObjectiveCriteria.ref())
+    criteria:ObjectiveCriteria;
     protected _getPlayers():CxxVector<ScoreboardId> {
         abstract();
     }
@@ -114,15 +126,12 @@ export class Objective extends NativeClass {
 
 }
 
-@nativeClass()
+@nativeClass(null)
 export class DisplayObjective extends NativeClass {
     @nativeField(Objective.ref())
     objective:Objective|null;
-    @nativeField(int8_t, 0x08)
+    @nativeField(uint8_t)
     order:ObjectiveSortOrder;
-}
-
-export class ObjectiveCriteria extends NativeClass {
 }
 
 @nativeClass()
@@ -139,7 +148,7 @@ export class ScoreboardId extends NativeClass {
 export class ScoreInfo extends NativeClass {
     @nativeField(Objective.ref())
     objective:Objective|null;
-    @nativeField(bool_t, 0x08)
+    @nativeField(bool_t)
     valid:bool_t;
     @nativeField(int32_t, 0x0C)
     value:int32_t;
