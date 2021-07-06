@@ -29,8 +29,6 @@ const STATUS_NO_NODE_THREAD:dword 0xE0000001
 export def GetCurrentThreadId:qword
 export def bedrockLogNp:qword
 export def memcpy:qword
-export def asyncAlloc:qword
-export def asyncPost:qword
 export def sprintf:qword
 export def malloc:qword
 export def vsnprintf:qword
@@ -52,6 +50,9 @@ export def RtlCaptureContext:qword
 export def memset:qword
 export def printf:qword
 export def Sleep:qword
+export def uv_async_call:qword
+export def uv_async_alloc:qword
+export def uv_async_post:qword
 
 # [[noreturn]]] makefunc_getout()
 export proc makefunc_getout
@@ -482,7 +483,7 @@ endp
 
 
 ; codes for minecraft
-export def uv_async_call:qword
+export def std_string_ctor:qword
 
 export proc logHookAsyncCb
     mov r8, [rcx + asyncSize + 8h]
@@ -512,7 +513,7 @@ export proc logHook ; (int severity, char* format, ...)
     mov rbx, rax
     lea rdx, [rax + 11h]
     lea rcx, logHookAsyncCb
-    call asyncAlloc
+    call uv_async_alloc
     mov rcx, [rsp+30h] ; severity
     mov [rax+asyncSize], rcx
     mov [rax+asyncSize+8], rbx ; length
@@ -533,13 +534,13 @@ export proc logHook ; (int severity, char* format, ...)
     call logHookAsyncCb
     jmp _eof
 async_post:
-    call asyncPost
+    call uv_async_post
     jmp _eof
 
 _failed:
     mov rdx, 20h
     lea rcx, logHookAsyncCb
-    call asyncAlloc
+    call uv_async_alloc
     mov rdx, [rsp+30h] ; severity
     mov [rax+asyncSize], rdx
     mov [rax+asyncSize+8h], 15
@@ -776,11 +777,8 @@ export proc packetSendAllHook
 endp
 
 export def getLineProcessTask:qword
-export def uv_async_alloc:qword
 export def std_cin:qword
 export def std_getline:qword
-export def uv_async_post:qword
-export def std_string_ctor:qword
 
 export proc getline
     ; stack start

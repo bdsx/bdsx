@@ -37,7 +37,7 @@ const sharedpointer = require('./sharedpointer');
 const CANCEL = common.CANCEL;
 const abstract = common.abstract;
 //@ts-ignore
-core.open = ()=>{};
+core.pdb.open = ()=>{};
 
 let onRuntimeError = null;
 

@@ -13,8 +13,11 @@ import { ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 export class LoginPacket extends Packet {
     @nativeField(int32_t, 0x30)
 	protocol:int32_t;
+    /**
+     * it can be null if the wrong client version
+     */
     @nativeField(ConnectionRequest.ref(), 0x38)
-	connreq:ConnectionRequest;
+	connreq:ConnectionRequest|null;
 }
 
 @nativeClass(null)

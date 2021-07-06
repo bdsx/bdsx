@@ -12,6 +12,7 @@ import { events } from "bdsx/events";
 import { MinecraftPacketIds } from 'bdsx/bds/packetids';
 events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId)=>{
     const ip = networkIdentifier.getAddress();
+    if (ptr.connreq === null) return; // Wrong version client
     const cert = ptr.connreq.cert;
     const xuid = cert.getXuid();
     const username = cert.getId();

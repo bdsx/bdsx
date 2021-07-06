@@ -19,7 +19,6 @@ if (!string_ctor || !string_dtor) {
 }
 
 asmcode.std_cin = dll.msvcp140.std_cin;
-asmcode.uv_async_alloc = uv_async.alloc;
 asmcode.getLineProcessTask = makefunc.np((asyncTask:StaticPointer)=>{
     const str = asyncTask.addAs(CxxStringWrapper, uv_async.sizeOfTask);
     const value = str.value;
@@ -28,7 +27,6 @@ asmcode.getLineProcessTask = makefunc.np((asyncTask:StaticPointer)=>{
     cb(value);
 }, void_t, null, StaticPointer);
 asmcode.std_getline = getline;
-asmcode.uv_async_post = uv_async.post;
 asmcode.std_string_ctor = string_ctor;
 
 // const endTask = makefunc.np((asyncTask:StaticPointer)=>{
