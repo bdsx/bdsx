@@ -213,8 +213,11 @@ const symbols = [
     'TextPacket::createTranslated',
     'Level::getAdventureSettings',
     'Level::getScoreboard',
+    'Level::getTagRegistry',
     'Level::updateWeather',
     'Level::save',
+    'ServerLevel::setCommandsEnabled',
+    'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',
     'Scoreboard::addObjective',
     'Scoreboard::getCriteria',
@@ -223,10 +226,17 @@ const symbols = [
     'Scoreboard::getObjectiveNames',
     'Scoreboard::getObjectives',
     'Scoreboard::removeObjective',
+    'Scoreboard::modifyPlayerScore',
     'ServerScoreboard::clearDisplayObjective',
     'ServerScoreboard::setDisplayObjective',
+    'ServerScoreboard::onScoreChanged',
     'Objective::getPlayers',
     'Objective::getPlayerScore',
+    'ScoreboardIdentityRef::modifyScoreInObjective',
+    'Scoreboard::getScoreboardIdentityRef',
+    'InventoryTransaction::addItemToContent',
+    'InventoryTransaction::getActions',
+    'InventoryTransactionItemGroup::getItemInstance',
 ] as const;
 
 // decorated symbols
@@ -254,6 +264,7 @@ const symbols2 = [
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVActor@@@Z',
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z',
+    '?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;
