@@ -76,13 +76,19 @@ export namespace TextPacket {
         Raw,
         Chat,
         Translate,
+        /** @deprecated **/
+        Translated = 2,
         Popup,
         JukeboxPopup,
         Tip,
         SystemMessage,
+        /** @deprecated **/
+        Sytem = 6,
         Whisper,
         Announcement,
         TextObject,
+        /** @deprecated **/
+        ObjectWhisper = 9
     }
 }
 
@@ -674,21 +680,22 @@ export class CameraPacket extends Packet {
 export class BossEventPacket extends Packet {
     @nativeField(bin64_t)
     unknown:bin64_t;
-    @nativeField(bin64_t, 0x38)
-    bossUniqueId:bin64_t;
-    @nativeField(bin64_t, 0x40)
+    /** Unique ID of the boss */
+    @nativeField(bin64_t)
+    entityUniqueId:bin64_t;
+    @nativeField(bin64_t)
     playerUniqueId:bin64_t;
-    @nativeField(uint32_t, 0x48)
+    @nativeField(uint32_t)
     type:uint32_t;
     @nativeField(CxxString, 0x50)
     title:CxxString;
-    @nativeField(float32_t, 0x70)
+    @nativeField(float32_t)
     healthPercent:float32_t;
-    @nativeField(uint32_t, 0x74)
+    @nativeField(uint32_t)
     color:uint32_t;
-    @nativeField(uint32_t, 0x78)
+    @nativeField(uint32_t)
     overlay:uint32_t;
-    @nativeField(uint16_t, 0x7C)
+    @nativeField(uint16_t)
     darkenScreen:uint16_t;
 }
 export namespace BossEventPacket {
