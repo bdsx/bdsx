@@ -14,6 +14,7 @@ import { Actor } from "./actor";
 import { RelativeFloat } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
+import { AvailableCommandsPacket } from "./packets";
 import { procHacker } from "./proc";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
@@ -287,8 +288,19 @@ export class CommandRegistry extends HasTypeId {
     registerOverloadInternal(signature:CommandRegistry.Signature, overload: CommandRegistry.Overload):void{
         abstract();
     }
+
     findCommand(command:string):CommandRegistry.Signature|null {
         abstract();
+    }
+
+    protected _serializeAvailableCommands(pk:AvailableCommandsPacket):AvailableCommandsPacket {
+        abstract();
+    }
+
+    serializeAvailableCommands():AvailableCommandsPacket {
+        const pk = AvailableCommandsPacket.create();
+        this._serializeAvailableCommands(pk);
+        return pk;
     }
 
     static getParser<T>(type:Type<T>):VoidPointer {
@@ -365,6 +377,7 @@ CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegis
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
 CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js("CommandRegistry::serializeAvailableCommands", AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';
