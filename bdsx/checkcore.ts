@@ -8,6 +8,6 @@ if (cgate.bdsxCoreVersion !== nversion) {
     console.error(colors.red('[BDSX] BDSX Core outdated'));
     console.error(colors.red(`[BDSX] Current version: ${oversion}`));
     console.error(colors.red(`[BDSX] Required version: ${nversion}`));
-    console.log("[BDSX] Please run 'npm i' or " + process.platform === "win32" ? 'update.bat' : 'update.sh' + " to update");
+    console.log("[BDSX] Please run 'npm i' or " + (process.platform === "win32" ? 'update.bat' : 'update.sh') + " to update");
     process.exit(0);
 }
