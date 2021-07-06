@@ -10,6 +10,7 @@ import type { Packet } from "./packet";
 
 export class Player extends Actor {
     abilities:Abilities;
+    deviceId:string;
 
     changeDimension(dimensionId:number, respawn:boolean):void {
         abstract();
