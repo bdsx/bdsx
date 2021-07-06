@@ -49,7 +49,8 @@ export enum CommandUsageFlag {
     Hidden,
 }
 
-export const CommandFlag = CommandVisibilityFlag;
+/** @deprecated **/
+export const CommandFlag = CommandCheatFlag;
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
