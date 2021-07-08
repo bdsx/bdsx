@@ -76,7 +76,7 @@ events.serverClose.on(()=>{
             "typescript": "^4.2.3"
         }
     };
-    fs.writeFileSync(`${targetdir}package.json`, JSON.stringify(examplejson, null, 2).replace(/\n/g, os.EOL), 'utf-8');
+    fs.writeFileSync(`${targetdir}package.json`, JSON.stringify(examplejson, null, 2).replace(/\n/g, os.EOL)+os.EOL, 'utf-8');
 }
 
 // tsconfig.json
@@ -84,7 +84,7 @@ events.serverClose.on(()=>{
     const tsconfig = JSON.parse(fs.readFileSync('./tsconfig.json', 'utf-8'));
     delete tsconfig.exclude;
     tsconfig.declaration = true;
-    fs.writeFileSync(`${targetdir}tsconfig.json`, JSON.stringify(tsconfig, null, 2).replace(/\n/g, os.EOL), 'utf-8');
+    fs.writeFileSync(`${targetdir}tsconfig.json`, JSON.stringify(tsconfig, null, 2).replace(/\n/g, os.EOL)+os.EOL, 'utf-8');
 }
 
 // .npmignore

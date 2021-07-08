@@ -1,10 +1,10 @@
 
-import {promises as fsp} from 'fs';
+import { promises as fsp } from 'fs';
+import { ConcurrencyQueue } from './concurrency';
+import { remapAndPrintError } from './source-map-support';
 import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
-import { remapStack } from './source-map-support';
-import { ConcurrencyQueue } from './concurrency';
 import os = require('os');
 
 class PromCounter {
@@ -39,63 +39,117 @@ const BDSX_SCOPE = '@bdsx/';
 export const loadedPlugins: string[] = [];
 
 export async function loadAllPlugins():Promise<void> {
+
+    class PackageJson {
+        private loaded:boolean = false;
+        private jsonpath:string|null = null;
+        private json:any|null = null;
+
+        constructor(public readonly name:string) {
+        }
+
+        setJsonPath(jsonpath:string):void {
+            if (this.jsonpath !== null) throw Error(`already`);
+            this.jsonpath = jsonpath;
+        }
+
+        async getJson():Promise<any> {
+            if (this.json !== null) return this.json;
+            return this.json = JSON.parse(await fsp.readFile(this.getPath(), 'utf-8'));
+        }
+
+        getPath():string {
+            if (this.jsonpath !== null) return this.jsonpath;
+            return this.jsonpath = require.resolve(`${this.name}/package.json`);
+        }
+
+        async fixLegacy():Promise<void> {
+            const json = await this.getJson();
+            if (json.scripts && json.scripts.prepare === 'tsc') {
+                json.scripts.prepare = 'tsc || exit 0';
+                await this.save();
+            }
+        }
+
+        async load(rootPackage:boolean):Promise<boolean> {
+            const packagejson = await this.getJson();
+            if (typeof packagejson !== 'object') {
+                console.error(`[BDSX-Plugins] Invalid ${this.name}/package.json`);
+                return false;
+            }
+            if (packagejson.dependencies == null) return true;
+            const counter = new PromCounter;
+            for (const name in packagejson.dependencies) {
+                if (!name.startsWith(BDSX_SCOPE)) continue;
+                PackageJson.get(name).requestLoad(counter, rootPackage ? packagejson : null);
+            }
+            await counter.wait();
+            return true;
+        }
+        async save():Promise<void> {
+            if (this.json === null) return;
+            await fsp.writeFile(this.getPath(), JSON.stringify(this.json, null, 2).replace('\n', os.EOL)+os.EOL);
+        }
+
+        static get(name:string):PackageJson {
+            let pkg = PackageJson.all.get(name);
+            if (pkg != null) return pkg;
+            pkg = new PackageJson(name);
+            PackageJson.all.set(name, pkg);
+            return pkg;
+        }
+
+        requestLoad(counter:PromCounter, parentjson:any):void {
+            if (this.loaded) return;
+            this.loaded = true;
+
+            counter.ref();
+            taskQueue.run(async()=>{
+                try {
+                    const json = await this.getJson();
+                    if (json.bdsxPlugin) {
+                        this.load(false);
+                    }
+                } catch (err) {
+                    this.loaded = false;
+                    if (parentjson && parentjson.dependencies[this.name].startsWith('file:./plugins/')) {
+                        try {
+                            await fsp.stat(`${pluginspath}${path.sep}${this.name.substr(BDSX_SCOPE.length)}`);
+                        } catch (err) {
+                            if (err.code === 'ENOENT') {
+                                console.error(colors.red(`[BDSX-Plugins] ${this.name}: removed`));
+                                delete parentjson.dependencies[this.name];
+                                packagejsonModified = true;
+                                PackageJson.all.delete(this.name);
+                                counter.unref();
+                                return;
+                            }
+                            remapAndPrintError(err);
+                        }
+                    } else {
+                        remapAndPrintError(err);
+                    }
+                    console.error(colors.red(`[BDSX-Plugins] Failed to read '${this.name}/package.json'`));
+                }
+                counter.unref();
+            });
+        }
+
+        public static readonly all = new Map<string, PackageJson>();
+    }
+
     let packagejsonModified = false;
+    let needToNpmInstall = false;
     const projpath = path.resolve(process.cwd(), process.argv[1]);
     const pluginspath = `${projpath}${path.sep}plugins`;
     const taskQueue = new ConcurrencyQueue;
-    const loaded = new Set<string>();
-    function requestLoad(counter:PromCounter, name:string, json?:any):void {
-        if (loaded.has(name)) return;
-        loaded.add(name);
-        counter.ref();
-        taskQueue.run(async()=>{
-            try {
-                const jsonpath = require.resolve(`${name}/package.json`);
-                const json = JSON.parse(await fsp.readFile(jsonpath, 'utf-8'));
-                if (json.bdsxPlugin) {
-                    await loadPackageJson(name, json, false);
-                }
-            } catch (err) {
-                loaded.delete(name);
-                if (json && json.dependencies[name].startsWith('file:./plugins/')) {
-                    try {
-                        const stat = await fsp.stat(`${pluginspath}${path.sep}${name.substr(BDSX_SCOPE.length)}`);
-                        console.log(stat);
-                    } catch (err) {
-                        if (err.code === 'ENOENT') {
-                            console.error(colors.red(`[BDSX-Plugins] ${name}: removed`));
-                            delete json.dependencies[name];
-                            packagejsonModified = true;
-                            counter.unref();
-                            return;
-                        }
-                    }
-                }
-                console.error(colors.red(`[BDSX-Plugins] Failed to read '${name}/package.json'`));
-            }
-            counter.unref();
-        });
-    }
-    async function loadPackageJson(name:string, json:any, rootPackage:boolean):Promise<boolean> {
-        if (!json) {
-            console.error(`[BDSX-Plugins] Invalid ${name}/package.json`);
-            return false;
-        }
-        if (!json.dependencies) return true;
-        const counter = new PromCounter;
-        for (const name in json.dependencies) {
-            if (!name.startsWith(BDSX_SCOPE)) continue;
-            requestLoad(counter, name, rootPackage ? json : null);
-        }
-        await counter.wait();
-        return true;
-    }
 
     // read package.json
-    const packagejson = `${projpath}${path.sep}package.json`;
+    const mainpkg = new PackageJson('[entrypoint]');
+    mainpkg.setJsonPath(`${projpath}${path.sep}package.json`);
     let mainjson:any;
     try {
-        mainjson = JSON.parse(await fsp.readFile(packagejson, 'utf-8'));
+        mainjson = await mainpkg.getJson();
     } catch (err) {
         console.error(colors.red(`[BDSX-Plugins] Failed to load`));
         if (err.code === 'ENOENT') {
@@ -107,68 +161,91 @@ export async function loadAllPlugins():Promise<void> {
     }
 
     try {
-        // load plugins from package.json
-        loadPackageJson('[entrypoint]', mainjson, true);
-        await taskQueue.onceEnd();
-
         // load plugins from the directory
-        const plugins = await fsp.readdir(pluginspath, {withFileTypes: true});
-        const newplugins:string[] = [];
-        for (const info of plugins) {
+        const counter = new PromCounter;
+        const pluginsFiles = await fsp.readdir(pluginspath, {withFileTypes: true});
+        const pluginsInDirectory:PackageJson[] = [];
+
+        // check new plugins
+        for (const info of pluginsFiles) {
             if (!info.isDirectory()) continue;
-            const plugin = info.name;
-            const fullname = `${BDSX_SCOPE}${plugin}`;
-            if (mainjson.dependencies[fullname]) continue;
-            mainjson.dependencies[fullname] = `file:./plugins/${plugin}`;
-            packagejsonModified = true;
-            newplugins.push(fullname);
+            const pluginname = info.name;
+            const fullname = `${BDSX_SCOPE}${pluginname}`;
+            const plugin = PackageJson.get(fullname);
+
             try {
-                const json = JSON.parse(await fsp.readFile(`${pluginspath}${path.sep}${plugin}${path.sep}package.json`, 'utf-8'));
+                plugin.getPath();
+            } catch (err) {
+                if (err.code === 'MODULE_NOT_FOUND') {
+                    plugin.setJsonPath(`${pluginspath}${path.sep}${pluginname}${path.sep}package.json`);
+                    needToNpmInstall = true;
+                } else {
+                    console.error(colors.red(`[BDSX-Plugins] Failed to read 'plugins/${pluginname}/package.json'.`));
+                    remapAndPrintError(err);
+                    continue;
+                }
+            }
+
+            pluginsInDirectory.push(plugin);
+
+            if (mainjson.dependencies[fullname]) continue;
+            mainjson.dependencies[fullname] = `file:./plugins/${pluginname}`;
+            packagejsonModified = true;
+            needToNpmInstall = true;
+            try {
+                const json = await plugin.getJson();
                 if (json.name !== fullname) {
                     console.error(colors.red(`[BDSX-Plugins] Wrong plugin name. Name in 'package.json' must be '${fullname}' but was '${json.name}'`));
                     continue;
                 }
             } catch (err) {
                 if (err.code === 'ENOENT') {
-                    console.error(colors.red(`[BDSX-Plugins] 'plugins/${plugin}/package.json' not found. Plugins need 'package.json'`));
+                    console.error(colors.red(`[BDSX-Plugins] 'plugins/${pluginname}/package.json' not found. Plugins need 'package.json'`));
                 } else {
-                    console.error(colors.red(`[BDSX-Plugins] Failed to read 'plugins/${plugin}/package.json'. ${err.message}`));
+                    console.error(colors.red(`[BDSX-Plugins] Failed to read 'plugins/${pluginname}/package.json'.`));
+                    remapAndPrintError(err);
                 }
             }
             console.log(colors.green(`[BDSX-Plugins] ${fullname}: added`));
         }
 
+        for (const plugin of pluginsInDirectory) {
+            taskQueue.run(()=>plugin.fixLegacy());
+            plugin.requestLoad(counter, mainjson);
+        }
+
+        await mainpkg.load(true);
+        await taskQueue.onceEnd();
+        await counter.wait();
+
         // apply changes
         if (packagejsonModified) {
             console.error(`[BDSX-Plugins] Apply the package changes`);
-            await fsp.writeFile(packagejson, JSON.stringify(mainjson, null, 2).replace('\n', os.EOL));
+            await mainpkg.save();
+        }
+        if (needToNpmInstall) {
             child_process.execSync('npm i', {stdio:'inherit', cwd:projpath});
-
-            const counter = new PromCounter;
-            for (const plugin of newplugins) {
-                requestLoad(counter, plugin);
-            }
-            await counter.wait();
         }
         await taskQueue.onceEnd();
 
         // import
-        if (loaded.size === 0) {
+        const pluginCount = PackageJson.all.size;
+        if (pluginCount === 0) {
             console.log('[BDSX-Plugins] No Plugins');
         } else {
             let index = 0;
-            for (const name of loaded) {
+            for (const pkg of PackageJson.all.values()) {
                 try {
-                    loadedPlugins.push(name);
-                    console.log(colors.green(`[BDSX-Plugins] Loading ${name} (${++index}/${loaded.size})`));
-                    require(name);
+                    loadedPlugins.push(pkg.name);
+                    console.log(colors.green(`[BDSX-Plugins] Loading ${pkg.name} (${++index}/${pluginCount})`));
+                    require(pkg.name);
                 } catch (err) {
-                    console.error(colors.red(`[BDSX-Plugins] Failed to load ${name}`));
-                    console.error(remapStack(err.stack));
+                    console.error(colors.red(`[BDSX-Plugins] Failed to load ${pkg.name}`));
+                    remapAndPrintError(err);
                 }
             }
         }
     } catch (err) {
-        console.error(colors.red(`[BDSX-Plugins] ${err.message}`));
+        remapAndPrintError(err);
     }
 }
