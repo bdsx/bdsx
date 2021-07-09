@@ -9,6 +9,7 @@ import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
+import { MobEffectInstance } from "./effects";
 import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
@@ -166,6 +167,18 @@ export class Actor extends NativeClass {
         };
         return (this as any).entity = entity;
     }
+    addEffect(effect: MobEffectInstance): void {
+        abstract();
+    }
+    removeEffect(id: number): void {
+        abstract();
+    }
+    // hasEffect(mobEffect: MobEffect): boolean { // ?hasEffect@Actor@@QEBA_NAEBVMobEffect@@@Z
+    //     abstract();
+    // }
+    // getEffect(mobEffect: MobEffect): MobEffectInstance { // ?getEffect@Actor@@QEBAPEBVMobEffectInstance@@AEBVMobEffect@@@Z
+    //     abstract();
+    // }
     addTag(tag:string):boolean {
         abstract();
     }

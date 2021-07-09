@@ -16,6 +16,7 @@ import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
+import { MobEffectInstance } from "./effects";
 import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, Item, ItemStack, PlayerInventory } from "./inventory";
@@ -105,6 +106,9 @@ Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {th
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
 };
+
+Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);
+Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 
 const attribNames = [
     "minecraft:zombie.spawn.reinforcements",
