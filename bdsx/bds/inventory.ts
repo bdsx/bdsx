@@ -1,9 +1,9 @@
 import { abstract } from "bdsx/common";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bool_t, CxxString, int16_t, int32_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { bool_t, CxxString, int16_t, int32_t, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { CxxVector } from "../cxxvector";
 import { CompoundTag } from "./nbt";
-import type { Player, ServerPlayer } from "./player";
+import type { ServerPlayer } from "./player";
 
 export enum ContainerId {
     Inventory = 0,
@@ -22,33 +22,41 @@ export enum ContainerId {
     /**
      * @deprecated
      */
-    Armor = 120,
+    Armor,
     /**
      * @deprecated
      */
-    Hotbar = 122,
+    Creative,
     /**
      * @deprecated
      */
-    FixedInventory = 123,
+    Hotbar,
     /**
      * @deprecated
      */
-    UI = 124
+    FixedInventory,
+    /**
+     * @deprecated
+     */
+    UI
 }
 
 export enum ArmorSlot {
     Head,
-    Chest,
+    /** IDA said this is called Torso */
+    Torso,
+    Chest = 1,
     Legs,
     Feet
 }
 
 export enum CreativeItemCategory {
-    Construction = 1,
-    Nature = 2,
-    Items = 4,
-    Uncategorized = 5,
+    All,
+    Construction,
+    Nature,
+    Equipment,
+    Items,
+    Uncategorized,
 }
 
 export class Item extends NativeClass {
@@ -89,6 +97,8 @@ export class ComponentItem extends NativeClass {
 export class ItemStack extends NativeClass {
     @nativeField(uint8_t, 0x22)
     amount:uint8_t;
+    @nativeField(uint16_t, 0x28)
+    pickupTime:uint16_t;
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted
      */

@@ -9,7 +9,7 @@ import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
-import { MobEffectInstance } from "./effects";
+import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
@@ -322,15 +322,27 @@ export class Actor extends NativeClass {
     addEffect(effect: MobEffectInstance): void {
         abstract();
     }
-    removeEffect(id: number): void {
+    removeEffect(id: MobEffectIds):void {
         abstract();
     }
-    // hasEffect(mobEffect: MobEffect): boolean { // ?hasEffect@Actor@@QEBA_NAEBVMobEffect@@@Z
-    //     abstract();
-    // }
-    // getEffect(mobEffect: MobEffect): MobEffectInstance { // ?getEffect@Actor@@QEBAPEBVMobEffectInstance@@AEBVMobEffect@@@Z
-    //     abstract();
-    // }
+    protected _hasEffect(mobEffect: MobEffect):boolean {
+        abstract();
+    }
+    hasEffect(id: MobEffectIds):boolean {
+        const effect = MobEffect.create(id);
+        const retval = this._hasEffect(effect);
+        effect.destruct();
+        return retval;
+    }
+    protected _getEffect(mobEffect: MobEffect):MobEffectInstance | null {
+        abstract();
+    }
+    getEffect(id: MobEffectIds):MobEffectInstance | null {
+        const effect = MobEffect.create(id);
+        const retval = this._getEffect(effect);
+        effect.destruct();
+        return retval;
+    }
     addTag(tag:string):boolean {
         abstract();
     }
