@@ -238,3 +238,9 @@ export function checkPowOf2(n:number):void {
     mask ++;
     if (mask !== n) throw Error(`${n} is not pow of 2`);
 }
+
+export function numberWithFillZero(n:number, width:number, radix?:number):string {
+    const text = n.toString(radix);
+    if (text.length >= width) return text;
+    return '0'.repeat(width-text.length)+text;
+}

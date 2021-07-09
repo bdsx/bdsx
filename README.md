@@ -12,6 +12,7 @@ import { events } from "bdsx/events";
 import { MinecraftPacketIds } from 'bdsx/bds/packetids';
 events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId)=>{
     const ip = networkIdentifier.getAddress();
+    if (ptr.connreq === null) return; // Wrong version client
     const cert = ptr.connreq.cert;
     const xuid = cert.getXuid();
     const username = cert.getId();
@@ -25,10 +26,10 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
 * Requirement  
 [node.js](https://nodejs.org/)  
 Wine(for Linux)  
-git clone https://github.com/bdsx/bdsx.git or download it
+GIT
+git clone https://github.com/bdsx/bdsx.git
 * Recommended  
 [VSCode](https://code.visualstudio.com/)  
-GIT
 
 ### Starting with VSCode
 ```sh

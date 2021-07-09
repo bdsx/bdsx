@@ -11,6 +11,7 @@ export const connectionList = new Map<NetworkIdentifier, string>();
 events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId) => {
     const ip = networkIdentifier.getAddress();
     const connreq = ptr.connreq;
+    if (connreq === null) return; // wrong client
     const cert = connreq.cert;
     const xuid = cert.getXuid();
     const username = cert.getId();

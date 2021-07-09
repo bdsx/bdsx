@@ -14,6 +14,7 @@ import { Actor } from "./actor";
 import { RelativeFloat } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
+import { AvailableCommandsPacket } from "./packets";
 import { procHacker } from "./proc";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
@@ -25,9 +26,31 @@ export enum CommandPermissionLevel {
 	Admin,
 }
 
-export enum CommandFlag {
-    None        = 0x00,
+export enum CommandCheatFlag {
+    Cheat,
+    NoCheat = 0x40,
+    None = 0,
 }
+
+/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
+export enum CommandVisibilityFlag {
+    Visible,
+    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
+    HiddenFromCommandBlockOrigin = 2,
+    HiddenFromPlayerOrigin = 4,
+    /** Still visible to console */
+    Hidden = 6,
+}
+
+export enum CommandUsageFlag {
+    Normal,
+    Test,
+    /** Any larger than 1 is hidden */
+    Hidden,
+}
+
+/** @deprecated **/
+export const CommandFlag = CommandCheatFlag;
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
@@ -244,7 +267,7 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
-    registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandFlag, flag2:CommandFlag):void {
+    registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
     }
     registerAlias(command:string, alias:string):void {
@@ -287,8 +310,19 @@ export class CommandRegistry extends HasTypeId {
     registerOverloadInternal(signature:CommandRegistry.Signature, overload: CommandRegistry.Overload):void{
         abstract();
     }
+
     findCommand(command:string):CommandRegistry.Signature|null {
         abstract();
+    }
+
+    protected _serializeAvailableCommands(pk:AvailableCommandsPacket):AvailableCommandsPacket {
+        abstract();
+    }
+
+    serializeAvailableCommands():AvailableCommandsPacket {
+        const pk = AvailableCommandsPacket.create();
+        this._serializeAvailableCommands(pk);
+        return pk;
     }
 
     static getParser<T>(type:Type<T>):VoidPointer {
@@ -365,6 +399,7 @@ CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegis
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
 CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js("CommandRegistry::serializeAvailableCommands", AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';

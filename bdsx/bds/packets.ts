@@ -1,18 +1,23 @@
 import { CxxVector } from "bdsx/cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
+import { ComplexInventoryTransaction } from "./inventory";
 import { Packet } from "./packet";
+import { ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
     @nativeField(int32_t, 0x30)
 	protocol:int32_t;
+    /**
+     * it can be null if the wrong client version
+     */
     @nativeField(ConnectionRequest.ref(), 0x38)
-	connreq:ConnectionRequest;
+	connreq:ConnectionRequest|null;
 }
 
 @nativeClass(null)
@@ -73,15 +78,20 @@ export namespace TextPacket {
     export enum Types {
         Raw,
         Chat,
-        Translated,
+        Translate,
+        /** @deprecated **/
+        Translated = 2,
         Popup,
         JukeboxPopup,
         Tip,
-        System,
+        SystemMessage,
+        /** @deprecated **/
+        Sytem = 6,
         Whisper,
         Announcement,
-        ObjectWhisper,
-        Object,
+        TextObject,
+        /** @deprecated **/
+        ObjectWhisper = 9
     }
 }
 
@@ -328,8 +338,8 @@ export class UpdateAttributesPacket extends Packet {
 
 @nativeClass(null)
 export class InventoryTransactionPacket extends Packet {
-    // ComplexInventoryTransaction* transaction;
-    // unknown
+    @nativeField(ComplexInventoryTransaction.ref(), 0x50)
+    transaction: ComplexInventoryTransaction;
 }
 
 @nativeClass(null)
@@ -673,16 +683,23 @@ export class CameraPacket extends Packet {
 export class BossEventPacket extends Packet {
     @nativeField(bin64_t)
     unknown:bin64_t;
+    /** Unique ID of the boss */
     @nativeField(bin64_t)
     entityUniqueId:bin64_t;
     @nativeField(bin64_t)
-    unknown2:bin64_t;
+    playerUniqueId:bin64_t;
     @nativeField(uint32_t)
     type:uint32_t;
-    @nativeField(CxxString)
+    @nativeField(CxxString, 0x50)
     title:CxxString;
     @nativeField(float32_t)
     healthPercent:float32_t;
+    @nativeField(uint32_t)
+    color:uint32_t;
+    @nativeField(uint32_t)
+    overlay:uint32_t;
+    @nativeField(uint16_t)
+    darkenScreen:uint16_t;
 }
 export namespace BossEventPacket {
     export enum Types {
@@ -692,6 +709,18 @@ export namespace BossEventPacket {
         UnregisterPlayer,
         HealthPercent,
         Title,
+        Properties,
+        Style,
+    }
+
+    export enum Colors {
+        Pink,
+        Blue,
+        Red,
+        Green,
+        Yellow,
+        Purple,
+        White
     }
 }
 
@@ -965,27 +994,7 @@ export class SetDisplayObjectivePacket extends Packet {
     @nativeField(CxxString)
     criteriaName:'dummy'|'';
     @nativeField(uint8_t)
-    sortOrder:SetDisplayObjectivePacket.Sort;
-}
-export namespace SetDisplayObjectivePacket {
-    export enum Sort {
-        ASCENDING = 0,
-        DESCENDING = 1,
-    }
-}
-
-@nativeClass()
-export class ScoreboardId extends NativeClass {
-    @nativeField(bin64_t)
-    id:bin64_t;
-    @nativeField(int64_as_float_t, 0)
-    idAsNumber:int64_as_float_t;
-
-    /**
-     * unknown
-     */
-    @nativeField(bin64_t)
-    u:bin64_t;
+    sortOrder:ObjectiveSortOrder;
 }
 
 @nativeClass()

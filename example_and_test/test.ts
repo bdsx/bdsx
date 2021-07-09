@@ -461,5 +461,5 @@ events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
 events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
-    connectedId = ptr.connreq.cert.getId();
+    connectedId = ptr.connreq!.cert.getId();
 });

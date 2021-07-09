@@ -66,8 +66,9 @@ function initFunctionMap():void {
     asmcode.printf = proc.printf;
     asmcode.GetCurrentThreadId = dllraw.kernel32.GetCurrentThreadId;
     asmcode.memcpy = dllraw.vcruntime140.memcpy;
-    asmcode.asyncAlloc = uv_async.alloc;
-    asmcode.asyncPost = uv_async.post;
+    asmcode.uv_async_alloc = uv_async.alloc;
+    asmcode.uv_async_post = uv_async.post;
+    asmcode.uv_async_call = uv_async.call;
     asmcode.sprintf = proc2.sprintf;
     asmcode.vsnprintf = proc2.vsnprintf;
     asmcode.malloc = dllraw.ucrtbase.malloc;

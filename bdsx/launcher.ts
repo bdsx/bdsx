@@ -17,7 +17,7 @@ import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError, remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
-import { _tickCallback } from "./util";
+import { numberWithFillZero, _tickCallback } from "./util";
 import { EXCEPTION_ACCESS_VIOLATION, STATUS_INVALID_PARAMETER } from "./windows_h";
 
 import readline = require("readline");
@@ -73,7 +73,7 @@ runtimeError.setHandler(err=>{
             break;
         case EXCEPTION_ACCESS_VIOLATION: {
             const info = err.exceptionInfos;
-            console.error(`Accessing an invalid memory address (${info[1].toString(16)})`);
+            console.error(`Accessing an invalid memory address (0x${numberWithFillZero(info[1], 16, 16)})`);
             break;
         }
         case STATUS_INVALID_PARAMETER:
@@ -204,7 +204,6 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.SetEvent = dll.kernel32.SetEvent.pointer;
 
     // hook game thread
-    asmcode.uv_async_call = uv_async.call;
     asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
     asmcode._Cnd_do_broadcast_at_thread_exit = dll.msvcp140._Cnd_do_broadcast_at_thread_exit;
 
