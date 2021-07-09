@@ -200,6 +200,8 @@ const symbols = [
     'Actor::getRuntimeID',
     'Actor::startRiding',
     'Actor::stopRiding',
+    'Actor::hasEffect',
+    'Actor::getEffect',
     'Mob::die',
     'Abilities::getCommandPermissions',
     'Abilities::getPlayerPermissions',
@@ -238,6 +240,7 @@ const symbols = [
     'InventoryTransaction::addItemToContent',
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
+    'MobEffect::getById',
 ] as const;
 
 // decorated symbols
