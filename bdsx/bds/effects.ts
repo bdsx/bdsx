@@ -113,11 +113,6 @@ export class MobEffectInstance extends NativeClass {
         abstract();
     }
 
-    /** @deprecated */
-    create(id: MobEffectIds, duration: number, amplifier: number, ambient: boolean, showParticles: boolean, displayAnimation: boolean): void {
-        this._create(id, duration, amplifier, ambient, showParticles, displayAnimation);
-    }
-
     getSplashDuration(): number {
         return this.duration * 0.75;
     }

@@ -11,9 +11,9 @@ setInterval(()=>{
         const actor = ni.getActor();
         if (!actor) continue;
         doingRegen = !doingRegen;
-        const effect = new MobEffectInstance(true);
-        if(doingRegen) effect.create(strengthId, 20, 1, false, false, false);
-        else effect.create(regenId, 20, 1, false, true, false);
+        let effect;
+        if(doingRegen) effect = MobEffectInstance.create(strengthId, 20, 1, false, false, false);
+        else effect = MobEffectInstance.create(regenId, 20, 1, false, true, false);
         actor.addEffect(effect);
     }
 }, 1000).unref();
