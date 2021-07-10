@@ -200,6 +200,8 @@ const symbols = [
     'Actor::getRuntimeID',
     'Actor::startRiding',
     'Actor::stopRiding',
+    'Actor::hasEffect',
+    'Actor::getEffect',
     'Mob::die',
     'Abilities::getCommandPermissions',
     'Abilities::getPlayerPermissions',
@@ -238,6 +240,7 @@ const symbols = [
     'InventoryTransaction::addItemToContent',
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
+    'MobEffect::getById',
 ] as const;
 
 // decorated symbols
@@ -262,6 +265,9 @@ const symbols2 = [
     '??_7ServerLevel@@6BILevel@@@',
     '??0CommandOutput@@QEAA@W4CommandOutputType@@@Z',
     '?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z',
+    '??0MobEffectInstance@@QEAA@IHH_N00@Z',
+    '?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z',
+    '?removeEffect@Actor@@QEAAXH@Z',
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVActor@@@Z',
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z',

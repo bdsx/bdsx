@@ -9,6 +9,7 @@ import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
+import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
@@ -28,10 +29,151 @@ export class ActorRuntimeID extends VoidPointer {
 
 export enum ActorType {
     Item = 0x40,
-    Player = 0x13f,
+    PrimedTnt,
+    FallingBlock,
+    MovingBlock,
+    Experience = 0x45,
+    EyeOfEnder,
+    EnderCrystal,
+    FireworksRocket,
+    FishingHook = 0x4D,
+    Chalkboard,
+    Painting = 0x53,
+    LeashKnot = 0x58,
+    BoatRideable = 0x5A,
+    LightningBolt = 0x5D,
+    AreaEffectCloud,
+    Balloon = 0x6B,
+    Shield = 0x75,
+    Lectern = 0x77,
+    TypeMask = 0xFF,
+
+    Mob,
+    Npc = 0x133,
+    Agent = 0x138,
+    ArmorStand = 0x13D,
+    TripodCamera,
+    Player,
+    Bee = 0x17A,
+
+    PathfinderMob = 0x300,
+    IronGolem = 0x314,
+    SnowGolem,
+    WanderingTrader = 0x376,
+
+    Monster = 0xB00,
+    Creeper = 0xB21,
+    Slime = 0xB25,
+    EnderMan,
+    Ghast = 0xB29,
+    LavaSlime = 0xB2A,
+    Blaze,
+    Witch = 0xB2D,
+    Guardian = 0xB31,
+    ElderGuardian,
+    Dragon = 0xB35,
+    Shulker,
+    Vindicator = 0xB39,
+    IllagerBeast = 0xB3B,
+    EvocationIllager = 0xB68,
+    Vex,
+    Pillager = 0xB72,
+    ElderGuardianGhost = 0xB78,
+
+    Animal = 0x1300,
+    Chicken = 0x130A,
+    Cow,
+    Pig,
+    Sheep,
+    MushroomCow = 0x1310,
+    Rabbit = 0x1312,
+    PolarBear = 0x131C,
+    Llama,
+    Turtle = 0x134A,
+    Panda = 0x1371,
+    Fox = 0x1379,
+
+    WaterAnimal = 0x2300,
+    Squid = 0x2311,
+    Dolphin = 0x231F,
+    Pufferfish = 0x236C,
+    Salmon,
+    Tropicalfish = 0x236F,
+    Fish,
+
+    TameableAnimal = 0x5300,
+    Wolf = 0x530E,
+    Ocelot = 0x5316,
+    Parrot = 0x531E,
+    Cat = 0x534B,
+
+    Ambient = 0x8100,
+    Bat = 0x8113,
+
+    UndeadMob = 0x10B00,
+    PigZombie = 0x10B24,
+    WitherBoss = 0x10B34,
+    Phantom = 0x10B3A,
+
+    ZombieMonster= 0x30B00,
+    Zombie = 0x30B20,
+    ZombieVillager = 0x30B2C,
+    Husk = 0x30B2F,
+    Drowned = 0x30B6E,
+    ZombieVillagerV2 = 0x30B74,
+
+    Arthropod = 0x40B00,
+    Spider = 0x40B23,
+    Silverfish = 0x40B27,
+    CaveSpider,
+    Endermite = 0x40B37,
+
+    Minecart = 0x80000,
+    MinecartRideable = 0x80054,
+    MinecartHopper = 0x80060,
+    MinecartTNT,
+    MinecartChest,
+    MinecartFurnace,
+    MinecartCommandBlock,
+
+    SkeletonMonster = 0x110B00,
+    Skeleton = 0x110B22,
+    Stray = 0x110B2E,
+    WitherSkeleton = 0x110B30,
+
+    EquineAnimal = 0x205300,
+    Horse = 0x205317,
+    Donkey,
+    Mule,
+    SkeletonHorse = 0x215B1A,
+    ZombieHorse,
+
+    Projectile = 0x400000,
+    ExperiencePotion = 0x400044,
+    ShulkerBullet = 0x40004C,
+    DragonFireball = 0x40004F,
+    Snowball = 0x400051,
+    ThrownEgg,
+    LargeFireball = 0x400055,
+    ThrownPotion,
+    Enderpearl,
+    WitherSkull = 0x400059,
+    WitherSkullDangerous = 0x40005B,
+    SmallFireball = 0x40005E,
+    LingeringPotion = 0x400065,
+    LlamaSpit,
+    EvocationFang,
+    IceBomb = 0x40006A,
+
+    AbstractArrow    = 0x800000,
+    Trident    = 0x0C00049,
+    Arrow,
+    VillagerBase = 0x1000300,
+    Villager = 0x100030F,
+    VillagerV2 = 0x1000373,
 }
 
-@nativeClass(null)
+@nativeClass(0x10)
 export class ActorDamageSource extends NativeClass{
     @nativeField(int32_t, 0x08)
     cause: int32_t;
@@ -39,11 +181,15 @@ export class ActorDamageSource extends NativeClass{
 
 export enum ActorDamageCause {
     /** The kill command */
-    None,
+    Override,
+    /** @deprecated */
+    None = 0,
     Contact,
     EntityAttack,
     Projectile,
-    Suffoocation,
+    Suffocation,
+    /** @deprecated Typo */
+    Suffoocation = 4,
     Fall,
     Fire,
     FireTick,
@@ -52,7 +198,8 @@ export enum ActorDamageCause {
     BlockExplosion,
     EntityExplosion,
     Void,
-    Magic = 0x0E,
+    Suicide,
+    Magic,
     Wither,
     Starve,
     Anvil,
@@ -171,6 +318,30 @@ export class Actor extends NativeClass {
             id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
         };
         return (this as any).entity = entity;
+    }
+    addEffect(effect: MobEffectInstance): void {
+        abstract();
+    }
+    removeEffect(id: MobEffectIds):void {
+        abstract();
+    }
+    protected _hasEffect(mobEffect: MobEffect):boolean {
+        abstract();
+    }
+    hasEffect(id: MobEffectIds):boolean {
+        const effect = MobEffect.create(id);
+        const retval = this._hasEffect(effect);
+        effect.destruct();
+        return retval;
+    }
+    protected _getEffect(mobEffect: MobEffect):MobEffectInstance | null {
+        abstract();
+    }
+    getEffect(id: MobEffectIds):MobEffectInstance | null {
+        const effect = MobEffect.create(id);
+        const retval = this._getEffect(effect);
+        effect.destruct();
+        return retval;
     }
     addTag(tag:string):boolean {
         abstract();

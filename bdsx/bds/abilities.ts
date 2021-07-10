@@ -4,6 +4,7 @@ import { bool_t, float32_t, int32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
 
+@nativeClass(0x140)
 export class Abilities extends NativeClass {
     protected _setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
         abstract();

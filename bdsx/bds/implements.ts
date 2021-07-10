@@ -5,7 +5,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "bdsx/core";
 import { CxxVector } from "bdsx/cxxvector";
 import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint32_t, uint8_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { SharedPtr } from "bdsx/sharedpointer";
 import { asmcode } from "../asm/asmcode";
@@ -16,6 +16,7 @@ import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
+import { MobEffect, MobEffectInstance } from "./effects";
 import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, InventoryAction, InventorySource, InventorySourceFlags, InventorySourceType, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, PlayerInventory } from "./inventory";
@@ -113,6 +114,11 @@ Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {th
 Actor.fromUniqueIdBin = function(bin) {
     return serverInstance.minecraft.something.level.fetchEntity(bin, true);
 };
+
+Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);
+Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
+(Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
+(Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
 
 const attribNames = [
     "minecraft:zombie.spawn.reinforcements",
@@ -452,3 +458,7 @@ Scoreboard.prototype.resetPlayerScore = procHacker.js("?resetPlayerScore@Scorebo
 (Objective.prototype as any)._getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective}, ScoreInfo, ScoreboardId);
 
 //ScoreboardIdentityRef.prototype.modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, int32_t, Objective, int32_t, int8_t);
+
+// effects.ts
+MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
+(MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
