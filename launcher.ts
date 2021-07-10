@@ -14,6 +14,7 @@ import 'bdsx/checkmodules';
 import 'bdsx/asm/checkasm';
 require('bdsx/legacy');
 
+import { installMinecraftAddons } from 'bdsx/addoninstaller';
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
 import 'colors';
@@ -39,7 +40,10 @@ console.log(
         }, 3000).unref();
     });
 
-    await loadAllPlugins();
+    await Promise.all([
+        loadAllPlugins(),
+        installMinecraftAddons()
+    ]);
 
     // launch BDS
     console.log('[BDSX] bedrockServer is launching...');

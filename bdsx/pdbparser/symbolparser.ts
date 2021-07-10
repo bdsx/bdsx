@@ -310,7 +310,7 @@ export class PdbIdentifier {
 
     decorate(deco:string, source?:string):PdbIdentifier {
         let name = this.name;
-        if (/^[a-zA-Z]/.test(deco)) {
+        if (/^\w/.test(deco)) {
             name += ' ';
         }
         name += deco;

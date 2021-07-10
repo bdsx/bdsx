@@ -95,7 +95,7 @@ const requiredDeps = packagejson.dependencies;
 
 for (const name in requiredDeps) {
     const requiredVersion = requiredDeps[name];
-    if (requiredVersion.startsWith('file:./plugins/')) continue;
+    if (/^file:(?:\.[\\/])?plugins[\\/]/.test(requiredVersion)) continue;
     try {
         const installed = require(`${name}/package.json`);
         const installedVersion = installed.version;

@@ -1,11 +1,11 @@
 
-import { promises as fsp } from 'fs';
 import { ConcurrencyQueue } from './concurrency';
 import { remapAndPrintError } from './source-map-support';
 import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
 import os = require('os');
+import { fsutil } from './fsutil';
 
 class PromCounter {
     private resolve:(()=>void)|null = null;
@@ -55,7 +55,7 @@ export async function loadAllPlugins():Promise<void> {
 
         async getJson():Promise<any> {
             if (this.json !== null) return this.json;
-            return this.json = JSON.parse(await fsp.readFile(this.getPath(), 'utf-8'));
+            return this.json = JSON.parse(await fsutil.readFile(this.getPath()));
         }
 
         getPath():string {
@@ -88,7 +88,7 @@ export async function loadAllPlugins():Promise<void> {
         }
         async save():Promise<void> {
             if (this.json === null) return;
-            await fsp.writeFile(this.getPath(), JSON.stringify(this.json, null, 2).replace('\n', os.EOL)+os.EOL);
+            await fsutil.writeFile(this.getPath(), JSON.stringify(this.json, null, 2).replace('\n', os.EOL)+os.EOL);
         }
 
         static get(name:string):PackageJson {
@@ -112,9 +112,9 @@ export async function loadAllPlugins():Promise<void> {
                     }
                 } catch (err) {
                     this.loaded = false;
-                    if (parentjson && parentjson.dependencies[this.name].startsWith('file:./plugins/')) {
+                    if (parentjson && /^file:(:?\.[\\/])?plugins[\\/]/.test(parentjson.dependencies[this.name])) {
                         try {
-                            await fsp.stat(`${pluginspath}${path.sep}${this.name.substr(BDSX_SCOPE.length)}`);
+                            await fsutil.stat(`${pluginspath}${path.sep}${this.name.substr(BDSX_SCOPE.length)}`);
                         } catch (err) {
                             if (err.code === 'ENOENT') {
                                 console.error(colors.red(`[BDSX-Plugins] ${this.name}: removed`));
@@ -163,7 +163,7 @@ export async function loadAllPlugins():Promise<void> {
     try {
         // load plugins from the directory
         const counter = new PromCounter;
-        const pluginsFiles = await fsp.readdir(pluginspath, {withFileTypes: true});
+        const pluginsFiles = await fsutil.readdirWithFileTypes(pluginspath);
         const pluginsInDirectory:PackageJson[] = [];
 
         // check new plugins
@@ -189,7 +189,7 @@ export async function loadAllPlugins():Promise<void> {
             pluginsInDirectory.push(plugin);
 
             if (mainjson.dependencies[fullname]) continue;
-            mainjson.dependencies[fullname] = `file:./plugins/${pluginname}`;
+            mainjson.dependencies[fullname] = `file:plugins/${pluginname}`;
             packagejsonModified = true;
             needToNpmInstall = true;
             try {

@@ -6,7 +6,6 @@ import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } f
 import { checkPowOf2, getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
-import fs = require('fs');
 import colors = require('colors');
 
 export enum Register
@@ -3291,12 +3290,12 @@ export namespace asm
 
         let buffer:Uint8Array;
         if (await fsutil.checkModified(src, binpath)){
-            buffer = asm.compile(await fs.promises.readFile(src, 'utf-8'), defines, reportDirect ? src : null);
-            await fs.promises.writeFile(binpath, buffer);
+            buffer = asm.compile(await fsutil.readFile(src), defines, reportDirect ? src : null);
+            await fsutil.writeFile(binpath, buffer);
             console.log(`Please reload it`);
             process.exit(0);
         } else {
-            buffer = await fs.promises.readFile(binpath);
+            buffer = await fsutil.readFile(binpath, null);
         }
         return asm.load(buffer);
     }
