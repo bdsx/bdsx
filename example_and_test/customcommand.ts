@@ -1,12 +1,11 @@
 
 // Custom Command
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandOutput, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
+import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
+import { events } from "bdsx/event";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
-import { JsonValue } from "../bdsx/bds/connreq";
-import { serverInstance } from "../bdsx/bds/server";
-import { events } from "../bdsx/event";
 
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{

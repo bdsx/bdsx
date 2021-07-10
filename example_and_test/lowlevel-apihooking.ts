@@ -1,16 +1,16 @@
 
 // Low Level - API Hooking
+import { Block } from "bdsx/bds/block";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
+import { ItemStack } from "bdsx/bds/inventory";
+import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { TextPacket } from "bdsx/bds/packets";
 import { capi } from "bdsx/capi";
 import { pdb } from "bdsx/core";
 import { UNDNAME_NAME_ONLY } from "bdsx/dbghelp";
 import { bool_t, int32_t, int8_t } from "bdsx/nativetype";
 import { ProcHacker } from "bdsx/prochacker";
-import { Block } from "../bdsx/bds/block";
-import { ItemStack } from "../bdsx/bds/inventory";
-import { NetworkIdentifier } from "../bdsx/bds/networkidentifier";
 
 function sendText(ni:NetworkIdentifier, message:string):void {
     const packet = TextPacket.create();

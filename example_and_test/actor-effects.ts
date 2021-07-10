@@ -1,4 +1,4 @@
-import { MobEffectInstance } from "../bdsx/bds/effects";
+import { MobEffectInstance } from "bdsx/bds/effects";
 import { connectionList } from "./net-login";
 
 const regenId = 10;

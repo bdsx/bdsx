@@ -5,6 +5,7 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
+import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
@@ -27,7 +28,6 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
-import { JsonValue } from "../bdsx/bds/connreq";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
