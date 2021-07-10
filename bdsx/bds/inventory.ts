@@ -1,7 +1,7 @@
-import { abstract } from "bdsx/common";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bool_t, CxxString, int16_t, int32_t, uint16_t, uint32_t, uint8_t } from "bdsx/nativetype";
+import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bool_t, CxxString, int16_t, int32_t, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
 

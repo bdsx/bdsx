@@ -1,6 +1,6 @@
-import { abstract } from "bdsx/common";
-import { NativeClass } from "bdsx/nativeclass";
+import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
+import { NativeClass } from "../nativeclass";
 import { CxxString } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { HashedString } from "./hashedstring";

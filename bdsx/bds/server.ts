@@ -1,9 +1,9 @@
-import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { VoidPointer } from "bdsx/core";
-import { NativeClass } from "bdsx/nativeclass";
-import { CxxString } from "bdsx/nativetype";
-import { SharedPtr } from "bdsx/sharedpointer";
+import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
+import { VoidPointer } from "../core";
+import { NativeClass } from "../nativeclass";
+import { CxxString } from "../nativetype";
+import { SharedPtr } from "../sharedpointer";
 import { DimensionId } from "./actor";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";

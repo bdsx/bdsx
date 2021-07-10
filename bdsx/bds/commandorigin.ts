@@ -1,10 +1,10 @@
-import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
-import { abstract } from "bdsx/common";
-import { VoidPointer } from "bdsx/core";
-import { mce } from "bdsx/mce";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { BlockPos, Vec3 } from "../bds/blockpos";
 import { capi } from "../capi";
+import { abstract } from "../common";
+import { VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
+import { mce } from "../mce";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString, NativeType, void_t } from "../nativetype";
 import { Actor } from "./actor";
 import { JsonValue } from "./connreq";

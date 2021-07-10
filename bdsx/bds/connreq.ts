@@ -1,9 +1,9 @@
-import { abstract } from "bdsx/common";
-import { CxxVector } from "bdsx/cxxvector";
-import { makefunc } from "bdsx/makefunc";
-import { mce } from "bdsx/mce";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "bdsx/nativetype";
+import { abstract } from "../common";
+import { CxxVector } from "../cxxvector";
+import { makefunc } from "../makefunc";
+import { mce } from "../mce";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { proc, proc2 } from "./proc";
 
 export enum JsonValueType

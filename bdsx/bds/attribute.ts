@@ -1,8 +1,8 @@
 
-import { abstract } from "bdsx/common";
-import { VoidPointer } from "bdsx/core";
-import { NativeClass } from "bdsx/nativeclass";
-import { float32_t } from "bdsx/nativetype";
+import { abstract } from "../common";
+import { VoidPointer } from "../core";
+import { NativeClass } from "../nativeclass";
+import { float32_t } from "../nativetype";
 
 export enum AttributeId
 {

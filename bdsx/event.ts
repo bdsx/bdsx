@@ -1,8 +1,8 @@
-import { CANCEL } from "bdsx/common";
 import { Color } from "colors";
 import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
+import { CANCEL } from "./common";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";

@@ -1,7 +1,7 @@
-import { abstract } from "bdsx/common";
-import { VoidPointer } from "bdsx/core";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { SharedPtr } from "bdsx/sharedpointer";
+import { abstract } from "../common";
+import { VoidPointer } from "../core";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { SharedPtr } from "../sharedpointer";
 import { CxxString } from "../nativetype";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";

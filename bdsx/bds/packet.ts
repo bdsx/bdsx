@@ -1,6 +1,6 @@
-import { abstract } from "bdsx/common";
-import { MantleClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { SharedPtr } from "bdsx/sharedpointer";
+import { abstract } from "../common";
+import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { SharedPtr } from "../sharedpointer";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";

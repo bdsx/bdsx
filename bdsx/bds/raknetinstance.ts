@@ -1,5 +1,5 @@
-import { VoidPointer } from "bdsx/core";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { VoidPointer } from "../core";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { RakNet } from "./raknet";
 
 @nativeClass()

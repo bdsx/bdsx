@@ -1,7 +1,7 @@
-import { abstract } from "bdsx/common";
-import { VoidPointer } from "bdsx/core";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "bdsx/nativetype";
+import { abstract } from "../common";
+import { VoidPointer } from "../core";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
 import { makefunc } from "../makefunc";
 import { procHacker } from "./proc";
 

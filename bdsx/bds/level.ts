@@ -1,8 +1,8 @@
-import { LoopbackPacketSender } from "bdsx/bds/loopbacksender";
-import { abstract } from "bdsx/common";
-import { CxxVector } from "bdsx/cxxvector";
-import { NativeClass } from "bdsx/nativeclass";
+import { LoopbackPacketSender } from "../bds/loopbacksender";
+import { abstract } from "../common";
 import { VoidPointer } from "../core";
+import { CxxVector } from "../cxxvector";
+import { NativeClass } from "../nativeclass";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";

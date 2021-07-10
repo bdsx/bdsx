@@ -50,6 +50,12 @@
         "prefer-rest-params": "off",
         "no-debugger": "warn",
         "import/export": "off",
-        "eol-last": "error"
+        "eol-last": "error",
+        "no-restricted-imports": ["error", {
+          "patterns": [{
+            "group": ["bdsx/*"],
+            "message": "Please use the relative path in bdsx libraries."
+          }]
+        }]
     }
 }

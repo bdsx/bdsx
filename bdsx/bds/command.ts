@@ -387,7 +387,6 @@ const types = [
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 
-
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
 

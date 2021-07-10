@@ -1,9 +1,9 @@
-import { bin } from "bdsx/bin";
-import { abstract } from "bdsx/common";
-import { StaticPointer, VoidPointer } from "bdsx/core";
-import { makefunc } from "bdsx/makefunc";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, int32_t } from "bdsx/nativetype";
+import { bin } from "../bin";
+import { abstract } from "../common";
+import { StaticPointer, VoidPointer } from "../core";
+import { makefunc } from "../makefunc";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, int32_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";

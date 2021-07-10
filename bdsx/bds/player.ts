@@ -1,4 +1,4 @@
-import { abstract } from "bdsx/common";
+import { abstract } from "../common";
 import { CxxString, float32_t, int32_t } from "../nativetype";
 import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID } from "./actor";

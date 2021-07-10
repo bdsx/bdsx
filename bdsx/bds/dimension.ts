@@ -1,6 +1,6 @@
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { int32_t } from "../nativetype";
 import type { DimensionId } from "./actor";
 import { procHacker } from "./proc";
