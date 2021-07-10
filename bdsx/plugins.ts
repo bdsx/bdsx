@@ -140,7 +140,7 @@ export async function loadAllPlugins():Promise<void> {
 
     let packagejsonModified = false;
     let needToNpmInstall = false;
-    const projpath = path.resolve(process.cwd(), process.argv[1]);
+    const projpath = fsutil.getProjectPath();
     const pluginspath = `${projpath}${path.sep}plugins`;
     const taskQueue = new ConcurrencyQueue;
 

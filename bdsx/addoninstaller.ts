@@ -598,22 +598,27 @@ interface FileInfo {
 }
 
 async function readdirWithStats(dirPath:string):Promise<FileInfo[]> {
-    const files = await fsutil.readdir(dirPath);
-    const out:FileInfo[] = [];
-    for (const fileName of files) {
-        const filePath = dirPath+path.sep+fileName;
-        const stat = await fsutil.stat(filePath);
-        const extidx = fileName.lastIndexOf('.');
-        out.push({
-            name:extidx === -1 ? fileName : fileName.substr(0, extidx),
-            path:filePath,
-            base:fileName,
-            isDirectory: stat.isDirectory(),
-            mtime: stat.mtimeMs,
-            size: stat.size
-        });
+    try {
+        const files = await fsutil.readdir(dirPath);
+        const out:FileInfo[] = [];
+        for (const fileName of files) {
+            const filePath = dirPath+path.sep+fileName;
+            const stat = await fsutil.stat(filePath);
+            const extidx = fileName.lastIndexOf('.');
+            out.push({
+                name:extidx === -1 ? fileName : fileName.substr(0, extidx),
+                path:filePath,
+                base:fileName,
+                isDirectory: stat.isDirectory(),
+                mtime: stat.mtimeMs,
+                size: stat.size
+            });
+        }
+        return out;
+    } catch (err) {
+        if (err.code === 'ENOENT') return [];
+        else throw err;
     }
-    return out;
 }
 
 async function unzip(name:string, zip:FileInfo, targetDir:FileInfo, getRootFiles:boolean = false):Promise<FileInfo[]|null> {
@@ -686,13 +691,13 @@ async function isLink(filepath:string):Promise<boolean> {
     return (await fsutil.lstat(filepath)).isSymbolicLink();
 }
 
-const bdsxPath = path.dirname(__dirname);
-const bdsPath = bdsxPath+path.sep+'bedrock_server';
-const addonsPath = bdsxPath+path.sep+'addons';
+const projectPath = fsutil.getProjectPath();
+const bdsPath = projectPath+path.sep+'bedrock_server';
+const addonsPath = projectPath+path.sep+'addons';
 const manifestNames = new Set<string>(['manifest.json', 'pack_manifest.json']);
 
 const dirmaker = new fsutil.DirectoryMaker;
-dirmaker.dirhas.add(bdsxPath);
+dirmaker.dirhas.add(projectPath);
 
 export async function installMinecraftAddons():Promise<void>{
     await dirmaker.make(bdsPath);

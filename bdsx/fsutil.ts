@@ -35,6 +35,10 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 }
 
 export namespace fsutil {
+    export function getProjectPath():string {
+        return path.resolve(process.cwd(), process.argv[1]);
+    }
+
     export function isDirectory(filepath:string):Promise<boolean> {
         return new Promise((resolve, reject)=>{
             fs.stat(filepath, (err, stat)=>{
