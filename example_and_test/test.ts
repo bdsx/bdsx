@@ -327,10 +327,6 @@ Tester.test({
     },
 
     async checkPacketNames() {
-        if (capi.isRunningOnWine()) {
-            this.skip('Skip packet check on the Wine system, as it usually fails');
-            return;
-        }
         for (const id in PacketIdToType) {
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             const packet = Packet.create();

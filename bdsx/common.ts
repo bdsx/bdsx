@@ -1,8 +1,12 @@
 
+import colors = require('colors');
+
 if ((global as any).bdsx != null) {
-    throw Error('bdsx is imported twice');
+    console.error(colors.red('[BDSX] multiple imported'));
+    console.error(colors.red('First Import: '+(global as any).bdsx));
+    console.error(colors.red('Dupplicated: '+__dirname));
 }
-(global as any).bdsx = true;
+(global as any).bdsx = __dirname;
 
 import type {} from './externs';
 import './polyfill';
