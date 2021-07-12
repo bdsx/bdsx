@@ -7,6 +7,8 @@ import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, 
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
+import { asmcode } from "./asm/asmcode";
+import { capi } from "./capi";
 
 const FREE_REGS:Register[] = [
     Register.rax,
@@ -230,7 +232,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             const unlock = new MemoryUnlocker(origin, codes.size);
             hacktool.jump(origin, ptr, Register.rax, codes.size);
             unlock.done();
-            return ptr;
+            return original;
         };
     }
 
@@ -270,7 +272,16 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
         return callback=>{
             const to = makefunc.np(callback, returnType, opts, ...params);
-            return makefunc.js(this.hookingRaw(key, to), returnType, opts, ...params);
+            const original = this.hookingRawWithOriginal(key)((asm, original) => {
+                asm
+                .call64(asmcode.GetCurrentThreadId, Register.rax)
+                .cmp_r_c(Register.rax, capi.nodeThreadId)
+                .jne_label('ne')
+                .jmp64(to, Register.rax)
+                .label('ne')
+                .jmp64(original, Register.rax);
+            });
+            return makefunc.js(original, returnType, opts, ...params);
         };
     }
 
