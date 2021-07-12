@@ -90,20 +90,15 @@ class PackInfo {
     }
 
     static async createFrom(packPath:string, hostManagePath:string, managedName:string):Promise<PackInfo|null> {
-        try {
-            const menifestPath = await findFiles(manifestNames, packPath);
-            if (menifestPath === null) {
-                console.error(colors.red(`[MCAddons] ${hostManagePath}/${managedName}: menifest not found`));
-                return null;
-            }
-
-            const json = await fsutil.readFile(menifestPath);
-            const manifest:AddonManifest = JSON.parse(stripJsonComments(json));
-            return new PackInfo(packPath, hostManagePath, managedName, manifest);
-        } catch (err) {
-            console.error(colors.red(`[MCAddons] ${hostManagePath}/${managedName}: ${err && err.message}`));
+        const menifestPath = await findFiles(manifestNames, packPath);
+        if (menifestPath === null) {
+            console.error(colors.red(`[MCAddons] ${hostManagePath}/${managedName}: menifest not found`));
             return null;
         }
+
+        const json = await fsutil.readFile(menifestPath);
+        const manifest:AddonManifest = JSON.parse(stripJsonComments(json));
+        return new PackInfo(packPath, hostManagePath, managedName, manifest);
     }
 }
 
@@ -124,8 +119,8 @@ class PackDirectory {
         this.packs.clear();
         const packs = await fsutil.readdir(this.path);
         for (const packName of packs) {
+            const packPath = path.join(this.path, packName);
             try {
-                const packPath = path.join(this.path, packName);
                 const pack = await PackInfo.createFrom(packPath, this.managedPath, packName);
                 if (pack === null) {
                     continue;
@@ -136,7 +131,12 @@ class PackDirectory {
                 }
                 this.packs.set(pack.uuid, pack);
             } catch (err) {
-                if (err.code !== 'ENOENT') throw err;
+                if (err.code === 'ENOENT') { // broken link
+                    console.error(colors.yellow(`[MCAddons] ${this.managedPath}/${packName}: Link is broken, removing`));
+                    await fsutil.unlinkQuiet(packPath);
+                    continue;
+                }
+                console.trace(colors.red(`[MCAddons] ${this.managedPath}/${packName}: ${err && err.message}`));
             }
         }
     }
@@ -147,7 +147,15 @@ class PackDirectory {
         const already = this.packs.get(pack.uuid);
         const installPath = this.path+path.sep+pack.name;
         if (already == null) {
-            await fsutil.symlink(pack.path, installPath, 'junction');
+            try {
+                await fsutil.symlink(pack.path, installPath, 'junction');
+            } catch (err) {
+                if (err.code === 'ENOENT') { // broken link
+                    console.error(colors.yellow(`[MCAddons] addons/${pack.managedName}: Link is broken, fixing`));
+                    await fsutil.unlinkQuiet(pack.path);
+                    await fsutil.symlink(pack.path, installPath, 'junction');
+                }
+            }
         } else {
             if (!await isLink(already.path)) {
                 console.error(colors.yellow(`[MCAddons] addons/${pack.managedName}: already exist`));
@@ -299,68 +307,72 @@ class BdsxPackDirectory {
     }
 
     private async _addDirectory(mpack:ManagedPack):Promise<void> {
-        let files:FileInfo[]|null = null;
-        if (mpack.zip !== null) {
-            if (mpack.directory === null || mpack.zip.mtime > mpack.directory.mtime) {
-                console.error(`[MCAddons] ${mpack.managedName}.${ZipType[mpack.zipType!]}: unzip`);
-                mpack.directory = await this._makeDirectory(mpack.zip);
-                files = await unzip(mpack.managedName, mpack.zip, mpack.directory, true);
-            }
-        } else if (mpack.directory === null) {
-            console.trace(`[MCAddons] ${mpack.managedName}: does not have zip or directory`);
-            return;
-        }
-        if (!mpack.checkUpdated(mpack.directory.mtime)) {
-            return;
-        }
-        mpack.installMTime = mpack.directory.mtime;
-
-        const dirName = mpack.managedName;
-        if (mpack.zipType === ZipType.mcpack) {
-            await mpack.loadPack();
-            return;
-        }
-
-        if (files == null) files = await readdirWithStats(mpack.directory.path);
-
-        const packFiles:FileInfo[] = [];
-        if (mpack.zipType === ZipType.mcaddon) {
-            for (const stat of files) {
-                if (stat.isDirectory) {
-                    packFiles.push(stat);
-                } else if (stat.base.endsWith('.mcpack')) {
-                    packFiles.push(stat);
+        try {
+            let files:FileInfo[]|null = null;
+            if (mpack.zip !== null) {
+                if (mpack.directory === null || mpack.zip.mtime > mpack.directory.mtime) {
+                    console.error(`[MCAddons] ${mpack.managedName}.${ZipType[mpack.zipType!]}: unzip`);
+                    mpack.directory = await this._makeDirectory(mpack.zip);
+                    files = await unzip(mpack.managedName, mpack.zip, mpack.directory, true);
                 }
+            } else if (mpack.directory === null) {
+                console.trace(`[MCAddons] ${mpack.managedName}: does not have zip or directory`);
+                return;
             }
-        } else {
-            for (const stat of files) {
-                if (stat.isDirectory) {
-                    packFiles.push(stat);
-                } else if (mpack.zipType === ZipType.mcaddon) {
-                    if (stat.base.endsWith('.mcpack')) {
+            if (!mpack.checkUpdated(mpack.directory.mtime)) {
+                return;
+            }
+            mpack.installMTime = mpack.directory.mtime;
+
+            const dirName = mpack.managedName;
+            if (mpack.zipType === ZipType.mcpack) {
+                await mpack.loadPack();
+                return;
+            }
+
+            if (files == null) files = await readdirWithStats(mpack.directory.path);
+
+            const packFiles:FileInfo[] = [];
+            if (mpack.zipType === ZipType.mcaddon) {
+                for (const stat of files) {
+                    if (stat.isDirectory) {
+                        packFiles.push(stat);
+                    } else if (stat.base.endsWith('.mcpack')) {
                         packFiles.push(stat);
                     }
-                } else if (manifestNames.has(stat.base)) {
-                    mpack.zipType = ZipType.mcpack;
-                    await mpack.loadPack();
-                    return;
-                } else if (stat.base.endsWith('.mcpack')) {
-                    mpack.zipType = ZipType.mcaddon;
-                    packFiles.push(stat);
+                }
+            } else {
+                for (const stat of files) {
+                    if (stat.isDirectory) {
+                        packFiles.push(stat);
+                    } else if (mpack.zipType === ZipType.mcaddon) {
+                        if (stat.base.endsWith('.mcpack')) {
+                            packFiles.push(stat);
+                        }
+                    } else if (manifestNames.has(stat.base)) {
+                        mpack.zipType = ZipType.mcpack;
+                        await mpack.loadPack();
+                        return;
+                    } else if (stat.base.endsWith('.mcpack')) {
+                        mpack.zipType = ZipType.mcaddon;
+                        packFiles.push(stat);
+                    }
                 }
             }
-        }
 
-        const mpacks = new Set<ManagedPack>();
-        for (const unzipped of packFiles) {
-            const mpack = this._getManagedPack(unzipped, dirName);
-            if (mpack === null) continue;
-            mpack.zipType = ZipType.mcpack;
-            mpacks.add(mpack);
-        }
+            const mpacks = new Set<ManagedPack>();
+            for (const unzipped of packFiles) {
+                const mpack = this._getManagedPack(unzipped, dirName);
+                if (mpack === null) continue;
+                mpack.zipType = ZipType.mcpack;
+                mpacks.add(mpack);
+            }
 
-        for (const mpack of mpacks) {
-            await this._addDirectory(mpack);
+            for (const mpack of mpacks) {
+                await this._addDirectory(mpack);
+            }
+        } catch (err) {
+            console.trace(colors.red(`[MCAddons] addons/${mpack.managedName}: ${err && err.message}`));
         }
     }
 
