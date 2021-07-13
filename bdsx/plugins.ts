@@ -88,7 +88,7 @@ export async function loadAllPlugins():Promise<void> {
         }
         async save():Promise<void> {
             if (this.json === null) return;
-            await fsutil.writeFile(this.getPath(), JSON.stringify(this.json, null, 2).replace('\n', os.EOL)+os.EOL);
+            await fsutil.writeJson(this.getPath(), this.json);
         }
 
         static get(name:string):PackageJson {

@@ -111,7 +111,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
     }
 
     function saveInstallInfo():Promise<void> {
-        return fsutil.writeFile(installInfoPath, JSON.stringify(installInfo, null, 4));
+        return fsutil.writeJson(installInfoPath, installInfo);
     }
 
     class InstallItem {

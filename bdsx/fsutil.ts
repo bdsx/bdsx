@@ -4,6 +4,7 @@
 
 import fs = require('fs');
 import path = require('path');
+import os = require('os');
 
 class DirentFromStat extends (fs.Dirent || class{}) {
     constructor(name:string, private readonly stat:fs.Stats) {
@@ -121,6 +122,23 @@ export namespace fsutil {
                 else resolve();
             });
         });
+    }
+    /**
+     * uses system EOL and add a last line
+     */
+    export function writeJson(path:string, content:unknown):Promise<void> {
+        return new Promise((resolve, reject)=>{
+            fs.writeFile(path, JSON.stringify(content, null, 2).replace(/\n/g, os.EOL)+os.EOL, 'utf8', (err)=>{
+                if (err !== null) reject(err);
+                else resolve();
+            });
+        });
+    }
+    /**
+     * uses system EOL and add a last line
+     */
+    export function writeJsonSync(path:string, content:unknown):void {
+        fs.writeFileSync(path, JSON.stringify(content, null, 2).replace(/\n/g, os.EOL)+os.EOL, 'utf8');
     }
     export function readdir(path:string):Promise<string[]> {
         return new Promise((resolve, reject)=>{

@@ -419,7 +419,7 @@ class BdsxPackDirectory {
                 obj[managedPack.managedName] = managedPack.toJson();
             }
         }
-        await fsutil.writeFile(this.bdsxAddonsJsonPath, JSON.stringify(obj, null, 2).replace(/\n/g, os.EOL)+os.EOL);
+        await fsutil.writeJson(this.bdsxAddonsJsonPath, obj);
     }
 }
 
@@ -458,7 +458,7 @@ abstract class PackManager<T> {
     async save():Promise<void> {
         if (!this.modified) return;
         await dirmaker.make(path.dirname(this.jsonPath));
-        await fsutil.writeFile(this.jsonPath, JSON.stringify(this.data, null, 2).replace(/\n/g, os.EOL)+os.EOL);
+        await fsutil.writeJson(this.jsonPath, this.data);
     }
 
     protected abstract _indexOf(uuid:string):number;
