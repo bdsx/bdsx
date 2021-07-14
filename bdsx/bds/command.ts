@@ -47,6 +47,7 @@ export enum CommandUsageFlag {
     Test,
     /** Any larger than 1 is hidden */
     Hidden,
+    _Unknown=0x80
 }
 
 /** @deprecated **/

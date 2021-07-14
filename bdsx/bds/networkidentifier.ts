@@ -55,6 +55,8 @@ class ServerNetworkHandler$Client extends NativeClass {
 
 @nativeClass(null)
 export class ServerNetworkHandler extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable: VoidPointer;
     @nativeField(CxxString, 0x258)
     motd: CxxString;
     @nativeField(int32_t, 0x2D0)
