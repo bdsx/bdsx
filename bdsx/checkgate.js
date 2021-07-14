@@ -33,5 +33,5 @@ checkJsCache('./fsutil');
 checkJsCache('./pluginmgr/index');
 checkJsCache('./pluginmgr/new');
 
-const importTarget = process.argv.splice(1, 2)[1];
+const importTarget = process.argv.splice(2, 1)[0];
 require(importTarget);
