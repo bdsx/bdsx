@@ -19,5 +19,3 @@ const interval = setInterval(()=>{
 events.serverStop.on(()=>{
     clearInterval(interval);
 });
-
-
