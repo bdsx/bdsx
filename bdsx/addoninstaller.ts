@@ -577,7 +577,7 @@ async function getLevelName():Promise<string> {
     const propertyFile = bdsPath+path.sep+'server.properties';
     try {
         const properties = await fsutil.readFile(propertyFile);
-        const matched = /^\w*level-name\w*=\w*(.*)\w*/.exec(properties);
+        const matched = /^\s*level-name\s*=\s*(.*)\s*$/m.exec(properties);
         if (matched !== null) {
             return matched[1];
         }
@@ -715,6 +715,7 @@ export async function installMinecraftAddons():Promise<void>{
     await dirmaker.make(bdsPath);
 
     const worldName = await getLevelName();
+    console.log(worldName);
     const worldPath = bdsPath+path.sep+'worlds'+path.sep+worldName;
 
     const serverPacks = new ServerPackManager(bdsPath+path.sep+'valid_known_packs.json');
