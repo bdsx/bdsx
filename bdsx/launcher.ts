@@ -24,6 +24,7 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
+import { serverProperties } from "./serverproperties";
 
 declare module 'colors'
 {
@@ -188,6 +189,17 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.evWaitGameThreadEnd = dll.kernel32.CreateEventW(null, 0, 0, null);
 
     uv_async.open();
+
+    // break max players limitation
+    {
+        const maxPlayer = +serverProperties["max-players"]!|0;
+        const maxconn = proc['SharedConstants::NetworkDefaultMaxConnections'];
+        if (maxPlayer > maxconn.getInt32()) {
+            const unlocker = new MemoryUnlocker(maxconn, 4);
+            proc['SharedConstants::NetworkDefaultMaxConnections'].setInt32(maxPlayer);
+            unlocker.done();
+        }
+    }
 
     // uv async callback, when BDS closed perfectly
     function finishCallback():void {

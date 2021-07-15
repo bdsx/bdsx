@@ -110,8 +110,14 @@ export class ServerInstance extends NativeClass {
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
         return this.minecraft.getServerNetworkHandler().disconnectClient(client, message);
     }
+    getMotd():string {
+        return this.minecraft.getServerNetworkHandler().motd;
+    }
     setMotd(motd:string):void {
         return this.minecraft.getServerNetworkHandler().setMotd(motd);
+    }
+    getMaxPlayers():number {
+        return this.minecraft.getServerNetworkHandler().maxPlayers;
     }
     setMaxPlayers(count:number):void {
         this.minecraft.getServerNetworkHandler().setMaxNumPlayers(count);
