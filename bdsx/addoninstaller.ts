@@ -1,12 +1,12 @@
 
 import fs = require('fs');
-import os = require('os');
 import path = require('path');
 import unzipper = require('unzipper');
 import colors = require('colors');
 import stripJsonComments = require('strip-json-comments');
 import { fsutil } from './fsutil';
 import ProgressBar = require('progress');
+import { serverProperties } from './serverproperties';
 
 interface ServerPack {
     file_system:string;
@@ -573,22 +573,6 @@ class ServerPackManager extends PackManager<ServerPack> {
 
 }
 
-async function getLevelName():Promise<string> {
-    const propertyFile = bdsPath+path.sep+'server.properties';
-    try {
-        const properties = await fsutil.readFile(propertyFile);
-        const matched = /^\w*level-name\w*=\w*(.*)\w*/.exec(properties);
-        if (matched !== null) {
-            return matched[1];
-        }
-    } catch (err) {
-        if (err.code !== 'ENOENT') {
-            throw err;
-        }
-    }
-    return 'Bedrock level';
-}
-
 async function readObjectJson(path:string):Promise<Record<string, any>> {
     try {
         const json = await fsutil.readFile(path);
@@ -703,7 +687,7 @@ async function isLink(filepath:string):Promise<boolean> {
     return (await fsutil.lstat(filepath)).isSymbolicLink();
 }
 
-const projectPath = fsutil.getProjectPath();
+const projectPath = fsutil.projectPath;
 const bdsPath = projectPath+path.sep+'bedrock_server';
 const addonsPath = projectPath+path.sep+'addons';
 const manifestNames = new Set<string>(['manifest.json', 'pack_manifest.json']);
@@ -714,7 +698,7 @@ dirmaker.dirhas.add(projectPath);
 export async function installMinecraftAddons():Promise<void>{
     await dirmaker.make(bdsPath);
 
-    const worldName = await getLevelName();
+    const worldName = serverProperties['level-name'] || 'Bedrock level';
     const worldPath = bdsPath+path.sep+'worlds'+path.sep+worldName;
 
     const serverPacks = new ServerPackManager(bdsPath+path.sep+'valid_known_packs.json');

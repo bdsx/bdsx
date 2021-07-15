@@ -6,14 +6,14 @@
   "main": "./launcher.js",
   "author": "YOU!",
   "scripts": {
-    "postinstall": "ts-node ./bdsx/installer ./bedrock_server",
-    "install_bds": "ts-node ./bdsx/installer ./bedrock_server",
+    "postinstall": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
+    "install_bds": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
     "lint-bdsx": "eslint bdsx --ext ts",
     "tsc-no-emit": "tsc --noEmit",
     "watch": "tsc -w",
     "build": "tsc",
-    "newplugin": "ts-node ./bdsx/pluginmgr/new",
-    "plugin-manager": "ts-node ./bdsx/pluginmgr"
+    "newplugin": "ts-node ./bdsx/checkgate ./pluginmgr/new",
+    "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr"
   },
   "dependencies": {
     "@bdsx/yg-survival-bdsx": "file:yg-survival-bdsx",

@@ -36,8 +36,11 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 }
 
 export namespace fsutil {
+    export const projectPath = path.resolve(process.cwd(), process.argv[1]);
+
+    /** @deprecated use fsutil.projectPath */
     export function getProjectPath():string {
-        return path.resolve(process.cwd(), process.argv[1]);
+        return projectPath;
     }
 
     export function isDirectory(filepath:string):Promise<boolean> {

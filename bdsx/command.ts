@@ -40,13 +40,6 @@ MinecraftCommands.prototype.executeCommand = function(ctx, b) {
     return executeCommand(this, res, ctx, b);
 };
 
-interface CommandEvent {
-    readonly command: string;
-    readonly networkIdentifier: NetworkIdentifier;
-
-    setCommand(command: string): void;
-}
-
 @nativeClass()
 export class CustomCommand extends Command {
     @nativeField(Command.VFTable)
@@ -62,15 +55,6 @@ export class CustomCommand extends Command {
         // empty
     }
 }
-
-type ParamToObject<PARAM> = PARAM extends [string, Type<infer T>, string] ?
-{[key in PARAM[0]|PARAM[2]]:key extends PARAM[0] ? T : bool_t} :
-    PARAM extends [string, Type<infer T>] ?
-    {[key in PARAM[0]]:T} :
-    never;
-type CombineUnion<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? {[key in keyof I]:I[key]} : never;
-type ParamsToObjects<PARAMS extends [string, Type<any>, string?][]> = {[key in keyof PARAMS]:PARAMS[key] extends [string, Type<any>, string?] ? ParamToObject<PARAMS[key]> : never};
-type ParamsToObject<PARAMS extends [string, Type<any>, string?][]> = CombineUnion<ParamsToObjects<PARAMS>[number]>;
 
 export class CustomCommandFactory {
 
@@ -153,7 +137,7 @@ export namespace command {
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
         flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NoCheat,
-        flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag.Normal):CustomCommandFactory {
+        flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag._Unknown):CustomCommandFactory {
         const registry = serverInstance.minecraft.commands.getRegistry();
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);

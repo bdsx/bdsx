@@ -112,7 +112,7 @@ Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Act
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
 
 Actor.fromUniqueIdBin = function(bin) {
-    return serverInstance.minecraft.something.level.fetchEntity(bin, true);
+    return serverInstance.minecraft.getLevel().fetchEntity(bin, true);
 };
 
 Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);
@@ -195,7 +195,7 @@ Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Pl
 const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
 Player.prototype.syncAbilties = function() {
     const pk = AdventureSettingsPacket.create();
-    AdventureSettingsPacket$AdventureSettingsPacket(pk, serverInstance.minecraft.something.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
+    AdventureSettingsPacket$AdventureSettingsPacket(pk, serverInstance.minecraft.getLevel().getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
     this.sendPacket(pk);
     pk.dispose();
 };
@@ -225,7 +225,7 @@ ServerPlayer.prototype.sendTranslatedMessage = function(message:CxxString, param
 
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
-    return ServerNetworkHandler$_getServerPlayer(serverInstance.minecraft.something.shandler, this, 0);
+    return ServerNetworkHandler$_getServerPlayer(serverInstance.minecraft.getServerNetworkHandler(), this, 0);
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
 
@@ -270,7 +270,9 @@ Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {t
 
 const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, int32_t);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", void_t, {this: ServerNetworkHandler}, NetworkIdentifier, int32_t, CxxString, int32_t);
+ServerNetworkHandler.prototype.allowIncomingConnections = procHacker.js("ServerNetworkHandler::allowIncomingConnections", void_t, {this:ServerNetworkHandler}, CxxString, bool_t);
 ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", void_t, {this:ServerNetworkHandler});
+ServerNetworkHandler.prototype.setMaxNumPlayers = procHacker.js("ServerNetworkHandler::setMaxNumPlayers", void_t, {this:ServerNetworkHandler}, int32_t);
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {
@@ -312,20 +314,17 @@ VanilaGameModuleServer.abstract({
 });
 DedicatedServer.abstract({});
 Minecraft$Something.abstract({
-    network:NetworkHandler.ref(),
     level:ServerLevel.ref(),
-    shandler:ServerNetworkHandler.ref(),
 });
 Minecraft.abstract({
     vftable:VoidPointer,
     vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
-    commands:[MinecraftCommands.ref(), 0xb0],
-    something:Minecraft$Something.ref(),
-    network:[NetworkHandler.ref(), 0xe0],
-    LoopbackPacketSender:LoopbackPacketSender.ref(),
     server:DedicatedServer.ref(),
 });
 Minecraft.prototype.getLevel = procHacker.js("Minecraft::getLevel", Level, {this:Minecraft});
+Minecraft.prototype.getNetworkHandler = procHacker.js("Minecraft::getNetworkHandler", NetworkHandler, {this:Minecraft});
+Minecraft.prototype.getServerNetworkHandler = procHacker.js("Minecraft::getServerNetworkHandler", ServerNetworkHandler, {this:Minecraft});
+Minecraft.prototype.getCommands = procHacker.js("Minecraft::getCommands", MinecraftCommands, {this:Minecraft});
 ScriptFramework.abstract({
     vftable:VoidPointer,
 });

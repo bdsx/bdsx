@@ -32,6 +32,7 @@ export class Level extends NativeClass {
     }
 }
 export class ServerLevel extends Level {
+    /** @deprecated unusing */
     packetSender:LoopbackPacketSender;
     actors:CxxVector<Actor>;
 

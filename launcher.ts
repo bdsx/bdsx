@@ -32,7 +32,6 @@ console.log(
 );
 
 (async()=>{
-
     events.serverClose.on(()=>{
         console.log('[BDSX] bedrockServer closed');
         setTimeout(()=>{
