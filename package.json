@@ -16,7 +16,6 @@
     "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr"
   },
   "dependencies": {
-    "@bdsx/yg-survival-bdsx": "file:yg-survival-bdsx",
     "bdsx": "file:bdsx",
     "blessed": "^0.1.81",
     "colors": "^1.4.0",
