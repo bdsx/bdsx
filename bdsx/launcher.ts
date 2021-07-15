@@ -190,17 +190,6 @@ function _launch(asyncResolve:()=>void):void {
 
     uv_async.open();
 
-    // break max players limitation
-    {
-        const maxPlayer = +serverProperties["max-players"]!|0;
-        const maxconn = proc['SharedConstants::NetworkDefaultMaxConnections'];
-        if (maxPlayer > maxconn.getInt32()) {
-            const unlocker = new MemoryUnlocker(maxconn, 4);
-            proc['SharedConstants::NetworkDefaultMaxConnections'].setInt32(maxPlayer);
-            unlocker.done();
-        }
-    }
-
     // uv async callback, when BDS closed perfectly
     function finishCallback():void {
         uv_async.close();
