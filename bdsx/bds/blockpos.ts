@@ -47,7 +47,7 @@ export class Vec2 extends NativeClass {
         return v;
     }
 
-    toJSON() {
+    toJSON():{x: number, y: number} {
         return {x:this.x, y:this.y};
     }
 }
