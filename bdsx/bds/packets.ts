@@ -44,7 +44,8 @@ export class DisconnectPacket extends Packet {
 
 @nativeClass(null)
 export class ResourcePacksInfoPacket extends Packet {
-    // unknown
+    @nativeField(bool_t)
+    forcedtoacceot:bool_t;
 }
 
 @nativeClass(null)
@@ -114,7 +115,8 @@ export class StartGamePacket extends Packet {
 }
 @nativeClass(null)
 export class AddPlayerPacket extends Packet {
-    // unknown
+    @nativeField(UUID) 
+    &   
 }
 
 @nativeClass(null)
