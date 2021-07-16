@@ -116,7 +116,38 @@ export class StartGamePacket extends Packet {
 @nativeClass(null)
 export class AddPlayerPacket extends Packet {
     @nativeField(UUID) 
-    &   
+    uuid:UUID;
+    @nativeField(CxxString)
+    username:CxxString;
+    @nativeField(int64_as_float_t)
+    eids:int64_as_float_t;
+    @nativeField(ActorRuntimeID)
+    actorId: ActorRuntimeID; 
+    @nativeField(CxxString)
+    pcid:CxxString;
+    @nativeField(Vec3)
+    pos: Vec3;
+    @nativeField(Vec3)
+    vel: Vec3;
+    @nativeField(float32_t)
+    pitch: float32_t;
+    @nativeField(float32_t)
+    yaw: float32_t;
+    @nativeField(float32_t)
+    headYaw: float32_t;
+    @nativeField(Item) 
+    heldItem: Item;
+    @nativeField(MetadataDictionary)
+    metadata: MetadataDictionary;
+    @nativeField(int32_t) 
+    flags: int32_t;
+    @nativeField(int32_t) 
+    cmdperms: int32_t;
+    @nativeField(int32_t) 
+    actorperms: int32_t;
+    @nativeField(int32_t) 
+    actorperms: int32_t;
+
 }
 
 @nativeClass(null)
