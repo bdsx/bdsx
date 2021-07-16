@@ -547,7 +547,7 @@ class ServerPackManager extends PackManager<ServerPack> {
 
     async install(mpack:ManagedPack):Promise<void> {
         const pack = await mpack.loadPack();
-        const installPath = await this.getPackDirectory(pack.directoryType).makeLink(pack);
+        await this.getPackDirectory(pack.directoryType).makeLink(pack);
 
         await this._load();
         const already = this.data.findIndex(v=>v.uuid===pack.uuid);

@@ -245,7 +245,6 @@ const symbols = [
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
     'MobEffect::getById',
-    'SharedConstants::NetworkDefaultMaxConnections',
 ] as const;
 
 // decorated symbols

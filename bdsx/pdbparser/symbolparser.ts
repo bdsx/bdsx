@@ -3,7 +3,6 @@ import { templateName } from "../templatename";
 import { LanguageParser } from "../textparser";
 import { PdbCache } from "./pdbcache";
 import ProgressBar = require('progress');
-import { remapAndPrintError } from "../source-map-support";
 
 const OPERATORS = new Set<string>([
     '::',

@@ -1,6 +1,6 @@
 import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, float32_t, int32_t } from "../nativetype";
+import { bool_t, float32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
 

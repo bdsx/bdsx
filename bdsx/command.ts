@@ -1,7 +1,6 @@
 
 import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
-import { NetworkIdentifier } from './bds/networkidentifier';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { events } from './event';
