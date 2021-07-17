@@ -1,7 +1,7 @@
 
 // launcher.ts is the launcher for BDS
 // These scripts are run before launching BDS
-// So there are no 'server' variable yet
+// So there is no 'server' variable yet
 // launcher.ts will import ./index.ts after launching BDS.
 
 import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";

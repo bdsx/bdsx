@@ -24,7 +24,6 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
-import { serverProperties } from "./serverproperties";
 
 declare module 'colors'
 {
@@ -496,6 +495,7 @@ export namespace bedrockServer
     /**
      * this handler has bugs on Linux+Wine
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     class DefaultStdInHandlerJs extends DefaultStdInHandler {
         private readonly rl = readline.createInterface({
             input: process.stdin,

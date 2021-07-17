@@ -1,5 +1,4 @@
 import { Actor, ActorDamageSource } from "../bds/actor";
-import { AttributeId } from "../bds/attribute";
 import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { ScriptCustomEventPacket } from "../bds/packets";

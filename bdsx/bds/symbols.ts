@@ -246,7 +246,6 @@ const symbols = [
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
     'MobEffect::getById',
-    'SharedConstants::NetworkDefaultMaxConnections',
     'UpdateBlockPacket::UpdateBlockPacket',
     'PlayerListPacket::emplace',
 ] as const;
