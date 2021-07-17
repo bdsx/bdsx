@@ -337,24 +337,24 @@ export class InventorySource extends NativeClass {
     @nativeField(int32_t)
     flags:InventorySourceFlags;
 
-    static create(containerId:ContainerId):InventorySource {
+    static create(containerId:ContainerId, type:InventorySourceType = InventorySourceType.ContainerInventory):InventorySource {
         const source = new InventorySource(true);
-        source.type = InventorySourceType.ContainerInventory;
+        source.type = type;
         source.containerId = containerId;
         source.flags = InventorySourceFlags.NoFlag;
         return source;
     }
 }
 
-@nativeClass(0x121)
+@nativeClass()
 export class InventoryAction extends NativeClass {
     @nativeField(InventorySource)
     source:InventorySource;
-    @nativeField(uint32_t, 0xC)
+    @nativeField(uint32_t, 0x0C)
     slot:uint32_t;
-    @nativeField(ItemStack, 0x10)
+    @nativeField(ItemStack, 272)
     from:ItemStack;
-    @nativeField(ItemStack, 0x98)
+    @nativeField(ItemStack, 416)
     to:ItemStack;
 }
 

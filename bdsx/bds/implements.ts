@@ -31,6 +31,7 @@ import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
 import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
+import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 
 // avoiding circular dependency
@@ -197,6 +198,7 @@ Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemS
 Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
 Player.prototype.getCommandPermissionLevel = procHacker.js('Player::getCommandPermissionLevel', int32_t, {this:Actor});
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
+Player.prototype.getSkin = procHacker.js("Player::getSkin", SerializedSkin, {this:Player});
 Player.prototype.startCooldown = procHacker.js("Player::startCooldown", void_t, {this:Player}, Item);
 Player.prototype.setGameType = procHacker.js("ServerPlayer::setPlayerGameType", void_t, {this:Player}, int32_t);
 Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player}, float32_t, float32_t);

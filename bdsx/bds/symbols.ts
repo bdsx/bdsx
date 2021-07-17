@@ -248,6 +248,7 @@ const symbols = [
     'MobEffect::getById',
     'UpdateBlockPacket::UpdateBlockPacket',
     'PlayerListPacket::emplace',
+    'Player::getSkin',
 ] as const;
 
 // decorated symbols

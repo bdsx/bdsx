@@ -1,6 +1,8 @@
 import { procHacker } from "./bds/proc";
 import { bin } from "./bin";
-import { bin128_t, bin64_t, uint16_t, uint32_t } from "./nativetype";
+import { CxxVector } from "./cxxvector";
+import { NativeClass } from "./nativeclass";
+import { bin128_t, bin64_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
 import { Wrapper } from "./pointer";
 
 export namespace mce
@@ -33,6 +35,32 @@ export namespace mce
     }, 'UUID');
     export type UUID = string;
     export const UUIDWrapper = Wrapper.make(mce.UUID);
+
+    export class Blob extends NativeClass {
+        /** @deprecated Has to be confirmed working */
+        bytes:CxxVector<uint8_t>;
+        size:bin64_t;
+    }
+    export class Image extends NativeClass {
+        imageFormat:uint32_t;
+        width:uint32_t;
+        height:uint32_t;
+        usage:uint8_t;
+        blob:mce.Blob;
+    }
 }
 
 const generateUUID = procHacker.js("Crypto::Random::generateUUID", mce.UUIDWrapper, {structureReturn: true});
+
+mce.Blob.abstract({
+    bytes:CxxVector.make(uint8_t),
+    size:[bin64_t, 0x08],
+}, 0x10);
+
+mce.Image.abstract({
+    imageFormat:uint32_t,
+    width:uint32_t,
+    height:uint32_t,
+    usage:uint8_t,
+    blob:mce.Blob,
+}, 0x20);
