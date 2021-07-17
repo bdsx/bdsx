@@ -28,12 +28,12 @@ export class PlayStatusPacket extends Packet {
 
 @nativeClass(null)
 export class ServerToClientHandshakePacket extends Packet {
-    // unknown
+    // no data
 }
 
 @nativeClass(null)
 export class ClientToServerHandshakePacket extends Packet {
-    // unknown
+    // no data
 }
 
 @nativeClass(null)
@@ -50,12 +50,14 @@ export class ResourcePacksInfoPacket extends Packet {
 
 @nativeClass(null)
 export class ResourcePacksStackPacket extends Packet {
-    // unknown
+    @nativeField(bool_t)
+    forcedtoacceot:bool_t;
 }
 
 @nativeClass(null)
 export class ResourcePackClientResponsePacket extends Packet {
-    // unknown
+    @nativeField(bool_t)
+    forcedtoacceot:bool_t;
 }
 
 @nativeClass(null)
@@ -120,7 +122,7 @@ export class AddPlayerPacket extends Packet {
     @nativeField(CxxString)
     username:CxxString;
     @nativeField(int64_as_float_t)
-    eids:int64_as_float_t;
+    eids: int64_as_float_t;
     @nativeField(ActorRuntimeID)
     actorId: ActorRuntimeID; 
     @nativeField(CxxString)
@@ -147,7 +149,16 @@ export class AddPlayerPacket extends Packet {
     actorperms: int32_t;
     @nativeField(int32_t) 
     actorperms: int32_t;
-
+    @nativeField(int32_t) 
+    otherperms: int32_t;
+    @nativeField(int64_as_float_t)
+    id: int64_as_float_t;
+    @nativeField(Links)
+    links:Links;
+    @nativeField(CxxString)
+    deviceid:CxxString;	
+    @nativeField(int32_t) 
+    deviceos: int32_t;
 }
 
 @nativeClass(null)
