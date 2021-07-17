@@ -1,4 +1,4 @@
-import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
+import { asm, FloatRegister, Register } from "./assembler";
 import { StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 

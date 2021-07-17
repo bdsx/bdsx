@@ -5,7 +5,7 @@
 
 import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, float32_t, int32_t, uint32_t, void_t } from "../nativetype";
+import { bool_t, CxxString, float32_t, int32_t, uint32_t } from "../nativetype";
 import { HashedString } from "./hashedstring";
 
 export enum MobEffectIds {

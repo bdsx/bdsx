@@ -12,7 +12,6 @@ const interval = setInterval(()=>{
 
     const coloredName = name.replace(/./g, v=>rainbow[(i++)%rainbow.length]+v);
     serverInstance.setMotd(coloredName);
-    serverInstance.setMaxPlayers(rainbowOffset+5);
 }, 5000);
 
 // without this code, bdsx does not end even after BDS closed

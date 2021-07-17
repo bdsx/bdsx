@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, int8_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor } from "./actor";
 import { Player } from "./player";
 

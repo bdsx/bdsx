@@ -54,8 +54,11 @@ Tester.test({
         this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
-        this.equals(serverInstance.minecraft.getServerNetworkHandler().motd, 'Dedicated Server', 'unexpected motd');
-        this.equals(serverInstance.minecraft.getServerNetworkHandler().maxPlayers, 10, 'unexpected maxPlayers');
+        const shandle = serverInstance.minecraft.getServerNetworkHandler();
+        this.equals(shandle.motd, 'Dedicated Server', 'unexpected motd');
+
+        serverInstance.setMaxPlayers(10);
+        this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
     },
 
     async nexttick() {
