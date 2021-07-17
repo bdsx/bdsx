@@ -218,6 +218,7 @@ const symbols = [
     'Ability::setBool',
     'AdventureSettingsPacket::AdventureSettingsPacket',
     'TextPacket::createTranslated',
+    'Level::destroyBlock',
     'Level::getAdventureSettings',
     'Level::getScoreboard',
     'Level::getTagRegistry',
@@ -246,6 +247,8 @@ const symbols = [
     'InventoryTransactionItemGroup::getItemInstance',
     'MobEffect::getById',
     'SharedConstants::NetworkDefaultMaxConnections',
+    'UpdateBlockPacket::UpdateBlockPacket',
+    'PlayerListPacket::emplace',
 ] as const;
 
 // decorated symbols
@@ -278,6 +281,8 @@ const symbols2 = [
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVActor@@@Z',
     '?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z',
     '?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z',
+    '?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z',
+    '??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

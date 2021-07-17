@@ -1,4 +1,5 @@
 import { abstract } from "../common";
+import { nativeClass, NativeClass } from "../nativeclass";
 import { CxxString, float32_t, int32_t } from "../nativetype";
 import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID } from "./actor";
@@ -11,6 +12,10 @@ import type { Packet } from "./packet";
 export class Player extends Actor {
     abilities:Abilities;
     deviceId:string;
+
+    protected _setName(name:string):void {
+        abstract();
+    }
 
     changeDimension(dimensionId:number, respawn:boolean):void {
         abstract();
@@ -104,6 +109,13 @@ export class ServerPlayer extends Player {
     }
 
     sendTranslatedMessage(message:CxxString, params:string[] = []):void {
+        abstract();
+    }
+}
+
+@nativeClass(0x282)
+export class PlayerListEntry extends NativeClass {
+    static create(player:Player):PlayerListEntry {
         abstract();
     }
 }

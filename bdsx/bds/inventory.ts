@@ -1,7 +1,9 @@
 import { abstract } from "../common";
+import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, int16_t, int32_t, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, int16_t, int32_t, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { Block, BlockLegacy } from "./block";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
 
@@ -95,14 +97,32 @@ export class ComponentItem extends NativeClass {
 
 @nativeClass(0x89)
 export class ItemStack extends NativeClass {
-    @nativeField(uint8_t, 0x22)
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+    @nativeField(Item.ref())
+    item:Item;
+    @nativeField(CompoundTag.ref())
+    userData: CompoundTag;
+    @nativeField(Block.ref())
+    block:Block;
+    @nativeField(int16_t)
+    aux:int16_t;
+    @nativeField(uint8_t)
     amount:uint8_t;
-    @nativeField(uint16_t, 0x28)
-    pickupTime:uint16_t;
+    @nativeField(bool_t)
+    valid:bool_t;
+    @nativeField(bin64_t, 0x28)
+    pickupTime:bin64_t;
+    @nativeField(bool_t)
+    showPickup:bool_t;
+    @nativeField(CxxVector.make(BlockLegacy.ref()), 0x38)
+    canPlaceOn:CxxVector<BlockLegacy>;
+    @nativeField(CxxVector.make(BlockLegacy.ref()), 0x58)
+    canDestroy:CxxVector<BlockLegacy>;
     /**
-     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted
+     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
-    static create(itemName:string, amount:number = 1, data:number = 0): ItemStack {
+    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
         abstract();
     }
     protected _getItem():Item {
