@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int16_t, int32_t, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
 import { Block, BlockLegacy } from "./block";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
