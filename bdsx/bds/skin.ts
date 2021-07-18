@@ -50,7 +50,6 @@ export class SerializedSkin extends NativeClass {
     // pieceTintColors:CxxUnorderedMap<persona::PieceType,TintMapColor>;
     // @nativeField(mce.Color, 0x1E8)
     // skinColor:mce.Color;
-    /** false for 1, true for 2 */
     @nativeField(int8_t, 0x1F8)
     isTrustedSkin:TrustedSkinFlag;
 }
