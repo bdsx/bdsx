@@ -249,6 +249,7 @@ const symbols = [
     'UpdateBlockPacket::UpdateBlockPacket',
     'PlayerListPacket::emplace',
     'Player::getSkin',
+    "ItemActor::`vftable'",
 ] as const;
 
 // decorated symbols

@@ -239,6 +239,9 @@ export class Actor extends NativeClass {
     isPlayer():this is ServerPlayer {
         abstract();
     }
+    isItem():this is ItemActor {
+        abstract();
+    }
     getAttributes():BaseAttributeMap {
         abstract();
     }
@@ -386,4 +389,8 @@ export class Actor extends NativeClass {
     private static _singletoning(ptr:Actor|null):Actor|null {
         abstract();
     }
+}
+
+export class ItemActor extends Actor {
+    itemStack:ItemStack;
 }
