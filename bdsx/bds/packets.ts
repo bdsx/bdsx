@@ -117,26 +117,7 @@ export class StartGamePacket extends Packet {
 export class AddPlayerPacket extends Packet {
     // unknown
 }
-@nativeClass(0x40)
-export class AttributeData extends NativeClass {
-    @nativeField(float32_t)
-    current:number;
-    @nativeField(float32_t)
-    min:number;
-    @nativeField(float32_t)
-    max:number;
-    @nativeField(float32_t)
-    default:number;
-    @nativeField(HashedString)
-    name:HashedString;
 
-    [NativeType.ctor]():void {
-        this.min = 0;
-        this.max = 0;
-        this.current = 0;
-        this.default = 0;
-    }
-}
 @nativeClass(null)
 export class AddActorPacket extends Packet {
     // unknown
@@ -325,6 +306,27 @@ export namespace ActorEventPacket {
 @nativeClass(null)
 export class MobEffectPacket extends Packet {
     // unknown
+}
+
+@nativeClass(0x40)
+export class AttributeData extends NativeClass {
+    @nativeField(float32_t)
+    current:number;
+    @nativeField(float32_t)
+    min:number;
+    @nativeField(float32_t)
+    max:number;
+    @nativeField(float32_t)
+    default:number;
+    @nativeField(HashedString)
+    name:HashedString;
+
+    [NativeType.ctor]():void {
+        this.min = 0;
+        this.max = 0;
+        this.current = 0;
+        this.default = 0;
+    }
 }
 
 @nativeClass(null)
