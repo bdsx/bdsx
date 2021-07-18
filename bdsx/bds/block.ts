@@ -32,6 +32,12 @@ export class BlockLegacy extends NativeClass {
 
 export class Block extends NativeClass {
     blockLegacy: BlockLegacy;
+    /**
+     * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
+     */
+    static create(blockName:string, data:number = 0):Block|null {
+        abstract();
+    }
     protected _getName():HashedString {
         abstract();
     }
@@ -41,7 +47,13 @@ export class Block extends NativeClass {
 }
 
 export class BlockSource extends NativeClass {
+    protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number):boolean {
+        abstract();
+    }
     getBlock(blockPos:BlockPos):Block {
+        abstract();
+    }
+    setBlock(blockPos:BlockPos, block:Block):boolean {
         abstract();
     }
 }
