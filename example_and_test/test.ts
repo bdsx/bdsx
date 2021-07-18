@@ -46,14 +46,19 @@ Tester.test({
         this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
         this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(serverInstance.minecraft.commands.vftable.equals(proc["MinecraftCommands::`vftable'"]), 'commands is not MinecraftCommands');
-        this.assert(serverInstance.minecraft.commands.sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
 
         this.assert(networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
         this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
+
+        const shandle = serverInstance.minecraft.getServerNetworkHandler();
+        this.equals(shandle.motd, 'Dedicated Server', 'unexpected motd');
+
+        serverInstance.setMaxPlayers(10);
+        this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
     },
 
     async nexttick() {
@@ -306,7 +311,7 @@ Tester.test({
                 const level = ctx.origin.getLevel();
                 this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
                 const size = level.players.size();
-                this.assert(size === 0, 'origin.getLevel().players.size is not zero');
+                this.equals(size, 0, 'origin.getLevel().players.size is not zero');
                 this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
                 events.command.remove(cb);
             }
@@ -399,6 +404,10 @@ Tester.test({
     actor() {
         const system = server.registerSystem(0, 0);
         system.listenForEvent('minecraft:entity_created', ev => {
+            const level = serverInstance.minecraft.getLevel();
+            this.equals(level.players.size(), 1, 'Unexpected player size');
+            this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
+
             try {
                 const uniqueId = ev.data.entity.__unique_id__;
                 const actor = Actor.fromEntity(ev.data.entity);

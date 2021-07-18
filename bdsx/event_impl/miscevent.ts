@@ -35,5 +35,5 @@ events.serverOpen.on(()=>{
         _tickCallback();
         return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, event.isJoinableThroughServerScreen);
     }
-    serverInstance.minecraft.something.shandler.updateServerAnnouncement();
+    serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement();
 });

@@ -8,6 +8,7 @@
     "ignorePatterns": ["**/*.js"],
     "plugins": [
         "@typescript-eslint",
+        "unused-imports",
         "import"
     ],
     "extends": [
@@ -35,8 +36,9 @@
             "allowSingleExtends": true
           }
         ],
-        "prefer-arrow-callback": "error",
+        "unused-imports/no-unused-imports": "error",
         "import/no-cycle": "error",
+        "prefer-arrow-callback": "error",
         "eqeqeq": ["error", "always", {"null": "ignore"}],
         "no-throw-literal": "error",
         "semi": "error",

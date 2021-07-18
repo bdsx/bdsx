@@ -1,7 +1,7 @@
 import { OperationSize, Register } from "./assembler";
 import { chakraUtil, VoidPointer, VoidPointerConstructor } from "./core";
 import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
-import { NativeClass, NativeClassType } from "./nativeclass";
+import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 
 

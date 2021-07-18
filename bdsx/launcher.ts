@@ -179,14 +179,14 @@ function _launch(asyncResolve:()=>void):void {
         0x0F, 0x84, 0xFF, 0xFF, 0xFF, 0xFF, // je bedrock_server.7FF7345226F3
         0x48, 0x8B, 0x13,                   // mov rdx,qword ptr ds:[rbx]                                                                                                                                                                                                                                                                          | rdx:&"졧\\직\x7F", rbx:L"뛠펇ǳ"
         0x48, 0x8B, 0xCB,                   // mov rcx,rbx                                                                                                                                                                                                                                                                                         | rbx:L"뛠펇ǳ"
-        0xFF, 0x92, 0x78, 0x04, 0x00, 0x00, // call qword ptr ds:[rdx+478]
+        0xFF, 0x92, 0x88, 0x04, 0x00, 0x00, // call qword ptr ds:[rdx+488]
         0x48, 0x8B, 0xC8,                   // mov rcx,rax
-        0xE8, 0x27, 0x32, 0x19, 0x00,       // call <bedrock_server.public: class Experiments & __ptr64 __cdecl LevelData::getExperiments(void) __ptr64>
+        0xE8, 0xff, 0xff, 0xff, 0xff,       // call <bedrock_server.public: class Experiments & __ptr64 __cdecl LevelData::getExperiments(void) __ptr64>
         0x48, 0x8B, 0xC8,                   // mov rcx,rax
-        0xE8, 0xAF, 0x75, 0x26, 0x00,       // call <bedrock_server.public: bool __cdecl Experiments::Scripting(void)const __ptr64>
+        0xE8, 0xFF, 0xFF, 0xFF, 0xFF,       // call <bedrock_server.public: bool __cdecl Experiments::Scripting(void)const __ptr64>
         0x84, 0xC0,                         // test al,al
         0x0F, 0x84, 0x06, 0x01, 0x00, 0x00, //je bedrock_server.7FF7C1CE94EF
-    ], [1, 5, 9, 13, 16, 20, 28, 32]);
+    ], [1, 5, 9, 13, 16, 20, 29, 33, 37, 41]);
 
     patchForStdio();
 
@@ -421,6 +421,7 @@ export namespace bedrockServer
     /**
      * this handler has bugs on Linux+Wine
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     class DefaultStdInHandlerJs extends DefaultStdInHandler {
         private readonly rl = readline.createInterface({
             input: process.stdin,
