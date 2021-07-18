@@ -448,7 +448,7 @@ Block.abstract({
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.create = function(blockName:string, data:number = 0):Block|null {
     const itemStack = ItemStack.create(blockName, 1, data);
-    if (itemStack?.isBlock()) {
+    if (itemStack.isBlock()) {
         const block = itemStack.block;
         itemStack.destruct();
         return block;
