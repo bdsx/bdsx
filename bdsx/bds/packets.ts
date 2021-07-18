@@ -1,9 +1,10 @@
 import { CxxVector } from "../cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
+import { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction } from "./inventory";
 import { Packet } from "./packet";
@@ -116,7 +117,26 @@ export class StartGamePacket extends Packet {
 export class AddPlayerPacket extends Packet {
     // unknown
 }
+@nativeClass(0x40)
+export class AttributeData extends NativeClass {
+    @nativeField(float32_t)
+    current:number;
+    @nativeField(float32_t)
+    min:number;
+    @nativeField(float32_t)
+    max:number;
+    @nativeField(float32_t)
+    default:number;
+    @nativeField(HashedString)
+    name:HashedString;
 
+    [NativeType.ctor]():void {
+        this.min = 0;
+        this.max = 0;
+        this.current = 0;
+        this.default = 0;
+    }
+}
 @nativeClass(null)
 export class AddActorPacket extends Packet {
     // unknown
@@ -305,27 +325,6 @@ export namespace ActorEventPacket {
 @nativeClass(null)
 export class MobEffectPacket extends Packet {
     // unknown
-}
-
-@nativeClass(0x40)
-export class AttributeData extends NativeClass {
-    @nativeField(float32_t)
-    current:number;
-    @nativeField(float32_t)
-    min:number;
-    @nativeField(float32_t)
-    max:number;
-    @nativeField(float32_t)
-    default:number;
-    @nativeField(HashedString)
-    name:HashedString;
-
-    [NativeType.ctor]():void {
-        this.min = 0;
-        this.max = 0;
-        this.current = 0;
-        this.default = 0;
-    }
 }
 
 @nativeClass(null)
@@ -1085,7 +1084,14 @@ export class ScriptCustomEventPacket extends Packet {
 
 @nativeClass(null)
 export class SpawnParticleEffect extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    DimensionID:uint8_t;
+    @nativeField(int64_as_float_t)
+    EntityID:int64_as_float_t;
+    @nativeField(Vec3)
+    Position: Vec3;
+    @nativeField(CxxString)
+    ParticleName:CxxString;
 }
 
 @nativeClass(null)
