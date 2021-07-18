@@ -4,7 +4,6 @@ import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
-import { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction } from "./inventory";
 import { Packet } from "./packet";
