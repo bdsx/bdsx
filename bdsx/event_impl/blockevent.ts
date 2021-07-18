@@ -8,6 +8,7 @@ import { CANCEL } from "../common";
 import { NativePointer } from "../core";
 import { events } from "../event";
 import { bool_t, int32_t, void_t } from "../nativetype";
+import { _tickCallback } from "../util";
 
 interface IBlockDestroyEvent {
     player: Player;
@@ -39,7 +40,9 @@ export class BlockPlaceEvent implements IBlockPlaceEvent {
 
 function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, facing:number):boolean {
     const event = new BlockDestroyEvent(survivalMode.actor as Player, blockPos);
-    if (events.blockDestroy.fire(event) === CANCEL) {
+    const canceled = events.blockDestroy.fire(event) === CANCEL;
+    _tickCallback();
+    if (canceled) {
         return false;
     } else {
         survivalMode.actor = event.player;
@@ -48,7 +51,9 @@ function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, facing:num
 }
 function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, facing:number):boolean {
     const event = new BlockDestroyEvent(gameMode.actor as Player, blockPos);
-    if (events.blockDestroy.fire(event) === CANCEL) {
+    const canceled = events.blockDestroy.fire(event) === CANCEL;
+    _tickCallback();
+    if (canceled) {
         return false;
     } else {
         gameMode.actor = event.player;
@@ -60,7 +65,9 @@ const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBl
 
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, facing:number, actor:Actor, ignoreEntities:boolean):boolean {
     const event = new BlockPlaceEvent(actor as Player, block, blockSource, blockPos);
-    if (events.blockPlace.fire(event) === CANCEL) {
+    const canceled = events.blockPlace.fire(event) === CANCEL;
+    _tickCallback();
+    if (canceled) {
         return false;
     } else {
         return _onBlockPlace(event.blockSource, event.block, event.blockPos, facing, event.player, ignoreEntities);
@@ -88,6 +95,7 @@ export class PistonMoveEvent implements IPistonMoveEvent {
 function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):void_t {
     const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
     events.pistonMove.fire(event);
+    _tickCallback();
     return _onPistonMove(pistonBlockActor, event.blockSource);
 }
 const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);

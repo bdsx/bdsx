@@ -16,6 +16,7 @@
     "plugin-manager": "ts-node ./bdsx/pluginmgr"
   },
   "dependencies": {
+    "@bdsx/test": "file:test",
     "bdsx": "file:bdsx",
     "blessed": "^0.1.81",
     "colors": "^1.4.0",

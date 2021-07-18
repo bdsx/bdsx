@@ -1,6 +1,6 @@
 import { procHacker } from "./bds/proc";
 import { abstract } from "./common";
-import { NativePointer, VoidPointer } from "./core";
+import { chakraUtil, NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
@@ -330,24 +330,24 @@ function getVectorName(type:Type<any>):string {
 
 CxxVector._alloc16 = procHacker.js("std::_Allocate<16,std::_Default_allocate_traits,0>", NativePointer, null, int64_as_float_t);
 
-
-class CxxVectorToArray<T> extends NativeType<T[]> {
+export class CxxVectorToArray<T> extends NativeType<T[]> {
     public readonly type:CxxVectorType<T>;
     public [makefunc.pointerReturn]:boolean;
 
     private constructor(public readonly compType:Type<T>) {
-        super(getVectorName(compType), VECTOR_SIZE, 8, v=>v instanceof Array,
+        super(getVectorName(compType), VECTOR_SIZE, 8,
+            v=>v instanceof Array,
+            undefined,
             (ptr, offset)=>ptr.addAs(this.type, offset, offset! >> 31).toArray(),
             (ptr, v, offset)=>ptr.addAs(this.type, offset, offset! >> 31).setFromArray(v),
-            (asm, target, source, info)=>{
-                // TODO: implement
-                throw Error(`not implemented`);
+            stackptr=>stackptr.getPointerAs(this.type).toArray(),
+            (stackptr, param)=>{
+                const buf = new this.type(true);
+                buf.construct();
+                buf.setFromArray(param);
+                makefunc.temporalDtors.push(()=>buf.destruct());
+                stackptr.setPointer(buf);
             },
-            (asm, target, source, info)=>{
-                // TODO: implement
-                throw Error(`not implemented`);
-            },
-            (asm, target, source)=>asm.qmov_t_t(target, source),
             ptr=>dll.vcruntime140.memset(ptr, 0, VECTOR_SIZE),
             ptr=>dll.ucrtbase.free(ptr),
             (to, from)=>to.as(this.type)[NativeType.ctor_copy](from.as(this.type)),
