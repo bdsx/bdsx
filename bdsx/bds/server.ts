@@ -1,3 +1,4 @@
+import { createAbstractObject } from "../abstractobject";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
@@ -129,5 +130,5 @@ export class ServerInstance extends NativeClass {
     }
 }
 
-export let serverInstance:ServerInstance;
-
+// eslint-disable-next-line prefer-const
+export let serverInstance:ServerInstance = createAbstractObject('bedrock_server is not launched yet');
