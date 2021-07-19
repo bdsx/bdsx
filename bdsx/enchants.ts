@@ -1,5 +1,6 @@
-import { ItemStack } from "bdsx/bds/inventory";
-import { abstract } from "bdsx/common";
+import { ItemStack } from "./bds/inventory";
+import { abstract } from "./common";
+
 
 export enum enchantment {
     protection = 0,
