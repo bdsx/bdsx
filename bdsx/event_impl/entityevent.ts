@@ -1,4 +1,4 @@
-import { Actor, ActorDamageSource } from "../bds/actor";
+import { Actor, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { ScriptCustomEventPacket } from "../bds/packets";
@@ -174,14 +174,12 @@ export class PlayerJoinEvent implements IPlayerJoinEvent {
 
 interface IPlayerPickupItemEvent {
     player: Player;
-    itemActor: Actor;
-    //itemStack: ItemStack;
+    itemActor: ItemActor;
 }
 export class PlayerPickupItemEvent implements IPlayerPickupItemEvent {
     constructor(
         public player: Player,
-        public itemActor: Actor,
-        //public itemStack: ItemStack, // should be from 0x688 at ItemActor but unexpected undefined value
+        public itemActor: ItemActor,
     ) {
     }
 }
@@ -367,7 +365,7 @@ events.packetAfter(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =
     _tickCallback();
 });
 
-function onPlayerPickupItem(player:Player, itemActor:Actor, orgCount:number, favoredSlot:number):boolean {
+function onPlayerPickupItem(player:Player, itemActor:ItemActor, orgCount:number, favoredSlot:number):boolean {
     const event = new PlayerPickupItemEvent(player, itemActor);
     const canceled = events.playerPickupItem.fire(event) === CANCEL;
     _tickCallback();
@@ -376,4 +374,4 @@ function onPlayerPickupItem(player:Player, itemActor:Actor, orgCount:number, fav
     }
     return _onPlayerPickupItem(event.player, itemActor, orgCount, favoredSlot);
 }
-const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, Actor, int32_t, int32_t)(onPlayerPickupItem);
+const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, ItemActor, int32_t, int32_t)(onPlayerPickupItem);

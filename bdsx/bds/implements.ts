@@ -10,7 +10,7 @@ import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, ui
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorRuntimeID, ActorUniqueID, DimensionId } from "./actor";
+import { Actor, ActorRuntimeID, ActorUniqueID, DimensionId, ItemActor } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -60,8 +60,12 @@ ServerLevel.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::se
 // actor.ts
 const actorMaps = new Map<string, Actor>();
 const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
+const ItemActor_vftable = proc["ItemActor::`vftable'"];
 Actor.prototype.isPlayer = function() {
     return this.vftable.equals(ServerPlayer_vftable);
+};
+Actor.prototype.isItem = function() {
+    return this.vftable.equals(ItemActor_vftable);
 };
 (Actor as any)._singletoning = function(ptr:StaticPointer|null):Actor|null {
     if (ptr === null) return null;
@@ -70,6 +74,8 @@ Actor.prototype.isPlayer = function() {
     if (actor) return actor;
     if (ptr.getPointer().equals(ServerPlayer_vftable)) {
         actor = ptr.as(ServerPlayer);
+    } else if (ptr.getPointer().equals(ItemActor_vftable)) {
+        actor = ptr.as(ItemActor);
     } else {
         actor = ptr.as(Actor);
     }
@@ -121,6 +127,10 @@ Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectI
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
 (Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
+
+ItemActor.abstract({
+    itemStack: [ItemStack, 1824],
+});
 
 const attribNames = [
     "minecraft:zombie.spawn.reinforcements",
