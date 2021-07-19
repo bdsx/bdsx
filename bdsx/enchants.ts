@@ -45,12 +45,12 @@ export enum enchantment {
 export class enchantUtils {
     static applyEnchant(itemstack:ItemStack, enchant:enchantment, level:number, isUnsafe:boolean):boolean{
         abstract();
-    };
+    }
     static getEnchantLevel(enchant:enchantment, itemstack:ItemStack):number{
         abstract();
-    };
+    }
     static hasEnchant(enchant:enchantment, itemstack:ItemStack):boolean{
         abstract();
-    };
+    }
 
 }
