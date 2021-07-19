@@ -1,6 +1,6 @@
 import { CxxVector } from "../cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
