@@ -22,6 +22,7 @@ import { dll } from "bdsx/dll";
 import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
+import { makefunc } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
@@ -55,7 +56,8 @@ Tester.test({
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
         const shandle = serverInstance.minecraft.getServerNetworkHandler();
-        this.equals(shandle.motd, 'Dedicated Server', 'unexpected motd');
+        shandle.setMotd('TestMotd');
+        this.equals(shandle.motd, 'TestMotd', 'unexpected motd');
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
@@ -251,6 +253,12 @@ Tester.test({
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
         const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer);
         this.equals(nullreturn(), null, 'nullreturn does not return null');
+
+        const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        this.equals(overTheFour(0, 0, 0, 0, 1234), 1234, 'makefunc.js, overTheFour failed');
+        const overTheFiveNative = makefunc.np(overTheFour, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        this.equals(overTheFiveRewrap(0, 0, 0, 0, 1234), 1234, 'makefunc.np, overTheFour failed');
     },
 
     vectorcopy() {

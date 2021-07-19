@@ -1,5 +1,4 @@
-import { OperationSize, Register } from "./assembler";
-import { chakraUtil, VoidPointer, VoidPointerConstructor } from "./core";
+import { VoidPointer, VoidPointerConstructor } from "./core";
 import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
@@ -115,8 +114,8 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
                 ptr.setPointer(nativeproc, offset);
                 return nativeproc;
             },
-            stackptr=>getJs(stackptr.getPointer()),
-            (stackptr, param)=>stackptr.setPointer(getNp(param)));
+            (stackptr, offset)=>getJs(stackptr.getPointer(offset)),
+            (stackptr, param, offset)=>stackptr.setPointer(getNp(param), offset));
     }
 }
 

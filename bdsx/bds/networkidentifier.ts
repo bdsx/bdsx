@@ -139,8 +139,8 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
         return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
     }
-    static [makefunc.getFromParam](ptr:StaticPointer):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier));
+    static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
+        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
     }
 
     static all():IterableIterator<NetworkIdentifier> {

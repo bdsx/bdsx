@@ -1,6 +1,5 @@
-import { Register } from "./assembler";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
-import { chakraUtil, NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
+import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
@@ -608,7 +607,7 @@ function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     return new NativeType<T>(type.name+'*', 8, 8,
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
-        (stackptr, offset)=>stackptr.getNullablePointerAs(clazz, offset)!,
+        (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),
         (stackptr, v, offset)=>stackptr.setPointer(v, offset)
     );
 }

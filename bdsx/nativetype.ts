@@ -165,11 +165,11 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         /**
          * assembly for casting the native value to the js value
          */
-        getFromParam:(stackptr:StaticPointer)=>T|null = get,
+        getFromParam:(stackptr:StaticPointer, offset?:number)=>T|null = get,
         /**
          * assembly for casting the js value to the native value
          */
-        setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T)=>void = set as any,
+        setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number)=>void = set as any,
         /**
          * constructor
          */
@@ -286,10 +286,10 @@ function makeReference<T>(type:NativeType<T>):NativeType<T> {
         8, 8,
         type.isTypeOf,
         type.isTypeOfWeak,
-        (ptr)=>type[NativeType.getter](ptr.getPointer()),
-        (ptr, v)=>type[NativeType.setter](ptr.getPointer(), v),
+        (ptr, offset)=>type[NativeType.getter](ptr.getPointer(offset)),
+        (ptr, v, offset)=>type[NativeType.setter](ptr.getPointer(), v, offset),
         undefined, // same with getter
-        (stackptr, param)=>stackptr.setPointer(makefunc.tempValue(type, param)),
+        (stackptr, param, offset)=>stackptr.setPointer(makefunc.tempValue(type, param), offset),
     );
 }
 
@@ -322,8 +322,8 @@ function isNumber(v:unknown):v is number {
     return typeof v === 'number';
 }
 
-function int32To64(ptr:StaticPointer, v:unknown):void {
-    ptr.setInt32To64WithZero(v as any);
+function int32To64(ptr:StaticPointer, v:unknown, offset?:number):void {
+    ptr.setInt32To64WithZero(v as any, offset);
 }
 
 export const void_t = new NativeType<void>(
@@ -490,7 +490,7 @@ export const float32_t = new NativeType<number>(
     (ptr, offset)=>ptr.getFloat32(offset),
     (ptr, v, offset)=>ptr.setFloat32(v, offset),
     undefined,
-    (stackptr, param)=>stackptr.setFloat32To64WithZero(param));
+    (stackptr, param, offset)=>stackptr.setFloat32To64WithZero(param, offset));
 export type float32_t = number;
 float32_t[makefunc.useXmmRegister] = true;
 Object.freeze(float32_t);
@@ -515,16 +515,16 @@ export const CxxString = new NativeType<string>(
     undefined,
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
-    stackptr=>{
-        const ptr = stackptr.getPointer();
+    (stackptr, offset)=>{
+        const ptr = stackptr.getPointer(offset);
         return ptr.getCxxString();
     },
-    (stackptr, param)=>{
+    (stackptr, param, offset)=>{
         const buf = new AllocatedPointer(0x20);
         string_ctor(buf);
         buf.setCxxString(param);
         makefunc.temporalDtors.push(()=>string_dtor(buf));
-        stackptr.setPointer(buf);
+        stackptr.setPointer(buf, offset);
     },
     string_ctor,
     string_dtor,
@@ -558,9 +558,8 @@ export const bin128_t = new NativeType<string>(
     16, 8,
     v=>typeof v === 'string' && v.length === 8,
     undefined,
-    (ptr)=>ptr.getBin(8),
-    (ptr, v)=>ptr.setBin(v),
-    ()=>{ throw Error('bin128_t does not support the function type'); },
+    (ptr, offset)=>ptr.getBin(8, offset),
+    (ptr, v, offset)=>ptr.setBin(v, offset),
     ()=>{ throw Error('bin128_t does not support the function type'); },
     ()=>{ throw Error('bin128_t does not support the function type'); }
 ).extends({

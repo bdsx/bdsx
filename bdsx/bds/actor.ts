@@ -380,8 +380,8 @@ export class Actor extends NativeClass {
     static [NativeType.getter](ptr:StaticPointer, offset?:number):Actor {
         return Actor._singletoning(ptr.add(offset, offset! >> 31))!;
     }
-    static [makefunc.getFromParam](stackptr:StaticPointer):Actor|null {
-        return Actor._singletoning(stackptr.getNullablePointer());
+    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):Actor|null {
+        return Actor._singletoning(stackptr.getNullablePointer(offset));
     }
     static all():IterableIterator<Actor> {
         abstract();

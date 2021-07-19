@@ -75,6 +75,12 @@ endp
 export def raxValue:qword
 export def xmm0Value:qword
 
+export proc breakBeforeCallNativeFunction
+    int3
+    jmp callNativeFunction
+    unwind
+endp
+
 export proc callNativeFunction ;JsValueRef(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState)
     ; prologue
     keep rbp
@@ -496,12 +502,12 @@ export proc packetSendAllHook
     mov rdx,rbx
     mov rcx,r14
     call onPacketSend
+    unwind
 
     ; original code
     mov rax, [r15]
     lea rdx, [r14+220h]
     mov rcx, r15
-    unwind
     jmp qword ptr[rax+18h]
 endp
 

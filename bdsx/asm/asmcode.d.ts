@@ -41,6 +41,7 @@ export namespace asmcode {
     export const addressof_raxValue:NativePointer;
     export let xmm0Value:VoidPointer;
     export const addressof_xmm0Value:NativePointer;
+    export const breakBeforeCallNativeFunction:NativePointer;
     export const callNativeFunction:NativePointer;
     export const callJsFunction:NativePointer;
     export let jshook_fireError:VoidPointer;

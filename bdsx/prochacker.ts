@@ -7,8 +7,6 @@ import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, 
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
-import { asmcode } from "./asm/asmcode";
-import { capi } from "./capi";
 
 const FREE_REGS:Register[] = [
     Register.rax,
@@ -231,7 +229,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[]):void {
         const origin = this.map[key];
-        if (!origin) throw Error(`Symbol ${String(key)} not found`);
+        if (origin == null) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
@@ -258,9 +256,9 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         ...params: PARAMS):
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
         return callback=>{
-            if (opts == null) opts = {} as any;
             const original = this.hookingRaw(key, original=>{
-                opts!.onError = original;
+                const nopts:MakeFuncOptions<any> = opts || {};
+                nopts.onError = original;
                 return makefunc.np(callback, returnType, opts, ...params);
             });
             return makefunc.js(original, returnType, opts, ...params);
@@ -279,7 +277,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     patching(subject:string, key:keyof T, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
         let ptr:NativePointer = this.map[key];
-        if (!ptr) {
+        if (ptr == null) {
             console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }
@@ -307,7 +305,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     jumping(subject:string, key:keyof T, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void {
         let ptr:NativePointer = this.map[key];
-        if (!ptr) {
+        if (ptr == null) {
             console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }

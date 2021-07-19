@@ -27,12 +27,12 @@ asm.getFunctionName = function(address:VoidPointer):string|null {
     if (looked === null) return null;
     const rva = looked[1];
     if (rva == null) return null;
-    return nativeFunctionNames.get((looked[0].add(rva)).toString(16)) || null;
+    return nativeFunctionNames.get((looked[0].add(rva)).getAddressBin()) || null;
 };
 asm.setFunctionNames = function(base:VoidPointer, labels:Record<string, number>):void {
     for (const name in labels) {
         const address = labels[name];
-        nativeFunctionNames.set(base.add(address).toString(16), name);
+        nativeFunctionNames.set(base.add(address).getAddressBin(), name);
     }
 };
 

@@ -1,6 +1,6 @@
 import { procHacker } from "./bds/proc";
 import { abstract } from "./common";
-import { chakraUtil, NativePointer, VoidPointer } from "./core";
+import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
@@ -341,12 +341,12 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
             (ptr, offset)=>ptr.addAs(this.type, offset, offset! >> 31).toArray(),
             (ptr, v, offset)=>ptr.addAs(this.type, offset, offset! >> 31).setFromArray(v),
             stackptr=>stackptr.getPointerAs(this.type).toArray(),
-            (stackptr, param)=>{
+            (stackptr, param, offset)=>{
                 const buf = new this.type(true);
                 buf.construct();
                 buf.setFromArray(param);
                 makefunc.temporalDtors.push(()=>buf.destruct());
-                stackptr.setPointer(buf);
+                stackptr.setPointer(buf, offset);
             },
             ptr=>dll.vcruntime140.memset(ptr, 0, VECTOR_SIZE),
             ptr=>dll.ucrtbase.free(ptr),

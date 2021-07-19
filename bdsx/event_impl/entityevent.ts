@@ -7,6 +7,7 @@ import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { events } from "../event";
+import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { _tickCallback } from "../util";
 
@@ -257,7 +258,8 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
 const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
 
 function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, attributeBuffInfo:VoidPointer):boolean {
-    const event = new EntityHeathChangeEvent(attributeDelegate.getPointerAs(Actor, 0x20), oldHealth, newHealth);
+    const actor = Actor[makefunc.getFromParam](attributeDelegate, 0x20);
+    const event = new EntityHeathChangeEvent(actor!, oldHealth, newHealth);
     events.entityHealthChange.fire(event);
     attributeDelegate.setPointer(event.entity, 0x20);
     _tickCallback();

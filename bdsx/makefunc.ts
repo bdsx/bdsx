@@ -12,6 +12,7 @@ export type ParamType = makefunc.Paramable;
 const functionMap = new AllocatedPointer(0x100);
 chakraUtil.JsAddRef(functionMap);
 const callNativeFunction:<T>(stackSize:number, writer:(stackptr:NativePointer, param:T)=>void, nativefunc:VoidPointer, param:T)=>NativePointer = chakraUtil.JsCreateFunction(asmcode.callNativeFunction, null);
+const breakBeforeCallNativeFunction:<T>(stackSize:number, writer:(stackptr:NativePointer, param:T)=>void, nativefunc:VoidPointer, param:T)=>NativePointer = chakraUtil.JsCreateFunction(asmcode.breakBeforeCallNativeFunction, null);
 const callJsFunction = asmcode.callJsFunction;
 
 function initFunctionMap():void {
@@ -91,6 +92,10 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * if this is defined, it allocates at the second parameter.
      */
     structureReturn?:boolean;
+    /**
+     * Option for native debugging
+     */
+    nativeDebugBreak?:boolean;
 
     /**
      * for makefunc.np
@@ -144,8 +149,8 @@ export namespace makefunc {
         name:string;
         [getter](ptr:StaticPointer, offset?:number):any;
         [setter](ptr:StaticPointer, value:any, offset?:number):void;
-        [getFromParam](stackptr:StaticPointer):any;
-        [setToParam](stackptr:StaticPointer, param:any):void;
+        [getFromParam](stackptr:StaticPointer, offset?:number):any;
+        [setToParam](stackptr:StaticPointer, param:any, offset?:number):void;
         [useXmmRegister]:boolean;
         [ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
         [size]:number;
@@ -168,8 +173,8 @@ export namespace makefunc {
     }
     export interface ParamableT<T> extends Paramable {
         prototype:T;
-        [getFromParam](stackptr:StaticPointer):T|null;
-        [setToParam](stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T):void;
+        [getFromParam](stackptr:StaticPointer, offset?:number):T|null;
+        [setToParam](stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number):void;
         [useXmmRegister]:boolean;
         isTypeOf(v:unknown):v is T;
         isTypeOfWeak(v:unknown):v is T;
@@ -177,8 +182,8 @@ export namespace makefunc {
     export class ParamableT<T> {
         constructor(
             public readonly name:string,
-            _getFromParam:(stackptr:StaticPointer)=>T|null,
-            _setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T)=>void,
+            _getFromParam:(stackptr:StaticPointer, offset?:number)=>T|null,
+            _setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number)=>void,
             _ctor_move:(to:StaticPointer, from:StaticPointer)=>void,
             isTypeOf:(v:unknown)=>boolean,
             isTypeOfWeak:(v:unknown)=>boolean = isTypeOf) {
@@ -227,6 +232,7 @@ export namespace makefunc {
         .mov_r_c(Register.r10, chakraUtil.asJsValueRef(func))
         .mov_r_c(Register.r11, onError)
         .jmp64(callJsFunction, Register.rax)
+        .unwind()
         .alloc('makefunc.npRaw');
     }
 
@@ -251,7 +257,7 @@ export namespace makefunc {
         if (options.structureReturn) {
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
                 paramsTypeResolved.unshift(returnTypeResolved);
-                call2 = function(thisVar, args) {
+                call2 = function _(thisVar, args) {
                     const returned = args.shift();
                     const res = jsfunction.apply(thisVar, args);
                     returnTypeResolved[ctor_move](returned, res);
@@ -259,7 +265,7 @@ export namespace makefunc {
                 };
             } else {
                 paramsTypeResolved.unshift(StaticPointer);
-                call2 = function(thisVar, args) {
+                call2 = function _(thisVar, args) {
                     const returned = args.shift();
                     const res = jsfunction.apply(thisVar, args);
                     returnTypeResolved[ctor_move](returned, res);
@@ -267,7 +273,7 @@ export namespace makefunc {
                 };
             }
         } else {
-            call2 = function(thisVar, args) {
+            call2 = function _(thisVar, args) {
                 const res = jsfunction.apply(thisVar, args);
                 returnTypeResolved[setToParam](result, res);
             };
@@ -276,39 +282,34 @@ export namespace makefunc {
             paramsTypeResolved.unshift(options.this);
         }
 
-        return npRaw(stackptr=>{
+        function _(stackptr:NativePointer):void{
             const keepIdx = temporalKeeper.length;
             const dtorIdx = temporalDtors.length;
 
-            let n = paramsTypeResolved.length;
+            const n = paramsTypeResolved.length;
             const args:any[] = new Array(n);
             let offset = 0;
             const regn = Math.min(4, n);
+             // args fake space for registers
             for (let i=0;i<regn;i++) {
                 const type = paramsTypeResolved[i];
                 if (type[useXmmRegister]) {
                     offset += 0x20;
-                    stackptr.move(offset, offset>>31);
-                    args[i] = type[getFromParam](stackptr);
-                    offset = -0x18;
+                    args[i] = type[getFromParam](stackptr, offset);
+                    offset -= 0x18;
                 } else {
-                    stackptr.move(offset, offset>>31);
-                    args[i] = type[getFromParam](stackptr);
-                    offset = 8;
+                    args[i] = type[getFromParam](stackptr, offset);
+                    offset += 8;
                 }
             }
             if (n > 4) {
-                n--;
-                offset += 0x90;
-                stackptr.move(offset);
-                let i=4;
-                for (;i<n;i++) {
+                // args memory space
+                offset += 0x58;
+                for (let i=4;i<n;i++) {
                     const type = paramsTypeResolved[i];
-                    args[i] = type[getFromParam](stackptr);
-                    stackptr.move(8);
+                    args[i] = type[getFromParam](stackptr, offset);
+                    offset += 8;
                 }
-                const type = paramsTypeResolved[i];
-                args[i] = type[getFromParam](stackptr);
             }
 
             const thisVar = options.this != null ? args.shift() : null;
@@ -319,7 +320,8 @@ export namespace makefunc {
             }
             temporalDtors.length = dtorIdx;
             temporalKeeper.length = keepIdx;
-        }, options.onError || asmcode.jsend_crash);
+        }
+        return npRaw(_, options.onError || asmcode.jsend_crash);
     }
 
     /**
@@ -340,7 +342,7 @@ export namespace makefunc {
         const paramsTypeResolved = params.map(remapType);
         let paramOffset = 1;
 
-
+        const call3 = options.nativeDebugBreak ? breakBeforeCallNativeFunction : callNativeFunction;
         let call2:(func:VoidPointer, thisVar:any, args:any[])=>any;
 
         if (options.structureReturn) {
@@ -351,7 +353,7 @@ export namespace makefunc {
                     const res = new returnTypeResolved(true);
                     args.unshift(res);
                     if (options.this != null) args.unshift(thisVar);
-                    callNativeFunction(stackSize, stackWriter, func, args);
+                    call3(stackSize, stackWriter, func, args);
                     return res;
                 };
             } else {
@@ -360,7 +362,7 @@ export namespace makefunc {
                     const res = new AllocatedPointer(returnTypeResolved[makefunc.size]);
                     args.unshift(res);
                     if (options.this != null) args.unshift(thisVar);
-                    callNativeFunction(stackSize, stackWriter, func, args);
+                    call3(stackSize, stackWriter, func, args);
                     return returnTypeResolved[getter](res);
                 };
             }
@@ -368,7 +370,7 @@ export namespace makefunc {
             paramOffset --;
             call2 = function _(func, thisVar, args) {
                 if (options.this != null) args.unshift(thisVar);
-                callNativeFunction(stackSize, stackWriter, func, args);
+                call3(stackSize, stackWriter, func, args);
                 return returnTypeResolved[getFromParam](result);
             };
         }
@@ -389,12 +391,13 @@ export namespace makefunc {
 
         const stackWriter = function _(stackptr:NativePointer, args:any[]):void {
             const n = paramsTypeResolved.length;
+            let offset = 0;
             for (let i=0;i<n;i++) {
                 const type = paramsTypeResolved[i];
                 const value = args[i];
                 if (!type.isTypeOfWeak(value)) throw TypeError(`unexpected parameter type (parameter ${i+paramOffset}, expected=${type.name}, actual=${value != null ? value.constructor.name : value})`);
-                type[setToParam](stackptr, value);
-                stackptr.move(8);
+                type[setToParam](stackptr, value, offset);
+                offset += 8;
             }
         };
 
@@ -436,15 +439,15 @@ export namespace makefunc {
 
     export const Ansi = new ParamableT<string>(
         'Ansi',
-        stackptr=>stackptr.getPointer().getString(undefined, 0, Encoding.Ansi),
-        (stackptr, param)=>{
+        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Ansi),
+        (stackptr, param, offset)=>{
             if (param === null) {
-                stackptr.setPointer(null);
+                stackptr.setPointer(null, offset);
             } else {
                 const buf = tempAlloc(param.length*2+1);
                 const len = buf.setString(param, 0, Encoding.Ansi);
                 buf.setUint8(len, 0);
-                stackptr.setPointer(buf);
+                stackptr.setPointer(buf, offset);
             }
         },
         abstract,
@@ -453,28 +456,28 @@ export namespace makefunc {
 
     export const Utf8 = new ParamableT<string>(
         'Utf8',
-        stackptr=>stackptr.getPointer().getString(undefined, 0, Encoding.Utf8),
-        (stackptr, param)=>stackptr.setPointer(param === null ? null : tempString(param)),
+        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf8),
+        (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param), offset),
         abstract,
         v=>v === null || typeof v === 'string'
     );
 
     export const Utf16 = new ParamableT<string>(
         'Utf16',
-        stackptr=>stackptr.getPointer().getString(undefined, 0, Encoding.Utf16),
-        (stackptr, param)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Utf16)),
+        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf16),
+        (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Utf16), offset),
         abstract,
         v=>v === null || typeof v === 'string'
     );
 
     export const Buffer = new ParamableT<VoidPointer|Bufferable>(
         'Buffer',
-        stackptr=>stackptr.getPointer(),
-        (stackptr, param)=>{
+        (stackptr, offset)=>stackptr.getPointer(offset),
+        (stackptr, param, offset)=>{
             if (param !== null && !(param instanceof VoidPointer)) {
                 param = VoidPointer.fromAddressBuffer(param);
             }
-            stackptr.setPointer(param);
+            stackptr.setPointer(param, offset);
         },
         abstract,
         v=>{
@@ -494,8 +497,8 @@ export namespace makefunc {
 
     export const JsValueRef = new ParamableT<any>(
         'JsValueRef',
-        stackptr=>stackptr.getJsValueRef(),
-        (stackptr, param)=>stackptr.setJsValueRef(param),
+        (stackptr, offset)=>stackptr.getJsValueRef(offset),
+        (stackptr, param, offset)=>stackptr.setJsValueRef(param, offset),
         abstract,
         ()=>true
     );
@@ -550,11 +553,11 @@ VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?
 VoidPointer[makefunc.setter] = function<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:VoidPointer, offset?:number):void{
     ptr.setPointer(value, offset);
 };
-VoidPointer[makefunc.setToParam] = function(stackptr:StaticPointer, param:VoidPointer):void {
-    stackptr.setPointer(param);
+VoidPointer[makefunc.setToParam] = function(stackptr:StaticPointer, param:VoidPointer, offset?:number):void {
+    stackptr.setPointer(param, offset);
 };
-VoidPointer[makefunc.getFromParam] = function(stackptr:StaticPointer):VoidPointer|null {
-    return stackptr.getNullablePointerAs(this);
+VoidPointer[makefunc.getFromParam] = function(stackptr:StaticPointer, offset?:number):VoidPointer|null {
+    return stackptr.getNullablePointerAs(this, offset);
 };
 makefunc.ParamableT.prototype[makefunc.useXmmRegister] = false;
 VoidPointer[makefunc.useXmmRegister] = false;

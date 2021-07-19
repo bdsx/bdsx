@@ -146,6 +146,21 @@ const COMMENT_REGEXP = /[;#]/;
 export type Value64 = number|string|Value64Castable;
 export type AsmMultiplyConstant = 1|2|4|8;
 
+function isZero(value:Value64):boolean {
+    switch (typeof value) {
+    case 'string':
+        return bin.isZero(value);
+    case 'object': {
+        const v = value[asm.splitTwo32Bits]();
+        return v[0] === 0 && v[1] === 0;
+    }
+    case 'number':
+        return value === 0;
+    default:
+        throw Error(`invalid constant value: ${value}`);
+    }
+}
+
 function split64bits(value:Value64):[number, number] {
     switch (typeof value) {
     case 'string':
@@ -1090,6 +1105,7 @@ export class X64Assembler {
      * call tmpreg;
      */
     call64(value:Value64, tempRegister:Register):this {
+        if (isZero(value)) throw Error(`Invalid jmp destination: ${value}`);
         this.mov_r_c(tempRegister, value);
         this.call_r(tempRegister);
         return this;
@@ -1101,11 +1117,12 @@ export class X64Assembler {
         keepFloatRegister:FloatRegister[]):this {
 
         const fullsize = keepRegister.length * 8 + keepFloatRegister.length * 0x10;
-        this.stack_c(((0x20 + fullsize -8 +7) & ~0xf) + 8);
+        const stackSize = ((0x20 + fullsize -8 + 0xf) & ~0xf) + 8;
+        this.stack_c(stackSize);
 
         let offset = 0x20;
-        for (let i=0;i<keepFloatRegister.length;i++) {
-            this.movdqa_rp_f(Register.rsp, 1, offset, keepFloatRegister[i]);
+        for (const r of keepFloatRegister) {
+            this.movdqa_rp_f(Register.rsp, 1, offset, r);
             offset += 0x10;
         }
         for (const r of keepRegister) {
@@ -1113,13 +1130,15 @@ export class X64Assembler {
             offset += 0x8;
         }
         this.call64(target, Register.rax);
-        for (let i=keepRegister.length-1;i>=0;i--){
-            offset -= 0x8;
-            this.mov_r_rp(keepRegister[i], Register.rsp, 1, offset);
+
+        offset = 0x20;
+        for (const r of keepFloatRegister) {
+            this.movdqa_f_rp(r, Register.rsp, 1, offset);
+            offset += 0x10;
         }
-        for (let i=keepFloatRegister.length-1;i>=0;i--) {
-            offset -= 0x10;
-            this.movdqa_f_rp(keepFloatRegister[i], Register.rsp, 1, offset);
+        for (const r of keepRegister) {
+            this.mov_r_rp(r, Register.rsp, 1, offset);
+            offset += 0x8;
         }
         this.unwind();
         return this;
@@ -1130,6 +1149,7 @@ export class X64Assembler {
      * jmp tmpreg
      */
     jmp64(value:Value64, tempRegister:Register):this {
+        if (isZero(value)) throw Error(`Invalid jmp destination: ${value}`);
         this.mov_r_c(tempRegister, value);
         this.jmp_r(tempRegister);
         return this;
@@ -1141,6 +1161,7 @@ export class X64Assembler {
      * jmp [rsp-8]
      */
     jmp64_notemp(value:Value64):this {
+        if (isZero(value)) throw Error(`Invalid jmp destination: ${value}`);
         const [low32, high32] = split64bits(value);
         this.mov_rp_c(Register.rsp, 1, -8, low32, OperationSize.dword);
         this.mov_rp_c(Register.rsp, 1, -4, high32, OperationSize.dword);
