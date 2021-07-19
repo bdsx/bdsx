@@ -1086,9 +1086,9 @@ export class ScriptCustomEventPacket extends Packet {
 @nativeClass(null)
 export class SpawnParticleEffect extends Packet {
     @nativeField(uint8_t)
-    DimensionID:uint8_t;
-    @nativeField(int64_as_float_t)
-    EntityID:int64_as_float_t;
+    dimensionId:uint8_t;
+    @nativeField(ActorRuntimeID)
+    EntityID:ActorRuntimeID;
     @nativeField(Vec3)
     Position: Vec3;
     @nativeField(CxxString)
