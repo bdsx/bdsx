@@ -1084,8 +1084,15 @@ export class ScriptCustomEventPacket extends Packet {
 }
 
 @nativeClass(null)
-export class SpawnParticleEffect extends Packet {
-    // unknown
+export class SpawnParticleEffectPacket extends Packet {
+    @nativeField(uint8_t)
+    dimensionId: uint8_t;
+    @nativeField(ActorUniqueID)
+    actorId: ActorUniqueID;
+    @nativeField(Vec3)
+    pos: Vec3;
+    @nativeField(CxxString)
+    particleName: CxxString;
 }
 
 @nativeClass(null)
@@ -1463,7 +1470,7 @@ export const PacketIdToType = {
     0x72: UpdateSoftEnumPacket,
     0x73: NetworkStackLatencyPacket,
     0x75: ScriptCustomEventPacket,
-    0x76: SpawnParticleEffect,
+    0x76: SpawnParticleEffectPacket,
     0x77: AvailableActorIdentifiersPacket,
     0x78: LevelSoundEventPacketV2,
     0x79: NetworkChunkPublisherUpdatePacket,

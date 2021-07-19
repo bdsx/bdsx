@@ -4,6 +4,7 @@ import { BlockPos, Vec3 } from "../bds/blockpos";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { EnchantUtils } from "./enchants";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
@@ -511,3 +512,8 @@ Scoreboard.prototype.resetPlayerScore = procHacker.js("?resetPlayerScore@Scorebo
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
+
+// enchants.ts
+EnchantUtils.applyEnchant = procHacker.js("?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z", bool_t, null, ItemStack, int16_t, int32_t, bool_t);
+EnchantUtils.getEnchantLevel = procHacker.js("EnchantUtils::getEnchantLevel", int32_t, null, int16_t, ItemStack);
+EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null, int16_t, ItemStack);
