@@ -61,7 +61,7 @@ export function installErrorHandler():void {
             } catch (err) {
                 events.errorFire(err);
             }
-        }, ms, args);
+        }, ms, ...args);
     };
     const oldSetTimeout = setTimeout;
     global.setTimeout = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
@@ -71,7 +71,7 @@ export function installErrorHandler():void {
             } catch (err) {
                 events.errorFire(err);
             }
-        }, ms, args);
+        }, ms, ...args);
     } as any;
     setTimeout.__promisify__ = oldSetTimeout.__promisify__;
 
