@@ -210,7 +210,6 @@ export class NativeClass extends StructurePointer {
     static readonly [fieldmap]:Record<keyof any, [NativeType<any>, number, [number, number]|null]>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
-    static readonly [makefunc.pointerReturn] = true;
     static readonly symbol?:string;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {

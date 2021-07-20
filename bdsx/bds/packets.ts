@@ -938,15 +938,17 @@ export class PhotoTransferPacket extends Packet {
 }
 
 @nativeClass(null)
-export class ShowModalFormPacket extends Packet {
+export class ModalFormRequestPacket extends Packet {
     @nativeField(uint32_t)
     id:uint32_t;
     @nativeField(CxxString)
     content:CxxString;
 }
 
-export const ModalFormRequestPacket = ShowModalFormPacket;
-export type ModalFormRequestPacket = ShowModalFormPacket;
+/** @deprecated use ModalFormRequestPacket, follow the real class name */
+export const ShowModalFormPacket = ModalFormRequestPacket;
+/** @deprecated use ModalFormRequestPacket, follow the real class name */
+export type ShowModalFormPacket = ModalFormRequestPacket;
 
 @nativeClass(null)
 export class ModalFormResponsePacket extends Packet {
@@ -1094,6 +1096,11 @@ export class SpawnParticleEffectPacket extends Packet {
     @nativeField(CxxString)
     particleName: CxxString;
 }
+
+/** @deprecated use SpawnParticleEffectPacket, follow real class name */
+export const SpawnParticleEffect = SpawnParticleEffectPacket;
+/** @deprecated use SpawnParticleEffectPacket, follow real class name */
+export type SpawnParticleEffect = SpawnParticleEffectPacket;
 
 @nativeClass(null)
 export class AvailableActorIdentifiersPacket extends Packet {
@@ -1453,7 +1460,7 @@ export const PacketIdToType = {
     0x61: BookEditPacket,
     0x62: NpcRequestPacket,
     0x63: PhotoTransferPacket,
-    0x64: ShowModalFormPacket,
+    0x64: ModalFormRequestPacket,
     0x65: ModalFormResponsePacket,
     0x66: ServerSettingsRequestPacket,
     0x67: ServerSettingsResponsePacket,

@@ -340,11 +340,19 @@ Tester.test({
     },
 
     async checkPacketNames() {
+        const wrongNames = new Map<string, string>([
+            ['ShowModalFormPacket', 'ModalFormRequestPacket'],
+            ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
+        ]);
+
         for (const id in PacketIdToType) {
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             const packet = Packet.create();
 
-            const cxxname = packet.getName();
+            let cxxname = packet.getName();
+            const renamed = wrongNames.get(cxxname);
+            if (renamed != null) cxxname = renamed;
+
             let name = Packet.name;
 
             this.equals(cxxname, name);

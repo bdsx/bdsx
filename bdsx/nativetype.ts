@@ -25,7 +25,7 @@ export interface Type<T> extends makefunc.Paramable {
     name:string;
     symbol?:string;
 
-    isTypeOf(v:unknown):v is T;
+    isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
@@ -534,7 +534,6 @@ export const CxxString = new NativeType<string>(
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
-CxxString[makefunc.pointerReturn] = true;
 Object.freeze(CxxString);
 export type CxxString = string;
 

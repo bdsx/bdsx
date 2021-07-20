@@ -1,7 +1,7 @@
 import { abstract } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { NativeClass, NativeClassType } from "./nativeclass";
+import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
@@ -56,9 +56,12 @@ export abstract class Wrapper<T> extends NativeClass {
     }
 }
 
+@nativeClass()
 export class CxxStringWrapper extends NativeClass {
-    length:number;
-    capacity:number;
+    @nativeField(int64_as_float_t, 0x10)
+    length:int64_as_float_t;
+    @nativeField(int64_as_float_t, 0x18)
+    capacity:int64_as_float_t;
 
     [NativeType.ctor]():void {
         abstract();
@@ -108,14 +111,12 @@ export class CxxStringWrapper extends NativeClass {
         this.length = nsize;
     }
 }
-CxxStringWrapper.define({
-    length:[int64_as_float_t, 0x10],
-    capacity:[int64_as_float_t, 0x18]
-});
 
 CxxStringWrapper.prototype[NativeType.ctor] = function(this:CxxStringWrapper) { return CxxString[NativeType.ctor](this as any); };
 CxxStringWrapper.prototype[NativeType.dtor] = function(this:CxxStringWrapper) { return CxxString[NativeType.dtor](this as any); };
 CxxStringWrapper.prototype[NativeType.ctor_copy] = function(this:CxxStringWrapper, other:CxxStringWrapper) {
     return CxxString[NativeType.ctor_copy](this as any, other as any);
 };
-
+CxxStringWrapper.prototype[NativeType.ctor_move] = function(this:CxxStringWrapper, other:CxxStringWrapper) {
+    return CxxString[NativeType.ctor_move](this as any, other as any);
+};
