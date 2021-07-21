@@ -1,6 +1,6 @@
 import { CxxVector } from "../cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, int16_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
@@ -1216,7 +1216,30 @@ export class AnvilDamagePacket extends Packet {
 
 @nativeClass(null)
 export class CompletedUsingItemPacket extends Packet {
-    // unknown
+    @nativeField(int16_t)
+    itemId: int16_t;
+    @nativeField(int32_t)
+    action: CompletedUsingItemPacket.Actions;
+}
+
+export namespace CompletedUsingItemPacket {
+    export enum Actions {
+        EquipArmor,
+        Eat,
+        Attack,
+        Consume,
+        Throw,
+        Shoot,
+        Place,
+        FillBottle,
+        FillBucket,
+        PourBucket,
+        UseTool,
+        Interact,
+        Retrieved,
+        Dyed,
+        Traded,
+    }
 }
 
 @nativeClass(null)
