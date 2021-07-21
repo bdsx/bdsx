@@ -343,6 +343,7 @@ Tester.test({
         const wrongNames = new Map<string, string>([
             ['ShowModalFormPacket', 'ModalFormRequestPacket'],
             ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
+            ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
         ]);
 
         for (const id in PacketIdToType) {
