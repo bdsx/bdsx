@@ -24,7 +24,7 @@ export interface CapsuledEvent<T extends (...args: any[]) => any> {
     remove(listener: T): boolean;
 }
 
-export class Event<T extends (...args: any[]) => any> implements CapsuledEvent<T> {
+export class Event<T extends (...args: any[]) => (number|CANCEL|void)> implements CapsuledEvent<T> {
     private readonly listeners: T[] = [];
 
     isEmpty(): boolean {
@@ -72,7 +72,8 @@ export class Event<T extends (...args: any[]) => any> implements CapsuledEvent<T
         for (const listener of this.listeners) {
             try {
                 const ret = listener(...v);
-                if (ret !== undefined) return ret;
+                if (ret === CANCEL) return;
+                if (typeof ret === 'number') return ret as any;
             } catch (err) {
                 remapAndPrintError(err);
             }
@@ -87,12 +88,12 @@ export class Event<T extends (...args: any[]) => any> implements CapsuledEvent<T
         for (const listener of this.listeners) {
             try {
                 const ret = listener(...v);
-                if (ret !== undefined) return ret;
+                if (ret === CANCEL) return;
+                if (typeof ret === 'number') return ret as any;
             } catch (err) {
                 Event.errorHandler._fireWithoutErrorHandling(err);
             }
         }
-        return undefined;
     }
 
     /**
@@ -103,12 +104,12 @@ export class Event<T extends (...args: any[]) => any> implements CapsuledEvent<T
         for (const listener of this.listeners) {
             try {
                 const ret = listener(...v);
-                if (ret !== undefined) return ret;
+                if (ret === CANCEL) return;
+                if (typeof ret === 'number') return ret as any;
             } catch (err) {
                 Event.errorHandler._fireWithoutErrorHandling(err);
             }
         }
-        return undefined;
     }
 
     allListeners(): IterableIterator<T> {
