@@ -1448,14 +1448,41 @@ export class EmoteListPacket extends Packet {
 }
 
 @nativeClass(null)
-export class PositionTrackingDBServerBroadcast extends Packet {
-    // unknown
+export class PositionTrackingDBServerBroadcastPacket extends Packet {
+    @nativeField(uint8_t)
+    action: PositionTrackingDBServerBroadcastPacket.Actions;
+    @nativeField(int32_t)
+    trackingId: int32_t;
+    // TODO: little endian encoded NBT compound tag
 }
 
-@nativeClass(null)
-export class PositionTrackingDBClientRequest extends Packet {
-    // unknown
+export namespace PositionTrackingDBServerBroadcastPacket {
+    export enum Actions {
+        Update,
+        Destroy,
+        NotFound,
+    }
 }
+
+/** @deprecated Use PositionTrackingDBServerBroadcastPacket */
+export const PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadcastPacket;
+
+@nativeClass(null)
+export class PositionTrackingDBClientRequestPacket extends Packet {
+    @nativeField(uint8_t)
+    action: PositionTrackingDBClientRequestPacket.Actions;
+    @nativeField(int32_t)
+    trackingId: int32_t;
+}
+
+export namespace PositionTrackingDBClientRequestPacket {
+    export enum Actions {
+        Query,
+    }
+}
+
+/** @deprecated Use PositionTrackingDBClientRequestPacket */
+export const PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPacket;
 
 @nativeClass(null)
 export class DebugInfoPacket extends Packet {
