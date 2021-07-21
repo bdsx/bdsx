@@ -344,6 +344,8 @@ Tester.test({
             ['ShowModalFormPacket', 'ModalFormRequestPacket'],
             ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
             ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
+            ['PositionTrackingDBServerBroadcast', 'PositionTrackingDBServerBroadcastPacket'],
+            ['PositionTrackingDBClientRequest', 'PositionTrackingDBClientRequestPacket'],
         ]);
 
         for (const id in PacketIdToType) {

@@ -159,6 +159,12 @@ export class ResourcePackStackPacket extends Packet {
     // experimental:bool_t;
 }
 
+/** @deprecated Use ResourcePackStackPacket, follow the real class name */
+export const ResourcePackStacksPacket = ResourcePackStackPacket;
+/** @deprecated use ResourcePackStackPacket, follow the real class name */
+export type ResourcePackStacksPacket = ResourcePackStackPacket;
+
+
 export enum ResourcePackResponse {
     Cancel = 1,
     Downloading,
@@ -1448,14 +1454,45 @@ export class EmoteListPacket extends Packet {
 }
 
 @nativeClass(null)
-export class PositionTrackingDBServerBroadcast extends Packet {
-    // unknown
+export class PositionTrackingDBServerBroadcastPacket extends Packet {
+    @nativeField(uint8_t)
+    action: PositionTrackingDBServerBroadcastPacket.Actions;
+    @nativeField(int32_t)
+    trackingId: int32_t;
+    // TODO: little endian encoded NBT compound tag
 }
 
-@nativeClass(null)
-export class PositionTrackingDBClientRequest extends Packet {
-    // unknown
+export namespace PositionTrackingDBServerBroadcastPacket {
+    export enum Actions {
+        Update,
+        Destroy,
+        NotFound,
+    }
 }
+
+/** @deprecated use PositionTrackingDBServerBroadcastPacket, follow the real class name */
+export const PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadcastPacket;
+/** @deprecated use PositionTrackingDBServerBroadcastPacket, follow the real class name */
+export type PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadcastPacket;
+
+@nativeClass(null)
+export class PositionTrackingDBClientRequestPacket extends Packet {
+    @nativeField(uint8_t)
+    action: PositionTrackingDBClientRequestPacket.Actions;
+    @nativeField(int32_t)
+    trackingId: int32_t;
+}
+
+export namespace PositionTrackingDBClientRequestPacket {
+    export enum Actions {
+        Query,
+    }
+}
+
+/** @deprecated Use PositionTrackingDBClientRequestPacket, follow the real class name */
+export const PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPacket;
+/** @deprecated Use PositionTrackingDBClientRequestPacket, follow the real class name */
+export type PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPacket;
 
 @nativeClass(null)
 export class DebugInfoPacket extends Packet {
