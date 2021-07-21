@@ -1,7 +1,7 @@
 import { Actor, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
-import { ScriptCustomEventPacket } from "../bds/packets";
+import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
 import { Player } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
@@ -195,14 +195,14 @@ export class PlayerCritEvent implements IPlayerCritEvent {
 
 interface IPlayerUseItemEvent {
     player: Player;
-    useMethod: number;
+    useMethod: CompletedUsingItemPacket.Actions;
     consumeItem: boolean;
     itemStack: ItemStack;
 }
 export class PlayerUseItemEvent implements IPlayerUseItemEvent {
     constructor(
         public player: Player,
-        public useMethod: number,
+        public useMethod: CompletedUsingItemPacket.Actions,
         public consumeItem: boolean,
         public itemStack: ItemStack
     ) {
