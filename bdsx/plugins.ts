@@ -4,8 +4,9 @@ import { remapAndPrintError } from './source-map-support';
 import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
-import os = require('os');
 import { fsutil } from './fsutil';
+
+const PLUGINS_BDSX_PATH = 'file:../bdsx';
 
 class PromCounter {
     private resolve:(()=>void)|null = null;
@@ -63,10 +64,25 @@ export async function loadAllPlugins():Promise<void> {
             return this.jsonpath = require.resolve(`${this.name}/package.json`);
         }
 
-        async fixLegacy():Promise<void> {
+        async fix():Promise<void> {
             const json = await this.getJson();
+            const deps = json.dependencies;
+            let modified = false;
+            if (deps != null && deps.bdsx != null && deps.bdsx !== PLUGINS_BDSX_PATH) {
+                deps.bdsx = PLUGINS_BDSX_PATH;
+                modified = true;
+            }
+            const devDeps = json.devDependencies;
+            if (devDeps != null && devDeps.bdsx != null && devDeps.bdsx !== PLUGINS_BDSX_PATH) {
+                devDeps.bdsx = PLUGINS_BDSX_PATH;
+                modified = true;
+            }
             if (json.scripts && json.scripts.prepare === 'tsc') {
                 json.scripts.prepare = 'tsc || exit 0';
+                modified = true;
+            }
+
+            if (modified) {
                 await this.save();
             }
         }
@@ -210,7 +226,7 @@ export async function loadAllPlugins():Promise<void> {
         }
 
         for (const plugin of pluginsInDirectory) {
-            taskQueue.run(()=>plugin.fixLegacy());
+            taskQueue.run(()=>plugin.fix());
             plugin.requestLoad(counter, mainjson);
         }
 

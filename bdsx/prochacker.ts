@@ -7,8 +7,6 @@ import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, 
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
 import colors = require('colors');
-import { asmcode } from "./asm/asmcode";
-import { capi } from "./capi";
 
 const FREE_REGS:Register[] = [
     Register.rax,
@@ -193,7 +191,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      * @param to call address
      */
-    hookingRaw(key:keyof T, to: VoidPointer):VoidPointer {
+    hookingRaw(key:keyof T, to: VoidPointer|((original:VoidPointer)=>VoidPointer)):VoidPointer {
         const origin = this.map[key];
         if (!origin) throw Error(`Symbol ${String(key)} not found`);
 
@@ -202,9 +200,10 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         const out = new AsmMover(origin, codes.size);
         out.moveCode(codes, key, REQUIRE_SIZE);
         out.end();
-        const original = out.alloc();
+        const original = out.alloc(key+' (moved original)');
 
         const unlock = new MemoryUnlocker(origin, codes.size);
+        if (to instanceof Function) to = to(original);
         hacktool.jump(origin, to, Register.rax, codes.size);
         unlock.done();
 
@@ -215,25 +214,11 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      */
     hookingRawWithOriginal(key:keyof T): (callback: (asm: X64Assembler, original: VoidPointer) => void) => VoidPointer {
-        const origin = this.map[key];
-        if (!origin) throw Error(`Symbol ${String(key)} not found`);
-
-        const REQUIRE_SIZE = 12;
-        const codes = disasm.process(origin, REQUIRE_SIZE);
-        const out = new AsmMover(origin, codes.size);
-        out.moveCode(codes, key, REQUIRE_SIZE);
-        out.end();
-        const original = out.alloc();
-
-        return callback => {
+        return callback => this.hookingRaw(key, original=>{
             const data = asm();
             callback(data, original);
-            const ptr = data.alloc();
-            const unlock = new MemoryUnlocker(origin, codes.size);
-            hacktool.jump(origin, ptr, Register.rax, codes.size);
-            unlock.done();
-            return original;
-        };
+            return data.alloc('hook of '+key);
+        });
     }
 
     /**
@@ -244,7 +229,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[]):void {
         const origin = this.map[key];
-        if (!origin) throw Error(`Symbol ${String(key)} not found`);
+        if (origin == null) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
@@ -256,7 +241,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         out.moveCode(codes, key, REQUIRE_SIZE);
         out.end();
         const unlock = new MemoryUnlocker(origin, codes.size);
-        hacktool.jump(origin, out.alloc(), Register.rax, codes.size);
+        hacktool.jump(origin, out.alloc('hook of '+key), Register.rax, codes.size);
         unlock.done();
     }
 
@@ -271,15 +256,10 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         ...params: PARAMS):
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
         return callback=>{
-            const to = makefunc.np(callback, returnType, opts, ...params);
-            const original = this.hookingRawWithOriginal(key)((asm, original) => {
-                asm
-                .call64(asmcode.GetCurrentThreadId, Register.rax)
-                .cmp_r_c(Register.rax, capi.nodeThreadId)
-                .jne_label('ne')
-                .jmp64(to, Register.rax)
-                .label('ne')
-                .jmp64(original, Register.rax);
+            const original = this.hookingRaw(key, original=>{
+                const nopts:MakeFuncOptions<any> = opts || {};
+                nopts.onError = original;
+                return makefunc.np(callback, returnType, nopts as any, ...params);
             });
             return makefunc.js(original, returnType, opts, ...params);
         };
@@ -297,7 +277,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     patching(subject:string, key:keyof T, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
         let ptr:NativePointer = this.map[key];
-        if (!ptr) {
+        if (ptr == null) {
             console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }
@@ -325,7 +305,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     jumping(subject:string, key:keyof T, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void {
         let ptr:NativePointer = this.map[key];
-        if (!ptr) {
+        if (ptr == null) {
             console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }

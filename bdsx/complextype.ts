@@ -1,5 +1,4 @@
-import { OperationSize, Register } from "./assembler";
-import { chakraUtil, VoidPointer, VoidPointerConstructor } from "./core";
+import { VoidPointer, VoidPointerConstructor } from "./core";
 import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
@@ -76,29 +75,12 @@ export class NativeTemplateClass extends NativeClass {
     }
 }
 
-
-const makefunc_np = Symbol();
-
-
-
 let warned = false;
 function warn():void {
     if (warned) return;
     warned = true;
     console.log(`NativeFunctionType has potential for memory leaks.`);
 }
-let callJsSingleton:VoidPointer|null = null;
-function makeCallJs():VoidPointer {
-    if (callJsSingleton !== null) return callJsSingleton;
-    return callJsSingleton = makefunc.np((jsfunc:any, source:any)=>jsfunc(source), VoidPointer, null, makefunc.JsValueRef, makefunc.JsValueRef);
-}
-
-let callNpSingleton:VoidPointer|null = null;
-function makeCallNp():VoidPointer {
-    if (callNpSingleton !== null) return callNpSingleton;
-    return callNpSingleton = makefunc.np((jsfunc:any, source:VoidPointer)=>jsfunc(source), VoidPointer, null, makefunc.JsValueRef, VoidPointer);
-}
-
 export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeType<T>{
     parameterTypes:ParamType[];
     returnType:ParamType;
@@ -108,6 +90,8 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
         returnType:RETURN,
         opts?: OPTS,
         ...params: PARAMS):NativeFunctionType<FunctionFromTypes_js_without_pointer<OPTS, PARAMS, RETURN>> {
+
+        const makefunc_np = Symbol();
         type Func = FunctionFromTypes_js_without_pointer<OPTS, PARAMS, RETURN> & {[makefunc_np]?:VoidPointer};
         function getNp(func:Func):VoidPointer {
             const ptr = func[makefunc_np];
@@ -117,41 +101,21 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
             return func[makefunc_np] = makefunc.np(func, returnType, opts, ...params);
         }
         function getJs(ptr:VoidPointer):Func {
-            warn();
-            console.log(`a function(${ptr}) is allocated.`);
             return makefunc.js(ptr, returnType, opts, ...params);
         }
         return new NativeFunctionType<Func>(
             `${returnType.name} (__cdecl*)(${params.map(param=>param.name).join(',')})`,
             8, 8,
             v=>v instanceof Function,
+            undefined,
             (ptr, offset)=>getJs(ptr.add(offset, offset!>>31)),
             (ptr, value, offset)=>{
                 const nativeproc = getNp(value);
                 ptr.setPointer(nativeproc, offset);
                 return nativeproc;
             },
-            (asm, target, source)=>{
-                const calljs = makeCallJs();
-                chakraUtil.JsAddRef(getNp);
-                const getNpRef = chakraUtil.asJsValueRef(getNp);
-                asm.mov_t_t(makefunc.Target[1], source, OperationSize.qword);
-                asm.mov_r_c(Register.rcx, getNpRef);
-                asm.call64(calljs, Register.rax);
-                asm.mov_t_t(target, makefunc.Target.return, OperationSize.qword);
-            },
-            (asm, target, source)=>{
-                const callnp = makeCallNp();
-                chakraUtil.JsAddRef(getJs);
-                const getJsRef = chakraUtil.asJsValueRef(getJs);
-                asm.mov_t_t(makefunc.Target[1], source, OperationSize.qword);
-                asm.mov_r_c(Register.rcx, getJsRef);
-                asm.call64(callnp, Register.rax);
-                asm.mov_t_t(target, makefunc.Target.return, OperationSize.qword);
-            },
-            (asm, target, source)=>{
-                asm.mov_t_t(target, source, OperationSize.qword);
-            });
+            (stackptr, offset)=>getJs(stackptr.getPointer(offset)),
+            (stackptr, param, offset)=>stackptr.setPointer(getNp(param), offset));
     }
 }
 
@@ -178,7 +142,6 @@ export const NativeVarArgs = new NativeType<any[]>(
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
-    ()=>{ throw Error('Unimplemented'); },
     ()=>{ throw Error('Unimplemented'); },
     ()=>{ throw Error('Unimplemented'); },
     ()=>{ throw Error('Unexpected usage'); },

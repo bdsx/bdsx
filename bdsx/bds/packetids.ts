@@ -104,7 +104,9 @@ export enum MinecraftPacketIds {//int32_t
 	BookEdit = 0x61,
 	NpcRequest = 0x62,
 	PhotoTransfer = 0x63,
+	/** @deprecated use ModalFormRequest, follow the real class name */
 	ShowModalForm = 0x64,
+	ModalFormRequest = 0x64,
 	ModalFormResponse = 0x65,
 	ServerSettingsRequest = 0x66,
 	ServerSettingsResponse = 0x67,

@@ -3,7 +3,7 @@ import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, int32_t } from "../nativetype";
+import { bin64_t, int32_t, NativeType } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
@@ -380,13 +380,16 @@ export class Actor extends NativeClass {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
     }
-    static [makefunc.np2js](ptr:Actor|null):Actor|null {
-        return Actor._singletoning(ptr);
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):Actor {
+        return Actor._singletoning(ptr.add(offset, offset! >> 31))!;
+    }
+    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):Actor|null {
+        return Actor._singletoning(stackptr.getNullablePointer(offset));
     }
     static all():IterableIterator<Actor> {
         abstract();
     }
-    private static _singletoning(ptr:Actor|null):Actor|null {
+    private static _singletoning(ptr:StaticPointer|null):Actor|null {
         abstract();
     }
 }
