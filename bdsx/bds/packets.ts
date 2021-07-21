@@ -7,7 +7,7 @@ import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction } from "./inventory";
 import { Packet } from "./packet";
-import { ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
+import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
@@ -28,33 +28,148 @@ export class PlayStatusPacket extends Packet {
 
 @nativeClass(null)
 export class ServerToClientHandshakePacket extends Packet {
-    // unknown
+    @nativeField(CxxString)
+    jwt:CxxString;
 }
 
 @nativeClass(null)
 export class ClientToServerHandshakePacket extends Packet {
-    // unknown
+    // no data
 }
 
 @nativeClass(null)
 export class DisconnectPacket extends Packet {
+    @nativeField(bool_t)
+    skipMessage:bool_t;
     @nativeField(CxxString, 0x38)
     message:CxxString;
 }
 
+// @nativeClass(0x70)
+// export class SemVersion extends NativeClass {
+//     @nativeField(uint16_t)
+//     major:uint16_t;
+//     @nativeField(uint16_t)
+//     minor:uint16_t;
+//     @nativeField(uint16_t)
+//     patch:uint16_t;
+//     @nativeField(CxxString, 0x08)
+//     preRelease:CxxString;
+//     @nativeField(CxxString)
+//     buildMeta:CxxString;
+//     @nativeField(CxxString)
+//     fullVersionString:CxxString;
+//     @nativeField(bool_t)
+//     validVersion:bool_t;
+//     @nativeField(bool_t)
+//     anyVersion:bool_t;
+// }
+
+// export class BaseGameVersion extends SemVersion {
+// }
+
+export enum PackType {
+    Invalid,
+    Addon,
+    Cached,
+    CopyProtected,
+    Behavior,
+    PersonaPiece,
+    Resources,
+    Skins,
+    WorldTemplate,
+    Count,
+}
+
+// @nativeClass(0x88)
+// export class PackIdVersion extends NativeClass {
+//     @nativeField(mce.UUID)
+//     uuid:mce.UUID
+//     @nativeField(SemVersion, 0x10)
+//     version:SemVersion
+//     @nativeField(uint8_t)
+//     packType:PackType
+// }
+
+// @nativeClass(0xA8)
+// export class PackInstanceId extends NativeClass {
+//     @nativeField(PackIdVersion)
+//     packId:PackIdVersion;
+//     @nativeField(CxxString)
+//     subpackName:CxxString;
+// }
+
+// @nativeClass(0x18)
+// export class ContentIdentity extends NativeClass {
+//     @nativeField(mce.UUID)
+//     uuid:mce.UUID
+//     @nativeField(bool_t, 0x10)
+//     valid:bool_t
+// }
+
+// @nativeClass(0xF0)
+// export class ResourcePackInfoData extends NativeClass {
+//     @nativeField(PackIdVersion)
+//     packId:PackIdVersion;
+//     @nativeField(bin64_t)
+//     packSize:bin64_t;
+//     @nativeField(CxxString)
+//     contentKey:CxxString;
+//     @nativeField(CxxString)
+//     subpackName:CxxString;
+//     @nativeField(ContentIdentity)
+//     contentIdentity:ContentIdentity;
+//     @nativeField(bool_t)
+//     hasScripts:bool_t;
+//     @nativeField(bool_t)
+//     hasExceptions:bool_t;
+// }
+
+// @nativeClass(null)
+// export class ResourcePacksInfoData extends NativeClass {
+//     @nativeField(bool_t)
+//     texturePackRequired:bool_t;
+//     @nativeField(bool_t)
+//     hasScripts:bool_t;
+//     @nativeField(bool_t)
+//     hasExceptions:bool_t;
+//     @nativeField(CxxVector.make(ResourcePackInfoData), 0x08)
+//     addOnPacks:CxxVector<ResourcePackInfoData>;
+//     @nativeField(CxxVector.make(ResourcePackInfoData), 0x20)
+//     texturePacks:CxxVector<ResourcePackInfoData>;
+// }
+
 @nativeClass(null)
 export class ResourcePacksInfoPacket extends Packet {
-    // unknown
+    // @nativeField(ResourcePacksInfoData)
+    // data:ResourcePacksInfoData;
 }
 
 @nativeClass(null)
-export class ResourcePacksStackPacket extends Packet {
-    // unknown
+export class ResourcePackStackPacket extends Packet {
+    // @nativeField(CxxVector.make(PackInstanceId))
+    // addOnPacks:CxxVector<PackInstanceId>;
+    // @nativeField(CxxVector.make(PackInstanceId))
+    // texturePacks:CxxVector<PackInstanceId>;
+    // @nativeField(BaseGameVersion)
+    // baseGameVersion:BaseGameVersion;
+    // @nativeField(bool_t)
+    // texturePackRequired:bool_t;
+    // @nativeField(bool_t)
+    // experimental:bool_t;
+}
+
+export enum ResourcePackResponse {
+    Cancel = 1,
+    Downloading,
+    DownloadingFinished,
+    ResourcePackStackFinished,
 }
 
 @nativeClass(null)
 export class ResourcePackClientResponsePacket extends Packet {
-    // unknown
+    // @nativeField(uint8_t, 0x40)
+    // response: ResourcePackResponse;
 }
 
 @nativeClass(null)
@@ -683,8 +798,12 @@ export class CameraPacket extends Packet {
 
 @nativeClass(null)
 export class BossEventPacket extends Packet {
-    @nativeField(bin64_t)
-    unknown:bin64_t;
+    /** Always 1 */
+    @nativeField(int32_t)
+    flagDarken:int32_t;
+    /** Always 2 */
+    @nativeField(int32_t)
+    flagFog:int32_t;
     /** Unique ID of the boss */
     @nativeField(bin64_t)
     entityUniqueId:bin64_t;
@@ -697,11 +816,13 @@ export class BossEventPacket extends Packet {
     @nativeField(float32_t)
     healthPercent:float32_t;
     @nativeField(uint32_t)
-    color:uint32_t;
+    color:BossEventPacket.Colors;
     @nativeField(uint32_t)
-    overlay:uint32_t;
-    @nativeField(uint16_t)
-    darkenScreen:uint16_t;
+    overlay:BossEventPacket.Overlay;
+    @nativeField(bool_t)
+    darkenScreen:bool_t;
+    @nativeField(bool_t)
+    createWorldFog:bool_t;
 }
 export namespace BossEventPacket {
     export enum Types {
@@ -723,6 +844,14 @@ export namespace BossEventPacket {
         Yellow,
         Purple,
         White
+    }
+
+    export enum Overlay {
+        Progress,
+        Notched6,
+        Notched10,
+        Notched12,
+        Notched20,
     }
 }
 
@@ -990,7 +1119,7 @@ export class RemoveObjectivePacket extends Packet {
 @nativeClass(null)
 export class SetDisplayObjectivePacket extends Packet {
     @nativeField(CxxString)
-    displaySlot:'list'|'sidebar'|'belowname'|'';
+    displaySlot:'list'|'sidebar'|'belowname'|''|DisplaySlot;
     @nativeField(CxxString)
     objectiveName:CxxString;
     @nativeField(CxxString)
@@ -1394,7 +1523,7 @@ export const PacketIdToType = {
     0x04: ClientToServerHandshakePacket,
     0x05: DisconnectPacket,
     0x06: ResourcePacksInfoPacket,
-    0x07: ResourcePacksStackPacket,
+    0x07: ResourcePackStackPacket,
     0x08: ResourcePackClientResponsePacket,
     0x09: TextPacket,
     0x0a: SetTimePacket,

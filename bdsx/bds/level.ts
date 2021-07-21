@@ -35,18 +35,17 @@ export class Level extends NativeClass {
     getTagRegistry():TagRegistry {
         abstract();
     }
-}
-export class ServerLevel extends Level {
-    /** @deprecated unusing */
-    packetSender:LoopbackPacketSender;
-    actors:CxxVector<Actor>;
-
     setCommandsEnabled(value:boolean):void {
         abstract();
     }
     setShouldSendSleepMessage(value:boolean):void {
         abstract();
     }
+}
+export class ServerLevel extends Level {
+    /** @deprecated unusing */
+    packetSender:LoopbackPacketSender;
+    actors:CxxVector<Actor>;
 }
 
 export class AdventureSettings extends NativeClass {

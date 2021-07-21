@@ -7,7 +7,7 @@ import { CxxVector } from "../cxxvector";
 import { EnchantUtils } from "./enchants";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
@@ -25,7 +25,7 @@ import { AdventureSettings, Level, ServerLevel, TagRegistry } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, PlayerListPacket, TextPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
@@ -45,6 +45,8 @@ Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCoun
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});
+Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
+Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
 
 Level.abstract({
     vftable: VoidPointer,
@@ -55,8 +57,6 @@ ServerLevel.abstract({
     packetSender:[LoopbackPacketSender.ref(), 0x830],
     actors:[CxxVector.make(Actor.ref()), 0x1590],
 });
-ServerLevel.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
-ServerLevel.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();
@@ -225,26 +225,15 @@ Player.prototype.syncAbilties = function() {
 };
 
 ServerPlayer.abstract({
-    networkIdentifier:[NetworkIdentifier, 0xa98]
+    networkIdentifier:[NetworkIdentifier, 0xa98],
 });
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
 ServerPlayer.prototype.knockback = procHacker.js("ServerPlayer::knockback", void_t, {this: ServerPlayer}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
+ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", void_t, {this: ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", void_t, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
-};
-const CxxStringVector = CxxVector.make(CxxString);
-const TextPacket$createTranslated = procHacker.js("TextPacket::createTranslated", TextPacket, null, TextPacket, CxxString, CxxStringVector);
-ServerPlayer.prototype.sendTranslatedMessage = function(message:CxxString, params:string[] = []) {
-    const pk = TextPacket.create();
-    const _params = new CxxStringVector(true);
-    _params.construct();
-    params.forEach(e => _params.push(e));
-    TextPacket$createTranslated(pk, message, _params);
-    this.sendNetworkPacket(pk);
-    _params.destruct();
-    pk.dispose();
 };
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
