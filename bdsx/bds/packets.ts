@@ -1,5 +1,4 @@
 import { CxxVector } from "../cxxvector";
-import { mce } from "../mce";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
