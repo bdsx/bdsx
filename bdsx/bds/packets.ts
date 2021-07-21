@@ -1,6 +1,6 @@
 import { CxxVector } from "../cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int8_t, int16_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
@@ -158,6 +158,12 @@ export class ResourcePackStackPacket extends Packet {
     // @nativeField(bool_t)
     // experimental:bool_t;
 }
+
+/** @deprecated Use ResourcePackStackPacket, follow the real class name */
+export const ResourcePackStacksPacket = ResourcePackStackPacket;
+/** @deprecated use ResourcePackStackPacket, follow the real class name */
+export type ResourcePackStacksPacket = ResourcePackStackPacket;
+
 
 export enum ResourcePackResponse {
     Cancel = 1,
@@ -1464,8 +1470,10 @@ export namespace PositionTrackingDBServerBroadcastPacket {
     }
 }
 
-/** @deprecated Use PositionTrackingDBServerBroadcastPacket */
+/** @deprecated use PositionTrackingDBServerBroadcastPacket, follow the real class name */
 export const PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadcastPacket;
+/** @deprecated use PositionTrackingDBServerBroadcastPacket, follow the real class name */
+export type PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadcastPacket;
 
 @nativeClass(null)
 export class PositionTrackingDBClientRequestPacket extends Packet {
@@ -1481,8 +1489,10 @@ export namespace PositionTrackingDBClientRequestPacket {
     }
 }
 
-/** @deprecated Use PositionTrackingDBClientRequestPacket */
+/** @deprecated Use PositionTrackingDBClientRequestPacket, follow the real class name */
 export const PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPacket;
+/** @deprecated Use PositionTrackingDBClientRequestPacket, follow the real class name */
+export type PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPacket;
 
 @nativeClass(null)
 export class DebugInfoPacket extends Packet {
