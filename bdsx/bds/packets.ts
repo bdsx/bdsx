@@ -798,8 +798,11 @@ export class CameraPacket extends Packet {
 
 @nativeClass(null)
 export class BossEventPacket extends Packet {
+    /** @deprecated */
+    @nativeField(bin64_t)
+    unknown:bin64_t;
     /** Always 1 */
-    @nativeField(int32_t)
+    @nativeField(int32_t, 0x30)
     flagDarken:int32_t;
     /** Always 2 */
     @nativeField(int32_t)
