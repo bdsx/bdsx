@@ -217,7 +217,6 @@ const symbols = [
     'Ability::getFloat',
     'Ability::setBool',
     'AdventureSettingsPacket::AdventureSettingsPacket',
-    'TextPacket::createTranslated',
     'Level::destroyBlock',
     'Level::getAdventureSettings',
     'Level::getScoreboard',
@@ -250,6 +249,7 @@ const symbols = [
     'PlayerListPacket::emplace',
     'Player::getSkin',
     "ItemActor::`vftable'",
+    'ServerPlayer::_nextContainerCounter',
 ] as const;
 
 // decorated symbols

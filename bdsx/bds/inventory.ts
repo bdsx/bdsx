@@ -7,14 +7,17 @@ import { Block, BlockLegacy } from "./block";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
 
+/**
+ * Values from 1 to 100 are for a player's container counter.
+ */
 export enum ContainerId {
-    Inventory = 0,
+    Inventory,
     /**
-     * @deprecated
+     * Used as the minimum value of a player's container counter.
      */
-    First = 1,
+    First,
     /**
-     * @deprecated
+     * Used as the maximum value of a player's container counter.
      */
     Last = 100,
     /**
