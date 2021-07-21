@@ -1,4 +1,7 @@
 
+/**
+ * imitate VC srand/rand
+ */
 export class PseudoRandom {
     public static readonly RAND_MAX = 0x7fff;
 

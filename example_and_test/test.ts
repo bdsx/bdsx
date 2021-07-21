@@ -22,6 +22,7 @@ import { dll } from "bdsx/dll";
 import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
+import { makefunc } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
@@ -55,7 +56,8 @@ Tester.test({
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
         const shandle = serverInstance.minecraft.getServerNetworkHandler();
-        this.equals(shandle.motd, 'Dedicated Server', 'unexpected motd');
+        shandle.setMotd('TestMotd');
+        this.equals(shandle.motd, 'TestMotd', 'unexpected motd');
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
@@ -227,30 +229,36 @@ Tester.test({
     },
 
     makefunc() {
-        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, {structureReturn:true});
+        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).make(int32_t, {structureReturn:true});
         this.equals(test(), 1, 'structureReturn int32_t');
-        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
+        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float64_t, null, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
+        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float32_t, null, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
-        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(bool_t);
+        const getbool = asm().mov_r_c(Register.rax, 0x100).make(bool_t);
         this.equals(getbool(), false, 'bool return');
-        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, null, bool_t);
+        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, null, bool_t);
         this.equals(bool2int(true), 1, 'bool to int');
-        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int32_t, null, int32_t);
+        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int32_t, null, int32_t);
         this.equals(int2short_as_int(-1), 0xffff, 'int to short old');
-        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int16_t, null, int32_t);
+        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int16_t, null, int32_t);
         this.equals(int2short(-1), -1, 'int to short');
         this.equals(int2short(0xffff), -1, 'int to short');
-        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(uint16_t, null, int32_t);
+        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(uint16_t, null, int32_t);
         this.equals(int2ushort(-1), 0xffff, 'int to ushort');
         this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
-        const string2string = asm().mov_r_r(Register.rax, Register.rcx).ret().make(CxxString, null, CxxString);
+        const string2string = asm().mov_r_r(Register.rax, Register.rcx).make(CxxString, null, CxxString);
         this.equals(string2string('test'), 'test', 'string to string');
         this.equals(string2string('testtesta'), 'testtesta', 'test string over 8 bytes');
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
-        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).ret().make(NativePointer);
+        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer);
         this.equals(nullreturn(), null, 'nullreturn does not return null');
+
+        const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        this.equals(overTheFour(0, 0, 0, 0, 1234), 1234, 'makefunc.js, overTheFour failed');
+        const overTheFiveNative = makefunc.np(overTheFour, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        this.equals(overTheFiveRewrap(0, 0, 0, 0, 1234), 1234, 'makefunc.np, overTheFour failed');
     },
 
     vectorcopy() {
@@ -332,11 +340,19 @@ Tester.test({
     },
 
     async checkPacketNames() {
+        const wrongNames = new Map<string, string>([
+            ['ShowModalFormPacket', 'ModalFormRequestPacket'],
+            ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
+        ]);
+
         for (const id in PacketIdToType) {
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             const packet = Packet.create();
 
-            const cxxname = packet.getName();
+            let cxxname = packet.getName();
+            const renamed = wrongNames.get(cxxname);
+            if (renamed != null) cxxname = renamed;
+
             let name = Packet.name;
 
             this.equals(cxxname, name);

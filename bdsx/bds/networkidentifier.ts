@@ -136,17 +136,23 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-    static [makefunc.np2js](ptr:NetworkIdentifier):NetworkIdentifier {
-        let ni = identifiers.get(ptr);
-        if (ni) return ni;
-        ni = new NetworkIdentifier(true);
-        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-        identifiers.add(ni);
-        return ni;
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
+        return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
+    }
+    static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
+        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
     }
 
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
+    }
+    private static _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
+        let ni = identifiers.get(ptr);
+        if (ni != null) return ni;
+        ni = new NetworkIdentifier(true);
+        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
+        identifiers.add(ni);
+        return ni;
     }
 }
 

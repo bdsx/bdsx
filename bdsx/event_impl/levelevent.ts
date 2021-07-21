@@ -6,6 +6,7 @@ import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { _tickCallback } from "../util";
 
 interface ILevelExplodeEvent {
     level: Level;
@@ -75,7 +76,9 @@ const _onLevelExplode = procHacker.hooking("?explode@Level@@UEAAXAEAVBlockSource
 
 function onLevelSave(level:Level):void {
     const event = new LevelSaveEvent(level);
-    if (events.levelSave.fire(event) !== CANCEL) {
+    const canceled = events.levelSave.fire(event) !== CANCEL;
+    _tickCallback();
+    if (canceled) {
         return _onLevelSave(event.level);
     }
 }
@@ -83,7 +86,9 @@ const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLe
 
 function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
-    if (events.levelWeatherChange.fire(event) !== CANCEL) {
+    const canceled = events.levelWeatherChange.fire(event) !== CANCEL;
+    _tickCallback();
+    if (canceled) {
         return _onLevelWeatherChange(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);
     }
 }

@@ -4,14 +4,22 @@
 // So there is no 'server' variable yet
 // launcher.ts will import ./index.ts after launching BDS.
 
+// install source map
 import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";
 installSourceMapSupport();
 
+// check
 import 'bdsx/common';
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
 import 'bdsx/checkmodules';
 import 'bdsx/asm/checkasm';
+
+// install bdsx error handler
+import { installErrorHandler } from "bdsx/errorhandler";
+installErrorHandler();
+
+// imports
 require('bdsx/legacy');
 
 import { installMinecraftAddons } from 'bdsx/addoninstaller';

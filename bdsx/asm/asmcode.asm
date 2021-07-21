@@ -23,467 +23,207 @@ const JsArrayBuffer 10
 const JsTypedArray 11
 const JsDataView 12
 const EXCEPTION_BREAKPOINT:dword 80000003h
-const STATUS_INVALID_PARAMETER:dword 0xC000000D
-const STATUS_NO_NODE_THREAD:dword 0xE0000001
+const EXCEPTION_NONCONTINUABLE_EXCEPTION:dword 0xC0000025
 
 export def GetCurrentThreadId:qword
 export def bedrockLogNp:qword
-export def memcpy:qword
-export def sprintf:qword
-export def malloc:qword
 export def vsnprintf:qword
-export def JsHasException:qword
-export def JsCreateTypeError:qword
-export def JsGetValueType:qword
-export def JsStringToPointer:qword
-export def JsGetArrayBufferStorage:qword
-export def JsGetTypedArrayStorage:qword
-export def JsGetDataViewStorage:qword
 export def JsConstructObject:qword
-export def js_null:qword
-export def js_true:qword
-export def nodeThreadId:dword
 export def JsGetAndClearException:qword
-export def runtimeErrorFire:qword
+export def js_null:qword
+export def nodeThreadId:dword
 export def runtimeErrorRaise:qword
 export def RtlCaptureContext:qword
+
+export def JsNumberToInt:qword
+export def JsCallFunction:qword
+export def js_undefined:qword
+export def pointer_js2class:qword
+export def NativePointer:qword
+
 export def memset:qword
-export def printf:qword
-export def Sleep:qword
+
 export def uv_async_call:qword
 export def uv_async_alloc:qword
 export def uv_async_post:qword
 
-# [[noreturn]]] makefunc_getout()
-export proc makefunc_getout
-    mov rsp, [rdi+fn_returnPoint]
-    and rsp, -2
-    pop rcx
-    pop rbp
-    pop rsi
-    mov [rdi+fn_returnPoint], rcx
-    pop rdi
+; JsErrorCode pointer_np2js(JsValueRef ctor, void* ptr, JsValueRef* out)
+export proc pointer_np2js
+    stack 28h
+    mov [rsp+38h], rdx
+    mov [rsp+40h], r8
+
+    lea r9, [rsp+20h]
+    lea rdx, [rsp+30h]
+    mov rax, js_null
+    mov r8, 1
+    mov [rdx], rax
+    call JsConstructObject
+    test eax, eax
+    jnz _eof
+
+    mov rdx, [rsp+40h]
+    mov rcx, [rsp+20h]
+    mov [rdx], rcx
+
+    call pointer_js2class
+    mov rcx, [rsp+38h]
+    mov [rax+10h], rcx
     xor eax, eax
 endp
 
-# it uses rax, rdx only
-# size_t strlen(const char* string)
-export proc strlen
-    lea rax, [rcx-1]
-_next:
-    add rax, 1
-    movzx edx, byte ptr[rax]
-    test rdx, rdx
-    jnz _next
+export def raxValue:qword
+export def xmm0Value:qword
 
-    sub rax, rcx
+export proc breakBeforeCallNativeFunction
+    int3
+    jmp callNativeFunction
+    unwind
 endp
 
-# JsValueRef makeError(char* string, size_t size)
-export proc makeError
-    stack 88h
-    lea r8, [rcx+rdx]
-    lea r9, [rsp+20h]
-_copy:
-    movzx eax, byte ptr[rcx]
-    mov word ptr[r9], ax
-    add rcx, 1
-    add r9, 2
-    cmp rcx, r8
-    jne _copy
-
-    lea rcx, [rsp+20h]
-    lea r8, [rsp+18h]
-    call [rdi+fn_JsPointerToString]
-    mov rcx, [rsp+18h]
-    lea rdx, [rsp+10h]
-    call JsCreateTypeError
-    mov rax, [rsp+10h]
-endp
-
-# [[noreturn]] getout_jserror(JsValueRef error)
-export proc getout_jserror
+export proc callNativeFunction ;JsValueRef(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState)
+    ; prologue
+    keep rbp
+    keep rbx
     stack 28h
-    mov [rsp+20h], rcx
-    call [rdi + fn_stack_free_all]
-    mov rax, [rdi+fn_returnPoint]
-    and rax, 1
-    jz runtimeError
+    setframe rbp, 0h
+    mov rbx, r8 ; rbx = arguments
+    xor eax, eax
 
-    mov rcx, [rsp+20h]
-    call [rdi + fn_JsSetException]
-    call makefunc_getout
-runtimeError:
-    mov rcx, [rsp+20h]
-    call runtimeErrorFire
-endp
+    ; arguments[1] to int, stacksize
+    lea rdx, [rbp+40h] ; result
+    mov [rdx], rax
+    mov rcx, [rbx+8h] ; number = arguments[1]
+    call JsNumberToInt
+    sub rsp, [rbp+40h] ; stacksize
 
-# [[noreturn]] getout_invalid_parameter(uint32_t paramNum)
-export proc getout_invalid_parameter
-    stack 48h
-    test ecx, ecx
-    jg paramNum_is_number
-    lea rcx, "Invalid parameter at this"
-    call strlen
-    jmp paramNum_is_this
-paramNum_is_number:
-    mov r8, rcx
-    lea rdx, "Invalid parameter at %d"
-    lea rcx, [rsp + 20h]
-    call sprintf
-    lea rcx, [rsp + 20h]
-paramNum_is_this:
-    mov rdx, rax
-    call makeError
-    mov rcx, rax
-    call getout_jserror
-endp
-
-# [[noreturn]] getout_invalid_parameter_count(uint32_t actual, uint32_t expected)
-export proc getout_invalid_parameter_count
-    stack 68h
-    mov r9, rcx
-    mov r8, rdx
-    lea rdx, "Invalid parameter count (expected=%d, actual=%d)"
-    lea rcx, [rsp + 20h]
-    call sprintf
-    lea rcx, [rsp + 20h]
-    mov rdx, rax
-    call makeError
-    mov rcx, rax
-    call getout_jserror
-endp
-
-# [[noreturn]] getout(JsErrorCode err)
-export proc getout
-    stack 48h
-    const JsErrorNoCurrentContext 0x10003
-    cmp rcx, JsErrorNoCurrentContext
-    je _noContext
-    mov [rsp + 0x28], rcx
-    mov rax, [rdi+fn_returnPoint]
-    and rax, 1
-    jz _crash
-    lea rcx, [rsp + 20h]
-    call JsHasException
+    ; make stack pointer
+    lea r8, [rbp+50h] ; result = &args[1]
+    mov rdx, rsp
+    mov rcx, NativePointer
+    call pointer_np2js
     test eax, eax
-    jnz _codeerror
-    movzx eax, byte ptr[rsp + 20h]
+    jnz _eof
+
+    ; call second arg
+    mov rcx, [rbx+10h] ; function = arguments[2]
+    lea r9, [rbp+40h] ; returning value
+
+    mov r8, js_undefined
+    lea rdx, [rbp+48h] ; args
+    mov rax, [rbx+20h] ; param = arguments[4]
+    mov [rbp+48h], r8 ; args[0] = js_undefined
+    mov [rbp+58h], rax ; args[2] = param
+    mov r8, 3 ; argumentCount = 3
+
+    sub rsp, 0x20
+    ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
+    call JsCallFunction
     test eax, eax
-    jz _codeerror
-    call [rdi + fn_stack_free_all]
-    call makefunc_getout
+    jnz _eof
 
-_noContext:
-    call GetCurrentThreadId
-    cmp rax, nodeThreadId
-    je _nodeThread
-    mov ecx, STATUS_NO_NODE_THREAD
-    call raise_runtime_error
+    ; arguments[3] to pointer, function
+    mov rcx, [rbx+18h] ; arguments[3]
+    call pointer_js2class
 
-_nodeThread:
-    lea rdx, "JS Context not found\n"
-    call printf
+    add rsp, 0x20
 
-_crash:
-    lea rcx, [rsp + 20h]
+    ; call native function
+    mov rcx, [rsp]
+    mov rdx, [rsp+8h]
+    mov r8, [rsp+10h]
+    mov r9, [rsp+18h]
+    movsd xmm0, qword ptr[rsp]
+    movsd xmm1, qword ptr[rsp+8h]
+    movsd xmm2, qword ptr[rsp+10h]
+    movsd xmm3, qword ptr[rsp+18h]
+    call [rax+10h]
+    mov raxValue, rax
+    movsd xmm0Value, xmm0
+
+_eof:
+    unwind
+    mov rax, js_undefined
+    ret
+endp
+
+; r10 = jsfunc, r11 = onError
+export proc callJsFunction
+    stack 88h
+    mov [rsp+80h], r11 ; onError
+    ; 78h is unused
+
+    mov [rsp+38h], rcx
+    mov [rsp+40h], rdx
+    mov [rsp+48h], r8
+    mov [rsp+50h], r9
+
+    movsd [rsp+58h], xmm0
+    movsd [rsp+60h], xmm1
+    movsd [rsp+68h], xmm2
+    movsd [rsp+70h], xmm3
+
+    mov [rsp+20h], r10 ; jsfunc
+
+    ; make stack pointer
+    lea r8, [rsp+30h] ; result = &args[1]
+    lea rdx, [rsp+38h] ; stackptr
+    mov rcx, NativePointer
+    call pointer_np2js
+    test eax, eax
+    jnz _error
+
+    mov rcx, [rsp+20h] ; function = jsfunc
+    lea r9, [rsp+20h] ; result, ignored
+    mov r8, 2
+    mov rax, js_null
+    lea rdx, [rsp+28h] ; args
+    mov [rsp+28h], rax ; args[0] = null
+    ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
+    call JsCallFunction
+    test eax, eax
+    jnz _error
+    mov rax, raxValue
+    movsd xmm0, xmm0Value
+
+    unwind
+    ret
+_error:
+    mov rcx, [rsp+38h]
+    mov rdx, [rsp+40h]
+    mov r8, [rsp+48h]
+    mov r9, [rsp+50h]
+    movsd xmm0, [rsp+58h]
+    movsd xmm1, [rsp+60h]
+    movsd xmm2, [rsp+68h]
+    movsd xmm3, [rsp+70h]
+    unwind
+    jmp [rsp-8h] ; onError, -88h + 80h
+endp
+
+export def jshook_fireError:qword
+
+export proc jsend_crash
+    mov ecx, eax
+    or ecx, 0xE0000000
+    jmp raise_runtime_error
+endp
+
+export proc jsend_returnZero
+    stack 18h
+    lea rcx, [rsp+10h]
     call JsGetAndClearException
     test eax, eax
-    jnz _codeerror
-    call [rdi + fn_stack_free_all]
-    mov rcx, [rsp + 20h]
-    call runtimeErrorFire
+    jnz _empty
 
-_codeerror:
-    mov r8, [rsp + 0x28]
-    lea rdx, "JsErrorCode: 0x%x"
-    lea rcx, [rsp + 20h]
-    call sprintf
-    lea rcx, [rsp + 20h]
-    mov rdx, rax
-    call makeError
-    mov rcx, rax
-    call getout_jserror
-endp
+    mov rcx, [rsp+10h]
+    call jshook_fireError
 
-# char* str_js2np(JsValueRef value, uint32_t paramNum, char*(*converter)(const char16_t*, size_t), size_t* outsize)
-export proc str_js2np
-    stack 28h
-    mov [rsp+48h], r9
-    mov [rsp+40h], r8
-    mov [rsp+38h], rdx
-    mov [rsp+30h], rcx
-    lea rdx, [rsp+10h]
-    call JsGetValueType
-    test eax, eax
-    jnz _failed
-    mov eax, [rsp+10h]
-    sub rax, JsNull
-    jz _null
-    sub rax, 2
-    jnz _failed
-    lea r8, [rsp+20h]
-    lea rdx, [rsp+18h]
-    mov rcx, [rsp+30h]
-    call JsStringToPointer
-    test eax, eax
-    jnz _failed
-    mov r8, [rsp+48h]
-    mov rcx, [rsp+18h]
-    mov rdx, [rsp+20h]
-    call [rsp+40h]
-    jmp _eof
-_failed:
-    mov rcx, [rsp+38h]
-    call [rdi+fn_getout_invalid_parameter]
-_null:
-endp
-
-# void* buffer_to_pointer(JsValueRef value, uint32_t paramNum)
-export proc buffer_to_pointer
-    stack 38h
-    mov [rsp+48h], rdx
-    mov [rsp+40h], rcx
-    lea rdx, [rsp+10h]
-    call JsGetValueType
-    test eax, eax
-    jnz _failed
-    mov eax, [rsp+10h]
-    sub rax, JsNull ; JsNull 1
-    jz _null
-    sub rax, 4 ; JsObject 5
-    jz _object
-    sub rax, 5 ; JsArrayBuffer 10
-    jz _arrayBuffer
-    sub rax, 1 ; JsTypedArray 11
-    jz _typedArray
-    sub rax, 1 ; JsDataView 12
-    jz _dataView
-_failed:
-    mov rcx, [rsp+38h]
-    call [rdi+fn_getout_invalid_parameter]
-
-_null:
+_empty:
     xor eax, eax
-    jmp _eof
-
-_object:
-    mov rcx, [rsp+40h]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rax, [rax+10h]
-    jmp _eof
-
-_arrayBuffer:
-    lea r8, [rsp+18h]
-    lea rdx, [rsp+10h]
-    mov rcx, [rsp+40h]
-    call JsGetArrayBufferStorage
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+10h]
-    jmp _eof
-
-_typedArray:
-    lea r9, [rsp+30h]
-    mov [rsp+20h], r9
-    mov r8, r9
-    lea rdx, [rsp+28h]
-    mov rcx, [rsp+40h]
-    call JsGetTypedArrayStorage
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+28h]
-    jmp _eof
-
-_dataView:
-    lea r8, [rsp+18h]
-    lea rdx, [rsp+10h]
-    mov rcx, [rsp+40h]
-    call JsGetDataViewStorage
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+10h]
 endp
-
-; const char16_t* utf16_js2np(JsValueRef value, uint32_t paramNum)
-export proc utf16_js2np
-    stack 28h
-    mov [rsp+38h], rdx
-    mov [rsp+30h], rcx
-    lea rdx, [rsp+10h]
-    call JsGetValueType
-    test eax, eax
-    jnz _failed
-    mov eax, [rsp+10h]
-    sub rax, 1
-    jz _null
-    sub rax, 2
-    jnz _failed
-    lea r8, [rsp+20h]
-    lea rdx, [rsp+18h]
-    mov rcx, [rsp+30h]
-    call JsStringToPointer
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+18h]
-    jmp _eof
-_null:
-    xor eax, eax
-    jmp _eof
-_failed:
-    mov rcx, [rsp+38h]
-    call [rdi+fn_getout_invalid_parameter]
-endp
-
-; JsValueRef str_np2js(pcstr str, uint32_t paramNum, JsErrorCode(*converter)(const char*, JsValue))
-export proc str_np2js
-    stack 28h
-    mov [rsp+38h], rdx
-    lea rdx, [rsp+10h]
-    call r8
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+10h]
-    jmp _eof
-_failed:
-    mov rcx, [rsp+38h]
-    call [rdi+fn_getout_invalid_parameter]
-endp
-
-; JsValueRef utf16_np2js(pcstr16 str, uint32_t paramNum)
-export proc utf16_np2js
-    stack 28h
-    mov [rsp+38h], rdx
-
-    mov rdx, rcx
-_next:
-    movzx eax, word ptr[rdx]
-    add rdx, 2
-    test eax, eax
-    jnz _next
-
-    sub rdx, rcx
-    shr rdx, 2
-
-    lea r8, [rsp+18h]
-    call [rdi+fn_JsPointerToString]
-    test eax, eax
-    jz _failed
-    mov rax, [rsp+18h]
-    jmp _eof
-_failed:
-    mov rcx, [rsp+38h]
-    call [rdi+fn_getout_invalid_parameter]
-endp
-
-; JsValueRef pointer_np2js_nullable(JsValueRef ctor, void* ptr) noexcept
-export proc pointer_np2js_nullable
-    test rdx, rdx
-    jnz pointer_np2js
-    mov rax, js_null
-endp
-
-; JsValueRef pointer_np2js(JsValueRef ctor, void* ptr)
-export proc pointer_np2js
-    stack 38h
-    mov [rsp+48h], rdx
-    lea r9, [rsp+20h]
-    mov r8, 1
-    lea rdx, [rsp+28h]
-    mov rax, js_null
-    mov [rdx], rax
-    call JsConstructObject
-    test eax, eax
-    jnz _failed
-    mov rcx, [rsp+20h]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rcx, [rsp+48h]
-    mov [rax+10h], rcx
-    mov rax, [rsp+20h]
-    jmp _eof
-_failed:
-    mov ecx, eax
-    call getout
-endp
-
-; void* pointer_js_new(JsValueRef ctor, JsValueRef* out)
-export proc pointer_js_new
-    stack 38h
-    mov [rsp+48h], rdx
-    mov r9, rdx
-    mov r8, 2
-    lea rdx, [rsp+28h]
-    mov rax, js_null
-    mov [rdx], rax
-    mov rax, js_true
-    mov [rdx+8], rax
-    call JsConstructObject
-    test eax, eax
-    jnz _failed
-    mov rax, [rsp+48h]
-    mov rcx, [rax]
-    call [rdi+fn_pointer_js2class]
-    test rax, rax
-    jz _failed
-    mov rax, [rax+10h]
-    jmp _eof
-_failed:
-    mov ecx, eax
-    call getout
-endp
-
-; int64_t bin64(JsValueRef value, uint32_t paramNum)
-export proc bin64
-    stack 28h
-    mov [rsp+38h], rdx
-    lea r8, [rsp+20h]
-    lea rdx, [rsp+18h]
-    call JsStringToPointer
-    test eax, eax
-    jnz _failed
-
-    mov r8, [rsp+20h]
-    test r8, r8
-    jz _eof
-
-    mov rcx, [rsp+18h]
-    lea r8, [rcx+r8*2]
-
-    movsx rax, word ptr[rcx]
-    add rcx, 2
-    cmp rcx, r8
-    jz _eof
-
-    movsx rdx, word ptr[rcx]
-    shl rdx, 16
-    or rax, rdx
-    add rcx, 2
-    cmp rcx, r8
-    jz _eof
-
-    movsx rdx, word ptr[rcx]
-    shl rdx, 32
-    or rax, rdx
-    add rcx, 2
-    cmp rcx, r8
-    jz _eof
-
-    movsx rdx, word ptr[rcx]
-    shl rdx, 48
-    or rax, rdx
-    jmp _eof
-_failed:
-    mov rcx, [rsp+38h]
-    call [rdi+fn_getout_invalid_parameter]
-endp
-
 
 ; codes for minecraft
-export def std_string_ctor:qword
 
 export proc logHookAsyncCb
     mov r8, [rcx + asyncSize + 8h]
@@ -561,6 +301,7 @@ export proc runtime_error
 _ignore:
 endp
 
+; [[noreturn]] raise_runtime_error(int err)
 export proc raise_runtime_error
     const sizeofEXCEPTION_RECORD 152
     const sizeofCONTEXT 1232
@@ -585,12 +326,6 @@ export proc raise_runtime_error
 
     lea rcx, [rsp+8] ; exception_ptrs
     call runtimeErrorRaise
-endp
-
-; [[noreturn]] handle_invalid_parameter()
-export proc handle_invalid_parameter
-    mov ecx, STATUS_INVALID_PARAMETER
-    jmp raise_runtime_error
 endp
 
 export def serverInstance:qword
@@ -767,18 +502,19 @@ export proc packetSendAllHook
     mov rdx,rbx
     mov rcx,r14
     call onPacketSend
+    unwind
 
     ; original code
     mov rax, [r15]
     lea rdx, [r14+220h]
     mov rcx, r15
-    unwind
     jmp qword ptr[rax+18h]
 endp
 
 export def getLineProcessTask:qword
 export def std_cin:qword
 export def std_getline:qword
+export def std_string_ctor:qword
 
 export proc getline
     ; stack start

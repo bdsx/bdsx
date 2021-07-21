@@ -7,7 +7,7 @@ import { ServerLevel } from "./bds/level";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { CANCEL, Encoding } from "./common";
-import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, runtimeError, StaticPointer, uv_async, VoidPointer } from "./core";
+import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
@@ -17,8 +17,7 @@ import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError, remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
-import { numberWithFillZero, _tickCallback } from "./util";
-import { EXCEPTION_ACCESS_VIOLATION, STATUS_INVALID_PARAMETER } from "./windows_h";
+import { _tickCallback } from "./util";
 
 import readline = require("readline");
 import colors = require('colors');
@@ -53,42 +52,6 @@ class Liner {
     }
 }
 
-const STATUS_NO_NODE_THREAD = (0xE0000001|0);
-
-// default runtime error handler
-runtimeError.setHandler(err=>{
-    if (!err) {
-        err = Error(`Native crash without error object, (result=${err})`);
-    }
-    remapError(err);
-
-    const lastSender = ipfilter.getLastSender();
-    console.error('[ Native Crash ]');
-    console.error(`Last packet from IP: ${lastSender}`);
-    if (err.code && err.nativeStack && err.exceptionInfos) {
-        console.error('[ Native Stack ]');
-        switch (err.code) {
-        case STATUS_NO_NODE_THREAD:
-            console.error(`JS Accessing from the out of threads`);
-            break;
-        case EXCEPTION_ACCESS_VIOLATION: {
-            const info = err.exceptionInfos;
-            console.error(`Accessing an invalid memory address (0x${numberWithFillZero(info[1], 16, 16)})`);
-            break;
-        }
-        case STATUS_INVALID_PARAMETER:
-            console.error(`Native function received wrong parameters`);
-            break;
-        }
-        console.error(err.nativeStack);
-    }
-    console.error('[ JS Stack ]');
-    try {
-        if ((err instanceof Error) && !err.stack) throw err;
-    } catch (err) {
-    }
-    console.error(err.stack || err.message);
-});
 
 let launched = false;
 let loadingIsFired = false;
@@ -124,7 +87,7 @@ function patchForStdio():void {
         }
         if (events.serverLog.fire(line, color) === CANCEL) return;
         console.log(color(line));
-    }, void_t, null, int32_t, StaticPointer, int64_as_float_t);
+    }, void_t, {onError:asmcode.jsend_returnZero}, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
@@ -134,7 +97,7 @@ function patchForStdio():void {
         if (events.commandOutput.fire(line) !== CANCEL) {
             console.log(line);
         }
-    }, void_t, null, int64_as_float_t, StaticPointer);
+    }, void_t, {onError: asmcode.jsend_returnZero}, int64_as_float_t, StaticPointer);
     procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x217, asmcode.CommandOutputSenderHook, Register.rax, true, [
         0xE8, 0xFF, 0xFF, 0xFF, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64,char const * __ptr64 const,uns>
         0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,   // lea rdx,qword ptr ds:[<class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::flush<char,struct std::char_traits<char> >(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64)>]
@@ -152,7 +115,7 @@ function patchForStdio():void {
     ], [3, 7, 21, 25, 38, 42]);
 
     // remove original stdin thread
-    const justReturn = asm().ret();
+    const justReturn = asm().ret().buffer();
     procHacker.write('ConsoleInputReader::ConsoleInputReader', 0, justReturn);
     procHacker.write('ConsoleInputReader::~ConsoleInputReader', 0, justReturn);
     procHacker.write('ConsoleInputReader::unblockReading', 0, justReturn);
@@ -162,28 +125,7 @@ function _launch(asyncResolve:()=>void):void {
     ipfilter.init(ip=>{
         console.error(`[BDSX] traffic exceeded threshold for IP: ${ip}`);
     });
-    jshook.init(events.errorFire);
-    const oldSetInterval = setInterval;
-    global.setInterval = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
-        return oldSetInterval((...args:any[])=>{
-            try {
-                callback(...args);
-            } catch (err) {
-                events.errorFire(err);
-            }
-        }, ms, args);
-    };
-    const oldSetTimeout = setTimeout;
-    global.setTimeout = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
-        return oldSetTimeout((...args:any[])=>{
-            try {
-                callback(...args);
-            } catch (err) {
-                events.errorFire(err);
-            }
-        }, ms, args);
-    } as any;
-    setTimeout.__promisify__ = oldSetTimeout.__promisify__;
+    jshook.init();
 
     asmcode.evWaitGameThreadEnd = dll.kernel32.CreateEventW(null, 0, 0, null);
 
@@ -220,23 +162,6 @@ function _launch(asyncResolve:()=>void):void {
         ],
         [4, 8, 9, 13]
     );
-
-    // 1.16.210.05 - no google breakpad now
-    // hook runtime error
-    // procHacker.jumping('hook-runtime-error', 'google_breakpad::ExceptionHandler::HandleException', 0, asmcode.runtime_error, Register.rax, [
-    //     0x48, 0x89, 0x5C, 0x24, 0x08,   // mov qword ptr ss:[rsp+8],rbx
-    //     0x57,                           // push rdi
-    //     0x48, 0x83, 0xEC, 0x20,         // sub rsp,20
-    //     0x48, 0x8B, 0xF9,               // mov rdi,rcx
-    // ], []);
-    // procHacker.jumping('hook-invalid-parameter', 'google_breakpad::ExceptionHandler::HandleInvalidParameter', 0, asmcode.handle_invalid_parameter, Register.rax, [
-    //     0x40, 0x55, // push rbp
-    //     0x41, 0x54, // push r12
-    //     0x41, 0x55, // push r13
-    //     0x41, 0x56, // push r14
-    //     0x41, 0x57, // push r15
-    //     0x48, 0x8D, 0xAC, 0x24, 0x00, 0xF8, 0xFF, 0xFF, // lea rbp,qword ptr ss:[rsp-800]
-    // ], []);
 
     // get server instance
     procHacker.hookingRawWithCallOriginal('ServerInstance::ServerInstance', asmcode.ServerInstance_ctor_hook, [Register.rcx, Register.rdx, Register.r8], []);
@@ -378,6 +303,7 @@ function createServerCommandOrigin(name:CxxString, level:ServerLevel, permission
     const origin = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
     wrapper.value = origin;
     serverCommandOriginConstructor(origin, name, level, permissionLevel, dimension);
+    origin.getName();
     return wrapper;
 }
 

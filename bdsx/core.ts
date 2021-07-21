@@ -226,7 +226,7 @@ export declare class StaticPointer extends PrivatePointer {
      * if encoding is Encoding.Buffer it will call getBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    getString<T extends Encoding = Encoding.Utf8>(bytes?: number, offset?: number, encoding?: T): TypeFromEncoding<T>;
+    getString<T extends Encoding = Encoding.Utf8>(bytes?: number|undefined, offset?: number, encoding?: T): TypeFromEncoding<T>;
 
     /**
      * set string with null character
@@ -261,6 +261,9 @@ export declare class StaticPointer extends PrivatePointer {
      */
     setBin(v:string, offset?:number): void;
 
+    setInt32To64WithZero(value: number, offset?: number): void;
+    setFloat32To64WithZero(value: number, offset?: number): void;
+
     interlockedIncrement16(offset?:number):number;
     interlockedIncrement32(offset?:number):number;
     interlockedIncrement64(offset?:number):number;
@@ -281,6 +284,12 @@ export declare class StaticPointer extends PrivatePointer {
  */
 export declare class AllocatedPointer extends StaticPointer {
     constructor(size:number);
+
+    /**
+     * allocate a encoded string
+     * include the null character
+     */
+    static fromString(str:string, encoding?:Encoding):AllocatedPointer;
 }
 
 export declare class StructurePointer extends PrivatePointer {
@@ -330,7 +339,7 @@ export declare class NativePointer extends StaticPointer {
     writeInt64WithFloat(value: number): void;
     writeFloat32(value: number): void;
     writeFloat64(value: number): void;
-    writePointer(value: StaticPointer): void;
+    writePointer(value: VoidPointer|null): void;
 
     /**
      * read a C++ std::string
@@ -441,8 +450,17 @@ export declare class NativePointer extends StaticPointer {
     writeJsValueRef(value:unknown):void;
 }
 
+export interface RuntimeStack {
+    base:NativePointer|null;
+    address:NativePointer;
+    moduleName:string|null;
+    fileName:string|null;
+    functionName:string|null;
+    lineNumber:number;
+}
+
 export declare class RuntimeError extends Error {
-    nativeStack?:string;
+    nativeStack?:RuntimeStack[];
     code?:number;
     exceptionInfos?:number[];
 }
@@ -570,6 +588,9 @@ export declare namespace runtimeError
     // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
 
+    // wrapper of RtlLookupFunctionEntry
+    export function lookUpFunctionEntry(address:VoidPointer):[VoidPointer]|[VoidPointer, number, number, number]|null;
+    // wrapper of RtlAddFunctionTable
 	export function addFunctionTable(functionTable:VoidPointer, entryCount:number, baseAddress:VoidPointer):void;
 }
 
@@ -695,21 +716,6 @@ export declare namespace cgate
 }
 
 export declare namespace chakraUtil {
-
-    // void* stack_alloc(size_t size)
-    export const stack_alloc:VoidPointer;
-    // void stack_free_all()
-    export const stack_free_all:VoidPointer;
-    // uintptr_t* last_allocate
-    export const stack_ptr:VoidPointer;
-    // char* stack_utf8(const char16_t* str, size_t size)
-    export const stack_utf8:VoidPointer;
-    // char* stack_ansi(const char16_t* str, size_t size)
-    export const stack_ansi:VoidPointer;
-    // JsErrorCode from_utf8(pcstr str, JsValueRef* out)
-    export const from_utf8:VoidPointer;
-    // JsErrorCode from_ansi(pcstr str, JsValueRef* out)
-    export const from_ansi:VoidPointer;
     // void* pointer_js2np(JsValueRef value)
     export const pointer_js2class:VoidPointer;
 
@@ -804,10 +810,13 @@ type ErrorListener = (err:Error)=>void;
 
 export declare namespace jshook
 {
+    export function init():void;
+    /** @deprecated */
     export function init(onError:ErrorListener):void;
     export function setOnError(onError:ErrorListener):ErrorListener;
     export function getOnError():ErrorListener;
     export function fireError(err:Error):void;
+    export const fireErrorPointer:VoidPointer;
 }
 
 export declare namespace cxxException

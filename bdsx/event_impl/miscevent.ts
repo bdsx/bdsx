@@ -4,6 +4,7 @@ import { VoidPointer } from "../core";
 import { events } from "../event";
 import { bin64_t, bool_t, int32_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
+import { _tickCallback } from "../util";
 
 interface IQueryRegenerateEvent {
     motd: string,
@@ -31,6 +32,7 @@ events.serverOpen.on(()=>{
         events.queryRegenerate.fire(event);
         motd.value = event.motd;
         levelname.value = event.levelname;
+        _tickCallback();
         return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, event.isJoinableThroughServerScreen);
     }
     serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement();

@@ -250,6 +250,8 @@ const symbols = [
     'Player::getSkin',
     "ItemActor::`vftable'",
     'ServerPlayer::_nextContainerCounter',
+    'EnchantUtils::getEnchantLevel',
+    'EnchantUtils::hasEnchant'
 ] as const;
 
 // decorated symbols
@@ -286,6 +288,7 @@ const symbols2 = [
     '??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z',
     'sprintf',
     'vsnprintf',
+    '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z'
 ] as const;
 
 
