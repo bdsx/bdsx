@@ -9,7 +9,7 @@ export enum MinecraftPacketIds {//int32_t
 	ClientToServerHandshake = 0x04,
 	Disconnect = 0x05,
 	ResourcePacksInfo = 0x06,
-	ResourcePacksStack = 0x07,
+	ResourcePackStack = 0x07,
 	ResourcePackClientResponse = 0x08,
 	Text = 0x09,
 	SetTime = 0x0a,
