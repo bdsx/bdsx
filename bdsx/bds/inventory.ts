@@ -188,9 +188,9 @@ export class ItemStack extends NativeClass {
         const cxxvector = CxxVectorString.construct();
         if (typeof lores === "string") {
             cxxvector.push(lores);
-        } else lores.forEach((v)=>{
-            cxxvector.push(v);
-        });
+        } else {
+            cxxvector.push(...lores);
+        }
         this._setCustomLore(cxxvector);
         cxxvector.destruct();
     }

@@ -197,7 +197,9 @@ Player.prototype.setName = function(name:string):void {
     const entry = PlayerListEntry.create(this);
     const pk = PlayerListPacket.create();
     PlayerListPacket$emplace(pk, entry);
-    serverInstance.minecraft.getLevel().players.toArray().forEach(player => player.sendNetworkPacket(pk));
+    for (const player of serverInstance.minecraft.getLevel().players) {
+        player.sendNetworkPacket(pk);
+    }
     entry.destruct();
     pk.dispose();
 };
@@ -240,7 +242,7 @@ ServerPlayer.prototype.sendTranslatedMessage = function(message:CxxString, param
     const pk = TextPacket.create();
     const _params = new CxxStringVector(true);
     _params.construct();
-    params.forEach(e => _params.push(e));
+    _params.push(...params);
     TextPacket$createTranslated(pk, message, _params);
     this.sendNetworkPacket(pk);
     _params.destruct();
@@ -464,7 +466,9 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
     const pk = UpdateBlockPacket.create();
     UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block, 3);
-    serverInstance.minecraft.getLevel().players.toArray().forEach(player => player.sendNetworkPacket(pk));
+    for (const player of serverInstance.minecraft.getLevel().players) {
+        player.sendNetworkPacket(pk);
+    }
     pk.dispose();
     return retval;
 };

@@ -9,7 +9,8 @@
     "plugins": [
         "@typescript-eslint",
         "unused-imports",
-        "import"
+        "import",
+        "github"
     ],
     "extends": [
       "eslint:recommended",
@@ -36,6 +37,7 @@
             "allowSingleExtends": true
           }
         ],
+        "github/array-foreach": "error",
         "unused-imports/no-unused-imports": "error",
         "import/no-cycle": "error",
         "prefer-arrow-callback": "error",

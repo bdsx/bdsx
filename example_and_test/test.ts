@@ -16,7 +16,7 @@ import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
 import { CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
-import { CxxVector } from "bdsx/cxxvector";
+import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { events } from "bdsx/event";
@@ -259,6 +259,19 @@ Tester.test({
         const overTheFiveNative = makefunc.np(overTheFour, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
         const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
         this.equals(overTheFiveRewrap(0, 0, 0, 0, 1234), 1234, 'makefunc.np, overTheFour failed');
+
+        const CxxStringVectorToArray = CxxVectorToArray.make(CxxString);
+        const CxxStringVector = CxxVector.make(CxxString);
+        const class_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVector);
+        const clsvector = CxxStringVector.construct();
+        clsvector.push('a','b','c','d');
+        this.equals(class_to_array(clsvector).join(','), 'a,b,c,d', 'CxxVectorToArray, class_to_array');
+        clsvector.destruct();
+
+        const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVectorToArray);
+        this.equals(array_to_array(['a','b','c','d']).join(','), 'a,b,c,d', 'CxxVectorToArray, array_to_array');
+
+
     },
 
     vectorcopy() {
@@ -294,7 +307,20 @@ Tester.test({
 
         b.destruct();
 
+        a.vector.push('test1', 'test2', 'test3');
+        this.equals(a.vector.size(), 4, 'a.vector, invalid size');
+        this.equals([...a.vector].join(','), 'test,test1,test2,test3', 'a.vector, invalid size');
+
         a.destruct();
+
+        const vec = (CxxVector.make(CxxString)).construct();
+        vec.push("1");
+        vec.push("2");
+        vec.push("3");
+        vec.push("4");
+        vec.push("5");
+        this.equals(vec.toArray().join(','), '1,2,3,4,5', 'vector copy');
+        vec.destruct();
     },
 
     json() {

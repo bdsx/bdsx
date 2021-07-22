@@ -100,9 +100,14 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
             newBytes += compsize;
             this._resize(newBytes, Math.max(capBytes*2, newBytes), begptr, oldsizeBytes);
             begptr = this.getPointer(0);
+            begptr.move(newBytes);
+        } else {
+            newBytes += compsize;
+            begptr.move(newBytes);
+            this.setPointer(begptr, 8);
+            begptr.move(-compsize, -1);
         }
 
-        begptr.move(idx*compsize);
         this._copy(begptr, component, idx);
     }
 
@@ -140,21 +145,55 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         return true;
     }
 
-    push(component:T):void {
-        let begptr = this.getPointer(0);
-        const endptr = this.getPointer(8);
-        const compsize = this.componentType[NativeType.size];
-        const idx = endptr.subptr(begptr) / compsize | 0;
-        const capptr = this.getPointer(16);
-        if (capptr.equals(endptr)) {
-            const oldsizeBytes = endptr.subptr(begptr);
-            const capBytes = capptr.subptr(begptr);
-            const newsizeBytes = oldsizeBytes+compsize;
-            this._resize(newsizeBytes, Math.max(capBytes*2, newsizeBytes), begptr, oldsizeBytes);
-            begptr = this.getPointer(0);
+    push(...component:T[]):void {
+        switch (component.length) {
+        case 0: return;
+        case 1: {
+            let begptr = this.getPointer(0);
+            const endptr = this.getPointer(8);
+            const compsize = this.componentType[NativeType.size];
+            const oldbytes = endptr.subptr(begptr);
+            const capptr = this.getPointer(16);
+            if (capptr.equals(endptr)) {
+                const capBytes = capptr.subptr(begptr);
+                const newsizeBytes = oldbytes+compsize;
+                this._resize(newsizeBytes, Math.max(capBytes*2, newsizeBytes), begptr, oldbytes);
+                begptr = this.getPointer(0);
+                begptr.move(oldbytes);
+            } else {
+                begptr.move(oldbytes+compsize);
+                this.setPointer(begptr, 8);
+                begptr.move(-compsize, -1);
+            }
+            this._copy(begptr, component[0], oldbytes / compsize | 0);
+            return;
         }
-        begptr.move(idx*compsize);
-        this._copy(begptr, component, idx);
+        default: {
+            let begptr = this.getPointer(0);
+            const endptr = this.getPointer(8);
+            const capptr = this.getPointer(16);
+            const compsize = this.componentType[NativeType.size];
+            const oldbytes = endptr.subptr(begptr);
+            const n = component.length;
+            const newbytes = n*compsize + oldbytes;
+            const capbytes = capptr.subptr(begptr);
+            if (newbytes > capbytes) {
+                this._resize(newbytes, Math.max(newbytes, capbytes*2), begptr, oldbytes);
+                begptr = this.getPointer(0);
+                begptr.move(oldbytes);
+            } else {
+                begptr.move(newbytes);
+                this.setPointer(begptr, 8);
+                begptr.move(oldbytes-newbytes, -1);
+            }
+            let idx = oldbytes / compsize | 0;
+            for (const c of component) {
+                this._copy(begptr, c, idx++);
+                begptr.move(compsize);
+            }
+            break;
+        }
+        }
     }
 
     resize(size:number):void {
