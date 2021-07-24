@@ -62,9 +62,9 @@ class PackInfo {
         this.uuid = manifest.header.uuid;
         this.version = manifest.header.version || manifest.header.modules[0].version;
 
-        if (manifest.modules) {
+        if (manifest.modules != null) {
             this.type = manifest.modules[0].type.toLowerCase();
-        } else if (manifest.header.modules) {
+        } else if (manifest.header.modules != null) {
             this.type = manifest.header.modules[0].type.toLowerCase();
         } else {
             throw new Error(`${path}: modules not found.`);

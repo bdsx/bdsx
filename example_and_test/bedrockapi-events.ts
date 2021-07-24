@@ -2,9 +2,11 @@
 // Addon Script
 import { Actor, DimensionId } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
+import { Tester } from "bdsx/tester";
 import { system } from "./bedrockapi-system";
 
 system.listenForEvent('minecraft:entity_created', ev => {
+    if (!Tester.isPassed()) return; // logging if test is passed
     console.log('entity created: ' + ev.data.entity.__identifier__);
 
     // Get extra informations from entity

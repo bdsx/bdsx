@@ -3,36 +3,66 @@ import { remapError, remapStackLine } from "./source-map-support";
 import { getLineAt } from "./util";
 import colors = require('colors');
 
-let passed = 0;
-let skipped = 0;
 let testnum = 1;
 let testcount = 0;
+let done = 0;
+let testIsDone = false;
+
+const total:number[] = [0,0,0,0];
 
 export class Tester {
-    subject = '';
-    errored = false;
-    done = false;
-    skipped = false;
+    private subject = '';
+    private state = Tester.State.Pending;
+    private pending = 0;
 
     public static errored = false;
+    public static isPassed():boolean {
+        return testIsDone && !Tester.errored;
+    }
 
-    log(message:string):void {
-        console.log(`[test/${this.subject}] ${message}`);
+    private _done(state:Tester.State):void {
+        if (state <= this.state) return;
+        if (this.pending !== 0 && state === Tester.State.Passed) {
+            this._logPending();
+            return;
+        }
+        total[this.state]--;
+        total[state]++;
+        if (this.state === Tester.State.Pending) done++;
+        if (state === Tester.State.Failed) {
+            Tester._log(`FAILED (${total[Tester.State.Passed]}/${testcount})`, true);
+            Tester.errored = true;
+        }
+        this.state = state;
+
+        if (done === testcount) {
+            const error = total[Tester.State.Failed] !== 0;
+            const message = `[test] TEST ${error ? 'FAILED' : 'PASSED'} (${total[Tester.State.Passed]}/${testcount - total[Tester.State.Skipped]})`;
+
+            Tester._log(message, error);
+            testIsDone = true;
+        }
+    }
+
+    private _logPending():void {
+        if (this.pending === 0) this.log(`Pending done`);
+        else this.log(`Pending ${this.pending} tasks`);
+    }
+    private static _log(message:string, error?:boolean):void {
+        if (error) console.error(colors.red(`[test] ${message}`));
+        else console.log(colors.brightGreen(`[test] ${message}`));
+    }
+
+    log(message:string, error?:boolean):void {
+        const msg = `[test/${this.subject}] ${message}`;
+        if (error) console.error(colors.red(msg));
+        else console.log(colors.brightGreen(msg));
     }
 
     private _error(message:string, errorpos:string):void {
-        console.error(colors.red(`[test/${this.subject}] failed. ${message}`));
+        this.log(`failed. ${message}`, true);
         console.error(colors.red(errorpos));
-        if (!this.errored) {
-            if (this.done) {
-                if (this.skipped) skipped--;
-                else passed--;
-                console.error(colors.red(`[test] FAILED (${passed}/${testcount})`));
-            }
-            this.errored = true;
-            this.skipped = false;
-            Tester.errored = true;
-        }
+        this._done(Tester.State.Failed);
     }
 
     error(message:string, stackidx:number = 2):void {
@@ -62,8 +92,28 @@ export class Tester {
     }
 
     skip(message:string):void {
-        this.skipped = true;
         this.log(message);
+        this._done(Tester.State.Skipped);
+    }
+
+    wrap<ARGS extends any[]>(run:(...args:ARGS)=>(void|Promise<void>), count:number = 1):(...args:ARGS)=>Promise<void> {
+        if (count !== 0) this.pending ++;
+        return async(...args:ARGS)=>{
+            try {
+                await run(...args);
+            } catch (err) {
+                this.processError(err);
+            }
+            if (count !== 0) {
+                if ((--count) === 0) {
+                    this.pending--;
+                    this._logPending();
+                    if (this.pending === 0) {
+                        this._done(Tester.State.Passed);
+                    }
+                }
+            }
+        };
     }
 
     static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>, waitOneTick?:boolean):Promise<void> {
@@ -80,8 +130,8 @@ export class Tester {
             });
         }
 
-        console.log(`[test] node version: ${process.versions.node}`);
-        console.log(`[test] engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
+        Tester._log(`node version: ${process.versions.node}`);
+        Tester._log(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
 
         const testlist = Object.entries(tests);
         testcount += testlist.length;
@@ -89,27 +139,22 @@ export class Tester {
         for (const [subject, test] of testlist) {
             const tester = new Tester;
             try {
-                console.log(`[test] (${testnum++}/${testcount}) ${subject}`);
+                Tester._log(`(${testnum++}/${testcount}) ${subject}`);
                 tester.subject = subject;
-                tester.errored = false;
                 await test.call(tester);
-                if (tester.skipped) skipped++;
-                else if (!tester.errored) passed++;
-                tester.done = true;
+                tester._done(Tester.State.Passed);
             } catch (err) {
                 tester.processError(err);
             }
         }
+    }
+}
 
-        if (skipped !== 0) {
-            console.error(colors.yellow(`[test] SKIPPED (${skipped}/${testcount})`));
-            testcount -= skipped;
-        }
-
-        if (passed !== testcount) {
-            console.error(colors.red(`[test] FAILED (${passed}/${testcount})`));
-        } else {
-            console.log(`[test] PASSED (${passed}/${testcount})`);
-        }
+export namespace Tester {
+    export enum State {
+        Pending,
+        Passed,
+        Skipped,
+        Failed,
     }
 }

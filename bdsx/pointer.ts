@@ -30,7 +30,8 @@ export abstract class Wrapper<T> extends NativeClass {
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
         to.copyFrom(from, 8);
     }
-    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, offset:number):void {
+    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
+        const {offset} = info;
         const type = this;
         let obj:VoidPointer|null = null;
 
