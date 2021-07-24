@@ -16,6 +16,7 @@ import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
 import { CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
+import { CxxMap } from "bdsx/cxxmap";
 import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
@@ -197,7 +198,7 @@ Tester.test({
 
     },
 
-    memset(): void {
+    memset() {
         const dest = new Uint8Array(12);
         const ptr = new NativePointer;
         ptr.setAddressFromBuffer(dest);
@@ -378,6 +379,19 @@ Tester.test({
         str.destruct();
 
 
+    },
+
+    map() {
+        const map = CxxMap.make(CxxString, int32_t).construct();
+        map.set('a', 4);
+        map.set('b', 5.5);
+        map.set('abcdefg12345678910', 6);
+        this.equals(map.get('a'), 4, 'map get a');
+        this.equals(map.get('b'), 5, 'map get b');
+        this.equals(map.get('abcdefg12345678910'), 6, 'map get long text');
+        this.equals(map.size(), 3, 'map size');
+
+        map.destruct();
     },
 
     json() {

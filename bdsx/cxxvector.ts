@@ -32,7 +32,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     // 	m_end = nullptr; // 0x08
     // 	m_cap = nullptr; // 0x10
 
-    abstract componentType:Type<T>;
+    abstract readonly componentType:Type<T>;
     static readonly componentType:Type<any>;
 
     [NativeType.ctor]():void {

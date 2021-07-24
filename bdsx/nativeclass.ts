@@ -1,3 +1,4 @@
+import { capi } from "./capi";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
@@ -32,6 +33,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     [isSealed]:boolean;
     [isNativeClass]:true;
     construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T;
+    allocate<T>(this:{new():T}, copyFrom?:T|null):T;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
     typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
@@ -110,7 +112,7 @@ interface NativeFieldInfo extends NativeDescriptorBuilder.Info {
     type:Type<any>;
 }
 
-class StructureDefination {
+class StructureDefinition {
     /**
      * end of fields
      */
@@ -141,14 +143,17 @@ class StructureDefination {
         sealClass(clazz);
 
         clazz[fieldmap] = this.fields;
-        Object.freeze(this.fields);
 
         const propmap = new NativeDescriptorBuilder;
         for (const key in this.fields) {
             const info = this.fields[key]!;
             info.type[NativeType.descriptor](propmap, key, info);
         }
-        const superproto = (clazz as any).__proto__.prototype;
+        const supercls = (clazz as any).__proto__;
+        const superproto = supercls.prototype;
+
+        (this.fields as any).__proto__ = supercls[fieldmap];
+        Object.freeze(this.fields);
 
         const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
         if (ctor !== null) {
@@ -182,6 +187,7 @@ class StructureDefination {
         let offset:number|undefined;
         let relative:number|undefined;
         let ghost = false;
+        let noInitialize = false;
         if (fieldOffset != null) {
             if (typeof fieldOffset === 'number') {
                 offset = fieldOffset;
@@ -194,6 +200,8 @@ class StructureDefination {
                 }
                 bitField = opts.bitMask;
                 ghost = opts.ghost || false;
+                if (ghost) noInitialize = true;
+                else noInitialize = opts.noInitialize || false;
             }
         }
         if (offset == null) {
@@ -211,7 +219,7 @@ class StructureDefination {
             if (bitField != null) {
                 throw Error(`${type.name} does not support the bit mask`);
             }
-            this.fields[key] = {type, offset, ghost, bitmask:null};
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask:null};
             if (!ghost) this.eof = null;
         } else {
             let bitmask:[number, number]|null = null;
@@ -244,7 +252,7 @@ class StructureDefination {
                 }
                 nextOffset = offset + sizeofType;
             }
-            this.fields[key] = {type, offset, ghost, bitmask};
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask};
             if (!ghost && this.eof !== null && nextOffset > this.eof) {
                 this.eof = nextOffset;
             }
@@ -252,7 +260,7 @@ class StructureDefination {
     }
 }
 
-const structures = new WeakMap<{new():any}, StructureDefination>();
+const structures = new WeakMap<{new():any}, StructureDefinition>();
 
 export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
@@ -306,7 +314,7 @@ export class NativeClass extends StructurePointer {
         return ptr.addAs(this, offset, (offset || 0) >> 31);
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
-        const {offset, bitmask, ghost} = info;
+        const {offset, noInitialize} = info;
         const type = this;
         builder.desc[key] = {
             configurable: true,
@@ -316,7 +324,7 @@ export class NativeClass extends StructurePointer {
                 return value;
             }
         };
-        if (ghost) return;
+        if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
             builder.ctor.used = true;
             builder.ctor.code += `this${accessor(key)}[NativeType.ctor]();\n`;
@@ -332,6 +340,7 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
+     * call the constructor
      * alias of [NativeType.ctor]() and [Native.ctor_copy]();
      */
     construct(copyFrom?:this|null):void {
@@ -343,6 +352,7 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
+     * call the destructor
      * alias of [NativeType.dtor]();
      */
     destruct():void {
@@ -357,6 +367,19 @@ export class NativeClass extends StructurePointer {
      */
     static construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T {
         const inst = new this(true);
+        inst.construct(copyFrom);
+        return inst;
+    }
+
+    /**
+     * allocating with malloc and constructing.
+     *
+     * const inst = capi.malloc(size).as(Class);
+     * inst.construct();
+     */
+    static allocate<T>(this:{new():T}, copyFrom?:T|null):T {
+        const clazz = this as NativeClassType<any>;
+        const inst = capi.malloc(clazz[NativeType.size]).as(clazz);
         inst.construct(copyFrom);
         return inst;
     }
@@ -386,7 +409,7 @@ export class NativeClass extends StructurePointer {
 
         const superclass = (clazz as any).__proto__;
         sealClass(superclass);
-        const def = new StructureDefination(superclass);
+        const def = new StructureDefinition(superclass);
         structures.set(clazz, def);
 
         for (const key in fields) {
@@ -424,6 +447,23 @@ export class NativeClass extends StructurePointer {
     static typeOf<T extends NativeClass, KEY extends KeysWithoutFunction<T>>(this:{new():T}, field:KEY):Type<T[KEY]> {
         return (this as NativeClassType<T>)[fieldmap][field].type;
     }
+
+    static * keys():IterableIterator<string> {
+        for (const key in this[fieldmap]) {
+            yield key;
+        }
+    }
+
+    /**
+     * call the destructor and capi.free
+     *
+     * inst.destruct();
+     * capi.free(inst);
+     */
+    static delete(item:NativeClass):void {
+        item.destruct();
+        capi.free(item);
+    }
 }
 
 NativeClass.prototype[NativeType.size] = 0;
@@ -449,17 +489,24 @@ export interface NativeFieldOptions {
     /**
      * Set it as not a actual field, just for accessing.
      * Does not increase the size of the class.
-     * also does increase the next field offset.
+     * also does not increase the next field offset.
      * And does not call the constructor and the destructor.
+     *
+     * It's noInitialize with the zero space
      */
     ghost?:boolean;
+    /**
+     * Don't initialize
+     * But it has space unlike ghost
+     */
+    noInitialize?:boolean;
 }
 
 export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|number|null, bitMask?:number|null) {
     return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
         let def = structures.get(clazz);
-        if (def == null) structures.set(clazz, def = new StructureDefination((clazz as any).__proto__));
+        if (def == null) structures.set(clazz, def = new StructureDefinition((clazz as any).__proto__));
         def.field(key, type, fieldOffset, bitMask);
     };
 }
@@ -498,7 +545,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
         throw Error("non assignable");
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
-        const {offset, bitmask, ghost} = info;
+        const {offset, noInitialize} = info;
         const type = this as any;
         builder.desc[key] = {
             configurable: true,
@@ -508,7 +555,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
                 return value;
             }
         };
-        if (ghost) return;
+        if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
             builder.ctor.used = true;
             builder.ctor.code += `this${accessor(key)}[NativeType.ctor]();\n`;
@@ -554,7 +601,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
 
         let off = 0;
         for (let i = 0; i < count; i++) {
-            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false});
+            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false, noInitialize:false});
             off += itemSize;
         }
         class NativeArrayImpl extends NativeArray<T> {
