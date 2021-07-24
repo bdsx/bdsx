@@ -370,15 +370,15 @@ export class Actor extends NativeClass {
     getMaxHealth():number {
         abstract();
     }
-    static fromUniqueIdBin(bin:bin64_t):Actor|null {
+    static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();
     }
-    static fromUniqueId(lowbits:number, highbits:number):Actor|null {
-        return Actor.fromUniqueIdBin(bin.make64(lowbits, highbits));
+    static fromUniqueId(lowbits:number, highbits:number, getRemovedActor:boolean = true):Actor|null {
+        return Actor.fromUniqueIdBin(bin.make64(lowbits, highbits), getRemovedActor);
     }
-    static fromEntity(entity:IEntity):Actor|null {
+    static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;
-        return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"]);
+        return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);
     }
     static [NativeType.getter](ptr:StaticPointer, offset?:number):Actor {
         return Actor._singletoning(ptr.add(offset, offset! >> 31))!;

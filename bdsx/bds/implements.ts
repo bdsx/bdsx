@@ -121,8 +121,8 @@ Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
 
-Actor.fromUniqueIdBin = function(bin) {
-    return serverInstance.minecraft.getLevel().fetchEntity(bin, true);
+Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
+    return serverInstance.minecraft.getLevel().fetchEntity(bin, getRemovedActor);
 };
 
 Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);

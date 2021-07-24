@@ -20,7 +20,7 @@ export class Level extends NativeClass {
     destroyBlock(blockSource:BlockSource, blockPos:BlockPos, dropResources:boolean):boolean {
         abstract();
     }
-    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor|null {
+    fetchEntity(id:ActorUniqueID, fetchRemovedActor:boolean):Actor|null {
         abstract();
     }
     getActivePlayerCount():number {
