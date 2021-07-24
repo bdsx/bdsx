@@ -1,19 +1,10 @@
 import { abstract } from "../common";
-import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor } from "./actor";
 import type { Player } from "./player";
 
 export class Scoreboard extends NativeClass {
-    protected _getObjectiveNames():CxxVector<CxxString> {
-        abstract();
-    }
-
-    protected _getObjectives():CxxVector<Objective> {
-        abstract();
-    }
-
     // protected _modifyPlayerScore(success:boolean, id:ScoreboardId, objective:Objective, value:number, action:PlayerScoreSetFunction):number {
     //     abstract();
     // }
@@ -38,7 +29,7 @@ export class Scoreboard extends NativeClass {
     }
 
     getObjectiveNames():string[] {
-        return this._getObjectiveNames().toArray();
+        abstract();
     }
 
     getObjective(name:string):Objective|null {
@@ -46,7 +37,7 @@ export class Scoreboard extends NativeClass {
     }
 
     getObjectives():Objective[] {
-        return this._getObjectives().toArray();
+        abstract();
     }
 
     getActorScoreboardId(actor:Actor):ScoreboardId {
@@ -108,20 +99,13 @@ export class Objective extends NativeClass {
     displayName:CxxString;
     @nativeField(ObjectiveCriteria.ref())
     criteria:ObjectiveCriteria;
-    protected _getPlayers():CxxVector<ScoreboardId> {
-        abstract();
-    }
-
-    protected _getPlayerScore(info:ScoreInfo, id:ScoreboardId):ScoreInfo {
-        abstract();
-    }
 
     getPlayers():ScoreboardId[] {
-        return this._getPlayers().toArray();
+        abstract();
     }
 
     getPlayerScore(id:ScoreboardId):ScoreInfo {
-        return this._getPlayerScore(new ScoreInfo(true), id);
+        abstract();
     }
 
 }
