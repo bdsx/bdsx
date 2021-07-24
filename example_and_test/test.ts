@@ -346,6 +346,7 @@ Tester.test({
             ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
             ['PositionTrackingDBServerBroadcast', 'PositionTrackingDBServerBroadcastPacket'],
             ['PositionTrackingDBClientRequest', 'PositionTrackingDBClientRequestPacket'],
+            ['NPCDialoguePacket', 'NpcDialoguePacket'],
         ]);
 
         for (const id in PacketIdToType) {
