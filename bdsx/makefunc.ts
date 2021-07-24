@@ -6,6 +6,7 @@ import { abstract, Bufferable, Encoding } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, PrivatePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { isBaseOf } from "./util";
+import util = require('util');
 
 export type ParamType = makefunc.Paramable;
 
@@ -533,6 +534,9 @@ declare global
     }
 }
 
+VoidPointer.prototype[util.inspect.custom] = function() {
+    return `${this.constructor.name} { ${this.toString()} }`;
+};
 VoidPointer[makefunc.size] = 8;
 VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS{
     return ptr.getPointerAs(this, offset);

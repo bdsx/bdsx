@@ -1,10 +1,12 @@
 import { capi } from "./capi";
+import { CircularDetector } from "./circulardetector";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
+import util = require('util');
 
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
@@ -152,7 +154,8 @@ class StructureDefinition {
         const supercls = (clazz as any).__proto__;
         const superproto = supercls.prototype;
 
-        (this.fields as any).__proto__ = supercls[fieldmap];
+        const superfield = supercls[fieldmap];
+        if (superfield != null) (this.fields as any).__proto__ = superfield;
         Object.freeze(this.fields);
 
         const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
@@ -465,13 +468,33 @@ export class NativeClass extends StructurePointer {
         capi.free(item);
     }
 
+    protected _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
+        return CircularDetector.check(this, allocator, obj=>{
+            const fields = (this as any).constructor[fieldmap];
+            for (const field in fields) {
+                let value:unknown;
+                try {
+                    value = (this as any)[field];
+                } catch (err) {
+                    value = 'Error: '+err.message;
+                }
+                obj[field] = value;
+            }
+        });
+    }
+
     toJSON():Record<string, any> {
-        const out:Record<string, any> = {};
-        const fields = (this as any).constructor[fieldmap];
-        for (const field in fields) {
-            out[field] = (this as any)[field];
+        const obj = this._toJsonOnce(()=>({}));
+        for (const key in obj) {
+            if (!obj.hasOwnProperty(key)) continue;
+            const v = obj[key];
+            if (v != null) obj[key] = v.toJSON != null ? v.toJSON() : v;
         }
-        return out;
+        return obj;
+    }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        return this._toJsonOnce(()=>new (CircularDetector.makeTemporalClass(this.constructor.name, this, options)));
     }
 }
 

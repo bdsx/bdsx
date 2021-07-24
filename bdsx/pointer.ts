@@ -3,6 +3,8 @@ import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
+import util = require('util');
+import { CircularDetector } from "./circulardetector";
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
 {
@@ -114,6 +116,12 @@ export class CxxStringWrapper extends NativeClass {
     resize(nsize:number):void {
         this.reserve(nsize);
         this.length = nsize;
+    }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        const obj = new (CircularDetector.makeTemporalClass(this.constructor.name, this, options));
+        obj.value = this.value;
+        return obj;
     }
 }
 

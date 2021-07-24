@@ -390,7 +390,6 @@ Tester.test({
         this.equals(map.get('b'), 5, 'map get b');
         this.equals(map.get('abcdefg12345678910'), 6, 'map get long text');
         this.equals(map.size(), 3, 'map size');
-
         map.destruct();
     },
 

@@ -10,6 +10,8 @@ import { CxxPair, CxxPairType } from "./cxxpair";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { int8_t, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
+import { templateName } from "./templatename";
+import util = require('util');
 
 enum _Redbl { // colors for link to parent
     _Red,
@@ -590,7 +592,26 @@ export abstract class CxxMap<K, V> extends NativeClass {
             CxxMapImpl.prototype.componentType = comptype;
             CxxMapImpl.prototype.nodeType = nodetype;
             CxxMapImpl.prototype.key_comp = key_comp;
+            Object.defineProperty(CxxMapImpl, 'name', {
+                value:getMapName(comptype)
+            });
             return CxxMapImpl;
         });
     }
+
+    toArray():[K, V][] {
+        return [...this.entires()];
+    }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        const map = new Map<K, V>(this.toArray());
+        return `CxxMap ${util.inspect(map, options).substr(4)}`;
+    }
+}
+
+
+function getMapName(pair:CxxPairType<any, any>):string {
+    const key = pair.firstType;
+    const value = pair.secondType;
+    return templateName('std::map', key.name, value.name, templateName('std::less', key.name), templateName('std::allocator', pair.name));
 }
