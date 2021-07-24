@@ -424,6 +424,17 @@ export class NativeClass extends StructurePointer {
     static typeOf<T extends NativeClass, KEY extends KeysWithoutFunction<T>>(this:{new():T}, field:KEY):Type<T[KEY]> {
         return (this as NativeClassType<T>)[fieldmap][field].type;
     }
+
+    toJSON():Record<string, any> {
+        const out:Record<string, any> = {};
+        const fields = (this as any).constructor[fieldmap];
+        for (const field in fields) {
+            if (fields.hasOwnProperty(field)) {
+                out[field] = (this as any)[field];
+            }
+        }
+        return out;
+    }
 }
 
 NativeClass.prototype[NativeType.size] = 0;
