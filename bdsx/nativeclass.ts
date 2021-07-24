@@ -429,9 +429,7 @@ export class NativeClass extends StructurePointer {
         const out:Record<string, any> = {};
         const fields = (this as any).constructor[fieldmap];
         for (const field in fields) {
-            if (fields.hasOwnProperty(field)) {
-                out[field] = (this as any)[field];
-            }
+            out[field] = (this as any)[field];
         }
         return out;
     }
