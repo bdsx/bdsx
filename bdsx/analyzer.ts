@@ -10,6 +10,7 @@ export namespace analyzer
         analyzeMap = new Map<string, string>();
         if (symbols === null) {
             symbols = pdb.getAll();
+            (symbols as any).__proto__ = null;
         }
 
         for (const name in symbols) {

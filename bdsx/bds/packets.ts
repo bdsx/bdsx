@@ -1734,6 +1734,7 @@ export const PacketIdToType = {
     0xa2: ItemComponentPacket,
     0xa3: FilterTextPacket,
 };
+(PacketIdToType as any).__proto__ = null;
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
 for (const packetId in PacketIdToType) {

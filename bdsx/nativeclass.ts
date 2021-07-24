@@ -120,7 +120,7 @@ class StructureDefinition {
     align:number;
     bitoffset = 0;
     bitTargetSize = 0;
-    fields:Record<keyof any, NativeFieldInfo> = {};
+    fields:Record<keyof any, NativeFieldInfo> = Object.create(null);
 
     constructor(supercls:NativeClassType<any>) {
         this.eof = supercls[NativeType.size];
@@ -463,6 +463,15 @@ export class NativeClass extends StructurePointer {
     static delete(item:NativeClass):void {
         item.destruct();
         capi.free(item);
+    }
+
+    toJSON():Record<string, any> {
+        const out:Record<string, any> = {};
+        const fields = (this as any).constructor[fieldmap];
+        for (const field in fields) {
+            out[field] = (this as any)[field];
+        }
+        return out;
     }
 }
 

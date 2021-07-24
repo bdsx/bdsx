@@ -693,7 +693,7 @@ export class X64Assembler {
 
     labels(skipPrivate?:boolean):Record<string, number> {
         if (!this.normalized) throw Error(`asm is not built, need to call build()`);
-        const labels:Record<string, number> = {};
+        const labels:Record<string, number> = Object.create(null);
         for (const [name, label] of this.ids) {
             if (skipPrivate && name.startsWith('#')) continue;
             if (label instanceof Label) {
@@ -705,7 +705,7 @@ export class X64Assembler {
 
     defs():Record<string, number> {
         if (!this.normalized) throw Error(`asm is not built, need to call build()`);
-        const labels:Record<string, number> = {};
+        const labels:Record<string, number> = Object.create(null);
         for (const [name, label] of this.ids) {
             if (label instanceof Defination) {
                 labels[name] = label.offset;
@@ -2723,6 +2723,7 @@ export class X64Assembler {
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
+            (defines as any).__proto__ = null;
             for (const name in defines) {
                 this.const(name, defines[name]);
             }

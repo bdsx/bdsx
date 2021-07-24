@@ -171,3 +171,4 @@ export enum MinecraftPacketIds {//int32_t
 	ItemComponent = 0xa2,
 	FilterText = 0xa3,
 }
+(MinecraftPacketIds as any).__proto__ = null;
