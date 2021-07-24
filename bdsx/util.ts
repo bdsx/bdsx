@@ -244,3 +244,8 @@ export function numberWithFillZero(n:number, width:number, radix?:number):string
     if (text.length >= width) return text;
     return '0'.repeat(width-text.length)+text;
 }
+
+export function filterToIdentifierableString(name:string):string {
+    name = name.replace(/[^a-zA-Z_$0-9]/g, '');
+    return /^[0-9]/.test(name) ? '_'+name : name;
+}

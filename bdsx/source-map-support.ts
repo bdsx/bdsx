@@ -172,13 +172,13 @@ export function mapSourcePosition(position: Position): Position {
             // Load all sources stored inline with the source map into the file cache
             // to pretend like they are already loaded. They may not exist on disk.
             if (sourceMap.map) {
-                sourceMap.map.sources.forEach(source=>{
+                for (const source of sourceMap.map.sources) {
                     const contents = sourceMap!.map!.sourceContentFor(source);
                     if (contents) {
                         const url = supportRelativeURL(sourceMap!.url!, source);
                         fileContentsCache[url] = contents;
                     }
-                });
+                }
             }
         } else {
             sourceMap = sourceMapCache[position.source] = {

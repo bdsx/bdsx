@@ -6,7 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
@@ -14,6 +14,7 @@ import { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, Dimens
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
+import { CommandName } from "./commandname";
 import { Certificate, ConnectionRequest } from "./connreq";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectInstance } from "./effects";
@@ -121,8 +122,8 @@ Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
 
-Actor.fromUniqueIdBin = function(bin) {
-    return serverInstance.minecraft.getLevel().fetchEntity(bin, true);
+Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
+    return serverInstance.minecraft.getLevel().fetchEntity(bin, getRemovedActor);
 };
 
 Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);
@@ -207,7 +208,9 @@ Player.prototype.setName = function(name:string):void {
     const entry = PlayerListEntry.create(this);
     const pk = PlayerListPacket.create();
     PlayerListPacket$emplace(pk, entry);
-    serverInstance.minecraft.getLevel().players.toArray().forEach(player => player.sendNetworkPacket(pk));
+    for (const player of serverInstance.minecraft.getLevel().players) {
+        player.sendNetworkPacket(pk);
+    }
     entry.destruct();
     pk.dispose();
 };
@@ -376,7 +379,8 @@ Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
-Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxString), {this:Item, structureReturn: true});
+Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:Item, structureReturn: true});
+Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 
 ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});
@@ -438,7 +442,8 @@ InventoryTransaction.prototype.addItemToContent = procHacker.js("InventoryTransa
 InventoryTransactionItemGroup.prototype.getItemStack = procHacker.js("InventoryTransactionItemGroup::getItemInstance", ItemStack, {this:InventoryTransaction, structureReturn:true});
 
 // block.ts
-BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CxxString), {this:Item, structureReturn: true});
+BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:Item, structureReturn: true});
+BlockLegacy.prototype.getCommandNames2 = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:Block});
 BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", void_t, {this:Block}, float32_t);
 Block.abstract({
@@ -462,7 +467,9 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
     const pk = UpdateBlockPacket.create();
     UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block, 3);
-    serverInstance.minecraft.getLevel().players.toArray().forEach(player => player.sendNetworkPacket(pk));
+    for (const player of serverInstance.minecraft.getLevel().players) {
+        player.sendNetworkPacket(pk);
+    }
     pk.dispose();
     return retval;
 };

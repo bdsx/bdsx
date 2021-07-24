@@ -1,4 +1,4 @@
-import { abstract } from "./common";
+import { abstract, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
@@ -30,7 +30,8 @@ export abstract class Wrapper<T> extends NativeClass {
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
         to.copyFrom(from, 8);
     }
-    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, offset:number):void {
+    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
+        const {offset} = info;
         const type = this;
         let obj:VoidPointer|null = null;
 
@@ -86,6 +87,10 @@ export class CxxStringWrapper extends NativeClass {
     get valueptr():NativePointer {
         if (this.capacity >= 0x10) return this.getPointer();
         else return this.add();
+    }
+
+    valueAs<T extends Encoding>(encoding:T):TypeFromEncoding<T> {
+        return this.getCxxString(0, encoding);
     }
 
     reserve(nsize:number):void {

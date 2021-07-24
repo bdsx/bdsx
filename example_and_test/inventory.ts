@@ -12,4 +12,5 @@ events.playerJoin.on(ev=>{
         console.log(`item ${i}: ${item.getName()}`);
     }
     console.log(`[Inventory] End`);
+    slots.destruct();
 });

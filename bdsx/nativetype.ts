@@ -4,6 +4,7 @@ import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
 import { Singleton } from './singleton';
+import { filterToIdentifierableString } from './util';
 
 namespace NativeTypeFn {
     export const align = Symbol('align');
@@ -33,7 +34,7 @@ export interface Type<T> extends makefunc.Paramable {
     [NativeTypeFn.dtor]:(ptr:StaticPointer)=>void,
     [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void,
     [makefunc.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
-    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number, bitmask:[number, number]|null):void;
+    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void;
 
     /**
      * nullable actually
@@ -58,24 +59,42 @@ export class NativeDescriptorBuilder {
     public readonly desc:PropertyDescriptorMap = {};
     public readonly params:unknown[] = [];
 
+    public readonly imports = new Map<unknown, string>();
+    private readonly names = new Set<string>();
+
     public readonly ctor = new NativeDescriptorBuilder.UseContextCtor;
     public readonly dtor = new NativeDescriptorBuilder.UseContextDtor;
     public readonly ctor_copy = new NativeDescriptorBuilder.UseContextCtorCopy;
     public readonly ctor_move = new NativeDescriptorBuilder.UseContextCtorCopy;
+
+    importType(type:Type<any>):string {
+        return this.import(type, type.name);
+    }
+
+    import(type:unknown, name:string):string {
+        const oname = this.imports.get(type);
+        if (oname != null) return oname;
+        name = filterToIdentifierableString(name);
+        if (this.names.has(name)) {
+            const oname = name;
+            let idx = 1;
+            do {
+                name = oname+(++idx);
+            } while (this.names.has(name));
+        }
+        this.imports.set(type, name);
+        this.names.add(name);
+        return name;
+    }
 }
 export namespace NativeDescriptorBuilder {
     export abstract class UseContext {
         public code = '';
-        protected _use = false;
+        public used = false;
         public offset = 0;
 
-        protected abstract initUse():void;
-
         setPtrOffset(offset:number):void {
-            if (!this._use) {
-                this._use = true;
-                this.initUse();
-            }
+            this.used = true;
             const delta = offset-this.offset;
             if (delta !== 0) this.code += `ptr.move(${delta});\n`;
             this.offset = offset;
@@ -83,28 +102,21 @@ export namespace NativeDescriptorBuilder {
     }
 
     export class UseContextCtor extends UseContext {
-        protected initUse(): void {
-            this.code += `const ptr = this.add();\n`;
-        }
     }
     export class UseContextDtor extends UseContext {
-        protected initUse(): void {
-            this.code += `const ptr = this.add();\n`;
-        }
     }
     export class UseContextCtorCopy extends UseContext {
         setPtrOffset(offset:number):void {
-            if (!this._use) {
-                this._use = true;
-                this.initUse();
-            }
+            this.used = true;
             const delta = offset-this.offset;
             if (delta !== 0) this.code += `ptr.move(${delta});\noptr.move(${delta});\n`;
             this.offset = offset;
         }
-        protected initUse(): void {
-            this.code += `const ptr = this.add();\nconst optr = o.add();\n`;
-        }
+    }
+    export interface Info {
+        offset:number;
+        bitmask:[number,number]|null;
+        ghost:boolean;
     }
 }
 
@@ -231,11 +243,13 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         return Singleton.newInstance(NativeType, this, ()=>makeReference(this));
     }
 
-    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number, mask:[number, number]|null):void {
+    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
         abstract();
     }
 
-    static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, offset:number, bitmask:[number, number]|null):void {
+    static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
+        const {offset, bitmask, ghost} = info;
+
         const type = this;
         if (bitmask !== null) {
             if (!(type instanceof NativeType)) throw Error(`${this.name} does not support the bit mask`);
@@ -249,22 +263,24 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
                 set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); }
             };
         }
+
+        if (ghost) return;
         let ctorbase = (type as any).prototype;
         if (!ctorbase || !(NativeType.ctor in ctorbase)) ctorbase = type;
 
-        const typeidx = builder.params.push(type)-1;
+        const name = builder.importType(type);
         if (ctorbase[NativeType.ctor] !== emptyFunc) {
             builder.ctor.setPtrOffset(offset);
-            builder.ctor.code += `types[${typeidx}][NativeType.ctor](ptr);\n`;
+            builder.ctor.code += `${name}[NativeType.ctor](ptr);\n`;
         }
         if (ctorbase[NativeType.dtor] !== emptyFunc) {
             builder.dtor.setPtrOffset(offset);
-            builder.dtor.code += `types[${typeidx}][NativeType.dtor](ptr);\n`;
+            builder.dtor.code += `${name}[NativeType.dtor](ptr);\n`;
         }
         builder.ctor_copy.setPtrOffset(offset);
-        builder.ctor_copy.code += `types[${typeidx}][NativeType.ctor_copy](ptr, optr);\n`;
+        builder.ctor_copy.code += `${name}[NativeType.ctor_copy](ptr, optr);\n`;
         builder.ctor_move.setPtrOffset(offset);
-        builder.ctor_move.code += `types[${typeidx}][NativeType.ctor_move](ptr, optr);\n`;
+        builder.ctor_move.code += `${name}[NativeType.ctor_move](ptr, optr);\n`;
     }
 
     static definePointedProperty<KEY extends keyof any, T>(target:{[key in KEY]:T}, key:KEY, pointer:StaticPointer, type:Type<T>):void {
@@ -303,7 +319,7 @@ declare module './core'
         [NativeType.dtor](ptr:StaticPointer):void;
         [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void;
         [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void;
-        [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number, bitmask:[number, number]|null):void;
+        [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void;
     }
 }
 
@@ -568,3 +584,8 @@ export const bin128_t = new NativeType<string>(
 });
 export type bin128_t = string;
 Object.freeze(bin128_t);
+
+/** @deprecated for legacy support */
+export const CxxStringWith8Bytes = CxxString.extends();
+CxxStringWith8Bytes[NativeType.size] = 0x28;
+export type CxxStringWith8Bytes = string;

@@ -8,12 +8,12 @@ import { hex } from "./util";
 
 export namespace nethook
 {
-    export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void;
-    export type PacketListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void;
+    export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void|Promise<void>;
+    export type PacketListener<ID extends MinecraftPacketIds> = (packet: PacketIdToType[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void|Promise<void>;
     export type BeforeListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
     export type AfterListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
     export type SendListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
-    export type SendRawListener = (ptr:NativePointer, size:number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void;
+    export type SendRawListener = (ptr:NativePointer, size:number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void|Promise<void>;
 
     export let lastSender:NetworkIdentifier;
 

@@ -1,19 +1,26 @@
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
-import { CxxString } from "../nativetype";
+import { CxxStringWith8Bytes } from "../nativetype";
 import { BlockPos } from "./blockpos";
+import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 
 export class BlockLegacy extends NativeClass {
     getCommandName():string {
-        const names = this.getCommandNames();
-        const name = names.get(0);
+        const names = this.getCommandNames2();
+        const name = names.get(0).name;
         names.destruct();
         if (name === null) throw Error(`block has not any names`);
         return name;
     }
-    getCommandNames():CxxVector<CxxString> {
+    /**
+     * @deprecated use getCommandNames2
+     */
+    getCommandNames():CxxVector<CxxStringWith8Bytes> {
+        abstract();
+    }
+    getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
     getCreativeCategory():number {
