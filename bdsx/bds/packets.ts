@@ -1605,7 +1605,7 @@ export class NpcDialoguePacket extends Packet {
     actorId:ActorUniqueID;
     @nativeField(int32_t)
     action:NpcDialoguePacket.Actions;
-    /** @deprecated Always empty */
+    /** Always empty */
     // @nativeField(CxxString, 0x40)
     // dialogue:CxxString;
     // @nativeField(CxxString)
