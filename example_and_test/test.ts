@@ -16,7 +16,7 @@ import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
 import { CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
-import { CxxVector } from "bdsx/cxxvector";
+import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { events } from "bdsx/event";
@@ -259,6 +259,19 @@ Tester.test({
         const overTheFiveNative = makefunc.np(overTheFour, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
         const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
         this.equals(overTheFiveRewrap(0, 0, 0, 0, 1234), 1234, 'makefunc.np, overTheFour failed');
+
+        const CxxStringVectorToArray = CxxVectorToArray.make(CxxString);
+        const CxxStringVector = CxxVector.make(CxxString);
+        const class_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVector);
+        const clsvector = CxxStringVector.construct();
+        clsvector.push('a','b','c','d');
+        this.equals(class_to_array(clsvector).join(','), 'a,b,c,d', 'CxxVectorToArray, class_to_array');
+        clsvector.destruct();
+
+        const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVectorToArray);
+        this.equals(array_to_array(['a','b','c','d']).join(','), 'a,b,c,d', 'CxxVectorToArray, array_to_array');
+
+
     },
 
     vectorcopy() {
@@ -268,6 +281,8 @@ Tester.test({
             vector:CxxVector<CxxString>;
             @nativeField(CxxVector.make(CxxStringWrapper))
             vector2:CxxVector<CxxStringWrapper>;
+            @nativeField(CxxVector.make(CxxVector.make(CxxString)))
+            vector3:CxxVector<CxxVector<CxxString>>;
         }
 
         const a = new Class(true);
@@ -277,7 +292,6 @@ Tester.test({
         str.construct();
         str.value = 'test2';
         a.vector2.push(str);
-        str.destruct();
 
         this.equals(a.vector.size(), 1, 'a.vector, invalid size');
         this.equals(a.vector2.size(), 1, 'a.vector2, invalid size');
@@ -294,7 +308,76 @@ Tester.test({
 
         b.destruct();
 
+        a.vector.push('test1', 'test2', 'test3');
+        this.equals(a.vector.size(), 4, 'a.vector, invalid size');
+        this.equals([...a.vector].join(','), 'test,test1,test2,test3', 'a.vector, invalid size');
+
         a.destruct();
+
+        for (let i=0;i<10;i++) {
+            const vec = CxxVector.make(CxxString).construct();
+            vec.push("1111111122222222");
+            this.equals(vec.toArray().join(','), '1111111122222222', 'vector push 1');
+            vec.push("2");
+            this.equals(vec.toArray().join(','), '1111111122222222,2', 'vector push 2');
+            vec.push("3");
+            this.equals(vec.toArray().join(','), '1111111122222222,2,3', 'vector push 3');
+            vec.push("4");
+            this.equals(vec.toArray().join(','), '1111111122222222,2,3,4', 'vector push 4');
+            vec.set(4, "5");
+            this.equals(vec.toArray().join(','), '1111111122222222,2,3,4,5', 'vector set');
+
+            vec.setFromArray(['1','2','3','4']);
+            this.equals(vec.toArray().join(','), '1,2,3,4', ', setFromArray smaller');
+
+            vec.setFromArray(['1','2','3','4','5','6','7','8','9']);
+            this.equals(vec.toArray().join(','), '1,2,3,4,5,6,7,8,9', 'setFromArray larger');
+
+            vec.resize(6);
+            this.equals(vec.toArray().join(','), '1,2,3,4,5,6', 'resize smaller');
+            vec.resize(32);
+            this.equals(vec.toArray().join(','), '1,2,3,4,5,6,,,,,,,,,,,,,,,,,,,,,,,,,,', 'resize larger');
+            vec.destruct();
+            vec.construct();
+            vec.splice(0, 0, '1','2','3','4');
+            this.equals(vec.toArray().join(','), '1,2,3,4', 'splice to empty');
+            vec.splice(1, 2, '3','4');
+            this.equals(vec.toArray().join(','), '1,3,4,4', 'splice same size');
+            vec.splice(1, 2, '5');
+            this.equals(vec.toArray().join(','), '1,5,4', 'splice smaller');
+            vec.splice(1, 1, '1','2','3','4');
+            this.equals(vec.toArray().join(','), '1,1,2,3,4,4', 'splice larger');
+            vec.destruct();
+        }
+
+        const vec = CxxVector.make(CxxString).construct();
+        vec.resize(5);
+        vec.set(0, 't1');
+        vec.set(1, 't2');
+
+        const clsvector = CxxVector.make(Class).construct();
+        const cls = Class.construct();
+        cls.vector.push('test1');
+        cls.vector.push('test2');
+        cls.vector2.push(str);
+        cls.vector3.push(vec);
+        cls.vector3.push(vec);
+        clsvector.push(cls);
+        clsvector.push(cls);
+
+        const cloned = CxxVector.make(Class).construct(clsvector);
+        this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
+        this.equals(cloned.get(1)!.vector.toArray().join(','), 'test1,test2', 'cloned class, string vector');
+        this.equals(cloned.get(0)!.vector2.toArray().map(v=>v.value).join(','), 'test2', 'class, string vector');
+        this.equals(cloned.get(1)!.vector2.toArray().map(v=>v.value).join(','), 'test2', 'cloned class, string vector');
+        this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
+        this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
+        cloned.destruct();
+
+        clsvector.destruct();
+        str.destruct();
+
+
     },
 
     json() {
@@ -379,34 +462,34 @@ Tester.test({
         let idcheck = 0;
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
-            events.packetRaw(i).on((ptr, size, ni, packetId) => {
+            events.packetRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 idcheck = packetId;
                 this.assert(size > 0, `packet is too small (size = ${size})`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
-            });
-            events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            }, 0));
+            events.packetBefore<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
-            });
-            events.packetAfter<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            }, 0));
+            events.packetAfter<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
-            });
-            events.packetSend<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            }, 0));
+            events.packetSend<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
                 sendidcheck = packetId;
                 this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
-            });
-            events.packetSendRaw(i).on((ptr, size, ni, packetId) => {
+            }, 0));
+            events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
                 this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
-            });
+            }, 0));
         }
 
         const conns = new Set<NetworkIdentifier>();
-        events.packetAfter(MinecraftPacketIds.Login).on((ptr, ni) => {
+        events.packetAfter(MinecraftPacketIds.Login).on(this.wrap((ptr, ni) => {
             this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
             setTimeout(() => {
@@ -414,15 +497,25 @@ Tester.test({
                     this.error('[test] no packet was sent');
                 }
             }, 1000);
-        });
-        events.networkDisconnected.on(ni => {
+        }));
+        events.networkDisconnected.on(this.wrap(ni => {
             this.assert(conns.delete(ni), '[test] disconnection without connection');
-        });
+        }, 0));
+        events.packetSend(MinecraftPacketIds.AvailableCommands).on(this.wrap(p=>{
+            const commandArray = p.commands.toArray();
+            for (let i = 0; i < commandArray.length; i++) {
+                if (commandArray[i].name === "teleport") {
+                    commandArray.splice(i, 1);
+                    i--;
+                }
+            }
+            p.commands.setFromArray(commandArray);
+        }, 1));
     },
 
     actor() {
         const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', ev => {
+        system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
             const level = serverInstance.minecraft.getLevel();
             this.equals(level.players.size(), 1, 'Unexpected player size');
             this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
@@ -457,7 +550,7 @@ Tester.test({
             } catch (err) {
                 this.processError(err);
             }
-        });
+        }, 5));
     },
 
     chat() {
@@ -475,7 +568,6 @@ Tester.test({
             }
         });
     },
-
 }, true);
 
 let connectedNi: NetworkIdentifier;

@@ -185,9 +185,7 @@ export class ServerPlayer extends Player {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Translate;
         pk.message = message;
-        for (const param of params) {
-            pk.params.push(param);
-        }
+        pk.params.push(...params);
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
     }

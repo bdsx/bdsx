@@ -1,6 +1,6 @@
 import { CxxVector } from "../cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
@@ -886,19 +886,40 @@ export class ShowCreditsPacket extends Packet {
     // unknown
 }
 
+@nativeClass()
+class AvailableCommandsParamData extends NativeClass {
+    @nativeField(CxxString)
+    paramName:CxxString;
+    @nativeField(int32_t)
+    paramType:int32_t;
+    @nativeField(bool_t)
+    isOptional:bool_t;
+    @nativeField(uint8_t)
+    flags:uint8_t;
+}
+
+@nativeClass()
+class AvailableCommandsOverloadData extends NativeClass {
+    @nativeField(CxxVector.make(AvailableCommandsParamData))
+    parameters:CxxVector<AvailableCommandsParamData>;
+}
+
 @nativeClass(0x68)
 class AvailableCommandsCommandData extends NativeClass {
     @nativeField(CxxString)
     name:CxxString;
     @nativeField(CxxString)
     description:CxxString;
-    @nativeField(uint8_t)
-    flags:uint8_t;
-    @nativeField(uint8_t)
+    @nativeField(uint16_t) // 40
+    flags:uint16_t;
+    @nativeField(uint8_t) // 42
     permission:uint8_t;
-    @nativeField(CxxVector.make(CxxVector.make(CxxString)))
+    /** @deprecated use overloads */
+    @nativeField(CxxVector.make(CxxVector.make(CxxStringWith8Bytes)), {ghost: true})
     parameters:CxxVector<CxxVector<CxxString>>;
-    @nativeField(int32_t)
+    @nativeField(CxxVector.make(AvailableCommandsOverloadData))
+    overloads:CxxVector<AvailableCommandsOverloadData>;
+    @nativeField(int32_t) // 60
     aliases:int32_t;
 }
 

@@ -47,7 +47,6 @@ const symbols = [
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
     'ServerPlayer::setPlayerGameType',
-    'std::_Allocate<16,std::_Default_allocate_traits,0>',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
     'Actor::getHealth',
