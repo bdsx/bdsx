@@ -1,4 +1,4 @@
-import { abstract } from "./common";
+import { abstract, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
@@ -87,6 +87,10 @@ export class CxxStringWrapper extends NativeClass {
     get valueptr():NativePointer {
         if (this.capacity >= 0x10) return this.getPointer();
         else return this.add();
+    }
+
+    valueAs<T extends Encoding>(encoding:T):TypeFromEncoding<T> {
+        return this.getCxxString(0, encoding);
     }
 
     reserve(nsize:number):void {
