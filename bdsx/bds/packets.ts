@@ -1,11 +1,11 @@
 import { CxxVector } from "../cxxvector";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
-import { ComplexInventoryTransaction } from "./inventory";
+import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStack } from "./inventory";
 import { Packet } from "./packet";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
@@ -209,6 +209,7 @@ export namespace TextPacket {
         /** @deprecated **/
         Sytem = 6,
         Whisper,
+        // /say command
         Announcement,
         TextObject,
         /** @deprecated **/
@@ -351,7 +352,12 @@ export class LevelEventPacket extends Packet {
 
 @nativeClass(null)
 export class BlockEventPacket extends Packet {
-    // unknown
+    @nativeField(BlockPos)
+    pos:BlockPos;
+    @nativeField(int32_t)
+    type:int32_t;
+    @nativeField(int32_t)
+    data:int32_t;
 }
 
 @nativeClass(null)
@@ -627,18 +633,26 @@ export class RespawnPacket extends Packet {
 @nativeClass(null)
 export class ContainerOpenPacket extends Packet {
     @nativeField(uint8_t)
+    containerId:ContainerId;
+    /** @deprecated */
+    @nativeField(uint8_t, 0x30)
     windowId:uint8_t;
     @nativeField(int8_t)
-    type:int8_t;
+    type:ContainerType;
     @nativeField(BlockPos)
     pos:BlockPos;
     @nativeField(bin64_t)
     entityUniqueId:bin64_t;
+    @nativeField(int64_as_float_t, 0x30+0x01+0xC)
+    entityUniqueIdAsNumber:int64_as_float_t;
 }
 
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
     @nativeField(uint8_t)
+    containerId:ContainerId;
+    /** @deprecated */
+    @nativeField(uint8_t, 0x30)
     windowId:uint8_t;
     @nativeField(bool_t)
     server:bool_t;
@@ -656,7 +670,10 @@ export class PlayerHotbarPacket extends Packet {
 
 @nativeClass(null)
 export class InventoryContentPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    containerId:ContainerId;
+    @nativeField(CxxVector.make(ItemStack), 56)
+    slots:CxxVector<ItemStack>;
 }
 
 @nativeClass(null)
@@ -1556,6 +1573,58 @@ export class FilterTextPacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
+export class ClientboundDebugRendererPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class SyncActorPropertyPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class AddVolumeEntityPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class RemoveVolumeEntityPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class SimulationTypePacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class NpcDialoguePacket extends Packet {
+    /** ActorUniqueID of the Npc */
+    @nativeField(ActorUniqueID)
+    actorId:ActorUniqueID;
+    @nativeField(int32_t)
+    action:NpcDialoguePacket.Actions;
+    /** @deprecated Always empty */
+    // @nativeField(CxxString, 0x40)
+    // dialogue:CxxString;
+    // @nativeField(CxxString)
+    // sceneName:CxxString;
+    // @nativeField(CxxString)
+    // npcName:CxxString;
+    // @nativeField(CxxString)
+    // actionJson:CxxString;
+
+    @nativeField(int64_as_float_t, 0x30)
+    actorIdAsNumber:int64_as_float_t;
+}
+export namespace NpcDialoguePacket {
+    export enum Actions {
+        Open,
+        Close,
+    }
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -1701,8 +1770,8 @@ export const PacketIdToType = {
     0x96: CodeBuilderPacket,
     0x97: UpdatePlayerGameTypePacket,
     0x98: EmoteListPacket,
-    0x99: PositionTrackingDBServerBroadcast,
-    0x9a: PositionTrackingDBClientRequest,
+    0x99: PositionTrackingDBServerBroadcastPacket,
+    0x9a: PositionTrackingDBClientRequestPacket,
     0x9b: DebugInfoPacket,
     0x9c: PacketViolationWarningPacket,
     0x9d: MotionPredictionHintsPacket,
@@ -1712,6 +1781,12 @@ export const PacketIdToType = {
     0xa1: CorrectPlayerMovePredictionPacket,
     0xa2: ItemComponentPacket,
     0xa3: FilterTextPacket,
+    0xa4: ClientboundDebugRendererPacket,
+    0xa5: SyncActorPropertyPacket,
+    0xa6: AddVolumeEntityPacket,
+    0xa7: RemoveVolumeEntityPacket,
+    0xa8: SimulationTypePacket,
+    0xa9: NpcDialoguePacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 

@@ -26,6 +26,9 @@ export class Level extends NativeClass {
     getActivePlayerCount():number {
         abstract();
     }
+    getActorFactory():ActorFactory {
+        abstract();
+    }
     getAdventureSettings():AdventureSettings {
         abstract();
     }
@@ -46,6 +49,9 @@ export class ServerLevel extends Level {
     /** @deprecated unusing */
     packetSender:LoopbackPacketSender;
     actors:CxxVector<Actor>;
+}
+
+export class ActorFactory extends NativeClass {
 }
 
 export class AdventureSettings extends NativeClass {

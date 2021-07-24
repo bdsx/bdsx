@@ -14,6 +14,7 @@ const symbols = [
     'Level::fetchEntity',
     'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
+    'Player::add',
     'Player::addLevels',
     'Player::attack',
     'Player::drop',
@@ -218,6 +219,7 @@ const symbols = [
     'Ability::setBool',
     'AdventureSettingsPacket::AdventureSettingsPacket',
     'Level::destroyBlock',
+    'Level::getActorFactory',
     'Level::getAdventureSettings',
     'Level::getScoreboard',
     'Level::getTagRegistry',
@@ -251,7 +253,7 @@ const symbols = [
     "ItemActor::`vftable'",
     'ServerPlayer::_nextContainerCounter',
     'EnchantUtils::getEnchantLevel',
-    'EnchantUtils::hasEnchant'
+    'EnchantUtils::hasEnchant',
 ] as const;
 
 // decorated symbols
@@ -288,7 +290,8 @@ const symbols2 = [
     '??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z',
     'sprintf',
     'vsnprintf',
-    '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z'
+    '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z',
+    '??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z',
 ] as const;
 
 

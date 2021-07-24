@@ -2,21 +2,27 @@ import { abstract } from "../common";
 import { nativeClass, NativeClass } from "../nativeclass";
 import { float32_t, int32_t } from "../nativetype";
 import { Abilities } from "./abilities";
-import { Actor, ActorUniqueID } from "./actor";
+import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
-import { Vec3 } from "./blockpos";
+import { BlockPos, Vec3 } from "./blockpos";
 import { ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket } from "./packets";
+import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
 export class Player extends Actor {
     abilities:Abilities;
+    respawnPosition:BlockPos;
+    respawnDimension:DimensionId;
     deviceId:string;
 
     protected _setName(name:string):void {
+        abstract();
+    }
+
+    addItem(itemStack:ItemStack):boolean {
         abstract();
     }
 
@@ -142,6 +148,39 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
+    sendJukeboxPopup(message:string, params:string[] = []):void {
+        const pk = TextPacket.create();
+        pk.type = TextPacket.Types.JukeboxPopup;
+        pk.message = message;
+        for (const param of params) {
+            pk.params.push(param);
+        }
+        pk.needsTranslation = true;
+        this.sendNetworkPacket(pk);
+    }
+
+    sendPopup(message:string, params:string[] = []):void {
+        const pk = TextPacket.create();
+        pk.type = TextPacket.Types.Popup;
+        pk.message = message;
+        for (const param of params) {
+            pk.params.push(param);
+        }
+        pk.needsTranslation = true;
+        this.sendNetworkPacket(pk);
+    }
+
+    sendTip(message:string, params:string[] = []):void {
+        const pk = TextPacket.create();
+        pk.type = TextPacket.Types.Tip;
+        pk.message = message;
+        for (const param of params) {
+            pk.params.push(param);
+        }
+        pk.needsTranslation = true;
+        this.sendNetworkPacket(pk);
+    }
+
     sendTranslatedMessage(message:string, params:string[] = []):void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Translate;
@@ -226,7 +265,8 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
-    setFakeScoreboard(title:string, lines:Array<string|[string, number]>, name:string = `tmp-${new Date().getTime()}`):void {
+    /** @param lines Example: ["my score is 0", ["my score is 3", 3], "my score is 2 as my index is 2"] */
+    setFakeScoreboard(title:string, lines:Array<string|[string, number]>, name:string = `tmp-${new Date().getTime()}`):string {
         this.removeFakeScoreboard();
         {
             const pk = SetDisplayObjectivePacket.create();
@@ -262,6 +302,7 @@ export class ServerPlayer extends Player {
                 entry.destruct();
             }
         }
+        return name;
     }
 
     removeFakeScoreboard():void {
@@ -270,6 +311,14 @@ export class ServerPlayer extends Player {
         pk.objectiveName = "";
         pk.displayName = "";
         pk.criteriaName = "dummy";
+        this.sendNetworkPacket(pk);
+        pk.dispose();
+    }
+
+    transferServer(address:string, port:number = 19132):void {
+        const pk = TransferPacket.create();
+        pk.address = address;
+        pk.port = port;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }

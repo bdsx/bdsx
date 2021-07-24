@@ -170,4 +170,10 @@ export enum MinecraftPacketIds {//int32_t
 	CorrectPlayerMovePrediction = 0xa1,
 	ItemComponent = 0xa2,
 	FilterText = 0xa3,
+	ClientboundDebugRenderer = 0xa4,
+	SyncActorProperty = 0xa5,
+	AddVolumeEntity = 0xa6,
+	RemoveVolumeEntity = 0xa7,
+	SimulationType = 0xa8,
+	NpcDialogue = 0xa9,
 }

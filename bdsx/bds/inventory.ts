@@ -12,25 +12,15 @@ import type { ServerPlayer } from "./player";
  */
 export enum ContainerId {
     Inventory,
-    /**
-     * Used as the minimum value of a player's container counter.
-     */
+    /** Used as the minimum value of a player's container counter. */
     First,
-    /**
-     * Used as the maximum value of a player's container counter.
-     */
+    /** Used as the maximum value of a player's container counter. */
     Last = 100,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Offhand = 119,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Armor,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Creative,
     /**
      * @deprecated
@@ -40,10 +30,44 @@ export enum ContainerId {
      * @deprecated
      */
     FixedInventory,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     UI
+}
+
+export enum ContainerType {
+    Container,
+    Workbench,
+    Furnace,
+    Enchantment,
+    BrewingStand,
+    Anvil,
+    Dispenser,
+    Dropper,
+    Hopper,
+    Cauldron,
+    MinecartChest,
+    MinecartHopper,
+    Horse,
+    Beacon,
+    StructureEditor,
+    Trade,
+    CommandBlock,
+    Jukebox,
+    Armor,
+    Hand,
+    CompoundCreator,
+    ElementConstructor,
+    MaterialReducer,
+    LabTable,
+    Loom,
+    Lectern,
+    Grindstone,
+    BlastFurnace,
+    Smoker,
+    Stonecutter,
+    Cartography,
+    None = 0xF7,
+    Inventory = 0xFF,
 }
 
 export enum ArmorSlot {

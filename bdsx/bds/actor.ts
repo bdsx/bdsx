@@ -3,13 +3,14 @@ import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, int32_t, NativeType } from "../nativetype";
+import { bin64_t, CxxString, int32_t, NativeType } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
+import { HashedString } from "./hashedstring";
 import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
@@ -55,6 +56,8 @@ export enum ActorType {
     TripodCamera,
     Player,
     Bee = 0x17A,
+    Piglin,
+    PiglinBrute = 0x17F,
 
     PathfinderMob = 0x300,
     IronGolem = 0x314,
@@ -92,6 +95,10 @@ export enum ActorType {
     Turtle = 0x134A,
     Panda = 0x1371,
     Fox = 0x1379,
+    Hoglin = 0x137C,
+    Strider,
+    Goat = 0x1380,
+    Axolotl = 0x1382,
 
     WaterAnimal = 0x2300,
     Squid = 0x2311,
@@ -100,6 +107,7 @@ export enum ActorType {
     Salmon,
     Tropicalfish = 0x236F,
     Fish,
+    GlowSquid = 0x2381,
 
     TameableAnimal = 0x5300,
     Wolf = 0x530E,
@@ -114,6 +122,7 @@ export enum ActorType {
     PigZombie = 0x10B24,
     WitherBoss = 0x10B34,
     Phantom = 0x10B3A,
+    Zoglin = 0x10B7E,
 
     ZombieMonster= 0x30B00,
     Zombie = 0x30B20,
@@ -171,6 +180,24 @@ export enum ActorType {
     VillagerBase = 0x1000300,
     Villager = 0x100030F,
     VillagerV2 = 0x1000373,
+}
+
+@nativeClass(0xA9)
+export class ActorDefinitionIdentifier extends NativeClass {
+    @nativeField(CxxString)
+    namespace:CxxString;
+    @nativeField(CxxString)
+    identifier:CxxString;
+    @nativeField(CxxString)
+    initEvent:CxxString;
+    @nativeField(CxxString)
+    fullName:CxxString;
+    @nativeField(HashedString)
+    canonicalName:HashedString;
+
+    static create(type:ActorType):ActorDefinitionIdentifier {
+        abstract();
+    }
 }
 
 @nativeClass(0x10)
