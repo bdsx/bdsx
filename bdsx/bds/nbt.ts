@@ -56,55 +56,55 @@ export class Tag extends NativeClass {
     getAsType(type:Tag.Type):any;
     getAsType(type:Tag.Type):any {
         switch (type) {
-            case Tag.Type.Byte:
-                return this.getUint8(0x08);
-            case Tag.Type.Short:
-                return this.getInt16(0x08);
-            case Tag.Type.Int:
-                return this.getInt32(0x08);
-            case Tag.Type.Long:
-                return bin.toString(this.getBin64(0x08));
-            case Tag.Type.Float:
-                return this.getFloat32(0x08);
-            case Tag.Type.Double:
-                return this.getFloat64(0x08);
-            case Tag.Type.ByteArray:
-                return this.as(ByteArrayTag).value.toByteArray();
-            case Tag.Type.String:
-                return this.getCxxString(0x08);
-            case Tag.Type.List:
-                return this.as(ListTag).toArray();
-            case Tag.Type.Compound:
-                return this.as(CompoundTag).toObject();
-            case Tag.Type.IntArray:
-                return this.as(IntArrayTag).value.toIntArray();
+        case Tag.Type.Byte:
+            return this.getUint8(0x08);
+        case Tag.Type.Short:
+            return this.getInt16(0x08);
+        case Tag.Type.Int:
+            return this.getInt32(0x08);
+        case Tag.Type.Long:
+            return bin.toString(this.getBin64(0x08));
+        case Tag.Type.Float:
+            return this.getFloat32(0x08);
+        case Tag.Type.Double:
+            return this.getFloat64(0x08);
+        case Tag.Type.ByteArray:
+            return this.as(ByteArrayTag).value.toByteArray();
+        case Tag.Type.String:
+            return this.getCxxString(0x08);
+        case Tag.Type.List:
+            return this.as(ListTag).toArray();
+        case Tag.Type.Compound:
+            return this.as(CompoundTag).toObject();
+        case Tag.Type.IntArray:
+            return this.as(IntArrayTag).value.toIntArray();
         }
         return null;
     }
     setAsType(type: Tag.Type, value: any):void {
         switch (type) {
-            case Tag.Type.Byte:
-                this.setUint8(value, 0x08);
-            case Tag.Type.Short:
-                this.setInt16(value, 0x08);
-            case Tag.Type.Int:
-                this.setInt32(value, 0x08);
-            case Tag.Type.Long:
-                this.setBin(bin.as64(value), 0x08);
-            case Tag.Type.Float:
-                this.setFloat32(value, 0x08);
-            case Tag.Type.Double:
-                this.setFloat64(value, 0x08);
-            case Tag.Type.ByteArray:
-                this.as(ByteArrayTag).value.fromByteArray(value);
-            case Tag.Type.String:
-                this.setCxxString(value, 0x08);
-            case Tag.Type.List:
-                this.as(ListTag).fromArray(value);
-            case Tag.Type.Compound:
-                this.as(CompoundTag).fromObject(value);
-            case Tag.Type.IntArray:
-                this.as(IntArrayTag).value.fromIntArray(value);
+        case Tag.Type.Byte:
+            this.setUint8(value, 0x08);
+        case Tag.Type.Short:
+            this.setInt16(value, 0x08);
+        case Tag.Type.Int:
+            this.setInt32(value, 0x08);
+        case Tag.Type.Long:
+            this.setBin(bin.as64(value), 0x08);
+        case Tag.Type.Float:
+            this.setFloat32(value, 0x08);
+        case Tag.Type.Double:
+            this.setFloat64(value, 0x08);
+        case Tag.Type.ByteArray:
+            this.as(ByteArrayTag).value.fromByteArray(value);
+        case Tag.Type.String:
+            this.setCxxString(value, 0x08);
+        case Tag.Type.List:
+            this.as(ListTag).fromArray(value);
+        case Tag.Type.Compound:
+            this.as(CompoundTag).fromObject(value);
+        case Tag.Type.IntArray:
+            this.as(IntArrayTag).value.fromIntArray(value);
         }
     }
 }

@@ -527,32 +527,32 @@ EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null
 const Tag$newTag = procHacker.js("Tag::newTag", Tag, {structureReturn: true}, uint8_t);
 Tag.create = function(type:Tag.Type):any {
     switch (type) {
-        case Tag.Type.End:
-            return Tag$newTag(type).as(EndTag);
-        case Tag.Type.Byte:
-            return Tag$newTag(type).as(ByteTag);
-        case Tag.Type.Short:
-            return Tag$newTag(type).as(ShortTag);
-        case Tag.Type.Int:
-            return Tag$newTag(type).as(IntTag);
-        case Tag.Type.Long:
-            return Tag$newTag(type).as(LongTag);
-        case Tag.Type.Float:
-            return Tag$newTag(type).as(FloatTag);
-        case Tag.Type.Double:
-            return Tag$newTag(type).as(DoubleTag);
-        case Tag.Type.ByteArray:
-            return Tag$newTag(type).as(ByteArrayTag);
-        case Tag.Type.String:
-            return Tag$newTag(type).as(StringTag);
-        case Tag.Type.List:
-            return Tag$newTag(type).as(ListTag);
-        case Tag.Type.Compound:
-            return Tag$newTag(type).as(CompoundTag);
-        case Tag.Type.IntArray:
-            return Tag$newTag(type).as(IntArrayTag);
-        default:
-            throw new Error("Unknown tag type: " + type);
+    case Tag.Type.End:
+        return Tag$newTag(type).as(EndTag);
+    case Tag.Type.Byte:
+        return Tag$newTag(type).as(ByteTag);
+    case Tag.Type.Short:
+        return Tag$newTag(type).as(ShortTag);
+    case Tag.Type.Int:
+        return Tag$newTag(type).as(IntTag);
+    case Tag.Type.Long:
+        return Tag$newTag(type).as(LongTag);
+    case Tag.Type.Float:
+        return Tag$newTag(type).as(FloatTag);
+    case Tag.Type.Double:
+        return Tag$newTag(type).as(DoubleTag);
+    case Tag.Type.ByteArray:
+        return Tag$newTag(type).as(ByteArrayTag);
+    case Tag.Type.String:
+        return Tag$newTag(type).as(StringTag);
+    case Tag.Type.List:
+        return Tag$newTag(type).as(ListTag);
+    case Tag.Type.Compound:
+        return Tag$newTag(type).as(CompoundTag);
+    case Tag.Type.IntArray:
+        return Tag$newTag(type).as(IntArrayTag);
+    default:
+        throw new Error("Unknown tag type: " + type);
     }
 };
 CompoundTag.prototype.put = procHacker.js("CompoundTag::put", void_t, {this:CompoundTag}, CxxString, Tag);
