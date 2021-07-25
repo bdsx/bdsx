@@ -85,26 +85,37 @@ export class Tag extends NativeClass {
         switch (type) {
         case Tag.Type.Byte:
             this.setUint8(value, 0x08);
+            break;
         case Tag.Type.Short:
             this.setInt16(value, 0x08);
+            break;
         case Tag.Type.Int:
             this.setInt32(value, 0x08);
+            break;
         case Tag.Type.Long:
             this.setBin(bin.as64(value), 0x08);
+            break;
         case Tag.Type.Float:
             this.setFloat32(value, 0x08);
+            break;
         case Tag.Type.Double:
             this.setFloat64(value, 0x08);
+            break;
         case Tag.Type.ByteArray:
             this.as(ByteArrayTag).value.fromByteArray(value);
+            break;
         case Tag.Type.String:
             this.setCxxString(value, 0x08);
+            break;
         case Tag.Type.List:
             this.as(ListTag).fromArray(value);
+            break;
         case Tag.Type.Compound:
             this.as(CompoundTag).fromObject(value);
+            break;
         case Tag.Type.IntArray:
             this.as(IntArrayTag).value.fromIntArray(value);
+            break;
         }
     }
 }
