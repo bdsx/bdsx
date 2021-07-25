@@ -253,6 +253,8 @@ const symbols = [
     'ServerPlayer::_nextContainerCounter',
     'EnchantUtils::getEnchantLevel',
     'EnchantUtils::hasEnchant',
+    'Tag::newTag',
+    'CompoundTag::put',
 ] as const;
 
 // decorated symbols
