@@ -33,48 +33,48 @@ export class TagWrapper {
     toTag():EndTag|ByteTag|ShortTag|IntTag|LongTag|FloatTag|DoubleTag|ByteArrayTag|StringTag|ListTag|CompoundTag|IntArrayTag {
         const tag = Tag.create(this.type);
         switch (this.type) {
-            case Tag.Type.Byte:
-                (tag as ByteTag).value = this.value;
-                break;
-            case Tag.Type.Short:
-                (tag as ShortTag).value = this.value;
-                break;
-            case Tag.Type.Int:
-                (tag as IntTag).value = this.value;
-                break;
-            case Tag.Type.Long:
-                (tag as LongTag).value = this.value;
-                break;
-            case Tag.Type.Float:
-                (tag as FloatTag).value = this.value;
-                break;
-            case Tag.Type.Double:
-                (tag as DoubleTag).value = this.value;
-                break;
-            case Tag.Type.ByteArray:
-                (tag as ByteArrayTag).value.fromByteArray(this.value);
-                break;
-            case Tag.Type.String:
-                (tag as StringTag).value = this.value;
-                break;
-            case Tag.Type.List:
-                (tag as ListTag).construct();
-                (tag as ListTag).type = this.value[0]?.type ?? Tag.Type.End;
-                for (const wrapper of this.value as TagWrapper[]) {
-                    if (wrapper.type !== (tag as ListTag).type) {
-                        throw new Error("List tag type mismatch.");
-                    }
-                    (tag as ListTag).tags.push(wrapper.toTag());
+        case Tag.Type.Byte:
+            (tag as ByteTag).value = this.value;
+            break;
+        case Tag.Type.Short:
+            (tag as ShortTag).value = this.value;
+            break;
+        case Tag.Type.Int:
+            (tag as IntTag).value = this.value;
+            break;
+        case Tag.Type.Long:
+            (tag as LongTag).value = this.value;
+            break;
+        case Tag.Type.Float:
+            (tag as FloatTag).value = this.value;
+            break;
+        case Tag.Type.Double:
+            (tag as DoubleTag).value = this.value;
+            break;
+        case Tag.Type.ByteArray:
+            (tag as ByteArrayTag).value.fromByteArray(this.value);
+            break;
+        case Tag.Type.String:
+            (tag as StringTag).value = this.value;
+            break;
+        case Tag.Type.List:
+            (tag as ListTag).construct();
+            (tag as ListTag).type = this.value[0]?.type ?? Tag.Type.End;
+            for (const wrapper of this.value as TagWrapper[]) {
+                if (wrapper.type !== (tag as ListTag).type) {
+                    throw new Error("List tag type mismatch.");
                 }
-                break;
-            case Tag.Type.Compound:
-                (tag as CompoundTag).tags.construct();
-                for (const [key, value] of Object.entries(this.value as Record<string, TagWrapper>)) {
-                    (tag as CompoundTag).set(key, value.toTag());
-                }
-                break;
-            case Tag.Type.IntArray:
-                (tag as IntArrayTag).value.fromIntArray(this.value);
+                (tag as ListTag).tags.push(wrapper.toTag());
+            }
+            break;
+        case Tag.Type.Compound:
+            (tag as CompoundTag).tags.construct();
+            for (const [key, value] of Object.entries(this.value as Record<string, TagWrapper>)) {
+                (tag as CompoundTag).set(key, value.toTag());
+            }
+            break;
+        case Tag.Type.IntArray:
+            (tag as IntArrayTag).value.fromIntArray(this.value);
         }
         return tag;
     }
@@ -107,30 +107,30 @@ export class Tag extends NativeClass {
 
     getType():Tag.Type {
         switch ((this as any).constructor.name) {
-            case "ByteTag":
-                return Tag.Type.Byte;
-            case "ShortTag":
-                return Tag.Type.Short;
-            case "IntTag":
-                return Tag.Type.Int;
-            case "LongTag":
-                return Tag.Type.Long;
-            case "FloatTag":
-                return Tag.Type.Float;
-            case "DoubleTag":
-                return Tag.Type.Double;
-            case "ByteArrayTag":
-                return Tag.Type.ByteArray;
-            case "StringTag":
-                return Tag.Type.String;
-            case "ListTag":
-                return Tag.Type.List;
-            case "CompoundTag":
-                return Tag.Type.Compound;
-            case "IntArrayTag":
-                return Tag.Type.IntArray;
-            default:
-                return Tag.Type.End;
+        case "ByteTag":
+            return Tag.Type.Byte;
+        case "ShortTag":
+            return Tag.Type.Short;
+        case "IntTag":
+            return Tag.Type.Int;
+        case "LongTag":
+            return Tag.Type.Long;
+        case "FloatTag":
+            return Tag.Type.Float;
+        case "DoubleTag":
+            return Tag.Type.Double;
+        case "ByteArrayTag":
+            return Tag.Type.ByteArray;
+        case "StringTag":
+            return Tag.Type.String;
+        case "ListTag":
+            return Tag.Type.List;
+        case "CompoundTag":
+            return Tag.Type.Compound;
+        case "IntArrayTag":
+            return Tag.Type.IntArray;
+        default:
+            return Tag.Type.End;
         }
     }
 
@@ -247,7 +247,7 @@ export class LongTag extends Tag {
         return bin.toString(this.getBin64(0x08));
     }
     set value(value:string) {
-        this.setBin(bin.as64(value), 0x08)
+        this.setBin(bin.as64(value), 0x08);
     }
 
     toWrapper():TagWrapper {
@@ -286,7 +286,7 @@ export class TagMemoryChunk extends NativeClass {
     buffer:BinaryStream|null;
 
     get length():number {
-        return bin.toNumber(this.elements)
+        return bin.toNumber(this.elements);
     }
     set length(value:number) {
         this.elements = bin.make(value, 8);
