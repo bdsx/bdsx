@@ -546,7 +546,14 @@ export abstract class CxxMap<K, V> extends NativeClass {
         this.setUint64WithFloat(0, 8);
     }
 
-    *entires():IterableIterator<[K, V]> {
+    /**
+     * @deprecated Typo!
+     */
+    entires():IterableIterator<[K, V]> {
+        return this.entries();
+    }
+
+    *entries():IterableIterator<[K, V]> {
         let node = this._Myhead._Left;
         while (!node._Isnil) {
             const pair = node._Myval;
@@ -600,7 +607,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
     }
 
     toArray():[K, V][] {
-        return [...this.entires()];
+        return [...this.entries()];
     }
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {

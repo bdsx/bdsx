@@ -803,8 +803,13 @@ export declare namespace ipfilter
      * time is for expiring in unix time stamp.
      * if time is 0, it's permanent.
      */
+    export function entries():[string, number][];
+    /**
+     * @deprecated Typo!
+     */
     export function entires():[string, number][];
 }
+ipfilter.entries = ipfilter.entires;
 
 type ErrorListener = (err:Error)=>void;
 
