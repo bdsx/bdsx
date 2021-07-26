@@ -23,7 +23,7 @@ import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, PlayerInventory } from "./inventory";
 import { ActorFactory, AdventureSettings, Level, ServerLevel, TagRegistry } from "./level";
-import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, IntArrayTag, IntTag, ListTag, LongTag, ShortTag, StringTag, Tag } from "./nbt";
+import { CompoundTag, Tag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AdventureSettingsPacket, AttributeData, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
@@ -121,6 +121,8 @@ Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Act
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
+Actor.prototype.getStatusFlag = procHacker.js("Actor::getStatusFlag", bool_t, {this:Actor}, int32_t);
+Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z", bool_t, {this:Actor}, int32_t, bool_t);
 
 Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
     return serverInstance.minecraft.getLevel().fetchEntity(bin, getRemovedActor);
@@ -389,6 +391,7 @@ ItemStack.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxS
 ItemStack.prototype.setCustomName = procHacker.js("ItemStackBase::setCustomName", void_t, {this:ItemStack}, CxxString);
 (ItemStack.prototype as any)._setCustomLore = procHacker.js("ItemStackBase::setCustomLore", void_t, {this:ItemStack}, CxxVector.make(CxxStringWrapper));
 ItemStack.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStack});
+ItemStack.prototype.setUserData = procHacker.js("ItemStackBase::setUserData", void_t, {this:ItemStack}, CompoundTag.ref());
 ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", bool_t, {this:ItemStack});
 ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", bool_t, {this:ItemStack});
 ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", bool_t, {this:ItemStack});
@@ -526,33 +529,9 @@ EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null
 // nbt.ts
 const Tag$newTag = procHacker.js("Tag::newTag", Tag, {structureReturn: true}, uint8_t);
 Tag.create = function(type:Tag.Type):any {
-    switch (type) {
-    case Tag.Type.End:
-        return Tag$newTag(type).as(EndTag);
-    case Tag.Type.Byte:
-        return Tag$newTag(type).as(ByteTag);
-    case Tag.Type.Short:
-        return Tag$newTag(type).as(ShortTag);
-    case Tag.Type.Int:
-        return Tag$newTag(type).as(IntTag);
-    case Tag.Type.Long:
-        return Tag$newTag(type).as(LongTag);
-    case Tag.Type.Float:
-        return Tag$newTag(type).as(FloatTag);
-    case Tag.Type.Double:
-        return Tag$newTag(type).as(DoubleTag);
-    case Tag.Type.ByteArray:
-        return Tag$newTag(type).as(ByteArrayTag);
-    case Tag.Type.String:
-        return Tag$newTag(type).as(StringTag);
-    case Tag.Type.List:
-        return Tag$newTag(type).as(ListTag);
-    case Tag.Type.Compound:
-        return Tag$newTag(type).as(CompoundTag);
-    case Tag.Type.IntArray:
-        return Tag$newTag(type).as(IntArrayTag);
-    default:
-        throw new Error("Unknown tag type: " + type);
+    const tag = Tag$newTag(type).toType(type);
+    if (type === Tag.Type.Compound || type === Tag.Type.List) {
+        tag.construct();
     }
+    return tag;
 };
-CompoundTag.prototype.put = procHacker.js("CompoundTag::put", void_t, {this:CompoundTag}, CxxString, Tag);

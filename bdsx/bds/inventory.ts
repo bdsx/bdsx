@@ -205,6 +205,9 @@ export class ItemStack extends NativeClass {
     getUserData():CompoundTag {
         abstract();
     }
+    setUserData(tag:CompoundTag):void {
+        abstract();
+    }
     /**
      * it returns the enchantability.
      * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
@@ -216,8 +219,7 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     setCustomLore(lores:string[]|string):void {
-        const CxxVectorString = CxxVector.make(CxxString);
-        const cxxvector = CxxVectorString.construct();
+        const cxxvector = (CxxVector.make(CxxString)).construct();
         if (typeof lores === "string") {
             cxxvector.push(lores);
         } else {
