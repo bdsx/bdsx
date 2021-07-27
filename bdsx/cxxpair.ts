@@ -64,7 +64,7 @@ export abstract class CxxPair<T1, T2> extends NativeClass {
                 }
             }
             CxxPairImpl.prototype.setFirst = isBaseOf(firstType, NativeClass) ? setFirstWithClass : setFirstWithPrimitive;
-            CxxPairImpl.prototype.setSecond = isBaseOf(firstType, NativeClass) ? setSecondWithClass : setSecondWithPrimitive;
+            CxxPairImpl.prototype.setSecond = isBaseOf(secondType, NativeClass) ? setSecondWithClass : setSecondWithPrimitive;
             Object.defineProperty(CxxPairImpl, 'name', {value:getPairName(firstType, secondType)});
             CxxPairImpl.prototype.firstType = firstType;
             CxxPairImpl.prototype.secondType = secondType;
