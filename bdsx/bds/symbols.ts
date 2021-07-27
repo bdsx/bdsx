@@ -251,7 +251,8 @@ const symbols = [
     'Player::getSkin',
     "ItemActor::`vftable'",
     'EnchantUtils::getEnchantLevel',
-    'EnchantUtils::hasEnchant'
+    'EnchantUtils::hasEnchant',
+    'Player::getCertificate'
 ] as const;
 
 // decorated symbols

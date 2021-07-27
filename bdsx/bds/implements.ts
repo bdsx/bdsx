@@ -223,6 +223,7 @@ Player.prototype.syncAbilties = function() {
     this.sendPacket(pk);
     pk.dispose();
 };
+Player.prototype.getCertificate = procHacker.js("Player::getCertificate", Certificate, {this:Player});
 
 ServerPlayer.abstract({
     networkIdentifier:[NetworkIdentifier, 0xa98]
