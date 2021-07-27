@@ -59,6 +59,7 @@ export class JsonValue extends NativeClass {
             } else {
                 jsonValueCtorWithType(this, JsonValueType.Object);
                 for (const key in value) {
+                    if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
                     const child = jsonValueResolveReference(this, key, false);
                     child.setValue((value as any)[key]);
                 }

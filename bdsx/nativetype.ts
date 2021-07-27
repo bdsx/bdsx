@@ -4,6 +4,7 @@ import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
 import { Singleton } from './singleton';
+import { filterToIdentifierableString } from './util';
 
 namespace NativeTypeFn {
     export const align = Symbol('align');
@@ -25,7 +26,7 @@ export interface Type<T> extends makefunc.Paramable {
     name:string;
     symbol?:string;
 
-    isTypeOf(v:unknown):v is T;
+    isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
@@ -33,7 +34,7 @@ export interface Type<T> extends makefunc.Paramable {
     [NativeTypeFn.dtor]:(ptr:StaticPointer)=>void,
     [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void,
     [makefunc.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
-    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number, bitmask:[number, number]|null):void;
+    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void;
 
     /**
      * nullable actually
@@ -58,24 +59,42 @@ export class NativeDescriptorBuilder {
     public readonly desc:PropertyDescriptorMap = {};
     public readonly params:unknown[] = [];
 
+    public readonly imports = new Map<unknown, string>();
+    private readonly names = new Set<string>();
+
     public readonly ctor = new NativeDescriptorBuilder.UseContextCtor;
     public readonly dtor = new NativeDescriptorBuilder.UseContextDtor;
     public readonly ctor_copy = new NativeDescriptorBuilder.UseContextCtorCopy;
     public readonly ctor_move = new NativeDescriptorBuilder.UseContextCtorCopy;
+
+    importType(type:Type<any>):string {
+        return this.import(type, type.name);
+    }
+
+    import(type:unknown, name:string):string {
+        const oname = this.imports.get(type);
+        if (oname != null) return oname;
+        name = filterToIdentifierableString(name);
+        if (this.names.has(name)) {
+            const oname = name;
+            let idx = 1;
+            do {
+                name = oname+(++idx);
+            } while (this.names.has(name));
+        }
+        this.imports.set(type, name);
+        this.names.add(name);
+        return name;
+    }
 }
 export namespace NativeDescriptorBuilder {
     export abstract class UseContext {
         public code = '';
-        protected _use = false;
+        public used = false;
         public offset = 0;
 
-        protected abstract initUse():void;
-
         setPtrOffset(offset:number):void {
-            if (!this._use) {
-                this._use = true;
-                this.initUse();
-            }
+            this.used = true;
             const delta = offset-this.offset;
             if (delta !== 0) this.code += `ptr.move(${delta});\n`;
             this.offset = offset;
@@ -83,28 +102,22 @@ export namespace NativeDescriptorBuilder {
     }
 
     export class UseContextCtor extends UseContext {
-        protected initUse(): void {
-            this.code += `const ptr = this.add();\n`;
-        }
     }
     export class UseContextDtor extends UseContext {
-        protected initUse(): void {
-            this.code += `const ptr = this.add();\n`;
-        }
     }
     export class UseContextCtorCopy extends UseContext {
         setPtrOffset(offset:number):void {
-            if (!this._use) {
-                this._use = true;
-                this.initUse();
-            }
+            this.used = true;
             const delta = offset-this.offset;
             if (delta !== 0) this.code += `ptr.move(${delta});\noptr.move(${delta});\n`;
             this.offset = offset;
         }
-        protected initUse(): void {
-            this.code += `const ptr = this.add();\nconst optr = o.add();\n`;
-        }
+    }
+    export interface Info {
+        offset:number;
+        bitmask:[number,number]|null;
+        ghost:boolean;
+        noInitialize:boolean;
     }
 }
 
@@ -231,11 +244,13 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         return Singleton.newInstance(NativeType, this, ()=>makeReference(this));
     }
 
-    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number, mask:[number, number]|null):void {
+    [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
         abstract();
     }
 
-    static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, offset:number, bitmask:[number, number]|null):void {
+    static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
+        const {offset, bitmask, noInitialize} = info;
+
         const type = this;
         if (bitmask !== null) {
             if (!(type instanceof NativeType)) throw Error(`${this.name} does not support the bit mask`);
@@ -249,22 +264,24 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
                 set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); }
             };
         }
+
+        if (noInitialize) return;
         let ctorbase = (type as any).prototype;
         if (!ctorbase || !(NativeType.ctor in ctorbase)) ctorbase = type;
 
-        const typeidx = builder.params.push(type)-1;
+        const name = builder.importType(type);
         if (ctorbase[NativeType.ctor] !== emptyFunc) {
             builder.ctor.setPtrOffset(offset);
-            builder.ctor.code += `types[${typeidx}][NativeType.ctor](ptr);\n`;
+            builder.ctor.code += `${name}[NativeType.ctor](ptr);\n`;
         }
         if (ctorbase[NativeType.dtor] !== emptyFunc) {
             builder.dtor.setPtrOffset(offset);
-            builder.dtor.code += `types[${typeidx}][NativeType.dtor](ptr);\n`;
+            builder.dtor.code += `${name}[NativeType.dtor](ptr);\n`;
         }
         builder.ctor_copy.setPtrOffset(offset);
-        builder.ctor_copy.code += `types[${typeidx}][NativeType.ctor_copy](ptr, optr);\n`;
+        builder.ctor_copy.code += `${name}[NativeType.ctor_copy](ptr, optr);\n`;
         builder.ctor_move.setPtrOffset(offset);
-        builder.ctor_move.code += `types[${typeidx}][NativeType.ctor_move](ptr, optr);\n`;
+        builder.ctor_move.code += `${name}[NativeType.ctor_move](ptr, optr);\n`;
     }
 
     static definePointedProperty<KEY extends keyof any, T>(target:{[key in KEY]:T}, key:KEY, pointer:StaticPointer, type:Type<T>):void {
@@ -303,7 +320,7 @@ declare module './core'
         [NativeType.dtor](ptr:StaticPointer):void;
         [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void;
         [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void;
-        [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number, bitmask:[number, number]|null):void;
+        [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void;
     }
 }
 
@@ -336,7 +353,6 @@ export const void_t = new NativeType<void>(
     emptyFunc,
     emptyFunc,
     emptyFunc);
-Object.freeze(void_t);
 export type void_t = void;
 export const bool_t = new NativeType<boolean>(
     'bool',
@@ -356,7 +372,6 @@ bool_t[NativeTypeFn.bitSetter] = (ptr, value, shift, mask, offset)=>{
     const nvalue = ((+value) << shift) | (ptr.getUint8(offset) & ~mask);
     ptr.setUint8(nvalue, offset);
 };
-Object.freeze(bool_t);
 export const uint8_t = new NativeType<number>(
     'unsigned char',
     1, 1,
@@ -369,7 +384,6 @@ export const uint8_t = new NativeType<number>(
 export type uint8_t = number;
 uint8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint8_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(uint8_t);
 export const uint16_t = new NativeType<number>(
     'unsigned short',
     2, 2,
@@ -382,7 +396,6 @@ export const uint16_t = new NativeType<number>(
 export type uint16_t = number;
 uint16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint16_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(uint16_t);
 export const uint32_t = new NativeType<number>(
     'unsigned int',
     4, 4,
@@ -395,7 +408,6 @@ export const uint32_t = new NativeType<number>(
 export type uint32_t = number;
 uint32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint32_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(uint32_t);
 export const ulong_t = new NativeType<number>(
     'unsigned long',
     4, 4,
@@ -408,7 +420,6 @@ export const ulong_t = new NativeType<number>(
 export type ulong_t = number;
 ulong_t[NativeTypeFn.bitGetter] = numericBitGetter;
 ulong_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(ulong_t);
 export const uint64_as_float_t = new NativeType<number>(
     'unsigned __int64',
     8, 8,
@@ -417,7 +428,6 @@ export const uint64_as_float_t = new NativeType<number>(
     (ptr, offset)=>ptr.getUint64AsFloat(offset),
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
-Object.freeze(uint64_as_float_t);
 export const int8_t = new NativeType<number>(
     'char',
     1, 1,
@@ -430,7 +440,6 @@ export const int8_t = new NativeType<number>(
 export type int8_t = number;
 int8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int8_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(int8_t);
 export const int16_t = new NativeType<number>(
     'short',
     2, 2,
@@ -443,7 +452,6 @@ export const int16_t = new NativeType<number>(
 export type int16_t = number;
 int16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int16_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(int16_t);
 export const int32_t = new NativeType<number>(
     'int',
     4, 4,
@@ -456,7 +464,6 @@ export const int32_t = new NativeType<number>(
 export type int32_t = number;
 int32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int32_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(int32_t);
 export const long_t = new NativeType<number>(
     'long',
     4, 4,
@@ -469,7 +476,6 @@ export const long_t = new NativeType<number>(
 export type long_t = number;
 long_t[NativeTypeFn.bitGetter] = numericBitGetter;
 long_t[NativeTypeFn.bitSetter] = numericBitSetter;
-Object.freeze(long_t);
 export const int64_as_float_t = new NativeType<number>(
     '__int64',
     8, 8,
@@ -480,7 +486,6 @@ export const int64_as_float_t = new NativeType<number>(
     undefined,
     int32To64);
 export type int64_as_float_t = number;
-Object.freeze(int64_as_float_t);
 
 export const float32_t = new NativeType<number>(
     'float',
@@ -493,7 +498,6 @@ export const float32_t = new NativeType<number>(
     (stackptr, param, offset)=>stackptr.setFloat32To64WithZero(param, offset));
 export type float32_t = number;
 float32_t[makefunc.useXmmRegister] = true;
-Object.freeze(float32_t);
 export const float64_t = new NativeType<number>(
     'double',
     8, 8,
@@ -503,7 +507,6 @@ export const float64_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setFloat64(v, offset));
 export type float64_t = number;
 float64_t[makefunc.useXmmRegister] = true;
-Object.freeze(float64_t);
 
 const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
 const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], void_t, null, VoidPointer);
@@ -534,8 +537,6 @@ export const CxxString = new NativeType<string>(
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
-CxxString[makefunc.pointerReturn] = true;
-Object.freeze(CxxString);
 export type CxxString = string;
 
 export const bin64_t = new NativeType<string>(
@@ -551,7 +552,6 @@ export const bin64_t = new NativeType<string>(
     minus_one:'\uffff\uffff\uffff\uffff',
 });
 export type bin64_t = string;
-Object.freeze(bin64_t);
 
 export const bin128_t = new NativeType<string>(
     'unsigned __int128',
@@ -568,4 +568,8 @@ export const bin128_t = new NativeType<string>(
     minus_one:'\uffff\uffff\uffff\uffff',
 });
 export type bin128_t = string;
-Object.freeze(bin128_t);
+
+/** @deprecated for legacy support */
+export const CxxStringWith8Bytes = CxxString.extends();
+CxxStringWith8Bytes[NativeType.size] = 0x28;
+export type CxxStringWith8Bytes = string;

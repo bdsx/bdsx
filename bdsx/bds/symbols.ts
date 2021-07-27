@@ -14,6 +14,7 @@ const symbols = [
     'Level::fetchEntity',
     'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
+    'Player::add',
     'Player::addLevels',
     'Player::attack',
     'Player::drop',
@@ -46,7 +47,6 @@ const symbols = [
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
     'ServerPlayer::setPlayerGameType',
-    'std::_Allocate<16,std::_Default_allocate_traits,0>',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
     'Actor::getHealth',
@@ -217,8 +217,8 @@ const symbols = [
     'Ability::getFloat',
     'Ability::setBool',
     'AdventureSettingsPacket::AdventureSettingsPacket',
-    'TextPacket::createTranslated',
     'Level::destroyBlock',
+    'Level::getActorFactory',
     'Level::getAdventureSettings',
     'Level::getScoreboard',
     'Level::getTagRegistry',
@@ -250,6 +250,7 @@ const symbols = [
     'PlayerListPacket::emplace',
     'Player::getSkin',
     "ItemActor::`vftable'",
+    'ServerPlayer::_nextContainerCounter',
     'EnchantUtils::getEnchantLevel',
     'EnchantUtils::hasEnchant',
     'Player::getCertificate'
@@ -289,7 +290,8 @@ const symbols2 = [
     '??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z',
     'sprintf',
     'vsnprintf',
-    '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z'
+    '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z',
+    '??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z',
 ] as const;
 
 

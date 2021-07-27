@@ -2,32 +2,26 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
 import { Block, BlockLegacy } from "./block";
+import { CommandName } from "./commandname";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
 
+/**
+ * Values from 1 to 100 are for a player's container counter.
+ */
 export enum ContainerId {
-    Inventory = 0,
-    /**
-     * @deprecated
-     */
-    First = 1,
-    /**
-     * @deprecated
-     */
+    Inventory,
+    /** Used as the minimum value of a player's container counter. */
+    First,
+    /** Used as the maximum value of a player's container counter. */
     Last = 100,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Offhand = 119,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Armor,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Creative,
     /**
      * @deprecated
@@ -37,10 +31,44 @@ export enum ContainerId {
      * @deprecated
      */
     FixedInventory,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     UI
+}
+
+export enum ContainerType {
+    Container,
+    Workbench,
+    Furnace,
+    Enchantment,
+    BrewingStand,
+    Anvil,
+    Dispenser,
+    Dropper,
+    Hopper,
+    Cauldron,
+    MinecartChest,
+    MinecartHopper,
+    Horse,
+    Beacon,
+    StructureEditor,
+    Trade,
+    CommandBlock,
+    Jukebox,
+    Armor,
+    Hand,
+    CompoundCreator,
+    ElementConstructor,
+    MaterialReducer,
+    LabTable,
+    Loom,
+    Lectern,
+    Grindstone,
+    BlastFurnace,
+    Smoker,
+    Stonecutter,
+    Cartography,
+    None = 0xF7,
+    Inventory = 0xFF,
 }
 
 export enum ArmorSlot {
@@ -72,7 +100,11 @@ export class Item extends NativeClass {
         if (name === null) throw Error(`item has not any names`);
         return name;
     }
-    getCommandNames():CxxVector<string> {
+    /** @deprecated use getCommandNames2 */
+    getCommandNames():CxxVector<CxxStringWith8Bytes> {
+        abstract();
+    }
+    getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
     getCreativeCategory():number {
@@ -154,7 +186,7 @@ export class ItemStack extends NativeClass {
     }
     getName():string {
         const item = this.getItem();
-        if (item) {
+        if (item != null) {
             const Name = item.getCommandName();
             if (Name.includes(":")) return Name;
             else return "minecraft:" + Name;
@@ -188,9 +220,9 @@ export class ItemStack extends NativeClass {
         const cxxvector = CxxVectorString.construct();
         if (typeof lores === "string") {
             cxxvector.push(lores);
-        } else lores.forEach((v)=>{
-            cxxvector.push(v);
-        });
+        } else {
+            cxxvector.push(...lores);
+        }
         this._setCustomLore(cxxvector);
         cxxvector.destruct();
     }

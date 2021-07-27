@@ -455,7 +455,7 @@ command.hook = events.command;
 command.command.hook = events.command;
 //@ts-ignore
 command.CustomCommandFactory.prototype.override = function override(callback, ...parameters) {
-    const fields = {};
+    const fields = Object.create(null);
     for (const [name, type, optkey] of parameters) {
         if (name in fields)
             throw Error(`${name}: field name dupplicated`);

@@ -126,6 +126,7 @@ export class DocMethod {
             method.deleted = true;
         } else {
             method.desc = docfix.desc || '';
+            (docfix as any).__proto__ = null;
             for (const param in docfix) {
                 const reg = PARAM.exec(param);
                 if (reg === null) continue;
@@ -228,6 +229,7 @@ export class DocType {
                 break;
             }
 
+            (docfix as any).__proto__ = null;
             for (const key in docfix) {
                 const item = docfix[key];
                 if (key.startsWith('field:')) {

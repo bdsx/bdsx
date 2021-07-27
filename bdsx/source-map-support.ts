@@ -1,8 +1,9 @@
 
 import { SourceMapConsumer } from 'source-map';
-import { anyToString, removeLine as removeLine } from './util';
+import { removeLine } from './util';
 import path = require('path');
 import fs = require('fs');
+import util = require('util');
 
 const HIDE_UNDERSCOPE = true;
 
@@ -172,13 +173,13 @@ export function mapSourcePosition(position: Position): Position {
             // Load all sources stored inline with the source map into the file cache
             // to pretend like they are already loaded. They may not exist on disk.
             if (sourceMap.map) {
-                sourceMap.map.sources.forEach(source=>{
+                for (const source of sourceMap.map.sources) {
                     const contents = sourceMap!.map!.sourceContentFor(source);
                     if (contents) {
                         const url = supportRelativeURL(sourceMap!.url!, source);
                         fileContentsCache[url] = contents;
                     }
-                });
+                }
             }
         } else {
             sourceMap = sourceMapCache[position.source] = {
@@ -404,7 +405,7 @@ export function install():void {
     }
 
     console.trace = function(...messages:any[]): void {
-        const err = remapStack(removeLine(Error(messages.map(anyToString).join(' ')).stack || '', 1, 2))!;
+        const err = remapStack(removeLine(Error(messages.map(msg=>util.inspect(msg, false, 2, true)).join(' ')).stack || '', 1, 2))!;
         console.error(`Trace${err.substr(5)}`);
     };
 }

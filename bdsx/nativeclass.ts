@@ -1,9 +1,12 @@
+import { capi } from "./capi";
+import { CircularDetector } from "./circulardetector";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
+import util = require('util');
 
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
@@ -28,17 +31,90 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     new(alloc?:boolean):T;
     prototype:T;
     [StructurePointer.contentSize]:number|null;
-    [fieldmap]:Record<keyof any, [Type<any>, number, [number, number]|null]>;
+    [fieldmap]:Record<keyof any, NativeFieldInfo>;
     [isSealed]:boolean;
     [isNativeClass]:true;
     construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T;
+    allocate<T>(this:{new():T}, copyFrom?:T|null):T;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
     typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
     ref<T extends NativeClass>(this:{new():T}):NativeType<T>;
 }
 
-class StructureDefination {
+function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, superproto:NativeClassType<any>):((()=>void)|null)[] {
+    function override(ctx:NativeDescriptorBuilder.UseContext, type:typeof NativeType.ctor|typeof NativeType.dtor, fnname:string):void{
+        const superfn = superproto[type];
+        const manualfn = clazz.prototype[type];
+        if (ctx.used) {
+            if (superproto[type] !== emptyFunc) {
+                ctx.code = `superproto[NativeType.${fnname}].call(this);\n`+ctx.code;
+            }
+            if (superfn !== manualfn) {
+                builder.import(manualfn, 'manual_'+fnname);
+                ctx.code += `manual_${fnname}.call(this);\n`;
+            }
+            ctx.code = '\nfunction(){\nconst ptr = this.add();\n'+ctx.code;
+        } else if (superfn !== manualfn) {
+            clazz.prototype[type] = function(this:unknown){
+                superfn.call(this);
+                manualfn.call(this);
+            };
+        }
+    }
+
+    override(builder.ctor, NativeType.ctor, 'ctor');
+    override(builder.dtor, NativeType.dtor, 'dtor');
+    if (builder.ctor_copy.used) {
+        if (clazz.prototype.hasOwnProperty(NativeType.ctor_copy)) {
+            builder.ctor_copy.used = false;
+        } else {
+            let code = '\nfunction(o){\nconst ptr = this.add();\nconst optr = o.add();\n';
+            if (superproto[NativeType.ctor_copy] !== emptyFunc) {
+                code += `superproto[NativeType.ctor_copy].call(this);\n`;
+            }
+            code += builder.ctor_copy.code;
+            builder.ctor_copy.code = code;
+        }
+    }
+    if (builder.ctor_move.used) {
+        if (clazz.prototype.hasOwnProperty(NativeType.ctor_move)) {
+            builder.ctor_move.used = false;
+        } else {
+            let code = '\nfunction(o){\nconst ptr = this.add();\nconst optr = o.add();\n';
+            if (superproto[NativeType.ctor_move] !== emptyFunc) {
+                code += `superproto[NativeType.ctor_move].call(this);\n`;
+            }
+            code += builder.ctor_move.code;
+            builder.ctor_move.code = code;
+        }
+    }
+    const list = [builder.ctor, builder.dtor, builder.ctor_copy, builder.ctor_move];
+
+    let out = '\nconst [';
+    for (const imp of builder.imports.values()) {
+        out += imp;
+        out += ',';
+    }
+    out += 'NativeType,superproto] = imp;\nreturn [';
+    for (const item of list) {
+        if (item.used) {
+            out += item.code;
+            out += '},';
+        } else {
+            out += 'null,';
+        }
+    }
+    out += '];';
+    const imports = [...builder.imports.keys(), NativeType, superproto];
+    return new Function('imp', out)(imports);
+}
+
+interface NativeFieldInfo extends NativeDescriptorBuilder.Info {
+    type:Type<any>;
+}
+
+class StructureDefinition {
     /**
      * end of fields
      */
@@ -46,7 +122,7 @@ class StructureDefination {
     align:number;
     bitoffset = 0;
     bitTargetSize = 0;
-    fields:Record<keyof any, [Type<any>, number, [number, number]|null]> = {};
+    fields:Record<keyof any, NativeFieldInfo> = Object.create(null);
 
     constructor(supercls:NativeClassType<any>) {
         this.eof = supercls[NativeType.size];
@@ -69,67 +145,31 @@ class StructureDefination {
         sealClass(clazz);
 
         clazz[fieldmap] = this.fields;
-        Object.freeze(this.fields);
 
         const propmap = new NativeDescriptorBuilder;
         for (const key in this.fields) {
-            const [type, offset, bitmask] = this.fields[key]!;
-            type[NativeType.descriptor](propmap, key, offset, bitmask);
+            const info = this.fields[key]!;
+            info.type[NativeType.descriptor](propmap, key, info);
         }
-        const params = propmap.params;
-        const supercls = (clazz as any).__proto__.prototype;
-        const idx = params.push(supercls) - 1;
+        const supercls = (clazz as any).__proto__;
+        const superproto = supercls.prototype;
 
-        function override(ctx:NativeDescriptorBuilder.UseContext, type:typeof NativeType.ctor|typeof NativeType.dtor):void {
-            const superfn = supercls[type];
-            const manual = clazz.prototype[type];
-            if (ctx.code !== '') {
-                const func = new Function('NativeType', 'types', ctx.code);
-                if (superfn === manual) {
-                    clazz.prototype[type] = function(this:T){
-                        superfn.call(this);
-                        func.call(this, NativeType, params);
-                    };
-                } else {
-                    clazz.prototype[type] = function(this:T){
-                        superfn.call(this);
-                        func.call(this, NativeType, params);
-                        manual.call(this);
-                    };
-                }
-            } else if (superfn !== manual) {
-                clazz.prototype[type] = function(this:T){
-                    superfn.call(this);
-                    manual.call(this);
-                };
-            }
-        }
+        const superfield = supercls[fieldmap];
+        if (superfield != null) (this.fields as any).__proto__ = superfield;
+        Object.freeze(this.fields);
 
-        override(propmap.ctor, NativeType.ctor);
-        override(propmap.dtor, NativeType.dtor);
-        if (propmap.ctor_copy.code !== '') {
-            if (!clazz.prototype.hasOwnProperty(NativeType.ctor_copy)) {
-                let code = propmap.ctor_copy.code;
-                if (clazz.prototype[NativeType.ctor_copy] !== emptyFunc) {
-                    code = `types[${idx}][NativeType.ctor_copy].call(this);\n${code}`;
-                }
-                const func = new Function('NativeType', 'types', 'o', propmap.ctor_copy.code);
-                clazz.prototype[NativeType.ctor_copy] = function(this:T, o:T){
-                    func.call(this, NativeType, params, o);
-                };
-            }
+        const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
+        if (ctor !== null) {
+            clazz.prototype[NativeType.ctor] = ctor;
         }
-        if (propmap.ctor_move.code !== '') {
-            if (!clazz.prototype.hasOwnProperty(NativeType.ctor_move)) {
-                let code = propmap.ctor_move.code;
-                if (clazz.prototype[NativeType.ctor_move] !== emptyFunc) {
-                    code = `types[${idx}][NativeType.ctor_move].call(this);\n${code}`;
-                }
-                const func = new Function('NativeType', 'types', 'o', propmap.ctor_move.code);
-                clazz.prototype[NativeType.ctor_move] = function(this:T, o:T){
-                    func.call(this, NativeType, params, o);
-                };
-            }
+        if (dtor !== null) {
+            clazz.prototype[NativeType.dtor] = dtor;
+        }
+        if (ctor_copy !== null) {
+            clazz.prototype[NativeType.ctor_copy] = ctor_copy;
+        }
+        if (ctor_move !== null) {
+            clazz.prototype[NativeType.ctor_move] = ctor_move;
         }
 
         clazz[StructurePointer.contentSize] =
@@ -139,7 +179,7 @@ class StructureDefination {
         Object.defineProperties(clazz.prototype, propmap.desc);
     }
 
-    field(key:string, type:Type<any>, fieldOffset?:number|null, bitField?:number|null):void {
+    field(key:string, type:Type<any>, fieldOffset?:NativeFieldOptions|number|null, bitField?:number|null):void {
         if (isBaseOf(type, NativeClass)) {
             sealClass(type as NativeClassType<any>);
         }
@@ -147,14 +187,34 @@ class StructureDefination {
         const alignofType = type[NativeType.align];
         if (alignofType > this.align) this.align = alignofType;
 
-        let offset = 0;
+        let offset:number|undefined;
+        let relative:number|undefined;
+        let ghost = false;
+        let noInitialize = false;
         if (fieldOffset != null) {
-            offset = fieldOffset;
-        } else {
+            if (typeof fieldOffset === 'number') {
+                offset = fieldOffset;
+            } else {
+                const opts = fieldOffset;
+                if (opts.relative) {
+                    relative = opts.offset;
+                } else {
+                    offset = opts.offset;
+                }
+                bitField = opts.bitMask;
+                ghost = opts.ghost || false;
+                if (ghost) noInitialize = true;
+                else noInitialize = opts.noInitialize || false;
+            }
+        }
+        if (offset == null) {
             if (this.eof === null) {
                 throw Error('Cannot set a field without the offset, if the sizeof previous field or super class is unknown');
             }
             offset = (((this.eof + alignofType - 1) / alignofType)|0)*alignofType;
+        }
+        if (relative != null) {
+            offset += relative;
         }
 
         const sizeofType = type[NativeType.size];
@@ -162,10 +222,10 @@ class StructureDefination {
             if (bitField != null) {
                 throw Error(`${type.name} does not support the bit mask`);
             }
-            this.fields[key] = [type, offset, null];
-            this.eof = null;
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask:null};
+            if (!ghost) this.eof = null;
         } else {
-            let bitmaskinfo:[number, number]|null = null;
+            let bitmask:[number, number]|null = null;
             let nextOffset = offset;
             if (bitField != null) {
                 if (!(type instanceof NativeType) || !type.supportsBitMask()) {
@@ -178,39 +238,40 @@ class StructureDefination {
                 let shift = 0;
                 if (this.bitoffset === 0 || this.bitTargetSize !== sizeofType || nextBitOffset > maxBits) {
                     // next bit field
-                    this.bitoffset = bitField;
+                    if (!ghost) this.bitoffset = bitField;
                     nextOffset = offset + sizeofType;
                 } else {
                     offset -= sizeofType;
                     shift = this.bitoffset;
-                    this.bitoffset = nextBitOffset;
+                    if (!ghost) this.bitoffset = nextBitOffset;
                 }
-                this.bitTargetSize = sizeofType;
+                if (!ghost) this.bitTargetSize = sizeofType;
                 const mask = ((1 << bitField) - 1) << shift;
-                bitmaskinfo = [shift, mask];
+                bitmask = [shift, mask];
             } else {
-                this.bitoffset = 0;
-                this.bitTargetSize = 0;
+                if (!ghost) {
+                    this.bitoffset = 0;
+                    this.bitTargetSize = 0;
+                }
                 nextOffset = offset + sizeofType;
             }
-            this.fields[key] = [type, offset, bitmaskinfo];
-            if (this.eof !== null && nextOffset > this.eof) {
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask};
+            if (!ghost && this.eof !== null && nextOffset > this.eof) {
                 this.eof = nextOffset;
             }
         }
     }
 }
 
-const structures = new WeakMap<{new():any}, StructureDefination>();
+const structures = new WeakMap<{new():any}, StructureDefinition>();
 
 export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static readonly [NativeType.align]:number = 1;
     static readonly [StructurePointer.contentSize]:number = 0;
-    static readonly [fieldmap]:Record<keyof any, [NativeType<any>, number, [number, number]|null]>;
+    static readonly [fieldmap]:Record<keyof any, NativeFieldInfo>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
-    static readonly [makefunc.pointerReturn] = true;
     static readonly symbol?:string;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
@@ -232,6 +293,7 @@ export class NativeClass extends StructurePointer {
         // empty
     }
     [NativeType.setter](from:this):void {
+        if (this.equals(from)) return; // self setting
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](from);
     }
@@ -254,7 +316,8 @@ export class NativeClass extends StructurePointer {
     static [NativeType.getter](ptr:VoidPointer, offset?:number):NativeClass {
         return ptr.addAs(this, offset, (offset || 0) >> 31);
     }
-    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void {
+    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
+        const {offset, noInitialize} = info;
         const type = this;
         builder.desc[key] = {
             configurable: true,
@@ -264,17 +327,23 @@ export class NativeClass extends StructurePointer {
                 return value;
             }
         };
+        if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
+            builder.ctor.used = true;
             builder.ctor.code += `this${accessor(key)}[NativeType.ctor]();\n`;
         }
         if (type[NativeType.dtor] !== emptyFunc) {
+            builder.dtor.used = true;
             builder.dtor.code += `this${accessor(key)}[NativeType.dtor]();\n`;
         }
+        builder.ctor_copy.used = true;
         builder.ctor_copy.code += `this${accessor(key)}[NativeType.ctor_copy](o${accessor(key)});\n`;
+        builder.ctor_move.used = true;
         builder.ctor_move.code += `this${accessor(key)}[NativeType.ctor_move](o${accessor(key)});\n`;
     }
 
     /**
+     * call the constructor
      * alias of [NativeType.ctor]() and [Native.ctor_copy]();
      */
     construct(copyFrom?:this|null):void {
@@ -286,6 +355,7 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
+     * call the destructor
      * alias of [NativeType.dtor]();
      */
     destruct():void {
@@ -300,6 +370,19 @@ export class NativeClass extends StructurePointer {
      */
     static construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T {
         const inst = new this(true);
+        inst.construct(copyFrom);
+        return inst;
+    }
+
+    /**
+     * allocating with malloc and constructing.
+     *
+     * const inst = capi.malloc(size).as(Class);
+     * inst.construct();
+     */
+    static allocate<T>(this:{new():T}, copyFrom?:T|null):T {
+        const clazz = this as NativeClassType<any>;
+        const inst = capi.malloc(clazz[NativeType.size]).as(clazz);
         inst.construct(copyFrom);
         return inst;
     }
@@ -329,7 +412,7 @@ export class NativeClass extends StructurePointer {
 
         const superclass = (clazz as any).__proto__;
         sealClass(superclass);
-        const def = new StructureDefination(superclass);
+        const def = new StructureDefinition(superclass);
         structures.set(clazz, def);
 
         for (const key in fields) {
@@ -361,11 +444,57 @@ export class NativeClass extends StructurePointer {
     }
 
     static offsetOf<T extends NativeClass>(this:{new():T}, field:KeysWithoutFunction<T>):number {
-        return (this as NativeClassType<T>)[fieldmap][field][1];
+        return (this as NativeClassType<T>)[fieldmap][field].offset;
     }
 
     static typeOf<T extends NativeClass, KEY extends KeysWithoutFunction<T>>(this:{new():T}, field:KEY):Type<T[KEY]> {
-        return (this as NativeClassType<T>)[fieldmap][field][0];
+        return (this as NativeClassType<T>)[fieldmap][field].type;
+    }
+
+    static * keys():IterableIterator<string> {
+        for (const key in this[fieldmap]) {
+            yield key;
+        }
+    }
+
+    /**
+     * call the destructor and capi.free
+     *
+     * inst.destruct();
+     * capi.free(inst);
+     */
+    static delete(item:NativeClass):void {
+        item.destruct();
+        capi.free(item);
+    }
+
+    protected _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
+        return CircularDetector.check(this, allocator, obj=>{
+            const fields = (this as any).constructor[fieldmap];
+            for (const field in fields) {
+                let value:unknown;
+                try {
+                    value = (this as any)[field];
+                } catch (err) {
+                    value = 'Error: '+err.message;
+                }
+                obj[field] = value;
+            }
+        });
+    }
+
+    toJSON():Record<string, any> {
+        const obj = this._toJsonOnce(()=>({}));
+        for (const key in obj) {
+            if (!obj.hasOwnProperty(key)) continue;
+            const v = obj[key];
+            if (v != null) obj[key] = v.toJSON != null ? v.toJSON() : v;
+        }
+        return obj;
+    }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        return this._toJsonOnce(()=>new (CircularDetector.makeTemporalClass(this.constructor.name, this, options)));
     }
 }
 
@@ -382,11 +511,34 @@ function sealClass<T extends NativeClass>(cls:NativeClassType<T>):void {
     }
 }
 
-export function nativeField<T>(type:Type<T>, fieldOffset?:number|null, bitMask?:number|null) {
+export interface NativeFieldOptions {
+    offset?:number;
+    /**
+     * offset is a relative offset
+     */
+    relative?:boolean;
+    bitMask?:number;
+    /**
+     * Set it as not a actual field, just for accessing.
+     * Does not increase the size of the class.
+     * also does not increase the next field offset.
+     * And does not call the constructor and the destructor.
+     *
+     * It's noInitialize with the zero space
+     */
+    ghost?:boolean;
+    /**
+     * Don't initialize
+     * But it has space unlike ghost
+     */
+    noInitialize?:boolean;
+}
+
+export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|number|null, bitMask?:number|null) {
     return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
         let def = structures.get(clazz);
-        if (def == null) structures.set(clazz, def = new StructureDefination((clazz as any).__proto__));
+        if (def == null) structures.set(clazz, def = new StructureDefinition((clazz as any).__proto__));
         def.field(key, type, fieldOffset, bitMask);
     };
 }
@@ -424,7 +576,8 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
     static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void {
         throw Error("non assignable");
     }
-    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, offset:number):void {
+    static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
+        const {offset, noInitialize} = info;
         const type = this as any;
         builder.desc[key] = {
             configurable: true,
@@ -434,13 +587,18 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
                 return value;
             }
         };
+        if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
+            builder.ctor.used = true;
             builder.ctor.code += `this${accessor(key)}[NativeType.ctor]();\n`;
         }
         if (type[NativeType.dtor] !== emptyFunc) {
+            builder.dtor.used = true;
             builder.dtor.code += `this${accessor(key)}[NativeType.dtor]();\n`;
         }
+        builder.ctor_copy.used = true;
         builder.ctor_copy.code += `this${accessor(key)}[NativeType.ctor_copy](o${accessor(key)});\n`;
+        builder.ctor_move.used = true;
         builder.ctor_move.code += `this${accessor(key)}[NativeType.ctor_move](o${accessor(key)});\n`;
     }
     static readonly [NativeType.align]:number = 1;
@@ -475,7 +633,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
 
         let off = 0;
         for (let i = 0; i < count; i++) {
-            itemType[NativeType.descriptor](propmap, i, off, null);
+            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false, noInitialize:false});
             off += itemSize;
         }
         class NativeArrayImpl extends NativeArray<T> {

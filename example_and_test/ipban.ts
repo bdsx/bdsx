@@ -13,8 +13,8 @@ import path = require('path');
  */
 async function load():Promise<void> {
     try {
-        const entires = JSON.parse(await fs.readFile(path.join(__dirname, '../ipban.json'), 'utf-8'));
-        for (const [name, period] of entires) {
+        const entries = JSON.parse(await fs.readFile(path.join(__dirname, '../ipban.json'), 'utf-8'));
+        for (const [name, period] of entries) {
             ipfilter.addAt(name, period); // restore from the json file
         }
     } catch (err) {

@@ -9,7 +9,9 @@ export enum MinecraftPacketIds {//int32_t
 	ClientToServerHandshake = 0x04,
 	Disconnect = 0x05,
 	ResourcePacksInfo = 0x06,
+	/** @deprecated use ResourcePackStack, follow the real class name */
 	ResourcePacksStack = 0x07,
+	ResourcePackStack = 0x07,
 	ResourcePackClientResponse = 0x08,
 	Text = 0x09,
 	SetTime = 0x0a,
@@ -104,7 +106,9 @@ export enum MinecraftPacketIds {//int32_t
 	BookEdit = 0x61,
 	NpcRequest = 0x62,
 	PhotoTransfer = 0x63,
+	/** @deprecated use ModalFormRequest, follow the real class name */
 	ShowModalForm = 0x64,
+	ModalFormRequest = 0x64,
 	ModalFormResponse = 0x65,
 	ServerSettingsRequest = 0x66,
 	ServerSettingsResponse = 0x67,
@@ -166,4 +170,11 @@ export enum MinecraftPacketIds {//int32_t
 	CorrectPlayerMovePrediction = 0xa1,
 	ItemComponent = 0xa2,
 	FilterText = 0xa3,
+	ClientboundDebugRenderer = 0xa4,
+	SyncActorProperty = 0xa5,
+	AddVolumeEntity = 0xa6,
+	RemoveVolumeEntity = 0xa7,
+	SimulationType = 0xa8,
+	NpcDialogue = 0xa9,
 }
+(MinecraftPacketIds as any).__proto__ = null;

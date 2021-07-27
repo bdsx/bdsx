@@ -89,7 +89,8 @@ export class CustomCommandFactory {
             }
         }
 
-        const fields:Record<string, Type<any>> = {};
+        (parameters as any).__proto__ = null;
+        const fields:Record<string, Type<any>> = Object.create(null);
         for (const name in parameters) {
             let optional = false;
             let type:Type<any>|[Type<any>,boolean] = parameters[name];

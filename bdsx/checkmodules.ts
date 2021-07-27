@@ -92,6 +92,7 @@ const packagejson = JSON.parse(fs.readFileSync(packagejsonPath, 'utf-8'));
 let needUpdate = false;
 
 const requiredDeps = packagejson.dependencies;
+(requiredDeps as any).__proto__ = null;
 
 for (const name in requiredDeps) {
     const requiredVersion = requiredDeps[name];

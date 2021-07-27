@@ -20,10 +20,13 @@ export class Level extends NativeClass {
     destroyBlock(blockSource:BlockSource, blockPos:BlockPos, dropResources:boolean):boolean {
         abstract();
     }
-    fetchEntity(id:ActorUniqueID, unknown:boolean):Actor|null {
+    fetchEntity(id:ActorUniqueID, fetchRemovedActor:boolean):Actor|null {
         abstract();
     }
     getActivePlayerCount():number {
+        abstract();
+    }
+    getActorFactory():ActorFactory {
         abstract();
     }
     getAdventureSettings():AdventureSettings {
@@ -35,18 +38,20 @@ export class Level extends NativeClass {
     getTagRegistry():TagRegistry {
         abstract();
     }
-}
-export class ServerLevel extends Level {
-    /** @deprecated unusing */
-    packetSender:LoopbackPacketSender;
-    actors:CxxVector<Actor>;
-
     setCommandsEnabled(value:boolean):void {
         abstract();
     }
     setShouldSendSleepMessage(value:boolean):void {
         abstract();
     }
+}
+export class ServerLevel extends Level {
+    /** @deprecated unusing */
+    packetSender:LoopbackPacketSender;
+    actors:CxxVector<Actor>;
+}
+
+export class ActorFactory extends NativeClass {
 }
 
 export class AdventureSettings extends NativeClass {

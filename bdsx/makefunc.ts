@@ -6,6 +6,7 @@ import { abstract, Bufferable, Encoding } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, PrivatePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { isBaseOf } from "./util";
+import util = require('util');
 
 export type ParamType = makefunc.Paramable;
 
@@ -139,8 +140,6 @@ export namespace makefunc {
     export const setter = Symbol('setter');
     export const setToParam = Symbol('makefunc.writeToParam');
     export const getFromParam = Symbol('makefunc.readFromParam');
-    export const pointerReturn = Symbol('makefunc.pointerReturn');
-    export const nullAlsoInstance = Symbol('makefunc.nullAlsoInstance');
     export const useXmmRegister = Symbol('makefunc.returnWithXmm0');
     export const ctor_move = Symbol('makefunc.ctor_move');
     export const size = Symbol('makefunc.size');
@@ -159,25 +158,14 @@ export namespace makefunc {
          * allow downcasting
          */
         isTypeOfWeak(v:unknown):boolean;
-
-        /**
-         * if it has the local space. the value is the pointer that indicates the stored data.
-         * or it's read from the stored data
-         */
-        [pointerReturn]?:boolean;
-
-        /**
-         * the null pointer also can be the JS instance
-         */
-        [nullAlsoInstance]?:boolean;
     }
     export interface ParamableT<T> extends Paramable {
         prototype:T;
         [getFromParam](stackptr:StaticPointer, offset?:number):T|null;
         [setToParam](stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number):void;
         [useXmmRegister]:boolean;
-        isTypeOf(v:unknown):v is T;
-        isTypeOfWeak(v:unknown):v is T;
+        isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
+        isTypeOfWeak(v:unknown):boolean;
     }
     export class ParamableT<T> {
         constructor(
@@ -546,6 +534,9 @@ declare global
     }
 }
 
+VoidPointer.prototype[util.inspect.custom] = function() {
+    return `${this.constructor.name} { ${this.toString()} }`;
+};
 VoidPointer[makefunc.size] = 8;
 VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS{
     return ptr.getPointerAs(this, offset);

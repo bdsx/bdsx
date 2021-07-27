@@ -803,6 +803,10 @@ export declare namespace ipfilter
      * time is for expiring in unix time stamp.
      * if time is 0, it's permanent.
      */
+    export function entries():[string, number][];
+    /**
+     * @deprecated Typo!
+     */
     export function entires():[string, number][];
 }
 
@@ -838,5 +842,6 @@ export declare namespace cxxException
     export const cxxthrowString:VoidPointer;
 }
 
-module.exports = (process as any)._linkedBinding('bdsx_core');
+const core = module.exports = (process as any)._linkedBinding('bdsx_core');
+core.ipfilter.entries = core.ipfilter.entires;
 module.exports.PrivatePointer = module.exports.StaticPointer;
