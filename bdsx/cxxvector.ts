@@ -5,6 +5,7 @@ import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
+import util = require('util');
 
 export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>>
 {
@@ -408,6 +409,10 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                 return VectorImpl;
             }
         });
+    }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        return `CxxVector ${util.inspect(this.toArray(), options)}`;
     }
 }
 

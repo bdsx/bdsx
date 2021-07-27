@@ -46,7 +46,14 @@ export class ArrayMap<KEY, T> implements Iterable<[KEY, T[]]> {
         return this.map.values();
     }
 
+    /**
+     * @deprecated Typo!
+     */
     entires():IterableIterator<[KEY, T[]]> {
+        return this.map.entries();
+    }
+
+    entries():IterableIterator<[KEY, T[]]> {
         return this.map.entries();
     }
 

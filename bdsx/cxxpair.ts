@@ -54,8 +54,8 @@ export abstract class CxxPair<T1, T2> extends NativeClass {
             class CxxPairImpl extends CxxPair<T1, T2> {
                 firstType:Type<T1>;
                 secondType:Type<T2>;
-                static readonly type1:Type<T1> = firstType;
-                static readonly type2:Type<T2> = secondType;
+                static readonly firstType:Type<T1> = firstType;
+                static readonly secondType:Type<T2> = secondType;
                 setFirst(first:T1):void {
                     abstract();
                 }
@@ -64,7 +64,7 @@ export abstract class CxxPair<T1, T2> extends NativeClass {
                 }
             }
             CxxPairImpl.prototype.setFirst = isBaseOf(firstType, NativeClass) ? setFirstWithClass : setFirstWithPrimitive;
-            CxxPairImpl.prototype.setSecond = isBaseOf(firstType, NativeClass) ? setSecondWithClass : setSecondWithPrimitive;
+            CxxPairImpl.prototype.setSecond = isBaseOf(secondType, NativeClass) ? setSecondWithClass : setSecondWithPrimitive;
             Object.defineProperty(CxxPairImpl, 'name', {value:getPairName(firstType, secondType)});
             CxxPairImpl.prototype.firstType = firstType;
             CxxPairImpl.prototype.secondType = secondType;

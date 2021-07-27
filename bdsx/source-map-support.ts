@@ -1,8 +1,9 @@
 
 import { SourceMapConsumer } from 'source-map';
-import { anyToString, removeLine as removeLine } from './util';
+import { removeLine } from './util';
 import path = require('path');
 import fs = require('fs');
+import util = require('util');
 
 const HIDE_UNDERSCOPE = true;
 
@@ -404,7 +405,7 @@ export function install():void {
     }
 
     console.trace = function(...messages:any[]): void {
-        const err = remapStack(removeLine(Error(messages.map(anyToString).join(' ')).stack || '', 1, 2))!;
+        const err = remapStack(removeLine(Error(messages.map(msg=>util.inspect(msg, false, 2, true)).join(' ')).stack || '', 1, 2))!;
         console.error(`Trace${err.substr(5)}`);
     };
 }

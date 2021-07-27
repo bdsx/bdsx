@@ -388,10 +388,19 @@ Tester.test({
         map.set('abcdefg12345678910', 6);
         this.equals(map.get('a'), 4, 'map get a');
         this.equals(map.get('b'), 5, 'map get b');
-        this.equals(map.get('abcdefg12345678910'), 6, 'map get long text');
+        this.equals(map.get('abcdefg12345678910'), 6, 'cxxmap get long text');
         this.equals(map.size(), 3, 'map size');
-
         map.destruct();
+
+        const map2 = CxxMap.make(CxxString, CxxVector.make(CxxString)).construct();
+        const a = CxxVector.make(CxxString).construct();
+        a.push('a');
+        map2.set('1', a);
+        a.push('b');
+        map2.set('2', a);
+        a.destruct();
+        this.equals(map2.toArray().map(([a,b])=>[a, b.toArray().join('-')].join('-')).join(','), '1-a,2-a-b', 'cxxmap set with vector');
+        map2.destruct();
     },
 
     json() {
