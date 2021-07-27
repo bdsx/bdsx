@@ -5,6 +5,7 @@ import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Vec3 } from "./blockpos";
+import { Certificate } from "./connreq";
 import { Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
@@ -82,6 +83,9 @@ export class Player extends Actor {
         abstract();
     }
 
+    getCertificate():Certificate {
+        abstract();
+    }
 }
 
 export class ServerPlayer extends Player {
