@@ -616,7 +616,6 @@ export abstract class CxxMap<K, V> extends NativeClass {
     }
 }
 
-
 function getMapName(pair:CxxPairType<any, any>):string {
     const key = pair.firstType;
     const value = pair.secondType;

@@ -809,7 +809,6 @@ export declare namespace ipfilter
      */
     export function entires():[string, number][];
 }
-ipfilter.entries = ipfilter.entires;
 
 type ErrorListener = (err:Error)=>void;
 
@@ -843,5 +842,6 @@ export declare namespace cxxException
     export const cxxthrowString:VoidPointer;
 }
 
-module.exports = (process as any)._linkedBinding('bdsx_core');
+const core = module.exports = (process as any)._linkedBinding('bdsx_core');
+core.ipfilter.entries = core.ipfilter.entires;
 module.exports.PrivatePointer = module.exports.StaticPointer;
