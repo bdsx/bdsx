@@ -255,7 +255,6 @@ const symbols = [
     'EnchantUtils::getEnchantLevel',
     'EnchantUtils::hasEnchant',
     'Tag::newTag',
-    'ListTag::add',
     'Actor::getStatusFlag',
 ] as const;
 
@@ -294,7 +293,6 @@ const symbols2 = [
     '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z',
     '??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z',
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
-    '?put@CompoundTag@@QEAAPEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@4@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

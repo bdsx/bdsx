@@ -1,11 +1,10 @@
 import { bin } from "../bin";
 import { abstract } from "../common";
-import { StaticPointer, VoidPointer } from "../core";
+import { AllocatedPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint8_t } from "../nativetype";
-import { Wrapper } from "../pointer";
 import { BinaryStream } from "./stream";
 import util = require("util");
 
@@ -17,7 +16,7 @@ export class TagWrapper {
     constructor(type:Tag.Type.Byte, value:uint8_t);
     constructor(type:Tag.Type.Short, value:int16_t);
     constructor(type:Tag.Type.Int, value:int32_t);
-    constructor(type:Tag.Type.Long, value:string);
+    constructor(type:Tag.Type.Long, value:bin64_t);
     constructor(type:Tag.Type.Float, value:float32_t);
     constructor(type:Tag.Type.Double, value:float64_t);
     constructor(type:Tag.Type.ByteArray, value:Uint8Array);
@@ -55,7 +54,7 @@ export class TagWrapper {
             (tag as ByteArrayTag).value.fromByteArray(this.value);
             break;
         case Tag.Type.String:
-            (tag as StringTag).value = this.value;
+            (tag as any).setCxxString(this.value, 0x08);
             break;
         case Tag.Type.List:
             (tag as ListTag).construct();
@@ -70,7 +69,8 @@ export class TagWrapper {
         case Tag.Type.Compound:
             (tag as CompoundTag).tags.construct();
             for (const [key, value] of Object.entries(this.value as Record<string, TagWrapper>)) {
-                (tag as CompoundTag).set(key, value.toTag());
+                const newtag = value.toTag();
+                (tag as CompoundTag).set(key, newtag);
             }
             break;
         case Tag.Type.IntArray:
@@ -80,6 +80,9 @@ export class TagWrapper {
     }
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        if (this.type === Tag.Type.Long) {
+            return `${Tag.Type[this.type]}Tag ${util.inspect(bin.toString(this.value), options)}`;
+        }
         return `${Tag.Type[this.type]}Tag ${util.inspect(this.value, options)}`;
     }
 }
@@ -166,13 +169,50 @@ export class Tag extends NativeClass {
     }
 
     toVariant():CompoundTagVariant {
-        const variant = this.as(CompoundTagVariant);
-        variant.type = this.getType();
+        const type = this.getType();
+        const tag = this.toType(type);
+        const variant = CompoundTagVariant.construct();
+        switch (type) {
+        case Tag.Type.Byte:
+            variant.valueAsByteTag = (tag as ByteTag).value;
+            break;
+        case Tag.Type.Short:
+            variant.valueAsShortTag = (tag as ShortTag).value;
+            break;
+        case Tag.Type.Int:
+            variant.valueAsIntTag = (tag as IntTag).value;
+            break;
+        case Tag.Type.Long:
+            variant.valueAsLongTag = (tag as LongTag).value;
+            break;
+        case Tag.Type.Float:
+            variant.valueAsFloatTag = (tag as FloatTag).value;
+            break;
+        case Tag.Type.Double:
+            variant.valueAsDoubleTag = (tag as DoubleTag).value;
+            break;
+        case Tag.Type.ByteArray:
+            variant.valueAsByteArrayTag.fromByteArray((tag as ByteArrayTag).value.toByteArray());
+            break;
+        case Tag.Type.String:
+            variant.valueAsStringTag = (tag as StringTag).value;
+            break;
+        case Tag.Type.List:
+            variant.setUint8((tag as ListTag).type, 0x20)
+            variant.valueAsListTag.construct((tag as ListTag).tags);
+            break;
+        case Tag.Type.Compound:
+            variant.valueAsCompoundTag.construct((tag as CompoundTag).tags);
+            break;
+        case Tag.Type.IntArray:
+            variant.valueAsIntArrayTag.fromIntArray((tag as IntArrayTag).value.toIntArray());
+        }
+        variant.type = type;
         return variant;
     }
 
     toWrapper():TagWrapper {
-        abstract();
+        return this.toType(this.getType()).toWrapper();
     }
 
     toJSON():TagWrapper {
@@ -183,8 +223,6 @@ export class Tag extends NativeClass {
         return this.toWrapper();
     }
 }
-export const TagPointer = Wrapper.make(Tag.ref());
-export type TagPointer = typeof TagPointer;
 
 export namespace Tag {
     export enum Type {
@@ -226,7 +264,7 @@ export class ShortTag extends Tag {
     value:int16_t;
 
     toWrapper():TagWrapper {
-        return  new TagWrapper(Tag.Type.Byte, this.value);
+        return  new TagWrapper(Tag.Type.Short, this.value);
     }
 }
 
@@ -236,19 +274,14 @@ export class IntTag extends Tag {
     value:int32_t;
 
     toWrapper():TagWrapper {
-        return  new TagWrapper(Tag.Type.Byte, this.value);
+        return  new TagWrapper(Tag.Type.Int, this.value);
     }
 }
 
 @nativeClass(null)
 export class LongTag extends Tag {
-    /** Express the numberic value as a string. */
-    get value():string {
-        return bin.toString(this.getBin64(0x08));
-    }
-    set value(value:string) {
-        this.setBin(bin.as64(value), 0x08);
-    }
+    @nativeField(bin64_t, 0x08)
+    value:bin64_t;
 
     toWrapper():TagWrapper {
         return new TagWrapper(Tag.Type.Long, this.value);
@@ -261,7 +294,7 @@ export class FloatTag extends Tag {
     value:float32_t;
 
     toWrapper():TagWrapper {
-        return  new TagWrapper(Tag.Type.Byte, this.value);
+        return  new TagWrapper(Tag.Type.Float, this.value);
     }
 }
 
@@ -271,7 +304,7 @@ export class DoubleTag extends Tag {
     value:float64_t;
 
     toWrapper():TagWrapper {
-        return  new TagWrapper(Tag.Type.Byte, this.value);
+        return  new TagWrapper(Tag.Type.Double, this.value);
     }
 }
 
@@ -279,11 +312,11 @@ export class DoubleTag extends Tag {
 export class TagMemoryChunk extends NativeClass {
     @nativeField(bin64_t)
     elements:bin64_t;
-    /** Size in bytes possibily, but the size of each element is also 1 as it's always uint8_t, IntArrayTag is not used */
+    /** Total size in bytes possibly, but the size of each element is also 1 as it's always uint8_t, IntArrayTag is not used */
     @nativeField(bin64_t)
     size:bin64_t;
     @nativeField(BinaryStream.ref())
-    buffer:BinaryStream|null;
+    buffer:BinaryStream;
 
     get length():number {
         return bin.toNumber(this.elements);
@@ -293,43 +326,35 @@ export class TagMemoryChunk extends NativeClass {
     }
 
     fromByteArray(value:Uint8Array):void {
-        if (value.length !== this.length || !this.buffer) {
-            throw new Error("The length of input ByteArray is not the same as the tag's.");
-        }
-        const stream = this.buffer as any as StaticPointer;
-        const componentSize = bin.toNumber(this.size);
+        this.length = value.length;
+        this.size = bin.make(this.length, 8);
+        this.buffer = new AllocatedPointer(this.length) as any;
         for (let i = 0; i < value.length; i++) {
-            stream.setUint8(value[i], i * componentSize);
+            (this.buffer as any).setUint8(value[i], i);
         }
     }
     toByteArray():Uint8Array {
-        const out = new Uint8Array(bin.toNumber(this.elements));
+        const out = new Uint8Array(this.length);
         if (!this.buffer) return new Uint8Array();
-        const stream = this.buffer as any as StaticPointer;
-        const componentSize = bin.toNumber(this.size);
         for (let i = 0; i < this.length; i++) {
-            out[i] = stream.getUint8(i * componentSize);
+            out[i] = (this.buffer as any).getUint8(i);
         }
         return out;
     }
 
     fromIntArray(value:Int32Array):void {
-        if (value.length !== this.length || !this.buffer) {
-            throw new Error("The length of input IntArray is not the same as the tag's.");
-        }
-        const stream = this.buffer as any as StaticPointer;
-        const componentSize = bin.toNumber(this.size);
+        this.length = value.length;
+        this.size = bin.make(this.length * 4, 8);
+        this.buffer = new AllocatedPointer(this.length * 4) as any;
         for (let i = 0; i < value.length; i++) {
-            stream.setUint8(value[i], i * componentSize);
+            (this.buffer as any).setUint8(value[i], i * 4);
         }
     }
     toIntArray():Int32Array {
-        const out = new Int32Array(bin.toNumber(this.elements));
+        const out = new Int32Array(this.length);
         if (!this.buffer) return new Int32Array();
-        const stream = this.buffer as any as StaticPointer;
-        const componentSize = bin.toNumber(this.size);
         for (let i = 0; i < this.length; i++) {
-            out[i] = stream.getUint8(i * componentSize);
+            out[i] = (this.buffer as any).getUint8(i * 4);
         }
         return out;
     }
@@ -397,8 +422,37 @@ export class IntArrayTag extends Tag {
 
 @nativeClass(0x40)
 export class CompoundTagVariant extends Tag {
+    @nativeField(Tag, 0x00)
+    tagStorage:Tag;
+    @nativeField(uint8_t, 0x08)
+    valueAsByteTag:uint8_t;
+    @nativeField(int16_t, 0x08)
+    valueAsShortTag:int16_t;
+    @nativeField(int32_t, 0x08)
+    valueAsIntTag:int32_t;
+    @nativeField(bin64_t, 0x08)
+    valueAsLongTag:bin64_t;
+    @nativeField(float32_t, 0x08)
+    valueAsFloatTag:float32_t;
+    @nativeField(float64_t, 0x08)
+    valueAsDoubleTag:float64_t;
+    @nativeField(TagMemoryChunk, 0x08)
+    valueAsByteArrayTag:TagMemoryChunk;
+    @nativeField(CxxString, 0x08)
+    valueAsStringTag:CxxString;
+    @nativeField(CxxVector.make(Tag.ref()), 0x08)
+    valueAsListTag:CxxVector<Tag>;
+    @nativeField(CxxMap.make(CxxString, CompoundTagVariant), 0x08)
+    valueAsCompoundTag:CxxMap<CxxString, CompoundTagVariant>;
+    @nativeField(TagMemoryChunk, 0x08)
+    valueAsIntArrayTag:TagMemoryChunk;
+
     @nativeField(uint8_t, 0x28)
     type:Tag.Type;
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        return this.tagStorage.toType(this.type).toWrapper();
+    }
 }
 
 @nativeClass(null)
@@ -412,7 +466,8 @@ export class CompoundTag extends Tag {
     }
 
     set(key:string, tag:Tag):void {
-        this.tags.set(key, tag.toVariant());
+        const variant = tag.toVariant();
+        this.tags.set(key, variant);
     }
 
     get value():Record<string, Tag> {
@@ -426,7 +481,7 @@ export class CompoundTag extends Tag {
         this.tags.clear();
         for (const key in value) {
             const tag = value[key];
-            this.set(key, tag.toVariant());
+            this.set(key, tag.toVariant()); // BDS freezes on this line, because of the .destruct() in setSecondWithClass
         }
     }
 

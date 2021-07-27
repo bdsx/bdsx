@@ -530,7 +530,7 @@ EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null
 const Tag$newTag = procHacker.js("Tag::newTag", Tag, {structureReturn: true}, uint8_t);
 Tag.create = function(type:Tag.Type):any {
     const tag = Tag$newTag(type).toType(type);
-    if (type === Tag.Type.Compound || type === Tag.Type.List) {
+    if (type === Tag.Type.Compound || type === Tag.Type.List || type === Tag.Type.ByteArray || type === Tag.Type.IntArray) {
         tag.construct();
     }
     return tag;
