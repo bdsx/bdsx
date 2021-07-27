@@ -14,6 +14,7 @@ import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
 import 'bdsx/checkmodules';
 import 'bdsx/asm/checkasm';
+import 'bdsx/permissions';
 
 // install bdsx error handler
 import { installErrorHandler } from "bdsx/errorhandler";
