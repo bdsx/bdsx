@@ -1,69 +1,9 @@
 import { OperationSize, Register } from "./assembler";
 import { chakraUtil, VoidPointer, VoidPointerConstructor } from "./core";
 import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
-import { NativeClass, NativeClassType } from "./nativeclass";
+import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 
-
-export interface OverloadedFunction {
-    (...args:any[]):any;
-    overload(ptr:VoidPointer, returnType:makefunc.Paramable, opts?:{this?:Type<any>}|null, ...args:Type<any>[]):this;
-    get(opts?:Type<any>|null, ...args:Type<any>[]):OverloadedEntry|null;
-}
-
-export class OverloadedEntry {
-    constructor(
-        public readonly thisType:Type<any>|null,
-        public readonly args:Type<any>[],
-        public readonly func:(...args:any[])=>any
-    ) {
-    }
-
-    check(thisv:unknown, args:unknown[]):boolean {
-        if (this.thisType !== null) {
-            if (!this.thisType.isTypeOf(thisv)) return false;
-        }
-        for (let i=0;i<args.length;i++) {
-            if (!this.args[i].isTypeOf(args[i])) return false;
-        }
-        return true;
-    }
-    equals(thisv:Type<any>|null, args:Type<any>[]):boolean {
-        if (this.thisType !== null) {
-            if (this.thisType !== thisv) return false;
-        }
-        if (args.length !== this.args.length) return false;
-        for (let i=0;i<args.length;i++) {
-            if (this.args[i] !== args[i]) return false;
-        }
-        return true;
-    }
-}
-
-export namespace OverloadedFunction {
-    export function make():OverloadedFunction {
-        const overloads:OverloadedEntry[] = [];
-        const tfunc = function(this:unknown, ...args:any[]):void {
-            for (const entry of overloads) {
-                if (!entry.check(this, args)) continue;
-                return entry.func.apply(this, args);
-            }
-            throw Error(`overload not found`);
-        } as OverloadedFunction;
-        tfunc.overload = function(this:OverloadedFunction, ptr:VoidPointer, returnType:makefunc.Paramable, opts?:{this?:Type<any>}|null, ...args:Type<any>[]):OverloadedFunction {
-            const fn = makefunc.js(ptr, returnType, opts, ...args);
-            overloads.push(new OverloadedEntry(opts?.this || null, args, fn));
-            return this;
-        };
-        tfunc.get = function(this:OverloadedFunction, thisType:Type<any>|null = null, ...args:Type<any>[]):OverloadedEntry|null {
-            for (const overload of overloads) {
-                if (overload.equals(thisType, args)) return overload;
-            }
-            return null;
-        };
-        return tfunc;
-    }
-}
 
 export class NativeTemplateClass extends NativeClass {
     static readonly templates:any[] = [];
@@ -178,9 +118,9 @@ export const NativeVarArgs = new NativeType<any[]>(
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
-    ()=>{ throw Error('Unimplemented'); },
-    ()=>{ throw Error('Unimplemented'); },
-    ()=>{ throw Error('Unimplemented'); },
+    ()=>{ throw Error('Not implemented'); },
+    ()=>{ throw Error('Not implemented'); },
+    ()=>{ throw Error('Not implemented'); },
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },

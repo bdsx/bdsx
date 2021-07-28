@@ -22,7 +22,7 @@ import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, float64_t, GslStringSpan, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
@@ -245,6 +245,8 @@ Tester.test({
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
         const nullreturn = asm().xor_r_r(Register.rax, Register.rax).ret().make(NativePointer);
         this.equals(nullreturn(), null, 'nullreturn does not return null');
+        const gslstringspan = asm().mov_r_r(Register.rax, Register.rcx).ret().make(GslStringSpan, null, GslStringSpan);
+        this.equals(gslstringspan('test'), 'test', 'gslstringspan() failed');
     },
 
     vectorcopy() {

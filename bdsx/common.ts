@@ -81,6 +81,10 @@ export function abstract():never {
     throw Error('abstract');
 }
 
+export function unreachable():never {
+    throw Error('unreachable');
+}
+
 /** @deprecated use `bdsx/dbghelp` */
 export const SYMOPT_UNDNAME                   = 0x00000002;
 /** @deprecated use `bdsx/dbghelp` */

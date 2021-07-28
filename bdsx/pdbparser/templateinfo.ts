@@ -5,13 +5,34 @@ import { tsw } from "./tswriter";
 interface Identifier extends PdbIdentifier {
     templateInfo?:TemplateInfo;
     filted?:boolean;
+    keyIndex?:number;
 }
 
-const keys:PdbIdentifier[] = [];
-function getKey(n:number):PdbIdentifier {
+const keys:Identifier[] = [];
+function getKey(n:number):Identifier {
     let key = keys[n];
-    if (key == null) key = PdbIdentifier.global.make('#KEY'+n);
+    if (key == null) {
+        key = PdbIdentifier.make('#KEY'+n);
+        key.keyIndex = n;
+    }
     return key;
+}
+function getUnionNew(keys:Identifier[]):Identifier {
+    const unioned:Identifier = PdbIdentifier.makeUnionedType(keys);
+    unioned.keyIndex = -1;
+    return unioned;
+}
+
+function keyUnionAppend(base:Identifier, key:Identifier):Identifier {
+    if (base.keyIndex == null) throw Error(`not key`);
+    if (base.unionedTypes !== null) {
+        if (base.unionedTypes.has(key)) return base;
+        const unioned:Identifier = base.unionWith(key);
+        unioned.keyIndex = -1;
+        return unioned;
+    } else {
+        return getUnionNew([base, key]);
+    }
 }
 
 class ReplacingMap {
@@ -24,11 +45,121 @@ class ReplacingMap {
     replace(idx:number):void {
         idx++;
         for (let i=this.replacedCount;i<idx;i++) {
-            this.item = this.item.replaceTypeCascade(this.item.templateParameters[i], getKey(i));
+            const param:Identifier = this.item.templateParameters[i];
+            if (param.keyIndex == null) {
+                this.item = this.item.replaceTypeCascade(param, getKey(i));
+            } else {
+                this.item = this.item.replaceTypeCascade(param, keyUnionAppend(param, getKey(i)));
+            }
         }
         this.replacedCount = idx;
     }
 }
+
+class ComparingBase {
+    constructor(public base:Identifier) {
+    }
+
+    check(target:Identifier|null|undefined):boolean {
+        const res = ComparingBase.check(target, this.base);
+        if (res === null) return false;
+        this.base = res;
+        return true;
+    }
+
+    static check(target:Identifier|null|undefined, base:Identifier|null|undefined):Identifier|null {
+        if (target === base) return base || null;
+        if (target == null || base == null) return null;
+        if (target.keyIndex != null && base.keyIndex != null) {
+            if (target.unionedTypes !== null) {
+                if (base.unionedTypes !== null) return null;
+                return target.unionedTypes.has(base) ? base : null;
+            } else {
+                if (base.unionedTypes !== null) {
+                    return base.unionedTypes.has(target) ? target : null;
+                } else {
+                    return base.keyIndex === target.keyIndex ? base : null;
+                }
+            }
+        }
+        if (target.deco !== base.deco) return null;
+        if (target.decoedFrom !== null) {
+            const res = ComparingBase.check(target.decoedFrom, base.decoedFrom);
+            if (res === null) return null;
+            if (base.decoedFrom !== res) {
+                base = res.decorate(base.deco!);
+            }
+        }
+        if (target.functionBase !== null) {
+            if (base.functionBase === null) return null;
+
+            let bparams:PdbIdentifier[]|null = null;
+            const aparams = target.functionParameters;
+            for (let i=0;i<aparams.length;i++) {
+                const bparam:Identifier = base.functionParameters[i];
+                const res = ComparingBase.check(aparams[i], bparam);
+                if (res === null) return null;
+                if (bparam !== res) {
+                    if (bparams === null) bparams = base.functionParameters.slice();
+                    bparams[i] = res;
+                }
+            }
+
+            let res = ComparingBase.check(target.functionBase, base.functionBase);
+            if (res === null) return null;
+            if (base.functionBase !== res) {
+                if (bparams === null) bparams = base.functionParameters.slice();
+            }
+
+            res = ComparingBase.check(target.returnType, base.returnType);
+            if (res === null) return null;
+            if (base.returnType !== res) {
+                if (bparams === null) bparams = base.functionParameters.slice();
+            }
+
+            if (bparams !== null) {
+                base = base.functionBase!.makeFunction(bparams, res.returnType, res.isType);
+            }
+        }
+        if (target.templateBase !== null) {
+            let bparams:PdbIdentifier[]|null = null;
+            const atemplates = target.templateParameters;
+            for (let i=0;i<atemplates.length;i++) {
+                const btemplate:Identifier = base.templateParameters[i];
+                const res = ComparingBase.check(atemplates[i], btemplate);
+                if (res === null) return null;
+                if (btemplate !== res) {
+                    if (bparams === null) bparams = base.functionParameters.slice();
+                    bparams[i] = res;
+                }
+            }
+
+            const res = ComparingBase.check(target.templateBase, base.templateBase);
+            if (res === null) return null;
+            if (base.templateBase !== res) {
+                if (bparams === null) bparams = base.functionParameters.slice();
+            }
+            if (bparams !== null) {
+                base = res.makeSpecialized(bparams);
+            }
+        }
+
+        let res = ComparingBase.check(target.returnType, base.returnType);
+        if (res === null) return null;
+        if (base.returnType !== res) {
+            throw Error(`not implemented`);
+        }
+
+        res = ComparingBase.check(target.memberPointerBase, base.memberPointerBase);
+        if (res === null) return null;
+        if (base.memberPointerBase !== res) {
+            throw Error(`not implemented`);
+        }
+
+        return base;
+    }
+}
+
 
 function checkParameterDupplication(specialized:Identifier[]):number {
     const replacingMap = specialized.map(v=>new ReplacingMap(v));
@@ -37,16 +168,20 @@ function checkParameterDupplication(specialized:Identifier[]):number {
         const count = paramIndex+1;
 
         const pair = replacingMap[0];
-        if (pair.item.templateParameters.length <= count) return 0;
+        if (pair.item.templateParameters.length <= count) {
+            return 0;
+        }
         pair.replace(paramIndex);
-        const firstItem = pair.item;
+        const base = new ComparingBase(pair.item);
 
         for (let i=1;i<replacingMap.length;i++) {
             const pair = replacingMap[i];
-            if (pair.item.templateParameters.length <= count) return 0;
+            if (pair.item.templateParameters.length <= count) {
+                return 0;
+            }
             pair.replace(paramIndex);
-            if (pair.item === firstItem) continue;
-
+            if (base.check(pair.item)) continue;
+            base.check(pair.item);
             paramIndex++;
             continue _notMatched;
         }
@@ -72,10 +207,17 @@ export class TemplateInfo {
 
         for (const s of base.specialized) {
             s.templateParameters.length = count;
+
             (s as Identifier).filted = undefined;
-            base.children.delete(s.name);
+            const newkey = PdbIdentifier.makeTemplateKey(base, s.templateParameters);
+            const already = PdbIdentifier.keyMap.get(newkey);
+            if (already != null) {
+                throw Error(`failed to reduce template, already defined (new=${already.name}, already=${already.originalName}, old=${s})`);
+            }
+
             s.name = templateName(base.name, ...s.templateParameters.map(v=>v.toString()));
-            base.children.set(s.name, s);
+            PdbIdentifier.keyMap.set(newkey, s);
+
         }
     }
 
@@ -252,4 +394,3 @@ export class TemplateInfo {
 
 }
 const TEMPLATE_INFO_EMPTY = new TemplateInfo(null, [], [], -1);
-

@@ -1,28 +1,68 @@
+import { unreachable } from "../common";
 import { tsw } from "./tswriter";
 import path = require('path');
 
-const filenames = new Set<string>();
+const modulePathes = new Set<string>();
 
 class ImportName {
+    public value:tsw.Name|null = null;
+    public type:tsw.TypeName|null = null;
+
     constructor(
-        public readonly name:string,
-        public type:tsw.Kind) {
+        public readonly name:string) {
+    }
+
+
+    import<T extends tsw.Kind>(kind:T):tsw.KindToName<T> {
+        if (tsw.isIdentifier(kind)) {
+            if (this.value === null) {
+                this.value = new tsw.Name(this.name);
+            }
+            return this.value as any;
+        } else if (tsw.isType(kind)) {
+            if (this.type === null) {
+                this.type = new tsw.TypeName(this.name);
+            }
+            return this.type as any;
+        } else {
+            unreachable();
+        }
     }
 }
 
 class ImportTarget {
-    public imports:Map<string, ImportName> = new Map;
-    public varName:tsw.Name|null = null;
+    public readonly imports:Map<string, ImportName> = new Map;
+    public readonly direct:ImportName[] = [];
 
     constructor(public readonly path:string) {
     }
+
+    append(other:ImportTarget):void {
+        const news:ImportName[] = [];
+        for (const direct of other.direct) {
+            if (this.direct.some(v=>v.name === direct.name)) continue;
+            news.push(direct);
+        }
+        this.direct.push(...news);
+
+        for (const [name, value] of other.imports) {
+            const already = this.imports.get(name);
+            if (already == null) {
+                this.imports.set(name, value);
+            } else {
+                if (already.name !== value.name) throw new Error(`import name is dupplicated (name=${name}, ${already.name}, ${value.name})`);
+            }
+        }
+    }
 }
 
-export class TsFileBase {
+export class TsFile {
     public readonly imports = new ImportInfo(this);
-    constructor(public readonly path:string) {
-        if (filenames.has(path)) throw Error(`${path}: Filename dupplicated`);
-        filenames.add(path);
+    constructor(
+        public readonly path:string
+    ) {
+        if (modulePathes.has(path)) throw Error(`${path}: Filename dupplicated`);
+        modulePathes.add(path);
     }
 
     makeTarget():ImportTarget {
@@ -30,16 +70,35 @@ export class TsFileBase {
     }
 
     existName(name:string):boolean {
+        return this.imports.existName(name);
+    }
+
+    existNameInScope(name:string):boolean {
         return false;
     }
 
 }
 
 export class ImportInfo {
-    public readonly imports = new Map<TsFileBase, ImportTarget>();
+    public readonly imports = new Map<TsFile, ImportTarget>();
     private readonly globalNames = new Map<string, number>();
 
-    constructor(public readonly base:TsFileBase|null) {
+    constructor(public readonly base:TsFile|null) {
+    }
+
+    append(other:ImportInfo):void {
+        for (const [file, target] of other.imports) {
+            const already = this.imports.get(file);
+            if (already == null) {
+                this.imports.set(file, target);
+            } else {
+                already.append(target);
+            }
+        }
+    }
+
+    existName(name:string):boolean {
+        return this.globalNames.has(name);
     }
 
     makeGlobalName(name:string):string {
@@ -47,7 +106,7 @@ export class ImportInfo {
         for (;;) {
             counter = this.globalNames.get(name);
             if (counter == null) {
-                if (this.base !== null && !this.base.existName(name)) {
+                if (this.base !== null && this.base.existName(name)) {
                     this.globalNames.set(name, 1);
                     continue;
                 }
@@ -65,7 +124,7 @@ export class ImportInfo {
         }
     }
 
-    importDirect(hint:unknown, module?:TsFileBase|null):tsw.Name {
+    importDirect<T extends tsw.Kind>(hint:unknown, module:TsFile|null|undefined, kind:T):tsw.KindToName<T> {
         if (module === undefined) {
             throw Error(`host not found (${hint})`);
         }
@@ -78,16 +137,24 @@ export class ImportInfo {
         let target = this.imports.get(module);
         if (target == null) {
             this.imports.set(module, target = module.makeTarget());
-        } else {
-            if (target.varName !== null) {
-                return target.varName;
+        }
+        if (target.direct.length !== 0) {
+            for (const direct of target.direct) {
+                if (this.base !== null && this.base.existNameInScope(direct.name)) {
+                    continue;
+                }
+                return direct.import(kind);
             }
         }
         const name = path.basename(module.path);
-        return target.varName = new tsw.Name(this.makeGlobalName(name));
+        const varname = this.makeGlobalName(name);
+        const direct = new ImportName(varname);
+        target.direct.push(direct);
+        direct.import(tsw.Identifier);
+        return direct.import(kind);
     }
 
-    importName<T extends tsw.Kind>(host:TsFileBase|undefined|null, name:string, kind:T):tsw.KindToName<T> {
+    importName<T extends tsw.Kind>(host:TsFile|undefined|null, name:string, kind:T):tsw.KindToItem<T> {
         if (host === this.base) {
             return kind.asName(name);
         }
@@ -101,36 +168,40 @@ export class ImportInfo {
         let target = this.imports.get(host);
         if (!target) this.imports.set(host, target = host.makeTarget());
 
-        const imported = target.imports.get(name);
+        let imported = target.imports.get(name);
         let renamed:string;
         if (imported == null) {
             renamed = this.makeGlobalName(name);
-            target.imports.set(name, new ImportName(renamed, kind));
+            imported = new ImportName(renamed);
+            target.imports.set(name, imported);
         } else {
             renamed = imported.name;
-            if (kind > imported.type) {
-                imported.type = kind;
-            }
         }
-        return kind.asName(renamed);
+
+        if (this.base !== null && this.base.existNameInScope(renamed)) {
+            const module = this.importDirect(name, host, kind);
+            return module.member(name);
+        }
+        return imported.import(kind);
     }
 
     toTsw():(tsw.Import|tsw.ImportDirect|tsw.ImportType)[] {
         const imports:(tsw.Import|tsw.ImportDirect|tsw.ImportType)[] = [];
         for (const target of this.imports.values()) {
-            if (target.varName !== null) {
-                imports.push(new tsw.ImportDirect(target.varName.name, target.path));
+            for (const direct of target.direct) {
+                imports.push(new tsw.ImportDirect(direct.value!, target.path));
             }
-            const types:[string, string][] = [];
-            const values:[string, string][] = [];
+            const types:[tsw.NameProperty, tsw.TypeName][] = [];
+            const values:[tsw.NameProperty, tsw.Name][] = [];
             for (const [name, imported] of target.imports) {
-                switch (imported.type) {
-                case tsw.Type: types.push([name, imported.name]); break;
-                case tsw.Identifier: values.push([name, imported.name]); break;
+                if (imported.value !== null) {
+                    values.push([new tsw.NameProperty(name), imported.value]);
+                } else {
+                    types.push([new tsw.NameProperty(name), imported.type!]);
                 }
             }
             if (types.length !== 0) imports.push(new tsw.ImportType(types, target.path));
-            if (values.length !== 0) imports.push(new tsw.ImportType(values, target.path));
+            if (values.length !== 0) imports.push(new tsw.Import(values, target.path));
         }
         return imports;
     }

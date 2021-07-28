@@ -1,13 +1,14 @@
 import { asm, AsmMultiplyConstant, FloatRegister, OperationSize, Register, Value64, X64Assembler } from "./assembler";
 import { proc, proc2 } from "./bds/symbols";
 import "./codealloc";
-import { abstract, Bufferable } from "./common";
+import { abstract, Bufferable, CANCEL } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { makefuncDefines } from "./makefunc_defines";
 import { remapStack } from "./source-map-support";
 import { isBaseOf, removeLine } from "./util";
 import asmcode = require('./asm/asmcode');
+import colors = require('colors');
 
 /**
  * @deprecated use NativeType (int32_t, float32_t, float64_t, ...)
@@ -371,18 +372,24 @@ export namespace makefunc {
          * the null pointer also can be the JS instance
          */
         [nullAlsoInstance]?:boolean;
+
+        isTypeOf(v:unknown):boolean;
     }
     export interface ParamableT<T> extends Paramable {
         new():T;
+        isTypeOf(v:unknown):v is T;
     }
     export class ParamableT<T> {
+
         constructor(
             public readonly name:string,
+            isTypeOf:(v:unknown)=>boolean,
             _js2npAsm:(asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo)=>void,
             _np2jsAsm:(asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo)=>void,
             _np2npAsm:(asm:X64Assembler, target: Target, source: Target, info:makefunc.ParamInfo)=>void,
             _np2js?:(ptr:T|null)=>T|null,
             _js2np?:(ptr:T|null)=>T|null) {
+            this.isTypeOf = isTypeOf as any;
             this[js2npAsm] = _js2npAsm;
             this[np2jsAsm] = _np2jsAsm;
             this[np2npAsm] = _np2npAsm;
@@ -993,10 +1000,6 @@ export namespace makefunc {
         opts?: OPTS,
         ...params: PARAMS):
         FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> {
-        // if (functionPointer instanceof VoidPointer) {
-        //     dupcheck.check(functionPointer);
-        // }
-
         const returnTypeResolved = remapType(returnType);
         const pimaker = new ParamInfoMaker(returnTypeResolved, opts, params.map(remapType)); // check param count also
 
@@ -1161,6 +1164,7 @@ export namespace makefunc {
 
     export const Ansi = new ParamableT<string>(
         'Ansi',
+        v=>typeof v === 'string',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
             asm.xor_r_r(Register.r9, Register.r9);
@@ -1184,6 +1188,7 @@ export namespace makefunc {
 
     export const Utf8 = new ParamableT<string>(
         'Utf8',
+        v=>typeof v === 'string',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
             asm.xor_r_r(Register.r9, Register.r9);
@@ -1207,6 +1212,7 @@ export namespace makefunc {
 
     export const Utf16 = new ParamableT<string>(
         'Utf16',
+        v=>typeof v === 'string',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
             asm.mov_r_c(Register.rdx, info.numberOnUsing);
@@ -1224,6 +1230,7 @@ export namespace makefunc {
 
     export const Buffer = new ParamableT<VoidPointer|Bufferable>(
         'Buffer',
+        v=>typeof v === 'string',
         (asm:Maker, target:Target, source:Target, info:ParamInfo)=>{
             asm.qmov_t_t(Target[0], source);
             asm.mov_r_c(Register.rdx, info.numberOnUsing);
@@ -1241,6 +1248,7 @@ export namespace makefunc {
 
     export const JsValueRef = new ParamableT<any>(
         'JsValueRef',
+        v=>true,
         qwordMove,
         qwordMove,
         qwordMove
@@ -1249,6 +1257,7 @@ export namespace makefunc {
 
 const StructureReturnAllocation = new makefunc.ParamableT<VoidPointer>(
     'StructureReturnAllocation',
+    v=>v instanceof VoidPointer,
     abstract,
     abstract,
     qwordMove
@@ -1274,6 +1283,7 @@ declare module "./assembler"
 declare module "./core"
 {
     interface VoidPointerConstructor extends makefunc.Paramable{
+        isTypeOf<T>(this:{new():T}, v:unknown):v is T;
     }
     interface VoidPointer
     {
@@ -1312,6 +1322,9 @@ VoidPointer[makefunc.np2jsAsm] = function(asm:makefunc.Maker, target:makefunc.Ta
 };
 VoidPointer[makefunc.np2npAsm] = qwordMove;
 VoidPointer[makefunc.js2npLocalSize] = 8;
+VoidPointer.isTypeOf = function<T>(this:{new():T}, v:unknown):v is T {
+    return v instanceof this;
+};
 VoidPointer.prototype[asm.splitTwo32Bits] = function() {
     return [this.getAddressLow(), this.getAddressHigh()];
 };

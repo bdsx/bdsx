@@ -4,6 +4,7 @@
     "[markdown]": {
         "files.trimTrailingWhitespace": false
     },
+    "editor.insertSpaces": true,
     "files.exclude": {
         "**/*.js": { "when": "$(basename).ts"}
     }

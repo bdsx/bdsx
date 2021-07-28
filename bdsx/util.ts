@@ -212,7 +212,11 @@ export function str2set(str:string):Set<number>{
     return out;
 }
 
-export function arrayEquals(arr1:any[], arr2:any[], count:number):boolean {
+export function arrayEquals(arr1:any[], arr2:any[], count?:number):boolean {
+    if (count == null) {
+        count = arr1.length;
+        if (count !== arr2.length) return false;
+    }
     for (let i=0;i<count;i++) {
         if (arr1[i] !== arr2[i]) return false;
     }
@@ -249,4 +253,38 @@ export function checkPowOf2(n:number):void {
     mask |= (mask >> 1);
     mask ++;
     if (mask !== n) throw Error(`${n} is not pow of 2`);
+}
+
+export function intToVarString(n:number):string {
+    // 0-9 A-Z a-z _ $
+    const NUMBER_COUNT = 10;
+    const ALPHABET_COUNT = 26;
+    const TOTAL = NUMBER_COUNT+ALPHABET_COUNT*2+2;
+
+    const out:number[] = [];
+    do {
+        let v = n % TOTAL;
+        n = n / TOTAL | 0;
+        if (v < NUMBER_COUNT) {
+            out.push(v + 0x30);
+        } else {
+            v -= NUMBER_COUNT;
+            if (v < ALPHABET_COUNT) {
+                out.push(v + 0x41);
+            } else {
+                v -= ALPHABET_COUNT;
+                if (v < ALPHABET_COUNT) {
+                    out.push(v + 0x61);
+                } else {
+                    v -= ALPHABET_COUNT;
+                    switch (v) {
+                    case 0: out.push(0x24); break; // '$'
+                    case 1: out.push(0x5f); break; // '_'
+                    }
+                }
+            }
+        }
+    } while (n !== 0);
+
+    return String.fromCharCode(...out);
 }

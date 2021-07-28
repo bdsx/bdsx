@@ -195,6 +195,20 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      * @param to call address
      */
+    hookingRawWithoutOriginal(key:keyof T, to: VoidPointer):void {
+        const origin = this.map[key];
+        if (!origin) throw Error(`Symbol ${String(key)} not found`);
+
+        const REQUIRE_SIZE = 12;
+        const unlock = new MemoryUnlocker(origin, REQUIRE_SIZE);
+        hacktool.jump(origin, to, Register.rax, REQUIRE_SIZE);
+        unlock.done();
+    }
+
+    /**
+     * @param key target symbol name
+     * @param to call address
+     */
     hookingRawWithCallOriginal(key:keyof T, to: VoidPointer,
         keepRegister:Register[],
         keepFloatRegister:FloatRegister[]):void {
@@ -228,6 +242,22 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         return callback=>{
             const to = makefunc.np(callback, returnType, opts, ...params);
             return makefunc.js(this.hookingRaw(key, to), returnType, opts, ...params);
+        };
+    }
+
+    /**
+     * @param key target symbol name
+     * @param to call address
+     */
+    hookingWithoutOriginal<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+        key:keyof T,
+        returnType:RETURN,
+        opts?: OPTS,
+        ...params: PARAMS):
+        (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>void {
+        return callback=>{
+            const to = makefunc.np(callback, returnType, opts, ...params);
+            this.hookingRawWithoutOriginal(key, to);
         };
     }
 

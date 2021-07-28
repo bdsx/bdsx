@@ -1,10 +1,41 @@
 import { pdb } from "../core";
 import { templateName } from "../templatename";
 import { LanguageParser } from "../textparser";
+import { arraySame } from "../util";
 import { PdbCache } from "./pdbcache";
 import ProgressBar = require('progress');
-import { remapAndPrintError } from "../source-map-support";
-import { arraySame } from "../util";
+
+export class DecoSymbol {
+    public readonly needSpace:boolean;
+
+    private constructor(
+        public readonly key:string,
+        public readonly name:string) {
+        this.needSpace = /^[A-Za-z]/.test(name);
+    }
+
+    static readonly const = new DecoSymbol('c', 'const');
+    static readonly unsigned = new DecoSymbol('u', 'unsigned');
+    static readonly signed = new DecoSymbol('s', 'signed');
+    static readonly noexcept = new DecoSymbol('e', 'noexcept');
+    static readonly '&' = new DecoSymbol('l', '&');
+    static readonly '&&' = new DecoSymbol('r', '&&');
+    static readonly '|' = new DecoSymbol('o', '|');
+    static readonly '*' = new DecoSymbol('p', '*');
+
+    static make(key:string, name:string):DecoSymbol {
+        const already = DecoSymbol.all.get(key);
+        if (already != null) return already;
+        const deco = new DecoSymbol(key, name);
+        DecoSymbol.all.set(key, deco);
+        return deco;
+    }
+    static array(count:number):DecoSymbol {
+        return DecoSymbol.make(count+'', '['+count+']');
+    }
+
+    private static readonly all = new Map<string, DecoSymbol>();
+}
 
 const OPERATORS = new Set<string>([
     '::',
@@ -86,7 +117,56 @@ const FIELD_FOR_CLASS = new Set<string>([
 // "operator<<",
 
 let symbolIndex = -1;
+let idCounter = 0;
+
+
+function unionIfAny(from:PdbIdentifier, other:PdbIdentifier):PdbIdentifier|null {
+    if (from === other) return from;
+    if (from === PdbIdentifier.any_t || other === PdbIdentifier.any_t) return PdbIdentifier.any_t;
+    if (from.templateBase !== null && from.templateBase === other.templateBase) {
+        if (from.templateParameters.length !== other.templateParameters.length) return null;
+        const params:PdbIdentifier[] = [];
+        for (let i=0;i<from.templateParameters.length;i++) {
+            const param = unionIfAny(from.templateParameters[i], other.templateParameters[i]);
+            if (param === null) return null;
+            params.push(param);
+        }
+        return from.templateBase.makeSpecialized(params);
+    }
+    return null;
+}
+function unionAdd(types:Set<PdbIdentifier>, other:PdbIdentifier):PdbIdentifier|null {
+    if (other.unionedTypes !== null) {
+        throw Error(`${other} is unionedType`);
+    }
+    if (other === PdbIdentifier.any_t) {
+        return PdbIdentifier.any_t;
+    }
+    if (types.has(other)) {
+        return null;
+    }
+    for (const t of types) {
+        const res = unionIfAny(t, other);
+        if (res !== null && t !== res) {
+            types.delete(t);
+            types.add(res);
+            return null;
+        }
+    }
+    types.add(other);
+    return null;
+}
+function getKey(key:string, or:(key:string)=>PdbIdentifier):PdbIdentifier {
+    let item = PdbIdentifier.keyMap.get(key);
+    if (item != null) return item;
+    item = or(key);
+    PdbIdentifier.keyMap.set(key, item);
+    return item;
+}
+
 export class PdbIdentifier {
+    public id = ++idCounter;
+    public readonly originalName:string;
     public modifier:string|null = null;
     public isVirtualFunction = false;
     public isNamespaceLike = false;
@@ -110,7 +190,7 @@ export class PdbIdentifier {
     public isConstructor = false;
     public isNoExcept = false;
     public isTemplateConstructorBase = false;
-    public deco = '';
+    public deco:DecoSymbol|null = null;
     public decoedFrom:PdbIdentifier|null = null;
     public memberPointerBase:PdbIdentifier|null = null;
     public isValue = false;
@@ -125,11 +205,12 @@ export class PdbIdentifier {
     public functionBase:PdbIdentifier|null = null;
     public nameBase:PdbIdentifier|null = null;
     public returnType:PdbIdentifier|null = null;
-    public readonly children = new Map<string, PdbIdentifier>();
+    public readonly children:PdbIdentifier[] = [];
     public functionParameters:PdbIdentifier[] = [];
     public templateParameters:PdbIdentifier[] = [];
     public adjustors:PdbIdentifier[] = [];
     public specialized:PdbIdentifier[] = [];
+    public isTemplateBase = false;
     public overloads:PdbIdentifier[] = [];
     public address = 0;
     public redirectTo:PdbIdentifier|null = null;
@@ -143,8 +224,37 @@ export class PdbIdentifier {
         return this.unionedTypes !== null;
     }
 
+
+    static makeTypeUnionKey(types:PdbIdentifier[]):string {
+        return '!'+types.map(a=>a.id).join('|');
+    }
+    static makeDecoKey(base:PdbIdentifier, deco:DecoSymbol):string {
+        return `!${base.id}D${deco.key}`;
+    }
+    static makeChildKey(base:PdbIdentifier, child:string):string {
+        return `!${base.id}/${child}`;
+    }
+    static makeMemberFunctionTypeKey(base:PdbIdentifier):string {
+        return `!m${base.returnType!.id} ${base.memberPointerBase!.id}`;
+    }
+    static makeFunctionTypeKey(base:PdbIdentifier):string {
+        return `!f${base.returnType!.id}`;
+    }
+    static makeFunctionKey(base:PdbIdentifier, args:PdbIdentifier[]):string {
+        return `!${base.id}(${args.map(v=>v.id).join(',')})`;
+    }
+    static makeTemplateKey(base:PdbIdentifier, args:PdbIdentifier[]):string {
+        return templateName('!'+base.id, ...args.map(id=>id.id+''));
+    }
+
     constructor (
-        public name:string) {
+        public name:string,
+        public readonly key:string) {
+        this.originalName = name;
+    }
+
+    hasNonGlobalParent():this is {parent:PdbIdentifier} {
+        return this.parent !== null && this.parent !== PdbIdentifier.global;
     }
 
     getBase():PdbIdentifier {
@@ -196,7 +306,9 @@ export class PdbIdentifier {
             const idx = this.functionBase.overloads.indexOf(this);
             if (idx !== -1) this.functionBase.overloads.splice(idx, 1);
         }
-        this.parent!.children.delete(this.name);
+        const children = this.parent!.children;
+        const idx = children.indexOf(this);
+        if (idx !== -1) children.splice(idx ,1);
     }
 
     release():void {
@@ -207,15 +319,15 @@ export class PdbIdentifier {
     }
 
     removeConst():PdbIdentifier {
-        return this.removeDeco('const');
+        return this.removeDeco(DecoSymbol.const);
     }
 
-    removeDeco(deco:string):PdbIdentifier {
+    removeDeco(deco:DecoSymbol):PdbIdentifier {
         if (this.decoedFrom !== null) {
             if (this.deco === deco) return this.decoedFrom;
             const removed = this.decoedFrom.removeDeco(deco);
             if (removed === this) return this;
-            return removed.decorate(this.deco);
+            return removed.decorate(this.deco!);
         }
         return this;
     }
@@ -283,47 +395,6 @@ export class PdbIdentifier {
         return false;
     }
 
-    private unionIfAny(other:PdbIdentifier):PdbIdentifier|null {
-        if (this === other) return this;
-        if (this === PdbIdentifier.any_t || other === PdbIdentifier.any_t) return PdbIdentifier.any_t;
-        if (this.templateBase !== null && this.templateBase === other.templateBase) {
-            if (this.templateParameters.length !== other.templateParameters.length) return null;
-            const params:PdbIdentifier[] = [];
-            for (let i=0;i<this.templateParameters.length;i++) {
-                const param = this.templateParameters[i].unionIfAny(other.templateParameters[i]);
-                if (param === null) return null;
-                params.push(param);
-            }
-            return this.templateBase.makeSpecialized(params);
-        }
-        return null;
-    }
-
-    private unionAdd(other:PdbIdentifier):PdbIdentifier|null {
-        if (this.unionedTypes === null) {
-            throw Error(`${this} is not unionedType`);
-        }
-        if (other.unionedTypes !== null) {
-            throw Error(`${this} is unionedType`);
-        }
-        if (other === PdbIdentifier.any_t) {
-            return PdbIdentifier.any_t;
-        }
-        if (this.unionedTypes.has(other)) {
-            return null;
-        }
-        for (const t of this.unionedTypes) {
-            const res = t.unionIfAny(other);
-            if (res !== null && t !== res) {
-                this.unionedTypes.delete(t);
-                this.unionedTypes.add(res);
-                return null;
-            }
-        }
-        this.unionedTypes.add(other);
-        return null;
-    }
-
     unionWith(other:PdbIdentifier):PdbIdentifier{
         const a = this.removeConst();
         const b = other.removeConst();
@@ -339,47 +410,46 @@ export class PdbIdentifier {
             }
         }
 
-        const unioned = new PdbIdentifier('');
-        unioned.unionedTypes = new Set<PdbIdentifier>();
+        const unionedTypes = new Set<PdbIdentifier>();
         if (a.unionedTypes !== null) {
             for (const item of a.unionedTypes) {
-                unioned.unionedTypes.add(item);
+                unionedTypes.add(item);
             }
         } else {
-            unioned.unionedTypes.add(a);
+            unionedTypes.add(a);
         }
 
         if (b.unionedTypes !== null) {
             for (const item of b.unionedTypes) {
-                unioned.unionAdd(item);
-                if (unioned.unionedTypes.size > 5) {
+                unionAdd(unionedTypes, item);
+                if (unionedTypes.size > 5) {
                     return PdbIdentifier.any_t;
                 }
             }
         } else {
-            unioned.unionAdd(b);
-            if (unioned.unionedTypes.size > 5) {
+            unionAdd(unionedTypes, b);
+            if (unionedTypes.size > 5) {
                 return PdbIdentifier.any_t;
             }
         }
 
-        const name = [...unioned.unionedTypes].map(a=>a.toString()).sort((a,b)=>a.localeCompare(b)).join('|');
-        const already = PdbIdentifier.global.children.get(name);
-        if (already != null) return already;
-        unioned.name = name;
-        PdbIdentifier.global.attach(name, unioned);
-        return unioned;
+        const array = [...unionedTypes].sort((a,b)=>a.id-b.id);
+        return getKey(PdbIdentifier.makeTypeUnionKey(array), key=>{
+            const name = array.map(a=>a.name).join('|');
+            const unioned = new PdbIdentifier(name, key);
+            unioned.unionedTypes = unionedTypes;
+            return unioned;
+        });
     }
 
     static makeUnionedType(items:PdbIdentifier[]):PdbIdentifier {
-        const name = items.map(a=>a.toString()).sort((a,b)=>a.localeCompare(b)).join('|');
-        const already = PdbIdentifier.global.children.get(name);
-        if (already != null) return already;
-
-        const unioned = new PdbIdentifier(name);
-        unioned.unionedTypes = new Set(items);
-        PdbIdentifier.global.attach(name, unioned);
-        return unioned;
+        items.sort((a,b)=>a.id-b.id);
+        return getKey(PdbIdentifier.makeTypeUnionKey(items), key=>{
+            const name = items.map(a=>a.name).join('|');
+            const unioned = new PdbIdentifier(name, key);
+            unioned.unionedTypes = new Set(items);
+            return unioned;
+        });
     }
 
     hasArrayParam():boolean {
@@ -406,27 +476,49 @@ export class PdbIdentifier {
     }
 
     isPointerLike():boolean {
-        if (this.deco === '&' || this.deco === '*') return true;
+        if (this.deco === DecoSymbol["&"] || this.deco === DecoSymbol["*"]) return true;
         if (this.decoedFrom !== null) return this.decoedFrom.isPointerLike();
         return false;
     }
 
-    decorate(deco:string, source?:string):PdbIdentifier {
-        let name = this.name;
-        if (/^[a-zA-Z]/.test(deco)) {
-            name += ' ';
+    decorate(deco:DecoSymbol, source?:string):PdbIdentifier {
+        return getKey(PdbIdentifier.makeDecoKey(this, deco), key=>{
+            let name = this.name;
+            if (deco.needSpace) {
+                name += ' ';
+            }
+            name += deco.name;
+            const id = new PdbIdentifier(name, key);
+            if (this.isType) id.setAsType();
+            if (this.isValue) id.setAsValue();
+            if (this.isBasicType) id.setAsBasicType();
+            id.isDecoed = true;
+            id.deco = deco;
+            id.decoedFrom = this;
+            if (source != null) id.source = source;
+            return id;
+        });
+    }
+
+    append(child:PdbIdentifier):void {
+        if (child.parent !== null) {
+            if (child.parent === this) return;
+            throw Error(`${this} already has parent`);
         }
-        name += deco;
-        const id = this.parent!.make(name);
-        if (id === this) throw Error(`self deco linked (deco:${deco})`);
-        if (this.isType) id.setAsType();
-        if (this.isValue) id.setAsValue();
-        if (this.isBasicType) id.setAsBasicType();
-        id.isDecoed = true;
-        id.deco = deco;
-        id.decoedFrom = this;
-        if (source != null) id.source = source;
-        return id;
+        child.parent = this;
+        this.children.push(child);
+    }
+
+    makeChild(name:string):PdbIdentifier {
+        return getKey(PdbIdentifier.makeChildKey(this, name), key=>{
+            const item = new PdbIdentifier(name, key);
+            this.append(item);
+            return item;
+        });
+    }
+
+    findChild(name:string):PdbIdentifier|null {
+        return PdbIdentifier.keyMap.get(PdbIdentifier.makeChildKey(this, name)) || null;
     }
 
     getArraySize():number|null {
@@ -454,40 +546,20 @@ export class PdbIdentifier {
         return this.templateBase || this;
     }
 
-    find(name:string):PdbIdentifier {
-        const item = this.children.get(name);
-        if (item == null) throw Error(`${name} not found in '${this}'`);
-        return item;
-    }
-
-    make(name:string):PdbIdentifier {
-        let id = this.children.get(name);
-        if (id != null) return id;
-        this.children.set(name, id = new PdbIdentifier(name));
-        id.parent = this;
-        return id;
-    }
-
-    attach(name:string, item:PdbIdentifier):PdbIdentifier|null {
-        const old = this.children.get(name);
-        if (old != null) {
-            old.parent = null;
-        }
-        this.children.set(name, item);
-        item.parent = this;
-        return old || null;
-    }
-
     makeSpecialized(args:PdbIdentifier[], source?:string):PdbIdentifier {
         if (this.parent === null) throw Error(`no parent`);
-        const name = templateName(this.name, ...args.map(id=>id.toString()));
-        let specialized = this.parent.children.get(name);
+        const key = PdbIdentifier.makeTemplateKey(this, args);
+        this.isTemplateBase = true;
+        let specialized = PdbIdentifier.keyMap.get(key);
         if (specialized == null) {
-            specialized = this.parent.make(name);
+            const name = templateName(this.name, ...args.map(id=>id.toString()));
+            specialized = new PdbIdentifier(name, key);
             specialized.templateParameters = args;
             specialized.templateBase = this;
+            this.parent.append(specialized);
             if (source != null) specialized.source = source;
             this.specialized.push(specialized);
+            PdbIdentifier.keyMap.set(key, specialized);
         } else {
             if (specialized.isConstructor || specialized.isDestructor) {
                 // ctor or dtor
@@ -512,7 +584,7 @@ export class PdbIdentifier {
     replaceTypeCascade(from:PdbIdentifier, to:PdbIdentifier):PdbIdentifier {
         if (this === from) return to;
         if (this.decoedFrom !== null) {
-            return this.decoedFrom.replaceTypeCascade(from, to).decorate(this.deco);
+            return this.decoedFrom.replaceTypeCascade(from, to).decorate(this.deco!);
         }
         if (this.templateBase !== null) {
             const types = this.templateParameters.map(v=>v.replaceTypeCascade(from, to));
@@ -535,13 +607,6 @@ export class PdbIdentifier {
             }
         }
         return this;
-    }
-
-    makeConst(name:string):PdbIdentifier {
-        const id = this.make(name);
-        id.isConstant = true;
-        id.setAsValue();
-        return id;
     }
 
     toString():string {
@@ -644,13 +709,15 @@ export class PdbIdentifier {
             return PdbIdentifier.typename.makeSpecialized([this]);
         }
         if (this.isValue) {
-            const item = this.removeDeco('&').removeConst();
+            const item = this.removeDeco(DecoSymbol['&']).removeConst();
             if (item.isFunction) {
                 if (item.isMemberPointer) {
-                    const base = PdbIdentifier.global.make(`${item.returnType} ${item.memberPointerBase}::*`);
+                    const base = getKey(PdbIdentifier.makeMemberFunctionTypeKey(item),
+                        key=>new PdbIdentifier(`${item.returnType} ${item.memberPointerBase}::*`, key));
                     return makeFunction(base, item.returnType!, item.functionParameters, true);
                 } else {
-                    const base = PdbIdentifier.global.make(`${item.returnType}`);
+                    const base = getKey(PdbIdentifier.makeFunctionTypeKey(item),
+                        key=>new PdbIdentifier(`${item.returnType}`, key));
                     return makeFunction(base, item.returnType!, item.functionParameters, true);
                 }
             }
@@ -695,37 +762,63 @@ export class PdbIdentifier {
         }
     }
 
+    *components():IterableIterator<PdbIdentifier> {
+        if (this.parent !== null) {
+            yield this.parent;
+        }
+        yield *this.functionParameters;
+        yield *this.templateParameters;
+        if (this.unionedTypes !== null) {
+            yield *this.unionedTypes;
+        }
+        if (this.returnType !== null) {
+            yield this.returnType;
+        }
+    }
+
+    static makeConst(name:string):PdbIdentifier {
+        const id = PdbIdentifier.make(name);
+        id.isConstant = true;
+        id.setAsValue();
+        return id;
+    }
+
+    static make(name:string):PdbIdentifier {
+        return PdbIdentifier.global.makeChild(name);
+    }
+
     static filter:(item:PdbIdentifier)=>boolean = ()=>true;
 
-    public static readonly global = new PdbIdentifier('');
-    public static readonly std = PdbIdentifier.global.make('std');
-    public static readonly any_t = PdbIdentifier.global.make('any');
-    public static readonly never_t = PdbIdentifier.global.make('never');
-    public static readonly typename = PdbIdentifier.global.make('typename');
-    public static readonly int_t = PdbIdentifier.global.make('int');
+    public static readonly keyMap = new Map<string, PdbIdentifier>();
+    public static readonly global = new PdbIdentifier('', '');
+    public static readonly std = PdbIdentifier.make('std');
+    public static readonly any_t = PdbIdentifier.make('any');
+    public static readonly never_t = PdbIdentifier.make('never');
+    public static readonly typename = PdbIdentifier.make('typename');
+    public static readonly int_t = PdbIdentifier.make('int');
 }
 
 PdbIdentifier.global.setAsNamespace();
 PdbIdentifier.std.setAsNamespace();
-PdbIdentifier.global.make('__int64').setAsBasicType();
-PdbIdentifier.global.make('__int64 unsigned').setAsBasicType();
-PdbIdentifier.global.make('bool').setAsBasicType();
-PdbIdentifier.global.make('void').setAsBasicType();
+PdbIdentifier.make('__int64').setAsBasicType();
+PdbIdentifier.make('__int64 unsigned').setAsBasicType();
+PdbIdentifier.make('bool').setAsBasicType();
+PdbIdentifier.make('void').setAsBasicType();
 PdbIdentifier.int_t.setAsBasicType();
-PdbIdentifier.global.make('int unsigned').setAsBasicType();
-PdbIdentifier.global.make('long').setAsBasicType();
-PdbIdentifier.global.make('long unsigned').setAsBasicType();
-PdbIdentifier.global.make('short').setAsBasicType();
-PdbIdentifier.global.make('short unsigned').setAsBasicType();
-PdbIdentifier.global.make('char').setAsBasicType();
-PdbIdentifier.global.make('char unsigned').setAsBasicType();
-PdbIdentifier.global.make('wchar_t').setAsBasicType();
-PdbIdentifier.global.make('wchar_t unsigned').setAsBasicType();
-PdbIdentifier.global.make('float').setAsBasicType();
-PdbIdentifier.global.make('double').setAsBasicType();
+PdbIdentifier.make('int unsigned').setAsBasicType();
+PdbIdentifier.make('long').setAsBasicType();
+PdbIdentifier.make('long unsigned').setAsBasicType();
+PdbIdentifier.make('short').setAsBasicType();
+PdbIdentifier.make('short unsigned').setAsBasicType();
+PdbIdentifier.make('char').setAsBasicType();
+PdbIdentifier.make('char unsigned').setAsBasicType();
+PdbIdentifier.make('wchar_t').setAsBasicType();
+PdbIdentifier.make('wchar_t unsigned').setAsBasicType();
+PdbIdentifier.make('float').setAsBasicType();
+PdbIdentifier.make('double').setAsBasicType();
 PdbIdentifier.any_t.setAsBasicType();
 
-const void_t = PdbIdentifier.global.make('void');
+const void_t = PdbIdentifier.make('void');
 void_t.setAsBasicType();
 PdbIdentifier.typename.isType = true;
 
@@ -757,7 +850,6 @@ function setAsFunction(func:PdbIdentifier, funcbase:PdbIdentifier, args:PdbIdent
         args.length = 0;
     }
     func.functionParameters = args;
-    funcbase.overloads.push(func);
 
     if (returnType !== null) {
         func.setReturnType(returnType);
@@ -766,6 +858,7 @@ function setAsFunction(func:PdbIdentifier, funcbase:PdbIdentifier, args:PdbIdent
         func.setAsType();
         func.isFunctionType = true;
     } else {
+        funcbase.overloads.push(func);
         func.setAsFunction();
         func.functionBase = funcbase;
         funcbase.isFunctionBase = true;
@@ -773,17 +866,23 @@ function setAsFunction(func:PdbIdentifier, funcbase:PdbIdentifier, args:PdbIdent
         if (templateBase !== null)  {
             templateBase.isTemplateFunctionBase = true;
             func.templateBase = templateBase;
+            func.templateParameters = func.functionBase.templateParameters.slice();
         }
     }
 }
 
 function makeFunction(funcbase:PdbIdentifier, returnType:PdbIdentifier|null, args:PdbIdentifier[], isType:boolean):PdbIdentifier {
-    const id = funcbase.parent!.make(funcbase.name+'('+args.join(',')+')');
-    id.isConstructor = funcbase.isConstructor;
-    id.isDestructor = funcbase.isDestructor;
-    if (id.isConstructor || id.isDestructor) id.parent!.setAsClass();
-    setAsFunction(id, funcbase, args, returnType, isType);
-    return id;
+    return getKey(PdbIdentifier.makeFunctionKey(funcbase, args), key=>{
+        const id = new PdbIdentifier(funcbase.name+'('+args.join(',')+')', key);
+        if (funcbase.parent !== null) {
+            funcbase.parent.append(id);
+        }
+        id.isConstructor = funcbase.isConstructor;
+        id.isDestructor = funcbase.isDestructor;
+        if (id.isConstructor || id.isDestructor) id.parent!.setAsClass();
+        setAsFunction(id, funcbase, args, returnType, isType);
+        return id;
+    });
 }
 
 function parseParameters():PdbIdentifier[] {
@@ -791,7 +890,7 @@ function parseParameters():PdbIdentifier[] {
     for (;;) {
         if (parser.nextIf('...')) {
             parser.readOperator(OPERATORS);
-            args.push(PdbIdentifier.global.make('...'));
+            args.push(PdbIdentifier.make('...'));
         } else {
             const arg = parseIdentity(',)');
             arg.setAsType();
@@ -854,10 +953,11 @@ function parseDeco(
             const keyword = parser.readIdentifier();
             if (keyword === 'const') {
                 if (base === null) throw Error(`null base`);
-                const decoed = base.decorate(keyword, parser.getFrom(sourceFrom));
+                const decoed = base.decorate(DecoSymbol.const, parser.getFrom(sourceFrom));
                 if (base.isFunction) {
                     base.constFunction = decoed;
                     setAsFunction(decoed, base.functionBase!, base.functionParameters.slice(), base.returnType!, base.isType);
+                    base.parent!.append(decoed);
                     decoed.isType = false;
                 }
                 base = decoed;
@@ -875,13 +975,13 @@ function parseDeco(
                 // do nothing
             } else if (keyword === 'unsigned' || keyword === 'signed') {
                 if (base === null) throw Error(`null base`);
-                base = base.decorate(keyword, parser.getFrom(sourceFrom));
+                base = base.decorate(DecoSymbol[keyword], parser.getFrom(sourceFrom));
                 base.setAsBasicType();
             } else if (keyword === 'noexcept') {
                 if (base === null) throw Error(`null base`);
                 if (!base.isFunction && !base.isFunctionType) throw Error(`base is not function (${base})`);
                 if (base.isType) {
-                    base = base.decorate('noexcept', parser.getFrom(sourceFrom));
+                    base = base.decorate(DecoSymbol.noexcept, parser.getFrom(sourceFrom));
                 }
                 base.isNoExcept = true;
             } else {
@@ -891,7 +991,7 @@ function parseDeco(
                         const name = parser.readTo("'");
                         if (name === 'RTTI Type Descriptor') {
                             if (base === null) throw Error(`null base`);
-                            base = base.make("`RTTI Type Descriptor'");
+                            base = base.makeChild("`RTTI Type Descriptor'");
                             base.source = parser.getFrom(sourceFrom);
                             base.isStatic = true;
                             base.setAsValue();
@@ -951,7 +1051,7 @@ function parseDeco(
                     base.source = parser.getFrom(sourceFrom);
                     info.isFunction = false;
                 } else if (parser.endsWith('*')) {
-                    base = PdbIdentifier.global.make(`${returnType} ${fnOrThisType}::*`);
+                    base = PdbIdentifier.make(`${returnType} ${fnOrThisType}::*`);
                     base.isMemberPointer = true;
                     base.memberPointerBase = fnOrThisType;
                     if (returnType !== null) {
@@ -978,29 +1078,28 @@ function parseDeco(
             return base;
         } else if (oper === '*' || oper === '&' || oper === '&&') {
             if (base === null) throw Error(`null base`);
-            base = base.decorate(oper, parser.getFrom(sourceFrom));
+            base = base.decorate(DecoSymbol[oper], parser.getFrom(sourceFrom));
         } else if (oper === '(') {
             if (info.isFunction) {
                 if (base === null) throw Error(`null base`);
                 const args = parseParameters();
                 let baseType:PdbIdentifier;
                 let returnType:PdbIdentifier;
+                let isType = false;
                 if (base.isFunction) {
                     baseType = base.functionBase!;
                     returnType = makeFunction(base.returnType!, base.returnType!, args, true);
                 } else if (base.isMemberPointer) {
                     baseType = base.memberPointerBase!;
                     returnType = base.returnType!;
+                    isType = true;
                 } else {
                     baseType = base;
                     returnType = base;
+                    isType = true;
                 }
-                base = makeFunction(baseType, returnType, args, true);
+                base = makeFunction(baseType, returnType, args, isType);
                 info.isFunction = false;
-                if (base.isMemberPointer) {
-                    base.setAsType();
-                    base.isFunctionType = true;
-                }
             } else {
                 const old = info.isParenthesesInside;
                 info.isParenthesesInside = true;
@@ -1020,9 +1119,9 @@ function parseDeco(
             must(']');
 
             if (base === null) throw Error(`null base`);
-            base = base.decorate(`[${number}]`, parser.getFrom(sourceFrom));
-            base.arraySize = +number;
-            +number;
+            const n = +number;
+            base = base.decorate(DecoSymbol.array(n), parser.getFrom(sourceFrom));
+            base.arraySize = n;
         } else {
             parser.i--;
             printParserState(base);
@@ -1058,16 +1157,16 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                     const innerText = parser.readTo('>');
                     const lambdaName = parser.getFrom(from);
                     if (innerText === 'lambda_invoker_cdecl') {
-                        id = scope.make(lambdaName);
+                        id = scope.makeChild(lambdaName);
                         id.setAsFunction();
                         id.source = parser.getFrom(sourceFrom);
                     } else if (/^lambda_[a-z0-9]+$/.test(innerText)) {
-                        id = scope.make(lambdaName);
+                        id = scope.makeChild(lambdaName);
                         id.isLambda = true;
                         id.source = parser.getFrom(sourceFrom);
                         id.setAsClass();
                     } else if (/^unnamed-type-.+$/.test(innerText)) {
-                        id = scope.make(lambdaName);
+                        id = scope.makeChild(lambdaName);
                         id.source = parser.getFrom(sourceFrom);
                     } else {
                         printParserState();
@@ -1083,12 +1182,12 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                         printParserState();
                         throw Error(`Unexpected identifier ${idname}`);
                     }
-                    id = PdbIdentifier.global.makeConst('-'+idname);
+                    id = PdbIdentifier.makeConst('-'+idname);
                 } else if (oper === '&') {
                     id = parseSymbol(eof);
                     id.setAsValue();
                     id.source = parser.getFrom(sourceFrom);
-                    id = id.decorate(oper, parser.getFrom(from));
+                    id = id.decorate(DecoSymbol[oper], parser.getFrom(from));
                     id.setAsValue();
                     id.source = parser.getFrom(sourceFrom);
                     return id;
@@ -1099,10 +1198,10 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                             if (parser.nextIf('{for `')) {
                                 const arg = parseSymbol("'");
                                 must('}');
-                                id = scope.make(parser.getFrom(from));
+                                id = scope.makeChild(parser.getFrom(from));
                                 id.adjustors = [arg];
                             } else {
-                                id = scope.make(parser.getFrom(from));
+                                id = scope.makeChild(parser.getFrom(from));
                             }
                             id.isVFTable = true;
                             id.isStatic = true;
@@ -1110,34 +1209,34 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                         } else if (parser.nextIf("vcall'")) {
                             const arg = parser.readTo("'");
                             parser.readTo("'");
-                            id = scope.make(parser.getFrom(from));
+                            id = scope.makeChild(parser.getFrom(from));
                             id.isPrivate = true;
-                            id.adjustors = [PdbIdentifier.global.make(arg)];
+                            id.adjustors = [PdbIdentifier.make(arg)];
                             eof = eof.replace(/\(/, '');
                         } else if (parser.nextIf('RTTI Base Class Descriptor at (')) {
                             const arg = parser.readTo("'");
-                            id = scope.make(parser.getFrom(from));
+                            id = scope.makeChild(parser.getFrom(from));
                             if (!arg.endsWith(")")) {
                                 throw Error(`Unexpected base descriptor name: ${id.name}`);
                             }
-                            id.adjustors = arg.substr(0, arg.length-1).split(',').map(v=>PdbIdentifier.global.makeConst(v));
+                            id.adjustors = arg.substr(0, arg.length-1).split(',').map(v=>PdbIdentifier.makeConst(v));
                         } else {
                             for (const [sname, hasParam] of SPECIAL_NAMES) {
                                 if (parser.nextIf(sname)) {
                                     if (hasParam) {
                                         const iid = parseIdentity("'", {}, scope);
                                         must("'");
-                                        id = scope.make(parser.getFrom(from));
+                                        id = scope.makeChild(parser.getFrom(from));
                                         id.adjustors = [iid];
                                     } else {
-                                        id = scope.make(parser.getFrom(from));
+                                        id = scope.makeChild(parser.getFrom(from));
                                     }
                                     break _idfind;
                                 }
                             }
                             const arg = parseSymbol("'");
                             parser.readTo("'");
-                            id = scope.make(parser.getFrom(from));
+                            id = scope.makeChild(parser.getFrom(from));
                             id.isPrivate = true;
                             id.adjustors = [arg];
                             id.source = parser.getFrom(sourceFrom);
@@ -1153,7 +1252,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 let castTo:PdbIdentifier|null = null;
 
                 if (scope === PdbIdentifier.global && /^[0-9]+$/.test(idname)) {
-                    id = PdbIdentifier.global.makeConst(idname);
+                    id = PdbIdentifier.makeConst(idname);
                 } else if (idname === '__cdecl' || idname === '__stdcall') {
                     if (scope === PdbIdentifier.global) {
                         id = null;
@@ -1226,12 +1325,14 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                         idname = 'int';
                     }
                 }
-                id = scope.make(idname);
+                id = scope.makeChild(idname);
                 if (castTo !== null) {
                     id.returnType = castTo;
                 }
                 if (isUnsigned !== 0) {
-                    id = id.decorate((isUnsigned === 1 ? 'unsigned' : 'signed'), parser.getFrom(sourceFrom));
+                    id = id.decorate(
+                        isUnsigned === 1 ? DecoSymbol.unsigned : DecoSymbol.signed,
+                        parser.getFrom(sourceFrom));
                     id.setAsBasicType();
                 }
                 if (idname.startsWith('~')) {
@@ -1255,12 +1356,12 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 const adjustor = parser.readTo("'");
                 let matched:RegExpMatchArray|null;
                 if ((matched = adjustor.match(/^adjustor{([0-9]+)}$/))) {
-                    id = scope.make(id.name+'`'+adjustor+"'");
-                    id.adjustors.push(PdbIdentifier.global.makeConst(matched[1]));
+                    id = scope.makeChild(id.name+'`'+adjustor+"'");
+                    id.adjustors.push(PdbIdentifier.makeConst(matched[1]));
                 } else if ((matched = adjustor.match(/^vtordisp{([0-9]+),([0-9]+)}$/))) {
-                    id = scope.make(id.name+'`'+adjustor+"'");
-                    const v1 = PdbIdentifier.global.makeConst(matched[1]);
-                    const v2 = PdbIdentifier.global.makeConst(matched[2]);
+                    id = scope.makeChild(id.name+'`'+adjustor+"'");
+                    const v1 = PdbIdentifier.makeConst(matched[1]);
+                    const v2 = PdbIdentifier.makeConst(matched[2]);
                     id.adjustors.push(v1, v2);
                 } else {
                     printParserState();
@@ -1307,7 +1408,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 }
                 if (id.isFunctionBase) {
                     // function base but type
-                    id = id.parent!.make(id.name + '_');
+                    id = id.parent!.makeChild(id.name + '_');
                 }
                 id.setAsClass();
                 if (info.prefixType === 'enum') {
@@ -1357,16 +1458,36 @@ function parseSymbol(eof:string, isFunction:boolean = false):PdbIdentifier {
     return id;
 }
 
-function parse(from:number = 0, to?:number):void {
-
+function parse(list?:number[]):void {
     const cache = new PdbCache;
-    if (to === undefined) to = cache.total;
+    if (list == null) list = [0, cache.total];
+    for (let i=list.length-1;i>=0;i--) {
+        if (list[i] <= cache.total) break;
+        list.pop();
+    }
 
-    const bar = new ProgressBar('loading [:bar] :current/:total', to-from);
+    let count = 0;
+    for (let i=0;i<list.length;) {
+        const from = list[i++];
+        let to = list[i++];
+        if (to == null) to = cache.total;
+        count += to - from;
+    }
+
+    let listIndex = 0;
+    const bar = new ProgressBar('loading [:bar] :current/:total', count);
     symbolIndex = -1;
     for (const {address, name, flags, tag} of cache) {
+        const from = list[listIndex];
         if (++symbolIndex < from) continue;
-        if (symbolIndex >= to) break;
+        const to = list[listIndex+1];
+        if (symbolIndex >= to) {
+            listIndex += 2;
+            if (listIndex >= list.length) break;
+            continue;
+        }
+        if (SKIPS.has(symbolIndex)) continue;
+
         bar.tick();
         parser.context = pdb.undecorate(name, 0);
         parser.i = 0;
@@ -1383,6 +1504,21 @@ function parse(from:number = 0, to?:number):void {
     cache.close();
 }
 
+function arround(list:number[], range:number = 10):number[] {
+    list.sort((a,b)=>a-b);
+    const narray:number[] = [];
+    let prevmax = 0;
+    for (const n of list) {
+        const min = Math.max(n-range, prevmax);
+        const max = n+range;
+        if (max > prevmax) {
+            narray.push(min, max);
+            prevmax = max;
+        }
+    }
+    return narray;
+}
+
 PdbIdentifier.parse('class std::basic_string<char,class std::char_traits<char>,class std::allocator<char> >');
 PdbIdentifier.parse('class std::basic_ostream<char,class std::char_traits<char> >');
 PdbIdentifier.parse('class std::basic_istream<char,class std::char_traits<char> >');
@@ -1392,6 +1528,8 @@ PdbIdentifier.parse('class std::basic_istringstream<char,class std::char_traits<
 PdbIdentifier.parse('class std::basic_ostringstream<char,class std::char_traits<char>,class std::allocator<char> >');
 PdbIdentifier.parse('class std::basic_stringstream<char,class std::char_traits<char>,class std::allocator<char> >');
 
-// 57136, Error: function but type
-// parse(50000, 100000);
-parse(100000, 1000000);
+const SKIPS = new Set([2974, 106441]);
+// void __cdecl `public: static struct PlatformUtils::PlatformData::get & __ptr64 __cdecl Bedrock::PlatformUtils::PlatformData::get(void)'::`2'::`dynamic atexit destructor for 'sharedInstance''(void)
+// void __cdecl `public: static class Threading::CustomTLS::TLSManager::getSharedInstance & __ptr64 __cdecl Bedrock::Threading::CustomTLS::TLSManager::getSharedInstance(void)'::`2'::`dynamic atexit destructor for 'sharedInstance''(void)
+
+parse([10000, 1000000]);

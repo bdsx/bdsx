@@ -16,7 +16,6 @@ namespace NativeTypeFn {
     export const dtor = Symbol('dtor');
     export const ctor_copy = Symbol('ctor_copy');
     export const ctor_move = Symbol('ctor_move');
-    export const isNativeClass = Symbol('isNativeClass');
     export const descriptor = Symbol('descriptor');
     export const bitGetter = Symbol('bitGetter');
     export const bitSetter = Symbol('bitSetter');
@@ -42,7 +41,6 @@ export interface Type<T> extends makefunc.Paramable {
      */
     [NativeTypeFn.size]:number;
     [NativeTypeFn.align]:number;
-    [NativeTypeFn.isNativeClass]?:true;
 }
 
 export type GetFromType<T> =
@@ -119,6 +117,8 @@ function numericBitSetter(this:NativeType<number>, ptr:StaticPointer, value:numb
     this[NativeType.setter](ptr, value, offset);
 }
 
+let typeIndexCounter = 0;
+
 export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly getter:typeof NativeTypeFn.getter = NativeTypeFn.getter;
     public static readonly setter:typeof NativeTypeFn.setter = NativeTypeFn.setter;
@@ -144,7 +144,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public [makefunc.js2npLocalSize]:number;
     public [NativeTypeFn.bitGetter]:(this:NativeType<T>, ptr:StaticPointer, shift:number, mask:number, offset?:number)=>T = abstract;
     public [NativeTypeFn.bitSetter]:(this:NativeType<T>, ptr:StaticPointer, value:T, shift:number, mask:number, offset?:number)=>void = abstract;
-    public isTypeOf:(v:unknown)=>v is T;
+    public readonly typeIndex = ++typeIndexCounter;
 
     constructor(
         /**
@@ -194,10 +194,9 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
          * it uses the copy constructor by default
          */
         ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy) {
-        super(name, js2npAsm, np2jsAsm, np2npAsm);
+        super(name, isTypeOf, js2npAsm, np2jsAsm, np2npAsm);
         this[NativeType.size] = size;
         this[NativeType.align] = align;
-        this.isTypeOf = isTypeOf as any;
         this[NativeType.getter] = get;
         this[NativeType.setter] = set;
         this[NativeType.ctor] = ctor;
@@ -314,7 +313,6 @@ declare module './core'
         [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void;
         [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void;
         [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, offset:number, bitmask:[number, number]|null):void;
-        isTypeOf<T>(this:{new():T}, v:unknown):v is T;
     }
 }
 
@@ -335,9 +333,6 @@ VoidPointer[NativeType.ctor_move] = function(to:StaticPointer, from:StaticPointe
     this[NativeType.ctor_copy](to, from);
 };
 VoidPointer[NativeType.descriptor] = NativeType.defaultDescriptor;
-VoidPointer.isTypeOf = function<T>(this:{new():T}, v:unknown):v is T {
-    return v instanceof this;
-};
 
 const undefValueRef = chakraUtil.asJsValueRef(undefined);
 const nullValueRef = chakraUtil.asJsValueRef(null);
@@ -672,6 +667,51 @@ export const CxxString = new NativeType<string>(
 CxxString[makefunc.pointerReturn] = true;
 Object.freeze(CxxString);
 export type CxxString = string;
+
+// continued from https://github.com/bdsx/bdsx/pull/142/commits/9820de4acf3c818ae5bc2f5eae0d19fd750f4482
+export const GslStringSpan = new NativeType<string>(
+    'gsl::basic_string_span<char const,-1>',
+    0x10, 8,
+    v=>typeof v === 'string',
+    (ptr, offset)=>{
+        const newptr = ptr.add(offset);
+        const length = newptr.getInt64AsFloat();
+        return newptr.getPointer(8).getString(length);
+    },
+    (ptr, v, offset)=>{
+        throw Error('GslStringSpan cannot be set');
+    },
+    (asm, target, source, info)=>{
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.lea_r_rp(Register.r9, Register.rbp, 1, info.offsetForLocalSpace!);
+        asm.mov_r_c(Register.r8, chakraUtil.stack_utf8);
+        asm.mov_r_c(Register.rdx, info.numberOnUsing);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_str_js2np);
+
+        asm.mov_r_rp(Register.rcx, Register.rbp, 1, info.offsetForLocalSpace!);
+        asm.mov_rp_r(Register.rbp, 1, info.offsetForLocalSpace!+0x08, Register.rax);
+        asm.lea_t_rp(target, Register.rbp, 1, info.offsetForLocalSpace!);
+
+        asm.useStackAllocator = true;
+    },
+    (asm, target, source, info)=>{
+        asm.qmov_t_t(makefunc.Target[0], source);
+        asm.mov_r_rp(Register.rdx, Register.rcx, 1, 0x00);
+        asm.mov_r_rp(Register.rcx, Register.rcx, 1, 0x08);
+        asm.add_r_r(Register.rdx, Register.rcx);
+
+        const temp = target.tempPtr(source);
+        asm.lea_r_rp(Register.r8, temp.reg, 1, temp.offset);
+        asm.call_rp(Register.rdi, 1, makefuncDefines.fn_utf8_np2js);
+        asm.throwIfNonZero(info);
+
+        asm.qmov_t_t(target, temp);
+    },
+    (asm, target, source)=>asm.qmov_t_t(target, source)
+);
+GslStringSpan[makefunc.pointerReturn] = true;
+Object.freeze(GslStringSpan);
+export type GslStringSpan = string;
 
 export const bin64_t = new NativeType<string>(
     'unsigned __int64',
