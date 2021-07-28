@@ -197,16 +197,17 @@ export class Tag extends NativeClass {
             variant.valueAsStringTag = (tag as StringTag).value;
             break;
         case Tag.Type.List:
-            (variant as any).setUint8((tag as ListTag).type, 0x20)
+            (variant as any).setUint8((tag as ListTag).type, 0x20);
             variant.valueAsListTag.construct((tag as ListTag).tags);
             break;
-        case Tag.Type.Compound:
+        case Tag.Type.Compound: {
             const map = CxxMap.make(CxxString, CompoundTagVariant)[NativeType.getter](variant as any, 0x08);
             map.construct();
             for (const [key, variant] of (tag as CompoundTag).tags.entries()) {
                 map.set(key, variant);
             }
             break;
+        }
         case Tag.Type.IntArray:
             variant.valueAsIntArrayTag.fromIntArray((tag as IntArrayTag).value.toIntArray());
         }
