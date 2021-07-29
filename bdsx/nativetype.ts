@@ -40,6 +40,7 @@ export interface Type<T> extends makefunc.Paramable {
      * nullable actually
      */
     [NativeTypeFn.align]:number;
+    [NativeTypeFn.isNativeClass]?:true;
 }
 
 export type GetFromType<T> =
