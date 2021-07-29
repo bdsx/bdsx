@@ -559,23 +559,22 @@ export const GslStringSpan = new NativeType<string>(
     v=>typeof v === 'string',
     undefined,
     (ptr, offset)=>{
-        const newptr = ptr.add(offset);
-        const length = newptr.getInt64AsFloat(8);
-        return newptr.getPointer(8).getString(length);
+        const length = ptr.getInt64AsFloat(offset);
+        return ptr.getPointer((offset||0)+8).getString(length);
     },
     (ptr, v, offset)=>{
         throw Error('GslStringSpan cannot be set');
     },
     (stackptr, offset)=>{
-        const ptr = stackptr.getPointer(offset);
-        const size = ptr.getInt64AsFloat(8);
-        return ptr.getString(size);
+        const strptr = stackptr.getPointer(offset);
+        const length = strptr.getInt64AsFloat(0);
+        return strptr.getPointer(8).getString(length);
     },
     (stackptr, param, offset)=>{
         const str = Buffer.from(param, 'utf8');
         const buf = new AllocatedPointer(0x10);
-        buf.setPointer(VoidPointer.fromAddressBuffer(str), 0);
-        buf.setInt64WithFloat(str.length, 8);
+        buf.setPointer(VoidPointer.fromAddressBuffer(str), 8);
+        buf.setInt64WithFloat(str.length, 0);
         makefunc.temporalKeeper.push(buf, str);
         stackptr.setPointer(buf, offset);
     }
