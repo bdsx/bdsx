@@ -18,13 +18,13 @@ const COMMENT_SYMBOL = false;
 const properties = {
     overloadInfo: new tsw.NameProperty('overloadInfo'),
     this: new tsw.NameProperty('this'),
-    current: new tsw.NameProperty('current'),
     add: new tsw.NameProperty('add'),
     overloads: new tsw.NameProperty('overloads'),
     definePointedProperty: new tsw.NameProperty('definePointedProperty'),
     make: new tsw.NameProperty('make'),
     get: new tsw.NameProperty('get'),
     ref: new tsw.NameProperty('ref'),
+    constructWith:new tsw.NameProperty('constructWith'),
 };
 
 const specialNameRemap = new Map<string, string>();
@@ -283,7 +283,7 @@ class TsCode {
 
         let name = item.removeParameters().name;
         if (item.isConstructor) {
-            return new tsw.NameProperty('__constructor');
+            return properties.constructWith;
         } else {
             if (item.isDestructor) {
                 const NativeType = this.imports.importName(imports.nativetype, 'NativeType', tsw.Identifier);
@@ -848,9 +848,8 @@ class TsCodeDeclaration extends TsCode {
                     // no function type, use pointer
                     if (overload.functionParameters.length !== 0) console.error(`${overload}: no has the return type but has the arguments types`);
                     if (COMMENT_SYMBOL) this.currentBlock.comment(overload.symbolIndex+': '+overload.source);
-                    const dll = this.base.importDll();
                     this.currentBlock.const(name.toName(tsw.Identifier), null,
-                        dll.member(properties.current).call(properties.add, [new tsw.Constant(overload.address)]));
+                        this.base.importDllCurrent().call(properties.add, [new tsw.Constant(overload.address)]));
                 } else {
                     // typed function
                     const params = this.makeFuncDeclaration(
@@ -943,8 +942,7 @@ class TsCodeDeclaration extends TsCode {
             if (item.returnType === null) {
                 const targetName = impl.getName(target, tsw.Identifier, {assignee: true});
                 if (!item.isVFTable && item.functionParameters.length !== 0) console.error(`${item}: function but no return type`);
-                const dll = this.base.importDll();
-                impl.doc.assign(targetName, dll.member(properties.current).call(properties.add, [new tsw.Constant(item.address)]));
+                impl.doc.assign(targetName, this.base.importDllCurrent().call(properties.add, [new tsw.Constant(item.address)]));
             } else {
                 if (target.parent === null) {
                     throw Error(`${target}: has not parent`);
@@ -952,19 +950,18 @@ class TsCodeDeclaration extends TsCode {
 
                 let parent:tsw.Identifier;
                 if (target.parent === PdbIdentifier.global) {
-                    parent = impl.imports.importDirect(target, target.host, tsw.Identifier);
+                    parent = tsw.Name.exports;
                 } else {
                     parent = impl.toTsw(target.parent, tsw.Identifier);
                 }
 
-                const dll = this.base.importDll();
                 const NativeType = this.base.importNativeType();
                 const type = impl.toTsw(item.returnType, tsw.Identifier, {isField: true});
                 const prop = impl.getNameOnly(target, tsw.Identifier);
                 impl.doc.write(NativeType.call(properties.definePointedProperty, [
                     parent,
                     new tsw.Constant(prop.toName(tsw.Identifier).name),
-                    dll.member(properties.current).call(properties.add, [tsw.constVal(item.address)]),
+                    this.base.importDllCurrent().call(properties.add, [tsw.constVal(item.address)]),
                     type
                 ]));
             }
@@ -1185,7 +1182,7 @@ class TsCodeDeclaration extends TsCode {
                     if (overload.functionParameters.length === 0 && overload.functionBase!.name === overload.parent!.name) {
                         const NativeType = this.imports.importName(imports.nativetype, 'NativeType', tsw.Identifier);
                         const method = new tsw.MethodDef(null, false, new tsw.BracketProperty(NativeType.member('ctor')), [], tsw.TypeName.void);
-                        method.block.write(new tsw.Return(new tsw.DotCall(new tsw.Name('this'), new tsw.NameProperty('__constructor'), [])));
+                        method.block.write(new tsw.Return(new tsw.DotCall(new tsw.Name('this'), properties.constructWith, [])));
                         this.currentClass.write(method);
                         break;
                     }
@@ -1271,6 +1268,8 @@ class MinecraftTsFile extends TsFile {
     private StaticPointerType:tsw.Type|null = null;
     private NativeType:tsw.Identifier|null = null;
     private Wrapper:tsw.Identifier|null = null;
+    private dllCurrent:tsw.Identifier|null = null;
+    private ctorProperty:tsw.BracketProperty|null = null;
 
     constructor(ids:Identifier[]) {
         super('./minecraft');
@@ -1351,6 +1350,21 @@ class MinecraftTsFile extends TsFile {
         const assign = new tsw.VariableDef('const', [new tsw.VariableDefineItem(dnfMakeOverload, null, dnf.member('makeOverload'))]);
         this.decl.doc.unshift(assign);
         return this.dnfOverloadNew = dnfMakeOverload.call([]);
+    }
+
+    importDllCurrent():tsw.Identifier {
+        if (this.dllCurrent != null) return this.dllCurrent;
+        const dll = this.importDll();
+        const dllCurrent = new tsw.Name('$C');
+        const assign = new tsw.VariableDef('const', [new tsw.VariableDefineItem(dllCurrent, null, dll.member('current'))]);
+        this.decl.doc.unshift(assign);
+        return this.dllCurrent = dllCurrent;
+    }
+
+    getNativeTypeCtor():tsw.BracketProperty {
+        if (this.ctorProperty != null) return this.ctorProperty;
+        const NativeType = this.importNativeType();
+        return this.ctorProperty = new tsw.BracketProperty(NativeType.member('ctor'));
     }
 
     existName(name:string):boolean {

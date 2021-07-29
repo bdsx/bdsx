@@ -70,6 +70,8 @@ export type TypedArrayBuffer = Uint8Array | Uint16Array | Uint32Array |
 	Float32Array | Float64Array;
 export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 
+export type AnyFunction = (this:any, ...args:any[])=>any;
+
 export function emptyFunc():void{
 	// empty
 }

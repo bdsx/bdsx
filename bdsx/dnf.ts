@@ -1,8 +1,8 @@
+import { AnyFunction } from "./common";
 import { dll } from "./dll";
 import { makefunc, MakeFuncOptions } from "./makefunc";
 import { Type } from "./nativetype";
 
-type AnyFunction = (this:unknown, ...args:any[])=>unknown;
 
 enum Prop {
     rva,
@@ -69,7 +69,6 @@ function makeOverloadNativeCall(func:AnyFunction):AnyFunction {
     const info = func.overloadInfo!;
     return func[nativeCall] = makefunc.js(dll.current.add(info[Prop.rva]), info[Prop.returnType], info[Prop.opts], ...info[Prop.parameterTypes]);
 }
-
 
 // deferred native function
 export namespace dnf {
@@ -157,6 +156,23 @@ export namespace dnf {
         return null;
     }
 
+    export function getOverloadInfo(nf:AnyFunction):OverloadInfo {
+        const overloads = nf.overloads;
+        if (overloads != null) {
+            if (overloads.length === 0) {
+                throw Error(`it does not have overloads`);
+            } else if (overloads.length >= 2) {
+                throw Error(`it has multiple overloads`);
+            }
+            nf = overloads[0];
+        }
+        const info = nf.overloadInfo;
+        if (info == null) {
+            throw Error(`it does not have a overload info`);
+        }
+        return info;
+    }
+
     /**
      * make a deferred native function
      */
@@ -172,7 +188,7 @@ export namespace dnf {
                     const overload = overloads[0];
                     call = overload[nativeCall] || makeOverloadNativeCall(overload);
                 } else {
-                    call = function(this:unknown):any {
+                    nf[nativeCall] = call = function(this:unknown):any {
                         for (const overload of overloads) {
                             if (!checkEntryTemplates(overload, arguments)) continue;
                             const func = overload[nativeCall] || makeOverloadNativeCall(overload);

@@ -3402,4 +3402,3 @@ export namespace asm
         return regnamemap[register | (size << 4)] || `invalid_R${register}_S${size}`;
     }
 }
-

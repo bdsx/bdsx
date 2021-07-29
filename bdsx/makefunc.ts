@@ -102,7 +102,7 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * for makefunc.np
      * jump to onError when JsCallFunction is failed (js exception, wrong thread, etc)
      */
-    onError?:VoidPointer;
+    onError?:VoidPointer|null;
 }
 type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> =
     OPTS extends MakeFuncOptions<infer THIS> ?
@@ -120,7 +120,9 @@ export type FunctionFromTypes_js<
     OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
-    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {pointer:PTR};
+    ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>)& {
+        pointer:PTR;
+    };
 
 export type FunctionFromTypes_js_without_pointer<
     OPTS extends MakeFuncOptions<any>|null,
