@@ -1,14 +1,9 @@
 
-import { Command, CommandContext, CommandFlag, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
-import { NetworkIdentifier } from './bds/networkidentifier';
-import { MinecraftPacketIds } from './bds/packetids';
-import { CommandRequestPacket } from './bds/packets';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
-import { CANCEL } from './common';
 import { events } from './event';
-import { CapsuledEvent, EventEx } from './eventtarget';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
@@ -44,57 +39,6 @@ MinecraftCommands.prototype.executeCommand = function(ctx, b) {
     return executeCommand(this, res, ctx, b);
 };
 
-/**
- * @deprecated why are you using it?
- */
-export function hookingForCommand(): void {
-    // it will be called with the event callback
-}
-
-interface CommandEvent {
-    readonly command: string;
-    readonly networkIdentifier: NetworkIdentifier;
-
-    setCommand(command: string): void;
-}
-
-class CommandEventImpl implements CommandEvent {
-    public isModified = false;
-
-    constructor(
-        public command: string,
-        public networkIdentifier: NetworkIdentifier
-    ) {
-    }
-
-    setCommand(command: string): void {
-        this.isModified = true;
-        this.command = command;
-    }
-}
-type UserCommandListener = (ev: CommandEvent) => void | CANCEL;
-
-class UserCommandEvents extends EventEx<UserCommandListener> {
-    private readonly listener = (ptr: CommandRequestPacket, networkIdentifier: NetworkIdentifier, packetId: MinecraftPacketIds):void|CANCEL => {
-        const command = ptr.command;
-        const ev = new CommandEventImpl(command, networkIdentifier);
-        if (this.fire(ev) === CANCEL) return CANCEL;
-        if (ev.isModified) {
-            ptr.command = ev.command;
-        }
-    };
-
-    onStarted(): void {
-        events.packetBefore(MinecraftPacketIds.CommandRequest).on(this.listener);
-    }
-    onCleared(): void {
-        events.packetBefore(MinecraftPacketIds.CommandRequest).remove(this.listener);
-    }
-}
-
-/** @deprecated use nethook.before(MinecraftPacketIds.CommandRequest).on */
-export const net = new UserCommandEvents() as CapsuledEvent<UserCommandListener>;
-
 @nativeClass()
 export class CustomCommand extends Command {
     @nativeField(Command.VFTable)
@@ -111,62 +55,12 @@ export class CustomCommand extends Command {
     }
 }
 
-type ParamToObject<PARAM> = PARAM extends [string, Type<infer T>, string] ?
-{[key in PARAM[0]|PARAM[2]]:key extends PARAM[0] ? T : bool_t} :
-    PARAM extends [string, Type<infer T>] ?
-    {[key in PARAM[0]]:T} :
-    never;
-type CombineUnion<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? {[key in keyof I]:I[key]} : never;
-type ParamsToObjects<PARAMS extends [string, Type<any>, string?][]> = {[key in keyof PARAMS]:PARAMS[key] extends [string, Type<any>, string?] ? ParamToObject<PARAMS[key]> : never};
-type ParamsToObject<PARAMS extends [string, Type<any>, string?][]> = CombineUnion<ParamsToObjects<PARAMS>[number]>;
-
 export class CustomCommandFactory {
 
     constructor(
         public readonly registry:CommandRegistry,
         public readonly name:string) {
     }
-
-    /**
-     * @deprecated use overload, naming mistake
-     */
-    override<KEY extends string, ITEM extends [KEY, Type<any>, KEY?], PARAMS extends ITEM[]>(callback:(command:ParamsToObject<PARAMS>, origin:CommandOrigin, output:CommandOutput)=>void, ...parameters:PARAMS):this {
-        const fields:Record<string, Type<any>> = {};
-        for (const [name, type, optkey] of parameters) {
-            if (name in fields) throw Error(`${name}: field name dupplicated`);
-            fields[name] = type;
-            if (optkey !== undefined) {
-                if (optkey in fields) throw Error(`${optkey}: field name dupplicated`);
-                fields[optkey] = bool_t;
-            }
-        }
-        class CustomCommandImpl extends CustomCommand {
-            [NativeType.ctor]():void {
-                this.self_vftable.execute = customCommandExecute;
-            }
-            execute(origin:CommandOrigin, output:CommandOutput):void {
-                callback(this as any, origin, output);
-            }
-        }
-        CustomCommandImpl.define(fields);
-
-        const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
-            this.execute(origin, output);
-        }, void_t, {this:CustomCommandImpl}, CommandOrigin, CommandOutput);
-
-        const params:CommandParameterData[] = [];
-        for (const [name, type, optkey] of parameters) {
-            if (optkey !== undefined) {
-                params.push(CustomCommandImpl.optional(name as keyof CustomCommandImpl, optkey as keyof CustomCommandImpl));
-            } else {
-                params.push(CustomCommandImpl.mandatory(name as keyof CustomCommandImpl, null));
-            }
-        }
-
-        this.registry.registerOverload(this.name, CustomCommandImpl, params);
-        return this;
-    }
-
     overload<PARAMS extends Record<string, Type<any>|[Type<any>, boolean]>>(
         callback:(params:{
             [key in keyof PARAMS]:PARAMS[key] extends [Type<infer F>, infer V] ?
@@ -184,7 +78,7 @@ export class CustomCommandFactory {
                 try {
                     const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
                     for (const [name, optkey] of paramNames) {
-                        if (optkey === undefined || this[optkey]) {
+                        if (optkey == null || this[optkey]) {
                             nobj[name] = this[name];
                         }
                     }
@@ -195,7 +89,8 @@ export class CustomCommandFactory {
             }
         }
 
-        const fields:Record<string, Type<any>> = {};
+        (parameters as any).__proto__ = null;
+        const fields:Record<string, Type<any>> = Object.create(null);
         for (const name in parameters) {
             let optional = false;
             let type:Type<any>|[Type<any>,boolean] = parameters[name];
@@ -218,7 +113,7 @@ export class CustomCommandFactory {
         const params:CommandParameterData[] = [];
         CustomCommandImpl.define(fields);
         for (const [name, optkey] of paramNames) {
-            if (optkey !== undefined) params.push(CustomCommandImpl.optional(name, optkey));
+            if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any));
             else params.push(CustomCommandImpl.mandatory(name, null));
         }
 
@@ -238,16 +133,11 @@ export class CustomCommandFactory {
 
 export namespace command {
 
-    /**
-     * @deprecated use events.command
-     */
-    export const hook = events.command;
-
     export function register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
-        flags1:CommandFlag = 0x40, // register to list?
-        flags2:CommandFlag = CommandFlag.None):CustomCommandFactory {
+        flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NoCheat,
+        flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag._Unknown):CustomCommandFactory {
         const registry = serverInstance.minecraft.commands.getRegistry();
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);
@@ -255,11 +145,6 @@ export namespace command {
         return new CustomCommandFactory(registry, name);
     }
 }
-
-/**
- * @deprecated use events.command
- */
-export const hook = events.command;
 
 const customCommandDtor = makefunc.np(function(){
     this[NativeType.dtor]();

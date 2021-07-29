@@ -8,8 +8,7 @@ if [ $? != 0 ]; then exit $?; fi
 if [ ! -d "./bedrock_server" ]; then ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
-npm run -s build
-if [ $? != 0 ]; then exit $?; fi
+npm run -s build > /dev/null 2>&1
 
 if [ -x "$(command -v wine)" ]
 then

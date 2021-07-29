@@ -4,9 +4,9 @@ import fs = require('fs');
 import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
-import os = require('os');
+import { fsutil } from '../fsutil';
 
-if (process.argv[2] === undefined) {
+if (process.argv[2] == null) {
     console.error(colors.red(`[BDSX-Plugins] Please provide an argument for the target path of the new plugin`));
     process.exit(-1);
 }
@@ -68,15 +68,18 @@ events.serverClose.on(()=>{
         "scripts": {
             "build": "tsc",
             "watch": "tsc -w",
-            "prepare": "tsc"
+            "prepare": "tsc || exit 0"
         },
         "devDependencies": {
-            "bdsx": `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`,
             "@types/node": "^12.20.5",
+            "@typescript-eslint/eslint-plugin": "^4.28.2",
+            "@typescript-eslint/parser": "^4.28.2",
+            "bdsx": `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`,
+            "eslint": "^7.30.0",
             "typescript": "^4.2.3"
         }
     };
-    fs.writeFileSync(`${targetdir}package.json`, JSON.stringify(examplejson, null, 2).replace(/\n/g, os.EOL), 'utf-8');
+    fsutil.writeJsonSync(`${targetdir}package.json`, examplejson);
 }
 
 // tsconfig.json
@@ -84,7 +87,7 @@ events.serverClose.on(()=>{
     const tsconfig = JSON.parse(fs.readFileSync('./tsconfig.json', 'utf-8'));
     delete tsconfig.exclude;
     tsconfig.declaration = true;
-    fs.writeFileSync(`${targetdir}tsconfig.json`, JSON.stringify(tsconfig, null, 2).replace(/\n/g, os.EOL), 'utf-8');
+    fsutil.writeJsonSync(`${targetdir}tsconfig.json`, tsconfig);
 }
 
 // .npmignore
@@ -105,6 +108,32 @@ events.serverClose.on(()=>{
 *.d.ts
 `;
     fs.writeFileSync(`${targetdir}.gitignore`, gitignore, 'utf-8');
+}
+
+// .eslintrc.json
+{
+    const eslint = {
+        "root": true,
+        "parser": "@typescript-eslint/parser",
+        "parserOptions": {
+            "ecmaVersion": 2017,
+            "sourceType": "module"
+        },
+        "ignorePatterns": ["**/*.js"],
+        "plugins": [
+            "@typescript-eslint",
+            "import"
+        ],
+        "rules": {
+            "no-restricted-imports": ["error", {
+                "patterns": [{
+                    "group": ["**/bdsx/*", "!/bdsx/*"],
+                    "message": "Please use the absolute path for bdsx libraries."
+                }]
+            }]
+        }
+    };
+    fsutil.writeJsonSync(`${targetdir}.eslintrc.json`, eslint);
 }
 
 // README.md

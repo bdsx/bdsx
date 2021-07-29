@@ -12,6 +12,7 @@ const OUT_SCRIPTING = path.join(__dirname, '../generated.scripting.d.ts');
 const OUT_ADDONS = path.join(__dirname, '../generated.addons.d.ts');
 
 const docfixRaw = require('./docfix.json') as Record<string, DocFixItem|string|null>;
+docfixRaw.__proto__ = null;
 const docfix = new Map<string, DocType>();
 for (const name in docfixRaw) {
     const item = docfixRaw[name];
@@ -124,7 +125,7 @@ async function parseScriptingDoc():Promise<void> {
                                     const nfields:DocField[] = [];
                                     for (const field of fields) {
                                         const fieldIndex = paramNameMap.get(field.name);
-                                        if (fieldIndex === undefined) {
+                                        if (fieldIndex == null) {
                                             console.error(`param name not found: ${field.name}`);
                                             continue;
                                         }

@@ -126,6 +126,7 @@ export class DocMethod {
             method.deleted = true;
         } else {
             method.desc = docfix.desc || '';
+            (docfix as any).__proto__ = null;
             for (const param in docfix) {
                 const reg = PARAM.exec(param);
                 if (reg === null) continue;
@@ -139,7 +140,7 @@ export class DocMethod {
                     break;
                 }
             }
-            if (docfix.return !== undefined) {
+            if (docfix.return != null) {
                 method.return = DocType.fromDocFix(docfix.return);
             }
         }
@@ -228,6 +229,7 @@ export class DocType {
                 break;
             }
 
+            (docfix as any).__proto__ = null;
             for (const key in docfix) {
                 const item = docfix[key];
                 if (key.startsWith('field:')) {
@@ -295,8 +297,8 @@ export class DocType {
             this.fields.length = 0;
             this.methods.length = 0;
         }
-        if (docfix.optional !== undefined) this.optional = docfix.optional;
-        if (docfix.readonly !== undefined) this.readonly = docfix.readonly;
+        if (docfix.optional != null) this.optional = docfix.optional;
+        if (docfix.readonly != null) this.readonly = docfix.readonly;
         if (docfix.wrapToArray) {
             const inner = new DocType;
             inner.set(this);

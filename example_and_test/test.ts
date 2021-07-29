@@ -5,6 +5,7 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { CommandContext } from "bdsx/bds/command";
+import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
@@ -15,12 +16,14 @@ import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
 import { CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
-import { CxxVector } from "bdsx/cxxvector";
+import { CxxMap } from "bdsx/cxxmap";
+import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
+import { makefunc } from "bdsx/makefunc";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, GslStringSpan, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
@@ -45,14 +48,20 @@ Tester.test({
         this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
         this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(serverInstance.minecraft.commands.vftable.equals(proc["MinecraftCommands::`vftable'"]), 'commands is not MinecraftCommands');
-        this.assert(serverInstance.minecraft.commands.sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
 
         this.assert(networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
         this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
+
+        const shandle = serverInstance.minecraft.getServerNetworkHandler();
+        shandle.setMotd('TestMotd');
+        this.equals(shandle.motd, 'TestMotd', 'unexpected motd');
+
+        serverInstance.setMaxPlayers(10);
+        this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
     },
 
     async nexttick() {
@@ -91,8 +100,11 @@ Tester.test({
         assert('0f bf c0', 'movsx eax, ax');
         assert('0f be 00', 'movsx eax, byte ptr [rax]');
         assert('44 0F B6 C1 49 BA B3 01 00 00 00 01 00 00', 'movzx r8d, cl;movabs r10, 0x100000001b3');
-        assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]')
-        assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]')
+        assert('48 8D 04 40', 'lea rax, qword ptr [rax+rax*2]');
+        assert('48 8D 14 59', 'lea rdx, qword ptr [rcx+rbx*2]');
+        assert('0f 90 c0 0f 90 c1 0f 91 c0 0f 91 c1 0f 91 00', 'seto al;seto cl;setno al;setno cl;setno byte ptr [rax]');
+        assert('ff 81 c0 07 00 00 48 ff c0 48 ff 00 48 ff 08 48 ff c0 ff 18 ff 10 ff 28 ff e0',
+            'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
     },
 
     bin() {
@@ -152,7 +164,7 @@ Tester.test({
         const n = new PseudoRandom(12345);
         const hashset = new HashSet<HashItem>();
         let count = 0;
-        for (const v of hashset.entires()) {
+        for (const v of hashset.values()) {
             count++;
         }
         if (count !== 0) this.error(`empty hashset is not empty`);
@@ -186,7 +198,7 @@ Tester.test({
 
     },
 
-    memset(): void {
+    memset() {
         const dest = new Uint8Array(12);
         const ptr = new NativePointer;
         ptr.setAddressFromBuffer(dest);
@@ -197,8 +209,7 @@ Tester.test({
     },
 
     cxxstring() {
-        const str = new CxxStringWrapper(true);
-        str.construct();
+        const str = CxxStringWrapper.construct();
         this.equals(str.length, 0, 'std::string invalid constructor');
         this.equals(str.capacity, 15, 'std::string invalid constructor');
         const shortcase = '111';
@@ -209,44 +220,60 @@ Tester.test({
         this.equals(str.value, longcase, 'failed with long text');
         str.destruct();
 
-        const hstr = new HashedString(true);
-        hstr.construct();
+        const hstr = HashedString.construct();
         this.equals(hstr.str, '', 'Invalid string');
         hstr.destruct();
 
-        const data = new AttributeData(true);
-        data.construct();
+        const data = AttributeData.construct();
         this.equals(data.name.str, '', 'Invalid string');
         data.destruct();
     },
 
     makefunc() {
-        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, {structureReturn:true});
+        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).make(int32_t, {structureReturn:true});
         this.equals(test(), 1, 'structureReturn int32_t');
-        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float64_t, null, float32_t);
+        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float64_t, null, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).ret().make(float32_t, null, float64_t);
+        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float32_t, null, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
-        const getbool = asm().mov_r_c(Register.rax, 0x100).ret().make(bool_t);
+        const getbool = asm().mov_r_c(Register.rax, 0x100).make(bool_t);
         this.equals(getbool(), false, 'bool return');
-        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).ret().make(int32_t, null, bool_t);
+        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, null, bool_t);
         this.equals(bool2int(true), 1, 'bool to int');
-        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int32_t, null, int32_t);
+        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int32_t, null, int32_t);
         this.equals(int2short_as_int(-1), 0xffff, 'int to short old');
-        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(int16_t, null, int32_t);
+        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int16_t, null, int32_t);
         this.equals(int2short(-1), -1, 'int to short');
         this.equals(int2short(0xffff), -1, 'int to short');
-        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).ret().make(uint16_t, null, int32_t);
+        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(uint16_t, null, int32_t);
         this.equals(int2ushort(-1), 0xffff, 'int to ushort');
         this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
-        const string2string = asm().mov_r_r(Register.rax, Register.rcx).ret().make(CxxString, null, CxxString);
+        const string2string = asm().mov_r_r(Register.rax, Register.rcx).make(CxxString, null, CxxString);
         this.equals(string2string('test'), 'test', 'string to string');
         this.equals(string2string('testtesta'), 'testtesta', 'test string over 8 bytes');
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
-        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).ret().make(NativePointer);
+        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer);
         this.equals(nullreturn(), null, 'nullreturn does not return null');
+
         const gslstringspan = asm().mov_r_r(Register.rax, Register.rcx).ret().make(GslStringSpan, null, GslStringSpan);
         this.equals(gslstringspan('test'), 'test', 'gslstringspan() failed');
+
+        const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        this.equals(overTheFour(0, 0, 0, 0, 1234), 1234, 'makefunc.js, overTheFour failed');
+        const overTheFiveNative = makefunc.np(overTheFour, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        this.equals(overTheFiveRewrap(0, 0, 0, 0, 1234), 1234, 'makefunc.np, overTheFour failed');
+
+        const CxxStringVectorToArray = CxxVectorToArray.make(CxxString);
+        const CxxStringVector = CxxVector.make(CxxString);
+        const class_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVector);
+        const clsvector = CxxStringVector.construct();
+        clsvector.push('a','b','c','d');
+        this.equals(class_to_array(clsvector).join(','), 'a,b,c,d', 'CxxVectorToArray, class_to_array');
+        clsvector.destruct();
+
+        const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVectorToArray);
+        this.equals(array_to_array(['a','b','c','d']).join(','), 'a,b,c,d', 'CxxVectorToArray, array_to_array');
     },
 
     vectorcopy() {
@@ -256,6 +283,8 @@ Tester.test({
             vector:CxxVector<CxxString>;
             @nativeField(CxxVector.make(CxxStringWrapper))
             vector2:CxxVector<CxxStringWrapper>;
+            @nativeField(CxxVector.make(CxxVector.make(CxxString)))
+            vector3:CxxVector<CxxVector<CxxString>>;
         }
 
         const a = new Class(true);
@@ -265,7 +294,6 @@ Tester.test({
         str.construct();
         str.value = 'test2';
         a.vector2.push(str);
-        str.destruct();
 
         this.equals(a.vector.size(), 1, 'a.vector, invalid size');
         this.equals(a.vector2.size(), 1, 'a.vector2, invalid size');
@@ -282,7 +310,107 @@ Tester.test({
 
         b.destruct();
 
+        a.vector.push('test1', 'test2', 'test3');
+        this.equals(a.vector.size(), 4, 'a.vector, invalid size');
+        this.equals([...a.vector].join(','), 'test,test1,test2,test3', 'a.vector, invalid size');
+
         a.destruct();
+
+        for (let i=0;i<10;i++) {
+            const vec = CxxVector.make(CxxString).construct();
+            vec.push("1111111122222222");
+            this.equals(vec.toArray().join(','), '1111111122222222', 'vector push 1');
+            vec.push("2");
+            this.equals(vec.toArray().join(','), '1111111122222222,2', 'vector push 2');
+            vec.push("3");
+            this.equals(vec.toArray().join(','), '1111111122222222,2,3', 'vector push 3');
+            vec.push("4");
+            this.equals(vec.toArray().join(','), '1111111122222222,2,3,4', 'vector push 4');
+            vec.set(4, "5");
+            this.equals(vec.toArray().join(','), '1111111122222222,2,3,4,5', 'vector set');
+
+            vec.setFromArray(['1','2','3','4']);
+            this.equals(vec.toArray().join(','), '1,2,3,4', ', setFromArray smaller');
+
+            vec.setFromArray(['1','2','3','4','5','6','7','8','9']);
+            this.equals(vec.toArray().join(','), '1,2,3,4,5,6,7,8,9', 'setFromArray larger');
+
+            vec.resize(6);
+            this.equals(vec.toArray().join(','), '1,2,3,4,5,6', 'resize smaller');
+            vec.resize(32);
+            this.equals(vec.toArray().join(','), '1,2,3,4,5,6,,,,,,,,,,,,,,,,,,,,,,,,,,', 'resize larger');
+            vec.destruct();
+            vec.construct();
+            vec.splice(0, 0, '1','2','3','4');
+            this.equals(vec.toArray().join(','), '1,2,3,4', 'splice to empty');
+            vec.splice(1, 2, '3','4');
+            this.equals(vec.toArray().join(','), '1,3,4,4', 'splice same size');
+            vec.splice(1, 2, '5');
+            this.equals(vec.toArray().join(','), '1,5,4', 'splice smaller');
+            vec.splice(1, 1, '1','2','3','4');
+            this.equals(vec.toArray().join(','), '1,1,2,3,4,4', 'splice larger');
+            vec.destruct();
+        }
+
+        const vec = CxxVector.make(CxxString).construct();
+        vec.resize(5);
+        vec.set(0, 't1');
+        vec.set(1, 't2');
+
+        const clsvector = CxxVector.make(Class).construct();
+        const cls = Class.construct();
+        cls.vector.push('test1');
+        cls.vector.push('test2');
+        cls.vector2.push(str);
+        cls.vector3.push(vec);
+        cls.vector3.push(vec);
+        clsvector.push(cls);
+        clsvector.push(cls);
+
+        const cloned = CxxVector.make(Class).construct(clsvector);
+        this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
+        this.equals(cloned.get(1)!.vector.toArray().join(','), 'test1,test2', 'cloned class, string vector');
+        this.equals(cloned.get(0)!.vector2.toArray().map(v=>v.value).join(','), 'test2', 'class, string vector');
+        this.equals(cloned.get(1)!.vector2.toArray().map(v=>v.value).join(','), 'test2', 'cloned class, string vector');
+        this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
+        this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
+        cloned.destruct();
+
+        clsvector.destruct();
+        str.destruct();
+
+
+    },
+
+    map() {
+        const map = CxxMap.make(CxxString, int32_t).construct();
+        map.set('a', 4);
+        map.set('b', 5.5);
+        map.set('abcdefg12345678910', 6);
+        this.equals(map.get('a'), 4, 'map get a');
+        this.equals(map.get('b'), 5, 'map get b');
+        this.equals(map.get('abcdefg12345678910'), 6, 'cxxmap get long text');
+        this.equals(map.size(), 3, 'map size');
+        map.destruct();
+
+        const map2 = CxxMap.make(CxxString, CxxVector.make(CxxString)).construct();
+        const a = CxxVector.make(CxxString).construct();
+        a.push('a');
+        map2.set('1', a);
+        a.push('b');
+        map2.set('2', a);
+        a.destruct();
+        this.equals(map2.toArray().map(([a,b])=>[a, b.toArray().join('-')].join('-')).join(','), '1-a,2-a-b', 'cxxmap set with vector');
+        map2.destruct();
+    },
+
+    json() {
+        const v = new JsonValue(true);
+        v.constructWith({test:0, test2:'a', test3:true});
+        this.equals(v.get('test').value(), 0, 'json int');
+        this.equals(v.get('test2').value(), 'a', 'json string');
+        this.equals(v.get('test3').value(), true, 'json boolean');
+        v.destruct();
     },
 
     async command() {
@@ -298,7 +426,7 @@ Tester.test({
                 const level = ctx.origin.getLevel();
                 this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
                 const size = level.players.size();
-                this.assert(size === 0, 'origin.getLevel().players.size is not zero');
+                this.equals(size, 0, 'origin.getLevel().players.size is not zero');
                 this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
                 events.command.remove(cb);
             }
@@ -318,39 +446,24 @@ Tester.test({
         });
     },
 
-    async command2() {
-        let passed = false;
-        const cb = (cmd:string, origin:string) => {
-            if (cmd === '/__dummy_command') {
-                passed = origin === 'Server';
-                events.command.remove(cb);
-            }
-        };
-        events.command.on(cb);
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output.startsWith('Unknown command: __dummy_command')) {
-                    events.commandOutput.remove(outputcb);
-                    if (passed) resolve();
-                    else this.fail();
-                    return CANCEL;
-                }
-            };
-            events.commandOutput.on(outputcb);
-            bedrockServer.executeCommand('/__dummy_command', false);
-        });
-    },
-
     async checkPacketNames() {
-        if (capi.isRunningOnWine()) {
-            this.skip('Skip packet check on the Wine system, as it usually fails');
-            return;
-        }
+        const wrongNames = new Map<string, string>([
+            ['ShowModalFormPacket', 'ModalFormRequestPacket'],
+            ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
+            ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
+            ['PositionTrackingDBServerBroadcast', 'PositionTrackingDBServerBroadcastPacket'],
+            ['PositionTrackingDBClientRequest', 'PositionTrackingDBClientRequestPacket'],
+            ['NPCDialoguePacket', 'NpcDialoguePacket'],
+        ]);
+
         for (const id in PacketIdToType) {
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             const packet = Packet.create();
 
-            const cxxname = packet.getName();
+            let cxxname = packet.getName();
+            const renamed = wrongNames.get(cxxname);
+            if (renamed != null) cxxname = renamed;
+
             let name = Packet.name;
 
             this.equals(cxxname, name);
@@ -374,34 +487,34 @@ Tester.test({
         let idcheck = 0;
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
-            events.packetRaw(i).on((ptr, size, ni, packetId) => {
+            events.packetRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 idcheck = packetId;
                 this.assert(size > 0, `packet is too small (size = ${size})`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
-            });
-            events.packetBefore<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            }, 0));
+            events.packetBefore<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
-            });
-            events.packetAfter<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            }, 0));
+            events.packetAfter<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
                 this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
-            });
-            events.packetSend<MinecraftPacketIds>(i).on((ptr, ni, packetId) => {
+            }, 0));
+            events.packetSend<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
                 sendidcheck = packetId;
                 this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
                 sendpacket++;
-            });
-            events.packetSendRaw(i).on((ptr, size, ni, packetId) => {
+            }, 0));
+            events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
                 this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
-            });
+            }, 0));
         }
 
         const conns = new Set<NetworkIdentifier>();
-        events.packetAfter(MinecraftPacketIds.Login).on((ptr, ni) => {
+        events.packetAfter(MinecraftPacketIds.Login).on(this.wrap((ptr, ni) => {
             this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
             setTimeout(() => {
@@ -409,15 +522,29 @@ Tester.test({
                     this.error('[test] no packet was sent');
                 }
             }, 1000);
-        });
-        events.networkDisconnected.on(ni => {
+        }));
+        events.networkDisconnected.on(this.wrap(ni => {
             this.assert(conns.delete(ni), '[test] disconnection without connection');
-        });
+        }, 0));
+        events.packetSend(MinecraftPacketIds.AvailableCommands).on(this.wrap(p=>{
+            const commandArray = p.commands.toArray();
+            for (let i = 0; i < commandArray.length; i++) {
+                if (commandArray[i].name === "teleport") {
+                    commandArray.splice(i, 1);
+                    i--;
+                }
+            }
+            p.commands.setFromArray(commandArray);
+        }, 1));
     },
 
     actor() {
         const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', ev => {
+        system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
+            const level = serverInstance.minecraft.getLevel();
+            this.equals(level.players.size(), 1, 'Unexpected player size');
+            this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
+
             try {
                 const uniqueId = ev.data.entity.__unique_id__;
                 const actor = Actor.fromEntity(ev.data.entity);
@@ -448,7 +575,7 @@ Tester.test({
             } catch (err) {
                 this.processError(err);
             }
-        });
+        }, 5));
     },
 
     chat() {
@@ -466,7 +593,6 @@ Tester.test({
             }
         });
     },
-
 }, true);
 
 let connectedNi: NetworkIdentifier;
@@ -476,5 +602,5 @@ events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
 events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
-    connectedId = ptr.connreq.cert.getId();
+    connectedId = ptr.connreq!.cert.getId();
 });

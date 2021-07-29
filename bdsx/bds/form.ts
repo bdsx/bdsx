@@ -224,7 +224,7 @@ export class Form<DATA extends FormData> {
 
             const formdata:FormData = data;
             if (formdata.type === 'form') {
-                if (formdata.buttons !== undefined) {
+                if (formdata.buttons != null) {
                     for (const button of formdata.buttons) {
                         if (button.image?.type === "url") {
                             setTimeout(() => {
@@ -242,7 +242,7 @@ export class Form<DATA extends FormData> {
 
     sendTo(target:NetworkIdentifier, callback?: (form: Form<DATA>, networkIdentifier: NetworkIdentifier) => any):number {
         const submitted = new SentForm(target, res=>{
-            if (callback === undefined) return;
+            if (callback == null) return;
             switch (this.data.type) {
             case "form":
                 this.response = this.labels.get(res as any) || res;
@@ -392,7 +392,7 @@ export class CustomForm extends Form<FormDataCustom> {
 
 events.packetAfter(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     const sent = formMaps.get(pk.id);
-    if (sent === undefined) return;
+    if (sent == null) return;
     if (sent.networkIdentifier !== ni) return; // other user is responsing
     formMaps.delete(pk.id);
 

@@ -1,4 +1,4 @@
-import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
+import { asm, FloatRegister, Register } from "./assembler";
 import { StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 
@@ -26,21 +26,6 @@ export namespace hacktool
 
         from.setBuffer(jumper);
         dll.vcruntime140.memset(from.add(jumper.length), 0xcc, originalCodeSize - jumper.length); // fill int3 at remained
-    }
-
-    /**
-     * @deprecated use ProcHacker. it cannot handle jump/call codes.
-     */
-    export function hook(
-        from:StaticPointer, to:VoidPointer, originalCodeSize:number,
-        tempRegister?:Register|null):VoidPointer {
-        const newcode = asm().write(...from.getBuffer(originalCodeSize));
-        if (tempRegister != null) newcode.jmp64(from, tempRegister);
-        else newcode.jmp64_notemp(from.add(originalCodeSize));
-        const original = newcode.alloc();
-
-        jump(from, to, Register.rax, originalCodeSize);
-        return original;
     }
 
     export function patch(from:StaticPointer, to:VoidPointer, tmpRegister:Register, originalCodeSize:number, call:boolean):void {

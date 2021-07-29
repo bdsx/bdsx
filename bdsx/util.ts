@@ -1,4 +1,6 @@
 
+import util = require('util');
+
 export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
     const size = src.length;
     if (dst.length !== size) throw Error(`size unmatched(dst[${dst.length}] != src[${src.length}])`);
@@ -52,7 +54,7 @@ export function memdiff_contains(larger:number[], smaller:number[]):boolean {
 }
 export function memcheck(code:Uint8Array, originalCode:number[], skip?:number[]):number[]|null {
     const diff = memdiff(code, originalCode);
-    if (skip !== undefined) {
+    if (skip != null) {
         if (memdiff_contains(skip, diff)) return null;
     }
     return diff;
@@ -60,7 +62,7 @@ export function memcheck(code:Uint8Array, originalCode:number[], skip?:number[])
 export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
     const size = values.length;
     if (size === 0) return '';
-    if (nextLinePer === undefined) nextLinePer = size;
+    if (nextLinePer == null) nextLinePer = size;
 
     const out:number[] = [];
     for (let i=0;i<size;) {
@@ -131,77 +133,11 @@ export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }):
     return t.prototype instanceof base;
 }
 
+/**
+ * @deprecated use util.inspect
+ */
 export function anyToString(v:unknown):string {
-    const circular = new WeakSet<Record<string, any>>();
-
-    let out = '';
-    function writeArray(v:unknown[]):void {
-        if (v.length === 0) {
-            out += '[]';
-            return;
-        }
-        out += '[ ';
-        out += v[0];
-        for (let i=1;i<v.length;i++) {
-            out += ', ';
-            write(v[i]);
-        }
-        out += '] ';
-    }
-    function writeObject(v:Record<string, any>|null):void {
-        if (v === null) {
-            out += 'null';
-            return;
-        }
-        if (circular.has(v)) {
-            out += '[Circular]';
-            return;
-        }
-        circular.add(v);
-        if (v instanceof Array) {
-            writeArray(v);
-        } else {
-            const entires = Object.entries(v);
-            if (entires.length === 0) {
-                out += '{}';
-                return;
-            }
-            out += '{ ';
-            {
-                const [name, value] = entires[0];
-                out += name;
-                out += ': ';
-                write(value);
-            }
-            for (let i=1;i<entires.length;i++) {
-                const [name, value] = entires[i];
-                out += ', ';
-                out += name;
-                out += ': ';
-                write(value);
-            }
-            out += ' }';
-        }
-    }
-    function write(v:unknown):void {
-        switch (typeof v) {
-        case 'object':
-            writeObject(v);
-            break;
-        case 'string':
-            out += JSON.stringify(v);
-            break;
-        default:
-            out += v;
-            break;
-        }
-    }
-    if (typeof v === 'object') {
-        writeObject(v);
-    } else {
-        return `${v}`;
-    }
-    return out;
+    return util.inspect(v);
 }
 
 export function str2set(str:string):Set<number>{
@@ -287,4 +223,15 @@ export function intToVarString(n:number):string {
     } while (n !== 0);
 
     return String.fromCharCode(...out);
+}
+
+export function numberWithFillZero(n:number, width:number, radix?:number):string {
+    const text = (n>>>0).toString(radix);
+    if (text.length >= width) return text;
+    return '0'.repeat(width-text.length)+text;
+}
+
+export function filterToIdentifierableString(name:string):string {
+    name = name.replace(/[^a-zA-Z_$0-9]/g, '');
+    return /^[0-9]/.test(name) ? '_'+name : name;
 }

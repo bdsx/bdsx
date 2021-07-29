@@ -1,6 +1,7 @@
-import asmcode = require("./asm/asmcode");
+import { asmcode } from "./asm/asmcode";
 import { proc2 } from "./bds/proc";
 import { capi } from "./capi";
+import { Encoding } from "./common";
 import { chakraUtil, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc } from "./makefunc";
@@ -19,16 +20,14 @@ if (!string_ctor || !string_dtor) {
 }
 
 asmcode.std_cin = dll.msvcp140.std_cin;
-asmcode.uv_async_alloc = uv_async.alloc;
 asmcode.getLineProcessTask = makefunc.np((asyncTask:StaticPointer)=>{
     const str = asyncTask.addAs(CxxStringWrapper, uv_async.sizeOfTask);
-    const value = str.value;
+    const value = str.valueAs(Encoding.Ansi);
     str[NativeType.dtor]();
     const cb:GetLineCallback = asyncTask.getJsValueRef(uv_async.sizeOfTask+string_size);
     cb(value);
 }, void_t, null, StaticPointer);
 asmcode.std_getline = getline;
-asmcode.uv_async_post = uv_async.post;
 asmcode.std_string_ctor = string_ctor;
 
 // const endTask = makefunc.np((asyncTask:StaticPointer)=>{

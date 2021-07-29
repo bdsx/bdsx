@@ -1,6 +1,6 @@
-import { VoidPointer } from "bdsx/core";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { CxxString, NativeType } from "bdsx/nativetype";
+import { VoidPointer } from "../core";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { CxxString, NativeType } from "../nativetype";
 import { procHacker } from "./proc";
 
 @nativeClass()

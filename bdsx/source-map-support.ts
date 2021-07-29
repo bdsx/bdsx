@@ -1,8 +1,11 @@
 
 import { SourceMapConsumer } from 'source-map';
-import { anyToString, removeLine as removeLine } from './util';
+import { removeLine } from './util';
 import path = require('path');
 import fs = require('fs');
+import util = require('util');
+
+const HIDE_UNDERSCOPE = true;
 
 interface StackState {
     nextPosition: Position | null;
@@ -170,13 +173,13 @@ export function mapSourcePosition(position: Position): Position {
             // Load all sources stored inline with the source map into the file cache
             // to pretend like they are already loaded. They may not exist on disk.
             if (sourceMap.map) {
-                sourceMap.map.sources.forEach(source=>{
+                for (const source of sourceMap.map.sources) {
                     const contents = sourceMap!.map!.sourceContentFor(source);
                     if (contents) {
                         const url = supportRelativeURL(sourceMap!.url!, source);
                         fileContentsCache[url] = contents;
                     }
-                });
+                }
             }
         } else {
             sourceMap = sourceMapCache[position.source] = {
@@ -212,6 +215,7 @@ export function remapError<T extends Error>(err: T): T {
 }
 
 interface FrameInfo {
+    hidden: boolean;
     stackLine: string;
     internal: boolean;
 }
@@ -229,6 +233,7 @@ export function remapStack(stack?: string): string | undefined {
     let i = frames.length - 1;
     for (; i >= 1; i--) {
         const frame = remapStackLine(frames[i], state);
+        if (HIDE_UNDERSCOPE && frame.hidden) continue;
         if (frame.internal) continue;
         nframes.push(frame.stackLine);
         state.nextPosition = state.curPosition;
@@ -239,6 +244,7 @@ export function remapStack(stack?: string): string | undefined {
     let showFirstInternal = true;
     for (; i >= 1; i--) {
         const frame = remapStackLine(frames[i], state);
+        if (HIDE_UNDERSCOPE && frame.hidden) continue;
         if (frame.internal) {
             if (showFirstInternal) {
                 showFirstInternal = false;
@@ -252,6 +258,12 @@ export function remapStack(stack?: string): string | undefined {
         state.nextPosition = state.curPosition;
     }
     nframes.push(frames[0]);
+
+    // hide the RuntimeError constructor
+    const runtimeErrorIdx = nframes.findIndex(line=>line.startsWith('   at RuntimeError ('));
+    if (runtimeErrorIdx !== -1) {
+        nframes.length = runtimeErrorIdx-1;
+    }
     return nframes.reverse().join('\n');
 }
 
@@ -261,21 +273,21 @@ export function remapStack(stack?: string): string | undefined {
 export function remapStackLine(stackLine: string, state: StackState = { nextPosition: null, curPosition: null }): FrameInfo {
 
     const matched = /^ {3}at (.+) \(([^(]+)\)$/.exec(stackLine);
-    if (!matched) return { stackLine, internal: false };
+    if (!matched) return { hidden: false, stackLine, internal: false };
     const fnname = matched[1];
     const source = matched[2];
 
     // provides interface backward compatibility
     if (source === 'native code' || source === 'native code:0:0') {
         state.curPosition = null;
-        return { stackLine, internal: false };
+        return { hidden: false, stackLine, internal: false };
     }
     const srcmatched = /^(.+):(\d+):(\d+)$/.exec(source);
-    if (!srcmatched) return { stackLine, internal: false };
+    if (!srcmatched) return { hidden: false, stackLine, internal: false };
 
     const isEval = fnname === 'eval code';
     if (isEval) {
-        return { stackLine, internal: false };
+        return { hidden: false, stackLine, internal: false };
     }
 
     const file = srcmatched[1];
@@ -289,6 +301,7 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
     });
     state.curPosition = position;
     return {
+        hidden: fnname === '_',
         stackLine: `   at ${fnname} (${position.source}:${position.line}:${position.column + 1})`,
         internal: position.source.startsWith('internal/')
     };
@@ -392,7 +405,7 @@ export function install():void {
     }
 
     console.trace = function(...messages:any[]): void {
-        const err = remapStack(removeLine(Error(messages.map(anyToString).join(' ')).stack || '', 1, 2))!;
+        const err = remapStack(removeLine(Error(messages.map(msg=>util.inspect(msg, false, 2, true)).join(' ')).stack || '', 1, 2))!;
         console.error(`Trace${err.substr(5)}`);
     };
 }

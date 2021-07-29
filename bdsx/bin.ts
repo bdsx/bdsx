@@ -50,6 +50,12 @@ function add_with_offset(a:number[], b:string, offset:number):void {
 
 export namespace bin
 {
+    export function isZero(value:string):boolean {
+        for (let i=0;i<value.length;i++) {
+            if (value.charCodeAt(i) !== 0) return false;
+        }
+        return true;
+    }
     export function uint8(value:string):number {
         return value.length !== 0 ? value.charCodeAt(0) & 0xff : 0;
     }

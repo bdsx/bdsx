@@ -1,17 +1,28 @@
 
 // launcher.ts is the launcher for BDS
 // These scripts are run before launching BDS
-// So there are no 'server' variable yet
+// So there is no 'server' variable yet
 // launcher.ts will import ./index.ts after launching BDS.
 
+// install source map
 import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";
 installSourceMapSupport();
 
+// check
+import 'bdsx/common';
 import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
 import 'bdsx/checkmodules';
 import 'bdsx/asm/checkasm';
 
+// install bdsx error handler
+import { installErrorHandler } from "bdsx/errorhandler";
+installErrorHandler();
+
+// imports
+require('bdsx/legacy');
+
+import { installMinecraftAddons } from 'bdsx/addoninstaller';
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
 import 'colors';
@@ -29,7 +40,6 @@ console.log(
 );
 
 (async()=>{
-
     events.serverClose.on(()=>{
         console.log('[BDSX] bedrockServer closed');
         setTimeout(()=>{
@@ -37,7 +47,10 @@ console.log(
         }, 3000).unref();
     });
 
-    await loadAllPlugins();
+    await Promise.all([
+        loadAllPlugins(),
+        installMinecraftAddons()
+    ]);
 
     // launch BDS
     console.log('[BDSX] bedrockServer is launching...');

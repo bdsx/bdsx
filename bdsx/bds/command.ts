@@ -2,7 +2,7 @@ import { asm } from "../assembler";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { abstract } from "../common";
-import { chakraUtil, NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
+import { NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
@@ -13,6 +13,8 @@ import { templateName } from "../templatename";
 import { Actor } from "./actor";
 import { RelativeFloat } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
+import { JsonValue } from "./connreq";
+import { AvailableCommandsPacket } from "./packets";
 import { procHacker } from "./proc";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
@@ -24,9 +26,32 @@ export enum CommandPermissionLevel {
 	Admin,
 }
 
-export enum CommandFlag {
-    None        = 0x00,
+export enum CommandCheatFlag {
+    Cheat,
+    NoCheat = 0x40,
+    None = 0,
 }
+
+/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
+export enum CommandVisibilityFlag {
+    Visible,
+    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
+    HiddenFromCommandBlockOrigin = 2,
+    HiddenFromPlayerOrigin = 4,
+    /** Still visible to console */
+    Hidden = 6,
+}
+
+export enum CommandUsageFlag {
+    Normal,
+    Test,
+    /** Any larger than 1 is hidden */
+    Hidden,
+    _Unknown=0x80
+}
+
+/** @deprecated **/
+export const CommandFlag = CommandCheatFlag;
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
@@ -82,8 +107,19 @@ export class CommandContext extends NativeClass {
     origin:CommandOrigin;
 }
 
+export enum CommandOutputType {
+    Type3 = 3, // user / server console / command block
+    ScriptEngine = 4,
+}
+
 @nativeClass(null)
 export class CommandOutput extends NativeClass {
+    getType():CommandOutputType {
+        abstract();
+    }
+    constructAs(type:CommandOutputType):void {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -98,7 +134,9 @@ export class MinecraftCommands extends NativeClass {
     vftable:VoidPointer;
     @nativeField(CommandOutputSender.ref())
     sender:CommandOutputSender;
-
+    handleOutput(origin:CommandOrigin, output:CommandOutput):void {
+        abstract();
+    }
     executeCommand(ctx:SharedPtr<CommandContext>, b:boolean):MCRESULT {
         abstract();
     }
@@ -175,28 +213,9 @@ export class Command extends NativeClass {
         name:string = key as string):CommandParameterData {
         const cmdclass = this as NativeClassType<any>;
         const paramType = cmdclass.typeOf(key as string);
-        const param = new CommandParameterData(true);
-        param.construct();
-        param.tid.id = type_id(CommandRegistry, paramType).id;
-        param.parser = CommandRegistry.getParser(paramType);
-        param.name = name;
-        param.type = type;
-        if (desc != null) {
-            const descbuf = Buffer.from(desc, 'utf-8');
-            chakraUtil.JsAddRef(descbuf);
-            const ptr = new NativePointer;
-            ptr.setAddressFromBuffer(descbuf);
-            param.desc = ptr;
-        } else {
-            param.desc = null;
-        }
-
-        param.unk56 = -1;
-        param.offset = cmdclass.offsetOf(key as string);
-        param.flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        param.optional = false;
-        param.pad73 = false;
-        return param;
+        const offset = cmdclass.offsetOf(key as string);
+        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
+        return Command.manual(name, paramType, offset, flag_offset, false, desc, type);
     }
     static optional<CMD extends Command,
         KEY extends keyof CMD,
@@ -209,8 +228,19 @@ export class Command extends NativeClass {
         name:string = key as string):CommandParameterData {
         const cmdclass = this as NativeClassType<any>;
         const paramType = cmdclass.typeOf(key as string);
-        const param = new CommandParameterData(true);
-        param.construct();
+        const offset = cmdclass.offsetOf(key as string);
+        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
+        return Command.manual(name, paramType, offset, flag_offset, true, desc, type);
+    }
+    static manual(
+        name:string,
+        paramType:Type<any>,
+        offset:number,
+        flag_offset:number = -1,
+        optional:boolean = false,
+        desc?:string|null,
+        type:CommandParameterDataType = CommandParameterDataType.NORMAL):CommandParameterData {
+        const param = CommandParameterData.construct();
         param.tid.id = type_id(CommandRegistry, paramType).id;
         param.parser = CommandRegistry.getParser(paramType);
         param.name = name;
@@ -224,9 +254,9 @@ export class Command extends NativeClass {
         }
 
         param.unk56 = -1;
-        param.offset = cmdclass.offsetOf(key as string);
-        param.flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        param.optional = true;
+        param.offset = offset;
+        param.flag_offset = flag_offset;
+        param.optional = optional;
         param.pad73 = false;
         return param;
     }
@@ -238,7 +268,7 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
-    registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandFlag, flag2:CommandFlag):void {
+    registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
     }
     registerAlias(command:string, alias:string):void {
@@ -264,14 +294,13 @@ export class CommandRegistry extends HasTypeId {
         const sig = this.findCommand(name);
         if (sig === null) throw Error(`${name}: command not found`);
 
-        const overload = new CommandRegistry.Overload(true);
-        overload.construct();
+        const overload = CommandRegistry.Overload.construct();
         overload.commandVersion = bin.make64(1, 0x7fffffff);
         overload.allocator = allocator;
         overload.parameters.setFromArray(params);
         overload.u6 = -1;
         sig.overloads.push(overload);
-        this.registerOverloadInternal(sig, overload);
+        this.registerOverloadInternal(sig, sig.overloads.back()!);
         overload.destruct();
 
         for (const param of params) {
@@ -282,14 +311,25 @@ export class CommandRegistry extends HasTypeId {
     registerOverloadInternal(signature:CommandRegistry.Signature, overload: CommandRegistry.Overload):void{
         abstract();
     }
+
     findCommand(command:string):CommandRegistry.Signature|null {
         abstract();
     }
 
+    protected _serializeAvailableCommands(pk:AvailableCommandsPacket):AvailableCommandsPacket {
+        abstract();
+    }
+
+    serializeAvailableCommands():AvailableCommandsPacket {
+        const pk = AvailableCommandsPacket.create();
+        this._serializeAvailableCommands(pk);
+        return pk;
+    }
+
     static getParser<T>(type:Type<T>):VoidPointer {
         const parser = parsers.get(type);
-        if (parser !== undefined) return parser;
-        throw Error(`${type.name} parser not found`);
+        if (parser != null) return parser;
+        throw Error(`${type.symbol || type.name} parser not found`);
     }
 }
 
@@ -322,23 +362,36 @@ export namespace CommandRegistry {
 }
 
 function loadParserFromPdb(types:Type<any>[]):void {
-    const symbols = types.map(type=>templateName('CommandRegistry::parse', type.name));
+    const symbols = types.map(type=>templateName('CommandRegistry::parse', type.symbol || type.name));
 
-    pdb.setOptions(SYMOPT_PUBLICS_ONLY); // i don't know why but CommandRegistry::parse<bool> does not found without it.
+    pdb.setOptions(SYMOPT_PUBLICS_ONLY); // XXX: CommandRegistry::parse<bool> does not found without it.
     const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
     pdb.setOptions(0);
 
     for (let i=0;i<symbols.length;i++) {
         const addr = addrs[symbols[i]];
-        if (addr === undefined) continue;
+        if (addr == null) continue;
         parsers.set(types[i], addr);
     }
 }
 
-const types = [int32_t, float32_t, bool_t, CxxString, ActorWildcardCommandSelector, RelativeFloat, CommandRawText];
+const types = [
+    int32_t,
+    float32_t,
+    bool_t,
+    CxxString,
+    ActorWildcardCommandSelector,
+    RelativeFloat,
+    CommandRawText,
+    JsonValue
+];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
 
+CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
+CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
+
+MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this: MinecraftCommands });
 
@@ -346,6 +399,7 @@ CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegis
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
 CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js("CommandRegistry::serializeAvailableCommands", AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';

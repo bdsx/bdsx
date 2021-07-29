@@ -1,54 +1,92 @@
-import { abstract } from "bdsx/common";
-import { NativeClass } from "bdsx/nativeclass";
-import { CxxString, uint8_t } from "bdsx/nativetype";
+import { abstract } from "../common";
+import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
+import { Block, BlockLegacy } from "./block";
+import { CommandName } from "./commandname";
 import { CompoundTag } from "./nbt";
-import type { Player, ServerPlayer } from "./player";
+import type { ServerPlayer } from "./player";
 
+/**
+ * Values from 1 to 100 are for a player's container counter.
+ */
 export enum ContainerId {
-    Inventory = 0,
-    /**
-     * @deprecated
-     */
-    First = 1,
-    /**
-     * @deprecated
-     */
+    Inventory,
+    /** Used as the minimum value of a player's container counter. */
+    First,
+    /** Used as the maximum value of a player's container counter. */
     Last = 100,
-    /**
-     * @deprecated
-     */
+    /** Used in InventoryContentPacket */
     Offhand = 119,
+    /** Used in InventoryContentPacket */
+    Armor,
+    /** Used in InventoryContentPacket */
+    Creative,
     /**
      * @deprecated
      */
-    Armor = 120,
+    Hotbar,
     /**
      * @deprecated
      */
-    Hotbar = 122,
-    /**
-     * @deprecated
-     */
-    FixedInventory = 123,
-    /**
-     * @deprecated
-     */
-    UI = 124
+    FixedInventory,
+    /** Used in InventoryContentPacket */
+    UI
+}
+
+export enum ContainerType {
+    Container,
+    Workbench,
+    Furnace,
+    Enchantment,
+    BrewingStand,
+    Anvil,
+    Dispenser,
+    Dropper,
+    Hopper,
+    Cauldron,
+    MinecartChest,
+    MinecartHopper,
+    Horse,
+    Beacon,
+    StructureEditor,
+    Trade,
+    CommandBlock,
+    Jukebox,
+    Armor,
+    Hand,
+    CompoundCreator,
+    ElementConstructor,
+    MaterialReducer,
+    LabTable,
+    Loom,
+    Lectern,
+    Grindstone,
+    BlastFurnace,
+    Smoker,
+    Stonecutter,
+    Cartography,
+    None = 0xF7,
+    Inventory = 0xFF,
 }
 
 export enum ArmorSlot {
     Head,
-    Chest,
+    /** IDA said this is called Torso */
+    Torso,
+    Chest = 1,
     Legs,
     Feet
 }
 
 export enum CreativeItemCategory {
-    Construction = 1,
-    Nature = 2,
-    Items = 4,
-    Uncategorized = 5,
+    All,
+    Construction,
+    Nature,
+    Equipment,
+    Items,
+    Uncategorized,
 }
 
 export class Item extends NativeClass {
@@ -62,7 +100,11 @@ export class Item extends NativeClass {
         if (name === null) throw Error(`item has not any names`);
         return name;
     }
-    getCommandNames():CxxVector<string> {
+    /** @deprecated use getCommandNames2 */
+    getCommandNames():CxxVector<CxxStringWith8Bytes> {
+        abstract();
+    }
+    getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
     getCreativeCategory():number {
@@ -85,9 +127,36 @@ export class Item extends NativeClass {
 export class ComponentItem extends NativeClass {
 }
 
-
+@nativeClass(0x89)
 export class ItemStack extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+    @nativeField(Item.ref())
+    item:Item;
+    @nativeField(CompoundTag.ref())
+    userData: CompoundTag;
+    @nativeField(Block.ref())
+    block:Block;
+    @nativeField(int16_t)
+    aux:int16_t;
+    @nativeField(uint8_t)
     amount:uint8_t;
+    @nativeField(bool_t)
+    valid:bool_t;
+    @nativeField(bin64_t, 0x28)
+    pickupTime:bin64_t;
+    @nativeField(bool_t)
+    showPickup:bool_t;
+    @nativeField(CxxVector.make(BlockLegacy.ref()), 0x38)
+    canPlaceOn:CxxVector<BlockLegacy>;
+    @nativeField(CxxVector.make(BlockLegacy.ref()), 0x58)
+    canDestroy:CxxVector<BlockLegacy>;
+    /**
+     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
+     */
+    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+        abstract();
+    }
     protected _getItem():Item {
         abstract();
     }
@@ -117,7 +186,7 @@ export class ItemStack extends NativeClass {
     }
     getName():string {
         const item = this.getItem();
-        if (item) {
+        if (item != null) {
             const Name = item.getCommandName();
             if (Name.includes(":")) return Name;
             else return "minecraft:" + Name;
@@ -148,13 +217,12 @@ export class ItemStack extends NativeClass {
     }
     setCustomLore(lores:string[]|string):void {
         const CxxVectorString = CxxVector.make(CxxString);
-        const cxxvector = new CxxVectorString(true);
-        cxxvector.construct();
+        const cxxvector = CxxVectorString.construct();
         if (typeof lores === "string") {
             cxxvector.push(lores);
-        } else lores.forEach((v)=>{
-            cxxvector.push(v);
-        });
+        } else {
+            cxxvector.push(...lores);
+        }
         this._setCustomLore(cxxvector);
         cxxvector.destruct();
     }
@@ -276,4 +344,96 @@ export class PlayerInventory extends NativeClass {
     swapSlots(primarySlot:number, secondarySlot:number):void {
         abstract();
     }
+}
+
+export enum InventorySourceType {
+    InvalidInventory = -1,
+    ContainerInventory,
+    GlobalInventory,
+    WorldInteraction,
+    CreativeInventory,
+    UntrackedInteractionUI = 100,
+    NonImplementedFeatureTODO = 99999,
+}
+
+export enum InventorySourceFlags {
+    NoFlag,
+}
+
+@nativeClass()
+export class InventorySource extends NativeClass {
+    @nativeField(int32_t)
+    type:InventorySourceType;
+    @nativeField(int32_t)
+    containerId:ContainerId;
+    @nativeField(int32_t)
+    flags:InventorySourceFlags;
+
+    static create(containerId:ContainerId, type:InventorySourceType = InventorySourceType.ContainerInventory):InventorySource {
+        const source = new InventorySource(true);
+        source.type = type;
+        source.containerId = containerId;
+        source.flags = InventorySourceFlags.NoFlag;
+        return source;
+    }
+}
+
+@nativeClass()
+export class InventoryAction extends NativeClass {
+    @nativeField(InventorySource)
+    source:InventorySource;
+    @nativeField(uint32_t, 0x0C)
+    slot:uint32_t;
+    @nativeField(ItemStack, 272)
+    from:ItemStack;
+    @nativeField(ItemStack, 416)
+    to:ItemStack;
+}
+
+@nativeClass(0x15)
+export class InventoryTransactionItemGroup extends NativeClass {
+    @nativeField(int16_t)
+    itemId:int16_t;
+    @nativeField(int16_t, 0x04)
+    itemAux:int16_t;
+    @nativeField(CompoundTag.ref(), 0x08)
+    tag:CompoundTag;
+    @nativeField(int32_t, 0x10)
+    count:int32_t;
+    @nativeField(bool_t)
+    overflow:bool_t;
+
+    /** When the item is dropped this is air, it should be the item when it is picked up */
+    getItemStack():ItemStack {
+        abstract();
+    }
+}
+
+@nativeClass()
+export class InventoryTransaction extends NativeClass {
+    // Hope we have CxxUnorderMap class one day
+    //@nativeField(CxxUnorderMap.make(InventorySource.ref(), CxxVector.make(InventoryTransactionItemGroup.ref())))
+    //actions:CxxUnorderMap<InventorySource, CxxVector<InventoryAction>>;
+    @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40)
+    content:CxxVector<InventoryTransactionItemGroup>;
+
+    /** The packet will be cancelled if this is added wrongly */
+    addItemToContent(item:ItemStack, count:number):void {
+        abstract();
+    }
+    getActions(source:InventorySource):InventoryAction[] {
+        return this._getActions(source).toArray();
+    }
+
+    protected _getActions(source:InventorySource):CxxVector<InventoryAction> {
+        abstract();
+    }
+}
+
+@nativeClass()
+export class ComplexInventoryTransaction extends NativeClass {
+    @nativeField(uint8_t, 0x08)
+    type:uint8_t;
+    @nativeField(InventoryTransaction, 0x10)
+    data:InventoryTransaction;
 }

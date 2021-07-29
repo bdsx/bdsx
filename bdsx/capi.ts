@@ -1,4 +1,4 @@
-import asmcode = require("./asm/asmcode");
+import { asmcode } from "./asm/asmcode";
 import { chakraUtil, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc } from "./makefunc";
@@ -11,11 +11,6 @@ export namespace capi
     export const debugBreak = makefunc.js(asmcode.debugBreak, void_t);
 
     asmcode.nodeThreadId = nodeThreadId;
-
-    /**
-     * @deprecated use chakraUtil.asJsValueRef
-     */
-    export const getJsValueRef:(value:any)=>VoidPointer = chakraUtil.asJsValueRef;
 
     export function createThread(functionPointer:VoidPointer, param:VoidPointer|null = null, stackSize:number = 0):[ThreadHandle, number] {
         const out = new Uint32Array(1);

@@ -1,16 +1,13 @@
-import { abstract } from "./common";
+import { abstract, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { NativeClass, NativeClassType } from "./nativeclass";
+import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
+import util = require('util');
+import { CircularDetector } from "./circulardetector";
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
 {
-    /**
-     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
-     */
-    new(ptr:VoidPointer):Wrapper<T>;
-
     new(ptr?:boolean):Wrapper<T>;
 }
 
@@ -35,7 +32,8 @@ export abstract class Wrapper<T> extends NativeClass {
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
         to.copyFrom(from, 8);
     }
-    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, offset:number):void {
+    static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
+        const {offset} = info;
         const type = this;
         let obj:VoidPointer|null = null;
 
@@ -61,28 +59,12 @@ export abstract class Wrapper<T> extends NativeClass {
     }
 }
 
-/** @deprecated renamed to WrapperType<T> */
-export type PointerType<T> = WrapperType<T>;
-
-/** @deprecated renamed to Wrapper<T> */
-export abstract class Pointer<T> extends Wrapper<T> {
-    p:T;
-
-    static make<T>(type:{new():T}|NativeType<T>):PointerType<T> {
-        class TypedPointer extends Pointer<T> {
-            p:any;
-            value:any;
-            type:Type<T>;
-        }
-        TypedPointer.prototype.type = type as any;
-        TypedPointer.defineAsUnion({p:type as any, value:type as any});
-        return TypedPointer;
-    }
-}
-
+@nativeClass()
 export class CxxStringWrapper extends NativeClass {
-    length:number;
-    capacity:number;
+    @nativeField(int64_as_float_t, 0x10)
+    length:int64_as_float_t;
+    @nativeField(int64_as_float_t, 0x18)
+    capacity:int64_as_float_t;
 
     [NativeType.ctor]():void {
         abstract();
@@ -96,13 +78,6 @@ export class CxxStringWrapper extends NativeClass {
         abstract();
     }
 
-    /**
-     * @deprecated use .destruct
-     */
-    dispose():void {
-        this.destruct();
-    }
-
     get value():string {
         return this.getCxxString();
     }
@@ -114,6 +89,10 @@ export class CxxStringWrapper extends NativeClass {
     get valueptr():NativePointer {
         if (this.capacity >= 0x10) return this.getPointer();
         else return this.add();
+    }
+
+    valueAs<T extends Encoding>(encoding:T):TypeFromEncoding<T> {
+        return this.getCxxString(0, encoding);
     }
 
     reserve(nsize:number):void {
@@ -138,24 +117,19 @@ export class CxxStringWrapper extends NativeClass {
         this.reserve(nsize);
         this.length = nsize;
     }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        const obj = new (CircularDetector.makeTemporalClass(this.constructor.name, this, options));
+        obj.value = this.value;
+        return obj;
+    }
 }
-CxxStringWrapper.define({
-    length:[int64_as_float_t, 0x10],
-    capacity:[int64_as_float_t, 0x18]
-});
 
 CxxStringWrapper.prototype[NativeType.ctor] = function(this:CxxStringWrapper) { return CxxString[NativeType.ctor](this as any); };
 CxxStringWrapper.prototype[NativeType.dtor] = function(this:CxxStringWrapper) { return CxxString[NativeType.dtor](this as any); };
 CxxStringWrapper.prototype[NativeType.ctor_copy] = function(this:CxxStringWrapper, other:CxxStringWrapper) {
     return CxxString[NativeType.ctor_copy](this as any, other as any);
 };
-
-/** @deprecated renamed to CxxStringWrapper */
-export type CxxStringStructure = CxxStringWrapper;
-/** @deprecated renamed to CxxStringWrapper */
-export const CxxStringStructure = CxxStringWrapper;
-
-/** @deprecated use CxxStringWrapper */
-export const CxxStringPointer = Wrapper.make(CxxString);
-/** @deprecated use CxxStringWrapper */
-export type CxxStringPointer = Wrapper<CxxString>;
+CxxStringWrapper.prototype[NativeType.ctor_move] = function(this:CxxStringWrapper, other:CxxStringWrapper) {
+    return CxxString[NativeType.ctor_move](this as any, other as any);
+};

@@ -1,18 +1,17 @@
 
-import { Register } from "bdsx/assembler";
-import { abstract } from "bdsx/common";
-import { dll } from "bdsx/dll";
-import { Hashable, HashSet } from "bdsx/hashset";
-import { makefunc } from "bdsx/makefunc";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { CxxString, int32_t, NativeType, void_t } from "bdsx/nativetype";
-import { CxxStringWrapper } from "bdsx/pointer";
-import { SharedPtr } from "bdsx/sharedpointer";
-import { remapAndPrintError } from "bdsx/source-map-support";
-import { _tickCallback } from "bdsx/util";
+import { Register } from "../assembler";
+import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
+import { dll } from "../dll";
 import { events } from "../event";
-import { CapsuledEvent } from "../eventtarget";
+import { Hashable, HashSet } from "../hashset";
+import { makefunc } from "../makefunc";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
+import { CxxStringWrapper } from "../pointer";
+import { SharedPtr } from "../sharedpointer";
+import { remapAndPrintError } from "../source-map-support";
+import { _tickCallback } from "../util";
 import type { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import type { ServerPlayer } from "./player";
@@ -24,7 +23,7 @@ export class NetworkHandler extends NativeClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
 
-    send(ni:NetworkIdentifier, packet:Packet, u:number):void {
+    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void {
         abstract();
     }
 
@@ -56,10 +55,12 @@ class ServerNetworkHandler$Client extends NativeClass {
 
 @nativeClass(null)
 export class ServerNetworkHandler extends NativeClass {
-    @nativeField(CxxString, 0x258)
-    motd: CxxString;
-    @nativeField(int32_t, 0x2D0)
-    maxPlayers: int32_t;
+    @nativeField(VoidPointer)
+    vftable: VoidPointer;
+    @nativeField(CxxString, 0x260)
+    readonly motd:CxxString;
+    @nativeField(int32_t, 0x2D8)
+    readonly maxPlayers: int32_t;
 
     protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxString, d:number):void {
         abstract();
@@ -67,15 +68,25 @@ export class ServerNetworkHandler extends NativeClass {
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
         this._disconnectClient(client, 0, message, 0);
     }
+    /**
+     * Alias of allowIncomingConnections
+     */
     setMotd(motd:string):void {
-        this.motd = motd;
-        this.updateServerAnnouncement();
+        this.allowIncomingConnections(motd, true);
     }
+    /**
+     * @deprecated
+     */
     setMaxPlayers(count:number):void {
-        this.maxPlayers = count;
-        this.updateServerAnnouncement();
+        this.setMaxNumPlayers(count);
+    }
+    allowIncomingConnections(motd:string, b:boolean):void {
+        abstract();
     }
     updateServerAnnouncement():void {
+        abstract();
+    }
+    setMaxNumPlayers(n:number):void {
         abstract();
     }
 }
@@ -122,24 +133,26 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         return this.getAddress();
     }
 
-    /**
-     * @deprecated use events.networkDisconnected
-     */
-    static readonly close:CapsuledEvent<(ni:NetworkIdentifier)=>void> = events.networkDisconnected;
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-    static [makefunc.np2js](ptr:NetworkIdentifier):NetworkIdentifier {
-        let ni = identifiers.get(ptr);
-        if (ni) return ni;
-        ni = new NetworkIdentifier(true);
-        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-        identifiers.add(ni);
-        return ni;
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
+        return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
+    }
+    static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
+        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
     }
 
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
+    }
+    private static _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
+        let ni = identifiers.get(ptr);
+        if (ni != null) return ni;
+        ni = new NetworkIdentifier(true);
+        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
+        identifiers.add(ni);
+        return ni;
     }
 }
 

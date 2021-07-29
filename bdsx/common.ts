@@ -1,18 +1,15 @@
 
-declare global {
-    let bdsx:boolean|undefined;
-    namespace NodeJS {
-        interface Global {
-            bdsx?:boolean;
-        }
-    }
+import colors = require('colors');
+
+if ((global as any).bdsx != null) {
+    console.error(colors.red('[BDSX] multiple imported'));
+    console.error(colors.red('First Import: '+(global as any).bdsx));
+    console.error(colors.red('Dupplicated: '+__dirname));
 }
-if (global.bdsx != null) {
-    throw Error('bdsx is imported twice');
-}
-global.bdsx = true;
+(global as any).bdsx = __dirname;
 
 import type {} from './externs';
+import './polyfill';
 
 export interface CANCEL {
     __CANCEL_OBJECT__?:void;
@@ -84,10 +81,3 @@ export function abstract():never {
 export function unreachable():never {
     throw Error('unreachable');
 }
-
-/** @deprecated use `bdsx/dbghelp` */
-export const SYMOPT_UNDNAME                   = 0x00000002;
-/** @deprecated use `bdsx/dbghelp` */
-export const UNDNAME_COMPLETE                 = 0x0000;  // Enable full undecoration
-/** @deprecated use `bdsx/dbghelp` */
-export const UNDNAME_NAME_ONLY                = 0x1000;  // Crack only the name for primary declaration;

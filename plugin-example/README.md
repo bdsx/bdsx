@@ -17,7 +17,7 @@ Ctrl+Shift+B -> tsc: watch
 
 ### Publish the plugin
 1. Create an npm account if you don't have one yet. [NPM Sign Up](https://www.npmjs.com/signup)
-2. Request for joining `@bdsx` organization at `#npm-bdsx-org-member-request` channel of the discord server with npm ID or EMail.
+2. Request for joining `@bdsx` organization at `#npm-bdsx-org-member-request` channel of [the discord server](https://discord.gg/pC9XdkC) with npm ID or EMail.
 3. Login with the command line.
 ```sh
 > npm login

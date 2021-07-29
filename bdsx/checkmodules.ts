@@ -77,7 +77,7 @@ function checkVersionSyntax(pkgname:string, installed:string, requireds:string):
 
     for (const reqs of requireds.split(/ *\|\| */)) {
         const [req1, req2] = reqs.split(/ *- */, 2);
-        if (req2 !== undefined) {
+        if (req2 != null) {
             if (checkVersion(installedNums, req1) && checkVersion(installedNums, '<='+req2)) return true;
         } else {
             if (checkVersion(installedNums, req1)) return true;
@@ -92,10 +92,11 @@ const packagejson = JSON.parse(fs.readFileSync(packagejsonPath, 'utf-8'));
 let needUpdate = false;
 
 const requiredDeps = packagejson.dependencies;
+(requiredDeps as any).__proto__ = null;
 
 for (const name in requiredDeps) {
     const requiredVersion = requiredDeps[name];
-    if (requiredVersion.startsWith('file:./plugins/')) continue;
+    if (/^file:(?:\.[\\/])?plugins[\\/]/.test(requiredVersion)) continue;
     try {
         const installed = require(`${name}/package.json`);
         const installedVersion = installed.version;

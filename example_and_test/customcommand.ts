@@ -2,13 +2,14 @@
 // Custom Command
 import { RelativeFloat } from "bdsx/bds/blockpos";
 import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
+import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
-import { CxxString, int32_t } from "bdsx/nativetype";
+import { events } from "bdsx/event";
+import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
 
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
     console.log(param.rawtext.text);
-    throw Error('test');
 }, { rawtext:CommandRawText });
 
 // optional
@@ -46,4 +47,37 @@ command.register('eee', 'entity example').overload((param, origin, output)=>{
     }
 }, {
     target: ActorWildcardCommandSelector,
+});
+
+// boolean
+command.register('fff', 'boolean example').overload((param, origin, output)=>{
+    console.log(`boolean example> origin=${origin.getName()}`);
+    console.log(`value: ${param.b}`);
+}, {
+    b: bool_t,
+});
+
+// json
+command.register('ggg', 'json example').overload((param, origin, output)=>{
+    console.log(`json example> origin=${origin.getName()}`);
+    console.log(`value: ${JSON.stringify(param.json.value())}`);
+}, {
+    json: JsonValue,
+});
+
+// hook direct
+events.command.on((cmd, origin, ctx)=>{
+    switch (cmd) {
+    case '/whoami':
+        if (ctx.origin.isServerCommandOrigin()) {
+            console.log('You are the server console');
+        } else if (ctx.origin.isScriptCommandOrigin()) {
+            console.log('You are the script engine');
+        } else {
+            console.log('You are '+origin);
+		}
+        break;
+    default: return; // process the default command
+	}
+    return 0; // suppress the command, It will mute 'Unknown command' message.
 });

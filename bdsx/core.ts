@@ -3,10 +3,6 @@ import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 
 export interface VoidPointerConstructor
 {
-    /**
-     * @deprecated use ptr.as(*Pointer) or ptr.add() to clone pointers
-     */
-    new(pointer: VoidPointer|null|undefined):VoidPointer;
     new():VoidPointer;
 
     fromAddress<T extends VoidPointer>(this:{new():T}, addressLow:number, addressHigh?:number):T;
@@ -230,7 +226,7 @@ export declare class StaticPointer extends PrivatePointer {
      * if encoding is Encoding.Buffer it will call getBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    getString<T extends Encoding = Encoding.Utf8>(bytes?: number, offset?: number, encoding?: T): TypeFromEncoding<T>;
+    getString<T extends Encoding = Encoding.Utf8>(bytes?: number|undefined, offset?: number, encoding?: T): TypeFromEncoding<T>;
 
     /**
      * set string with null character
@@ -265,6 +261,9 @@ export declare class StaticPointer extends PrivatePointer {
      */
     setBin(v:string, offset?:number): void;
 
+    setInt32To64WithZero(value: number, offset?: number): void;
+    setFloat32To64WithZero(value: number, offset?: number): void;
+
     interlockedIncrement16(offset?:number):number;
     interlockedIncrement32(offset?:number):number;
     interlockedIncrement64(offset?:number):number;
@@ -285,6 +284,12 @@ export declare class StaticPointer extends PrivatePointer {
  */
 export declare class AllocatedPointer extends StaticPointer {
     constructor(size:number);
+
+    /**
+     * allocate a encoded string
+     * include the null character
+     */
+    static fromString(str:string, encoding?:Encoding):AllocatedPointer;
 }
 
 export declare class StructurePointer extends PrivatePointer {
@@ -293,10 +298,6 @@ export declare class StructurePointer extends PrivatePointer {
     static readonly nativeDtor:unique symbol;
     static [StructurePointer.contentSize]:number;
     constructor(allocateItSelf?:boolean);
-    /**
-     * @deprecated use ptr.as
-     */
-    constructor(pointerOrBufferItSelf:VoidPointer|null);
 }
 
 /**
@@ -338,7 +339,7 @@ export declare class NativePointer extends StaticPointer {
     writeInt64WithFloat(value: number): void;
     writeFloat32(value: number): void;
     writeFloat64(value: number): void;
-    writePointer(value: StaticPointer): void;
+    writePointer(value: VoidPointer|null): void;
 
     /**
      * read a C++ std::string
@@ -449,8 +450,17 @@ export declare class NativePointer extends StaticPointer {
     writeJsValueRef(value:unknown):void;
 }
 
+export interface RuntimeStack {
+    base:NativePointer|null;
+    address:NativePointer;
+    moduleName:string|null;
+    fileName:string|null;
+    functionName:string|null;
+    lineNumber:number;
+}
+
 export declare class RuntimeError extends Error {
-    nativeStack?:string;
+    nativeStack?:RuntimeStack[];
     code?:number;
     exceptionInfos?:number[];
 }
@@ -499,10 +509,6 @@ export declare namespace pdb
 {
     export const coreCachePath:string;
 
-    /**
-     * @deprecated it's do nothing now. pdb methods will open itself.
-     */
-    export function open():void;
     export function close():void;
 
     export function getOptions():number;
@@ -518,11 +524,6 @@ export declare namespace pdb
      * undecorate the decorated symbol
      */
     export function undecorate(decorated:string, flags:number):string;
-
-    /**
-     * @deprecated use pdb.getList instead
-     */
-    export function getProcAddresses<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(out:OLD, names:KEYS):{[key in KEYS[number]]: NativePointer} & OLD;
 
     /**
      * get symbols from cache.
@@ -587,6 +588,9 @@ export declare namespace runtimeError
     // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
 
+    // wrapper of RtlLookupFunctionEntry
+    export function lookUpFunctionEntry(address:VoidPointer):[VoidPointer]|[VoidPointer, number, number, number]|null;
+    // wrapper of RtlAddFunctionTable
 	export function addFunctionTable(functionTable:VoidPointer, entryCount:number, baseAddress:VoidPointer):void;
 }
 
@@ -712,21 +716,6 @@ export declare namespace cgate
 }
 
 export declare namespace chakraUtil {
-
-    // void* stack_alloc(size_t size)
-    export const stack_alloc:VoidPointer;
-    // void stack_free_all()
-    export const stack_free_all:VoidPointer;
-    // uintptr_t* last_allocate
-    export const stack_ptr:VoidPointer;
-    // char* stack_utf8(const char16_t* str, size_t size)
-    export const stack_utf8:VoidPointer;
-    // char* stack_ansi(const char16_t* str, size_t size)
-    export const stack_ansi:VoidPointer;
-    // JsErrorCode from_utf8(pcstr str, JsValueRef* out)
-    export const from_utf8:VoidPointer;
-    // JsErrorCode from_ansi(pcstr str, JsValueRef* out)
-    export const from_ansi:VoidPointer;
     // void* pointer_js2np(JsValueRef value)
     export const pointer_js2class:VoidPointer;
 
@@ -814,6 +803,10 @@ export declare namespace ipfilter
      * time is for expiring in unix time stamp.
      * if time is 0, it's permanent.
      */
+    export function entries():[string, number][];
+    /**
+     * @deprecated Typo!
+     */
     export function entires():[string, number][];
 }
 
@@ -821,10 +814,13 @@ type ErrorListener = (err:Error)=>void;
 
 export declare namespace jshook
 {
+    export function init():void;
+    /** @deprecated */
     export function init(onError:ErrorListener):void;
     export function setOnError(onError:ErrorListener):ErrorListener;
     export function getOnError():ErrorListener;
     export function fireError(err:Error):void;
+    export const fireErrorPointer:VoidPointer;
 }
 
 export declare namespace cxxException
@@ -846,5 +842,6 @@ export declare namespace cxxException
     export const cxxthrowString:VoidPointer;
 }
 
-module.exports = (process as any)._linkedBinding('bdsx_core');
+const core = module.exports = (process as any)._linkedBinding('bdsx_core');
+core.ipfilter.entries = core.ipfilter.entires;
 module.exports.PrivatePointer = module.exports.StaticPointer;

@@ -2,7 +2,7 @@
 
 import child_process = require('child_process');
 import blessed = require('blessed');
-import fs = require('fs');
+import { fsutil } from '../fsutil';
 
 const SELECTABLE_ITEM_STYLE = {
     fg: 'magenta',
@@ -66,11 +66,11 @@ class PackageInfo {
     public readonly author: string;
     public readonly date: string;
     public readonly version: string;
-    public readonly installed: string;
+    public readonly installed: string|null;
 
     private versions:string[]|null = null;
 
-    constructor(info: PackageInfoJson, deps?:Record<string, {version:string}>) {
+    constructor(info: PackageInfoJson, deps?:Record<string, {version:string|null}>) {
         this.name = info.name;
         this.desc = info.description || '';
         this.author = info.publisher.username;
@@ -78,7 +78,7 @@ class PackageInfo {
         this.version = info.version;
 
         const installedInfo = deps && deps[this.name];
-        this.installed = installedInfo && installedInfo.version || '';
+        this.installed = (installedInfo && installedInfo.version) || null;
     }
 
     async getVersions():Promise<string[]> {
@@ -241,23 +241,18 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
     });
 }
 
-function selectVersion(name:string, latestVersion:string, installedVersion:string, versions:string[]):Promise<(string|null)> {
+function selectVersion(name:string, latestVersion:string, installedVersion:string|null, versions:string[]):Promise<(string|null)> {
     return new Promise(resolve=>{
         if (screen === null) throw Error('blessed.screen not found');
 
         const vnames = versions.reverse().map(v=>`${name}@${v}`);
-        let installed = false;
         for (let i=0;i<versions.length;i++) {
             let moveToTop = false;
             if (versions[i] === latestVersion) {
                 vnames[i] += ' (Latest)';
                 moveToTop = true;
             }
-            if (versions[i] === installedVersion) {
-                vnames[i] += ' (Installed)';
-                moveToTop = true;
-                installed = true;
-            }
+            if (versions[i] === installedVersion) continue;
 
             if (moveToTop) {
                 vnames.unshift(vnames.splice(i, 1)[0]);
@@ -265,9 +260,15 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
             }
         }
 
-        if (installed) {
-            vnames.unshift('Remove');
-            versions.unshift('');
+        if (installedVersion !== null) {
+            if (versions.indexOf(installedVersion) === -1) {
+                vnames.unshift(installedVersion + ' (Installed)');
+                versions.unshift(installedVersion);
+            }
+            if (!installedVersion.startsWith('file:plugins/')) {
+                vnames.unshift('Remove');
+                versions.unshift('');
+            }
         }
 
         const list = blessed.list({
@@ -292,7 +293,8 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
         });
         list.on('select', (item, index)=>{
             list.destroy();
-            resolve(versions[index]);
+            const version = versions[index];
+            resolve(version);
         });
     });
 }
@@ -307,7 +309,7 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
             screen.key(['q', 'C-c'], (ch, key)=>process.exit(0));
         }
 
-        const packagejson = JSON.parse(await fs.promises.readFile('./package-lock.json', 'utf8'));
+        const packagejson = JSON.parse(await fsutil.readFile('./package-lock.json'));
         const deps = packagejson.dependencies || {};
 
         const plugin = await searchAndSelect('@bdsx/', deps);
@@ -325,6 +327,7 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
         const version = await selectVersion(plugin.name, plugin.version, plugin.installed, versions);
         topbox.destroy();
         if (version === null) continue;
+        if (version === plugin.installed) continue;
         screen.destroy();
         screen = null;
 
