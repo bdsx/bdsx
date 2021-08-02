@@ -35,6 +35,9 @@ export class Level extends NativeClass {
     getScoreboard():Scoreboard {
         abstract();
     }
+    getSeed():number {
+        abstract();
+    }
     getTagRegistry():TagRegistry {
         abstract();
     }

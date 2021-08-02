@@ -11,7 +11,7 @@ import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Ty
 import { SharedPtr } from "../sharedpointer";
 import { templateName } from "../templatename";
 import { Actor } from "./actor";
-import { RelativeFloat } from "./blockpos";
+import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
 import { AvailableCommandsPacket } from "./packets";
@@ -108,8 +108,62 @@ export class CommandContext extends NativeClass {
 }
 
 export enum CommandOutputType {
+    None = 0,
+    LastOutput = 1,
+    Silent = 2,
     Type3 = 3, // user / server console / command block
     ScriptEngine = 4,
+}
+
+type CommandOutputParameterType = string|boolean|number|Actor|BlockPos|Vec3|Actor[];
+
+@nativeClass(0x28)
+export class CommandOutputParameter extends NativeClass {
+    @nativeField(CxxString)
+    string:CxxString;
+    @nativeField(int32_t)
+    count:int32_t;
+    static create(input:CommandOutputParameterType, count?:number):CommandOutputParameter {
+        const out = CommandOutputParameter.construct();
+        switch (typeof input) {
+        case 'string':
+            out.string = input;
+            out.count = count ?? 0;
+            break;
+        case 'boolean':
+            out.string = input.toString();
+            out.count = 0;
+            break;
+        case 'number':
+            if (Number.isInteger(input)) {
+                out.string = input.toString();
+            } else {
+                out.string = input.toFixed(2).toString();
+            }
+            out.count = 0;
+            break;
+        case 'object':
+            if (input instanceof Actor) {
+                out.string = input.getName();
+                out.count = 1;
+            } else if (input instanceof BlockPos || input instanceof Vec3) {
+                out.string = `${input.x}, ${input.y}, ${input.z}`;
+                out.count = count ?? 0;
+            } else if (Array.isArray(input)) {
+                if (input.length > 0) {
+                    if (input[0] instanceof Actor) {
+                        out.string = input.map(e => e.getName()).join(', ');
+                        out.count = input.length;
+                    }
+                }
+            }
+            break;
+        default:
+            out.string = '';
+            out.count = -1;
+        }
+        return out;
+    }
 }
 
 @nativeClass(null)
@@ -119,6 +173,57 @@ export class CommandOutput extends NativeClass {
     }
     constructAs(type:CommandOutputType):void {
         abstract();
+    }
+    protected _successNoMessage():void {
+        abstract();
+    }
+    protected _success(message:string, params:CxxVector<CommandOutputParameter>):void {
+        abstract();
+    }
+    success(message?:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
+        if (message === undefined) {
+            this._successNoMessage();
+        } else {
+            const _params = (CxxVector.make(CommandOutputParameter)).construct();
+            if (params.length > 0) {
+                if (params[0] instanceof CommandOutputParameter) {
+                    for (const param of params as CommandOutputParameter[]) {
+                        _params.push(param);
+                        param.destruct();
+                    }
+                } else {
+                    for (const param of params as CommandOutputParameterType[]) {
+                        const _param = CommandOutputParameter.create(param);
+                        _params.push(_param);
+                        _param.destruct();
+                    }
+                }
+            }
+            this._success(message, _params);
+            _params.destruct();
+        }
+    }
+    _error(message:string, params:CxxVector<CommandOutputParameter>):void {
+        abstract();
+    }
+    error(message:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
+        const _params = (CxxVector.make(CommandOutputParameter)).construct();
+        if (params.length > 0) {
+            if (params[0] instanceof CommandOutputParameter) {
+                for (const param of params as CommandOutputParameter[]) {
+                    _params.push(param);
+                    param.destruct();
+                }
+            } else {
+                for (const param of params as CommandOutputParameterType[]) {
+                    const _param = CommandOutputParameter.create(param);
+                    _params.push(_param);
+                    _param.destruct();
+                }
+            }
+        }
+        this._error(message, _params);
+        _params.destruct();
     }
 }
 
@@ -137,7 +242,7 @@ export class MinecraftCommands extends NativeClass {
     handleOutput(origin:CommandOrigin, output:CommandOutput):void {
         abstract();
     }
-    executeCommand(ctx:SharedPtr<CommandContext>, b:boolean):MCRESULT {
+    executeCommand(ctx:SharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
         abstract();
     }
     getRegistry():CommandRegistry {
@@ -145,7 +250,7 @@ export class MinecraftCommands extends NativeClass {
     }
 }
 
-export enum CommandParameterDataType { NORMAL, ENUM, SOFT_ENUM }
+export enum CommandParameterDataType { NORMAL, ENUM, SOFT_ENUM, POSTFIX }
 
 const parsers = new Map<Type<any>, VoidPointer>();
 
@@ -390,6 +495,9 @@ loadParserFromPdb(types);
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
+(CommandOutput.prototype as any)._successNoMessage = procHacker.js('?success@CommandOutput@@QEAAXXZ', void_t, {this:CommandOutput});
+(CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
+(CommandOutput.prototype as any)._error = procHacker.js('?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 
 MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts

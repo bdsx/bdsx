@@ -45,29 +45,6 @@ export class DisconnectPacket extends Packet {
     message:CxxString;
 }
 
-// @nativeClass(0x70)
-// export class SemVersion extends NativeClass {
-//     @nativeField(uint16_t)
-//     major:uint16_t;
-//     @nativeField(uint16_t)
-//     minor:uint16_t;
-//     @nativeField(uint16_t)
-//     patch:uint16_t;
-//     @nativeField(CxxString, 0x08)
-//     preRelease:CxxString;
-//     @nativeField(CxxString)
-//     buildMeta:CxxString;
-//     @nativeField(CxxString)
-//     fullVersionString:CxxString;
-//     @nativeField(bool_t)
-//     validVersion:bool_t;
-//     @nativeField(bool_t)
-//     anyVersion:bool_t;
-// }
-
-// export class BaseGameVersion extends SemVersion {
-// }
-
 export enum PackType {
     Invalid,
     Addon,

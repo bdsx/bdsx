@@ -46,6 +46,7 @@ Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCoun
 Level.prototype.getActorFactory = procHacker.js("Level::getActorFactory", ActorFactory, {this:Level});
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
+Level.prototype.getSeed = procHacker.js("Level::getSeed", uint32_t, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
