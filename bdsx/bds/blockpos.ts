@@ -78,8 +78,8 @@ export class Vec3 extends NativeClass {
 export class RelativeFloat extends NativeClass {
     @nativeField(float32_t)
     value:float32_t;
-    @nativeField(bool_t, 0x04)
-    is_relative:bool_t; // Why is this not camelCased?
+    @nativeField(bool_t)
+    is_relative:bool_t;
 
     @nativeField(bin64_t, 0)
     bin_value:bin64_t;
