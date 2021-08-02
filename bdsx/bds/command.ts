@@ -94,6 +94,35 @@ ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
 };
 
 @nativeClass()
+export class CommandItem extends NativeClass {
+    @nativeField(int32_t)
+    version:int32_t;
+    @nativeField(int32_t)
+    id:int32_t;
+}
+
+@nativeClass()
+export class CommandPosition extends NativeClass {
+    @nativeField(float32_t)
+    x:float32_t;
+    @nativeField(float32_t)
+    y:float32_t;
+    @nativeField(float32_t)
+    z:float32_t;
+    @nativeField(bool_t)
+    isXRelative:bool_t;
+    @nativeField(bool_t)
+    isYRelative:bool_t;
+    @nativeField(bool_t)
+    isZRelative:bool_t;
+    @nativeField(bool_t)
+    local:bool_t;
+}
+
+export class CommandPositionFloat extends CommandPosition {
+}
+
+@nativeClass()
 export class CommandRawText extends NativeClass {
     @nativeField(CxxString)
     text:CxxString;
@@ -487,6 +516,9 @@ const types = [
     CxxString,
     ActorWildcardCommandSelector,
     RelativeFloat,
+    CommandItem,
+    CommandPosition,
+    CommandPositionFloat,
     CommandRawText,
     JsonValue
 ];
@@ -501,7 +533,7 @@ CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4Co
 
 MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
-MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this: MinecraftCommands });
+MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
