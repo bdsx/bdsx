@@ -67,7 +67,7 @@ function patchForStdio():void {
     // hook bedrock log
     asmcode.bedrockLogNp = makefunc.np((severity, msgptr, size)=>{
         // void(*callback)(int severity, const char* msg, size_t size)
-        const line = bedrockLogLiner.write(msgptr.getString(size, 0, Encoding.Utf8));
+        let line = bedrockLogLiner.write(msgptr.getString(size, 0, Encoding.Utf8));
         if (line === null) return;
 
         let color:colors.Color;
@@ -86,9 +86,10 @@ function patchForStdio():void {
             break;
         }
         if (events.serverLog.fire(line, color) === CANCEL) return;
-        console.log(color(line));
+        if(!process.env.COLOR || (process.env.COLOR === 'true' || process.env.COLOR === 'on')) line = color(line);
+        console.log(line);
     }, void_t, {onError:asmcode.jsend_returnZero}, int32_t, StaticPointer, int64_as_float_t);
-    if(!(process.env.COLOR === 'true' || process.env.COLOR === 'on')) asmcode.bedrockLogNp = asmcode.jsend_returnZero;
+    //  asmcode.bedrockLogNp = asmcode.jsend_returnZero;
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
