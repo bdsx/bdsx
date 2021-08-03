@@ -21,8 +21,8 @@ import { MobEffect, MobEffectInstance } from "./effects";
 import { EnchantUtils } from "./enchants";
 import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, PlayerInventory } from "./inventory";
-import { ActorFactory, AdventureSettings, Level, ServerLevel, TagRegistry } from "./level";
+import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
+import { ActorFactory, AdventureSettings, BlockPalette, Level, ServerLevel, TagRegistry } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
@@ -45,6 +45,7 @@ Level.prototype.fetchEntity = procHacker.js("Level::fetchEntity", Actor, {this:L
 Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCount", int32_t, {this:Level});
 Level.prototype.getActorFactory = procHacker.js("Level::getActorFactory", ActorFactory, {this:Level});
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
+Level.prototype.getBlockPalette = procHacker.js("Level::getBlockPalette", BlockPalette, {this:Level});
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("Level::getSeed", uint32_t, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});
@@ -419,11 +420,12 @@ ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValu
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
 const CommandUtils$createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
-ItemStack.create = function (itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
+ItemStack.create = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();
     CommandUtils$createItemStack(itemStack, itemName, amount, data);
     return itemStack;
 };
+ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
 
 PlayerInventory.prototype.addItem = procHacker.js("PlayerInventory::add", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
 PlayerInventory.prototype.clearSlot = procHacker.js("PlayerInventory::clearSlot", void_t, {this:PlayerInventory}, int32_t, int32_t);

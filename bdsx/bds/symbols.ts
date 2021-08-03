@@ -255,7 +255,9 @@ const symbols = [
     'EnchantUtils::hasEnchant',
     'Level::getSeed',
     'SharedConstants::CurrentGameSemVersion',
-    "SharedConstants::NetworkProtocolVersion",
+    'SharedConstants::NetworkProtocolVersion',
+    'Level::getBlockPalette',
+    'ItemStack::fromDescriptor',
 ] as const;
 
 // decorated symbols

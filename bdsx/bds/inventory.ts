@@ -5,6 +5,7 @@ import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
 import { Block, BlockLegacy } from "./block";
 import { CommandName } from "./commandname";
+import type { BlockPalette } from "./level";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
 
@@ -32,7 +33,8 @@ export enum ContainerId {
      */
     FixedInventory,
     /** Used in InventoryContentPacket */
-    UI
+    UI,
+    None = 0xFF,
 }
 
 export enum ContainerType {
@@ -127,7 +129,7 @@ export class Item extends NativeClass {
 export class ComponentItem extends NativeClass {
 }
 
-@nativeClass(0x89)
+@nativeClass(0x90)
 export class ItemStack extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
@@ -155,6 +157,9 @@ export class ItemStack extends NativeClass {
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
     static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+        abstract();
+    }
+    static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
         abstract();
     }
     protected _getItem():Item {
@@ -358,6 +363,7 @@ export enum InventorySourceType {
 
 export enum InventorySourceFlags {
     NoFlag,
+    WorldInteractionRandom,
 }
 
 @nativeClass()
@@ -378,27 +384,45 @@ export class InventorySource extends NativeClass {
     }
 }
 
+export class ItemDescriptor extends NativeClass {
+}
+
+export class ItemStackNetIdVariant extends NativeClass {
+}
+
+@nativeClass(0x80)
+export class NetworkItemStackDescriptor extends NativeClass {
+    @nativeField(ItemDescriptor)
+    descriptor:ItemDescriptor;
+    @nativeField(ItemStackNetIdVariant, 0x54)
+    id:ItemStackNetIdVariant;
+}
+
 @nativeClass()
 export class InventoryAction extends NativeClass {
     @nativeField(InventorySource)
     source:InventorySource;
-    @nativeField(uint32_t, 0x0C)
+    @nativeField(uint32_t)
     slot:uint32_t;
-    @nativeField(ItemStack, 272)
+    @nativeField(NetworkItemStackDescriptor)
+    fromDesc:NetworkItemStackDescriptor;
+    @nativeField(NetworkItemStackDescriptor)
+    toDesc:NetworkItemStackDescriptor;
+    @nativeField(ItemStack)
     from:ItemStack;
-    @nativeField(ItemStack, 416)
+    @nativeField(ItemStack)
     to:ItemStack;
 }
 
-@nativeClass(0x15)
+@nativeClass(0x18)
 export class InventoryTransactionItemGroup extends NativeClass {
-    @nativeField(int16_t)
-    itemId:int16_t;
-    @nativeField(int16_t, 0x04)
-    itemAux:int16_t;
-    @nativeField(CompoundTag.ref(), 0x08)
+    @nativeField(int32_t)
+    itemId:int32_t;
+    @nativeField(int32_t)
+    itemAux:int32_t;
+    @nativeField(CompoundTag.ref())
     tag:CompoundTag;
-    @nativeField(int32_t, 0x10)
+    @nativeField(int32_t)
     count:int32_t;
     @nativeField(bool_t)
     overflow:bool_t;
@@ -409,11 +433,10 @@ export class InventoryTransactionItemGroup extends NativeClass {
     }
 }
 
-@nativeClass()
+@nativeClass(null)
 export class InventoryTransaction extends NativeClass {
-    // Hope we have CxxUnorderMap class one day
-    //@nativeField(CxxUnorderMap.make(InventorySource.ref(), CxxVector.make(InventoryTransactionItemGroup.ref())))
-    //actions:CxxUnorderMap<InventorySource, CxxVector<InventoryAction>>;
+    // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
+    // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
     @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40)
     content:CxxVector<InventoryTransactionItemGroup>;
 
@@ -432,8 +455,19 @@ export class InventoryTransaction extends NativeClass {
 
 @nativeClass()
 export class ComplexInventoryTransaction extends NativeClass {
-    @nativeField(uint8_t, 0x08)
-    type:uint8_t;
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+    @nativeField(uint8_t)
+    type:ComplexInventoryTransaction.Type;
     @nativeField(InventoryTransaction, 0x10)
     data:InventoryTransaction;
+}
+export namespace ComplexInventoryTransaction {
+    export enum Type {
+        NormalTransaction,
+        InventoryMismatch,
+        ItemUseTransaction,
+        ItemUseOnEntityTransaction,
+        ItemReleaseTransaction,
+    }
 }
