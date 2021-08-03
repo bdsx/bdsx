@@ -1,18 +1,27 @@
-import { NativePointer, VoidPointer } from "./core";
+import { procHacker } from "./bds/proc";
+import { capi } from "./capi";
+import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
 import { NativeClass, NativeClassType } from "./nativeclass";
-import { NativeType, Type } from "./nativetype";
+import { NativeType, Type, uint64_as_float_t } from "./nativetype";
 import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
 import util = require('util');
+
+const allocate16 = procHacker.js('??$_Allocate@$0BA@U_Default_allocate_traits@std@@$0A@@std@@YAPEAX_K@Z', NativePointer, null, uint64_as_float_t);
+function deallocate16(addr:StaticPointer, size:number):void {
+    if (size >= 0x1000) {
+        addr = addr.getPointer(-8);
+    }
+    capi.free(addr);
+}
 
 export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>>
 {
     new(address?:VoidPointer|boolean):CxxVector<T>;
     componentType:Type<any>;
 }
-
 
 const VECTOR_SIZE = 0x18;
 
@@ -43,18 +52,19 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         const begin = this.getPointer(0);
         const ptr = begin.add();
         const end = this.getPointer(8);
+        const capBytes = this.getPointer(16).subptr(begin);
         const compsize = this.componentType[NativeType.size];
         let idx = 0;
         while (!ptr.equals(end)) {
             this._dtor(ptr, idx++);
             ptr.move(compsize);
         }
-        dll.ucrtbase.free(begin);
+        deallocate16(begin, capBytes);
         this._resizeCache(0);
     }
     [NativeType.ctor_copy](from:CxxVector<T>):void {
         const fromSizeBytes = from.sizeBytes();
-        const ptr = dll.ucrtbase.malloc(fromSizeBytes);
+        const ptr = allocate16(fromSizeBytes);
         const compsize = this.componentType[NativeType.size];
         const size = getSize(fromSizeBytes, compsize);
         const srcptr = from.getPointer(0);
@@ -86,13 +96,13 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     private _resize(newSizeBytes:number, oldCapBytes:number, oldptr:NativePointer, oldSizeBytes:number):void {
         const newcapBytes = Math.max(newSizeBytes, oldCapBytes*2);
         const compsize = this.componentType[NativeType.size];
-        const allocated = dll.ucrtbase.malloc(newcapBytes);
+        const allocated = allocate16(newcapBytes);
         this.setPointer(allocated, 0);
 
         const oldSize = getSize(oldSizeBytes, compsize);
         const newSize = getSize(newSizeBytes, compsize);
         this._move_alloc(allocated, oldptr, Math.min(oldSize, newSize));
-        dll.ucrtbase.free(oldptr);
+        deallocate16(oldptr, oldCapBytes);
         for (let i=oldSize;i<newSize;i++) {
             this._ctor(allocated, i);
             allocated.move(compsize);
@@ -438,7 +448,11 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
                 stackptr.setPointer(buf, offset);
             },
             ptr=>dll.vcruntime140.memset(ptr, 0, VECTOR_SIZE),
-            ptr=>dll.ucrtbase.free(ptr),
+            ptr=>{
+                const beg = ptr.getPointer(0);
+                const cap = ptr.getPointer(16);
+                deallocate16(beg, cap.subptr(beg));
+            },
             (to, from)=>to.as(this.type)[NativeType.ctor_copy](from.as(this.type)),
             (to, from)=>{
                 dll.vcruntime140.memcpy(to, from, VECTOR_SIZE);

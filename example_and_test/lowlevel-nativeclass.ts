@@ -3,7 +3,7 @@
 
 import { NativePointer } from "bdsx/core";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { int16_t, int32_t, int8_t } from "bdsx/nativetype";
+import { int16_t, int32_t, int8_t, NativeType } from "bdsx/nativetype";
 
 /**
  * All packets in packets.ts are NativeClass also
@@ -67,3 +67,18 @@ console.assert(obj.bitfield2 === 0); // all is masked without the first bit
 obj.bitfield3 = 1;
 const bitfield = pointer.getInt32(SampleStructure.offsetOf('bitfield1'));
 console.assert(bitfield === 0b101); // bitfield = 101 (2)
+
+// override the copy constructor
+@nativeClass()
+class Class extends NativeClass {
+    @nativeField(int32_t)
+    value:int32_t;
+    [NativeType.ctor_copy](from:Class):void {
+        this.value = from.value+1;
+    }
+}
+
+const original = new Class(true);
+original.value = 10;
+const copied = Class.construct(original); // call the copy constructor
+console.assert(copied.value === 11);

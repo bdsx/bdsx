@@ -145,7 +145,7 @@ export namespace events {
      * before 'before' and 'after'
      * earliest event for the packet receiving.
      * It will bring raw packet buffers before parsing
-     * It will cancel the packet if you return false
+     * It can be canceled the packet if you return 'CANCEL'
      */
     export function packetRaw(id:MinecraftPacketIds):Event<nethook.RawListener> {
         return getNetEventTarget(PacketEventType.Raw, id);
@@ -154,6 +154,7 @@ export namespace events {
     /**
      * after 'raw', before 'after'
      * the event that before processing but after parsed from raw.
+     * It can be canceled the packet if you return 'CANCEL'
      */
     export function packetBefore<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Before, id);
@@ -191,7 +192,7 @@ export namespace events {
 
     /**
     * global error listeners
-    * if returns CANCEL, then default error printing is disabled
+    * if returns 'CANCEL', then default error printing is disabled
     */
     export const error = Event.errorHandler;
 
@@ -212,6 +213,8 @@ export namespace events {
 
      /**
       * command input
+      * Commands will be canceled if you return a error code.
+      * 0 means success for error codes but others are unknown.
       */
     export const command = new Event<(command: string, originName: string, ctx: CommandContext) => void | number>();
 

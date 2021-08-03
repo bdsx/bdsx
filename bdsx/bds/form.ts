@@ -1,7 +1,7 @@
 import { events } from "../event";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
-import { SetTitlePacket, ShowModalFormPacket } from "./packets";
+import { ModalFormRequestPacket, SetTitlePacket } from "./packets";
 
 const formMaps = new Map<number, SentForm>();
 
@@ -206,18 +206,18 @@ export class FormInput extends FormComponent implements FormItemInput {
 }
 
 export class Form<DATA extends FormData> {
-    protected externalLoading = false;
     labels: Map<number, string> = new Map<number, string>();
     response:any;
 
     constructor(public data:DATA) {
     }
 
-    static sendTo<T extends FormData['type']>(target:NetworkIdentifier, data:FormData&{type:T}):Promise<FormResponse<T>> {
+    static sendTo<T extends FormData['type']>(target:NetworkIdentifier, data:FormData&{type:T}, opts?:Form.Options):Promise<FormResponse<T>> {
         return new Promise((resolve:(res:FormResponse<T>)=>void, reject)=>{
             const submitted = new SentForm(target, resolve, reject);
-            const pk = ShowModalFormPacket.create();
+            const pk = ModalFormRequestPacket.create();
             pk.id = submitted.id;
+            if (opts != null) opts.id = pk.id;
             pk.content = JSON.stringify(data);
             pk.sendTo(target);
             pk.dispose();
@@ -241,7 +241,8 @@ export class Form<DATA extends FormData> {
     }
 
     sendTo(target:NetworkIdentifier, callback?: (form: Form<DATA>, networkIdentifier: NetworkIdentifier) => any):number {
-        const submitted = new SentForm(target, res=>{
+        const opts:Form.Options = {};
+        Form.sendTo(target, this.data, opts).then(res=>{
             if (callback == null) return;
             switch (this.data.type) {
             case "form":
@@ -260,26 +261,22 @@ export class Form<DATA extends FormData> {
                 break;
             }
             callback(this, target);
-        }, err=>{
-            throw err;
         });
-        const pk = ShowModalFormPacket.create();
-        pk.id = submitted.id;
-        pk.content = JSON.stringify(this.data);
-        pk.sendTo(target);
-        pk.dispose();
-        if (this.externalLoading) {
-            setTimeout(() => {
-                const pk = SetTitlePacket.create();
-                pk.sendTo(target);
-                pk.dispose();
-            }, 1000);
-        }
-        return pk.id;
+        return opts.id!;
     }
 
     toJSON():FormData {
         return this.data;
+    }
+}
+
+export namespace Form {
+    export interface Options {
+        /**
+         * a field for the output.
+         * this function will record the id to it
+         */
+        id?:number;
     }
 }
 
@@ -291,9 +288,6 @@ export class SimpleForm extends Form<FormDataSimple> {
             content,
             buttons
         });
-        for (const button of buttons) {
-            if (button.image?.type === "url") this.externalLoading = true;
-        }
     }
     getTitle():string {
         return this.data.title;
@@ -309,7 +303,6 @@ export class SimpleForm extends Form<FormDataSimple> {
     }
     addButton(button: FormButton, label?: string):void {
         this.data.buttons!.push(button);
-        if (button.image?.type === "url") this.externalLoading = true;
         if (label) this.labels.set(this.data.buttons!.length - 1, label);
     }
     getButton(indexOrLabel: string | number):FormButton | null {

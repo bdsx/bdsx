@@ -32,7 +32,13 @@ export class Level extends NativeClass {
     getAdventureSettings():AdventureSettings {
         abstract();
     }
+    getBlockPalette():BlockPalette {
+        abstract();
+    }
     getScoreboard():Scoreboard {
+        abstract();
+    }
+    getSeed():number {
         abstract();
     }
     getTagRegistry():TagRegistry {
@@ -52,6 +58,9 @@ export class ServerLevel extends Level {
 }
 
 export class ActorFactory extends NativeClass {
+}
+
+export class BlockPalette extends NativeClass {
 }
 
 export class AdventureSettings extends NativeClass {

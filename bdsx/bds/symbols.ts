@@ -253,11 +253,17 @@ const symbols = [
     'ServerPlayer::_nextContainerCounter',
     'EnchantUtils::getEnchantLevel',
     'EnchantUtils::hasEnchant',
-    'Player::getCertificate'
+    'Player::getCertificate',
+    'Level::getSeed',
+    'SharedConstants::CurrentGameSemVersion',
+    'SharedConstants::NetworkProtocolVersion',
+    'Level::getBlockPalette',
+    'ItemStack::fromDescriptor'
 ] as const;
 
 // decorated symbols
 const symbols2 = [
+    '??$_Allocate@$0BA@U_Default_allocate_traits@std@@$0A@@std@@YAPEAX_K@Z',
     '?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z',
     '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ',
     '??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@',
@@ -288,10 +294,13 @@ const symbols2 = [
     '?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z',
     '?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z',
     '??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z',
-    'sprintf',
-    'vsnprintf',
     '?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z',
     '??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z',
+    '?success@CommandOutput@@QEAAXXZ',
+    '?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
+    '?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
+    'sprintf',
+    'vsnprintf',
 ] as const;
 
 
