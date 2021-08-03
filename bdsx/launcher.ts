@@ -88,6 +88,7 @@ function patchForStdio():void {
         if (events.serverLog.fire(line, color) === CANCEL) return;
         console.log(color(line));
     }, void_t, {onError:asmcode.jsend_returnZero}, int32_t, StaticPointer, int64_as_float_t);
+    if(!(process.env.COLOR === 'true' || process.env.COLOR === 'on')) asmcode.bedrockLogNp = asmcode.jsend_returnZero;
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{

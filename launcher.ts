@@ -8,6 +8,13 @@
 import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";
 installSourceMapSupport();
 
+import 'colors';
+if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 'on')) {
+    for(const x in require.cache[require.resolve('colors')].exports) {
+        if(typeof require.cache[require.resolve('colors')].exports[x] === 'function') require.cache[require.resolve('colors')].exports[x] = (a: any) => a;
+    }
+}
+
 // check
 import 'bdsx/common';
 import 'bdsx/checkcore';
@@ -26,7 +33,7 @@ require('bdsx/legacy');
 import { installMinecraftAddons } from 'bdsx/addoninstaller';
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
-import 'colors';
+
 import { events } from "bdsx/event";
 
 console.log(
