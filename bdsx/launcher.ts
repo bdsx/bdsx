@@ -6,7 +6,7 @@ import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
-import { CANCEL, Encoding } from "./common";
+import { CANCEL, Encoding, ServerNotStartedError } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { events } from "./event";
@@ -386,8 +386,12 @@ export namespace bedrockServer
      * but call the internal function directly
      */
     export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
+        const minecraft = bd_server.serverInstance.minecraft;
+        if(!minecraft) {
+            throw new ServerNotStartedError();
+        }
         const origin = createServerCommandOrigin('Server',
-            bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
+            minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
 

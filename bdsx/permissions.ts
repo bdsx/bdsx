@@ -134,11 +134,14 @@ export namespace Permissions {
     // }
 
     export async function saveData() {
+        if(!dirty) return;
+        dirty = false;
         const data: any = {};
         for(const user of allPermissions) {
             data[user[0]] = user[1];
         }
         await fsutil.writeJson(permissionsPath, data);
+        console.log("done");
     }
 
     export async function loadData(data?: any) {
@@ -155,12 +158,7 @@ export namespace Permissions {
             permissionNodeFromString(permission.parent)?.registerChild(new PermissionNode(permission.name, permission.description, permission.default));
         }
     }
-    setInterval(() => {
-        if(dirty) {
-            dirty = false;
-            saveData();
-        }
-    }, 60000);
+    setInterval(saveData, 60000).unref();
 }
 
 Permissions.loadData();
