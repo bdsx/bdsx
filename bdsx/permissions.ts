@@ -8,7 +8,7 @@ const PERMISSIONS_FILE = 'bdsxpermissions.json';
 const permissionsPath = path.join(fsutil.projectPath, PERMISSIONS_FILE);
 
 export namespace Permissions {
-    let allPermissions = new Map<string, {[perm: string]: boolean | undefined}>();
+    let allPermissions = new Map<string, {[permission: string]: boolean | undefined}>();
 
     export class RootPermissionNode {
         children: Map<string, PermissionNode> = new Map();
@@ -144,7 +144,13 @@ export namespace Permissions {
         console.log("done");
     }
 
-    export async function loadData(data?: any): Promise<void> {
+    type permissionData = {
+        [xuid: string]: {
+            [permission: string]: boolean
+        }
+    };
+
+    export async function loadData(data?: permissionData): Promise<void> {
         if(!data) data = JSON.parse(await fsutil.readFile(permissionsPath));
         const dataAsArray: [string, any][] = [];
         for(const xuid in data) {
