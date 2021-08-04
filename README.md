@@ -7,7 +7,7 @@ BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.j
 * OS: Windows or Linux (with Wine)
 * All Minecraft BDS features
 * All node.js features (*that are supported by ChakraCore. See [this page](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules) for more information)
-* [Debug with Visual Studio Code (You can debug plugins too)](https://github.com/bdsx/bdsx/wiki/Debug-with-VSCode)
+* Debug with Visual Studio Code (You can debug plugins too)
 * Intercept network packets
 * [Hook commands](https://github.com/bdsx/bdsx/wiki/Command-Hooking)
 * [Low-level hooking]() and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
