@@ -106,11 +106,11 @@ export namespace Permissions {
 
     export function getUserAllPermissions(player: Player): any;
     export function getUserAllPermissions(playerXuid: string): any;
-    export function getUserAllPermissions(player: string | Player) {
+    export function getUserAllPermissions(player: string | Player): any {
         return allPermissions.get(typeof player === 'string' ? player : player.getCertificate().getXuid()) ?? {};
     }
 
-    export function registerPermission(name: string, description: string, parent: RootPermissionNode | null, defaultValue: boolean) {
+    export function registerPermission(name: string, description: string, parent: RootPermissionNode | null, defaultValue: boolean): PermissionNode {
         const permission = new PermissionNode(name, description, defaultValue);
         permission.parent = parent ?? rootNode;
         if(parent) parent.registerChild(permission);
@@ -133,7 +133,7 @@ export namespace Permissions {
     //     }
     // }
 
-    export async function saveData() {
+    export async function saveData(): Promise<void> {
         if(!dirty) return;
         dirty = false;
         const data: any = {};
@@ -144,7 +144,7 @@ export namespace Permissions {
         console.log("done");
     }
 
-    export async function loadData(data?: any) {
+    export async function loadData(data?: any): Promise<void> {
         if(!data) data = JSON.parse(await fsutil.readFile(permissionsPath));
         const dataAsArray: [string, any][] = [];
         for(const xuid in data) {
@@ -153,7 +153,7 @@ export namespace Permissions {
         allPermissions = new Map(dataAsArray);
     }
 
-    export async function registerPermissionBulk(data: {parent: string, name: string, default: boolean, description: string}[]) {
+    export function registerPermissionBulk(data: {parent: string, name: string, default: boolean, description: string}[]): void {
         for (const permission of data) {
             permissionNodeFromString(permission.parent)?.registerChild(new PermissionNode(permission.name, permission.description, permission.default));
         }

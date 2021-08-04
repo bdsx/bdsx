@@ -65,7 +65,8 @@ If you want to publish a bdsx plugin, please ask to be invited to the bdsx organ
 ├ bdsx.sh # Executable for Linux
 └ bdsx.bat # Executable for Windows
 # Please start your own code from ./index.ts
-# By default index.ts imports example_and_test. To disable the examples simply remove the import or replace it with your own code. 
+# By default index.ts imports example_and_test. To disable the examples
+# simply remove the import or replace it with your own code. 
 ```
 
 ## BDSX Discussions
