@@ -6,7 +6,7 @@ import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
 import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
-import { CANCEL, Encoding, ServerNotStartedError } from "./common";
+import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { events } from "./event";
@@ -86,7 +86,7 @@ function patchForStdio():void {
             break;
         }
         if (events.serverLog.fire(line, color) === CANCEL) return;
-        if(!process.env.COLOR || (process.env.COLOR === 'true' || process.env.COLOR === 'on')) line = color(line);
+        line = color(line);
         console.log(line);
     }, void_t, {onError:asmcode.jsend_returnZero}, int32_t, StaticPointer, int64_as_float_t);
     //  asmcode.bedrockLogNp = asmcode.jsend_returnZero;
@@ -386,12 +386,8 @@ export namespace bedrockServer
      * but call the internal function directly
      */
     export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
-        const minecraft = bd_server.serverInstance.minecraft;
-        if(!minecraft) {
-            throw new ServerNotStartedError();
-        }
         const origin = createServerCommandOrigin('Server',
-            minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
+            bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
 

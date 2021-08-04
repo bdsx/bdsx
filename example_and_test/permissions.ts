@@ -1,3 +1,5 @@
+// The permissions system is currently deprecated and not useable. This is an example of the api works for reference.
+
 import { command } from 'bdsx/command';
 import { ActorWildcardCommandSelector, CommandPermissionLevel, CommandRawText } from 'bdsx/bds/command';
 import { Permissions } from 'bdsx/permissions';

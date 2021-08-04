@@ -8,12 +8,9 @@
 import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";
 installSourceMapSupport();
 
-import 'colors';
-if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 'on')) {
-    for(const x in require.cache[require.resolve('colors')].exports) {
-        if(typeof require.cache[require.resolve('colors')].exports[x] === 'function') require.cache[require.resolve('colors')].exports[x] = (a: any) => a;
-    }
-}
+import { disable } from 'colors';
+
+if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 'on')) disable();
 
 // check
 import 'bdsx/common';
@@ -21,7 +18,7 @@ import 'bdsx/checkcore';
 import 'bdsx/checkmd5';
 import 'bdsx/checkmodules';
 import 'bdsx/asm/checkasm';
-import 'bdsx/permissions';
+// import 'bdsx/permissions';
 
 // install bdsx error handler
 import { installErrorHandler } from "bdsx/errorhandler";

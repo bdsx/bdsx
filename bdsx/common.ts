@@ -77,5 +77,3 @@ export function emptyFunc():void{
 export function abstract():never {
     throw Error('abstract');
 }
-
-export class ServerNotStartedError extends Error {}

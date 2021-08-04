@@ -3,6 +3,8 @@ import { fsutil } from "./fsutil";
 import { Player } from "./bds/player";
 import { events } from "./event";
 
+throw new Error("The permissions system is currently on hold. Please wait to use it until it is finished.");
+
 const PERMISSIONS_FILE = 'bdsxpermissions.json';
 
 const permissionsPath = path.join(fsutil.projectPath, PERMISSIONS_FILE);
