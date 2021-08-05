@@ -128,7 +128,6 @@ const symbols = [
     'ItemStackBase::setCustomLore',
     'ItemStackBase::setDamageValue',
     'ItemStackBase::startCoolDown',
-    'ItemStackBase::load',
     'ItemStackBase::sameItem',
     'ItemStackBase::isStackedByData',
     'ItemStackBase::isStackable',
@@ -318,6 +317,7 @@ const symbols2 = [
     '??0CompoundTag@@QEAA@XZ',
     '??0IntArrayTag@@QEAA@XZ',
     '?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z',
+    '?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

@@ -422,6 +422,7 @@ ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValu
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
 (ItemStack.prototype as any)._save = procHacker.js("ItemStackBase::save", TagPointer, {this:ItemStack}, TagPointer);
+ItemStack.prototype.load = procHacker.js("?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z", ItemStack, {this:ItemStack}, CompoundTag);
 const CommandUtils$createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
 ItemStack.create = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();

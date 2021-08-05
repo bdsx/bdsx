@@ -310,6 +310,9 @@ export class ItemStack extends NativeClass {
     save():CompoundTag {
         return this._save(TagPointer.construct()).value as CompoundTag;
     }
+    load(tag:CompoundTag):ItemStack {
+        abstract();
+    }
 }
 
 export class PlayerInventory extends NativeClass {
