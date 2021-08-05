@@ -12,6 +12,7 @@ import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
 import { ArmorSlot, ItemStack } from "./inventory";
+import { CompoundTag } from "./nbt";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -396,6 +397,14 @@ export class Actor extends NativeClass {
     }
     getMaxHealth():number {
         abstract();
+    }
+    protected _save(tag:CompoundTag):boolean {
+        abstract();
+    }
+    save():CompoundTag {
+        const tag = CompoundTag.create({});
+        this._save(tag);
+        return tag;
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();

@@ -262,6 +262,7 @@ const symbols = [
     'MobEffectInstance::save',
     'MobEffectInstance::load',
     'ItemStackBase::save',
+    'Actor::save',
     "EndTag::`vftable'",
     'ListTag::add',
     'ListTag::size',
