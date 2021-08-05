@@ -7,6 +7,7 @@ import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, float32_t, int32_t, uint32_t } from "../nativetype";
 import { HashedString } from "./hashedstring";
+import { CompoundTag, TagPointer } from "./nbt";
 
 export enum MobEffectIds {
     Empty,
@@ -112,11 +113,20 @@ export class MobEffectInstance extends NativeClass {
     protected _create(id: MobEffectIds, duration: number, amplifier: number, ambient: boolean, showParticles: boolean, displayAnimation: boolean): void {
         abstract();
     }
+    protected _save(ptr: TagPointer): TagPointer {
+        abstract();
+    }
 
     getSplashDuration(): number {
         return this.duration * 0.75;
     }
     getLingerDuration(): number {
         return this.duration * 0.25;
+    }
+    save(): CompoundTag {
+        return this._save(TagPointer.construct()).value as CompoundTag;
+    }
+    load(tag: CompoundTag): MobEffectInstance {
+        abstract();
     }
 }

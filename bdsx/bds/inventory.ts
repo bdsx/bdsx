@@ -6,7 +6,7 @@ import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint
 import { Block, BlockLegacy } from "./block";
 import { CommandName } from "./commandname";
 import type { BlockPalette } from "./level";
-import { CompoundTag } from "./nbt";
+import { CompoundTag, TagPointer } from "./nbt";
 import type { ServerPlayer } from "./player";
 
 /**
@@ -214,10 +214,10 @@ export class ItemStack extends NativeClass {
      * it returns the enchantability.
      * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
      */
-    getEnchantValue(): number {
+    getEnchantValue():number {
         abstract();
     }
-    isEnchanted(): boolean {
+    isEnchanted():boolean {
         abstract();
     }
     setCustomLore(lores:string[]|string):void {
@@ -241,9 +241,9 @@ export class ItemStack extends NativeClass {
     startCoolDown(player:ServerPlayer):void {
         abstract();
     }
-    load(compoundTag:CompoundTag):void {
-        abstract();
-    }
+    // load(compoundTag:CompoundTag):void {
+    //     abstract();
+    // }
     sameItem(item:ItemStack):boolean {
         abstract();
     }
@@ -303,6 +303,12 @@ export class ItemStack extends NativeClass {
     }
     getAttackDamage():number {
         abstract();
+    }
+    protected _save(ptr:TagPointer): TagPointer {
+        abstract();
+    }
+    save():CompoundTag {
+        return this._save(TagPointer.construct()).value as CompoundTag;
     }
 }
 

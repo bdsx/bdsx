@@ -258,7 +258,12 @@ const symbols = [
     'SharedConstants::CurrentGameSemVersion',
     'SharedConstants::NetworkProtocolVersion',
     'Level::getBlockPalette',
-    'ItemStack::fromDescriptor'
+    'ItemStack::fromDescriptor',
+    'MobEffectInstance::save',
+    'MobEffectInstance::load',
+    'ItemStackBase::save',
+    "EndTag::`vftable'",
+    'ListTag::size',
 ] as const;
 
 // decorated symbols
@@ -299,6 +304,18 @@ const symbols2 = [
     '?success@CommandOutput@@QEAAXXZ',
     '?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
     '?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
+    '??0ByteTag@@QEAA@E@Z',
+    '??0ShortTag@@QEAA@F@Z',
+    '??0IntTag@@QEAA@H@Z',
+    '??0Int64Tag@@QEAA@_J@Z',
+    '??0FloatTag@@QEAA@M@Z',
+    '??0DoubleTag@@QEAA@XZ',
+    '??0ByteArrayTag@@QEAA@UTagMemoryChunk@@@Z',
+    '??0StringTag@@QEAA@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
+    '??0ListTag@@QEAA@XZ',
+    '??0CompoundTag@@QEAA@XZ',
+    '??0IntArrayTag@@QEAA@XZ',
+    '?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z',
     'sprintf',
     'vsnprintf',
 ] as const;

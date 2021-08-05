@@ -6,7 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
@@ -23,7 +23,7 @@ import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, ServerLevel, TagRegistry } from "./level";
-import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "./nbt";
+import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AdventureSettingsPacket, AttributeData, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
@@ -399,7 +399,7 @@ ItemStack.prototype.getEnchantValue = procHacker.js("ItemStackBase::getEnchantVa
 ItemStack.prototype.isEnchanted = procHacker.js("ItemStackBase::isEnchanted", bool_t, {this:ItemStack});
 ItemStack.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamageValue", void_t, {this:ItemStack}, int32_t);
 ItemStack.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", void_t, {this:ItemStack}, ServerPlayer);
-ItemStack.prototype.load = procHacker.js("ItemStackBase::load", void_t, {this:ItemStack}, CompoundTag);
+// ItemStack.prototype.load = procHacker.js("ItemStackBase::_loadItem", void_t, {this:ItemStack}, CompoundTag);
 ItemStack.prototype.sameItem = procHacker.js("ItemStackBase::sameItem", bool_t, {this:ItemStack}, ItemStack);
 ItemStack.prototype.isStackedByData = procHacker.js("ItemStackBase::isStackedByData", bool_t, {this:ItemStack});
 ItemStack.prototype.isStackable = procHacker.js("ItemStackBase::isStackable", bool_t, {this:ItemStack});
@@ -420,6 +420,7 @@ ItemStack.prototype.getMaxDamage = procHacker.js("ItemStackBase::getMaxDamage", 
 ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValue", int32_t, {this:ItemStack});
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
+(ItemStack.prototype as any)._save = procHacker.js("ItemStackBase::save", TagPointer, {this:ItemStack}, TagPointer);
 const CommandUtils$createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
 ItemStack.create = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();
@@ -521,6 +522,8 @@ Objective.prototype.getPlayerScore = procHacker.js("Objective::getPlayerScore", 
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
+(MobEffectInstance.prototype as any)._save = procHacker.js("MobEffectInstance::save", TagPointer, {this:MobEffectInstance}, TagPointer);
+MobEffectInstance.prototype.load = procHacker.js("MobEffectInstance::load", MobEffectInstance, {this:MobEffectInstance}, CompoundTag);
 
 // enchants.ts
 EnchantUtils.applyEnchant = procHacker.js("?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z", bool_t, null, ItemStack, int16_t, int32_t, bool_t);
@@ -578,5 +581,56 @@ Tag.all = function():IterableIterator<Tag> {
     return tagMap.values();
 };
 
+(Tag.prototype as any)._toString = makefunc.js([0x20], CxxString, {this:Tag}, CxxStringWrapper);
 Tag.prototype.getId = makefunc.js([0x28], uint8_t, {this:Tag});
 Tag.prototype.equals = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
+
+EndTag.create = function():EndTag {
+    const tag = EndTag.construct();
+    tag.vftable = proc["EndTag::`vftable'"];
+    return tag;
+};
+ByteTag.create = procHacker.js("??0ByteTag@@QEAA@E@Z", ByteTag, {structureReturn:true}, uint8_t);
+ShortTag.create = procHacker.js("??0ShortTag@@QEAA@F@Z", ShortTag, {structureReturn:true}, int16_t);
+IntTag.create = procHacker.js("??0IntTag@@QEAA@H@Z", IntTag, {structureReturn:true}, int32_t);
+Int64Tag.create = procHacker.js("??0Int64Tag@@QEAA@_J@Z", Int64Tag, {structureReturn:true}, bin64_t);
+FloatTag.create = procHacker.js("??0FloatTag@@QEAA@M@Z", FloatTag, {structureReturn:true}, float32_t);
+const DoubleTag$DoubleTag = procHacker.js("??0DoubleTag@@QEAA@XZ", DoubleTag, {structureReturn:true});
+DoubleTag.create = function(data:float64_t):DoubleTag {
+    const tag = DoubleTag$DoubleTag();
+    tag.data = data;
+    return tag;
+};
+const ByteArrayTag$ByteArrayTag = procHacker.js("??0ByteArrayTag@@QEAA@UTagMemoryChunk@@@Z", ByteArrayTag, {structureReturn:true}, TagMemoryChunk);
+ByteArrayTag.create = function(data:Uint8Array):IntArrayTag {
+    const chunk = new TagMemoryChunk(true);
+    chunk.fromUint8Array(data);
+    const tag = ByteArrayTag$ByteArrayTag(chunk);
+    return tag;
+};
+StringTag.create = procHacker.js("??0StringTag@@QEAA@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StringTag, {structureReturn:true}, CxxString);
+const ListTag$ListTag = procHacker.js("??0ListTag@@QEAA@XZ", ListTag, {structureReturn:true});
+ListTag.create = function(data):ListTag {
+    const tag = ListTag$ListTag();
+    for (const e of data) {
+        tag.push(e);
+    }
+    return tag;
+};
+const CompoundTag$CompoundTag = procHacker.js("??0CompoundTag@@QEAA@XZ", CompoundTag, {structureReturn:true});
+CompoundTag.create = function(data):CompoundTag {
+    const tag = CompoundTag$CompoundTag();
+    for (const [k, v] of Object.entries(data)) {
+        tag.set(k, v);
+    }
+    return tag;
+};
+const IntArrayTag$IntArrayTag = procHacker.js("??0IntArrayTag@@QEAA@XZ", IntArrayTag, {structureReturn:true});
+IntArrayTag.create = function(data:Int32Array):IntArrayTag {
+    const tag = IntArrayTag$IntArrayTag();
+    tag.data.fromInt32Array(data);
+    return tag;
+};
+
+ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
+CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
