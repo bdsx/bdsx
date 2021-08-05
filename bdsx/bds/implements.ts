@@ -23,7 +23,7 @@ import { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, ServerLevel, TagRegistry } from "./level";
-import { CompoundTag } from "./nbt";
+import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AdventureSettingsPacket, AttributeData, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
@@ -526,3 +526,57 @@ MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t)
 EnchantUtils.applyEnchant = procHacker.js("?applyEnchant@EnchantUtils@@SA_NAEAVItemStackBase@@W4Type@Enchant@@H_N@Z", bool_t, null, ItemStack, int16_t, int32_t, bool_t);
 EnchantUtils.getEnchantLevel = procHacker.js("EnchantUtils::getEnchantLevel", int32_t, null, int16_t, ItemStack);
 EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null, int16_t, ItemStack);
+
+// nbt.ts
+const tagMap = new Map<string, Tag>();
+(Tag as any)._singletoning = function(ptr:StaticPointer|null):Tag|null {
+    if (ptr === null) return null;
+    const binptr = ptr.getAddressBin();
+    let tag = tagMap.get(binptr);
+    if (tag) return tag;
+    switch (Tag.prototype.getId.call(ptr)) {
+    case Tag.Type.Byte:
+        tag = ptr.as(ByteTag);
+        break;
+    case Tag.Type.Short:
+        tag = ptr.as(ShortTag);
+        break;
+    case Tag.Type.Int:
+        tag = ptr.as(IntTag);
+        break;
+    case Tag.Type.Int64:
+        tag = ptr.as(Int64Tag);
+        break;
+    case Tag.Type.Float:
+        tag = ptr.as(FloatTag);
+        break;
+    case Tag.Type.Double:
+        tag = ptr.as(DoubleTag);
+        break;
+    case Tag.Type.ByteArray:
+        tag = ptr.as(ByteArrayTag);
+        break;
+    case Tag.Type.String:
+        tag = ptr.as(StringTag);
+        break;
+    case Tag.Type.List:
+        tag = ptr.as(ListTag);
+        break;
+    case Tag.Type.Compound:
+        tag = ptr.as(CompoundTag);
+        break;
+    case Tag.Type.IntArray:
+        tag = ptr.as(IntArrayTag);
+        break;
+    default:
+        tag = ptr.as(EndTag);
+    }
+    tagMap.set(binptr, tag);
+    return tag;
+};
+Tag.all = function():IterableIterator<Tag> {
+    return tagMap.values();
+};
+
+Tag.prototype.getId = makefunc.js([0x28], uint8_t, {this:Tag});
+Tag.prototype.equals = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
