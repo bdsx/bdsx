@@ -231,8 +231,7 @@ export class ListTag extends Tag {
         return this.data.set(idx, tag);
     }
     push(tag:Tag):void {
-        this.type = tag.getId();
-        this.data.push(tag);
+        abstract();
     }
     size():number {
         abstract();

@@ -632,5 +632,11 @@ IntArrayTag.create = function(data:Int32Array):IntArrayTag {
     return tag;
 };
 
+const ListTag$add = procHacker.js("ListTag::add", VoidPointer, {this:ListTag}, TagPointer);
+ListTag.prototype.push = function(tag:Tag):void_t {
+    const ptr = TagPointer.construct();
+    ptr.value = tag;
+    ListTag$add.call(this, ptr);
+};
 ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
 CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
