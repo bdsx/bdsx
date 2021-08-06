@@ -9,7 +9,7 @@ import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_fl
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import util = require("util");
 
-// This branch is still in developement.
+console.warn("nbt.ts is still in development.".red);
 
 // Notice that in bedrock_server.exe, LongTag is called Int64Tag. However, in Tag::getTagName, Int64Tag returns TAG_Long.
 

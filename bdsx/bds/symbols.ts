@@ -269,6 +269,11 @@ const symbols = [
     'StructureManager::getOrCreate',
     'Level::getStructureManager',
     'CompoundTag::~CompoundTag',
+    'StructureManager::StructureManager',
+    'StructureTemplateData::save',
+    'StructureTemplateData::load',
+    'StructureTemplate::fillFromWorld',
+    'StructureTemplate::placeInWorld',
 ] as const;
 
 // decorated symbols

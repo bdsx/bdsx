@@ -35,7 +35,7 @@ import { DisplayObjective, Objective, ObjectiveCriteria, Scoreboard, ScoreboardI
 import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
-import { StructureManager, StructureSettings } from "./structure";
+import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
 
 // avoiding circular dependency
 
@@ -658,13 +658,17 @@ CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$bas
 CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", VoidPointer, {this:CompoundTag});
 
 // structure.ts
-const StructureSettings$StructureSettings = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {structureReturn:true});
+StructureSettings.prototype[NativeType.ctor] = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {this:StructureSettings});
 StructureSettings.constructWith = function(size:BlockPos, ignoreEntities:boolean = false, ignoreBlocks:boolean = false):StructureSettings {
-    const settings = StructureSettings$StructureSettings();
-    settings.structureSize = size;
-    settings.structureOffset = BlockPos.create(0, 0, 0);
+    const settings = StructureSettings.construct();
+    settings.structureSize.construct(size);
     settings.ignoreEntities = ignoreEntities;
     settings.ignoreBlocks = ignoreBlocks;
     return settings;
 };
-// StructureManager.prototype.getOrCreate = procHacker.js("StructureManager::getOrCreate", StructureTemplate, {this:StructureManager}, CxxString);
+(StructureTemplateData.prototype as any)._save = procHacker.js("StructureTemplateData::save", TagPointer, {this:StructureTemplate}, TagPointer);
+StructureTemplateData.prototype.load = procHacker.js("StructureTemplateData::load", bool_t, {this:StructureTemplate}, CompoundTag);
+StructureTemplate.prototype.fillFromWorld = procHacker.js("StructureTemplate::fillFromWorld", void_t, {this:StructureTemplate}, BlockSource, BlockPos, StructureSettings);
+StructureTemplate.prototype.placeInWorld = procHacker.js("StructureTemplate::placeInWorld", void_t, {this:StructureTemplate}, BlockSource, BlockPalette, BlockPos, StructureSettings);
+StructureManager.prototype[NativeType.ctor] = procHacker.js("StructureManager::StructureManager", StructureManager, {this:StructureManager});
+StructureManager.prototype.getOrCreate = procHacker.js("StructureManager::getOrCreate", StructureTemplate, {this:StructureManager}, CxxString);
