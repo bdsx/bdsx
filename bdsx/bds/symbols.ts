@@ -312,7 +312,7 @@ const symbols2 = [
     '??0ByteTag@@QEAA@E@Z',
     '??0ShortTag@@QEAA@F@Z',
     '??0IntTag@@QEAA@H@Z',
-    '??0Int64Tag@@QEAA@_J@Z',
+    '??0Int64Tag@@QEAA@XZ',
     '??0FloatTag@@QEAA@M@Z',
     '??0DoubleTag@@QEAA@XZ',
     '??0ByteArrayTag@@QEAA@UTagMemoryChunk@@@Z',

@@ -597,7 +597,12 @@ EndTag.constructWith = function():EndTag {
 ByteTag.constructWith = procHacker.js("??0ByteTag@@QEAA@E@Z", ByteTag, {structureReturn:true}, uint8_t);
 ShortTag.constructWith = procHacker.js("??0ShortTag@@QEAA@F@Z", ShortTag, {structureReturn:true}, int16_t);
 IntTag.constructWith = procHacker.js("??0IntTag@@QEAA@H@Z", IntTag, {structureReturn:true}, int32_t);
-Int64Tag.constructWith = procHacker.js("??0Int64Tag@@QEAA@_J@Z", Int64Tag, {structureReturn:true}, bin64_t);
+const Int64Tag$Int64Tag = procHacker.js("??0Int64Tag@@QEAA@XZ", Int64Tag, {structureReturn:true});
+Int64Tag.constructWith = function(data:bin64_t):Int64Tag {
+    const tag = Int64Tag$Int64Tag();
+    tag.data = data;
+    return tag;
+};
 FloatTag.constructWith = procHacker.js("??0FloatTag@@QEAA@M@Z", FloatTag, {structureReturn:true}, float32_t);
 const DoubleTag$DoubleTag = procHacker.js("??0DoubleTag@@QEAA@XZ", DoubleTag, {structureReturn:true});
 DoubleTag.constructWith = function(data:float64_t):DoubleTag {
