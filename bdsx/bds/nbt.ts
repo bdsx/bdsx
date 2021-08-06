@@ -123,7 +123,7 @@ export type TagPointer = Wrapper<Tag>;
 
 @nativeClass(0x08)
 export class EndTag extends Tag {
-    static create():EndTag {
+    static constructWith():EndTag {
         abstract();
     }
 }
@@ -133,7 +133,7 @@ export class ByteTag extends Tag {
     @nativeField(uint8_t)
     data:uint8_t;
 
-    static create(data:uint8_t):ByteTag {
+    static constructWith(data:uint8_t):ByteTag {
         abstract();
     }
 }
@@ -143,7 +143,7 @@ export class ShortTag extends Tag {
     @nativeField(int16_t)
     data:int16_t;
 
-    static create(data:int16_t):ShortTag {
+    static constructWith(data:int16_t):ShortTag {
         abstract();
     }
 }
@@ -153,7 +153,7 @@ export class IntTag extends Tag {
     @nativeField(int32_t)
     data:int32_t;
 
-    static create(data:int32_t):IntTag {
+    static constructWith(data:int32_t):IntTag {
         abstract();
     }
 }
@@ -163,7 +163,7 @@ export class Int64Tag extends Tag {
     @nativeField(bin64_t)
     data:bin64_t;
 
-    static create(data:bin64_t):Int64Tag {
+    static constructWith(data:bin64_t):Int64Tag {
         abstract();
     }
 
@@ -177,7 +177,7 @@ export class FloatTag extends Tag {
     @nativeField(float32_t)
     data:float32_t;
 
-    static create(data:float32_t):FloatTag {
+    static constructWith(data:float32_t):FloatTag {
         abstract();
     }
 }
@@ -187,7 +187,7 @@ export class DoubleTag extends Tag {
     @nativeField(float64_t)
     data:float64_t;
 
-    static create(data:float64_t):DoubleTag {
+    static constructWith(data:float64_t):DoubleTag {
         abstract();
     }
 }
@@ -197,7 +197,7 @@ export class ByteArrayTag extends Tag {
     @nativeField(TagMemoryChunk)
     data:TagMemoryChunk;
 
-    static create(data:Uint8Array):ByteArrayTag {
+    static constructWith(data:Uint8Array):ByteArrayTag {
         abstract();
     }
 
@@ -211,7 +211,7 @@ export class StringTag extends Tag {
     @nativeField(CxxString)
     data:CxxString;
 
-    static create(data:CxxString):StringTag {
+    static constructWith(data:CxxString):StringTag {
         abstract();
     }
 }
@@ -237,7 +237,7 @@ export class ListTag extends Tag {
         abstract();
     }
 
-    static create(data:Tag[]):ListTag {
+    static constructWith(data:Tag[]):ListTag {
         abstract();
     }
 
@@ -254,7 +254,7 @@ export class CompoundTag extends Tag {
     set(key:CxxString, tag:Tag):Tag {
         abstract();
     }
-    static create(data:Record<string, Tag>):CompoundTag {
+    static constructWith(data:Record<string, Tag>):CompoundTag {
         abstract();
     }
 
@@ -269,7 +269,7 @@ export class IntArrayTag extends Tag {
     @nativeField(TagMemoryChunk)
     data:TagMemoryChunk;
 
-    static create(data:Int32Array):IntArrayTag {
+    static constructWith(data:Int32Array):IntArrayTag {
         abstract();
     }
 

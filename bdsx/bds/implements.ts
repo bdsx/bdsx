@@ -35,6 +35,7 @@ import { DisplayObjective, Objective, ObjectiveCriteria, Scoreboard, ScoreboardI
 import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
+import { StructureManager, StructureSettings } from "./structure";
 
 // avoiding circular dependency
 
@@ -48,6 +49,7 @@ Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSetting
 Level.prototype.getBlockPalette = procHacker.js("Level::getBlockPalette", BlockPalette, {this:Level});
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("Level::getSeed", uint32_t, {this:Level});
+(Level.prototype as any)._getStructureManager = procHacker.js("Level::getStructureManager", StructureManager, {this:Level}, StructureManager);
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
@@ -587,32 +589,32 @@ Tag.all = function():IterableIterator<Tag> {
 Tag.prototype.getId = makefunc.js([0x28], uint8_t, {this:Tag});
 Tag.prototype.equals = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
 
-EndTag.create = function():EndTag {
+EndTag.constructWith = function():EndTag {
     const tag = EndTag.construct();
     tag.vftable = proc["EndTag::`vftable'"];
     return tag;
 };
-ByteTag.create = procHacker.js("??0ByteTag@@QEAA@E@Z", ByteTag, {structureReturn:true}, uint8_t);
-ShortTag.create = procHacker.js("??0ShortTag@@QEAA@F@Z", ShortTag, {structureReturn:true}, int16_t);
-IntTag.create = procHacker.js("??0IntTag@@QEAA@H@Z", IntTag, {structureReturn:true}, int32_t);
-Int64Tag.create = procHacker.js("??0Int64Tag@@QEAA@_J@Z", Int64Tag, {structureReturn:true}, bin64_t);
-FloatTag.create = procHacker.js("??0FloatTag@@QEAA@M@Z", FloatTag, {structureReturn:true}, float32_t);
+ByteTag.constructWith = procHacker.js("??0ByteTag@@QEAA@E@Z", ByteTag, {structureReturn:true}, uint8_t);
+ShortTag.constructWith = procHacker.js("??0ShortTag@@QEAA@F@Z", ShortTag, {structureReturn:true}, int16_t);
+IntTag.constructWith = procHacker.js("??0IntTag@@QEAA@H@Z", IntTag, {structureReturn:true}, int32_t);
+Int64Tag.constructWith = procHacker.js("??0Int64Tag@@QEAA@_J@Z", Int64Tag, {structureReturn:true}, bin64_t);
+FloatTag.constructWith = procHacker.js("??0FloatTag@@QEAA@M@Z", FloatTag, {structureReturn:true}, float32_t);
 const DoubleTag$DoubleTag = procHacker.js("??0DoubleTag@@QEAA@XZ", DoubleTag, {structureReturn:true});
-DoubleTag.create = function(data:float64_t):DoubleTag {
+DoubleTag.constructWith = function(data:float64_t):DoubleTag {
     const tag = DoubleTag$DoubleTag();
     tag.data = data;
     return tag;
 };
 const ByteArrayTag$ByteArrayTag = procHacker.js("??0ByteArrayTag@@QEAA@UTagMemoryChunk@@@Z", ByteArrayTag, {structureReturn:true}, TagMemoryChunk);
-ByteArrayTag.create = function(data:Uint8Array):IntArrayTag {
+ByteArrayTag.constructWith = function(data:Uint8Array):IntArrayTag {
     const chunk = new TagMemoryChunk(true);
     chunk.fromUint8Array(data);
     const tag = ByteArrayTag$ByteArrayTag(chunk);
     return tag;
 };
-StringTag.create = procHacker.js("??0StringTag@@QEAA@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StringTag, {structureReturn:true}, CxxString);
+StringTag.constructWith = procHacker.js("??0StringTag@@QEAA@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StringTag, {structureReturn:true}, CxxString);
 const ListTag$ListTag = procHacker.js("??0ListTag@@QEAA@XZ", ListTag, {structureReturn:true});
-ListTag.create = function(data):ListTag {
+ListTag.constructWith = function(data):ListTag {
     const tag = ListTag$ListTag();
     for (const e of data) {
         tag.push(e);
@@ -620,7 +622,7 @@ ListTag.create = function(data):ListTag {
     return tag;
 };
 const CompoundTag$CompoundTag = procHacker.js("??0CompoundTag@@QEAA@XZ", CompoundTag, {structureReturn:true});
-CompoundTag.create = function(data):CompoundTag {
+CompoundTag.constructWith = function(data):CompoundTag {
     const tag = CompoundTag$CompoundTag();
     for (const [k, v] of Object.entries(data)) {
         tag.set(k, v);
@@ -628,7 +630,7 @@ CompoundTag.create = function(data):CompoundTag {
     return tag;
 };
 const IntArrayTag$IntArrayTag = procHacker.js("??0IntArrayTag@@QEAA@XZ", IntArrayTag, {structureReturn:true});
-IntArrayTag.create = function(data:Int32Array):IntArrayTag {
+IntArrayTag.constructWith = function(data:Int32Array):IntArrayTag {
     const tag = IntArrayTag$IntArrayTag();
     tag.data.fromInt32Array(data);
     return tag;
@@ -641,4 +643,23 @@ ListTag.prototype.push = function(tag:Tag):void_t {
     ListTag$add.call(this, ptr);
 };
 ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
+ListTag.prototype[NativeType.dtor] = function() {
+    for (const e of this.data) {
+        e.destruct();
+    }
+    // this.data.destruct(); Destructing a CxxVector crashes the process?
+};
 CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
+CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", VoidPointer, {this:CompoundTag});
+
+// structure.ts
+const StructureSettings$StructureSettings = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {structureReturn:true});
+StructureSettings.constructWith = function(size:BlockPos, ignoreEntities:boolean = false, ignoreBlocks:boolean = false):StructureSettings {
+    const settings = StructureSettings$StructureSettings();
+    settings.structureSize = size;
+    settings.structureOffset = BlockPos.create(0, 0, 0);
+    settings.ignoreEntities = ignoreEntities;
+    settings.ignoreBlocks = ignoreBlocks;
+    return settings;
+};
+// StructureManager.prototype.getOrCreate = procHacker.js("StructureManager::getOrCreate", StructureTemplate, {this:StructureManager}, CxxString);

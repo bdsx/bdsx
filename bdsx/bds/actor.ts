@@ -402,7 +402,7 @@ export class Actor extends NativeClass {
         abstract();
     }
     save():CompoundTag {
-        const tag = CompoundTag.create({});
+        const tag = CompoundTag.constructWith({});
         this._save(tag);
         return tag;
     }

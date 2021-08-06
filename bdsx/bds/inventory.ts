@@ -316,7 +316,7 @@ export class ItemStack extends NativeClass {
 }
 
 export class PlayerInventory extends NativeClass {
-    addItem(itemStack:ItemStack, v:boolean):boolean {
+    addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
         abstract();
     }
     clearSlot(slot:number, containerId:ContainerId):void {

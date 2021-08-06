@@ -9,6 +9,7 @@ import { BlockPos } from "./blockpos";
 import { Dimension } from "./dimension";
 import { ServerPlayer } from "./player";
 import { Scoreboard } from "./scoreboard";
+import { StructureManager } from "./structure";
 
 export class Level extends NativeClass {
     vftable:VoidPointer;
@@ -40,6 +41,12 @@ export class Level extends NativeClass {
     }
     getSeed():number {
         abstract();
+    }
+    protected _getStructureManager(structureManager:StructureManager):StructureManager {
+        abstract();
+    }
+    getStructureManager():StructureManager {
+        return this._getStructureManager(StructureManager.construct());
     }
     getTagRegistry():TagRegistry {
         abstract();

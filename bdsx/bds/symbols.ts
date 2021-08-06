@@ -265,6 +265,10 @@ const symbols = [
     "EndTag::`vftable'",
     'ListTag::add',
     'ListTag::size',
+    'StructureSettings::StructureSettings',
+    'StructureManager::getOrCreate',
+    'Level::getStructureManager',
+    'CompoundTag::~CompoundTag',
 ] as const;
 
 // decorated symbols
