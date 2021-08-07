@@ -246,10 +246,14 @@ export class ListTag extends Tag {
     }
 }
 
+@nativeClass(0x40)
+export class CompoundTagVariant extends Tag {
+}
+
 @nativeClass(0x28)
 export class CompoundTag extends Tag {
-    @nativeField(CxxMap.make(CxxString, Tag))
-    data:CxxMap<CxxString, Tag>;
+    @nativeField(CxxMap.make(CxxString, CompoundTagVariant))
+    data:CxxMap<CxxString, CompoundTagVariant>;
 
     set(key:CxxString, tag:Tag):Tag {
         abstract();
