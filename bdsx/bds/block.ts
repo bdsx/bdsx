@@ -1,12 +1,17 @@
 import { abstract } from "../common";
+import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { NativeClass } from "../nativeclass";
-import { CxxStringWith8Bytes } from "../nativetype";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { CxxStringWith8Bytes, int32_t } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 
+@nativeClass(null)
 export class BlockLegacy extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+
     getCommandName():string {
         const names = this.getCommandNames2();
         const name = names.get(0).name;
@@ -37,8 +42,15 @@ export class BlockLegacy extends NativeClass {
     }
 }
 
+@nativeClass(null)
 export class Block extends NativeClass {
-    blockLegacy: BlockLegacy;
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+    @nativeField(int32_t)
+    data:int32_t;
+    @nativeField(BlockLegacy.ref(), 0x10)
+    blockLegacy:BlockLegacy;
+
     /**
      * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
      */
