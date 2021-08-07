@@ -10,12 +10,18 @@ import { procHacker } from "./proc";
 export class Dimension extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    @nativeField(BlockSource, 0x60)
-    blockSource:BlockSource;
+    /** @deprecated Use getBlockSource() instead */
+    get blockSource():BlockSource {
+        return this.getBlockSource();
+    }
 
+    getBlockSource():BlockSource {
+        abstract();
+    }
     getDimensionId():DimensionId {
         abstract();
     }
 }
 
+Dimension.prototype.getBlockSource = procHacker.js('Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD', BlockSource, {this:Dimension});
 Dimension.prototype.getDimensionId = procHacker.js('Dimension::getDimensionId', int32_t, {this:Dimension, structureReturn:true});

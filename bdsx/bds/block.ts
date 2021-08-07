@@ -11,6 +11,7 @@ import { HashedString } from "./hashedstring";
 export class BlockLegacy extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
+    /** @deprecated use Block.getDescriptionId() instead */
     @nativeField(CxxString)
     descriptionId:CxxString;
 
@@ -64,6 +65,10 @@ export class Block extends NativeClass {
     }
     getName():string {
         return this._getName().str;
+    }
+
+    getDescriptionId():CxxString {
+        abstract();
     }
 }
 

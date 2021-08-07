@@ -260,6 +260,8 @@ const symbols = [
     'Level::getBlockPalette',
     'ItemStack::fromDescriptor',
     'Level::getDimension',
+    'Block::getDescriptionId',
+    'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
 ] as const;
 
 // decorated symbols
