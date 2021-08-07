@@ -12,7 +12,7 @@ import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
 import { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, ItemActor } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { Block, BlockLegacy, BlockSource } from "./block";
+import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
 import { Certificate, ConnectionRequest } from "./connreq";
@@ -479,6 +479,8 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     pk.dispose();
     return retval;
 };
+BlockSource.prototype.getBlockEntity = procHacker.js("?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z", BlockActor, {this:BlockSource}, BlockPos);
+BlockActor.prototype.save = procHacker.js("BlockActor::save", bool_t, {this:BlockActor}, CompoundTag);
 
 // abilties.ts
 Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});

@@ -274,6 +274,7 @@ const symbols = [
     'StructureTemplateData::load',
     'StructureTemplate::fillFromWorld',
     'StructureTemplate::placeInWorld',
+    'BlockActor::save'
 ] as const;
 
 // decorated symbols
@@ -329,6 +330,7 @@ const symbols2 = [
     '?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z',
     'sprintf',
     'vsnprintf',
+    '?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z'
 ] as const;
 
 

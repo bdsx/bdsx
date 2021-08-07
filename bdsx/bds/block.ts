@@ -6,6 +6,7 @@ import { CxxStringWith8Bytes, uint16_t } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
+import { CompoundTag } from "./nbt";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -73,6 +74,15 @@ export class BlockSource extends NativeClass {
         abstract();
     }
     setBlock(blockPos:BlockPos, block:Block):boolean {
+        abstract();
+    }
+    getBlockEntity(blockPos:BlockPos): BlockActor | null {
+        abstract();
+    }
+}
+
+export class BlockActor extends NativeClass {
+    save(tag: CompoundTag):boolean{
         abstract();
     }
 }
