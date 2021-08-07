@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { CxxStringWith8Bytes, int32_t } from "../nativetype";
+import { CxxStringWith8Bytes, uint16_t } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
@@ -46,8 +46,8 @@ export class BlockLegacy extends NativeClass {
 export class Block extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    @nativeField(int32_t)
-    data:int32_t;
+    @nativeField(uint16_t)
+    data:uint16_t;
     @nativeField(BlockLegacy.ref(), 0x10)
     blockLegacy:BlockLegacy;
 
