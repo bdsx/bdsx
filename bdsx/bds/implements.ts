@@ -6,6 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
+import { NativeClass } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
@@ -648,21 +649,24 @@ ListTag.prototype.push = function(tag:Tag):void_t {
 };
 ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
 ListTag.prototype[NativeType.dtor] = function() {
-    // this.data.destruct does not work well as the values have different sizes
-    for (const e of this.data) {
-        e.destruct();
+    for (let i = this.data.size(); i > 0; i--) {
+        const v = this.data.back();
+        if (v) {
+            v.destruct();
+            this.data.pop();
+        }
     }
 };
 CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
-// CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", VoidPointer, {this:CompoundTag});
 CompoundTag.prototype[NativeType.dtor] = function() {
-    // this.data.clear does not work well as the values have different sizes (maybe for this one, but surely for list tag)
+    // this.data.clear crashes
     for (const v of this.data.values()) {
         v.destruct();
     }
-    // Native destructor just sets every key to empty strings (needs to verify)
-    // Calling that or bdsx's default destructor will cause some displacement of keys and values, when another CompoundTag is constructed
+    NativeClass.delete((this.data as any).getPointerAs((this.data as any).nodeType, 0));
+    // Calling native constructor or bdsx's default destructor will cause some displacement of keys and values, when another CompoundTag is constructed
 };
+// CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", void_t, {this:CompoundTag});
 
 // structure.ts
 StructureSettings.prototype[NativeType.ctor] = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {this:StructureSettings});
