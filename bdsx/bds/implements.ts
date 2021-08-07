@@ -46,6 +46,7 @@ Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCoun
 Level.prototype.getActorFactory = procHacker.js("Level::getActorFactory", ActorFactory, {this:Level});
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
 Level.prototype.getBlockPalette = procHacker.js("Level::getBlockPalette", BlockPalette, {this:Level});
+Level.prototype.getDimension = procHacker.js("Level::getDimension", Dimension, {this:Level}, int32_t);
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("Level::getSeed", uint32_t, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});

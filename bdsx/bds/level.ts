@@ -35,6 +35,9 @@ export class Level extends NativeClass {
     getBlockPalette():BlockPalette {
         abstract();
     }
+    getDimension(dimension:DimensionId):Dimension|null {
+        abstract();
+    }
     getScoreboard():Scoreboard {
         abstract();
     }

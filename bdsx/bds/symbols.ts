@@ -258,7 +258,8 @@ const symbols = [
     'SharedConstants::CurrentGameSemVersion',
     'SharedConstants::NetworkProtocolVersion',
     'Level::getBlockPalette',
-    'ItemStack::fromDescriptor'
+    'ItemStack::fromDescriptor',
+    'Level::getDimension',
 ] as const;
 
 // decorated symbols

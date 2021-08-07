@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { CxxStringWith8Bytes, uint16_t } from "../nativetype";
+import { bool_t, CxxString, CxxStringWith8Bytes, uint16_t } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
@@ -11,6 +11,8 @@ import { HashedString } from "./hashedstring";
 export class BlockLegacy extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
+    @nativeField(CxxString)
+    descriptionId:CxxString;
 
     getCommandName():string {
         const names = this.getCommandNames2();
@@ -65,7 +67,17 @@ export class Block extends NativeClass {
     }
 }
 
+@nativeClass(null)
 export class BlockSource extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+    @nativeField(VoidPointer)
+    ownerThreadID:VoidPointer;
+    @nativeField(bool_t)
+    allowUnpopulatedChunks:bool_t;
+    @nativeField(bool_t)
+    publicSource:bool_t;
+
     protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number):boolean {
         abstract();
     }
