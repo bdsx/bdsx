@@ -262,6 +262,12 @@ export class CompoundTag extends Tag {
         abstract();
     }
 
+    [NativeType.ctor_copy](from:CompoundTag):void {
+        for (const [k, v] of from.data.entries()) {
+            this.set(k, v);
+        }
+    }
+
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
         const map = new Map<CxxString, Tag>(this.data.toArray());
         return `CompoundTag ${util.inspect(map, options).substr(4)}`;

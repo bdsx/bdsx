@@ -168,7 +168,7 @@ export class ItemStack extends NativeClass {
     protected _setCustomLore(name:CxxVector<string>):void {
         abstract();
     }
-    protected _save(ptr:TagPointer): TagPointer {
+    protected _save(ptr:TagPointer):TagPointer {
         abstract();
     }
     isBlock():boolean {
@@ -307,8 +307,18 @@ export class ItemStack extends NativeClass {
     getAttackDamage():number {
         abstract();
     }
-    save():CompoundTag {
-        return this._save(TagPointer.construct()).value as CompoundTag;
+    save(tag:CompoundTag):void {
+        const ptr = new TagPointer(true);
+        ptr.value = tag;
+        this._save(ptr);
+        tag.construct(ptr.value as CompoundTag);
+        ptr.value.destruct();
+        ptr.destruct();
+    }
+    constructAndSave():CompoundTag {
+        const tag = CompoundTag.constructWith({});
+        this.save(tag);
+        return tag;
     }
     load(tag:CompoundTag):ItemStack {
         abstract();

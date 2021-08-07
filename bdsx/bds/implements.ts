@@ -125,7 +125,7 @@ Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Act
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
-(Actor.prototype as any)._save = procHacker.js("Actor::save", bool_t, {this:Actor}, CompoundTag);
+Actor.prototype.save = procHacker.js("Actor::save", bool_t, {this:Actor}, CompoundTag);
 
 Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
     return serverInstance.minecraft.getLevel().fetchEntity(bin, getRemovedActor);
@@ -480,7 +480,7 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     return retval;
 };
 BlockSource.prototype.getBlockEntity = procHacker.js("?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z", BlockActor, {this:BlockSource}, BlockPos);
-BlockActor.prototype.save = procHacker.js("BlockActor::save", bool_t, {this:BlockActor}, CompoundTag);
+BlockActor.prototype.save = makefunc.js([0x10], bool_t, {this:BlockActor}, CompoundTag);
 
 // abilties.ts
 Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});
@@ -648,23 +648,60 @@ ListTag.prototype.push = function(tag:Tag):void_t {
 };
 ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
 ListTag.prototype[NativeType.dtor] = function() {
+    // this.data.destruct does not work well as the values have different sizes
     for (const e of this.data) {
         e.destruct();
     }
-    // this.data.destruct(); Destructing a CxxVector crashes the process?
 };
 CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
-CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", VoidPointer, {this:CompoundTag});
+// CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", VoidPointer, {this:CompoundTag});
+CompoundTag.prototype[NativeType.dtor] = function() {
+    // this.data.clear does not work well as the values have different sizes (maybe for this one, but surely for list tag)
+    for (const v of this.data.values()) {
+        v.destruct();
+    }
+    // Native destructor just sets every key to empty strings (needs to verify)
+    // Calling that or bdsx's default destructor will cause some displacement of keys and values, when another CompoundTag is constructed
+};
 
 // structure.ts
 StructureSettings.prototype[NativeType.ctor] = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {this:StructureSettings});
 StructureSettings.constructWith = function(size:BlockPos, ignoreEntities:boolean = false, ignoreBlocks:boolean = false):StructureSettings {
     const settings = StructureSettings.construct();
-    settings.structureSize.construct(size);
-    settings.ignoreEntities = ignoreEntities;
-    settings.ignoreBlocks = ignoreBlocks;
+    settings.setStructureSize(size);
+    settings.setStructureOffset(BlockPos.create(0, 0, 0));
+    settings.setIgnoreEntities(ignoreEntities);
+    settings.setIgnoreBlocks(ignoreBlocks);
     return settings;
 };
+StructureSettings.prototype[NativeType.dtor] = procHacker.js("StructureSettings::~StructureSettings", StructureSettings, {this:StructureSettings});
+StructureSettings.prototype.getIgnoreBlocks = procHacker.js("StructureSettings::getIgnoreBlocks", bool_t, {this:StructureSettings});
+StructureSettings.prototype.getIgnoreEntities = procHacker.js("StructureSettings::getIgnoreEntities", bool_t, {this:StructureSettings});
+StructureSettings.prototype.isAnimated = procHacker.js("StructureSettings::isAnimated", bool_t, {this:StructureSettings});
+StructureSettings.prototype.getStructureOffset = procHacker.js("StructureSettings::getStructureOffset", BlockPos, {this:StructureSettings});
+StructureSettings.prototype.getStructureSize = procHacker.js("StructureSettings::getStructureSize", BlockPos, {this:StructureSettings});
+StructureSettings.prototype.getPivot = procHacker.js("StructureSettings::getPivot", Vec3, {this:StructureSettings});
+StructureSettings.prototype.getAnimationMode = procHacker.js("StructureSettings::getAnimationMode", uint8_t, {this:StructureSettings});
+StructureSettings.prototype.getMirror = procHacker.js("StructureSettings::getMirror", uint32_t, {this:StructureSettings});
+StructureSettings.prototype.getRotation = procHacker.js("StructureSettings::getRotation", uint32_t, {this:StructureSettings});
+StructureSettings.prototype.getAnimationSeconds = procHacker.js("StructureSettings::getAnimationSeconds", float32_t, {this:StructureSettings});
+StructureSettings.prototype.getIntegrityValue = procHacker.js("StructureSettings::getIntegrityValue", float32_t, {this:StructureSettings});
+StructureSettings.prototype.getAnimationTicks = procHacker.js("StructureSettings::getAnimationTicks", uint32_t, {this:StructureSettings});
+StructureSettings.prototype.getIntegritySeed = procHacker.js("StructureSettings::getIntegritySeed", float32_t, {this:StructureSettings});
+StructureSettings.prototype.setAnimationMode = procHacker.js("StructureSettings::setAnimationMode", void_t, {this:StructureSettings}, uint8_t);
+StructureSettings.prototype.setAnimationSeconds = procHacker.js("StructureSettings::setAnimationSeconds", void_t, {this:StructureSettings}, float32_t);
+StructureSettings.prototype.setIgnoreBlocks = procHacker.js("StructureSettings::setIgnoreBlocks", void_t, {this:StructureSettings}, bool_t);
+StructureSettings.prototype.setIgnoreEntities = procHacker.js("StructureSettings::setIgnoreEntities", void_t, {this:StructureSettings}, bool_t);
+StructureSettings.prototype.setIgnoreJigsawBlocks = procHacker.js("StructureSettings::setIgnoreJigsawBlocks", void_t, {this:StructureSettings}, bool_t);
+StructureSettings.prototype.setIntegritySeed = procHacker.js("StructureSettings::setIntegritySeed", void_t, {this:StructureSettings}, float32_t);
+StructureSettings.prototype.setIntegrityValue = procHacker.js("StructureSettings::setIntegrityValue", void_t, {this:StructureSettings}, float32_t);
+StructureSettings.prototype.setMirror = procHacker.js("StructureSettings::setMirror", void_t, {this:StructureSettings}, uint8_t);
+StructureSettings.prototype.setPaletteName = procHacker.js("StructureSettings::setPaletteName", void_t, {this:StructureSettings}, CxxString);
+StructureSettings.prototype.setPivot = procHacker.js("StructureSettings::setPivot", void_t, {this:StructureSettings}, Vec3);
+StructureSettings.prototype.setReloadActorEquipment = procHacker.js("StructureSettings::setReloadActorEquipment", void_t, {this:StructureSettings}, bool_t);
+StructureSettings.prototype.setRotation = procHacker.js("StructureSettings::setRotation", void_t, {this:StructureSettings}, uint8_t);
+StructureSettings.prototype.setStructureOffset = procHacker.js("StructureSettings::setStructureOffset", void_t, {this:StructureSettings}, BlockPos);
+StructureSettings.prototype.setStructureSize = procHacker.js("StructureSettings::setStructureSize", void_t, {this:StructureSettings}, BlockPos);
 (StructureTemplateData.prototype as any)._save = procHacker.js("StructureTemplateData::save", TagPointer, {this:StructureTemplate}, TagPointer);
 StructureTemplateData.prototype.load = procHacker.js("StructureTemplateData::load", bool_t, {this:StructureTemplate}, CompoundTag);
 StructureTemplate.prototype.fillFromWorld = procHacker.js("StructureTemplate::fillFromWorld", void_t, {this:StructureTemplate}, BlockSource, BlockPos, StructureSettings);

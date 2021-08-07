@@ -1,13 +1,12 @@
+import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, float32_t, int32_t, uint32_t, uint8_t } from "../nativetype";
-import { ActorUniqueID } from "./actor";
+import { CxxString, int32_t } from "../nativetype";
 import { BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import type { BlockPalette } from "./level";
 import { CompoundTag, TagPointer } from "./nbt";
-
 console.warn("structure.ts is still in development.".red);
 
 export enum Rotation {
@@ -27,38 +26,118 @@ export enum Mirror {
 
 @nativeClass(0x60)
 export class StructureSettings extends NativeClass {
-    @nativeField(CxxString)
-    paletteName:CxxString;
-    @nativeField(bool_t)
-    ignoreEntities:bool_t;
-    @nativeField(bool_t)
-    reloadActorEquipment:bool_t;
-    @nativeField(bool_t)
-    ignoreBlocks:bool_t;
-    @nativeField(bool_t)
-    ignoreJigsawBlocks:bool_t;
-    @nativeField(BlockPos)
-    structureSize:BlockPos;
-    @nativeField(BlockPos)
-    structureOffset:BlockPos;
-    @nativeField(Vec3)
-    pivot:Vec3;
-    @nativeField(ActorUniqueID)
-    lastTouchedByPlayer:ActorUniqueID;
-    @nativeField(uint8_t)
-    rotation:Rotation;
-    @nativeField(uint8_t)
-    mirror:Mirror;
-    @nativeField(uint8_t)
-    animationMode:uint8_t;
-
-    @nativeField(float32_t, 0x54)
-    integrityValue:float32_t;
-    @nativeField(uint32_t)
-    integritySeed:uint32_t;
-
     static constructWith(size:BlockPos, ignoreEntities:boolean = false, ignoreBlocks:boolean = false):StructureSettings {
         abstract();
+    }
+
+    getIgnoreBlocks():boolean {
+        abstract();
+    }
+    getIgnoreEntities():boolean {
+        abstract();
+    }
+    getIgnoreJigsawBlocks():boolean {
+        return this.getBoolean(0x23);
+    }
+    isAnimated():boolean {
+        abstract();
+    }
+    getStructureOffset():BlockPos {
+        abstract();
+    }
+    getStructureSize():BlockPos {
+        abstract();
+    }
+    getPivot():Vec3 {
+        abstract();
+    }
+    getPaletteName():string {
+        return this.getCxxString();
+    }
+    getAnimationMode():number {
+        abstract();
+    }
+    getMirror():Mirror {
+        abstract();
+    }
+    getReloadActorEquipment():boolean {
+        return this.getBoolean(0x21);
+    }
+    getRotation():Rotation {
+        abstract();
+    }
+    getAnimationSeconds():number {
+        abstract();
+    }
+    getIntegrityValue():number {
+        abstract();
+    }
+    getAnimationTicks():number {
+        abstract();
+    }
+    getIntegritySeed():number {
+        abstract();
+    }
+    setAnimationMode(mode:number):void {
+        abstract();
+    }
+    setAnimationSeconds(seconds:number):void {
+        abstract();
+    }
+    setIgnoreBlocks(ignoreBlocks:boolean):void {
+        abstract();
+    }
+    setIgnoreEntities(ignoreEntities:boolean):void {
+        abstract();
+    }
+    setIgnoreJigsawBlocks(ignoreJigsawBlocks:boolean):void {
+        abstract();
+    }
+    setIntegritySeed(seed:number):void {
+        abstract();
+    }
+    setIntegrityValue(value:number):void {
+        abstract();
+    }
+    setMirror(mirror:Mirror):void {
+        abstract();
+    }
+    setPaletteName(name:string):void {
+        abstract();
+    }
+    setPivot(pivot:Vec3):void {
+        abstract();
+    }
+    setReloadActorEquipment(reloadActorEquipment:boolean):void {
+        abstract();
+    }
+    setRotation(rotation:Rotation):void {
+        abstract();
+    }
+    setStructureOffset(offset:BlockPos):void {
+        abstract();
+    }
+    setStructureSize(size:BlockPos):void {
+        abstract();
+    }
+
+    _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
+        return CircularDetector.check(this, allocator, obj=>{
+            obj.paletteName = this.getPaletteName();
+            obj.ignoreEntities = this.getIgnoreEntities();
+            obj.reloadActorEquipment = this.getReloadActorEquipment();
+            obj.ignoreBlocks = this.getIgnoreBlocks();
+            obj.ignoreJigsawBlocks = this.getIgnoreJigsawBlocks();
+            obj.structureSize = this.getStructureSize();
+            obj.structureOffset = this.getStructureOffset();
+            obj.pivot = this.getPivot();
+            obj.rotation = this.getRotation();
+            obj.mirror = this.getMirror();
+            obj.animationMode = this.getAnimationMode();
+            obj.animationTicks = this.getAnimationTicks();
+            obj.integrityValue = this.getIntegrityValue();
+            obj.integritySeed = this.getIntegritySeed();
+        });
     }
 }
 
@@ -84,8 +163,18 @@ export class StructureTemplateData extends NativeClass {
     protected _save(ptr:TagPointer):TagPointer {
         abstract();
     }
-    save():CompoundTag {
-        return this._save(TagPointer.construct()).value as CompoundTag;
+    save(tag:CompoundTag):void {
+        const ptr = new TagPointer(true);
+        ptr.value = tag;
+        this._save(ptr);
+        tag.construct(ptr.value as CompoundTag);
+        ptr.value.destruct();
+        ptr.destruct();
+    }
+    constructAndSave():CompoundTag {
+        const tag = CompoundTag.constructWith({});
+        this.save(tag);
+        return tag;
     }
     load(tag:CompoundTag):boolean {
         abstract();

@@ -123,8 +123,18 @@ export class MobEffectInstance extends NativeClass {
     getLingerDuration(): number {
         return this.duration * 0.25;
     }
-    save(): CompoundTag {
-        return this._save(TagPointer.construct()).value as CompoundTag;
+    save(tag: CompoundTag): void {
+        const ptr = new TagPointer(true);
+        ptr.value = tag;
+        this._save(ptr);
+        tag.construct(ptr.value as CompoundTag);
+        ptr.value.destruct();
+        ptr.destruct();
+    }
+    constructAndSave(): CompoundTag {
+        const tag = CompoundTag.constructWith({});
+        this.save(tag);
+        return tag;
     }
     load(tag: CompoundTag): MobEffectInstance {
         abstract();

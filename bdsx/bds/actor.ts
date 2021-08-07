@@ -398,12 +398,12 @@ export class Actor extends NativeClass {
     getMaxHealth():number {
         abstract();
     }
-    protected _save(tag:CompoundTag):boolean {
+    save(tag:CompoundTag):boolean {
         abstract();
     }
-    save():CompoundTag {
+    constructAndSave():CompoundTag {
         const tag = CompoundTag.constructWith({});
-        this._save(tag);
+        this.save(tag);
         return tag;
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {

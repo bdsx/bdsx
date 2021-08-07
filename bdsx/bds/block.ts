@@ -76,13 +76,22 @@ export class BlockSource extends NativeClass {
     setBlock(blockPos:BlockPos, block:Block):boolean {
         abstract();
     }
-    getBlockEntity(blockPos:BlockPos): BlockActor | null {
+    getBlockEntity(blockPos:BlockPos):BlockActor|null {
         abstract();
     }
 }
 
+@nativeClass(null)
 export class BlockActor extends NativeClass {
-    save(tag: CompoundTag):boolean{
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+
+    save(tag:CompoundTag):boolean{
         abstract();
+    }
+    constructAndSave():CompoundTag{
+        const tag = CompoundTag.constructWith({});
+        this.save(tag);
+        return tag;
     }
 }
