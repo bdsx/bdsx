@@ -46,6 +46,7 @@ Level.prototype.getActivePlayerCount = procHacker.js("Level::getActivePlayerCoun
 Level.prototype.getActorFactory = procHacker.js("Level::getActorFactory", ActorFactory, {this:Level});
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
 Level.prototype.getBlockPalette = procHacker.js("Level::getBlockPalette", BlockPalette, {this:Level});
+Level.prototype.getDimension = procHacker.js("Level::getDimension", Dimension, {this:Level}, int32_t);
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("Level::getSeed", uint32_t, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});
@@ -450,9 +451,6 @@ BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNa
 BlockLegacy.prototype.getCommandNames2 = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:Block});
 BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", void_t, {this:Block}, float32_t);
-Block.abstract({
-    blockLegacy: [BlockLegacy.ref(), 0x10],
-});
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.create = function(blockName:string, data:number = 0):Block|null {
     const itemStack = ItemStack.create(blockName, 1, data);
@@ -464,6 +462,7 @@ Block.create = function(blockName:string, data:number = 0):Block|null {
     itemStack.destruct();
     return null;
 };
+Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
 BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("UpdateBlockPacket::UpdateBlockPacket", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, Block, uint8_t);
