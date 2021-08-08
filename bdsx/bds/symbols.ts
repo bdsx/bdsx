@@ -302,7 +302,9 @@ const symbols = [
     'StructureSettings::setRotation',
     'StructureSettings::setStructureOffset',
     'StructureSettings::setStructureSize',
-
+    'Level::getDimension',
+    'Block::getDescriptionId',
+    'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
 ] as const;
 
 // decorated symbols

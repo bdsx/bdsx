@@ -24,12 +24,38 @@ export enum CommandPermissionLevel {
 	Host,
 	Automation,
 	Admin,
+    Internal,
 }
 
 export enum CommandCheatFlag {
     Cheat,
+    NotCheat = 0x40,
+    /** @deprecated */
     NoCheat = 0x40,
     None = 0,
+}
+
+export enum CommandExecuteFlag {
+    Allowed,
+    Disallowed = 0x10,
+}
+
+export enum CommandSyncFlag {
+    Synced,
+    Local = 8,
+}
+
+export enum CommandTypeFlag {
+    None,
+    Message = 0x20,
+}
+
+export enum CommandUsageFlag {
+    Normal,
+    Test,
+    /** @deprecated Use CommandVisibilityFlag */
+    Hidden,
+    _Unknown=0x80
 }
 
 /** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
@@ -42,16 +68,8 @@ export enum CommandVisibilityFlag {
     Hidden = 6,
 }
 
-export enum CommandUsageFlag {
-    Normal,
-    Test,
-    /** Any larger than 1 is hidden */
-    Hidden,
-    _Unknown=0x80
-}
-
 /** @deprecated **/
-export const CommandFlag = CommandCheatFlag;
+export const CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
@@ -477,7 +495,16 @@ export namespace CommandRegistry {
         @nativeField(CxxVector.make<CommandParameterData>(CommandParameterData))
         parameters:CxxVector<CommandParameterData>;
         @nativeField(int32_t)
+        commandVersionOffset:int32_t;
+        /** @deprecated */
+        @nativeField(int32_t, 0x28)
         u6:int32_t;
+    }
+
+    @nativeClass()
+    export class Symbol extends NativeClass {
+        @nativeField(int32_t)
+        value:int32_t;
     }
 
     @nativeClass(null)
@@ -488,6 +515,14 @@ export namespace CommandRegistry {
         description:CxxString;
         @nativeField(CxxVector.make<CommandRegistry.Overload>(CommandRegistry.Overload))
         overloads:CxxVector<Overload>;
+        @nativeField(int32_t)
+        permissionLevel:CommandPermissionLevel;
+        @nativeField(CommandRegistry.Symbol)
+        commandSymbol:CommandRegistry.Symbol;
+        @nativeField(CommandRegistry.Symbol)
+        commandAliasEnum:CommandRegistry.Symbol;
+        @nativeField(int32_t)
+        flags:CommandCheatFlag|CommandExecuteFlag|CommandSyncFlag|CommandTypeFlag|CommandUsageFlag|CommandVisibilityFlag;
     }
 
     @nativeClass(null)
