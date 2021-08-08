@@ -14,92 +14,92 @@ import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
 export class Player extends Actor {
-    abilities:Abilities;
-    respawnPosition:BlockPos;
-    respawnDimension:DimensionId;
-    deviceId:string;
+    abilities: Abilities;
+    respawnPosition: BlockPos;
+    respawnDimension: DimensionId;
+    deviceId: string;
 
-    protected _setName(name:string):void {
+    protected _setName(name: string): void {
         abstract();
     }
 
-    addItem(itemStack:ItemStack):boolean {
+    addItem(itemStack: ItemStack): boolean {
         abstract();
     }
 
-    changeDimension(dimensionId:number, respawn:boolean):void {
+    changeDimension(dimensionId: number, respawn: boolean): void {
         abstract();
     }
 
-    setName(name:string):void {
+    setName(name: string): void {
         abstract();
     }
 
-    teleportTo(position:Vec3, shouldStopRiding:boolean, cause:number, sourceEntityType:number, sourceActorId:ActorUniqueID):void {
+    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, sourceActorId: ActorUniqueID): void {
         abstract();
     }
 
-    getGameType():GameType {
+    getGameType(): GameType {
         abstract();
     }
 
-    getInventory():PlayerInventory {
+    getInventory(): PlayerInventory {
         abstract();
     }
 
-    getMainhandSlot():ItemStack {
+    getMainhandSlot(): ItemStack {
         abstract();
     }
 
-    getOffhandSlot():ItemStack {
+    getOffhandSlot(): ItemStack {
         abstract();
     }
 
-    getPermissionLevel():PlayerPermission {
+    getPermissionLevel(): PlayerPermission {
         abstract();
     }
 
-    getSkin():SerializedSkin {
+    getSkin(): SerializedSkin {
         abstract();
     }
 
-    startCooldown(item:Item):void{
+    startCooldown(item: Item): void {
         abstract();
     }
 
-    setGameType(gameType:GameType):void {
+    setGameType(gameType: GameType): void {
         abstract();
     }
 
-    setSize(width:number, height:number):void {
+    setSize(width: number, height: number): void {
         abstract();
     }
 
-    setSleeping(value:boolean):void {
+    setSleeping(value: boolean): void {
         abstract();
     }
 
-    isSleeping():boolean {
+    isSleeping(): boolean {
         abstract();
     }
 
-    isJumping():boolean {
+    isJumping(): boolean {
         abstract();
     }
 
-    syncAbilties():void {
+    syncAbilties(): void {
         abstract();
     }
 
-    getCertificate():Certificate {
+    getCertificate(): Certificate {
         abstract();
     }
 }
 
 export class ServerPlayer extends Player {
-    networkIdentifier:NetworkIdentifier;
+    networkIdentifier: NetworkIdentifier;
 
-    protected _sendInventory(shouldSelectSlot:boolean):void {
+    protected _sendInventory(shouldSelectSlot: boolean): void {
         abstract();
     }
 
@@ -107,29 +107,29 @@ export class ServerPlayer extends Player {
         abstract();
     }
 
-    nextContainerCounter():ContainerId {
+    nextContainerCounter(): ContainerId {
         abstract();
     }
 
-    openInventory():void {
+    openInventory(): void {
         abstract();
     }
 
-    sendNetworkPacket(packet:Packet):void {
+    sendNetworkPacket(packet: Packet): void {
         abstract();
     }
 
-    sendInventory(shouldSelectSlot:boolean = false):void {
+    sendInventory(shouldSelectSlot: boolean = false): void {
         setTimeout(() => {
             this._sendInventory(shouldSelectSlot);
         }, 50);
     }
 
-    setAttribute(id:AttributeId, value:number):AttributeInstance|null {
+    setAttribute(id: AttributeId, value: number): AttributeInstance | null {
         abstract();
     }
 
-    sendChat(message:string, author:string):void {
+    sendChat(message: string, author: string): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Chat;
         pk.name = author;
@@ -137,7 +137,7 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
-    sendWhisper(message:string, author:string):void {
+    sendWhisper(message: string, author: string): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Chat;
         pk.name = author;
@@ -145,14 +145,14 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
-    sendMessage(message:string):void {
+    sendMessage(message: string): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Raw;
         pk.message = message;
         this.sendNetworkPacket(pk);
     }
 
-    sendJukeboxPopup(message:string, params:string[] = []):void {
+    sendJukeboxPopup(message: string, params: string[] = []): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.JukeboxPopup;
         pk.message = message;
@@ -163,7 +163,7 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
-    sendPopup(message:string, params:string[] = []):void {
+    sendPopup(message: string, params: string[] = []): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Popup;
         pk.message = message;
@@ -174,7 +174,7 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
-    sendTip(message:string, params:string[] = []):void {
+    sendTip(message: string, params: string[] = []): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Tip;
         pk.message = message;
@@ -185,7 +185,7 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
-    sendTranslatedMessage(message:string, params:string[] = []):void {
+    sendTranslatedMessage(message: string, params: string[] = []): void {
         const pk = TextPacket.create();
         pk.type = TextPacket.Types.Translate;
         pk.message = message;
@@ -194,7 +194,7 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
     }
 
-    setBossBar(title:string, percent:number):void {
+    setBossBar(title: string, percent: number): void {
         this.removeBossBar();
         const pk = BossEventPacket.create();
         pk.entityUniqueId = this.getUniqueIdBin();
@@ -206,7 +206,7 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
-    resetTitleDuration():void {
+    resetTitleDuration(): void {
         const pk = SetTitlePacket.create();
         pk.type = SetTitlePacket.Types.Reset;
         this.sendNetworkPacket(pk);
@@ -214,7 +214,7 @@ export class ServerPlayer extends Player {
     }
 
     /** Set duration of title animation in ticks, will not affect action bar */
-    setTitleDuration(fadeInTime:number, stayTime:number, fadeOutTime:number):void {
+    setTitleDuration(fadeInTime: number, stayTime: number, fadeOutTime: number): void {
         const pk = SetTitlePacket.create();
         pk.type = SetTitlePacket.Types.AnimationTimes;
         pk.fadeInTime = fadeInTime;
@@ -224,7 +224,7 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
-    sendTitle(title:string, subtitle?:string):void {
+    sendTitle(title: string, subtitle?: string): void {
         const pk = SetTitlePacket.create();
         pk.type = SetTitlePacket.Types.Title;
         pk.text = title;
@@ -234,7 +234,7 @@ export class ServerPlayer extends Player {
     }
 
     /** Will not display if there is no title being displayed */
-    sendSubtitle(subtitle:string):void {
+    sendSubtitle(subtitle: string): void {
         const pk = SetTitlePacket.create();
         pk.type = SetTitlePacket.Types.Subtitle;
         pk.text = subtitle;
@@ -243,14 +243,14 @@ export class ServerPlayer extends Player {
     }
 
     /** Will not affect action bar */
-    clearTitle():void {
+    clearTitle(): void {
         const pk = SetTitlePacket.create();
         pk.type = SetTitlePacket.Types.Clear;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
 
-    sendActionbar(actionbar:string):void {
+    sendActionbar(actionbar: string): void {
         const pk = SetTitlePacket.create();
         pk.type = SetTitlePacket.Types.Actionbar;
         pk.text = actionbar;
@@ -258,7 +258,7 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
-    removeBossBar():void {
+    removeBossBar(): void {
         const pk = BossEventPacket.create();
         pk.entityUniqueId = this.getUniqueIdBin();
         pk.playerUniqueId = this.getUniqueIdBin();
@@ -268,7 +268,7 @@ export class ServerPlayer extends Player {
     }
 
     /** @param lines Example: ["my score is 0", ["my score is 3", 3], "my score is 2 as my index is 2"] */
-    setFakeScoreboard(title:string, lines:Array<string|[string, number]>, name:string = `tmp-${new Date().getTime()}`):string {
+    setFakeScoreboard(title: string, lines: Array<string | [string, number]>, name: string = `tmp-${new Date().getTime()}`): string {
         this.removeFakeScoreboard();
         {
             const pk = SetDisplayObjectivePacket.create();
@@ -282,7 +282,7 @@ export class ServerPlayer extends Player {
         {
             const pk = SetScorePacket.create();
             pk.type = SetScorePacket.Type.CHANGE;
-            const entries = [];
+            const entries: Array<ScorePacketInfo> = [];
             for (const [i, line] of lines.entries()) {
                 const entry = ScorePacketInfo.construct();
                 entry.objectiveName = name;
@@ -307,7 +307,7 @@ export class ServerPlayer extends Player {
         return name;
     }
 
-    removeFakeScoreboard():void {
+    removeFakeScoreboard(): void {
         const pk = SetDisplayObjectivePacket.create();
         pk.displaySlot = DisplaySlot.Sidebar;
         pk.objectiveName = "";
@@ -317,7 +317,7 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
-    transferServer(address:string, port:number = 19132):void {
+    transferServer(address: string, port: number = 19132): void {
         const pk = TransferPacket.create();
         pk.address = address;
         pk.port = port;
@@ -328,7 +328,7 @@ export class ServerPlayer extends Player {
 
 @nativeClass(0x282)
 export class PlayerListEntry extends NativeClass {
-    static create(player:Player):PlayerListEntry {
+    static create(player: Player): PlayerListEntry {
         abstract();
     }
 }
