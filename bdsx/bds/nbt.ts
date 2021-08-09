@@ -163,12 +163,34 @@ export class Int64Tag extends Tag {
     @nativeField(bin64_t)
     data:bin64_t;
 
+    get dataAsString():string {
+        return bin.toString(this.data);
+    }
+    set dataAsString(data:string) {
+        if (isNaN(parseInt(data))) throw new TypeError("Not a number");
+        if (!/^\d{1,20}$/.test(data) || data.length === 20 && data > "18446744073709551615") {
+            this.data = bin.make(Number(data), 8);
+        } else {
+            let dhi = 0, dlo;
+            if (data.length > 14) {
+                dhi =+ data.slice(0,data.length - 14);
+                data = data.slice(data.length-14);
+            }
+            dlo =+ data;
+            dlo += dhi * 0x107a4000;
+            this.data = bin.make64(dlo >>> 0, dhi * 0x5af3 + ~~(dlo / 0x100000000));
+        }
+    }
+
     static constructWith(data:bin64_t):Int64Tag {
+        abstract();
+    }
+    static constructWithString(data:string):Int64Tag {
         abstract();
     }
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
-        return `LongTag ${util.inspect(bin.toString(this.data), options)}`;
+        return `LongTag ${util.inspect(this.dataAsString, options)}`;
     }
 }
 
@@ -233,6 +255,9 @@ export class ListTag extends Tag {
     push(tag:Tag):void {
         abstract();
     }
+    pop():void {
+        this.data.pop();
+    }
     size():number {
         abstract();
     }
@@ -255,9 +280,22 @@ export class CompoundTag extends Tag {
     @nativeField(CxxMap.make(CxxString, CompoundTagVariant))
     data:CxxMap<CxxString, CompoundTagVariant>;
 
-    set(key:CxxString, tag:Tag):Tag {
+    get(key:string):Tag|null {
+        return this.data.get(key);
+    }
+    set(key:string, tag:Tag):Tag {
         abstract();
     }
+    contains(key:string):boolean {
+        return this.data.has(key);
+    }
+    remove(key:string):void {
+        this.data.delete(key);
+    }
+    clear():void {
+        this.data.clear();
+    }
+
     static constructWith(data:Record<string, Tag>):CompoundTag {
         abstract();
     }

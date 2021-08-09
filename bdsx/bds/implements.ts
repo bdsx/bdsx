@@ -588,6 +588,11 @@ Int64Tag.constructWith = function(data:bin64_t):Int64Tag {
     tag.data = data;
     return tag;
 };
+Int64Tag.constructWithString = function(number:string):Int64Tag {
+    const tag = Int64Tag$Int64Tag();
+    tag.dataAsString = number;
+    return tag;
+};
 FloatTag.constructWith = procHacker.js("??0FloatTag@@QEAA@M@Z", FloatTag, {structureReturn:true}, float32_t);
 const DoubleTag$DoubleTag = procHacker.js("??0DoubleTag@@QEAA@XZ", DoubleTag, {structureReturn:true});
 DoubleTag.constructWith = function(data:float64_t):DoubleTag {
