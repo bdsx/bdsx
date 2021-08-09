@@ -235,7 +235,7 @@ export namespace makefunc {
         returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer {
         if (typeof jsfunction !== 'function') throw TypeError(`arg1, expected=function, actual=${jsfunction}`);
 
-        const options:MakeFuncOptions<any> = opts || {};
+        const options:MakeFuncOptions<any> = opts! || {};
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
         const result = returnTypeResolved[makefunc.useXmmRegister] ? asmcode.addressof_xmm0Value : asmcode.addressof_raxValue;
@@ -325,7 +325,7 @@ export namespace makefunc {
         ...params: PARAMS):
         FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> {
 
-        const options:MakeFuncOptions<any> = opts || {};
+        const options:MakeFuncOptions<any> = opts! || {};
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
         let paramOffset = 1;
