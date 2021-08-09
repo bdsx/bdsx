@@ -3,11 +3,10 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t } from "../nativetype";
-import { BlockSource } from "./block";
+import { Block, BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import type { BlockPalette } from "./level";
 import { CompoundTag, TagPointer } from "./nbt";
-console.warn("structure.ts is still in development.".red);
 
 export enum Rotation {
     None,
@@ -151,14 +150,6 @@ export class StructureTemplateData extends NativeClass {
     size:BlockPos;
     @nativeField(BlockPos)
     structureWorldOrigin:BlockPos;
-    // @nativeField(CxxVector.make(int32_t))
-    // blockIndices:CxxVector<int32_t>;
-    // @nativeField(CxxVector.make(int32_t))
-    // extraBlockIndices:CxxVector<int32_t>;
-    // @nativeField(CxxUnorderedMap.make(CxxString, StructureBlockPalette))
-    // palettes:CxxUnorderedMap<CxxString, StructureBlockPalette>;
-    // @nativeField(CxxVector.make(CompoundTag))
-    // entityData:CxxVector<CompoundTag>;
 
     protected _save(ptr:TagPointer):TagPointer {
         abstract();
@@ -187,10 +178,17 @@ export class StructureTemplate extends NativeClass {
     name:CxxString;
     @nativeField(StructureTemplateData)
     data:StructureTemplateData;
+
     fillFromWorld(region:BlockSource, pos:BlockPos, settings:StructureSettings):void {
         abstract();
     }
     placeInWorld(region:BlockSource, palette:BlockPalette, pos:BlockPos, settings:StructureSettings):void {
+        abstract();
+    }
+    getBlockAtPos(pos:BlockPos):Block {
+        abstract();
+    }
+    getSize():BlockPos {
         abstract();
     }
 }

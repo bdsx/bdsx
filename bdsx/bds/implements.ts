@@ -6,7 +6,6 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { NativeClass } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
@@ -538,50 +537,34 @@ EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null
 
 // nbt.ts
 const tagMap = new Map<string, Tag>();
-(Tag as any)._singletoning = function(ptr:StaticPointer|null):Tag|null {
+(Tag as any)._toVariantType = function(ptr:StaticPointer|null):Tag|null {
     if (ptr === null) return null;
-    const binptr = ptr.getAddressBin();
-    let tag = tagMap.get(binptr);
-    if (tag) return tag;
     switch (Tag.prototype.getId.call(ptr)) {
     case Tag.Type.Byte:
-        tag = ptr.as(ByteTag);
-        break;
+        return ptr.as(ByteTag);
     case Tag.Type.Short:
-        tag = ptr.as(ShortTag);
-        break;
+        return ptr.as(ShortTag);
     case Tag.Type.Int:
-        tag = ptr.as(IntTag);
-        break;
+        return ptr.as(IntTag);
     case Tag.Type.Int64:
-        tag = ptr.as(Int64Tag);
-        break;
+        return ptr.as(Int64Tag);
     case Tag.Type.Float:
-        tag = ptr.as(FloatTag);
-        break;
+        return ptr.as(FloatTag);
     case Tag.Type.Double:
-        tag = ptr.as(DoubleTag);
-        break;
+        return ptr.as(DoubleTag);
     case Tag.Type.ByteArray:
-        tag = ptr.as(ByteArrayTag);
-        break;
+        return ptr.as(ByteArrayTag);
     case Tag.Type.String:
-        tag = ptr.as(StringTag);
-        break;
+        return ptr.as(StringTag);
     case Tag.Type.List:
-        tag = ptr.as(ListTag);
-        break;
+        return ptr.as(ListTag);
     case Tag.Type.Compound:
-        tag = ptr.as(CompoundTag);
-        break;
+        return ptr.as(CompoundTag);
     case Tag.Type.IntArray:
-        tag = ptr.as(IntArrayTag);
-        break;
+        return ptr.as(IntArrayTag);
     default:
-        tag = ptr.as(EndTag);
+        return ptr.as(EndTag);
     }
-    tagMap.set(binptr, tag);
-    return tag;
 };
 Tag.all = function():IterableIterator<Tag> {
     return tagMap.values();
@@ -650,25 +633,7 @@ ListTag.prototype.push = function(tag:Tag):void_t {
     ListTag$add.call(this, ptr);
 };
 ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
-ListTag.prototype[NativeType.dtor] = function() {
-    for (let i = this.data.size(); i > 0; i--) {
-        const v = this.data.back();
-        if (v) {
-            v.destruct();
-            this.data.pop();
-        }
-    }
-};
 CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
-CompoundTag.prototype[NativeType.dtor] = function() {
-    // this.data.clear crashes
-    for (const v of this.data.values()) {
-        v.destruct();
-    }
-    NativeClass.delete((this.data as any).getPointerAs((this.data as any).nodeType, 0));
-    // Calling native constructor or bdsx's default destructor will cause some displacement of keys and values, when another CompoundTag is constructed
-};
-// CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", void_t, {this:CompoundTag});
 
 // structure.ts
 StructureSettings.prototype[NativeType.ctor] = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {this:StructureSettings});
@@ -712,5 +677,7 @@ StructureSettings.prototype.setStructureSize = procHacker.js("StructureSettings:
 StructureTemplateData.prototype.load = procHacker.js("StructureTemplateData::load", bool_t, {this:StructureTemplate}, CompoundTag);
 StructureTemplate.prototype.fillFromWorld = procHacker.js("StructureTemplate::fillFromWorld", void_t, {this:StructureTemplate}, BlockSource, BlockPos, StructureSettings);
 StructureTemplate.prototype.placeInWorld = procHacker.js("StructureTemplate::placeInWorld", void_t, {this:StructureTemplate}, BlockSource, BlockPalette, BlockPos, StructureSettings);
+StructureTemplate.prototype.getBlockAtPos = procHacker.js("StructureTemplate::getBlockAtPos", Block, {this:StructureTemplate}, BlockPos);
+StructureTemplate.prototype.getSize = procHacker.js("StructureTemplate::getSize", BlockPos, {this:StructureTemplate});
 StructureManager.prototype[NativeType.ctor] = procHacker.js("StructureManager::StructureManager", StructureManager, {this:StructureManager});
 StructureManager.prototype.getOrCreate = procHacker.js("StructureManager::getOrCreate", StructureTemplate, {this:StructureManager}, CxxString);

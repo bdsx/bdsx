@@ -6,6 +6,7 @@ import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStack } from "./inventory";
+import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
@@ -696,7 +697,10 @@ export class AdventureSettingsPacket extends Packet {
 
 @nativeClass(null)
 export class BlockActorDataPacket extends Packet {
-    // unknown
+    @nativeField(BlockPos)
+    pos: BlockPos;
+    @nativeField(CompoundTag, 0x40)
+    data: CompoundTag;
 }
 
 @nativeClass(null)

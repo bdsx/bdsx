@@ -88,15 +88,15 @@ export class Tag extends NativeClass {
     }
 
     static [NativeType.getter](ptr:StaticPointer, offset?:number):Tag {
-        return Tag._singletoning(ptr.add(offset, offset! >> 31))!;
+        return Tag._toVariantType(ptr.add(offset, offset! >> 31))!;
     }
     static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):Tag|null {
-        return Tag._singletoning(stackptr.getNullablePointer(offset));
+        return Tag._toVariantType(stackptr.getNullablePointer(offset));
     }
     static all():IterableIterator<Tag> {
         abstract();
     }
-    private static _singletoning(ptr:StaticPointer|null):Tag|null {
+    private static _toVariantType(ptr:StaticPointer|null):Tag|null {
         abstract();
     }
 }
