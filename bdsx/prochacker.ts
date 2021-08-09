@@ -257,7 +257,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
         return callback=>{
             const original = this.hookingRaw(key, original=>{
-                const nopts:MakeFuncOptions<any> = opts || {};
+                const nopts:MakeFuncOptions<any> = opts! || {};
                 nopts.onError = original;
                 return makefunc.np(callback, returnType, nopts as any, ...params);
             });
