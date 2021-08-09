@@ -55,7 +55,29 @@ events.serverClose.on(()=>{
 
 // package.json
 {
-    const bdsxPath = path.join(__dirname, '..');
+    const mainPackageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
+    const bdsxPath = path.resolve('./bdsx');
+
+    const srcdeps = mainPackageJson.devDependencies;
+    const destdeps:Record<string, string> = {};
+    const inherites = [
+        '@types/node',
+        '@typescript-eslint/eslint-plugin',
+        '@typescript-eslint/parser',
+        'eslint',
+        'typescript',
+    ];
+
+    for (const dep of inherites) {
+        const version = srcdeps[dep];
+        if (version == null) {
+            console.error(colors.red(`[BDSX-Plugins] package.json/devDependencies does not have '${dep}'`));
+        } else {
+            destdeps[dep] = srcdeps[dep];
+        }
+    }
+    destdeps.bdsx = `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`;
+
     const examplejson = {
         "name": `@bdsx/${basename}`,
         "version": "1.0.0",
@@ -70,14 +92,7 @@ events.serverClose.on(()=>{
             "watch": "tsc -w",
             "prepare": "tsc || exit 0"
         },
-        "devDependencies": {
-            "@types/node": "^12.20.5",
-            "@typescript-eslint/eslint-plugin": "^4.28.2",
-            "@typescript-eslint/parser": "^4.28.2",
-            "bdsx": `file:${path.relative(targetPath, bdsxPath).replace(/\\/g, '/')}`,
-            "eslint": "^7.30.0",
-            "typescript": "^4.2.3"
-        }
+        "devDependencies": destdeps
     };
     fsutil.writeJsonSync(`${targetdir}package.json`, examplejson);
 }
