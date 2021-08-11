@@ -15,7 +15,6 @@ if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 
 // check
 import 'bdsx/common';
 import 'bdsx/checkcore';
-import 'bdsx/checkmd5';
 import 'bdsx/checkmodules';
 import 'bdsx/asm/checkasm';
 // import 'bdsx/permissions';
