@@ -179,7 +179,6 @@ export class Certificate extends NativeClass {
         return mce.UUID.toString(this.getIdentity());
     }
 }
-
 export class ConnectionRequest extends NativeClass {
     cert:Certificate;
     something:Certificate;
@@ -189,7 +188,43 @@ export class ConnectionRequest extends NativeClass {
         if (ptr === null) return null;
         return ptr.json;
     }
-    getJsonValue():any {
+    getJsonValue():{
+        AnimatedImageData:unknown[],
+        ArmSize:string,
+        CapeData:string,
+        CapeId:string,
+        CapeImageHeight:number,
+        CapeImageWidth:number,
+        CapeOnClassicSkin:boolean,
+        ClientRandomId:number,
+        CurrentInputMode:number,
+        DefaultInputMode:number,
+        DeviceId:string,
+        DeviceModel:string,
+        DeviceOS:number,
+        GameVersion:string,
+        GuiScale:number,
+        LanguageCode:string,
+        PersonaPieces:unknown[],
+        PersonaSkin:boolean,
+        PieceTintColors:unknown[],
+        PlatformOfflineId:string,
+        PlatformOnlineId:string,
+        PlayFabId:string,
+        PremiumSkin:boolean,
+        SelfSignedId:string,
+        ServerAddress:string,
+        SkinAnimationData:string,
+        SkinColor:string,
+        SkinData:string,
+        SkinGeometryData:string,
+        SkinId:string,
+        SkinImageHeight:number,
+        SkinImageWidth:number,
+        SkinResourcePatch:string,
+        ThirdPartyName:string,
+        ThirdPartyNameOnly:boolean,
+        UIProfile:number }|null {
         return this.getJson()?.value();
     }
 

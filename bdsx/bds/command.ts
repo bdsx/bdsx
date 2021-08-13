@@ -213,7 +213,7 @@ export class CommandOutputParameter extends NativeClass {
     }
 }
 
-@nativeClass(null)
+@nativeClass(0x30)
 export class CommandOutput extends NativeClass {
     getType():CommandOutputType {
         abstract();
@@ -250,7 +250,7 @@ export class CommandOutput extends NativeClass {
             _params.destruct();
         }
     }
-    _error(message:string, params:CxxVector<CommandOutputParameter>):void {
+    protected _error(message:string, params:CxxVector<CommandOutputParameter>):void {
         abstract();
     }
     error(message:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
