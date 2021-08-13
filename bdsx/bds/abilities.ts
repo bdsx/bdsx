@@ -100,6 +100,7 @@ export class Ability extends NativeClass {
 
 export namespace Ability {
     export enum Type {
+        Invalid,
         Unset,
         Bool,
         Float,
