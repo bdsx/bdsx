@@ -143,7 +143,7 @@ export class ScoreInfo extends NativeClass {
 export class ScoreboardIdentityRef extends NativeClass {
     @nativeField(uint32_t)
     objectiveReferences:uint32_t;
-    @nativeField(ScoreboardId.ref(), 0x08)
+    @nativeField(ScoreboardId, 0x08)
     scoreboardId:ScoreboardId;
 
     // modifyScoreInObjective(result:number, objective:Objective, score:number, action:PlayerScoreSetFunction):boolean {
