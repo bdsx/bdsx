@@ -4,7 +4,7 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event } from "./eventtarget";
-import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
@@ -41,7 +41,10 @@ export namespace events {
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
     /** Not cancellable */
     export const pistonMove = new Event<(event: PistonMoveEvent) => void>();
-
+    /** Cancellable but requires additional stimulation */
+    export const campfireLight = new Event<(event: CampfireTryLightFire) => void | CANCEL>();
+    /** Cancellable but requires additional stimulation */
+    export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
     ////////////////////////////////////////////////////////
     // Entity events
 
