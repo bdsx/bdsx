@@ -7,7 +7,7 @@ import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer } from "../core";
 import { events } from "../event";
-import { bool_t, int32_t, void_t } from "../nativetype";
+import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { _tickCallback } from "../util";
 
 interface IBlockDestroyEvent {
@@ -99,3 +99,28 @@ function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):v
     return _onPistonMove(pistonBlockActor, event.blockSource);
 }
 const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);
+
+interface IFarmlandDecayEvent {
+    block: Block;
+    blockPos: BlockPos;
+    blockSource: BlockSource;
+    culprit: Actor;
+}
+export class FarmlandDecayEvent implements IFarmlandDecayEvent {
+    constructor(
+        public block: Block,
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public culprit: Actor,
+    ) {
+    }
+}
+function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: BlockPos, culprit: Actor, fallDistance: float32_t):void_t {
+    const event = new FarmlandDecayEvent(block, blockPos, blockSource, culprit);
+    const canceled = events.farmlandDecay.fire(event) === CANCEL;
+    _tickCallback();
+    if (!canceled) {
+        return _onFarmlandDecay(event.block, event.blockSource, event.blockPos, event.culprit, fallDistance);
+    }
+}
+const _onFarmlandDecay = procHacker.hooking("FarmBlock::transformOnFall", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);

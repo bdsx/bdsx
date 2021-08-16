@@ -1,4 +1,5 @@
 import { bin } from "../bin";
+import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
@@ -418,6 +419,13 @@ export class Actor extends NativeClass {
     }
     private static _singletoning(ptr:StaticPointer|null):Actor|null {
         abstract();
+    }
+    _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
+        return CircularDetector.check(this, allocator, obj=>{
+            obj.name = this.getName();
+            obj.pos = this.getPosition();
+            obj.type = this.getEntityTypeId();
+        });
     }
 }
 

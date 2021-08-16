@@ -262,6 +262,7 @@ const symbols = [
     'Level::getDimension',
     'Block::getDescriptionId',
     'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
+    'FarmBlock::transformOnFall',
 ] as const;
 
 // decorated symbols
