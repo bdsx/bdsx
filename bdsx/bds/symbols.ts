@@ -263,6 +263,7 @@ const symbols = [
     'Block::getDescriptionId',
     'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
     'FarmBlock::transformOnFall',
+    'SplashPotionEffectSubcomponent::doOnHitEffect',
 ] as const;
 
 // decorated symbols

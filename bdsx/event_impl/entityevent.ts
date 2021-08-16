@@ -1,4 +1,5 @@
 import { Actor, ActorDamageSource, ItemActor } from "../bds/actor";
+import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
@@ -219,6 +220,18 @@ export class PlayerJumpEvent implements IPlayerJumpEvent {
     }
 }
 
+interface ISplashPotionHitEvent {
+    entity: Actor;
+    potionEffect: number;
+}
+export class SplashPotionHitEvent implements ISplashPotionHitEvent {
+    constructor(
+        public entity: Actor,
+        public potionEffect: number,
+    ) {
+    }
+}
+
 // function onPlayerJump(player: Player):void {
 //     const event = new PlayerJumpEvent(player);
 //     console.log(player.getName());
@@ -375,3 +388,15 @@ function onPlayerPickupItem(player:Player, itemActor:ItemActor, orgCount:number,
     return _onPlayerPickupItem(event.player, itemActor, orgCount, favoredSlot);
 }
 const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, ItemActor, int32_t, int32_t)(onPlayerPickupItem);
+
+
+function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSubcomponent, entity: Actor, projectileComponent: ProjectileComponent):void {
+    const event = new SplashPotionHitEvent(entity, splashPotionEffectSubcomponent.potionEffect);
+    const canceled = events.splashPotionHit.fire(event) === CANCEL;
+    _tickCallback();
+    if (!canceled) {
+        splashPotionEffectSubcomponent.potionEffect = event.potionEffect;
+        return _onSplashPotionHit(splashPotionEffectSubcomponent, event.entity, projectileComponent);
+    }
+}
+const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::doOnHitEffect", void_t, null, SplashPotionEffectSubcomponent, Actor, ProjectileComponent)(onSplashPotionHit);
