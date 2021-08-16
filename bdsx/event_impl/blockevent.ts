@@ -124,3 +124,48 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
     }
 }
 const _onFarmlandDecay = procHacker.hooking("FarmBlock::transformOnFall", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
+
+interface ICampfireTryLightFire {
+    blockSource: BlockSource;
+    blockPos: BlockPos;
+}
+
+export class CampfireTryLightFire implements ICampfireTryLightFire {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource
+    ) {
+    }
+}
+
+function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
+    const event = new CampfireTryLightFire(blockPos, blockSource);
+    const canceled = events.campfireLight.fire(event) === CANCEL;
+    _tickCallback();
+    if (canceled) return false;
+    else return _CampfireTryLightFire(event.blockSource, event.blockPos);
+}
+
+const _CampfireTryLightFire = procHacker.hooking("?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryLightFire);
+
+interface ICampfireTryDouseFire {
+    blockSource: BlockSource;
+    blockPos: BlockPos;
+}
+export class CampfireTryDouseFire implements ICampfireTryDouseFire {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource
+    ) {
+    }
+}
+
+function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
+    const event = new CampfireTryDouseFire(blockPos, blockSource);
+    const canceled = events.campfireDouse.fire(event) === CANCEL;
+    _tickCallback();
+    if (canceled) return false;
+    else return _CampfireTryDouseFire(event.blockSource, event.blockPos);
+}
+
+const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);

@@ -14,7 +14,7 @@ BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.j
 * Get IP Address & XUID (Example below)
 
 ```ts
-import { events } from "bdsx/events";
+import { events } from "bdsx/event";
 import { MinecraftPacketIds } from 'bdsx/bds/packetids';
 events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetId)=>{
     const ip = networkIdentifier.getAddress();

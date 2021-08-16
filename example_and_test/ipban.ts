@@ -35,7 +35,7 @@ async function save():Promise<void> {
     saving = new Promise(resolve=>{
         resolver = resolve;
     });
-    const all = ipfilter.entires();
+    const all = ipfilter.entries();
     await fs.writeFile('../ipban.json', JSON.stringify(all)); // save to the json file
     saving = null;
     resolver!();
