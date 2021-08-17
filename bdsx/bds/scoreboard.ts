@@ -1,17 +1,15 @@
 import { abstract } from "../common";
+import { AllocatedPointer, StaticPointer } from "../core";
+import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor } from "./actor";
 import type { Player } from "./player";
 
 export class Scoreboard extends NativeClass {
-    // protected _modifyPlayerScore(success:boolean, id:ScoreboardId, objective:Objective, value:number, action:PlayerScoreSetFunction):number {
-    //     abstract();
-    // }
-
-    // sync(id:ScoreboardId, objective:Objective):void {
-    //     abstract();
-    // }
+    sync(id:ScoreboardId, objective:Objective):void {
+        abstract();
+    }
 
     addObjective(name:string, displayName:string, criteria:ObjectiveCriteria):Objective {
         abstract();
@@ -56,6 +54,28 @@ export class Scoreboard extends NativeClass {
         abstract();
     }
 
+    protected _getScoreboardIdentityRefs(retstr:CxxVector<ScoreboardIdentityRef>):CxxVector<ScoreboardIdentityRef> {
+        abstract();
+    }
+
+    getScoreboardIdentityRefs():ScoreboardIdentityRef[] {
+        const arr =  this._getScoreboardIdentityRefs(CxxVector.make(ScoreboardIdentityRef).construct());
+        const retval = arr.toArray();
+        arr.destruct();
+        return retval;
+    }
+
+    protected _getTrackedIds(retstr:CxxVector<ScoreboardId>):CxxVector<ScoreboardId> {
+        abstract();
+    }
+
+    getTrackedIds():ScoreboardId[] {
+        const arr =  this._getTrackedIds(CxxVector.make(ScoreboardId).construct());
+        const retval = arr.toArray();
+        arr.destruct();
+        return retval;
+    }
+
     removeObjective(objective:Objective):boolean {
         abstract();
     }
@@ -67,18 +87,39 @@ export class Scoreboard extends NativeClass {
     setDisplayObjective(displaySlot:DisplaySlot, objective:Objective, order:ObjectiveSortOrder):DisplayObjective|null {
         abstract();
     }
+
+    getPlayerScore(id:ScoreboardId, objective:Objective):number|null {
+        const score = objective.getPlayerScore(id);
+        if (score.valid) {
+            const retval = score.value;
+            score.destruct();
+            return retval;
+        }
+        score.destruct();
+        return null;
+    }
+
     resetPlayerScore(id:ScoreboardId, objective:Objective):void {
         abstract();
     }
-    // setPlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
-    //     return this._modifyPlayerScore(false, id, objective, value, PlayerScoreSetFunction.Set);
-    // }
-    // addPlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
-    //     return this._modifyPlayerScore(false, id, objective, value, PlayerScoreSetFunction.Add);
-    // }
-    // removePlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
-    //     return this._modifyPlayerScore(false, id, objective, value, PlayerScoreSetFunction.Subtract);
-    // }
+
+    setPlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
+        const retval = this.getScoreboardIdentityRef(id).modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Set);
+        this.sync(id, objective);
+        return retval;
+    }
+
+    addPlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
+        const retval = this.getScoreboardIdentityRef(id).modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Add);
+        this.sync(id, objective);
+        return retval;
+    }
+
+    removePlayerScore(id:ScoreboardId, objective:Objective, value:number):number {
+        const retval = this.getScoreboardIdentityRef(id).modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Subtract);
+        this.sync(id, objective);
+        return retval;
+    }
 }
 
 @nativeClass(null)
@@ -107,7 +148,6 @@ export class Objective extends NativeClass {
     getPlayerScore(id:ScoreboardId):ScoreInfo {
         abstract();
     }
-
 }
 
 @nativeClass(null)
@@ -146,9 +186,16 @@ export class ScoreboardIdentityRef extends NativeClass {
     @nativeField(ScoreboardId, 0x08)
     scoreboardId:ScoreboardId;
 
-    // modifyScoreInObjective(result:number, objective:Objective, score:number, action:PlayerScoreSetFunction):boolean {
-    //     abstract();
-    // }
+    protected _modifyScoreInObjective(result:StaticPointer, objective:Objective, score:number, action:PlayerScoreSetFunction):boolean {
+        abstract();
+    }
+
+    modifyScoreInObjective(objective:Objective, score:number, action:PlayerScoreSetFunction):number {
+        const result = new AllocatedPointer(4);
+        this._modifyScoreInObjective(result, objective, score, action);
+        const retval = result.getInt32();
+        return retval;
+    }
 }
 
 export enum DisplaySlot {

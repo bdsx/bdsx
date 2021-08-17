@@ -234,7 +234,6 @@ const symbols = [
     'Scoreboard::getObjectiveNames',
     'Scoreboard::getObjectives',
     'Scoreboard::removeObjective',
-    'Scoreboard::modifyPlayerScore',
     'ServerScoreboard::clearDisplayObjective',
     'ServerScoreboard::setDisplayObjective',
     'ServerScoreboard::onScoreChanged',
@@ -264,10 +263,15 @@ const symbols = [
     'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
     'FarmBlock::transformOnFall',
     'SplashPotionEffectSubcomponent::doOnHitEffect',
+    'Scoreboard::getScoreboardIdentityRefs',
+    'ScoreboardIdentityRef::modifyScoreInObjective',
+    'Scoreboard::getTrackedIds',
 ] as const;
 
 // decorated symbols
 const symbols2 = [
+    'sprintf',
+    'vsnprintf',
     '??$_Allocate@$0BA@U_Default_allocate_traits@std@@$0A@@std@@YAPEAX_K@Z',
     '?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z',
     '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ',
@@ -304,10 +308,8 @@ const symbols2 = [
     '?success@CommandOutput@@QEAAXXZ',
     '?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
     '?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
-    'sprintf',
-    'vsnprintf',
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
-    '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z'
+    '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
 ] as const;
 
 

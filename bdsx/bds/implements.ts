@@ -507,16 +507,17 @@ Scoreboard.prototype.getObjectives = procHacker.js("Scoreboard::getObjectives", 
 Scoreboard.prototype.getActorScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVActor@@@Z", ScoreboardId, {this:Scoreboard}, Actor);
 Scoreboard.prototype.getFakePlayerScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", ScoreboardId, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getPlayerScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z", ScoreboardId, {this:Scoreboard}, Player);
-Scoreboard.prototype.getScoreboardIdentityRef = procHacker.js("Scoreboard::getScoreboardIdentityRef", ScoreboardIdentityRef, {this:Scoreboard, structureReturn:true}, ScoreboardId);
+Scoreboard.prototype.getScoreboardIdentityRef = procHacker.js("Scoreboard::getScoreboardIdentityRef", ScoreboardIdentityRef.ref(), {this:Scoreboard}, ScoreboardId);
+(Scoreboard.prototype as any)._getScoreboardIdentityRefs = procHacker.js("Scoreboard::getScoreboardIdentityRefs", CxxVector.make(ScoreboardIdentityRef), {this:Scoreboard}, CxxVector.make(ScoreboardIdentityRef));
+(Scoreboard.prototype as any)._getTrackedIds = procHacker.js("Scoreboard::getTrackedIds", CxxVector.make(ScoreboardId), {this:Scoreboard}, CxxVector.make(ScoreboardId));
 Scoreboard.prototype.removeObjective = procHacker.js("Scoreboard::removeObjective", bool_t, {this:Scoreboard}, Objective);
 Scoreboard.prototype.resetPlayerScore = procHacker.js("?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z", void_t, {this:Scoreboard}, ScoreboardId, Objective);
-//Scoreboard.prototype.sync = procHacker.js("ServerScoreboard::onScoreChanged", void_t, {this:Scoreboard}, ScoreboardId, Objective);
-//(Scoreboard.prototype as any)._modifyPlayerScore = procHacker.js("Scoreboard::modifyPlayerScore", int32_t, {this:Scoreboard}, bool_t, ScoreboardId, Objective, int32_t, int8_t);
+Scoreboard.prototype.sync = procHacker.js("ServerScoreboard::onScoreChanged", void_t, {this:Scoreboard}, ScoreboardId, Objective);
 
 Objective.prototype.getPlayers = procHacker.js("Objective::getPlayers", CxxVectorToArray.make(ScoreboardId.ref()), {this:Objective, structureReturn: true});
 Objective.prototype.getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective, structureReturn: true}, ScoreboardId);
 
-//ScoreboardIdentityRef.prototype.modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, int32_t, Objective, int32_t, int8_t);
+(ScoreboardIdentityRef.prototype as any)._modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, StaticPointer, Objective, int32_t, int8_t);
 
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
