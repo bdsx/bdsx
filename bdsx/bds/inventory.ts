@@ -4,7 +4,6 @@ import { CxxVector } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, NativeType, uint32_t, uint8_t } from "../nativetype";
-import { CxxStringWrapper } from "../pointer";
 import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -202,14 +201,8 @@ export class ItemStack extends NativeClass {
         }
         return "minecraft:air";
     }
-    protected _getRawNameId(retstr:CxxStringWrapper):CxxStringWrapper {
-        abstract();
-    }
     getRawNameId():string {
-        const str = this._getRawNameId(CxxStringWrapper.construct());
-        const retval = str.value;
-        str.destruct();
-        return retval;
+        abstract();
     }
     hasCustomName():boolean {
         abstract();
