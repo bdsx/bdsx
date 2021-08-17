@@ -1,9 +1,12 @@
 import { abstract } from "../common";
-import { VoidPointer } from "../core";
+import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, NativeType, uint32_t, uint8_t } from "../nativetype";
+import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
+import { BlockPos, Vec3 } from "./blockpos";
 import { CommandName } from "./commandname";
 import type { BlockPalette } from "./level";
 import { CompoundTag } from "./nbt";
@@ -433,7 +436,7 @@ export class InventoryTransactionItemGroup extends NativeClass {
     }
 }
 
-@nativeClass(null)
+@nativeClass(0x58)
 export class InventoryTransaction extends NativeClass {
     // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
     // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
@@ -461,7 +464,41 @@ export class ComplexInventoryTransaction extends NativeClass {
     type:ComplexInventoryTransaction.Type;
     @nativeField(InventoryTransaction, 0x10)
     data:InventoryTransaction;
+
+    isItemUseTransaction():this is ItemUseInventoryTransaction {
+        return this.type === ComplexInventoryTransaction.Type.ItemUseTransaction;
+    }
+
+    isItemUseOnEntityTransaction():this is ItemUseOnActorInventoryTransaction {
+        return this.type === ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction;
+    }
+
+    isItemReleaseTransaction():this is ItemReleaseInventoryTransaction {
+        return this.type === ComplexInventoryTransaction.Type.ItemReleaseTransaction;
+    }
+
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):ComplexInventoryTransaction {
+        return ComplexInventoryTransaction._toVariantType(ptr.add(offset, offset! >> 31))!;
+    }
+    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):ComplexInventoryTransaction|null {
+        return ComplexInventoryTransaction._toVariantType(stackptr.getNullablePointer(offset));
+    }
+    private static _toVariantType(ptr:StaticPointer|null):ComplexInventoryTransaction|null {
+        if (ptr === null) return null;
+        const transaction = ptr.as(ComplexInventoryTransaction);
+        switch (transaction.type) {
+        case ComplexInventoryTransaction.Type.ItemUseTransaction:
+            return ptr.as(ItemUseInventoryTransaction);
+        case ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction:
+            return ptr.as(ItemUseOnActorInventoryTransaction);
+        case ComplexInventoryTransaction.Type.ItemReleaseTransaction:
+            return ptr.as(ItemReleaseInventoryTransaction);
+        default:
+            return transaction;
+        }
+    }
 }
+
 export namespace ComplexInventoryTransaction {
     export enum Type {
         NormalTransaction,
@@ -469,5 +506,76 @@ export namespace ComplexInventoryTransaction {
         ItemUseTransaction,
         ItemUseOnEntityTransaction,
         ItemReleaseTransaction,
+    }
+}
+
+@nativeClass(null)
+export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
+    @nativeField(uint32_t)
+    actionType:ItemUseInventoryTransaction.ActionType;
+    @nativeField(BlockPos)
+    pos:BlockPos;
+    @nativeField(uint32_t)
+    targetBlockId:uint32_t;
+    @nativeField(int32_t)
+    face:int32_t;
+    @nativeField(int32_t)
+    slot:int32_t;
+    @nativeField(NetworkItemStackDescriptor, {offset: 0x04, relative: true})
+    descriptor:NetworkItemStackDescriptor;
+    @nativeField(Vec3)
+    fromPos:Vec3;
+    @nativeField(Vec3)
+    clickPos:Vec3;
+}
+
+export namespace ItemUseInventoryTransaction {
+    export enum ActionType {
+        Place,
+        Use,
+        Destroy,
+    }
+}
+
+@nativeClass(null)
+export class ItemUseOnActorInventoryTransaction extends ComplexInventoryTransaction {
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID;
+    @nativeField(uint32_t)
+    actionType:ItemUseOnActorInventoryTransaction.ActionType;
+    @nativeField(int32_t)
+    slot:int32_t;
+    @nativeField(NetworkItemStackDescriptor)
+    descriptor:NetworkItemStackDescriptor;
+    @nativeField(Vec3)
+    fromPos:Vec3;
+    @nativeField(Vec3)
+    hitPos:Vec3;
+}
+
+export namespace ItemUseOnActorInventoryTransaction {
+    export enum ActionType {
+        Interact,
+        Attack,
+        ItemInteract,
+    }
+}
+
+@nativeClass(null)
+export class ItemReleaseInventoryTransaction extends ComplexInventoryTransaction {
+    @nativeField(uint32_t)
+    actionType:ItemReleaseInventoryTransaction.ActionType;
+    @nativeField(int32_t)
+    slot:int32_t;
+    @nativeField(NetworkItemStackDescriptor)
+    descriptor:NetworkItemStackDescriptor;
+    @nativeField(Vec3)
+    fromPos:Vec3;
+}
+
+export namespace ItemReleaseInventoryTransaction {
+    export enum ActionType {
+        Release,
+        Use,
     }
 }
