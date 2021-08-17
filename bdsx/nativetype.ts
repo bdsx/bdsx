@@ -9,7 +9,6 @@ import { filterToIdentifierableString } from './util';
 namespace NativeTypeFn {
     export const align = Symbol('align');
     export const ctor = Symbol('ctor');
-    export const dtor = Symbol('dtor');
     export const ctor_copy = Symbol('ctor_copy');
     export const isNativeClass = Symbol('isNativeClass');
     export const descriptor = Symbol('descriptor');
@@ -31,7 +30,7 @@ export interface Type<T> extends makefunc.Paramable {
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
     [NativeTypeFn.ctor]:(ptr:StaticPointer)=>void,
-    [NativeTypeFn.dtor]:(ptr:StaticPointer)=>void,
+    [makefunc.dtor]:(ptr:StaticPointer)=>void,
     [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void,
     [makefunc.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
     [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void;
@@ -134,7 +133,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly getter:typeof makefunc.getter = makefunc.getter;
     public static readonly setter:typeof makefunc.setter = makefunc.setter;
     public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
-    public static readonly dtor:typeof NativeTypeFn.dtor = NativeTypeFn.dtor;
+    public static readonly dtor:typeof makefunc.dtor = makefunc.dtor;
     public static readonly ctor_copy:typeof NativeTypeFn.ctor_copy = NativeTypeFn.ctor_copy;
     public static readonly ctor_move:typeof makefunc.ctor_move = makefunc.ctor_move;
     public static readonly size:typeof makefunc.size = makefunc.size;
@@ -144,7 +143,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public [makefunc.getter]:(this:NativeType<T>, ptr:StaticPointer, offset?:number)=>T;
     public [makefunc.setter]:(this:NativeType<T>, ptr:StaticPointer, v:T, offset?:number)=>void;
     public [NativeTypeFn.ctor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
-    public [NativeTypeFn.dtor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
+    public [makefunc.dtor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
     public [makefunc.ctor_move]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
     public [NativeTypeFn.ctor_copy]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
     public [NativeTypeFn.align]:number;

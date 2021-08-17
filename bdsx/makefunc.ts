@@ -141,6 +141,7 @@ export namespace makefunc {
     export const setToParam = Symbol('makefunc.writeToParam');
     export const getFromParam = Symbol('makefunc.readFromParam');
     export const useXmmRegister = Symbol('makefunc.returnWithXmm0');
+    export const dtor = Symbol('makefunc.dtor');
     export const ctor_move = Symbol('makefunc.ctor_move');
     export const size = Symbol('makefunc.size');
 
@@ -151,7 +152,8 @@ export namespace makefunc {
         [getFromParam](stackptr:StaticPointer, offset?:number):any;
         [setToParam](stackptr:StaticPointer, param:any, offset?:number):void;
         [useXmmRegister]:boolean;
-        [ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
+        [ctor_move](to:StaticPointer, from:StaticPointer):void;
+        [dtor](ptr:StaticPointer):void;
         [size]:number;
         isTypeOf(v:unknown):boolean;
         /**
@@ -351,7 +353,9 @@ export namespace makefunc {
                     args.unshift(res);
                     if (options.this != null) args.unshift(thisVar);
                     call3(stackSize, stackWriter, func, args);
-                    return returnTypeResolved[getter](res);
+                    const out = returnTypeResolved[getter](res);
+                    returnTypeResolved[makefunc.dtor](res);
+                    return out;
                 };
             }
         } else {
