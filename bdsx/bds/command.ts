@@ -146,6 +146,15 @@ export class CommandRawText extends NativeClass {
     text:CxxString;
 }
 
+
+@nativeClass()
+export class CommandWildcardInt extends NativeClass {
+    @nativeField(bool_t)
+    isWildcard:bool_t;
+    @nativeField(int32_t, 0x04)
+    value:int32_t;
+}
+
 @nativeClass(0x30)
 export class CommandContext extends NativeClass {
     @nativeField(CxxString)
@@ -555,6 +564,7 @@ const types = [
     CommandPosition,
     CommandPositionFloat,
     CommandRawText,
+    CommandWildcardInt,
     JsonValue
 ];
 type_id.pdbimport(CommandRegistry, types);
