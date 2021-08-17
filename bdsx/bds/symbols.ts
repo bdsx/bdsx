@@ -266,6 +266,8 @@ const symbols = [
     'Scoreboard::getScoreboardIdentityRefs',
     'ScoreboardIdentityRef::modifyScoreInObjective',
     'Scoreboard::getTrackedIds',
+    'ItemStackBase::getRawNameId',
+    'ItemStackBase::_setItem',
 ] as const;
 
 // decorated symbols

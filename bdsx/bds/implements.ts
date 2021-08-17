@@ -389,6 +389,7 @@ Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVect
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 
 ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});
+(ItemStack.prototype as any)._getRawNameId = procHacker.js("ItemStackBase::getRawNameId", CxxStringWrapper, {this:ItemStack}, CxxStringWrapper);
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 ItemStack.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxString, {this:ItemStack, structureReturn:true});
 ItemStack.prototype.setCustomName = procHacker.js("ItemStackBase::setCustomName", void_t, {this:ItemStack}, CxxString);
@@ -400,6 +401,7 @@ ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", bool_t, {thi
 ItemStack.prototype.getEnchantValue = procHacker.js("ItemStackBase::getEnchantValue", int32_t, {this:ItemStack});
 ItemStack.prototype.isEnchanted = procHacker.js("ItemStackBase::isEnchanted", bool_t, {this:ItemStack});
 ItemStack.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamageValue", void_t, {this:ItemStack}, int32_t);
+ItemStack.prototype.setItem = procHacker.js("ItemStackBase::_setItem", bool_t, {this:ItemStack}, int32_t);
 ItemStack.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", void_t, {this:ItemStack}, ServerPlayer);
 ItemStack.prototype.load = procHacker.js("ItemStackBase::load", void_t, {this:ItemStack}, CompoundTag);
 ItemStack.prototype.sameItem = procHacker.js("ItemStackBase::sameItem", bool_t, {this:ItemStack}, ItemStack);
