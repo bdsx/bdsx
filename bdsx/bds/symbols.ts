@@ -268,6 +268,7 @@ const symbols = [
     'Scoreboard::getTrackedIds',
     'ItemStackBase::getRawNameId',
     'ItemStackBase::_setItem',
+    'Actor::getStatusFlag',
 ] as const;
 
 // decorated symbols
@@ -312,6 +313,7 @@ const symbols2 = [
     '?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z',
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
+    '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
 ] as const;
 
 

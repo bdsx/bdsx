@@ -243,6 +243,101 @@ export enum ActorDamageCause {
     All = 0x1F,
 }
 
+export enum ActorFlags {
+    OnFire,
+    Sneaking,
+    Riding,
+    Sprinting,
+    UsingItem,
+    Invisible,
+    Tempted,
+    InLove,
+    Saddled,
+    Powered,
+    Ignit0ed,
+    Baby,
+    Converting,
+    Critical,
+    CanShowName,
+    AlwaysShowName,
+    NoAI,
+    Silent,
+    WallClimbing,
+    CanClimb,
+    CanSwim,
+    CanFly,
+    CanWalk,
+    Resting,
+    Sitting,
+    Angry,
+    Interested,
+    Charged,
+    Tamed,
+    Orphaned,
+    Leashed,
+    Sheared,
+    Gliding,
+    Elder,
+    Moving,
+    Breathing,
+    Chested,
+    Stackable,
+    ShowBottom,
+    Standing,
+    Shaking,
+    Idling,
+    Casting,
+    Charging,
+    WasdControlled,
+    CanPowerJump,
+    Lingering,
+    HasCollision,
+    HasGravity,
+    FireImmune,
+    Dancing,
+    Enchanted,
+    ReturnTrident,
+    ContainerIsPrivate,
+    IsTransforming,
+    DamageNearbyMobs,
+    Swimming,
+    Bribed,
+    IsPregnant,
+    LayingEgg,
+    RiderCanPick,
+    TransitionSitting,
+    Eating,
+    LayingDown,
+    Snezing,
+    Trusting,
+    Rolling,
+    Scared,
+    InScaffolding,
+    OverScaffolding,
+    FallThroughScaffolding,
+    Blocking,
+    TransitionBlocking,
+    BlockedUsingShield,
+    BlockedUsingDamagedShield,
+    Sleeping,
+    WantsToWake,
+    TradeInterest,
+    DoorBreaker,
+    BreakingObstruction,
+    DoorOpener,
+    IsIllagerCaptain,
+    Stunned,
+    Roaring,
+    DelayedAttack,
+    IsAvoidingMobs,
+    FacingTargetToRangeAttack,
+    HiddenWhenInvisible,
+    IsInUI,
+    Stalking,
+    Emoting,
+    Celebrating,
+}
+
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
@@ -396,6 +491,16 @@ export class Actor extends NativeClass {
         abstract();
     }
     getMaxHealth():number {
+        abstract();
+    }
+    /**
+     * Most of the time it will be reset by ticking
+     * @returns changed
+     */
+    setStatusFlag(flag:ActorFlags, value:boolean):boolean {
+        abstract();
+    }
+    getStatusFlag(flag:ActorFlags):boolean {
         abstract();
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
