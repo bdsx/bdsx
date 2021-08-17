@@ -354,7 +354,7 @@ export namespace makefunc {
                     if (options.this != null) args.unshift(thisVar);
                     call3(stackSize, stackWriter, func, args);
                     const out = returnTypeResolved[getter](res);
-                    returnTypeResolved[makefunc.dtor](res);
+                    returnTypeResolved[dtor](res);
                     return out;
                 };
             }
