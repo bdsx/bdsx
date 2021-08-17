@@ -389,7 +389,7 @@ Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVect
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 
 ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});
-(ItemStack.prototype as any)._getRawNameId = procHacker.js("ItemStackBase::getRawNameId", CxxStringWrapper, {this:ItemStack}, CxxStringWrapper);
+ItemStack.prototype.getRawNameId = procHacker.js("ItemStackBase::getRawNameId", CxxString, {this:ItemStack, structureReturn: true});
 (ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
 ItemStack.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxString, {this:ItemStack, structureReturn:true});
 ItemStack.prototype.setCustomName = procHacker.js("ItemStackBase::setCustomName", void_t, {this:ItemStack}, CxxString);
