@@ -251,6 +251,7 @@ const symbols = [
     "ItemActor::`vftable'",
     'ServerPlayer::_nextContainerCounter',
     'EnchantUtils::getEnchantLevel',
+    'EnchantUtils::hasCurse',
     'EnchantUtils::hasEnchant',
     'Player::getCertificate',
     'Level::getSeed',
@@ -269,6 +270,7 @@ const symbols = [
     'ItemStackBase::getRawNameId',
     'ItemStackBase::_setItem',
     'Actor::getStatusFlag',
+    'ItemStackBase::constructItemEnchantsFromUserData',
 ] as const;
 
 // decorated symbols

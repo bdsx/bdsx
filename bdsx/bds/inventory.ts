@@ -8,6 +8,7 @@ import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandName } from "./commandname";
+import type { ItemEnchants } from "./enchants";
 import type { BlockPalette } from "./level";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
@@ -311,6 +312,9 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     getAttackDamage():number {
+        abstract();
+    }
+    constructItemEnchantsFromUserData():ItemEnchants {
         abstract();
     }
 }
