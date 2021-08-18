@@ -105,6 +105,8 @@ Tester.test({
         assert('0f 90 c0 0f 90 c1 0f 91 c0 0f 91 c1 0f 91 00', 'seto al;seto cl;setno al;setno cl;setno byte ptr [rax]');
         assert('ff 81 c0 07 00 00 48 ff c0 48 ff 00 48 ff 08 48 ff c0 ff 18 ff 10 ff 28 ff e0',
             'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
+        assert('41 b0 01 ba 38 00 00 00 48 89 CB e8 aa 6c fb ff',
+            'mov r8b, 0x1;mov edx, 0x38;mov rbx, rcx;call -0x49356');
     },
 
     bin() {

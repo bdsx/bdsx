@@ -395,6 +395,11 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             if (size === OperationSize.dword) size = OperationSize.qword;
             if (v & 0x08) return new asm.Operation(asm.code.pop_r, [reg, size]);
             else return new asm.Operation(asm.code.push_r, [reg, size]);
+        } else if ((v & 0xf0) === 0xb0){ // mov r c
+            const isDword = (v & 0x8) !== 0;
+            const reg = (v & 0x7) | ((rex & 1) << 3);
+            const value = isDword ? ptr.readUint32() : ptr.readUint8();
+            return new asm.Operation(asm.code.mov_r_c, [reg, value, isDword ? OperationSize.dword : OperationSize.byte]);
         } else if ((v & 0xfc) === 0x84) { // test or xchg
             const info = walk_offset(rex, ptr);
             if (info === null) break; // bad
