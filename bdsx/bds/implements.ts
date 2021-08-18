@@ -97,8 +97,8 @@ Actor.abstract({
     vftable: VoidPointer,
     identifier: [CxxString as NativeType<EntityId>, 0x458], // minecraft:player
 });
-const CommandUtils$spawnEntityAt = procHacker.js("CommandUtils::spawnEntityAt", Actor, null, BlockSource, Vec3, ActorDefinitionIdentifier, StaticPointer, Actor);
-Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner:Actor):Actor {
+const CommandUtils$spawnEntityAt = procHacker.js("CommandUtils::spawnEntityAt", Actor, null, BlockSource, Vec3, ActorDefinitionIdentifier, StaticPointer, VoidPointer);
+Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
     const ptr = new AllocatedPointer(8);
     switch (typeof id) {
     case "number":
@@ -108,7 +108,7 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
         ptr.setBin(id);
         break;
     }
-    return CommandUtils$spawnEntityAt(region, pos, type, ptr, summoner);
+    return CommandUtils$spawnEntityAt(region, pos, type, ptr, summoner ?? new VoidPointer());
 };
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
