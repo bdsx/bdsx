@@ -55,6 +55,7 @@ const symbols = [
     'Actor::getNameTag',
     'Actor::getOffhandSlot',
     'Actor::getPos',
+    'Actor::getRotation',
     'Actor::getRegionConst',
     'Actor::getUniqueID',
     'Actor::hasTag',
@@ -271,6 +272,7 @@ const symbols = [
     'ItemStackBase::_setItem',
     'Actor::getStatusFlag',
     'ItemStackBase::constructItemEnchantsFromUserData',
+    'CommandUtils::spawnEntityAt',
 ] as const;
 
 // decorated symbols

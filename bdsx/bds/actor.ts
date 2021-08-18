@@ -4,10 +4,10 @@ import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, NativeType } from "../nativetype";
+import { bin64_t, CxxString, int32_t, int64_as_float_t, NativeType } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
-import { Vec3 } from "./blockpos";
+import { Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
@@ -342,6 +342,13 @@ export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
 
+    /** @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorDefinitionIdentifier.create(ActorType.Pig), -1, player) */
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID, summoner:Actor):Actor;
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:int64_as_float_t, summoner:Actor):Actor;
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner:Actor):Actor {
+        abstract();
+    }
+
     sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
@@ -384,6 +391,9 @@ export class Actor extends NativeClass {
         throw Error(`this is not player`);
     }
     getPosition():Vec3 {
+        abstract();
+    }
+    getRotation():Vec2 {
         abstract();
     }
     getRegion():BlockSource {
