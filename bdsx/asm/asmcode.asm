@@ -81,7 +81,8 @@ export proc breakBeforeCallNativeFunction
     unwind
 endp
 
-export proc callNativeFunction ;JsValueRef(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState)
+;JsValueRef(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState)
+export proc callNativeFunction
     ; prologue
     keep rbp
     keep rbx
@@ -111,10 +112,8 @@ export proc callNativeFunction ;JsValueRef(JsValueRef callee, bool isConstructCa
 
     mov r8, js_undefined
     lea rdx, [rbp+48h] ; args
-    mov rax, [rbx+20h] ; param = arguments[4]
     mov [rbp+48h], r8 ; args[0] = js_undefined
-    mov [rbp+58h], rax ; args[2] = param
-    mov r8, 3 ; argumentCount = 3
+    mov r8, 2 ; argumentCount = 2
 
     sub rsp, 0x20
     ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)

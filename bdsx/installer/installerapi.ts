@@ -8,6 +8,7 @@ import { https } from 'follow-redirects';
 import BDSX_CORE_VERSION = require('../version-bdsx.json');
 import BDS_VERSION = require('../version-bds.json');
 import { fsutil } from '../fsutil';
+import { printOnProgress } from '../util';
 
 const BDSX_YES = process.env.BDSX_YES;
 const sep = path.sep;
@@ -24,14 +25,14 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         const noValues  = [ 'no', 'n' ];
 
         return new Promise<boolean>(resolve=>{
-            if (BDSX_YES === "false") {
+            if (BDSX_YES === 'false') {
                 return resolve(false);
             }
-            if (!process.stdin.isTTY || BDSX_YES === "true") {
+            if (!process.stdin.isTTY || BDSX_YES === 'true') {
                 return resolve(true);
             }
             if (agreeOption) {
-                console.log("Agreed by -y");
+                console.log('Agreed by -y');
                 return resolve(true);
             }
 
@@ -53,9 +54,11 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                 if (noValues.indexOf(cleaned) >= 0)
                     return resolve(false);
 
-                process.stdout.write('\nInvalid Response.\n');
-                process.stdout.write(`Answer either yes : (${yesValues.join(', ')}) \n`);
-                process.stdout.write(`Or no: (${noValues.join(', ')}) \n\n`);
+                console.log();
+                console.log('Invalid Response.');
+                console.log(`Answer either yes : (${yesValues.join(', ')})`);
+                console.log(`Or no: (${noValues.join(', ')})`);
+                console.log();
                 resolve(yesno(question, defaultValue));
             });
         });
@@ -83,14 +86,17 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
 
     async function removeInstalled(dest:string, files:string[]):Promise<void> {
         for (let i = files.length - 1; i >= 0; i--) {
+            const file = files[i];
             try {
-                const file = files[i];
                 if (file.endsWith(sep)) {
                     await fsutil.rmdir(path.join(dest, file.substr(0, file.length-1)));
                 } else {
                     await fsutil.unlink(path.join(dest, file));
                 }
             } catch (err) {
+                if (err.code !== 'ENOENT') {
+                    console.error(`Failed to remove ${file}, ${err.message}`);
+                }
             }
         }
     }
@@ -180,6 +186,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                         if (this.opts.skipExists) {
                             const exists = await fsutil.exists(path.join(dest, entry.path));
                             if (exists) {
+                                printOnProgress(`Keep ${entry.path}`);
                                 entry.autodrain();
                                 return;
                             }
@@ -260,7 +267,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
             console.log(`BDS Version: ${BDS_VERSION}`);
             console.log(`Minecraft End User License Agreement: https://account.mojang.com/terms`);
             console.log(`Privacy Policy: https://go.microsoft.com/fwlink/?LinkId=521839`);
-            const ok = await yesno("Do you agree to the terms above? (y/n)");
+            const ok = await yesno('Do you agree to the terms above? (y/n)');
             if (!ok) throw new MessageError("Canceled");
         },
         async preinstall() {

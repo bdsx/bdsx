@@ -305,7 +305,6 @@ function createServerCommandOrigin(name:CxxString, level:ServerLevel, permission
     const origin = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
     wrapper.value = origin;
     serverCommandOriginConstructor(origin, name, level, permissionLevel, dimension);
-    origin.getName();
     return wrapper;
 }
 
@@ -392,7 +391,7 @@ export namespace bedrockServer
             dimension);
 
         const ctx = createCommandContext(command, origin);
-        const res = bd_server.serverInstance.minecraft.commands.executeCommand(ctx, mute);
+        const res = bd_server.serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
 
         ctx.destruct();
         origin.destruct();

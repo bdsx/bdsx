@@ -423,7 +423,10 @@ export class NativeClass extends StructurePointer {
                 def.field(key, type);
             }
         }
-        if (abstract) def.eof = null;
+        if (abstract) {
+            def.eof = null;
+            if (defineSize === undefined) defineSize = null;
+        }
         if (defineAlign !== null) def.align = defineAlign;
         def.define(clazz, defineSize);
     }

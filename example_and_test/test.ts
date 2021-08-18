@@ -506,7 +506,9 @@ Tester.test({
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
-                this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                if (chatCancelCounter === 0) {
+                    this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                }
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             }, 0));
