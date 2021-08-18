@@ -273,6 +273,8 @@ const symbols = [
     'Actor::getStatusFlag',
     'ItemStackBase::constructItemEnchantsFromUserData',
     'CommandUtils::spawnEntityAt',
+    'Actor::startSwimming',
+    'Player::startSwimming',
 ] as const;
 
 // decorated symbols

@@ -149,7 +149,7 @@ export class ItemStack extends NativeClass {
     amount:uint8_t;
     @nativeField(bool_t)
     valid:bool_t;
-    @nativeField(bin64_t, 0x28)
+    @nativeField(bin64_t, {offset:0x04, relative:true})
     pickupTime:bin64_t;
     @nativeField(bool_t)
     showPickup:bool_t;
@@ -320,7 +320,7 @@ export class ItemStack extends NativeClass {
 }
 
 export class PlayerInventory extends NativeClass {
-    addItem(itemStack:ItemStack, v:boolean):boolean {
+    addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
         abstract();
     }
     clearSlot(slot:number, containerId:ContainerId):void {
@@ -344,7 +344,7 @@ export class PlayerInventory extends NativeClass {
     getSelectedSlot():number {
         return this.getInt8(0x10);
     }
-    getSlotWithItem(itemStack:ItemStack, v2:boolean, v3:boolean):number {
+    getSlotWithItem(itemStack:ItemStack, checkAux:boolean, checkData:boolean):number {
         abstract();
     }
     getSlots():CxxVector<ItemStack> {
@@ -353,7 +353,7 @@ export class PlayerInventory extends NativeClass {
     selectSlot(slot:number, containerId:ContainerId):void {
         abstract();
     }
-    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, v:boolean):void {
+    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, linkEmptySlot:boolean):void {
         abstract();
     }
     setSelectedItem(itemStack:ItemStack):void {

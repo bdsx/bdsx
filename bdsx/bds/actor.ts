@@ -494,7 +494,7 @@ export class Actor extends NativeClass {
     getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
-    setSneaking(bool:boolean):void {
+    setSneaking(value:boolean):void {
         abstract();
     }
     getHealth():number {
