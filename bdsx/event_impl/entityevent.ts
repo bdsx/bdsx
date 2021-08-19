@@ -54,6 +54,15 @@ export class EntityDieEvent implements IEntityDieEvent {
     ) {
     }
 }
+interface IEntityStartSwimmingEvent {
+    entity: Actor;
+}
+export class EntityStartSwimmingEvent implements IEntityStartSwimmingEvent {
+    constructor(
+        public entity: Actor,
+    ) {
+    }
+}
 interface IEntityStartRidingEvent {
     entity: Actor;
     ride: Actor;
@@ -285,6 +294,25 @@ function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
     return _onEntityDie(event.entity, event.damageSource);
 }
 const _onEntityDie = procHacker.hooking('Mob::die', bool_t, null, Actor, ActorDamageSource)(onEntityDie);
+
+function onEntityStartSwimming(entity:Actor):void {
+    const event = new EntityStartSwimmingEvent(entity);
+    const canceled = events.entityStartSwimming.fire(event) === CANCEL;
+    _tickCallback();
+    if (!canceled) {
+        return _onEntityStartSwimming(event.entity);
+    }
+}
+function onPlayerStartSwimming(entity:Player):void {
+    const event = new EntityStartSwimmingEvent(entity);
+    const canceled = events.entityStartSwimming.fire(event) === CANCEL;
+    _tickCallback();
+    if (!canceled) {
+        return _onPlayerStartSwimming(event.entity as Player);
+    }
+}
+const _onEntityStartSwimming = procHacker.hooking('Actor::startSwimming', void_t, null, Actor)(onEntityStartSwimming);
+const _onPlayerStartSwimming = procHacker.hooking('Player::startSwimming', void_t, null, Player)(onPlayerStartSwimming);
 
 function onEntityStartRiding(entity:Actor, ride:Actor):boolean {
     const event = new EntityStartRidingEvent(entity, ride);

@@ -5,7 +5,7 @@ import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -59,6 +59,8 @@ export namespace events {
     export const entityDie = new Event<(event: EntityDieEvent) => void>();
     /** Not cancellable */
     export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
+    /** Cancellable */
+    export const entityStartSwimming = new Event<(event: EntityStartSwimmingEvent) => void | CANCEL>();
     /** Cancellable */
     export const entityStartRiding = new Event<(event: EntityStartRidingEvent) => void | CANCEL>();
     /** Cancellable but the client is still exiting though it will automatically ride again after rejoin */
