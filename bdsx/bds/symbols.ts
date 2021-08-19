@@ -276,6 +276,7 @@ const symbols = [
     'Actor::startSwimming',
     'Player::startSwimming',
     'RakNetInstance::getPort',
+    'ScoreboardIdentityRef::removeFromObjective',
 ] as const;
 
 // decorated symbols

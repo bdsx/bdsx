@@ -539,7 +539,7 @@ Scoreboard.prototype.sync = procHacker.js("ServerScoreboard::onScoreChanged", vo
 Objective.prototype.getPlayers = procHacker.js("Objective::getPlayers", CxxVectorToArray.make(ScoreboardId.ref()), {this:Objective, structureReturn: true});
 Objective.prototype.getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective, structureReturn: true}, ScoreboardId);
 
-(ScoreboardIdentityRef.prototype as any)._modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, StaticPointer, Objective, int32_t, int8_t);
+(ScoreboardIdentityRef.prototype as any)._modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, StaticPointer, Objective, int32_t, uint8_t);
 
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);

@@ -7,7 +7,7 @@ import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
-import type { QueryRegenerateEvent } from "./event_impl/miscevent";
+import type { QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
 
@@ -199,6 +199,14 @@ export namespace events {
 
     /** Not cancellable */
     export const queryRegenerate = new Event<(event: QueryRegenerateEvent) => void>();
+    /** Cancellable */
+    export const scoreReset = new Event<(event: ScoreResetEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const scoreSet = new Event<(event: ScoreSetEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const scoreAdd = new Event<(event: ScoreAddEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const scoreRemove = new Event<(event: ScoreRemoveEvent) => void | CANCEL>();
 
     /**
     * global error listeners
