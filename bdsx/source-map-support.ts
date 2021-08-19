@@ -405,7 +405,7 @@ export function install():void {
     }
 
     console.trace = function(...messages:any[]): void {
-        const err = remapStack(removeLine(Error(messages.map(msg=>util.inspect(msg, false, 2, true)).join(' ')).stack || '', 1, 2))!;
+        const err = remapStack(removeLine(Error(messages.map(msg=>typeof msg === 'string' ? msg : util.inspect(msg, false, 2, true)).join(' ')).stack || '', 1, 2))!;
         console.error(`Trace${err.substr(5)}`);
     };
 }
