@@ -48,6 +48,16 @@ export class LevelSaveEvent implements ILevelSaveEvent {
     }
 }
 
+interface ILevelTickEvent {
+    level: Level;
+}
+export class LevelTickEvent implements ILevelTickEvent {
+    constructor(
+        public level: Level,
+    ) {
+    }
+}
+
 interface ILevelWeatherChangeEvent {
     level: Level;
     rainLevel: number;
@@ -85,6 +95,13 @@ function onLevelSave(level:Level):void {
     }
 }
 const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLevelSave);
+
+function onLevelTick(level:Level):void {
+    const event = new LevelTickEvent(level);
+    events.levelTick.fire(event);
+    _onLevelTick(event.level);
+}
+const _onLevelTick = procHacker.hooking("Level::tick", void_t, null, Level)(onLevelTick);
 
 function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);

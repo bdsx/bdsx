@@ -225,6 +225,7 @@ const symbols = [
     'Level::getTagRegistry',
     'Level::updateWeather',
     'Level::save',
+    'Level::tick',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',

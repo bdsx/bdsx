@@ -6,7 +6,7 @@ import { CANCEL } from "./common";
 import { Event } from "./eventtarget";
 import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
-import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
+import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
@@ -91,6 +91,8 @@ export namespace events {
 
     /** Cancellable */
     export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const levelTick = new Event<(event: LevelTickEvent) => void>();
     /** Cancellable but you won't be able to stop the server */
     export const levelSave = new Event<(event: LevelSaveEvent) => void | CANCEL>();
     /** Cancellable */

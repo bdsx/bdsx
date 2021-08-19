@@ -2,6 +2,7 @@ import { createAbstractObject } from "../abstractobject";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
+import { events } from "../event";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
@@ -157,6 +158,15 @@ export class ServerInstance extends NativeClass {
     }
     getGameVersion():SemVersion {
         return proc["SharedConstants::CurrentGameSemVersion"].as(SemVersion);
+    }
+    nextTick():Promise<void> {
+        return new Promise(resolve=>{
+            const listener = (): void => {
+                resolve();
+                events.levelTick.remove(listener);
+            };
+            events.levelTick.on(listener);
+        });
     }
 }
 
