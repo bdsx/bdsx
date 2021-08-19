@@ -480,7 +480,7 @@ export namespace disasm
         fallback?(ptr:NativePointer):asm.Operation|number|null;
         quiet?:boolean;
     }
-    export function walk(ptr:NativePointer, opts:Options={}):asm.Operation|null {
+    export function walk(ptr:NativePointer, opts?:Options|null):asm.Operation|null {
         const low = ptr.getAddressLow();
         const high = ptr.getAddressHigh();
 
@@ -490,6 +490,7 @@ export namespace disasm
             return res;
         }
 
+        if (opts == null) opts = {};
         ptr.setAddress(low, high);
         if (opts.fallback != null) {
             let res = opts.fallback(ptr);
@@ -525,7 +526,7 @@ export namespace disasm
         }
         return null;
     }
-    export function process(ptr:VoidPointer, size:number, opts:Options={}):asm.Operations {
+    export function process(ptr:VoidPointer, size:number, opts?:Options|null):asm.Operations {
         const operations:asm.Operation[] = [];
         const nptr = ptr.as(NativePointer);
         let oper:asm.Operation|null = null;
@@ -540,25 +541,29 @@ export namespace disasm
     /**
      * @param opts it's a quiet option if it's boolean,
      */
-    export function check(hexstr:string|Uint8Array, opts:boolean|Options={}):asm.Operations {
+    export function check(hexstr:string|Uint8Array, opts?:boolean|Options|null):asm.Operations {
         const buffer = typeof hexstr === 'string' ? unhex(hexstr) : hexstr;
         const ptr = new NativePointer;
         ptr.setAddressFromBuffer(buffer);
 
+        let quiet:boolean;
         if (typeof opts === 'boolean') {
+            quiet = opts;
             opts = {
                 quiet:opts
             };
+        } else {
+            quiet = !!(opts && opts.quiet);
         }
 
         const opers:asm.Operation[] = [];
-        if (!opts.quiet) console.log();
+        if (!quiet) console.log();
         let oper:asm.Operation|null = null;
         let pos = 0;
         const size = buffer.length;
         while ((pos < size) && (oper = disasm.walk(ptr, opts)) !== null) {
             const posend = pos + oper.size;
-            if (!opts.quiet) console.log(oper+'' + colors.gray(` // ${hex(buffer.subarray(pos, posend))}`));
+            if (!quiet) console.log(oper+'' + colors.gray(` // ${hex(buffer.subarray(pos, posend))}`));
             pos = posend;
             opers.push(oper);
         }
