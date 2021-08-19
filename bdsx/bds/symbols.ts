@@ -275,6 +275,7 @@ const symbols = [
     'CommandUtils::spawnEntityAt',
     'Actor::startSwimming',
     'Player::startSwimming',
+    'RakNetInstance::getPort',
 ] as const;
 
 // decorated symbols

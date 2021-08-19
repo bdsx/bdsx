@@ -132,8 +132,8 @@ export class ServerInstance extends NativeClass {
     disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
         this._disconnectAllClients(message);
     }
-    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
-        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message);
+    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
+        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message, skipMessage);
     }
     getMotd():string {
         return this.minecraft.getServerNetworkHandler().motd;
