@@ -107,6 +107,16 @@ Tester.test({
             'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
         assert('41 b0 01 ba 38 00 00 00 48 89 CB e8 aa 6c fb ff',
             'mov r8b, 0x1;mov edx, 0x38;mov rbx, rcx;call -0x49356');
+        this.assert(disasm.check('82', true).size === 0, 'asm bad');
+        const opers = disasm.check('82', {
+            fallback(asm){
+                if (asm.readUint8() === 0x82) {
+                    return 1; // opcode size
+                } else {
+                    return null; // failed
+                }
+            }, quiet: true});
+        this.assert(opers.size === 1, 'fallback');
     },
 
     bin() {

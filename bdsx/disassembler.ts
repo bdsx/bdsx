@@ -476,7 +476,11 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
 
 export namespace disasm
 {
-    export function walk(ptr:NativePointer):asm.Operation|null {
+    export interface Options {
+        fallback?(ptr:NativePointer):asm.Operation|number|null;
+        quiet?:boolean;
+    }
+    export function walk(ptr:NativePointer, opts:Options={}):asm.Operation|null {
         const low = ptr.getAddressLow();
         const high = ptr.getAddressHigh();
 
@@ -487,43 +491,74 @@ export namespace disasm
         }
 
         ptr.setAddress(low, high);
+        if (opts.fallback != null) {
+            let res = opts.fallback(ptr);
+            if (res !== null) {
+                if (typeof res === 'number') {
+                    ptr.setAddress(low, high);
+                    const size = res;
+                    const buffer = ptr.readBuffer(size);
+                    res = new asm.Operation(asm.code.writeBuffer, [buffer]);
+                    res.size = size;
+                } else {
+                    ptr.setAddress(low, high);
+                    ptr.move(res.size);
+                }
+                return res;
+            }
+        }
         let size = 16;
+        let opcode = '';
         while (size !== 0) {
             try {
-                console.error(colors.red('disasm.walk: unimplemented opcode, failed'));
-                console.error(colors.red('disasm.walk: Please send rua.kr this error'));
-                console.trace(colors.red(`opcode: ${hex(ptr.getBuffer(size))}`));
+                opcode = hex(ptr.getBuffer(size));
                 break;
             } catch (err) {
+                // access violation
                 size--;
             }
         }
+        if (!opts.quiet) {
+            console.error(colors.red('disasm.walk: unimplemented opcode, failed'));
+            console.error(colors.red('disasm.walk: Please send rua.kr this error'));
+            console.trace(colors.red(`opcode: ${opcode || '[failed to read]'}`));
+        }
         return null;
     }
-    export function process(ptr:VoidPointer, size:number):asm.Operations {
+    export function process(ptr:VoidPointer, size:number, opts:Options={}):asm.Operations {
         const operations:asm.Operation[] = [];
         const nptr = ptr.as(NativePointer);
         let oper:asm.Operation|null = null;
         let ressize = 0;
-        while ((ressize < size) && (oper = disasm.walk(nptr)) !== null) {
+        while ((ressize < size) && (oper = disasm.walk(nptr, opts)) !== null) {
             operations.push(oper);
             ressize += oper.size;
         }
         return new asm.Operations(operations, ressize);
     }
-    export function check(hexstr:string|Uint8Array, quiet?:boolean):asm.Operations {
+
+    /**
+     * @param opts it's a quiet option if it's boolean,
+     */
+    export function check(hexstr:string|Uint8Array, opts:boolean|Options={}):asm.Operations {
         const buffer = typeof hexstr === 'string' ? unhex(hexstr) : hexstr;
         const ptr = new NativePointer;
         ptr.setAddressFromBuffer(buffer);
 
+        if (typeof opts === 'boolean') {
+            opts = {
+                quiet:opts
+            };
+        }
+
         const opers:asm.Operation[] = [];
-        if (!quiet) console.log();
+        if (!opts.quiet) console.log();
         let oper:asm.Operation|null = null;
         let pos = 0;
         const size = buffer.length;
-        while ((pos < size) && (oper = disasm.walk(ptr)) !== null) {
+        while ((pos < size) && (oper = disasm.walk(ptr, opts)) !== null) {
             const posend = pos + oper.size;
-            if (!quiet) console.log(oper+'' + colors.gray(` // ${hex(buffer.subarray(pos, posend))}`));
+            if (!opts.quiet) console.log(oper+'' + colors.gray(` // ${hex(buffer.subarray(pos, posend))}`));
             pos = posend;
             opers.push(oper);
         }
