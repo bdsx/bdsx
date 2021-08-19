@@ -494,15 +494,14 @@ export namespace disasm
         ptr.setAddress(low, high);
         if (opts.fallback != null) {
             let res = opts.fallback(ptr);
+            ptr.setAddress(low, high);
             if (res !== null) {
                 if (typeof res === 'number') {
-                    ptr.setAddress(low, high);
                     const size = res;
                     const buffer = ptr.readBuffer(size);
                     res = new asm.Operation(asm.code.writeBuffer, [buffer]);
                     res.size = size;
                 } else {
-                    ptr.setAddress(low, high);
                     ptr.move(res.size);
                 }
                 return res;
