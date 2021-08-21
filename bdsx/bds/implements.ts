@@ -159,7 +159,7 @@ ActorDefinitionIdentifier.create = function(type:number):ActorDefinitionIdentifi
     return identifier;
 };
 
-ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource});
+ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 
 ItemActor.abstract({
     itemStack: [ItemStack, 1824],
