@@ -16,6 +16,7 @@ import { _tickCallback } from "../util";
 interface IEntityHurtEvent {
     entity: Actor;
     damage: number;
+    damageSource: ActorDamageSource;
     knock: boolean,
     ignite: boolean,
 }
@@ -23,6 +24,7 @@ export class EntityHurtEvent implements IEntityHurtEvent {
     constructor(
         public entity: Actor,
         public damage: number,
+        public damageSource: ActorDamageSource,
         public knock: boolean,
         public ignite: boolean,
     ) {
@@ -267,13 +269,13 @@ function onPlayerCrit(player: Player):void {
 const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
 
 function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean):boolean {
-    const event = new EntityHurtEvent(entity, damage, knock, ignite);
+    const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);
     const canceled = events.entityHurt.fire(event) === CANCEL;
     _tickCallback();
     if (canceled) {
         return false;
     }
-    return _onEntityHurt(event.entity, actorDamageSource, event.damage, knock, ignite);
+    return _onEntityHurt(event.entity, event.damageSource, event.damage, knock, ignite);
 }
 const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
 
