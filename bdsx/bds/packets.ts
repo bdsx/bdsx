@@ -1,11 +1,12 @@
 import { CxxVector } from "../cxxvector";
+import { mce } from "../mce";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
-import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStack } from "./inventory";
+import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { Packet } from "./packet";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
@@ -649,8 +650,8 @@ export class PlayerHotbarPacket extends Packet {
 export class InventoryContentPacket extends Packet {
     @nativeField(uint8_t)
     containerId:ContainerId;
-    @nativeField(CxxVector.make(ItemStack), 56)
-    slots:CxxVector<ItemStack>;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor), 56)
+    slots:CxxVector<NetworkItemStackDescriptor>;
 }
 
 @nativeClass(null)
@@ -670,7 +671,16 @@ export class CraftingDataPacket extends Packet {
 
 @nativeClass(null)
 export class CraftingEventPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    containerId:ContainerId;
+    @nativeField(int32_t, 0x34)
+    containerType:ContainerType;
+    @nativeField(mce.UUID)
+    recipeId:mce.UUID;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor))
+    inputItems:CxxVector<NetworkItemStackDescriptor>;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor))
+    outputItems:CxxVector<NetworkItemStackDescriptor>;
 }
 
 @nativeClass(null)

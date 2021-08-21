@@ -397,6 +397,7 @@ export class InventorySource extends NativeClass {
     }
 }
 
+//@nativeClass(0x48)
 export class ItemDescriptor extends NativeClass {
 }
 

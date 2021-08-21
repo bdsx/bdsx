@@ -10,7 +10,7 @@ import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, in
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, ItemActor } from "./actor";
+import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, ItemActor } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -158,6 +158,8 @@ ActorDefinitionIdentifier.create = function(type:number):ActorDefinitionIdentifi
     ActorDefinitionIdentifier$ActorDefinitionIdentifier(identifier, type);
     return identifier;
 };
+
+ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource});
 
 ItemActor.abstract({
     itemStack: [ItemStack, 1824],
