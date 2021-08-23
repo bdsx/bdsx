@@ -477,16 +477,26 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
 export namespace disasm
 {
     export interface Options {
-        fallback?(ptr:NativePointer):asm.Operation|number|null;
+        /**
+         * returns asm.Operator - it will assume the size from the moved distance.
+         * returns number - it uses the number as the size.
+         * returns null - failed.
+         * returns void - it will assume the size from moved distance.
+         */
+        fallback?(ptr:NativePointer):asm.Operation|number|null|void;
         quiet?:boolean;
     }
     export function walk(ptr:NativePointer, opts?:Options|null):asm.Operation|null {
         const low = ptr.getAddressLow();
         const high = ptr.getAddressHigh();
 
+        function getMovedDistance():number {
+            return (ptr.getAddressHigh()-high)*0x100000000 + (ptr.getAddressLow()-low);
+        }
+
         const res = walk_raw(ptr);
         if (res !== null) {
-            res.size = (ptr.getAddressHigh()-high)*0x100000000 + (ptr.getAddressLow()-low);
+            res.size = getMovedDistance();
             return res;
         }
 
@@ -494,15 +504,19 @@ export namespace disasm
         ptr.setAddress(low, high);
         if (opts.fallback != null) {
             let res = opts.fallback(ptr);
-            ptr.setAddress(low, high);
-            if (res !== null) {
-                if (typeof res === 'number') {
-                    const size = res;
+            if (res === null) {
+                // fail
+                ptr.setAddress(low, high);
+            } else {
+                if (typeof res === 'object') {
+                    // size from the ptr distance
+                    res.size = getMovedDistance();
+                } else {
+                    const size = res == null ? getMovedDistance() : res;
+                    ptr.setAddress(low, high);
                     const buffer = ptr.readBuffer(size);
                     res = new asm.Operation(asm.code.writeBuffer, [buffer]);
                     res.size = size;
-                } else {
-                    ptr.move(res.size);
                 }
                 return res;
             }
