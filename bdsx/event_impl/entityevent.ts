@@ -151,6 +151,22 @@ export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     }
 }
 
+interface IPlayerInventoryChangeEvent {
+    player: Player;
+    readonly oldItemStack: ItemStack;
+    readonly newItemStack: ItemStack;
+    readonly slot:number;
+}
+export class PlayerInventoryChangeEvent implements IPlayerInventoryChangeEvent {
+    constructor(
+        public player: Player,
+        readonly oldItemStack: ItemStack,
+        readonly newItemStack: ItemStack,
+        readonly slot:number,
+    ) {
+    }
+}
+
 interface IPlayerRespawnEvent {
     player: Player;
 }
@@ -383,6 +399,14 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):
     return _onPlayerDropItem(event.player, event.itemStack, randomly);
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
+
+function onPlayerInventoryChange(player:Player, container:VoidPointer, slot:number, oldItemStack:ItemStack, newItemStack:ItemStack, unknown:boolean):void {
+    const event = new PlayerInventoryChangeEvent(player, oldItemStack, newItemStack, slot);
+    events.playerInventoryChange.fire(event);
+    _tickCallback();
+    return _onPlayerInventoryChange(event.player, container, slot, event.oldItemStack, event.newItemStack, unknown);
+}
+const _onPlayerInventoryChange = procHacker.hooking("Player::inventoryChanged", void_t, null, Player, VoidPointer, int32_t, ItemStack, ItemStack, bool_t)(onPlayerInventoryChange);
 
 function onPlayerRespawn(player:Player):void {
     const event = new PlayerRespawnEvent(player);
