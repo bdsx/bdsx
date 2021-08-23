@@ -451,12 +451,33 @@ export class InventoryTransactionPacket extends Packet {
 
 @nativeClass(null)
 export class MobEquipmentPacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID;
+    @nativeField(NetworkItemStackDescriptor)
+    item:NetworkItemStackDescriptor;
+    @nativeField(uint8_t, 0xC1)
+    slot:uint8_t;
+    @nativeField(uint8_t)
+    selectedSlot:uint8_t;
+    @nativeField(uint8_t)
+    containerId:ContainerId;
 }
 
 @nativeClass(null)
 export class MobArmorEquipmentPacket extends Packet {
-    // unknown
+    // I need some tests, I do not know when this packet is sent
+    // @nativeField(NetworkItemStackDescriptor)
+    // head:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor, {ghost: true})
+    // chest:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor)
+    // torso:NetworkItemStackDescriptor; // Found 'torso' instead of 'chest' in IDA
+    // @nativeField(NetworkItemStackDescriptor)
+    // legs:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor)
+    // feet:NetworkItemStackDescriptor;
+    // @nativeField(ActorRuntimeID)
+    // runtimeId:ActorRuntimeID;
 }
 
 @nativeClass(null)
@@ -610,28 +631,28 @@ export class RespawnPacket extends Packet {
 
 @nativeClass(null)
 export class ContainerOpenPacket extends Packet {
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
+    windowId:uint8_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
-    /** @deprecated */
-    @nativeField(uint8_t, 0x30)
-    windowId:uint8_t;
     @nativeField(int8_t)
     type:ContainerType;
     @nativeField(BlockPos)
     pos:BlockPos;
     @nativeField(bin64_t)
     entityUniqueId:bin64_t;
-    @nativeField(int64_as_float_t, 0x30+0x01+0xC)
+    @nativeField(int64_as_float_t, {ghost: true})
     entityUniqueIdAsNumber:int64_as_float_t;
 }
 
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
+    windowId:uint8_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
-    /** @deprecated */
-    @nativeField(uint8_t, 0x30)
-    windowId:uint8_t;
     @nativeField(bool_t)
     server:bool_t;
 }
@@ -642,8 +663,11 @@ export class PlayerHotbarPacket extends Packet {
     selectedSlot:uint32_t;
     @nativeField(bool_t)
     selectHotbarSlot:bool_t;
-    @nativeField(uint8_t)
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
     windowId:uint8_t;
+    @nativeField(uint8_t)
+    containerId:ContainerId;
 }
 
 @nativeClass(null)
