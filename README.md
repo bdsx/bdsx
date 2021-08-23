@@ -1,4 +1,4 @@
-# BDSX 2.0 : BDS + node.js
+# BDSX : BDS + node.js
 ![logo](bdsx/icon/icon.png)  
 BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.js](https://nodejs.org/). Because it is based on the offical BDS software, it includes all the features of vanilla Minecraft, but includes other features as well, such as hooking functions and packets to change behavior. 
 
@@ -50,7 +50,7 @@ When starting BDSX with VSCode, you need to
 3. Run `npm i` to install npm packages and BDS
 4. Press `F5` to build and run in VSCode
 
-For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well. 
+For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well.  
 If you want to publish a bdsx plugin, please ask to be invited to the bdsx organization on npm in the `#npm-bdsx-org-member-request` channel in Discord. 
 
 > VSCode will show you upgrade the NodeJS debugger. but ChakraCore needs the legacy debugger.  
