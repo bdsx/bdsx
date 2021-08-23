@@ -54,7 +54,9 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
                 builder.import(manualfn, 'manual_'+fnname);
                 ctx.code += `manual_${fnname}.call(this);\n`;
             }
-            ctx.code = '\nfunction(){\nconst ptr = this.add();\n'+ctx.code;
+            let prefix = '\nfunction(){\n';
+            if (ctx.ptrUsed) prefix += 'const ptr = this.add();\n';
+            ctx.code = prefix+ctx.code;
         } else if (superfn !== manualfn) {
             clazz.prototype[type] = function(this:unknown){
                 superfn.call(this);
@@ -69,7 +71,8 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
         if (clazz.prototype.hasOwnProperty(NativeType.ctor_copy)) {
             builder.ctor_copy.used = false;
         } else {
-            let code = '\nfunction(o){\nconst ptr = this.add();\nconst optr = o.add();\n';
+            let code = '\nfunction(o){\n';
+            if (builder.ctor_copy.ptrUsed) code += 'const ptr = this.add();\nconst optr = o.add();\n';
             if (superproto[NativeType.ctor_copy] !== emptyFunc) {
                 code += `superproto[NativeType.ctor_copy].call(this);\n`;
             }
@@ -81,7 +84,8 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
         if (clazz.prototype.hasOwnProperty(NativeType.ctor_move)) {
             builder.ctor_move.used = false;
         } else {
-            let code = '\nfunction(o){\nconst ptr = this.add();\nconst optr = o.add();\n';
+            let code = '\nfunction(o){\n';
+            if (builder.ctor_move.ptrUsed) code += 'const ptr = this.add();\nconst optr = o.add();\n';
             if (superproto[NativeType.ctor_move] !== emptyFunc) {
                 code += `superproto[NativeType.ctor_move].call(this);\n`;
             }

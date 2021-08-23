@@ -91,6 +91,7 @@ export namespace NativeDescriptorBuilder {
         public code = '';
         public used = false;
         public offset = 0;
+        public ptrUsed = false;
 
         setPtrOffset(offset:number):void {
             this.used = true;
@@ -134,6 +135,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly setter:typeof makefunc.setter = makefunc.setter;
     public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
     public static readonly dtor:typeof makefunc.dtor = makefunc.dtor;
+    public static readonly registerDirect:typeof makefunc.registerDirect = makefunc.registerDirect;
     public static readonly ctor_copy:typeof NativeTypeFn.ctor_copy = NativeTypeFn.ctor_copy;
     public static readonly ctor_move:typeof makefunc.ctor_move = makefunc.ctor_move;
     public static readonly size:typeof makefunc.size = makefunc.size;
@@ -270,15 +272,19 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
 
         const name = builder.importType(type);
         if (ctorbase[NativeType.ctor] !== emptyFunc) {
+            builder.ctor.ptrUsed = true;
             builder.ctor.setPtrOffset(offset);
             builder.ctor.code += `${name}[NativeType.ctor](ptr);\n`;
         }
         if (ctorbase[NativeType.dtor] !== emptyFunc) {
+            builder.dtor.ptrUsed = true;
             builder.dtor.setPtrOffset(offset);
             builder.dtor.code += `${name}[NativeType.dtor](ptr);\n`;
         }
+        builder.ctor_copy.ptrUsed = true;
         builder.ctor_copy.setPtrOffset(offset);
         builder.ctor_copy.code += `${name}[NativeType.ctor_copy](ptr, optr);\n`;
+        builder.ctor_move.ptrUsed = true;
         builder.ctor_move.setPtrOffset(offset);
         builder.ctor_move.code += `${name}[NativeType.ctor_move](ptr, optr);\n`;
     }

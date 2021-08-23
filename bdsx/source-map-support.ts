@@ -1,9 +1,10 @@
 
 import { SourceMapConsumer } from 'source-map';
-import { removeLine } from './util';
+import { getLineAt, indexOfLine, removeLine } from './util';
 import path = require('path');
 import fs = require('fs');
 import util = require('util');
+import colors = require('colors');
 
 const HIDE_UNDERSCOPE = true;
 
@@ -214,10 +215,20 @@ export function remapError<T extends Error>(err: T): T {
     return err;
 }
 
-interface FrameInfo {
+export interface FrameInfo {
     hidden: boolean;
     stackLine: string;
     internal: boolean;
+    position: Position|null;
+}
+
+function frameToString(frame:FrameInfo):string {
+    const pos = frame.position;
+    if (pos !== null) {
+        return `${colors.cyan(pos.source)}:${colors.brightYellow(pos.line+'')}:${colors.brightYellow(pos.column+'')}`;
+    } else {
+        return colors.cyan(frame.stackLine);
+    }
 }
 
 /**
@@ -267,27 +278,29 @@ export function remapStack(stack?: string): string | undefined {
     return nframes.reverse().join('\n');
 }
 
+const stackLineMatcher = /^ +at (.+) \(([^(]+)\)$/;
+
 /**
  * remap filepath to original filepath for one line
  */
 export function remapStackLine(stackLine: string, state: StackState = { nextPosition: null, curPosition: null }): FrameInfo {
 
-    const matched = /^ {3}at (.+) \(([^(]+)\)$/.exec(stackLine);
-    if (!matched) return { hidden: false, stackLine, internal: false };
+    const matched = stackLineMatcher.exec(stackLine);
+    if (matched === null) return { hidden: false, stackLine, internal: false, position:null };
     const fnname = matched[1];
     const source = matched[2];
 
     // provides interface backward compatibility
     if (source === 'native code' || source === 'native code:0:0') {
         state.curPosition = null;
-        return { hidden: false, stackLine, internal: false };
+        return { hidden: false, stackLine, internal: false, position:null };
     }
     const srcmatched = /^(.+):(\d+):(\d+)$/.exec(source);
-    if (!srcmatched) return { hidden: false, stackLine, internal: false };
+    if (!srcmatched) return { hidden: false, stackLine, internal: false, position:null };
 
     const isEval = fnname === 'eval code';
     if (isEval) {
-        return { hidden: false, stackLine, internal: false };
+        return { hidden: false, stackLine, internal: false, position:null };
     }
 
     const file = srcmatched[1];
@@ -303,7 +316,8 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
     return {
         hidden: fnname === '_',
         stackLine: `   at ${fnname} (${position.source}:${position.line}:${position.column + 1})`,
-        internal: position.source.startsWith('internal/')
+        internal: position.source.startsWith('internal/'),
+        position,
     };
 }
 
@@ -409,3 +423,19 @@ export function install():void {
         console.error(`Trace${err.substr(5)}`);
     };
 }
+
+export function getCurrentFrameInfo(stackOffset:number = 0):FrameInfo {
+    return remapStackLine(getLineAt(Error().stack!, stackOffset + 2));
+}
+
+export function partialTrace(message:string, offset:number = 0):void {
+    const stack = remapStack(new Error().stack)!;
+    const idx = indexOfLine(stack, 2+offset);
+    if (idx === -1) {
+        console.error(message);
+    } else {
+        console.error('Trace: '+message);
+        console.error(stack.substr(idx));
+    }
+}
+

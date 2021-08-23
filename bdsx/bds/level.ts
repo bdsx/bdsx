@@ -54,6 +54,7 @@ export class Level extends NativeClass {
         abstract();
     }
 }
+
 export class ServerLevel extends Level {
     /** @deprecated unusing */
     packetSender:LoopbackPacketSender;
