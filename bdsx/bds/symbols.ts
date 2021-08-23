@@ -279,6 +279,7 @@ const symbols = [
     'RakNetInstance::getPort',
     'ScoreboardIdentityRef::removeFromObjective',
     'ActorDamageSource::getDamagingEntityUniqueID',
+    'Player::inventoryChanged',
 ] as const;
 
 // decorated symbols

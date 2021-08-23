@@ -16,6 +16,7 @@ import { _tickCallback } from "../util";
 interface IEntityHurtEvent {
     entity: Actor;
     damage: number;
+    damageSource: ActorDamageSource;
     knock: boolean,
     ignite: boolean,
 }
@@ -23,6 +24,7 @@ export class EntityHurtEvent implements IEntityHurtEvent {
     constructor(
         public entity: Actor,
         public damage: number,
+        public damageSource: ActorDamageSource,
         public knock: boolean,
         public ignite: boolean,
     ) {
@@ -149,6 +151,22 @@ export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     }
 }
 
+interface IPlayerInventoryChangeEvent {
+    player: Player;
+    readonly oldItemStack: ItemStack;
+    readonly newItemStack: ItemStack;
+    readonly slot:number;
+}
+export class PlayerInventoryChangeEvent implements IPlayerInventoryChangeEvent {
+    constructor(
+        public player: Player,
+        readonly oldItemStack: ItemStack,
+        readonly newItemStack: ItemStack,
+        readonly slot:number,
+    ) {
+    }
+}
+
 interface IPlayerRespawnEvent {
     player: Player;
 }
@@ -267,13 +285,13 @@ function onPlayerCrit(player: Player):void {
 const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
 
 function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean):boolean {
-    const event = new EntityHurtEvent(entity, damage, knock, ignite);
+    const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);
     const canceled = events.entityHurt.fire(event) === CANCEL;
     _tickCallback();
     if (canceled) {
         return false;
     }
-    return _onEntityHurt(event.entity, actorDamageSource, event.damage, knock, ignite);
+    return _onEntityHurt(event.entity, event.damageSource, event.damage, knock, ignite);
 }
 const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
 
@@ -381,6 +399,14 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):
     return _onPlayerDropItem(event.player, event.itemStack, randomly);
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
+
+function onPlayerInventoryChange(player:Player, container:VoidPointer, slot:number, oldItemStack:ItemStack, newItemStack:ItemStack, unknown:boolean):void {
+    const event = new PlayerInventoryChangeEvent(player, oldItemStack, newItemStack, slot);
+    events.playerInventoryChange.fire(event);
+    _tickCallback();
+    return _onPlayerInventoryChange(event.player, container, slot, event.oldItemStack, event.newItemStack, unknown);
+}
+const _onPlayerInventoryChange = procHacker.hooking("Player::inventoryChanged", void_t, null, Player, VoidPointer, int32_t, ItemStack, ItemStack, bool_t)(onPlayerInventoryChange);
 
 function onPlayerRespawn(player:Player):void {
     const event = new PlayerRespawnEvent(player);
