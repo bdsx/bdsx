@@ -936,6 +936,32 @@ export class X64Assembler {
         return this.mov_r_c(dest, value, size);
     }
 
+    private _movabs_rax_mem(address:Value64, writeBit:number, size:OperationSize):this {
+        if (size === OperationSize.word) {
+            this.write(0x66);
+        } else if (size === OperationSize.qword) {
+            this.write(0x48);
+        }
+        const dwordBit = +(size !== OperationSize.byte);
+        this.write((writeBit << 1) | dwordBit | 0xa0);
+        const [low32, high32] = split64bits(address);
+        this.writeInt32(low32);
+        this.writeInt32(high32);
+        return this;
+    }
+
+    movabs_r_cp(
+        dest:Register, address:Value64, size:OperationSize = OperationSize.qword):this {
+        if (dest !== Register.rax) throw Error(`Invalid operand ${Register[dest]}`);
+        return this._movabs_rax_mem(address, 0, size);
+    }
+
+    movabs_cp_r(
+        address:Value64, src:Register, size:OperationSize = OperationSize.qword):this {
+        if (src !== Register.rax) throw Error(`Invalid operand ${Register[src]}`);
+        return this._movabs_rax_mem(address, 1, size);
+    }
+
     def(name:string, size:OperationSize, bytes:number, align:number, exportDef:boolean = false):this {
         if (align < 1) align = 1;
         checkPowOf2(align);
@@ -2995,15 +3021,38 @@ export function asm():X64Assembler {
     return new X64Assembler(new Uint8Array(64), 0);
 }
 
-function shex(v:number|string):string {
-    if (typeof v === 'string') return `0x${bin.toString(v, 16)}`;
-    if (v < 0) return `-0x${(-v).toString(16)}`;
-    else return `0x${v.toString(16)}`;
+function value64ToString16(v:Value64Castable):string {
+    const [low, high] = v[asm.splitTwo32Bits]();
+    if (high === 0) {
+        return '0x'+low.toString(16);
+    }
+    const lowstr = low.toString(16);
+    return '0x' + high.toString(16) + '0'.repeat(16-lowstr.length) + lowstr;
 }
-function shex_o(v:number|string):string {
+
+function uhex(v:Value64):string {
+    if (typeof v === 'string') return `0x${bin.toString(v, 16)}`;
+    if (typeof v === 'number') {
+        if (v < 0) v = v>>>0;
+        return `0x${v.toString(16)}`;
+    }
+    return value64ToString16(v);
+}
+function shex(v:Value64):string {
+    if (typeof v === 'string') return `0x${bin.toString(v, 16)}`;
+    if (typeof v === 'number') {
+        if (v < 0) return `-0x${(-v).toString(16)}`;
+        else return `0x${v.toString(16)}`;
+    }
+    return value64ToString16(v);
+}
+function shex_o(v:Value64):string {
     if (typeof v === 'string') return `+0x${bin.toString(v, 16)}`;
-    if (v < 0) return `-0x${(-v).toString(16)}`;
-    else return `+0x${v.toString(16)}`;
+    if (typeof v === 'number') {
+        if (v < 0) return `-0x${(-v).toString(16)}`;
+        else return `+0x${v.toString(16)}`;
+    }
+    return '+'+value64ToString16(v);
 }
 
 const REVERSE_MAP:Record<string, string> = {
@@ -3181,6 +3230,10 @@ export namespace asm
         multiply:AsmMultiplyConstant;
         offset:number;
     }
+    export interface ParameterConstantPointer extends ParameterBase {
+        type:'cp';
+        address:Value64;
+    }
     export interface ParameterRegisterRegisterPointer extends ParameterBase {
         type:'rrp';
         register:Register;
@@ -3206,7 +3259,7 @@ export namespace asm
         type:'label';
         label:string;
     }
-    export type Parameter = ParameterRegister | ParameterRegisterPointer | ParameterRegisterRegisterPointer | ParameterFloatRegister | ParameterFarPointer | ParameterConstant | ParameterLabel;
+    export type Parameter = ParameterRegister | ParameterRegisterPointer | ParameterConstantPointer | ParameterRegisterRegisterPointer | ParameterFloatRegister | ParameterFarPointer | ParameterConstant | ParameterLabel;
 
     export class Operation {
         public size = -1;
@@ -3242,6 +3295,13 @@ export namespace asm
                     out.push({
                         type, argi: argi_ori, parami:i, register: r
                     });
+                } else if (type === 'cp') {
+                    const r = this.args[argi++];
+                    if (typeof r !== 'number' || r < -1 || r >= 16) {
+                        throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
+                    }
+                    const address = this.args[argi++];
+                    out.push({ type, argi: argi_ori, parami: i, address });
                 } else if (type === 'rp' || type === 'fp') {
                     const r = this.args[argi++];
                     if (typeof r !== 'number' || r < -1 || r >= 16) {
@@ -3287,6 +3347,7 @@ export namespace asm
                 case 'r':
                 case 'f':
                 case 'c':
+                case 'cp':
                     i ++;
                     break;
                 case 'rp':
@@ -3317,6 +3378,9 @@ export namespace asm
                     break;
                 case 'c':
                     argstr.push(shex(v));
+                    break;
+                case 'cp':
+                    argstr.push(uhex(v));
                     break;
                 case 'rp':
                 case 'fp': {
