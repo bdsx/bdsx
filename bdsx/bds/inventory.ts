@@ -183,6 +183,12 @@ export class ItemStack extends NativeClass {
     getMaxStackSize(): number{
         abstract();
     }
+    toString(): string{
+        abstract();
+    }
+    toDebugString(): string{
+        abstract();
+    }
     isBlock():boolean {
         abstract();
     }
