@@ -279,6 +279,9 @@ const symbols = [
     'ScoreboardIdentityRef::removeFromObjective',
     'ActorDamageSource::getDamagingEntityUniqueID',
     'Player::inventoryChanged',
+    'ItemStackBase::getMaxStackSize',
+    'ItemStack::clone',
+    
 ] as const;
 
 // decorated symbols
