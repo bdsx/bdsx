@@ -172,7 +172,7 @@ export class ItemStack extends NativeClass {
     protected _setCustomLore(name:CxxVector<string>):void {
         abstract();
     }
-    protected _cloneItem(itemStack: ItemStack): void{
+    protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
     cloneItem(): ItemStack{
