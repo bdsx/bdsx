@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cwd=$(pwd)
 SCRIPT=$(readlink -f "$0")
 cd $(dirname "$SCRIPT")
