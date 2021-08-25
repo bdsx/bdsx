@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 cwd=$(pwd)
 SCRIPT=$(readlink -f "$0")
