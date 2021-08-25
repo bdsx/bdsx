@@ -409,6 +409,8 @@ Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVecto
 Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
 
+ItemStack.prototype.toString = procHacker.js('ItemStackBase::toString', CxxString, {this: ItemStack, structureReturn: true});
+ItemStack.prototype.toDebugString = procHacker.js('ItemStackBase::toDebugString', CxxString, {this: ItemStack, structureReturn: true});
 ItemStack.prototype.getMaxStackSize = procHacker.js('ItemStackBase::getMaxStackSize', int32_t, {this: ItemStack});
 (ItemStack.prototype as any)._cloneItem = procHacker.js('ItemStack::clone', void_t, {this: ItemStack}, ItemStack);
 ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});

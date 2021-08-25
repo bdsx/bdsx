@@ -280,7 +280,9 @@ const symbols = [
     'ActorDamageSource::getDamagingEntityUniqueID',
     'Player::inventoryChanged',
     'ItemStackBase::getMaxStackSize',
-    'ItemStack::clone'
+    'ItemStack::clone',
+    'ItemStackBase::toString',
+    'ItemStackBase::toDebugString'
 ] as const;
 
 // decorated symbols
