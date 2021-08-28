@@ -175,6 +175,16 @@ export class ItemStack extends NativeClass {
     protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
+    protected _getArmorValue(): number{
+        abstract();
+    }
+    getArmorValue(): number{
+        if(!this.isArmorItem) return 0;
+        return this._getArmorValue();
+    }
+    setAuxValue(value: number): void{
+        abstract;
+    }
     getAuxValue():number{
         abstract();
     }
