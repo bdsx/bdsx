@@ -32,7 +32,7 @@ import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
-import { DisplayObjective, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
+import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
 import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
@@ -547,8 +547,13 @@ Scoreboard.prototype.removeObjective = procHacker.js("Scoreboard::removeObjectiv
 Scoreboard.prototype.resetPlayerScore = procHacker.js("?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z", void_t, {this:Scoreboard}, ScoreboardId, Objective);
 Scoreboard.prototype.sync = procHacker.js("ServerScoreboard::onScoreChanged", void_t, {this:Scoreboard}, ScoreboardId, Objective);
 
-Objective.prototype.getPlayers = procHacker.js("Objective::getPlayers", CxxVectorToArray.make(ScoreboardId.ref()), {this:Objective, structureReturn: true});
+Objective.prototype.getPlayers = procHacker.js("Objective::getPlayers", CxxVectorToArray.make(ScoreboardId), {this:Objective, structureReturn: true});
 Objective.prototype.getPlayerScore = procHacker.js("Objective::getPlayerScore", ScoreInfo, {this:Objective, structureReturn: true}, ScoreboardId);
+
+IdentityDefinition.prototype.getEntityId = procHacker.js("IdentityDefinition::getEntityId", ActorUniqueID.ref(), {this:IdentityDefinition});
+IdentityDefinition.prototype.getPlayerId = procHacker.js("IdentityDefinition::getPlayerId", ActorUniqueID.ref(), {this:IdentityDefinition});
+IdentityDefinition.prototype.getFakePlayerName = procHacker.js("IdentityDefinition::getFakePlayerName", CxxString, {this:IdentityDefinition});
+IdentityDefinition.prototype.getIdentityType = procHacker.js("IdentityDefinition::getIdentityType", uint8_t, {this:IdentityDefinition});
 
 (ScoreboardIdentityRef.prototype as any)._modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, StaticPointer, Objective, int32_t, uint8_t);
 

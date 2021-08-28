@@ -286,7 +286,11 @@ const symbols = [
     'ItemStackBase::getAuxValue',
     'ItemStackBase::setAuxValue',
     'ArmorItem::getArmorValue',
-    'Mob::getArmorValue'
+    'Mob::getArmorValue',
+    'IdentityDefinition::getEntityId',
+    'IdentityDefinition::getPlayerId',
+    'IdentityDefinition::getFakePlayerName',
+    'IdentityDefinition::getIdentityType',
 ] as const;
 
 // decorated symbols
