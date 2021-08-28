@@ -282,7 +282,8 @@ const symbols = [
     'ItemStackBase::getMaxStackSize',
     'ItemStack::clone',
     'ItemStackBase::toString',
-    'ItemStackBase::toDebugString'
+    'ItemStackBase::toDebugString',
+    'ItemStackBase::getAuxValue'
 ] as const;
 
 // decorated symbols

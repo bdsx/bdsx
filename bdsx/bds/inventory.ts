@@ -175,6 +175,9 @@ export class ItemStack extends NativeClass {
     protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
+    getAuxValue():number{
+        abstract();
+    }
     cloneItem(): ItemStack{
         const itemStack = ItemStack.create('air');
         this._cloneItem(itemStack);
