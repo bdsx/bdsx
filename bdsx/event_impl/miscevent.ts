@@ -1,11 +1,11 @@
 import { procHacker } from "../bds/proc";
-import { Objective, PlayerScoreSetFunction, Scoreboard, ScoreboardIdentityRef } from "../bds/scoreboard";
+import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, ScoreboardIdentityRef } from "../bds/scoreboard";
 import { serverInstance } from "../bds/server";
 import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
-import { bin64_t, bool_t, int32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, int32_t, uint8_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { _tickCallback } from "../util";
 
@@ -121,4 +121,29 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
         return false;
     }
     return _onScoreModify(event.identityRef, result, event.objective, event.score, mode);
+}
+
+interface IObjectiveCreateEvent {
+    name:string;
+    displayName:string;
+    criteria:ObjectiveCriteria;
+}
+export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
+    constructor(
+        public name:string,
+        public displayName:string,
+        public criteria:ObjectiveCriteria,
+    ) {
+    }
+}
+
+const _onObjectiveCreate = procHacker.hooking("Scoreboard::addObjective", Objective, null, Scoreboard, CxxString, CxxString, ObjectiveCriteria)(onObjectiveCreate);
+function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective {
+    const event = new ObjectiveCreateEvent(name, displayName, criteria);
+    const canceled = events.objectiveCreate.fire(event) === CANCEL;
+    _tickCallback();
+    if (canceled) {
+        return VoidPointer as any;
+    }
+    return _onObjectiveCreate(scoreboard, event.name, event.displayName, event.criteria);
 }
