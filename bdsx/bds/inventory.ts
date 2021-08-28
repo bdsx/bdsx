@@ -172,6 +172,23 @@ export class ItemStack extends NativeClass {
     protected _setCustomLore(name:CxxVector<string>):void {
         abstract();
     }
+    protected _cloneItem(itemStack: ItemStack):void {
+        abstract();
+    }
+    cloneItem(): ItemStack{
+        const itemStack = ItemStack.create('air');
+        this._cloneItem(itemStack);
+        return itemStack;
+    }
+    getMaxStackSize(): number{
+        abstract();
+    }
+    toString(): string{
+        abstract();
+    }
+    toDebugString(): string{
+        abstract();
+    }
     isBlock():boolean {
         abstract();
     }

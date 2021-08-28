@@ -130,7 +130,6 @@ const symbols = [
     'ItemStackBase::setDamageValue',
     'ItemStackBase::startCoolDown',
     'ItemStackBase::load',
-    'ItemStackBase::sameItem',
     'ItemStackBase::isStackedByData',
     'ItemStackBase::isStackable',
     'ItemStackBase::isWearableItem',
@@ -280,6 +279,10 @@ const symbols = [
     'ScoreboardIdentityRef::removeFromObjective',
     'ActorDamageSource::getDamagingEntityUniqueID',
     'Player::inventoryChanged',
+    'ItemStackBase::getMaxStackSize',
+    'ItemStack::clone',
+    'ItemStackBase::toString',
+    'ItemStackBase::toDebugString'
 ] as const;
 
 // decorated symbols
@@ -325,6 +328,7 @@ const symbols2 = [
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
+    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z',
 ] as const;
 
 

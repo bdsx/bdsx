@@ -197,16 +197,19 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE, opts);
+        if (codes.size === 0) throw Error(`Failed to disassemble`);
         const out = new AsmMover(origin, codes.size);
         out.moveCode(codes, key, REQUIRE_SIZE);
         out.end();
         const original = out.alloc(key+' (moved original)');
 
         const unlock = new MemoryUnlocker(origin, codes.size);
-        if (to instanceof Function) to = to(original);
-        hacktool.jump(origin, to, Register.rax, codes.size);
-        unlock.done();
-
+        try {
+            if (to instanceof Function) to = to(original);
+            hacktool.jump(origin, to, Register.rax, codes.size);
+        } finally {
+            unlock.done();
+        }
         return original;
     }
 

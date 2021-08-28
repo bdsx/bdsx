@@ -30,6 +30,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
+import { RelativeFloat } from "bdsx/bds/blockpos";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -284,7 +285,9 @@ Tester.test({
         const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVectorToArray);
         this.equals(array_to_array(['a','b','c','d']).join(','), 'a,b,c,d', 'CxxVectorToArray, array_to_array');
 
-
+        const rfloat_to_bin = asm().mov_r_r(Register.rax, Register.rcx).make(bin64_t, null, RelativeFloat);
+        const value = RelativeFloat.create(123, true);
+        this.equals(rfloat_to_bin(value), value.bin_value, 'rfloat_to_bin');
     },
 
     vectorcopy() {

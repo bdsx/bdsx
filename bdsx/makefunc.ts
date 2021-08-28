@@ -152,6 +152,7 @@ export namespace makefunc {
     export const dtor = Symbol('makefunc.dtor');
     export const ctor_move = Symbol('makefunc.ctor_move');
     export const size = Symbol('makefunc.size');
+    export const registerDirect = Symbol('makefunc.registerDirect');
 
     export interface Paramable {
         name:string;
@@ -163,6 +164,7 @@ export namespace makefunc {
         [ctor_move](to:StaticPointer, from:StaticPointer):void;
         [dtor](ptr:StaticPointer):void;
         [size]:number;
+        [registerDirect]?:boolean;
         isTypeOf(v:unknown):boolean;
         /**
          * allow downcasting
@@ -268,14 +270,15 @@ export namespace makefunc {
             args.push(varname);
             gen.import(`${varname}_t`, type);
             if (offset >= 0x20) { // args memory space
-                const sizev = type[size];
-                if (sizev != null && sizev <= 8) {
+                if (type[registerDirect]) {
                     gen.writeln(`const ${varname}=${varname}_t[getter](stackptr, ${offset+0x58});`);
                 } else {
                     gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset+0x58});`);
                 }
             } else { // args register space
-                if (type[useXmmRegister]) {
+                if (type[registerDirect]) {
+                    gen.writeln(`const ${varname}=${varname}_t[getter](stackptr, ${offset});`);
+                } else if (type[useXmmRegister]) {
                     gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset+0x20});`);
                 } else {
                     gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset});`);
@@ -364,21 +367,21 @@ export namespace makefunc {
             // virtual function
             const vfoff = functionPointer[0];
             const thisoff = functionPointer[1] || 0;
-            gen.import('vfoff', vfoff);
-            gen.import('thisoff', thisoff);
-            gen.writeln('const vftable=this.getPointer(thisoff);');
-            gen.writeln('const func=vftable.getPointer(vfoff);');
+            gen.writeln(`const vftable=this.getPointer(${thisoff});`);
+            gen.writeln(`const func=vftable.getPointer(${vfoff});`);
         } else {
             if (!(functionPointer instanceof VoidPointer)) throw TypeError(`arg1, expected=*Pointer, actual=${functionPointer}`);
             gen.import('func', functionPointer);
         }
+
+        const returnTypeIsClass = isBaseOf(returnTypeResolved, StructurePointer);
 
         const paramPairs:[string, Paramable][] = [];
         if (options.this != null) {
             paramPairs.push(['this', options.this]);
         }
         if (options.structureReturn) {
-            if (isBaseOf(returnTypeResolved, StructurePointer)) {
+            if (returnTypeIsClass) {
                 paramPairs.push([`retVar`, returnTypeResolved]);
             } else {
                 paramPairs.push([`retVar`, VoidPointer]);
@@ -407,8 +410,7 @@ export namespace makefunc {
             let offset = 0;
             for (const [varname, type] of paramPairs) {
                 gen.import(`${varname}_t`, type);
-                const sizev = type[size];
-                if (offset >= 0x20 && sizev != null && sizev <= 8) {
+                if (type[registerDirect]) {
                     gen.writeln(`    ${varname}_t[setter](stackptr, ${varname}, ${offset});`);
                 } else {
                     gen.writeln(`    ${varname}_t[setToParam](stackptr, ${varname}, ${offset});`);
@@ -423,7 +425,7 @@ export namespace makefunc {
         gen.import('ncall', ncall);
         if (options.structureReturn) {
             gen.import('returnTypeResolved', returnTypeResolved);
-            if (isBaseOf(returnTypeResolved, StructurePointer)) {
+            if (returnTypeIsClass) {
                 gen.writeln('const retVar=new returnTypeResolved(true);');
                 returnVar = 'retVar';
                 writeNcall();
@@ -448,11 +450,18 @@ export namespace makefunc {
             gen.import('returnTypeResolved', returnTypeResolved);
             gen.import('getFromParam', getFromParam);
             writeNcall();
-            const getterFunc = returnTypeResolved[getFromParam];
-            if (getterFunc !== emptyFunc) {
-                gen.writeln('const out=returnTypeResolved[getFromParam](result);');
+
+            if (returnTypeIsClass && returnTypeResolved[registerDirect]) {
+                gen.import('sizeSymbol', size);
+                gen.writeln('const out=new returnTypeResolved(true);');
+                gen.writeln(`out.copyFrom(result, returnTypeResolved[sizeSymbol]);`);
             } else {
-                returnVar = '';
+                const getterFunc = returnTypeResolved[getFromParam];
+                if (getterFunc !== emptyFunc) {
+                    gen.writeln('const out=returnTypeResolved[getFromParam](result);');
+                } else {
+                    returnVar = '';
+                }
             }
         }
 

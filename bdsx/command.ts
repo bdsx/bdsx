@@ -136,9 +136,9 @@ export namespace command {
     export function register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
-        flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NoCheat,
+        flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NotCheat,
         flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag._Unknown):CustomCommandFactory {
-        const registry = serverInstance.minecraft.commands.getRegistry();
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);
         registry.registerCommand(name, description, perm, flags1, flags2);
