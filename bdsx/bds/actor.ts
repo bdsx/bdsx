@@ -358,7 +358,13 @@ export class Actor extends NativeClass {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
-
+    protected _getArmorValue():number{
+        abstract();
+    }
+    getArmorValue(): number{
+        if(this.isItem()) return 0;
+        return this._getArmorValue();
+    }
     getDimension():Dimension {
         abstract();
     }
