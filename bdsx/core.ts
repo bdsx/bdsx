@@ -97,7 +97,7 @@ export declare class PrivatePointer extends VoidPointer {
     protected setInt64WithFloat(value: number, offset?: number): void;
     protected setFloat32(value: number, offset?: number): void;
     protected setFloat64(value: number, offset?: number): void;
-    protected setPointer(value: VoidPointer, offset?: number): void;
+    protected setPointer(value: VoidPointer|null, offset?: number): void;
 
     /**
      * get C++ std::string
@@ -154,6 +154,9 @@ export declare class PrivatePointer extends VoidPointer {
      * @param words 2bytes per word
      */
     protected setBin(v:string, offset?:number): void;
+
+    protected setInt32To64WithZero(value: number, offset?: number): void;
+    protected setFloat32To64WithZero(value: number, offset?: number): void;
 
     protected interlockedIncrement16(offset?:number):number;
     protected interlockedIncrement32(offset?:number):number;

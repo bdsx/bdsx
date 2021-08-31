@@ -1,12 +1,8 @@
-// import { abstract } from "../common";
-// import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-// import { bool_t, int32_t, NativeType, uint32_t, void_t } from "../nativetype";
-// import { procHacker } from "./proc";
 
 import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, float32_t, int32_t, uint32_t } from "../nativetype";
-import { HashedString } from "./hashedstring";
+import { bool_t, int32_t, uint32_t } from "../nativetype";
+import minecraft = require('../minecraft');
 
 export enum MobEffectIds {
     Empty,
@@ -41,41 +37,8 @@ export enum MobEffectIds {
     HeroOfTheVillage,
 }
 
-@nativeClass(null)
-export class MobEffect extends NativeClass {
-    @nativeField(uint32_t, 0x08)
-    id: uint32_t;
-    @nativeField(bool_t)
-    harmful: bool_t;
-    // @nativeField(mce.Color, 0x10)
-    // color: mce.Color;
-    @nativeField(CxxString, 0x20)
-    descriptionId: CxxString;
-    @nativeField(int32_t)
-    icon: int32_t;
-    @nativeField(float32_t)
-    durationModifier: float32_t;
-    @nativeField(bool_t) //0x48
-    disabled: bool_t;
-    @nativeField(CxxString, 0x50)
-    resourceName: CxxString;
-    @nativeField(CxxString)
-    iconName: CxxString;
-    @nativeField(bool_t)
-    showParticles: bool_t;
-    @nativeField(HashedString, 0x98)
-    componentName: HashedString;
-    // @nativeField(VoidPointer, 0xF8) // std::vector<std::pair<Attribute const*,std::shared_ptr<AttributeModifier>>>
-    // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), SharedPtr<AttributeModifier>>;
-
-
-    static create(id: MobEffectIds): MobEffect {
-        abstract();
-    }
-    getId(): number {
-        abstract();
-    }
-}
+export const MobEffect = minecraft.MobEffect;
+export type MobEffect = minecraft.MobEffect;
 
 @nativeClass(0x1C)
 export class MobEffectInstance extends NativeClass {

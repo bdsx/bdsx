@@ -1,8 +1,8 @@
 
 import { proc, proc2 } from './bds/symbols';
-import { abstract, emptyFunc, Encoding } from './common';
+import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
-import { makefunc } from './makefunc';
+import { makefunc, TypeIn } from './makefunc';
 import { Singleton } from './singleton';
 import { filterToIdentifierableString } from './util';
 
@@ -20,13 +20,11 @@ namespace NativeTypeFn {
 /**
  * native type information
  */
-export interface Type<T> extends makefunc.Paramable {
-    prototype:T;
-
-    name:string;
+export interface Type<T> extends TypeIn<T> {
     symbol?:string;
 
-    isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
+    isTypeOf<V>(this:TypeIn<V>, v:unknown):v is V;
+    ref():NativeType<T>;
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
@@ -270,7 +268,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
 
         if (noInitialize) return;
         let ctorbase = (type as any).prototype;
-        if (!ctorbase || !(NativeType.ctor in ctorbase)) ctorbase = type;
+        if (ctorbase == null || !(NativeType.ctor in ctorbase)) ctorbase = type;
 
         const name = builder.importType(type);
         if (ctorbase[NativeType.ctor] !== emptyFunc) {
@@ -324,6 +322,7 @@ declare module './core'
         [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void;
         [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void;
         [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void;
+        ref():NativeType<any>;
     }
 }
 
@@ -352,7 +351,9 @@ export const nullptr_t = new NativeType<void>(
     v=>v == null,
     undefined,
     (ptr, offset)=>null,
-    (ptr, v, offset)=>{},
+    (ptr, v, offset)=>{
+        // empty
+    },
     undefined,
     emptyFunc);
 Object.freeze(nullptr_t);

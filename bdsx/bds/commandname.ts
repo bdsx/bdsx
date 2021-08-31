@@ -1,10 +1,6 @@
-import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { CxxString, uint8_t } from "../nativetype";
+import { CommandName as MinecraftCommandName } from "../minecraft";
 
-@nativeClass()
-export class CommandName extends NativeClass {
-    @nativeField(CxxString)
-    name:string;
-    @nativeField(uint8_t)
-    unknown:uint8_t;
-}
+/** @deprecated use it in bdsx/minecraft */
+export const CommandName = MinecraftCommandName;
+/** @deprecated use it in bdsx/minecraft */
+export type CommandName = MinecraftCommandName;

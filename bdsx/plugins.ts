@@ -8,6 +8,11 @@ import { fsutil } from './fsutil';
 
 const PLUGINS_BDSX_PATH = 'file:../bdsx';
 
+interface PackageJsonForm {
+    bdsxPlugin?:boolean;
+    dependencies?:Record<string, string>;
+}
+
 class PromCounter {
     private resolve:(()=>void)|null = null;
     private counter = 0;
@@ -77,7 +82,7 @@ export async function loadAllPlugins():Promise<void> {
                 devDeps.bdsx = PLUGINS_BDSX_PATH;
                 modified = true;
             }
-            if (json.scripts && json.scripts.prepare === 'tsc') {
+            if (json.scripts != null && json.scripts.prepare === 'tsc') {
                 json.scripts.prepare = 'tsc || exit 0';
                 modified = true;
             }
@@ -122,13 +127,13 @@ export async function loadAllPlugins():Promise<void> {
             counter.ref();
             taskQueue.run(async()=>{
                 try {
-                    const json = await this.getJson();
+                    const json:PackageJsonForm = await this.getJson();
                     if (json.bdsxPlugin) {
                         this.load(false);
                     }
                 } catch (err) {
                     this.loaded = false;
-                    if (parentjson && /^file:(:?\.[\\/])?plugins[\\/]/.test(parentjson.dependencies[this.name])) {
+                    if (parentjson != null && /^file:(:?\.[\\/])?plugins[\\/]/.test(parentjson.dependencies[this.name])) {
                         try {
                             await fsutil.stat(`${pluginspath}${path.sep}${this.name.substr(BDSX_SCOPE.length)}`);
                         } catch (err) {
@@ -163,7 +168,7 @@ export async function loadAllPlugins():Promise<void> {
     // read package.json
     const mainpkg = new PackageJson('[entrypoint]');
     mainpkg.setJsonPath(`${projpath}${path.sep}package.json`);
-    let mainjson:any;
+    let mainjson:PackageJsonForm;
     try {
         mainjson = await mainpkg.getJson();
     } catch (err) {
@@ -175,6 +180,7 @@ export async function loadAllPlugins():Promise<void> {
         }
         return;
     }
+    if (mainjson.dependencies == null) mainjson.dependencies = {};
 
     try {
         // load plugins from the directory
@@ -204,7 +210,7 @@ export async function loadAllPlugins():Promise<void> {
 
             pluginsInDirectory.push(plugin);
 
-            if (mainjson.dependencies[fullname]) continue;
+            if (mainjson.dependencies[fullname] != null) continue;
             mainjson.dependencies[fullname] = `file:plugins/${pluginname}`;
             packagejsonModified = true;
             needToNpmInstall = true;

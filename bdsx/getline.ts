@@ -15,7 +15,7 @@ const string_ctor:VoidPointer = (CxxString[NativeType.ctor] as any).pointer;
 const string_dtor:VoidPointer = (CxxString[NativeType.dtor] as any).pointer;
 const string_size = CxxString[NativeType.size];
 
-if (!string_ctor || !string_dtor) {
+if (string_ctor == null || string_dtor == null) {
     throw Error('cannot find the constructor and the destructor of std::string');
 }
 

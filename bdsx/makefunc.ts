@@ -3,7 +3,7 @@ import { asm, Register, X64Assembler } from "./assembler";
 import { proc2 } from "./bds/symbols";
 import "./codealloc";
 import { abstract, Bufferable, Encoding } from "./common";
-import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, PrivatePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
+import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, PrivatePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer, VoidPointerConstructor } from "./core";
 import { dllraw } from "./dllraw";
 import { isBaseOf } from "./util";
 import util = require('util');
@@ -64,7 +64,7 @@ function remapType(type:ParamType):makefunc.Paramable {
             makefuncTypeMap[RawTypeId.Void] = void_t;
         }
         const res = makefuncTypeMap[type];
-        if (!res) throw Error(`Invalid RawTypeId: ${type}`);
+        if (res == null) throw Error(`Invalid RawTypeId: ${type}`);
         return res;
     }
     return type;
@@ -130,9 +130,10 @@ export type FunctionFromTypes_js_without_pointer<
     RETURN extends ParamType> =
     ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
 
-/**
- * bypass GC
- */
+export interface TypeIn<T> extends makefunc.Paramable {
+    name:string;
+    prototype:T;
+}
 
 export namespace makefunc {
     export const temporalKeeper:any[] = [];
@@ -166,10 +167,10 @@ export namespace makefunc {
         [getFromParam](stackptr:StaticPointer, offset?:number):T|null;
         [setToParam](stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number):void;
         [useXmmRegister]:boolean;
-        isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
+        isTypeOf<V>(this:TypeIn<V>, v:unknown):v is V;
         isTypeOfWeak(v:unknown):boolean;
     }
-    export class ParamableT<T> {
+    export class ParamableT<T> implements TypeIn<T> {
 
         constructor(
             public readonly name:string,
@@ -341,7 +342,7 @@ export namespace makefunc {
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
                 paramsTypeResolved.unshift(returnTypeResolved);
                 call2 = function _(func, thisVar, args) {
-                    const res = new returnTypeResolved(true);
+                    const res = new (returnTypeResolved as any)(true);
                     args.unshift(res);
                     if (options.this != null) args.unshift(thisVar);
                     call3(stackSize, stackWriter, func, args);
@@ -444,6 +445,7 @@ export namespace makefunc {
         abstract,
         v=>v === null || typeof v === 'string'
     );
+    export type Ansi = string;
 
     export const Utf8 = new ParamableT<string>(
         'Utf8',
@@ -452,6 +454,7 @@ export namespace makefunc {
         abstract,
         v=>v === null || typeof v === 'string'
     );
+    export type Utf8 = string;
 
     export const Utf16 = new ParamableT<string>(
         'Utf16',
@@ -460,6 +463,7 @@ export namespace makefunc {
         abstract,
         v=>v === null || typeof v === 'string'
     );
+    export type Utf16 = string;
 
     export const Buffer = new ParamableT<VoidPointer|Bufferable>(
         'Buffer',
@@ -485,6 +489,7 @@ export namespace makefunc {
             return false;
         }
     );
+    export type Buffer = VoidPointer|Bufferable;
 
     export const JsValueRef = new ParamableT<any>(
         'JsValueRef',
@@ -493,6 +498,7 @@ export namespace makefunc {
         abstract,
         ()=>true
     );
+    export type JsValueRef = any;
 }
 
 export interface MakeFuncOptionsWithName<THIS extends { new(): VoidPointer|void; }> extends MakeFuncOptions<THIS> {
@@ -522,7 +528,7 @@ declare module "./assembler"
 declare module "./core"
 {
     interface VoidPointerConstructor extends makefunc.Paramable{
-        isTypeOf<T>(this:{new():T}, v:unknown):v is T;
+        isTypeOf<T>(this:TypeIn<T>, v:unknown):v is T;
     }
     interface VoidPointer
     {
@@ -563,7 +569,7 @@ Uint8Array.prototype[asm.splitTwo32Bits] = function() {
     ptr.setAddressFromBuffer(this);
     return [ptr.getAddressLow(), ptr.getAddressHigh()];
 };
-VoidPointer.isTypeOf = function<T>(this:{new():T}, v:unknown):v is T {
+VoidPointer.isTypeOf = function<T>(this:TypeIn<T>&VoidPointerConstructor, v:unknown):v is T {
     return v === null || v instanceof this;
 };
 VoidPointer.isTypeOfWeak = function(v:unknown):boolean{

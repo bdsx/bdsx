@@ -1,14 +1,14 @@
 import { abstract } from "../common";
-import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
-import { makefunc } from "../makefunc";
-import { procHacker } from "./proc";
+import { bin64_t, uint16_t } from "../nativetype";
+import minecraft = require('../minecraft');
 
 const portDelineator = '|'.charCodeAt(0);
 
+/** @deprecated */
 export namespace RakNet
 {
+    /** @deprecated */
     @nativeClass(136)
     export class SystemAddress extends NativeClass {
         @nativeField(uint16_t, 130)
@@ -28,28 +28,22 @@ export namespace RakNet
         }
     }
 
-    @nativeClass()
-    export class RakNetGUID extends NativeClass {
-        @nativeField(bin64_t)
-        g:bin64_t;
-        @nativeField(uint16_t)
-        systemIndex:uint16_t;
-    }
+    /** @deprecated */
+    export const RakPeer = minecraft.RakNet.RakPeer;
+    /** @deprecated */
+    export type RakPeer = minecraft.RakNet.RakPeer;
 
-    @nativeClass()
-    export class RakPeer extends NativeClass {
-        @nativeField(VoidPointer)
-        vftable:VoidPointer;
+    /** @deprecated */
+    export const RakNetGUID = minecraft.RakNet.RakNetGUID;
+    /** @deprecated */
+    export type RakNetGUID = minecraft.RakNet.RakNetGUID;
 
-        GetSystemAddressFromIndex(idx:number):SystemAddress {
-            abstract();
-        }
-    }
-
+    /** @deprecated */
     export const UNASSIGNED_RAKNET_GUID = new RakNetGUID(true);
     UNASSIGNED_RAKNET_GUID.g = bin64_t.minus_one;
     UNASSIGNED_RAKNET_GUID.systemIndex = -1;
 
+    /** @deprecated */
     @nativeClass()
     export class AddressOrGUID extends NativeClass {
         @nativeField(RakNetGUID)
@@ -59,14 +53,11 @@ export namespace RakNet
 
         GetSystemIndex():uint16_t {
             const rakNetGuid = this.rakNetGuid;
-            if (rakNetGuid !== UNASSIGNED_RAKNET_GUID) {
+            if (rakNetGuid.g !== UNASSIGNED_RAKNET_GUID.g) {
                 return rakNetGuid.systemIndex;
             } else {
                 return this.systemAddress.systemIndex;
             }
         }
     }
-
-    SystemAddress.prototype.ToString = procHacker.js("?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z", void_t, {this: RakNet.SystemAddress}, bool_t, makefunc.Buffer, int32_t);
-    RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, int32_t);
 }

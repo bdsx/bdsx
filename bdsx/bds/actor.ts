@@ -15,15 +15,15 @@ import { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
+import common = require('../common');
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
 
-export enum DimensionId { // int32_t
-    Overworld = 0,
-    Nether = 1,
-    TheEnd = 2
-}
+/** @deprecated import it from bdsx/common */
+export const DimensionId = common.DimensionId;
+/** @deprecated import it from bdsx/common */
+export type DimensionId = common.DimensionId;
 
 export class ActorRuntimeID extends VoidPointer {
 }
@@ -242,6 +242,7 @@ export enum ActorDamageCause {
     All = 0x1F,
 }
 
+/** @deprecated import it from bdsx/minecraft */
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
@@ -337,7 +338,7 @@ export class Actor extends NativeClass {
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;
-        if (entity) return entity;
+        if (entity != null) return entity;
         entity = {
             __unique_id__:{
                 "64bit_low": this.getUniqueIdLow(),

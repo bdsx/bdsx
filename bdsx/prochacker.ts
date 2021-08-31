@@ -68,7 +68,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     nopping(subject:string, key:keyof T, offset:number, originalCode:number[], ignoreArea:number[]):void {
         let ptr:StaticPointer = this.map[key];
-        if (!ptr) {
+        if (ptr == null) {
             console.error(colors.red(`${subject}: skip, symbol "${key}" not found`));
             return;
         }
@@ -87,7 +87,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     hookingRaw(key:keyof T, to: VoidPointer|((original:VoidPointer)=>VoidPointer)):VoidPointer {
         const origin = this.map[key];
-        if (!origin) throw Error(`Symbol ${String(key)} not found`);
+        if (origin == null) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE);
@@ -121,7 +121,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     hookingRawWithoutOriginal(key:keyof T, to: VoidPointer):void {
         const origin = this.map[key];
-        if (!origin) throw Error(`Symbol ${String(key)} not found`);
+        if (origin == null) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
         const unlock = new MemoryUnlocker(origin, REQUIRE_SIZE);
@@ -207,10 +207,6 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             return;
         }
         ptr = ptr.add(offset);
-        if (!ptr) {
-            console.error(colors.red(`${subject}: skip`));
-            return;
-        }
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (this.check(subject, key, offset, ptr, originalCode, ignoreArea)) {

@@ -6,6 +6,7 @@ import { BlockPos } from "./blockpos";
 import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 
+/** @deprecated import it from bdsx/minecraft */
 export class BlockLegacy extends NativeClass {
     getCommandName():string {
         const names = this.getCommandNames2();
@@ -37,6 +38,7 @@ export class BlockLegacy extends NativeClass {
     }
 }
 
+/** @deprecated import it from bdsx/minecraft */
 export class Block extends NativeClass {
     blockLegacy: BlockLegacy;
     /**
@@ -53,6 +55,7 @@ export class Block extends NativeClass {
     }
 }
 
+/** @deprecated import it from bdsx/minecraft */
 export class BlockSource extends NativeClass {
     protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number):boolean {
         abstract();

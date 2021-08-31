@@ -77,7 +77,7 @@ export function installErrorHandler():void {
 
     // default runtime error handler
     runtimeError.setHandler(err=>{
-        if (!err) {
+        if (err == null) {
             err = Error(`Native crash without error object, (result=${err})`);
         }
         remapError(err);
@@ -98,7 +98,7 @@ export function installErrorHandler():void {
             return filepath;
         }
 
-        if (err.code && err.nativeStack && err.exceptionInfos) {
+        if (err.code != null && err.nativeStack != null && err.exceptionInfos != null) {
             const lastSender = ipfilter.getLastSender();
             console.error('[ Native Crash ]');
             console.error(`Last packet from IP: ${lastSender}`);

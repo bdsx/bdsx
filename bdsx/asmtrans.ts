@@ -53,7 +53,7 @@ export class X64OpcodeTransporter extends X64Assembler {
                 const tmpreg = this.getUnusing();
                 if (tmpreg === null) throw Error(`Not enough free registers`);
                 const jmp_r = (asm.code as any)[`${basename}_r`];
-                if (jmp_r) {
+                if (jmp_r != null) {
                     this.mov_r_c(tmpreg, this.origin.add(offset));
                     jmp_r.call(this, tmpreg);
                 } else {

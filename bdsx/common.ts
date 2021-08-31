@@ -63,6 +63,12 @@ export enum Encoding {
 	Ansi
 }
 
+export enum DimensionId { // int32_t
+    Overworld = 0,
+    Nether = 1,
+    TheEnd = 2
+}
+
 export type TypeFromEncoding<T extends Encoding> = T extends Encoding.Buffer ? Uint8Array : string;
 
 export type TypedArrayBuffer = Uint8Array | Uint16Array | Uint32Array |
@@ -71,6 +77,10 @@ export type TypedArrayBuffer = Uint8Array | Uint16Array | Uint32Array |
 export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 
 export type AnyFunction = (this:any, ...args:any[])=>any;
+export type NonNullableFields<T extends any[]> = {[key in keyof T]:NonNullable<T[key]>};
+export type NonNullableParameters<THIS, T> = T extends (...args:infer ARGS)=>infer RET ?
+    (this:THIS, ...args:NonNullableFields<ARGS>)=>RET : never;
+
 
 export function emptyFunc():void{
 	// empty
@@ -83,3 +93,10 @@ export function abstract():never {
 export function unreachable():never {
     throw Error('unreachable');
 }
+
+export function notImplemented():never {
+    throw Error('not implemented');
+}
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type AbstractClass<T> = Function&{prototype:T};

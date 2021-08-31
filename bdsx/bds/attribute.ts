@@ -1,8 +1,5 @@
 
-import { abstract } from "../common";
-import { VoidPointer } from "../core";
-import { NativeClass } from "../nativeclass";
-import { float32_t } from "../nativetype";
+import minecraft = require('../minecraft');
 
 export enum AttributeId
 {
@@ -23,17 +20,12 @@ export enum AttributeId
 	JumpStrength=15, // for horse?
 }
 
-export class AttributeInstance extends NativeClass {
-	vftable:VoidPointer;
-	u1:VoidPointer;
-	u2:VoidPointer;
-	currentValue:float32_t;
-	minValue:float32_t;
-	maxValue:float32_t;
-	defaultValue:float32_t;
-}
-export class BaseAttributeMap extends NativeClass {
-    getMutableInstance(type:AttributeId):AttributeInstance|null {
-        abstract();
-    }
-}
+/** @deprecated import it from bdsx/minecraft */
+export const AttributeInstance = minecraft.AttributeInstance;
+/** @deprecated import it from bdsx/minecraft */
+export type AttributeInstance = minecraft.AttributeInstance;
+
+/** @deprecated import it from bdsx/minecraft */
+export const BaseAttributeMap = minecraft.BaseAttributeMap;
+/** @deprecated import it from bdsx/minecraft */
+export type BaseAttributeMap = minecraft.BaseAttributeMap;

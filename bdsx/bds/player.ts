@@ -1,10 +1,10 @@
 import { abstract } from "../common";
+import { AttributeInstance, BlockPos, Vec3 } from "../minecraft";
 import { nativeClass, NativeClass } from "../nativeclass";
 import { float32_t, int32_t } from "../nativetype";
 import { Abilities } from "./abilities";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
-import { AttributeId, AttributeInstance } from "./attribute";
-import { BlockPos, Vec3 } from "./blockpos";
+import { AttributeId } from "./attribute";
 import { ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
@@ -12,6 +12,7 @@ import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePa
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
+/** @deprecated import it from bdsx/minecraft */
 export class Player extends Actor {
     abilities:Abilities;
     respawnPosition:BlockPos;
@@ -92,6 +93,7 @@ export class Player extends Actor {
 
 }
 
+/** @deprecated import it from bdsx/minecraft */
 export class ServerPlayer extends Player {
     networkIdentifier:NetworkIdentifier;
 

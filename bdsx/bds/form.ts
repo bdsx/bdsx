@@ -153,7 +153,7 @@ export class FormToggle extends FormComponent implements FormItemToggle {
     default: boolean;
     constructor(text: string, defaultValue?: boolean) {
         super(text);
-        if (defaultValue) this.default = defaultValue;
+        if (defaultValue != null) this.default = defaultValue;
     }
 }
 
@@ -167,8 +167,8 @@ export class FormSlider extends FormComponent implements FormItemSlider {
         super(text);
         this.min = min;
         this.max = max;
-        if (step) this.step = step;
-        if (defaultValue) this.default = defaultValue;
+        if (step != null) this.step = step;
+        if (defaultValue != null) this.default = defaultValue;
     }
 }
 
@@ -179,7 +179,7 @@ export class FormStepSlider extends FormComponent implements FormItemStepSlider 
     constructor(text: string, steps: string[], defaultIndex?: number) {
         super(text);
         this.steps = steps;
-        if (defaultIndex) this.default = defaultIndex;
+        if (defaultIndex != null) this.default = defaultIndex;
     }
 }
 
@@ -190,7 +190,7 @@ export class FormDropdown extends FormComponent implements FormItemDropdown {
     constructor(text: string, options: string[], defaultIndex?: number) {
         super(text);
         this.options = options;
-        if (defaultIndex) this.default = defaultIndex;
+        if (defaultIndex != null) this.default = defaultIndex;
     }
 }
 

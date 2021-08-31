@@ -319,14 +319,15 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         }
     }
 
-    static make<T>(type:Type<T>):CxxVectorType<T> {
-        return Singleton.newInstance<CxxVectorType<T>>(CxxVector, type, ():CxxVectorType<T>=>{
-            if (type[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
+    static make<T>(type:{prototype:T}):CxxVectorType<T> {
+        const t = type as Type<T>;
+        return Singleton.newInstance<CxxVectorType<T>>(CxxVector, t, ():CxxVectorType<T>=>{
+            if (t[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
 
-            if (NativeClass.isNativeClassType(type)) {
+            if (NativeClass.isNativeClassType(t)) {
                 class VectorImpl extends CxxVector<NativeClass> {
                     componentType:NativeClassType<NativeClass>;
-                    static readonly componentType:NativeClassType<NativeClass> = type as any;
+                    static readonly componentType:NativeClassType<NativeClass> = t as any;
                     private readonly cache:(NativeClass|undefined)[] = [];
 
                     protected _resizeCache(size:number):void {
@@ -366,14 +367,14 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         this._get(ptr, index)[NativeType.setter](from);
                     }
                 }
-                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(type)});
-                VectorImpl.prototype.componentType = type;
+                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(t)});
+                VectorImpl.prototype.componentType = t;
                 VectorImpl.abstract({}, VECTOR_SIZE, 8);
                 return VectorImpl as any;
             } else {
                 class VectorImpl extends CxxVector<T> {
                     componentType:Type<T>;
-                    static readonly componentType:Type<T> = type;
+                    static readonly componentType:Type<T> = t;
 
                     protected _move_alloc(allocated:NativePointer, oldptr:VoidPointer, movesize:number):void {
                         const compsize = this.componentType[NativeType.size];
@@ -403,8 +404,8 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         type[NativeType.setter](ptr, from);
                     }
                 }
-                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(type)});
-                VectorImpl.prototype.componentType = type;
+                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(t)});
+                VectorImpl.prototype.componentType = t;
                 VectorImpl.abstract({}, VECTOR_SIZE, 8);
                 return VectorImpl;
             }
@@ -420,10 +421,10 @@ function getVectorName(type:Type<any>):string {
     return templateName('std::vector', type.name, templateName('std::allocator', type.name));
 }
 
-export class CxxVectorToArray<T> extends NativeType<T[]> {
+class CxxVectorToArrayImpl<T> extends NativeType<T[]> {
     public readonly type:CxxVectorType<T>;
 
-    private constructor(public readonly compType:Type<T>) {
+    constructor(public readonly compType:Type<T>) {
         super(getVectorName(compType), VECTOR_SIZE, 8,
             v=>v instanceof Array,
             undefined,
@@ -447,8 +448,12 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
         );
         this.type = CxxVector.make(this.compType);
     }
+}
 
-    static make<T>(compType:Type<T>):CxxVectorToArray<T> {
-        return Singleton.newInstance<CxxVectorToArray<T>>(CxxVectorToArray, compType, ()=>new CxxVectorToArray<T>(compType));
+export namespace CxxVectorToArray {
+    export function make<T>(compType:Type<T>):NativeType<T[]> {
+        return Singleton.newInstance<NativeType<T[]>>(CxxVectorToArrayImpl, compType, ()=>new CxxVectorToArrayImpl<T>(compType));
     }
 }
+
+export type CxxVectorToArray<T> = T[];

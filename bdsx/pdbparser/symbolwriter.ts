@@ -1,19 +1,22 @@
-import { emptyFunc, unreachable } from "../common";
+import { emptyFunc } from "../common";
 import { styling } from "../externs/bds-scripting/styling";
 import { remapAndPrintError } from "../source-map-support";
 import { arrayEquals } from "../util";
-import { imageSections } from "./imagesections";
-import { DecoSymbol, PdbIdentifier } from "./symbolparser";
+import { resolvePacketClasses } from "./packetresolver";
+import { reduceTemplateTypes } from "./reducetemplate";
+import { DecoSymbol, PdbId } from "./symbolparser";
+import { PdbMember, PdbMemberList } from "./symbolsorter";
 import { TemplateInfo } from "./templateinfo";
-import { ImportInfo, TsFile } from "./tsimport";
+import { TsFile, TsImportInfo, TsImportItem } from "./tsimport";
 import { tsw } from "./tswriter";
-import fs = require('fs');
 import path = require('path');
+import ProgressBar = require("progress");
 
+// resolveSuper(); // pretty inaccurate
+resolvePacketClasses();
 
 const outDir = path.join(__dirname, '..');
 const COMMENT_SYMBOL = false;
-
 
 const properties = {
     overloadInfo: new tsw.NameProperty('overloadInfo'),
@@ -25,6 +28,11 @@ const properties = {
     get: new tsw.NameProperty('get'),
     ref: new tsw.NameProperty('ref'),
     constructWith:new tsw.NameProperty('constructWith'),
+    structureReturn: new tsw.NameProperty('structureReturn'),
+    ctor: new tsw.NameProperty('ctor'),
+    dtor: new tsw.NameProperty('dtor'),
+    ID: new tsw.NameProperty('ID'),
+    idMap: new tsw.NameProperty('idMap'),
 };
 
 const specialNameRemap = new Map<string, string>();
@@ -87,36 +95,42 @@ const adjustorRegExp = /^(.+)`adjustor{([0-9]+)}'$/;
 const idremap:Record<string, string> = {'{':'','}':'',',':'_','<':'_','>':'_'};
 const recursiveCheck = new Set<Identifier>();
 
-interface Identifier extends PdbIdentifier {
-    host?:TsFile|null;
-    jsTypeName?:string;
+interface TemplateRedirect {
+    redirect(item:PdbId<PdbId.TemplateBase>, templates:Identifier[], kind:tsw.Kind, opts:ToTswOptions):tsw.ItemPair;
+    templates:Identifier[];
+}
+
+interface Identifier extends PdbId<PdbId.Data> {
+    jsType?:((item:Identifier, kind:tsw.Kind)=>tsw.ItemPair)|tsw.ItemPair|ImportItem|null;
+    jsTypeOnly?:tsw.Type;
     jsTypeNullable?:boolean;
-    paramVarName?:string;
-    isOverloaded?:boolean;
+    templateRedirects?:TemplateRedirect[];
+
+    dontExport?:boolean;
+    paramVarName?:string|null;
     filted?:boolean;
-    keyIndex?:number;
     tswVar?:tsw.Name;
+
+    isMantleClass?:boolean;
 }
 
-function getFirstIterableItem<T>(item:Iterable<T>):T|undefined {
-    for (const v of item) {
-        return v;
-    }
-    return undefined;
-}
-
-PdbIdentifier.filter = (item:Identifier):boolean=>{
+PdbId.filter = (item:Identifier):boolean=>{
     if (item.filted != null) return item.filted;
     item = item.decay();
-    if (item.isLambda) return item.filted = false;
-    if ((item.isFunctionBase || item.isTemplateFunctionBase || item.isFunction || item.isClassLike) && item.parent === PdbIdentifier.std && item.name.startsWith('_')) {
+    if (item.data instanceof PdbId.LambdaClass) return item.filted = false;
+    if ((item.data instanceof PdbId.FunctionBase ||
+        item.data instanceof PdbId.TemplateFunctionBase ||
+        item.data instanceof PdbId.Function ||
+        item.data instanceof PdbId.ClassLike) &&
+        item.parent === PdbId.std &&
+        item.name.startsWith('_')) {
         return item.filted = false;
     }
     if (item.name === "`anonymous namespace'") return item.filted = false;
     if (item.name.startsWith('<unnamed-type-')) return item.filted = false;
-    if (item.keyIndex != null) return item.filted = false;
+    if (item.data instanceof PdbId.KeyType) return item.filted = false;
     if (item.templateBase !== null) {
-        if (item.parent === PdbIdentifier.std) {
+        if (item.parent === PdbId.std) {
             if (item.templateBase.name === 'allocator') {
                 return item.filted = false;
             }
@@ -137,32 +151,80 @@ PdbIdentifier.filter = (item:Identifier):boolean=>{
         }
     }
     for (const comp of item.components()) {
-        if (!PdbIdentifier.filter(comp)) return item.filted = false;
+        if (!PdbId.filter(comp)) {
+            return item.filted = false;
+        }
     }
 
     return item.filted = true;
 };
 
-function setBasicType(name:string|PdbIdentifier, jsTypeName:string, paramVarName:string, host:TsFile|null, jsTypeNullable?:boolean):Identifier {
-    const item:Identifier = name instanceof PdbIdentifier ? name : PdbIdentifier.parse(name);
-    item.isBasicType = true;
-    item.host = host;
-    item.jsTypeName = jsTypeName;
-    item.paramVarName = paramVarName;
-    if (jsTypeNullable != null) item.jsTypeNullable = jsTypeNullable;
-    return item;
+function getFirstIterableItem<T>(item:Iterable<T>):T|undefined {
+    for (const v of item) {
+        return v;
+    }
+    return undefined;
 }
 
-function nullableType(out:tsw.IdBase):tsw.TypeOr {
-    if (!(out instanceof tsw.Type)) throw Error(`nullable but not type (${out})`);
-    return out.or(tsw.TypeName.null);
+class Definer {
+    public item:Identifier;
+
+    constructor(name:string|PdbId<PdbId.Data>) {
+        this.item = name instanceof PdbId ? name : PdbId.parse(name);
+    }
+
+    paramName(name:string):this {
+        this.item.paramVarName = name;
+        return this;
+    }
+
+    js(jsType:[string, TsFile]|((item:Identifier, kind:tsw.Kind)=>tsw.ItemPair)|ImportItem|tsw.ItemPair|null, opts:{
+        jsTypeNullable?:boolean,
+        jsTypeOnly?:tsw.Type,
+    } = {}):this {
+        if (jsType instanceof Array) {
+            const [name, host] = jsType;
+            this.item.jsType = new ImportItem(minecraft, host, name);
+        } else {
+            this.item.jsType = jsType;
+        }
+        this.item.jsTypeOnly = opts.jsTypeOnly;
+        this.item.dontExport = true;
+        if (opts.jsTypeNullable != null) this.item.jsTypeNullable = opts.jsTypeNullable;
+        return this;
+    }
+
+    templateRedirect(
+        templateRedirect:(item:PdbId<PdbId.TemplateBase>, templates:Identifier[], kind:tsw.Kind, opts:ToTswOptions)=>tsw.ItemPair,
+        opts:{
+        exportOriginal?:boolean,
+    } = {}):this {
+        if (this.item.templateBase === null) {
+            throw Error(`templateRedirect but is not template`);
+        }
+        const params = this.item.templateParameters;
+        if (params === null) {
+            throw Error(`templateRedirect but no templateParameters`);
+        }
+
+        this.item = this.item.templateBase;
+        if (this.item.templateRedirects == null) this.item.templateRedirects = [];
+        this.item.templateRedirects.push({
+            templates: params,
+            redirect: templateRedirect
+        });
+        if (!opts.exportOriginal) this.item.dontExport = true;
+        return this;
+    }
 }
+
 class TsFileExtern extends TsFile {
 
 }
 
 const imports = {
     nativetype: new TsFileExtern('./nativetype'),
+    cxxvector: new TsFileExtern('./cxxvector'),
     complextype: new TsFileExtern('./complextype'),
     dnf: new TsFileExtern('./dnf'),
     nativeclass: new TsFileExtern('./nativeclass'),
@@ -171,65 +233,183 @@ const imports = {
     core: new TsFileExtern('./core'),
     common: new TsFileExtern('./common'),
     pointer: new TsFileExtern('./pointer'),
+    sharedpointer: new TsFileExtern('./sharedpointer'),
 };
 
-enum FieldType {
-    Member,
-    Static,
-    InNamespace,
+interface ToTswOptions {
+    isField?:boolean;
+    noTemplate?:boolean;
+    noJsType?:boolean;
+    absoluteValue?:boolean;
 }
 
-function getFieldType(item:Identifier):FieldType {
-    if (item.isStatic) {
-        return FieldType.Static;
+class MakeFuncOptions {
+    private value:tsw.ObjectDef|null = null;
+    private readonly map = new Map<string, number>();
+
+    has(key:string):boolean {
+        return this.map.has(key);
     }
-    if (item.isFunctionBase || item.isTemplateFunctionBase || item.isFunction) {
-        return FieldType.Member;
+
+    add(prop:tsw.NameProperty, value:tsw.Value):void {
+        if (this.value === null) {
+            this.value = new tsw.ObjectDef([]);
+        }
+        const oidx = this.map.get(prop.name);
+        if (oidx != null) {
+            this.value.fields[oidx] = [prop, value];
+        } else {
+            const idx = this.value.fields.push([prop, value])-1;
+            this.map.set(prop.name, idx);
+        }
     }
-    return FieldType.InNamespace;
+
+    get():tsw.Value {
+        return this.value || tsw.Constant.null;
+    }
+}
+
+class FunctionMaker {
+    public readonly opts = new MakeFuncOptions;
+    public returnType:tsw.ItemPair;
+    public parameters:tsw.ItemPair[];
+    public parametersWithoutThis:tsw.ItemPair[];
+    public parameterNames:tsw.Name[];
+    public parametersOffset = 0;
+    private paramDeclares:tsw.DefineItem[]|null = null;
+
+    constructor(
+        private readonly file:MinecraftTsFile,
+        kind:tsw.Kind,
+        public readonly isStatic:boolean,
+        returnType:Identifier,
+        parameters:Identifier[],
+        public readonly classType:tsw.ItemPair|null) {
+        if (!isStatic && classType != null && classType.value !== null) {
+            this.opts.add(properties.this, classType.value);
+        }
+        this.returnType = file.toTswReturn(returnType, kind, this.opts, true);
+        this.parametersWithoutThis = this.parameters = file.toTswParameters(parameters, kind, true);
+        this.parameterNames = file.makeParamNamesByTypes(parameters);
+        if (classType != null && classType.type !== null) {
+            if (classType.type instanceof tsw.TemplateType) {
+                this.parametersWithoutThis = this.parameters.slice();
+                if (isStatic) {
+                    this.parameters.unshift(file.NativeClassType.wrap(classType));
+                    this.parametersOffset = 0;
+                } else {
+                    this.parameters.unshift(classType);
+                }
+                this.parameterNames.unshift(tsw.Name.this);
+            }
+        }
+
+    }
+
+    private _getParamDeclares():tsw.DefineItem[] {
+        if (this.paramDeclares !== null) return this.paramDeclares;
+        return this.paramDeclares = this.file.makeParameterDecls(this.parameters, this.parameterNames);
+    }
+
+    makeType():tsw.ItemPair {
+        const out = new tsw.ItemPair;
+        if (this.returnType.value !== null) {
+            const NativeFunctionType = this.file.NativeFunctionType.import(tsw.Kind.Value);
+            out.value = NativeFunctionType.value.call(properties.make, [
+                this.returnType.value,
+                this.opts.get(),
+                ...this.parametersWithoutThis.map(id=>id.value)
+            ]);
+        }
+
+        if (this.returnType.type !== null) {
+            out.type = new tsw.FunctionType(this.returnType.type, this._getParamDeclares());
+        }
+
+        return out;
+    }
+
+    make(name:tsw.Property, overload:Identifier):MethodPair {
+        const out = {} as MethodPair;
+        if (this.returnType.type !== null) {
+            out.declare = new tsw.MethodDecl(null, this.isStatic, name, this._getParamDeclares(), this.returnType.type);
+        }
+        if (this.returnType.value !== null) {
+            const paramDefs:tsw.Value[] = [
+                new tsw.Constant(overload.address),
+                new tsw.ArrayDef(this.parametersWithoutThis.map(pair=>pair.value!)),
+                this.returnType.value!,
+                this.opts.get()
+            ];
+
+            if (overload.templateBase !== null) {
+                const templates = overload.templateParameters!.map(t=>this.file.toTsw(t, tsw.Kind.Value, {absoluteValue: true}).value!);
+                paramDefs.push(new tsw.ArrayDef(templates));
+            }
+
+            out.variable = this.file.getOverloadVarId(overload);
+            out.assign = new tsw.Assign(out.variable.member(properties.overloadInfo), new tsw.ArrayDef(paramDefs));
+        }
+        return out;
+    }
+}
+
+interface MethodPair {
+    declare:tsw.MethodDecl;
+    variable:tsw.Name;
+    assign:tsw.Assign;
+}
+
+class ParsedFunction {
+    declare:tsw.MethodDecl;
+    templateDeclare:tsw.MethodDecl|null = null;
+    variable:tsw.Name;
+    assign:tsw.Assign;
+
+    constructor(file:MinecraftTsFile, name:tsw.Property, field:PdbMember, overload:Identifier) {
+        if (!overload.is(PdbId.Function)) throw Error(`is not function(${overload})`);
+        if (overload.data.returnType === null) throw Error(`Unresolved return type (${overload})`);
+        if (overload.parent === null) throw Error(`is function but no parent`);
+
+        let funcKind = tsw.Kind.Value;
+        if (overload.parent.templateBase !== null) {
+            funcKind = tsw.Kind.Both;
+        }
+
+        const classType = file.getClassType(overload, funcKind, true);
+
+        const func = new FunctionMaker(
+            file, tsw.Kind.Both, field.isStatic,
+            overload.data.returnType, overload.data.functionParameters, classType);
+
+        const method = func.make(name, overload);
+        this.declare = method.declare;
+        this.variable = method.variable;
+        this.assign = method.assign;
+
+        if (overload.templateBase !== null) {
+            const typeOfTemplates = overload.templateParameters!.map(v=>v.getTypeOfIt());
+            const types = file.toTswParameters(typeOfTemplates, tsw.Kind.Type);
+            const names = file.makeParamNamesByTypes(typeOfTemplates);
+            const tparams = file.makeParameterDecls(types, names, field.isStatic, classType?.type);
+            for (const param of tparams) {
+                if (param instanceof tsw.VariableDefineItem) {
+                    if (param.name === tsw.Name.this) continue;
+                    param.initial = tsw.OPTIONAL;
+                }
+            }
+            const treturnType = new tsw.FunctionType(func.returnType.type!, tparams.slice(classType != null ? 1 : 0));
+            this.templateDeclare = new tsw.MethodDecl(null, field.isStatic, name, tparams, treturnType);
+        }
+    }
 }
 
 class TsCode {
     public readonly doc = new tsw.Block;
-    public readonly imports:ImportInfo;
+    public readonly imports:TsImportInfo;
 
     constructor(public readonly base:MinecraftTsFile) {
         this.imports = this.base.imports;
-    }
-
-    private _getVarName(type:Identifier):string {
-        let baseid:Identifier = type;
-        for (;;) {
-            if (baseid.paramVarName) return baseid.paramVarName;
-            if (baseid.decoedFrom !== null) {
-                baseid = baseid.decoedFrom;
-            } else if (baseid.functionBase !== null) {
-                baseid = baseid.functionBase;
-            } else if (baseid.templateBase !== null) {
-                baseid = baseid.templateBase;
-            } else if (baseid.isFunctionType) {
-                return 'cb';
-            } else {
-                break;
-            }
-        }
-        if (baseid.memberPointerBase !== null) {
-            const postfix = baseid.isFunction ? '_fn' : '_m';
-            return this._getVarName(baseid.memberPointerBase)+postfix;
-        }
-        if (baseid.isTypeUnion) return 'arg';
-        let basename = this.getNameOnly(baseid, tsw.Identifier, {noImport: true}).toName(tsw.Identifier).name;
-        if (basename.endsWith('_t')) basename = basename.substr(0, basename.length-2);
-        basename = styling.toCamelStyle(basename, /[[\] :*]/g, false);
-        return basename;
-    }
-
-    insideOf(namespace:Identifier):boolean {
-        return false;
-    }
-
-    isClassMethod(id:Identifier):boolean {
-        return !id.isType && id.parent!.isClassLike && !id.isStatic;
     }
 
     getIdName(item:Identifier):string {
@@ -237,277 +417,1026 @@ class TsCode {
             return this.getIdName(item.redirectedFrom);
         }
         if (item.templateBase !== null) {
-            return this.getIdName(item.templateBase)+'_'+item.templateParameters.map(id=>this.getIdName(id)).join('_');
+            return this.getIdName(item.templateBase)+'_'+item.templateParameters!.map(id=>this.getIdName(id)).join('_');
         }
-        if (item.decoedFrom !== null) {
-            return this.getIdName(item.decoedFrom);
+        if (item.data instanceof PdbId.Decorated) {
+            return this.getIdName(item.data.base);
         }
-        if (item.memberPointerBase !== null) {
-            const postfix = item.isFunction ? '_fn' : '_m';
-            return this.getIdName(item.memberPointerBase)+postfix;
+        if (item.data instanceof PdbId.MemberPointerType) {
+            return this.getIdName(item.data.memberPointerBase)+'_m';
         }
-        const nameobj = this.getNameOnly(item, tsw.Identifier, {noImport: true});
+        if (item.data instanceof PdbId.MemberFunctionType) {
+            return this.getIdName(item.data.memberPointerBase)+'_fn';
+        }
+        const nameobj = this.getNameOnly(item);
         if (!(nameobj instanceof tsw.NameProperty)) throw Error(`is not name(${item})`);
         let name = nameobj.name.replace(/[{},<>]/g, v=>idremap[v]);
         if (name.startsWith('-')) {
             name = 'minus_'+name.substr(1);
         }
-        if (item.parent !== null && item.parent !== PdbIdentifier.global) {
+        if (item.parent !== null && item.parent !== PdbId.global) {
             name = this.getIdName(item.parent) + '_' + name;
         }
         return name;
     }
 
-    getNameOnly(item:Identifier, kind:tsw.Kind, opts:{noImport?:boolean} = {}):tsw.Property {
+    getNameOnly(item:Identifier):tsw.Property {
         if (item.templateBase !== null) {
             throw Error(`${item}: getName with template`);
         }
-        if (item.isTypeUnion) {
+        if (item.is(PdbId.TypeUnion)) {
             throw Error(`${item}: getName with type union`);
         }
-        if (item.decoedFrom !== null) {
+        if (item.is(PdbId.Decorated)) {
             throw Error(`getName with deco type(${item})`);
         }
-        if (item.isFunctionType) {
+        if (item.is(PdbId.FunctionType) || item.is(PdbId.FunctionTypeBase)) {
             throw Error(`${item.name}: getName with function type`);
         }
         if (item.parent === null) {
-            throw Error(`${item.name} has not parent`);
+            throw Error(`${item.name} has not parent, (type=${item.data.constructor.name})`);
         }
-        if (item.isLambda) {
+        if (item.is(PdbId.LambdaClass)) {
             throw new IgnoreThis(`lambda (${item})`);
         }
-        if (item.keyIndex != null) {
+        if (item.is(PdbId.KeyType)) {
             throw new IgnoreThis(`temporal key (${item})`);
         }
 
         let name = item.removeParameters().name;
-        if (item.isConstructor) {
-            return properties.constructWith;
-        } else {
-            if (item.isDestructor) {
-                const NativeType = this.imports.importName(imports.nativetype, 'NativeType', tsw.Identifier);
-                return new tsw.BracketProperty(NativeType.member('dtor'));
+        if (item.is(PdbId.Function) || item.is(PdbId.FunctionBase)) {
+            if (item.data.isConstructor) {
+                return properties.constructWith;
+            } else if (item.data.isDestructor) {
+                const NativeType = this.base.NativeType.importValue();
+                return new tsw.BracketProperty(NativeType.member(properties.dtor));
             }
         }
 
+        if (item.is(PdbId.VCall)) {
+            return new tsw.NameProperty('__vcall_'+this.getIdName(item.data.param));
+        }
         const remapped = specialNameRemap.get(name);
         let matched:RegExpMatchArray|null;
         if (remapped != null) {
             name = remapped;
         } else if (name.startsWith('`')) {
-            if (name.startsWith("`vector deleting destructor'")) {
-                name = '__vector_deleting_destructor_'+item.adjustors.join('_');
-            } else if (name.startsWith("`vftable'")) {
-                name = '__vftable_for_'+item.adjustors.map(id=>this.getIdName(id)).join('_');
-            } else if (name.startsWith("`vbtable'")) {
-                name = '__vbtable_for_'+item.adjustors.map(id=>this.getIdName(id)).join('_');
-            } else if (name.startsWith("`vcall'")) {
-                name = '__vcall_'+item.adjustors.map(id=>this.getIdName(id)).join('_');
+            if (item.params !== null) {
+                const params = [...item.params];
+                if (name.startsWith("`vector deleting destructor'")) {
+                    name = '__vector_deleting_destructor_'+params.join('_');
+                } else if (name.startsWith("`vftable'")) {
+                    name = '__vftable_for_'+params.map(id=>this.getIdName(id)).join('_');
+                } else if (name.startsWith("`vbtable'")) {
+                    name = '__vbtable_for_'+params.map(id=>this.getIdName(id)).join('_');
+                } else {
+                    name = '__'+name.replace(/[`' ()\-,0-9]/g, '');
+                    // name = '__'+name.replace(/[`' ()-,0-9]/g, '')+'_'+item.adjustors.join('_').replace(/-/g, 'minus_');
+                }
             } else {
                 name = '__'+name.replace(/[`' ()\-,0-9]/g, '');
-                // name = '__'+name.replace(/[`' ()-,0-9]/g, '')+'_'+item.adjustors.join('_').replace(/-/g, 'minus_');
             }
         } else if ((matched = name.match(adjustorRegExp)) !== null) {
             name = matched[1]+'_adjustor_'+matched[2];
         } else if (name.startsWith('operator ')) {
-            if (item.returnType === null) {
-                throw Error(`failed to get return type(${item})`);
-            } else {
-                name = 'operator_castto_'+this.getIdName(item.returnType);
-            }
-        }
-        if (item.parent === PdbIdentifier.global && !item.isConstant) {
-            if (!opts.noImport) {
-                const imported = this.imports.importName(item.host, name, kind);
-                if (!(imported instanceof tsw.Name) && !(imported instanceof tsw.TypeName)) {
-                    throw Error(`${imported} is not name`);
+            if (item.is(PdbId.FunctionBase) || item.is(PdbId.TemplateFunctionBase)) {
+                for (const over of item.data.allOverloads()) {
+                    if (over.data.returnType === null) throw Error(`Unresolved return type ${over}`);
+                    name = 'operator_castto_'+this.getIdName(over.data.returnType);
+                    break;
                 }
-                return imported.toProperty();
+            } else {
+                throw Error(`failed to get return type(${item})`);
             }
         }
         return new tsw.NameProperty(name);
     }
 
     defineType(item:Identifier, type:tsw.Type):tsw.BlockItem {
-        const name = this.getNameOnly(item, tsw.Identifier);
-        return new tsw.Export(new tsw.TypeDef(name.toName(tsw.Type), type));
+        const name = this.getNameOnly(item);
+        return new tsw.Export(new tsw.TypeDef(name.toName(tsw.Kind.Type).type, type));
     }
 
-    defineVariable(item:Identifier, type:tsw.Type|null, define:'const'|'let', initial?:tsw.Identifier):tsw.BlockItem {
-        const name = this.getNameOnly(item, tsw.Identifier);
-        const exported = new tsw.Export(new tsw.VariableDef(define, [new tsw.VariableDefineItem(name.toName(tsw.Identifier), type, initial)]));
+    defineVariable(item:Identifier, type:tsw.Type|null, define:'const'|'let', initial?:tsw.Value):tsw.BlockItem {
+        const name = this.getNameOnly(item);
+        const exported = new tsw.Export(new tsw.VariableDef(define, [new tsw.VariableDefineItem(name.toName(tsw.Kind.Value).value, type, initial)]));
         if (initial == null) exported.writeJS = emptyFunc;
         return exported;
     }
 
     getClassDeclaration(item:Identifier, type:tsw.Type|null, isReadonly:boolean, isStatic:boolean):tsw.ClassItem {
-        const name = this.getNameOnly(item, tsw.Identifier);
+        const name = this.getNameOnly(item);
         return new tsw.ClassField(null, isStatic, isReadonly, name, type);
     }
 
-    getName<T extends tsw.Kind>(item:Identifier, kind:T, opts:{insideOfClass?:boolean, isStatic?:boolean, assignee?:boolean} = {}):tsw.KindToItem<T> {
+    getName<T extends tsw.Kind>(item:Identifier, kind:T, opts:{assignee?:boolean, insideOfClass?:boolean, absoluteValue?:boolean} = {}):tsw.ItemPair {
         if (item.templateBase !== null) {
             throw Error(`${item}: getName with template`);
         }
         if (item.parent === null) {
             throw Error(`${item.name} has not parent`);
         }
-        if (item.isLambda) {
+        if (item.is(PdbId.LambdaClass)) {
             throw new IgnoreThis(`lambda (${item})`);
         }
 
-        let result:tsw.KindToItem<T>|null = null;
-        if (item.parent === PdbIdentifier.global) {
-            if (opts.assignee) {
-                if (tsw.isIdentifier(kind)) {
-                    if (item.host !== this.base) {
-                        result = this.imports.importDirect(item, item.host, kind);
-                    } else {
-                        result = tsw.Name.exports as any;
-                    }
-                } else {
-                    throw Error('assignnee but not identifier');
-                }
-            }
-        } else {
-            result = this.toTsw(item.parent, kind);
-            if (opts.insideOfClass && !opts.isStatic && !item.isType && tsw.isType(kind) && item.parent.isClassLike && (item.isFunction || item.isFunctionBase || item.isTemplateFunctionBase)) {
-                result = result.member(tsw.NameProperty.prototypeName);
+        let result:tsw.ItemPair|null = null;
+        if (item.parent !== PdbId.global) {
+            result = this.base.toTsw(item.parent, kind, {absoluteValue: opts.absoluteValue});
+            if (opts.insideOfClass && !item.isStatic && !item.isType &&
+                result.type != null &&
+                item.parent.is(PdbId.ClassLike) &&
+                (item.is(PdbId.Function) || item.is(PdbId.FunctionBase) || item.is(PdbId.TemplateFunctionBase))) {
+                result.type = result.type.member(tsw.NameProperty.prototypeName);
             }
         }
 
-        const prop = this.getNameOnly(item, kind);
-        return (result !== null) ? result.member(prop) : prop.toName(kind);
+        const prop = this.getNameOnly(item);
+        if (result !== null) {
+            if (result.type != null) {
+                result.type = result.type.member(prop);
+            }
+            if (result.value != null) {
+                result.value = result.value.member(prop);
+            }
+        } else {
+            if (opts.assignee) {
+                result = new tsw.ItemPair(
+                    tsw.Name.exports.member(prop),
+                    prop.toName(kind & tsw.Kind.Type).type
+                );
+            } else {
+                result = prop.toName(kind);
+            }
+        }
+        return result;
+    }
+}
+
+class TsCodeDeclaration extends TsCode {
+    public readonly idsMap = new Set<Identifier>();
+    private readonly nameMaker = (item:PdbId<PdbId.Data>):tsw.Type=>this.base.toTsw(item, tsw.Kind.Type).type;
+    public readonly defs = new tsw.VariableDef('const', []);
+
+    public currentNs:Identifier = PdbId.global;
+    public currentBlock:tsw.Block = this.doc;
+    public currentClass:tsw.Class|null = null;
+
+    constructor(
+        public readonly base:MinecraftTsFile,
+        private readonly ids:Identifier[]
+    ) {
+        super(base);
+        this.doc.write(this.defs);
     }
 
-    makeFuncDeclaration(isStaticMethod:boolean, args:(Identifier|tsw.TypeName)[], thisType?:Identifier|tsw.Type|null):{declaration:tsw.DefineItem[], parameterNames:tsw.Name[]} {
-        const names = new Map<string, {index:number, counter:number}>();
-        const declaration:tsw.DefineItem[] = [];
-        const varNames:string[] = [];
-        const parameters:tsw.Name[] = [];
-        for (let i=0;i<args.length;i++) {
-            const type = args[i];
-            let basename:string;
-            if (type instanceof PdbIdentifier) basename = this._getVarName(type);
-            else basename = 'arg'+i;
+    private _writeRedirect(item:Identifier):void {
+        if (!(this.currentBlock instanceof tsw.Block)) {
+            throw Error(`${this.currentBlock} is not block`);
+        }
+
+        try {
+            if (!item.is(PdbId.Redirect)) {
+                PdbId.printOnProgress(`[symbolwriter.ts] ${item}: is not redirecting`);
+                return;
+            }
+            const ori = item.data.redirectTo;
+            const from = ori.redirectedFrom;
+            ori.redirectedFrom = null;
+            const type = this.base.toTsw(ori, tsw.Kind.Type).type;
+            const NativeClassType = this.base.NativeClassType.importType();
+            if (COMMENT_SYMBOL) this.currentBlock.comment(ori.symbolIndex+': '+ori.source);
+            this.currentBlock.write(this.defineType(item, type));
+            const typeOfThis = new tsw.TypeOf(this.base.toTsw(ori.removeTemplateParameters(), tsw.Kind.Value).value);
+            const classType = NativeClassType.template(type).and(typeOfThis);
+            this.currentBlock.write(this.defineVariable(item, classType, 'const', this.base.toTsw(ori, tsw.Kind.Value).value));
+            ori.redirectedFrom = from;
+        } catch (err) {
+            if (err instanceof IgnoreThis) {
+                this.currentBlock.comment(`ignored: ${item}`);
+                this.currentBlock.comment(`  ${err.message}`);
+                return;
+            }
+            throw err;
+        }
+    }
+
+    private _writeOverloads(field:PdbMember, insideOfClass:boolean):void {
+        try {
+            const impl = this.base.doc.impl;
+            const overloads = field.overloads;
+            if (overloads.length === 0) {
+                throw Error(`empty overloads`);
+            }
+            if (!insideOfClass && field.isStatic) {
+                throw Error(`${overloads[0]}: is static but not in the class`);
+            }
+
+            const target = field.base.removeTemplateParameters();
+            const name = this.getNameOnly(field.base);
+
+            const scope = this.currentClass || this.currentBlock;
+
+            const writedOverloads:tsw.Name[] = [];
+            let previousParams:PdbId<PdbId.Data>[]|null = null;
+            let previousThis:PdbId<PdbId.Data>|null = null;
+            for (const overload of overloads) {
+                try {
+                    const thisParam = overload.parent!.templateBase !== null ? overload.parent! : null;
+                    if (COMMENT_SYMBOL) scope.comment(overload.symbolIndex+': '+overload.source);
+                    if (overload.data.returnType === null) throw Error(`Unresolved return type (${overload})`);
+                    const func = new ParsedFunction(this.base, name, field, overload);
+
+                    if (previousParams === null || (
+                        !arrayEquals(overload.data.functionParameters, previousParams) ||
+                        previousThis !== thisParam
+                    )) {
+                        previousParams = overload.data.functionParameters;
+                        previousThis = thisParam;
+                        scope.addFunctionDecl(name, func.declare.params.params, func.declare.returnType, field.isStatic);
+                    } else {
+                        scope.comment(`dupplicated: ${func.declare};`);
+                    }
+                    impl.doc.write(func.assign);
+                    writedOverloads.push(func.variable);
+                } catch (err) {
+                    if (!(err instanceof IgnoreThis)) {
+                        PdbId.printOnProgress(`> Writing ${overload} (symbolIndex=${overload.symbolIndex})`);
+                        throw err;
+                    }
+                    scope.comment(`ignored: ${overload}`);
+                    scope.comment(`  ${err.message}`);
+                }
+            }
+
+            if (writedOverloads.length !== 0) {
+                const funcdef = this.base.getFunctionVarId(target);
+                if (this.currentClass !== null) {
+                    const clsName = this.currentClass.name;
+                    if (field.isStatic) {
+                        this.currentBlock.assign(clsName.member(name), funcdef);
+                    } else {
+                        this.currentBlock.assign(clsName.member(tsw.NameProperty.prototypeName).member(name), funcdef);
+                    }
+                } else {
+                    const exported = this.currentBlock.export(new tsw.VariableDef('const', [
+                        new tsw.VariableDefineItem(name.toName(tsw.Kind.Value).value, null, funcdef)
+                    ]));
+                    exported.cloneToDecl = ()=>null;
+                }
+                this.currentBlock.assign(funcdef.member(properties.overloads), new tsw.ArrayDef(writedOverloads));
+            }
+
+        } catch (err) {
+            if ((err instanceof IgnoreThis)) {
+                const block = this.currentClass || this.currentBlock;
+                block.comment(`ignored: ${field.base.name}`);
+                block.comment(`  ${err.message}`);
+                return;
+            }
+            throw err;
+        }
+    }
+
+    private _writeField(item:Identifier, isStatic:boolean):void {
+        try {
+            if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
+            let type:tsw.Type;
+            if (item.is(PdbId.ReturnAble)) {
+                if (item.data.returnType === null) throw Error(`Unresolved return type (${item})`);
+                type = this.base.toTsw(item.data.returnType, tsw.Kind.Type, {isField: true}).type;
+            } else {
+                type = this.base.StaticPointer.importType();
+            }
+            if (this.currentClass !== null) {
+                this.currentClass.write(this.getClassDeclaration(item, type, false, isStatic));
+            } else {
+                this.currentBlock.write(this.defineVariable(item, type, 'const'));
+            }
+
+            const impl = this.base.doc.impl;
+            const target:Identifier = item.removeTemplateParameters();
+            if (COMMENT_SYMBOL) impl.doc.comment(item.symbolIndex+': '+item.source);
+            if (item.address === 0) {
+                PdbId.printOnProgress(`[symbolwriter.ts] ${item}: address not found`);
+                throw new IgnoreThis(`address not found (${item})`);
+            }
+
+            const addrvar = this.base.getAddressVarId(item);
+            if (item.is(PdbId.ReturnAble)) {
+                if (target.parent === null) {
+                    throw Error(`${target}: has not parent`);
+                }
+
+                let parent:tsw.Value;
+                if (target.parent === PdbId.global) {
+                    parent = tsw.Name.exports;
+                } else {
+                    parent = impl.base.toTsw(target.parent, tsw.Kind.Value, {absoluteValue: true}).value;
+                }
+
+                const NativeType = this.base.NativeType.importValue();
+                if (item.data.returnType === null) throw Error(`Unresolved return type (${item})`);
+                const type = impl.base.toTsw(item.data.returnType, tsw.Kind.Value, {isField: true, absoluteValue: true}).value;
+                const prop = impl.getNameOnly(target);
+                impl.doc.write(NativeType.call(properties.definePointedProperty, [
+                    parent,
+                    new tsw.Constant(prop.toName(tsw.Kind.Value).value.name),
+                    addrvar,
+                    type
+                ]));
+            } else {
+                const targetName = impl.getName(target, tsw.Kind.Value, {assignee: true, absoluteValue: true}).value;
+                impl.doc.assign(targetName, addrvar);
+            }
+        } catch (err) {
+            if ((err instanceof IgnoreThis)) {
+                this.currentBlock.comment(`ignored: ${item}`);
+                this.currentBlock.comment(`  ${err.message}`);
+                return;
+            }
+            throw err;
+        }
+    }
+
+    private _getField(out:PdbMemberList, item:Identifier):void {
+        if (item.parent === null) {
+            throw Error(`${item.name}: parent not found`);
+        }
+        if (item.dontExport) return;
+        if (!PdbId.filter(item)) return;
+        if (item.is(PdbId.Decorated)) return;
+        if (item.is(PdbId.FunctionType)) return;
+        if (item.is(PdbId.MemberPointerType)) return;
+        if (item.is(PdbId.TemplateFunctionNameBase)) return;
+        if (item.templateBase !== null) return; // class or function template
+        if (item.is(PdbId.Function)) return;
+
+        if (item.hasOverloads()) {
+            for (const o of item.data.allOverloads()) {
+                if (!PdbId.filter(o)) continue;
+                if (o.templateBase !== null && o.data.hasArrayParam()) continue;
+                if (item.is(PdbId.TemplateFunctionBase)) {
+                    if (o.data.functionParameters.some(arg=>arg.getArraySize() !== null)) {
+                        continue;
+                    }
+                }
+                if (!o.data.functionParameters.every(PdbId.filter)) {
+                    continue;
+                }
+                if (o.parent !== null && !PdbId.filter(o.parent)) {
+                    continue;
+                }
+                if (o.data.returnType !== null && !PdbId.filter(o.data.returnType)) {
+                    continue;
+                }
+                out.push(item, o);
+            }
+        } else {
+            out.set(item);
+        }
+    }
+
+    private _writeClass(item:Identifier):void {
+        try {
+            let opened = false;
+
+            const tinfo = TemplateInfo.from(item);
+            if (tinfo.paramTypes.length !== 0) {
+                if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
+                const templateDecl =  tinfo.makeTemplateDecl(this.nameMaker);
+                const clsname = this.getNameOnly(item);
+                const cls = new tsw.Class(clsname.toName(tsw.Kind.Value).value);
+                cls.templates = templateDecl;
+                cls.extends = this.base.NativeTemplateClass.importValue();
+                this.currentBlock.export(cls);
+                this.currentClass = cls;
+                this.base.currentClassId = item;
+                opened = true;
+
+                try {
+                    const makeTemplateParams = tinfo.makeWrappedTemplateDecl(this.nameMaker);
+                    const types = tinfo.paramTypes.map(v=>new tsw.ItemPair(null, new tsw.TypeName(v.name)));
+                    const names = this.base.makeParamNamesByLength(types.length);
+                    const args = this.base.makeParameterDecls(types, names);
+
+                    const unwrappedType:tsw.TemplateType[] = [];
+                    const NativeClassType = this.base.NativeClassType.importType();
+                    if (tinfo.paramTypes.length !== 0) {
+                        const UnwrapType = this.base.UnwrapType.importType();
+                        for (const param of tinfo.paramTypes) {
+                            unwrappedType.push(new tsw.TemplateType(UnwrapType, [new tsw.TypeName(param.name)]));
+                        }
+                    }
+                    const returnType = new tsw.TemplateType(NativeClassType, [
+                        new tsw.TemplateType(clsname.toName(tsw.Kind.Type).type, unwrappedType)
+                    ]).and(new tsw.TypeOf(clsname.toName(tsw.Kind.Value).value));
+                    const def = new tsw.MethodDecl(null, true, properties.make, args, returnType);
+                    def.templates = makeTemplateParams;
+                    this.currentClass.write(def);
+                } catch (err) {
+                    if (err instanceof IgnoreThis) {
+                        this.currentBlock.comment(`ignored: ${item}`);
+                        this.currentBlock.comment(`  ${err.message}`);
+                    } else {
+                        throw err;
+                    }
+                }
+            } else {
+                if (
+                    item.is(PdbId.ClassLike) ||
+                    item.is(PdbId.TemplateClassBase) // template but no template parameters.
+                ) {
+                    if (item.is(PdbId.Enum)) {
+                        if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
+                        const name = this.getNameOnly(item);
+                        this.currentBlock.export(new tsw.Enum(name.toName(tsw.Kind.Value).value, []));
+                    } else {
+                        if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
+                        const cls = new tsw.Class(this.getNameOnly(item).toName(tsw.Kind.Value).value);
+                        if (item.isMantleClass) {
+                            const MantleClass = this.base.MantleClass.importValue();
+                            cls.extends = MantleClass;
+                        } else {
+                            let supercls:tsw.Value|null = null;
+                            if (item.is(PdbId.Class)) {
+                                const superid = item.data.super;
+                                if (superid !== null) {
+                                    supercls = this.base.toTsw(superid, tsw.Kind.Value).value;
+                                }
+                            }
+                            if (supercls === null) {
+                                const NativeClass = this.base.NativeClass.importValue();
+                                supercls = NativeClass;
+                            }
+                            cls.extends = supercls;
+                        }
+                        this.currentBlock.export(cls);
+                        this.currentClass = cls;
+                        opened = true;
+                    }
+                }
+            }
+
+            const fields = this.getAllFields(item);
+            const sortedMember = fields.sortedMember();
+            if (opened) {
+                for (const field of fields.sortedStaticMember()) {
+                    this.writeMembers(field, true);
+                }
+                for (const field of sortedMember) {
+                    this.writeMembers(field, true);
+                }
+            }
+
+            this.currentClass = null;
+
+            for (const _ of this.enterNamespace(item)) {
+                if (!opened) {
+                    for (const field of sortedMember) {
+                        try {
+                            this.writeMembers(field, false);
+                        } catch (err) {
+                            if ((err instanceof IgnoreThis)) {
+                                this.currentBlock.comment(`ignored: ${field.base.name}`);
+                                this.currentBlock.comment(`  ${err.message}`);
+                            } else {
+                                PdbId.printOnProgress(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
+                                throw err;
+                            }
+                        }
+                    }
+                }
+
+                for (const field of fields.sortedInNamespace()) {
+                    try {
+                        this.writeMembers(field, false);
+                    } catch (err) {
+                        if ((err instanceof IgnoreThis)) {
+                            this.currentBlock.comment(`ignored: ${field.base.name}`);
+                            this.currentBlock.comment(`  ${err.message}`);
+                        } else {
+                            PdbId.printOnProgress(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
+                            throw err;
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            if ((err instanceof IgnoreThis)) {
+                this.currentBlock.comment(`ignored: ${item}`);
+                this.currentBlock.comment(`  ${err.message}`);
+                return;
+            }
+            throw err;
+        }
+    }
+
+    existName(name:string):boolean {
+        return PdbId.global.getChild(name) != null;
+    }
+
+    existNameInScope(name:string):boolean {
+        let ns = this.currentNs;
+        while (ns !== PdbId.global) {
+            const item:Identifier|null = ns.getChild(name);
+            if (item != null) return true;
+            ns = ns.parent!;
+        }
+        return PdbId.global.getChild(name) != null;
+    }
+
+    *enterNamespace(item:Identifier):IterableIterator<void> {
+        if (!(this.currentBlock instanceof tsw.Block)) throw Error(`${this.currentBlock} is not namespace`);
+        const prop = this.getNameOnly(item);
+
+        const ns = new tsw.Namespace(prop.toName(tsw.Kind.Value).value);
+
+        const oldblock = this.currentBlock;
+        const oldclass = this.currentClass;
+        const oldclassid = this.base.currentClassId;
+        const oldns = this.currentNs;
+        this.currentBlock = ns.block;
+        this.currentClass = null;
+        this.base.currentClassId = null;
+        this.currentNs = item;
+        try {
+            yield;
+        } catch (err) {
+            remapAndPrintError(err);
+        }
+        this.currentNs = oldns;
+        this.base.currentClassId = oldclassid;
+        this.currentClass = oldclass;
+        this.currentBlock = oldblock;
+        if (ns.block.size() !== 0) {
+            this.currentBlock.write(new tsw.Export(ns));
+        }
+    }
+
+    getAllFields(item:PdbId<PdbId.Data>):PdbMemberList {
+        const out = new PdbMemberList;
+
+        if (item.is(PdbId.TemplateBase)) {
+            if (item.data.specialized.length !== 0) {
+                for (const specialized of item.data.specialized) {
+                    for (const child of specialized.children.values()) {
+                        this._getField(out, child);
+                    }
+                }
+            }
+        }
+        for (const child of item.children.values()) {
+            this._getField(out, child);
+        }
+        return out;
+    }
+
+    writeMembers(field:PdbMember, insideOfClass:boolean):void {
+        const overloads = field.overloads;
+        if (overloads.length !== 0) {
+            // set default constructor
+            if (this.currentClass !== null) {
+                for (const overload of overloads) {
+                    if (overload.data.functionParameters.length === 0 && overload.data.functionBase.name === overload.parent!.name) {
+                        const NativeType = this.base.NativeType.importValue();
+                        const method = new tsw.MethodDef(null, false, new tsw.BracketProperty(NativeType.member(properties.ctor)), [], tsw.BasicType.void);
+                        method.block.write(new tsw.Return(new tsw.DotCall(tsw.Name.this, properties.constructWith, [])));
+                        this.currentClass.write(method);
+                        break;
+                    }
+                }
+            }
+
+            // write overloads
+            try {
+                this._writeOverloads(field, insideOfClass);
+            } catch (err) {
+                if ((err instanceof IgnoreThis)) {
+                    this.currentBlock.comment(`ignored: ${field.base.name}`);
+                    this.currentBlock.comment(`  ${err.message}`);
+                } else {
+                    throw err;
+                }
+            }
+        } else {
+            const base = field.base;
+            if (base.is(PdbId.Redirect)) {
+                this._writeRedirect(base);
+            } else if (base.is(PdbId.NamespaceLike) || base.is(PdbId.TemplateBase)) {
+                if (base.address !== 0) {
+                    throw Error(`class but has address (${base})`);
+                }
+                if (!insideOfClass) {
+                    this._writeClass(base);
+                }
+            } else {
+                this._writeField(base, true);
+            }
+            // throw Error(`${base.source || base}: unexpected identifier`);
+        }
+    }
+
+    parseAll():void {
+        const out = new PdbMemberList;
+        for (const item of this.ids) {
+            this._getField(out, item);
+        }
+        if (out.staticMember.size !== 0) {
+            const first = getFirstIterableItem(out.staticMember)!;
+            throw Error(`global static member: ${first.base}`);
+        }
+        const total = out.inNamespace.size + out.member.size;
+        const bar = new ProgressBar('[symbolwriter.ts] Converting [:bar] :current/:total', total);
+        try {
+            for (const field of out.inNamespace) {
+                try {
+                    this.writeMembers(field, false);
+                } catch (err) {
+                    if (err instanceof IgnoreThis) {
+                        this.currentBlock.comment(`ignored: ${field.base.name}`);
+                        this.currentBlock.comment(`  ${err.message}`);
+                        continue;
+                    }
+                    PdbId.printOnProgress(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
+                    throw err;
+                }
+                bar.tick();
+            }
+            for (const field of out.member) {
+                try {
+                    this.writeMembers(field, false);
+                } catch (err) {
+                    if (err instanceof IgnoreThis) {
+                        this.currentBlock.comment(`ignored: ${field.base.name}`);
+                        this.currentBlock.comment(`  ${err.message}`);
+                        continue;
+                    }
+                    PdbId.printOnProgress(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
+                    throw err;
+                }
+                bar.tick();
+            }
+        } finally {
+            bar.terminate();
+        }
+    }
+}
+
+class ImportItem extends TsImportItem {
+    constructor(
+        base:TsFile,
+        from:TsFileExtern,
+        name:string) {
+        super(base, from, name);
+    }
+    wrap(pair:tsw.ItemPair):tsw.ItemPair {
+        const This = this.import(pair.getKind());
+        const out = new tsw.ItemPair;
+        if (pair.value !== null) {
+            out.value = new tsw.DotCall(This.value, properties.make, [pair.value]);
+        }
+        if (pair.type !== null) {
+            out.type = new tsw.TemplateType(This.type, [pair.type]);
+        }
+        return out;
+    }
+
+    unwrap(pair:tsw.ItemPair):boolean {
+        const kind = pair.getKind();
+
+        const This = this.import(kind);
+        if ((pair.type === null || (pair.type instanceof tsw.TemplateType && pair.type.type === This.type)) &&
+            (pair.value === null || (pair.value instanceof tsw.DotCall && pair.value.item === This.value && pair.value.property === properties.make))) {
+            if (pair.value !== null) pair.value = pair.value.params[0];
+            if (pair.type !== null) pair.type = pair.type.params[0];
+            return true;
+        }
+        return false;
+    }
+}
+
+class MinecraftDocument {
+    public readonly decl:TsCodeDeclaration;
+    public readonly impl:TsCode;
+
+    constructor(base:MinecraftTsFile, ids:Identifier[]) {
+        this.decl = new TsCodeDeclaration(base, ids);
+        this.impl = new TsCode(base);
+    }
+
+    makeVariable(value:tsw.Value):tsw.Name {
+        const tswvar = this.decl.doc.makeTemporalVariableName(this.impl.doc);
+        this.decl.defs.vars.defines.push(new tsw.VariableDefineItem(tswvar, null, value));
+        this.decl.doc.addValueName(tswvar, this.decl.defs, value);
+        return tswvar;
+    }
+
+}
+
+class MinecraftTsFile extends TsFile {
+    public readonly Bufferable = new ImportItem(this, imports.common, 'Bufferable');
+
+    public readonly VoidPointer = new ImportItem(this, imports.core, 'VoidPointer');
+    public readonly StaticPointer = new ImportItem(this, imports.core, 'StaticPointer');
+
+    public readonly NativeType = new ImportItem(this, imports.nativetype, 'NativeType');
+    public readonly templateArgs = new ImportItem(this, imports.nativetype, 'templateArgs');
+    public readonly UnwrapType = new ImportItem(this, imports.nativetype, 'UnwrapType');
+    public readonly int32_t = new ImportItem(this, imports.nativetype, 'int32_t');
+
+    public readonly NativeTemplateClass = new ImportItem(this, imports.complextype, 'NativeTemplateClass');
+    public readonly NativeFunctionType = new ImportItem(this, imports.complextype, 'NativeFunctionType');
+    public readonly MemberPointer = new ImportItem(this, imports.complextype, 'MemberPointer');
+
+    public readonly NativeClassType = new ImportItem(this, imports.nativeclass, 'NativeClassType');
+    public readonly MantleClass = new ImportItem(this, imports.nativeclass, 'MantleClass');
+    public readonly NativeClass = new ImportItem(this, imports.nativeclass, 'NativeClass');
+
+    public readonly makefunc = new ImportItem(this, imports.makefunc, 'makefunc');
+    public readonly dnf = new ImportItem(this, imports.dnf, 'dnf');
+    public readonly dll = new ImportItem(this, imports.dll, 'dll');
+    public readonly Wrapper = new ImportItem(this, imports.pointer, 'Wrapper');
+    public readonly Ptr = new ImportItem(this, imports.pointer, 'Ptr');
+    public readonly SharedPtr = new ImportItem(this, imports.sharedpointer, 'SharedPtr');
+    public readonly CxxVectorToArray = new ImportItem(this, imports.cxxvector, 'CxxVectorToArray');
+
+    private dnfMakeCall:tsw.Call|null = null;
+    private dnfOverloadNew:tsw.Call|null = null;
+    private dllCurrent:tsw.Value|null = null;
+    private ctorProperty:tsw.BracketProperty|null = null;
+    public currentClassId:Identifier|null = null;
+
+    public readonly doc:MinecraftDocument;
+
+    constructor(ids:Identifier[]) {
+        super('./minecraft');
+        this.doc = new MinecraftDocument(this, ids);
+    }
+
+    private _getVarName(type:Identifier):string {
+        let baseid:Identifier = type;
+        for (;;) {
+            if (baseid.paramVarName != null) return baseid.paramVarName;
+            if (baseid.data instanceof PdbId.Decorated) {
+                baseid = baseid.data.base;
+            } else if (baseid.data instanceof PdbId.Function) {
+                if (baseid.data instanceof PdbId.FunctionType) {
+                    return 'cb';
+                } else {
+                    baseid = baseid.data.functionBase;
+                }
+            } else if (baseid.templateBase !== null) {
+                baseid = baseid.templateBase;
+            } else {
+                break;
+            }
+        }
+        if (baseid.data instanceof PdbId.MemberPointerType) {
+            return this._getVarName(baseid.data.memberPointerBase)+'_m';
+        }
+        if (baseid.data instanceof PdbId.FunctionTypeBase) {
+            return 'fn';
+        }
+        if (baseid.data instanceof PdbId.FunctionType) {
+            if (baseid.data.returnType === null) throw Error(`returnType unresolved (${baseid})`);
+            return this._getVarName(baseid.data.returnType)+'_fn';
+        }
+        if (baseid.data instanceof PdbId.MemberFunctionType) {
+            return this._getVarName(baseid.data.memberPointerBase)+'_fn';
+        }
+        if (baseid.is(PdbId.TypeUnion)) return 'arg';
+        let basename = this.getNameOnly(baseid).toName(tsw.Kind.Value).value.name;
+        if (basename.endsWith('_t')) basename = basename.substr(0, basename.length-2);
+        basename = styling.toCamelStyle(basename, /[[\] :*]/g, false);
+        return basename;
+    }
+
+    makeParamNamesByTypes(ids:Identifier[]):tsw.Name[] {
+        const namemap = new Map<string, {index:number, counter:number}>();
+        const names:string[] = new Array(ids.length);
+        for (let i=0;i<ids.length;i++) {
+            const basename = this._getVarName(ids[i]);
 
             let name = basename;
-            const info = names.get(name);
+            const info = namemap.get(name);
             if (info == null) {
-                names.set(name, {index:i, counter:1});
+                namemap.set(name, {index:i, counter:1});
             } else {
                 if (info.counter === 1) {
-                    varNames[info.index] = basename + '_' + info.counter;
+                    names[info.index] = basename + '_' + info.counter;
                 }
                 info.counter++;
                 name = basename + '_' + info.counter;
             }
-            varNames[i] = name;
+            names[i] = name;
         }
-        for (let i=0;i<varNames.length;i++) {
-            let type:tsw.Type|PdbIdentifier = args[i];
-            if (type instanceof PdbIdentifier) {
-                type = this.toTsw(type, tsw.Type, {isParameter: true, nullable: true});
-            }
-            const name = new tsw.Name(varNames[i]);
-            declaration[i] = new tsw.VariableDefineItem(name, type);
-            parameters[i] = name;
-        }
-        if (thisType != null) {
-            let type:tsw.Type;
-            if (isStaticMethod) {
-                const NativeClassType = this.imports.importName(imports.nativeclass, 'NativeClassType', tsw.Type);
-                thisType = thisType instanceof tsw.Type ? thisType : this.toTsw(thisType, tsw.Type, {isParameter: true});
-                type = new tsw.TemplateType(NativeClassType, [thisType]);
-            } else {
-                thisType = thisType instanceof tsw.Type ? thisType : this.toTsw(thisType, tsw.Type, {isParameter: true, nullable: true, noJsType: true});
-            }
-            declaration.unshift(new tsw.VariableDefineItem(tsw.Name.this, thisType));
-        }
-        return {
-            declaration,
-            parameterNames: parameters
-        };
+        return names.map(name=>new tsw.Name(name));
     }
 
-    makeFuncParams_params(item:Identifier[]):tsw.Identifier[]{
-        return item.map(id=>this.toTsw(id, tsw.Identifier, {isParameter: true}));
+    makeParamNamesByLength(len:number):tsw.Name[] {
+        const names:tsw.Name[] = new Array(len);
+        for (let i=0;i<len;i++) {
+            names[i] = new tsw.Name('arg'+i);
+        }
+        return names;
     }
 
-    getThisType<T extends tsw.Kind>(item:Identifier, kind:T):tsw.KindToItem<T> {
-        if (this.isClassMethod(item)) {
-            return this.toTsw(item.parent!, kind, {isParameter: true});
-        } else {
-            return (tsw.isIdentifier(kind) ? tsw.Constant.null : tsw.TypeName.null) as any;
-        }
+    insideOf(namespace:Identifier):boolean {
+        return namespace === this.doc.decl.currentNs;
     }
 
-    makefuncParams_return(item:Identifier):tsw.Identifier {
-        if (item.returnType === null) {
-            throw Error(`${item}: function but no return type`);
+    getIdName(item:Identifier):string {
+        if (item.redirectedFrom !== null) {
+            return this.getIdName(item.redirectedFrom);
         }
-        return this.toTsw(item.returnType, tsw.Identifier, {isParameter: true});
-    }
-
-    writeDnfOverload(item:Identifier):void {
-        const thistype = this.getThisType(item, tsw.Identifier);
-
-        const parameterTypes = this.makeFuncParams_params(item.functionParameters);
-        const returnType = this.makefuncParams_return(item);
-        let opts:tsw.Identifier;
-        if (thistype !== null) {
-            opts = new tsw.ObjectDef([
-                [properties.this, thistype]
-            ]);
-        } else {
-            opts = tsw.Constant.null;
-        }
-        const params:tsw.Identifier[] = [
-            new tsw.Constant(item.address),
-            new tsw.ArrayDef(parameterTypes),
-            returnType,
-            opts
-        ];
-
         if (item.templateBase !== null) {
-            const templates = item.templateParameters.map(t=>this.toTsw(t, tsw.Identifier));
-            params.push(new tsw.ArrayDef(templates));
+            return this.getIdName(item.templateBase)+'_'+item.templateParameters!.map(id=>this.getIdName(id)).join('_');
         }
-
-        const varid = this.base.getOverloadVarId(item);
-        this.doc.assign(varid.member(properties.overloadInfo), new tsw.ArrayDef(params));
+        if (item.data instanceof PdbId.Decorated) {
+            return this.getIdName(item.data.base);
+        }
+        if (item.data instanceof PdbId.MemberPointerType) {
+            return this.getIdName(item.data.memberPointerBase)+'_m';
+        }
+        if (item.data instanceof PdbId.MemberFunctionType) {
+            return this.getIdName(item.data.memberPointerBase)+'_fn';
+        }
+        const nameobj = this.getNameOnly(item);
+        if (!(nameobj instanceof tsw.NameProperty)) throw Error(`is not name(${item})`);
+        let name = nameobj.name.replace(/[{},<>]/g, v=>idremap[v]);
+        if (name.startsWith('-')) {
+            name = 'minus_'+name.substr(1);
+        }
+        if (item.parent !== null && item.parent !== PdbId.global) {
+            name = this.getIdName(item.parent) + '_' + name;
+        }
+        return name;
     }
 
-    toTswArgs<T extends tsw.Kind>(args:(Identifier[]|Identifier)[], kind:T):tsw.KindToItem<T>[] {
-        return args.map((id):tsw.KindToItem<T>=>{
-            if (id instanceof Array) {
-                if (tsw.isIdentifier(kind)) {
-                    const templateArgs = this.imports.importName(imports.nativetype, 'templateArgs', tsw.Identifier);
-                    return new tsw.Call(templateArgs, id.map(id=>this.toTsw(id, kind))) as tsw.KindToItem<T>;
-                } else if (tsw.isType(kind)) {
-                    return new tsw.Tuple(id.map(id=>this.toTsw(id, tsw.Type))) as tsw.KindToItem<T>;
-                } else {
-                    throw Error(`unreachable`);
-                }
+    getNameOnly(item:Identifier):tsw.Property {
+        if (item.templateBase !== null) {
+            throw Error(`${item}: getName with template`);
+        }
+        if (item.is(PdbId.TypeUnion)) {
+            throw Error(`${item}: getName with type union`);
+        }
+        if (item.is(PdbId.Decorated)) {
+            throw Error(`getName with deco type(${item})`);
+        }
+        if (item.is(PdbId.FunctionType) || item.is(PdbId.FunctionTypeBase)) {
+            throw Error(`${item.name}: getName with function type`);
+        }
+        if (item.parent === null) {
+            throw Error(`${item.name} has not parent, (type=${item.data.constructor.name})`);
+        }
+        if (item.is(PdbId.LambdaClass)) {
+            throw new IgnoreThis(`lambda (${item})`);
+        }
+        if (item.is(PdbId.KeyType)) {
+            throw new IgnoreThis(`temporal key (${item})`);
+        }
+
+        let name = item.removeParameters().name;
+        if (item.is(PdbId.Function) || item.is(PdbId.FunctionBase)) {
+            if (item.data.isConstructor) {
+                return properties.constructWith;
+            } else if (item.data.isDestructor) {
+                const NativeType = this.NativeType.importValue();
+                return new tsw.BracketProperty(NativeType.member(properties.dtor));
             }
-            return this.toTsw(id, kind);
+        }
+
+        if (item.is(PdbId.VCall)) {
+            return new tsw.NameProperty('__vcall_'+this.getIdName(item.data.param));
+        }
+        const remapped = specialNameRemap.get(name);
+        let matched:RegExpMatchArray|null;
+        if (remapped != null) {
+            name = remapped;
+        } else if (name.startsWith('`')) {
+            if (item.params !== null) {
+                const params = [...item.params];
+                if (name.startsWith("`vector deleting destructor'")) {
+                    name = '__vector_deleting_destructor_'+params.join('_');
+                } else if (name.startsWith("`vftable'")) {
+                    name = '__vftable_for_'+params.map(id=>this.getIdName(id)).join('_');
+                } else if (name.startsWith("`vbtable'")) {
+                    name = '__vbtable_for_'+params.map(id=>this.getIdName(id)).join('_');
+                } else {
+                    name = '__'+name.replace(/[`' ()\-,0-9]/g, '');
+                    // name = '__'+name.replace(/[`' ()-,0-9]/g, '')+'_'+item.adjustors.join('_').replace(/-/g, 'minus_');
+                }
+            } else {
+                name = '__'+name.replace(/[`' ()\-,0-9]/g, '');
+            }
+        } else if ((matched = name.match(adjustorRegExp)) !== null) {
+            name = matched[1]+'_adjustor_'+matched[2];
+        } else if (name.startsWith('operator ')) {
+            if (item.is(PdbId.FunctionBase) || item.is(PdbId.TemplateFunctionBase)) {
+                for (const over of item.data.allOverloads()) {
+                    if (over.data.returnType === null) throw Error(`Unresolved return type ${over}`);
+                    name = 'operator_castto_'+this.getIdName(over.data.returnType);
+                    break;
+                }
+            } else {
+                throw Error(`failed to get return type(${item})`);
+            }
+        }
+        return new tsw.NameProperty(name);
+    }
+
+    getClassType<T extends tsw.Kind>(item:Identifier, kind:T, absoluteValue?:boolean):tsw.ItemPair|null {
+        if (!item.isType && (item.parent!.data instanceof PdbId.ClassLike)) {
+            const v = this.toTsw(item.parent!, kind, {absoluteValue});
+            this.wrappedPointerToWrappedRef(v);
+            return v;
+        } else {
+            return null;
+        }
+    }
+
+    makeParameterDecls(paramTypes:tsw.ItemPair[], paramNames:tsw.Name[], isStaticMethod?:boolean, classType?:tsw.Type|null):tsw.DefineItem[] {
+        const declaration:tsw.DefineItem[] = [];
+        for (let i=0;i<paramNames.length;i++) {
+            declaration[i] = new tsw.VariableDefineItem(paramNames[i], paramTypes[i].type);
+        }
+        if (classType != null) {
+            if (isStaticMethod) {
+                const NativeClassType = this.NativeClassType.importType();
+                classType = new tsw.TemplateType(NativeClassType, [classType]);
+            }
+            declaration.unshift(new tsw.VariableDefineItem(tsw.Name.this, classType));
+        }
+        return declaration;
+    }
+
+    toTswTemplateParameters<T extends tsw.Kind>(args:(Identifier[]|Identifier)[], kind:T, absoluteValue?:boolean):tsw.ItemPair[] {
+        return args.map((id):tsw.ItemPair=>{
+            const opts = {absoluteValue};
+            let out:tsw.ItemPair;
+            if (id instanceof Array) {
+                const params = id.map(id=>this.toTsw(id, kind, opts));
+                out = new tsw.ItemPair;
+                if ((kind & tsw.Kind.Value) !== 0) {
+                    const templateArgs = this.templateArgs.importValue();
+                    out.value = new tsw.Call(templateArgs, params.map(id=>id.value));
+                }
+                if ((kind & tsw.Kind.Type) !== 0) {
+                    out.type = new tsw.Tuple(params.map(id=>id.type));
+                }
+            } else {
+                out = this.toTsw(id, kind, opts);
+            }
+            return out;
         });
     }
 
-    toTsw<T extends tsw.Kind>(item:Identifier, kind:T, opts:{isField?:boolean, isParameter?:boolean, noTemplate?:boolean, nullable?:boolean, noJsType?:boolean}={}):tsw.KindToItem<T> {
-        if (opts.nullable) {
-            if (!tsw.isType(kind)) {
-                throw TypeError(`nullable but no type (${item})`);
-            }
-            if (opts.noTemplate) {
-                throw TypeError(`nullable but no noTemplate`);
+    toTswReturn(type:Identifier, kind:tsw.Kind, opts:MakeFuncOptions, absoluteValue?:boolean):tsw.ItemPair {
+        const returnType = this.toTsw(type, kind, {absoluteValue});
+        const pointerRemoved = this.Ptr.unwrap(returnType);
+        this.wrappedPointerToWrappedRef(returnType);
+        if (!pointerRemoved) {
+            if (this.Wrapper.unwrap(returnType)) {
+                opts.add(properties.structureReturn, tsw.Name.true);
+            } else if (!type.isBasicType && !type.is(PdbId.Enum)) {
+                opts.add(properties.structureReturn, tsw.Name.true);
             }
         }
-        if (item.isLambda) {
+        return returnType.notNull();
+    }
+
+    toTswParameters(items:Identifier[], kind:tsw.Kind, absoluteValue?:boolean):tsw.ItemPair[] {
+        return items.map((item, idx)=>{
+            const v = this.toTsw(item, kind, {absoluteValue});
+            this.Ptr.unwrap(v);
+            this.wrappedPointerToWrappedRef(v);
+            return v;
+        });
+    }
+
+    wrapAnyTemplate(type:tsw.Type, item:Identifier):tsw.Type {
+        if (type === null) return type;
+        if (!item.is(PdbId.TemplateClassBase)) return type;
+
+        const tinfo = TemplateInfo.from(item);
+        if (tinfo.paramTypes.length === 0) return type;
+
+        if (item.templateRedirects != null) {
+            for (const redirect of item.templateRedirects) {
+                const templates = tinfo.paramTypes.map(()=>any_t);
+                return redirect.redirect(item, templates, tsw.Kind.Type, {}).type;
+            }
+        }
+        const params = tinfo.paramTypes.map(()=>tsw.BasicType.any);
+        return new tsw.TemplateType(type, params);
+    }
+
+    toTsw(item:Identifier, kind:tsw.Kind, opts:ToTswOptions = {}):tsw.ItemPair {
+        if (item.is(PdbId.LambdaClass)) {
             throw new IgnoreThis(`lambda (${item})`);
         }
-        if (item.parent === PdbIdentifier.global && item.name.startsWith('`')) {
+        if (item.parent === PdbId.global && item.name.startsWith('`')) {
             throw new IgnoreThis(`private symbol (${item})`);
         }
 
@@ -521,21 +1450,19 @@ class TsCode {
             if (item.redirectedFrom !== null) {
                 return this.toTsw(item.redirectedFrom, kind, opts);
             }
-            if (item.decoedFrom !== null) {
-                if (item.deco === DecoSymbol.const) return this.toTsw(item.decoedFrom, kind, opts);
-                if (item.deco !== null && item.deco.name === '[0]') throw new IgnoreThis(`incomprehensible syntax(${item})`);
+            if (item.is(PdbId.Decorated)) {
+                if (item.data.deco === DecoSymbol.const) return this.toTsw(item.data.base, kind, opts);
+                if (item.data.deco !== null && item.data.deco.name === '[0]') throw new IgnoreThis(`incomprehensible syntax(${item})`);
             }
-            if (item.unionedTypes !== null) {
-                if (!tsw.isType(kind)) throw Error(`union is not type (${item})`);
+            if (item.is(PdbId.TypeUnion)) {
+                if (kind !== tsw.Kind.Type) throw Error(`union is not type (${item})`);
 
-                const nopts = {...opts};
-                nopts.nullable = false;
                 const types:tsw.Type[] = [];
                 let ignored:IgnoreThis|null = null;
-                for (const union of item.unionedTypes) {
+                for (const union of item.data.unionedTypes) {
                     try {
-                        const type = this.toTsw(union, tsw.Type, nopts);
-                        types.push(type);
+                        const type = this.toTsw(union, tsw.Kind.Type, opts);
+                        types.push(type.type);
                     } catch (err) {
                         if (!(err instanceof IgnoreThis)) throw err;
                         ignored = err;
@@ -544,998 +1471,345 @@ class TsCode {
                 if (types.length === 0) {
                     throw ignored || new IgnoreThis('No types');
                 }
-                if (opts.nullable) types.push(tsw.TypeName.null);
-                return new tsw.TypeOr(types) as tsw.KindToItem<T>;
+                return {
+                    type: new tsw.TypeOr(types)
+                } as any;
             }
-            if (!opts.noJsType && item.jsTypeName != null) {
-                if (opts.isParameter) {
-                    if (item === any_t) return tsw.TypeName.unknown as tsw.KindToItem<T>;
+            if (!opts.noJsType && item.jsType != null) {
+                if (item.jsTypeOnly != null) kind &= ~tsw.Kind.Type;
+                let out:tsw.ItemPair;
+                if (item.jsType instanceof tsw.ItemPair) {
+                    out = item.jsType;
+                } else if (item.jsType instanceof ImportItem) {
+                    out = item.jsType.import(kind);
+                } else {
+                    out = item.jsType(item, kind);
                 }
-                let out:tsw.KindToItem<T> = this.imports.importName(item.host, item.jsTypeName, kind);
-                if (opts.nullable && item.jsTypeNullable) {
-                    out = nullableType(out) as tsw.KindToItem<T>;
+                if (item.jsTypeOnly != null) {
+                    out.type = item.jsTypeOnly;
+                }
+                if (!opts.noTemplate) {
+                    out.type = this.wrapAnyTemplate(out.type, item);
                 }
                 return out;
             }
-            if (item.decoedFrom !== null) {
-                if (item.deco === DecoSymbol['*'] || item.deco === DecoSymbol['&'] || item.deco === DecoSymbol['&&']) {
-                    let out:tsw.IdBase = this.toTsw(item.decoedFrom, kind);
-                    if (item.isValue) {
-                        if (item.decoedFrom.address === 0) {
-                            console.error(`${item.source}: address not found`);
+            if (item.isValue && (kind & tsw.Kind.Type) !== 0) {
+                const out = this.toTsw(item.getTypeOfIt(), tsw.Kind.Type);
+                if ((kind & tsw.Kind.Value) !== 0) {
+                    recursiveCheck.delete(item);
+                    out.value = this.toTsw(item, tsw.Kind.Value, opts).value;
+                }
+                return out;
+            }
+            if (item.is(PdbId.Decorated)) {
+                let notNull = false;
+                switch (item.data.deco) {
+                case DecoSymbol['&']:
+                case DecoSymbol['&&']:
+                    notNull = true;
+                    // fall through
+                case DecoSymbol['*']: {
+                    const baseitem = item.data.base;
+                    if (item.isValue && item.data.deco === DecoSymbol['&']) {
+                        if (baseitem.address === 0) {
+                            PdbId.printOnProgress(`[symbolwriter.ts] ${item.source}: address not found`);
                             throw new IgnoreThis(`address not found (${item})`);
                         }
-                        if (tsw.isType(kind)) {
-                            out = this.toTsw(item.getTypeOfIt(), kind);
+                        let out:tsw.ItemPair;
+                        if ((kind & tsw.Kind.Value) !== 0) {
+                            if (baseitem.is(PdbId.Function)) {
+                                out = new tsw.ItemPair;
+                                out.value = this.getOverloadVarId(baseitem);
+                                if ((kind & tsw.Kind.Type) !== 0) {
+                                    out.type = this.toTsw(baseitem, tsw.Kind.Type).type;
+                                }
+                            } else {
+                                out = new tsw.ItemPair;
+                                out.value = this.getAddressVarId(baseitem);
+                                if ((kind & tsw.Kind.Type) !== 0) {
+                                    out.type = this.toTsw(baseitem, tsw.Kind.Type).type;
+                                }
+                            }
+                        } else {
+                            out = this.toTsw(baseitem, kind, {absoluteValue: opts.absoluteValue});
                         }
-                        if (opts.nullable) {
-                            out = nullableType(out);
-                        }
-                        return out as tsw.KindToItem<T>;
+                        return out;
                     }
-                    if (item.decoedFrom.isMemberPointer) {
-                        if (opts.nullable) {
-                            out = nullableType(out);
-                        }
-                        return out as tsw.KindToItem<T>;
+                    const out = this.toTsw(baseitem, kind, {absoluteValue: opts.absoluteValue});
+                    if (baseitem.is(PdbId.FunctionType)) {
+                        return out;
+                    }
+                    if (baseitem.is(PdbId.MemberPointerType)) {
+                        return out;
                     }
 
-                    if (out instanceof tsw.Type) {
-                        if (!opts.isField && !opts.isParameter) {
-                            const Wrapper = this.imports.importName(imports.pointer, 'Wrapper', tsw.Type);
-                            out = new tsw.TemplateType(Wrapper, [out as tsw.Type]);
-                        }
-                        if (opts.nullable) {
-                            out = nullableType(out);
-                        }
-                        return out as tsw.KindToItem<T>;
-                    } else if (out instanceof tsw.Identifier) {
-                        if (!opts.isParameter) {
-                            out = out.call(properties.ref, []);
-                            if (!opts.isField) {
-                                const Wrapper = this.base.importWrapper();
-                                out = Wrapper.call(properties.make, [out as tsw.Identifier]);
-                            }
-                        }
-                        return out as tsw.KindToItem<T>;
+                    if (out.type != null) {
+                        if (!notNull) out.type = out.type.or(tsw.BasicType.null);
                     }
+                    if (opts.isField) {
+                        if (out.value != null) {
+                            out.value = out.value.call(properties.ref, []);
+                        }
+                    } else {
+                        const Ptr = this.Ptr.import(kind);
+                        if (out.type != null) {
+                            out.type = new tsw.TemplateType(Ptr.type, [out.type]);
+                        }
+                        if (out.value != null) {
+                            out.value = Ptr.value.call(properties.make, [out.value]);
+                        }
+                    }
+                    return out;
+                }
                 }
             }
 
-            let out:tsw.KindToItem<T>|null = null;
+            let out = new tsw.ItemPair;
             if (item.templateBase !== null) {
-                const nopts = {...opts};
-                nopts.nullable = false;
-                nopts.noTemplate = true;
-                out = this.toTsw(item.templateBase, kind, nopts);
-            } else if (item.isMemberPointer) {
-                const base = this.toTsw(item.memberPointerBase!, kind);
-                const type = this.toTsw(item.returnType!, kind);
-                const MemberPointer = this.imports.importName(imports.complextype, 'MemberPointer', kind);
-                if (MemberPointer instanceof tsw.Type) {
-                    let out:tsw.Type = new tsw.TemplateType(MemberPointer, [base as tsw.Type, type as tsw.Type]);
-                    if (opts.nullable) {
-                        out = nullableType(out);
-                    }
-                    return out as tsw.KindToItem<T>;
-                } else if (MemberPointer instanceof tsw.Identifier) {
-                    const out = MemberPointer.call(properties.make, [base as tsw.Identifier, type as tsw.Identifier]);
-                    return out as tsw.KindToItem<T>;
-                } else {
-                    unreachable();
+                const base:Identifier = item.templateBase;
+                out = this.toTsw(base, kind, {...opts, noTemplate:true});
+            } else if (item.is(PdbId.MemberPointerType)) {
+                const base = this.toTsw(item.data.memberPointerBase, kind, {absoluteValue:opts.absoluteValue});
+                const type = this.toTsw(item.data.type, kind, {absoluteValue:opts.absoluteValue});
+                const MemberPointer = this.MemberPointer.import(kind);
+                if (MemberPointer.type !== null) {
+                    out.type = new tsw.TemplateType(MemberPointer.type, [base.type!, type.type!]);
                 }
-            } else if (item.isFunctionType) {
-                if (tsw.isType(kind)) {
-                    const params = this.makeFuncDeclaration(false, item.functionParameters).declaration;
-                    const returnType = this.toTsw(item.returnType!, tsw.Type, {isParameter: true});
-                    let out:tsw.Type = new tsw.FunctionType(returnType, params);
-                    if (opts.nullable) {
-                        out = nullableType(out);
-                    }
-                    return out as tsw.KindToItem<T>;
-                }  else if (tsw.isIdentifier(kind)) {
-                    const NativeFunctionType = this.imports.importName(imports.complextype, 'NativeFunctionType', kind);
-                    const out = NativeFunctionType.call(properties.make, [
-                        this.toTsw(item.returnType!, kind, {isParameter: true}),
-                        tsw.Constant.null,
-                        ...item.functionParameters.map(id=>this.toTsw(id, kind, {isParameter: true}))
-                    ]);
-                    return out as tsw.KindToItem<T>;
-                } else {
-                    unreachable();
+                if (MemberPointer.value !== null) {
+                    out.value = MemberPointer.value.call(properties.make, [base.value!, type.value!]);
                 }
+                return out;
+            } else if (item.is(PdbId.FunctionType)) {
+                if (item.data.returnType === null) throw Error(`Unresolved return type (${item})`);
+                const func = new FunctionMaker(this, kind, false, item.data.returnType, item.data.functionParameters, null);
+                return func.makeType();
             } else {
-                if (item.hasNonGlobalParent() && !this.insideOf(item.parent)) {
-                    out = this.toTsw(item.parent, kind, {noTemplate: true});
-                    if (!item.isStatic && !item.isType && tsw.isIdentifier(kind) && item.parent.isClassLike && (item.isFunction || item.isFunctionBase || item.isTemplateFunctionBase)) {
-                        out = out.member(tsw.NameProperty.prototypeName);
+                const prop = this.getNameOnly(item);
+                if (item.hasNonGlobalParent()) {
+                    const insideOfNamespace = this.insideOf(item.parent);
+                    if (insideOfNamespace && !opts.absoluteValue) {
+                        out = prop.toName(kind);
+                    } else {
+                        if (!insideOfNamespace) {
+                            out = this.toTsw(item.parent, kind, {noTemplate: true, absoluteValue:opts.absoluteValue});
+                            if (out.type != null) {
+                                out.type = out.type.member(prop);
+                            }
+                        } else { // absoluteValue=true
+                            out = this.toTsw(item.parent, kind & tsw.Kind.Value, {noTemplate: true, absoluteValue:true});
+                            out.type = prop.toName(kind & tsw.Kind.Type).type;
+                        }
+                        if (out.value != null) {
+                            if (!item.isStatic && !item.isType &&
+                                item.parent.is(PdbId.ClassLike) &&
+                                (item.is(PdbId.Function) || item.is(PdbId.FunctionBase) || item.is(PdbId.TemplateFunctionBase))) {
+                                out.value = out.value.member(tsw.NameProperty.prototypeName);
+                            }
+                            out.value = out.value.member(prop);
+                        }
                     }
-                    out = out.member(this.getNameOnly(item, kind));
                 } else {
-                    const prop = this.getNameOnly(item, kind);
                     out = prop.toName(kind);
                 }
+            }
 
-                if (item.isOverloaded) {
-                    if (!(out instanceof tsw.Identifier)) throw Error(`is not value (${item})`);
-
-                    const params = this.makeFuncParams_params(item.functionParameters);
-                    const thisType = this.getThisType(item, tsw.Identifier);
-                    const args:tsw.Identifier[] = [out, thisType, new tsw.ArrayDef(params)];
-                    if (item.templateBase !== null) {
-                        const typebases = item.templateParameters.map(t=>t.getTypeOfIt());
-                        const ids = typebases.map(t=>this.toTsw(t, tsw.Identifier));
-                        args.push(new tsw.ArrayDef(ids));
-                    }
-                    const dnf = this.base.importDnf();
-                    out = dnf.call(properties.get, args) as tsw.KindToItem<T>;
-                }
+            const tinfo = TemplateInfo.from(item);
+            if (tinfo.parameters.length === 0 && item.is(PdbId.Enum)) {
+                out.value = this.int32_t.importValue();
             }
 
             if (opts.noTemplate) {
                 return out;
             }
 
-            const tinfo = TemplateInfo.from(item);
             if (tinfo.parameters.length !== 0) {
-                const base = item.functionBase;
-                if (base !== null) {
-                    if (out instanceof tsw.Type) {
-                        const thisType = this.getThisType(item, tsw.Type);
-                        const retType = this.toTsw(item.returnType!, tsw.Type);
-                        const paramTypes = this.makeFuncDeclaration(item.isStatic, item.functionParameters, thisType);
-                        return new tsw.FunctionType(retType, paramTypes.declaration) as any;
-                    } else if (out instanceof tsw.Identifier) {
-                        return this.base.getOverloadVarId(item) as any;
-                    } else {
-                        unreachable();
+                if (item.is(PdbId.Function)) {
+                    if (out.type != null) {
+                        if (item.data.returnType === null) throw Error(`Unresolved return type (${item})`);
+                        const classType = this.getClassType(item, tsw.Kind.Type);
+                        const retType = this.toTsw(item.data.returnType, tsw.Kind.Type).type;
+                        const types = this.toTswParameters(item.data.functionParameters, tsw.Kind.Type, opts.absoluteValue);
+                        const names = this.makeParamNamesByTypes(item.data.functionParameters);
+                        const params = this.makeParameterDecls(types, names, item.isStatic, classType?.type);
+                        out.type = new tsw.FunctionType(retType, params);
                     }
+                    if (out.value != null) {
+                        out.value = this.getOverloadVarId(item);
+                    }
+                    return out;
                 } else {
-                    const params = this.toTswArgs(tinfo.parameters, kind);
-                    if (out instanceof tsw.Type) {
-                        return new tsw.TemplateType(out, params as any[]) as any;
-                    } else if (out instanceof tsw.Identifier) {
-                        return new tsw.DotCall(out, properties.make, params as any[]) as any;
-                    } else {
-                        unreachable();
+                    const base:(Identifier&PdbId<PdbId.TemplateBase>)|null = item.templateBase;
+                    if (base !== null && base !== this.currentClassId) {
+                        if (base.templateRedirects != null) {
+                            for (const redirect of base.templateRedirects) {
+                                const templates = tinfo.infer(redirect.templates);
+                                if (templates !== null) {
+                                    return redirect.redirect(base, templates, kind, {absoluteValue: opts.absoluteValue});
+                                }
+                            }
+                        }
                     }
+
+                    const params = this.toTswTemplateParameters(tinfo.parameters, kind, opts.absoluteValue);
+                    if (out.type != null) {
+                        out.type = new tsw.TemplateType(out.type, params.map(v=>v.type!));
+                    }
+                    if (out.value != null) {
+                        out.value = new tsw.DotCall(out.value, properties.make, params.map(v=>v.value!));
+                    }
+                    return out;
                 }
-            }
-            if (opts.nullable) {
-                out = nullableType(out) as tsw.KindToItem<T>;
+            } else {
+                out.type = this.wrapAnyTemplate(out.type, item);
             }
             return out;
         } finally {
             recursiveCheck.delete(item);
         }
     }
-}
 
-class TsCodeDeclaration extends TsCode {
-    public readonly idsMap = new Set<Identifier>();
-    private readonly nameMaker = (item:PdbIdentifier):tsw.Type=>this.toTsw(item, tsw.Type);
-    public readonly defs = new tsw.VariableDef('const', []);
-
-    public currentNs:Identifier = PdbIdentifier.global;
-    public currentBlock:tsw.Block = this.doc;
-    public currentClass:tsw.Class|null = null;
-
-    public readonly implementation:TsCode;
-
-    constructor(
-        public readonly base:MinecraftTsFile,
-        private readonly ids:Identifier[]
-    ) {
-        super(base);
-        this.implementation = new TsCode(base);
-        this.doc.write(this.defs);
-        this.ids.sort();
-        for (const id of this.ids) {
-            if (id.host !== undefined) continue;
-            id.host = base;
+    wrappedPointerToWrappedRef(pair:tsw.ItemPair):boolean {
+        const cloned = pair.clone();
+        if (this.Wrapper.unwrap(cloned)) {
+            if (this.Ptr.unwrap(cloned)) {
+                pair.set(this.Wrapper.wrap(this.wrapRef(cloned)));
+                return true;
+            }
         }
+        return false;
     }
 
-    existName(name:string):boolean {
-        const item:Identifier|null = PdbIdentifier.global.findChild(name);
-        if (item == null) return false;
-        return item.host === this.base;
-    }
-
-    existNameInScope(name:string):boolean {
-        let ns = this.currentNs;
-        while (ns !== PdbIdentifier.global) {
-            const item:Identifier|null = ns.findChild(name);
-            if (item != null) return true;
-            ns = ns.parent!;
-        }
-        const item:Identifier|null = PdbIdentifier.global.findChild(name);
-        if (item == null) return false;
-        return item.host === this.base;
-    }
-
-    insideOf(namespace:Identifier):boolean {
-        return namespace === this.currentNs;
-    }
-
-    *enterNamespace(item:Identifier):IterableIterator<void> {
-        if (!(this.currentBlock instanceof tsw.Block)) throw Error(`${this.currentBlock} is not namespace`);
-        const prop = this.getNameOnly(item, tsw.Identifier);
-
-        const ns = new tsw.Namespace(prop.toName(tsw.Identifier));
-
-        const oldblock = this.currentBlock;
-        const oldclass = this.currentClass;
-        const oldns = this.currentNs;
-        this.currentBlock = ns.block;
-        this.currentClass = null;
-        this.currentNs = item;
-        try {
-            yield;
-        } catch (err) {
-            remapAndPrintError(err);
-        }
-        this.currentNs = oldns;
-        this.currentClass = oldclass;
-        this.currentBlock = oldblock;
-        if (ns.block.size() !== 0) {
-            this.currentBlock.write(new tsw.Export(ns));
-        }
-    }
-
-    hasOverloads(item:Identifier):boolean {
-        return item.isTemplateFunctionBase || (item.isFunctionBase && item.templateBase === null);
-    }
-
-    private _writeRedirect(item:Identifier):void {
-        if (!(this.currentBlock instanceof tsw.Block)) {
-            throw Error(`${this.currentBlock} is not block`);
-        }
-
-        try {
-            const ori = item.redirectTo;
-            if (ori === null) {
-                console.error(`${item}: is not redirecting`);
-                return;
-            }
-            const from = ori.redirectedFrom;
-            ori.redirectedFrom = null;
-            const type = this.toTsw(ori, tsw.Type);
-            const NativeClassType = this.imports.importName(imports.nativeclass, 'NativeClassType', tsw.Type);
-            if (COMMENT_SYMBOL) this.currentBlock.comment(ori.symbolIndex+': '+ori.source);
-            this.currentBlock.write(this.defineType(item, type));
-            const classType = new tsw.TemplateType(NativeClassType, [type]).and(new tsw.TypeOf(this.toTsw(ori.removeTemplateParameters(), tsw.Identifier)));
-            this.currentBlock.write(this.defineVariable(item, classType, 'const', this.toTsw(ori, tsw.Identifier)));
-            ori.redirectedFrom = from;
-        } catch (err) {
-            if (err instanceof IgnoreThis) {
-                this.currentBlock.comment(`ignored: ${err.message}`);
-                return;
-            }
-            throw err;
-        }
-    }
-
-    private _writeOverloads(field:IdField, insideOfClass:boolean):void {
-        try {
-            const impl = this.implementation;
-            const overloads = field.overloads;
-            if (overloads.length === 0) {
-                throw Error(`empty overloads`);
-            }
-            if (!insideOfClass && field.isStatic) {
-                throw Error(`${overloads[0]}: is static but not in the class`);
-            }
-
-            const target = field.base.removeTemplateParameters();
-            const name = this.getNameOnly(field.base, tsw.Identifier);
-            const funcdef = this.base.getFunctionVarId(target);
-            if (this.currentClass !== null) {
-                this.currentBlock.assign(this.currentClass.name.member(tsw.NameProperty.prototypeName).member(name), funcdef);
-            } else {
-                const exported = this.currentBlock.export(new tsw.VariableDef('const', [
-                    new tsw.VariableDefineItem(name.toName(tsw.Identifier), null, funcdef)
-                ]));
-                exported.cloneToDecl = ()=>null;
-            }
-
-            const scope = this.currentClass || this.currentBlock;
-
-            if (overloads.length === 1) {
-                // single overload
-                const overload = overloads[0];
-                if (overload.returnType === null) {
-                    // no function type, use pointer
-                    if (overload.functionParameters.length !== 0) console.error(`${overload}: no has the return type but has the arguments types`);
-                    if (COMMENT_SYMBOL) this.currentBlock.comment(overload.symbolIndex+': '+overload.source);
-                    this.currentBlock.const(name.toName(tsw.Identifier), null,
-                        this.base.importDllCurrent().call(properties.add, [new tsw.Constant(overload.address)]));
-                } else {
-                    // typed function
-                    const params = this.makeFuncDeclaration(
-                        field.isStatic,
-                        overload.functionParameters,
-                        overload.parent!.templateBase !== null ? overload.parent! : null).declaration;
-                    if (COMMENT_SYMBOL) this.currentBlock.comment(overload.symbolIndex+': '+overload.source);
-                    const returnType = this.toTsw(overload.returnType, tsw.Type, {isParameter: true});
-                    scope.addFunctionDecl(name, params, returnType, field.isStatic);
-                    impl.writeDnfOverload(overload);
-                }
-            } else {
-                // multiple overloads
-                let previousParams:PdbIdentifier[]|null = null;
-                let previousThis:PdbIdentifier|null = null;
-                for (const overload of overloads) {
-                    try {
-                        if (COMMENT_SYMBOL) scope.comment(overload.symbolIndex+': '+overload.source);
-                        const thisParam = overload.parent!.templateBase !== null ? overload.parent! : null;
-                        const params = this.makeFuncDeclaration(field.isStatic, overload.functionParameters, thisParam).declaration;
-                        const returnType = this.toTsw(overload.returnType!, tsw.Type, {isParameter: true});
-                        if (previousParams === null || (
-                            !arrayEquals(overload.functionParameters, previousParams) ||
-                            previousThis !== thisParam
-                        )) {
-                            previousParams = overload.functionParameters;
-                            previousThis = thisParam;
-                            scope.addFunctionDecl(name, params, returnType, field.isStatic);
-                        } else {
-                            scope.comment(`dupplicated: ${name}(${params.join(', ')}):${returnType};`);
-                        }
-                        if (overload.templateBase !== null) {
-                            const typeOfTemplates = overload.templateParameters.map(v=>v.getTypeOfIt());
-                            let thisType:PdbIdentifier|null = null;
-                            let stripThis = 0;
-                            if (overload.parent!.templateBase !== null) {
-                                thisType = overload.parent;
-                                stripThis = 1;
-                            }
-                            const tparams = this.makeFuncDeclaration(field.isStatic, typeOfTemplates, thisType).declaration;
-                            for (const param of tparams) {
-                                if (param instanceof tsw.VariableDefineItem) {
-                                    if (param.name === tsw.Name.this) continue;
-                                    param.initial = tsw.OPTIONAL;
-                                }
-                            }
-                            scope.addFunctionDecl(name, tparams, new tsw.FunctionType(returnType, tparams.slice(stripThis)), field.isStatic);
-                        }
-                        impl.writeDnfOverload(overload);
-                    } catch (err) {
-                        if (!(err instanceof IgnoreThis)) {
-                            console.error(`> Writing ${overload} (symbolIndex=${overload.symbolIndex})`);
-                            throw err;
-                        }
-                        scope.comment(`ignored: ${err.message}`);
-                    }
-                }
-            }
-        } catch (err) {
-            if ((err instanceof IgnoreThis)) {
-                (this.currentClass || this.currentBlock).comment(`ignored: ${err.message}`);
-                return;
-            }
-            throw err;
-        }
-    }
-
-    private _writeField(item:Identifier, isStatic:boolean):void {
-        try {
-            if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
-            let type:tsw.Type;
-            if (item.returnType !== null) {
-                type = this.toTsw(item.returnType, tsw.Type, {isField: true});
-            } else {
-                type = this.imports.importName(imports.core, 'StaticPointer', tsw.Type);
-            }
-            if (this.currentClass !== null) {
-                this.currentClass.write(this.getClassDeclaration(item, type, false, isStatic));
-            } else {
-                this.currentBlock.write(this.defineVariable(item, type, 'const'));
-            }
-
-            const impl = this.implementation;
-            const target:Identifier = item.removeTemplateParameters();
-            if (COMMENT_SYMBOL) impl.doc.comment(item.symbolIndex+': '+item.source);
-            if (item.address === 0) {
-                console.error(`${item}: address not found`);
-                throw new IgnoreThis(`address not found (${item})`);
-            }
-            if (item.returnType === null) {
-                const targetName = impl.getName(target, tsw.Identifier, {assignee: true});
-                if (!item.isVFTable && item.functionParameters.length !== 0) console.error(`${item}: function but no return type`);
-                impl.doc.assign(targetName, this.base.importDllCurrent().call(properties.add, [new tsw.Constant(item.address)]));
-            } else {
-                if (target.parent === null) {
-                    throw Error(`${target}: has not parent`);
-                }
-
-                let parent:tsw.Identifier;
-                if (target.parent === PdbIdentifier.global) {
-                    parent = tsw.Name.exports;
-                } else {
-                    parent = impl.toTsw(target.parent, tsw.Identifier);
-                }
-
-                const NativeType = this.base.importNativeType();
-                const type = impl.toTsw(item.returnType, tsw.Identifier, {isField: true});
-                const prop = impl.getNameOnly(target, tsw.Identifier);
-                impl.doc.write(NativeType.call(properties.definePointedProperty, [
-                    parent,
-                    new tsw.Constant(prop.toName(tsw.Identifier).name),
-                    this.base.importDllCurrent().call(properties.add, [tsw.constVal(item.address)]),
-                    type
-                ]));
-            }
-        } catch (err) {
-            if ((err instanceof IgnoreThis)) {
-                this.currentBlock.comment(`ignored: ${err.message}`);
-                return;
-            }
-            throw err;
-        }
-    }
-
-    private _getField(out:FieldInfo, item:Identifier):void {
-        if (item.parent === null) {
-            throw Error(`${item.name}: parent not found`);
-        }
-        if (!PdbIdentifier.filter(item)) return;
-        if (item.isDecoed) return;
-        if (item.isFunctionType) return;
-        if (item.isNameBase) return;
-        if (item.templateBase !== null) return; // class or function template
-        if (item.functionBase !== null) return;
-        if (item.address !== 0) { // expect type from section
-            const section = imageSections.getSectionOfRva(item.address);
-            if (section === null) {
-                console.error(`${item.name}: Unknown section`);
-            } else {
-                switch (section.name) {
-                case '.reloc': // data?
-                    break;
-                case '.pdata': // exception info
-                    return;
-                case '.data': // user section?
-                    return;
-                case '.rdata': // readonly
-                    item.setAsFunction();
-                    break;
-                default:
-                    console.error(`${section.name}, ${item.name}: unspecified section`);
-                    break;
-                }
-            }
-        }
-
-        if (this.hasOverloads(item)) {
-            for (const o of item.allOverloads()) {
-                if (!PdbIdentifier.filter(o)) continue;
-                if (o.isTemplate && o.hasArrayParam()) continue;
-                if (item.isTemplateFunctionBase) {
-                    if (o.functionParameters.some(arg=>arg.getArraySize() !== null)) {
-                        continue;
-                    }
-                }
-                if (!o.functionParameters.every(PdbIdentifier.filter)) {
-                    continue;
-                }
-                if (o.parent !== null && !PdbIdentifier.filter(o.parent)) {
-                    continue;
-                }
-                if (o.returnType !== null && !PdbIdentifier.filter(o.returnType)) {
-                    continue;
-                }
-                out.push(item, o);
-            }
-        } else {
-            out.set(item);
-        }
-    }
-
-    getAllFields(item:Identifier):FieldInfo {
-        const out = new FieldInfo;
-
-        if (item.specialized.length !== 0) {
-            for (const specialized of item.specialized) {
-                for (const child of specialized.children.values()) {
-                    this._getField(out, child);
-                }
-            }
-        }
-        for (const child of item.children.values()) {
-            this._getField(out, child);
+    wrapRef(pair:tsw.ItemPair):tsw.ItemPair {
+        const out = new tsw.ItemPair(pair.value, pair.type);
+        if (out.value !== null) {
+            out.value = new tsw.DotCall(out.value, properties.ref, []);
         }
         return out;
     }
 
-    private _writeClass(item:Identifier):void {
-        if (!(this.currentBlock instanceof tsw.Block)) {
-            throw Error(`${this.currentBlock} is not block`);
-        }
-        try {
-            let opened = false;
-
-            const tinfo = TemplateInfo.from(item);
-            if (tinfo.paramTypes.length !== 0) {
-
-                if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
-                const templateDecl =  tinfo.makeTemplateDecl(this.nameMaker);
-                const clsname = this.getNameOnly(item, tsw.Identifier);
-                const cls = new tsw.Class(clsname.toName(tsw.Identifier));
-                cls.templates = templateDecl;
-                cls.extends = this.imports.importName(imports.complextype, 'NativeTemplateClass', tsw.Identifier);
-                this.currentBlock.export(cls);
-                this.currentClass = cls;
-                opened = true;
-
-                try {
-                    const makeTemplateParams = tinfo.makeWrappedTemplateDecl(this.nameMaker);
-                    const args = this.makeFuncDeclaration(true, tinfo.paramTypes.map(v=>new tsw.TypeName(v.name)));
-
-                    const unwrappedType:tsw.TemplateType[] = [];
-                    const NativeClassType = this.imports.importName(imports.nativeclass, 'NativeClassType', tsw.Type);
-                    if (tinfo.paramTypes.length !== 0) {
-                        const UnwrapType = this.imports.importName(imports.nativetype, 'UnwrapType', tsw.Type);
-                        for (const param of tinfo.paramTypes) {
-                            unwrappedType.push(new tsw.TemplateType(UnwrapType, [new tsw.TypeName(param.name)]));
-                        }
-                    }
-                    const returnType = new tsw.TemplateType(NativeClassType, [
-                        new tsw.TemplateType(clsname.toName(tsw.Type), unwrappedType)
-                    ]).and(new tsw.TypeOf(clsname.toName(tsw.Identifier)));
-                    const def = new tsw.MethodDef(null, true, properties.make, args.declaration, returnType);
-                    def.templates = makeTemplateParams;
-                    def.block.write(new tsw.Return(new tsw.DotCall(tsw.Name.super, properties.make, args.parameterNames)));
-                    this.currentClass.write(def);
-                } catch (err) {
-                    if (err instanceof IgnoreThis) {
-                        this.currentBlock.comment(`ignored: ${err.message}`);
-                    } else {
-                        throw err;
-                    }
-                }
-            } else {
-                if (item.isClassLike) {
-                    if (item.isEnum) {
-                        if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
-                        const NativeType = this.imports.importName(imports.nativetype, 'NativeType', tsw.Type);
-                        const int32_t = this.imports.importName(imports.nativetype, 'int32_t', tsw.Identifier);
-                        const int32_t_type = this.imports.importName(imports.nativetype, 'int32_t', tsw.Type);
-                        const name = this.getNameOnly(item, tsw.Identifier);
-                        this.currentBlock.export(new tsw.VariableDef('const', [
-                            new tsw.VariableDefineItem(
-                                name.toName(tsw.Identifier),
-                                new tsw.TemplateType(NativeType, [int32_t_type]),
-                                int32_t.call('extends', []))
-                        ]));
-                        this.currentBlock.export(new tsw.TypeDef(
-                            name.toName(tsw.Type),
-                            int32_t_type
-                        ));
-                    } else {
-                        const NativeClass = this.imports.importName(imports.nativeclass, 'NativeClass', tsw.Identifier);
-                        if (COMMENT_SYMBOL) this.currentBlock.comment(item.symbolIndex+': '+item.source);
-                        const cls = new tsw.Class(this.getNameOnly(item, tsw.Identifier).toName(tsw.Identifier));
-                        cls.extends = NativeClass;
-                        this.currentBlock.export(cls);
-                        this.currentClass = cls;
-                        opened = true;
-                    }
-                }
-            }
-
-            const fields = this.getAllFields(item);
-            if (opened) {
-                for (const field of fields.staticMember) {
-                    this.writeMembers(field, true);
-                }
-                for (const field of fields.member) {
-                    this.writeMembers(field, true);
-                }
-            }
-
-            this.currentClass = null;
-
-            for (const _ of this.enterNamespace(item)) {
-                if (!opened) {
-                    for (const field of fields.member) {
-                        try {
-                            this.writeMembers(field, false);
-                        } catch (err) {
-                            if ((err instanceof IgnoreThis)) {
-                                this.currentBlock.comment(`ignored: ${err.message}`);
-                            } else {
-                                console.error(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
-                                throw err;
-                            }
-                        }
-                    }
-                }
-
-                for (const field of fields.inNamespace) {
-                    try {
-                        this.writeMembers(field, false);
-                    } catch (err) {
-                        if ((err instanceof IgnoreThis)) {
-                            this.currentBlock.comment(`ignored: ${err.message}`);
-                        } else {
-                            console.error(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
-                            throw err;
-                        }
-                    }
-                }
-            }
-        } catch (err) {
-            if ((err instanceof IgnoreThis)) {
-                this.currentBlock.comment(`ignored: ${err.message}`);
-                return;
-            }
-            throw err;
-        }
-    }
-
-    writeMembers(field:IdField, insideOfClass:boolean):void {
-        const overloads = field.overloads;
-        if (overloads.length !== 0) {
-            // set default constructor
-            if (this.currentClass !== null) {
-                for (const overload of overloads) {
-                    if (overload.functionParameters.length === 0 && overload.functionBase!.name === overload.parent!.name) {
-                        const NativeType = this.imports.importName(imports.nativetype, 'NativeType', tsw.Identifier);
-                        const method = new tsw.MethodDef(null, false, new tsw.BracketProperty(NativeType.member('ctor')), [], tsw.TypeName.void);
-                        method.block.write(new tsw.Return(new tsw.DotCall(new tsw.Name('this'), properties.constructWith, [])));
-                        this.currentClass.write(method);
-                        break;
-                    }
-                }
-            }
-
-            // write overloads
-            try {
-                this._writeOverloads(field, insideOfClass);
-            } catch (err) {
-                if ((err instanceof IgnoreThis)) {
-                    this.currentBlock.comment(`ignored: ${err.message}`);
-                } else {
-                    throw err;
-                }
-            }
-        } else {
-            const base = field.base;
-            if (base.isFunction) {
-                this._writeField(base, false);
-            } else if (base.isClassLike) {
-                if (!insideOfClass) {
-                    this._writeClass(base);
-                }
-            } else if (base.isStatic) {
-                this._writeField(base, false);
-            } else if (base.isRedirectType) {
-                this._writeRedirect(base);
-            } else if (base.templateBase === null) {
-                if (!insideOfClass) {
-                    this._writeClass(base);
-                }
-            }
-            // throw Error(`${base.source || base}: unexpected identifier`);
-        }
-    }
-
-    parseAll():void {
-        const out = new FieldInfo;
-        for (const item of this.ids) {
-            this._getField(out, item);
-        }
-        if (out.staticMember.size !== 0) {
-            const first = getFirstIterableItem(out.staticMember)!;
-            throw Error(`global static member: ${first.base}`);
-        }
-        for (const field of out.inNamespace) {
-            try {
-                this.writeMembers(field, false);
-            } catch (err) {
-                if (err instanceof IgnoreThis) {
-                    this.currentBlock.comment(`ignored: ${err.message}`);
-                    continue;
-                }
-                console.error(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
-                throw err;
-            }
-        }
-        for (const field of out.member) {
-            try {
-                this.writeMembers(field, false);
-            } catch (err) {
-                if (err instanceof IgnoreThis) {
-                    this.currentBlock.comment(`ignored: ${err.message}`);
-                    continue;
-                }
-                console.error(`> Writing ${field.base} (symbolIndex=${field.base.symbolIndex})`);
-                throw err;
-            }
-        }
-    }
-}
-
-class MinecraftTsFile extends TsFile {
-    private readonly decl:TsCodeDeclaration;
-
-
-    private dnf:tsw.Identifier|null = null;
-    private dll:tsw.Identifier|null = null;
-    private dnfMakeCall:tsw.Call|null = null;
-    private dnfOverloadNew:tsw.Call|null = null;
-    private StaticPointer:tsw.Identifier|null = null;
-    private StaticPointerType:tsw.Type|null = null;
-    private NativeType:tsw.Identifier|null = null;
-    private Wrapper:tsw.Identifier|null = null;
-    private dllCurrent:tsw.Identifier|null = null;
-    private ctorProperty:tsw.BracketProperty|null = null;
-
-    constructor(ids:Identifier[]) {
-        super('./minecraft');
-
-        this.decl = new TsCodeDeclaration(this, ids);
-    }
-
-    makeVariable(value:tsw.Identifier):tsw.Name {
-        const tswvar = this.decl.doc.makeTemporalVariableName(this.decl.implementation.doc);
-        this.decl.defs.vars.defines.push(new tsw.VariableDefineItem(tswvar, null, value));
-        this.decl.doc.addValueName(tswvar, this.decl.defs, value);
-        return tswvar;
-    }
-
     getOverloadVarId(item:Identifier):tsw.Name {
         if (item.tswVar != null) return item.tswVar;
-        if (!item.isFunction) {
+        if (!item.is(PdbId.Function)) {
             throw Error(`is not function (${item})`);
         }
         const value = this.callDnfMakeOverload();
-        return item.tswVar = this.makeVariable(value);
+        return item.tswVar = this.doc.makeVariable(value);
     }
 
     getFunctionVarId(item:Identifier):tsw.Name {
         if (item.tswVar != null) return item.tswVar;
-        if (!item.isTemplateFunctionBase && !item.isFunctionBase) {
+        if (!item.is(PdbId.TemplateFunctionBase) && !item.is(PdbId.FunctionBase)) {
             throw Error(`is not function base (${item})`);
         }
         const value = this.callDnfMake();
-        return item.tswVar = this.makeVariable(value);
+        return item.tswVar = this.doc.makeVariable(value);
     }
 
-    importDnf():tsw.Identifier {
-        if (this.dnf !== null) return this.dnf;
-        return this.dnf = this.imports.importName(imports.dnf, 'dnf', tsw.Identifier);
-    }
-
-    importDll():tsw.Identifier {
-        if (this.dll !== null) return this.dll;
-        return this.dll = this.imports.importName(imports.dll, 'dll', tsw.Identifier);
-    }
-
-    importStaticPointer():tsw.Identifier {
-        if (this.StaticPointer !== null) return this.StaticPointer;
-        return this.StaticPointer = this.imports.importName(imports.core, 'StaticPointer', tsw.Identifier);
-    }
-
-    importStaticPointerType():tsw.Type {
-        if (this.StaticPointerType !== null) return this.StaticPointerType;
-        return this.StaticPointerType = this.imports.importName(imports.core, 'StaticPointer', tsw.Type);
-    }
-
-    importNativeType():tsw.Identifier {
-        if (this.NativeType !== null) return this.NativeType;
-        return this.NativeType = this.imports.importName(imports.nativetype, 'NativeType', tsw.Identifier);
-    }
-
-    importWrapper():tsw.Identifier {
-        if (this.Wrapper !== null) return this.Wrapper;
-        return this.Wrapper = this.imports.importName(imports.pointer, 'Wrapper', tsw.Identifier);
+    getAddressVarId(item:Identifier):tsw.Name {
+        if (item.tswVar != null) return item.tswVar;
+        const value = this.importDllCurrent().call(properties.add, [tsw.constVal(item.address)]);
+        return item.tswVar = this.doc.makeVariable(value);
     }
 
     callDnfMake():tsw.Call {
         if (this.dnfMakeCall !== null) return this.dnfMakeCall;
 
-        const dnf = this.importDnf();
+        const dnf = this.dnf.importValue();
         const dnfMake = new tsw.Name('$F');
-        const assign = new tsw.VariableDef('const', [new tsw.VariableDefineItem(dnfMake, null, dnf.member(properties.make))]);
-        this.decl.doc.unshift(assign);
+        const assign = new tsw.VariableDef('const', [
+            new tsw.VariableDefineItem(dnfMake, null, dnf.member(properties.make))
+        ]);
+        this.doc.decl.doc.unshift(assign);
 
         return this.dnfMakeCall = dnfMake.call([]);
     }
 
     callDnfMakeOverload():tsw.Call {
         if (this.dnfOverloadNew !== null) return this.dnfOverloadNew;
-        const dnf = this.importDnf();
+        const dnf = this.dnf.importValue();
         const dnfMakeOverload = new tsw.Name('$O');
         const assign = new tsw.VariableDef('const', [new tsw.VariableDefineItem(dnfMakeOverload, null, dnf.member('makeOverload'))]);
-        this.decl.doc.unshift(assign);
+        this.doc.decl.doc.unshift(assign);
         return this.dnfOverloadNew = dnfMakeOverload.call([]);
     }
 
-    importDllCurrent():tsw.Identifier {
+    importDllCurrent():tsw.Value {
         if (this.dllCurrent != null) return this.dllCurrent;
-        const dll = this.importDll();
+        const dll = this.dll.importValue();
         const dllCurrent = new tsw.Name('$C');
         const assign = new tsw.VariableDef('const', [new tsw.VariableDefineItem(dllCurrent, null, dll.member('current'))]);
-        this.decl.doc.unshift(assign);
+        this.doc.decl.doc.unshift(assign);
         return this.dllCurrent = dllCurrent;
     }
 
     getNativeTypeCtor():tsw.BracketProperty {
         if (this.ctorProperty != null) return this.ctorProperty;
-        const NativeType = this.importNativeType();
-        return this.ctorProperty = new tsw.BracketProperty(NativeType.member('ctor'));
+        const NativeType = this.NativeType.importValue();
+        return this.ctorProperty = new tsw.BracketProperty(NativeType.member(properties.ctor));
     }
 
     existName(name:string):boolean {
-        return super.existName(name) || this.decl.existName(name);
+        return super.existName(name) || this.doc.decl.existName(name);
     }
 
     existNameInScope(name:string):boolean {
-        return super.existNameInScope(name) || this.decl.existNameInScope(name);
+        return super.existNameInScope(name) || this.doc.decl.existNameInScope(name);
     }
 
-    writeAll():void {
+    parseAll():void {
         try {
-            this.decl.parseAll();
+            this.doc.decl.parseAll();
         } catch (err) {
-            console.error(`> Parsing ${this.path}`);
+            PdbId.printOnProgress(`> Parsing ${this.path}`);
             throw err;
         }
+    }
+
+    save():void {
         const imports = this.imports.toTsw();
         const comment = new tsw.Comment("This script is generated by the PDB Parser, Please don't modify it directly");
 
-        try {
-            const decl = this.decl.doc.cloneToDecl();
-            decl.unshift(comment, ...imports);
-            decl.save(path.join(outDir,this.path)+'.d.ts');
-        } catch (err) {
-            console.error(`> Writing ${this.path}.d.ts`);
-            throw err;
-        }
-        try {
-            const impl = this.decl.implementation;
-            impl.doc.unshiftBlock(this.decl.doc);
-            impl.doc.unshift(comment, ...imports);
-            impl.doc.cloneToJS().save(path.join(outDir,this.path)+'.js');
-        } catch (err) {
-            console.error(`> Writing ${this.path}.js`);
-            throw err;
-        }
+        const minecraftTsReady = new tsw.Name('minecraftTsReady');
+
+        console.log(`[symbolwriter.ts] Writing ${this.path}.d.ts`);
+        const decl = this.doc.decl.doc.cloneToDecl();
+        decl.unshift(comment, ...imports);
+        decl.save(path.join(outDir,this.path)+'.d.ts');
+
+        console.log(`[symbolwriter.ts] Writing ${this.path}.js`);
+        const impl = this.doc.impl;
+        impl.doc.unshift(new tsw.ImportOnly('./minecraft_impl'));
+        impl.doc.unshiftBlock(this.doc.decl.doc);
+        impl.doc.unshift(comment, ...imports);
+        impl.doc.write(
+            new tsw.Import([[minecraftTsReady.toProperty(), minecraftTsReady]], './minecraft_impl/ready'),
+            minecraftTsReady.call('resolve', [])
+        );
+
+        impl.doc.cloneToJS().save(path.join(outDir,this.path)+'.js');
     }
 }
-
-class IdField {
-    public readonly overloads:Identifier[] = [];
-    public isStatic:boolean;
-    constructor(public readonly base:Identifier) {
-    }
-}
-
-class IdFieldMap implements Iterable<IdField> {
-
-    private readonly map = new Map<string, IdField>();
-
-    append(list:Iterable<IdField>, isStatic:boolean):this {
-        for (const item of list) {
-            this.get(item.base, isStatic).overloads.push(...item.overloads);
-        }
-        return this;
-    }
-
-    get(base:Identifier, isStatic:boolean):IdField {
-        let nametarget = base;
-        if (base.functionBase !== null) {
-            nametarget = base.functionBase;
-        }
-        if (base.templateBase !== null) {
-            nametarget = base.templateBase;
-        }
-
-        let name = '';
-        if (base.isConstructor) {
-            name = '#constructor';
-            isStatic = false;
-        } else if (base.isDestructor) {
-            name = '#destructor';
-            isStatic = false;
-        } else {
-            name = nametarget.name;
-        }
-        let field = this.map.get(name);
-        if (field != null) return field;
-        field = new IdField(base);
-        field.isStatic = isStatic;
-
-        this.map.set(name, field);
-        return field;
-    }
-
-    clear():void {
-        this.map.clear();
-    }
-
-    get size():number {
-        return this.map.size;
-    }
-
-    values():IterableIterator<IdField> {
-        return this.map.values();
-    }
-
-    [Symbol.iterator]():IterableIterator<IdField> {
-        return this.map.values();
-    }
-}
-
-class FieldInfo {
-    public readonly inNamespace = new IdFieldMap;
-    public readonly staticMember = new IdFieldMap;
-    public readonly member = new IdFieldMap;
-
-    push(base:Identifier, item:Identifier):void {
-        this.set(base, item).overloads.push(item);
-    }
-
-    set(base:Identifier, item:Identifier = base):IdField {
-        if (base.templateBase !== null) {
-            throw Error('base is template');
-        }
-        switch (getFieldType(item)) {
-        case FieldType.Member: return this.member.get(base, false);
-        case FieldType.Static: return this.staticMember.get(base, true);
-        case FieldType.InNamespace: return this.inNamespace.get(base, false);
-        }
-    }
-}
-
-setBasicType('bool', 'bool_t', 'b', imports.nativetype);
-setBasicType('void', 'void_t', 'v', imports.nativetype);
-setBasicType('float', 'float32_t', 'f', imports.nativetype);
-setBasicType('double', 'float64_t', 'd', imports.nativetype);
-setBasicType('char', 'int8_t', 'c', imports.nativetype);
-setBasicType('wchar_t', 'uint16_t', 'wc', imports.nativetype);
-setBasicType('char signed', 'int8_t', 'sc', imports.nativetype);
-setBasicType('char unsigned', 'uint8_t', 'uc', imports.nativetype);
-setBasicType('short', 'int16_t', 's', imports.nativetype);
-setBasicType('short unsigned', 'uint16_t', 'us', imports.nativetype);
-setBasicType('int', 'int32_t', 'i', imports.nativetype);
-setBasicType('int unsigned', 'uint32_t', 'u', imports.nativetype);
-setBasicType('long', 'int32_t', 'i', imports.nativetype);
-setBasicType('long unsigned', 'uint32_t', 'u', imports.nativetype);
-setBasicType('__int64', 'bin64_t', 'i', imports.nativetype, true);
-setBasicType('__int64 unsigned', 'bin64_t', 'u', imports.nativetype, true);
-setBasicType('void*', 'VoidPointer', 'p', imports.core, true);
-setBasicType('void const*', 'VoidPointer', 'p', imports.core, true);
-setBasicType('std::nullptr_t', 'nullptr_t', 'v', imports.nativetype);
-setBasicType('typename', 'Type', 't', imports.nativetype);
-const any_t = setBasicType('any', 'any', 'v', null);
-setBasicType(any_t.decorate(DecoSymbol.make('a', '[]')), 'any[]', 'args', null);
-setBasicType('never', 'never', 'v', null);
-setBasicType(PdbIdentifier.parse('std::basic_string<char,std::char_traits<char>,std::allocator<char> >'), 'CxxString', 'str', imports.nativetype);
-setBasicType(PdbIdentifier.parse('gsl::basic_string_span<char const,-1>'), 'GslStringSpan', 'str', imports.nativetype);
-setBasicType(PdbIdentifier.make('...'), 'NativeVarArgs', '...args', imports.complextype);
 
 // std.make('string').redirect(std.find('basic_string<char,std::char_traits<char>,std::allocator<char> >'));
-PdbIdentifier.parse('std::ostream').redirect(PdbIdentifier.parse('std::basic_ostream<char,std::char_traits<char> >'));
-PdbIdentifier.parse('std::istream').redirect(PdbIdentifier.parse('std::basic_istream<char,std::char_traits<char> >'));
-PdbIdentifier.parse('std::iostream').redirect(PdbIdentifier.parse('std::basic_iostream<char,std::char_traits<char> >'));
-PdbIdentifier.parse('std::stringbuf').redirect(PdbIdentifier.parse('std::basic_stringbuf<char,std::char_traits<char>,std::allocator<char> >'));
-PdbIdentifier.parse('std::istringstream').redirect(PdbIdentifier.parse('std::basic_istringstream<char,std::char_traits<char>,std::allocator<char> >'));
-PdbIdentifier.parse('std::ostringstream').redirect(PdbIdentifier.parse('std::basic_ostringstream<char,std::char_traits<char>,std::allocator<char> >'));
-PdbIdentifier.parse('std::stringstream').redirect(PdbIdentifier.parse('std::basic_stringstream<char,std::char_traits<char>,std::allocator<char> >'));
+PdbId.parse('std::ostream').redirect(PdbId.parse('std::basic_ostream<char,std::char_traits<char> >'));
+PdbId.parse('std::istream').redirect(PdbId.parse('std::basic_istream<char,std::char_traits<char> >'));
+PdbId.parse('std::iostream').redirect(PdbId.parse('std::basic_iostream<char,std::char_traits<char> >'));
+PdbId.parse('std::stringbuf').redirect(PdbId.parse('std::basic_stringbuf<char,std::char_traits<char>,std::allocator<char> >'));
+PdbId.parse('std::istringstream').redirect(PdbId.parse('std::basic_istringstream<char,std::char_traits<char>,std::allocator<char> >'));
+PdbId.parse('std::ostringstream').redirect(PdbId.parse('std::basic_ostringstream<char,std::char_traits<char>,std::allocator<char> >'));
+PdbId.parse('std::stringstream').redirect(PdbId.parse('std::basic_stringstream<char,std::char_traits<char>,std::allocator<char> >'));
 
-PdbIdentifier.parse('RakNet::RakNetRandom').setAsClass();
+PdbId.parse('RakNet::RakNetRandom').determine(PdbId.Class);
 
+console.log(`[symbolwriter.ts] Filtering...`);
 const ids:Identifier[] = [];
-for (const item of PdbIdentifier.global.children) {
+const packets:Identifier[] = [];
+for (const item of PdbId.global.children) {
     if (item.isBasicType) {
         // basic types
     } else if (item.name.startsWith('`')) {
         // private symbols
-    } else if (item.isLambda) {
-        // lambdas
-    } else if (item.isConstant && /^[0-9]+$/.test(item.name)) {
+    } else if (item.data instanceof PdbId.Constant) {
         // numbers
     } else if (item.name.startsWith('{')) {
         // code chunk?
@@ -1544,16 +1818,96 @@ for (const item of PdbIdentifier.global.children) {
     } else if (/^main\$dtor\$[0-9]+$/.test(item.name)) {
         // dtor in main
     } else {
-        ids.push(item);
+        const packetId = resolvePacketClasses.getId(item);
+        if (packetId == null) {
+            ids.push(item);
+        } else {
+            packets.push(item);
+        }
     }
 }
+ids.sort((a,b)=>a.name.localeCompare(b.name));
+packets.sort((a,b)=>resolvePacketClasses.getId(a)!-resolvePacketClasses.getId(b)!);
+const minecraft = new MinecraftTsFile(ids.concat(packets));
+minecraft.callDnfMake();
+minecraft.callDnfMakeOverload();
 
-for (const item of PdbIdentifier.global.loopAll()) {
-    if (item.isTemplate) {
-        TemplateInfo.reduceTemplateType(item);
+new Definer('bool').js(['bool_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.boolean}).paramName('b');
+new Definer('void').js(['void_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.void}).paramName('v');
+new Definer('std::nullptr_t').js(['nullptr_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.null}).paramName('v');
+new Definer('float').js(['float32_t', imports.nativetype]).paramName('f');
+new Definer('double').js(['float64_t', imports.nativetype]).paramName('d');
+new Definer('char').js(['int8_t', imports.nativetype]).paramName('c');
+new Definer('char const *').js((item, kind)=>{
+    const makefunc = minecraft.makefunc.import(kind & tsw.Kind.Value);
+    if (makefunc.value !== null) makefunc.value = makefunc.value.member('Utf8');
+    if ((kind & tsw.Kind.Type) !== 0) makefunc.type = tsw.BasicType.string;
+    return makefunc;
+}).paramName('str');
+new Definer('char *').js((item, kind)=>minecraft.makefunc.import(kind).member('Buffer')).paramName('char_ptr');
+new Definer('wchar_t').js(['uint16_t', imports.nativetype]).paramName('wc');
+new Definer('char signed').js(['int8_t', imports.nativetype]).paramName('sc');
+new Definer('char unsigned').js(['uint8_t', imports.nativetype]).paramName('uc');
+new Definer('short').js(['int16_t', imports.nativetype]).paramName('s');
+new Definer('short unsigned').js(['uint16_t', imports.nativetype]).paramName('us');
+new Definer('int').js(['int32_t', imports.nativetype]).paramName('i');
+new Definer('int unsigned').js(['uint32_t', imports.nativetype]).paramName('u');
+new Definer('long').js(['int32_t', imports.nativetype]).paramName('i');
+new Definer('long unsigned').js(['uint32_t', imports.nativetype]).paramName('u');
+new Definer('__int64').js(['bin64_t', imports.nativetype], {jsTypeNullable: true}).paramName('i');
+new Definer('__int64 unsigned').js(['bin64_t', imports.nativetype], {jsTypeNullable: true}).paramName('u');
+new Definer('void*').js(minecraft.VoidPointer, {jsTypeNullable: true}).paramName('p');
+new Definer('void const*').js(minecraft.VoidPointer, {jsTypeNullable: true}).paramName('p');
+new Definer('typename').js(['Type', imports.nativetype]).paramName('t');
+const any_t = new Definer('any').js(tsw.ItemPair.any).paramName('v').item;
+new Definer(any_t.decorate(DecoSymbol.make('a', '[]'))).js(new tsw.ItemPair(null, new tsw.ArrayType(tsw.BasicType.any))).paramName('args');
+new Definer('never').js(tsw.ItemPair.never).paramName('v');
+new Definer('std::basic_string<char,std::char_traits<char>,std::allocator<char> >').js(['CxxString', imports.nativetype]).paramName('str');
+new Definer('gsl::basic_string_span<char const,-1>').js(['GslStringSpan', imports.nativetype]).paramName('str');
+new Definer(PdbId.make('...')).js(['NativeVarArgs', imports.complextype]).paramName('...args');
+new Definer('gsl::not_null<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.Wrapper.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('v');
+new Definer('std::unique_ptr<#KEY0, std::default_delete<#KEY0>>').templateRedirect((item, templates, kind, opts)=>minecraft.Wrapper.wrap(minecraft.toTsw(templates[0], kind, opts)), {exportOriginal: true}).paramName('v');
+new Definer('std::shared_ptr<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.SharedPtr.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('v');
+new Definer('AutomaticID<Dimension, int>').js(['DimensionId', imports.common]).paramName('dim');
+new Definer('Packet').item.isMantleClass = true;
+
+reduceTemplateTypes();
+new Definer('std::vector<#KEY0>').js(['CxxVector', imports.cxxvector]).templateRedirect((item, templates, kind, opts)=>{
+    const param = minecraft.toTsw(templates[0], kind, opts);
+    const out = new tsw.ItemPair;
+    if ((kind & tsw.Kind.Value) !== 0) {
+        out.value = minecraft.CxxVectorToArray.importValue().call(properties.make, [param.value]);
     }
-}
+    if ((kind & tsw.Kind.Type) !== 0) {
+        out.type = new tsw.ArrayType(param.type);
+    }
+    return out;
+}).paramName('array');
 
-const minecraft = new MinecraftTsFile(ids);
-minecraft.writeAll();
-console.log(`global id count: ${PdbIdentifier.global.children.length}`);
+minecraft.parseAll();
+
+// set packet Ids
+const packetClasses:[tsw.NumberProperty, tsw.Value][] = [];
+const packetTypes:tsw.ClassField[] = [];
+for (const packet of resolvePacketClasses.list.sort((a,b)=>a.packetId!-b.packetId!)) {
+    const cls = minecraft.doc.decl.doc.getValue(packet.name);
+    if (cls == null) {
+        console.error(`[symbolwriter.ts] Packet not found: ${packet.name}`);
+        continue;
+    }
+    if (!(cls instanceof tsw.Class)) {
+        console.error(`[symbolwriter.ts] Packet is not class: ${packet.name}`);
+        continue;
+    }
+    const packetId = new tsw.Constant(packet.packetId!);
+    cls.unshift(new tsw.ClassField(null, true, true, properties.ID, new tsw.TypeName(packet.packetId+''), packetId));
+    const packetIdProp = new tsw.NumberProperty(packet.packetId!);
+    packetClasses.push([packetIdProp, cls.name]);
+    packetTypes.push(new tsw.ClassField(null, false, false, packetIdProp, new tsw.TypeOf(cls.name)));
+}
+const packetClass = minecraft.doc.decl.doc.getValue('Packet') as tsw.Class;
+packetClass.unshift(new tsw.ClassField(null, true, true, properties.idMap, new tsw.ObjectType(packetTypes)));
+minecraft.doc.impl.doc.assign(packetClass.name.member(properties.idMap), new tsw.ObjectDef(packetClasses));
+
+minecraft.save();
+console.log(`[symbolwriter.ts] done`);

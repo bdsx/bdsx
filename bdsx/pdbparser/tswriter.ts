@@ -1,7 +1,7 @@
 
 import fs = require('fs');
 import os = require('os');
-import { abstract, unreachable } from '../common';
+import { notImplemented, unreachable } from '../common';
 import { intToVarString } from '../util';
 
 enum Precedence {
@@ -84,9 +84,6 @@ abstract class OutStream {
             }
         }
         this.detab();
-        if (linePerComponent) {
-            this.lineBreak();
-        }
     }
 
 
@@ -118,11 +115,15 @@ class FileOutStream extends OutStream {
 
 export namespace tsw {
 
-    export type Kind = typeof IdBase;
-    export type KindToItem<T extends Kind> = T extends {prototype:infer I} ? I : never;
-    export type KindToName<T extends Kind> = KindToItem<T>&KindToItem<T>['__name_type_dummy']&{name:string};
+    export enum Kind {
+        None,
+        Value,
+        Type,
+        Both,
+    }
 
     export class JsCloningContext {
+        public readonly exported = new Set<string>();
         constructor(
             public readonly block:Block,
             public readonly newBlock:Block) {
@@ -141,14 +142,14 @@ export namespace tsw {
 
     export interface ClassItem {
         classedWriteTo(os:OutStream):void;
-        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[]):void;
+        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[], clazz:Class):void;
         cloneToDecl():ClassItem|null;
     }
 
     export interface DefinationHost {
-        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type, isStatic:boolean):void;
-        addVariable(name:Name|Property, returnType:Type, isStatic:boolean):void;
-        const(name:Name, type:Type|null, value:Identifier):void;
+        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type|null, isStatic:boolean):void;
+        addVariable(name:Name|Property, type:Type|null, isStatic:boolean, initial?:Value|null):void;
+        const(name:Name, type:Type|null, value:Value):void;
     }
 
     export abstract class ItemBase {
@@ -179,10 +180,7 @@ export namespace tsw {
 
     export abstract class IdBase extends Item implements WritableItem {
         __name_type_dummy:unknown;
-        public static asName<T extends Kind>(this:T,name:string):KindToName<T> {
-            abstract();
-        }
-        abstract member<T extends IdBase>(this:T,name:string|Property):T;
+        abstract member(name:string|number|Property|Value):Member|TypeMember;
         abstract writeTo(os:OutStream):void;
         wrappedWriteTo(os:OutStream, precedence:Precedence):void {
             if (this.precedence > precedence) {
@@ -195,29 +193,29 @@ export namespace tsw {
         }
     }
 
-    export abstract class Identifier extends IdBase implements BlockItem {
+    export abstract class Value extends IdBase implements BlockItem {
         __name_type_dummy:Name;
 
-        public static asName<T extends Kind>(this:T,name:string):KindToName<T> {
-            return new Name(name) as unknown as KindToName<T>;
+        public static asName(name:string):Name {
+            return new Name(name);
         }
-        member<T extends IdBase>(this:T,name:string|number|Property|Identifier):T{
+        member(name:string|number|Property|Value):Member{
             switch (typeof name) {
             case 'string':
                 name = new NameProperty(name);
                 break;
             case 'number':
-                name = new BracketProperty(new Constant(name));
+                name = new NumberProperty(name);
                 break;
             default:
-                if (name instanceof Identifier) {
+                if (name instanceof Value) {
                     name = new BracketProperty(name);
                 }
                 break;
             }
-            return new Member(this as any, name) as any;
+            return new Member(this as any, name);
         }
-        add(value:string|number|Identifier):Add{
+        add(value:string|number|Value):Add{
             switch (typeof value) {
             case 'number':
             case 'string':
@@ -226,7 +224,7 @@ export namespace tsw {
             }
             return new Add(this, value);
         }
-        subtract(value:string|number|Identifier):Subtract{
+        subtract(value:string|number|Value):Subtract{
             switch (typeof value) {
             case 'number':
             case 'string':
@@ -235,15 +233,15 @@ export namespace tsw {
             }
             return new Subtract(this, value);
         }
-        abstract cloneToDecl():Identifier|null;
-        abstract cloneToJS(ctx:JsCloningContext):Identifier;
+        abstract cloneToDecl():Value|null;
+        abstract cloneToJS(ctx:JsCloningContext):Value;
         writeJS(ctx:JsCloningContext):void {
             ctx.write(this.cloneToJS(ctx));
         }
 
-        call(fnname:string|Property, params:Identifier[]):DotCall;
-        call(params:Identifier[]):Call;
-        call(paramsOrName:string|Property|Identifier[], params?:Identifier[]):DotCall|Call {
+        call(fnname:string|Property, params:Value[]):DotCall;
+        call(params:Value[]):Call;
+        call(paramsOrName:string|Property|Value[], params?:Value[]):DotCall|Call {
             if (paramsOrName instanceof Array) {
                 return new Call(this, paramsOrName);
             } else {
@@ -251,7 +249,7 @@ export namespace tsw {
                 return new DotCall(this, paramsOrName, params!);
             }
         }
-        callNew(params:Identifier[]):New {
+        callNew(params:Value[]):New {
             return new New(this, params);
         }
 
@@ -261,7 +259,7 @@ export namespace tsw {
         }
     }
 
-    export class Name extends Identifier {
+    export class Name extends Value {
         private prop:NameProperty|null = null;
 
         constructor(public readonly name:string) {
@@ -280,15 +278,19 @@ export namespace tsw {
             if (this.prop !== null) return this.prop;
             return this.prop = new NameProperty(this.name);
         }
+        toTypeName():TypeName {
+            return this.toProperty().toName(tsw.Kind.Type).type;
+        }
 
         public static readonly this = new Name('this');
         public static readonly require = new Name('require');
         public static readonly exports = new Name('exports');
         public static readonly super = new Name('super');
-
+        public static readonly true = new Name('true');
+        public static readonly false = new Name('false');
     }
 
-    export class Constant extends Identifier {
+    export class Constant extends Value {
         constructor(public value:string|number|boolean|null) {
             super();
         }
@@ -324,7 +326,7 @@ export namespace tsw {
         cloneToDecl():Comment {
             return this;
         }
-        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[]):void {
+        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[], clazz:Class):void {
             dest.push(this);
         }
         classedWriteDecl(dest:ClassItem[]):void {
@@ -338,8 +340,8 @@ export namespace tsw {
         }
     }
 
-    export abstract class BinaryOperator extends Identifier {
-        constructor(public first:Identifier, public second:Identifier) {
+    export abstract class BinaryOperator extends Value {
+        constructor(public first:Value, public second:Value) {
             super();
         }
         readonly operatorSymbol:string;
@@ -368,8 +370,8 @@ export namespace tsw {
     Object.defineProperty(Subtract.prototype, 'precedence', {value: Precedence.AddSubtract});
     Object.defineProperty(Subtract.prototype, 'operatorSymbol', {value:'-'});
 
-    export class Member extends Identifier {
-        constructor(public readonly item:Identifier, public readonly property:Property) {
+    export class Member extends Value {
+        constructor(public readonly item:Value, public readonly property:Property) {
             super();
         }
         cloneToDecl():Member|null {
@@ -387,7 +389,7 @@ export namespace tsw {
     }
     Object.defineProperty(Member.prototype, 'precedence', {value: Precedence.Dot});
 
-    export abstract class Expression extends Identifier {
+    export abstract class Expression extends Value {
 
         cloneToDecl():null {
             return null;
@@ -395,8 +397,10 @@ export namespace tsw {
     }
 
     export class Assign extends Expression {
-        constructor(public dest:Identifier, public src:Identifier) {
+        constructor(public dest:Value, public src:Value) {
             super();
+            if (dest == null) throw TypeError('invalid param');
+            if (src == null) throw TypeError('invalid param');
         }
 
         cloneToJS(ctx:JsCloningContext):Assign {
@@ -411,11 +415,11 @@ export namespace tsw {
     Object.defineProperty(Assign.prototype, 'precedence', {value: Precedence.Assign});
 
     export class As extends Expression {
-        constructor(public value:Identifier, public type:Identifier) {
+        constructor(public value:Value, public type:Value) {
             super();
         }
 
-        cloneToJS(ctx:JsCloningContext):Identifier {
+        cloneToJS(ctx:JsCloningContext):Value {
             return this.value.cloneToJS(ctx);
         }
         writeTo(os:OutStream):void {
@@ -428,9 +432,9 @@ export namespace tsw {
 
     export class DotCall extends Member {
         constructor(
-            thisVar:Identifier,
+            thisVar:Value,
             callee:Property,
-            public params:Identifier[]) {
+            public params:Value[]) {
             super(thisVar, callee);
         }
         cloneToJS(ctx:JsCloningContext):DotCall {
@@ -449,8 +453,8 @@ export namespace tsw {
 
     export class Call extends Expression {
         constructor(
-            public callee:Identifier,
-            public params:Identifier[]) {
+            public callee:Value,
+            public params:Value[]) {
             super();
         }
         cloneToJS(ctx:JsCloningContext):Call {
@@ -469,8 +473,8 @@ export namespace tsw {
 
     export class New extends Expression {
         constructor(
-            public clazz:Identifier,
-            public params:Identifier[]) {
+            public clazz:Value,
+            public params:Value[]) {
             super();
         }
         cloneToJS(ctx:JsCloningContext):New {
@@ -490,7 +494,7 @@ export namespace tsw {
     Object.defineProperty(New.prototype, 'precedence', {value: Precedence.Call});
 
     export class Return extends ItemBase implements BlockItem {
-        constructor(public value:Identifier) {
+        constructor(public value:Value) {
             super();
         }
         cloneToDecl():never {
@@ -508,10 +512,10 @@ export namespace tsw {
     }
 
     export class Names {
-        private readonly values = new Map<string, [Name, Defination, Identifier|null]>();
+        private readonly values = new Map<string, [Name, Defination, Value|null]>();
         private readonly types = new Map<string, [TypeName, Defination, Type]>();
 
-        getValues():IterableIterator<[Name, Defination, Identifier|null]> {
+        getValues():IterableIterator<[Name, Defination, Value|null]> {
             return this.values.values();
         }
 
@@ -519,11 +523,17 @@ export namespace tsw {
             return this.types.values();
         }
 
-        addValue(name:Name, host:Defination, value:Identifier|null):void {
+        addValue(name:Name, host:Defination, value:Value|null):void {
+            if (this.values.has(name.name) && host instanceof Namespace && host.name === name) {
+                return;
+            }
             this.values.set(name.name, [name, host, value]);
         }
 
         addType(name:TypeName, host:Defination, type:Type):void {
+            if (this.types.has(name.name) && host instanceof Namespace && host.name.toTypeName() === type) {
+                return;
+            }
             this.types.set(name.name, [name, host, type]);
         }
 
@@ -531,8 +541,8 @@ export namespace tsw {
             return this.values.has(name);
         }
 
-        getValue(name:Name):Defination|null {
-            const v = this.values.get(name.name);
+        getValue(name:string):Defination|null {
+            const v = this.values.get(name);
             if (v == null) return null;
             return v[1];
         }
@@ -541,8 +551,8 @@ export namespace tsw {
             return this.types.has(name);
         }
 
-        getType(name:TypeName):Defination|null {
-            const v = this.types.get(name.name);
+        getType(name:string):Defination|null {
+            const v = this.types.get(name);
             if (v == null) return null;
             return v[1];
         }
@@ -551,8 +561,6 @@ export namespace tsw {
             for (const item of items) {
                 if (item.isDefination()) {
                     item.getDefineNames(this);
-                } else if (item instanceof Export) {
-                    item.item.getDefineNames(this);
                 } else {
                     return;
                 }
@@ -565,7 +573,7 @@ export namespace tsw {
         private readonly names = new Names;
         private temporalIndexCounter = 0;
 
-        addValueName(name:Name, host:Defination, value:Identifier|null):void {
+        addValueName(name:Name, host:Defination, value:Value|null):void {
             this.names.addValue(name, host, value);
         }
 
@@ -577,29 +585,43 @@ export namespace tsw {
             return this.items[i];
         }
 
-        unshift(...items:BlockItem[]):void {
+        private _unshift(items:BlockItem[]):void {
             this.names.addNamesFrom(items);
-            // this.items.unshift(...item); // it made the "out of stack space" error with too many items
-            const shift = items.length;
-            const src = this.items;
-            let n = src.length;
-            src.length = n + shift;
-            for (let i=n-1;i>=0;i--) {
-                src[i+shift] = src[i];
+            // this.items.unshift(...items); // it made the "out of stack space" error with too many items
+
+            const dest = this.items;
+            const destlen = dest.length;
+            const srclen = items.length;
+            dest.length = destlen + srclen;
+            dest.copyWithin(srclen, 0, destlen);
+            for (let i=0;i<srclen;i++) {
+                dest[i] = items[i];
             }
-            n = items.length;
-            for (let i=0;i<n;i++) {
-                src[i] = items[i];
+        }
+
+        private _push(items:BlockItem[]):void {
+            this.names.addNamesFrom(items);
+            // this.items.push(...items); // it made the "out of stack space" error with too many items
+
+            const dest = this.items;
+            const destlen = dest.length;
+            const srclen = items.length;
+            dest.length = destlen + srclen;
+            for (let i=0;i<srclen;i++) {
+                dest[i+destlen] = items[i];
             }
+        }
+
+        unshift(...items:BlockItem[]):void {
+            this._unshift(items);
         }
 
         write(...item:BlockItem[]):void {
-            this.names.addNamesFrom(item);
-            this.items.push(...item);
+            this._push(item);
         }
 
         unshiftBlock(block:Block):void {
-            this.unshift(...block.items);
+            this._unshift(block.items);
         }
 
         writeBlock(block:Block):void {
@@ -617,11 +639,11 @@ export namespace tsw {
             }
         }
 
-        getValue(name:Name):Defination|null {
+        getValue(name:string):Defination|null {
             return this.names.getValue(name);
         }
 
-        getType(name:TypeName):Defination|null {
+        getType(name:string):Defination|null {
             return this.names.getType(name);
         }
 
@@ -649,12 +671,12 @@ export namespace tsw {
             this.items.push(new Comment(comment));
         }
 
-        const(name:Name, type:Type|null, value:Identifier):void {
+        const(name:Name, type:Type|null, value:Value):void {
             this.write(new VariableDef('const', [
                 new VariableDefineItem(name, type, value)
             ]));
         }
-        assign(dest:Identifier, src:Identifier):Assign {
+        assign(dest:Value, src:Value):Assign {
             const res = new Assign(dest, src);
             this.items.push(res);
             return res;
@@ -664,17 +686,17 @@ export namespace tsw {
             this.write(res);
             return res;
         }
-        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type, isStatic:boolean):void {
+        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type|null, isStatic:boolean):void {
             if (!(name instanceof Name)) {
-                name = name.toName(Identifier);
+                name = name.toName(Kind.Value).value;
             }
             this.write(new Export(new FunctionDecl(name, params, returnType)));
         }
-        addVariable(name:Name|Property, type:Type, isStatic:boolean):void {
+        addVariable(name:Name|Property, type:Type|null, isStatic:boolean, initial?:Value|null):void {
             if (!(name instanceof Name)) {
-                name = name.toName(Identifier);
+                name = name.toName(Kind.Value).value;
             }
-            this.write(new Export(new VariableDef('let', [new VariableDefineItem(name, type)])));
+            this.write(new Export(new VariableDef('let', [new VariableDefineItem(name, type, initial)])));
         }
 
         writeJS(ctx:JsCloningContext):void {
@@ -720,7 +742,7 @@ export namespace tsw {
         }
     }
 
-    class OptionalIndicator extends Identifier {
+    class OptionalIndicator extends Value {
         cloneToJS():OptionalIndicator {
             return this;
         }
@@ -737,7 +759,7 @@ export namespace tsw {
         constructor(
             public name:Name,
             public type:Type|null = null,
-            public initial:Identifier|null = null) {
+            public initial:Value|null = null) {
             super();
         }
 
@@ -777,7 +799,7 @@ export namespace tsw {
     export class ObjectUnpackDefineItem extends DefineItem {
         constructor(
             public names:[NameProperty, Name][],
-            public initial:Identifier) {
+            public initial:Value) {
             super();
         }
 
@@ -785,10 +807,10 @@ export namespace tsw {
             return new ObjectUnpackDefineItem(this.names, this.initial.cloneToJS(ctx));
         }
         cloneToDecl():DefineItem {
-            throw Error(`not implemented yet`);
+            notImplemented();
         }
         cloneToDeclNoOptional():DefineItem {
-            throw Error(`not implemented yet`);
+            notImplemented();
         }
 
         getDefineNames(names:Names, host:Defination):void {
@@ -815,7 +837,7 @@ export namespace tsw {
     export class ArrayUnpackDefineItem extends DefineItem {
         constructor(
             public names:Name[],
-            public initial:Identifier) {
+            public initial:Value) {
             super();
         }
 
@@ -823,10 +845,10 @@ export namespace tsw {
             return new ArrayUnpackDefineItem(this.names, this.initial.cloneToJS(ctx));
         }
         cloneToDecl():DefineItem {
-            throw Error(`not implemented yet`);
+            notImplemented();
         }
         cloneToDeclNoOptional():DefineItem {
-            throw Error(`not implemented yet`);
+            notImplemented();
         }
 
         getDefineNames(names:Names, host:Defination):void {
@@ -895,7 +917,7 @@ export namespace tsw {
             super();
         }
 
-        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[]):void {
+        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[], clazz:Class):void {
             this.modifier = null;
             this.isReadonly = false;
             dest.push(this);
@@ -920,16 +942,21 @@ export namespace tsw {
         constructor(public modifier:'public'|'protected'|'private'|null, isStatic:boolean, isReadonly:boolean,
             public name:Property,
             public type:Type|null = null,
-            public initial:Identifier|null = null) {
+            public initial:Value|null = null) {
             super(modifier, isStatic, isReadonly);
         }
 
-        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[]):void {
-            if (this.initial !== null) throw Error('not implemented');
+        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[], clazz:Class):void {
+            if (this.initial !== null) {
+                if (this.isStatic) {
+                    ctx.newBlock.assign(clazz.name.member(this.name), this.initial);
+                } else {
+                    notImplemented();
+                }
+            }
         }
-        classedWriteDecl(dest:ClassItem[]):void {
-            const field = new ClassField(this.modifier, this.isStatic, this.isReadonly, this.name, this.type, null);
-            dest.push(field);
+        cloneToDecl():ClassField {
+            return new ClassField(this.modifier, this.isStatic, this.isReadonly, this.name, this.type, null);
         }
         classedWriteTo(os:OutStream):void {
             super.classedWriteTo(os);
@@ -939,6 +966,7 @@ export namespace tsw {
                 this.type.writeTo(os);
             }
             if (this.initial !== null) {
+                os.write(' = ');
                 this.initial.writeTo(os);
             }
             os.write(';');
@@ -962,9 +990,9 @@ export namespace tsw {
         }
     }
 
-    export class Class extends Identifier implements Defination, DefinationHost {
+    export class Class extends Value implements Defination, DefinationHost {
         private readonly items:ClassItem[] = [];
-        public extends:Identifier|null = null;
+        public extends:Value|null = null;
         public templates:TemplateDecl|null = null;
 
         constructor(public name:Name) {
@@ -978,35 +1006,47 @@ export namespace tsw {
         write(item:ClassItem):void {
             this.items.push(item);
         }
+        unshift(item:ClassItem):void {
+            this.items.unshift(item);
+        }
 
         comment(comment:string):void {
             this.items.push(new Comment(comment));
         }
 
-        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type, isStatic:boolean):void{
+        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type|null, isStatic:boolean):void{
             if (!(name instanceof Property)) {
                 name = name.toProperty();
             }
             this.write(new MethodDecl(null, isStatic, name, params, returnType));
         }
-        addVariable(name:Name|Property, type:Type, isStatic:boolean):void {
+        addVariable(name:Name|Property, type:Type|null, isStatic:boolean, initial?:Value|null):void {
             if (!(name instanceof Property)) {
                 name = name.toProperty();
             }
-            this.write(new ClassField(null, isStatic, false, name, type));
+            this.write(new ClassField(null, isStatic, false, name, type, initial));
         }
-        const(name:Name|Property, type:Type|null, value:Identifier):void {
+        const(name:Name|Property, type:Type|null, value:Value):void {
             if (!(name instanceof Property)) {
                 name = name.toProperty();
             }
             this.write(new ClassField(null, true, true, name, type, value));
         }
 
+        writeJS(ctx:JsCloningContext):void {
+            const cls = new Class(this.name);
+            cls.extends = this.extends;
+            ctx.write(cls);
+
+            for (const item of this.items) {
+                item.classedWriteJS(ctx, cls.items, this);
+            }
+        }
         cloneToJS(ctx:JsCloningContext):Class {
             const cls = new Class(this.name);
             cls.extends = this.extends;
-            for (let i=0;i<this.items.length;i++) {
-                this.items[i].classedWriteJS(ctx, cls.items);
+            for (const item of this.items) {
+                item.classedWriteJS(ctx, cls.items, this);
             }
             return cls;
         }
@@ -1027,7 +1067,9 @@ export namespace tsw {
         }
 
         getDefineNames(names:Names):void {
-            names.addValue(this.name, this, this);
+            names.addValue(this.name, this, this.name);
+            const typeName = this.name.toTypeName();
+            names.addType(typeName, this, typeName);
         }
 
         writeTo(os:OutStream):void {
@@ -1056,6 +1098,65 @@ export namespace tsw {
         }
     }
 
+    export class Enum extends ItemBase implements Defination, BlockItem{
+        constructor(
+            public readonly name:Name,
+            public readonly items:[string, Value?][]) {
+            super();
+        }
+
+        isDefination():true {
+            return true;
+        }
+
+        writeJS(ctx:JsCloningContext):void {
+            ctx.write(new VariableDef('const', [
+                new VariableDefineItem(this.name, null, new ObjectDef([]))
+            ]));
+            let previous:number|null = -1;
+            for (const [key, value] of this.items) {
+                let nvalue:Value;
+                if (value != null) {
+                    if (value instanceof Constant && typeof value.value === 'number') {
+                        previous = value.value;
+                    }
+                    nvalue = value;
+                } else {
+                    if (previous === null) {
+                        throw Error('Enum member must have initializer.');
+                    }
+                    ++previous;
+                    nvalue = new Constant(previous);
+                }
+                const setKey = new Assign(this.name.member(nvalue), new Constant(key));
+                ctx.write(new Assign(this.name.member(setKey), nvalue));
+            }
+        }
+        cloneToDecl():Namespace|null {
+            return null;
+        }
+        cloneToExportedDecl():Enum {
+            return new Enum(this.name, this.items);
+        }
+        getDefineNames(names:Names):void {
+            names.addValue(this.name, this, null);
+        }
+
+        blockedWriteTo(os:OutStream):void {
+            os.write(`enum ${this.name} {`);
+            os.tab();
+            for (const [key, value] of os.join(this.items, ',', true)) {
+                os.write(key);
+                if (value != null) {
+                    os.write(' = ');
+                    value.writeTo(os);
+                }
+            }
+            os.detab();
+            os.write('}');
+        }
+    }
+
     export class Namespace extends ItemBase implements Defination, BlockItem {
         constructor(
             public readonly name:Name,
@@ -1068,16 +1169,17 @@ export namespace tsw {
         }
 
         writeJS(ctx:JsCloningContext):void {
-            const func = new ArrowFunctionDef([new VariableDefineItem(Name.exports)], null);
-            func.block = this.block.cloneToJS();
-
-            const already = ctx.newBlock.getValue(this.name);
+            const already = ctx.newBlock.getValue(this.name.name);
             if (already == null) {
                 ctx.write(new VariableDef('const', [
                     new VariableDefineItem(this.name, null, new ObjectDef([]))
                 ]));
             }
-            if (func.block.size() === 0) return;
+
+            const block = this.block.cloneToJS();
+            if (block.size() === 0) return;
+            const func = new ArrowFunctionDef([new VariableDefineItem(Name.exports)], null);
+            func.block = block;
             ctx.write(func.call([this.name]));
         }
         cloneToDecl():Namespace|null {
@@ -1088,7 +1190,9 @@ export namespace tsw {
             return new Namespace(this.name, cloned);
         }
         getDefineNames(names:Names):void {
-            names.addValue(this.name, this, null);
+            names.addValue(this.name, this, this.name);
+            const typeName = this.name.toTypeName();
+            names.addType(typeName, this, typeName);
         }
 
         blockedWriteTo(os:OutStream):void {
@@ -1111,6 +1215,8 @@ export namespace tsw {
             this.item.writeJS(ctx);
 
             for (const [name] of names.getValues()) {
+                if (ctx.exported.has(name.name)) continue;
+                ctx.exported.add(name.name);
                 ctx.write(new Assign(new Member(Name.exports, name.toProperty()), name));
             }
         }
@@ -1136,11 +1242,21 @@ export namespace tsw {
     export abstract class Type extends IdBase {
         __name_type_dummy:TypeName;
 
-        member<T extends IdBase>(this:T,name:string|Property):T{
-            if (!(name instanceof Property)) {
+        member(name:string|number|Property|Value):TypeMember{
+            switch (typeof name) {
+            case 'string':
                 name = new NameProperty(name);
+                break;
+            case 'number':
+                name = new NumberProperty(name);
+                break;
+            default:
+                if (name instanceof Value) {
+                    name = new BracketProperty(name);
+                }
+                break;
             }
-            return new TypeMember(this as any, name) as any;
+            return new TypeMember(this, name);
         }
         union<T extends TypeUnion>(unionType:{new(types:Type[]):T}, ...others:Type[]):T {
             const out:Type[] = [this];
@@ -1159,13 +1275,128 @@ export namespace tsw {
         or(...others:Type[]):TypeOr {
             return this.union(TypeOr, ...others);
         }
-        public static asName<T extends Kind>(this:T,name:string):KindToName<T> {
-            return new TypeName(name) as any;
+        template(...types:Type[]):TemplateType {
+            return new TemplateType(this, types);
+        }
+        notNull():Type {
+            return this;
+        }
+        public static asName(name:string):TypeName {
+            return new TypeName(name);
         }
         abstract toString():string;
     }
+    export class ObjectType extends Type {
+        constructor(public readonly items:ClassItem[] = []) {
+            super();
+        }
+
+        write(item:ClassItem):void {
+            this.items.push(item);
+        }
+        unshift(item:ClassItem):void {
+            this.items.unshift(item);
+        }
+        comment(comment:string):void {
+            this.items.push(new Comment(comment));
+        }
+
+
+        writeTo(os:OutStream):void {
+            os.write(' {');
+            os.tab();
+            os.lineBreak();
+            for (const item of this.items) {
+                item.classedWriteTo(os);
+                os.lineBreak();
+            }
+            os.detab();
+            os.write('}');
+        }
+
+        toString():string {
+            const os = new StringOutStream;
+            this.writeTo(os);
+            return os.result.replace(/\r?\n/g, '');
+        }
+    }
+    export class Interface extends ObjectType implements Defination, DefinationHost {
+        public readonly extends:Value[] = [];
+        public templates:TemplateDecl|null = null;
+
+        constructor(public name:TypeName) {
+            super();
+        }
+
+        isDefination():true {
+            return true;
+        }
+
+        writeJS(ctx:JsCloningContext):void {
+            // empty
+        }
+        cloneToDecl():Interface|null {
+            return null;
+        }
+        cloneToExportedDecl():Interface {
+            const cls = new Interface(this.name);
+            cls.templates = this.templates;
+            cls.extends.push(...this.extends);
+            for (const item of this.items) {
+                const cloned = item.cloneToDecl();
+                if (cloned === null) continue;
+                cls.items.push(cloned);
+            }
+            return cls;
+        }
+
+        addFunctionDecl(name:Name|Property, params:DefineItem[], returnType:Type|null, isStatic:boolean):void{
+            if (!(name instanceof Property)) {
+                name = name.toProperty();
+            }
+            this.write(new MethodDecl(null, isStatic, name, params, returnType));
+        }
+        addVariable(name:Name|Property, type:Type|null, isStatic:boolean, initial?:Value|null):void {
+            if (!(name instanceof Property)) {
+                name = name.toProperty();
+            }
+            this.write(new ClassField(null, isStatic, false, name, type, initial));
+        }
+        const(name:Name|Property, type:Type|null, value:Value):void {
+            if (!(name instanceof Property)) {
+                name = name.toProperty();
+            }
+            this.write(new ClassField(null, true, true, name, type, value));
+        }
+
+        getDefineNames(names:Names):void {
+            names.addType(this.name, this, this);
+        }
+
+        writeTo(os:OutStream):void {
+            if (this.templates === null) throw Error(`object type but has template`);
+            if (this.extends.length !== 0) throw Error(`object type but extended`);
+            super.writeTo(os);
+        }
+
+        blockedWriteTo(os:OutStream):void {
+            os.write('interface ');
+            this.name.writeTo(os);
+            if (this.templates !== null) {
+                this.templates.writeTo(os);
+            }
+            if (this.extends.length !== 0) {
+                os.write(' extends ');
+                for (const item of os.join(this.extends, ', ')) {
+                    item.writeTo(os);
+                }
+            }
+            super.writeTo(os);
+        }
+    }
+
     export class TypeOf extends Type {
-        constructor(public value:Identifier) {
+        constructor(public value:Value) {
             super();
         }
         writeTo(os:OutStream):void {
@@ -1189,7 +1420,7 @@ export namespace tsw {
             this.property.classedWriteTo(os);
         }
         toString():string {
-            return this.item+'.'+this.property;
+            return this.item.toString()+this.property;
         }
     }
     Object.defineProperty(TypeMember.prototype, 'precedence', {value: Precedence.Dot});
@@ -1209,18 +1440,28 @@ export namespace tsw {
             if (this.prop !== null) return this.prop;
             return this.prop = new NameProperty(this.name);
         }
-
-        public static readonly void = new TypeName('void');
-        public static readonly null = new TypeName('null');
-        public static readonly unknown = new TypeName('unknown');
+        toName():Name {
+            return this.toProperty().toName(tsw.Kind.Value).value;
+        }
+    }
+    export class BasicType extends TypeName {
+        public static readonly number = new BasicType('number');
+        public static readonly boolean = new BasicType('boolean');
+        public static readonly string = new BasicType('string');
+        public static readonly void = new BasicType('void');
+        public static readonly null = new BasicType('null');
+        public static readonly unknown = new BasicType('unknown');
+        public static readonly any = new BasicType('any');
+        public static readonly never = new BasicType('never');
     }
     export abstract class Property extends Item {
-        abstract toName<T extends Kind>(kind:T):KindToName<T>;
+        abstract toName(kind:Kind):NamePair;
         abstract classedWriteTo(os:OutStream):void;
         abstract memberedWriteTo(os:OutStream):void;
+        abstract toStringWithoutDot():string;
     }
     export class BracketProperty extends Property {
-        constructor(public value:Identifier) {
+        constructor(public value:Value) {
             super();
         }
 
@@ -1235,8 +1476,11 @@ export namespace tsw {
         toString():string {
             return '['+this.value.toString()+']';
         }
-        toName<T extends Kind>(kind:T):KindToName<T> {
+        toName(kind:Kind):NamePair {
             throw Error(`${this} is not name property`);
+        }
+        toStringWithoutDot():string {
+            return this.toString();
         }
     }
     export class NameProperty extends Property {
@@ -1255,17 +1499,47 @@ export namespace tsw {
         toString():string {
             return '.'+this.name;
         }
-        toName<T extends Kind>(kind:T):KindToName<T> {
-            if (isType(kind)) {
-                if (this.typename !== null) return this.typename as any;
-                return this.typename = kind.asName(this.name) as any;
-            } else {
-                if (this.idname !== null) return this.idname as any;
-                return this.idname = kind.asName(this.name) as any;
+        toStringWithoutDot():string {
+            return this.name;
+        }
+        toName(kind:Kind):NamePair {
+            const out = new NamePair;
+            if (kind & 1) {
+                if (this.idname === null) {
+                    this.idname = Value.asName(this.name);
+                }
+                out.value = this.idname;
             }
+            if (kind & 2) {
+                if (this.typename === null) {
+                    this.typename = Type.asName(this.name);
+                }
+                out.type = this.typename;
+            }
+            return out;
         }
 
         public static readonly prototypeName = new NameProperty('prototype');
+    }
+    export class NumberProperty extends Property {
+        constructor(public number:number) {
+            super();
+        }
+        classedWriteTo(os:OutStream):void {
+            os.write(this.number+'');
+        }
+        memberedWriteTo(os:OutStream):void {
+            os.write('['+this.number+']');
+        }
+        toString():string {
+            return '['+this.number+']';
+        }
+        toName(kind:Kind):NamePair {
+            throw Error(`${this} is not name property`);
+        }
+        toStringWithoutDot():string {
+            return this.number.toString();
+        }
     }
     export class ArrayType extends Type {
         constructor(public component:Type) {
@@ -1489,7 +1763,7 @@ export namespace tsw {
         }
     }
 
-    export class ArrowFunctionDef extends Identifier {
+    export class ArrowFunctionDef extends Value {
         public params:ParamDef;
         public block = new Block;
 
@@ -1561,7 +1835,7 @@ export namespace tsw {
             this.params = new ParamDef(params);
         }
 
-        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[]):void {
+        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[], clazz:Class):void {
             // empty
         }
 
@@ -1580,7 +1854,7 @@ export namespace tsw {
         }
 
         toString():string {
-            let out = `${this.name}${this.params}`;
+            let out = `${this.name.toStringWithoutDot()}${this.params}`;
             if (this.templates !== null) {
                 out += this.templates;
             }
@@ -1604,7 +1878,7 @@ export namespace tsw {
             super(modifier, isStatic, name, params, returnType);
         }
 
-        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[]):void {
+        classedWriteJS(ctx:JsCloningContext, dest:ClassItem[], clazz:Class):void {
             const def = new MethodDef(
                 null,
                 this.isStatic,
@@ -1638,8 +1912,8 @@ export namespace tsw {
         }
     }
 
-    export class ArrayDef extends Identifier {
-        constructor(public fields:Identifier[], public linePerComponent:boolean = false) {
+    export class ArrayDef extends Value {
+        constructor(public fields:Value[], public linePerComponent:boolean = false) {
             super();
         }
 
@@ -1658,8 +1932,8 @@ export namespace tsw {
         }
     }
 
-    export class ObjectDef extends Identifier {
-        constructor(public readonly fields:[Property, Identifier][]) {
+    export class ObjectDef extends Value {
+        constructor(public readonly fields:[Property, Value][]) {
             super();
         }
 
@@ -1690,6 +1964,7 @@ export namespace tsw {
         }
 
         writeTo(os:OutStream):void {
+            if (this.params.length === 0) throw Error(`Empty parameter types (${this.toString()})`);
             this.type.writeTo(os);
             os.write('<');
             for (const type of os.join(this.params, ', ')) {
@@ -1748,6 +2023,15 @@ export namespace tsw {
         toString():string {
             return this.types.join('|');
         }
+        notNull():TypeOr {
+            const idx = this.types.indexOf(tsw.BasicType.null);
+            if (idx !== -1) {
+                const cloned = this.types.slice();
+                cloned.splice(idx, 1);
+                return new tsw.TypeOr(cloned);
+            }
+            return this;
+        }
     }
     Object.defineProperty(TypeOr.prototype, 'precedence', {value: Precedence.TypeOr});
 
@@ -1804,6 +2088,36 @@ export namespace tsw {
         }
         toString():string {
             return `import ${this.name} = require("${this.path}")`;
+        }
+    }
+
+    export class ImportOnly extends ItemBase implements Defination, BlockItem {
+        constructor(
+            public readonly path:string) {
+            super();
+        }
+
+        isDefination():true {
+            return true;
+        }
+        writeJS(dest:JsCloningContext):void {
+            dest.write(Name.require.call([new Constant(this.path)]));
+        }
+        cloneToDecl():ImportOnly {
+            return this;
+        }
+        cloneToExportedDecl():ImportOnly {
+            return this;
+        }
+
+        blockedWriteTo(os:OutStream):void {
+            os.write( `import "${this.path}");`);
+        }
+        getDefineNames(names:Names):void {
+            // empty
+        }
+        toString():string {
+            return `import "${this.path}")`;
         }
     }
 
@@ -1890,6 +2204,68 @@ export namespace tsw {
         }
     }
 
+    export class ItemPair {
+        public value:Value;
+        public type:Type;
+        constructor(
+            value:Value|null = null,
+            type:Type|null = null) {
+            this.value = value!;
+            this.type = type!;
+        }
+        static asName(name:string, kind:Kind):NamePair {
+            const out = new NamePair;
+            if ((kind & Kind.Value) !== 0) out.value = Value.asName(name);
+            if ((kind & Kind.Type) !== 0) out.type = Type.asName(name);
+            return out;
+        }
+        getKind():Kind {
+            let kind = Kind.None;
+            if (this.value !== null) kind |= Kind.Value;
+            if (this.type !== null) kind |= Kind.Type;
+            return kind;
+        }
+        set(pair:tsw.ItemPair):void {
+            this.value = pair.value;
+            this.type = pair.type;
+        }
+        notNull():tsw.ItemPair {
+            if (this.type !== null) {
+                return new tsw.ItemPair(this.value, this.type.notNull());
+            }
+            return this;
+        }
+        clone():tsw.ItemPair {
+            return new tsw.ItemPair(this.value, this.type);
+        }
+        member(name:string|number|Property|Value):tsw.ItemPair {
+            const out = new ItemPair;
+            if (this.value !== null) out.value = this.value.member(name);
+            if (this.type !== null) out.type = this.type.member(name);
+            return out;
+        }
+        each(forValue:(value:Value)=>Value, forType:(type:Type)=>Type):ItemPair {
+            const out = new ItemPair;
+            if (this.value !== null) out.value = forValue(this.value);
+            if (this.type !== null) out.type = forType(this.type);
+            return out;
+        }
+        toString():string {
+            let out = '[';
+            if (this.value !== null) out += `value=${this.value},`;
+            if (this.type !== null) out += `type=${this.type},`;
+            return out = out.substr(0, out.length-1)+']';
+        }
+    }
+    export class NamePair extends ItemPair {
+        public value:Name;
+        public type:TypeName;
+    }
+    export namespace ItemPair {
+        export const any = new NamePair(null, BasicType.any);
+        export const never = new NamePair(null, BasicType.never);
+    }
+
     export function dots<T extends IdBase>(host:T, ...names:(string|Property|Name|number)[]):T {
         let member:IdBase = host;
         for (const name of names) {
@@ -1909,7 +2285,7 @@ export namespace tsw {
                 }
                 break;
             }
-            if (member instanceof Identifier) {
+            if (member instanceof Value) {
                 member = new Member(member, prop);
             } else if (member instanceof Type) {
                 member = new TypeMember(member, prop);
@@ -1922,11 +2298,5 @@ export namespace tsw {
 
     export function constVal(value:number|string|boolean|null):Constant {
         return new Constant(value);
-    }
-    export function isIdentifier(kind:Kind):kind is typeof Identifier{
-        return kind === Identifier;
-    }
-    export function isType(kind:Kind):kind is typeof Type{
-        return kind === Type;
     }
 }

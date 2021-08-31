@@ -103,7 +103,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         try {
             const file = await fsutil.readFile(installInfoPath);
             installInfo = JSON.parse(file);
-            if (!installInfo) installInfo = {};
+            if (installInfo == null) installInfo = {};
         } catch (err) {
             if (err.code !== 'ENOENT') throw err;
             installInfo = {};

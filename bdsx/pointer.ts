@@ -6,14 +6,15 @@ import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type 
 import util = require('util');
 import { CircularDetector } from "./circulardetector";
 
-export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
-{
+export interface WrapperType<T> extends NativeClassType<Wrapper<T>> {
     new(ptr?:boolean):Wrapper<T>;
+}
+export interface PtrType<T> extends WrapperType<T> {
 }
 
 export abstract class Wrapper<T> extends NativeClass {
     abstract value:T;
-    abstract type:Type<T>;
+    readonly abstract type:Type<T>;
 
     static make<T>(type:{new():T}|NativeType<T>):WrapperType<T>{
         class TypedWrapper extends Wrapper<T>{
@@ -56,6 +57,25 @@ export abstract class Wrapper<T> extends NativeClass {
                 return obj;
             }
         };
+    }
+}
+
+export type Pointer = any; // legacy
+export declare const Pointer:any; // legacy
+
+export abstract class Ptr<T> extends Wrapper<T> {
+    get(index:number):T {
+        const size = this.type[NativeType.size];
+        if (size == null) throw Error(`${this.type.name}: unknown size`);
+        return this.type[NativeType.getter](this as any, index*size);
+    }
+    set(value:T, index:number):void {
+        const size = this.type[NativeType.size];
+        if (size == null) throw Error(`${this.type.name}: unknown size`);
+        this.type[NativeType.setter](this as any, value, index*size);
+    }
+    static make<T>(type:{new():T, ref():any}|NativeType<T>):PtrType<T>{
+        return Wrapper.make(type.ref());
     }
 }
 

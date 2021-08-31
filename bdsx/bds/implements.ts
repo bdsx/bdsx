@@ -328,19 +328,6 @@ ConnectionRequest.abstract({
     something:[Certificate.ref(), 0x10],
 });
 
-// attribute.ts
-AttributeInstance.abstract({
-    vftable:VoidPointer,
-    u1:VoidPointer,
-    u2:VoidPointer,
-    currentValue: [float32_t, 0x84],
-    minValue: [float32_t, 0x7C],
-    maxValue: [float32_t, 0x80],
-    defaultValue: [float32_t, 0x78],
-});
-
-BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap}, int32_t);
-
 // server.ts
 VanilaGameModuleServer.abstract({
     listener:[VanilaServerGameplayEventListener.ref(), 0x8]

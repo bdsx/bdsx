@@ -454,6 +454,15 @@ Tester.test({
             ['PositionTrackingDBServerBroadcast', 'PositionTrackingDBServerBroadcastPacket'],
             ['PositionTrackingDBClientRequest', 'PositionTrackingDBClientRequestPacket'],
             ['NPCDialoguePacket', 'NpcDialoguePacket'],
+            // ['EventPacket', 'TelemetryEventPacket'],
+            // ['ClientboundMapItemDataPacket', 'MapItemDataPacket'],
+            // ['AutomationClientConnectPacket', 'WSConnectPacket'],
+            // ['UpdateBlockSyncedPacket', 'UpdateBlockPacketSynced'],
+            // ['BiomeDefinitionListPacket', 'BiomeDefinitionList'],
+            // ['MapCreateLockedCopyPacket', 'MapCreateLockedCopy'],
+            // ['StructureTemplateDataResponsePacket', 'StructureTemplateDataExportPacket'],
+            // ['ItemStackRequestPacket', 'ItemStackRequest'],
+            // ['ItemStackResponsePacket', 'ItemStackResponse'],
         ]);
 
         for (const id in PacketIdToType) {

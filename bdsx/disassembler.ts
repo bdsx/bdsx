@@ -14,6 +14,8 @@ interface OffsetInfo {
 }
 function readConstNumber(size:OperationSize, ptr:NativePointer):number {
     switch (size) {
+    case OperationSize.void:
+        return 0;
     case OperationSize.byte:
         return ptr.readInt8();
     case OperationSize.word:

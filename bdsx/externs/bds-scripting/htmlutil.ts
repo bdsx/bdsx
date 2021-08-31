@@ -184,7 +184,7 @@ export class HtmlSearcher {
     next():HTMLElement {
         for (;;) {
             const node = this.base.childNodes[++this.index];
-            if (!node) throw HtmlSearcher.EOF;
+            if (node == null) throw HtmlSearcher.EOF;
             if (node.nodeType !== NodeType.ELEMENT_NODE) continue;
             const element = node as HTMLElement;
             for (let i=this.rules.length-1;i>=0;i--) {

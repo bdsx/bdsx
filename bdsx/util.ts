@@ -1,5 +1,6 @@
 
 import util = require('util');
+import { AbstractClass } from './common';
 
 export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
     const size = src.length;
@@ -127,7 +128,7 @@ export function getLineAt(context:string, lineIndex:number):string {
     else return context.substring(idx, next);
 }
 
-export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }): t is { new(...args: any[]): BASE } {
+export function isBaseOf<BASE>(t: unknown, base: AbstractClass<BASE>): t is AbstractClass<BASE> {
     if (typeof t !== 'function') return false;
     if (t === base) return true;
     return t.prototype instanceof base;
@@ -144,6 +145,14 @@ export function str2set(str:string):Set<number>{
     const out = new Set<number>();
     for (let i=0;i<str.length;i++) {
         out.add(str.charCodeAt(i));
+    }
+    return out;
+}
+
+export function str2array(str:string):number[]{
+    const out = new Array(str.length);
+    for (let i=0;i<str.length;i++) {
+        out[i] = str.charCodeAt(i);
     }
     return out;
 }

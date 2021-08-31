@@ -31,7 +31,7 @@ export namespace analyzer
                 const addrstr = addr+'';
 
                 const addrname = analyzeMap!.get(addrstr);
-                if (addrname) {
+                if (addrname != null) {
                     console.log(`${offset}: ${addrname}(${addrstr})`);
                     continue;
                 }
@@ -40,7 +40,7 @@ export namespace analyzer
                     const addr2 = addr.getPointer();
                     const addr2str = addr2+'';
                     const addr2name = analyzeMap!.get(addr2str);
-                    if (addr2name) {
+                    if (addr2name != null) {
                         console.log(`${offset}: ${addrstr}: ${addr2name}(${addr2str})`);
                     } else {
                         console.log(`${offset}: ${addrstr}: ${addr2str}`);

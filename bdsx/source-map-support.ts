@@ -53,7 +53,7 @@ function handlerExec<T, R>(list: ((arg: T) => R)[]): (arg: T) => R | null {
     return function (arg) {
         for (let i = 0; i < list.length; i++) {
             const ret = list[i](arg);
-            if (ret) {
+            if (ret != null) {
                 return ret;
             }
         }
@@ -68,7 +68,7 @@ retrieveFileHandlers.push((path) => {
     path = path.trim();
     if (/^file:/.test(path)) {
         // existsSync/readFileSync can't handle file protocol, but once stripped, it works
-        path = path.replace(/file:\/\/\/(\w:)?/, (protocol, drive)=> drive ?
+        path = path.replace(/file:\/\/\/(\w:)?/, (protocol, drive)=> drive != null ?
             '' : // file:///C:/dir/file -> C:/dir/file
             '/' // file:///root-dir/file -> /root-dir/file
         );
@@ -190,7 +190,7 @@ export function mapSourcePosition(position: Position): Position {
     }
 
     // Resolve the source URL relative to the URL of the source map
-    if (sourceMap && sourceMap.map) {
+    if (sourceMap != null && sourceMap.map) {
         const originalPosition = sourceMap.map.originalPositionFor(position);
 
         // Only return the original position if a matching line was found. If no
@@ -311,7 +311,7 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
  * remap stack and print
  */
 export function remapAndPrintError(err:{stack?:string}): void {
-    if (err && err.stack) {
+    if (err != null && err.stack != null) {
         console.error(remapStack(err.stack));
     } else {
         console.error(err);
@@ -327,21 +327,21 @@ export function getErrorSource(error: Error): string | null {
         const column = +match[3];
 
         // Support the inline sourceContents inside the source map
-        let contents = fileContentsCache[source];
+        let contents:string|null|undefined = fileContentsCache[source];
 
         // Support files on disk
-        if (!contents && fs && fs.existsSync(source)) {
+        if (contents == null && fs.existsSync(source)) {
             try {
                 contents = fs.readFileSync(source, 'utf8');
             } catch (er) {
-                contents = '';
+                contents = null;
             }
         }
 
         // Format the line from the original source code like node does
-        if (contents) {
+        if (contents != null) {
             const code = contents.split(/(?:\r\n|\r|\n)/)[line - 1];
-            if (code) {
+            if (code != null) {
                 return `${source}:${line}\n${code}\n${new Array(column).join(' ')}^`;
             }
         }
@@ -354,7 +354,7 @@ function printErrorAndExit(error: Error):void {
 
     // Ensure error is printed synchronously and not truncated
     const handle = (process.stderr as any)._handle;
-    if (handle && handle.setBlocking) {
+    if (handle != null && handle.setBlocking != null) {
         handle.setBlocking(true);
     }
 
@@ -373,7 +373,7 @@ function shimEmitUncaughtException():void {
     process.emit = function (type: string, ...args:any[]) {
         if (type === 'uncaughtException') {
             const err = args[0];
-            if (err && err.stack) {
+            if (err != null && err.stack != null) {
                 err.stack = remapStack(err.stack);
                 const hasListeners = (this.listeners(type).length > 0);
                 if (!hasListeners) {
@@ -382,7 +382,7 @@ function shimEmitUncaughtException():void {
             }
         } else if (type === 'unhandledRejection') {
             const err = args[0];
-            if (err && err.stack) err.stack = remapStack(err.stack);
+            if (err != null && err.stack != null) err.stack = remapStack(err.stack);
         }
 
         return origEmit.apply(this, arguments);

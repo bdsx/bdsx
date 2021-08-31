@@ -6,6 +6,7 @@ import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
 import { BinaryStream } from "./stream";
+import { TypeIn } from "../makefunc";
 
 // export interface PacketType<T> extends StructureType<T>
 // {
@@ -70,7 +71,7 @@ export class Packet extends MantleClass {
         this[sharedptr_of_packet] = null;
     }
 
-    static create<T extends Packet>(this:{new(alloc?:boolean):T, ID:number, ref():any}):T {
+    static create<T extends Packet>(this:TypeIn<T>&{ID:number}):T {
         const id = this.ID;
         if (id === undefined) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
         const cls = SharedPtr.make(this);

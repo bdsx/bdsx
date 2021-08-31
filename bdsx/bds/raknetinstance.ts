@@ -1,11 +1,7 @@
-import { VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { RakNet } from "./raknet";
 
-@nativeClass()
-export class RakNetInstance extends NativeClass {
-    @nativeField(VoidPointer)
-    vftable:VoidPointer;
-    @nativeField(RakNet.RakPeer.ref(), 0x1e8)
-    peer:RakNet.RakPeer;
-}
+import minecraft = require('../minecraft');
+
+/** @deprecated */
+export const RakNetInstance = minecraft.RakNetInstance;
+/** @deprecated */
+export type RakNetInstance = minecraft.RakNetInstance;

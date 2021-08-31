@@ -4,6 +4,7 @@
  */
 "use strict";
 
+const { notImplemented } = require("./common");
 const core = require("./core");
 const { Actor } = require("./bds/actor");
 const { NetworkIdentifier } = require("./bds/networkidentifier");
@@ -34,7 +35,7 @@ exports.setOnErrorListener = setOnErrorListener;
 exports.setOnRuntimeErrorListener = legacy.setOnRuntimeErrorListener;
 
 function setOnCommandListener(cb) {
-    throw Error('not implemented');
+    notImplemented();
 }
 exports.setOnCommandListener = setOnCommandListener;
 exports.ipfilter = core.ipfilter;

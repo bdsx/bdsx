@@ -1,4 +1,3 @@
-import { unreachable } from "../common";
 import { tsw } from "./tswriter";
 import path = require('path');
 
@@ -12,21 +11,21 @@ class ImportName {
         public readonly name:string) {
     }
 
-
-    import<T extends tsw.Kind>(kind:T):tsw.KindToName<T> {
-        if (tsw.isIdentifier(kind)) {
+    import(kind:tsw.Kind):tsw.ItemPair {
+        const out = new tsw.ItemPair;
+        if ((kind & tsw.Kind.Value) !== 0) {
             if (this.value === null) {
                 this.value = new tsw.Name(this.name);
             }
-            return this.value as any;
-        } else if (tsw.isType(kind)) {
+            out.value = this.value;
+        }
+        if (((kind & tsw.Kind.Type) !== 0)) {
             if (this.type === null) {
                 this.type = new tsw.TypeName(this.name);
             }
-            return this.type as any;
-        } else {
-            unreachable();
+            out.type = this.type;
         }
+        return out;
     }
 }
 
@@ -57,16 +56,12 @@ class ImportTarget {
 }
 
 export class TsFile {
-    public readonly imports = new ImportInfo(this);
+    public readonly imports = new TsImportInfo(this);
     constructor(
         public readonly path:string
     ) {
         if (modulePathes.has(path)) throw Error(`${path}: Filename dupplicated`);
         modulePathes.add(path);
-    }
-
-    makeTarget():ImportTarget {
-        return new ImportTarget(this.path);
     }
 
     existName(name:string):boolean {
@@ -79,14 +74,23 @@ export class TsFile {
 
 }
 
-export class ImportInfo {
+export class TsImportInfo {
     public readonly imports = new Map<TsFile, ImportTarget>();
-    private readonly globalNames = new Map<string, number>();
+    public readonly globalNames = new Map<string, number>();
 
     constructor(public readonly base:TsFile|null) {
     }
 
-    append(other:ImportInfo):void {
+    getTarget(from:TsFile):ImportTarget {
+        let target = this.imports.get(from);
+        if (target == null) {
+            target = new ImportTarget(from.path);
+            this.imports.set(from, target);
+        }
+        return target;
+    }
+
+    append(other:TsImportInfo):void {
         for (const [file, target] of other.imports) {
             const already = this.imports.get(file);
             if (already == null) {
@@ -124,67 +128,6 @@ export class ImportInfo {
         }
     }
 
-    importDirect<T extends tsw.Kind>(hint:unknown, module:TsFile|null|undefined, kind:T):tsw.KindToName<T> {
-        if (module === undefined) {
-            throw Error(`host not found (${hint})`);
-        }
-        if (module === this.base) {
-            throw Error(`self import (${hint})`);
-        }
-        if (module === null) {
-            throw Error(`is const identifier (${hint})`);
-        }
-        let target = this.imports.get(module);
-        if (target == null) {
-            this.imports.set(module, target = module.makeTarget());
-        }
-        if (target.direct.length !== 0) {
-            for (const direct of target.direct) {
-                if (this.base !== null && this.base.existNameInScope(direct.name)) {
-                    continue;
-                }
-                return direct.import(kind);
-            }
-        }
-        const name = path.basename(module.path);
-        const varname = this.makeGlobalName(name);
-        const direct = new ImportName(varname);
-        target.direct.push(direct);
-        direct.import(tsw.Identifier);
-        return direct.import(kind);
-    }
-
-    importName<T extends tsw.Kind>(host:TsFile|undefined|null, name:string, kind:T):tsw.KindToItem<T> {
-        if (host === this.base) {
-            return kind.asName(name);
-        }
-
-        if (host === undefined) {
-            throw Error(`host not found (${name})`);
-        }
-        if (host === null) {
-            return kind.asName(name);
-        }
-        let target = this.imports.get(host);
-        if (!target) this.imports.set(host, target = host.makeTarget());
-
-        let imported = target.imports.get(name);
-        let renamed:string;
-        if (imported == null) {
-            renamed = this.makeGlobalName(name);
-            imported = new ImportName(renamed);
-            target.imports.set(name, imported);
-        } else {
-            renamed = imported.name;
-        }
-
-        if (this.base !== null && this.base.existNameInScope(renamed)) {
-            const module = this.importDirect(name, host, kind);
-            return module.member(name);
-        }
-        return imported.import(kind);
-    }
-
     toTsw():(tsw.Import|tsw.ImportDirect|tsw.ImportType)[] {
         const imports:(tsw.Import|tsw.ImportDirect|tsw.ImportType)[] = [];
         for (const target of this.imports.values()) {
@@ -197,7 +140,8 @@ export class ImportInfo {
                 if (imported.value !== null) {
                     values.push([new tsw.NameProperty(name), imported.value]);
                 } else {
-                    types.push([new tsw.NameProperty(name), imported.type!]);
+                    if (imported.type === null) throw Error(`${imported.name}: Imported but no type of value`);
+                    types.push([new tsw.NameProperty(name), imported.type]);
                 }
             }
             if (types.length !== 0) imports.push(new tsw.ImportType(types, target.path));
@@ -206,4 +150,70 @@ export class ImportInfo {
         return imports;
     }
 
+}
+
+export class TsImportItem {
+    private target:ImportTarget|null = null;
+    private basicImport:ImportName|null = null;
+
+    constructor(
+        public readonly base:TsFile,
+        public readonly from:TsFile,
+        public readonly name:string) {
+    }
+
+    private _importDirect(kind:tsw.Kind):tsw.ItemPair {
+        const target = this.target!;
+        if (target.direct.length !== 0) {
+            for (const direct of target.direct) {
+                const base = this.base.imports.base;
+                if (base !== null && base.existNameInScope(direct.name)) {
+                    continue;
+                }
+                return direct.import(kind);
+            }
+        }
+        const name = path.basename(this.from.path);
+        const varname = this.base.imports.makeGlobalName(name);
+        const direct = new ImportName(varname);
+        target.direct.push(direct);
+        direct.import(tsw.Kind.Value);
+        return direct.import(kind);
+    }
+
+    import(kind:tsw.Kind):tsw.ItemPair {
+        if (this.basicImport === null) {
+            if (this.target === null) {
+                this.target = this.base.imports.getTarget(this.from);
+            }
+
+            let imported = this.target.imports.get(this.name);
+            if (imported != null) {
+                this.basicImport = imported;
+            } else {
+                const importName = this.base.imports.makeGlobalName(this.name);
+                if (this.base.existNameInScope(importName)) {
+                    this.base.imports.globalNames.delete(importName);
+                    return this._importDirect(kind).member(this.name);
+                }
+                imported = new ImportName(importName);
+                this.target.imports.set(this.name, imported);
+                this.basicImport = imported;
+                return this.basicImport.import(kind);
+            }
+        }
+
+        const importName = this.basicImport.name;
+        if (this.base.existNameInScope(importName)) {
+            return this._importDirect(kind).member(this.name);
+        }
+        return this.basicImport.import(kind);
+    }
+
+    importValue():tsw.Value {
+        return this.import(tsw.Kind.Value).value;
+    }
+    importType():tsw.Type {
+        return this.import(tsw.Kind.Type).type;
+    }
 }

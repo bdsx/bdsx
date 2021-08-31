@@ -583,7 +583,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
         }
     }
 
-    static make<K, V>(k:Type<K>, v:Type<V>):CxxMapType<K, V> {
+    static make<K, V>(key:{prototype:K}, value:{prototype:V}):CxxMapType<K, V> {
+        const k = key as Type<K>;
+        const v = value as Type<V>;
         const comptype = CxxPair.make(k, v);
         const nodetype = CxxTreeNode.make(comptype);
         const key_comp = CxxLess.make(k);

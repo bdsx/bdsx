@@ -9,6 +9,7 @@ import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStack } fr
 import { Packet } from "./packet";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
+/** @deprecated */
 @nativeClass(null)
 export class LoginPacket extends Packet {
     @nativeField(int32_t, 0x30)
@@ -20,23 +21,27 @@ export class LoginPacket extends Packet {
 	connreq:ConnectionRequest|null;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayStatusPacket extends Packet {
     @nativeField(int32_t)
     status:int32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ServerToClientHandshakePacket extends Packet {
     @nativeField(CxxString)
     jwt:CxxString;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ClientToServerHandshakePacket extends Packet {
     // no data
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class DisconnectPacket extends Packet {
     @nativeField(bool_t)
@@ -139,12 +144,14 @@ export enum PackType {
 //     texturePacks:CxxVector<ResourcePackInfoData>;
 // }
 
+/** @deprecated */
 @nativeClass(null)
 export class ResourcePacksInfoPacket extends Packet {
     // @nativeField(ResourcePacksInfoData)
     // data:ResourcePacksInfoData;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ResourcePackStackPacket extends Packet {
     // @nativeField(CxxVector.make(PackInstanceId))
@@ -164,7 +171,7 @@ export const ResourcePackStacksPacket = ResourcePackStackPacket;
 /** @deprecated use ResourcePackStackPacket, follow the real class name */
 export type ResourcePackStacksPacket = ResourcePackStackPacket;
 
-
+/** @deprecated */
 export enum ResourcePackResponse {
     Cancel = 1,
     Downloading,
@@ -172,12 +179,14 @@ export enum ResourcePackResponse {
     ResourcePackStackFinished,
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ResourcePackClientResponsePacket extends Packet {
     // @nativeField(uint8_t, 0x40)
     // response: ResourcePackResponse;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class TextPacket extends Packet {
     @nativeField(uint8_t)
@@ -195,7 +204,9 @@ export class TextPacket extends Packet {
     @nativeField(CxxString)
     platformChatId:CxxString;
 }
+/** @deprecated */
 export namespace TextPacket {
+    /** @deprecated */
     export enum Types {
         Raw,
         Chat,
@@ -217,53 +228,63 @@ export namespace TextPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetTimePacket extends Packet {
     @nativeField(int32_t)
     time:int32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelSettings extends MantleClass {
     @nativeField(int32_t)
     seed:int32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class StartGamePacket extends Packet {
     @nativeField(LevelSettings)
     settings:LevelSettings;
 }
+/** @deprecated */
 @nativeClass(null)
 export class AddPlayerPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AddActorPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RemoveActorPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AddItemActorPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class TakeItemActorPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MoveActorAbsolutePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MovePlayerPacket extends Packet {
     @nativeField(ActorRuntimeID)
@@ -298,11 +319,13 @@ export namespace MovePlayerPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RiderJumpPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class UpdateBlockPacket extends Packet {
     @nativeField(BlockPos)
@@ -330,26 +353,31 @@ export namespace UpdateBlockPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AddPaintingPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class TickSyncPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelSoundEventPacketV1 extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelEventPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class BlockEventPacket extends Packet {
     @nativeField(BlockPos)
@@ -360,6 +388,7 @@ export class BlockEventPacket extends Packet {
     data:int32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ActorEventPacket extends Packet {
     @nativeField(ActorRuntimeID)
@@ -429,11 +458,13 @@ export namespace ActorEventPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MobEffectPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(0x40)
 export class AttributeData extends NativeClass {
     @nativeField(float32_t)
@@ -455,6 +486,7 @@ export class AttributeData extends NativeClass {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class UpdateAttributesPacket extends Packet {
     @nativeField(ActorRuntimeID)
@@ -463,6 +495,7 @@ export class UpdateAttributesPacket extends Packet {
     attributes:CxxVector<AttributeData>;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class InventoryTransactionPacket extends Packet {
     @nativeField(uint32_t)
@@ -471,16 +504,19 @@ export class InventoryTransactionPacket extends Packet {
     transaction: ComplexInventoryTransaction;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MobEquipmentPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MobArmorEquipmentPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class InteractPacket extends Packet {
     @nativeField(uint8_t)
@@ -499,16 +535,19 @@ export namespace InteractPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class BlockPickRequestPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ActorPickRequestPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerActionPacket extends Packet {
     @nativeField(BlockPos)
@@ -520,7 +559,9 @@ export class PlayerActionPacket extends Packet {
     @nativeField(ActorRuntimeID)
     actorId: ActorRuntimeID;
 }
+/** @deprecated */
 export namespace PlayerActionPacket {
+    /** @deprecated */
     export enum Actions {
         /** @deprecated */
         StartBreak,
@@ -569,42 +610,50 @@ export namespace PlayerActionPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class EntityFallPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class HurtArmorPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetActorDataPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetActorMotionPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetActorLinkPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetHealthPacket extends Packet {
     @nativeField(uint8_t)
     health:uint8_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetSpawnPositionPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AnimatePacket extends Packet {
     @nativeField(ActorRuntimeID)
@@ -614,7 +663,9 @@ export class AnimatePacket extends Packet {
     @nativeField(float32_t)
     rowingTime:float32_t;
 }
+/** @deprecated */
 export namespace AnimatePacket {
+    /** @deprecated */
     export enum Actions {
         SwingArm = 1,
         WakeUp = 3,
@@ -625,11 +676,13 @@ export namespace AnimatePacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RespawnPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ContainerOpenPacket extends Packet {
     @nativeField(uint8_t)
@@ -647,6 +700,7 @@ export class ContainerOpenPacket extends Packet {
     entityUniqueIdAsNumber:int64_as_float_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
     @nativeField(uint8_t)
@@ -658,6 +712,7 @@ export class ContainerClosePacket extends Packet {
     server:bool_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerHotbarPacket extends Packet {
     @nativeField(uint32_t)
@@ -668,6 +723,7 @@ export class PlayerHotbarPacket extends Packet {
     windowId:uint8_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class InventoryContentPacket extends Packet {
     @nativeField(uint8_t)
@@ -676,31 +732,37 @@ export class InventoryContentPacket extends Packet {
     slots:CxxVector<ItemStack>;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class InventorySlotPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ContainerSetDataPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CraftingDataPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CraftingEventPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class GuiDataPickItemPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AdventureSettingsPacket extends Packet {
     @nativeField(uint32_t)
@@ -717,31 +779,37 @@ export class AdventureSettingsPacket extends Packet {
     customFlag: uint32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class BlockActorDataPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerInputPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelChunkPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetCommandsEnabledPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetDifficultyPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ChangeDimensionPacket extends Packet {
     @nativeField(uint32_t)
@@ -756,26 +824,31 @@ export class ChangeDimensionPacket extends Packet {
     respawn:bool_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetPlayerGameTypePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerListPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SimpleEventPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class TelemetryEventPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SpawnExperienceOrbPacket extends Packet {
     @nativeField(Vec3)
@@ -784,41 +857,49 @@ export class SpawnExperienceOrbPacket extends Packet {
     amount:int32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MapItemDataPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MapInfoRequestPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RequestChunkRadiusPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ChunkRadiusUpdatedPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ItemFrameDropItemPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class GameRulesChangedPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CameraPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class BossEventPacket extends Packet {
     /** @deprecated */
@@ -881,6 +962,7 @@ export namespace BossEventPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ShowCreditsPacket extends Packet {
     // unknown
@@ -927,6 +1009,7 @@ class AvailableCommandsCommandData extends NativeClass {
 class AvailableCommandsEnumData extends NativeClass{
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AvailableCommandsPacket extends Packet {
     @nativeField(CxxVector.make(CxxString))
@@ -938,6 +1021,7 @@ export class AvailableCommandsPacket extends Packet {
     @nativeField(CxxVector.make(AvailableCommandsCommandData))
     commands:CxxVector<AvailableCommandsCommandData>;
 }
+/** @deprecated */
 export namespace AvailableCommandsPacket {
     export type CommandData = AvailableCommandsCommandData;
     export const CommandData = AvailableCommandsCommandData;
@@ -945,6 +1029,7 @@ export namespace AvailableCommandsPacket {
     export const EnumData = AvailableCommandsEnumData;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CommandRequestPacket extends Packet {
     @nativeField(CxxString)
@@ -952,36 +1037,42 @@ export class CommandRequestPacket extends Packet {
 }
 
 
+/** @deprecated */
 @nativeClass(null)
 export class CommandBlockUpdatePacket extends Packet {
     // unknown
 }
 
 
+/** @deprecated */
 @nativeClass(null)
 export class CommandOutputPacket extends Packet {
     // unknown
 }
 
 
+/** @deprecated */
 @nativeClass(null)
 export class ResourcePackDataInfoPacket extends Packet {
     // unknown
 }
 
 
+/** @deprecated */
 @nativeClass(null)
 export class ResourcePackChunkDataPacket extends Packet {
     // unknown
 }
 
 
+/** @deprecated */
 @nativeClass(null)
 export class ResourcePackChunkRequestPacket extends Packet {
     // unknown
 }
 
 
+/** @deprecated */
 @nativeClass(null)
 export class TransferPacket extends Packet {
     @nativeField(CxxString)
@@ -990,6 +1081,7 @@ export class TransferPacket extends Packet {
     port:uint16_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlaySoundPacket extends Packet {
     @nativeField(CxxString)
@@ -1002,6 +1094,7 @@ export class PlaySoundPacket extends Packet {
     pitch:float32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class StopSoundPacket extends Packet {
     @nativeField(CxxString)
@@ -1010,6 +1103,7 @@ export class StopSoundPacket extends Packet {
     stopAll:bool_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetTitlePacket extends Packet {
     @nativeField(int32_t)
@@ -1034,46 +1128,55 @@ export namespace SetTitlePacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AddBehaviorTreePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class StructureBlockUpdatePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ShowStoreOfferPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PurchaseReceiptPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerSkinPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SubClientLoginPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class WSConnectPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetLastHurtByPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class BookEditPacket extends Packet {
     // it seems fields have weird empty spaces.
@@ -1093,7 +1196,9 @@ export class BookEditPacket extends Packet {
     @nativeField(CxxString)
     xuid:CxxString;
 }
+/** @deprecated */
 export namespace BookEditPacket {
+    /** @deprecated */
     export enum Types {
         ReplacePage,
         AddPage,
@@ -1103,16 +1208,19 @@ export namespace BookEditPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class NpcRequestPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PhotoTransferPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ModalFormRequestPacket extends Packet {
     @nativeField(uint32_t)
@@ -1126,6 +1234,7 @@ export const ShowModalFormPacket = ModalFormRequestPacket;
 /** @deprecated use ModalFormRequestPacket, follow the real class name */
 export type ShowModalFormPacket = ModalFormRequestPacket;
 
+/** @deprecated */
 @nativeClass(null)
 export class ModalFormResponsePacket extends Packet {
     @nativeField(uint32_t)
@@ -1134,11 +1243,13 @@ export class ModalFormResponsePacket extends Packet {
     response:CxxString;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ServerSettingsRequestPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ServerSettingsResponsePacket extends Packet {
     @nativeField(uint32_t)
@@ -1147,22 +1258,26 @@ export class ServerSettingsResponsePacket extends Packet {
     content:CxxString;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ShowProfilePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetDefaultGameTypePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RemoveObjectivePacket extends Packet {
     @nativeField(CxxString)
     objectiveName:CxxString;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetDisplayObjectivePacket extends Packet {
     @nativeField(CxxString)
@@ -1177,6 +1292,7 @@ export class SetDisplayObjectivePacket extends Packet {
     sortOrder:ObjectiveSortOrder;
 }
 
+/** @deprecated */
 @nativeClass()
 export class ScorePacketInfo extends NativeClass {
     @nativeField(ScoreboardId)
@@ -1204,6 +1320,7 @@ export namespace ScorePacketInfo {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetScorePacket extends Packet {
     @nativeField(uint8_t)
@@ -1220,47 +1337,56 @@ export namespace SetScorePacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LabTablePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class UpdateBlockPacketSynced extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MoveActorDeltaPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetScoreboardIdentityPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SetLocalPlayerAsInitializedPacket extends Packet {
     @nativeField(ActorRuntimeID)
     actorId: ActorRuntimeID;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class UpdateSoftEnumPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class NetworkStackLatencyPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ScriptCustomEventPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SpawnParticleEffectPacket extends Packet {
     @nativeField(uint8_t)
@@ -1278,26 +1404,31 @@ export const SpawnParticleEffect = SpawnParticleEffectPacket;
 /** @deprecated use SpawnParticleEffectPacket, follow real class name */
 export type SpawnParticleEffect = SpawnParticleEffectPacket;
 
+/** @deprecated */
 @nativeClass(null)
 export class AvailableActorIdentifiersPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelSoundEventPacketV2 extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class NetworkChunkPublisherUpdatePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class BiomeDefinitionList extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelSoundEventPacket extends Packet {
     @nativeField(uint32_t)
@@ -1314,82 +1445,98 @@ export class LevelSoundEventPacket extends Packet {
     disableRelativeVolume: bool_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LevelEventGenericPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class LecternUpdatePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RemoveEntityPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ClientCacheStatusPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class OnScreenTextureAnimationPacket extends Packet {
     @nativeField(int32_t)
     animationType: int32_t;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MapCreateLockedCopy extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class StructureTemplateDataRequestPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class StructureTemplateDataExportPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ClientCacheBlobStatusPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ClientCacheMissResponsePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class EducationSettingsPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class EmotePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MultiplayerSettingsPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SettingsCommandPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AnvilDamagePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CompletedUsingItemPacket extends Packet {
     @nativeField(int16_t)
@@ -1418,11 +1565,13 @@ export namespace CompletedUsingItemPacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class NetworkSettingsPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {
     @nativeField(float32_t)
@@ -1451,46 +1600,55 @@ export class PlayerAuthInputPacket extends Packet {
     delta: Vec3;
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CreativeContentPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerEnchantOptionsPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ItemStackRequest extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ItemStackResponse extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerArmorDamagePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CodeBuilderPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class UpdatePlayerGameTypePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class EmoteListPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PositionTrackingDBServerBroadcastPacket extends Packet {
     @nativeField(uint8_t)
@@ -1513,6 +1671,7 @@ export const PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadca
 /** @deprecated use PositionTrackingDBServerBroadcastPacket, follow the real class name */
 export type PositionTrackingDBServerBroadcast = PositionTrackingDBServerBroadcastPacket;
 
+/** @deprecated */
 @nativeClass(null)
 export class PositionTrackingDBClientRequestPacket extends Packet {
     @nativeField(uint8_t)
@@ -1532,26 +1691,31 @@ export const PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPa
 /** @deprecated Use PositionTrackingDBClientRequestPacket, follow the real class name */
 export type PositionTrackingDBClientRequest = PositionTrackingDBClientRequestPacket;
 
+/** @deprecated */
 @nativeClass(null)
 export class DebugInfoPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PacketViolationWarningPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class MotionPredictionHintsPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AnimateEntityPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CameraShakePacket extends Packet {
     @nativeField(float32_t)
@@ -1574,51 +1738,61 @@ export namespace CameraShakePacket {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class PlayerFogPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class CorrectPlayerMovePredictionPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ItemComponentPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class FilterTextPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ClientboundDebugRendererPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SyncActorPropertyPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class AddVolumeEntityPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class RemoveVolumeEntityPacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SimulationTypePacket extends Packet {
     // unknown
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class NpcDialoguePacket extends Packet {
     /** ActorUniqueID of the Npc */
@@ -1639,13 +1813,17 @@ export class NpcDialoguePacket extends Packet {
     @nativeField(int64_as_float_t, 0x30)
     actorIdAsNumber:int64_as_float_t;
 }
+
+/** @deprecated */
 export namespace NpcDialoguePacket {
+    /** @deprecated */
     export enum Actions {
         Open,
         Close,
     }
 }
 
+/** @deprecated */
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -1810,6 +1988,7 @@ export const PacketIdToType = {
     0xa9: NpcDialoguePacket,
 };
 (PacketIdToType as any).__proto__ = null;
+/** @deprecated */
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
 for (const packetId in PacketIdToType) {

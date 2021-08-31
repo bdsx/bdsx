@@ -176,7 +176,7 @@ function searchAndSelect(prefix:string, deps:Record<string, {version:string}>):P
         });
         table.on('select', (item, index)=>{
             const plugin = packages[index-1];
-            if (!plugin) return;
+            if (plugin == null) return;
             table.destroy();
             search.destroy();
             resolve(plugin);

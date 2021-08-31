@@ -164,7 +164,7 @@ export class Certificate extends NativeClass {
         abstract();
     }
     /**
-     * alias of getIdentityName
+     * @alias getIdentityName
      */
     getId():string {
         return this.getIdentityName();

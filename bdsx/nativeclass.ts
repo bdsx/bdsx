@@ -1,8 +1,8 @@
 import { capi } from "./capi";
 import { CircularDetector } from "./circulardetector";
-import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
+import { AnyFunction, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
-import { makefunc } from "./makefunc";
+import { makefunc, TypeIn } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
@@ -12,7 +12,8 @@ type FieldMapItem = [Type<any>, number]|Type<any>;
 
 
 export type KeysFilter<T, FILTER> = {[key in keyof T]:T[key] extends FILTER ? key: never}[keyof T];
-export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:any[])=>any ? never: key}[keyof T];
+type AnyToUnknown<T> = 0 extends (1 & T) ? unknown : T;
+export type KeysWithoutFunction<T> = {[key in keyof T]:AnyToUnknown<T[key]> extends AnyFunction ? never: key}[keyof T];
 
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
 
@@ -26,8 +27,7 @@ function accessor(key:string|number):string {
     return `[${JSON.stringify(key)}]`;
 }
 
-export interface NativeClassType<T extends NativeClass> extends Type<T>
-{
+export interface NativeClassType<T extends NativeClass> extends Type<T> {
     new(alloc?:boolean):T;
     prototype:T;
     [StructurePointer.contentSize]:number|null;
@@ -39,7 +39,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T>
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
     typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
-    ref<T extends NativeClass>(this:{new():T}):NativeType<T>;
+    ref<T extends NativeClass>(this:TypeIn<T>):NativeType<T>;
 }
 
 function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, superproto:NativeClassType<any>):((()=>void)|null)[] {
@@ -91,12 +91,12 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
     }
     const list = [builder.ctor, builder.dtor, builder.ctor_copy, builder.ctor_move];
 
-    let out = '\nconst [';
+    let out = '"use strict";\nconst [';
     for (const imp of builder.imports.values()) {
         out += imp;
         out += ',';
     }
-    out += 'NativeType,superproto] = imp;\nreturn [';
+    out += 'NativeType,superproto] = $imp;\nreturn [';
     for (const item of list) {
         if (item.used) {
             out += item.code;
@@ -107,7 +107,7 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
     }
     out += '];';
     const imports = [...builder.imports.keys(), NativeType, superproto];
-    return new Function('imp', out)(imports);
+    return new Function('$imp', out)(imports);
 }
 
 interface NativeFieldInfo extends NativeDescriptorBuilder.Info {
@@ -160,16 +160,24 @@ class StructureDefinition {
 
         const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
         if (ctor !== null) {
-            clazz.prototype[NativeType.ctor] = ctor;
+            if (!clazz.prototype[NativeType.ctor].isNativeFunction) {
+                clazz.prototype[NativeType.ctor] = ctor;
+            }
         }
         if (dtor !== null) {
-            clazz.prototype[NativeType.dtor] = dtor;
+            if (!clazz.prototype[NativeType.dtor].isNativeFunction) {
+                clazz.prototype[NativeType.dtor] = dtor;
+            }
         }
         if (ctor_copy !== null) {
-            clazz.prototype[NativeType.ctor_copy] = ctor_copy;
+            if (!clazz.prototype[NativeType.ctor_copy].isNativeFunction) {
+                clazz.prototype[NativeType.ctor_copy] = ctor_copy;
+            }
         }
         if (ctor_move !== null) {
-            clazz.prototype[NativeType.ctor_move] = ctor_move;
+            if (!clazz.prototype[NativeType.ctor_move].isNativeFunction) {
+                clazz.prototype[NativeType.ctor_move] = ctor_move;
+            }
         }
 
         clazz[StructurePointer.contentSize] =
@@ -344,7 +352,7 @@ export class NativeClass extends StructurePointer {
 
     /**
      * call the constructor
-     * alias of [NativeType.ctor]() and [Native.ctor_copy]();
+     * @alias [NativeType.ctor]
      */
     construct(copyFrom?:this|null):void {
         if (copyFrom == null) {
@@ -356,7 +364,7 @@ export class NativeClass extends StructurePointer {
 
     /**
      * call the destructor
-     * alias of [NativeType.dtor]();
+     * @alias [NativeType.dtor]
      */
     destruct():void {
         this[NativeType.dtor]();
@@ -439,7 +447,7 @@ export class NativeClass extends StructurePointer {
         return clazz.define(fields, undefined, undefined, abstract);
     }
 
-    static ref<T extends NativeClass>(this:{new():T}):NativeType<T> {
+    static ref<T extends NativeClass>(this:TypeIn<T>):NativeType<T> {
         return Singleton.newInstance(NativeClass, this, ()=>makeReference(this));
     }
 
@@ -561,8 +569,7 @@ export function nativeClass(size?:number|null, align:number|null = null) {
     };
 }
 
-export interface NativeArrayType<T> extends Type<NativeArray<T>>
-{
+export interface NativeArrayType<T> extends Type<NativeArray<T>> {
     new(ptr?:VoidPointer):NativeArray<T>;
 }
 
@@ -574,7 +581,13 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
         return ptr.addAs(this, offset, offset! >> 31);
     }
     static [NativeType.setter]<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:THIS, offset?:number):void {
-        throw Error("non assignable");
+        throw Error('NativeArray cannot be set');
+    }
+    static [makefunc.getFromParam]<THIS extends VoidPointer>(this:{new():THIS}, stackptr:StaticPointer, offset?:number):THIS {
+        return stackptr.addAs(this, offset, offset! >> 31);
+    }
+    static [makefunc.setToParam]<THIS extends VoidPointer>(this:{new():THIS}, stackptr:StaticPointer, value:THIS, offset?:number):void {
+        stackptr.setPointer(value, offset);
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
         const {offset, noInitialize} = info;
@@ -603,9 +616,28 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
     }
     static readonly [NativeType.align]:number = 1;
 
+    static ref<T>(this:TypeIn<NativeArray<T>>):NativeType<NativeArray<T>> {
+        return Singleton.newInstance(NativeArray, this, ()=>{
+            const clazz = this as NativeArrayType<T>;
+            return new NativeType<NativeArray<T>>(clazz.name+'*', 8, 8,
+                clazz.isTypeOf,
+                clazz.isTypeOfWeak,
+                (ptr, offset)=>clazz[makefunc.getFromParam](ptr, offset),
+                (ptr, v, offset)=>ptr.setPointer(v, offset)
+            );
+        });
+    }
+
+    set(value:T, i:number):void {
+        const size = this.componentType[NativeType.size];
+        if (size == null) throw Error(`${this.componentType.name}: unknown size`);
+        this.componentType[NativeType.setter](this as any, value, i*size);
+    }
+
     get(i:number):T {
-        const offset = i*this.componentType[NativeType.size];
-        return this.componentType[NativeType.getter](this as any, offset);
+        const size = this.componentType[NativeType.size];
+        if (size == null) throw Error(`${this.componentType.name}: unknown size`);
+        return this.componentType[NativeType.getter](this as any, i*size);
     }
 
     toArray():T[] {
@@ -641,7 +673,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
             static readonly [StructurePointer.contentSize] = off;
             static readonly [NativeType.align] = itemType[NativeType.align];
             [NativeType.size]:number;
-            static isTypeOf<T>(this:{new():T}, v:unknown):v is T {
+            static isTypeOf<T>(this:TypeIn<T>, v:unknown):v is T {
                 return v === null || v instanceof NativeArrayImpl;
             }
             length:number;
@@ -760,13 +792,13 @@ export declare class MantleClass extends NativeClass {
 }
 exports.MantleClass = NativeClass;
 
-function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
+function makeReference<T extends NativeClass>(type:TypeIn<T>):NativeType<T> {
     const clazz = type as NativeClassType<T>;
     return new NativeType<T>(type.name+'*', 8, 8,
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
-        (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),
-        (stackptr, v, offset)=>stackptr.setPointer(v, offset)
+        (ptr, offset)=>clazz[makefunc.getFromParam](ptr, offset),
+        (ptr, v, offset)=>ptr.setPointer(v, offset)
     );
 }
 

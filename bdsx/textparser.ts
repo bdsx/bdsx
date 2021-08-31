@@ -3,9 +3,9 @@ import colors = require('colors');
 import { str2set } from './util';
 
 const SPACE_REG = /^([\s\uFEFF\xA0]*)(.*[^\s\uFEFF\xA0])[\s\uFEFF\xA0]*$/;
-const DEFAULT_SEPERATOR = str2set('!@#%^&*()+-=`~[]{};\':",./<>?');
-
-const SPACES = str2set(' \t\r\n\uFEFF\xa0');
+const DEFAULT_SEPERATOR = "[!@#%^&*()+-=`~[]{};\\':\",./<>?]";
+const NONSPACE = /[^\s\uFEFF\xA0]/g;
+const SPACES = ' \t\r\n\uFEFF\xa0';
 
 export class TextParser {
     public i = 0;
@@ -36,27 +36,28 @@ export class TextParser {
     }
 
     skipSpaces():void {
-        const nonspace = /[^\s\uFEFF\xA0]/g;
-        nonspace.lastIndex = this.i;
-        const res = nonspace.exec(this.context);
+        NONSPACE.lastIndex = this.i;
+        const res = NONSPACE.exec(this.context);
         if (res === null) {
             this.i = this.context.length;
-            return;
+        } else {
+            this.i = res.index;
         }
-        this.i = res.index;
     }
 
 }
 
 export class LanguageParser extends TextParser {
+    private readonly regexpReadToOperator:RegExp;
+    public readonly seperatorsSet:Set<number>;
 
     constructor(
         context:string,
-        public readonly seperators:Set<number> = DEFAULT_SEPERATOR) {
+        public readonly seperators:string = DEFAULT_SEPERATOR) {
         super(context);
-        for (const chr of SPACES) {
-            this.seperators.add(chr);
-        }
+        const slashed = this.seperators.replace(/[\]\\-]/g, match=>'\\'+match);
+        this.seperatorsSet = str2set(this.seperators+SPACES);
+        this.regexpReadToOperator = new RegExp('['+slashed+SPACES+']', 'g');
     }
 
     unget(str:string):void {
@@ -67,11 +68,15 @@ export class LanguageParser extends TextParser {
     readIdentifier():string|null {
         this.skipSpaces();
         const from = this.i;
-        for (;;) {
-            if (this.i >= this.context.length) break;
-            const code = this.context.charCodeAt(this.i);
-            if (this.seperators.has(code)) break;
-            this.i++;
+        if (from >= this.context.length) return null;
+
+        const regexp = this.regexpReadToOperator;
+        regexp.lastIndex = from;
+        const res = regexp.exec(this.context);
+        if (res === null) {
+            this.i = this.context.length;
+        } else {
+            this.i = res.index;
         }
         if (from === this.i) return null;
         return this.context.substring(from, this.i);
@@ -84,7 +89,7 @@ export class LanguageParser extends TextParser {
         let out = '';
         for (;;) {
             const code = this.context.charCodeAt(this.i);
-            if (!this.seperators.has(code)) break;
+            if (!this.seperatorsSet.has(code)) break;
             out += String.fromCharCode(code);
             if (out.length !== 1 && !operators.has(out)) break;
             this.i++;

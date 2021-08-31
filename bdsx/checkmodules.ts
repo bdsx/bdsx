@@ -100,6 +100,7 @@ for (const name in requiredDeps) {
     try {
         const installed = require(`${name}/package.json`);
         const installedVersion = installed.version;
+        if (installedVersion == null) continue;
         if (!checkVersionSyntax(name, installedVersion, requiredVersion)) {
             console.error(colors.red(`${name}: version does not match (installed=${installedVersion}, required=${requiredVersion})`));
             needUpdate = true;
