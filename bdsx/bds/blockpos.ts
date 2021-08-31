@@ -1,5 +1,5 @@
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, float32_t, int32_t, uint32_t } from "../nativetype";
+import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint32_t } from "../nativetype";
 
 export enum Facing {
     Down,
@@ -76,6 +76,7 @@ export class Vec3 extends NativeClass {
 
 @nativeClass()
 export class RelativeFloat extends NativeClass {
+    static readonly [NativeType.registerDirect] = true;
     @nativeField(float32_t)
     value:float32_t;
     @nativeField(bool_t)
@@ -83,4 +84,11 @@ export class RelativeFloat extends NativeClass {
 
     @nativeField(bin64_t, 0)
     bin_value:bin64_t;
+
+    static create(value:number, is_relative:boolean):RelativeFloat {
+        const v = new RelativeFloat(true);
+        v.value = value;
+        v.is_relative = is_relative;
+        return v;
+    }
 }

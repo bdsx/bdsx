@@ -4,10 +4,10 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event } from "./eventtarget";
-import type { BlockDestroyEvent, BlockPlaceEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent } from "./event_impl/entityevent";
-import type { LevelExplodeEvent, LevelSaveEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
-import type { QueryRegenerateEvent } from "./event_impl/miscevent";
+import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
+import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
+import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
 
@@ -41,7 +41,13 @@ export namespace events {
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
     /** Not cancellable */
     export const pistonMove = new Event<(event: PistonMoveEvent) => void>();
+    /** Cancellable */
+    export const farmlandDecay = new Event<(event: FarmlandDecayEvent) => void | CANCEL>();
 
+    /** Cancellable but requires additional stimulation */
+    export const campfireLight = new Event<(event: CampfireTryLightFire) => void | CANCEL>();
+    /** Cancellable but requires additional stimulation */
+    export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
     ////////////////////////////////////////////////////////
     // Entity events
 
@@ -54,6 +60,8 @@ export namespace events {
     /** Not cancellable */
     export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
     /** Cancellable */
+    export const entityStartSwimming = new Event<(event: EntityStartSwimmingEvent) => void | CANCEL>();
+    /** Cancellable */
     export const entityStartRiding = new Event<(event: EntityStartRidingEvent) => void | CANCEL>();
     /** Cancellable but the client is still exiting though it will automatically ride again after rejoin */
     export const entityStopRiding = new Event<(event: EntityStopRidingEvent) => void | CANCEL>();
@@ -61,6 +69,8 @@ export namespace events {
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
     /** Cancellable but only when player is in container screens*/
     export const playerDropItem = new Event<(event: PlayerDropItemEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const playerInventoryChange = new Event<(event: PlayerInventoryChangeEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerRespawn = new Event<(event: PlayerRespawnEvent) => void | CANCEL>();
     /** Cancellable */
@@ -75,12 +85,16 @@ export namespace events {
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
     /** Not cancellable */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
+    /** Cancellable */
+    export const splashPotionHit = new Event<(event: SplashPotionHitEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Level events
 
     /** Cancellable */
     export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const levelTick = new Event<(event: LevelTickEvent) => void>();
     /** Cancellable but you won't be able to stop the server */
     export const levelSave = new Event<(event: LevelSaveEvent) => void | CANCEL>();
     /** Cancellable */
@@ -189,6 +203,16 @@ export namespace events {
 
     /** Not cancellable */
     export const queryRegenerate = new Event<(event: QueryRegenerateEvent) => void>();
+    /** Cancellable */
+    export const scoreReset = new Event<(event: ScoreResetEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const scoreSet = new Event<(event: ScoreSetEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const scoreAdd = new Event<(event: ScoreAddEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const scoreRemove = new Event<(event: ScoreRemoveEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const objectiveCreate = new Event<(event: ObjectiveCreateEvent) => void | CANCEL>();
 
     /**
     * global error listeners

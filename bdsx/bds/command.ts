@@ -112,12 +112,48 @@ ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
 };
 
 @nativeClass()
+export class CommandFilePath extends NativeClass {
+    @nativeField(CxxString)
+    text:CxxString;
+}
+
+@nativeClass()
+class CommandIntegerRange extends NativeClass { // Not exporting yet, not supported
+    @nativeField(int32_t)
+    min:int32_t;
+    @nativeField(int32_t)
+    max:int32_t;
+    @nativeField(bool_t)
+    inverted:bool_t;
+}
+
+@nativeClass()
 export class CommandItem extends NativeClass {
     @nativeField(int32_t)
     version:int32_t;
     @nativeField(int32_t)
     id:int32_t;
 }
+
+export class CommandMessage extends NativeClass {
+    data:CxxVector<CommandMessage.MessageComponent>;
+}
+
+export namespace CommandMessage {
+
+    @nativeClass(0x28)
+    export class MessageComponent extends NativeClass {
+        @nativeField(CxxString)
+        string:CxxString;
+        // Needs to implement this, but it crashes for me
+        // @nativeField(Wrapper.make(CxxVector.make(WildcardCommandSelector.make(Actor)).ref()))
+        // selection:Wrapper<CxxVector<WildcardCommandSelector<Actor>>>;
+    }
+}
+
+CommandMessage.abstract({
+    data: CxxVector.make(CommandMessage.MessageComponent),
+}, 0x18);
 
 @nativeClass()
 export class CommandPosition extends NativeClass {
@@ -144,6 +180,15 @@ export class CommandPositionFloat extends CommandPosition {
 export class CommandRawText extends NativeClass {
     @nativeField(CxxString)
     text:CxxString;
+}
+
+
+@nativeClass()
+export class CommandWildcardInt extends NativeClass {
+    @nativeField(bool_t)
+    isWildcard:bool_t;
+    @nativeField(int32_t, 0x04)
+    value:int32_t;
 }
 
 @nativeClass(0x30)
@@ -551,10 +596,14 @@ const types = [
     CxxString,
     ActorWildcardCommandSelector,
     RelativeFloat,
+    CommandFilePath,
+    // CommandIntegerRange,
     CommandItem,
+    CommandMessage,
     CommandPosition,
     CommandPositionFloat,
     CommandRawText,
+    CommandWildcardInt,
     JsonValue
 ];
 type_id.pdbimport(CommandRegistry, types);
@@ -579,7 +628,7 @@ CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findComm
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';
 'CommandRegistry::parse<CommandFilePath>';
-'CommandRegistry::parse<CommandIntegerRange>';
+'CommandRegistry::parse<CommandIntegerRange>'; // Not supported yet(?) there is no type id for it
 'CommandRegistry::parse<CommandItem>';
 'CommandRegistry::parse<CommandMessage>';
 'CommandRegistry::parse<CommandPosition>';

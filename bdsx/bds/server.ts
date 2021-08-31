@@ -2,6 +2,7 @@ import { createAbstractObject } from "../abstractobject";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
+import { events } from "../event";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
@@ -131,8 +132,8 @@ export class ServerInstance extends NativeClass {
     disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
         this._disconnectAllClients(message);
     }
-    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
-        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message);
+    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
+        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message, skipMessage);
     }
     getMotd():string {
         return this.minecraft.getServerNetworkHandler().motd;
@@ -156,6 +157,15 @@ export class ServerInstance extends NativeClass {
     }
     getGameVersion():SemVersion {
         return proc["SharedConstants::CurrentGameSemVersion"].as(SemVersion);
+    }
+    nextTick():Promise<void> {
+        return new Promise(resolve=>{
+            const listener = (): void => {
+                resolve();
+                events.levelTick.remove(listener);
+            };
+            events.levelTick.on(listener);
+        });
     }
 }
 

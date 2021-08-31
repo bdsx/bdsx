@@ -78,7 +78,7 @@ export class MobEffect extends NativeClass {
     }
 }
 
-@nativeClass(0x1C)
+@nativeClass()
 export class MobEffectInstance extends NativeClass {
     @nativeField(uint32_t)
     id: uint32_t;
@@ -96,7 +96,7 @@ export class MobEffectInstance extends NativeClass {
     displayAnimation: bool_t;
     @nativeField(bool_t)
     ambient: bool_t;
-    @nativeField(bool_t, 0x1A)
+    @nativeField(bool_t)
     noCounter: bool_t;
     @nativeField(bool_t)
     showParticles: bool_t;

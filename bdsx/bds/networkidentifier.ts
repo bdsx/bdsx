@@ -62,11 +62,11 @@ export class ServerNetworkHandler extends NativeClass {
     @nativeField(int32_t, 0x2D8)
     readonly maxPlayers: int32_t;
 
-    protected _disconnectClient(client:NetworkIdentifier, b:number, message:CxxString, d:number):void {
+    protected _disconnectClient(client:NetworkIdentifier, unknown:number, message:CxxString, skipMessage:boolean):void {
         abstract();
     }
-    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
-        this._disconnectClient(client, 0, message, 0);
+    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
+        this._disconnectClient(client, 0, message, skipMessage);
     }
     /**
      * Alias of allowIncomingConnections

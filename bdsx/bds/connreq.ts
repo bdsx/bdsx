@@ -189,7 +189,7 @@ export class ConnectionRequest extends NativeClass {
         return ptr.json;
     }
     getJsonValue():{
-        AnimatedImageData:unknown[],
+        AnimatedImageData:{AnimationExpression:number, Frames:number, Image:string, ImageHeight:number, ImageWidth:number, Type:number}[],
         ArmSize:string,
         CapeData:string,
         CapeId:string,
@@ -205,9 +205,9 @@ export class ConnectionRequest extends NativeClass {
         GameVersion:string,
         GuiScale:number,
         LanguageCode:string,
-        PersonaPieces:unknown[],
+        PersonaPieces:{IsDefault:boolean, PackId:string, PieceId:string, PieceType:string, ProductId:string}[],
         PersonaSkin:boolean,
-        PieceTintColors:unknown[],
+        PieceTintColors:{Colors:[string, string, string, string], PieceType:string}[],
         PlatformOfflineId:string,
         PlatformOnlineId:string,
         PlayFabId:string,

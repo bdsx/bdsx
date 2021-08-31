@@ -1,3 +1,4 @@
+import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { RakNet } from "./raknet";
@@ -8,4 +9,8 @@ export class RakNetInstance extends NativeClass {
     vftable:VoidPointer;
     @nativeField(RakNet.RakPeer.ref(), 0x1e8)
     peer:RakNet.RakPeer;
+
+    getPort():number {
+        abstract();
+    }
 }

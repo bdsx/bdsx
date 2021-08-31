@@ -191,34 +191,37 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      * @param to call address
      */
-    hookingRaw(key:keyof T, to: VoidPointer|((original:VoidPointer)=>VoidPointer)):VoidPointer {
+    hookingRaw(key:keyof T, to: VoidPointer|((original:VoidPointer)=>VoidPointer), opts?:disasm.Options|null):VoidPointer {
         const origin = this.map[key];
         if (!origin) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
-        const codes = disasm.process(origin, REQUIRE_SIZE);
+        const codes = disasm.process(origin, REQUIRE_SIZE, opts);
+        if (codes.size === 0) throw Error(`Failed to disassemble`);
         const out = new AsmMover(origin, codes.size);
         out.moveCode(codes, key, REQUIRE_SIZE);
         out.end();
         const original = out.alloc(key+' (moved original)');
 
         const unlock = new MemoryUnlocker(origin, codes.size);
-        if (to instanceof Function) to = to(original);
-        hacktool.jump(origin, to, Register.rax, codes.size);
-        unlock.done();
-
+        try {
+            if (to instanceof Function) to = to(original);
+            hacktool.jump(origin, to, Register.rax, codes.size);
+        } finally {
+            unlock.done();
+        }
         return original;
     }
 
     /**
      * @param key target symbol name
      */
-    hookingRawWithOriginal(key:keyof T): (callback: (asm: X64Assembler, original: VoidPointer) => void) => VoidPointer {
+    hookingRawWithOriginal(key:keyof T, opts?:disasm.Options|null): (callback: (asm: X64Assembler, original: VoidPointer) => void) => VoidPointer {
         return callback => this.hookingRaw(key, original=>{
             const data = asm();
             callback(data, original);
             return data.alloc('hook of '+key);
-        });
+        }, opts);
     }
 
     /**
@@ -227,12 +230,13 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      */
     hookingRawWithCallOriginal(key:keyof T, to: VoidPointer,
         keepRegister:Register[],
-        keepFloatRegister:FloatRegister[]):void {
+        keepFloatRegister:FloatRegister[],
+        opts:disasm.Options={}):void {
         const origin = this.map[key];
         if (origin == null) throw Error(`Symbol ${String(key)} not found`);
 
         const REQUIRE_SIZE = 12;
-        const codes = disasm.process(origin, REQUIRE_SIZE);
+        const codes = disasm.process(origin, REQUIRE_SIZE, opts);
         const out = new AsmMover(origin, codes.size);
         for (const reg of keepRegister) {
             out.freeregs.add(reg);
@@ -249,7 +253,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param key target symbol name
      * @param to call address
      */
-    hooking<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+    hooking<OPTS extends (MakeFuncOptions<any>&disasm.Options)|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         key:keyof T,
         returnType:RETURN,
         opts?: OPTS,
@@ -260,7 +264,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
                 const nopts:MakeFuncOptions<any> = opts! || {};
                 nopts.onError = original;
                 return makefunc.np(callback, returnType, nopts as any, ...params);
-            });
+            }, opts);
             return makefunc.js(original, returnType, opts, ...params);
         };
     }

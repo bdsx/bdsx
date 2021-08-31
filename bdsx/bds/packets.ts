@@ -1,11 +1,12 @@
 import { CxxVector } from "../cxxvector";
+import { mce } from "../mce";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
-import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStack } from "./inventory";
+import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
@@ -451,12 +452,33 @@ export class InventoryTransactionPacket extends Packet {
 
 @nativeClass(null)
 export class MobEquipmentPacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID;
+    @nativeField(NetworkItemStackDescriptor)
+    item:NetworkItemStackDescriptor;
+    @nativeField(uint8_t, 0xC1)
+    slot:uint8_t;
+    @nativeField(uint8_t)
+    selectedSlot:uint8_t;
+    @nativeField(uint8_t)
+    containerId:ContainerId;
 }
 
 @nativeClass(null)
 export class MobArmorEquipmentPacket extends Packet {
-    // unknown
+    // I need some tests, I do not know when this packet is sent
+    // @nativeField(NetworkItemStackDescriptor)
+    // head:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor, {ghost: true})
+    // chest:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor)
+    // torso:NetworkItemStackDescriptor; // Found 'torso' instead of 'chest' in IDA
+    // @nativeField(NetworkItemStackDescriptor)
+    // legs:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor)
+    // feet:NetworkItemStackDescriptor;
+    // @nativeField(ActorRuntimeID)
+    // runtimeId:ActorRuntimeID;
 }
 
 @nativeClass(null)
@@ -610,28 +632,28 @@ export class RespawnPacket extends Packet {
 
 @nativeClass(null)
 export class ContainerOpenPacket extends Packet {
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
+    windowId:uint8_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
-    /** @deprecated */
-    @nativeField(uint8_t, 0x30)
-    windowId:uint8_t;
     @nativeField(int8_t)
     type:ContainerType;
     @nativeField(BlockPos)
     pos:BlockPos;
     @nativeField(bin64_t)
     entityUniqueId:bin64_t;
-    @nativeField(int64_as_float_t, 0x30+0x01+0xC)
+    @nativeField(int64_as_float_t, {ghost: true})
     entityUniqueIdAsNumber:int64_as_float_t;
 }
 
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
+    windowId:uint8_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
-    /** @deprecated */
-    @nativeField(uint8_t, 0x30)
-    windowId:uint8_t;
     @nativeField(bool_t)
     server:bool_t;
 }
@@ -642,16 +664,19 @@ export class PlayerHotbarPacket extends Packet {
     selectedSlot:uint32_t;
     @nativeField(bool_t)
     selectHotbarSlot:bool_t;
-    @nativeField(uint8_t)
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
     windowId:uint8_t;
+    @nativeField(uint8_t)
+    containerId:ContainerId;
 }
 
 @nativeClass(null)
 export class InventoryContentPacket extends Packet {
     @nativeField(uint8_t)
     containerId:ContainerId;
-    @nativeField(CxxVector.make(ItemStack), 56)
-    slots:CxxVector<ItemStack>;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor), 56)
+    slots:CxxVector<NetworkItemStackDescriptor>;
 }
 
 @nativeClass(null)
@@ -671,7 +696,16 @@ export class CraftingDataPacket extends Packet {
 
 @nativeClass(null)
 export class CraftingEventPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    containerId:ContainerId;
+    @nativeField(int32_t, 0x34)
+    containerType:ContainerType;
+    @nativeField(mce.UUID)
+    recipeId:mce.UUID;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor))
+    inputItems:CxxVector<NetworkItemStackDescriptor>;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor))
+    outputItems:CxxVector<NetworkItemStackDescriptor>;
 }
 
 @nativeClass(null)

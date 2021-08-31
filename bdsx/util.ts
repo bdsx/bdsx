@@ -199,3 +199,10 @@ export function filterToIdentifierableString(name:string):string {
     name = name.replace(/[^a-zA-Z_$0-9]/g, '');
     return /^[0-9]/.test(name) ? '_'+name : name;
 }
+
+export function printOnProgress(message:string):void {
+    process.stdout.cursorTo(0);
+    process.stdout.write(message);
+    process.stdout.clearLine(1);
+    console.log();
+}
