@@ -79,7 +79,21 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
         out.push(0x20);
     }
     out.pop();
-    return String.fromCharCode(...out);
+
+    const LIMIT = 1024; // it's succeeded with 1024*8 but used a less number for safety
+    let offset = LIMIT;
+    if (out.length <= LIMIT) {
+        return String.fromCharCode(...out);
+    }
+
+    // split for stack space
+    let outstr = '';
+    do {
+        outstr += String.fromCharCode(...out.slice(offset-1024, offset));
+        offset += LIMIT;
+    } while (offset < out.length);
+    outstr += String.fromCharCode(...out.slice(offset-1024));
+    return outstr;
 }
 export function unhex(hex:string):Uint8Array {
     const hexes = hex.split(/[ \t\r\n]+/g);
@@ -243,4 +257,11 @@ export function numberWithFillZero(n:number, width:number, radix?:number):string
 export function filterToIdentifierableString(name:string):string {
     name = name.replace(/[^a-zA-Z_$0-9]/g, '');
     return /^[0-9]/.test(name) ? '_'+name : name;
+}
+
+export function printOnProgress(message:string):void {
+    process.stdout.cursorTo(0);
+    process.stdout.write(message);
+    process.stdout.clearLine(1);
+    console.log();
 }

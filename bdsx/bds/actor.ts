@@ -1,17 +1,18 @@
 import { bin } from "../bin";
+import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, NativeType } from "../nativetype";
+import { bin64_t, CxxString, int32_t, int64_as_float_t, NativeType } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { BlockSource } from "./block";
-import { Vec3 } from "./blockpos";
+import { Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
-import { ArmorSlot, ItemStack } from "./inventory";
+import type { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -204,6 +205,11 @@ export class ActorDefinitionIdentifier extends NativeClass {
 export class ActorDamageSource extends NativeClass{
     @nativeField(int32_t, 0x08)
     cause: int32_t;
+
+    /** @deprecated Has to be confirmed working */
+    getDamagingEntityUniqueID():ActorUniqueID {
+        abstract();
+    }
 }
 
 export enum ActorDamageCause {
@@ -242,16 +248,124 @@ export enum ActorDamageCause {
     All = 0x1F,
 }
 
+export enum ActorFlags {
+    OnFire,
+    Sneaking,
+    Riding,
+    Sprinting,
+    UsingItem,
+    Invisible,
+    Tempted,
+    InLove,
+    Saddled,
+    Powered,
+    Ignit0ed,
+    Baby,
+    Converting,
+    Critical,
+    CanShowName,
+    AlwaysShowName,
+    NoAI,
+    Silent,
+    WallClimbing,
+    CanClimb,
+    CanSwim,
+    CanFly,
+    CanWalk,
+    Resting,
+    Sitting,
+    Angry,
+    Interested,
+    Charged,
+    Tamed,
+    Orphaned,
+    Leashed,
+    Sheared,
+    Gliding,
+    Elder,
+    Moving,
+    Breathing,
+    Chested,
+    Stackable,
+    ShowBottom,
+    Standing,
+    Shaking,
+    Idling,
+    Casting,
+    Charging,
+    WasdControlled,
+    CanPowerJump,
+    Lingering,
+    HasCollision,
+    HasGravity,
+    FireImmune,
+    Dancing,
+    Enchanted,
+    ReturnTrident,
+    ContainerIsPrivate,
+    IsTransforming,
+    DamageNearbyMobs,
+    Swimming,
+    Bribed,
+    IsPregnant,
+    LayingEgg,
+    RiderCanPick,
+    TransitionSitting,
+    Eating,
+    LayingDown,
+    Snezing,
+    Trusting,
+    Rolling,
+    Scared,
+    InScaffolding,
+    OverScaffolding,
+    FallThroughScaffolding,
+    Blocking,
+    TransitionBlocking,
+    BlockedUsingShield,
+    BlockedUsingDamagedShield,
+    Sleeping,
+    WantsToWake,
+    TradeInterest,
+    DoorBreaker,
+    BreakingObstruction,
+    DoorOpener,
+    IsIllagerCaptain,
+    Stunned,
+    Roaring,
+    DelayedAttack,
+    IsAvoidingMobs,
+    FacingTargetToRangeAttack,
+    HiddenWhenInvisible,
+    IsInUI,
+    Stalking,
+    Emoting,
+    Celebrating,
+}
+
 /** @deprecated import it from bdsx/minecraft */
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
 
+    /** @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorDefinitionIdentifier.create(ActorType.Pig), -1, player) */
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID, summoner?:Actor):Actor;
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:int64_as_float_t, summoner?:Actor):Actor;
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+        abstract();
+    }
+
     sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
-
+    protected _getArmorValue():number{
+        abstract();
+    }
+    getArmorValue(): number{
+        if(this.isItem()) return 0;
+        return this._getArmorValue();
+    }
     getDimension():Dimension {
         abstract();
     }
@@ -289,6 +403,9 @@ export class Actor extends NativeClass {
         throw Error(`this is not player`);
     }
     getPosition():Vec3 {
+        abstract();
+    }
+    getRotation():Vec2 {
         abstract();
     }
     getRegion():BlockSource {
@@ -389,13 +506,23 @@ export class Actor extends NativeClass {
     getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
-    setSneaking(bool:boolean):void {
+    setSneaking(value:boolean):void {
         abstract();
     }
     getHealth():number {
         abstract();
     }
     getMaxHealth():number {
+        abstract();
+    }
+    /**
+     * Most of the time it will be reset by ticking
+     * @returns changed
+     */
+    setStatusFlag(flag:ActorFlags, value:boolean):boolean {
+        abstract();
+    }
+    getStatusFlag(flag:ActorFlags):boolean {
         abstract();
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
@@ -419,6 +546,13 @@ export class Actor extends NativeClass {
     }
     private static _singletoning(ptr:StaticPointer|null):Actor|null {
         abstract();
+    }
+    _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
+        return CircularDetector.check(this, allocator, obj=>{
+            obj.name = this.getName();
+            obj.pos = this.getPosition();
+            obj.type = this.getEntityTypeId();
+        });
     }
 }
 

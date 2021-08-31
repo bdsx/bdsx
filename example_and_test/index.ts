@@ -30,3 +30,4 @@ import './lowlevel-nativeclass';
 import './lowlevel-string-and-vector';
 import './lowlevel-asm';
 import './actor-effects';
+// import './permissions';

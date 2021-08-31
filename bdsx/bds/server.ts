@@ -1,14 +1,16 @@
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { NativeClass } from "../nativeclass";
-import { CxxString } from "../nativetype";
+import { events } from "../event";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
 import { DimensionId } from "./actor";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
+import { proc } from "./symbols";
 import minecraft = require('../minecraft');
 
 export class MinecraftEventing extends NativeClass {}
@@ -86,6 +88,29 @@ export class ScriptFramework extends NativeClass {
     vftable:VoidPointer;
 }
 
+@nativeClass(0x70)
+export class SemVersion extends NativeClass {
+    @nativeField(uint16_t)
+    major:uint16_t;
+    @nativeField(uint16_t)
+    minor:uint16_t;
+    @nativeField(uint16_t)
+    patch:uint16_t;
+    @nativeField(CxxString, 0x08)
+    preRelease:CxxString;
+    @nativeField(CxxString)
+    buildMeta:CxxString;
+    @nativeField(CxxString)
+    fullVersionString:CxxString;
+    @nativeField(bool_t)
+    validVersion:bool_t;
+    @nativeField(bool_t)
+    anyVersion:bool_t;
+}
+
+export class BaseGameVersion extends SemVersion {
+}
+
 export class MinecraftServerScriptEngine extends ScriptFramework {
 }
 
@@ -108,8 +133,8 @@ export class ServerInstance extends NativeClass {
     disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
         this._disconnectAllClients(message);
     }
-    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected"):void {
-        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message);
+    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
+        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message, skipMessage);
     }
     getMotd():string {
         return this.minecraft.getServerNetworkHandler().motd;
@@ -127,6 +152,21 @@ export class ServerInstance extends NativeClass {
         for (const player of this.minecraft.getLevel().players.toArray()) {
             player.sendNetworkPacket(this.minecraft.commands.getRegistry().serializeAvailableCommands());
         }
+    }
+    getNetworkProtocolVersion():number {
+        return proc["SharedConstants::NetworkProtocolVersion"].getInt32();
+    }
+    getGameVersion():SemVersion {
+        return proc["SharedConstants::CurrentGameSemVersion"].as(SemVersion);
+    }
+    nextTick():Promise<void> {
+        return new Promise(resolve=>{
+            const listener = (): void => {
+                resolve();
+                events.levelTick.remove(listener);
+            };
+            events.levelTick.on(listener);
+        });
     }
 }
 

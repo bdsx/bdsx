@@ -1,12 +1,14 @@
 import { CxxVector } from "../cxxvector";
+import { mce } from "../mce";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
-import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStack } from "./inventory";
+import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { Packet } from "./packet";
+import type { GameType } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
 /** @deprecated */
@@ -49,29 +51,6 @@ export class DisconnectPacket extends Packet {
     @nativeField(CxxString, 0x38)
     message:CxxString;
 }
-
-// @nativeClass(0x70)
-// export class SemVersion extends NativeClass {
-//     @nativeField(uint16_t)
-//     major:uint16_t;
-//     @nativeField(uint16_t)
-//     minor:uint16_t;
-//     @nativeField(uint16_t)
-//     patch:uint16_t;
-//     @nativeField(CxxString, 0x08)
-//     preRelease:CxxString;
-//     @nativeField(CxxString)
-//     buildMeta:CxxString;
-//     @nativeField(CxxString)
-//     fullVersionString:CxxString;
-//     @nativeField(bool_t)
-//     validVersion:bool_t;
-//     @nativeField(bool_t)
-//     anyVersion:bool_t;
-// }
-
-// export class BaseGameVersion extends SemVersion {
-// }
 
 export enum PackType {
     Invalid,
@@ -507,13 +486,34 @@ export class InventoryTransactionPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class MobEquipmentPacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID;
+    @nativeField(NetworkItemStackDescriptor)
+    item:NetworkItemStackDescriptor;
+    @nativeField(uint8_t, 0xC1)
+    slot:uint8_t;
+    @nativeField(uint8_t)
+    selectedSlot:uint8_t;
+    @nativeField(uint8_t)
+    containerId:ContainerId;
 }
 
 /** @deprecated */
 @nativeClass(null)
 export class MobArmorEquipmentPacket extends Packet {
-    // unknown
+    // I need some tests, I do not know when this packet is sent
+    // @nativeField(NetworkItemStackDescriptor)
+    // head:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor, {ghost: true})
+    // chest:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor)
+    // torso:NetworkItemStackDescriptor; // Found 'torso' instead of 'chest' in IDA
+    // @nativeField(NetworkItemStackDescriptor)
+    // legs:NetworkItemStackDescriptor;
+    // @nativeField(NetworkItemStackDescriptor)
+    // feet:NetworkItemStackDescriptor;
+    // @nativeField(ActorRuntimeID)
+    // runtimeId:ActorRuntimeID;
 }
 
 /** @deprecated */
@@ -685,29 +685,29 @@ export class RespawnPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class ContainerOpenPacket extends Packet {
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
+    windowId:uint8_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
-    /** @deprecated */
-    @nativeField(uint8_t, 0x30)
-    windowId:uint8_t;
     @nativeField(int8_t)
     type:ContainerType;
     @nativeField(BlockPos)
     pos:BlockPos;
     @nativeField(bin64_t)
     entityUniqueId:bin64_t;
-    @nativeField(int64_as_float_t, 0x30+0x01+0xC)
+    @nativeField(int64_as_float_t, {ghost: true})
     entityUniqueIdAsNumber:int64_as_float_t;
 }
 
 /** @deprecated */
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
+    windowId:uint8_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
-    /** @deprecated */
-    @nativeField(uint8_t, 0x30)
-    windowId:uint8_t;
     @nativeField(bool_t)
     server:bool_t;
 }
@@ -719,8 +719,11 @@ export class PlayerHotbarPacket extends Packet {
     selectedSlot:uint32_t;
     @nativeField(bool_t)
     selectHotbarSlot:bool_t;
-    @nativeField(uint8_t)
+    /** @deprecated */
+    @nativeField(uint8_t, {ghost: true})
     windowId:uint8_t;
+    @nativeField(uint8_t)
+    containerId:ContainerId;
 }
 
 /** @deprecated */
@@ -728,8 +731,8 @@ export class PlayerHotbarPacket extends Packet {
 export class InventoryContentPacket extends Packet {
     @nativeField(uint8_t)
     containerId:ContainerId;
-    @nativeField(CxxVector.make(ItemStack), 56)
-    slots:CxxVector<ItemStack>;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor), 56)
+    slots:CxxVector<NetworkItemStackDescriptor>;
 }
 
 /** @deprecated */
@@ -753,7 +756,16 @@ export class CraftingDataPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class CraftingEventPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    containerId:ContainerId;
+    @nativeField(int32_t, 0x34)
+    containerType:ContainerType;
+    @nativeField(mce.UUID)
+    recipeId:mce.UUID;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor))
+    inputItems:CxxVector<NetworkItemStackDescriptor>;
+    @nativeField(CxxVector.make(NetworkItemStackDescriptor))
+    outputItems:CxxVector<NetworkItemStackDescriptor>;
 }
 
 /** @deprecated */
@@ -800,13 +812,15 @@ export class LevelChunkPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class SetCommandsEnabledPacket extends Packet {
-    // unknown
+    @nativeField(bool_t)
+    commandsEnabled:bool_t;
 }
 
 /** @deprecated */
 @nativeClass(null)
 export class SetDifficultyPacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    difficulty:uint32_t;
 }
 
 /** @deprecated */
@@ -827,7 +841,8 @@ export class ChangeDimensionPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class SetPlayerGameTypePacket extends Packet {
-    // unknown
+    @nativeField(int32_t)
+    playerGameType:GameType;
 }
 
 /** @deprecated */
@@ -839,7 +854,8 @@ export class PlayerListPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class SimpleEventPacket extends Packet {
-    // unknown
+    @nativeField(uint16_t)
+    subtype:uint16_t;
 }
 
 /** @deprecated */
@@ -903,10 +919,10 @@ export class CameraPacket extends Packet {
 @nativeClass(null)
 export class BossEventPacket extends Packet {
     /** @deprecated */
-    @nativeField(bin64_t)
+    @nativeField(bin64_t, {ghost: true})
     unknown:bin64_t;
     /** Always 1 */
-    @nativeField(int32_t, 0x30)
+    @nativeField(int32_t)
     flagDarken:int32_t;
     /** Always 2 */
     @nativeField(int32_t)
@@ -950,7 +966,7 @@ export namespace BossEventPacket {
         Green,
         Yellow,
         Purple,
-        White
+        White,
     }
 
     export enum Overlay {
@@ -1179,17 +1195,15 @@ export class SetLastHurtByPacket extends Packet {
 /** @deprecated */
 @nativeClass(null)
 export class BookEditPacket extends Packet {
-    // it seems fields have weird empty spaces.
-    // I'm not sure how it implemented actually.
     @nativeField(uint8_t)
     type:uint8_t;
-    @nativeField(uint8_t, 0x34)
-    inventorySlot:uint8_t;
-    @nativeField(uint8_t, 0x38)
-    pageNumber:uint8_t;
-    @nativeField(uint8_t, 0x3c)
-    secondaryPageNumber:uint8_t;
-    @nativeField(CxxString, 0x40)
+    @nativeField(int32_t, 0x34) // It is int32 but is uint8 after serialization
+    inventorySlot:int32_t;
+    @nativeField(int32_t) // It is int32 but is uint8 after serialization
+    pageNumber:int32_t;
+    @nativeField(int32_t)
+    secondaryPageNumber:int32_t; // It is int32 but is uint8 after serialization
+    @nativeField(CxxString)
     text:CxxString;
     @nativeField(CxxString)
     author:CxxString;

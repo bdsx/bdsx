@@ -77,10 +77,10 @@ export type TypedArrayBuffer = Uint8Array | Uint16Array | Uint32Array |
 export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 
 export type AnyFunction = (this:any, ...args:any[])=>any;
+
 export type NonNullableFields<T extends any[]> = {[key in keyof T]:NonNullable<T[key]>};
 export type NonNullableParameters<THIS, T> = T extends (...args:infer ARGS)=>infer RET ?
     (this:THIS, ...args:NonNullableFields<ARGS>)=>RET : never;
-
 
 export function emptyFunc():void{
 	// empty

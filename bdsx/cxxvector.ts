@@ -1,3 +1,4 @@
+import { msAlloc } from "./msalloc";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
@@ -12,7 +13,6 @@ export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>>
     new(address?:VoidPointer|boolean):CxxVector<T>;
     componentType:Type<any>;
 }
-
 
 const VECTOR_SIZE = 0x18;
 
@@ -43,18 +43,19 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         const begin = this.getPointer(0);
         const ptr = begin.add();
         const end = this.getPointer(8);
+        const capBytes = this.getPointer(16).subptr(begin);
         const compsize = this.componentType[NativeType.size];
         let idx = 0;
         while (!ptr.equals(end)) {
             this._dtor(ptr, idx++);
             ptr.move(compsize);
         }
-        dll.ucrtbase.free(begin);
+        msAlloc.deallocate(begin, capBytes);
         this._resizeCache(0);
     }
     [NativeType.ctor_copy](from:CxxVector<T>):void {
         const fromSizeBytes = from.sizeBytes();
-        const ptr = dll.ucrtbase.malloc(fromSizeBytes);
+        const ptr = msAlloc.allocate(fromSizeBytes);
         const compsize = this.componentType[NativeType.size];
         const size = getSize(fromSizeBytes, compsize);
         const srcptr = from.getPointer(0);
@@ -86,13 +87,13 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     private _resize(newSizeBytes:number, oldCapBytes:number, oldptr:NativePointer, oldSizeBytes:number):void {
         const newcapBytes = Math.max(newSizeBytes, oldCapBytes*2);
         const compsize = this.componentType[NativeType.size];
-        const allocated = dll.ucrtbase.malloc(newcapBytes);
+        const allocated = msAlloc.allocate(newcapBytes);
         this.setPointer(allocated, 0);
 
         const oldSize = getSize(oldSizeBytes, compsize);
         const newSize = getSize(newSizeBytes, compsize);
         this._move_alloc(allocated, oldptr, Math.min(oldSize, newSize));
-        dll.ucrtbase.free(oldptr);
+        msAlloc.deallocate(oldptr, oldCapBytes);
         for (let i=oldSize;i<newSize;i++) {
             this._ctor(allocated, i);
             allocated.move(compsize);
@@ -439,7 +440,11 @@ class CxxVectorToArrayImpl<T> extends NativeType<T[]> {
                 stackptr.setPointer(buf, offset);
             },
             ptr=>dll.vcruntime140.memset(ptr, 0, VECTOR_SIZE),
-            ptr=>dll.ucrtbase.free(ptr),
+            ptr=>{
+                const beg = ptr.getPointer(0);
+                const cap = ptr.getPointer(16);
+                msAlloc.deallocate(beg, cap.subptr(beg));
+            },
             (to, from)=>to.as(this.type)[NativeType.ctor_copy](from.as(this.type)),
             (to, from)=>{
                 dll.vcruntime140.memcpy(to, from, VECTOR_SIZE);

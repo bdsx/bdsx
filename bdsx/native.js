@@ -9,7 +9,6 @@ const core = require("./core");
 const { Actor } = require("./bds/actor");
 const { NetworkIdentifier } = require("./bds/networkidentifier");
 const { capi } = require("./capi");
-const { CxxVector } = require("./cxxvector");
 const { NativeModule } = require("./dll");
 const { legacy, SharedPointer } = require("./legacy");
 const { nethook } = require("./nethook");
@@ -47,7 +46,7 @@ exports.NativePointer = core.NativePointer;
 exports.Actor = Actor;
 exports.SharedPointer = SharedPointer;
 exports.NativeModule = NativeModule;
-exports.std$_Allocate$16 = CxxVector._alloc16;
+exports.std$_Allocate$16 = capi.malloc;
 exports.malloc = capi.malloc;
 exports.free = capi.free;
 function loadPdb() {

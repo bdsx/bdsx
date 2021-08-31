@@ -1,10 +1,10 @@
 
 import { ConcurrencyQueue } from './concurrency';
+import { fsutil } from './fsutil';
 import { remapAndPrintError } from './source-map-support';
 import path = require('path');
 import colors = require('colors');
 import child_process = require('child_process');
-import { fsutil } from './fsutil';
 
 const PLUGINS_BDSX_PATH = 'file:../bdsx';
 
@@ -43,6 +43,7 @@ class PromCounter {
 const BDSX_SCOPE = '@bdsx/';
 
 export const loadedPlugins: string[] = [];
+export const loadedPackages: {name:string, loaded:boolean, jsonpath:string|null, json:any|null}[] = [];
 
 export async function loadAllPlugins():Promise<void> {
 
@@ -258,9 +259,10 @@ export async function loadAllPlugins():Promise<void> {
             let index = 0;
             for (const pkg of PackageJson.all.values()) {
                 try {
-                    loadedPlugins.push(pkg.name);
                     console.log(colors.green(`[BDSX-Plugins] Loading ${pkg.name} (${++index}/${pluginCount})`));
                     require(pkg.name);
+                    loadedPlugins.push(pkg.name);
+                    loadedPackages.push({name:pkg.name, loaded:(pkg as any).loaded, jsonpath:(pkg as any).jsonpath, json:(pkg as any).json});
                 } catch (err) {
                     console.error(colors.red(`[BDSX-Plugins] Failed to load ${pkg.name}`));
                     remapAndPrintError(err);

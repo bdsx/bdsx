@@ -2,9 +2,10 @@ import { asmcode } from "./asm/asmcode";
 import { asm, Register, X64Assembler } from "./assembler";
 import { proc2 } from "./bds/symbols";
 import "./codealloc";
-import { abstract, Bufferable, Encoding } from "./common";
-import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, PrivatePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer, VoidPointerConstructor } from "./core";
+import { abstract, Bufferable, emptyFunc, Encoding } from "./common";
+import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer, VoidPointerConstructor } from "./core";
 import { dllraw } from "./dllraw";
+import { FunctionGen } from "./functiongen";
 import { isBaseOf } from "./util";
 import util = require('util');
 
@@ -12,8 +13,8 @@ export type ParamType = makefunc.Paramable;
 
 const functionMap = new AllocatedPointer(0x100);
 chakraUtil.JsAddRef(functionMap);
-const callNativeFunction:<T>(stackSize:number, writer:(stackptr:NativePointer, param:T)=>void, nativefunc:VoidPointer, param:T)=>NativePointer = chakraUtil.JsCreateFunction(asmcode.callNativeFunction, null);
-const breakBeforeCallNativeFunction:<T>(stackSize:number, writer:(stackptr:NativePointer, param:T)=>void, nativefunc:VoidPointer, param:T)=>NativePointer = chakraUtil.JsCreateFunction(asmcode.breakBeforeCallNativeFunction, null);
+const callNativeFunction:(stackSize:number, writer:(stackptr:NativePointer)=>void, nativefunc:VoidPointer)=>NativePointer = chakraUtil.JsCreateFunction(asmcode.callNativeFunction, null);
+const breakBeforeCallNativeFunction:(stackSize:number, writer:(stackptr:NativePointer)=>void, nativefunc:VoidPointer)=>NativePointer = chakraUtil.JsCreateFunction(asmcode.breakBeforeCallNativeFunction, null);
 const callJsFunction = asmcode.callJsFunction;
 
 function initFunctionMap():void {
@@ -97,6 +98,10 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * Option for native debugging
      */
     nativeDebugBreak?:boolean;
+    /**
+     * Option for JS debugging
+     */
+    jsDebugBreak?:boolean;
 
     /**
      * for makefunc.np
@@ -135,6 +140,10 @@ export interface TypeIn<T> extends makefunc.Paramable {
     prototype:T;
 }
 
+function invalidParameterError(paramName:string, expected:string, actual:unknown):never {
+    throw TypeError(`unexpected parameter type (${paramName}, expected=${expected}, actual=${actual != null ? (actual as any).constructor.name : actual})`);
+}
+
 export namespace makefunc {
     export const temporalKeeper:any[] = [];
     export const temporalDtors:(()=>void)[] = [];
@@ -144,8 +153,10 @@ export namespace makefunc {
     export const setToParam = Symbol('makefunc.writeToParam');
     export const getFromParam = Symbol('makefunc.readFromParam');
     export const useXmmRegister = Symbol('makefunc.returnWithXmm0');
+    export const dtor = Symbol('makefunc.dtor');
     export const ctor_move = Symbol('makefunc.ctor_move');
     export const size = Symbol('makefunc.size');
+    export const registerDirect = Symbol('makefunc.registerDirect');
 
     export interface Paramable {
         name:string;
@@ -154,8 +165,10 @@ export namespace makefunc {
         [getFromParam](stackptr:StaticPointer, offset?:number):any;
         [setToParam](stackptr:StaticPointer, param:any, offset?:number):void;
         [useXmmRegister]:boolean;
-        [ctor_move]:(to:StaticPointer, from:StaticPointer)=>void;
+        [ctor_move](to:StaticPointer, from:StaticPointer):void;
+        [dtor](ptr:StaticPointer):void;
         [size]:number;
+        [registerDirect]?:boolean;
         isTypeOf(v:unknown):boolean;
         /**
          * allow downcasting
@@ -218,14 +231,17 @@ export namespace makefunc {
         return ptr;
     }
 
-    export function npRaw(func:(stackptr:NativePointer)=>void, onError:VoidPointer):VoidPointer {
+    export function npRaw(func:(stackptr:NativePointer)=>void, onError:VoidPointer, opts?:{name?:string, jsDebugBreak?:boolean}|null):VoidPointer {
         chakraUtil.JsAddRef(func);
-        return asm()
+        const code = asm();
+        if (opts == null) opts = {};
+        if (opts.jsDebugBreak) code.debugBreak();
+        return code
         .mov_r_c(Register.r10, chakraUtil.asJsValueRef(func))
         .mov_r_c(Register.r11, onError)
         .jmp64(callJsFunction, Register.rax)
         .unwind()
-        .alloc('makefunc.npRaw');
+        .alloc(opts.name || 'makefunc.npRaw');
     }
 
     /**
@@ -237,83 +253,88 @@ export namespace makefunc {
     export function np<RETURN extends ParamType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
         jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
         returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer {
-        if (typeof jsfunction !== 'function') throw TypeError(`arg1, expected=function, actual=${jsfunction}`);
+        if (typeof jsfunction !== 'function') invalidParameterError('arg1', 'function', jsfunction);
 
-        const options:MakeFuncOptions<any> = opts || {};
+        const options:MakeFuncOptions<any> = opts! || {};
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
         const result = returnTypeResolved[makefunc.useXmmRegister] ? asmcode.addressof_xmm0Value : asmcode.addressof_raxValue;
 
-        let call2:(thisVar:any, args:any[])=>any;
+        const gen = new FunctionGen;
+        if (options.jsDebugBreak) gen.writeln('debugger;');
+
+        gen.import('temporalKeeper', temporalKeeper);
+        gen.import('temporalDtors', temporalDtors);
+        gen.writeln('const keepIdx=temporalKeeper.length;');
+        gen.writeln('const dtorIdx=temporalDtors.length;');
+
+        gen.import('getter', getter);
+        gen.import('getFromParam', getFromParam);
+        let offset = 0;
+        function param(varname:string, type:Paramable):void {
+            args.push(varname);
+            gen.import(`${varname}_t`, type);
+            if (offset >= 0x20) { // args memory space
+                if (type[registerDirect]) {
+                    gen.writeln(`const ${varname}=${varname}_t[getter](stackptr, ${offset+0x58});`);
+                } else {
+                    gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset+0x58});`);
+                }
+            } else { // args register space
+                if (type[registerDirect]) {
+                    gen.writeln(`const ${varname}=${varname}_t[getter](stackptr, ${offset});`);
+                } else if (type[useXmmRegister]) {
+                    gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset+0x20});`);
+                } else {
+                    gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset});`);
+                }
+            }
+            offset += 8;
+        }
 
         if (options.structureReturn) {
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
-                paramsTypeResolved.unshift(returnTypeResolved);
-                call2 = function _(thisVar, args) {
-                    const returned = args.shift();
-                    const res = jsfunction.apply(thisVar, args);
-                    returnTypeResolved[ctor_move](returned, res);
-                    returnTypeResolved[setToParam](result, returned);
-                };
+                param(`retVar`, returnTypeResolved);
             } else {
-                paramsTypeResolved.unshift(StaticPointer);
-                call2 = function _(thisVar, args) {
-                    const returned = args.shift();
-                    const res = jsfunction.apply(thisVar, args);
-                    returnTypeResolved[ctor_move](returned, res);
-                    result.setPointer(returned);
-                };
+                param(`retVar`, StaticPointer);
+            }
+        }
+
+        const args:string[] = [];
+        if (options.this != null) {
+            param(`thisVar`, options.this);
+        } else {
+            args.push('null');
+        }
+        for (let i=0;i<paramsTypeResolved.length;i++) {
+            const type = paramsTypeResolved[i];
+            param(`arg${i}`, type);
+        }
+
+        gen.import('jsfunction', jsfunction);
+        gen.import('result', result);
+        gen.import('returnTypeResolved', returnTypeResolved);
+        gen.import('setToParam', setToParam);
+        gen.import('ctor_move', ctor_move);
+        if (options.structureReturn) {
+            gen.writeln(`const res=jsfunction.call(${args.join(',')});`);
+            gen.writeln('returnTypeResolved[ctor_move](retVar, res);');
+            if (isBaseOf(returnTypeResolved, StructurePointer)) {
+                gen.writeln('returnTypeResolved[setToParam](result, retVar);');
+            } else {
+                gen.writeln('result.setPointer(retVar);');
             }
         } else {
-            call2 = function _(thisVar, args) {
-                const res = jsfunction.apply(thisVar, args);
-                returnTypeResolved[setToParam](result, res);
-            };
+            gen.writeln(`const res=jsfunction.call(${args.join(',')});`);
+            gen.writeln('returnTypeResolved[setToParam](result, res);');
         }
-        if (options.this != null) {
-            paramsTypeResolved.unshift(options.this);
-        }
+        gen.writeln('for (let i=temporalDtors.length-1; i>=dtorIdx; i--) {');
+        gen.writeln('    temporalDtors[i]();');
+        gen.writeln('}');
+        gen.writeln('temporalDtors.length = dtorIdx;');
+        gen.writeln('temporalKeeper.length = keepIdx;');
 
-        function _(stackptr:NativePointer):void{
-            const keepIdx = temporalKeeper.length;
-            const dtorIdx = temporalDtors.length;
-
-            const n = paramsTypeResolved.length;
-            const args:any[] = new Array(n);
-            let offset = 0;
-            const regn = Math.min(4, n);
-             // args fake space for registers
-            for (let i=0;i<regn;i++) {
-                const type = paramsTypeResolved[i];
-                if (type[useXmmRegister]) {
-                    offset += 0x20;
-                    args[i] = type[getFromParam](stackptr, offset);
-                    offset -= 0x18;
-                } else {
-                    args[i] = type[getFromParam](stackptr, offset);
-                    offset += 8;
-                }
-            }
-            if (n > 4) {
-                // args memory space
-                offset += 0x58;
-                for (let i=4;i<n;i++) {
-                    const type = paramsTypeResolved[i];
-                    args[i] = type[getFromParam](stackptr, offset);
-                    offset += 8;
-                }
-            }
-
-            const thisVar = options.this != null ? args.shift() : null;
-            call2(thisVar, args);
-
-            for (let i = temporalDtors.length-1; i>= dtorIdx; i--) {
-                temporalDtors[i]();
-            }
-            temporalDtors.length = dtorIdx;
-            temporalKeeper.length = keepIdx;
-        }
-        return npRaw(_, options.onError || asmcode.jsend_crash);
+        return npRaw(gen.generate('stackptr'), options.onError || asmcode.jsend_crash, opts);
     }
 
     /**
@@ -329,46 +350,9 @@ export namespace makefunc {
         ...params: PARAMS):
         FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> {
 
-        const options:MakeFuncOptions<any> = opts || {};
+        const options:MakeFuncOptions<any> = opts! || {};
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
-        let paramOffset = 1;
-
-        const call3 = options.nativeDebugBreak ? breakBeforeCallNativeFunction : callNativeFunction;
-        let call2:(func:VoidPointer, thisVar:any, args:any[])=>any;
-
-        if (options.structureReturn) {
-            paramOffset --;
-            if (isBaseOf(returnTypeResolved, StructurePointer)) {
-                paramsTypeResolved.unshift(returnTypeResolved);
-                call2 = function _(func, thisVar, args) {
-                    const res = new (returnTypeResolved as any)(true);
-                    args.unshift(res);
-                    if (options.this != null) args.unshift(thisVar);
-                    call3(stackSize, stackWriter, func, args);
-                    return res;
-                };
-            } else {
-                paramsTypeResolved.unshift(VoidPointer);
-                call2 = function _(func, thisVar, args) {
-                    const res = new AllocatedPointer(returnTypeResolved[makefunc.size]);
-                    args.unshift(res);
-                    if (options.this != null) args.unshift(thisVar);
-                    call3(stackSize, stackWriter, func, args);
-                    return returnTypeResolved[getter](res);
-                };
-            }
-        } else {
-            paramOffset --;
-            call2 = function _(func, thisVar, args) {
-                if (options.this != null) args.unshift(thisVar);
-                call3(stackSize, stackWriter, func, args);
-                return returnTypeResolved[getFromParam](result);
-            };
-        }
-        if (options.this != null) {
-            paramsTypeResolved.unshift(options.this);
-        }
 
         let countOnCpp = params.length;
         if (options.this != null) countOnCpp++;
@@ -379,51 +363,125 @@ export namespace makefunc {
         stackSize += 0x8;
         stackSize = ((stackSize + 0xf) & ~0xf);
 
-        const result = returnTypeResolved[makefunc.useXmmRegister] ? asmcode.addressof_xmm0Value : asmcode.addressof_raxValue;
+        const ncall = options.nativeDebugBreak ? breakBeforeCallNativeFunction : callNativeFunction;
 
-        const stackWriter = function _(stackptr:NativePointer, args:any[]):void {
-            const n = paramsTypeResolved.length;
-            let offset = 0;
-            for (let i=0;i<n;i++) {
-                const type = paramsTypeResolved[i];
-                const value = args[i];
-                if (!type.isTypeOfWeak(value)) throw TypeError(`unexpected parameter type (parameter ${i+paramOffset}, expected=${type.name}, actual=${value != null ? value.constructor.name : value})`);
-                type[setToParam](stackptr, value, offset);
-                offset += 8;
-            }
-        };
+        const gen = new FunctionGen;
 
-        const call = function _(func:VoidPointer, thisVar:any, args:any[]):any {
-            const keepIdx = temporalKeeper.length;
-            const dtorIdx = temporalDtors.length;
-
-            const res = call2(func, thisVar, args);
-
-            for (let i = temporalDtors.length-1; i>= dtorIdx; i--) {
-                temporalDtors[i]();
-            }
-            temporalDtors.length = dtorIdx;
-            temporalKeeper.length = keepIdx;
-            return res;
-        };
-
-        let funcout:any;
+        if (options.jsDebugBreak) gen.writeln('debugger;');
         if (functionPointer instanceof Array) {
+            // virtual function
             const vfoff = functionPointer[0];
             const thisoff = functionPointer[1] || 0;
-
-            // virtual function
-            funcout = function _(this:PrivatePointer, ...args:any[]):any {
-                const vftable = this.getPointer(thisoff);
-                const func = vftable.getPointer(vfoff);
-                return call(func, this, args);
-            };
+            gen.writeln(`const vftable=this.getPointer(${thisoff});`);
+            gen.writeln(`const func=vftable.getPointer(${vfoff});`);
         } else {
             if (!(functionPointer instanceof VoidPointer)) throw TypeError(`arg1, expected=*Pointer, actual=${functionPointer}`);
-            funcout = function _(this:any, ...args:any[]):any{
-                return call(functionPointer, this, args);
-            };
+            gen.import('func', functionPointer);
         }
+
+        const returnTypeIsClass = isBaseOf(returnTypeResolved, StructurePointer);
+
+        const paramPairs:[string, Paramable][] = [];
+        if (options.this != null) {
+            paramPairs.push(['this', options.this]);
+        }
+        if (options.structureReturn) {
+            if (returnTypeIsClass) {
+                paramPairs.push([`retVar`, returnTypeResolved]);
+            } else {
+                paramPairs.push([`retVar`, VoidPointer]);
+            }
+        }
+
+        gen.import('invalidParameterError', invalidParameterError);
+        gen.import('setToParam', setToParam);
+        gen.import('setter', setter);
+
+        gen.import('temporalKeeper', temporalKeeper);
+        gen.import('temporalDtors', temporalDtors);
+
+        for (let i=0;i<paramsTypeResolved.length;i++) {
+            const varname = `arg${i}`;
+            const type = paramsTypeResolved[i];
+            paramPairs.push([varname, type]);
+            gen.writeln(`if (!${varname}_t.isTypeOfWeak(${varname})) invalidParameterError("${varname}", "${type.name}", ${varname});`);
+        }
+
+        gen.writeln('const keepIdx=temporalKeeper.length;');
+        gen.writeln('const dtorIdx=temporalDtors.length;');
+
+        function writeNcall():void {
+            gen.writeln('ncall(stackSize, stackptr=>{');
+            let offset = 0;
+            for (const [varname, type] of paramPairs) {
+                gen.import(`${varname}_t`, type);
+                if (type[registerDirect]) {
+                    gen.writeln(`    ${varname}_t[setter](stackptr, ${varname}, ${offset});`);
+                } else {
+                    gen.writeln(`    ${varname}_t[setToParam](stackptr, ${varname}, ${offset});`);
+                }
+                offset += 8;
+            }
+            gen.writeln('}, func);');
+        }
+
+        let returnVar = 'out';
+        gen.import('stackSize', stackSize);
+        gen.import('ncall', ncall);
+        if (options.structureReturn) {
+            gen.import('returnTypeResolved', returnTypeResolved);
+            if (returnTypeIsClass) {
+                gen.writeln('const retVar=new returnTypeResolved(true);');
+                returnVar = 'retVar';
+                writeNcall();
+            } else {
+                gen.import('getter', getter);
+                gen.import('AllocatedPointer', AllocatedPointer);
+                gen.import('returnTypeDtor', returnTypeResolved[dtor]);
+                gen.import('sizeSymbol', size);
+                gen.writeln('const retVar = new AllocatedPointer(returnTypeResolved[sizeSymbol]);');
+                writeNcall();
+                const getterFunc = returnTypeResolved[getter];
+                if (getterFunc !== emptyFunc) {
+                    gen.writeln('const out=returnTypeResolved[getter](retVar);');
+                } else {
+                    returnVar = '';
+                }
+                gen.writeln('returnTypeDtor(retVar);');
+            }
+        } else {
+            const result = returnTypeResolved[makefunc.useXmmRegister] ? asmcode.addressof_xmm0Value : asmcode.addressof_raxValue;
+            gen.import('result', result);
+            gen.import('returnTypeResolved', returnTypeResolved);
+            gen.import('getFromParam', getFromParam);
+            writeNcall();
+
+            if (returnTypeIsClass && returnTypeResolved[registerDirect]) {
+                gen.import('sizeSymbol', size);
+                gen.writeln('const out=new returnTypeResolved(true);');
+                gen.writeln(`out.copyFrom(result, returnTypeResolved[sizeSymbol]);`);
+            } else {
+                const getterFunc = returnTypeResolved[getFromParam];
+                if (getterFunc !== emptyFunc) {
+                    gen.writeln('const out=returnTypeResolved[getFromParam](result);');
+                } else {
+                    returnVar = '';
+                }
+            }
+        }
+
+        gen.writeln('for (let i = temporalDtors.length-1; i>= dtorIdx; i--) {');
+        gen.writeln('    temporalDtors[i]();');
+        gen.writeln('}');
+        gen.writeln('temporalDtors.length = dtorIdx;');
+        gen.writeln('temporalKeeper.length = keepIdx;');
+        if (returnVar !== '') gen.writeln(`return ${returnVar};`);
+
+        const args:string[] = [];
+        for (let i=0;i<paramsTypeResolved.length;i++) {
+            args.push('arg'+i);
+        }
+        const funcout = gen.generate(...args) as any;
         funcout.pointer = functionPointer;
         return funcout;
     }

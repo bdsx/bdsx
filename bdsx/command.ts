@@ -98,11 +98,11 @@ export class CustomCommandFactory {
                 optional = type[1];
                 type = type[0];
             }
-            if (name in fields) throw Error(`${name}: field name dupplicated`);
+            if (name in fields) throw Error(`${name}: field name duplicated`);
             fields[name] = type;
             if (optional) {
                 const optkey = name+'__set';
-                if (optkey in fields) throw Error(`${optkey}: field name dupplicated`);
+                if (optkey in fields) throw Error(`${optkey}: field name duplicated`);
                 fields[optkey] = bool_t;
                 paramNames.push([name as keyof CustomCommandImpl, optkey as keyof CustomCommandImpl]);
             } else {
@@ -136,9 +136,9 @@ export namespace command {
     export function register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
-        flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NoCheat,
+        flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NotCheat,
         flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag._Unknown):CustomCommandFactory {
-        const registry = serverInstance.minecraft.commands.getRegistry();
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);
         registry.registerCommand(name, description, perm, flags1, flags2);

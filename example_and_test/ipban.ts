@@ -35,7 +35,7 @@ async function save():Promise<void> {
     saving = new Promise(resolve=>{
         resolver = resolve;
     });
-    const all = ipfilter.entires();
+    const all = ipfilter.entries();
     await fs.writeFile('../ipban.json', JSON.stringify(all)); // save to the json file
     saving = null;
     resolver!();
@@ -47,7 +47,7 @@ export function banIp(ni:NetworkIdentifier):void {
     save(); // ipfilter does not keep it permanently. need to store it somewhere.
 }
 
-// if the traffic is larger than 1 KiB, it blocks the user until 1 hour
+// if the traffic is larger than 1 MiB, it blocks the user until 1 hour
 ipfilter.setTrafficLimit(1024*1024*1024); // 1 MiB
 ipfilter.setTrafficLimitPeriod(60*60); // 1 Hour
 

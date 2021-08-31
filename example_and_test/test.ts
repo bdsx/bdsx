@@ -30,6 +30,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
+import { RelativeFloat } from "bdsx/bds/blockpos";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -105,6 +106,18 @@ Tester.test({
         assert('0f 90 c0 0f 90 c1 0f 91 c0 0f 91 c1 0f 91 00', 'seto al;seto cl;setno al;setno cl;setno byte ptr [rax]');
         assert('ff 81 c0 07 00 00 48 ff c0 48 ff 00 48 ff 08 48 ff c0 ff 18 ff 10 ff 28 ff e0',
             'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
+        assert('41 b0 01 ba 38 00 00 00 48 89 CB e8 aa 6c fb ff',
+            'mov r8b, 0x1;mov edx, 0x38;mov rbx, rcx;call -0x49356');
+        this.assert(disasm.check('82', true).size === 0, 'asm bad');
+        const opers = disasm.check('82', {
+            fallback(asm){
+                if (asm.readUint8() === 0x82) {
+                    return 1; // opcode size
+                } else {
+                    return null; // failed
+                }
+            }, quiet: true});
+        this.assert(opers.size === 1, 'fallback');
     },
 
     bin() {
@@ -274,6 +287,10 @@ Tester.test({
 
         const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVectorToArray);
         this.equals(array_to_array(['a','b','c','d']).join(','), 'a,b,c,d', 'CxxVectorToArray, array_to_array');
+
+        const rfloat_to_bin = asm().mov_r_r(Register.rax, Register.rcx).make(bin64_t, null, RelativeFloat);
+        const value = RelativeFloat.create(123, true);
+        this.equals(rfloat_to_bin(value), value.bin_value, 'rfloat_to_bin');
     },
 
     vectorcopy() {
@@ -516,7 +533,9 @@ Tester.test({
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 this.assert(size > 0, `packet size is too little`);
-                this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                if (chatCancelCounter === 0) {
+                    this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                }
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             }, 0));

@@ -15,7 +15,7 @@ declare module "../minecraft" {
 RelativeFloat.define({
     value:float32_t,
     is_relative:bool_t,
-    bin_value:bin64_t,
+    bin_value:[bin64_t, 0],
 });
 
 RelativeFloat.create = function(value:number, is_relative:boolean):RelativeFloat {

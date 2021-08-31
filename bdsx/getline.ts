@@ -19,10 +19,12 @@ if (string_ctor == null || string_dtor == null) {
     throw Error('cannot find the constructor and the destructor of std::string');
 }
 
+let inputEncoding = Encoding.Ansi;
+
 asmcode.std_cin = dll.msvcp140.std_cin;
 asmcode.getLineProcessTask = makefunc.np((asyncTask:StaticPointer)=>{
     const str = asyncTask.addAs(CxxStringWrapper, uv_async.sizeOfTask);
-    const value = str.valueAs(Encoding.Ansi);
+    const value = str.valueAs(inputEncoding) as string;
     str[NativeType.dtor]();
     const cb:GetLineCallback = asyncTask.getJsValueRef(uv_async.sizeOfTask+string_size);
     cb(value);
@@ -43,6 +45,11 @@ export class GetLine {
         uv_async.open();
         const [handle] = capi.createThread(asmcode.getline, makefunc.asJsValueRef(this.online));
         this.thread = handle;
+    }
+
+    static setEncoding(encoding:Encoding):void {
+        if (encoding < Encoding.Utf8) throw TypeError(`${Encoding[encoding]} is not supported for GetLine.setEncoding`);
+        inputEncoding = encoding;
     }
 
     close():void {

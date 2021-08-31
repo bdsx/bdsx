@@ -11,7 +11,7 @@ import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Ty
 import { SharedPtr } from "../sharedpointer";
 import { templateName } from "../templatename";
 import { Actor } from "./actor";
-import { RelativeFloat } from "./blockpos";
+import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
 import { AvailableCommandsPacket } from "./packets";
@@ -24,12 +24,38 @@ export enum CommandPermissionLevel {
 	Host,
 	Automation,
 	Admin,
+    Internal,
 }
 
 export enum CommandCheatFlag {
     Cheat,
+    NotCheat = 0x40,
+    /** @deprecated */
     NoCheat = 0x40,
     None = 0,
+}
+
+export enum CommandExecuteFlag {
+    Allowed,
+    Disallowed = 0x10,
+}
+
+export enum CommandSyncFlag {
+    Synced,
+    Local = 8,
+}
+
+export enum CommandTypeFlag {
+    None,
+    Message = 0x20,
+}
+
+export enum CommandUsageFlag {
+    Normal,
+    Test,
+    /** @deprecated Use CommandVisibilityFlag */
+    Hidden,
+    _Unknown=0x80
 }
 
 /** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
@@ -42,16 +68,8 @@ export enum CommandVisibilityFlag {
     Hidden = 6,
 }
 
-export enum CommandUsageFlag {
-    Normal,
-    Test,
-    /** Any larger than 1 is hidden */
-    Hidden,
-    _Unknown=0x80
-}
-
 /** @deprecated **/
-export const CommandFlag = CommandCheatFlag;
+export const CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
@@ -94,9 +112,83 @@ ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
 };
 
 @nativeClass()
+export class CommandFilePath extends NativeClass {
+    @nativeField(CxxString)
+    text:CxxString;
+}
+
+@nativeClass()
+class CommandIntegerRange extends NativeClass { // Not exporting yet, not supported
+    @nativeField(int32_t)
+    min:int32_t;
+    @nativeField(int32_t)
+    max:int32_t;
+    @nativeField(bool_t)
+    inverted:bool_t;
+}
+
+@nativeClass()
+export class CommandItem extends NativeClass {
+    @nativeField(int32_t)
+    version:int32_t;
+    @nativeField(int32_t)
+    id:int32_t;
+}
+
+export class CommandMessage extends NativeClass {
+    data:CxxVector<CommandMessage.MessageComponent>;
+}
+
+export namespace CommandMessage {
+
+    @nativeClass(0x28)
+    export class MessageComponent extends NativeClass {
+        @nativeField(CxxString)
+        string:CxxString;
+        // Needs to implement this, but it crashes for me
+        // @nativeField(Wrapper.make(CxxVector.make(WildcardCommandSelector.make(Actor)).ref()))
+        // selection:Wrapper<CxxVector<WildcardCommandSelector<Actor>>>;
+    }
+}
+
+CommandMessage.abstract({
+    data: CxxVector.make(CommandMessage.MessageComponent),
+}, 0x18);
+
+@nativeClass()
+export class CommandPosition extends NativeClass {
+    @nativeField(float32_t)
+    x:float32_t;
+    @nativeField(float32_t)
+    y:float32_t;
+    @nativeField(float32_t)
+    z:float32_t;
+    @nativeField(bool_t)
+    isXRelative:bool_t;
+    @nativeField(bool_t)
+    isYRelative:bool_t;
+    @nativeField(bool_t)
+    isZRelative:bool_t;
+    @nativeField(bool_t)
+    local:bool_t;
+}
+
+export class CommandPositionFloat extends CommandPosition {
+}
+
+@nativeClass()
 export class CommandRawText extends NativeClass {
     @nativeField(CxxString)
     text:CxxString;
+}
+
+
+@nativeClass()
+export class CommandWildcardInt extends NativeClass {
+    @nativeField(bool_t)
+    isWildcard:bool_t;
+    @nativeField(int32_t, 0x04)
+    value:int32_t;
 }
 
 @nativeClass(0x30)
@@ -108,17 +200,122 @@ export class CommandContext extends NativeClass {
 }
 
 export enum CommandOutputType {
+    None = 0,
+    LastOutput = 1,
+    Silent = 2,
     Type3 = 3, // user / server console / command block
     ScriptEngine = 4,
 }
 
-@nativeClass(null)
+type CommandOutputParameterType = string|boolean|number|Actor|BlockPos|Vec3|Actor[];
+
+@nativeClass(0x28)
+export class CommandOutputParameter extends NativeClass {
+    @nativeField(CxxString)
+    string:CxxString;
+    @nativeField(int32_t)
+    count:int32_t;
+    static create(input:CommandOutputParameterType, count?:number):CommandOutputParameter {
+        const out = CommandOutputParameter.construct();
+        switch (typeof input) {
+        case 'string':
+            out.string = input;
+            out.count = count ?? 0;
+            break;
+        case 'boolean':
+            out.string = input.toString();
+            out.count = 0;
+            break;
+        case 'number':
+            if (Number.isInteger(input)) {
+                out.string = input.toString();
+            } else {
+                out.string = input.toFixed(2).toString();
+            }
+            out.count = 0;
+            break;
+        case 'object':
+            if (input instanceof Actor) {
+                out.string = input.getName();
+                out.count = 1;
+            } else if (input instanceof BlockPos || input instanceof Vec3) {
+                out.string = `${input.x}, ${input.y}, ${input.z}`;
+                out.count = count ?? 0;
+            } else if (Array.isArray(input)) {
+                if (input.length > 0) {
+                    if (input[0] instanceof Actor) {
+                        out.string = input.map(e => e.getName()).join(', ');
+                        out.count = input.length;
+                    }
+                }
+            }
+            break;
+        default:
+            out.string = '';
+            out.count = -1;
+        }
+        return out;
+    }
+}
+
+@nativeClass(0x30)
 export class CommandOutput extends NativeClass {
     getType():CommandOutputType {
         abstract();
     }
     constructAs(type:CommandOutputType):void {
         abstract();
+    }
+    protected _successNoMessage():void {
+        abstract();
+    }
+    protected _success(message:string, params:CxxVector<CommandOutputParameter>):void {
+        abstract();
+    }
+    success(message?:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
+        if (message === undefined) {
+            this._successNoMessage();
+        } else {
+            const _params = (CxxVector.make(CommandOutputParameter)).construct();
+            if (params.length > 0) {
+                if (params[0] instanceof CommandOutputParameter) {
+                    for (const param of params as CommandOutputParameter[]) {
+                        _params.push(param);
+                        param.destruct();
+                    }
+                } else {
+                    for (const param of params as CommandOutputParameterType[]) {
+                        const _param = CommandOutputParameter.create(param);
+                        _params.push(_param);
+                        _param.destruct();
+                    }
+                }
+            }
+            this._success(message, _params);
+            _params.destruct();
+        }
+    }
+    protected _error(message:string, params:CxxVector<CommandOutputParameter>):void {
+        abstract();
+    }
+    error(message:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
+        const _params = (CxxVector.make(CommandOutputParameter)).construct();
+        if (params.length > 0) {
+            if (params[0] instanceof CommandOutputParameter) {
+                for (const param of params as CommandOutputParameter[]) {
+                    _params.push(param);
+                    param.destruct();
+                }
+            } else {
+                for (const param of params as CommandOutputParameterType[]) {
+                    const _param = CommandOutputParameter.create(param);
+                    _params.push(_param);
+                    _param.destruct();
+                }
+            }
+        }
+        this._error(message, _params);
+        _params.destruct();
     }
 }
 
@@ -137,7 +334,7 @@ export class MinecraftCommands extends NativeClass {
     handleOutput(origin:CommandOrigin, output:CommandOutput):void {
         abstract();
     }
-    executeCommand(ctx:SharedPtr<CommandContext>, b:boolean):MCRESULT {
+    executeCommand(ctx:SharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
         abstract();
     }
     getRegistry():CommandRegistry {
@@ -145,7 +342,7 @@ export class MinecraftCommands extends NativeClass {
     }
 }
 
-export enum CommandParameterDataType { NORMAL, ENUM, SOFT_ENUM }
+export enum CommandParameterDataType { NORMAL, ENUM, SOFT_ENUM, POSTFIX }
 
 const parsers = new Map<Type<any>, VoidPointer>();
 
@@ -343,7 +540,16 @@ export namespace CommandRegistry {
         @nativeField(CxxVector.make<CommandParameterData>(CommandParameterData))
         parameters:CxxVector<CommandParameterData>;
         @nativeField(int32_t)
+        commandVersionOffset:int32_t;
+        /** @deprecated */
+        @nativeField(int32_t, 0x28)
         u6:int32_t;
+    }
+
+    @nativeClass()
+    export class Symbol extends NativeClass {
+        @nativeField(int32_t)
+        value:int32_t;
     }
 
     @nativeClass(null)
@@ -354,6 +560,14 @@ export namespace CommandRegistry {
         description:CxxString;
         @nativeField(CxxVector.make<CommandRegistry.Overload>(CommandRegistry.Overload))
         overloads:CxxVector<Overload>;
+        @nativeField(int32_t)
+        permissionLevel:CommandPermissionLevel;
+        @nativeField(CommandRegistry.Symbol)
+        commandSymbol:CommandRegistry.Symbol;
+        @nativeField(CommandRegistry.Symbol)
+        commandAliasEnum:CommandRegistry.Symbol;
+        @nativeField(int32_t)
+        flags:CommandCheatFlag|CommandExecuteFlag|CommandSyncFlag|CommandTypeFlag|CommandUsageFlag|CommandVisibilityFlag;
     }
 
     @nativeClass(null)
@@ -382,7 +596,14 @@ const types = [
     CxxString,
     ActorWildcardCommandSelector,
     RelativeFloat,
+    CommandFilePath,
+    // CommandIntegerRange,
+    CommandItem,
+    CommandMessage,
+    CommandPosition,
+    CommandPositionFloat,
     CommandRawText,
+    CommandWildcardInt,
     JsonValue
 ];
 type_id.pdbimport(CommandRegistry, types);
@@ -390,10 +611,13 @@ loadParserFromPdb(types);
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
+(CommandOutput.prototype as any)._successNoMessage = procHacker.js('?success@CommandOutput@@QEAAXXZ', void_t, {this:CommandOutput});
+(CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
+(CommandOutput.prototype as any)._error = procHacker.js('?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 
 MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
-MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this: MinecraftCommands });
+MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
@@ -404,7 +628,7 @@ CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findComm
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';
 'CommandRegistry::parse<CommandFilePath>';
-'CommandRegistry::parse<CommandIntegerRange>';
+'CommandRegistry::parse<CommandIntegerRange>'; // Not supported yet(?) there is no type id for it
 'CommandRegistry::parse<CommandItem>';
 'CommandRegistry::parse<CommandMessage>';
 'CommandRegistry::parse<CommandPosition>';

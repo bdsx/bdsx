@@ -48,6 +48,16 @@ export class LevelSaveEvent implements ILevelSaveEvent {
     }
 }
 
+interface ILevelTickEvent {
+    level: Level;
+}
+export class LevelTickEvent implements ILevelTickEvent {
+    constructor(
+        public level: Level,
+    ) {
+    }
+}
+
 interface ILevelWeatherChangeEvent {
     level: Level;
     rainLevel: number;
@@ -68,7 +78,9 @@ export class LevelWeatherChangeEvent implements ILevelWeatherChangeEvent {
 
 function onLevelExplode(level:Level, blockSource:BlockSource, entity:Actor, position:Vec3, power:float32_t, causesFire:bool_t, breaksBlocks:bool_t, maxResistance:float32_t, allowUnderwater:bool_t):void {
     const event = new LevelExplodeEvent(level, blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater);
-    if (events.levelExplode.fire(event) !== CANCEL) {
+    const canceled = events.levelExplode.fire(event) === CANCEL;
+    _tickCallback();
+    if (!canceled) {
         return _onLevelExplode(event.level, event.blockSource, event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater);
     }
 }
@@ -76,19 +88,26 @@ const _onLevelExplode = procHacker.hooking("?explode@Level@@UEAAXAEAVBlockSource
 
 function onLevelSave(level:Level):void {
     const event = new LevelSaveEvent(level);
-    const canceled = events.levelSave.fire(event) !== CANCEL;
+    const canceled = events.levelSave.fire(event) === CANCEL;
     _tickCallback();
-    if (canceled) {
+    if (!canceled) {
         return _onLevelSave(event.level);
     }
 }
 const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLevelSave);
 
+function onLevelTick(level:Level):void {
+    const event = new LevelTickEvent(level);
+    events.levelTick.fire(event);
+    _onLevelTick(event.level);
+}
+const _onLevelTick = procHacker.hooking("Level::tick", void_t, null, Level)(onLevelTick);
+
 function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
-    const canceled = events.levelWeatherChange.fire(event) !== CANCEL;
+    const canceled = events.levelWeatherChange.fire(event) === CANCEL;
     _tickCallback();
-    if (canceled) {
+    if (!canceled) {
         return _onLevelWeatherChange(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);
     }
 }

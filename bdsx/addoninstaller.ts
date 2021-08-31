@@ -577,11 +577,13 @@ async function readObjectJson(path:string):Promise<Record<string, any>> {
     try {
         const json = await fsutil.readFile(path);
         const result = JSON.parse(json);
+        if (result === null || !(result instanceof Object)) {
+            return Object.create(null);
+        }
         result.__proto__ = null;
-        if (result === null || !(result instanceof Object)) return {};
         return result;
     } catch (err) {
-        return {};
+        return Object.create(null);
     }
 }
 

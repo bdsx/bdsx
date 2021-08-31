@@ -37,7 +37,7 @@ export class Tester {
 
         if (done === testcount) {
             const error = total[Tester.State.Failed] !== 0;
-            const message = `[test] TEST ${error ? 'FAILED' : 'PASSED'} (${total[Tester.State.Passed]}/${testcount - total[Tester.State.Skipped]})`;
+            const message = `TEST ${error ? 'FAILED' : 'PASSED'} (${total[Tester.State.Passed]}/${testcount - total[Tester.State.Skipped]})`;
 
             Tester._log(message, error);
             testIsDone = true;

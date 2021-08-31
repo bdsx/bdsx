@@ -7,9 +7,16 @@ import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { BlockSource } from "./block";
 import { BlockPos } from "./blockpos";
 import { Dimension } from "./dimension";
+import { GameRules } from "./gamerules";
 import { ServerPlayer } from "./player";
 import { Scoreboard } from "./scoreboard";
 
+export enum Difficulty {
+    Peaceful,
+    Easy,
+    Normal,
+    Hard,
+}
 export class Level extends NativeClass {
     vftable:VoidPointer;
     players:CxxVector<ServerPlayer>;
@@ -32,10 +39,28 @@ export class Level extends NativeClass {
     getAdventureSettings():AdventureSettings {
         abstract();
     }
+    getBlockPalette():BlockPalette {
+        abstract();
+    }
+    getDimension(dimension:DimensionId):Dimension|null {
+        abstract();
+    }
+    getLevelData():LevelData {
+        abstract();
+    }
+    getGameRules():GameRules {
+        abstract();
+    }
     getScoreboard():Scoreboard {
         abstract();
     }
+    getSeed():number {
+        abstract();
+    }
     getTagRegistry():TagRegistry {
+        abstract();
+    }
+    hasCommandsEnabled():boolean {
         abstract();
     }
     setCommandsEnabled(value:boolean):void {
@@ -44,14 +69,30 @@ export class Level extends NativeClass {
     setShouldSendSleepMessage(value:boolean):void {
         abstract();
     }
+    syncGameRules():void {
+        abstract();
+    }
 }
+
 export class ServerLevel extends Level {
     /** @deprecated unusing */
     packetSender:LoopbackPacketSender;
     actors:CxxVector<Actor>;
 }
 
+export class LevelData extends NativeClass {
+    getGameDifficulty():Difficulty {
+        abstract();
+    }
+    setGameDifficulty(value:Difficulty):void {
+        abstract();
+    }
+}
+
 export class ActorFactory extends NativeClass {
+}
+
+export class BlockPalette extends NativeClass {
 }
 
 export class AdventureSettings extends NativeClass {
