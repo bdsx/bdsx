@@ -1,7 +1,7 @@
-import { msAlloc } from "./msalloc";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
-import { makefunc } from "./makefunc";
+import { makefunc, TypeIn } from "./makefunc";
+import { msAlloc } from "./msalloc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
@@ -456,8 +456,8 @@ class CxxVectorToArrayImpl<T> extends NativeType<T[]> {
 }
 
 export namespace CxxVectorToArray {
-    export function make<T>(compType:Type<T>):NativeType<T[]> {
-        return Singleton.newInstance<NativeType<T[]>>(CxxVectorToArrayImpl, compType, ()=>new CxxVectorToArrayImpl<T>(compType));
+    export function make<T>(compType:TypeIn<T>):NativeType<T[]> {
+        return Singleton.newInstance<NativeType<T[]>>(CxxVectorToArrayImpl, compType, ()=>new CxxVectorToArrayImpl<T>(compType as Type<T>));
     }
 }
 
