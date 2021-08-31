@@ -301,6 +301,10 @@ const symbols = [
     'GameRule::getBool',
     'GameRule::getInt',
     'GameRule::getFloat',
+    'Level::hasCommandsEnabled',
+    'Level::getLevelData',
+    'LevelData::getGameDifficulty',
+    'LevelData::setGameDifficulty',
 ] as const;
 
 // decorated symbols
