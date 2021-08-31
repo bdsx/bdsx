@@ -291,6 +291,16 @@ const symbols = [
     'IdentityDefinition::getPlayerId',
     'IdentityDefinition::getFakePlayerName',
     'IdentityDefinition::getIdentityType',
+    'Level::getGameRules',
+    'Abilities::getAbilityName',
+    'Abilities::nameToAbilityIndex',
+    'GameRules::nameToGameRuleIndex',
+    'GameRules::getRule',
+    'GameRules::hasRule',
+    'GameRules::createAllGameRulesPacket',
+    'GameRule::getBool',
+    'GameRule::getInt',
+    'GameRule::getFloat',
 ] as const;
 
 // decorated symbols

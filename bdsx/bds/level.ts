@@ -7,6 +7,7 @@ import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { BlockSource } from "./block";
 import { BlockPos } from "./blockpos";
 import { Dimension } from "./dimension";
+import { GameRules } from "./gamerules";
 import { ServerPlayer } from "./player";
 import { Scoreboard } from "./scoreboard";
 
@@ -38,6 +39,9 @@ export class Level extends NativeClass {
     getDimension(dimension:DimensionId):Dimension|null {
         abstract();
     }
+    getGameRules():GameRules {
+        abstract();
+    }
     getScoreboard():Scoreboard {
         abstract();
     }
@@ -51,6 +55,9 @@ export class Level extends NativeClass {
         abstract();
     }
     setShouldSendSleepMessage(value:boolean):void {
+        abstract();
+    }
+    syncGameRules():void {
         abstract();
     }
 }
