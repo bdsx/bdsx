@@ -30,7 +30,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
-import { RelativeFloat } from "bdsx/bds/blockpos";
+import { RelativeFloat } from "bdsx/minecraft";
 
 let sendidcheck = 0;
 let nextTickPassed = false;

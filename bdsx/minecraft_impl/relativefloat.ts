@@ -1,3 +1,4 @@
+import { makefunc } from "../makefunc";
 import { RelativeFloat } from "../minecraft";
 import { bin64_t, bool_t, float32_t } from "../nativetype";
 
@@ -12,6 +13,7 @@ declare module "../minecraft" {
     }
 }
 
+RelativeFloat[makefunc.registerDirect] = true;
 RelativeFloat.define({
     value:float32_t,
     is_relative:bool_t,
