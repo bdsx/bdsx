@@ -6,7 +6,7 @@
         "sourceType": "module",
         "project": "./tsconfig.json"
     },
-    "ignorePatterns": ["**/*.js", "/minecraft.d.ts"],
+    "ignorePatterns": ["**/*.js", "/minecraft.d.ts", "/minecraft_impl/enums.d.ts"],
     "plugins": [
         "@typescript-eslint",
         "unused-imports",

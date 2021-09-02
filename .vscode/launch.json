@@ -85,6 +85,17 @@
             ],
             "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
-        }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Enum Generator",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/minecraft_impl/enumgen.js"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
     ]
 }

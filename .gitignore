@@ -5,6 +5,7 @@ node_modules
 /npm-debug.log
 /pdbcache_by_example.ini
 *.js
+!/bdsx/minecraft_impl/enums.js
 !/bdsx/minecraft.js
 !/bdsx/index.js
 !/bdsx/legacy.js
