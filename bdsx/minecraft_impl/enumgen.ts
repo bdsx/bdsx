@@ -3,6 +3,7 @@
 import fs = require('fs');
 import path = require('path');
 import { tsw } from '../pdbparser/tswriter';
+import { ScriptWriter } from '../writer/scriptwriter';
 
 const properties = {
     proto:new tsw.NameProperty('__proto__')
@@ -10,11 +11,14 @@ const properties = {
 const names = {
     minecraft: new tsw.Name('minecraft')
 };
-const js = new tsw.Block;
-js.write(new tsw.ImportDirect(names.minecraft, '../minecraft'));
-const dts = new tsw.Block;
-const mcmodule = new tsw.Module(new tsw.Constant('../minecraft'));
-dts.declare(mcmodule);
+
+const dts = new ScriptWriter;
+const js = new ScriptWriter;
+js.writeln('const minecraft=require("../minecraft");');
+js.writeln(`let v;`);
+
+dts.writeln('declare module "../minecraft" {');
+dts.tab(4);
 const enumsDir = path.join(__dirname, 'enums_ini');
 const readExp = /^[ \t]*([^\s]*)[ \t]*=[ \t]*([^\s]*)[ \t]*(?:[#;][^\r\n]*)?$/gm;
 const firstIsNumber = /^[0-9]/;
@@ -23,45 +27,88 @@ for (const filename of fs.readdirSync(enumsDir)) {
     const nsList = filename.split('.');
     nsList.pop();
     const n = nsList.length-1;
-    let parent = js;
-    for (let i=0;i<n;i++) {
-        const ns = new tsw.Namespace(new tsw.Name(nsList[i]));
-        parent.write(ns);
-        parent = ns.block;
-    }
 
-    const items:[string, tsw.Value?][] = [];
     const content = fs.readFileSync(path.join(enumsDir, filename), 'utf8');
     readExp.lastIndex = 0;
-    let matched:RegExpExecArray|null;
-    while ((matched = readExp.exec(content)) != null) {
-        const [line, name, value] = matched;
-        try {
-            if (value === '') {
-                items.push([name]);
-            } else if (firstIsNumber.test(value)) {
-                items.push([name, new tsw.Constant(+value)]);
-            } else {
-                items.push([name, new tsw.Constant(JSON.parse(value))]);
-            }
-        } catch (err) {
-            console.error(`${line}: ${err.message}`);
-        }
-    }
+    const lines = content.split(/\r?\n/g);
 
-    const tempvar = js.makeTemporalVariableName();
-    parent.write(new tsw.Enum(tempvar, items));
-    parent.assign(tempvar.member(properties.proto), tsw.Constant.null);
-    parent.assign(tsw.dots(names.minecraft, ...nsList), tempvar);
+    js.writeln(`(minecraft.${nsList.join(',')}=v={}).__proto__=null;`);
 
     const enumName = nsList[n];
-    mcmodule.block.write(new tsw.Enum(new tsw.Name(enumName), items));
+    for (let i=0;i<n;i++) {
+        dts.writeln(`namespace ${nsList[i]} {`);
+        dts.tab(4);
+    }
+    dts.writeln(`enum ${enumName} {`);
+    dts.tab(4);
+
+    let comment:string|null = null;
+    let next:number|null = 0;
+    for (let lineNumber=0;lineNumber<lines.length;lineNumber++) {
+        try {
+            if (comment != null) {
+                dts.writeln(`/**${comment} */`);
+                comment = null;
+            }
+
+            let line = lines[lineNumber];
+            let idx = line.indexOf(';');
+            if (idx !== -1) {
+                comment = line.substr(idx+1);
+                line = line.substr(0, idx);
+            }
+
+            let value:string|null = null;
+            idx = line.indexOf('=');
+            if (idx !== -1) {
+                value = line.substr(idx+1).trim();
+                line = line.substr(0, idx).trim();
+            } else {
+                line = line.trim();
+                if (line === '') {
+                    continue;
+                }
+            }
+
+            if (!value) {
+                if (next === null) {
+                    throw Error(`needs value`);
+                }
+                dts.writeln(`${line},`);
+                value = next+'';
+                next++;
+            } else if (firstIsNumber.test(value)) {
+                dts.writeln(`${line}=${value},`);
+                next = +value + 1;
+            } else {
+                const v = JSON.parse(value);
+                if (typeof v !== 'number' && v !== 'string') {
+                    throw Error(`Unexpected value`);
+                }
+                dts.writeln(`${line}=${value},`);
+                next = typeof value === 'number' ? value : null;
+            }
+            js.writeln(`v[v[${value}]=${JSON.stringify(line)}]=${value};`);
+        } catch (err) {
+            console.error(`${filename}:${lineNumber+1} ${err.message}`);
+        }
+    }
+    if (comment != null) {
+        dts.writeln(`/**${comment} */`);
+    }
+    for (let i=0;i<=n;i++) {
+        dts.tab(-4);
+        dts.writeln(`}`);
+    }
 }
 
+dts.tab(-4);
+dts.writeln('}');
+dts.writeln('export {};');
+
 try {
-    dts.export(new tsw.ObjectUnpack([]));
-    dts.save(path.join(__dirname, 'enums.d.ts'));
-    js.cloneToJS().save(path.join(__dirname, 'enums.js'));
+    fs.writeFileSync(path.join(__dirname, 'enums.d.ts'), dts.script, 'utf8');
+    fs.writeFileSync(path.join(__dirname, 'enums.js'), js.script, 'utf8');
 } catch (err) {
     console.error(err.stack);
 }

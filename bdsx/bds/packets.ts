@@ -10,6 +10,7 @@ import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemSta
 import { Packet } from "./packet";
 import type { GameType } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
+import minecraft = require('../minecraft');
 
 /** @deprecated */
 @nativeClass(null)
@@ -289,6 +290,7 @@ export class MovePlayerPacket extends Packet {
     @nativeField(bin64_t)
     tick: bin64_t;
 }
+/** @deprecated */
 export namespace MovePlayerPacket {
     export enum Modes {
         Normal,
@@ -562,52 +564,9 @@ export class PlayerActionPacket extends Packet {
 /** @deprecated */
 export namespace PlayerActionPacket {
     /** @deprecated */
-    export enum Actions {
-        /** @deprecated */
-        StartBreak,
-        /** @deprecated */
-        AbortBreak,
-        /** @deprecated */
-        StopBreak,
-        GetUpdatedBlock,
-        /** @deprecated */
-        DropItem,
-        StartSleeping,
-        StopSleeping,
-        Respawn,
-        /** @deprecated */
-        Jump,
-        /** @deprecated */
-        StartSprint,
-        /** @deprecated */
-        StopSprint,
-        /** @deprecated */
-        StartSneak,
-        /** @deprecated */
-        StopSneak,
-        CreativePlayerDestroyBlock,
-        DimensionChangeAck,
-        /** @deprecated */
-        StartGlide,
-        /** @deprecated */
-        StopGlide,
-        /** @deprecated */
-        BuildDenied,
-        CrackBreak,
-        /** @deprecated */
-        ChangeSkin,
-        /** @deprecated */
-        SetEnchantmentSeed,
-        /** @deprecated */
-        StartSwimming,
-        /** @deprecated */
-        StopSwimming,
-        StartSpinAttack,
-        StopSpinAttack,
-        InteractBlock,
-        PredictDestroyBlock,
-        ContinueDestroyBlock,
-    }
+    export const Actions = minecraft.PlayerActionPacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.PlayerActionPacket.Actions;
 }
 
 /** @deprecated */
@@ -959,23 +918,15 @@ export namespace BossEventPacket {
         Style,
     }
 
-    export enum Colors {
-        Pink,
-        Blue,
-        Red,
-        Green,
-        Yellow,
-        Purple,
-        White,
-    }
+    /** @deprecated */
+    export const Colors = minecraft.BossEventPacket.Colors;
+    /** @deprecated */
+    export type Colors = minecraft.BossEventPacket.Colors;
 
-    export enum Overlay {
-        Progress,
-        Notched6,
-        Notched10,
-        Notched12,
-        Notched20,
-    }
+    /** @deprecated */
+    export const Overlay = minecraft.BossEventPacket.Overlay;
+    /** @deprecated */
+    export type Overlay = minecraft.BossEventPacket.Overlay;
 }
 
 /** @deprecated */
@@ -1327,11 +1278,10 @@ export class ScorePacketInfo extends NativeClass {
 }
 
 export namespace ScorePacketInfo {
-    export enum Type {
-        PLAYER = 1,
-        ENTITY = 2,
-        FAKE_PLAYER = 3,
-    }
+    /** @deprecated */
+    export const Type = minecraft.ScorePacketInfo.Type;
+    /** @deprecated */
+    export type Type = minecraft.ScorePacketInfo.Type;
 }
 
 /** @deprecated */
@@ -1560,23 +1510,10 @@ export class CompletedUsingItemPacket extends Packet {
 }
 
 export namespace CompletedUsingItemPacket {
-    export enum Actions {
-        EquipArmor,
-        Eat,
-        Attack,
-        Consume,
-        Throw,
-        Shoot,
-        Place,
-        FillBottle,
-        FillBucket,
-        PourBucket,
-        UseTool,
-        Interact,
-        Retrieved,
-        Dyed,
-        Traded,
-    }
+    /** @deprecated */
+    export const Actions = minecraft.CompletedUsingItemPacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.CompletedUsingItemPacket.Actions;
 }
 
 /** @deprecated */
@@ -1673,11 +1610,10 @@ export class PositionTrackingDBServerBroadcastPacket extends Packet {
 }
 
 export namespace PositionTrackingDBServerBroadcastPacket {
-    export enum Actions {
-        Update,
-        Destroy,
-        NotFound,
-    }
+    /** @deprecated */
+    export const Actions = minecraft.PositionTrackingDBServerBroadcastPacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.PositionTrackingDBServerBroadcastPacket.Actions;
 }
 
 /** @deprecated use PositionTrackingDBServerBroadcastPacket, follow the real class name */
@@ -1695,9 +1631,10 @@ export class PositionTrackingDBClientRequestPacket extends Packet {
 }
 
 export namespace PositionTrackingDBClientRequestPacket {
-    export enum Actions {
-        Query,
-    }
+    /** @deprecated */
+    export const Actions = minecraft.PositionTrackingDBClientRequestPacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.PositionTrackingDBClientRequestPacket.Actions;
 }
 
 /** @deprecated Use PositionTrackingDBClientRequestPacket, follow the real class name */
@@ -1831,10 +1768,9 @@ export class NpcDialoguePacket extends Packet {
 /** @deprecated */
 export namespace NpcDialoguePacket {
     /** @deprecated */
-    export enum Actions {
-        Open,
-        Close,
-    }
+    export const Actions = minecraft.NpcDialoguePacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.NpcDialoguePacket.Actions;
 }
 
 /** @deprecated */

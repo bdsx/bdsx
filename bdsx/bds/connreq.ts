@@ -5,18 +5,12 @@ import { mce } from "../mce";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { proc, proc2 } from "./proc";
+import minecraft = require('../minecraft');
 
-export enum JsonValueType
-{
-    Null = 0,
-    Int32 = 1,
-    Int64 = 2,
-    Float64 = 3,
-    String = 4,
-    Boolean = 5,
-    Array = 6,
-    Object = 7,
-}
+/** @deprecated */
+export const JsonValueType = minecraft.Json.ValueType;
+/** @deprecated */
+export type JsonValueType = minecraft.Json.ValueType;
 
 @nativeClass(0x10)
 export class JsonValue extends NativeClass {

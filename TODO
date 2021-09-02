@@ -1,0 +1,51 @@
+Convert enums to ini if it's BDS's one
+❌ - it's not found in BDS symbols
+AttributeId ❌, I guess it's written by me - rua.kr
+CommandCheatFlag ❌
+CommandExecuteFlag ❌
+CommandSyncFlag ❌
+CommandTypeFlag ❌
+CommandUsageFlag ❌
+CommandVisibilityFlag ❌
+MobEffectIds ❌
+
+- Progressing
+EnchantmentNames
+GameRuleId
+GameRule.Type
+ContainerId
+ContainerType
+ArmorSlot
+CreativeItemCategory
+InventorySourceType
+InventorySourceFlags
+ComplexInventoryTransaction.Type
+ItemUseInventoryTransaction.ActionType
+ItemUseOnActorInventoryTransaction.ActionType
+ItemReleaseInventoryTransaction.ActionType
+Difficulty
+MinecraftPacketIds
+PackType
+ResourcePackResponse
+TextPacket.Types
+MovePlayerPacket.Modes
+UpdateBlockPacket.Flags
+UpdateBlockPacket.DataLayerIds
+ActorEventPacket.Events
+InteractPacket.Actions
+AnimatePacket.Actions
+BossEventPacket.Types
+SetTitlePacket.Types
+BookEditPacket.Types
+SetScorePacket.Type
+CameraShakePacket.ShakeType
+CameraShakePacket.ShakeAction
+GameType
+PlayerPermission
+IdentityDefinition.Type
+DisplaySlot
+ObjectiveSortOrder
+PlayerScoreSetFunction
+ScoreCommandOperator
+TrustedSkinFlag
+PistonAction

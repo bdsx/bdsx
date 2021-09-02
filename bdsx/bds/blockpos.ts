@@ -1,14 +1,9 @@
 import minecraft = require('../minecraft');
 
-export enum Facing {
-    Down,
-    Up,
-    North,
-    South,
-    West,
-    East,
-    Max,
-}
+/** @deprecated */
+export const Facing = minecraft.Facing.Name;
+/** @deprecated */
+export type Facing = minecraft.Facing.Name;
 
 /** @deprecated import it from bdsx/minecraft */
 export const BlockPos = minecraft.BlockPos;

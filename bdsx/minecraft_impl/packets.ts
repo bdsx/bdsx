@@ -7,10 +7,6 @@ import { NativeClass } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 
 declare module "../minecraft" {
-    enum PackType {
-
-    }
-
     interface LoginPacket {
         protocol:int32_t;
         /**
@@ -60,28 +56,6 @@ declare module "../minecraft" {
         needsTranslation:bool_t;
         xboxUserId:CxxString;
         platformChatId:CxxString;
-    }
-
-    namespace TextPacket {
-        export enum Types {
-            Raw,
-            Chat,
-            Translate,
-            /** @deprecated **/
-            Translated = 2,
-            Popup,
-            JukeboxPopup,
-            Tip,
-            SystemMessage,
-            /** @deprecated **/
-            Sytem = 6,
-            Whisper,
-            // /say command
-            Announcement,
-            TextObject,
-            /** @deprecated **/
-            ObjectWhisper = 9
-        }
     }
 
     interface SetTimePacket {
@@ -134,15 +108,6 @@ declare module "../minecraft" {
         tick: bin64_t;
     }
 
-    namespace MovePlayerPacket {
-        enum Modes {
-            Normal,
-            Reset,
-            Teleport,
-            Pitch,
-        }
-    }
-
     interface RiderJumpPacket {
         // unknown
     }
@@ -152,21 +117,6 @@ declare module "../minecraft" {
         blockRuntimeId: uint32_t;
         flags: uint8_t;
         dataLayerId: uint32_t;
-    }
-    namespace UpdateBlockPacket {
-        export enum Flags {
-            None,
-            Neighbors,
-            Network,
-            All,
-            NoGraphic,
-            Priority = 8,
-            AllPriority = 11,
-        }
-        export enum DataLayerIds {
-            Normal,
-            Liquid,
-        }
     }
 
     interface AddPaintingPacket {
@@ -195,65 +145,6 @@ declare module "../minecraft" {
         actorId: ActorRuntimeID;
         event: uint8_t;
         data: int32_t;
-    }
-    namespace ActorEventPacket {
-        export enum Events {
-            Jump = 1,
-            HurtAnimation,
-            DeathAnimation,
-            ArmSwing,
-            StopAttack,
-            TameFail,
-            TameSuccess,
-            ShakeWet,
-            UseItem,
-            EatGrassAnimation,
-            FishHookBubble,
-            FishHookPosition,
-            FishHookHook,
-            FishHookTease,
-            SquidInkCloud,
-            ZombieVillagerCure,
-            AmbientSound,
-            Respawn,
-            IronGolemOfferFlower,
-            IronGolemWithdrawFlower,
-            LoveParticles,
-            VillagerAngry,
-            VillagerHappy,
-            WitchSpellParticles,
-            FireworkParticles,
-            InLoveParticles,
-            SilverfishSpawnAnimation,
-            GuardianAttack,
-            WitchDrinkPotion,
-            WitchThrowPotion,
-            MinecartTntPrimeFuse,
-            CreeperPrimeFuse,
-            AirSupplyExpired,
-            PlayerAddXpLevels,
-            ElderGuardianCurse,
-            AgentArmSwing,
-            EnderDragonDeath,
-            DustParticles,
-            ArrowShake,
-            EatingItem = 57,
-            BabyAnimalFeed = 60,
-            DeathSmokeCloud,
-            CompleteTrade,
-            RemoveLeash,
-            ConsumeTotem = 65,
-            PlayerCheckTreasureHunterAchievement,
-            EntitySpawn,
-            DragonPuke,
-            ItemEntityMerge,
-            StartSwim,
-            BalloonPop,
-            TreasureHunt,
-            AgentSummon,
-            ChargedCrossbow,
-            Fall,
-        }
     }
 
     interface MobEffectPacket {
@@ -295,14 +186,6 @@ declare module "../minecraft" {
         actorId:ActorRuntimeID;
         pos:Vec3;
     }
-    namespace InteractPacket {
-        export enum Actions {
-            LeaveVehicle = 3,
-            Mouseover,
-            OpenNPC,
-            OpenInventory,
-        }
-    }
 
     interface BlockPickRequestPacket {
         // unknown
@@ -317,54 +200,6 @@ declare module "../minecraft" {
         face: int32_t;
         action: PlayerActionPacket.Actions;
         actorId: ActorRuntimeID;
-    }
-    namespace PlayerActionPacket {
-        export enum Actions {
-            /** @deprecated */
-            StartBreak,
-            /** @deprecated */
-            AbortBreak,
-            /** @deprecated */
-            StopBreak,
-            GetUpdatedBlock,
-            /** @deprecated */
-            DropItem,
-            StartSleeping,
-            StopSleeping,
-            Respawn,
-            /** @deprecated */
-            Jump,
-            /** @deprecated */
-            StartSprint,
-            /** @deprecated */
-            StopSprint,
-            /** @deprecated */
-            StartSneak,
-            /** @deprecated */
-            StopSneak,
-            CreativePlayerDestroyBlock,
-            DimensionChangeAck,
-            /** @deprecated */
-            StartGlide,
-            /** @deprecated */
-            StopGlide,
-            /** @deprecated */
-            BuildDenied,
-            CrackBreak,
-            /** @deprecated */
-            ChangeSkin,
-            /** @deprecated */
-            SetEnchantmentSeed,
-            /** @deprecated */
-            StartSwimming,
-            /** @deprecated */
-            StopSwimming,
-            StartSpinAttack,
-            StopSpinAttack,
-            InteractBlock,
-            PredictDestroyBlock,
-            ContinueDestroyBlock,
-        }
     }
 
     interface EntityFallPacket {
@@ -399,16 +234,6 @@ declare module "../minecraft" {
         actorId:ActorRuntimeID;
         action:int32_t;
         rowingTime:float32_t;
-    }
-    namespace AnimatePacket {
-        export enum Actions {
-            SwingArm = 1,
-            WakeUp = 3,
-            CriticalHit,
-            MagicCriticalHit,
-            RowRight = 128,
-            RowLeft,
-        }
     }
 
     interface RespawnPacket {
@@ -567,36 +392,6 @@ declare module "../minecraft" {
         darkenScreen:bool_t;
         createWorldFog:bool_t;
     }
-    namespace BossEventPacket {
-        export enum Types {
-            Show,
-            RegisterPlayer,
-            Hide,
-            UnregisterPlayer,
-            HealthPercent,
-            Title,
-            Properties,
-            Style,
-        }
-
-        export enum Colors {
-            Pink,
-            Blue,
-            Red,
-            Green,
-            Yellow,
-            Purple,
-            White
-        }
-
-        export enum Overlay {
-            Progress,
-            Notched6,
-            Notched10,
-            Notched12,
-            Notched20,
-        }
-    }
 
     interface ShowCreditsPacket {
         // unknown
@@ -689,17 +484,6 @@ declare module "../minecraft" {
         fadeOutTime:int32_t;
     }
 
-    namespace SetTitlePacket {
-        export enum Types {
-            Clear,
-            Reset,
-            Title,
-            Subtitle,
-            Actionbar,
-            AnimationTimes,
-        }
-    }
-
     interface AddBehaviorTreePacket {
         // unknown
     }
@@ -742,15 +526,6 @@ declare module "../minecraft" {
         text:CxxString;
         author:CxxString;
         xuid:CxxString;
-    }
-    namespace BookEditPacket {
-        export enum Types {
-            ReplacePage,
-            AddPage,
-            DeletePage,
-            SwapPages,
-            SignBook,
-        }
     }
 
     interface NpcRequestPacket {
@@ -811,25 +586,10 @@ declare module "../minecraft" {
         customName:CxxString;
     }
 
-    namespace ScorePacketInfo {
-        export enum Type {
-            PLAYER = 1,
-            ENTITY = 2,
-            FAKE_PLAYER = 3,
-        }
-    }
-
     interface SetScorePacket {
         type:uint8_t;
 
         entries:CxxVector<ScorePacketInfo>;
-    }
-
-    namespace SetScorePacket {
-        export enum Type {
-            CHANGE = 0,
-            REMOVE = 1,
-        }
     }
 
     interface LabTablePacket {
@@ -961,26 +721,6 @@ declare module "../minecraft" {
         action: CompletedUsingItemPacket.Actions;
     }
 
-    namespace CompletedUsingItemPacket {
-        export enum Actions {
-            EquipArmor,
-            Eat,
-            Attack,
-            Consume,
-            Throw,
-            Shoot,
-            Place,
-            FillBottle,
-            FillBucket,
-            PourBucket,
-            UseTool,
-            Interact,
-            Retrieved,
-            Dyed,
-            Traded,
-        }
-    }
-
     interface NetworkSettingsPacket {
         // unknown
     }
@@ -1038,23 +778,9 @@ declare module "../minecraft" {
         // TODO: little endian encoded NBT compound tag
     }
 
-    namespace PositionTrackingDBServerBroadcastPacket {
-        export enum Actions {
-            Update,
-            Destroy,
-            NotFound,
-        }
-    }
-
     interface PositionTrackingDBClientRequestPacket {
         action: PositionTrackingDBClientRequestPacket.Actions;
         trackingId: int32_t;
-    }
-
-    namespace PositionTrackingDBClientRequestPacket {
-        export enum Actions {
-            Query,
-        }
     }
 
     interface DebugInfoPacket {
@@ -1078,16 +804,6 @@ declare module "../minecraft" {
         duration:float32_t;
         shakeType:uint8_t;
         shakeAction:uint8_t;
-    }
-    namespace CameraShakePacket {
-        export enum ShakeType {
-            Positional,
-            Rotational,
-        }
-        export enum ShakeAction {
-            Add,
-            Stop,
-        }
     }
 
     interface PlayerFogPacket {
@@ -1138,14 +854,6 @@ declare module "../minecraft" {
 
         actorIdAsNumber:int64_as_float_t;
     }
-
-    namespace NpcDialoguePacket {
-        export enum Actions {
-            Open,
-            Close,
-        }
-    }
-
 }
 
 UpdateAttributesPacket.AttributeData.define({

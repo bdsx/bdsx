@@ -3,6 +3,7 @@ import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, float32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
+import minecraft = require('../minecraft');
 
 @nativeClass(0x140)
 export class Abilities extends NativeClass {
@@ -43,30 +44,10 @@ export class Abilities extends NativeClass {
     }
 }
 
-export enum AbilitiesIndex {
-    Build,
-    Mine,
-    DoorsAndSwitches,
-    OpenContainers,
-    AttackPlayers,
-    AttackMobs,
-    OperatorCommands,
-    Teleport,
-    /** Both are 8 */
-    ExposedAbilityCount,
-
-    Invulnerable = 8,
-    Flying,
-    MayFly,
-    Instabuild,
-    Lightning,
-    FlySpeed,
-    WalkSpeed,
-    Muted,
-    WorldBuilder,
-    NoClip,
-    AbilityCount,
-}
+/** @deprecated */
+export const AbilitiesIndex = minecraft.AbilitiesIndex;
+/** @deprecated */
+export type AbilitiesIndex = minecraft.AbilitiesIndex;
 
 export class Ability extends NativeClass {
     type:Ability.Type;
@@ -110,32 +91,14 @@ export class Ability extends NativeClass {
 }
 
 export namespace Ability {
-    export enum Type {
-        Invalid,
-        Unset,
-        Bool,
-        Float,
-    }
-
-    export enum Options {
-        None,
-        NoSave,
-        CommandExposed = 2,
-        PermissionsInterfaceExposed = 4,
-        WorldbuilderOverrides = 8,
-
-        NoSaveCommandExposed = 3,
-        NoSavePermissionsInterfaceExposed = 5,
-        CommandExposedPermissionsInterfaceExposed = 6,
-        NoSaveCommandExposedPermissionsInterfaceExposed = 7,
-        NoSaveWorldbuilderOverrides = 9,
-        CommandExposedWorldbuilderOverrides = 10,
-        NoSaveCommandExposedWorldbuilderOverrides = 11,
-        PermissionsInterfaceExposedWorldbuilderOverrides = 12,
-        NoSavePermissionsInterfaceExposedWorldbuilderOverrides = 13,
-        CommandExposedPermissionsInterfaceExposedWorldbuilderOverrides = 14,
-        All = 15,
-    }
+    /** @deprecated */
+    export const Type = minecraft.Ability.Type;
+    /** @deprecated */
+    export type Type = minecraft.Ability.Type;
+    /** @deprecated */
+    export const Options = minecraft.Ability.Options;
+    /** @deprecated */
+    export type Options = minecraft.Ability.Options;
 
     @nativeClass()
     export class Value extends NativeClass {

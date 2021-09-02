@@ -3,50 +3,14 @@ import { CxxVector } from "../cxxvector";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { int32_t, uint32_t } from "../nativetype";
 import { ItemStack } from "./inventory";
+import minecraft = require('../minecraft');
 
+/** @deprecated */
 export namespace Enchant {
-    export enum Type {
-        ArmorAll,
-        ArmorFire,
-        ArmorFall,
-        ArmorExplosive,
-        ArmorProjectile,
-        ArmorThorns,
-        WaterBreath,
-        WaterSpeed,
-        WaterAffinity,
-        WeaponDamage,
-        WeaponUndead,
-        WeaponArthropod,
-        WeaponKnockback,
-        WeaponFire,
-        WeaponLoot,
-        MiningEfficiency,
-        MiningSilkTouch,
-        MiningDurability,
-        MiningLoot,
-        BowDamage,
-        BowKnockback,
-        BowFire,
-        BowInfinity,
-        FishingLoot,
-        FishingLure,
-        FrostWalker,
-        Mending,
-        CurseBinding,
-        CurseVanishing,
-        TridentImpaling,
-        TridentRiptide,
-        TridentLoyalty,
-        TridentChanneling,
-        CrossbowMultishot,
-        CrossbowPiercing,
-        CrossbowQuickCharge,
-        SoulSpeed,
-
-        NumEnchantments,
-        InvalidEnchantment,
-    }
+    /** @deprecated */
+    export const Type = minecraft.Enchant.Type;
+    /** @deprecated */
+    export type Type = minecraft.Enchant.Type;
 }
 
 export enum EnchantmentNames {

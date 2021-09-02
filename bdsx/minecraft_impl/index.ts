@@ -4,6 +4,7 @@ import './attributeinstance';
 import './baseattributemap';
 import './blockpos';
 import './commandname';
+import './enums';
 import './gamemode';
 import './item';
 import './itemactor';
@@ -24,4 +25,3 @@ import './serverplayer';
 import './survivalmode';
 import './teleporttarget';
 import './vec3';
-
