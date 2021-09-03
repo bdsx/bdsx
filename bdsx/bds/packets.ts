@@ -8,6 +8,7 @@ import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { Packet } from "./packet";
+import type { GameType } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 
 @nativeClass(null)
@@ -745,12 +746,14 @@ export class LevelChunkPacket extends Packet {
 
 @nativeClass(null)
 export class SetCommandsEnabledPacket extends Packet {
-    // unknown
+    @nativeField(bool_t)
+    commandsEnabled:bool_t;
 }
 
 @nativeClass(null)
 export class SetDifficultyPacket extends Packet {
-    // unknown
+    @nativeField(uint32_t)
+    difficulty:uint32_t;
 }
 
 @nativeClass(null)
@@ -769,7 +772,8 @@ export class ChangeDimensionPacket extends Packet {
 
 @nativeClass(null)
 export class SetPlayerGameTypePacket extends Packet {
-    // unknown
+    @nativeField(int32_t)
+    playerGameType:GameType;
 }
 
 @nativeClass(null)
@@ -779,7 +783,8 @@ export class PlayerListPacket extends Packet {
 
 @nativeClass(null)
 export class SimpleEventPacket extends Packet {
-    // unknown
+    @nativeField(uint16_t)
+    subtype:uint16_t;
 }
 
 @nativeClass(null)
@@ -833,10 +838,10 @@ export class CameraPacket extends Packet {
 @nativeClass(null)
 export class BossEventPacket extends Packet {
     /** @deprecated */
-    @nativeField(bin64_t)
+    @nativeField(bin64_t, {ghost: true})
     unknown:bin64_t;
     /** Always 1 */
-    @nativeField(int32_t, 0x30)
+    @nativeField(int32_t)
     flagDarken:int32_t;
     /** Always 2 */
     @nativeField(int32_t)
@@ -880,7 +885,7 @@ export namespace BossEventPacket {
         Green,
         Yellow,
         Purple,
-        White
+        White,
     }
 
     export enum Overlay {
@@ -1087,17 +1092,15 @@ export class SetLastHurtByPacket extends Packet {
 
 @nativeClass(null)
 export class BookEditPacket extends Packet {
-    // it seems fields have weird empty spaces.
-    // I'm not sure how it implemented actually.
     @nativeField(uint8_t)
     type:uint8_t;
-    @nativeField(uint8_t, 0x34)
-    inventorySlot:uint8_t;
-    @nativeField(uint8_t, 0x38)
-    pageNumber:uint8_t;
-    @nativeField(uint8_t, 0x3c)
-    secondaryPageNumber:uint8_t;
-    @nativeField(CxxString, 0x40)
+    @nativeField(int32_t, 0x34) // It is int32 but is uint8 after serialization
+    inventorySlot:int32_t;
+    @nativeField(int32_t) // It is int32 but is uint8 after serialization
+    pageNumber:int32_t;
+    @nativeField(int32_t)
+    secondaryPageNumber:int32_t; // It is int32 but is uint8 after serialization
+    @nativeField(CxxString)
     text:CxxString;
     @nativeField(CxxString)
     author:CxxString;

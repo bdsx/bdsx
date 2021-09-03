@@ -283,7 +283,28 @@ const symbols = [
     'ItemStack::clone',
     'ItemStackBase::toString',
     'ItemStackBase::toDebugString',
-    'ItemStackBase::getAuxValue'
+    'ItemStackBase::getAuxValue',
+    'ItemStackBase::setAuxValue',
+    'ArmorItem::getArmorValue',
+    'Mob::getArmorValue',
+    'IdentityDefinition::getEntityId',
+    'IdentityDefinition::getPlayerId',
+    'IdentityDefinition::getFakePlayerName',
+    'IdentityDefinition::getIdentityType',
+    'Level::getGameRules',
+    'Abilities::getAbilityName',
+    'Abilities::nameToAbilityIndex',
+    'GameRules::nameToGameRuleIndex',
+    'GameRules::getRule',
+    'GameRules::hasRule',
+    'GameRules::createAllGameRulesPacket',
+    'GameRule::getBool',
+    'GameRule::getInt',
+    'GameRule::getFloat',
+    'Level::hasCommandsEnabled',
+    'Level::getLevelData',
+    'LevelData::getGameDifficulty',
+    'LevelData::setGameDifficulty',
 ] as const;
 
 // decorated symbols
@@ -329,7 +350,7 @@ const symbols2 = [
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
-    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z',
+    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z'
 ] as const;
 
 

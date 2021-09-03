@@ -1,9 +1,10 @@
+import { bin } from "../bin";
 import { abstract } from "../common";
 import { AllocatedPointer, StaticPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
-import { Actor } from "./actor";
+import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
 
 export class Scoreboard extends NativeClass {
@@ -158,14 +159,65 @@ export class DisplayObjective extends NativeClass {
     order:ObjectiveSortOrder;
 }
 
+export class IdentityDefinition extends NativeClass {
+    getEntityId():ActorUniqueID {
+        abstract();
+    }
+
+    getPlayerId():ActorUniqueID {
+        abstract();
+    }
+
+    getFakePlayerName():string {
+        abstract();
+    }
+
+    getIdentityType():IdentityDefinition.Type {
+        abstract();
+    }
+
+    getName():string|null {
+        switch (this.getIdentityType()) {
+        case IdentityDefinition.Type.Entity: {
+            // BDSX reads int64 as uint64, so we have to manually handle it since ActorUniqueID is signed and negative
+            const a = bin.sub(bin.make64(4294967295, 4294967295), this.getEntityId());
+            const b = bin.add(a, bin.make64(1, 0));
+            return "-" + bin.toString(b);
+        }
+        case IdentityDefinition.Type.Player: {
+            const actor = Actor.fromUniqueIdBin(this.getPlayerId());
+            if (actor) {
+                return actor.getName();
+            } else {
+                // Player Offline
+                return null;
+            }
+        }
+        case IdentityDefinition.Type.FakePlayer:
+            return this.getFakePlayerName();
+        default:
+            return null;
+        }
+    }
+}
+
+export namespace IdentityDefinition {
+    export enum Type {
+        Invalid,
+        Player,
+        Entity,
+        FakePlayer,
+    }
+}
+
 @nativeClass()
 export class ScoreboardId extends NativeClass {
     @nativeField(bin64_t)
     id:bin64_t;
     @nativeField(int64_as_float_t, 0)
     idAsNumber:int64_as_float_t;
-    @nativeField(bin64_t)
-    identityDef:bin64_t;
+    @nativeField(IdentityDefinition.ref())
+    identityDef:IdentityDefinition;
 }
 
 @nativeClass()
@@ -177,7 +229,6 @@ export class ScoreInfo extends NativeClass {
     @nativeField(int32_t, 0x0C)
     value:int32_t;
 }
-
 
 @nativeClass()
 export class ScoreboardIdentityRef extends NativeClass {

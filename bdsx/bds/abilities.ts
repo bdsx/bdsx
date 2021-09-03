@@ -34,6 +34,13 @@ export class Abilities extends NativeClass {
             break;
         }
     }
+
+    static getAbilityName(abilityIndex:AbilitiesIndex):string {
+        abstract();
+    }
+    static nameToAbilityIndex(name:string):AbilitiesIndex {
+        abstract();
+    }
 }
 
 export enum AbilitiesIndex {
@@ -45,7 +52,10 @@ export enum AbilitiesIndex {
     AttackMobs,
     OperatorCommands,
     Teleport,
+    /** Both are 8 */
     ExposedAbilityCount,
+
+    Invulnerable = 8,
     Flying,
     MayFly,
     Instabuild,
@@ -55,6 +65,7 @@ export enum AbilitiesIndex {
     Muted,
     WorldBuilder,
     NoClip,
+    AbilityCount,
 }
 
 export class Ability extends NativeClass {
@@ -126,11 +137,11 @@ export namespace Ability {
         All = 15,
     }
 
-    @nativeClass(0x04)
+    @nativeClass()
     export class Value extends NativeClass {
-        @nativeField(bool_t, 0x00)
+        @nativeField(bool_t, {ghost:true})
         boolVal:bool_t;
-        @nativeField(float32_t, 0x00)
+        @nativeField(float32_t)
         floatVal:float32_t;
     }
 }
