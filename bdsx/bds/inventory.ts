@@ -12,6 +12,7 @@ import type { ItemEnchants } from "./enchants";
 import type { BlockPalette } from "./level";
 import { CompoundTag } from "./nbt";
 import type { ServerPlayer } from "./player";
+import minecraft = require('../minecraft');
 
 /**
  * Values from 1 to 100 are for a player's container counter.
@@ -41,59 +42,20 @@ export enum ContainerId {
     None = 0xFF,
 }
 
-export enum ContainerType {
-    Container,
-    Workbench,
-    Furnace,
-    Enchantment,
-    BrewingStand,
-    Anvil,
-    Dispenser,
-    Dropper,
-    Hopper,
-    Cauldron,
-    MinecartChest,
-    MinecartHopper,
-    Horse,
-    Beacon,
-    StructureEditor,
-    Trade,
-    CommandBlock,
-    Jukebox,
-    Armor,
-    Hand,
-    CompoundCreator,
-    ElementConstructor,
-    MaterialReducer,
-    LabTable,
-    Loom,
-    Lectern,
-    Grindstone,
-    BlastFurnace,
-    Smoker,
-    Stonecutter,
-    Cartography,
-    None = 0xF7,
-    Inventory = 0xFF,
-}
+/** @deprecated */
+export const ContainerType = minecraft.ContainerType;
+/** @deprecated */
+export type ContainerType = minecraft.ContainerType;
 
-export enum ArmorSlot {
-    Head,
-    /** IDA said this is called Torso */
-    Torso,
-    Chest = 1,
-    Legs,
-    Feet
-}
+/** @deprecated */
+export const ArmorSlot = minecraft.ArmorSlot;
+/** @deprecated */
+export type ArmorSlot = minecraft.ArmorSlot;
 
-export enum CreativeItemCategory {
-    All,
-    Construction,
-    Nature,
-    Equipment,
-    Items,
-    Uncategorized,
-}
+/** @deprecated */
+export const CreativeItemCategory = minecraft.CreativeItemCategory;
+/** @deprecated */
+export type CreativeItemCategory = minecraft.CreativeItemCategory;
 
 export class Item extends NativeClass {
     allowOffhand():boolean {
@@ -541,13 +503,8 @@ export class ComplexInventoryTransaction extends NativeClass {
 }
 
 export namespace ComplexInventoryTransaction {
-    export enum Type {
-        NormalTransaction,
-        InventoryMismatch,
-        ItemUseTransaction,
-        ItemUseOnEntityTransaction,
-        ItemReleaseTransaction,
-    }
+    export const Type = minecraft.ComplexInventoryTransaction.Type;
+    export type Type = minecraft.ComplexInventoryTransaction.Type;
 }
 
 @nativeClass(null)
@@ -571,11 +528,10 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
 }
 
 export namespace ItemUseInventoryTransaction {
-    export enum ActionType {
-        Place,
-        Use,
-        Destroy,
-    }
+    /** @deprecated */
+    export const ActionType = minecraft.ItemUseInventoryTransaction.ActionType;
+    /** @deprecated */
+    export type ActionType = minecraft.ItemUseInventoryTransaction.ActionType;
 }
 
 @nativeClass(null)
@@ -595,11 +551,10 @@ export class ItemUseOnActorInventoryTransaction extends ComplexInventoryTransact
 }
 
 export namespace ItemUseOnActorInventoryTransaction {
-    export enum ActionType {
-        Interact,
-        Attack,
-        ItemInteract,
-    }
+    /** @deprecated */
+    export const ActionType = minecraft.ItemUseOnActorInventoryTransaction.ActionType;
+    /** @deprecated */
+    export type ActionType = minecraft.ItemUseOnActorInventoryTransaction.ActionType;
 }
 
 @nativeClass(null)
@@ -615,8 +570,8 @@ export class ItemReleaseInventoryTransaction extends ComplexInventoryTransaction
 }
 
 export namespace ItemReleaseInventoryTransaction {
-    export enum ActionType {
-        Release,
-        Use,
-    }
+    /** @deprecated */
+    export const ActionType = minecraft.ItemReleaseInventoryTransaction.ActionType;
+    /** @deprecated */
+    export type ActionType = minecraft.ItemReleaseInventoryTransaction.ActionType;
 }

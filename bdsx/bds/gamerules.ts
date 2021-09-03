@@ -1,6 +1,7 @@
 import { abstract } from "../common";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, float32_t, int32_t } from "../nativetype";
+import { NativeClass } from "../nativeclass";
+import { bool_t } from "../nativetype";
+import minecraft = require('../minecraft');
 
 export enum GameRuleId {
     CommandBlockOutput,
@@ -116,20 +117,12 @@ export class GameRule extends NativeClass {
 }
 
 export namespace GameRule {
-    export enum Type {
-        Invalid,
-        Bool,
-        Int,
-        Float,
-    }
-
-    @nativeClass()
-    export class Value extends NativeClass {
-        @nativeField(bool_t, {ghost:true})
-        boolVal:bool_t;
-        @nativeField(int32_t, {ghost:true})
-        intVal:int32_t;
-        @nativeField(float32_t)
-        floatVal:float32_t;
-    }
+    /** @deprecated */
+    export const Type = minecraft.GameRule.Type;
+    /** @deprecated */
+    export type Type = minecraft.GameRule.Type;
+    /** @deprecated */
+    export const Value = minecraft.GameRule.Value;
+    /** @deprecated */
+    export type Value = minecraft.GameRule.Value;
 }

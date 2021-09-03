@@ -8,21 +8,12 @@ CommandTypeFlag ❌
 CommandUsageFlag ❌
 CommandVisibilityFlag ❌
 MobEffectIds ❌
+GameRuleId ❌, is class
+ContainerId ❌
+InventorySourceType ❌
+InventorySourceFlags ❌
 
 - Progressing
-EnchantmentNames
-GameRuleId
-GameRule.Type
-ContainerId
-ContainerType
-ArmorSlot
-CreativeItemCategory
-InventorySourceType
-InventorySourceFlags
-ComplexInventoryTransaction.Type
-ItemUseInventoryTransaction.ActionType
-ItemUseOnActorInventoryTransaction.ActionType
-ItemReleaseInventoryTransaction.ActionType
 Difficulty
 MinecraftPacketIds
 PackType

@@ -12,6 +12,21 @@ const names = {
     minecraft: new tsw.Name('minecraft')
 };
 
+let comment:string|null = null;
+function writeComment():void {
+    if (comment === null) return;
+    switch (comment.charAt(0)) {
+    case '#':
+    case ';':
+        dts.writeln(`//${comment.substr(1)}`);
+        break;
+    default:
+        dts.writeln(`/**${comment} */`);
+        break;
+    }
+    comment = null;
+}
+
 const dts = new ScriptWriter;
 const js = new ScriptWriter;
 js.writeln('const minecraft=require("../minecraft");');
@@ -32,7 +47,7 @@ for (const filename of fs.readdirSync(enumsDir)) {
     readExp.lastIndex = 0;
     const lines = content.split(/\r?\n/g);
 
-    js.writeln(`(minecraft.${nsList.join(',')}=v={}).__proto__=null;`);
+    js.writeln(`(minecraft.${nsList.join('.')}=v={}).__proto__=null;`);
 
     const enumName = nsList[n];
     for (let i=0;i<n;i++) {
@@ -42,14 +57,11 @@ for (const filename of fs.readdirSync(enumsDir)) {
     dts.writeln(`enum ${enumName} {`);
     dts.tab(4);
 
-    let comment:string|null = null;
+
     let next:number|null = 0;
     for (let lineNumber=0;lineNumber<lines.length;lineNumber++) {
         try {
-            if (comment != null) {
-                dts.writeln(`/**${comment} */`);
-                comment = null;
-            }
+            writeComment();
 
             let line = lines[lineNumber];
             let idx = line.indexOf(';');
@@ -58,7 +70,7 @@ for (const filename of fs.readdirSync(enumsDir)) {
                 line = line.substr(0, idx);
             }
 
-            let value:string|null = null;
+            let value:string|number|null = null;
             idx = line.indexOf('=');
             if (idx !== -1) {
                 value = line.substr(idx+1).trim();
@@ -78,8 +90,9 @@ for (const filename of fs.readdirSync(enumsDir)) {
                 value = next+'';
                 next++;
             } else if (firstIsNumber.test(value)) {
-                dts.writeln(`${line}=${value},`);
-                next = +value + 1;
+                dts.writeln(`${line} = ${value},`);
+                value = +value;
+                next = value + 1;
             } else {
                 const v = JSON.parse(value);
                 if (typeof v !== 'number' && v !== 'string') {
@@ -93,9 +106,7 @@ for (const filename of fs.readdirSync(enumsDir)) {
             console.error(`${filename}:${lineNumber+1} ${err.message}`);
         }
     }
-    if (comment != null) {
-        dts.writeln(`/**${comment} */`);
-    }
+    writeComment();
     for (let i=0;i<=n;i++) {
         dts.tab(-4);
         dts.writeln(`}`);

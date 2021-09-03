@@ -8,14 +8,14 @@ import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
 import util = require('util');
 
-type FieldMapItem = [Type<any>, number]|Type<any>;
+type FieldMapItem = [Type<any>, number|NativeFieldOptions]|Type<any>;
 
 
 export type KeysFilter<T, FILTER> = {[key in keyof T]:T[key] extends FILTER ? key: never}[keyof T];
 type AnyToUnknown<T> = 0 extends (1 & T) ? unknown : T;
 export type KeysWithoutFunction<T> = {[key in keyof T]:AnyToUnknown<T[key]> extends AnyFunction ? never: key}[keyof T];
 
-type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
+type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number|NativeFieldOptions]};
 
 const isNativeClass = Symbol();
 const isSealed = Symbol();
