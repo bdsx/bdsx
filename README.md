@@ -9,8 +9,8 @@ BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.j
 * All node.js features (*that are supported by ChakraCore. See [this page](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules) for more information)
 * Debug with Visual Studio Code (You can debug plugins too)
 * Intercept network packets
-* [Hook commands](https://github.com/bdsx/bdsx/wiki/Command-Hooking)
-* [Low-level hooking]() and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
+* [Custom Commands](https://github.com/bdsx/bdsx/wiki/Custom-Commands)
+* Low-level hooking and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
 * Get IP Address & XUID (Example below)
 
 ```ts
