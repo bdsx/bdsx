@@ -14,6 +14,7 @@ import './mobeffect';
 import './networkhandler';
 import './packet';
 import './packets';
+import './pistonblockactor';
 import './player';
 import './raknet/addressorguid';
 import './raknet/raknetguid';

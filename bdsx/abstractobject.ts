@@ -18,3 +18,7 @@ export function createAbstractObject(message:string):any {
         getOwnPropertyDescriptor: _,
     });
 }
+
+export namespace createAbstractObject {
+    export const bedrockObject = createAbstractObject('bedrock_server is not launched yet');
+}

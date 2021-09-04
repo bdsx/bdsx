@@ -10,6 +10,7 @@ if ((global as any).bdsx != null) {
 
 import type {} from './externs';
 import './polyfill';
+import enums = require('./enums');
 
 export interface CANCEL {
     __CANCEL_OBJECT__?:void;
@@ -18,42 +19,16 @@ export interface CANCEL {
 
 export const CANCEL:CANCEL = {toString(){ return 'CANCEL'; }};
 
-export enum AttributeName {
-	ZombieSpawnReinforcementsChange="minecraft:zombie.spawn.reinforcements",
-	PlayerHunger="minecraft:player.hunger",
-	PlayerSaturation="minecraft:player.saturation",
-	PlayerExhaustion="minecraft:player.exhaustion",
-	PlayerLevel="minecraft:player.level",
-	PlayerExperience="minecraft:player.experience",
-	Health="minecraft:health",
-	FollowRange="minecraft:follow_range",
-	KnockbackResistance="minecraft:knockback_registance",
-	MovementSpeed="minecraft:movement",
-	UnderwaterMovementSpeed="minecraft:underwater_movement",
-	AttackDamage="minecraft:attack_damage",
-	Absorption="minecraft:absorption",
-	Luck="minecraft:luck",
-	JumpStrength="minecraft:horse.jump_strength",
-}
+/** @deprecated import it from 'bdsx/enums' */
+export const AttributeName = enums.AttributeName;
+/** @deprecated import it from 'bdsx/enums' */
+export type AttributeName = enums.AttributeName;
 
-// https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
-export enum DeviceOS {
-	UNKNOWN = -1,
-	ANDROID = 1,
-	IOS = 2,
-	OSX = 3,
-	AMAZON = 4,
-	GEAR_VR = 5,
-	HOLOLENS = 6,
-	WINDOWS_10 = 7,
-	WIN32 = 8,
-	DEDICATED = 9,
-	TVOS = 10,
-	PLAYSTATION = 11,
-	NINTENDO = 12,
-	XBOX = 13,
-	WINDOWS_PHONE = 14,
-}
+
+/** @deprecated import it from 'bdsx/enums' */
+export const DeviceOS = enums.DeviceOS;
+/** @deprecated import it from 'bdsx/enums' */
+export type DeviceOS = enums.DeviceOS;
 
 export enum Encoding {
 	Utf16=-2,
@@ -61,12 +36,6 @@ export enum Encoding {
 	Utf8=0,
 	None,
 	Ansi
-}
-
-export enum DimensionId { // int32_t
-    Overworld = 0,
-    Nether = 1,
-    TheEnd = 2
 }
 
 export type TypeFromEncoding<T extends Encoding> = T extends Encoding.Buffer ? Uint8Array : string;

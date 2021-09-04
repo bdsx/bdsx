@@ -242,6 +242,7 @@ const imports = {
     dll: new TsFileExtern('./dll'),
     core: new TsFileExtern('./core'),
     common: new TsFileExtern('./common'),
+    enums: new TsFileExtern('./enums'),
     pointer: new TsFileExtern('./pointer'),
     sharedpointer: new TsFileExtern('./sharedpointer'),
 };
@@ -1881,7 +1882,7 @@ new Definer(PdbId.make('...')).js(['NativeVarArgs', imports.complextype]).paramN
 new Definer('gsl::not_null<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.Wrapper.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('v');
 new Definer('std::unique_ptr<#KEY0, std::default_delete<#KEY0>>').templateRedirect((item, templates, kind, opts)=>minecraft.Wrapper.wrap(minecraft.toTsw(templates[0], kind, opts)), {exportOriginal: true}).paramName('v');
 new Definer('std::shared_ptr<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.SharedPtr.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('v');
-new Definer('AutomaticID<Dimension, int>').js(['DimensionId', imports.common]).paramName('dim');
+new Definer('AutomaticID<Dimension, int>').js(['DimensionId', imports.enums]).paramName('dim');
 new Definer('Packet').item.isMantleClass = true;
 
 reduceTemplateTypes();

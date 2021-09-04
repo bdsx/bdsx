@@ -1,3 +1,4 @@
+import { createAbstractObject } from "../abstractobject";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
@@ -11,7 +12,6 @@ import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { proc } from "./symbols";
-import minecraft = require('../minecraft');
 
 export class MinecraftEventing extends NativeClass {}
 export class ResourcePackManager extends NativeClass {}
@@ -172,5 +172,5 @@ export class ServerInstance extends NativeClass {
 
 /** @deprecated use minecraft.serverInstance */
 // eslint-disable-next-line prefer-const
-export let serverInstance:ServerInstance = minecraft.serverInstance as any;
+export let serverInstance:ServerInstance = createAbstractObject.bedrockObject;
 

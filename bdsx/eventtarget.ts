@@ -2,6 +2,9 @@
 import { CANCEL } from './common';
 import { remapAndPrintError } from './source-map-support';
 
+/**
+ * @deprecated unusing
+ */
 export interface CapsuledEvent<T extends (...args: any[]) => any> {
     /**
      * return true if there are no connected listeners
@@ -24,8 +27,43 @@ export interface CapsuledEvent<T extends (...args: any[]) => any> {
     remove(listener: T): boolean;
 }
 
-export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<void>)> implements CapsuledEvent<T> {
+export class Event<T extends (...args: any[]) => Event.ReturnType> implements CapsuledEvent<T> {
     private readonly listeners: T[] = [];
+    private installer:(()=>void)|null = null;
+    private uninstaller:(()=>void)|null = null;
+
+    setInstaller(installer:()=>void, uninstaller:(()=>void)|null = null):void {
+        if (this.listeners.length !== 0) {
+            if (this.uninstaller !== null) {
+                this.uninstaller();
+            }
+            installer();
+
+            if (uninstaller === null) {
+                this.installer = null;
+            } else {
+                this.installer = installer;
+            }
+        } else {
+            this.installer = installer;
+        }
+        this.uninstaller = uninstaller;
+    }
+
+    /**
+     * pipe two events
+     * it uses setInstaller
+     */
+    pipe<T2 extends (...args: any[]) => Event.ReturnType>(
+        target:Event<T2>,
+        piper:(this:this, ...args:Parameters<T2>)=>ReturnType<T2>
+    ):void {
+        const pipe = ((...args)=>piper.call(this, ...args)) as T2;
+        this.setInstaller(
+            ()=>target.on(pipe),
+            ()=>target.remove(pipe)
+        );
+    }
 
     isEmpty(): boolean {
         return this.listeners.length === 0;
@@ -35,6 +73,12 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
      * cancel event if it returns non-undefined value
      */
     on(listener: T): void {
+        if (this.listeners.length === 0 && this.installer !== null) {
+            this.installer();
+            if (this.uninstaller === null) {
+                this.installer = null;
+            }
+        }
         this.listeners.push(listener);
     }
 
@@ -62,6 +106,9 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
         const idx = this.listeners.indexOf(listener);
         if (idx === -1) return false;
         this.listeners.splice(idx, 1);
+        if (this.listeners.length === 0 && this.uninstaller != null) {
+            this.uninstaller();
+        }
         return true;
     }
 
@@ -126,6 +173,13 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
     public static errorHandler = new Event<(error:any)=>void|CANCEL>();
 }
 
+export namespace Event {
+    export type ReturnType = number|CANCEL|void|Promise<void>;
+}
+
+/**
+ * @deprecated use Event.setInstaller
+ */
 export class EventEx<T extends (...args: any[]) => any> extends Event<T> {
     protected onStarted(): void {
         // empty

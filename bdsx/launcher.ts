@@ -22,6 +22,7 @@ import { _tickCallback } from "./util";
 import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
+import minecraft = require("./minecraft");
 import nimodule = require("./bds/networkidentifier");
 
 declare module 'colors'
@@ -253,6 +254,8 @@ function _launch(asyncResolve:()=>void):void {
 
                 bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
                 nimodule.networkHandler = bd_server.serverInstance.networkHandler;
+                minecraft.serverInstance = asmcode.serverInstance.as(minecraft.ServerInstance);
+                minecraft.networkHandler = minecraft.serverInstance.networkHandler;
                 openIsFired = true;
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it

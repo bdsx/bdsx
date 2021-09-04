@@ -1,4 +1,5 @@
 
+import { createAbstractObject } from "../abstractobject";
 import { Register } from "../assembler";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
@@ -19,6 +20,7 @@ import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
+/** @deprecated */
 export class NetworkHandler extends NativeClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
@@ -156,7 +158,9 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     }
 }
 
-export let networkHandler:NetworkHandler;
+/** @deprecated */
+// eslint-disable-next-line prefer-const
+export let networkHandler:NetworkHandler = createAbstractObject.bedrockObject;
 
 procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
     try {

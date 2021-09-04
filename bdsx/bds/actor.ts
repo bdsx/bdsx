@@ -16,16 +16,16 @@ import type { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
-import common = require('../common');
+import enums = require('../enums');
 import minecraft = require('../minecraft');
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
 
-/** @deprecated import it from bdsx/common */
-export const DimensionId = common.DimensionId;
-/** @deprecated import it from bdsx/common */
-export type DimensionId = common.DimensionId;
+/** @deprecated import it from bdsx/enums */
+export const DimensionId = enums.DimensionId;
+/** @deprecated import it from bdsx/enums */
+export type DimensionId = enums.DimensionId;
 
 export class ActorRuntimeID extends VoidPointer {
 }

@@ -30,74 +30,75 @@ for (let i=0;i<PACKET_EVENT_COUNT;i++) {
 }
 
 
+/** @deprecated */
 export namespace events {
 
     ////////////////////////////////////////////////////////
     // Block events
 
-    /** Cancellable */
+    /** @deprecated */
     export const blockDestroy = new Event<(event: BlockDestroyEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const pistonMove = new Event<(event: PistonMoveEvent) => void>();
-    /** Cancellable */
+    /** @deprecated */
     export const farmlandDecay = new Event<(event: FarmlandDecayEvent) => void | CANCEL>();
 
-    /** Cancellable but requires additional stimulation */
+    /** @deprecated */
     export const campfireLight = new Event<(event: CampfireTryLightFire) => void | CANCEL>();
-    /** Cancellable but requires additional stimulation */
+    /** @deprecated */
     export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
     ////////////////////////////////////////////////////////
     // Entity events
 
-    /** Cancellable */
+    /** @deprecated */
     export const entityHurt = new Event<(event: EntityHurtEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const entityHealthChange = new Event<(event: EntityHeathChangeEvent) => void>();
-    /** Not cancellable */
+    /** @deprecated */
     export const entityDie = new Event<(event: EntityDieEvent) => void>();
-    /** Not cancellable */
+    /** @deprecated */
     export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
-    /** Cancellable */
+    /** @deprecated */
     export const entityStartSwimming = new Event<(event: EntityStartSwimmingEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const entityStartRiding = new Event<(event: EntityStartRidingEvent) => void | CANCEL>();
-    /** Cancellable but the client is still exiting though it will automatically ride again after rejoin */
+    /** @deprecated */
     export const entityStopRiding = new Event<(event: EntityStopRidingEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
-    /** Cancellable but only when player is in container screens*/
+    /** @deprecated */
     export const playerDropItem = new Event<(event: PlayerDropItemEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const playerInventoryChange = new Event<(event: PlayerInventoryChangeEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const playerRespawn = new Event<(event: PlayerRespawnEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const playerLevelUp = new Event<(event: PlayerLevelUpEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const entityCreated = new Event<(event: EntityCreatedEvent) => void>();
-    /** Not cancellable */
+    /** @deprecated */
     export const playerJoin = new Event<(event: PlayerJoinEvent) => void>();
-    /** Cancellable */
+    /** @deprecated */
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
-    /** Not cancellable */
+    /** @deprecated */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
-    /** Cancellable */
+    /** @deprecated */
     export const splashPotionHit = new Event<(event: SplashPotionHitEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Level events
 
-    /** Cancellable */
+    /** @deprecated */
     export const levelExplode = new Event<(event: LevelExplodeEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /** @deprecated */
     export const levelTick = new Event<(event: LevelTickEvent) => void>();
     /** Cancellable but you won't be able to stop the server */
     export const levelSave = new Event<(event: LevelSaveEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const levelWeatherChange = new Event<(event: LevelWeatherChangeEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
@@ -155,45 +156,27 @@ export namespace events {
         return packetAllTargets[id];
     }
 
-    /**
-     * before 'before' and 'after'
-     * earliest event for the packet receiving.
-     * It will bring raw packet buffers before parsing
-     * It can be canceled the packet if you return 'CANCEL'
-     */
+    /** @deprecated */
     export function packetRaw(id:MinecraftPacketIds):Event<nethook.RawListener> {
         return getNetEventTarget(PacketEventType.Raw, id);
     }
 
-    /**
-     * after 'raw', before 'after'
-     * the event that before processing but after parsed from raw.
-     * It can be canceled the packet if you return 'CANCEL'
-     */
+    /** @deprecated */
     export function packetBefore<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Before, id);
     }
 
-    /**
-     * after 'raw' and 'before'
-     * the event that after processing. some fields are assigned after the processing
-     */
+    /** @deprecated */
     export function packetAfter<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.After, id);
     }
 
-    /**
-     * before serializing.
-     * it can modify class fields.
-     */
+    /** @deprecated */
     export function packetSend<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Send, id);
     }
 
-    /**
-     * after serializing. before sending.
-     * it can access serialized buffer.
-     */
+    /** @deprecated */
     export function packetSendRaw(id:number):Event<nethook.SendRawListener> {
         return getNetEventTarget(PacketEventType.SendRaw, id);
     }
@@ -201,25 +184,23 @@ export namespace events {
     ////////////////////////////////////////////////////////
     // Misc
 
-    /** Not cancellable */
+    /** @deprecated */
     export const queryRegenerate = new Event<(event: QueryRegenerateEvent) => void>();
-    /** Cancellable */
+    /** @deprecated */
     export const scoreReset = new Event<(event: ScoreResetEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const scoreSet = new Event<(event: ScoreSetEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const scoreAdd = new Event<(event: ScoreAddEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const scoreRemove = new Event<(event: ScoreRemoveEvent) => void | CANCEL>();
-    /** Cancellable */
+    /** @deprecated */
     export const objectiveCreate = new Event<(event: ObjectiveCreateEvent) => void | CANCEL>();
 
-    /**
-    * global error listeners
-    * if returns 'CANCEL', then default error printing is disabled
-    */
+    /** @deprecated */
     export const error = Event.errorHandler;
 
+    /** @deprecated */
     export function errorFire(err:unknown):void {
         if (err instanceof Error) {
             err.stack = remapStack(err.stack);
@@ -229,23 +210,13 @@ export namespace events {
         }
     }
 
-     /**
-      * command console outputs
-      */
+    /** @deprecated */
     export const commandOutput = new Event<(log:string)=>CANCEL|void>();
 
-
-     /**
-      * command input
-      * Commands will be canceled if you return a error code.
-      * 0 means success for error codes but others are unknown.
-      */
+    /** @deprecated */
     export const command = new Event<(command: string, originName: string, ctx: CommandContext) => void | number>();
 
-
-    /**
-      * network identifier disconnected
-      */
+    /** @deprecated */
     export const networkDisconnected = new Event<(ni:NetworkIdentifier)=>void>();
 
 }

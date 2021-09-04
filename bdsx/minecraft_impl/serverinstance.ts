@@ -21,4 +21,4 @@ ServerInstance.abstract({
     networkHandler:[NetworkHandler.ref(), 0xa8],
 });
 
-minecraft.serverInstance = createAbstractObject('bedrock_server is not launched yet');
+minecraft.serverInstance = createAbstractObject.bedrockObject;
