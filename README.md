@@ -9,8 +9,8 @@ BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.j
 * All node.js features (*that are supported by ChakraCore. See [this page](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules) for more information)
 * Debug with Visual Studio Code (You can debug plugins too)
 * Intercept network packets
-* [Hook commands](https://github.com/bdsx/bdsx/wiki/Command-Hooking)
-* [Low-level hooking]() and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
+* [Custom Commands](https://github.com/bdsx/bdsx/wiki/Custom-Commands)
+* Low-level hooking and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
 * Get IP Address & XUID (Example below)
 
 ```ts
@@ -46,16 +46,13 @@ You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Lin
 
 When starting BDSX with VSCode, you need to
 1. Open the project with VSCode
-2. Open a terminal (Ctrl+Shift+｀)
-3. Run `npm i` to install npm packages and BDS
-4. Press `F5` to build and run in VSCode
+2. Install the legacy debugger. the suggestion dialog will be opened up on the right bottom corner.
+3. Open a terminal (Ctrl+Shift+｀)
+4. Run `npm i` to install npm packages and BDS
+5. Press `F5` to build and run in VSCode
 
 For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well.  
 If you want to publish a bdsx plugin, please ask to be invited to the bdsx organization on npm in the `#npm-bdsx-org-member-request` channel in Discord. 
-
-> VSCode will show you upgrade the NodeJS debugger. but ChakraCore needs the legacy debugger.  
-> If you upgraded it. it needs to set back `"debug.javascript.usePreview"` to `false` in `.vscode/settings.json`.
-
 
 ## File Structure
 ```sh
