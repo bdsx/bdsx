@@ -4,6 +4,7 @@ import { HtmlSearcher, htmlutil } from './htmlutil';
 import { styling } from './styling';
 import { DocField, DocFixItem, DocMethod, DocType as DocType } from './type';
 import { FileWriter } from '../../writer/filewriter';
+import { ScriptWriter } from '../../writer/scriptwriter';
 
 const DOCURL_SCRIPTING = 'https://bedrock.dev/docs/stable/Scripting';
 const DOCURL_ADDONS = 'https://bedrock.dev/docs/stable/Addons';
@@ -70,7 +71,9 @@ async function parseScriptingDoc():Promise<void> {
     }
 
     const writer = new FileWriter(OUT_SCRIPTING);
-    await writer.write(`/**\n * Generated with bdsx/bds-scripting/parser.ts\n * docfix.json overrides it.\n * Please DO NOT modify this directly.\n */\ndeclare global {\n\n`);
+    const lines = ScriptWriter.generateWarningComment('bdsx/bds-scripting/parser.ts');
+    await writer.write('/**\n * '+lines.join('\n * ')+'\n */\n\n');
+    await writer.write(`declare global {\n\n`);
 
     try {
         const s = new HtmlSearcher(base);

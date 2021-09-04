@@ -2830,12 +2830,16 @@ export class X64Assembler {
         return out.buffer();
     }
 
-    toScript(bdsxLibPath:string, exportName?:string):{js:string, dts:string} {
+    toScript(bdsxLibPath:string, exportName?:string, generator?:string):{js:string, dts:string} {
         const buffer = this.buffer();
         const rftable = this.ids.get('#runtime_function_table');
 
         const dts = new ScriptWriter;
         const js = new ScriptWriter;
+        dts.generateWarningComment(generator);
+        js.generateWarningComment(generator);
+
+        dts.writeln('');
 
         let imports = 'cgate';
         if (rftable instanceof Label) {

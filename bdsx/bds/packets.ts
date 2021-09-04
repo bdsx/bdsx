@@ -53,18 +53,10 @@ export class DisconnectPacket extends Packet {
     message:CxxString;
 }
 
-export enum PackType {
-    Invalid,
-    Addon,
-    Cached,
-    CopyProtected,
-    Behavior,
-    PersonaPiece,
-    Resources,
-    Skins,
-    WorldTemplate,
-    Count,
-}
+/** @deprecated */
+export const PackType = minecraft.PackType;
+/** @deprecated */
+export type PackType = minecraft.PackType;
 
 // @nativeClass(0x88)
 // export class PackIdVersion extends NativeClass {
@@ -152,12 +144,9 @@ export const ResourcePackStacksPacket = ResourcePackStackPacket;
 export type ResourcePackStacksPacket = ResourcePackStackPacket;
 
 /** @deprecated */
-export enum ResourcePackResponse {
-    Cancel = 1,
-    Downloading,
-    DownloadingFinished,
-    ResourcePackStackFinished,
-}
+export const ResourcePackResponse = minecraft.ResourcePackResponse;
+/** @deprecated */
+export type ResourcePackResponse = minecraft.ResourcePackResponse;
 
 /** @deprecated */
 @nativeClass(null)
@@ -187,25 +176,9 @@ export class TextPacket extends Packet {
 /** @deprecated */
 export namespace TextPacket {
     /** @deprecated */
-    export enum Types {
-        Raw,
-        Chat,
-        Translate,
-        /** @deprecated **/
-        Translated = 2,
-        Popup,
-        JukeboxPopup,
-        Tip,
-        SystemMessage,
-        /** @deprecated **/
-        Sytem = 6,
-        Whisper,
-        // /say command
-        Announcement,
-        TextObject,
-        /** @deprecated **/
-        ObjectWhisper = 9
-    }
+    export const Types = minecraft.TextPacket.Types;
+    /** @deprecated */
+    export type Types = minecraft.TextPacket.Types;
 }
 
 /** @deprecated */
@@ -292,12 +265,8 @@ export class MovePlayerPacket extends Packet {
 }
 /** @deprecated */
 export namespace MovePlayerPacket {
-    export enum Modes {
-        Normal,
-        Reset,
-        Teleport,
-        Pitch,
-    }
+    export const Modes = minecraft.MovePlayerPacket.Modes;
+    export type Modes = minecraft.MovePlayerPacket.Modes;
 }
 
 /** @deprecated */
@@ -319,19 +288,14 @@ export class UpdateBlockPacket extends Packet {
     dataLayerId: uint32_t;
 }
 export namespace UpdateBlockPacket {
-    export enum Flags {
-        None,
-        Neighbors,
-        Network,
-        All,
-        NoGraphic,
-        Priority = 8,
-        AllPriority = 11,
-    }
-    export enum DataLayerIds {
-        Normal,
-        Liquid,
-    }
+    /** @deprecated */
+    export const Flags = minecraft.UpdateBlockPacket.Flags;
+    /** @deprecated */
+    export type Flags = minecraft.UpdateBlockPacket.Flags;
+    /** @deprecated */
+    export const DataLayerIds = minecraft.UpdateBlockPacket.DataLayerIds;
+    /** @deprecated */
+    export type DataLayerIds = minecraft.UpdateBlockPacket.DataLayerIds;
 }
 
 /** @deprecated */
@@ -379,64 +343,12 @@ export class ActorEventPacket extends Packet {
     @nativeField(int32_t)
     data: int32_t;
 }
+/** @deprecated */
 export namespace ActorEventPacket {
-    export enum Events {
-        Jump = 1,
-        HurtAnimation,
-        DeathAnimation,
-        ArmSwing,
-        StopAttack,
-        TameFail,
-        TameSuccess,
-        ShakeWet,
-        UseItem,
-        EatGrassAnimation,
-        FishHookBubble,
-        FishHookPosition,
-        FishHookHook,
-        FishHookTease,
-        SquidInkCloud,
-        ZombieVillagerCure,
-        AmbientSound,
-        Respawn,
-        IronGolemOfferFlower,
-        IronGolemWithdrawFlower,
-        LoveParticles,
-        VillagerAngry,
-        VillagerHappy,
-        WitchSpellParticles,
-        FireworkParticles,
-        InLoveParticles,
-        SilverfishSpawnAnimation,
-        GuardianAttack,
-        WitchDrinkPotion,
-        WitchThrowPotion,
-        MinecartTntPrimeFuse,
-        CreeperPrimeFuse,
-        AirSupplyExpired,
-        PlayerAddXpLevels,
-        ElderGuardianCurse,
-        AgentArmSwing,
-        EnderDragonDeath,
-        DustParticles,
-        ArrowShake,
-        EatingItem = 57,
-        BabyAnimalFeed = 60,
-        DeathSmokeCloud,
-        CompleteTrade,
-        RemoveLeash,
-        ConsumeTotem = 65,
-        PlayerCheckTreasureHunterAchievement,
-        EntitySpawn,
-        DragonPuke,
-        ItemEntityMerge,
-        StartSwim,
-        BalloonPop,
-        TreasureHunt,
-        AgentSummon,
-        ChargedCrossbow,
-        Fall,
-    }
+    /** @deprecated */
+    export const Events = minecraft.ActorEventPacket.Events;
+    /** @deprecated */
+    export type Events = minecraft.ActorEventPacket.Events;
 }
 
 /** @deprecated */
@@ -529,12 +441,10 @@ export class InteractPacket extends Packet {
     pos:Vec3;
 }
 export namespace InteractPacket {
-    export enum Actions {
-        LeaveVehicle = 3,
-        Mouseover,
-        OpenNPC,
-        OpenInventory,
-    }
+    /** @deprecated */
+    export const Actions = minecraft.InteractPacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.InteractPacket.Actions;
 }
 
 /** @deprecated */
@@ -625,14 +535,9 @@ export class AnimatePacket extends Packet {
 /** @deprecated */
 export namespace AnimatePacket {
     /** @deprecated */
-    export enum Actions {
-        SwingArm = 1,
-        WakeUp = 3,
-        CriticalHit,
-        MagicCriticalHit,
-        RowRight = 128,
-        RowLeft,
-    }
+    export const Actions = minecraft.AnimatePacket.Actions;
+    /** @deprecated */
+    export type Actions = minecraft.AnimatePacket.Actions;
 }
 
 /** @deprecated */
@@ -907,16 +812,10 @@ export class BossEventPacket extends Packet {
     createWorldFog:bool_t;
 }
 export namespace BossEventPacket {
-    export enum Types {
-        Show,
-        RegisterPlayer,
-        Hide,
-        UnregisterPlayer,
-        HealthPercent,
-        Title,
-        Properties,
-        Style,
-    }
+    /** @deprecated */
+    export const Types = minecraft.BossEventPacket.Types;
+    /** @deprecated */
+    export type Types = minecraft.BossEventPacket.Types;
 
     /** @deprecated */
     export const Colors = minecraft.BossEventPacket.Colors;
@@ -1085,14 +984,10 @@ export class SetTitlePacket extends Packet {
     fadeOutTime:int32_t;
 }
 export namespace SetTitlePacket {
-    export enum Types {
-        Clear,
-        Reset,
-        Title,
-        Subtitle,
-        Actionbar,
-        AnimationTimes,
-    }
+    /** @deprecated */
+    export const Types = minecraft.SetTitlePacket.Types;
+    /** @deprecated */
+    export type Types = minecraft.SetTitlePacket.Types;
 }
 
 /** @deprecated */
@@ -1164,13 +1059,9 @@ export class BookEditPacket extends Packet {
 /** @deprecated */
 export namespace BookEditPacket {
     /** @deprecated */
-    export enum Types {
-        ReplacePage,
-        AddPage,
-        DeletePage,
-        SwapPages,
-        SignBook,
-    }
+    export const Types = minecraft.BookEditPacket.Types;
+    /** @deprecated */
+    export type Types = minecraft.BookEditPacket.Types;
 }
 
 /** @deprecated */
@@ -1295,10 +1186,10 @@ export class SetScorePacket extends Packet {
 }
 
 export namespace SetScorePacket {
-    export enum Type {
-        CHANGE = 0,
-        REMOVE = 1,
-    }
+    /** @deprecated */
+    export const Type = minecraft.SetScorePacket.Type;
+    /** @deprecated */
+    export type Type = minecraft.SetScorePacket.Type;
 }
 
 /** @deprecated */
@@ -1679,14 +1570,14 @@ export class CameraShakePacket extends Packet {
     shakeAction:uint8_t;
 }
 export namespace CameraShakePacket {
-    export enum ShakeType {
-        Positional,
-        Rotational,
-    }
-    export enum ShakeAction {
-        Add,
-        Stop,
-    }
+    /** @deprecated */
+    export const ShakeType = minecraft.CameraShakePacket.ShakeType;
+    /** @deprecated */
+    export type ShakeType = minecraft.CameraShakePacket.ShakeType;
+    /** @deprecated */
+    export const ShakeAction = minecraft.CameraShakePacket.ShakeAction;
+    /** @deprecated */
+    export type ShakeAction = minecraft.CameraShakePacket.ShakeAction;
 }
 
 /** @deprecated */

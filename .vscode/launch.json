@@ -7,7 +7,7 @@
         {
             "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
             "cwd": "${workspaceFolder}/bedrock_server",
-            "type": "node",
+            "type": "legacy-node",
             "request": "launch",
             "name": "Launch BDSX",
             "args": ["${workspaceFolder}"],
@@ -40,7 +40,7 @@
         },
         {
             "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
-            "type": "node",
+            "type": "legacy-node",
             "request": "launch",
             "name": "Launch Assembly Compiler",
             "skipFiles": [
@@ -52,7 +52,7 @@
         },
         {
             "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
-            "type": "node",
+            "type": "legacy-node",
             "request": "launch",
             "name": "Launch Assembly Tests",
             "skipFiles": [
@@ -76,7 +76,7 @@
         {
             "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
             "cwd": "${workspaceFolder}/bedrock_server",
-            "type": "node",
+            "type": "legacy-node",
             "request": "launch",
             "name": "Launch PDB Parser",
             "args": ["${workspaceFolder}/bdsx/pdbparser"],
@@ -96,6 +96,6 @@
             "args": ["${workspaceFolder}/bdsx/minecraft_impl/enumgen.js"],
             "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
-        },
+        }
     ]
 }

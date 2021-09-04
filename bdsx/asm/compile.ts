@@ -15,7 +15,7 @@ try {
         sizeOfCxxString: 0x20,
     };
     code.compile(fs.readFileSync(asmpath, 'utf8'), defines, asmpath);
-    const {js, dts} = code.toScript('..', 'asmcode');
+    const {js, dts} = code.toScript('..', 'asmcode', 'bdsx/asm/compile.ts');
     fs.writeFileSync(path.join(__dirname, './asmcode.js'), js);
     fs.writeFileSync(path.join(__dirname, './asmcode.d.ts'), dts);
     console.log(`[bdsx-asm] done. no errors`);

@@ -13,7 +13,8 @@
     "watch": "tsc -w",
     "build": "tsc",
     "newplugin": "ts-node ./bdsx/checkgate ./pluginmgr/new",
-    "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr"
+    "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr",
+    "enumgen": "ts-node ./bdsx/minecraft_impl/enumgen"
   },
   "dependencies": {
     "bdsx": "file:bdsx",

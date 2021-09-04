@@ -1,8 +1,8 @@
 /**
- * Generated with bdsx/bds-scripting/parser.ts
- * docfix.json overrides it.
+ * Generated with bdsx/bds-scripting/parser.ts.
  * Please DO NOT modify this directly.
  */
+
 declare global {
 
 interface IEntity {

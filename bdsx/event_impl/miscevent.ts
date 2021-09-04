@@ -1,7 +1,7 @@
 import { procHacker } from "../bds/proc";
 import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, ScoreboardIdentityRef } from "../bds/scoreboard";
 import { serverInstance } from "../bds/server";
-import { CANCEL } from "../common";
+import { CANCEL, unreachable } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
@@ -115,6 +115,8 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
         event = new ScoreRemoveEvent(identityRef, objective, score);
         canceled = events.scoreRemove.fire(event) === CANCEL;
         break;
+    default:
+        unreachable();
     }
     _tickCallback();
     if (canceled) {

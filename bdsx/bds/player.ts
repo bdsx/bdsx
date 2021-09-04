@@ -12,6 +12,7 @@ import type { Packet } from "./packet";
 import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
+import minecraft = require('../minecraft');
 
 /** @deprecated import it from bdsx/minecraft */
 export class Player extends Actor {
@@ -335,14 +336,10 @@ export class PlayerListEntry extends NativeClass {
     }
 }
 
-export enum GameType {
-    Survival,
-    Creative,
-    Adventure,
-    SurvivalSpectator,
-    CreativeSpectator,
-    Default
-}
+/** @deprecated */
+export const GameType = minecraft.GameType;
+/** @deprecated */
+export type GameType = minecraft.GameType;
 
 export enum PlayerPermission {
     VISITOR,

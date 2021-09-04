@@ -10,13 +10,11 @@ import { Dimension } from "./dimension";
 import { GameRules } from "./gamerules";
 import { ServerPlayer } from "./player";
 import { Scoreboard } from "./scoreboard";
+import minecraft = require('../minecraft');
 
-export enum Difficulty {
-    Peaceful,
-    Easy,
-    Normal,
-    Hard,
-}
+export const Difficulty = minecraft.Difficulty;
+export type Difficulty = minecraft.Difficulty;
+
 export class Level extends NativeClass {
     vftable:VoidPointer;
     players:CxxVector<ServerPlayer>;

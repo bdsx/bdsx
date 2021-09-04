@@ -7,7 +7,7 @@ import { CxxVector } from "../cxxvector";
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, void_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
 import { templateName } from "../templatename";
 import { Actor } from "./actor";
@@ -17,6 +17,7 @@ import { JsonValue } from "./connreq";
 import { AvailableCommandsPacket } from "./packets";
 import { procHacker } from "./proc";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
+import minecraft = require('../minecraft');
 
 export enum CommandPermissionLevel {
 	Normal,
@@ -71,11 +72,10 @@ export enum CommandVisibilityFlag {
 /** @deprecated **/
 export const CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
 
-@nativeClass()
-export class MCRESULT extends NativeClass {
-    @nativeField(uint32_t)
-    result:uint32_t;
-}
+/** @deprecated */
+export const MCRESULT = minecraft.MCRESULT;
+/** @deprecated */
+export type MCRESULT = minecraft.MCRESULT;
 
 @nativeClass(0xc0)
 export class CommandSelectorBase extends NativeClass {

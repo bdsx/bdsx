@@ -6,6 +6,7 @@ import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
+import minecraft = require('../minecraft');
 
 export class Scoreboard extends NativeClass {
     sync(id:ScoreboardId, objective:Objective):void {
@@ -201,13 +202,12 @@ export class IdentityDefinition extends NativeClass {
     }
 }
 
+/** @deprecated */
 export namespace IdentityDefinition {
-    export enum Type {
-        Invalid,
-        Player,
-        Entity,
-        FakePlayer,
-    }
+    /** @deprecated */
+    export const Type = minecraft.IdentityDefinition.Type;
+    /** @deprecated */
+    export type Type = minecraft.IdentityDefinition.Type;
 }
 
 @nativeClass()
@@ -255,16 +255,14 @@ export enum DisplaySlot {
     Sidebar = "sidebar",
 }
 
-export enum ObjectiveSortOrder {
-    Ascending,
-    Descending,
-}
-
-export enum PlayerScoreSetFunction {
-    Set,
-    Add,
-    Subtract,
-}
+/** @deprecated */
+export const ObjectiveSortOrder = minecraft.ObjectiveSortOrder;
+/** @deprecated */
+export type ObjectiveSortOrder = minecraft.ObjectiveSortOrder;
+/** @deprecated */
+export const PlayerScoreSetFunction = minecraft.PlayerScoreSetFunction;
+/** @deprecated */
+export type PlayerScoreSetFunction = minecraft.PlayerScoreSetFunction;
 
 export enum ScoreCommandOperator {
     Equals = 1,

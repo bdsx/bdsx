@@ -1,3 +1,8 @@
+/**
+ * Generated with the enum generator.
+ * Please DO NOT modify this directly.
+ * If it's needed to update, Modify bdsx/minecraft_impl/enums_ini/*.ini instead
+ */
 declare module "../minecraft" {
     enum AbilitiesIndex {
         Build,
@@ -84,6 +89,65 @@ declare module "../minecraft" {
         Charging,
         Temperature = 0x1A,
         All = 0x1F,
+    }
+    namespace ActorEventPacket {
+        enum Events {
+            Jump = 1,
+            HurtAnimation,
+            DeathAnimation,
+            ArmSwing,
+            StopAttack,
+            TameFail,
+            TameSuccess,
+            ShakeWet,
+            UseItem,
+            EatGrassAnimation,
+            FishHookBubble,
+            FishHookPosition,
+            FishHookHook,
+            FishHookTease,
+            SquidInkCloud,
+            ZombieVillagerCure,
+            AmbientSound,
+            Respawn,
+            IronGolemOfferFlower,
+            IronGolemWithdrawFlower,
+            LoveParticles,
+            VillagerAngry,
+            VillagerHappy,
+            WitchSpellParticles,
+            FireworkParticles,
+            InLoveParticles,
+            SilverfishSpawnAnimation,
+            GuardianAttack,
+            WitchDrinkPotion,
+            WitchThrowPotion,
+            MinecartTntPrimeFuse,
+            CreeperPrimeFuse,
+            AirSupplyExpired,
+            PlayerAddXpLevels,
+            ElderGuardianCurse,
+            AgentArmSwing,
+            EnderDragonDeath,
+            DustParticles,
+            ArrowShake,
+            EatingItem = 57,
+            BabyAnimalFeed = 60,
+            DeathSmokeCloud,
+            CompleteTrade,
+            RemoveLeash,
+            ConsumeTotem = 65,
+            PlayerCheckTreasureHunterAchievement,
+            EntitySpawn,
+            DragonPuke,
+            ItemEntityMerge,
+            StartSwim,
+            BalloonPop,
+            TreasureHunt,
+            AgentSummon,
+            ChargedCrossbow,
+            Fall,
+        }
     }
     enum ActorFlags {
         OnFire,
@@ -317,6 +381,16 @@ declare module "../minecraft" {
         Villager = 0x100030F,
         VillagerV2 = 0x1000373,
     }
+    namespace AnimatePacket {
+        enum Actions {
+            SwingArm = 1,
+            WakeUp = 3,
+            CriticalHit,
+            MagicCriticalHit,
+            RowRight = 128,
+            RowLeft,
+        }
+    }
     enum ArmorSlot {
         Head,
         /** IDA said this is called Torso */
@@ -324,6 +398,15 @@ declare module "../minecraft" {
         Chest = 1,
         Legs,
         Feet,
+    }
+    namespace BookEditPacket {
+        enum Types {
+            ReplacePage,
+            AddPage,
+            DeletePage,
+            SwapPages,
+            SignBook,
+        }
     }
     namespace BossEventPacket {
         enum Colors {
@@ -343,6 +426,30 @@ declare module "../minecraft" {
             Notched10,
             Notched12,
             Notched20,
+        }
+    }
+    namespace BossEventPacket {
+        enum Types {
+            Show,
+            RegisterPlayer,
+            Hide,
+            UnregisterPlayer,
+            HealthPercent,
+            Title,
+            Properties,
+            Style,
+        }
+    }
+    namespace CameraShakePacket {
+        enum ShakeAction {
+            Add,
+            Stop,
+        }
+    }
+    namespace CameraShakePacket {
+        enum ShakeType {
+            Positional,
+            Rotational,
         }
     }
     namespace CompletedUsingItemPacket {
@@ -415,6 +522,12 @@ declare module "../minecraft" {
         Equipment,
         Items,
         Uncategorized,
+    }
+    enum Difficulty {
+        Peaceful,
+        Easy,
+        Normal,
+        Hard,
     }
     namespace Enchant {
         enum Type {
@@ -516,6 +629,30 @@ declare module "../minecraft" {
             Float,
         }
     }
+    enum GameType {
+        Survival,
+        Creative,
+        Adventure,
+        SurvivalSpectator,
+        CreativeSpectator,
+        Default,
+    }
+    namespace IdentityDefinition {
+        enum Type {
+            Invalid,
+            Player,
+            Entity,
+            FakePlayer,
+        }
+    }
+    namespace InteractPacket {
+        enum Actions {
+            LeaveVehicle = 3,
+            Mouseover,
+            OpenNPC,
+            OpenInventory,
+        }
+    }
     namespace ItemReleaseInventoryTransaction {
         enum ActionType {
             Release,
@@ -548,11 +685,199 @@ declare module "../minecraft" {
             Object = 7,
         }
     }
+    enum MinecraftPacketIds {
+        // referred from: https://github.com/NiclasOlofsson/MiNET/blob/master/src/MiNET/MiNET/Net/MCPE%20Protocol%20Documentation.md
+        Login = 0x01,
+        PlayStatus = 0x02,
+        ServerToClientHandshake = 0x03,
+        ClientToServerHandshake = 0x04,
+        Disconnect = 0x05,
+        ResourcePacksInfo = 0x06,
+        /** @deprecated use ResourcePackStack, follow the real class name */
+        ResourcePacksStack = 0x07,
+        ResourcePackStack = 0x07,
+        ResourcePackClientResponse = 0x08,
+        Text = 0x09,
+        SetTime = 0x0a,
+        StartGame = 0x0b,
+        AddPlayer = 0x0c,
+        AddActor = 0x0d,
+        RemoveActor = 0x0e,
+        AddItemActor = 0x0f,
+        TakeItemActor = 0x11,
+        MoveActorAbsolute = 0x12,
+        MovePlayer = 0x13,
+        RiderJump = 0x14,
+        UpdateBlock = 0x15,
+        AddPainting = 0x16,
+        TickSync = 0x17,
+        LevelSoundEventV1 = 0x18,
+        LevelEvent = 0x19,
+        BlockEvent = 0x1a,
+        /** @deprecated use ActorEvent, matching to official name */
+        EntityEvent = 0x1b,
+        ActorEvent = 0x1b,
+        MobEffect = 0x1c,
+        UpdateAttributes = 0x1d,
+        InventoryTransaction = 0x1e,
+        MobEquipment = 0x1f,
+        MobArmorEquipment = 0x20,
+        Interact = 0x21,
+        BlockPickRequest = 0x22,
+        ActorPickRequest = 0x23,
+        PlayerAction = 0x24,
+        HurtArmor = 0x26,
+        /** @deprecated use SetActorData, matching to official name */
+        SetEntityData = 0x27,
+        SetActorData = 0x27,
+        /** @deprecated use SetActorMotion, matching to official name */
+        SetEntityMotion = 0x28,
+        SetActorMotion = 0x28,
+        SetActorLink = 0x29,
+        SetHealth = 0x2a,
+        SetSpawnPosition = 0x2b,
+        Animate = 0x2c,
+        Respawn = 0x2d,
+        ContainerOpen = 0x2e,
+        ContainerClose = 0x2f,
+        PlayerHotbar = 0x30,
+        InventoryContent = 0x31,
+        InventorySlot = 0x32,
+        ContainerSetData = 0x33,
+        CraftingData = 0x34,
+        CraftingEvent = 0x35,
+        GuiDataPickItem = 0x36,
+        AdventureSettings = 0x37,
+        BlockActorData = 0x38,
+        PlayerInput = 0x39,
+        LevelChunk = 0x3a,
+        SetCommandsEnabled = 0x3b,
+        SetDifficulty = 0x3c,
+        ChangeDimension = 0x3d,
+        SetPlayerGameType = 0x3e,
+        PlayerList = 0x3f,
+        SimpleEvent = 0x40,
+        TelemetryEvent = 0x41,
+        SpawnExperienceOrb = 0x42,
+        MapItemData = 0x43,
+        MapInfoRequest = 0x44,
+        RequestChunkRadius = 0x45,
+        ChunkRadiusUpdated = 0x46,
+        ItemFrameDropItem = 0x47,
+        GameRulesChanged = 0x48,
+        Camera = 0x49,
+        BossEvent = 0x4a,
+        ShowCredits = 0x4b,
+        AvailableCommands = 0x4c,
+        CommandRequest = 0x4d,
+        CommandBlockUpdate = 0x4e,
+        CommandOutput = 0x4f,
+        ResourcePackDataInfo = 0x52,
+        ResourcePackChunkData = 0x53,
+        ResourcePackChunkRequest = 0x54,
+        Transfer = 0x55,
+        PlaySound = 0x56,
+        StopSound = 0x57,
+        SetTitle = 0x58,
+        AddBehaviorTree = 0x59,
+        StructureBlockUpdate = 0x5a,
+        ShowStoreOffer = 0x5b,
+        PurchaseReceipt = 0x5c,
+        PlayerSkin = 0x5d,
+        SubClientLogin = 0x5e,
+        WSConnect = 0x5f,
+        SetLastHurtBy = 0x60,
+        BookEdit = 0x61,
+        NpcRequest = 0x62,
+        PhotoTransfer = 0x63,
+        /** @deprecated use ModalFormRequest, follow the real class name */
+        ShowModalForm = 0x64,
+        ModalFormRequest = 0x64,
+        ModalFormResponse = 0x65,
+        ServerSettingsRequest = 0x66,
+        ServerSettingsResponse = 0x67,
+        ShowProfile = 0x68,
+        SetDefaultGameType = 0x69,
+        RemoveObjective = 0x6a,
+        SetDisplayObjective = 0x6b,
+        SetScore = 0x6c,
+        LabTable = 0x6d,
+        UpdateBlockSynced = 0x6e,
+        /** @deprecated use MoveActorDelta, matching to official name */
+        MoveEntityDelta = 0x6f,
+        MoveActorDelta = 0x6f,
+        SetScoreboardIdentity = 0x70,
+        SetLocalPlayerAsInitialized = 0x71,
+        UpdateSoftEnum = 0x72,
+        NetworkStackLatency = 0x73,
+        ScriptCustomEvent = 0x75,
+        SpawnParticleEffect = 0x76,
+        AvailableActorIdentifiers = 0x77,
+        LevelSoundEventV2 = 0x78,
+        NetworkChunkPublisherUpdate = 0x79,
+        BiomeDefinitionList = 0x7a,
+        LevelSoundEvent = 0x7b,
+        LevelEventGeneric = 0x7c,
+        LecternUpdate = 0x7d,
+        RemoveEntity = 0x80,
+        ClientCacheStatus = 0x81,
+        OnScreenTextureAnimation = 0x82,
+        MapCreateLockedCopy = 0x83,
+        StructureTemplateDataRequest = 0x84,
+        StructureTemplateDataExport = 0x85,
+        ClientCacheBlobStatus = 0x87,
+        ClientCacheMissResponse = 0x88,
+        EducationSettings = 0x89,
+        Emote = 0x8a,
+        MultiplayerSettings = 0x8b,
+        SettingsCommand = 0x8c,
+        AnvilDamage = 0x8d,
+        CompletedUsingItem = 0x8e,
+        NetworkSettings = 0x8f,
+        PlayerAuthInput = 0x90,
+        CreativeContent = 0x91,
+        PlayerEnchantOptions = 0x92,
+        ItemStackRequest = 0x93,
+        ItemStackResponse = 0x94,
+        PlayerArmorDamage = 0x95,
+        CodeBuilder = 0x96,
+        UpdatePlayerGameType = 0x97,
+        EmoteList = 0x98,
+        PositionTrackingDBServerBroadcast = 0x99,
+        PositionTrackingDBClientRequest = 0x9a,
+        DebugInfo = 0x9b,
+        PacketViolationWarning = 0x9c,
+        MotionPredictionHints = 0x9d,
+        AnimateEntity = 0x9e,
+        CameraShake = 0x9f,
+        PlayerFog = 0xa0,
+        CorrectPlayerMovePrediction = 0xa1,
+        ItemComponent = 0xa2,
+        FilterText = 0xa3,
+        ClientboundDebugRenderer = 0xa4,
+        SyncActorProperty = 0xa5,
+        AddVolumeEntity = 0xa6,
+        RemoveVolumeEntity = 0xa7,
+        SimulationType = 0xa8,
+        NpcDialogue = 0xa9,
+    }
+    namespace MovePlayerPacket {
+        enum Modes {
+            Normal,
+            Reset,
+            Teleport,
+            Pitch,
+        }
+    }
     namespace NpcDialoguePacket {
         enum Actions {
             Open,
             Close,
         }
+    }
+    enum ObjectiveSortOrder {
+        Ascending,
+        Descending,
     }
     enum PackType {
         Invalid,
@@ -614,6 +939,11 @@ declare module "../minecraft" {
             ContinueDestroyBlock,
         }
     }
+    enum PlayerScoreSetFunction {
+        Set,
+        Add,
+        Subtract,
+    }
     namespace PositionTrackingDBClientRequestPacket {
         enum Actions {
             Query,
@@ -637,6 +967,60 @@ declare module "../minecraft" {
             PLAYER = 1,
             ENTITY = 2,
             FAKE_PLAYER = 3,
+        }
+    }
+    namespace SetScorePacket {
+        enum Type {
+            CHANGE = 0,
+            REMOVE = 1,
+        }
+    }
+    namespace SetTitlePacket {
+        enum Types {
+            Clear,
+            Reset,
+            Title,
+            Subtitle,
+            Actionbar,
+            AnimationTimes,
+        }
+    }
+    namespace TextPacket {
+        enum Types {
+            Raw,
+            Chat,
+            Translate,
+            /** @deprecated */
+            Translated = 2,
+            Popup,
+            JukeboxPopup,
+            Tip,
+            SystemMessage,
+            /** @deprecated */
+            Sytem = 6,
+            Whisper,
+            /** /say command */
+            Announcement,
+            TextObject,
+            /** @deprecated */
+            ObjectWhisper = 9,
+        }
+    }
+    namespace UpdateBlockPacket {
+        enum DataLayerIds {
+            Normal,
+            Liquid,
+        }
+    }
+    namespace UpdateBlockPacket {
+        enum Flags {
+            None,
+            Neighbors,
+            Network,
+            All,
+            NoGraphic,
+            Priority = 8,
+            AllPriority = 11,
         }
     }
 }

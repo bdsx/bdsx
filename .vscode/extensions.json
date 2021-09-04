@@ -1,5 +1,7 @@
 {
     "recommendations": [
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.node-debug",
+        "pucelle.run-on-save"
     ]
 }
