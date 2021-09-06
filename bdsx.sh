@@ -18,7 +18,7 @@ fi
 if [ ! -d "./node_modules" ]; then ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
-if [ ! -d "./bedrock_server/bedrock_server.exe" ]; then ./update.sh; fi
+if [ ! -f "./bedrock_server/bedrock_server.exe" ]; then ./update.sh; fi
 if [ $? != 0 ]; then exit $?; fi
 
 # remove junk
@@ -29,7 +29,7 @@ while :; do
 
 # shellprepare
 npm run -s shellprepare
-if [$? -neq 1]; then; break; fi
+if [ $? != 1 ]; then break; fi
 
 # launch
 cd bedrock_server
