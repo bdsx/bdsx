@@ -59,7 +59,6 @@
                 "<node_internals>/**"
             ],
             "args": ["${workspaceFolder}/bdsx/asm/test/asmtest.js"],
-            "console": "integratedTerminal",
 			"preLaunchTask": "${defaultBuildTask}"
         },
         {
@@ -84,6 +83,16 @@
                 "<node_internals>/**"
             ],
             "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Shell Prelaunch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/shellprepare.js"],
 			"preLaunchTask": "${defaultBuildTask}"
         }
     ]
