@@ -38,7 +38,8 @@ function exit(exitCode:number):never {
 
 function prelaunch():never {
     function getTsConfig():ts.ParsedCommandLine {
-        const configPath = ts.findConfigFile('.', ts.sys.fileExists);
+        const curdir = process.cwd();
+        const configPath = ts.findConfigFile(curdir, ts.sys.fileExists);
         if (configPath == null) {
             return {
                 options: ts.getDefaultCompilerOptions(),
@@ -47,7 +48,7 @@ function prelaunch():never {
             };
         }
         const configFileJson = ts.readConfigFile(configPath, ts.sys.readFile);
-        return ts.parseJsonConfigFileContent(configFileJson.config, ts.sys, '.');
+        return ts.parseJsonConfigFileContent(configFileJson.config, ts.sys, curdir);
     }
 
     const config = getTsConfig();
