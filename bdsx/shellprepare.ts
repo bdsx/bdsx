@@ -20,7 +20,8 @@ try {
 
 function build():void {
     function getTsConfig():ts.ParsedCommandLine {
-        const configPath = ts.findConfigFile('.', ts.sys.fileExists);
+        const curdir = process.cwd();
+        const configPath = ts.findConfigFile(curdir, ts.sys.fileExists);
         if (configPath == null) {
             return {
                 options: ts.getDefaultCompilerOptions(),
@@ -29,7 +30,7 @@ function build():void {
             };
         }
         const configFileJson = ts.readConfigFile(configPath, ts.sys.readFile);
-        return ts.parseJsonConfigFileContent(configFileJson.config, ts.sys, '.');
+        return ts.parseJsonConfigFileContent(configFileJson.config, ts.sys, curdir);
     }
 
     const config = getTsConfig();
