@@ -854,6 +854,10 @@ declare module "../minecraft" {
 
         actorIdAsNumber:int64_as_float_t;
     }
+
+    namespace Packet {
+        type idMap = {[key in keyof typeof Packet.idMap]:InstanceType<(typeof Packet.idMap)[key]>};
+    }
 }
 
 UpdateAttributesPacket.AttributeData.define({

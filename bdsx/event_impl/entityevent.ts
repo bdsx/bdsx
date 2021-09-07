@@ -276,13 +276,13 @@ function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, 
 }
 const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Player, ItemStack, int32_t, bool_t)(onPlayerUseItem);
 
-function onPlayerCrit(player: Player):void {
+function onPlayerCrit(player: Player, actor: Actor):void {
     const event = new PlayerCritEvent(player);
     events.playerCrit.fire(event);
     _tickCallback();
-    return _onPlayerCrit(event.player);
+    return _onPlayerCrit(event.player, actor);
 }
-const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
+const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player, Actor)(onPlayerCrit);
 
 function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean):boolean {
     const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);

@@ -12,6 +12,7 @@ import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { proc } from "./symbols";
+import minecraft = require('../minecraft');
 
 export class MinecraftEventing extends NativeClass {}
 export class ResourcePackManager extends NativeClass {}
@@ -171,6 +172,16 @@ export class ServerInstance extends NativeClass {
 }
 
 /** @deprecated use minecraft.serverInstance */
-// eslint-disable-next-line prefer-const
-export let serverInstance:ServerInstance = createAbstractObject.bedrockObject;
+export declare const serverInstance:ServerInstance;
 
+Object.defineProperty(exports, 'serverInstance', {
+    get(){
+        if (minecraft.serverInstance === createAbstractObject.bedrockObject) {
+            return createAbstractObject.bedrockObject;
+        } else {
+            const serverInstance = minecraft.serverInstance.as(ServerInstance);
+            Object.defineProperty(exports, 'serverInstance', {value:serverInstance});
+        }
+    },
+    configurable: true
+});

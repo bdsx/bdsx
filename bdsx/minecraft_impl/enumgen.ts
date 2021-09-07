@@ -2,15 +2,7 @@
 
 import fs = require('fs');
 import path = require('path');
-import { tsw } from '../pdbparser/tswriter';
 import { ScriptWriter } from '../writer/scriptwriter';
-
-const properties = {
-    proto:new tsw.NameProperty('__proto__')
-};
-const names = {
-    minecraft: new tsw.Name('minecraft')
-};
 
 let comment:string|null = null;
 function writeComment():void {

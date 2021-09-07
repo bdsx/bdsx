@@ -325,7 +325,7 @@ export class NativeClass extends StructurePointer {
         const nptr = ptr.addAs(this, offset, (offset || 0) >> 31);
         (nptr as any)[NativeType.setter](value as any);
     }
-    static [NativeType.getter](ptr:VoidPointer, offset?:number):NativeClass {
+    static [NativeType.getter](ptr:VoidPointer, offset?:number):any {
         return ptr.addAs(this, offset, (offset || 0) >> 31);
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {

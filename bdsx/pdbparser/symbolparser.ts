@@ -189,10 +189,10 @@ function unionAdd(types:Set<PdbId<PdbId.Data>>, other:PdbId<PdbId.Data>):PdbId<P
     types.add(other);
     return null;
 }
-function getKey<T extends PdbId.Data>(key:string, or:(key:string)=>PdbId<T>):PdbId<T> {
+function getKey<T extends PdbId.Data>(key:string, orCreate:(key:string)=>PdbId<T>):PdbId<T> {
     let item = PdbId.keyMap.get(key);
     if (item != null) return item;
-    item = or(key);
+    item = orCreate(key);
     PdbId.keyMap.set(key, item);
     return item;
 }
@@ -363,6 +363,9 @@ export class PdbId<DATA extends PdbId.Data> {
             if (idx !== -1) this.templateBase.data.specialized.splice(idx, 1);
         }
         this.data._delete();
+        if (this.parent !== null) {
+            PdbId.keyMap.delete(PdbId.makeChildKey(this.parent, this.name));
+        }
     }
 
     release():void {

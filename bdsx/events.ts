@@ -1,12 +1,12 @@
 import { Color } from "colors";
 import { CANCEL } from "./common";
+import type { NativePointer } from "./core";
 import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./events_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./events_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./events_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./events_impl/miscevent";
 import { Event } from "./eventtarget";
-import { CommandContext, MinecraftPacketIds, NetworkIdentifier } from "./minecraft";
-import type { nethook } from "./nethook";
+import { CommandContext, MinecraftPacketIds, NetworkIdentifier, Packet } from "./minecraft";
 import { remapStack } from "./source-map-support";
 
 const PACKET_ID_COUNT = 0x100;
@@ -27,8 +27,13 @@ for (let i=0;i<PACKET_EVENT_COUNT;i++) {
     packetAllTargets[i] = null;
 }
 
-
 export namespace events {
+    export type RawListener = (ptr:NativePointer, size:number, networkIdentifier:NetworkIdentifier, packetId: number)=>CANCEL|void|Promise<void>;
+    export type PacketListener<ID extends MinecraftPacketIds> = (packet: Packet.idMap[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL|void|Promise<void>;
+    export type BeforeListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
+    export type AfterListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
+    export type SendListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
+    export type SendRawListener = (ptr:NativePointer, size:number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL|void|Promise<void>;
 
     ////////////////////////////////////////////////////////
     // Block events
@@ -159,7 +164,7 @@ export namespace events {
      * It will bring raw packet buffers before parsing
      * It can be canceled the packet if you return 'CANCEL'
      */
-    export function packetRaw(id:MinecraftPacketIds):Event<nethook.RawListener> {
+    export function packetRaw(id:MinecraftPacketIds):Event<RawListener> {
         return getNetEventTarget(PacketEventType.Raw, id);
     }
 
@@ -168,7 +173,7 @@ export namespace events {
      * the event that before processing but after parsed from raw.
      * It can be canceled the packet if you return 'CANCEL'
      */
-    export function packetBefore<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
+    export function packetBefore<ID extends MinecraftPacketIds>(id:ID):Event<PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Before, id);
     }
 
@@ -176,7 +181,7 @@ export namespace events {
      * after 'raw' and 'before'
      * the event that after processing. some fields are assigned after the processing
      */
-    export function packetAfter<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
+    export function packetAfter<ID extends MinecraftPacketIds>(id:ID):Event<PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.After, id);
     }
 
@@ -184,7 +189,7 @@ export namespace events {
      * before serializing.
      * it can modify class fields.
      */
-    export function packetSend<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
+    export function packetSend<ID extends MinecraftPacketIds>(id:ID):Event<PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Send, id);
     }
 
@@ -192,7 +197,7 @@ export namespace events {
      * after serializing. before sending.
      * it can access serialized buffer.
      */
-    export function packetSendRaw(id:number):Event<nethook.SendRawListener> {
+    export function packetSendRaw(id:number):Event<SendRawListener> {
         return getNetEventTarget(PacketEventType.SendRaw, id);
     }
 

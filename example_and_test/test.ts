@@ -14,23 +14,24 @@ import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
-import { CANCEL } from "bdsx/common";
+import { CANCEL, emptyFunc } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
 import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { events } from "bdsx/event";
+import { Event } from "bdsx/eventtarget";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
+import { RelativeFloat } from "bdsx/minecraft";
 import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, GslStringSpan, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
-import { RelativeFloat } from "bdsx/minecraft";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -428,6 +429,15 @@ Tester.test({
         this.equals(v.get('test2').value(), 'a', 'json string');
         this.equals(v.get('test3').value(), true, 'json boolean');
         v.destruct();
+    },
+
+    hookAll() {
+        for (const name in events) {
+            const evtarget = (events as any)[name];
+            if (evtarget instanceof Event) {
+                evtarget.on(emptyFunc);
+            }
+        }
     },
 
     async command() {

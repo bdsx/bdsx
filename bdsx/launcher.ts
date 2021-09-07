@@ -252,8 +252,6 @@ function _launch(asyncResolve:()=>void):void {
             try {
                 cgate.nodeLoopOnce();
 
-                bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
-                nimodule.networkHandler = bd_server.serverInstance.networkHandler;
                 minecraft.serverInstance = asmcode.serverInstance.as(minecraft.ServerInstance);
                 minecraft.networkHandler = minecraft.serverInstance.networkHandler;
                 openIsFired = true;

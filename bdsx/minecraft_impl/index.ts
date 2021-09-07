@@ -27,4 +27,4 @@ import './serverplayer';
 import './survivalmode';
 import './teleporttarget';
 import './vec3';
-
+import './splashpotioneffectsubcomponent';

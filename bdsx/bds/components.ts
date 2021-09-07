@@ -36,6 +36,7 @@ export class ProjectileComponent extends NativeClass {
     */
 }
 
+/** @deprecated */
 @nativeClass(0x08)
 export class OnHitSubcomponent extends NativeClass {
     @nativeField(VoidPointer)
@@ -55,6 +56,7 @@ export class OnHitSubcomponent extends NativeClass {
     }
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class SplashPotionEffectSubcomponent extends OnHitSubcomponent {
     @nativeField(int32_t)

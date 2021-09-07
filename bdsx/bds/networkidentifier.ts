@@ -1,14 +1,14 @@
 
 import { createAbstractObject } from "../abstractobject";
-import { Register } from "../assembler";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { dll } from "../dll";
 import { events } from "../event";
-import { Hashable, HashSet } from "../hashset";
+import { events as newevents } from "../events";
+import { Hashable } from "../hashset";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
+import { CxxString, int32_t, NativeType } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
@@ -16,9 +16,11 @@ import { _tickCallback } from "../util";
 import type { Packet } from "./packet";
 import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import type { ServerPlayer } from "./player";
-import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
+import minecraft = require('../minecraft');
+
+const legacyLink = Symbol('legacy-ni');
 
 /** @deprecated */
 export class NetworkHandler extends NativeClass {
@@ -38,8 +40,8 @@ export class NetworkHandler extends NativeClass {
     }
 }
 
-export namespace NetworkHandler
-{
+/** @deprecated */
+export namespace NetworkHandler {
     export class Connection extends NativeClass {
         networkIdentifier:NetworkIdentifier;
         u1:VoidPointer;
@@ -55,6 +57,7 @@ export namespace NetworkHandler
 class ServerNetworkHandler$Client extends NativeClass {
 }
 
+/** @deprecated */
 @nativeClass(null)
 export class ServerNetworkHandler extends NativeClass {
     @nativeField(VoidPointer)
@@ -93,13 +96,13 @@ export class ServerNetworkHandler extends NativeClass {
     }
 }
 
-export namespace ServerNetworkHandler
-{
+/** @deprecated */
+export namespace ServerNetworkHandler {
+    /** @deprecated */
     export type Client = ServerNetworkHandler$Client;
 }
 
-const identifiers = new HashSet<NetworkIdentifier>();
-
+/** @deprecated */
 @nativeClass()
 export class NetworkIdentifier extends NativeClass implements Hashable {
     @nativeField(RakNet.AddressOrGUID)
@@ -110,7 +113,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     }
 
     assignTo(target:VoidPointer):void {
-        dll.vcruntime140.memcpy(target, this, NetworkHandler[NativeClass.contentSize]);
+        dll.vcruntime140.memcpy(target, this, NetworkIdentifier[NativeClass.contentSize]);
     }
 
     equals(other:NetworkIdentifier):boolean {
@@ -136,43 +139,52 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     }
 
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
-        return identifiers.get(ptr.as(NetworkIdentifier))!;
+        return fromNewNi(minecraft.NetworkIdentifier.fromPointer(ptr));
     }
     static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
+        const newni = minecraft.NetworkIdentifier[NativeType.getter](ptr, offset);
+        return fromNewNi(newni);
     }
     static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
+        const newni = minecraft.NetworkIdentifier[makefunc.getFromParam](ptr, offset);
+        return fromNewNi(newni);
     }
 
-    static all():IterableIterator<NetworkIdentifier> {
-        return identifiers.values();
-    }
-    private static _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
-        let ni = identifiers.get(ptr);
-        if (ni != null) return ni;
-        ni = new NetworkIdentifier(true);
-        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-        identifiers.add(ni);
-        return ni;
+    static *all():IterableIterator<NetworkIdentifier> {
+        for (const newid of minecraft.NetworkIdentifier.all()) {
+            yield fromNewNi(newid);
+        }
     }
 }
 
-/** @deprecated */
-// eslint-disable-next-line prefer-const
-export let networkHandler:NetworkHandler = createAbstractObject.bedrockObject;
+function fromNewNi(ptr:minecraft.NetworkIdentifier):NetworkIdentifier {
+    let legacy:NetworkIdentifier|undefined = (ptr as any)[legacyLink];
+    if (legacy == null) {
+        legacy = (ptr as any)[legacyLink] = ptr.as(NetworkIdentifier);
+    }
+    return legacy;
+}
 
-procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+/** @deprecated */
+export declare const networkHandler:NetworkHandler;
+
+Object.defineProperty(exports, 'networkHandler', {
+    get(){
+        if (minecraft.networkHandler === createAbstractObject.bedrockObject) {
+            return createAbstractObject.bedrockObject;
+        } else {
+            const networkHandler = minecraft.networkHandler.as(NetworkHandler);
+            Object.defineProperty(exports, 'networkHandler', {value:networkHandler});
+        }
+    },
+    configurable: true
+});
+
+newevents.networkDisconnected.on(ni=>{
     try {
-        events.networkDisconnected.fire(ni);
+        events.networkDisconnected.fire(fromNewNi(ni));
         _tickCallback();
     } catch (err) {
         remapAndPrintError(err);
     }
-    // ni is used after onConnectionClosed. on some message processings.
-    // timeout for avoiding the re-allocation
-    setTimeout(()=>{
-        identifiers.delete(ni);
-    }, 3000);
-}, void_t, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
-[Register.rcx, Register.rdx, Register.r8, Register.r9], []);
+});
