@@ -1,19 +1,18 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { NetworkHandler, NetworkIdentifier } from "../bds/networkidentifier";
 import { createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "../bds/packet";
-import { MinecraftPacketIds } from "../bds/packetids";
-import { PacketIdToType } from "../bds/packets";
-import { proc, procHacker } from "../bds/proc";
+import { proc } from "../bds/proc";
 import { abstract, CANCEL } from "../common";
 import { VoidPointer } from "../core";
-import { events } from "../event";
+import { events } from "../events";
 import { Event } from "../eventtarget";
+import { hook } from "../hook";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
+import { LoopbackPacketSender, MinecraftPacketIds, NetworkHandler, NetworkIdentifier, PacketViolationHandler } from "../minecraft";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, int32_t, int64_as_float_t, void_t } from "../nativetype";
-import { nethook } from "../nethook";
+import { PacketIdToType } from "../packetidtotype";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
@@ -39,13 +38,13 @@ class OnPacketRBP extends NativeClass {
     stream:ReadOnlyBinaryStream;
 }
 
-let sendInternalOriginal:(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>void;
+let sendInternalOriginal:(this:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>void;
 
 function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
     try {
-        const target = events.packetEvent(events.PacketEventType.Raw, packetId) as Event<nethook.RawListener>;
+        const target = events.packetEvent(events.PacketEventType.Raw, packetId) as Event<events.RawListener>;
         const ni = conn.networkIdentifier;
-        nethook.lastSender = ni;
+        NetworkIdentifier.lastSender = ni;
         if (target !== null && !target.isEmpty()) {
             const s = rbp.stream;
             const data = s.data;
@@ -74,10 +73,10 @@ function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packet
     try {
         if (result.streamReadResult !== StreamReadResult.Pass) return result;
 
-        const target = events.packetEvent(events.PacketEventType.Before, packetId) as Event<nethook.BeforeListener<MinecraftPacketIds>>;
+        const target = events.packetEvent(events.PacketEventType.Before, packetId) as Event<events.BeforeListener<MinecraftPacketIds>>;
         if (target !== null && !target.isEmpty()) {
             const packet = rbp.packet.p!;
-            const ni = nethook.lastSender;
+            const ni = NetworkIdentifier.lastSender;
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
@@ -102,9 +101,9 @@ function onPacketAfter(rbp:OnPacketRBP):void {
     try {
         const packet = rbp.packet.p!;
         const packetId = packet.getId();
-        const target = events.packetEvent(events.PacketEventType.After, packetId) as Event<nethook.AfterListener<MinecraftPacketIds>>;
+        const target = events.packetEvent(events.PacketEventType.After, packetId) as Event<events.AfterListener<MinecraftPacketIds>>;
         if (target !== null && !target.isEmpty()) {
-            const ni = nethook.lastSender;
+            const ni = NetworkIdentifier.lastSender;
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
@@ -123,7 +122,7 @@ function onPacketAfter(rbp:OnPacketRBP):void {
 function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet):void{
     try {
         const packetId = packet.getId();
-        const target = events.packetEvent(events.PacketEventType.Send, packetId) as Event<nethook.SendListener<MinecraftPacketIds>>;
+        const target = events.packetEvent(events.PacketEventType.Send, packetId) as Event<events.SendListener<MinecraftPacketIds>>;
         if (target !== null && !target.isEmpty()) {
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
@@ -142,10 +141,10 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
         remapAndPrintError(err);
     }
 }
-function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
+function onPacketSendInternal(this:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
     try {
         const packetId = packet.getId();
-        const target = events.packetEvent(events.PacketEventType.SendRaw, packetId) as Event<nethook.SendRawListener>;
+        const target = events.packetEvent(events.PacketEventType.SendRaw, packetId) as Event<events.SendRawListener>;
         if (target !== null && !target.isEmpty()) {
             for (const listener of target.allListeners()) {
                 try {
@@ -161,23 +160,24 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
     } catch (err) {
         remapAndPrintError(err);
     }
-    sendInternalOriginal(handler, ni, packet, data);
+    sendInternalOriginal.call(this, ni, packet, data);
 }
 
 bedrockServer.withLoading().then(()=>{
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x240,
-        asmcode.packetRawHook, Register.rax, true, [
-            0x8B, 0xD6,                     // mov edx,esi
-            0x48, 0x8D, 0x4D, 0x78,         // lea rcx,qword ptr ss:[rbp+78]
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,   // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
-            0x90                            // nop
-        ], [7, 11]);
+    const packetlizer = hook(NetworkHandler, '_sortAndPacketizeEvents');
+    packetlizer.patch('hook-packet-raw', 0x240, asmcode.packetRawHook, Register.rax, true, [
+        0x8B, 0xD6,                     // mov edx,esi
+        0x48, 0x8D, 0x4D, 0x78,         // lea rcx,qword ptr ss:[rbp+78]
+        0xE8, 0xFF, 0xFF, 0xFF, 0xFF,   // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
+        0x90                            // nop
+    ], [7, 11]);
 
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x328,
+    packetlizer.patch(
+        'hook-packet-before', 0x328,
         asmcode.packetBeforeHook, // original code depended
         Register.rax,
         true, [
@@ -198,13 +198,15 @@ bedrockServer.withLoading().then(()=>{
         0x41, 0x56, // push r14
     ];
     asmcode.PacketViolationHandlerHandleViolationAfter = proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length);
-    procHacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0,
+    hook(PacketViolationHandler, '_handleViolation').patch(
+        'hook-packet-before-skip', 0,
         asmcode.packetBeforeCancelHandling,
         Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24]);
 
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x48d,
+    packetlizer.patch(
+        'hook-packet-after', 0x48d,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
@@ -216,8 +218,9 @@ bedrockServer.withLoading().then(()=>{
 
     const onPacketSendNp = makefunc.np(onPacketSend, void_t, null, NetworkHandler, NetworkIdentifier, Packet);
     asmcode.onPacketSend = onPacketSendNp;
-    procHacker.hookingRawWithCallOriginal('NetworkHandler::send', onPacketSendNp, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
-    procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0x90,
+    hook(NetworkHandler, 'send').raw(onPacketSendNp, {callOriginal: true});
+    hook(LoopbackPacketSender, 'sendToClients').patch(
+        'hook-packet-send-all', 0x90,
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
             0x49, 0x8B, 0x07, // mov rax,qword ptr ds:[r15]
@@ -226,6 +229,5 @@ bedrockServer.withLoading().then(()=>{
             0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
         ], []);
 
-    sendInternalOriginal = procHacker.hooking('NetworkHandler::_sendInternal', void_t, null,
-        NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper)(onPacketSendInternal);
+    sendInternalOriginal = hook(NetworkHandler, '_sendInternal').call(onPacketSendInternal);
 });

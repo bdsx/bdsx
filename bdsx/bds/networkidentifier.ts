@@ -1,5 +1,4 @@
 
-import { createAbstractObject } from "../abstractobject";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { dll } from "../dll";
@@ -138,51 +137,48 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         return this.getAddress();
     }
 
-    static fromPointer(ptr:StaticPointer):NetworkIdentifier {
-        return fromNewNi(minecraft.NetworkIdentifier.fromPointer(ptr));
+    static fromPointer(ptr:VoidPointer):NetworkIdentifier {
+        return NetworkIdentifier.fromNewNi(minecraft.NetworkIdentifier.fromPointer(ptr));
+    }
+    static fromNewNi(ptr:minecraft.NetworkIdentifier):NetworkIdentifier {
+        let legacy:NetworkIdentifier|undefined = (ptr as any)[legacyLink];
+        if (legacy == null) {
+            legacy = (ptr as any)[legacyLink] = ptr.as(NetworkIdentifier);
+        }
+        return legacy;
     }
     static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
         const newni = minecraft.NetworkIdentifier[NativeType.getter](ptr, offset);
-        return fromNewNi(newni);
+        return NetworkIdentifier.fromNewNi(newni);
     }
     static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
         const newni = minecraft.NetworkIdentifier[makefunc.getFromParam](ptr, offset);
-        return fromNewNi(newni);
+        return NetworkIdentifier.fromNewNi(newni);
     }
 
     static *all():IterableIterator<NetworkIdentifier> {
         for (const newid of minecraft.NetworkIdentifier.all()) {
-            yield fromNewNi(newid);
+            yield NetworkIdentifier.fromNewNi(newid);
         }
     }
 }
 
-function fromNewNi(ptr:minecraft.NetworkIdentifier):NetworkIdentifier {
-    let legacy:NetworkIdentifier|undefined = (ptr as any)[legacyLink];
-    if (legacy == null) {
-        legacy = (ptr as any)[legacyLink] = ptr.as(NetworkIdentifier);
-    }
-    return legacy;
-}
 
 /** @deprecated */
 export declare const networkHandler:NetworkHandler;
 
 Object.defineProperty(exports, 'networkHandler', {
     get(){
-        if (minecraft.networkHandler === createAbstractObject.bedrockObject) {
-            return createAbstractObject.bedrockObject;
-        } else {
-            const networkHandler = minecraft.networkHandler.as(NetworkHandler);
-            Object.defineProperty(exports, 'networkHandler', {value:networkHandler});
-        }
+        const networkHandler = minecraft.networkHandler.as(NetworkHandler);
+        Object.defineProperty(exports, 'networkHandler', {value:networkHandler});
+        return networkHandler;
     },
     configurable: true
 });
 
 newevents.networkDisconnected.on(ni=>{
     try {
-        events.networkDisconnected.fire(fromNewNi(ni));
+        events.networkDisconnected.fire(NetworkIdentifier.fromNewNi(ni));
         _tickCallback();
     } catch (err) {
         remapAndPrintError(err);

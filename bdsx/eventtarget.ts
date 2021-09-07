@@ -1,5 +1,5 @@
 
-import { CANCEL } from './common';
+import { AnyFunction, CANCEL } from './common';
 import { remapAndPrintError } from './source-map-support';
 
 /**
@@ -26,6 +26,8 @@ export interface CapsuledEvent<T extends (...args: any[]) => any> {
     onAfter(listener: T, needle: T): void;
     remove(listener: T): boolean;
 }
+
+type FirstParameter<T extends AnyFunction> = T extends (first:infer P, ...args:any[])=>any ? P : void;
 
 export class Event<T extends (...args: any[]) => Event.ReturnType> implements CapsuledEvent<T> {
     private readonly listeners: T[] = [];
@@ -82,6 +84,18 @@ export class Event<T extends (...args: any[]) => Event.ReturnType> implements Ca
         this.listeners.push(listener);
     }
 
+    once(listener: T): void {
+        const listenerWrap = (...args:any):any=>{
+            this.remove(listenerWrap as T);
+            return listener(...args);
+        };
+        this.on(listenerWrap as T);
+    }
+
+    promise():Promise<FirstParameter<T>> {
+        return new Promise(resolve=>this.once(resolve as T));
+    }
+
     onFirst(listener: T): void {
         this.listeners.unshift(listener);
     }
@@ -132,7 +146,7 @@ export class Event<T extends (...args: any[]) => Event.ReturnType> implements Ca
      * return value if it canceled
      */
     fire(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
-        for (const listener of this.listeners) {
+        for (const listener of this.listeners.slice()) {
             try {
                 const ret = listener(...v);
                 if (ret === CANCEL) return CANCEL as any;
@@ -148,7 +162,7 @@ export class Event<T extends (...args: any[]) => Event.ReturnType> implements Ca
      * return value if it canceled
      */
     fireReverse(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
-        for (const listener of this.listeners) {
+        for (const listener of this.listeners.slice().reverse()) {
             try {
                 const ret = listener(...v);
                 if (ret === CANCEL) return CANCEL as any;

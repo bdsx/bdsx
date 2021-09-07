@@ -17,13 +17,12 @@ import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError, remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
-import { _tickCallback } from "./util";
+import { DeferPromise, _tickCallback } from "./util";
 
 import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import minecraft = require("./minecraft");
-import nimodule = require("./bds/networkidentifier");
 
 declare module 'colors'
 {
@@ -55,8 +54,8 @@ class Liner {
 
 
 let launched = false;
-let loadingIsFired = false;
-let openIsFired = false;
+const loadingIsFired = DeferPromise.make<void>();
+const openIsFired = DeferPromise.make<void>();
 
 const bedrockLogLiner = new Liner;
 const cmdOutputLiner = new Liner;
@@ -214,7 +213,7 @@ function _launch(asyncResolve:()=>void):void {
     require('./bds/implements');
     require('./event_impl');
 
-    loadingIsFired = true;
+    loadingIsFired.resolve();
     events.serverLoading.fire();
     events.serverLoading.clear();
 
@@ -254,7 +253,7 @@ function _launch(asyncResolve:()=>void):void {
 
                 minecraft.serverInstance = asmcode.serverInstance.as(minecraft.ServerInstance);
                 minecraft.networkHandler = minecraft.serverInstance.networkHandler;
-                openIsFired = true;
+                openIsFired.resolve();
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it
                 asyncResolve();
@@ -326,24 +325,11 @@ export namespace bedrockServer
     export let sessionId: string;
 
     export function withLoading():Promise<void> {
-        return new Promise(resolve=>{
-            if (loadingIsFired) {
-                resolve();
-            } else {
-                events.serverLoading.on(resolve);
-            }
-        });
+        return loadingIsFired;
     }
     export function afterOpen():Promise<void> {
-        return new Promise(resolve=>{
-            if (openIsFired) {
-                resolve();
-            } else {
-                events.serverOpen.on(resolve);
-            }
-        });
+        return openIsFired;
     }
-
     export function isLaunched():boolean {
         return launched;
     }
@@ -402,56 +388,20 @@ export namespace bedrockServer
 
     let stdInHandler:DefaultStdInHandler|null = null;
 
-    export abstract class DefaultStdInHandler {
+    export class DefaultStdInHandler {
         protected online:(line:string)=>void = executeCommandOnConsole;
+        private readonly getline = new GetLine(line=>this.online(line));
         protected readonly onclose = ():void=>{
             this.close();
         };
 
-        protected constructor() {
-            // empty
+        constructor() {
+            events.serverClose.on(this.onclose);
         }
-
-        abstract close():void;
 
         static install():DefaultStdInHandler {
             if (stdInHandler !== null) throw remapError(Error('Already opened'));
-            return stdInHandler = new DefaultStdInHandlerGetLine;
-        }
-    }
-
-    /**
-     * this handler has bugs on Linux+Wine
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    class DefaultStdInHandlerJs extends DefaultStdInHandler {
-        private readonly rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-
-        constructor() {
-            super();
-
-            this.rl.on('line', line=>this.online(line));
-            events.serverClose.on(this.onclose);
-        }
-
-        close():void {
-            if (stdInHandler === null) return;
-            console.assert(stdInHandler !== null);
-            stdInHandler = null;
-            this.rl.close();
-            this.rl.removeAllListeners();
-            events.serverClose.remove(this.onclose);
-        }
-    }
-
-    class DefaultStdInHandlerGetLine extends DefaultStdInHandler {
-        private readonly getline = new GetLine(line=>this.online(line));
-        constructor() {
-            super();
-            events.serverClose.on(this.onclose);
+            return stdInHandler = new DefaultStdInHandler;
         }
 
         close():void {

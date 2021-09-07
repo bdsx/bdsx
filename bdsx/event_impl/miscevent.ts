@@ -17,6 +17,7 @@ interface IQueryRegenerateEvent {
     isJoinableThroughServerScreen: boolean,
 
 }
+/** @deprecated */
 export class QueryRegenerateEvent implements IQueryRegenerateEvent {
     constructor(
         public motd: string,
@@ -28,21 +29,25 @@ export class QueryRegenerateEvent implements IQueryRegenerateEvent {
     }
 }
 
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
-function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean):bin64_t {
-    const event = new QueryRegenerateEvent(motd.value, levelname.value, currentPlayers, maxPlayers, isJoinableThroughServerScreen);
-    events.queryRegenerate.fire(event);
-    motd.value = event.motd;
-    levelname.value = event.levelname;
-    _tickCallback();
-    return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, event.isJoinableThroughServerScreen);
-}
-bedrockServer.afterOpen().then(() => serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
+events.queryRegenerate.setInstaller(()=>{
+    const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
+    function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean):bin64_t {
+        const event = new QueryRegenerateEvent(motd.value, levelname.value, currentPlayers, maxPlayers, isJoinableThroughServerScreen);
+        events.queryRegenerate.fire(event);
+        motd.value = event.motd;
+        levelname.value = event.levelname;
+        _tickCallback();
+        return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, event.isJoinableThroughServerScreen);
+    }
+    if (bedrockServer.isLaunched()) return;
+    events.serverOpen.onFirst(()=>serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
+});
 
 interface IScoreResetEvent {
     identityRef:ScoreboardIdentityRef;
     objective:Objective;
 }
+/** @deprecated */
 export class ScoreResetEvent implements IScoreResetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
@@ -68,6 +73,7 @@ interface IScoreSetEvent {
     objective:Objective;
     score:number;
 }
+/** @deprecated */
 export class ScoreSetEvent implements IScoreSetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
@@ -77,6 +83,7 @@ export class ScoreSetEvent implements IScoreSetEvent {
     ) {
     }
 }
+/** @deprecated */
 export class ScoreAddEvent extends ScoreSetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
@@ -87,6 +94,7 @@ export class ScoreAddEvent extends ScoreSetEvent {
         super(identityRef, objective, score);
     }
 }
+/** @deprecated */
 export class ScoreRemoveEvent extends ScoreSetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
@@ -130,6 +138,7 @@ interface IObjectiveCreateEvent {
     displayName:string;
     criteria:ObjectiveCriteria;
 }
+/** @deprecated */
 export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
     constructor(
         public name:string,

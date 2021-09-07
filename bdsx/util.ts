@@ -265,3 +265,18 @@ export function printOnProgress(message:string):void {
     process.stdout.clearLine(1);
     console.log();
 }
+
+export type DeferPromise<T> = Promise<T>&{resolve:(value?:T|PromiseLike<T>)=>void, reject:(reason?:any)=>void};
+export namespace DeferPromise {
+    export function make<T>():DeferPromise<T> {
+        let resolve:((value?:T|PromiseLike<T>)=>void)|undefined;
+        let reject:((reason?:any)=>void)|undefined;
+        const prom = new Promise<T>((resolve_, reject_)=>{
+            resolve = resolve_;
+            reject = reject_;
+        }) as DeferPromise<T>;
+        prom.resolve = resolve!;
+        prom.reject = reject!;
+        return prom;
+    }
+}

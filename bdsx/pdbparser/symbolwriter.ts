@@ -1846,7 +1846,7 @@ const minecraft = new MinecraftTsFile(ids.concat(packets));
 minecraft.callDnfMake();
 minecraft.callDnfMakeOverload();
 
-new Definer('bool').js(['bool_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.boolean}).paramName('b');
+new Definer('bool').js(['bool_t', imports.nativetype]).paramName('b');
 new Definer('void').js(['void_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.void}).paramName('v');
 new Definer('std::nullptr_t').js(['nullptr_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.null}).paramName('v');
 new Definer('float').js(['float32_t', imports.nativetype]).paramName('f');

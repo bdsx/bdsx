@@ -15,6 +15,7 @@ import minecraft = require('../minecraft');
 export const Difficulty = minecraft.Difficulty;
 export type Difficulty = minecraft.Difficulty;
 
+/** @deprecated */
 export class Level extends NativeClass {
     vftable:VoidPointer;
     players:CxxVector<ServerPlayer>;

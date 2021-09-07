@@ -19,7 +19,9 @@ import type { ServerPlayer } from "./player";
 import enums = require('../enums');
 import minecraft = require('../minecraft');
 
+/** @deprecated */
 export const ActorUniqueID = bin64_t.extends();
+/** @deprecated */
 export type ActorUniqueID = bin64_t;
 
 /** @deprecated import it from bdsx/enums */

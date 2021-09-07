@@ -5,6 +5,7 @@ import { NativePointer } from "./core";
 import { events } from "./events";
 import { MinecraftPacketIds } from "./minecraft";
 import { hex } from "./util";
+import minecraft = require('./minecraft');
 
 export namespace nethook {
     /** @deprecated */
@@ -49,3 +50,11 @@ export namespace nethook {
         }
     }
 }
+
+
+Object.defineProperty(nethook, 'lastSender', {
+    get(){
+        const sender = minecraft.NetworkIdentifier.lastSender;
+        return NetworkIdentifier.fromNewNi(sender);
+    }
+});

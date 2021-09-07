@@ -24,6 +24,7 @@ class SavedCode {
 
 /**
  * Procedure hacker
+ * @deprecated use hook()
  */
 export class ProcHacker<T extends Record<string, NativePointer>> {
     constructor(public readonly map:T) {

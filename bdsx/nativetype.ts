@@ -22,8 +22,8 @@ namespace NativeTypeFn {
 export interface Type<T> extends TypeIn<T> {
     symbol?:string;
 
-    isTypeOf<V>(this:TypeIn<V>, v:unknown):v is V;
-    ref():NativeType<T>;
+    isTypeOf<V>(this:Type<V>, v:unknown):v is V;
+    ref():NativeType<any>;
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;

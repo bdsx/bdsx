@@ -6,11 +6,7 @@ import { Actor, Block, BlockPos, BlockSource, CampfireBlock, FarmBlock, GameMode
 import { bool_t, float32_t, void_t } from "../nativetype";
 import { _tickCallback } from "../util";
 
-interface IBlockDestroyEvent {
-    player: Player;
-    blockPos: BlockPos;
-}
-export class BlockDestroyEvent implements IBlockDestroyEvent {
+export class BlockDestroyEvent {
     constructor(
         public player: Player,
         public blockPos: BlockPos,
@@ -18,13 +14,7 @@ export class BlockDestroyEvent implements IBlockDestroyEvent {
     }
 }
 
-interface IBlockPlaceEvent {
-    player: Player,
-    block: Block,
-    blockSource: BlockSource,
-    blockPos: BlockPos;
-}
-export class BlockPlaceEvent implements IBlockPlaceEvent {
+export class BlockPlaceEvent {
     constructor(
         public player: Player,
         public block: Block,
@@ -58,9 +48,9 @@ events.blockDestroy.setInstaller(()=>{
         }
     }
 
-    const _onBlockDestroy = hook(SurvivalMode, 'destroyBlock')(onBlockDestroy);
+    const _onBlockDestroy = hook(SurvivalMode, 'destroyBlock').call(onBlockDestroy);
 
-    const _onBlockDestroyCreative = hook(GameMode, '_creativeDestroyBlock')(onBlockDestroyCreative);
+    const _onBlockDestroyCreative = hook(GameMode, '_creativeDestroyBlock').call(onBlockDestroyCreative);
 });
 
 events.blockPlace.setInstaller(()=>{
@@ -74,19 +64,14 @@ events.blockPlace.setInstaller(()=>{
             return _onBlockPlace.call(event.blockSource, event.block, event.blockPos, facing, event.player, ignoreEntities);
         }
     }
-    const _onBlockPlace = hook(BlockSource, 'mayPlace')(onBlockPlace);
+    const _onBlockPlace = hook(BlockSource, 'mayPlace').call(onBlockPlace);
 });
 
-interface IPistonMoveEvent {
-    blockPos: BlockPos;
-    blockSource: BlockSource;
-    readonly action: PistonAction;
-}
-export class PistonMoveEvent implements IPistonMoveEvent {
+export class PistonMoveEvent {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
-        public action: PistonAction,
+        public readonly action: PistonAction,
     ) {
     }
 }
@@ -101,16 +86,10 @@ events.pistonMove.setInstaller(()=>{
         _tickCallback();
         return _onPistonMove.call(this, event.blockSource);
     }
-    const _onPistonMove = hook(PistonBlockActor, '_spawnMovingBlocks')(onPistonMove);
+    const _onPistonMove = hook(PistonBlockActor, '_spawnMovingBlocks').call(onPistonMove);
 });
 
-interface IFarmlandDecayEvent {
-    block: Block;
-    blockPos: BlockPos;
-    blockSource: BlockSource;
-    culprit: Actor;
-}
-export class FarmlandDecayEvent implements IFarmlandDecayEvent {
+export class FarmlandDecayEvent {
     constructor(
         public block: Block,
         public blockPos: BlockPos,
@@ -129,15 +108,10 @@ events.farmlandDecay.setInstaller(()=>{
             return _onFarmlandDecay.call(event.block, event.blockSource, event.blockPos, event.culprit, fallDistance);
         }
     }
-    const _onFarmlandDecay = hook(FarmBlock, 'transformOnFall')(onFarmlandDecay);
+    const _onFarmlandDecay = hook(FarmBlock, 'transformOnFall').call(onFarmlandDecay);
 });
 
-interface ICampfireTryLightFire {
-    blockSource: BlockSource;
-    blockPos: BlockPos;
-}
-
-export class CampfireTryLightFire implements ICampfireTryLightFire {
+export class CampfireTryLightFire {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource
@@ -154,14 +128,10 @@ events.campfireLight.setInstaller(()=>{
         else return _CampfireTryLightFire(event.blockSource, event.blockPos);
     }
 
-    const _CampfireTryLightFire = hook(CampfireBlock.tryLightFire)(onCampfireTryLightFire);
+    const _CampfireTryLightFire = hook(CampfireBlock.tryLightFire).call(onCampfireTryLightFire);
 });
 
-interface ICampfireTryDouseFire {
-    blockSource: BlockSource;
-    blockPos: BlockPos;
-}
-export class CampfireTryDouseFire implements ICampfireTryDouseFire {
+export class CampfireTryDouseFire {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource
@@ -178,5 +148,5 @@ events.campfireDouse.setInstaller(()=>{
         else return _CampfireTryDouseFire(event.blockSource, event.blockPos, b);
     }
 
-    const _CampfireTryDouseFire = hook(CampfireBlock.tryDouseFire)(onCampfireTryDouseFire);
+    const _CampfireTryDouseFire = hook(CampfireBlock.tryDouseFire).call(onCampfireTryDouseFire);
 });

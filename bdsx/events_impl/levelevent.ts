@@ -1,25 +1,11 @@
-import { Actor } from "../bds/actor";
-import { BlockSource } from "../bds/block";
-import { Vec3 } from "../bds/blockpos";
-import { Level } from "../bds/level";
-import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
-import { events } from "../event";
-import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { events } from "../events";
+import { hook } from "../hook";
+import { Actor, BlockSource, Level, Vec3 } from "../minecraft";
+import { bool_t, float32_t, int32_t } from "../nativetype";
 import { _tickCallback } from "../util";
 
-interface ILevelExplodeEvent {
-    level: Level;
-    blockSource: BlockSource;
-    entity: Actor;
-    position: Vec3;
-    power: number;
-    causesFire: boolean;
-    breaksBlocks: boolean;
-    maxResistance: number;
-    allowUnderwater: boolean;
-}
-export class LevelExplodeEvent implements ILevelExplodeEvent {
+export class LevelExplodeEvent {
     constructor(
         public level: Level,
         public blockSource: BlockSource,
@@ -38,34 +24,21 @@ export class LevelExplodeEvent implements ILevelExplodeEvent {
     }
 }
 
-interface ILevelSaveEvent {
-    level: Level;
-}
-export class LevelSaveEvent implements ILevelSaveEvent {
+export class LevelSaveEvent {
     constructor(
         public level: Level,
     ) {
     }
 }
 
-interface ILevelTickEvent {
-    level: Level;
-}
-export class LevelTickEvent implements ILevelTickEvent {
+export class LevelTickEvent {
     constructor(
         public level: Level,
     ) {
     }
 }
 
-interface ILevelWeatherChangeEvent {
-    level: Level;
-    rainLevel: number;
-    rainTime: number;
-    lightningLevel: number;
-    lightningTime: number;
-}
-export class LevelWeatherChangeEvent implements ILevelWeatherChangeEvent {
+export class LevelWeatherChangeEvent {
     constructor(
         public level: Level,
         public rainLevel: number,
@@ -76,39 +49,47 @@ export class LevelWeatherChangeEvent implements ILevelWeatherChangeEvent {
     }
 }
 
-function onLevelExplode(level:Level, blockSource:BlockSource, entity:Actor, position:Vec3, power:float32_t, causesFire:bool_t, breaksBlocks:bool_t, maxResistance:float32_t, allowUnderwater:bool_t):void {
-    const event = new LevelExplodeEvent(level, blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater);
-    const canceled = events.levelExplode.fire(event) === CANCEL;
-    _tickCallback();
-    if (!canceled) {
-        return _onLevelExplode(event.level, event.blockSource, event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater);
+events.levelExplode.setInstaller(()=>{
+    function onLevelExplode(this:Level, blockSource:BlockSource, entity:Actor, position:Vec3, power:float32_t, causesFire:bool_t, breaksBlocks:bool_t, maxResistance:float32_t, allowUnderwater:bool_t):void {
+        const event = new LevelExplodeEvent(this, blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater);
+        const canceled = events.levelExplode.fire(event) === CANCEL;
+        _tickCallback();
+        if (!canceled) {
+            return _onLevelExplode.call(event.level, event.blockSource, event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater);
+        }
     }
-}
-const _onLevelExplode = procHacker.hooking("?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z", void_t, null, Level, BlockSource, Actor, Vec3, float32_t, bool_t, bool_t, float32_t, bool_t)(onLevelExplode);
+    const _onLevelExplode = hook(Level, 'explode', BlockSource, Actor, Vec3, float32_t, bool_t, bool_t, float32_t, bool_t).call(onLevelExplode);
+});
 
-function onLevelSave(level:Level):void {
-    const event = new LevelSaveEvent(level);
-    const canceled = events.levelSave.fire(event) === CANCEL;
-    _tickCallback();
-    if (!canceled) {
-        return _onLevelSave(event.level);
+events.levelSave.setInstaller(()=>{
+    function onLevelSave(this:Level):void {
+        const event = new LevelSaveEvent(this);
+        const canceled = events.levelSave.fire(event) === CANCEL;
+        _tickCallback();
+        if (!canceled) {
+            return _onLevelSave.call(event.level);
+        }
     }
-}
-const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLevelSave);
+    const _onLevelSave = hook(Level, 'save').call(onLevelSave);
+});
 
-function onLevelTick(level:Level):void {
-    const event = new LevelTickEvent(level);
-    events.levelTick.fire(event);
-    _onLevelTick(event.level);
-}
-const _onLevelTick = procHacker.hooking("Level::tick", void_t, null, Level)(onLevelTick);
-
-function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
-    const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
-    const canceled = events.levelWeatherChange.fire(event) === CANCEL;
-    _tickCallback();
-    if (!canceled) {
-        return _onLevelWeatherChange(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);
+events.levelTick.setInstaller(()=>{
+    function onLevelTick(this:Level):void {
+        const event = new LevelTickEvent(this);
+        events.levelTick.fire(event);
+        _onLevelTick.call(event.level);
     }
-}
-const _onLevelWeatherChange = procHacker.hooking("Level::updateWeather", void_t, null, Level, float32_t, int32_t, float32_t, int32_t)(onLevelWeatherChange);
+    const _onLevelTick = hook(Level, 'tick').call(onLevelTick);
+});
+
+events.levelWeatherChange.setInstaller(()=>{
+    function onLevelWeatherChange(this:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
+        const event = new LevelWeatherChangeEvent(this, rainLevel, rainTime, lightningLevel, lightningTime);
+        const canceled = events.levelWeatherChange.fire(event) === CANCEL;
+        _tickCallback();
+        if (!canceled) {
+            return _onLevelWeatherChange.call(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);
+        }
+    }
+    const _onLevelWeatherChange = hook(Level, 'updateWeather').call(onLevelWeatherChange);
+});

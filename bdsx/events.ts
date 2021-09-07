@@ -250,5 +250,4 @@ export namespace events {
       * network identifier disconnected
       */
     export const networkDisconnected = new Event<(ni:NetworkIdentifier)=>void>();
-
 }

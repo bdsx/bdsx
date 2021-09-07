@@ -30,4 +30,4 @@ NetworkHandler.abstract({
     instance: [RakNetInstance.ref(), 0x48]
 });
 
-minecraft.networkHandler = createAbstractObject.bedrockObject;
+createAbstractObject.setAbstractProperty(minecraft, 'networkHandler');

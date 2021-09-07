@@ -1,7 +1,7 @@
 import { capi } from "./capi";
 import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
-import { makefunc, TypeIn } from "./makefunc";
+import { makefunc } from "./makefunc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { NativeType, Type, uint32_t, void_t } from "./nativetype";
 import { Singleton } from "./singleton";
@@ -93,7 +93,7 @@ export abstract class SharedPtr<T> extends NativeClass {
     }
     abstract create(vftable:VoidPointer):void;
 
-    static make<T extends NativeClass>(type:TypeIn<T>):NativeClassType<SharedPtr<T>> {
+    static make<T extends NativeClass>(type:Type<T>):NativeClassType<SharedPtr<T>> {
         const t = type as Type<T>;
         return Singleton.newInstance(SharedPtr, t, ()=>{
             const Base = SharedPtrBase.make(t);

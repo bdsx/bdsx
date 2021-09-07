@@ -22,15 +22,15 @@ function onDestroyBlock(this:SurvivalMode, blockPos:BlockPos, v:number):boolean 
 }
 
 // bool SurvivalMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler or the decompiler.
-const originalFunc = hook(SurvivalMode, 'destroyBlock')(onDestroyBlock);
+const originalFunc = hook(SurvivalMode, 'destroyBlock').call(onDestroyBlock);
 
 //////////////////////////
 // hook the item using on block
-const itemUseOn = hook(GameMode, 'useItemOn')(function(item, blockpos, n, pos, block) {
+const itemUseOn = hook(GameMode, 'useItemOn').call(function(item, blockpos, n, pos, block) {
     sendText(this.actor.getNetworkIdentifier(), `${item.getName()} using at ${blockpos.x} ${blockpos.y} ${blockpos.z}`);
     return itemUseOn.call(this, item, blockpos, n, pos, block);
 });
 
 //////////////////////////
 // hide the map marker
-hook(MapItemSavedData, '_updateTrackedEntityDecoration')(()=>false);
+hook(MapItemSavedData, '_updateTrackedEntityDecoration').call(()=>false);

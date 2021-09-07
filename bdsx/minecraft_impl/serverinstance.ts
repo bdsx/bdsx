@@ -21,4 +21,4 @@ ServerInstance.abstract({
     networkHandler:[NetworkHandler.ref(), 0xa8],
 });
 
-minecraft.serverInstance = createAbstractObject.bedrockObject;
+createAbstractObject.setAbstractProperty(minecraft, 'serverInstance');

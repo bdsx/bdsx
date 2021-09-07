@@ -1,6 +1,6 @@
-Convert event_impl/* to events_impl/*
-blockevent.ts ✔️
-entityevent.ts ✔️
-levelevent.ts
-miscevent.ts
-packetevent.ts
+
+* for symbolaprser.ts/symbolwriter.ts
+Ptr<T>[] to T[]
+(T|null)[] to T[] when it returning.
+int32_t& to Wrapper<int32_t>
+NetworkHandler::_sendInternal - use CxxStringWrapper insteadof CxxString

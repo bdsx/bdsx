@@ -6,7 +6,7 @@ import { bin } from "../bin";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { dnf } from "../dnf";
-import { hook, hookRaw } from "../hook";
+import { hook } from "../hook";
 import { makefunc } from "../makefunc";
 import { Actor, ActorUniqueID, AttributeInstance, Item, ItemActor, Level, MobEffect, MobEffectInstance, Packet, RelativeFloat, serverInstance, ServerPlayer, TeleportCommand, Vec3 } from "../minecraft";
 import { bin64_t, CxxString, NativeType, void_t } from "../nativetype";
@@ -178,11 +178,11 @@ function _removeActor(actor:Actor):void {
 }
 
 minecraftTsReady.promise.then(()=>{
-    const Level$removeEntityReferences = hook(Level, 'removeEntityReferences')(function(actor, b){
+    const Level$removeEntityReferences = hook(Level, 'removeEntityReferences').call(function(actor, b){
         _removeActor(actor);
         return Level$removeEntityReferences.call(this, actor, b);
     });
 
     asmcode.removeActor = makefunc.np(_removeActor, void_t, null, Actor);
-    hookRaw(Actor.prototype[NativeType.dtor], asmcode.actorDestructorHook, {callOriginal: true});
+    hook(Actor, NativeType.dtor).raw(asmcode.actorDestructorHook, {callOriginal: true});
 });

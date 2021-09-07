@@ -7,14 +7,7 @@ import { int32_t } from "../nativetype";
 import { _tickCallback } from "../util";
 
 
-interface IEntityHurtEvent {
-    entity: Actor;
-    damage: number;
-    damageSource: ActorDamageSource;
-    knock: boolean,
-    ignite: boolean,
-}
-export class EntityHurtEvent implements IEntityHurtEvent {
+export class EntityHurtEvent {
     constructor(
         public entity: Actor,
         public damage: number,
@@ -25,12 +18,7 @@ export class EntityHurtEvent implements IEntityHurtEvent {
     }
 }
 
-interface IEntityHeathChangeEvent {
-    entity: Actor;
-    readonly oldHealth: number;
-    readonly newHealth: number;
-}
-export class EntityHeathChangeEvent implements IEntityHeathChangeEvent {
+export class EntityHeathChangeEvent {
     constructor(
         public entity: Actor,
         readonly oldHealth: number,
@@ -39,44 +27,27 @@ export class EntityHeathChangeEvent implements IEntityHeathChangeEvent {
     }
 }
 
-interface IEntityDieEvent {
-    entity: Actor;
-    damageSource: ActorDamageSource;
-}
-export class EntityDieEvent implements IEntityDieEvent {
+export class EntityDieEvent {
     constructor(
         public entity: Actor,
         public damageSource: ActorDamageSource,
     ) {
     }
 }
-interface IEntityStartSwimmingEvent {
-    entity: Actor;
-}
-export class EntityStartSwimmingEvent implements IEntityStartSwimmingEvent {
+export class EntityStartSwimmingEvent {
     constructor(
         public entity: Actor,
     ) {
     }
 }
-interface IEntityStartRidingEvent {
-    entity: Actor;
-    ride: Actor;
-}
-export class EntityStartRidingEvent implements IEntityStartRidingEvent {
+export class EntityStartRidingEvent {
     constructor(
         public entity: Actor,
         public ride: Actor,
     ) {
     }
 }
-interface IEntityStopRidingEvent {
-    entity: Actor;
-    exitFromRider: boolean;
-    actorIsBeingDestroyed: boolean;
-    switchingRides: boolean;
-}
-export class EntityStopRidingEvent implements IEntityStopRidingEvent {
+export class EntityStopRidingEvent {
     constructor(
         public entity: Actor,
         public exitFromRider: boolean,
@@ -85,11 +56,7 @@ export class EntityStopRidingEvent implements IEntityStopRidingEvent {
     ) {
     }
 }
-interface IEntitySneakEvent {
-    entity: Actor;
-    isSneaking: boolean;
-}
-export class EntitySneakEvent implements IEntitySneakEvent {
+export class EntitySneakEvent {
     constructor(
         public entity: Actor,
         public isSneaking: boolean,
@@ -97,22 +64,14 @@ export class EntitySneakEvent implements IEntitySneakEvent {
     }
 }
 
-interface IEntityCreatedEvent {
-    entity: Actor;
-}
-export class EntityCreatedEvent implements IEntityCreatedEvent {
+export class EntityCreatedEvent {
     constructor(
         public entity: Actor
     ) {
     }
 }
 
-// interface IEntityDeathEvent {
-//     entity: Actor;
-//     damageSource: ActorDamageSource;
-//     ActorType: number;
-// }
-// export class EntityDeathEvent implements IEntityDeathEvent {
+// export class EntityDeathEvent {
 //     constructor(
 //         public entity: Actor,
 //         public damageSource: ActorDamageSource,
@@ -121,11 +80,7 @@ export class EntityCreatedEvent implements IEntityCreatedEvent {
 //     }
 // }
 
-interface IPlayerAttackEvent {
-    player: Player;
-    victim: Actor;
-}
-export class PlayerAttackEvent implements IPlayerAttackEvent {
+export class PlayerAttackEvent {
     constructor(
         public player: Player,
         public victim: Actor,
@@ -133,11 +88,7 @@ export class PlayerAttackEvent implements IPlayerAttackEvent {
     }
 }
 
-interface IPlayerDropItemEvent {
-    player: Player;
-    itemStack: ItemStack;
-}
-export class PlayerDropItemEvent implements IPlayerDropItemEvent {
+export class PlayerDropItemEvent {
     constructor(
         public player: Player,
         public itemStack: ItemStack,
@@ -145,13 +96,7 @@ export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     }
 }
 
-interface IPlayerInventoryChangeEvent {
-    player: Player;
-    readonly oldItemStack: ItemStack;
-    readonly newItemStack: ItemStack;
-    readonly slot:number;
-}
-export class PlayerInventoryChangeEvent implements IPlayerInventoryChangeEvent {
+export class PlayerInventoryChangeEvent {
     constructor(
         public player: Player,
         readonly oldItemStack: ItemStack,
@@ -161,21 +106,14 @@ export class PlayerInventoryChangeEvent implements IPlayerInventoryChangeEvent {
     }
 }
 
-interface IPlayerRespawnEvent {
-    player: Player;
-}
-export class PlayerRespawnEvent implements IPlayerRespawnEvent {
+export class PlayerRespawnEvent {
     constructor(
         public player: Player,
     ) {
     }
 }
 
-interface IPlayerLevelUpEvent {
-    player: Player;
-    levels: number;
-}
-export class PlayerLevelUpEvent implements IPlayerLevelUpEvent {
+export class PlayerLevelUpEvent {
     constructor(
         public player: Player,
         /** Amount of levels upgraded */
@@ -187,41 +125,29 @@ export class PlayerLevelUpEvent implements IPlayerLevelUpEvent {
 interface IPlayerJoinEvent {
     readonly player: Player;
 }
-export class PlayerJoinEvent implements IPlayerJoinEvent {
+export class PlayerJoinEvent {
     constructor(
         readonly player: Player,
     ) {
     }
 }
 
-interface IPlayerPickupItemEvent {
-    player: Player;
-    itemActor: ItemActor;
-}
-export class PlayerPickupItemEvent implements IPlayerPickupItemEvent {
+export class PlayerPickupItemEvent {
     constructor(
         public player: Player,
         public itemActor: ItemActor,
     ) {
     }
 }
-interface IPlayerCritEvent {
-    player: Player;
-}
-export class PlayerCritEvent implements IPlayerCritEvent {
+
+export class PlayerCritEvent {
     constructor(
         public player: Player
     ) {
     }
 }
 
-interface IPlayerUseItemEvent {
-    player: Player;
-    useMethod: CompletedUsingItemPacket.Actions;
-    consumeItem: boolean;
-    itemStack: ItemStack;
-}
-export class PlayerUseItemEvent implements IPlayerUseItemEvent {
+export class PlayerUseItemEvent {
     constructor(
         public player: Player,
         public useMethod: CompletedUsingItemPacket.Actions,
@@ -231,21 +157,14 @@ export class PlayerUseItemEvent implements IPlayerUseItemEvent {
     }
 }
 
-interface IPlayerJumpEvent {
-    player: Player;
-}
-export class PlayerJumpEvent implements IPlayerJumpEvent {
+export class PlayerJumpEvent {
     constructor(
         public player: Player
     ) {
     }
 }
 
-interface ISplashPotionHitEvent {
-    entity: Actor;
-    potionEffect: number;
-}
-export class SplashPotionHitEvent implements ISplashPotionHitEvent {
+export class SplashPotionHitEvent {
     constructor(
         public entity: Actor,
         public potionEffect: number,
@@ -268,7 +187,7 @@ events.playerUseItem.setInstaller(()=>{
         _tickCallback();
         return _onPlayerUseItem.call(event.player, event.itemStack, event.useMethod, event.consumeItem);
     }
-    const _onPlayerUseItem = hook(Player, 'useItem')(onPlayerUseItem);
+    const _onPlayerUseItem = hook(Player, 'useItem').call(onPlayerUseItem);
 });
 
 events.playerCrit.setInstaller(()=>{
@@ -278,7 +197,7 @@ events.playerCrit.setInstaller(()=>{
         _tickCallback();
         return _onPlayerCrit.call(event.player, actor);
     }
-    const _onPlayerCrit = hook(Player, '_crit')(onPlayerCrit);
+    const _onPlayerCrit = hook(Player, '_crit').call(onPlayerCrit);
 });
 
 events.entityHurt.setInstaller(()=>{
@@ -291,7 +210,7 @@ events.entityHurt.setInstaller(()=>{
         }
         return _onEntityHurt.call(event.entity, event.damageSource, event.damage, knock, ignite);
     }
-    const _onEntityHurt = hook(Actor, 'hurt')(onEntityHurt);
+    const _onEntityHurt = hook(Actor, 'hurt').call(onEntityHurt);
 });
 
 events.entityHealthChange.setInstaller(()=>{
@@ -302,7 +221,7 @@ events.entityHealthChange.setInstaller(()=>{
         _tickCallback();
         return _onEntityHealthChange.call(this, oldHealth, newHealth, attributeBuffInfo);
     }
-    const _onEntityHealthChange = hook(HealthAttributeDelegate, 'change')(onEntityHealthChange);
+    const _onEntityHealthChange = hook(HealthAttributeDelegate, 'change').call(onEntityHealthChange);
 });
 
 events.entityDie.setInstaller(()=>{
@@ -312,7 +231,7 @@ events.entityDie.setInstaller(()=>{
         _tickCallback();
         return _onEntityDie.call(event.entity, event.damageSource);
     }
-    const _onEntityDie = hook(Mob, 'die')(onEntityDie);
+    const _onEntityDie = hook(Mob, 'die').call(onEntityDie);
 });
 
 events.entityStartSwimming.setInstaller(()=>{
@@ -324,7 +243,7 @@ events.entityStartSwimming.setInstaller(()=>{
             return _onEntityStartSwimming.call(event.entity);
         }
     }
-    const _onEntityStartSwimming = hook(Actor, 'startSwimming')(onEntityStartSwimming);
+    const _onEntityStartSwimming = hook(Actor, 'startSwimming').call(onEntityStartSwimming);
 });
 
 events.entityStartSwimming.setInstaller(()=>{
@@ -336,7 +255,7 @@ events.entityStartSwimming.setInstaller(()=>{
             return _onPlayerStartSwimming.call(event.entity as Player);
         }
     }
-    const _onPlayerStartSwimming = hook(Player, 'startSwimming')(onPlayerStartSwimming);
+    const _onPlayerStartSwimming = hook(Player, 'startSwimming').call(onPlayerStartSwimming);
 });
 
 events.entityStartRiding.setInstaller(()=>{
@@ -349,7 +268,7 @@ events.entityStartRiding.setInstaller(()=>{
         }
         return _onEntityStartRiding.call(event.entity, event.ride);
     }
-    const _onEntityStartRiding = hook(Actor, 'startRiding')(onEntityStartRiding);
+    const _onEntityStartRiding = hook(Actor, 'startRiding').call(onEntityStartRiding);
 });
 
 events.entityStopRiding.setInstaller(()=>{
@@ -361,7 +280,7 @@ events.entityStopRiding.setInstaller(()=>{
             return _onEntityStopRiding.call(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
         }
     }
-    const _onEntityStopRiding = hook(Actor, 'stopRiding')(onEntityStopRiding);
+    const _onEntityStopRiding = hook(Actor, 'stopRiding').call(onEntityStopRiding);
 });
 
 events.entitySneak.setInstaller(()=>{
@@ -371,7 +290,7 @@ events.entitySneak.setInstaller(()=>{
         _tickCallback();
         return _onEntitySneak.call(this, event.entity, event.isSneaking);
     }
-    const _onEntitySneak = hook(ScriptServerActorEventListener, 'onActorSneakChanged')(onEntitySneak);
+    const _onEntitySneak = hook(ScriptServerActorEventListener, 'onActorSneakChanged').call(onEntitySneak);
 });
 
 events.entityCreated.setInstaller(()=>{
@@ -381,16 +300,8 @@ events.entityCreated.setInstaller(()=>{
         _tickCallback();
         return _onEntityCreated.call(this, event.entity);
     }
-    const _onEntityCreated = hook(ScriptServerActorEventListener, 'onActorCreated')(onEntityCreated);
+    const _onEntityCreated = hook(ScriptServerActorEventListener, 'onActorCreated').call(onEntityCreated);
 });
-
-// function onEntityDeath(Script:ScriptCustomEventPacket, entity:Actor, actorDamageSource:ActorDamageSource, ActorType:number):boolean {
-//     const event = new EntityDeathEvent(entity, actorDamageSource, ActorType);
-//     console.log(`${entity} ${actorDamageSource} ${ActorType}`)
-//     events.entityCreated.fire(event);
-//     return _onEntityDeath(Script, event.entity, event.damageSource, event.ActorType);
-// }
-// const _onEntityDeath = hook(ScriptServerActorEventListener, 'onActorDeath', bool_t, null, ScriptCustomEventPacket, Actor, ActorDamageSource, int32_t)(onEntityDeath);
 
 events.playerAttack.setInstaller(()=>{
     function onPlayerAttack(this:Player, victim:Actor):boolean {
@@ -402,7 +313,7 @@ events.playerAttack.setInstaller(()=>{
         }
         return _onPlayerAttack.call(event.player, event.victim);
     }
-    const _onPlayerAttack = hook(Player, "attack")(onPlayerAttack);
+    const _onPlayerAttack = hook(Player, "attack").call(onPlayerAttack);
 });
 
 events.playerDropItem.setInstaller(()=>{
@@ -415,7 +326,7 @@ events.playerDropItem.setInstaller(()=>{
         }
         return _onPlayerDropItem.call(event.player, event.itemStack, randomly);
     }
-    const _onPlayerDropItem = hook(Player, "drop")(onPlayerDropItem);
+    const _onPlayerDropItem = hook(Player, "drop").call(onPlayerDropItem);
 });
 
 events.playerInventoryChange.setInstaller(()=>{
@@ -425,7 +336,7 @@ events.playerInventoryChange.setInstaller(()=>{
         _tickCallback();
         return _onPlayerInventoryChange.call(event.player, container, slot, event.oldItemStack, event.newItemStack, unknown);
     }
-    const _onPlayerInventoryChange = hook(Player, "inventoryChanged")(onPlayerInventoryChange);
+    const _onPlayerInventoryChange = hook(Player, "inventoryChanged").call(onPlayerInventoryChange);
 });
 
 events.playerRespawn.setInstaller(()=>{
@@ -435,7 +346,7 @@ events.playerRespawn.setInstaller(()=>{
         _tickCallback();
         return _onPlayerRespawn.call(event.player);
     }
-    const _onPlayerRespawn = hook(Player, "respawn")(onPlayerRespawn);
+    const _onPlayerRespawn = hook(Player, "respawn").call(onPlayerRespawn);
 });
 
 events.playerLevelUp.setInstaller(()=>{
@@ -447,7 +358,7 @@ events.playerLevelUp.setInstaller(()=>{
             return _onPlayerLevelUp.call(event.player, event.levels);
         }
     }
-    const _onPlayerLevelUp = hook(Player, "addLevels")(onPlayerLevelUp);
+    const _onPlayerLevelUp = hook(Player, "addLevels").call(onPlayerLevelUp);
 });
 
 events.playerJoin.setInstaller(()=>{
@@ -470,7 +381,7 @@ events.playerPickupItem.setInstaller(()=>{
         }
         return _onPlayerPickupItem.call(event.player, itemActor, orgCount, favoredSlot);
     }
-    const _onPlayerPickupItem = hook(Player, "take")(onPlayerPickupItem);
+    const _onPlayerPickupItem = hook(Player, "take").call(onPlayerPickupItem);
 });
 
 events.splashPotionHit.setInstaller(()=>{
@@ -483,5 +394,5 @@ events.splashPotionHit.setInstaller(()=>{
             return _onSplashPotionHit.call(this, event.entity, projectileComponent);
         }
     }
-    const _onSplashPotionHit = hook(SplashPotionEffectSubcomponent, 'doOnHitEffect')(onSplashPotionHit);
+    const _onSplashPotionHit = hook(SplashPotionEffectSubcomponent, 'doOnHitEffect').call(onSplashPotionHit);
 });

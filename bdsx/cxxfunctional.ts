@@ -1,10 +1,9 @@
 import { VoidPointer } from "./core";
 import { dll } from "./dll";
-import { TypeIn } from "./makefunc";
 import { CxxString, Type } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
 
-const lesses = new WeakMap<TypeIn<any>, (a:any, b:any)=>boolean>();
+const lesses = new WeakMap<Type<any>, (a:any, b:any)=>boolean>();
 
 /**
  * std::less
@@ -24,7 +23,7 @@ export const CxxLess = {
     /**
      * define std::less<type>
      */
-    define<T>(type:TypeIn<T>, less:(a:T, b:T)=>boolean):void {
+    define<T>(type:Type<T>, less:(a:T, b:T)=>boolean):void {
         const fn = lesses.get(type);
         if (fn != null) throw Error(`std::less<${type.name}> is already defined`);
         lesses.set(type, less);

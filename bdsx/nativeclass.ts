@@ -2,7 +2,7 @@ import { capi } from "./capi";
 import { CircularDetector } from "./circulardetector";
 import { AnyFunction, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
-import { makefunc, TypeIn } from "./makefunc";
+import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
@@ -39,7 +39,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T> {
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
     offsetOf(key:KeysWithoutFunction<T>):number;
     typeOf<KEY extends KeysWithoutFunction<T>>(field:KEY):Type<T[KEY]>;
-    ref<T extends NativeClass>(this:TypeIn<T>):NativeType<T>;
+    ref<T extends NativeClass>(this:Type<T>):NativeType<T>;
 }
 
 function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, superproto:NativeClassType<any>):((()=>void)|null)[] {
@@ -454,7 +454,7 @@ export class NativeClass extends StructurePointer {
         return clazz.define(fields, undefined, undefined, abstract);
     }
 
-    static ref<T extends NativeClass>(this:TypeIn<T>):NativeType<T> {
+    static ref<T extends NativeClass>(this:Type<T>):NativeType<T> {
         return Singleton.newInstance(NativeClass, this, ()=>makeReference(this));
     }
 
@@ -623,7 +623,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
     }
     static readonly [NativeType.align]:number = 1;
 
-    static ref<T>(this:TypeIn<NativeArray<T>>):NativeType<NativeArray<T>> {
+    static ref<T>(this:Type<NativeArray<T>>):NativeType<NativeArray<T>> {
         return Singleton.newInstance(NativeArray, this, ()=>{
             const clazz = this as NativeArrayType<T>;
             return new NativeType<NativeArray<T>>(clazz.name+'*', 8, 8,
@@ -680,7 +680,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
             static readonly [StructurePointer.contentSize] = off;
             static readonly [NativeType.align] = itemType[NativeType.align];
             [NativeType.size]:number;
-            static isTypeOf<T>(this:TypeIn<T>, v:unknown):v is T {
+            static isTypeOf<T>(this:Type<T>, v:unknown):v is T {
                 return v === null || v instanceof NativeArrayImpl;
             }
             length:number;
@@ -799,7 +799,7 @@ export declare class MantleClass extends NativeClass {
 }
 exports.MantleClass = NativeClass;
 
-function makeReference<T extends NativeClass>(type:TypeIn<T>):NativeType<T> {
+function makeReference<T extends NativeClass>(type:Type<T>):NativeType<T> {
     const clazz = type as NativeClassType<T>;
     return new NativeType<T>(type.name+'*', 8, 8,
         clazz.isTypeOf,

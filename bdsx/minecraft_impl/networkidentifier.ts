@@ -9,6 +9,8 @@ import { NativeClass } from "../nativeclass";
 import { NativeType } from "../nativetype";
 import { remapAndPrintError } from "../source-map-support";
 import { _tickCallback } from "../util";
+import './raknet/addressorguid';
+import { minecraftTsReady } from "./ready";
 
 const identifiers = new HashSet<NetworkIdentifier>();
 
@@ -25,8 +27,9 @@ declare module "../minecraft" {
     }
 
     namespace NetworkIdentifier {
-        function fromPointer(ptr:StaticPointer):NetworkIdentifier;
+        function fromPointer(ptr:VoidPointer):NetworkIdentifier;
         function all():IterableIterator<NetworkIdentifier>;
+        let lastSender:NetworkIdentifier;
     }
 
 }
@@ -49,7 +52,7 @@ NetworkIdentifier.prototype.toString = function():string {
     return this.getAddress();
 };
 
-NetworkIdentifier.fromPointer = function(ptr:StaticPointer):NetworkIdentifier {
+NetworkIdentifier.fromPointer = function(ptr:VoidPointer):NetworkIdentifier {
     return identifiers.get(ptr.as(NetworkIdentifier))!;
 };
 
@@ -72,16 +75,18 @@ function _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
     return ni;
 }
 
-hook(NetworkHandler, 'onConnectionClosed')(ni=>{
-    try {
-        events.networkDisconnected.fire(ni);
-        _tickCallback();
-    } catch (err) {
-        remapAndPrintError(err);
-    }
-    // ni is used after onConnectionClosed. on some message processings.
-    // timeout for avoiding the re-allocation
-    setTimeout(()=>{
-        identifiers.delete(ni);
-    }, 3000);
-}, {callOriginal: true});
+minecraftTsReady.promise.then(()=>{
+    hook(NetworkHandler, 'onConnectionClosed').call(ni=>{
+        try {
+            events.networkDisconnected.fire(ni);
+            _tickCallback();
+        } catch (err) {
+            remapAndPrintError(err);
+        }
+        // ni is used after onConnectionClosed. on some message processings.
+        // timeout for avoiding the re-allocation
+        setTimeout(()=>{
+            identifiers.delete(ni);
+        }, 3000);
+    }, {callOriginal: true});
+});

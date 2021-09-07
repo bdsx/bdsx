@@ -20,5 +20,15 @@ export function createAbstractObject(message:string):any {
 }
 
 export namespace createAbstractObject {
-    export const bedrockObject = createAbstractObject('bedrock_server is not launched yet');
+    export function setAbstractProperty(o:unknown, p:PropertyKey):void {
+        Object.defineProperty(o, p, {
+            get():never {
+                throw Error(`'bedrock_server is not launched yet'`);
+            },
+            set(value:unknown):void {
+                Object.defineProperty(o, p, {value});
+            },
+            configurable: true
+        });
+    }
 }

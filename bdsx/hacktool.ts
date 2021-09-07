@@ -2,8 +2,7 @@ import { asm, FloatRegister, Register } from "./assembler";
 import { StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 
-export namespace hacktool
-{
+export namespace hacktool {
     /**
      * @param keepRegister
      * @param keepFloatRegister
@@ -52,5 +51,4 @@ export namespace hacktool
         from.setBuffer(jumper);
         dll.vcruntime140.memset(from.add(jumper.length), 0x90, originalCodeSize - jumper.length); // fill nop at remained
     }
-
 }

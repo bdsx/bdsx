@@ -1,4 +1,3 @@
-import { createAbstractObject } from "../abstractobject";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
@@ -176,12 +175,9 @@ export declare const serverInstance:ServerInstance;
 
 Object.defineProperty(exports, 'serverInstance', {
     get(){
-        if (minecraft.serverInstance === createAbstractObject.bedrockObject) {
-            return createAbstractObject.bedrockObject;
-        } else {
-            const serverInstance = minecraft.serverInstance.as(ServerInstance);
-            Object.defineProperty(exports, 'serverInstance', {value:serverInstance});
-        }
+        const serverInstance = minecraft.serverInstance.as(ServerInstance);
+        Object.defineProperty(exports, 'serverInstance', {value:serverInstance});
+        return serverInstance;
     },
     configurable: true
 });

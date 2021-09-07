@@ -134,7 +134,7 @@ export namespace dnf {
     /**
      * search overloads with templates
      */
-    export function getByTemplates(nf:AnyFunction, ...args:unknown[]):AnyFunction|null{
+    export function getOverloadByTemplates(nf:AnyFunction, ...args:unknown[]):AnyFunction|null{
         const overloads = nf.overloads;
         if (overloads == null) {
             throw Error(`it does not have overloads`);
@@ -152,7 +152,7 @@ export namespace dnf {
     /**
      * search overloads with values
      */
-    export function getByValues(nf:AnyFunction, thisv:unknown, ...args:unknown[]):AnyFunction|null{
+    export function getOverloadByValues(nf:AnyFunction, thisv:unknown, ...args:unknown[]):AnyFunction|null{
         const overloads = nf.overloads;
         if (overloads == null) {
             throw Error(`it does not have overloads`);
@@ -170,7 +170,7 @@ export namespace dnf {
     /**
      * search overloads with parameter types
      */
-    export function getByTypes(nf:AnyFunction, thisv:Type<any>, ...args:Type<any>[]):AnyFunction|null{
+    export function getOverloadByTypes(nf:AnyFunction, thisv:Type<any>|null, ...args:Type<any>[]):AnyFunction|null{
         const overloads = nf.overloads;
         if (overloads == null) {
             throw Error(`it does not have overloads`);

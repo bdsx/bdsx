@@ -43,10 +43,10 @@ export function setRecentSendedPacketForTest(packetId: number): void {
 
 Tester.test({
     async globals() {
-        this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
+        this.assert(serverInstance.isNotNull(), 'serverInstance not found');
         this.assert(serverInstance.vftable.equals(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
-        this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
+        this.assert(networkHandler.isNotNull(), 'networkHandler not found');
         this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
         this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');

@@ -47,3 +47,9 @@ export enum DeviceOS {
 	XBOX = 13,
 	WINDOWS_PHONE = 14,
 }
+
+export enum DisplaySlot {
+    BelowName = "belowname",
+    List = "list",
+    Sidebar = "sidebar",
+}

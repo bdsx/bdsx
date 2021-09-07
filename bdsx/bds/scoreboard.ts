@@ -7,7 +7,9 @@ import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_
 import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
 import minecraft = require('../minecraft');
+import enums = require('../enums');
 
+/** @deprecated */
 export class Scoreboard extends NativeClass {
     sync(id:ScoreboardId, objective:Objective):void {
         abstract();
@@ -124,16 +126,12 @@ export class Scoreboard extends NativeClass {
     }
 }
 
-@nativeClass(null)
-export class ObjectiveCriteria extends NativeClass {
-    @nativeField(CxxString)
-    name:CxxString;
-    @nativeField(bool_t)
-    readOnly:bool_t;
-    @nativeField(uint8_t)
-    renderType:uint8_t;
-}
+/** @deprecated */
+export const ObjectiveCriteria = minecraft.ObjectiveCriteria;
+/** @deprecated */
+export type ObjectiveCriteria = minecraft.ObjectiveCriteria;
 
+/** @deprecated */
 @nativeClass(null)
 export class Objective extends NativeClass {
     @nativeField(CxxString, 0x40)
@@ -160,6 +158,8 @@ export class DisplayObjective extends NativeClass {
     order:ObjectiveSortOrder;
 }
 
+/** @deprecated */
+@nativeClass(null)
 export class IdentityDefinition extends NativeClass {
     getEntityId():ActorUniqueID {
         abstract();
@@ -210,6 +210,7 @@ export namespace IdentityDefinition {
     export type Type = minecraft.IdentityDefinition.Type;
 }
 
+/** @deprecated */
 @nativeClass()
 export class ScoreboardId extends NativeClass {
     @nativeField(bin64_t)
@@ -230,6 +231,7 @@ export class ScoreInfo extends NativeClass {
     value:int32_t;
 }
 
+/** @deprecated */
 @nativeClass()
 export class ScoreboardIdentityRef extends NativeClass {
     @nativeField(uint32_t)
@@ -249,11 +251,10 @@ export class ScoreboardIdentityRef extends NativeClass {
     }
 }
 
-export enum DisplaySlot {
-    BelowName = "belowname",
-    List = "list",
-    Sidebar = "sidebar",
-}
+/** @deprecated  */
+export const DisplaySlot = enums.DisplaySlot;
+/** @deprecated  */
+export type DisplaySlot = enums.DisplaySlot;
 
 /** @deprecated */
 export const ObjectiveSortOrder = minecraft.ObjectiveSortOrder;
