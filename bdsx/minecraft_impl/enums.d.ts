@@ -985,6 +985,14 @@ declare module "../minecraft" {
             AnimationTimes,
         }
     }
+    enum StreamReadResult {
+        NoError = 0,
+        Error = 1,
+        /** disconnect at 3 times */
+        Warning = 2,
+        /** Custom code by BDSX */
+        Ignore = 0x7f,
+    }
     namespace TextPacket {
         enum Types {
             Raw,

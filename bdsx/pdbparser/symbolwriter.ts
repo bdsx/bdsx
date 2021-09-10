@@ -2,16 +2,18 @@ import { emptyFunc } from "../common";
 import { styling } from "../externs/bds-scripting/styling";
 import { remapAndPrintError } from "../source-map-support";
 import { arrayEquals } from "../util";
+import { ScriptWriter } from "../writer/scriptwriter";
 import { resolvePacketClasses } from "./packetresolver";
 import { reduceTemplateTypes } from "./reducetemplate";
 import { DecoSymbol, PdbId } from "./symbolparser";
 import { PdbMember, PdbMemberList } from "./symbolsorter";
 import { TemplateInfo } from "./templateinfo";
 import { TsFile, TsImportInfo, TsImportItem } from "./tsimport";
+import { tswNames } from "./tswnames";
+import { wrapperUtil } from "./tswrapperutil";
 import { tsw } from "./tswriter";
 import path = require('path');
 import ProgressBar = require("progress");
-import { ScriptWriter } from "../writer/scriptwriter";
 
 let installedBdsVersion = '';
 try {
@@ -28,22 +30,16 @@ resolvePacketClasses();
 const outDir = path.join(__dirname, '..');
 const COMMENT_SYMBOL = false;
 
-const properties = {
-    overloadInfo: new tsw.NameProperty('overloadInfo'),
-    this: new tsw.NameProperty('this'),
-    add: new tsw.NameProperty('add'),
-    overloads: new tsw.NameProperty('overloads'),
-    definePointedProperty: new tsw.NameProperty('definePointedProperty'),
-    make: new tsw.NameProperty('make'),
-    get: new tsw.NameProperty('get'),
-    ref: new tsw.NameProperty('ref'),
-    constructWith:new tsw.NameProperty('constructWith'),
-    structureReturn: new tsw.NameProperty('structureReturn'),
-    ctor: new tsw.NameProperty('ctor'),
-    dtor: new tsw.NameProperty('dtor'),
-    ID: new tsw.NameProperty('ID'),
-    idMap: new tsw.NameProperty('idMap'),
-};
+const primitiveTypes = new Set<string>();
+primitiveTypes.add('int32_t');
+primitiveTypes.add('uint32_t');
+primitiveTypes.add('int16_t');
+primitiveTypes.add('uint16_t');
+primitiveTypes.add('int8_t');
+primitiveTypes.add('uint8_t');
+primitiveTypes.add('float32_t');
+primitiveTypes.add('float64_t');
+primitiveTypes.add('CxxString');
 
 const specialNameRemap = new Map<string, string>();
 specialNameRemap.set("`vector deleting destructor'", '__vector_deleting_destructor');
@@ -111,7 +107,7 @@ interface TemplateRedirect {
 }
 
 interface Identifier extends PdbId<PdbId.Data> {
-    jsType?:((item:Identifier, kind:tsw.Kind)=>tsw.ItemPair)|tsw.ItemPair|ImportItem|null;
+    jsType?:((item:Identifier, kind:tsw.Kind)=>tsw.ItemPair)|tsw.ItemPair|TsImportItem|null;
     jsTypeOnly?:tsw.Type;
     jsTypeNullable?:boolean;
     templateRedirects?:TemplateRedirect[];
@@ -176,6 +172,37 @@ function getFirstIterableItem<T>(item:Iterable<T>):T|undefined {
     return undefined;
 }
 
+function typePlaining(item:tsw.Type):tsw.Type {
+    item = item.notNull();
+    if (item instanceof tsw.TemplateType) {
+        if (item.type === Const.type) {
+            return typePlaining(item.params[0]);
+        } else {
+            return new tsw.TemplateType(item.type, item.params.map(typePlaining));
+        }
+    }
+    if (item instanceof tsw.ArrayType) {
+        return new tsw.ArrayType(typePlaining(item.component));
+    }
+    if (item instanceof tsw.Tuple) {
+        return new tsw.Tuple(item.fields.map(typePlaining));
+    }
+    return item;
+}
+
+function isPrimitiveType(item:tsw.ItemPair, raw:Identifier):boolean {
+    if (raw.is(PdbId.Enum)) return true;
+    if (item.type !== null) {
+        if (!(item.type instanceof tsw.TypeName)) return false;
+        if (!primitiveTypes.has(item.type.name)) return false;
+    }
+    if (item.value !== null) {
+        if (!(item.value instanceof tsw.Name)) return false;
+        if (!primitiveTypes.has(item.value.name)) return false;
+    }
+    return true;
+}
+
 class Definer {
     public item:Identifier;
 
@@ -188,13 +215,13 @@ class Definer {
         return this;
     }
 
-    js(jsType:[string, TsFile]|((item:Identifier, kind:tsw.Kind)=>tsw.ItemPair)|ImportItem|tsw.ItemPair|null, opts:{
+    js(jsType:[string, TsFile]|((item:Identifier, kind:tsw.Kind)=>tsw.ItemPair)|TsImportItem|tsw.ItemPair|null, opts:{
         jsTypeNullable?:boolean,
         jsTypeOnly?:tsw.Type,
     } = {}):this {
         if (jsType instanceof Array) {
             const [name, host] = jsType;
-            this.item.jsType = new ImportItem(minecraft, host, name);
+            this.item.jsType = new wrapperUtil.ImportItem(minecraft, host, name);
         } else {
             this.item.jsType = jsType;
         }
@@ -228,23 +255,18 @@ class Definer {
     }
 }
 
-class TsFileExtern extends TsFile {
-
-}
-
 const imports = {
-    nativetype: new TsFileExtern('./nativetype'),
-    cxxvector: new TsFileExtern('./cxxvector'),
-    complextype: new TsFileExtern('./complextype'),
-    dnf: new TsFileExtern('./dnf'),
-    nativeclass: new TsFileExtern('./nativeclass'),
-    makefunc: new TsFileExtern('./makefunc'),
-    dll: new TsFileExtern('./dll'),
-    core: new TsFileExtern('./core'),
-    common: new TsFileExtern('./common'),
-    enums: new TsFileExtern('./enums'),
-    pointer: new TsFileExtern('./pointer'),
-    sharedpointer: new TsFileExtern('./sharedpointer'),
+    nativetype: new TsFile('./nativetype'),
+    cxxvector: new TsFile('./cxxvector'),
+    complextype: new TsFile('./complextype'),
+    dnf: new TsFile('./dnf'),
+    nativeclass: new TsFile('./nativeclass'),
+    dll: new TsFile('./dll'),
+    core: new TsFile('./core'),
+    common: new TsFile('./common'),
+    enums: new TsFile('./enums'),
+    pointer: new TsFile('./pointer'),
+    sharedpointer: new TsFile('./sharedpointer'),
 };
 
 interface ToTswOptions {
@@ -297,7 +319,7 @@ class FunctionMaker {
         parameters:Identifier[],
         public readonly classType:tsw.ItemPair|null) {
         if (!isStatic && classType != null && classType.value !== null) {
-            this.opts.add(properties.this, classType.value);
+            this.opts.add(tswNames.this, classType.value);
         }
         this.returnType = file.toTswReturn(returnType, kind, this.opts, true);
         this.parametersWithoutThis = this.parameters = file.toTswParameters(parameters, kind, true);
@@ -326,7 +348,7 @@ class FunctionMaker {
         const out = new tsw.ItemPair;
         if (this.returnType.value !== null) {
             const NativeFunctionType = this.file.NativeFunctionType.import(tsw.Kind.Value);
-            out.value = NativeFunctionType.value.call(properties.make, [
+            out.value = NativeFunctionType.value.call(tswNames.make, [
                 this.returnType.value,
                 this.opts.get(),
                 ...this.parametersWithoutThis.map(id=>id.value)
@@ -359,7 +381,7 @@ class FunctionMaker {
             }
 
             out.variable = this.file.getOverloadVarId(overload);
-            out.assign = new tsw.Assign(out.variable.member(properties.overloadInfo), new tsw.ArrayDef(paramDefs));
+            out.assign = new tsw.Assign(out.variable.member(tswNames.overloadInfo), new tsw.ArrayDef(paramDefs));
         }
         return out;
     }
@@ -401,8 +423,8 @@ class ParsedFunction {
         if (overload.templateBase !== null) {
             const typeOfTemplates = overload.templateParameters!.map(v=>v.getTypeOfIt());
             const types = file.toTswParameters(typeOfTemplates, tsw.Kind.Type);
-            const names = file.makeParamNamesByTypes(typeOfTemplates);
-            const tparams = file.makeParameterDecls(types, names, field.isStatic, classType?.type);
+            const tswNames = file.makeParamNamesByTypes(typeOfTemplates);
+            const tparams = file.makeParameterDecls(types, tswNames, field.isStatic, classType?.type);
             for (const param of tparams) {
                 if (param instanceof tsw.VariableDefineItem) {
                     if (param.name === tsw.Name.this) continue;
@@ -477,10 +499,10 @@ class TsCode {
         let name = item.removeParameters().name;
         if (item.is(PdbId.Function) || item.is(PdbId.FunctionBase)) {
             if (item.data.isConstructor) {
-                return properties.constructWith;
+                return tswNames.constructWith;
             } else if (item.data.isDestructor) {
                 const NativeType = this.base.NativeType.importValue();
-                return new tsw.BracketProperty(NativeType.member(properties.dtor));
+                return new tsw.BracketProperty(NativeType.member(tswNames.dtor));
             }
         }
 
@@ -695,7 +717,7 @@ class TsCodeDeclaration extends TsCode {
                     ]));
                     exported.cloneToDecl = ()=>null;
                 }
-                this.currentBlock.assign(funcdef.member(properties.overloads), new tsw.ArrayDef(writedOverloads));
+                this.currentBlock.assign(funcdef.member(tswNames.overloads), new tsw.ArrayDef(writedOverloads));
             }
 
         } catch (err) {
@@ -719,6 +741,11 @@ class TsCodeDeclaration extends TsCode {
             } else {
                 type = this.base.StaticPointer.importType();
             }
+            // unwrap const
+            if (type instanceof tsw.TemplateType && type.type === Const.type) {
+                type = type.params[0];
+            }
+
             if (this.currentClass !== null) {
                 this.currentClass.write(this.getClassDeclaration(item, type, false, isStatic));
             } else {
@@ -750,7 +777,7 @@ class TsCodeDeclaration extends TsCode {
                 if (item.data.returnType === null) throw Error(`Unresolved return type (${item})`);
                 const type = impl.base.toTsw(item.data.returnType, tsw.Kind.Value, {isField: true, absoluteValue: true}).value;
                 const prop = impl.getNameOnly(target);
-                impl.doc.write(NativeType.call(properties.definePointedProperty, [
+                impl.doc.write(NativeType.call(tswNames.definePointedProperty, [
                     parent,
                     new tsw.Constant(prop.toName(tsw.Kind.Value).value.name),
                     addrvar,
@@ -828,8 +855,8 @@ class TsCodeDeclaration extends TsCode {
                 try {
                     const makeTemplateParams = tinfo.makeWrappedTemplateDecl(this.nameMaker);
                     const types = tinfo.paramTypes.map(v=>new tsw.ItemPair(null, new tsw.TypeName(v.name)));
-                    const names = this.base.makeParamNamesByLength(types.length);
-                    const args = this.base.makeParameterDecls(types, names);
+                    const paramNames = this.base.makeParamNamesByLength(types.length);
+                    const args = this.base.makeParameterDecls(types, paramNames);
 
                     const unwrappedType:tsw.TemplateType[] = [];
                     const NativeClassType = this.base.NativeClassType.importType();
@@ -842,7 +869,7 @@ class TsCodeDeclaration extends TsCode {
                     const returnType = new tsw.TemplateType(NativeClassType, [
                         new tsw.TemplateType(clsname.toName(tsw.Kind.Type).type, unwrappedType)
                     ]).and(new tsw.TypeOf(clsname.toName(tsw.Kind.Value).value));
-                    const def = new tsw.MethodDecl(null, true, properties.make, args, returnType);
+                    const def = new tsw.MethodDecl(null, true, tswNames.make, args, returnType);
                     def.templates = makeTemplateParams;
                     this.currentClass.write(def);
                 } catch (err) {
@@ -944,17 +971,19 @@ class TsCodeDeclaration extends TsCode {
     }
 
     existName(name:string):boolean {
-        return PdbId.global.getChild(name) != null;
+        const item:Identifier|null = PdbId.global.getChild(name);
+        return item != null && !item.dontExport;
     }
 
     existNameInScope(name:string):boolean {
         let ns = this.currentNs;
         while (ns !== PdbId.global) {
             const item:Identifier|null = ns.getChild(name);
-            if (item != null) return true;
+            if (item != null) return !item.dontExport;
             ns = ns.parent!;
         }
-        return PdbId.global.getChild(name) != null;
+        const item:Identifier|null = PdbId.global.getChild(name);
+        return item != null && !item.dontExport;
     }
 
     *enterNamespace(item:Identifier):IterableIterator<void> {
@@ -1011,8 +1040,8 @@ class TsCodeDeclaration extends TsCode {
                 for (const overload of overloads) {
                     if (overload.data.functionParameters.length === 0 && overload.data.functionBase.name === overload.parent!.name) {
                         const NativeType = this.base.NativeType.importValue();
-                        const method = new tsw.MethodDef(null, false, new tsw.BracketProperty(NativeType.member(properties.ctor)), [], tsw.BasicType.void);
-                        method.block.write(new tsw.Return(new tsw.DotCall(tsw.Name.this, properties.constructWith, [])));
+                        const method = new tsw.MethodDef(null, false, new tsw.BracketProperty(NativeType.member(tswNames.ctor)), [], tsw.BasicType.void);
+                        method.block.write(new tsw.Return(new tsw.DotCall(tsw.Name.this, tswNames.constructWith, [])));
                         this.currentClass.write(method);
                         break;
                     }
@@ -1094,39 +1123,6 @@ class TsCodeDeclaration extends TsCode {
     }
 }
 
-class ImportItem extends TsImportItem {
-    constructor(
-        base:TsFile,
-        from:TsFileExtern,
-        name:string) {
-        super(base, from, name);
-    }
-    wrap(pair:tsw.ItemPair):tsw.ItemPair {
-        const This = this.import(pair.getKind());
-        const out = new tsw.ItemPair;
-        if (pair.value !== null) {
-            out.value = new tsw.DotCall(This.value, properties.make, [pair.value]);
-        }
-        if (pair.type !== null) {
-            out.type = new tsw.TemplateType(This.type, [pair.type]);
-        }
-        return out;
-    }
-
-    unwrap(pair:tsw.ItemPair):boolean {
-        const kind = pair.getKind();
-
-        const This = this.import(kind);
-        if ((pair.type === null || (pair.type instanceof tsw.TemplateType && pair.type.type === This.type)) &&
-            (pair.value === null || (pair.value instanceof tsw.DotCall && pair.value.item === This.value && pair.value.property === properties.make))) {
-            if (pair.value !== null) pair.value = pair.value.params[0];
-            if (pair.type !== null) pair.type = pair.type.params[0];
-            return true;
-        }
-        return false;
-    }
-}
-
 class MinecraftDocument {
     public readonly decl:TsCodeDeclaration;
     public readonly impl:TsCode;
@@ -1146,31 +1142,31 @@ class MinecraftDocument {
 }
 
 class MinecraftTsFile extends TsFile {
-    public readonly Bufferable = new ImportItem(this, imports.common, 'Bufferable');
+    public readonly Bufferable = new TsImportItem(this, imports.common, 'Bufferable');
 
-    public readonly VoidPointer = new ImportItem(this, imports.core, 'VoidPointer');
-    public readonly StaticPointer = new ImportItem(this, imports.core, 'StaticPointer');
+    public readonly VoidPointer = new TsImportItem(this, imports.core, 'VoidPointer');
+    public readonly StaticPointer = new TsImportItem(this, imports.core, 'StaticPointer');
 
-    public readonly NativeType = new ImportItem(this, imports.nativetype, 'NativeType');
-    public readonly templateArgs = new ImportItem(this, imports.nativetype, 'templateArgs');
-    public readonly UnwrapType = new ImportItem(this, imports.nativetype, 'UnwrapType');
-    public readonly int32_t = new ImportItem(this, imports.nativetype, 'int32_t');
+    public readonly NativeType = new TsImportItem(this, imports.nativetype, 'NativeType');
+    public readonly templateArgs = new TsImportItem(this, imports.nativetype, 'templateArgs');
+    public readonly UnwrapType = new TsImportItem(this, imports.nativetype, 'UnwrapType');
+    public readonly int32_t = new TsImportItem(this, imports.nativetype, 'int32_t');
 
-    public readonly NativeTemplateClass = new ImportItem(this, imports.complextype, 'NativeTemplateClass');
-    public readonly NativeFunctionType = new ImportItem(this, imports.complextype, 'NativeFunctionType');
-    public readonly MemberPointer = new ImportItem(this, imports.complextype, 'MemberPointer');
+    public readonly NativeTemplateClass = new TsImportItem(this, imports.complextype, 'NativeTemplateClass');
+    public readonly NativeFunctionType = new TsImportItem(this, imports.complextype, 'NativeFunctionType');
+    public readonly MemberPointer = new TsImportItem(this, imports.complextype, 'MemberPointer');
 
-    public readonly NativeClassType = new ImportItem(this, imports.nativeclass, 'NativeClassType');
-    public readonly MantleClass = new ImportItem(this, imports.nativeclass, 'MantleClass');
-    public readonly NativeClass = new ImportItem(this, imports.nativeclass, 'NativeClass');
+    public readonly MantleClass = new TsImportItem(this, imports.nativeclass, 'MantleClass');
+    public readonly NativeClass = new TsImportItem(this, imports.nativeclass, 'NativeClass');
 
-    public readonly makefunc = new ImportItem(this, imports.makefunc, 'makefunc');
-    public readonly dnf = new ImportItem(this, imports.dnf, 'dnf');
-    public readonly dll = new ImportItem(this, imports.dll, 'dll');
-    public readonly Wrapper = new ImportItem(this, imports.pointer, 'Wrapper');
-    public readonly Ptr = new ImportItem(this, imports.pointer, 'Ptr');
-    public readonly SharedPtr = new ImportItem(this, imports.sharedpointer, 'SharedPtr');
-    public readonly CxxVectorToArray = new ImportItem(this, imports.cxxvector, 'CxxVectorToArray');
+    public readonly dnf = new TsImportItem(this, imports.dnf, 'dnf');
+    public readonly dll = new TsImportItem(this, imports.dll, 'dll');
+
+    public readonly NativeClassType = new wrapperUtil.ImportItem(this, imports.nativeclass, 'NativeClassType');
+    public readonly Wrapper = new wrapperUtil.ImportItem(this, imports.pointer, 'Wrapper');
+    public readonly Ptr = new wrapperUtil.ImportItem(this, imports.pointer, 'Ptr');
+    public readonly SharedPtr = new wrapperUtil.ImportItem(this, imports.sharedpointer, 'SharedPtr');
+    public readonly CxxVectorToArray = new wrapperUtil.ImportItem(this, imports.cxxvector, 'CxxVectorToArray');
 
     private dnfMakeCall:tsw.Call|null = null;
     private dnfOverloadNew:tsw.Call|null = null;
@@ -1225,7 +1221,7 @@ class MinecraftTsFile extends TsFile {
 
     makeParamNamesByTypes(ids:Identifier[]):tsw.Name[] {
         const namemap = new Map<string, {index:number, counter:number}>();
-        const names:string[] = new Array(ids.length);
+        const tswNames:string[] = new Array(ids.length);
         for (let i=0;i<ids.length;i++) {
             const basename = this._getVarName(ids[i]);
 
@@ -1235,22 +1231,22 @@ class MinecraftTsFile extends TsFile {
                 namemap.set(name, {index:i, counter:1});
             } else {
                 if (info.counter === 1) {
-                    names[info.index] = basename + '_' + info.counter;
+                    tswNames[info.index] = basename + '_' + info.counter;
                 }
                 info.counter++;
                 name = basename + '_' + info.counter;
             }
-            names[i] = name;
+            tswNames[i] = name;
         }
-        return names.map(name=>new tsw.Name(name));
+        return tswNames.map(name=>new tsw.Name(name));
     }
 
     makeParamNamesByLength(len:number):tsw.Name[] {
-        const names:tsw.Name[] = new Array(len);
+        const tswNames:tsw.Name[] = new Array(len);
         for (let i=0;i<len;i++) {
-            names[i] = new tsw.Name('arg'+i);
+            tswNames[i] = new tsw.Name('arg'+i);
         }
-        return names;
+        return tswNames;
     }
 
     insideOf(namespace:Identifier):boolean {
@@ -1311,10 +1307,10 @@ class MinecraftTsFile extends TsFile {
         let name = item.removeParameters().name;
         if (item.is(PdbId.Function) || item.is(PdbId.FunctionBase)) {
             if (item.data.isConstructor) {
-                return properties.constructWith;
+                return tswNames.constructWith;
             } else if (item.data.isDestructor) {
                 const NativeType = this.NativeType.importValue();
-                return new tsw.BracketProperty(NativeType.member(properties.dtor));
+                return new tsw.BracketProperty(NativeType.member(tswNames.dtor));
             }
         }
 
@@ -1359,9 +1355,7 @@ class MinecraftTsFile extends TsFile {
 
     getClassType<T extends tsw.Kind>(item:Identifier, kind:T, absoluteValue?:boolean):tsw.ItemPair|null {
         if (!item.isType && (item.parent!.data instanceof PdbId.ClassLike)) {
-            const v = this.toTsw(item.parent!, kind, {absoluteValue});
-            this.wrappedPointerToWrappedRef(v);
-            return v;
+            return this.toTsw(item.parent!, kind, {absoluteValue});
         } else {
             return null;
         }
@@ -1405,24 +1399,13 @@ class MinecraftTsFile extends TsFile {
 
     toTswReturn(type:Identifier, kind:tsw.Kind, opts:MakeFuncOptions, absoluteValue?:boolean):tsw.ItemPair {
         const returnType = this.toTsw(type, kind, {absoluteValue});
-        const pointerRemoved = this.Ptr.unwrap(returnType);
-        this.wrappedPointerToWrappedRef(returnType);
-        if (!pointerRemoved) {
-            if (this.Wrapper.unwrap(returnType)) {
-                opts.add(properties.structureReturn, tsw.Name.true);
-            } else if (!type.isBasicType && !type.is(PdbId.Enum)) {
-                opts.add(properties.structureReturn, tsw.Name.true);
-            }
-        }
-        return returnType.notNull();
+        return this.plaining(type, returnType, opts);
     }
 
     toTswParameters(items:Identifier[], kind:tsw.Kind, absoluteValue?:boolean):tsw.ItemPair[] {
         return items.map((item, idx)=>{
             const v = this.toTsw(item, kind, {absoluteValue});
-            this.Ptr.unwrap(v);
-            this.wrappedPointerToWrappedRef(v);
-            return v;
+            return this.plaining(item, v, null);
         });
     }
 
@@ -1462,7 +1445,9 @@ class MinecraftTsFile extends TsFile {
                 return this.toTsw(item.redirectedFrom, kind, opts);
             }
             if (item.is(PdbId.Decorated)) {
-                if (item.data.deco === DecoSymbol.const) return this.toTsw(item.data.base, kind, opts);
+                if (item.data.deco === DecoSymbol.const) {
+                    return Const.wrap(this.toTsw(item.data.base, kind, opts));
+                }
                 if (item.data.deco !== null && item.data.deco.name === '[0]') throw new IgnoreThis(`incomprehensible syntax(${item})`);
             }
             if (item.is(PdbId.TypeUnion)) {
@@ -1491,7 +1476,7 @@ class MinecraftTsFile extends TsFile {
                 let out:tsw.ItemPair;
                 if (item.jsType instanceof tsw.ItemPair) {
                     out = item.jsType;
-                } else if (item.jsType instanceof ImportItem) {
+                } else if (item.jsType instanceof TsImportItem) {
                     out = item.jsType.import(kind);
                 } else {
                     out = item.jsType(item, kind);
@@ -1513,11 +1498,11 @@ class MinecraftTsFile extends TsFile {
                 return out;
             }
             if (item.is(PdbId.Decorated)) {
-                let notNull = false;
+                let isRef = false;
                 switch (item.data.deco) {
                 case DecoSymbol['&']:
                 case DecoSymbol['&&']:
-                    notNull = true;
+                    isRef = true;
                     // fall through
                 case DecoSymbol['*']: {
                     const baseitem = item.data.base;
@@ -1546,7 +1531,7 @@ class MinecraftTsFile extends TsFile {
                         }
                         return out;
                     }
-                    const out = this.toTsw(baseitem, kind, {absoluteValue: opts.absoluteValue});
+                    let out = this.toTsw(baseitem, kind, {absoluteValue: opts.absoluteValue});
                     if (baseitem.is(PdbId.FunctionType)) {
                         return out;
                     }
@@ -1555,20 +1540,13 @@ class MinecraftTsFile extends TsFile {
                     }
 
                     if (out.type != null) {
-                        if (!notNull) out.type = out.type.or(tsw.BasicType.null);
+                        if (!isRef) out.type = out.type.or(tsw.BasicType.null);
                     }
                     if (opts.isField) {
-                        if (out.value != null) {
-                            out.value = out.value.call(properties.ref, []);
-                        }
+                        out = refCall.wrap(out);
                     } else {
-                        const Ptr = this.Ptr.import(kind);
-                        if (out.type != null) {
-                            out.type = new tsw.TemplateType(Ptr.type, [out.type]);
-                        }
-                        if (out.value != null) {
-                            out.value = Ptr.value.call(properties.make, [out.value]);
-                        }
+                        if (isRef) out = Ref.wrap(out);
+                        else out = this.Ptr.wrap(out);
                     }
                     return out;
                 }
@@ -1587,7 +1565,7 @@ class MinecraftTsFile extends TsFile {
                     out.type = new tsw.TemplateType(MemberPointer.type, [base.type!, type.type!]);
                 }
                 if (MemberPointer.value !== null) {
-                    out.value = MemberPointer.value.call(properties.make, [base.value!, type.value!]);
+                    out.value = MemberPointer.value.call(tswNames.make, [base.value!, type.value!]);
                 }
                 return out;
             } else if (item.is(PdbId.FunctionType)) {
@@ -1640,8 +1618,8 @@ class MinecraftTsFile extends TsFile {
                         const classType = this.getClassType(item, tsw.Kind.Type);
                         const retType = this.toTsw(item.data.returnType, tsw.Kind.Type).type;
                         const types = this.toTswParameters(item.data.functionParameters, tsw.Kind.Type, opts.absoluteValue);
-                        const names = this.makeParamNamesByTypes(item.data.functionParameters);
-                        const params = this.makeParameterDecls(types, names, item.isStatic, classType?.type);
+                        const tswNames = this.makeParamNamesByTypes(item.data.functionParameters);
+                        const params = this.makeParameterDecls(types, tswNames, item.isStatic, classType?.type);
                         out.type = new tsw.FunctionType(retType, params);
                     }
                     if (out.value != null) {
@@ -1666,7 +1644,7 @@ class MinecraftTsFile extends TsFile {
                         out.type = new tsw.TemplateType(out.type, params.map(v=>v.type!));
                     }
                     if (out.value != null) {
-                        out.value = new tsw.DotCall(out.value, properties.make, params.map(v=>v.value!));
+                        out.value = new tsw.DotCall(out.value, tswNames.make, params.map(v=>v.value!));
                     }
                     return out;
                 }
@@ -1679,23 +1657,83 @@ class MinecraftTsFile extends TsFile {
         }
     }
 
-    wrappedPointerToWrappedRef(pair:tsw.ItemPair):boolean {
-        const cloned = pair.clone();
-        if (this.Wrapper.unwrap(cloned)) {
-            if (this.Ptr.unwrap(cloned)) {
-                pair.set(this.Wrapper.wrap(this.wrapRef(cloned)));
-                return true;
+    plaining(raw:Identifier, item:tsw.ItemPair, opts:MakeFuncOptions|null):tsw.ItemPair {
+        try {
+            // remove const
+            if (Const.is(item)) {
+                item = Const.unwrap(item);
             }
-        }
-        return false;
-    }
 
-    wrapRef(pair:tsw.ItemPair):tsw.ItemPair {
-        const out = new tsw.ItemPair(pair.value, pair.type);
-        if (out.value !== null) {
-            out.value = new tsw.DotCall(out.value, properties.ref, []);
+            let pointerRemoved = false;
+            if (isPrimitiveType(item, raw)) {
+                if (Ref.is(item)) {
+                    const inner = Ref.unwrap(item);
+                    if (Const.is(inner)) {
+                        // Ref<Const<T>> -> T.ref()
+                        item = refCall.wrap(Const.unwrap(inner));
+                        pointerRemoved = true;
+                    }
+                }
+            } else {
+                if (Ref.is(item) || this.Ptr.is(item)) {
+                    item = Ref.unwrap(item);
+                    // Ptr<T> or Ref<T> -> T
+                    pointerRemoved = true;
+                }
+            }
+            if (Const.is(item)) {
+                item = Const.unwrap(item);
+            }
+            const PtrToRef = (item:tsw.ItemPair):(tsw.ItemPair|null)=> {
+                if (Ref.is(item)) {
+                    item = Ref.unwrap(item);
+                } else if (this.Ptr.is(item)) {
+                    item = wrapperUtil.unwrap(item);
+                } else {
+                    return null;
+                }
+                return refCall.wrap(plainingInner(item));
+            };
+            const plainingInner = (item:tsw.ItemPair):tsw.ItemPair=> {
+                if (this.Wrapper.is(item)) {
+                    const ref = PtrToRef(wrapperUtil.unwrap(item));
+                    if (ref !== null) item = this.Wrapper.wrap(ref);
+                }
+                if (this.CxxVectorToArray.is(item)) {
+                    let component = wrapperUtil.unwrap(item);
+                    const ref = PtrToRef(component);
+                    if (ref !== null) component = ref;
+
+                    const out = new tsw.ItemPair;
+                    if (component.type !== null) {
+                        out.type = new tsw.ArrayType(component.type) as any;
+                    }
+                    if (component.value !== null) {
+                        out.value = this.CxxVectorToArray.importValue().call(tswNames.make, [component.value]) as any;
+                    }
+                    return out;
+                }
+                return item;
+            };
+            item = plainingInner(item);
+            if (opts !== null && item.type !== null) {
+                item.type = typePlaining(item.type);
+            }
+            if (!pointerRemoved) {
+                if (opts !== null) {
+                    if (this.Wrapper.is(item)) {
+                        item = wrapperUtil.unwrap(item);
+                        opts.add(tswNames.structureReturn, tsw.Name.true);
+                    } else if (!raw.isBasicType && !raw.is(PdbId.Enum)) {
+                        opts.add(tswNames.structureReturn, tsw.Name.true);
+                    }
+                }
+            }
+        } catch (err) {
+            PdbId.printOnProgress(`> Planing ${item.type || item.value} (symbolIndex=${raw.symbolIndex})`);
+            throw err;
         }
-        return out;
+        return item;
     }
 
     getOverloadVarId(item:Identifier):tsw.Name {
@@ -1718,7 +1756,7 @@ class MinecraftTsFile extends TsFile {
 
     getAddressVarId(item:Identifier):tsw.Name {
         if (item.tswVar != null) return item.tswVar;
-        const value = this.importDllCurrent().call(properties.add, [tsw.constVal(item.address)]);
+        const value = this.importDllCurrent().call(tswNames.add, [tsw.constVal(item.address)]);
         return item.tswVar = this.doc.makeVariable(value);
     }
 
@@ -1728,7 +1766,7 @@ class MinecraftTsFile extends TsFile {
         const dnf = this.dnf.importValue();
         const dnfMake = new tsw.Name('$F');
         const assign = new tsw.VariableDef('const', [
-            new tsw.VariableDefineItem(dnfMake, null, dnf.member(properties.make))
+            new tsw.VariableDefineItem(dnfMake, null, dnf.member(tswNames.make))
         ]);
         this.doc.decl.doc.unshift(assign);
 
@@ -1756,7 +1794,7 @@ class MinecraftTsFile extends TsFile {
     getNativeTypeCtor():tsw.BracketProperty {
         if (this.ctorProperty != null) return this.ctorProperty;
         const NativeType = this.NativeType.importValue();
-        return this.ctorProperty = new tsw.BracketProperty(NativeType.member(properties.ctor));
+        return this.ctorProperty = new tsw.BracketProperty(NativeType.member(tswNames.ctor));
     }
 
     existName(name:string):boolean {
@@ -1787,7 +1825,11 @@ class MinecraftTsFile extends TsFile {
 
         console.log(`[symbolwriter.ts] Writing ${this.path}.d.ts`);
         const decl = this.doc.decl.doc.cloneToDecl();
-        decl.unshift(...head);
+        decl.unshift(
+            ...head,
+            new tsw.TypeDef(Ref.type, minecraft.Ptr.importType().template(tswNames.T), [tswNames.T]),
+            new tsw.TypeDef(Const.type, tswNames.T, [tswNames.T]),
+        );
         decl.save(path.join(outDir,this.path)+'.d.ts');
 
         console.log(`[symbolwriter.ts] Writing ${this.path}.js`);
@@ -1816,6 +1858,7 @@ PdbId.parse('std::stringstream').redirect(PdbId.parse('std::basic_stringstream<c
 PdbId.parse('RakNet::RakNetRandom').determine(PdbId.Class);
 
 console.log(`[symbolwriter.ts] Filtering...`);
+
 const ids:Identifier[] = [];
 const packets:Identifier[] = [];
 for (const item of PdbId.global.children) {
@@ -1845,6 +1888,10 @@ packets.sort((a,b)=>resolvePacketClasses.getId(a)!-resolvePacketClasses.getId(b)
 const minecraft = new MinecraftTsFile(ids.concat(packets));
 minecraft.callDnfMake();
 minecraft.callDnfMakeOverload();
+const Const = new wrapperUtil.TypeWrapper('Const');
+const Ref = new wrapperUtil.TypeWrapper('Ref');
+const refCall = new wrapperUtil.RefWrapper('ref');
+const PointerLike = new wrapperUtil.ImportItem(minecraft, imports.nativetype, 'PointerLike');
 
 new Definer('bool').js(['bool_t', imports.nativetype]).paramName('b');
 new Definer('void').js(['void_t', imports.nativetype], {jsTypeOnly: tsw.BasicType.void}).paramName('v');
@@ -1852,13 +1899,9 @@ new Definer('std::nullptr_t').js(['nullptr_t', imports.nativetype], {jsTypeOnly:
 new Definer('float').js(['float32_t', imports.nativetype]).paramName('f');
 new Definer('double').js(['float64_t', imports.nativetype]).paramName('d');
 new Definer('char').js(['int8_t', imports.nativetype]).paramName('c');
-new Definer('char const *').js((item, kind)=>{
-    const makefunc = minecraft.makefunc.import(kind & tsw.Kind.Value);
-    if (makefunc.value !== null) makefunc.value = makefunc.value.member('Utf8');
-    if ((kind & tsw.Kind.Type) !== 0) makefunc.type = tsw.BasicType.string;
-    return makefunc;
-}).paramName('str');
-new Definer('char *').js((item, kind)=>minecraft.makefunc.import(kind).member('Buffer')).paramName('char_ptr');
+new Definer('char const *').js(['StringUtf8', imports.nativetype]).paramName('str');
+new Definer('wchar_t const *').js(['StringUtf16', imports.nativetype]).paramName('str');
+new Definer('char *').js(PointerLike).paramName('char_ptr');
 new Definer('wchar_t').js(['uint16_t', imports.nativetype]).paramName('wc');
 new Definer('char signed').js(['int8_t', imports.nativetype]).paramName('sc');
 new Definer('char unsigned').js(['uint8_t', imports.nativetype]).paramName('uc');
@@ -1870,33 +1913,31 @@ new Definer('long').js(['int32_t', imports.nativetype]).paramName('i');
 new Definer('long unsigned').js(['uint32_t', imports.nativetype]).paramName('u');
 new Definer('__int64').js(['bin64_t', imports.nativetype], {jsTypeNullable: true}).paramName('i');
 new Definer('__int64 unsigned').js(['bin64_t', imports.nativetype], {jsTypeNullable: true}).paramName('u');
-new Definer('void*').js(minecraft.VoidPointer, {jsTypeNullable: true}).paramName('p');
-new Definer('void const*').js(minecraft.VoidPointer, {jsTypeNullable: true}).paramName('p');
+new Definer('void*').js(PointerLike, {jsTypeNullable: true}).paramName('p');
+new Definer('void const*').js(PointerLike, {jsTypeNullable: true}).paramName('p');
 new Definer('typename').js(['Type', imports.nativetype]).paramName('t');
 const any_t = new Definer('any').js(tsw.ItemPair.any).paramName('v').item;
-new Definer(any_t.decorate(DecoSymbol.make('a', '[]'))).js(new tsw.ItemPair(null, new tsw.ArrayType(tsw.BasicType.any))).paramName('args');
+const anyArray = new tsw.ArrayType(tsw.BasicType.any);
+new Definer(any_t.decorate(DecoSymbol.make('a', '[]'))).js(new tsw.ItemPair(null, anyArray)).paramName('args');
 new Definer('never').js(tsw.ItemPair.never).paramName('v');
 new Definer('std::basic_string<char,std::char_traits<char>,std::allocator<char> >').js(['CxxString', imports.nativetype]).paramName('str');
 new Definer('gsl::basic_string_span<char const,-1>').js(['GslStringSpan', imports.nativetype]).paramName('str');
 new Definer(PdbId.make('...')).js(['NativeVarArgs', imports.complextype]).paramName('...args');
 new Definer('gsl::not_null<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.Wrapper.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('v');
-new Definer('std::unique_ptr<#KEY0, std::default_delete<#KEY0>>').templateRedirect((item, templates, kind, opts)=>minecraft.Wrapper.wrap(minecraft.toTsw(templates[0], kind, opts)), {exportOriginal: true}).paramName('v');
+new Definer('std::unique_ptr<#KEY0, std::default_delete<#KEY0>>').templateRedirect((item, templates, kind, opts)=>minecraft.Ptr.wrap(minecraft.toTsw(templates[0], kind, opts)), {exportOriginal: true}).paramName('v');
 new Definer('std::shared_ptr<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.SharedPtr.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('v');
 new Definer('AutomaticID<Dimension, int>').js(['DimensionId', imports.enums]).paramName('dim');
 new Definer('Packet').item.isMantleClass = true;
+new Definer('CxxStringWrapper').js(['CxxStringWrapper', imports.pointer]).paramName('data');
+
+// NetworkHandler::_sendInternal - 3rd parameter, CxxString to CxxStringWrapper
+const _sendInternal = PdbId.parse('NetworkHandler::_sendInternal');
+if (_sendInternal.is(PdbId.FunctionBase)) {
+    _sendInternal.data.overloads[0].data.functionParameters[2] = PdbId.parse('CxxStringWrapper');
+}
 
 reduceTemplateTypes();
-new Definer('std::vector<#KEY0>').js(['CxxVector', imports.cxxvector]).templateRedirect((item, templates, kind, opts)=>{
-    const param = minecraft.toTsw(templates[0], kind, opts);
-    const out = new tsw.ItemPair;
-    if ((kind & tsw.Kind.Value) !== 0) {
-        out.value = minecraft.CxxVectorToArray.importValue().call(properties.make, [param.value]);
-    }
-    if ((kind & tsw.Kind.Type) !== 0) {
-        out.type = new tsw.ArrayType(param.type);
-    }
-    return out;
-}).paramName('array');
+new Definer('std::vector<#KEY0>').templateRedirect((item, templates, kind, opts)=>minecraft.CxxVectorToArray.wrap(minecraft.toTsw(templates[0], kind, opts))).paramName('array');
 
 minecraft.parseAll();
 
@@ -1914,14 +1955,14 @@ for (const packet of resolvePacketClasses.list.sort((a,b)=>a.packetId!-b.packetI
         continue;
     }
     const packetId = new tsw.Constant(packet.packetId!);
-    cls.unshift(new tsw.ClassField(null, true, true, properties.ID, new tsw.TypeName(packet.packetId+''), packetId));
+    cls.unshift(new tsw.ClassField(null, true, true, tswNames.ID, new tsw.TypeName(packet.packetId+''), packetId));
     const packetIdProp = new tsw.NumberProperty(packet.packetId!);
     packetClasses.push([packetIdProp, cls.name]);
     packetTypes.push(new tsw.ClassField(null, false, false, packetIdProp, new tsw.TypeOf(cls.name)));
 }
 const packetClass = minecraft.doc.decl.doc.getValue('Packet') as tsw.Class;
-packetClass.unshift(new tsw.ClassField(null, true, true, properties.idMap, new tsw.ObjectType(packetTypes)));
-minecraft.doc.impl.doc.assign(packetClass.name.member(properties.idMap), new tsw.ObjectDef(packetClasses));
+packetClass.unshift(new tsw.ClassField(null, true, true, tswNames.idMap, new tsw.ObjectType(packetTypes)));
+minecraft.doc.impl.doc.assign(packetClass.name.member(tswNames.idMap), new tsw.ObjectDef(packetClasses));
 
 minecraft.save();
 console.log(`[symbolwriter.ts] done`);

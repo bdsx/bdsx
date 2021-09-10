@@ -1,7 +1,7 @@
 
 import { proc, proc2 } from './bds/symbols';
-import { abstract, emptyFunc } from './common';
-import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
+import { abstract, Bufferable, emptyFunc, Encoding } from './common';
+import { AllocatedPointer, NativePointer, StaticPointer, VoidPointer } from './core';
 import { makefunc, TypeIn } from './makefunc';
 import { Singleton } from './singleton';
 import { filterToIdentifierableString } from './util';
@@ -130,7 +130,7 @@ function numericBitSetter(this:NativeType<number>, ptr:StaticPointer, value:numb
 
 let typeIndexCounter = 0;
 
-export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
+export class NativeType<T, InputType=T> extends makefunc.ParamableT<T, InputType> implements Type<T> {
     public static readonly getter:typeof makefunc.getter = makefunc.getter;
     public static readonly setter:typeof makefunc.setter = makefunc.setter;
     public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
@@ -142,15 +142,15 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly align:typeof NativeTypeFn.align = NativeTypeFn.align;
     public static readonly descriptor:typeof NativeTypeFn.descriptor = NativeTypeFn.descriptor;
 
-    public [makefunc.getter]:(this:NativeType<T>, ptr:StaticPointer, offset?:number)=>T;
-    public [makefunc.setter]:(this:NativeType<T>, ptr:StaticPointer, v:T, offset?:number)=>void;
-    public [NativeTypeFn.ctor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
-    public [makefunc.dtor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
-    public [makefunc.ctor_move]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
-    public [NativeTypeFn.ctor_copy]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
+    public [makefunc.getter]:(this:NativeType<T, InputType>, ptr:StaticPointer, offset?:number)=>T;
+    public [makefunc.setter]:(this:NativeType<T, InputType>, ptr:StaticPointer, v:InputType, offset?:number)=>void;
+    public [NativeTypeFn.ctor]:(this:NativeType<T, InputType>, ptr:StaticPointer)=>void;
+    public [makefunc.dtor]:(this:NativeType<T, InputType>, ptr:StaticPointer)=>void;
+    public [makefunc.ctor_move]:(this:NativeType<T, InputType>, to:StaticPointer, from:StaticPointer)=>void;
+    public [NativeTypeFn.ctor_copy]:(this:NativeType<T, InputType>, to:StaticPointer, from:StaticPointer)=>void;
     public [NativeTypeFn.align]:number;
-    public [NativeTypeFn.bitGetter]:(this:NativeType<T>, ptr:StaticPointer, shift:number, mask:number, offset?:number)=>T = abstract;
-    public [NativeTypeFn.bitSetter]:(this:NativeType<T>, ptr:StaticPointer, value:T, shift:number, mask:number, offset?:number)=>void = abstract;
+    public [NativeTypeFn.bitGetter]:(this:NativeType<T, InputType>, ptr:StaticPointer, shift:number, mask:number, offset?:number)=>T = abstract;
+    public [NativeTypeFn.bitSetter]:(this:NativeType<T, InputType>, ptr:StaticPointer, value:InputType, shift:number, mask:number, offset?:number)=>void = abstract;
     public readonly typeIndex = ++typeIndexCounter;
 
     constructor(
@@ -176,7 +176,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         /**
          * setter with the pointer
          */
-        set:(ptr:StaticPointer, v:T, offset?:number)=>void,
+        set:(ptr:StaticPointer, v:InputType, offset?:number)=>void,
         /**
          * assembly for casting the native value to the js value
          */
@@ -184,7 +184,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         /**
          * assembly for casting the js value to the native value
          */
-        setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number)=>void = set as any,
+        setToParam:(stackptr:StaticPointer, param:InputType extends VoidPointer ? (InputType|null) : InputType, offset?:number)=>void = set as any,
         /**
          * constructor
          */
@@ -242,7 +242,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         return ntype as any;
     }
 
-    ref():NativeType<T> {
+    ref():NativeType<T, InputType> {
         return Singleton.newInstance(NativeType, this, ()=>makeReference(this));
     }
 
@@ -303,8 +303,8 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
 }
 NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
 
-function makeReference<T>(type:NativeType<T>):NativeType<T> {
-    return new NativeType<T>(
+function makeReference<T, InputType>(type:NativeType<T, InputType>):NativeType<T, InputType> {
+    return new NativeType<T, InputType>(
         `${type.name}*`,
         8, 8,
         type.isTypeOf,
@@ -502,9 +502,7 @@ export const int64_as_float_t = new NativeType<number>(
     v=>typeof v === 'number' && Math.round(v) === v && -0x8000000000000000 <= v && v < 0x8000000000000000,
     isNumber,
     (ptr, offset)=>ptr.getInt64AsFloat(offset),
-    (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset),
-    undefined,
-    int32To64);
+    (ptr, v, offset)=>ptr.setInt64WithFloat(v, offset));
 export type int64_as_float_t = number;
 
 export const float32_t = new NativeType<number>(
@@ -559,6 +557,10 @@ export const CxxString = new NativeType<string>(
     });
 export type CxxString = string;
 
+function impossible():never {
+    throw Error(`Impossible to set`);
+}
+
 // continued from https://github.com/bdsx/bdsx/pull/142/commits/9820de4acf3c818ae5bc2f5eae0d19fd750f4482
 export const GslStringSpan = new NativeType<string>(
     'gsl::basic_string_span<char const,-1>',
@@ -569,9 +571,7 @@ export const GslStringSpan = new NativeType<string>(
         const length = ptr.getInt64AsFloat(offset);
         return ptr.getPointer((offset||0)+8).getString(length);
     },
-    (ptr, v, offset)=>{
-        throw Error('GslStringSpan cannot be set');
-    },
+    impossible,
     (stackptr, offset)=>{
         const strptr = stackptr.getPointer(offset);
         const length = strptr.getInt64AsFloat(0);
@@ -618,6 +618,99 @@ export const bin128_t = new NativeType<string>(
     minus_one:'\uffff\uffff\uffff\uffff',
 });
 export type bin128_t = string;
+
+export const StringAnsi = new NativeType<string>(
+    'char const *',
+    8, 8,
+    v=>v === null || typeof v === 'string',
+    undefined,
+    (ptr, offset)=>ptr.getPointer().getString(undefined, offset, Encoding.Ansi),
+    impossible,
+    undefined,
+    (stackptr, param, offset)=>{
+        if (param === null) {
+            stackptr.setPointer(null, offset);
+        } else {
+            const buf = makefunc.tempAlloc(param.length*2+1);
+            const len = buf.setString(param, 0, Encoding.Ansi);
+            buf.setUint8(len, 0);
+            stackptr.setPointer(buf, offset);
+        }
+    },
+);
+export type StringAnsi = string;
+
+export const StringUtf8 = new NativeType<string>(
+    'char const *',
+    8, 8,
+    v=>v === null || typeof v === 'string',
+    undefined,
+    (ptr, offset)=>ptr.getPointer().getString(undefined, offset, Encoding.Utf8),
+    impossible,
+    undefined,
+    (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : makefunc.tempString(param), offset),
+);
+export type StringUtf8 = string;
+
+export const StringUtf16 = new NativeType<string>(
+    'StringUtf16',
+    8, 8,
+    v=>v === null || typeof v === 'string',
+    undefined,
+    (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf16),
+    impossible,
+    undefined,
+    (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : makefunc.tempString(param, Encoding.Utf16), offset),
+);
+export type StringUtf16 = string;
+
+export const PointerLike = new NativeType<NativePointer, VoidPointer|Bufferable|string>(
+    'void const *',
+    8, 8,
+    v=>{
+        if (v === null) return true;
+        if (v instanceof VoidPointer) return true;
+        if (v instanceof DataView) return true;
+        if (v instanceof ArrayBuffer) return true;
+        if (v instanceof Uint8Array) return true;
+        if (v instanceof Int32Array) return true;
+        if (v instanceof Uint16Array) return true;
+        if (v instanceof Uint32Array) return true;
+        if (v instanceof Int8Array) return true;
+        if (v instanceof Int16Array) return true;
+        return false;
+    },
+    undefined,
+    (stackptr, offset)=>stackptr.getPointer(offset),
+    (stackptr, param, offset)=>{
+        if (!(param instanceof VoidPointer)) {
+            throw Error(`Needs the pointer for fields`);
+        }
+        stackptr.setPointer(param, offset);
+    },
+    undefined,
+    (stackptr, param, offset)=>{
+        if (param !== null) {
+            if (typeof param === 'string') {
+                param = makefunc.tempString(param);
+            } else if (!(param instanceof VoidPointer)) {
+                param = VoidPointer.fromAddressBuffer(param);
+            }
+        }
+        stackptr.setPointer(param, offset);
+    },
+);
+export type PointerLike = VoidPointer|Bufferable;
+
+export const JsValueRef = new NativeType<any>(
+    'JsValueRef',
+    8, 8,
+    ()=>true,
+    undefined,
+    (ptr, offset)=>ptr.getJsValueRef(offset),
+    (ptr, param, offset)=>ptr.setJsValueRef(param, offset)
+);
+export type JsValueRef = any;
 
 export type WrapArrayToTypeArray<T extends any[]> = {[P in keyof T]: P extends keyof any[] ? T[P] : Type<T[P]>};
 export type UnwrapTypeArrayToArray<T extends Type<any>[]> = {[P in keyof T]: T[P] extends Type<infer V> ? V : T[P]};

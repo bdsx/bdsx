@@ -1,4 +1,4 @@
-import { DimensionId } from "../bds/actor";
+import { DimensionId } from "../enums";
 import { Actor, Player } from "../minecraft";
 
 declare module "../minecraft" {

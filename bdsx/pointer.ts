@@ -1,6 +1,6 @@
 import { CircularDetector } from "./circulardetector";
 import { abstract, Encoding, TypeFromEncoding } from "./common";
-import { NativePointer, StaticPointer, VoidPointer } from "./core";
+import { AllocatedPointer, NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
@@ -8,6 +8,7 @@ import util = require('util');
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>> {
     new(ptr?:boolean):Wrapper<T>;
+    readonly type:Type<any>;
 }
 export interface PtrType<T> extends WrapperType<T> {
 }
@@ -15,15 +16,17 @@ export interface PtrType<T> extends WrapperType<T> {
 export abstract class Wrapper<T> extends NativeClass {
     abstract value:T;
     readonly abstract type:Type<T>;
+    static readonly type:Type<unknown>;
 
-    static make<T>(type:{new():T}|NativeType<T>):WrapperType<T>{
+    static make<T>(type:Type<T>):WrapperType<T>{
         class TypedWrapper extends Wrapper<T>{
             value:any;
             type:Type<T>;
+            static readonly type:Type<T> = type;
         }
         Object.defineProperty(TypedWrapper, 'name', {value: type.name});
-        TypedWrapper.prototype.type = type as any;
-        TypedWrapper.define({value:type as any});
+        TypedWrapper.prototype.type = type;
+        TypedWrapper.define({value:type});
         return TypedWrapper;
     }
 
@@ -63,6 +66,8 @@ export abstract class Wrapper<T> extends NativeClass {
 export type Pointer = any; // legacy
 export declare const Pointer:any; // legacy
 
+const bufferKeeper = Symbol();
+
 export abstract class Ptr<T> extends Wrapper<T> {
     get(index:number):T {
         const size = this.type[NativeType.size];
@@ -74,7 +79,15 @@ export abstract class Ptr<T> extends Wrapper<T> {
         if (size == null) throw Error(`${this.type.name}: unknown size`);
         this.type[NativeType.setter](this as any, value, index*size);
     }
-    static make<T>(type:{new():T, ref():any}|NativeType<T>):PtrType<T>{
+    static create<T>(this:PtrType<T>, count:number):Ptr<T> {
+        const size = this.type[NativeType.size];
+        if (size == null) throw Error(`${this.type.name}: unknown size`);
+        const buffer = new AllocatedPointer(size * count);
+        const ptr = buffer.as(this);
+        (ptr as any)[bufferKeeper] = buffer; // make a reference for avoiding GC
+        return ptr as Ptr<T>;
+    }
+    static make<T>(type:Type<T>):PtrType<T>{
         return Wrapper.make(type.ref());
     }
 }

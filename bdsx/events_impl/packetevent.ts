@@ -1,6 +1,5 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "../bds/packet";
 import { proc } from "../bds/proc";
 import { abstract, CANCEL } from "../common";
 import { VoidPointer } from "../core";
@@ -9,7 +8,7 @@ import { Event } from "../eventtarget";
 import { hook } from "../hook";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
-import { LoopbackPacketSender, MinecraftPacketIds, NetworkHandler, NetworkIdentifier, PacketViolationHandler } from "../minecraft";
+import { ExtendedStreamReadResult, LoopbackPacketSender, MinecraftPacketIds, MinecraftPackets, NetworkHandler, NetworkIdentifier, Packet, PacketViolationHandler, StreamReadResult } from "../minecraft";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, int32_t, int64_as_float_t, void_t } from "../nativetype";
 import { PacketIdToType } from "../packetidtotype";
@@ -40,7 +39,10 @@ class OnPacketRBP extends NativeClass {
 
 let sendInternalOriginal:(this:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>void;
 
-function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
+const PacketSharedPtr = SharedPtr.make(Packet);
+const createPacketRaw = hook(MinecraftPackets.createPacket).reform(void_t, null, PacketSharedPtr, int32_t);
+
+function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):SharedPtr<Packet>|null {
     try {
         const target = events.packetEvent(events.PacketEventType.Raw, packetId) as Event<events.RawListener>;
         const ni = conn.networkIdentifier;
@@ -63,7 +65,8 @@ function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkH
             }
             _tickCallback();
         }
-        return createPacketRaw(rbp.packet, packetId);
+        createPacketRaw(rbp.packet, packetId);
+        return rbp.packet;
     } catch (err) {
         remapAndPrintError(err);
         return null;
@@ -71,7 +74,7 @@ function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkH
 }
 function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packetId:MinecraftPacketIds):ExtendedStreamReadResult {
     try {
-        if (result.streamReadResult !== StreamReadResult.Pass) return result;
+        if (result.streamReadResult !== StreamReadResult.NoError) return result;
 
         const target = events.packetEvent(events.PacketEventType.Before, packetId) as Event<events.BeforeListener<MinecraftPacketIds>>;
         if (target !== null && !target.isEmpty()) {

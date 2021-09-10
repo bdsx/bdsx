@@ -1,6 +1,2 @@
 
-* for symbolaprser.ts/symbolwriter.ts
-Ptr<T>[] to T[]
-(T|null)[] to T[] when it returning.
-int32_t& to Wrapper<int32_t>
-NetworkHandler::_sendInternal - use CxxStringWrapper insteadof CxxString
+Split tools from the current git repo

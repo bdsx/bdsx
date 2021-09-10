@@ -72,8 +72,12 @@ function remapType(type:ParamType):makefunc.Paramable {
 }
 
 type InstanceTypeOnly<T> = T extends {prototype:infer V} ? V : never;
+declare const inputParamType:unique symbol; // fake symbol
 
-type TypeFrom_js2np<T extends ParamType> = InstanceTypeOnly<T>|null;
+interface ParamableInput<T> {
+    [inputParamType]:T;
+}
+type TypeFrom_js2np<T extends ParamType> = (T extends ParamableInput<infer V> ? V : InstanceTypeOnly<T>)|null;
 type TypeFrom_np2js<T extends ParamType> = InstanceTypeOnly<T>;
 
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
@@ -83,8 +87,7 @@ export type TypesFromParamIds_np2js<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_np2js<T[key]> : T[key];
 };
 
-export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
-{
+export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> {
     /**
      * *Pointer, 'this' parameter passes as first parameter.
      */
@@ -175,20 +178,20 @@ export namespace makefunc {
          */
         isTypeOfWeak(v:unknown):boolean;
     }
-    export interface ParamableT<T> extends Paramable {
+    export interface ParamableT<T, InputType=T> extends Paramable, ParamableInput<InputType> {
         prototype:T;
         [getFromParam](stackptr:StaticPointer, offset?:number):T|null;
-        [setToParam](stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number):void;
+        [setToParam](stackptr:StaticPointer, param:InputType extends VoidPointer ? (InputType|null) : InputType, offset?:number):void;
         [useXmmRegister]:boolean;
         isTypeOf<V>(this:TypeIn<V>, v:unknown):v is V;
         isTypeOfWeak(v:unknown):boolean;
     }
-    export class ParamableT<T> implements TypeIn<T> {
+    export class ParamableT<T, InputType=T> implements TypeIn<T> {
 
         constructor(
             public readonly name:string,
             _getFromParam:(stackptr:StaticPointer, offset?:number)=>T|null,
-            _setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number)=>void,
+            _setToParam:(stackptr:StaticPointer, param:InputType extends VoidPointer ? (InputType|null) : InputType, offset?:number)=>void,
             _ctor_move:(to:StaticPointer, from:StaticPointer)=>void,
             isTypeOf:(v:unknown)=>boolean,
             isTypeOfWeak:(v:unknown)=>boolean = isTypeOf) {
@@ -253,7 +256,9 @@ export namespace makefunc {
     export function np<RETURN extends ParamType, OPTS extends MakeFuncOptions<any>|null, PARAMS extends ParamType[]>(
         jsfunction: FunctionFromTypes_np<OPTS, PARAMS, RETURN>,
         returnType: RETURN, opts?: OPTS, ...params: PARAMS): VoidPointer {
-        if (typeof jsfunction !== 'function') invalidParameterError('arg1', 'function', jsfunction);
+        if (typeof jsfunction !== 'function') {
+            invalidParameterError('arg1', 'function', jsfunction);
+        }
 
         const options:MakeFuncOptions<any> = opts! || {};
         const returnTypeResolved = remapType(returnType);
@@ -487,6 +492,7 @@ export namespace makefunc {
     }
     export import asJsValueRef = chakraUtil.asJsValueRef;
 
+    /** @deprecated use StringAnsi in nativetype */
     export const Ansi = new ParamableT<string>(
         'Ansi',
         (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Ansi),
@@ -503,8 +509,10 @@ export namespace makefunc {
         abstract,
         v=>v === null || typeof v === 'string'
     );
+    /** @deprecated use StringAnsi in nativetype */
     export type Ansi = string;
 
+    /** @deprecated use StringUtf8 in nativetype */
     export const Utf8 = new ParamableT<string>(
         'Utf8',
         (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf8),
@@ -512,8 +520,10 @@ export namespace makefunc {
         abstract,
         v=>v === null || typeof v === 'string'
     );
+    /** @deprecated use StringUtf8 in nativetype */
     export type Utf8 = string;
 
+    /** @deprecated use StringUtf16 in nativetype */
     export const Utf16 = new ParamableT<string>(
         'Utf16',
         (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf16),
@@ -521,8 +531,10 @@ export namespace makefunc {
         abstract,
         v=>v === null || typeof v === 'string'
     );
+    /** @deprecated use StringUtf16 in nativetype */
     export type Utf16 = string;
 
+    /** @deprecated use PointerLike in nativetype */
     export const Buffer = new ParamableT<VoidPointer|Bufferable>(
         'Buffer',
         (stackptr, offset)=>stackptr.getPointer(offset),
@@ -547,8 +559,10 @@ export namespace makefunc {
             return false;
         }
     );
+    /** @deprecated use PointerLike in nativetype */
     export type Buffer = VoidPointer|Bufferable;
 
+    /** @deprecated use JsValueRef in nativetype */
     export const JsValueRef = new ParamableT<any>(
         'JsValueRef',
         (stackptr, offset)=>stackptr.getJsValueRef(offset),
@@ -556,6 +570,7 @@ export namespace makefunc {
         abstract,
         ()=>true
     );
+    /** @deprecated use JsValueRef in nativetype */
     export type JsValueRef = any;
 }
 

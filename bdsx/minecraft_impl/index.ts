@@ -7,6 +7,7 @@ import './block';
 import './blockpos';
 import './commandname';
 import './enums';
+import './extendedstreamreadresult';
 import './farmblock';
 import './gamemode';
 import './gamerule';
@@ -42,3 +43,4 @@ import './survivalmode';
 import './teleporttarget';
 import './vec2';
 import './vec3';
+

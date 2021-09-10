@@ -323,7 +323,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     static make<T>(type:{prototype:T}):CxxVectorType<T> {
         const t = type as Type<T>;
         return Singleton.newInstance<CxxVectorType<T>>(CxxVector, t, ():CxxVectorType<T>=>{
-            if (t[NativeType.size] === undefined) throw Error("CxxVector needs the component size");
+            if (t[NativeType.size] == null) throw Error("CxxVector needs the component size");
 
             if (NativeClass.isNativeClassType(t)) {
                 class VectorImpl extends CxxVector<NativeClass> {

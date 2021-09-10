@@ -243,7 +243,7 @@ export async function loadAllPlugins():Promise<void> {
 
         // apply changes
         if (packagejsonModified) {
-            console.error(`[BDSX-Plugins] Apply the package changes`);
+            console.log(`[BDSX-Plugins] Apply the package changes`);
             await mainpkg.save();
         }
         if (needToNpmInstall) {

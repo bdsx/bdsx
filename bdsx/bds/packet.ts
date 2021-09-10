@@ -6,28 +6,29 @@ import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
 import { BinaryStream } from "./stream";
+import minecraft = require('../minecraft');
 
-// export interface PacketType<T> extends StructureType<T>
-// {
-//     readonly ID:number;
-// }
-
+/** @deprecated */
 export const PacketReadResult = uint32_t.extends({
     PacketReadNoError: 0,
     PacketReadError: 1,
 });
+/** @deprecated */
 export type PacketReadResult = uint32_t;
 
 
+/** @deprecated */
 export const StreamReadResult = int32_t.extends({
     Disconnect: 0,
     Pass: 1,
     Warning: 2, // disconnect at 3 times
     Ignore: 0x7f,
 });
+/** @deprecated */
 export type StreamReadResult = int32_t;
 
-@nativeClass()
+/** @deprecated */
+@nativeClass(null)
 export class ExtendedStreamReadResult extends NativeClass {
     @nativeField(StreamReadResult)
 	streamReadResult:StreamReadResult;
@@ -38,6 +39,7 @@ export class ExtendedStreamReadResult extends NativeClass {
 
 const sharedptr_of_packet = Symbol('sharedptr');
 
+/** @deprecated */
 @nativeClass(0x30)
 export class Packet extends MantleClass {
     static ID:number;
@@ -85,7 +87,10 @@ export class Packet extends MantleClass {
 }
 
 
+/** @deprecated */
 export const PacketSharedPtr = SharedPtr.make(Packet);
+/** @deprecated */
 export type PacketSharedPtr = SharedPtr<Packet>;
 
+/** @deprecated */
 export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, int32_t);

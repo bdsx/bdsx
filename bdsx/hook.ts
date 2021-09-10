@@ -5,7 +5,7 @@ import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { disasm } from "./disassembler";
 import { dll } from "./dll";
 import { hacktool } from "./hacktool";
-import { makefunc, MakeFuncOptions } from "./makefunc";
+import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { Type, UnwrapTypeArrayToArray } from "./nativetype";
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
@@ -23,7 +23,7 @@ export function hook<THIS, NAME extends keyof THIS, TYPES extends Type<any>[]>(n
 /**
  * @returns returns 'hook.fail' if it failed.
  */
-export function hook(nf:AnyFunction|null, name?:string|Type<any>|null, ...types:Type<any>[]):HookTool<any, AnyFunction> {
+export function hook(nf:AnyFunction|null, name?:keyof any|Type<any>|null, ...types:Type<any>[]):HookTool<any, AnyFunction> {
     if (nf === null) {
         console.trace(`Failed to hook, null received`);
         return hook.fail;
@@ -31,10 +31,10 @@ export function hook(nf:AnyFunction|null, name?:string|Type<any>|null, ...types:
 
     let thisType:Type<any>|null;
     if (name != null) {
-        if (typeof name === 'string') {
+        if (typeof name !== 'object') {
             thisType = nf as any;
             nf = nf.prototype[name];
-            if (!(nf instanceof Function)) throw Error(`${(nf as any).name}.${name} is not a function`);
+            if (!(nf instanceof Function)) throw Error(`${(nf as any).name}.${String(name)} is not a function`);
         } else {
             thisType = null;
             types.unshift(name);
@@ -50,7 +50,7 @@ export function hook(nf:AnyFunction|null, name?:string|Type<any>|null, ...types:
         const overload = dnf.getOverloadByTypes(nf, nf as any, ...types);
         if (overload === null) {
             if (thisType !== null) {
-                console.trace(`Failed to hook, overload not found from ${thisType.name}.${name}`);
+                console.trace(`Failed to hook, overload not found from ${thisType.name}.${String(name)}`);
             } else {
                 console.trace(`Failed to hook, overload not found`);
             }
@@ -59,7 +59,7 @@ export function hook(nf:AnyFunction|null, name?:string|Type<any>|null, ...types:
         nf = overload;
     }
 
-    return new HookTool<any, AnyFunction>(nf, name);
+    return new HookTool<any, AnyFunction>(nf, String(name));
 }
 
 export class HookTool<THIS, T extends AnyFunction> {
@@ -68,6 +68,15 @@ export class HookTool<THIS, T extends AnyFunction> {
 
     getAddress():NativePointer {
         return dnf.getAddressOf(this.nf);
+    }
+
+    reform<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+        returnType:RETURN,
+        opts?: OPTS,
+        ...params: PARAMS):
+        FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN> {
+        const addr = this.getAddress();
+        return makefunc.js(addr, returnType, opts, ...params);
     }
 
     /**

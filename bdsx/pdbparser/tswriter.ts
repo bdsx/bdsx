@@ -649,7 +649,7 @@ export namespace tsw {
         cloneToDecl():Block {
             const newblock = new Block;
             for (const item of this.items) {
-                if (item instanceof Export) {
+                if ((item instanceof Export) || item instanceof TypeDef) {
                     const cloned = item.cloneToDecl();
                     if (cloned === null) continue;
                     newblock.write(cloned);
@@ -1689,7 +1689,7 @@ export namespace tsw {
 
     export class TypeDef extends ItemBase implements Exportable {
 
-        constructor(public name:TypeName, public type:Type) {
+        constructor(public name:TypeName, public type:Type, public readonly templates:tsw.TypeName[]|null = null) {
             super();
         }
 
@@ -1701,7 +1701,7 @@ export namespace tsw {
             // empty
         }
         cloneToDecl():TypeDef|null {
-            return null;
+            return this;
         }
         cloneToExportedDecl():TypeDef {
             return this;
@@ -1712,13 +1712,25 @@ export namespace tsw {
         }
 
         blockedWriteTo(os:OutStream):void {
-            os.write(`type ${this.name} = `);
+            os.write(`type ${this.name}`);
+            if (this.templates !== null) {
+                os.write('<');
+                for (const item of os.join(this.templates, ', ')) {
+                    item.writeTo(os);
+                }
+                os.write('>');
+            }
+            os.write(` = `);
             this.type.writeTo(os);
             os.write(';');
         }
 
         toString():string {
-            return `type ${this.name} = ${this.type}`;
+            if (this.templates !== null) {
+                return `type ${this.name}<${this.templates.join(', ')}> = ${this.type}`;
+            } else {
+                return `type ${this.name} = ${this.type}`;
+            }
         }
     }
 
@@ -2354,6 +2366,10 @@ export namespace tsw {
     export class NamePair extends ItemPair {
         public value:Name;
         public type:TypeName;
+
+        static create(name:string):NamePair {
+            return new NamePair(new Name(name), new TypeName(name));
+        }
     }
     export namespace ItemPair {
         export const any = new NamePair(null, BasicType.any);
