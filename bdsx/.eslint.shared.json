@@ -1,0 +1,65 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 2017,
+        "sourceType": "module",
+        "project": "./tsconfig.json"
+    },
+    "plugins": [
+        "@typescript-eslint",
+        "unused-imports",
+        "import",
+        "github"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:import/errors",
+        "plugin:import/warnings",
+        "plugin:import/typescript"
+    ],
+    "rules": {
+        "@typescript-eslint/semi": "error",
+        "@typescript-eslint/no-namespace": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-inferrable-types": ["error", { "ignoreProperties": true, "ignoreParameters": true }],
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
+        "@typescript-eslint/no-this-alias": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-duplicate-imports": "error",
+        "@typescript-eslint/no-empty-interface": [
+            "error",
+            {
+                "allowSingleExtends": true
+            }
+        ],
+        "github/array-foreach": "error",
+        "unused-imports/no-unused-imports": "error",
+        "import/no-cycle": "error",
+        "prefer-arrow-callback": "error",
+        "eqeqeq": ["error", "always", {"null": "ignore"}],
+        "no-throw-literal": "error",
+        "semi": "error",
+        "arrow-body-style": ["error", "as-needed"],
+        "implicit-arrow-linebreak": ["error", "beside"],
+        "no-empty": ["error", {"allowEmptyCatch": true}],
+        "no-trailing-spaces": "error",
+        "indent": ["error", 4, {"ignoreComments": true, "MemberExpression": 0 }],
+        "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
+        "no-prototype-builtins": "off",
+        "prefer-rest-params": "off",
+        "no-debugger": "warn",
+        "import/export": "off",
+        "eol-last": "error",
+        "no-restricted-imports": ["error", {
+            "patterns": [{
+                "group": ["bdsx/*"],
+                "message": "Please use the relative path in bdsx libraries."
+            }]
+        }]
+    }
+}

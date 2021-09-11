@@ -575,6 +575,7 @@ v[v[2]="Adventure"]=2;
 v[v[3]="SurvivalSpectator"]=3;
 v[v[4]="CreativeSpectator"]=4;
 v[v[5]="Default"]=5;
+v[v[6]="test"]=6;
 (minecraft.IdentityDefinition.Type=v={}).__proto__=null;
 v[v[0]="Invalid"]=0;
 v[v[1]="Player"]=1;

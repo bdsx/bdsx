@@ -16,7 +16,6 @@ if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 
 import 'bdsx/common';
 import 'bdsx/checkcore';
 import 'bdsx/checkmodules';
-import 'bdsx/asm/checkasm';
 // import 'bdsx/permissions';
 
 // install bdsx error handler

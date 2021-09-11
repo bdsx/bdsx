@@ -1,3 +1,8 @@
+/**
+ * Generated with bdsx/asm/compile.ts.
+ * Please DO NOT modify this directly.
+ */
+
 import { VoidPointer, NativePointer } from '../core';
 export namespace asmcode {
     export let GetCurrentThreadId:VoidPointer;

@@ -636,6 +636,7 @@ declare module "../minecraft" {
         SurvivalSpectator,
         CreativeSpectator,
         Default,
+        test,
     }
     namespace IdentityDefinition {
         enum Type {

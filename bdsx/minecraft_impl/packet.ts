@@ -1,40 +1,21 @@
 import { makefunc } from "../makefunc";
 import { BinaryStream, ExtendedStreamReadResult, MinecraftPacketIds, MinecraftPackets, networkHandler, NetworkIdentifier, Packet, ReadOnlyBinaryStream } from "../minecraft";
 import { MantleClass } from "../nativeclass";
-import { CxxString, int32_t, uint32_t, void_t } from "../nativetype";
+import { CxxString, int32_t, void_t } from "../nativetype";
 import { SharedPtr as BdsxSharedPtr } from "../sharedpointer";
 import './networkhandler';
-
-const PacketReadResult = uint32_t.extends({
-    PacketReadNoError: 0,
-    PacketReadError: 1,
-});
-type PacketReadResult = uint32_t;
-
-const StreamReadResult = int32_t.extends({
-    Disconnect: 0,
-    Pass: 1,
-    Warning: 2, // disconnect at 3 times
-    Ignore: 0x7f,
-});
-type StreamReadResult = int32_t;
+import './extendedstreamreadresult';
 
 const sharedptr_of_packet = Symbol('sharedptr');
 
 declare module "../minecraft" {
-    interface ExtendedStreamReadResult {
-        streamReadResult:StreamReadResult;
-        dummy:int32_t;
-        // array?
-    }
-
     interface Packet extends MantleClass {
         [sharedptr_of_packet]?:BdsxSharedPtr<any>|null;
 
         getId():MinecraftPacketIds;
         getName():CxxString;
         write(stream:BinaryStream):void;
-        read(stream:BinaryStream):PacketReadResult;
+        read(stream:BinaryStream):StreamReadResult;
         readExtended(readOnlyBinaryStream:ReadOnlyBinaryStream):ExtendedStreamReadResult;
 
         /**
@@ -50,11 +31,6 @@ declare module "../minecraft" {
         function create<T extends Packet>(this:{new(alloc?:boolean):T, ID:MinecraftPacketIds, ref():any}):T;
     }
 }
-
-ExtendedStreamReadResult.define({
-    streamReadResult:StreamReadResult,
-    dummy:int32_t,
-});
 
 Packet.prototype.dispose = function() {
     this[sharedptr_of_packet]!.dispose();

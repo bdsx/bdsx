@@ -9,15 +9,5 @@
     },
     "search.exclude": {
         "bdsx/minecraft.js": true
-    },
-    "runOnSave.statusMessageTimeout": 3000,
-    "runOnSave.commands": [
-        {
-            "globMatch": "**/bdsx/minecraft_impl/enums_ini/*.ini",
-            "command": "npm run enumgen",
-            "runIn": "backend",
-            "runningStatusMessage": "enums.d.ts - Generating",
-            "finishStatusMessage": "enums.d.ts - Generated"
-        }
-    ]
+    }
 }
