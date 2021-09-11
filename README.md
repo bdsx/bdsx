@@ -81,5 +81,8 @@ https://github.com/bdsx/bdsx/issues
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
 
+## BDSX for Development
+https://github.com/bdsx/bdsx-dev
+
 ## BDSX Core
 https://github.com/bdsx/bdsx-core
