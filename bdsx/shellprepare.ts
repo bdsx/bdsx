@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import glob = require('glob');
 import fs = require('fs');
 
+const BDSX_PERMANENT = process.env.BDSX_PERMANENT === 'true';
 const DATA_FILE_PATH = './bedrock_server/bdsx_shell_data.ini';
 const RESTART_TIME_THRESHOLD = 30000;
 
@@ -17,26 +18,7 @@ try {
 } catch(err) {
 }
 
-function exit(exitCode:number):never {
-    delete data.exit;
-    if (exitCode === 1) {
-        data.startAt = Date.now()+'';
-
-        let out = '';
-        for (const name in data) {
-            out += name;
-            out += '=';
-            out += data[name];
-            out += '\n';
-        }
-        fs.writeFileSync(DATA_FILE_PATH, out, 'utf8');
-    } else {
-        try { fs.unlinkSync(DATA_FILE_PATH); } catch (err) {}
-    }
-    process.exit(exitCode);
-}
-
-function prelaunch():never {
+function build():void {
     function getTsConfig():ts.ParsedCommandLine {
         const curdir = process.cwd();
         const configPath = ts.findConfigFile(curdir, ts.sys.fileExists);
@@ -75,35 +57,66 @@ function prelaunch():never {
     if (files.length !== 0) {
         ts.createProgram(files, config.options).emit();
     }
+}
+
+function exit(exitCode:number):never {
+    delete data.exit;
+    if (exitCode === 1) {
+        let out = '';
+        for (const name in data) {
+            out += name;
+            out += '=';
+            out += data[name];
+            out += '\n';
+        }
+        fs.writeFileSync(DATA_FILE_PATH, out, 'utf8');
+    } else {
+        try { fs.unlinkSync(DATA_FILE_PATH); } catch (err) {}
+    }
+    process.exit(exitCode);
+}
+
+function firstLaunch():never {
+    build();
+    data.startAt = Date.now()+'';
     exit(1);
 }
 
-function postlaunch():void {
+function relaunch():void {
+    console.log(`Re-Launch BDSX`);
+    let counter = 3;
+    setInterval(()=>{
+        if (counter === 0) {
+            if (BDSX_PERMANENT) build();
+            exit(1);
+        } else {
+            console.log(counter--);
+        }
+    }, 1000);
+}
+
+function repeatedLaunch():void {
     const exitCode = +data.exit;
     if (exitCode !== 0) {
         console.log(`Exited with code ${(exitCode < 0  || exitCode > 0x1000000) ? '0x'+(exitCode >>> 0).toString(16) : exitCode}`);
 
-        const time = +data.startAt;
-        const passed = Date.now() - time;
+        const startTime = +data.startAt;
+        const passed = Date.now() - startTime;
         if (passed > RESTART_TIME_THRESHOLD) {
             // re-launch
-            console.log(`Re-Launch BDSX`);
-            let counter = 3;
-            setInterval(()=>{
-                if (counter === 0) {
-                    exit(1);
-                } else {
-                    console.log(counter--);
-                }
-            }, 1000);
+            relaunch();
             return;
         }
+    } else if (BDSX_PERMANENT) {
+        relaunch();
+        return;
     }
     exit(0);
 }
 
+
 if (data.exit == null) {
-    prelaunch();
+    firstLaunch();
 } else {
-    postlaunch();
+    repeatedLaunch();
 }
