@@ -186,7 +186,7 @@ export namespace TextPacket {
         Tip,
         SystemMessage,
         /** @deprecated **/
-        Sytem = 6,
+        System = 6,
         Whisper,
         // /say command
         Announcement,
