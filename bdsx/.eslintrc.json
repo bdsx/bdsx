@@ -41,6 +41,7 @@
       "github/array-foreach": "error",
       "unused-imports/no-unused-imports": "error",
       "import/no-cycle": "error",
+      "import/no-default-export": "error",
       "prefer-arrow-callback": "error",
       "eqeqeq": ["error", "always", {"null": "ignore"}],
       "no-throw-literal": "error",
