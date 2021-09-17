@@ -233,7 +233,7 @@ const TextFormat = {
     UNDERLINE: ESCAPE + "n",
     ITALIC: ESCAPE + "o",
     THIN: ESCAPE + "¶"
-}
+};
 
 Object.freeze(TextFormat);
 
