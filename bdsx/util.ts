@@ -237,4 +237,4 @@ const TextFormat = {
 
 Object.freeze(TextFormat);
 
-export default TextFormat;
+export TextFormat;
