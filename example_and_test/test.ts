@@ -40,6 +40,16 @@ export function setRecentSendedPacketForTest(packetId: number): void {
     sendidcheck = packetId;
 }
 
+@nativeClass()
+class VectorClass extends NativeClass {
+    @nativeField(CxxVector.make(CxxString))
+    vector:CxxVector<CxxString>;
+    @nativeField(CxxVector.make(CxxStringWrapper))
+    vector2:CxxVector<CxxStringWrapper>;
+    @nativeField(CxxVector.make(CxxVector.make(CxxString)))
+    vector3:CxxVector<CxxVector<CxxString>>;
+}
+
 Tester.test({
     async globals() {
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
@@ -293,17 +303,8 @@ Tester.test({
     },
 
     vectorcopy() {
-        @nativeClass()
-        class Class extends NativeClass {
-            @nativeField(CxxVector.make(CxxString))
-            vector:CxxVector<CxxString>;
-            @nativeField(CxxVector.make(CxxStringWrapper))
-            vector2:CxxVector<CxxStringWrapper>;
-            @nativeField(CxxVector.make(CxxVector.make(CxxString)))
-            vector3:CxxVector<CxxVector<CxxString>>;
-        }
 
-        const a = new Class(true);
+        const a = new VectorClass(true);
         a.construct();
         a.vector.push('test');
         const str = new CxxStringWrapper(true);
@@ -316,7 +317,7 @@ Tester.test({
         this.equals(a.vector.get(0), 'test', `a.vector, invalid value ${a.vector.get(0)}`);
         this.equals(a.vector2.get(0)!.value, 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
 
-        const b = new Class(true);
+        const b = new VectorClass(true);
         b.construct(a);
         this.equals(b.vector.size(), 1, 'b.vector, invalid size');
         this.equals(b.vector2.size(), 1, 'b.vector2, invalid size');
@@ -367,14 +368,21 @@ Tester.test({
             this.equals(vec.toArray().join(','), '1,1,2,3,4,4', 'splice larger');
             vec.destruct();
         }
+        str.destruct();
+    },
 
+    classvectorcopy() {
         const vec = CxxVector.make(CxxString).construct();
         vec.resize(5);
         vec.set(0, 't1');
         vec.set(1, 't2');
 
-        const clsvector = CxxVector.make(Class).construct();
-        const cls = Class.construct();
+        const str = new CxxStringWrapper(true);
+        str.construct();
+        str.value = 'test2';
+
+        const clsvector = CxxVector.make(VectorClass).construct();
+        const cls = VectorClass.construct();
         cls.vector.push('test1');
         cls.vector.push('test2');
         cls.vector2.push(str);
@@ -383,7 +391,7 @@ Tester.test({
         clsvector.push(cls);
         clsvector.push(cls);
 
-        const cloned = CxxVector.make(Class).construct(clsvector);
+        const cloned = CxxVector.make(VectorClass).construct(clsvector);
         this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
         this.equals(cloned.get(1)!.vector.toArray().join(','), 'test1,test2', 'cloned class, string vector');
         this.equals(cloned.get(0)!.vector2.toArray().map(v=>v.value).join(','), 'test2', 'class, string vector');
@@ -391,11 +399,6 @@ Tester.test({
         this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
-
-        clsvector.destruct();
-        str.destruct();
-
-
     },
 
     map() {
