@@ -209,7 +209,7 @@ export function printOnProgress(message:string):void {
 
 export const ESCAPE = "§";
 
-const TextFormat = {
+export const TextFormat = {
     BLACK: ESCAPE + "0",
     DARK_BLUE: ESCAPE + "1",
     DARK_GREEN: ESCAPE + "2",
@@ -236,5 +236,3 @@ const TextFormat = {
 };
 
 Object.freeze(TextFormat);
-
-export TextFormat;
