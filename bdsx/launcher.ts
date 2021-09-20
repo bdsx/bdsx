@@ -23,6 +23,7 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
+import { createAbstractObject } from "./abstractobject";
 
 declare module 'colors'
 {
@@ -52,6 +53,9 @@ class Liner {
     }
 }
 
+
+// eslint-disable-next-line prefer-const
+(global as any).server = createAbstractObject('BDS is not launched yet. `server` is available after the launch');
 
 let launched = false;
 let loadingIsFired = false;
