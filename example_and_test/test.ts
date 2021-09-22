@@ -507,29 +507,34 @@ Tester.test({
         let sendpacket = 0;
         for (let i = 0; i < 255; i++) {
             events.packetRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetRaw, Invalid ni');
                 idcheck = packetId;
-                this.assert(size > 0, `packet is too small (size = ${size})`);
-                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                this.assert(size > 0, `packetRaw, packet is too small (size = ${size})`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `packetRaw, different packetId in buffer. id=${packetId}`);
             }, 0));
             events.packetBefore<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
-                this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetBefore, Invalid ni');
+                this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `packetBefore, different class.packetId on before. id=${packetId}`);
             }, 0));
             events.packetAfter<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
-                this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetAfter, Invalid ni');
+                this.equals(packetId, idcheck, `packetAfter, different packetId on after. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `packetAfter, different class.packetId on after. id=${packetId}`);
             }, 0));
             events.packetSend<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSend, Invalid ni');
                 sendidcheck = packetId;
-                this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
+                this.equals(ptr.getId(), packetId, `packetSend, different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
-                this.assert(size > 0, `packet size is too little`);
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni');
+                this.assert(size > 0, `packetSendRaw, packet size is too little`);
                 if (chatCancelCounter === 0) {
-                    this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                    this.equals(packetId, sendidcheck, `packetSendRaw, different packetId on sendRaw. id=${packetId}`);
                 }
-                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `packetSendRaw, different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             }, 0));
         }

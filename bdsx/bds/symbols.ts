@@ -177,7 +177,7 @@ const symbols = [
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
     'BlockLegacy::getCommandNames',
-    'RakNetServerLocator::announceServer',
+    'RakNetServerLocator::_announceServer',
     'HealthAttributeDelegate::change',
     'MinecraftCommands::getRegistry',
     'MinecraftCommands::handleOutput',

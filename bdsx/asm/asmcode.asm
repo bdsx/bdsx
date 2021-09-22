@@ -446,10 +446,10 @@ export proc packetBeforeHook
     stack 28h
 
     ; original codes
-    mov rax,qword ptr[rcx]
-    lea r8,[rbp+c0h]
-    lea rdx,[rbp-60h]
-    call qword ptr[rax+20h]
+    mov rax,qword ptr ds:[rcx]
+    lea r8,qword ptr ss:[rbp+100h]
+    lea rdx,qword ptr ss:[rbp-20h]
+    call qword ptr ds:[rax+20h]
 
     mov rcx, rax ; read result
     mov rdx, rbp ; rbp
@@ -503,9 +503,9 @@ export proc packetSendAllHook
     call onPacketSend
     unwind
 
-    ; original code
+    ; original codes
     mov rax, [r15]
-    lea rdx, [r14+220h]
+    lea rdx, [r14+248h]
     mov rcx, r15
     jmp qword ptr[rax+18h]
 endp

@@ -9,11 +9,9 @@ import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
-import { SharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
 import { _tickCallback } from "../util";
 import type { Packet } from "./packet";
-import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import type { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
@@ -40,12 +38,6 @@ export namespace NetworkHandler
 {
     export class Connection extends NativeClass {
         networkIdentifier:NetworkIdentifier;
-        u1:VoidPointer;
-        u2:VoidPointer;
-        u3:VoidPointer;
-        epeer:SharedPtr<EncryptedNetworkPeer>;
-        bpeer:SharedPtr<BatchedNetworkPeer>;
-        bpeer2:SharedPtr<BatchedNetworkPeer>;
     }
 }
 
@@ -57,9 +49,9 @@ class ServerNetworkHandler$Client extends NativeClass {
 export class ServerNetworkHandler extends NativeClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
-    @nativeField(CxxString, 0x260)
+    @nativeField(CxxString, 0x268)
     readonly motd:CxxString;
-    @nativeField(int32_t, 0x2D8)
+    @nativeField(int32_t, 0x2e0)
     readonly maxPlayers: int32_t;
 
     protected _disconnectClient(client:NetworkIdentifier, unknown:number, message:CxxString, skipMessage:boolean):void {

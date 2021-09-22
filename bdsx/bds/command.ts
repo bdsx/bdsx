@@ -495,7 +495,7 @@ export class CommandRegistry extends HasTypeId {
         overload.commandVersion = bin.make64(1, 0x7fffffff);
         overload.allocator = allocator;
         overload.parameters.setFromArray(params);
-        overload.u6 = -1;
+        overload.commandVersionOffset = -1;
         sig.overloads.push(overload);
         this.registerOverloadInternal(sig, sig.overloads.back()!);
         overload.destruct();
@@ -531,25 +531,27 @@ export class CommandRegistry extends HasTypeId {
 }
 
 export namespace CommandRegistry {
-    @nativeClass(0x30)
+    @nativeClass()
+    export class Symbol extends NativeClass {
+        @nativeField(int32_t)
+        value:int32_t;
+    }
+
+    @nativeClass(0x48)
     export class Overload extends NativeClass {
         @nativeField(bin64_t)
         commandVersion:bin64_t;
         @nativeField(VoidPointer)
         allocator:VoidPointer;
-        @nativeField(CxxVector.make<CommandParameterData>(CommandParameterData))
+        @nativeField(CxxVector.make(CommandParameterData))
         parameters:CxxVector<CommandParameterData>;
         @nativeField(int32_t)
         commandVersionOffset:int32_t;
         /** @deprecated */
         @nativeField(int32_t, 0x28)
         u6:int32_t;
-    }
-
-    @nativeClass()
-    export class Symbol extends NativeClass {
-        @nativeField(int32_t)
-        value:int32_t;
+        @nativeField(CxxVector.make(CommandRegistry.Symbol))
+        symbols:CxxVector<CommandRegistry.Symbol>;
     }
 
     @nativeClass(null)

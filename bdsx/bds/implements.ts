@@ -29,7 +29,7 @@ import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AdventureSettingsPacket, AttributeData, GameRulesChangedPacket, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
-import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
+import { BatchedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
@@ -308,17 +308,11 @@ asmcode.NetworkIdentifierGetHash = proc['NetworkIdentifier::getHash'];
 NetworkIdentifier.prototype.hash = makefunc.js(asmcode.networkIdentifierHash, int32_t, {this:NetworkIdentifier});
 
 NetworkHandler.Connection.abstract({
-    networkIdentifier:NetworkIdentifier,
-    u1:VoidPointer, // null
-    u2:VoidPointer, // null
-    u3:VoidPointer, // null
-    epeer:SharedPtr.make(EncryptedNetworkPeer),
-    bpeer:SharedPtr.make(BatchedNetworkPeer),
-    bpeer2:SharedPtr.make(BatchedNetworkPeer),
+    networkIdentifier:[NetworkIdentifier, 0x8],
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x48]
+    instance: [RakNetInstance.ref(), 0x58]
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)

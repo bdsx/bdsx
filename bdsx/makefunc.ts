@@ -491,7 +491,7 @@ export namespace makefunc {
             } else {
                 const buf = tempAlloc(param.length*2+1);
                 const len = buf.setString(param, 0, Encoding.Ansi);
-                buf.setUint8(len, 0);
+                buf.setUint8(0, len);
                 stackptr.setPointer(buf, offset);
             }
         },

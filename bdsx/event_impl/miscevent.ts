@@ -5,8 +5,8 @@ import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
+import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, uint8_t } from "../nativetype";
-import { CxxStringWrapper } from "../pointer";
 import { _tickCallback } from "../util";
 
 interface IQueryRegenerateEvent {
@@ -28,14 +28,31 @@ export class QueryRegenerateEvent implements IQueryRegenerateEvent {
     }
 }
 
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
-function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean):bin64_t {
-    const event = new QueryRegenerateEvent(motd.value, levelname.value, currentPlayers, maxPlayers, isJoinableThroughServerScreen);
+@nativeClass()
+class AnnouneServerData extends NativeClass {
+    @nativeField(CxxString)
+    motd:CxxString;
+    @nativeField(CxxString)
+    levelname:CxxString;
+    @nativeField(int32_t)
+    currentPlayers:int32_t;
+    @nativeField(int32_t)
+    maxPlayers:int32_t;
+    @nativeField(bool_t)
+    isJoinableThroughServerScreen:bool_t;
+}
+
+// CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t
+//  motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean
+
+const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", bin64_t, null, VoidPointer, AnnouneServerData)(onQueryRegenerate);
+function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnouneServerData):bin64_t {
+    const event = new QueryRegenerateEvent(data.motd, data.levelname, data.currentPlayers, data.maxPlayers, data.isJoinableThroughServerScreen);
     events.queryRegenerate.fire(event);
-    motd.value = event.motd;
-    levelname.value = event.levelname;
+    data.motd = event.motd;
+    data.levelname = event.levelname;
     _tickCallback();
-    return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, event.isJoinableThroughServerScreen);
+    return _onQueryRegenerate(rakNetServerLocator, data);
 }
 bedrockServer.afterOpen().then(() => serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
 
