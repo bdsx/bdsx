@@ -77,7 +77,7 @@ export class MobEffect extends NativeClass {
     }
 }
 
-@nativeClass()
+@nativeClass(0x80)
 export class MobEffectInstance extends NativeClass {
     @nativeField(uint32_t)
     id: uint32_t;
@@ -87,6 +87,7 @@ export class MobEffectInstance extends NativeClass {
     durationEasy: int32_t;
     @nativeField(int32_t)
     durationNormal: int32_t;
+
     @nativeField(int32_t)
     durationHard: int32_t;
     @nativeField(int32_t)
@@ -105,7 +106,7 @@ export class MobEffectInstance extends NativeClass {
      */
     static create(id: MobEffectIds, duration: number = 600, amplifier: number = 0, ambient: boolean = false, showParticles: boolean = true, displayAnimation: boolean = false): MobEffectInstance {
         const effect = new MobEffectInstance(true);
-        (effect as any)._create(id, duration, amplifier, ambient, showParticles, displayAnimation);
+        effect._create(id, duration, amplifier, ambient, showParticles, displayAnimation);
         return effect;
     }
 

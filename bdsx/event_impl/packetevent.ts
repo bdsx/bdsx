@@ -8,7 +8,6 @@ import { proc, procHacker } from "../bds/proc";
 import { abstract, CANCEL } from "../common";
 import { VoidPointer } from "../core";
 import { events } from "../event";
-import { Event } from "../eventtarget";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
@@ -129,14 +128,12 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
             const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        return;
-                    }
+                    if (listener(typedPacket, ni, packetId) === CANCEL) break;
                 } catch (err) {
                     events.errorFire(err);
                 }
             }
+            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -149,14 +146,12 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
         if (target !== null && !target.isEmpty()) {
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(data.valueptr, data.length, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        return;
-                    }
+                    if (listener(data.valueptr, data.length, ni, packetId) === CANCEL) break;
                 } catch (err) {
                     events.errorFire(err);
                 }
             }
+            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -208,7 +203,7 @@ bedrockServer.withLoading().then(()=>{
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-            0x4C, 0x8D, 0x8D, 0xB8, 0x00, 0x00, 0x00, // lea r9,qword ptr ss:[rbp+78]
+            0x4C, 0x8D, 0x8D, 0xB8, 0x00, 0x00, 0x00, // lea r9,qword ptr ss:[rbp+b8]
             0x4C, 0x8B, 0xC6, // mov r8,rsi
             0x49, 0x8B, 0xD6, // mov rdx,r14
             0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]

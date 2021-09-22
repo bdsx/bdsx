@@ -4,9 +4,11 @@
 
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
+import { RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
+import { ServerLevel } from "bdsx/bds/level";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
@@ -30,7 +32,6 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
-import { RelativeFloat } from "bdsx/bds/blockpos";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -505,31 +506,36 @@ Tester.test({
     packetEvents() {
         let idcheck = 0;
         let sendpacket = 0;
+        let ignoreEndingPacketsAfter = 0; // ignore ni check of send for the avoiding disconnected ni.
         for (let i = 0; i < 255; i++) {
             events.packetRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
-                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetRaw, Invalid ni');
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetRaw, Invalid ni, id='+packetId);
                 idcheck = packetId;
                 this.assert(size > 0, `packetRaw, packet is too small (size = ${size})`);
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `packetRaw, different packetId in buffer. id=${packetId}`);
             }, 0));
             events.packetBefore<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetBefore, Invalid ni');
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetBefore, Invalid ni, id='+packetId);
                 this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `packetBefore, different class.packetId on before. id=${packetId}`);
             }, 0));
             events.packetAfter<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetAfter, Invalid ni');
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetAfter, Invalid ni, id='+packetId);
                 this.equals(packetId, idcheck, `packetAfter, different packetId on after. id=${packetId}`);
                 this.equals(ptr.getId(), idcheck, `packetAfter, different class.packetId on after. id=${packetId}`);
             }, 0));
             events.packetSend<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSend, Invalid ni');
+                if (Date.now() < ignoreEndingPacketsAfter) {
+                    this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSend, Invalid ni, id='+packetId);
+                }
                 sendidcheck = packetId;
                 this.equals(ptr.getId(), packetId, `packetSend, different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
-                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni');
+                if (Date.now() < ignoreEndingPacketsAfter) {
+                    this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni, id='+packetId);
+                }
                 this.assert(size > 0, `packetSendRaw, packet size is too little`);
                 if (chatCancelCounter === 0) {
                     this.equals(packetId, sendidcheck, `packetSendRaw, different packetId on sendRaw. id=${packetId}`);
@@ -541,6 +547,7 @@ Tester.test({
 
         const conns = new Set<NetworkIdentifier>();
         events.packetAfter(MinecraftPacketIds.Login).on(this.wrap((ptr, ni) => {
+            ignoreEndingPacketsAfter = Date.now() + 2000;
             this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
             setTimeout(() => {
@@ -567,7 +574,7 @@ Tester.test({
     actor() {
         const system = server.registerSystem(0, 0);
         system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
-            const level = serverInstance.minecraft.getLevel();
+            const level = serverInstance.minecraft.getLevel().as(ServerLevel);
             this.equals(level.players.size(), 1, 'Unexpected player size');
             this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
 
@@ -589,6 +596,7 @@ Tester.test({
                         `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
 
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                        this.assert(level.getPlayers()[0] === actor, 'the joined player is not a first player');
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
                         this.equals(name, connectedId, 'id does not match');
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');

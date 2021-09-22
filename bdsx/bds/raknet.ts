@@ -9,9 +9,11 @@ const portDelineator = '|'.charCodeAt(0);
 
 export namespace RakNet
 {
-    @nativeClass(136)
+    @nativeClass(0x88)
     export class SystemAddress extends NativeClass {
-        @nativeField(uint16_t, 130)
+        @nativeField(uint16_t, 0x80)
+        debugPort:uint16_t;
+        @nativeField(uint16_t, 0x82)
         systemIndex:uint16_t;
 
         // void SystemAddress::ToString(bool writePort, char *dest, char portDelineator) const
@@ -59,7 +61,7 @@ export namespace RakNet
 
         GetSystemIndex():uint16_t {
             const rakNetGuid = this.rakNetGuid;
-            if (rakNetGuid !== UNASSIGNED_RAKNET_GUID) {
+            if (rakNetGuid.equals(UNASSIGNED_RAKNET_GUID)) {
                 return rakNetGuid.systemIndex;
             } else {
                 return this.systemAddress.systemIndex;

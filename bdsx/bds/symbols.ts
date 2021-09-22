@@ -206,6 +206,7 @@ const symbols = [
     'Actor::stopRiding',
     'Actor::hasEffect',
     'Actor::getEffect',
+    'Actor::tryGetFromEntity',
     'Mob::die',
     'Abilities::getCommandPermissions',
     'Abilities::getPlayerPermissions',
@@ -225,6 +226,7 @@ const symbols = [
     'Level::updateWeather',
     'Level::save',
     'Level::tick',
+    'Level::getUsers',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',
@@ -305,6 +307,7 @@ const symbols = [
     'Level::getLevelData',
     'LevelData::getGameDifficulty',
     'LevelData::setGameDifficulty',
+    'OwnerStorageEntity::_getStackRef',
 ] as const;
 
 // decorated symbols

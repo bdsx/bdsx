@@ -29,7 +29,7 @@ export class QueryRegenerateEvent implements IQueryRegenerateEvent {
 }
 
 @nativeClass()
-class AnnouneServerData extends NativeClass {
+class AnnounceServerData extends NativeClass {
     @nativeField(CxxString)
     motd:CxxString;
     @nativeField(CxxString)
@@ -45,8 +45,8 @@ class AnnouneServerData extends NativeClass {
 // CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t
 //  motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean
 
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", bin64_t, null, VoidPointer, AnnouneServerData)(onQueryRegenerate);
-function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnouneServerData):bin64_t {
+const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", bin64_t, null, VoidPointer, AnnounceServerData)(onQueryRegenerate);
+function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServerData):bin64_t {
     const event = new QueryRegenerateEvent(data.motd, data.levelname, data.currentPlayers, data.maxPlayers, data.isJoinableThroughServerScreen);
     events.queryRegenerate.fire(event);
     data.motd = event.motd;

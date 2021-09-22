@@ -343,6 +343,24 @@ export enum ActorFlags {
     Celebrating,
 }
 
+@nativeClass()
+export class EntityContext extends NativeClass {
+
+}
+
+@nativeClass()
+export class OwnerStorageEntity extends NativeClass {
+    _getStackRef():EntityContext {
+        abstract();
+    }
+}
+
+@nativeClass(0x18)
+export class EntityRefTraits extends NativeClass {
+    @nativeField(OwnerStorageEntity)
+    context:OwnerStorageEntity;
+}
+
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     identifier:EntityId;
@@ -351,6 +369,9 @@ export class Actor extends NativeClass {
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID, summoner?:Actor):Actor;
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:int64_as_float_t, summoner?:Actor):Actor;
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+        abstract();
+    }
+    static tryGetFromEntity(entity:EntityContext):Actor {
         abstract();
     }
 

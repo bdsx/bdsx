@@ -64,9 +64,9 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
 
     get(item:T):T|null {
         let hash = item[hashkey];
-        if (hash == null) hash = item[hashkey] = item.hash()>>>0;
+        if (hash == null) hash = item[hashkey] = item.hash();
 
-        const idx = hash % this.array.length;
+        const idx = (hash >>> 0) % this.array.length;
         let found = this.array[idx];
         for (;;) {
             if (found === null) return null;
@@ -77,9 +77,9 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
 
     has(item:T):boolean {
         let hash = item[hashkey];
-        if (hash == null) hash = item[hashkey] = item.hash()>>>0;
+        if (hash == null) hash = item[hashkey] = item.hash();
 
-        const idx = hash % this.array.length;
+        const idx = (hash >>> 0) % this.array.length;
         let found = this.array[idx];
         for (;;) {
             if (found === null) return false;
@@ -90,9 +90,9 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
 
     delete(item:T):boolean {
         let hash = item[hashkey];
-        if (hash == null) hash = item[hashkey] = item.hash()>>>0;
+        if (hash == null) hash = item[hashkey] = item.hash();
 
-        const idx = hash % this.array.length;
+        const idx = (hash >>> 0) % this.array.length;
         let found = this.array[idx];
         if (found === null) return false;
         if (found[hashkey] === hash && item.equals(found)) {
@@ -123,9 +123,9 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
         }
 
         let hash = item[hashkey];
-        if (hash == null) hash = item[hashkey] = item.hash()>>>0;
+        if (hash == null) hash = item[hashkey] = item.hash();
 
-        const idx = hash % cap;
+        const idx = (hash >>> 0) % cap;
         item[nextlink] = this.array[idx];
         this.array[idx] = item;
         return this;

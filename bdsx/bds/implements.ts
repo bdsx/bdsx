@@ -1,7 +1,7 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
 import { BlockPos, Vec2, Vec3 } from "../bds/blockpos";
-import { LoopbackPacketSender } from "../bds/loopbacksender";
+import { bin } from "../bin";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
@@ -10,7 +10,7 @@ import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, in
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, ItemActor } from "./actor";
+import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -67,16 +67,22 @@ Level.prototype.syncGameRules = function() {
     }
     wrapper.destruct();
 };
+Level.prototype.getPlayers = function() {
+    const out:ServerPlayer[] = [];
+    for (const user of this.getUsers()) {
+        const entity = Actor.tryGetFromEntity(user.context._getStackRef());
+        if (!(entity instanceof ServerPlayer)) continue;
+        out.push(entity);
+    }
+    return out;
+};
+Level.prototype.getUsers = procHacker.js('Level::getUsers', CxxVector.make(EntityRefTraits), {this:Level});
 
 Level.abstract({
     vftable: VoidPointer,
-    players:[CxxVector.make(ServerPlayer.ref()), 0x58],
 });
 
-ServerLevel.abstract({
-    packetSender:[LoopbackPacketSender.ref(), 0x830],
-    actors:[CxxVector.make(Actor.ref()), 0x1590],
-});
+ServerLevel.abstract({});
 
 LevelData.prototype.getGameDifficulty = procHacker.js("LevelData::getGameDifficulty", uint32_t, {this:LevelData});
 LevelData.prototype.setGameDifficulty = procHacker.js("LevelData::setGameDifficulty", void_t, {this:LevelData}, uint32_t);
@@ -140,10 +146,10 @@ Actor.prototype.getScoreTag = procHacker.js("Actor::getScoreTag", CxxString, {th
 Actor.prototype.setScoreTag = procHacker.js("Actor::setScoreTag", void_t, {this:Actor}, CxxString);
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
-Actor.prototype.getEntityTypeId = makefunc.js([0x520], int32_t, {this:Actor}); // ActorType getEntityTypeId()
+Actor.prototype.getEntityTypeId = makefunc.js([0x558], int32_t, {this:Actor}); // ActorType getEntityTypeId()
 Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
 Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
-Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true});
 Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
 const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
@@ -169,6 +175,9 @@ Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectI
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
 (Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
+
+OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_getStackRef', EntityContext, {this:OwnerStorageEntity});
+Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
 
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
 ActorDefinitionIdentifier.create = function(type:number):ActorDefinitionIdentifier {
@@ -281,7 +290,7 @@ Player.prototype.syncAbilties = function() {
 Player.prototype.getCertificate = procHacker.js("Player::getCertificate", Certificate, {this:Player});
 
 ServerPlayer.abstract({
-    networkIdentifier:[NetworkIdentifier, 0xa98],
+    networkIdentifier:[NetworkIdentifier, 0xa78],
 });
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
 ServerPlayer.prototype.knockback = procHacker.js("ServerPlayer::knockback", void_t, {this: ServerPlayer}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
@@ -304,11 +313,14 @@ NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
 
-asmcode.NetworkIdentifierGetHash = proc['NetworkIdentifier::getHash'];
-NetworkIdentifier.prototype.hash = makefunc.js(asmcode.networkIdentifierHash, int32_t, {this:NetworkIdentifier});
+const NetworkIdentifier_getHash = procHacker.js('NetworkIdentifier::getHash', bin64_t, null, NetworkIdentifier);
+NetworkIdentifier.prototype.hash = function() {
+    const hash = NetworkIdentifier_getHash(this);
+    return bin.int32(hash) ^ bin.int32_high(hash);
+};
 
 NetworkHandler.Connection.abstract({
-    networkIdentifier:[NetworkIdentifier, 0x8],
+    networkIdentifier:[NetworkIdentifier, 0],
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,

@@ -94,6 +94,8 @@ const identifiers = new HashSet<NetworkIdentifier>();
 export class NetworkIdentifier extends NativeClass implements Hashable {
     @nativeField(RakNet.AddressOrGUID)
     public address:RakNet.AddressOrGUID;
+    @nativeField(int32_t)
+    unknown:int32_t;
 
     constructor(allocate?:boolean) {
         super(allocate);
@@ -147,7 +149,6 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         return ni;
     }
 }
-
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
