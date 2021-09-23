@@ -6,7 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
@@ -118,7 +118,6 @@ Actor.all = function():IterableIterator<Actor> {
 
 Actor.abstract({
     vftable: VoidPointer,
-    identifier: [CxxString as NativeType<EntityId>, 0x458], // minecraft:player
 });
 const CommandUtils$spawnEntityAt = procHacker.js("CommandUtils::spawnEntityAt", Actor, null, BlockSource, Vec3, ActorDefinitionIdentifier, StaticPointer, VoidPointer);
 Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
@@ -150,6 +149,7 @@ Actor.prototype.getEntityTypeId = makefunc.js([0x558], int32_t, {this:Actor}); /
 Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
 Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
 Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true});
+Actor.prototype.getActorIdentifier = procHacker.js('Actor::getActorIdentifier', ActorDefinitionIdentifier, {this:Actor});
 Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
 const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);

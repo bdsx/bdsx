@@ -586,6 +586,7 @@ Tester.test({
                 }
 
                 if (actor !== null) {
+                    this.equals(ev.data.entity.__identifier__, actor.identifier, 'invalid Actor.identifier');
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
@@ -602,6 +603,8 @@ Tester.test({
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
                         this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
+                        this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
+                        this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
                     } else {
                         this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
                     }
