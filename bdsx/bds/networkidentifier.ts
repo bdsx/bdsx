@@ -7,7 +7,7 @@ import { events } from "../event";
 import { Hashable, HashSet } from "../hashset";
 import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
+import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { remapAndPrintError } from "../source-map-support";
 import { _tickCallback } from "../util";
@@ -92,10 +92,10 @@ const identifiers = new HashSet<NetworkIdentifier>();
 
 @nativeClass()
 export class NetworkIdentifier extends NativeClass implements Hashable {
+    @nativeField(bin64_t)
+    unknown:bin64_t;
     @nativeField(RakNet.AddressOrGUID)
     public address:RakNet.AddressOrGUID;
-    @nativeField(int32_t)
-    unknown:int32_t;
 
     constructor(allocate?:boolean) {
         super(allocate);

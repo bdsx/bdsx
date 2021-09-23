@@ -36,6 +36,13 @@ export namespace RakNet
         g:bin64_t;
         @nativeField(uint16_t)
         systemIndex:uint16_t;
+
+        equals(other:VoidPointer|null):boolean {
+            if (other instanceof RakNetGUID) {
+                return this.g === other.g;
+            }
+            return false;
+        }
     }
 
     @nativeClass()
@@ -61,7 +68,7 @@ export namespace RakNet
 
         GetSystemIndex():uint16_t {
             const rakNetGuid = this.rakNetGuid;
-            if (rakNetGuid.equals(UNASSIGNED_RAKNET_GUID)) {
+            if (rakNetGuid.g !== UNASSIGNED_RAKNET_GUID.g) {
                 return rakNetGuid.systemIndex;
             } else {
                 return this.systemAddress.systemIndex;
