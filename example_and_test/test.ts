@@ -581,12 +581,15 @@ Tester.test({
             try {
                 const uniqueId = ev.data.entity.__unique_id__;
                 const actor = Actor.fromEntity(ev.data.entity);
-                if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                const bsapiIdentifier = ev.data.entity.__identifier__;
+                if (bsapiIdentifier === 'minecraft:player') {
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
                 if (actor !== null) {
-                    this.equals(ev.data.entity.__identifier__, actor.identifier, 'invalid Actor.identifier');
+                    if (bsapiIdentifier !== 'minecraft:item') {
+                        this.equals(bsapiIdentifier, actor.identifier, 'invalid Actor.identifier');
+                    }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
