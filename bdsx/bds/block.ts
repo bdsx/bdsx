@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, CxxStringWith8Bytes, uint16_t } from "../nativetype";
+import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
 import { BlockPos } from "./blockpos";
 import { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
@@ -66,8 +66,10 @@ export class Block extends NativeClass {
     getName():string {
         return this._getName().str;
     }
-
     getDescriptionId():CxxString {
+        abstract();
+    }
+    getRuntimeId():int32_t {
         abstract();
     }
 }

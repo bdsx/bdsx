@@ -34,7 +34,7 @@ import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
-import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
+import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 
@@ -62,7 +62,7 @@ Level.prototype.syncGameRules = function() {
     const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
     wrapper.value = GameRulesChangedPacket.create();
     GameRules$createAllGameRulesPacket.call(this.getGameRules(), wrapper);
-    for (const player of serverInstance.minecraft.getLevel().players) {
+    for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(wrapper.value);
     }
     wrapper.destruct();
@@ -258,7 +258,7 @@ Player.prototype.setName = function(name:string):void {
     const entry = PlayerListEntry.create(this);
     const pk = PlayerListPacket.create();
     PlayerListPacket$emplace(pk, entry);
-    for (const player of serverInstance.minecraft.getLevel().players) {
+    for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(pk);
     }
     entry.destruct();
@@ -396,9 +396,6 @@ VanilaGameModuleServer.abstract({
     listener:[VanilaServerGameplayEventListener.ref(), 0x8]
 });
 DedicatedServer.abstract({});
-Minecraft$Something.abstract({
-    level:ServerLevel.ref(),
-});
 Minecraft.abstract({
     vftable:VoidPointer,
     vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
@@ -520,14 +517,15 @@ Block.create = function(blockName:string, data:number = 0):Block|null {
     return null;
 };
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
+Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
 BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
-const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("UpdateBlockPacket::UpdateBlockPacket", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, Block, uint8_t);
+const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
     const pk = UpdateBlockPacket.create();
-    UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block, 3);
-    for (const player of serverInstance.minecraft.getLevel().players) {
+    UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block.getRuntimeId(), 3);
+    for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(pk);
     }
     pk.dispose();

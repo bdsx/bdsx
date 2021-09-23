@@ -248,7 +248,6 @@ const symbols = [
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
     'MobEffect::getById',
-    'UpdateBlockPacket::UpdateBlockPacket',
     'PlayerListPacket::emplace',
     'Player::getSkin',
     "ItemActor::`vftable'",
@@ -264,6 +263,7 @@ const symbols = [
     'ItemStack::fromDescriptor',
     'Level::getDimension',
     'Block::getDescriptionId',
+    'Block::getRuntimeId',
     'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
     'FarmBlock::transformOnFall',
     'SplashPotionEffectSubcomponent::doOnHitEffect',
@@ -354,7 +354,8 @@ const symbols2 = [
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
-    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z'
+    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z',
+    '??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z',
 ] as const;
 
 

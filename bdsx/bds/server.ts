@@ -11,6 +11,7 @@ import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
+import type { ServerPlayer } from "./player";
 import { proc } from "./symbols";
 
 export class MinecraftEventing extends NativeClass {}
@@ -26,7 +27,7 @@ export class EntityRegistryOwned extends NativeClass {}
  * @deprecated
  * unknown instance
  */
-export class Minecraft$Something extends NativeClass {
+export class Minecraft$Something {
     /** @deprecated use minecraft.getNetworkHandler() */
     get network():NetworkHandler {
         return serverInstance.minecraft.getNetworkHandler();
@@ -148,9 +149,12 @@ export class ServerInstance extends NativeClass {
     setMaxPlayers(count:number):void {
         this.minecraft.getServerNetworkHandler().setMaxNumPlayers(count);
     }
+    getPlayers():ServerPlayer[] {
+        return this.minecraft.getLevel().getPlayers();
+    }
     updateCommandList():void {
-        for (const player of this.minecraft.getLevel().players.toArray()) {
-            player.sendNetworkPacket(this.minecraft.commands.getRegistry().serializeAvailableCommands());
+        for (const player of this.getPlayers()) {
+            player.sendNetworkPacket(this.minecraft.getCommands().getRegistry().serializeAvailableCommands());
         }
     }
     getNetworkProtocolVersion():number {

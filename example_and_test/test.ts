@@ -587,7 +587,8 @@ Tester.test({
                 }
 
                 if (actor !== null) {
-                    if (bsapiIdentifier !== 'minecraft:item') {
+                    const actorIdentifier = actor.identifier;
+                    if (actorIdentifier !== 'minecraft:item') {
                         this.equals(bsapiIdentifier, actor.identifier, 'invalid Actor.identifier');
                     }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
