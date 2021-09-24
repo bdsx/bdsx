@@ -1,11 +1,12 @@
 import { Block } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { serverInstance } from "bdsx/bds/server";
+import { events } from "bdsx/event";
 
 
 let dirtStone = false;
 
-setInterval(()=>{
+const interval = setInterval(()=>{
     for (const player of serverInstance.getPlayers()) {
         const region = player.getRegion();
         const pos = player.getPosition();
@@ -13,3 +14,7 @@ setInterval(()=>{
     }
     dirtStone = !dirtStone;
 }, 100);
+
+events.serverStop.on(()=>{
+    clearInterval(interval);
+});
