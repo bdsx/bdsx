@@ -146,7 +146,10 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
         if (target !== null && !target.isEmpty()) {
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(data.valueptr, data.length, ni, packetId) === CANCEL) break;
+                    if (listener(data.valueptr, data.length, ni, packetId) === CANCEL) {
+                        _tickCallback();
+                        return;
+                    }
                 } catch (err) {
                     events.errorFire(err);
                 }
