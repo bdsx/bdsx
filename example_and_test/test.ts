@@ -5,13 +5,14 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { CommandContext } from "bdsx/bds/command";
+import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ServerLevel } from "bdsx/bds/level";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
+import { Player, PlayerPermission } from "bdsx/bds/player";
 import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
@@ -594,6 +595,12 @@ Tester.test({
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
+                    if (actor instanceof Player) {
+                        const cmdlevel = actor.abilities.getCommandPermissionLevel();
+                        this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');
+                        const playerlevel = actor.abilities.getPlayerPermissionLevel();
+                        this.assert(PlayerPermission.VISITOR <= cmdlevel && cmdlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
+                    }
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];

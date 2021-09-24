@@ -246,7 +246,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 
 // player.ts
 Player.abstract({
-    abilities:[Abilities, 0x948],
+    abilities:[Abilities, 0x928],
     respawnPosition:[BlockPos, 0x1D9C],
     respawnDimension:[uint8_t, 0x76A],
     deviceId:[CxxString, 0x20A0],
