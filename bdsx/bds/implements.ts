@@ -32,6 +32,7 @@ import { AdventureSettingsPacket, AttributeData, GameRulesChangedPacket, PlayerL
 import { BatchedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
+import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
 import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
@@ -339,6 +340,10 @@ NetworkHandler.prototype.sendInternal = procHacker.js('NetworkHandler::_sendInte
 BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', void_t, {this:BatchedNetworkPeer}, CxxString, int32_t, int32_t, int32_t, int32_t);
 
 RakNetInstance.prototype.getPort = procHacker.js("RakNetInstance::getPort", uint16_t, {this:RakNetInstance});
+
+RakNet.RakPeer.prototype.GetAveragePing = procHacker.js("?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetLastPing = procHacker.js("?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetLowestPing = procHacker.js("?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
 
 // packet.ts
 Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void {

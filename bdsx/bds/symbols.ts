@@ -356,6 +356,9 @@ const symbols2 = [
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
     '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z',
     '??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z',
+    '?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z',
+    '?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z',
+    '?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z'
 ] as const;
 
 

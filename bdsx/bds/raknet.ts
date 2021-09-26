@@ -53,6 +53,15 @@ export namespace RakNet
         GetSystemAddressFromIndex(idx:number):SystemAddress {
             abstract();
         }
+        GetAveragePing(address:RakNet.AddressOrGUID):int32_t {
+            abstract();
+        }
+        GetLastPing(address:RakNet.AddressOrGUID):number {
+            abstract();
+        }
+        GetLowestPing(address:RakNet.AddressOrGUID):number {
+            abstract();
+        }
     }
 
     export const UNASSIGNED_RAKNET_GUID = new RakNetGUID(true);
