@@ -1,7 +1,7 @@
 import { serverInstance } from 'bdsx/bds/server';
 import { command } from 'bdsx/command';
 
-const peer = serverInstance.minecraft.getNetworkHandler().instance.peer;
+const peer = serverInstance.networkHandler.instance.peer;
 
 command.register("ping", "example for getting ping").overload((params, origin) => {
     if (origin.isServerCommandOrigin()) {
