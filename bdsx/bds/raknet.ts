@@ -53,7 +53,7 @@ export namespace RakNet
         GetSystemAddressFromIndex(idx:number):SystemAddress {
             abstract();
         }
-        GetAveragePing(address:RakNet.AddressOrGUID):int32_t {
+        GetAveragePing(address:RakNet.AddressOrGUID):number {
             abstract();
         }
         GetLastPing(address:RakNet.AddressOrGUID):number {
