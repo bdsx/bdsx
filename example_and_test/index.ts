@@ -29,6 +29,7 @@ import './net-rawpacket';
 import './net-scorepacket';
 import './net-sendhook';
 import './net-transferserver';
+import './net-ping'
 import './setblock';
 import './test';
 // import './permissions';
