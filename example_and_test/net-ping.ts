@@ -18,4 +18,4 @@ command.register("ping", "example for getting ping").overload((params, origin) =
     console.log(`[EXAMPLE-PING] ${name}'s average ping is`, peer.GetAveragePing(address));
     console.log(`[EXAMPLE-PING] ${name}'s last ping is`, peer.GetLastPing(address));
     console.log(`[EXAMPLE-PING] ${name}'s lowest ping is`, peer.GetLowestPing(address));
-},{})
+}, {})
