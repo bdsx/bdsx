@@ -1,17 +1,17 @@
 import { abstract } from "../common";
 import { nativeClass, NativeClass } from "../nativeclass";
 import { float32_t, int32_t } from "../nativetype";
-import { Abilities } from "./abilities";
+import type { Abilities } from "./abilities";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
-import { BlockPos, Vec3 } from "./blockpos";
-import { Certificate } from "./connreq";
+import type { BlockPos, Vec3 } from "./blockpos";
+import type { Certificate } from "./connreq";
 import { ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
-import { SerializedSkin } from "./skin";
+import type { SerializedSkin } from "./skin";
 
 export class Player extends Actor {
     abilities: Abilities;

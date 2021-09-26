@@ -1,14 +1,14 @@
 import { abstract } from "../common";
-import { VoidPointer } from "../core";
+import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
-import { Actor, ActorUniqueID, DimensionId, EntityRefTraits } from "./actor";
-import { BlockSource } from "./block";
-import { BlockPos } from "./blockpos";
-import { Dimension } from "./dimension";
-import { GameRules } from "./gamerules";
-import { ServerPlayer } from "./player";
-import { Scoreboard } from "./scoreboard";
+import type { Actor, ActorUniqueID, DimensionId, EntityRefTraits } from "./actor";
+import type { BlockSource } from "./block";
+import type { BlockPos } from "./blockpos";
+import type { Dimension } from "./dimension";
+import type { GameRules } from "./gamerules";
+import type { ServerPlayer } from "./player";
+import type { Scoreboard } from "./scoreboard";
 
 export enum Difficulty {
     Peaceful,
