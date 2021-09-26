@@ -1,7 +1,7 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
 import { BlockPos, Vec2, Vec3 } from "../bds/blockpos";
-import { LoopbackPacketSender } from "../bds/loopbacksender";
+import { bin } from "../bin";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
@@ -10,7 +10,7 @@ import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, float64_t, 
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, ItemActor } from "./actor";
+import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { MinecraftCommands } from "./command";
@@ -24,17 +24,18 @@ import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
-import { ActorFactory, AdventureSettings, BlockPalette, Level, ServerLevel, TagRegistry } from "./level";
+import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, TagRegistry } from "./level";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AdventureSettingsPacket, AttributeData, GameRulesChangedPacket, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
-import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
+import { BatchedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
+import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
-import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
+import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
@@ -50,11 +51,13 @@ Level.prototype.getActorFactory = procHacker.js("Level::getActorFactory", ActorF
 Level.prototype.getAdventureSettings = procHacker.js("Level::getAdventureSettings", AdventureSettings, {this:Level});
 Level.prototype.getBlockPalette = procHacker.js("Level::getBlockPalette", BlockPalette, {this:Level});
 Level.prototype.getDimension = procHacker.js("Level::getDimension", Dimension, {this:Level}, int32_t);
+Level.prototype.getLevelData = procHacker.js("Level::getLevelData", LevelData.ref(), {this:Level});
 Level.prototype.getGameRules = procHacker.js("Level::getGameRules", GameRules, {this:Level});
 Level.prototype.getScoreboard = procHacker.js("Level::getScoreboard", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("Level::getSeed", uint32_t, {this:Level});
 (Level.prototype as any)._getStructureManager = procHacker.js("Level::getStructureManager", StructureManager, {this:Level}, StructureManager);
 Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegistry, {this:Level});
+Level.prototype.hasCommandsEnabled = procHacker.js("Level::hasCommandsEnabled", bool_t, {this:Level});
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
 const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
@@ -62,21 +65,30 @@ Level.prototype.syncGameRules = function() {
     const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
     wrapper.value = GameRulesChangedPacket.create();
     GameRules$createAllGameRulesPacket.call(this.getGameRules(), wrapper);
-    for (const player of serverInstance.minecraft.getLevel().players) {
+    for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(wrapper.value);
     }
     wrapper.destruct();
 };
+Level.prototype.getPlayers = function() {
+    const out:ServerPlayer[] = [];
+    for (const user of this.getUsers()) {
+        const entity = Actor.tryGetFromEntity(user.context._getStackRef());
+        if (!(entity instanceof ServerPlayer)) continue;
+        out.push(entity);
+    }
+    return out;
+};
+Level.prototype.getUsers = procHacker.js('Level::getUsers', CxxVector.make(EntityRefTraits), {this:Level});
 
 Level.abstract({
     vftable: VoidPointer,
-    players:[CxxVector.make(ServerPlayer.ref()), 0x58],
 });
 
-ServerLevel.abstract({
-    packetSender:[LoopbackPacketSender.ref(), 0x830],
-    actors:[CxxVector.make(Actor.ref()), 0x1590],
-});
+ServerLevel.abstract({});
+
+LevelData.prototype.getGameDifficulty = procHacker.js("LevelData::getGameDifficulty", uint32_t, {this:LevelData});
+LevelData.prototype.setGameDifficulty = procHacker.js("LevelData::setGameDifficulty", void_t, {this:LevelData}, uint32_t);
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();
@@ -109,7 +121,6 @@ Actor.all = function():IterableIterator<Actor> {
 
 Actor.abstract({
     vftable: VoidPointer,
-    identifier: [CxxString as NativeType<EntityId>, 0x458], // minecraft:player
 });
 const CommandUtils$spawnEntityAt = procHacker.js("CommandUtils::spawnEntityAt", Actor, null, BlockSource, Vec3, ActorDefinitionIdentifier, StaticPointer, VoidPointer);
 Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
@@ -137,10 +148,11 @@ Actor.prototype.getScoreTag = procHacker.js("Actor::getScoreTag", CxxString, {th
 Actor.prototype.setScoreTag = procHacker.js("Actor::setScoreTag", void_t, {this:Actor}, CxxString);
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
-Actor.prototype.getEntityTypeId = makefunc.js([0x520], int32_t, {this:Actor}); // ActorType getEntityTypeId()
+Actor.prototype.getEntityTypeId = makefunc.js([0x558], int32_t, {this:Actor}); // ActorType getEntityTypeId()
 Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
 Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
-Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true}); // DimensionId* getDimensionId(DimensionId*)
+Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true});
+Actor.prototype.getActorIdentifier = procHacker.js('Actor::getActorIdentifier', ActorDefinitionIdentifier, {this:Actor});
 Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
 const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
@@ -167,6 +179,9 @@ Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectI
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
 (Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
+
+OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_getStackRef', EntityContext, {this:OwnerStorageEntity});
+Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
 
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
 ActorDefinitionIdentifier.create = function(type:number):ActorDefinitionIdentifier {
@@ -235,7 +250,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 
 // player.ts
 Player.abstract({
-    abilities:[Abilities, 0x948],
+    abilities:[Abilities, 0x928],
     respawnPosition:[BlockPos, 0x1D9C],
     respawnDimension:[uint8_t, 0x76A],
     deviceId:[CxxString, 0x20A0],
@@ -247,7 +262,7 @@ Player.prototype.setName = function(name:string):void {
     const entry = PlayerListEntry.create(this);
     const pk = PlayerListPacket.create();
     PlayerListPacket$emplace(pk, entry);
-    for (const player of serverInstance.minecraft.getLevel().players) {
+    for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(pk);
     }
     entry.destruct();
@@ -279,7 +294,7 @@ Player.prototype.syncAbilties = function() {
 Player.prototype.getCertificate = procHacker.js("Player::getCertificate", Certificate, {this:Player});
 
 ServerPlayer.abstract({
-    networkIdentifier:[NetworkIdentifier, 0xa98],
+    networkIdentifier:[NetworkIdentifier, 0xa78],
 });
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
 ServerPlayer.prototype.knockback = procHacker.js("ServerPlayer::knockback", void_t, {this: ServerPlayer}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
@@ -302,21 +317,18 @@ NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
 
-asmcode.NetworkIdentifierGetHash = proc['NetworkIdentifier::getHash'];
-NetworkIdentifier.prototype.hash = makefunc.js(asmcode.networkIdentifierHash, int32_t, {this:NetworkIdentifier});
+const NetworkIdentifier_getHash = procHacker.js('NetworkIdentifier::getHash', bin64_t, null, NetworkIdentifier);
+NetworkIdentifier.prototype.hash = function() {
+    const hash = NetworkIdentifier_getHash(this);
+    return bin.int32(hash) ^ bin.int32_high(hash);
+};
 
 NetworkHandler.Connection.abstract({
-    networkIdentifier:NetworkIdentifier,
-    u1:VoidPointer, // null
-    u2:VoidPointer, // null
-    u3:VoidPointer, // null
-    epeer:SharedPtr.make(EncryptedNetworkPeer),
-    bpeer:SharedPtr.make(BatchedNetworkPeer),
-    bpeer2:SharedPtr.make(BatchedNetworkPeer),
+    networkIdentifier:[NetworkIdentifier, 0],
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x48]
+    instance: [RakNetInstance.ref(), 0x58]
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
@@ -331,6 +343,10 @@ NetworkHandler.prototype.sendInternal = procHacker.js('NetworkHandler::_sendInte
 BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sendPacket', void_t, {this:BatchedNetworkPeer}, CxxString, int32_t, int32_t, int32_t, int32_t);
 
 RakNetInstance.prototype.getPort = procHacker.js("RakNetInstance::getPort", uint16_t, {this:RakNetInstance});
+
+RakNet.RakPeer.prototype.GetAveragePing = procHacker.js("?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetLastPing = procHacker.js("?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetLowestPing = procHacker.js("?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
 
 // packet.ts
 Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void {
@@ -388,9 +404,6 @@ VanilaGameModuleServer.abstract({
     listener:[VanilaServerGameplayEventListener.ref(), 0x8]
 });
 DedicatedServer.abstract({});
-Minecraft$Something.abstract({
-    level:ServerLevel.ref(),
-});
 Minecraft.abstract({
     vftable:VoidPointer,
     vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
@@ -513,14 +526,15 @@ Block.create = function(blockName:string, data:number = 0):Block|null {
     return null;
 };
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
+Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
 BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
-const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("UpdateBlockPacket::UpdateBlockPacket", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, Block, uint8_t);
+const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
     const pk = UpdateBlockPacket.create();
-    UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block, 3);
-    for (const player of serverInstance.minecraft.getLevel().players) {
+    UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block.getRuntimeId(), 3);
+    for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(pk);
     }
     pk.dispose();

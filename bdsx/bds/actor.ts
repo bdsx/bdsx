@@ -184,7 +184,7 @@ export enum ActorType {
     VillagerV2 = 0x1000373,
 }
 
-@nativeClass(0xA9)
+@nativeClass(0xb0)
 export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     namespace:CxxString;
@@ -344,14 +344,38 @@ export enum ActorFlags {
     Celebrating,
 }
 
+@nativeClass()
+export class EntityContext extends NativeClass {
+
+}
+
+@nativeClass()
+export class OwnerStorageEntity extends NativeClass {
+    _getStackRef():EntityContext {
+        abstract();
+    }
+}
+
+@nativeClass(0x18)
+export class EntityRefTraits extends NativeClass {
+    @nativeField(OwnerStorageEntity)
+    context:OwnerStorageEntity;
+}
+
 export class Actor extends NativeClass {
     vftable:VoidPointer;
-    identifier:EntityId;
+    /** @deprecated use getIdentifier */
+    get identifier():EntityId {
+        return this.getIdentifier();
+    }
 
     /** @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorDefinitionIdentifier.create(ActorType.Pig), -1, player) */
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID, summoner?:Actor):Actor;
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:int64_as_float_t, summoner?:Actor):Actor;
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+        abstract();
+    }
+    static tryGetFromEntity(entity:EntityContext):Actor {
         abstract();
     }
 
@@ -372,11 +396,11 @@ export class Actor extends NativeClass {
     getDimensionId():DimensionId {
         abstract();
     }
-    /**
-     * it's same with this.identifier
-     */
-    getIdentifier():string {
-        return this.identifier;
+    getIdentifier():EntityId {
+        return this.getActorIdentifier().canonicalName.str as EntityId;
+    }
+    getActorIdentifier():ActorDefinitionIdentifier {
+        abstract();
     }
     isPlayer():this is ServerPlayer {
         abstract();

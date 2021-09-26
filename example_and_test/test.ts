@@ -4,12 +4,15 @@
 
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
-import { CommandContext } from "bdsx/bds/command";
+import { RelativeFloat } from "bdsx/bds/blockpos";
+import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
+import { ServerLevel } from "bdsx/bds/level";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
+import { Player, PlayerPermission } from "bdsx/bds/player";
 import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
@@ -30,7 +33,6 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
-import { RelativeFloat } from "bdsx/bds/blockpos";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -38,6 +40,16 @@ let chatCancelCounter = 0;
 
 export function setRecentSendedPacketForTest(packetId: number): void {
     sendidcheck = packetId;
+}
+
+@nativeClass()
+class VectorClass extends NativeClass {
+    @nativeField(CxxVector.make(CxxString))
+    vector:CxxVector<CxxString>;
+    @nativeField(CxxVector.make(CxxStringWrapper))
+    vector2:CxxVector<CxxStringWrapper>;
+    @nativeField(CxxVector.make(CxxVector.make(CxxString)))
+    vector3:CxxVector<CxxVector<CxxString>>;
 }
 
 Tester.test({
@@ -108,6 +120,8 @@ Tester.test({
             'inc dword ptr [rcx+0x7c0];inc rax;inc qword ptr [rax];dec qword ptr [rax];inc rax;call fword ptr [rax];call qword ptr [rax];jmp fword ptr [rax];jmp rax');
         assert('41 b0 01 ba 38 00 00 00 48 89 CB e8 aa 6c fb ff',
             'mov r8b, 0x1;mov edx, 0x38;mov rbx, rcx;call -0x49356');
+        assert('d1 e8 c1 e8 00 c1 e0 00 d1 e0 d1 f8 c1 f8 00',
+            'shr eax, 0x1;shr eax, 0x0;shl eax, 0x0;shl eax, 0x1;sar eax, 0x1;sar eax, 0x0');
         this.assert(disasm.check('82', true).size === 0, 'asm bad');
         const opers = disasm.check('82', {
             fallback(asm){
@@ -291,17 +305,8 @@ Tester.test({
     },
 
     vectorcopy() {
-        @nativeClass()
-        class Class extends NativeClass {
-            @nativeField(CxxVector.make(CxxString))
-            vector:CxxVector<CxxString>;
-            @nativeField(CxxVector.make(CxxStringWrapper))
-            vector2:CxxVector<CxxStringWrapper>;
-            @nativeField(CxxVector.make(CxxVector.make(CxxString)))
-            vector3:CxxVector<CxxVector<CxxString>>;
-        }
 
-        const a = new Class(true);
+        const a = new VectorClass(true);
         a.construct();
         a.vector.push('test');
         const str = new CxxStringWrapper(true);
@@ -314,7 +319,7 @@ Tester.test({
         this.equals(a.vector.get(0), 'test', `a.vector, invalid value ${a.vector.get(0)}`);
         this.equals(a.vector2.get(0)!.value, 'test2', `a.vector2, invalid value ${a.vector2.get(0)!.value}`);
 
-        const b = new Class(true);
+        const b = new VectorClass(true);
         b.construct(a);
         this.equals(b.vector.size(), 1, 'b.vector, invalid size');
         this.equals(b.vector2.size(), 1, 'b.vector2, invalid size');
@@ -365,14 +370,21 @@ Tester.test({
             this.equals(vec.toArray().join(','), '1,1,2,3,4,4', 'splice larger');
             vec.destruct();
         }
+        str.destruct();
+    },
 
+    classvectorcopy() {
         const vec = CxxVector.make(CxxString).construct();
         vec.resize(5);
         vec.set(0, 't1');
         vec.set(1, 't2');
 
-        const clsvector = CxxVector.make(Class).construct();
-        const cls = Class.construct();
+        const str = new CxxStringWrapper(true);
+        str.construct();
+        str.value = 'test2';
+
+        const clsvector = CxxVector.make(VectorClass).construct();
+        const cls = VectorClass.construct();
         cls.vector.push('test1');
         cls.vector.push('test2');
         cls.vector2.push(str);
@@ -381,7 +393,7 @@ Tester.test({
         clsvector.push(cls);
         clsvector.push(cls);
 
-        const cloned = CxxVector.make(Class).construct(clsvector);
+        const cloned = CxxVector.make(VectorClass).construct(clsvector);
         this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
         this.equals(cloned.get(1)!.vector.toArray().join(','), 'test1,test2', 'cloned class, string vector');
         this.equals(cloned.get(0)!.vector2.toArray().map(v=>v.value).join(','), 'test2', 'class, string vector');
@@ -389,11 +401,6 @@ Tester.test({
         this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
-
-        clsvector.destruct();
-        str.destruct();
-
-
     },
 
     map() {
@@ -500,37 +507,48 @@ Tester.test({
     packetEvents() {
         let idcheck = 0;
         let sendpacket = 0;
+        let ignoreEndingPacketsAfter = 0; // ignore ni check of send for the avoiding disconnected ni.
         for (let i = 0; i < 255; i++) {
             events.packetRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetRaw, Invalid ni, id='+packetId);
                 idcheck = packetId;
-                this.assert(size > 0, `packet is too small (size = ${size})`);
-                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                this.assert(size > 0, `packetRaw, packet is too small (size = ${size})`);
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `packetRaw, different packetId in buffer. id=${packetId}`);
             }, 0));
             events.packetBefore<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.equals(packetId, idcheck, `different packetId on before. id=${packetId}`);
-                this.equals(ptr.getId(), idcheck, `different class.packetId on before. id=${packetId}`);
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetBefore, Invalid ni, id='+packetId);
+                this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `packetBefore, different class.packetId on before. id=${packetId}`);
             }, 0));
             events.packetAfter<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
-                this.equals(packetId, idcheck, `different packetId on after. id=${packetId}`);
-                this.equals(ptr.getId(), idcheck, `different class.packetId on after. id=${packetId}`);
+                this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetAfter, Invalid ni, id='+packetId);
+                this.equals(packetId, idcheck, `packetAfter, different packetId on after. id=${packetId}`);
+                this.equals(ptr.getId(), idcheck, `packetAfter, different class.packetId on after. id=${packetId}`);
             }, 0));
             events.packetSend<MinecraftPacketIds>(i).on(this.wrap((ptr, ni, packetId) => {
+                if (Date.now() < ignoreEndingPacketsAfter) {
+                    this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSend, Invalid ni, id='+packetId);
+                }
                 sendidcheck = packetId;
-                this.equals(ptr.getId(), packetId, `different class.packetId on send. id=${packetId}`);
+                this.equals(ptr.getId(), packetId, `packetSend, different class.packetId on send. id=${packetId}`);
                 sendpacket++;
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
-                this.assert(size > 0, `packet size is too little`);
-                if (chatCancelCounter === 0) {
-                    this.equals(packetId, sendidcheck, `different packetId on sendRaw. id=${packetId}`);
+                if (Date.now() < ignoreEndingPacketsAfter) {
+                    this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni, id='+packetId);
                 }
-                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `different packetId in buffer. id=${packetId}`);
+                this.assert(size > 0, `packetSendRaw, packet size is too little`);
+                if (chatCancelCounter === 0) {
+                    this.equals(packetId, sendidcheck, `packetSendRaw, different packetId on sendRaw. id=${packetId}`);
+                }
+                this.equals(packetId, (ptr.readVarUint() & 0x3ff), `packetSendRaw, different packetId in buffer. id=${packetId}`);
                 sendpacket++;
             }, 0));
         }
 
         const conns = new Set<NetworkIdentifier>();
         events.packetAfter(MinecraftPacketIds.Login).on(this.wrap((ptr, ni) => {
+            ignoreEndingPacketsAfter = Date.now() + 2000;
             this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
             setTimeout(() => {
@@ -557,21 +575,32 @@ Tester.test({
     actor() {
         const system = server.registerSystem(0, 0);
         system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
-            const level = serverInstance.minecraft.getLevel();
+            const level = serverInstance.minecraft.getLevel().as(ServerLevel);
             this.equals(level.players.size(), 1, 'Unexpected player size');
             this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
 
             try {
                 const uniqueId = ev.data.entity.__unique_id__;
                 const actor = Actor.fromEntity(ev.data.entity);
-                if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                const bsapiIdentifier = ev.data.entity.__identifier__;
+                if (bsapiIdentifier === 'minecraft:player') {
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
                 if (actor !== null) {
+                    const actorIdentifier = actor.identifier;
+                    if (actorIdentifier !== 'minecraft:item') {
+                        this.equals(bsapiIdentifier, actor.identifier, 'invalid Actor.identifier');
+                    }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
+                    if (actor instanceof Player) {
+                        const cmdlevel = actor.abilities.getCommandPermissionLevel();
+                        this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');
+                        const playerlevel = actor.abilities.getPlayerPermissionLevel();
+                        this.assert(PlayerPermission.VISITOR <= cmdlevel && cmdlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
+                    }
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
                     const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
@@ -579,11 +608,14 @@ Tester.test({
                         `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
 
                     if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                        this.assert(level.getPlayers()[0] === actor, 'the joined player is not a first player');
                         const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
                         this.equals(name, connectedId, 'id does not match');
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
                         this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
+                        this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
+                        this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
                     } else {
                         this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
                     }

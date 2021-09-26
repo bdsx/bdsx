@@ -178,7 +178,7 @@ const symbols = [
     'BlockLegacy::getCreativeCategory',
     'BlockLegacy::setDestroyTime',
     'BlockLegacy::getCommandNames',
-    'RakNetServerLocator::announceServer',
+    'RakNetServerLocator::_announceServer',
     'HealthAttributeDelegate::change',
     'MinecraftCommands::getRegistry',
     'MinecraftCommands::handleOutput',
@@ -207,6 +207,7 @@ const symbols = [
     'Actor::stopRiding',
     'Actor::hasEffect',
     'Actor::getEffect',
+    'Actor::tryGetFromEntity',
     'Mob::die',
     'Abilities::getCommandPermissions',
     'Abilities::getPlayerPermissions',
@@ -226,6 +227,7 @@ const symbols = [
     'Level::updateWeather',
     'Level::save',
     'Level::tick',
+    'Level::getUsers',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',
@@ -247,7 +249,6 @@ const symbols = [
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
     'MobEffect::getById',
-    'UpdateBlockPacket::UpdateBlockPacket',
     'PlayerListPacket::emplace',
     'Player::getSkin',
     "ItemActor::`vftable'",
@@ -308,6 +309,7 @@ const symbols = [
     'StructureSettings::setStructureSize',
     'Level::getDimension',
     'Block::getDescriptionId',
+    'Block::getRuntimeId',
     'Dimension::getBlockSourceDEPRECATEDUSEPLAYERREGIONINSTEAD',
     'FarmBlock::transformOnFall',
     'SplashPotionEffectSubcomponent::doOnHitEffect',
@@ -347,6 +349,12 @@ const symbols = [
     'GameRule::getBool',
     'GameRule::getInt',
     'GameRule::getFloat',
+    'Level::hasCommandsEnabled',
+    'Level::getLevelData',
+    'LevelData::getGameDifficulty',
+    'LevelData::setGameDifficulty',
+    'OwnerStorageEntity::_getStackRef',
+    'Actor::getActorIdentifier',
 ] as const;
 
 // decorated symbols
@@ -408,7 +416,11 @@ const symbols2 = [
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
-    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z'
+    '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z',
+    '??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z',
+    '?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z',
+    '?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z',
+    '?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z'
 ] as const;
 
 

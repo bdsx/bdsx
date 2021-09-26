@@ -226,11 +226,11 @@ export namespace makefunc {
         return ptr;
     }
 
-    export function npRaw(func:(stackptr:NativePointer)=>void, onError:VoidPointer, opts?:{name?:string, jsDebugBreak?:boolean}|null):VoidPointer {
+    export function npRaw(func:(stackptr:NativePointer)=>void, onError:VoidPointer, opts?:{name?:string, nativeDebugBreak?:boolean}|null):VoidPointer {
         chakraUtil.JsAddRef(func);
         const code = asm();
         if (opts == null) opts = {};
-        if (opts.jsDebugBreak) code.debugBreak();
+        if (opts.nativeDebugBreak) code.debugBreak();
         return code
         .mov_r_c(Register.r10, chakraUtil.asJsValueRef(func))
         .mov_r_c(Register.r11, onError)
@@ -491,7 +491,7 @@ export namespace makefunc {
             } else {
                 const buf = tempAlloc(param.length*2+1);
                 const len = buf.setString(param, 0, Encoding.Ansi);
-                buf.setUint8(len, 0);
+                buf.setUint8(0, len);
                 stackptr.setPointer(buf, offset);
             }
         },

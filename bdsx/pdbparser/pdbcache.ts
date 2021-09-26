@@ -125,6 +125,10 @@ export class PdbCache implements Iterable<SymbolInfo> {
         this.total = this._readInt();
     }
 
+    static clearCache():void {
+        try { fs.unlinkSync(cachepath); } catch(err) {}
+    }
+
     close():void {
         fs.closeSync(this.fd);
     }

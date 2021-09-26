@@ -94,9 +94,6 @@ export namespace asmcode {
     export let removeActor:VoidPointer;
     export const addressof_removeActor:NativePointer;
     export const actorDestructorHook:NativePointer;
-    export let NetworkIdentifierGetHash:VoidPointer;
-    export const addressof_NetworkIdentifierGetHash:NativePointer;
-    export const networkIdentifierHash:NativePointer;
     export let onPacketRaw:VoidPointer;
     export const addressof_onPacketRaw:NativePointer;
     export const packetRawHook:NativePointer;

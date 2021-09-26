@@ -41,6 +41,9 @@ export class Tester {
 
             Tester._log(message, error);
             testIsDone = true;
+            if (error) {
+                Tester._log('Unit tests can fail If other user scripts are running.', true);
+            }
         }
     }
 

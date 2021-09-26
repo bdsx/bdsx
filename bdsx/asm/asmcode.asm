@@ -421,17 +421,6 @@ skip_dtor:
     ret
 endp
 
-export def NetworkIdentifierGetHash:qword
-
-export proc networkIdentifierHash
-    stack 8
-    call NetworkIdentifierGetHash
-    mov rcx, rax
-    shr rcx, 32
-    xor eax, ecx
-endp
-
-
 export def onPacketRaw:qword
 export proc packetRawHook
     stack 28h
@@ -447,8 +436,8 @@ export proc packetBeforeHook
 
     ; original codes
     mov rax,qword ptr[rcx]
-    lea r8,[rbp+c0h]
-    lea rdx,[rbp-60h]
+    lea r8,qword ptr[rbp+100h]
+    lea rdx,qword ptr[rbp-20h]
     call qword ptr[rax+20h]
 
     mov rcx, rax ; read result
@@ -483,7 +472,7 @@ export proc packetAfterHook
 
     ; orignal codes
     mov rax,[rcx]
-    lea r9,[rbp+78h]
+    lea r9,[rbp+b8h]
     mov r8,rsi
     mov rdx,r14
     call [rax+8]
@@ -503,9 +492,9 @@ export proc packetSendAllHook
     call onPacketSend
     unwind
 
-    ; original code
+    ; original codes
     mov rax, [r15]
-    lea rdx, [r14+220h]
+    lea rdx, [r14+248h]
     mov rcx, r15
     jmp qword ptr[rax+18h]
 endp

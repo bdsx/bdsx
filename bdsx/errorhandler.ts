@@ -104,10 +104,9 @@ export function installErrorHandler():void {
             console.error(`Last packet from IP: ${lastSender}`);
             console.error('[ Native Stack ]');
 
-            if ((err.code & 0xE0000000) === (0xE0000000|0)) {
-                // Chakra Exception
-                const errno = err.code & 0x0fffffff;
-                console.error(JsErrorCode[errno] || `JsErrorCode 0x${numberWithFillZero(errno, 8, 16)}`);
+            const chakraErrorNumber = err.code & 0x0fffffff;
+            if (JsErrorCode[chakraErrorNumber] != null) {
+                console.error(`${JsErrorCode[chakraErrorNumber]}(0x${numberWithFillZero(chakraErrorNumber, 8, 16)})`);
             } else {
                 let errmsg = `${runtimeError.codeToString(err.code)}(0x${numberWithFillZero(err.code, 8, 16)})`;
                 switch (err.code) {
@@ -119,6 +118,7 @@ export function installErrorHandler():void {
                 }
                 console.error(errmsg);
             }
+
             let insideChakra = false;
             for (const frame of err.nativeStack) {
 

@@ -25,6 +25,131 @@ function getSize(bytes:number, compsize:number):number {
 }
 
 /**
+ * CxxVector-like with a JS array
+ * @deprecated this API is for the legacy support.
+ */
+export class CxxVectorLike<T> {
+    private warned = false;
+    constructor(private readonly array:(T|null)[]) {
+    }
+
+    [NativeType.ctor]():void {
+        this.array.length = 0;
+    }
+    [NativeType.dtor]():void {
+        this.array.length = 0;
+    }
+    [NativeType.ctor_copy](from:CxxVectorLike<T>):void {
+        this.setFromArray(from.array);
+    }
+    [NativeType.ctor_move](from:CxxVectorLike<T>):void {
+        this.setFromArray(from.array);
+        from.array.length = 0;
+    }
+
+    set(idx:number, component:T|null):void {
+        const fromSize = this.array.length;
+        const newSize = idx+1;
+        if (newSize > fromSize) {
+            for (let i=fromSize;i<newSize;i++) {
+                this.array[i] = null;
+            }
+        }
+        this.array[idx] = component;
+    }
+
+    get(idx:number):T {
+        return (this.array[idx] || null)!;
+    }
+
+    back():T|null {
+        const n = this.array.length;
+        if (n === 0) {
+            return null;
+        }
+        return this.array[n-1];
+    }
+
+    pop():boolean {
+        if (this.array.length === 0) {
+            return false;
+        }
+        this.array.pop();
+        return true;
+    }
+
+    push(...component:(T|null)[]):void {
+        this.array.push(...component);
+    }
+
+    splice(start:number, deleteCount:number, ...items:(T|null)[]):void {
+        const n = items.length;
+        if (n < deleteCount) {
+            let i = start+n;
+            const offset = deleteCount-n;
+            const newsize = this.size() - offset;
+            for (;i<newsize;i++) {
+                this.set(i, this.get(i+offset));
+            }
+            this.resize(newsize);
+        } else if (n > deleteCount) {
+            const offset = n-deleteCount;
+            const size = this.size();
+            const newsize = size+offset;
+            this.resize(newsize);
+            const iend = start + n;
+            for (let i=newsize-1;i>=iend;i--) {
+                this.set(i, this.get(i-offset));
+            }
+        }
+
+        for (let i=0;i<n;i++) {
+            this.set(i+start, items[i]);
+        }
+    }
+
+    resize(newSize:number):void {
+        const oldSize = this.array.length;
+        this.array.length = newSize;
+        for (let i=oldSize;i<newSize;i++) {
+            this.array[i] = null;
+        }
+    }
+
+    size():number {
+        return this.array.length;
+    }
+
+    sizeBytes():number {
+        if (!this.warned) {
+            this.warned = true;
+            console.trace("CxxVectorLike.sizeBytes, deprecated usage, it's not actual bytes");
+        }
+        return this.array.length * 8;
+    }
+
+    capacity():number {
+        return this.array.length;
+    }
+
+    toArray():T[] {
+        return this.array.slice() as T[];
+    }
+
+    setFromArray(array:(T|null)[]):void {
+        const t = this.array;
+        const n = t.length = array.length;
+        for (let i=0;i<n;i++) {
+            t[i] = array[i];
+        }
+    }
+
+    [Symbol.iterator]():IterableIterator<T> {
+        return this.array.values() as IterableIterator<T>;
+    }
+}
+
+/**
  * std::vector<T>
  * C++ standard dynamic array class
  */
@@ -79,7 +204,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     protected abstract _get(ptr:NativePointer, index:number):T;
     protected abstract _ctor(ptr:NativePointer, index:number):void;
     protected abstract _dtor(ptr:NativePointer, index:number):void;
-    protected abstract _copy(to:NativePointer, from:T, index:number):void;
+    protected abstract _copy(to:NativePointer, from:T|null, index:number):void;
     protected _resizeCache(n:number):void {
         // empty
     }
@@ -103,7 +228,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         this.setPointer(allocated, 16);
     }
 
-    set(idx:number, component:T):void {
+    set(idx:number, component:T|null):void {
         const type = this.componentType;
 
         const compsize = type[NativeType.size];
@@ -164,7 +289,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         return true;
     }
 
-    push(...component:T[]):void {
+    push(...component:(T|null)[]):void {
         const n = component.length;
         if (n === 0) return;
 
@@ -213,7 +338,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         }
     }
 
-    splice(start:number, deleteCount:number, ...items:T[]):void {
+    splice(start:number, deleteCount:number, ...items:(T|null)[]):void {
         const n = items.length;
         if (n < deleteCount) {
             let i = start+n;
@@ -303,7 +428,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         return out;
     }
 
-    setFromArray(array:T[]):void {
+    setFromArray(array:(T|null)[]):void {
         const n = array.length;
         const size = this.size();
         if (n > size) this.resize(n);
@@ -363,8 +488,8 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                     protected _ctor(ptr:NativePointer, index:number):void{
                         this._get(ptr, index)[NativeType.ctor]();
                     }
-                    protected _copy(ptr:NativePointer, from:NativeClass, index:number):void{
-                        this._get(ptr, index)[NativeType.setter](from);
+                    protected _copy(ptr:NativePointer, from:NativeClass|null, index:number):void{
+                        this._get(ptr, index)[NativeType.setter](from!);
                     }
                 }
                 Object.defineProperty(VectorImpl, 'name', {value:getVectorName(type)});
@@ -399,7 +524,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         const type = this.componentType;
                         type[NativeType.ctor](ptr);
                     }
-                    protected _copy(ptr:NativePointer, from:T):void{
+                    protected _copy(ptr:NativePointer, from:T|null):void{
                         const type = this.componentType;
                         type[NativeType.setter](ptr, from);
                     }

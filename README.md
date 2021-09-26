@@ -9,8 +9,8 @@ BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.j
 * All node.js features (*that are supported by ChakraCore. See [this page](https://github.com/bdsx/bdsx/wiki/Available-NPM-Modules) for more information)
 * Debug with Visual Studio Code (You can debug plugins too)
 * Intercept network packets
-* [Hook commands](https://github.com/bdsx/bdsx/wiki/Command-Hooking)
-* [Low-level hooking]() and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
+* [Custom Commands](https://github.com/bdsx/bdsx/wiki/Custom-Commands)
+* Low-level hooking and [DLL Call](https://github.com/bdsx/bdsx/wiki/Call-DLL-Directly)
 * Get IP Address & XUID (Example below)
 
 ```ts
@@ -30,7 +30,6 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
 * Requirements
     * [node.js](https://nodejs.org/)
     * Wine (if using Linux)
-    * OR just use Docker: `docker run -ti karikera/bdsx`
 * Recommended  
     * [VSCode](https://code.visualstudio.com/)
 
@@ -39,23 +38,16 @@ To download, clone the repo:
 git clone https://github.com/bdsx/bdsx.git
 ```
 
-### Starting with the executable
-You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Linux. 
-
-### Development with VSCode
-
+### Debug & Launch with VSCode
 When starting BDSX with VSCode, you need to
 1. Open the project with VSCode
-2. Open a terminal (Ctrl+Shift+｀)
-3. Run `npm i` to install npm packages and BDS
-4. Press `F5` to build and run in VSCode
+2. Install the legacy debugger. the suggestion dialog will be opened up on the right bottom corner.
+3. Open a terminal (Ctrl+Shift+｀)
+4. Run `npm i` to install npm packages and BDS
+5. Press `F5` to build and run in VSCode
 
-For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well.  
-If you want to publish a bdsx plugin, please ask to be invited to the bdsx organization on npm in the `#npm-bdsx-org-member-request` channel in Discord. 
-
-> VSCode will show you upgrade the NodeJS debugger. but ChakraCore needs the legacy debugger.  
-> If you upgraded it. it needs to set back `"debug.javascript.usePreview"` to `false` in `.vscode/settings.json`.
-
+### Launch with the executable
+You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Linux.
 
 ## File Structure
 ```sh
@@ -66,11 +58,19 @@ If you want to publish a bdsx plugin, please ask to be invited to the bdsx organ
 ├ launcher.ts # Script for launching BDS.
 ├ index.ts # Main entry point. This file is required by the launcher when BDS is fully started.
 ├ bdsx.sh # Executable for Linux
-└ bdsx.bat # Executable for Windows
-# Please start your own code from ./index.ts
-# By default index.ts imports example_and_test. To disable the examples
-# simply remove the import or replace it with your own code. 
+└ bdsx.bat # Executable for Windows 
 ```
+> Please start your own code from ./index.ts
+
+> By default index.ts imports example_and_test. To disable the examples simply remove the import or replace it with your own code.
+
+> For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well.  
+
+## Make a bdsx plugin
+Please check `plugin-example/README.md`.
+
+## Docker Image
+https://hub.docker.com/r/karikera/bdsx
 
 ## BDSX Discussions
 https://github.com/bdsx/bdsx/discussions

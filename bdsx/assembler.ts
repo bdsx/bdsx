@@ -1660,20 +1660,38 @@ export class X64Assembler {
         return this._oper(MovOper.Write, Operator.and, dest, src, multiply, offset, 0, size);
     }
 
-    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+    private _shift_r_c(dest:Register, signed:boolean, right:boolean, chr:number, size = OperationSize.qword):this {
         this._rex(dest, 0, null, size);
-        this.put(0xc1);
-        this.put(0xe8 | dest);
-        this.put(chr%128);
+        let operbit = 0xe0;
+        if (right) {
+            operbit |= 0x08;
+            if (signed) operbit |= 0x10;
+        }
+
+        if (chr === 1) {
+            this.put(0xd1);
+            this.put(operbit | dest);
+        } else {
+            this.put(0xc1);
+            this.put(operbit | dest);
+            this.put(chr%128);
+        }
         return this;
+    }
+
+    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+        return this._shift_r_c(dest, false, true, chr, size);
     }
     shl_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
-        this._rex(dest, 0, null, size);
-        this.put(0xc1);
-        this.put(0xe0 | dest);
-        this.put(chr%128);
-        return this;
+        return this._shift_r_c(dest, false, false, chr, size);
     }
+    sar_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+        return this._shift_r_c(dest, true, true, chr, size);
+    }
+    sal_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+        return this._shift_r_c(dest, true, false, chr, size);
+    }
+
 
     private _movsx(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, destsize:OperationSize, srcsize:OperationSize, oper:MovOper):this {
         if (destsize == null || srcsize == null) throw Error(`Need operand size`);

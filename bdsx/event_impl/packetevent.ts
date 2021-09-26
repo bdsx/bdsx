@@ -8,7 +8,6 @@ import { proc, procHacker } from "../bds/proc";
 import { abstract, CANCEL } from "../common";
 import { VoidPointer } from "../core";
 import { events } from "../event";
-import { Event } from "../eventtarget";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
@@ -33,9 +32,9 @@ ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnly
 
 @nativeClass(null)
 class OnPacketRBP extends NativeClass {
-    @nativeField(SharedPtr.make(Packet), 0x78)
+    @nativeField(SharedPtr.make(Packet), 0xb8)
     packet:SharedPtr<Packet>;
-    @nativeField(ReadOnlyBinaryStream, 0xc0)
+    @nativeField(ReadOnlyBinaryStream, 0x100)
     stream:ReadOnlyBinaryStream;
 }
 
@@ -43,7 +42,7 @@ let sendInternalOriginal:(handler:NetworkHandler, ni:NetworkIdentifier, packet:P
 
 function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
     try {
-        const target = events.packetEvent(events.PacketEventType.Raw, packetId) as Event<nethook.RawListener>;
+        const target = events.packetRaw(packetId);
         const ni = conn.networkIdentifier;
         nethook.lastSender = ni;
         if (target !== null && !target.isEmpty()) {
@@ -74,7 +73,7 @@ function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packet
     try {
         if (result.streamReadResult !== StreamReadResult.Pass) return result;
 
-        const target = events.packetEvent(events.PacketEventType.Before, packetId) as Event<nethook.BeforeListener<MinecraftPacketIds>>;
+        const target = events.packetBefore(packetId);
         if (target !== null && !target.isEmpty()) {
             const packet = rbp.packet.p!;
             const ni = nethook.lastSender;
@@ -102,7 +101,7 @@ function onPacketAfter(rbp:OnPacketRBP):void {
     try {
         const packet = rbp.packet.p!;
         const packetId = packet.getId();
-        const target = events.packetEvent(events.PacketEventType.After, packetId) as Event<nethook.AfterListener<MinecraftPacketIds>>;
+        const target = events.packetAfter(packetId);
         if (target !== null && !target.isEmpty()) {
             const ni = nethook.lastSender;
             const TypedPacket = PacketIdToType[packetId] || Packet;
@@ -123,20 +122,18 @@ function onPacketAfter(rbp:OnPacketRBP):void {
 function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet):void{
     try {
         const packetId = packet.getId();
-        const target = events.packetEvent(events.PacketEventType.Send, packetId) as Event<nethook.SendListener<MinecraftPacketIds>>;
+        const target = events.packetSend(packetId);
         if (target !== null && !target.isEmpty()) {
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        return;
-                    }
+                    if (listener(typedPacket, ni, packetId) === CANCEL) break;
                 } catch (err) {
                     events.errorFire(err);
                 }
             }
+            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -145,7 +142,7 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
 function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
     try {
         const packetId = packet.getId();
-        const target = events.packetEvent(events.PacketEventType.SendRaw, packetId) as Event<nethook.SendRawListener>;
+        const target = events.packetSendRaw(packetId);
         if (target !== null && !target.isEmpty()) {
             for (const listener of target.allListeners()) {
                 try {
@@ -157,6 +154,7 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
                     events.errorFire(err);
                 }
             }
+            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -167,23 +165,23 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
 bedrockServer.withLoading().then(()=>{
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x240,
+    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x1f1,
         asmcode.packetRawHook, Register.rax, true, [
-            0x8B, 0xD6,                     // mov edx,esi
-            0x48, 0x8D, 0x4D, 0x78,         // lea rcx,qword ptr ss:[rbp+78]
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,   // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
-            0x90                            // nop
-        ], [7, 11]);
+            0x8B, 0xD6,                               // mov edx,esi
+            0x48, 0x8D, 0x8D, 0xB8, 0x00, 0x00, 0x00, // lea rcx,qword ptr ss:[rbp+78]
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,             // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
+            0x90                                      // nop
+        ], [10, 14]);
 
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x328,
+    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2f4,
         asmcode.packetBeforeHook, // original code depended
         Register.rax,
         true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-            0x4C, 0x8D, 0x85, 0xC0, 0x00, 0x00, 0x00, // lea r8,qword ptr ss:[rbp+C0]
-            0x48, 0x8D, 0x55, 0xA0, //lea rdx,qword ptr ss:[rbp-60]
+            0x4C, 0x8D, 0x85, 0x00, 0x01, 0x00, 0x00, // lea r8,qword ptr ss:[rbp+100]
+            0x48, 0x8D, 0x55, 0xE0, //lea rdx,qword ptr ss:[rbp-20]
             0xFF, 0x50, 0x20, // call qword ptr ds:[rax+20]
         ], []);
 
@@ -200,15 +198,15 @@ bedrockServer.withLoading().then(()=>{
     asmcode.PacketViolationHandlerHandleViolationAfter = proc['PacketViolationHandler::_handleViolation'].add(packetViolationOriginalCode.length);
     procHacker.patching('hook-packet-before-skip', 'PacketViolationHandler::_handleViolation', 0,
         asmcode.packetBeforeCancelHandling,
-        Register.rax, false, packetViolationOriginalCode, [3, 7, 21, 24]);
+        Register.rax, false, packetViolationOriginalCode, []);
 
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x48d,
+    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x475,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]
-            0x4C, 0x8D, 0x4D, 0x78, // lea r9,qword ptr ss:[rbp+78]
+            0x4C, 0x8D, 0x8D, 0xB8, 0x00, 0x00, 0x00, // lea r9,qword ptr ss:[rbp+b8]
             0x4C, 0x8B, 0xC6, // mov r8,rsi
             0x49, 0x8B, 0xD6, // mov rdx,r14
             0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
@@ -221,7 +219,7 @@ bedrockServer.withLoading().then(()=>{
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
             0x49, 0x8B, 0x07, // mov rax,qword ptr ds:[r15]
-            0x49, 0x8D, 0x96, 0x20, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r14+220]
+            0x49, 0x8D, 0x96, 0x48, 0x02, 0x00, 0x00, // lea rdx,qword ptr ds:[r14+248]
             0x49, 0x8B, 0xCF, // mov rcx,r15
             0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
         ], []);

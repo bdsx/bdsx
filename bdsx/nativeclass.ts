@@ -296,10 +296,10 @@ export class NativeClass extends StructurePointer {
     [NativeType.ctor_move](from:this):void {
         // empty
     }
-    [NativeType.setter](from:this):void {
+    [NativeType.setter](from:this|null):void {
         if (this.equals(from)) return; // self setting
         this[NativeType.dtor]();
-        this[NativeType.ctor_copy](from);
+        this[NativeType.ctor_copy](from!);
     }
     static [NativeType.ctor](ptr:StaticPointer):void {
         ptr.as(this)[NativeType.ctor]();

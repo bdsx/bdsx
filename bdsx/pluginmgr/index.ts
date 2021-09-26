@@ -256,11 +256,24 @@ function searchAndSelect(prefixes:string[], deps:Record<string, {version:string}
     });
 }
 
+function reverse<T>(items:T[]):T[] {
+    const n = items.length;
+    const last = n-1;
+    const half = n >> 1;
+    for (let i=0;i<half;i++) {
+        const j = last-i;
+        const t = items[i];
+        items[i] = items[j];
+        items[j] = t;
+    }
+    return items;
+}
+
 function selectVersion(name:string, latestVersion:string, installedVersion:string|null, versions:string[]):Promise<(string|null)> {
     return new Promise(resolve=>{
         if (screen === null) throw Error('blessed.screen not found');
 
-        const vnames = versions.reverse().map(v=>`${name}@${v}`);
+        const vnames = reverse(versions).map(v=>`${name}@${v}`);
         for (let i=0;i<versions.length;i++) {
             let moveToTop = false;
             if (versions[i] === latestVersion) {

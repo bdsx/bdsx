@@ -1,9 +1,8 @@
-import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { CxxVector } from "../cxxvector";
+import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
-import { Actor, ActorUniqueID, DimensionId } from "./actor";
+import { Actor, ActorUniqueID, DimensionId, EntityRefTraits } from "./actor";
 import { BlockSource } from "./block";
 import { BlockPos } from "./blockpos";
 import { Dimension } from "./dimension";
@@ -12,10 +11,33 @@ import { ServerPlayer } from "./player";
 import { Scoreboard } from "./scoreboard";
 import { StructureManager } from "./structure";
 
+export enum Difficulty {
+    Peaceful,
+    Easy,
+    Normal,
+    Hard,
+}
+
 export class Level extends NativeClass {
     vftable:VoidPointer;
-    players:CxxVector<ServerPlayer>;
+    /** @deprecated use getPlayers() */
+    get players():CxxVectorLike<ServerPlayer> {
+        const players = new CxxVectorLike(this.getPlayers());
+        Object.defineProperty(this, 'players', {
+            get(){
+                players.setFromArray(this.getPlayers());
+                return players;
+            }
+        });
+        return players;
+    }
 
+    getPlayers():ServerPlayer[] {
+        abstract();
+    }
+    getUsers():CxxVector<EntityRefTraits> {
+        abstract();
+    }
     createDimension(id:DimensionId):Dimension {
         abstract();
     }
@@ -40,6 +62,9 @@ export class Level extends NativeClass {
     getDimension(dimension:DimensionId):Dimension|null {
         abstract();
     }
+    getLevelData():LevelData {
+        abstract();
+    }
     getGameRules():GameRules {
         abstract();
     }
@@ -58,6 +83,9 @@ export class Level extends NativeClass {
     getTagRegistry():TagRegistry {
         abstract();
     }
+    hasCommandsEnabled():boolean {
+        abstract();
+    }
     setCommandsEnabled(value:boolean):void {
         abstract();
     }
@@ -70,9 +98,15 @@ export class Level extends NativeClass {
 }
 
 export class ServerLevel extends Level {
-    /** @deprecated unusing */
-    packetSender:LoopbackPacketSender;
-    actors:CxxVector<Actor>;
+}
+
+export class LevelData extends NativeClass {
+    getGameDifficulty():Difficulty {
+        abstract();
+    }
+    setGameDifficulty(value:Difficulty):void {
+        abstract();
+    }
 }
 
 export class ActorFactory extends NativeClass {
