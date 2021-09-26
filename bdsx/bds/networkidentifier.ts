@@ -29,7 +29,7 @@ export class NetworkHandler extends NativeClass {
         abstract();
     }
 
-    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
+    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection|null {
         abstract();
     }
 }
