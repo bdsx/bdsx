@@ -233,7 +233,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
             type[NativeType.ctor_copy],
             type[NativeType.ctor_move],
         );
-        if (fields) {
+        if (fields != null) {
             for (const field in fields) {
                 (ntype as any)[field] = fields[field];
             }

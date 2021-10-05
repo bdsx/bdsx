@@ -463,6 +463,29 @@ export namespace bin
         }
         return String.fromCharCode(...out);
     }
+    /**
+     * similar with bin.hex(), but reversed byte by byte
+     */
+    export function reversedHex(a:string):string {
+        const out:number[] = [];
+        const write = (v:number):void=>{
+            if (v < 10) {
+                out.push(v+0x30);
+            } else {
+                out.push(v+(0x61-10));
+            }
+        };
+
+        const n = a.length;
+        for (let i=n-1;i>=0;i--) {
+            const v = a.charCodeAt(i);
+            write((v >> 12) & 0xf);
+            write((v >> 8) & 0xf);
+            write((v >> 4) & 0xf);
+            write(v & 0xf);
+        }
+        return String.fromCharCode(...out);
+    }
     export function as64(v:string):string {
         const n = v.length;
         if (n === 4) return v;

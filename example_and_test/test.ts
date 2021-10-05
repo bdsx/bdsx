@@ -551,6 +551,15 @@ Tester.test({
             ignoreEndingPacketsAfter = Date.now() + 2000;
             this.assert(!conns.has(ni), '[test] login without connection');
             conns.add(ni);
+
+            const connreq = ptr.connreq;
+            this.assert(connreq !== null, 'no ConnectionRequest');
+            if (connreq !== null) {
+                const cert = connreq.cert;
+                let uuid = cert.json.value()["extraData"]["identity"];
+                this.equals(uuid, cert.getIdentityString(), 'getIdentityString() !== extraData.identity');
+            }
+
             setTimeout(() => {
                 if (sendpacket === 0) {
                     this.error('[test] no packet was sent');
