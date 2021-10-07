@@ -309,6 +309,8 @@ const symbols = [
     'LevelData::setGameDifficulty',
     'OwnerStorageEntity::_getStackRef',
     'Actor::getActorIdentifier',
+    'Level::getTime',
+    'Level::setTime'
 ] as const;
 
 // decorated symbols

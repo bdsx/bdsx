@@ -28,7 +28,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, GameRulesChangedPacket, PlayerListPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, GameRulesChangedPacket, PlayerListPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
@@ -68,6 +68,16 @@ Level.prototype.syncGameRules = function() {
     }
     wrapper.destruct();
 };
+const level$setTime = procHacker.js("Level::setTime", void_t, {this:Level}, int64_as_float_t);
+Level.prototype.setTime = function(time: number):void {
+    level$setTime.call(this, time);
+    const packet = SetTimePacket.create();
+    packet.time = time;
+    for (const player of serverInstance.getPlayers()) {
+        player.sendNetworkPacket(packet);
+    }
+}
+
 Level.prototype.getPlayers = function() {
     const out:ServerPlayer[] = [];
     for (const user of this.getUsers()) {

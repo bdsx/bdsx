@@ -88,6 +88,9 @@ export class Level extends NativeClass {
     setShouldSendSleepMessage(value:boolean):void {
         abstract();
     }
+    setTime(time: number):void {
+        abstract();
+    }
     syncGameRules():void {
         abstract();
     }
