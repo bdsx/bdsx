@@ -76,7 +76,7 @@ Level.prototype.setTime = function(time: number):void {
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(packet);
     }
-}
+};
 
 Level.prototype.getPlayers = function() {
     const out:ServerPlayer[] = [];
