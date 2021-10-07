@@ -78,6 +78,7 @@ Level.prototype.getPlayers = function() {
     return out;
 };
 Level.prototype.getUsers = procHacker.js('Level::getUsers', CxxVector.make(EntityRefTraits), {this:Level});
+Level.prototype.getTime = procHacker.js("Level::getTime", int64_as_float_t, {this:Level});
 
 Level.abstract({
     vftable: VoidPointer,

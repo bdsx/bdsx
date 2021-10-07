@@ -76,6 +76,9 @@ export class Level extends NativeClass {
     getTagRegistry():TagRegistry {
         abstract();
     }
+    getTime():number {
+        abstract();
+    }
     hasCommandsEnabled():boolean {
         abstract();
     }
