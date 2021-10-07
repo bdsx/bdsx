@@ -310,7 +310,8 @@ const symbols = [
     'OwnerStorageEntity::_getStackRef',
     'Actor::getActorIdentifier',
     'Level::getTime',
-    'Level::setTime'
+    'Level::setTime',
+    'Actor::getLevel'
 ] as const;
 
 // decorated symbols
