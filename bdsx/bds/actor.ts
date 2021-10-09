@@ -418,7 +418,7 @@ export class Actor extends NativeClass {
         abstract();
     }
     setNameTag(name:string):void {
-        abstract();
+        this.setName(name);
     }
     setScoreTag(text:string):void{
         abstract();
