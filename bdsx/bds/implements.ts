@@ -148,6 +148,7 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
 Actor.prototype.setName = procHacker.js("Actor::setNameTag", void_t, {this:Actor}, CxxString);
+Actor.prototype.setNameTag = procHacker.js("Actor::setNameTag", void_t, {this:Actor}, CxxString);
 Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.hasTag = procHacker.js("Actor::hasTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Actor}, CxxString);
