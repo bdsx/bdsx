@@ -16,6 +16,7 @@ import type { ArmorSlot, ItemStack } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
+import { Level } from "./level";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -416,6 +417,9 @@ export class Actor extends NativeClass {
     setName(name:string):void {
         abstract();
     }
+    setNameTag(name:string):void {
+        this.setName(name);
+    }
     setScoreTag(text:string):void{
         abstract();
     }
@@ -546,6 +550,9 @@ export class Actor extends NativeClass {
         abstract();
     }
     getStatusFlag(flag:ActorFlags):boolean {
+        abstract();
+    }
+    getLevel():Level {
         abstract();
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {

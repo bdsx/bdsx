@@ -76,6 +76,9 @@ export class Level extends NativeClass {
     getTagRegistry():TagRegistry {
         abstract();
     }
+    getTime():number {
+        abstract();
+    }
     hasCommandsEnabled():boolean {
         abstract();
     }
@@ -83,6 +86,9 @@ export class Level extends NativeClass {
         abstract();
     }
     setShouldSendSleepMessage(value:boolean):void {
+        abstract();
+    }
+    setTime(time: number):void {
         abstract();
     }
     syncGameRules():void {
