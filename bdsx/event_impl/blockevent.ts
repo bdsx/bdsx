@@ -1,8 +1,8 @@
 import { Actor } from "../bds/actor";
 import { Block, BlockSource } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
-import { GameMode, SurvivalMode } from "../bds/gamemode";
-import { Player } from "../bds/player";
+import { ItemStack } from "../bds/inventory";
+import { ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer } from "../core";
@@ -11,26 +11,32 @@ import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { _tickCallback } from "../util";
 
 interface IBlockDestroyEvent {
-    player: Player;
+    player: ServerPlayer;
+    blockSource: BlockSource,
     blockPos: BlockPos;
+    itemStack: ItemStack;
+    generateParticle: boolean;
 }
 export class BlockDestroyEvent implements IBlockDestroyEvent {
     constructor(
-        public player: Player,
+        public player: ServerPlayer,
         public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public itemStack: ItemStack,
+        public generateParticle: boolean
     ) {
     }
 }
 
 interface IBlockPlaceEvent {
-    player: Player,
+    player: ServerPlayer,
     block: Block,
     blockSource: BlockSource,
     blockPos: BlockPos;
 }
 export class BlockPlaceEvent implements IBlockPlaceEvent {
     constructor(
-        public player: Player,
+        public player: ServerPlayer,
         public block: Block,
         public blockSource: BlockSource,
         public blockPos: BlockPos,
@@ -38,33 +44,20 @@ export class BlockPlaceEvent implements IBlockPlaceEvent {
     }
 }
 
-function onBlockDestroy(survivalMode:SurvivalMode, blockPos:BlockPos, facing:number):boolean {
-    const event = new BlockDestroyEvent(survivalMode.actor as Player, blockPos);
+function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos, itemStack:ItemStack, generateParticle:bool_t):boolean {
+    const event = new BlockDestroyEvent(actor as ServerPlayer, blockPos, blockSource, itemStack, generateParticle);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
     _tickCallback();
     if (canceled) {
         return false;
     } else {
-        survivalMode.actor = event.player;
-        return _onBlockDestroy(survivalMode, event.blockPos, facing);
+        return _onBlockDestroy(event.blockSource, event.player, event.blockPos, event.itemStack, event.generateParticle);
     }
 }
-function onBlockDestroyCreative(gameMode:GameMode, blockPos:BlockPos, facing:number):boolean {
-    const event = new BlockDestroyEvent(gameMode.actor as Player, blockPos);
-    const canceled = events.blockDestroy.fire(event) === CANCEL;
-    _tickCallback();
-    if (canceled) {
-        return false;
-    } else {
-        gameMode.actor = event.player;
-        return _onBlockDestroyCreative(gameMode, event.blockPos, facing);
-    }
-}
-const _onBlockDestroy = procHacker.hooking("SurvivalMode::destroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroy);
-const _onBlockDestroyCreative = procHacker.hooking("GameMode::_creativeDestroyBlock", bool_t, null, SurvivalMode, BlockPos, int32_t)(onBlockDestroyCreative);
+const _onBlockDestroy = procHacker.hooking("BlockSource::checkBlockDestroyPermissions", bool_t, null, BlockSource, Actor, BlockPos, ItemStack, bool_t)(onBlockDestroy);
 
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, facing:number, actor:Actor, ignoreEntities:boolean):boolean {
-    const event = new BlockPlaceEvent(actor as Player, block, blockSource, blockPos);
+    const event = new BlockPlaceEvent(actor as ServerPlayer, block, blockSource, blockPos);
     const canceled = events.blockPlace.fire(event) === CANCEL;
     _tickCallback();
     if (canceled) {

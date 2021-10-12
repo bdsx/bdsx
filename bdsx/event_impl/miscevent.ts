@@ -34,7 +34,7 @@ class AnnounceServerData extends NativeClass {
     motd:CxxString;
     @nativeField(CxxString)
     levelname:CxxString;
-    @nativeField(int32_t)
+    @nativeField(int32_t, {relative: true, offset: 4})
     currentPlayers:int32_t;
     @nativeField(int32_t)
     maxPlayers:int32_t;
