@@ -440,6 +440,10 @@ export class NetworkItemStackDescriptor extends NativeClass {
     descriptor:ItemDescriptor;
     @nativeField(ItemStackNetIdVariant, 0x54)
     id:ItemStackNetIdVariant;
+
+    static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
+        abstract();
+    }
 }
 
 @nativeClass()

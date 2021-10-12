@@ -360,7 +360,8 @@ const symbols2 = [
     '??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z',
     '?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z',
     '?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z',
-    '?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z'
+    '?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z',
+    '??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z',
 ] as const;
 
 

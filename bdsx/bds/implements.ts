@@ -499,6 +499,7 @@ ItemStack.create = function(itemName: CxxString, amount: int32_t = 1, data: int3
     return itemStack;
 };
 ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
+NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, {structureReturn:true}, ItemStack);
 
 PlayerInventory.prototype.getSlotWithItem = procHacker.js('PlayerInventory::getSlotWithItem', int32_t, {this: PlayerInventory}, ItemStack, bool_t, bool_t);
 PlayerInventory.prototype.addItem = procHacker.js("PlayerInventory::add", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
