@@ -4,7 +4,7 @@ import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
 import type { Actor, ActorUniqueID, DimensionId, EntityRefTraits } from "./actor";
 import type { BlockSource } from "./block";
-import type { BlockPos } from "./blockpos";
+import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
 import type { GameRules } from "./gamerules";
 import type { ServerPlayer } from "./player";
@@ -92,6 +92,9 @@ export class Level extends NativeClass {
         abstract();
     }
     syncGameRules():void {
+        abstract();
+    }
+    spawnParticleEffect(effectName:string, spawnLocation:Vec3, dimension:Dimension):void {
         abstract();
     }
 }

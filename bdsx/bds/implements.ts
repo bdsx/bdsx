@@ -68,6 +68,7 @@ Level.prototype.syncGameRules = function() {
     }
     wrapper.destruct();
 };
+Level.prototype.spawnParticleEffect = procHacker.js("?spawnParticleEffect@Level@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVVec3@@PEAVDimension@@@Z", void_t, {this:Level}, CxxString, Vec3, Dimension);
 const level$setTime = procHacker.js("Level::setTime", void_t, {this:Level}, int64_as_float_t);
 Level.prototype.setTime = function(time: number):void {
     level$setTime.call(this, time);

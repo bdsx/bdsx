@@ -313,7 +313,7 @@ const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerComman
 ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
 
 function sessionIdGrabber(text: string): void {
-    const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d:\d\d\d INFO\] Session ID (.*)$/);
+    const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d:\d{3} INFO\] Session ID (.*)$/);
     if(tmp) {
         bedrockServer.sessionId = tmp[1];
         events.serverLog.remove(sessionIdGrabber);
