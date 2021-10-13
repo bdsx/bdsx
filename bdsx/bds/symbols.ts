@@ -226,6 +226,7 @@ const symbols = [
     'Level::save',
     'Level::tick',
     'Level::getUsers',
+    'Level::getEntities',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',

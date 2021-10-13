@@ -39,6 +39,12 @@ export class Level extends NativeClass {
     getUsers():CxxVector<EntityRefTraits> {
         abstract();
     }
+    protected _getEntities():CxxVector<EntityRefTraits> {
+        abstract();
+    }
+    getEntities():Actor[] {
+        abstract();
+    }
     createDimension(id:DimensionId):Dimension {
         abstract();
     }
