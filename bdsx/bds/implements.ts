@@ -90,6 +90,16 @@ Level.prototype.getPlayers = function() {
     return out;
 };
 Level.prototype.getUsers = procHacker.js('Level::getUsers', CxxVector.make(EntityRefTraits), {this:Level});
+(Level.prototype as any)._getEntities = procHacker.js('Level::getEntities', CxxVector.make(EntityRefTraits), {this:Level});
+Level.prototype.getEntities = function() {
+    const out:Actor[] = [];
+    for (const refTraits of (this as any)._getEntities()) {
+        const entity = Actor.tryGetFromEntity(refTraits.context._getStackRef());
+        if (!(entity instanceof Actor)) continue;
+        out.push(entity);
+    }
+    return out;
+};
 Level.prototype.getTime = procHacker.js("Level::getTime", int64_as_float_t, {this:Level});
 
 Level.abstract({
