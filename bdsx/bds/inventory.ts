@@ -160,8 +160,12 @@ export class ItemStack extends NativeClass {
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
-    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+    static constructWith(itemName:string, amount:number = 1, data:number = 0):ItemStack {
         abstract();
+    }
+    /** @deprecated */
+    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+        return ItemStack.constructWith(itemName, amount, data);
     }
     static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
         abstract();
@@ -189,7 +193,7 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     cloneItem(): ItemStack{
-        const itemStack = ItemStack.create('air');
+        const itemStack = ItemStack.constructWith('air');
         this._cloneItem(itemStack);
         return itemStack;
     }

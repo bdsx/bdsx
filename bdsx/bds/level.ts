@@ -2,8 +2,9 @@ import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
+import { CxxString } from "../nativetype";
 import type { Actor, ActorDefinitionIdentifier, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor } from "./actor";
-import type { BlockSource } from "./block";
+import type { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
 import type { GameRules } from "./gamerules";
@@ -118,8 +119,11 @@ export class LevelData extends NativeClass {
 
 export class ActorFactory extends NativeClass {
 }
-
 export class BlockPalette extends NativeClass {
+    /** @param name only accepts format like "minecraft:wool" */
+    getBlockLegacy(name:CxxString):BlockLegacy {
+        abstract();
+    }
 }
 
 export class AdventureSettings extends NativeClass {

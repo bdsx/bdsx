@@ -314,6 +314,8 @@ const symbols = [
     'Level::getSpawner',
     'Spawner::spawnItem',
     'Spawner::spawnMob',
+    'BlockPalette::getBlockLegacy',
+    'BlockLegacy::getRenderBlock',
 ] as const;
 
 // decorated symbols

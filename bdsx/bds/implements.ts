@@ -101,6 +101,8 @@ ServerLevel.abstract({});
 LevelData.prototype.getGameDifficulty = procHacker.js("LevelData::getGameDifficulty", uint32_t, {this:LevelData});
 LevelData.prototype.setGameDifficulty = procHacker.js("LevelData::setGameDifficulty", void_t, {this:LevelData}, uint32_t);
 
+BlockPalette.prototype.getBlockLegacy = procHacker.js("BlockPalette::getBlockLegacy", BlockLegacy, {this:BlockPalette}, CxxString);
+
 const Spawner$spawnItem = procHacker.js("Spawner::spawnItem", ItemActor, null, Spawner, BlockSource, ItemStack, VoidPointer, Vec3, int32_t);
 Spawner.prototype.spawnItem = function(region:BlockSource, itemStack:ItemStack, pos:Vec3, throwTime:number):ItemActor {
     return Spawner$spawnItem(this, region, itemStack, new VoidPointer(), pos, throwTime);
@@ -205,7 +207,7 @@ OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_
 Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
 
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
-ActorDefinitionIdentifier.create = function(type:number):ActorDefinitionIdentifier {
+ActorDefinitionIdentifier.constructWith = function(type:number):ActorDefinitionIdentifier {
     const identifier = ActorDefinitionIdentifier.construct();
     ActorDefinitionIdentifier$ActorDefinitionIdentifier(identifier, type);
     return identifier;
@@ -280,7 +282,7 @@ Player.abstract({
 const PlayerListPacket$emplace = procHacker.js("PlayerListPacket::emplace", void_t, null, PlayerListPacket, PlayerListEntry);
 Player.prototype.setName = function(name:string):void {
     (this as any)._setName(name);
-    const entry = PlayerListEntry.create(this);
+    const entry = PlayerListEntry.constructWith(this);
     const pk = PlayerListPacket.create();
     PlayerListPacket$emplace(pk, entry);
     for (const player of serverInstance.getPlayers()) {
@@ -327,7 +329,7 @@ ServerPlayer.prototype.getNetworkIdentifier = function () {
 };
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
-PlayerListEntry.create = function(player:Player):PlayerListEntry {
+PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
     const entry = PlayerListEntry.construct();
     return PlayerListEntry$PlayerListEntry(entry, player);
 };
@@ -504,7 +506,7 @@ ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableIte
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
 ItemStack.prototype.constructItemEnchantsFromUserData = procHacker.js("ItemStackBase::constructItemEnchantsFromUserData", ItemEnchants, {this:ItemStack, structureReturn: true});
 const CommandUtils$createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
-ItemStack.create = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
+ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();
     CommandUtils$createItemStack(itemStack, itemName, amount, data);
     return itemStack;
@@ -535,9 +537,10 @@ BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNa
 BlockLegacy.prototype.getCommandNames2 = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:Block});
 BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", void_t, {this:Block}, float32_t);
+BlockLegacy.prototype.getRenderBlock = procHacker.js("BlockLegacy::getRenderBlock", Block, {this:BlockLegacy});
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
-Block.create = function(blockName:string, data:number = 0):Block|null {
-    const itemStack = ItemStack.create(blockName, 1, data);
+Block.constructWith = function(blockName:string, data:number = 0):Block|null {
+    const itemStack = ItemStack.constructWith(blockName, 1, data);
     if (itemStack.isBlock()) {
         const block = itemStack.block;
         itemStack.destruct();

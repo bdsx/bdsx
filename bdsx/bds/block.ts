@@ -43,6 +43,9 @@ export class BlockLegacy extends NativeClass {
     getDestroyTime():number {
         return this.getFloat32(0x12C);
     }
+    getRenderBlock():Block {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -57,8 +60,12 @@ export class Block extends NativeClass {
     /**
      * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
      */
-    static create(blockName:string, data:number = 0):Block|null {
+    static constructWith(blockName:string, data:number = 0):Block|null {
         abstract();
+    }
+    /** @deprecated */
+    static create(blockName:string, data:number = 0):Block|null {
+        return this.constructWith(blockName, data);
     }
     protected _getName():HashedString {
         abstract();

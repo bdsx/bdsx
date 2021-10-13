@@ -13,10 +13,10 @@ import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
 import type { ArmorSlot, ItemStack } from "./inventory";
+import { Level } from "./level";
 import { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
-import { Level } from "./level";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -197,8 +197,12 @@ export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(HashedString)
     canonicalName:HashedString;
 
-    static create(type:ActorType):ActorDefinitionIdentifier {
+    static constructWith(type:ActorType):ActorDefinitionIdentifier {
         abstract();
+    }
+    /** @deprecated */
+    static create(type:ActorType):ActorDefinitionIdentifier {
+        return ActorDefinitionIdentifier.constructWith(type);
     }
 }
 

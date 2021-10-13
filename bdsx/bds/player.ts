@@ -328,8 +328,12 @@ export class ServerPlayer extends Player {
 
 @nativeClass(0x282)
 export class PlayerListEntry extends NativeClass {
-    static create(player: Player): PlayerListEntry {
+    static constructWith(player: Player): PlayerListEntry {
         abstract();
+    }
+    /** @deprecated */
+    static create(player: Player): PlayerListEntry {
+        return PlayerListEntry.constructWith(player);
     }
 }
 
