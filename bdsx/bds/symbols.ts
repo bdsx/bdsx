@@ -310,7 +310,10 @@ const symbols = [
     'Actor::getActorIdentifier',
     'Level::getTime',
     'Level::setTime',
-    'Actor::getLevel'
+    'Actor::getLevel',
+    'Level::getSpawner',
+    'Spawner::spawnItem',
+    'Spawner::spawnMob',
 ] as const;
 
 // decorated symbols
