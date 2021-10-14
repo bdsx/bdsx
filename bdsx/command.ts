@@ -6,8 +6,8 @@ import { serverInstance } from './bds/server';
 import { events } from './event';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
-import { NativeClass, nativeClass, nativeField } from './nativeclass';
-import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
+import { nativeClass, nativeField } from './nativeclass';
+import { bool_t, CxxString, int32_t, NativeType, Type, void_t } from './nativetype';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
 
@@ -67,7 +67,8 @@ export class CustomCommandFactory {
         callback:(params:{
             [key in keyof PARAMS]:PARAMS[key] extends [Type<infer F>, infer V] ?
                 (V extends true ? F|undefined : F) :
-                (PARAMS[key] extends {prototype:infer F} ? F : PARAMS[key] extends Type<infer F> ? F : never)
+                (PARAMS[key] extends {prototype:infer F} ? F : PARAMS[key] extends Type<infer F> ? F :
+                PARAMS[key] extends CommandEnum ? number : never)
             }, origin:CommandOrigin, output:CommandOutput)=>void,
         parameters:PARAMS):this {
 
@@ -81,7 +82,11 @@ export class CustomCommandFactory {
                     const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
                     for (const [name, optkey] of paramNames) {
                         if (optkey == null || this[optkey]) {
-                            nobj[name] = this[name];
+                            if ((fields[name.toString()] as any)[enumIdSymbol]) {
+                                nobj[name] = (fields[name.toString()] as any)[this[name] as any];
+                            } else {
+                                nobj[name] = this[name];
+                            }
                         }
                     }
                     callback(nobj as any, origin, output);
@@ -123,7 +128,6 @@ export class CustomCommandFactory {
                 else params.push(CustomCommandImpl.mandatory(name, null));
             }
         }
-        console.log(params);
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
             this.execute(origin, output);
@@ -159,13 +163,12 @@ export namespace command {
     export function addEnum<T extends string[]>(name:string, ...args: T): Record<typeof args[number]|typeof enumNameSymbol|typeof enumIdSymbol, number> {
         const registry = serverInstance.minecraft.getCommands().getRegistry();
         const enumId = registry.addEnumValues(name, args);
-        class CustomEnum extends NativeClass {
-            static [enumNameSymbol] = name;
-            static [enumIdSymbol] = enumId;
-        }
+        const CustomEnum = CxxString.extends();
+        Object.defineProperty(CustomEnum, enumNameSymbol, {value:name});
+        Object.defineProperty(CustomEnum, enumIdSymbol, {value:enumId});
         Object.defineProperty(CustomEnum, "name", {value:name});
         for (const [i, key] of args.entries()) {
-            Object.defineProperty(CustomEnum, key, {value:i});
+            Object.defineProperty(CustomEnum, key, {value:i + 1});
         }
         return CustomEnum as any;
     }

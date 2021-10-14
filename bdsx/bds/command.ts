@@ -442,7 +442,7 @@ export class Command extends NativeClass {
         enumId?:number):CommandParameterData {
         const param = CommandParameterData.construct();
         param.tid.id = enumId ?? type_id(CommandRegistry, paramType).id;
-        param.parser = enumId ? CommandRegistry.getParser(int32_t) : CommandRegistry.getParser(paramType);
+        param.parser = enumId ? CommandRegistry.getParser("enum") : CommandRegistry.getParser(paramType);
         param.name = name;
         param.type = type;
         if (desc != null) {
@@ -599,20 +599,22 @@ export namespace CommandRegistry {
 
 function loadParserFromPdb(types:Type<any>[]):void {
     const symbols = types.map(type=>templateName('CommandRegistry::parse', type.symbol || type.name));
-    symbols.push('CommandRegistry::parseEnum<int,CommandRegistry::DefaultIdConverter<int> >');
 
     pdb.setOptions(SYMOPT_PUBLICS_ONLY); // XXX: CommandRegistry::parse<bool> does not found without it.
     const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
+    const enumSymbol = 'CommandRegistry::parseEnum<int,CommandRegistry::DefaultIdConverter<int> >';
+    const enumAddr = pdb.getList(pdb.coreCachePath, {}, [enumSymbol], false, UNDNAME_NAME_ONLY)[enumSymbol];
     pdb.setOptions(0);
 
     for (let i=0;i<symbols.length;i++) {
         const addr = addrs[symbols[i]];
         if (addr == null) continue;
-        if (i === symbols.length - 1) {
-            parsers.set("enum", addr);
-        }
         parsers.set(types[i], addr);
     }
+
+    parsers.set('enum', enumAddr);
+
+    // parsers.set("enum", makefunc.np(() => false, bool_t, null, StaticPointer, StaticPointer, StaticPointer));
 }
 
 const types = [
