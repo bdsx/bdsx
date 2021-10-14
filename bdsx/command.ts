@@ -167,6 +167,7 @@ export namespace command {
         const values = new Array<string>();
         for (const value of args) {
             const _value = value.toLowerCase();
+            if (value === "") throw Error(`${value}: enum value cannot be empty`); // It will be ignored by CommandRegistry::addEnumValues if it is empty
             if (values.includes(_value)) throw Error(`${value}: enum value duplicated`);
             /*
                 Allowed special characters:
