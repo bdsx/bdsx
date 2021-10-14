@@ -6,7 +6,7 @@ import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Certificate } from "./connreq";
-import { ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
+import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
@@ -126,6 +126,10 @@ export class ServerPlayer extends Player {
     }
 
     setAttribute(id: AttributeId, value: number): AttributeInstance | null {
+        abstract();
+    }
+
+    setArmor(slot: ArmorSlot, itemStack:ItemStack): void {
         abstract();
     }
 
