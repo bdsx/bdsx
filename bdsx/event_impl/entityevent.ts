@@ -466,8 +466,8 @@ const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::d
 
 function onProjectileShoot(projectileComponent: ProjectileComponent, projectile: Actor, shooter: Actor): void {
     const event = new ProjectileShootEvent(projectile, shooter);
-    _tickCallback();
     events.projectileShoot.fire(event);
+    _tickCallback();
     return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
 }
 const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
