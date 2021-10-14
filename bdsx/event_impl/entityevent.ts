@@ -259,6 +259,14 @@ export class SplashPotionHitEvent implements ISplashPotionHitEvent {
     }
 }
 
+interface IProjectileShootEvent {
+    projectile: Actor;
+    shooter: Actor;
+}
+export class ProjectileShootEvent implements IProjectileShootEvent {
+    constructor(public projectile: Actor, public shooter: Actor) {}
+}
+
 // function onPlayerJump(player: Player):void {
 //     const event = new PlayerJumpEvent(player);
 //     console.log(player.getName());
@@ -454,3 +462,12 @@ function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSub
     }
 }
 const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::doOnHitEffect", void_t, null, SplashPotionEffectSubcomponent, Actor, ProjectileComponent)(onSplashPotionHit);
+
+
+function onProjectileShoot(projectileComponent: ProjectileComponent, projectile: Actor, shooter: Actor): void {
+    const event = new ProjectileShootEvent(projectile, shooter);
+    events.projectileShoot.fire(event);
+    _tickCallback();
+    return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
+}
+const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
