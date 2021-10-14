@@ -344,7 +344,7 @@ export class MinecraftCommands extends NativeClass {
 
 export enum CommandParameterDataType { NORMAL, ENUM, SOFT_ENUM, POSTFIX }
 
-const parsers = new Map<Type<any>, VoidPointer>();
+const parsers = new Map<Type<any>|"enum", VoidPointer>();
 
 @nativeClass()
 export class CommandParameterData extends NativeClass {
@@ -407,12 +407,13 @@ export class Command extends NativeClass {
         keyForIsSet:KEY_ISSET,
         desc?:string|null,
         type:CommandParameterDataType = CommandParameterDataType.NORMAL,
-        name:string = key as string):CommandParameterData {
+        name:string = key as string,
+        enumId?:number):CommandParameterData {
         const cmdclass = this as NativeClassType<any>;
         const paramType = cmdclass.typeOf(key as string);
         const offset = cmdclass.offsetOf(key as string);
         const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        return Command.manual(name, paramType, offset, flag_offset, false, desc, type);
+        return Command.manual(name, paramType, offset, flag_offset, false, desc, type, enumId);
     }
     static optional<CMD extends Command,
         KEY extends keyof CMD,
@@ -422,12 +423,13 @@ export class Command extends NativeClass {
         keyForIsSet:KEY_ISSET,
         desc?:string|null,
         type:CommandParameterDataType = CommandParameterDataType.NORMAL,
-        name:string = key as string):CommandParameterData {
+        name:string = key as string,
+        enumId?:number):CommandParameterData {
         const cmdclass = this as NativeClassType<any>;
         const paramType = cmdclass.typeOf(key as string);
         const offset = cmdclass.offsetOf(key as string);
         const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        return Command.manual(name, paramType, offset, flag_offset, true, desc, type);
+        return Command.manual(name, paramType, offset, flag_offset, true, desc, type, enumId);
     }
     static manual(
         name:string,
@@ -436,7 +438,8 @@ export class Command extends NativeClass {
         flag_offset:number = -1,
         optional:boolean = false,
         desc?:string|null,
-        type:CommandParameterDataType = CommandParameterDataType.NORMAL):CommandParameterData {
+        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
+        enumId?:number):CommandParameterData {
         const param = CommandParameterData.construct();
         param.tid.id = enumId ?? type_id(CommandRegistry, paramType).id;
         param.parser = enumId ? CommandRegistry.getParser("enum") : CommandRegistry.getParser(paramType);
@@ -523,10 +526,27 @@ export class CommandRegistry extends HasTypeId {
         return pk;
     }
 
-    static getParser<T>(type:Type<T>):VoidPointer {
-        const parser = parsers.get(type);
+    static getParser<T>(type:Type<T>|"enum"):VoidPointer {
+        if (type !== "enum") {
+            const parser = parsers.get(type);
+            if (parser != null) return parser;
+            throw Error(`${type.symbol || type.name} parser not found`);
+        }
+        const parser = parsers.get("enum");
         if (parser != null) return parser;
-        throw Error(`${type.symbol || type.name} parser not found`);
+        throw Error(`Enum parser not found`);
+    }
+
+    _addEnumValues(name:CxxString, values:CxxVector<CxxString>):number {
+        abstract();
+    }
+
+    addEnumValues(name:string, values:string[]):number {
+        const _values = CxxVector.make(CxxString).construct();
+        _values.setFromArray(values);
+        const ret = this._addEnumValues(name, _values);
+        _values.destruct();
+        return ret;
     }
 }
 
@@ -612,7 +632,7 @@ const types = [
     CommandPositionFloat,
     CommandRawText,
     CommandWildcardInt,
-    JsonValue
+    JsonValue,
 ];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
@@ -631,6 +651,7 @@ CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegis
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
 CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+CommandRegistry.prototype._addEnumValues = procHacker.js("?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z", int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
 (CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js("CommandRegistry::serializeAvailableCommands", AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
