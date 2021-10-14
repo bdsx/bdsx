@@ -1,12 +1,12 @@
 
-import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandParameterDataType, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { events } from './event';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
-import { nativeClass, nativeField } from './nativeclass';
+import { NativeClass, nativeClass, nativeField } from './nativeclass';
 import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
@@ -55,13 +55,15 @@ export class CustomCommand extends Command {
     }
 }
 
+type CommandEnum = Record<typeof enumNameSymbol|typeof enumIdSymbol|string, number>;
+
 export class CustomCommandFactory {
 
     constructor(
         public readonly registry:CommandRegistry,
         public readonly name:string) {
     }
-    overload<PARAMS extends Record<string, Type<any>|[Type<any>, boolean]>>(
+    overload<PARAMS extends Record<string, Type<any>|CommandEnum|[Type<any>|CommandEnum, boolean]>>(
         callback:(params:{
             [key in keyof PARAMS]:PARAMS[key] extends [Type<infer F>, infer V] ?
                 (V extends true ? F|undefined : F) :
@@ -90,10 +92,10 @@ export class CustomCommandFactory {
         }
 
         (parameters as any).__proto__ = null;
-        const fields:Record<string, Type<any>> = Object.create(null);
+        const fields:Record<string, Type<any>|CommandEnum> = Object.create(null);
         for (const name in parameters) {
             let optional = false;
-            let type:Type<any>|[Type<any>,boolean] = parameters[name];
+            let type:Type<any>|CommandEnum|[Type<any>|CommandEnum,boolean] = parameters[name];
             if (type instanceof Array) {
                 optional = type[1];
                 type = type[0];
@@ -113,9 +115,15 @@ export class CustomCommandFactory {
         const params:CommandParameterData[] = [];
         CustomCommandImpl.define(fields);
         for (const [name, optkey] of paramNames) {
-            if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any));
-            else params.push(CustomCommandImpl.mandatory(name, null));
+            if ((fields[name.toString()] as any)[enumIdSymbol]) {
+                if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any, (fields[name.toString()] as any)[enumNameSymbol], CommandParameterDataType.ENUM, name.toString(), (fields[name.toString()] as any)[enumIdSymbol]));
+                else params.push(CustomCommandImpl.mandatory(name, null, (fields[name.toString()] as any)[enumNameSymbol], CommandParameterDataType.ENUM, name.toString(), (fields[name.toString()] as any)[enumIdSymbol]));
+            } else {
+                if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any));
+                else params.push(CustomCommandImpl.mandatory(name, null));
+            }
         }
+        console.log(params);
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
             this.execute(origin, output);
@@ -131,6 +139,9 @@ export class CustomCommandFactory {
     }
 }
 
+export const enumNameSymbol = Symbol("enumName");
+export const enumIdSymbol = Symbol("enumId");
+
 export namespace command {
 
     export function register(name:string,
@@ -143,6 +154,20 @@ export namespace command {
         if (cmd !== null) throw Error(`${name}: command already registered`);
         registry.registerCommand(name, description, perm, flags1, flags2);
         return new CustomCommandFactory(registry, name);
+    }
+
+    export function addEnum<T extends string[]>(name:string, ...args: T): Record<typeof args[number]|typeof enumNameSymbol|typeof enumIdSymbol, number> {
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const enumId = registry.addEnumValues(name, args);
+        class CustomEnum extends NativeClass {
+            static [enumNameSymbol] = name;
+            static [enumIdSymbol] = enumId;
+        }
+        Object.defineProperty(CustomEnum, "name", {value:name});
+        for (const [i, key] of args.entries()) {
+            Object.defineProperty(CustomEnum, key, {value:i});
+        }
+        return CustomEnum as any;
     }
 }
 

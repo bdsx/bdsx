@@ -10,7 +10,7 @@ const interval = setInterval(()=>{
     for (const player of serverInstance.getPlayers()) {
         const region = player.getRegion();
         const pos = player.getPosition();
-        region.setBlock(BlockPos.create(Math.floor(pos.x), Math.floor(pos.y)-2, Math.floor(pos.z)), Block.create(dirtStone ? 'dirt' : 'stone')!);
+        region.setBlock(BlockPos.create(Math.floor(pos.x), Math.floor(pos.y)-2, Math.floor(pos.z)), Block.constructWith(dirtStone ? 'dirt' : 'stone')!);
     }
     dirtStone = !dirtStone;
 }, 100);

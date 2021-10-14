@@ -369,6 +369,7 @@ const symbols2 = [
     '?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z',
     '??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z',
     '?spawnParticleEffect@Level@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVVec3@@PEAVDimension@@@Z',
+    '?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z',
 ] as const;
 
 
