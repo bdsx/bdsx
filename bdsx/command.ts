@@ -55,8 +55,6 @@ export class CustomCommand extends Command {
     }
 }
 
-type CommandEnum = Record<typeof enumNameSymbol|typeof enumIdSymbol|string, number>;
-
 export class CustomCommandFactory {
 
     constructor(
@@ -83,7 +81,10 @@ export class CustomCommandFactory {
                     for (const [name, optkey] of paramNames) {
                         if (optkey == null || this[optkey]) {
                             if ((fields[name.toString()] as any)[enumIdSymbol]) {
-                                nobj[name] = (fields[name.toString()] as any)[this[name] as any];
+                                const enumObj = (fields[name.toString()] as CommandEnum);
+                                const enumValue = (this[name] as any as string).toLowerCase();
+                                const enumValues = enumObj[enumValuesSymbol] as any as string[];
+                                nobj[name] = enumValues.indexOf(enumValue) + 1;
                             } else {
                                 nobj[name] = this[name];
                             }
@@ -143,9 +144,10 @@ export class CustomCommandFactory {
     }
 }
 
-export const enumNameSymbol = Symbol("enumName");
-export const enumIdSymbol = Symbol("enumId");
-
+const enumNameSymbol = Symbol("enumName");
+const enumIdSymbol = Symbol("enumId");
+const enumValuesSymbol = Symbol("enumValues");
+type CommandEnum = Record<typeof enumNameSymbol|typeof enumIdSymbol|typeof enumValuesSymbol|string, number>;
 export namespace command {
 
     export function register(name:string,
@@ -160,12 +162,30 @@ export namespace command {
         return new CustomCommandFactory(registry, name);
     }
 
-    export function addEnum<T extends string[]>(name:string, ...args: T): Record<typeof args[number]|typeof enumNameSymbol|typeof enumIdSymbol, number> {
+    export function addEnum<T extends string[]>(name:string, ...args: T): Record<typeof args[number]|typeof enumNameSymbol|typeof enumIdSymbol|typeof enumValuesSymbol, number> {
         const registry = serverInstance.minecraft.getCommands().getRegistry();
-        const enumId = registry.addEnumValues(name, args);
+        const values = new Array<string>();
+        for (const value of args) {
+            const _value = value.toLowerCase();
+            if (values.includes(_value)) throw Error(`${value}: enum value duplicated`);
+            /*
+                Allowed special characters:
+                - (
+                - )
+                - -
+                - .
+                - ?
+                - _
+                and the ones whose ascii code is bigger than 127, like §, ©, etc.
+            */
+            if (/[ -'*-,/:->@[-^`{-~]/.test(_value)) throw Error(`${value}: enum value contains invalid characters`);
+            values.push(_value.toLowerCase());
+        }
+        const enumId = registry.addEnumValues(name, values);
         const CustomEnum = CxxString.extends();
         Object.defineProperty(CustomEnum, enumNameSymbol, {value:name});
         Object.defineProperty(CustomEnum, enumIdSymbol, {value:enumId});
+        Object.defineProperty(CustomEnum, enumValuesSymbol, {value:values});
         Object.defineProperty(CustomEnum, "name", {value:name});
         for (const [i, key] of args.entries()) {
             Object.defineProperty(CustomEnum, key, {value:i + 1});
