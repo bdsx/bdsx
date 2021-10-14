@@ -318,6 +318,7 @@ const symbols = [
     'BlockPalette::getBlockLegacy',
     'BlockLegacy::getRenderBlock',
     'ServerPlayer::setArmor',
+    'ProjectileComponent::shoot',
 ] as const;
 
 // decorated symbols
@@ -373,8 +374,13 @@ const symbols2 = [
     '?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z',
 ] as const;
 
-
-export const proc = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
+export const proc = pdb.getList(
+    pdb.coreCachePath,
+    {},
+    symbols,
+    false,
+    UNDNAME_NAME_ONLY
+);
 export const proc2 = pdb.getList(pdb.coreCachePath, {}, symbols2);
 
 pdb.close();
