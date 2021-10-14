@@ -337,6 +337,7 @@ ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetw
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     return this.networkIdentifier;
 };
+ServerPlayer.prototype.setArmor = procHacker.js("ServerPlayer::setArmor", void_t, {this: ServerPlayer}, uint32_t, ItemStack);
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
 PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {

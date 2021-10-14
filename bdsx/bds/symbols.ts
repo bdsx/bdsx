@@ -317,6 +317,7 @@ const symbols = [
     'Spawner::spawnMob',
     'BlockPalette::getBlockLegacy',
     'BlockLegacy::getRenderBlock',
+    'ServerPlayer::setArmor',
 ] as const;
 
 // decorated symbols
