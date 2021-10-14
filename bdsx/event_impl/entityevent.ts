@@ -259,6 +259,14 @@ export class SplashPotionHitEvent implements ISplashPotionHitEvent {
     }
 }
 
+interface IProjectileShootEvent {
+    projectile: Actor;
+    shooter: Actor;
+}
+export class ProjectileShootEvent implements IProjectileShootEvent {
+    constructor(public projectile: Actor, public shooter: Actor) {}
+}
+
 // function onPlayerJump(player: Player):void {
 //     const event = new PlayerJumpEvent(player);
 //     console.log(player.getName());
