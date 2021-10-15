@@ -67,4 +67,10 @@ export namespace type_id {
             map.set(types[i], addr);
         }
     }
+    export function register(base:typeof HasTypeId, type:Type<any>, id:number):void {
+        const map = base[typeidmap];
+        const newid = new typeid_t<any>(true);
+        newid.id = id;
+        map.set(type, newid);
+    }
 }

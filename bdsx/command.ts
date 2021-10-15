@@ -1,5 +1,5 @@
 
-import { Command, CommandCheatFlag, CommandContext, CommandOutput, CommandParameterData, CommandParameterDataType, CommandPermissionLevel, CommandRegistry, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandOutput, CommandParameterData, CommandParameterDataType, CommandPermissionLevel, CommandRegistry, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
@@ -7,10 +7,10 @@ import { events } from './event';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
-import { bool_t, CxxString, int32_t, NativeType, Type, void_t } from './nativetype';
+import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
 import { SharedPtr } from './sharedpointer';
 import { _tickCallback } from './util';
-
+import colors = require('colors');
 
 let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
 function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t):MCRESULT {
@@ -55,22 +55,43 @@ export class CustomCommand extends Command {
     }
 }
 
+interface CommandFieldOptions {
+    optional?:boolean;
+    description?:string;
+    name?:string;
+}
+type GetTypeFromParam<T> =
+    T extends CommandEnum<infer KEYS> ? KEYS :
+    T extends Type<infer F> ? F :
+    never;
+
+type OptionalCheck<T, OPTS extends boolean|CommandFieldOptions> =
+    (OPTS extends true ? true : OPTS extends {optional:true} ? true : false) extends true ?
+    GetTypeFromParam<T> :
+    GetTypeFromParam<T>|undefined;
+
 export class CustomCommandFactory {
 
     constructor(
         public readonly registry:CommandRegistry,
         public readonly name:string) {
     }
-    overload<PARAMS extends Record<string, Type<any>|CommandEnum|[Type<any>|CommandEnum, boolean]>>(
+    overload<PARAMS extends Record<string, Type<any>|[Type<any>, CommandFieldOptions|boolean]>>(
         callback:(params:{
-            [key in keyof PARAMS]:PARAMS[key] extends [Type<infer F>, infer V] ?
-                (V extends true ? F|undefined : F) :
-                (PARAMS[key] extends {prototype:infer F} ? F : PARAMS[key] extends Type<infer F> ? F :
-                PARAMS[key] extends CommandEnum ? number : never)
+            [key in keyof PARAMS]:
+                PARAMS[key] extends [infer T, infer OPTS] ? OptionalCheck<T, OPTS> :
+                PARAMS[key] extends Type<any> ? GetTypeFromParam<PARAMS[key]> :
+                never
             }, origin:CommandOrigin, output:CommandOutput)=>void,
         parameters:PARAMS):this {
 
-        const paramNames:[keyof CustomCommandImpl, (keyof CustomCommandImpl)?][] = [];
+        interface ParamInfo {
+            key:keyof CustomCommandImpl;
+            optkey:keyof CustomCommandImpl|null;
+            description?:string;
+            name:string;
+        }
+        const paramInfos:ParamInfo[] = [];
         class CustomCommandImpl extends CustomCommand {
             [NativeType.ctor]():void {
                 this.self_vftable.execute = customCommandExecute;
@@ -78,15 +99,14 @@ export class CustomCommandFactory {
             execute(origin:CommandOrigin, output:CommandOutput):void {
                 try {
                     const nobj:Record<keyof CustomCommandImpl, any> = {} as any;
-                    for (const [name, optkey] of paramNames) {
+                    for (const {key, optkey} of paramInfos) {
                         if (optkey == null || this[optkey]) {
-                            if ((fields[name.toString()] as any)[enumIdSymbol]) {
-                                const enumObj = (fields[name.toString()] as CommandEnum);
-                                const enumValue = (this[name] as any as string).toLowerCase();
-                                const enumValues = enumObj[enumValuesSymbol] as any as string[];
-                                nobj[name] = enumValues.indexOf(enumValue) + 1;
+                            const type = fields[key.toString()];
+                            if (type instanceof CommandEnum) {
+                                // match the case
+                                nobj[key] = type.mapper.get((this[key] as any as string).toLowerCase());
                             } else {
-                                nobj[name] = this[name];
+                                nobj[key] = this[key];
                             }
                         }
                     }
@@ -98,36 +118,49 @@ export class CustomCommandFactory {
         }
 
         (parameters as any).__proto__ = null;
-        const fields:Record<string, Type<any>|CommandEnum> = Object.create(null);
-        for (const name in parameters) {
+        const fields:Record<string, Type<any>> = Object.create(null);
+        for (const key in parameters) {
             let optional = false;
-            let type:Type<any>|CommandEnum|[Type<any>|CommandEnum,boolean] = parameters[name];
+            let type:Type<any>|[Type<any>, CommandFieldOptions|boolean] = parameters[key];
+            const info:ParamInfo = {
+                key: key as keyof CustomCommandImpl,
+                name: key,
+                optkey: null,
+            };
+
             if (type instanceof Array) {
-                optional = type[1];
+                const opts = type[1];
+                if (typeof opts === 'boolean') {
+                    optional = opts;
+                } else {
+                    optional = !!opts.optional;
+                    info.description = opts.description;
+                    if (opts.name != null) info.name = opts.name;
+                }
                 type = type[0];
             }
-            if (name in fields) throw Error(`${name}: field name duplicated`);
-            fields[name] = type;
+            if (key in fields) throw Error(`${key}: field name duplicated`);
+            fields[key] = type;
+
             if (optional) {
-                const optkey = name+'__set';
+                const optkey = key+'__set';
                 if (optkey in fields) throw Error(`${optkey}: field name duplicated`);
                 fields[optkey] = bool_t;
-                paramNames.push([name as keyof CustomCommandImpl, optkey as keyof CustomCommandImpl]);
-            } else {
-                paramNames.push([name as keyof CustomCommandImpl]);
+                info.optkey = optkey as keyof CustomCommandImpl;
             }
+            paramInfos.push(info);
         }
 
-        const params:CommandParameterData[] = [];
         CustomCommandImpl.define(fields);
-        for (const [name, optkey] of paramNames) {
-            if ((fields[name.toString()] as any)[enumIdSymbol]) {
-                if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any, (fields[name.toString()] as any)[enumNameSymbol], CommandParameterDataType.ENUM, name.toString(), (fields[name.toString()] as any)[enumIdSymbol]));
-                else params.push(CustomCommandImpl.mandatory(name, null, (fields[name.toString()] as any)[enumNameSymbol], CommandParameterDataType.ENUM, name.toString(), (fields[name.toString()] as any)[enumIdSymbol]));
-            } else {
-                if (optkey != null) params.push(CustomCommandImpl.optional(name, optkey as any));
-                else params.push(CustomCommandImpl.mandatory(name, null));
-            }
+
+        const params:CommandParameterData[] = [];
+        for (const {key, optkey, description, name} of paramInfos) {
+            const type = fields[key as string];
+            const dataType = type instanceof CommandEnum ?
+                CommandParameterDataType.ENUM :
+                CommandParameterDataType.NORMAL;
+            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, description, dataType, name));
+            else params.push(CustomCommandImpl.mandatory(key, null, description, dataType, name));
         }
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
@@ -144,13 +177,27 @@ export class CustomCommandFactory {
     }
 }
 
-const enumNameSymbol = Symbol("enumName");
-const enumIdSymbol = Symbol("enumId");
-const enumValuesSymbol = Symbol("enumValues");
-type CommandEnum = Record<typeof enumNameSymbol|typeof enumIdSymbol|typeof enumValuesSymbol|string, number>;
-export namespace command {
+const commandEnumStored = Symbol('commandEnum');
+function _enum<VALUES extends Record<string, string|number>>(name:string, values:VALUES):CommandEnum<VALUES[keyof VALUES]>;
+function _enum<VALUES extends string[]>(name:string, ...values:VALUES):CommandEnum<VALUES[number]>;
+function _enum(name:string, ...values:(string|Record<string, number|string>)[]):CommandEnum<any> {
+    const first = values[0];
+    if (typeof first === 'object') {
+        const cmdenum:CommandIndexEnum<any>|undefined = (first as any)[commandEnumStored];
+        if (cmdenum != null) {
+            if (cmdenum.name !== name) {
+                console.error(colors.yellow(`the enum name is different but it would not be applied. (${cmdenum.name} => ${name})`));
+            }
+            return cmdenum;
+        }
+        return (first as any)[commandEnumStored] = new CommandIndexEnum(name, first); // store and reuse
+    } else {
+        return new CommandStringEnum(name, ...(values as string[]));
+    }
+}
 
-    export function register(name:string,
+export const command ={
+    register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
         flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NotCheat,
@@ -160,40 +207,9 @@ export namespace command {
         if (cmd !== null) throw Error(`${name}: command already registered`);
         registry.registerCommand(name, description, perm, flags1, flags2);
         return new CustomCommandFactory(registry, name);
-    }
-
-    export function addEnum<T extends string[]>(name:string, ...args: T): Record<typeof args[number]|typeof enumNameSymbol|typeof enumIdSymbol|typeof enumValuesSymbol, number> {
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
-        const values = new Array<string>();
-        for (const value of args) {
-            const _value = value.toLowerCase();
-            if (value === "") throw Error(`${value}: enum value cannot be empty`); // It will be ignored by CommandRegistry::addEnumValues if it is empty
-            if (values.includes(_value)) throw Error(`${value}: enum value duplicated`);
-            /*
-                Allowed special characters:
-                - (
-                - )
-                - -
-                - .
-                - ?
-                - _
-                and the ones whose ascii code is bigger than 127, like §, ©, etc.
-            */
-            if (/[ -'*-,/:->@[-^`{-~]/.test(_value)) throw Error(`${value}: enum value contains invalid characters`);
-            values.push(_value.toLowerCase());
-        }
-        const enumId = registry.addEnumValues(name, values);
-        const CustomEnum = CxxString.extends();
-        Object.defineProperty(CustomEnum, enumNameSymbol, {value:name});
-        Object.defineProperty(CustomEnum, enumIdSymbol, {value:enumId});
-        Object.defineProperty(CustomEnum, enumValuesSymbol, {value:values});
-        Object.defineProperty(CustomEnum, "name", {value:name});
-        for (const [i, key] of args.entries()) {
-            Object.defineProperty(CustomEnum, key, {value:i + 1});
-        }
-        return CustomEnum as any;
-    }
-}
+    },
+    enum:_enum,
+};
 
 const customCommandDtor = makefunc.np(function(){
     this[NativeType.dtor]();

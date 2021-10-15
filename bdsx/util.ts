@@ -207,6 +207,11 @@ export function printOnProgress(message:string):void {
     console.log();
 }
 
+export function getEnumKeys<T extends Record<string, number|string>>(enumType:T):(keyof T)[] {
+    const NUMBERIC = /^[1-9][0-9]*$/;
+    return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
+}
+
 export const ESCAPE = "§";
 
 export const TextFormat = {

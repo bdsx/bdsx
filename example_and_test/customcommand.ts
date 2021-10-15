@@ -1,22 +1,28 @@
 
 // Custom Command
+import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, CommandIndexEnum, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
+import { serverInstance } from "bdsx/bds/server";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
 
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
-    console.log(param.rawtext.text);
+    output.success(
+        `raw text example> origin=${origin.getName()}\n`+
+        `text: `+param.rawtext.text);
 }, { rawtext:CommandRawText });
 
 // optional
 command.register('bbb', 'optional param example').overload((param, origin, output)=>{
-    console.log(`optional param example> origin=${origin.getName()}`);
-    console.log(`first: ${param.first}`);
-    if (param.second !== undefined) console.log(`second: ${param.second}`);
+    let out =
+        `optional param example> origin=${origin.getName()}\n`+
+        `first: ${param.first}`;
+    if (param.second !== undefined) out += `\nsecond: ${param.second}`;
+    output.success(out);
 }, {
     first: int32_t,
     second: [CxxString, true],
@@ -24,15 +30,17 @@ command.register('bbb', 'optional param example').overload((param, origin, outpu
 
 // empty parameters
 command.register('ccc', 'empty params example').overload((param, origin, output)=>{
-    console.log(`empty params example> origin=${origin.getName()}`);
+    output.success(
+        `empty params example> origin=${origin.getName()}\n`);
 }, {});
 
 // relative float, /ccc ~~~
 command.register('ddd', 'relative float example').overload((param, origin, output)=>{
-    console.log(`relative float example> origin=${origin.getName()}`);
-    console.log(param.x.value, param.x.is_relative);
-    console.log(param.y.value, param.y.is_relative);
-    console.log(param.z.value, param.z.is_relative);
+    output.success(
+        `relative float example> origin=${origin.getName()}\n`+
+        `${param.x.value} ${param.x.is_relative}\n`+
+        `${param.y.value} ${param.y.is_relative}\n`+
+        `${param.z.value} ${param.z.is_relative}\n`);
 }, {
     x: RelativeFloat,
     y: RelativeFloat,
@@ -41,26 +49,41 @@ command.register('ddd', 'relative float example').overload((param, origin, outpu
 
 // entity
 command.register('eee', 'entity example').overload((param, origin, output)=>{
-    console.log(`entity example> origin=${origin.getName()}`);
+    let out = `entity example> origin=${origin.getName()}`;
     for (const actor of param.target.newResults(origin)) {
-        console.log(actor.getName());
+        out += '\n'+actor.getName();
     }
+    output.success(out);
 }, {
     target: ActorWildcardCommandSelector,
 });
 
 // boolean
 command.register('fff', 'boolean example').overload((param, origin, output)=>{
-    console.log(`boolean example> origin=${origin.getName()}`);
-    console.log(`value: ${param.b}`);
+    output.success(
+        `boolean example> origin=${origin.getName()}\n`+
+        `value: ${param.b}`);
 }, {
     b: bool_t,
 });
 
+// enum
+serverInstance.minecraft.getLevel().setCommandsEnabled(true); // (?) it shows the enum list
+command.register('ggg', 'enum example').overload((param, origin, output)=>{
+    output.success(
+        `enum example> origin=${origin.getName()}\n`+
+        `enum1: ${param.enum1}\n`+
+        `enum2: ${param.enum2}`);
+}, {
+    enum1: command.enum('EnumType', 'enum1', 'Enum2', 'ENUM3'), // string enum
+    enum2: command.enum('DimensionId', DimensionId), // TS enum
+});
+
 // json
-command.register('ggg', 'json example').overload((param, origin, output)=>{
-    console.log(`json example> origin=${origin.getName()}`);
-    console.log(`value: ${JSON.stringify(param.json.value())}`);
+command.register('hhh', 'json example').overload((param, origin, output)=>{
+    output.success(
+        `json example> origin=${origin.getName()}\n`+
+        `value: ${JSON.stringify(param.json.value())}`);
 }, {
     json: JsonValue,
 });
