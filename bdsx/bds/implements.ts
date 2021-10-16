@@ -127,10 +127,10 @@ const actorMaps = new Map<string, Actor>();
 const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
 const ItemActor_vftable = proc["ItemActor::`vftable'"];
 Actor.prototype.isPlayer = function() {
-    return this.vftable.equals(ServerPlayer_vftable);
+    return this instanceof ServerPlayer;
 };
 Actor.prototype.isItem = function() {
-    return this.vftable.equals(ItemActor_vftable);
+    return this instanceof ItemActor;
 };
 (Actor as any)._singletoning = function(ptr:StaticPointer|null):Actor|null {
     if (ptr === null) return null;
