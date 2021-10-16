@@ -209,6 +209,10 @@ CommandItem.prototype.createInstance = procHacker.js('CommandItem::createInstanc
 
 export class CommandMessage extends NativeClass {
     data:CxxVector<CommandMessage.MessageComponent>;
+
+    getMessage(origin:CommandOrigin):string {
+        abstract();
+    }
 }
 
 export namespace CommandMessage {
@@ -217,15 +221,15 @@ export namespace CommandMessage {
     export class MessageComponent extends NativeClass {
         @nativeField(CxxString)
         string:CxxString;
-        // Needs to implement this, but it crashes for me
-        // @nativeField(Wrapper.make(CxxVector.make(WildcardCommandSelector.make(Actor)).ref()))
-        // selection:Wrapper<CxxVector<WildcardCommandSelector<Actor>>>;
+        @nativeField(ActorCommandSelector.ref())
+        selection:WildcardCommandSelector<Actor>;
     }
 }
 
 CommandMessage.abstract({
     data: CxxVector.make(CommandMessage.MessageComponent),
 }, 0x18);
+CommandMessage.prototype.getMessage = procHacker.js('CommandMessage::getMessage', CxxString, {this:CommandMessage, structureReturn:true}, CommandOrigin);
 
 @nativeClass()
 export class CommandPosition extends NativeClass {
