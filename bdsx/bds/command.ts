@@ -16,7 +16,9 @@ import { Actor } from "./actor";
 import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
+import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
+import { Player } from "./player";
 import { procHacker } from "./proc";
 import { serverInstance } from "./server";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
@@ -78,6 +80,27 @@ export const CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
 export class MCRESULT extends NativeClass {
     @nativeField(uint32_t)
     result:uint32_t;
+}
+
+export enum CommandSelectionOrder {
+    Sorted,
+    InvertSorted,
+    Random,
+}
+
+export enum CommandSelectionType {
+    /** Used in @s */
+    Self,
+    /** Used in @e */
+    Entities,
+    /** Used in @a */
+    Players,
+    /** Used in @r */
+    DefaultPlayers,
+    /** Used in @c */
+    OwnedAgent,
+    /** Used in @v */
+    Agents,
 }
 
 @nativeClass(0xc0)
@@ -149,11 +172,10 @@ export const ActorCommandSelector = CommandSelector.make(Actor);
 ActorCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
-export class PlayerCommandSelector extends ActorCommandSelector {
-    [NativeType.ctor]():void {
-        CommandSelectorBaseCtor(this, true);
-    }
-}
+export const PlayerCommandSelector = CommandSelector.make(Player);
+PlayerCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, true);
+};
 
 @nativeClass()
 export class CommandFilePath extends NativeClass {
@@ -177,7 +199,13 @@ export class CommandItem extends NativeClass {
     version:int32_t;
     @nativeField(int32_t)
     id:int32_t;
+
+    createInstance(count:number):ItemStack {
+        abstract();
+    }
 }
+
+CommandItem.prototype.createInstance = procHacker.js('CommandItem::createInstance', ItemStack, {this:CommandItem, structureReturn:true}, int32_t);
 
 export class CommandMessage extends NativeClass {
     data:CxxVector<CommandMessage.MessageComponent>;
@@ -750,6 +778,7 @@ const types = [
     CxxString,
     ActorWildcardCommandSelector,
     ActorCommandSelector,
+    PlayerCommandSelector,
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,

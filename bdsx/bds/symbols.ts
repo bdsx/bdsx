@@ -184,6 +184,7 @@ const symbols = [
     'CommandSelectorBase::CommandSelectorBase',
     'CommandSelectorBase::~CommandSelectorBase',
     'CommandSelectorBase::newResults',
+    'CommandItem::createInstance',
     'ScriptServerActorEventListener::onActorSneakChanged',
     'ScriptServerActorEventListener::onActorCreated',
     'ScriptServerActorEventListener::onActorDeath',
