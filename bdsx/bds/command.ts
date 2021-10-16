@@ -111,7 +111,7 @@ export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
 ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
-export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(Actor);
+export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(Player);
 PlayerWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, true);
 };
@@ -710,7 +710,6 @@ const types = [
     bool_t,
     CxxString,
     ActorWildcardCommandSelector,
-    PlayerWildcardCommandSelector,
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,
@@ -724,6 +723,8 @@ const types = [
 ];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
+type_id.register(CommandRegistry, PlayerWildcardCommandSelector, type_id(CommandRegistry, ActorWildcardCommandSelector).id);
+parsers.set(PlayerWildcardCommandSelector, parsers.get(ActorWildcardCommandSelector)!);
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
