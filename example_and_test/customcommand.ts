@@ -2,7 +2,7 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandIndexEnum, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { serverInstance } from "bdsx/bds/server";
 import { command } from "bdsx/command";
@@ -55,6 +55,7 @@ command.register('eee', 'entity example').overload((param, origin, output)=>{
     }
     output.success(out);
 }, {
+    //You can set as player-only with PlayerWildcardCommandSelector
     target: ActorWildcardCommandSelector,
 });
 
@@ -68,7 +69,7 @@ command.register('fff', 'boolean example').overload((param, origin, output)=>{
 });
 
 // enum
-serverInstance.minecraft.getLevel().setCommandsEnabled(true); // (?) it shows the enum list
+// serverInstance.minecraft.getLevel().setCommandsEnabled(true); // (?) it shows the enum list, but it will turn on allow-cheats.
 command.register('ggg', 'enum example').overload((param, origin, output)=>{
     output.success(
         `enum example> origin=${origin.getName()}\n`+

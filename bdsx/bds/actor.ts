@@ -406,9 +406,16 @@ export class Actor extends NativeClass {
     getActorIdentifier():ActorDefinitionIdentifier {
         abstract();
     }
+
+    /**
+     * @alias instanceof ServerPlayer
+     */
     isPlayer():this is ServerPlayer {
         abstract();
     }
+    /**
+     * @alias instanceof ItemActor
+     */
     isItem():this is ItemActor {
         abstract();
     }

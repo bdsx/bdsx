@@ -9,6 +9,7 @@ import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
+import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
 import { Actor } from "./actor";
@@ -84,11 +85,22 @@ export class CommandSelectorBase extends NativeClass {
     private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
         abstract();
     }
-    newResults(origin:CommandOrigin):Actor[] {
+    newResults<T extends Actor>(origin:CommandOrigin, typeFilter?:new(...args:any[])=>T):T[] {
         const list = this._newResults(origin);
-        const actors = list.p!.toArray();
-        list.dispose();
-        return actors;
+        if (typeFilter != null) {
+            const out:T[] = [];
+            for (const actor of list.p!) {
+                if (actor instanceof typeFilter) {
+                    out.push(actor as T);
+                }
+            }
+            list.dispose();
+            return out;
+        } else {
+            const actors = list.p!.toArray();
+            list.dispose();
+            return actors as T[];
+        }
     }
 }
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
@@ -99,19 +111,25 @@ CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorB
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
 
     static make<T>(type:Type<T>):NativeClassType<WildcardCommandSelector<T>> {
-        class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
-        }
-        Object.defineProperty(WildcardCommandSelectorImpl, 'name', {value: templateName('WildcardCommandSelector', type.name)});
-        WildcardCommandSelectorImpl.define({});
+        return Singleton.newInstance(WildcardCommandSelector, type, ()=>{
+            class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
+            }
+            Object.defineProperty(WildcardCommandSelectorImpl, 'name', {value: templateName('WildcardCommandSelector', type.name)});
+            WildcardCommandSelectorImpl.define({});
 
-        return WildcardCommandSelectorImpl;
+            return WildcardCommandSelectorImpl;
+        });
     }
 }
-
 export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
-ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
+ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
+export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector {
+    [NativeType.ctor]():void {
+        CommandSelectorBaseCtor(this, true);
+    }
+}
 
 @nativeClass()
 export class CommandFilePath extends NativeClass {
@@ -720,6 +738,8 @@ const types = [
 ];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
+type_id.clone(CommandRegistry, ActorWildcardCommandSelector, PlayerWildcardCommandSelector);
+parsers.set(PlayerWildcardCommandSelector, parsers.get(ActorWildcardCommandSelector)!);
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
