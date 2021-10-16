@@ -2,7 +2,7 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandIndexEnum, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { serverInstance } from "bdsx/bds/server";
 import { command } from "bdsx/command";

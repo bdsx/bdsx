@@ -67,6 +67,19 @@ export namespace type_id {
             map.set(types[i], addr);
         }
     }
+    export function clone(base:typeof HasTypeId, oriType:Type<any>, newType:Type<any>):void {
+        const map = base[typeidmap];
+        let typeid = map.get(oriType);
+        if (typeid == null) {
+            throw Error(`type_id ${oriType.name} not found`);
+        }
+        if (!(typeid instanceof typeid_t)) {
+            typeid = makefunc.js(typeid, typeid_t, {structureReturn: true})();
+            map.set(oriType, typeid);
+        }
+        map.set(newType, typeid);
+
+    }
     export function register(base:typeof HasTypeId, type:Type<any>, id:number):void {
         const map = base[typeidmap];
         const newid = new typeid_t<any>(true);

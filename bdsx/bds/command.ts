@@ -111,10 +111,11 @@ export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
 ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
-export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(Player);
-PlayerWildcardCommandSelector.prototype[NativeType.ctor] = function () {
-    CommandSelectorBaseCtor(this, true);
-};
+export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector {
+    [NativeType.ctor]():void {
+        CommandSelectorBaseCtor(this, true);
+    }
+}
 
 @nativeClass()
 export class CommandFilePath extends NativeClass {
@@ -723,7 +724,7 @@ const types = [
 ];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
-type_id.register(CommandRegistry, PlayerWildcardCommandSelector, type_id(CommandRegistry, ActorWildcardCommandSelector).id);
+type_id.clone(CommandRegistry, ActorWildcardCommandSelector, PlayerWildcardCommandSelector);
 parsers.set(PlayerWildcardCommandSelector, parsers.get(ActorWildcardCommandSelector)!);
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
