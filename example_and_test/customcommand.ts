@@ -55,6 +55,7 @@ command.register('eee', 'entity example').overload((param, origin, output)=>{
     }
     output.success(out);
 }, {
+    //You can set as player-only with PlayerWildcardCommandSelector
     target: ActorWildcardCommandSelector,
 });
 
