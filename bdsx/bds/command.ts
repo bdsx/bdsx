@@ -107,10 +107,13 @@ export class WildcardCommandSelector<T> extends CommandSelectorBase {
         return WildcardCommandSelectorImpl;
     }
 }
-
 export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
-ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
+ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
+};
+export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(Actor);
+PlayerWildcardCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, true);
 };
 
 @nativeClass()
@@ -707,6 +710,7 @@ const types = [
     bool_t,
     CxxString,
     ActorWildcardCommandSelector,
+    PlayerWildcardCommandSelector,
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,
