@@ -103,6 +103,7 @@ export class CommandSelectorBase extends NativeClass {
         }
     }
 }
+/** @param args_1 forcePlayer */
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
 (CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
@@ -126,6 +127,29 @@ ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
 export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector {
+    [NativeType.ctor]():void {
+        CommandSelectorBaseCtor(this, true);
+    }
+}
+@nativeClass()
+export class CommandSelector<T> extends CommandSelectorBase {
+
+    static make<T>(type:Type<T>):NativeClassType<CommandSelector<T>> {
+        return Singleton.newInstance(CommandSelector, type, ()=>{
+            class CommandSelectorImpl extends CommandSelector<T> {
+            }
+            Object.defineProperty(CommandSelectorImpl, 'name', {value: templateName('CommandSelector', type.name)});
+            CommandSelectorImpl.define({});
+
+            return CommandSelectorImpl;
+        });
+    }
+}
+export const ActorCommandSelector = CommandSelector.make(Actor);
+ActorCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
+export class PlayerCommandSelector extends ActorCommandSelector {
     [NativeType.ctor]():void {
         CommandSelectorBaseCtor(this, true);
     }
@@ -725,6 +749,7 @@ const types = [
     bool_t,
     CxxString,
     ActorWildcardCommandSelector,
+    ActorCommandSelector,
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,
