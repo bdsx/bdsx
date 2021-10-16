@@ -353,7 +353,41 @@ export class ItemStack extends NativeClass {
     }
 }
 
+export class Container extends NativeClass {
+    getSlots():CxxVector<ItemStack> {
+        abstract();
+    }
+    getItemCount(compare:ItemStack):int32_t {
+        abstract();
+    }
+    getContainerType():ContainerType {
+        abstract();
+    }
+    setCustomName(name:string):void {
+        abstract();
+    }
+}
+
+export class FillingContainer extends Container {
+}
+export class SimpleContainer extends Container {
+}
+
+export class Inventory extends FillingContainer {
+    /** Requires player.sendInventory */
+    dropSlot(slot:number, onlyClearContainer:boolean, dropAll:boolean, randomly:boolean):void {
+        abstract();
+    }
+}
+
+export class PlayerUIContainer extends SimpleContainer {
+}
+
+@nativeClass(null)
 export class PlayerInventory extends NativeClass {
+    @nativeField(Inventory.ref(), 0xB0)
+    container:Inventory;
+
     addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
         abstract();
     }

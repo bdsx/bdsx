@@ -319,6 +319,11 @@ const symbols = [
     'BlockLegacy::getRenderBlock',
     'ServerPlayer::setArmor',
     'ProjectileComponent::shoot',
+    'Container::getSlots',
+    'Container::getItemCount',
+    'Container::getContainerType',
+    'Container::setCustomName',
+    'Inventory::dropSlot',
 ] as const;
 
 // decorated symbols

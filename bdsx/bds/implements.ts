@@ -23,7 +23,7 @@ import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
+import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -284,6 +284,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 // player.ts
 Player.abstract({
     abilities:[Abilities, 0x928],
+    playerUIContainer:[PlayerUIContainer, 0x1210],
     respawnPosition:[BlockPos, 0x1D9C],
     respawnDimension:[uint8_t, 0x76A],
     deviceId:[CxxString, 0x20A0],
@@ -524,6 +525,13 @@ ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, dat
 };
 ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
 NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, {structureReturn:true}, ItemStack);
+
+Container.prototype.getSlots = procHacker.js("Container::getSlots", CxxVector.make(ItemStack.ref()), {this:Container, structureReturn:true});
+Container.prototype.getItemCount = procHacker.js("Container::getItemCount", int32_t, {this:Container}, ItemStack);
+Container.prototype.getContainerType = procHacker.js("Container::getContainerType", uint8_t, {this:Container});
+Container.prototype.setCustomName = procHacker.js("Container::setCustomName", void_t, {this:Container}, CxxString);
+
+Inventory.prototype.dropSlot = procHacker.js("Inventory::dropSlot", void_t, {this:Inventory}, int32_t, bool_t, bool_t, bool_t);
 
 PlayerInventory.prototype.getSlotWithItem = procHacker.js('PlayerInventory::getSlotWithItem', int32_t, {this: PlayerInventory}, ItemStack, bool_t, bool_t);
 PlayerInventory.prototype.addItem = procHacker.js("PlayerInventory::add", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
