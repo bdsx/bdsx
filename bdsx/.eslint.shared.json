@@ -40,6 +40,7 @@
         "github/array-foreach": "error",
         "unused-imports/no-unused-imports": "error",
         "import/no-cycle": "error",
+        "import/no-default-export": "error",
         "prefer-arrow-callback": "error",
         "eqeqeq": ["error", "always", {"null": "ignore"}],
         "no-throw-literal": "error",
@@ -54,12 +55,6 @@
         "prefer-rest-params": "off",
         "no-debugger": "warn",
         "import/export": "off",
-        "eol-last": "error",
-        "no-restricted-imports": ["error", {
-            "patterns": [{
-                "group": ["bdsx/*"],
-                "message": "Please use the relative path in bdsx libraries."
-            }]
-        }]
+        "eol-last": "error"
     }
 }

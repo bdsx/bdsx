@@ -1,7 +1,7 @@
 /**
  * Generated with the enum generator.
  * Please DO NOT modify this directly.
- * If it's needed to update, Modify bdsx/minecraft_impl/enums_ini/*.ini instead
+ * If it's needed to update, Modify bdsx-dev/enums_ini/*.ini instead
  */
 const minecraft=require("../minecraft");
 let v;
@@ -407,12 +407,40 @@ v[v[4]="HealthPercent"]=4;
 v[v[5]="Title"]=5;
 v[v[6]="Properties"]=6;
 v[v[7]="Style"]=7;
+(minecraft.BuildPlatform=v={}).__proto__=null;
+v[v[-1]="UNKNOWN"]=-1;
+v[v[1]="ANDROID"]=1;
+v[v[2]="IOS"]=2;
+v[v[3]="OSX"]=3;
+v[v[4]="AMAZON"]=4;
+v[v[5]="GEAR_VR"]=5;
+v[v[6]="HOLOLENS"]=6;
+v[v[7]="WINDOWS_10"]=7;
+v[v[8]="WIN32"]=8;
+v[v[9]="DEDICATED"]=9;
+v[v[10]="TVOS"]=10;
+v[v[11]="PLAYSTATION"]=11;
+v[v[12]="NINTENDO"]=12;
+v[v[13]="XBOX"]=13;
+v[v[14]="WINDOWS_PHONE"]=14;
 (minecraft.CameraShakePacket.ShakeAction=v={}).__proto__=null;
 v[v[0]="Add"]=0;
 v[v[1]="Stop"]=1;
 (minecraft.CameraShakePacket.ShakeType=v={}).__proto__=null;
 v[v[0]="Positional"]=0;
 v[v[1]="Rotational"]=1;
+(minecraft.CommandParameterDataType=v={}).__proto__=null;
+v[v[0]="NORMAL"]=0;
+v[v[1]="ENUM"]=1;
+v[v[2]="SOFT_ENUM"]=2;
+v[v[3]="POSTFIX"]=3;
+(minecraft.CommandPermissionLevel=v={}).__proto__=null;
+v[v[0]="Normal"]=0;
+v[v[1]="Operator"]=1;
+v[v[2]="Host"]=2;
+v[v[3]="Automation"]=3;
+v[v[4]="Admin"]=4;
+v[v[5]="Internal"]=5;
 (minecraft.CompletedUsingItemPacket.Actions=v={}).__proto__=null;
 v[v[0]="EquipArmor"]=0;
 v[v[1]="Eat"]=1;
@@ -481,6 +509,10 @@ v[v[0]="Peaceful"]=0;
 v[v[1]="Easy"]=1;
 v[v[2]="Normal"]=2;
 v[v[3]="Hard"]=3;
+(minecraft.DimensionId=v={}).__proto__=null;
+v[v[0]="Overworld"]=0;
+v[v[1]="Nether"]=1;
+v[v[2]="TheEnd"]=2;
 (minecraft.Enchant.Type=v={}).__proto__=null;
 v[v[0]="ArmorAll"]=0;
 v[v[1]="ArmorFire"]=1;
@@ -575,7 +607,6 @@ v[v[2]="Adventure"]=2;
 v[v[3]="SurvivalSpectator"]=3;
 v[v[4]="CreativeSpectator"]=4;
 v[v[5]="Default"]=5;
-v[v[6]="test"]=6;
 (minecraft.IdentityDefinition.Type=v={}).__proto__=null;
 v[v[0]="Invalid"]=0;
 v[v[1]="Player"]=1;

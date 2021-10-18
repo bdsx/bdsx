@@ -1,28 +1,28 @@
 
 // Addon Script
-import { Actor, DimensionId } from "bdsx/bds/actor";
-import { AttributeId } from "bdsx/bds/attribute";
 import { Tester } from "bdsx/tester";
 import { system } from "./bedrockapi-system";
 import colors = require('colors');
+import { bdsx } from "bdsx/v3";
+import { AttributeId, DimensionId } from "bdsx/enums";
 
 system.listenForEvent('minecraft:entity_created', ev => {
     if (!Tester.isPassed()) return; // logging if test is passed
     console.log('entity created: ' + ev.data.entity.__identifier__);
 
     // Get extra informations from entity
-    const actor = Actor.fromEntity(ev.data.entity);
-    if (actor !== null) {
-        console.log('entity dimension: ' + DimensionId[actor.getDimensionId()]);
-        const level = actor.getAttribute(AttributeId.PlayerLevel);
+    const entity = bdsx.Entity.fromEntity(ev.data.entity);
+    if (entity !== null) {
+        console.log('entity dimension: ' + DimensionId[entity.dimensionId]);
+        const level = entity.getAttribute(AttributeId.PlayerLevel);
         console.log('entity level: ' + level);
 
-        if (actor.isPlayer()) {
-            const ni = actor.getNetworkIdentifier();
-            console.log('player IP: '+ni.getAddress());
+        if (entity instanceof bdsx.Player) {
+            console.log('player IP: '+entity.ip);
         }
     } else {
-        console.error(colors.red(`Actor not found: ${ev.data.entity.__identifier__}`));
+        // this case does not occur. a kind of test.
+        console.error(colors.red(`Entity not found: ${ev.data.entity.__identifier__}`));
     }
 });
 system.listenForEvent('minecraft:entity_death', ev=>{

@@ -10,7 +10,6 @@ import { HashedString } from "bdsx/bds/hashedstring";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
-import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
@@ -32,6 +31,8 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { hex } from "bdsx/util";
+import { mcglobal } from "bdsx/mcglobal";
+import { bdsx } from "bdsx/v3";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -43,26 +44,26 @@ export function setRecentSendedPacketForTest(packetId: number): void {
 
 Tester.test({
     async globals() {
-        this.assert(serverInstance.isNotNull(), 'serverInstance not found');
-        this.assert(serverInstance.vftable.equals(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
+        this.assert(mcglobal.serverInstance.isNotNull(), 'serverInstance not found');
+        this.assert(mcglobal.serverInstance.vftable.equals(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
-        this.assert(networkHandler.isNotNull(), 'networkHandler not found');
-        this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
+        this.assert(mcglobal.networkHandler.isNotNull(), 'networkHandler not found');
+        this.assert(mcglobal.networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
-        this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(mcglobal.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
+        this.assert(mcglobal.commands.sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
 
-        this.assert(networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
+        this.assert(mcglobal.networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
-        this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
+        this.assert(mcglobal.networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
-        const shandle = serverInstance.minecraft.getServerNetworkHandler();
+        const shandle = mcglobal.serverInstance.minecraft.getServerNetworkHandler();
         shandle.setMotd('TestMotd');
         this.equals(shandle.motd, 'TestMotd', 'unexpected motd');
 
-        serverInstance.setMaxPlayers(10);
+        bdsx.server.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
     },
 
@@ -579,7 +580,7 @@ Tester.test({
     actor() {
         const system = server.registerSystem(0, 0);
         system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
-            const level = serverInstance.minecraft.getLevel();
+            const level = mcglobal.serverInstance.minecraft.getLevel();
             this.equals(level.players.size(), 1, 'Unexpected player size');
             this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
 

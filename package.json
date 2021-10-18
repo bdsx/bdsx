@@ -6,8 +6,8 @@
   "main": "./launcher.js",
   "author": "YOU!",
   "scripts": {
-    "postinstall": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
-    "install_bds": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
+    "postinstall": "ts-node ./bdsx/installer/installer ./bedrock_server",
+    "install_bds": "ts-node ./bdsx/installer/installer ./bedrock_server",
     "lint-bdsx": "eslint bdsx --ext ts",
     "tsc-no-emit": "tsc --noEmit",
     "watch": "tsc -w",
@@ -19,7 +19,7 @@
     "bdsx": "file:bdsx",
     "blessed": "^0.1.81",
     "colors": "^1.4.0",
-    "follow-redirects": "^1.14.2",
+    "follow-redirects": "^1.14.4",
     "progress": "^2.0.3",
     "source-map": "~0.6.1",
     "strip-json-comments": "^3.1.1",
@@ -31,15 +31,15 @@
   "devDependencies": {
     "@types/blessed": "^0.1.19",
     "@types/follow-redirects": "^1.13.1",
-    "@types/node": "^12.20.20",
+    "@types/node": "^12.20.28",
     "@types/progress": "^2.0.5",
     "@types/strip-json-comments": "^3.0.0",
     "@types/unzipper": "^0.10.4",
-    "@typescript-eslint/eslint-plugin": "^4.29.2",
-    "@typescript-eslint/parser": "^4.29.2",
+    "@typescript-eslint/eslint-plugin": "^4.33.0",
+    "@typescript-eslint/parser": "^4.33.0",
     "eslint": "^7.32.0",
     "eslint-plugin-github": "^4.2.0",
     "eslint-plugin-import": "2.24.0 || ^2.24.2",
-    "eslint-plugin-unused-imports": "^1.1.4"
+    "eslint-plugin-unused-imports": "^1.1.5"
   }
 }

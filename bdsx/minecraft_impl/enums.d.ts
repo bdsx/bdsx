@@ -1,7 +1,7 @@
 /**
  * Generated with the enum generator.
  * Please DO NOT modify this directly.
- * If it's needed to update, Modify bdsx/minecraft_impl/enums_ini/*.ini instead
+ * If it's needed to update, Modify bdsx-dev/enums_ini/*.ini instead
  */
 declare module "../minecraft" {
     enum AbilitiesIndex {
@@ -440,6 +440,24 @@ declare module "../minecraft" {
             Style,
         }
     }
+    enum BuildPlatform {
+        /** https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php */
+        UNKNOWN=-1,
+        ANDROID = 1,
+        IOS = 2,
+        OSX = 3,
+        AMAZON = 4,
+        GEAR_VR = 5,
+        HOLOLENS = 6,
+        WINDOWS_10 = 7,
+        WIN32 = 8,
+        DEDICATED = 9,
+        TVOS = 10,
+        PLAYSTATION = 11,
+        NINTENDO = 12,
+        XBOX = 13,
+        WINDOWS_PHONE = 14,
+    }
     namespace CameraShakePacket {
         enum ShakeAction {
             Add,
@@ -451,6 +469,20 @@ declare module "../minecraft" {
             Positional,
             Rotational,
         }
+    }
+    enum CommandParameterDataType {
+        NORMAL,
+        ENUM,
+        SOFT_ENUM,
+        POSTFIX,
+    }
+    enum CommandPermissionLevel {
+        Normal,
+        Operator,
+        Host,
+        Automation,
+        Admin,
+        Internal,
     }
     namespace CompletedUsingItemPacket {
         enum Actions {
@@ -528,6 +560,11 @@ declare module "../minecraft" {
         Easy,
         Normal,
         Hard,
+    }
+    enum DimensionId {
+        Overworld = 0,
+        Nether = 1,
+        TheEnd = 2,
     }
     namespace Enchant {
         enum Type {
@@ -636,7 +673,6 @@ declare module "../minecraft" {
         SurvivalSpectator,
         CreativeSpectator,
         Default,
-        test,
     }
     namespace IdentityDefinition {
         enum Type {

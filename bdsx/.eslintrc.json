@@ -1,4 +1,0 @@
-{
-  "ignorePatterns": ["**/*.js", "/minecraft.d.ts", "/minecraft_impl/enums.d.ts"],
-  "extends": "./.eslint.shared"
-}

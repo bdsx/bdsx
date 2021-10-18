@@ -15,7 +15,7 @@
                 "<node_internals>/**"
             ],
             "console": "integratedTerminal",
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "tsc: watch"
         }
     ]
 }

@@ -1,0 +1,1 @@
+{"version":3,"file":"gamerule.js","sourceRoot":"","sources":["../../../bdsx-lib/minecraft_impl/gamerule.ts"],"names":[],"mappings":";;AAAA,4CAAwC;AACxC,8CAA2D;AAY3D,oBAAQ,CAAC,KAAK,CAAC,MAAM,CAAC;IAClB,OAAO,EAAC,CAAC,mBAAM,EAAE,EAAC,KAAK,EAAC,IAAI,EAAC,CAAC;IAC9B,MAAM,EAAC,CAAC,oBAAO,EAAE,EAAC,KAAK,EAAC,IAAI,EAAC,CAAC;IAC9B,QAAQ,EAAC,sBAAS;CACrB,CAAC,CAAC"}

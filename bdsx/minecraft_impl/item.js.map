@@ -1,0 +1,1 @@
+{"version":3,"file":"item.js","sourceRoot":"","sources":["../../../bdsx-lib/minecraft_impl/item.ts"],"names":[],"mappings":";;AAAA,4CAAoC;AAQpC,gBAAI,CAAC,SAAS,CAAC,cAAc,GAAG;IAC5B,MAAM,KAAK,GAAG,IAAI,CAAC,eAAe,EAAE,CAAC;IACrC,MAAM,IAAI,GAAG,KAAK,CAAC,CAAC,CAAC,CAAC;IACtB,IAAI,IAAI,IAAI,IAAI;QAAE,MAAM,KAAK,CAAC,wBAAwB,CAAC,CAAC;IACxD,OAAO,IAAI,CAAC,IAAI,CAAC;AACrB,CAAC,CAAC"}

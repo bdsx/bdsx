@@ -1,9 +1,9 @@
-import { ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket } from "bdsx/bds/packets";
-import { command } from "bdsx/command";
+import { ScorePacketInfo, ServerPlayer, SetDisplayObjectivePacket, SetScorePacket } from "bdsx/minecraft";
+import { bdsx } from "bdsx/v3";
 
-command.register('example_score', 'score packet example').overload((params, origin, output)=>{
+bdsx.command.register('example_score', 'score packet example').overload((params, origin, output)=>{
     const actor = origin.getEntity();
-    if (actor?.isPlayer()) {
+    if (actor instanceof ServerPlayer) {
 
         // SetDisplayObjectivePacket
         const displaypacket = SetDisplayObjectivePacket.create();
@@ -11,7 +11,7 @@ command.register('example_score', 'score packet example').overload((params, orig
         displaypacket.objectiveName = 'objective';
         displaypacket.displayName = 'name';
         displaypacket.criteriaName = 'dummy';
-        displaypacket.sendTo(actor.networkIdentifier);
+        actor.sendNetworkPacket(displaypacket);
         displaypacket.dispose();
 
         // SetScorePacket
@@ -20,7 +20,7 @@ command.register('example_score', 'score packet example').overload((params, orig
         entry.objectiveName = 'objective';
         entry.customName = 'custom';
         entry.type = ScorePacketInfo.Type.PLAYER;
-        entry.playerEntityUniqueId = actor.getUniqueIdBin();
+        entry.playerEntityUniqueId = actor.getUniqueID().value;
         entry.score = 1000;
 
         const packet = SetScorePacket.create();

@@ -1,10 +1,8 @@
 
 // Network Hooking: disconnected
-import { events } from "bdsx/event";
-import { connectionList } from "./net-login";
 
-events.networkDisconnected.on(networkIdentifier => {
-    const id = connectionList.get(networkIdentifier);
-    connectionList.delete(networkIdentifier);
-    console.log(`${id}> disconnected`);
+import { bdsx } from "bdsx/v3";
+
+bdsx.events.playerDisconnect.on(ev => {
+    console.log(`${ev.player.name}> disconnected`);
 });

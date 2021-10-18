@@ -5,9 +5,13 @@
     },
     "editor.insertSpaces": true,
     "files.exclude": {
-        "**/*.js": { "when": "$(basename).ts"}
+        "**/*.js": { "when": "$(basename).ts"},
+        "bdsx/**/*.js.map": true
     },
     "search.exclude": {
-        "bdsx/minecraft.js": true
-    }
+        "bdsx/**/*.js": true,
+        "bdsx/**/*.d.ts": true
+    },
+    "npm.autoDetect": "off",
+    "typescript.tsc.autoDetect": "off"
 }

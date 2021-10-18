@@ -1,14 +1,11 @@
-import { AttributeId } from "bdsx/bds/attribute";
-import { events } from "bdsx/event";
-import { connectionList } from "./net-login";
+import { AttributeId } from "bdsx/enums";
+import { bdsx } from "bdsx/v3";
 
 // Change attributes
 let healthCounter = 5;
 const interval = setInterval(()=>{
-    for (const ni of connectionList.keys()) {
-        const actor = ni.getActor();
-        if (!actor) continue;
-        actor.setAttribute(AttributeId.Health, healthCounter);
+    for (const player of bdsx.Player.all()) {
+        player.setAttribute(AttributeId.Health, healthCounter);
     }
 
     healthCounter ++;
@@ -16,6 +13,6 @@ const interval = setInterval(()=>{
 }, 100);
 
 // without this code, bdsx does not end even after BDS closed
-events.serverStop.on(()=>{
+bdsx.events.serverStop.on(()=>{
     clearInterval(interval);
 });

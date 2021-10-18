@@ -28,8 +28,7 @@ require('bdsx/legacy');
 import { installMinecraftAddons } from 'bdsx/addoninstaller';
 import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
-
-import { events } from "bdsx/event";
+import { bdsx } from "bdsx/v3";
 
 console.log(
 "  _____      _____ \n".green +
@@ -43,7 +42,7 @@ console.log(
 );
 
 (async()=>{
-    events.serverClose.on(()=>{
+    bdsx.events.serverClose.on(()=>{
         console.log('[BDSX] bedrockServer closed');
         setTimeout(()=>{
             console.log('[BDSX] node.js is processing...');

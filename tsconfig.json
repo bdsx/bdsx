@@ -2,9 +2,12 @@
   "exclude": [
     "node_modules",
     "bedrock_server",
-    "addons"
+    "addons",
+    "bdsx"
   ],
   "compilerOptions": {
+    "typeRoots": ["./bdsx/typings"],
+    "types": ["node", "minecraft"],
     "target": "es2017",
     "lib": [ "es2017" ],
     "module": "CommonJS",
