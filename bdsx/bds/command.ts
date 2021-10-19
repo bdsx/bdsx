@@ -3,6 +3,7 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { abstract } from "../common";
 import { NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
+import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
@@ -633,6 +634,8 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
+    signatures:CxxMap<CxxString, CommandRegistry.Signature>;
+
     registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
     }
@@ -809,6 +812,9 @@ MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::han
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
+CommandRegistry.abstract({
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344] // from CommandRegistry::findCommand
+});
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);

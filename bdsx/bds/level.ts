@@ -2,7 +2,6 @@ import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
-import { CxxString } from "../nativetype";
 import type { Actor, ActorDefinitionIdentifier, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor } from "./actor";
 import type { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
@@ -127,7 +126,9 @@ export class ActorFactory extends NativeClass {
 }
 export class BlockPalette extends NativeClass {
     /** @param name only accepts format like "minecraft:wool" */
-    getBlockLegacy(name:CxxString):BlockLegacy {
+    getBlockLegacy(name:BlockId):BlockLegacy;
+    getBlockLegacy(name:string):BlockLegacy;
+    getBlockLegacy(name:BlockId|string):BlockLegacy {
         abstract();
     }
 }

@@ -1,5 +1,5 @@
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint32_t } from "../nativetype";
+import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 
 export enum Facing {
     Down,
@@ -25,6 +25,62 @@ export class BlockPos extends NativeClass {
         v.x = x;
         v.y = y;
         v.z = z;
+        return v;
+    }
+
+    toJSON():VectorXYZ {
+        return {x:this.x, y:this.y, z:this.z};
+    }
+}
+
+@nativeClass()
+export class ChunkPos extends NativeClass {
+    @nativeField(int32_t)
+    x:int32_t;
+    @nativeField(int32_t)
+    z:int32_t;
+
+    static create(x:number, z:number):ChunkPos;
+    static create(pos:BlockPos):ChunkPos;
+    static create(a:number|BlockPos, b?:number):ChunkPos {
+        const v = new ChunkPos(true);
+        if (typeof a === "number") {
+            v.x = a;
+            v.z = b!;
+        } else {
+            v.x = a.x >> 4;
+            v.z = a.z >> 4;
+        }
+        return v;
+    }
+
+    toJSON():{x: number, z: number} {
+        return {x:this.x, z:this.z};
+    }
+}
+
+@nativeClass()
+export class ChunkBlockPos extends NativeClass {
+    @nativeField(uint8_t)
+    x:uint8_t;
+    @nativeField(uint16_t)
+    y:uint16_t;
+    @nativeField(uint8_t)
+    z:uint8_t;
+
+    static create(x:number, y:number, z:number):ChunkBlockPos;
+    static create(pos:BlockPos):ChunkBlockPos;
+    static create(a:number|BlockPos, b?:number, c?:number):ChunkBlockPos {
+        const v = new ChunkBlockPos(true);
+        if (typeof a === "number") {
+            v.x = a;
+            v.y = b!;
+            v.z = c!;
+        } else {
+            v.x = a.x & 0xF;
+            v.y = a.y;
+            v.z = a.z & 0xF;
+        }
         return v;
     }
 

@@ -160,7 +160,9 @@ export class ItemStack extends NativeClass {
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
-    static constructWith(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+    static constructWith(itemName:ItemId, amount?:number, data?:number): ItemStack;
+    static constructWith(itemName:string, amount?:number, data?:number): ItemStack;
+    static constructWith(itemName:ItemId|string, amount:number = 1, data:number = 0):ItemStack {
         abstract();
     }
     /** @deprecated */

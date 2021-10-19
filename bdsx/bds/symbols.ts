@@ -326,6 +326,18 @@ const symbols = [
     'Container::getContainerType',
     'Container::setCustomName',
     'Inventory::dropSlot',
+    'BlockSource::getChunk',
+    'BlockSource::getChunkAt',
+    'BlockSource::getChunkSource',
+    'Dimension::getChunkSource',
+    'LevelChunk::getBiome',
+    'LevelChunk::getLevel',
+    'LevelChunk::getPosition',
+    'LevelChunk::getMin',
+    'LevelChunk::getMax',
+    'LevelChunk::toWorldPos',
+    'ChunkSource::getLevel',
+    'Biome::getBiomeType',
 ] as const;
 
 // decorated symbols

@@ -1,6 +1,6 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { BlockPos, Vec2, Vec3 } from "../bds/blockpos";
+import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
@@ -12,7 +12,9 @@ import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
 import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Biome } from "./biome";
 import { Block, BlockLegacy, BlockSource } from "./block";
+import { ChunkSource, LevelChunk } from "./chunk";
 import { MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
 import { OnHitSubcomponent } from "./components";
@@ -583,6 +585,9 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     pk.dispose();
     return retval;
 };
+BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
+BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);
+BlockSource.prototype.getChunkSource = procHacker.js("BlockSource::getChunkSource", ChunkSource, {this:BlockSource});
 
 // abilties.ts
 Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});
@@ -689,3 +694,16 @@ EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null
 OnHitSubcomponent.prototype.readfromJSON = makefunc.js([0x08], void_t, {this:OnHitSubcomponent}, JsonValue);
 OnHitSubcomponent.prototype.writetoJSON = makefunc.js([0x10], void_t, {this:OnHitSubcomponent}, JsonValue);
 (OnHitSubcomponent.prototype as any)._getName = makefunc.js([0x20], StaticPointer, {this:OnHitSubcomponent});
+
+// chunk.ts
+LevelChunk.prototype.getBiome = procHacker.js("LevelChunk::getBiome", Biome, {this:LevelChunk});
+LevelChunk.prototype.getLevel = procHacker.js("LevelChunk::getLevel", Level, {this:LevelChunk});
+LevelChunk.prototype.getPosition = procHacker.js("LevelChunk::getPosition", ChunkPos, {this:LevelChunk});
+LevelChunk.prototype.getMin = procHacker.js("LevelChunk::getMin", BlockPos, {this:LevelChunk});
+LevelChunk.prototype.getMax = procHacker.js("LevelChunk::getMax", BlockPos, {this:LevelChunk});
+LevelChunk.prototype.toWorldPos = procHacker.js("LevelChunk::toWorldPos", BlockPos, {this:LevelChunk, structureReturn:true}, ChunkPos);
+ChunkSource.prototype.getLevel = procHacker.js("ChunkSource::getLevel", Level, {this:ChunkSource});
+ChunkSource.prototype.getLevel = procHacker.js("ChunkSource::getLevel", Level, {this:ChunkSource});
+
+// biome.ts
+Biome.prototype.getBiomeType = procHacker.js("Biome::getBiomeType", uint32_t, {this:Biome});
