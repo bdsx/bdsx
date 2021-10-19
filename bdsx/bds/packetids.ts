@@ -20,6 +20,7 @@ export enum MinecraftPacketIds {//int32_t
 	AddActor = 0x0d,
 	RemoveActor = 0x0e,
 	AddItemActor = 0x0f,
+	UNUSED_PLS_USE_ME = 0x10, // DEPRECATED
 	TakeItemActor = 0x11,
 	MoveActorAbsolute = 0x12,
 	MovePlayer = 0x13,
@@ -42,7 +43,8 @@ export enum MinecraftPacketIds {//int32_t
 	BlockPickRequest = 0x22,
 	ActorPickRequest = 0x23,
 	PlayerAction = 0x24,
-	HurtArmor = 0x26,
+	ActorFall = 0x25, // DEPRECATED
+ 	HurtArmor = 0x26,
 	/** @deprecated use SetActorData, matching to official name */
 	SetEntityData = 0x27,
 	SetActorData = 0x27,
@@ -126,6 +128,7 @@ export enum MinecraftPacketIds {//int32_t
 	SetLocalPlayerAsInitialized = 0x71,
 	UpdateSoftEnum = 0x72,
 	NetworkStackLatency = 0x73,
+	BlockPalette = 0x74, // DEPRECATED
 	ScriptCustomEvent = 0x75,
 	SpawnParticleEffect = 0x76,
 	AvailableActorIdentifiers = 0x77,
@@ -135,12 +138,15 @@ export enum MinecraftPacketIds {//int32_t
 	LevelSoundEvent = 0x7b,
 	LevelEventGeneric = 0x7c,
 	LecternUpdate = 0x7d,
+	VideoStreamConnect_DEPRECATED = 0x7e,
+	AddEntity = 0x7f, // DEPRECATED
 	RemoveEntity = 0x80,
 	ClientCacheStatus = 0x81,
 	OnScreenTextureAnimation = 0x82,
 	MapCreateLockedCopy = 0x83,
 	StructureTemplateDataRequest = 0x84,
 	StructureTemplateDataExport = 0x85,
+	UpdateBlockProperties = 0x86, // DEPRECATED
 	ClientCacheBlobStatus = 0x87,
 	ClientCacheMissResponse = 0x88,
 	EducationSettings = 0x89,
@@ -176,5 +182,9 @@ export enum MinecraftPacketIds {//int32_t
 	RemoveVolumeEntity = 0xa7,
 	SimulationType = 0xa8,
 	NpcDialogue = 0xa9,
+	EduUriResourcePacket = 0xaa,
+	CreatePhotoPacket = 0xab,
+	UpdateSubChunkBlocks = 0xac,
+	PhotoInfoRequest = 0xad,
 }
 (MinecraftPacketIds as any).__proto__ = null;
