@@ -1660,6 +1660,46 @@ export namespace NpcDialoguePacket {
     }
 }
 
+export class UNUSED_PLS_USE_ME extends Packet {
+    // unknown
+}
+
+export class ActorFall extends Packet {
+    // unknown
+}
+
+export class BlockPalette extends Packet {
+    // unknown
+}
+
+export class VideoStreamConnect_DEPRECATED extends Packet {
+    // unknown
+}
+
+export class AddEntity extends Packet {
+    // unknown
+}
+
+export class UpdateBlockProperties extends Packet {
+    // unknown
+}
+
+export class EduUriResourcePacket extends Packet {
+    // unknown
+}
+
+export class CreatePhotoPacket extends Packet {
+    // unknown
+}
+
+export class UpdateSubChunkBlocks extends Packet {
+    // unknown
+}
+
+export class PhotoInfoRequest extends Packet {
+    // unknown
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -1676,6 +1716,7 @@ export const PacketIdToType = {
     0x0d: AddActorPacket,
     0x0e: RemoveActorPacket,
     0x0f: AddItemActorPacket,
+    0x10: UNUSED_PLS_USE_ME, // DEPRECATED
     0x11: TakeItemActorPacket,
     0x12: MoveActorAbsolutePacket,
     0x13: MovePlayerPacket,
@@ -1696,6 +1737,7 @@ export const PacketIdToType = {
     0x22: BlockPickRequestPacket,
     0x23: ActorPickRequestPacket,
     0x24: PlayerActionPacket,
+    0x25: ActorFall, // DEPRECATED
     0x26: HurtArmorPacket,
     0x27: SetActorDataPacket,
     0x28: SetActorMotionPacket,
@@ -1772,6 +1814,7 @@ export const PacketIdToType = {
     0x71: SetLocalPlayerAsInitializedPacket,
     0x72: UpdateSoftEnumPacket,
     0x73: NetworkStackLatencyPacket,
+    0x74: BlockPalette, // DEPRECATED
     0x75: ScriptCustomEventPacket,
     0x76: SpawnParticleEffectPacket,
     0x77: AvailableActorIdentifiersPacket,
@@ -1781,12 +1824,15 @@ export const PacketIdToType = {
     0x7b: LevelSoundEventPacket,
     0x7c: LevelEventGenericPacket,
     0x7d: LecternUpdatePacket,
+    0x7e: VideoStreamConnect_DEPRECATED,
+    0x7f: AddEntity, // DEPRECATED
     0x80: RemoveEntityPacket,
     0x81: ClientCacheStatusPacket,
     0x82: OnScreenTextureAnimationPacket,
     0x83: MapCreateLockedCopy,
     0x84: StructureTemplateDataRequestPacket,
     0x85: StructureTemplateDataExportPacket,
+    0x86: UpdateBlockProperties, // DEPRECATED
     0x87: ClientCacheBlobStatusPacket,
     0x88: ClientCacheMissResponsePacket,
     0x89: EducationSettingsPacket,
@@ -1822,6 +1868,10 @@ export const PacketIdToType = {
     0xa7: RemoveVolumeEntityPacket,
     0xa8: SimulationTypePacket,
     0xa9: NpcDialoguePacket,
+    0xaa: EduUriResourcePacket,
+    0xab: CreatePhotoPacket,
+    0xac: UpdateSubChunkBlocks,
+    0xad: PhotoInfoRequest
 };
 (PacketIdToType as any).__proto__ = null;
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
