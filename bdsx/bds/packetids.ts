@@ -44,7 +44,7 @@ export enum MinecraftPacketIds {//int32_t
 	ActorPickRequest = 0x23,
 	PlayerAction = 0x24,
 	ActorFall = 0x25, // DEPRECATED
- 	HurtArmor = 0x26,
+	HurtArmor = 0x26,
 	/** @deprecated use SetActorData, matching to official name */
 	SetEntityData = 0x27,
 	SetActorData = 0x27,
