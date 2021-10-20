@@ -26,7 +26,7 @@ import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
+import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -230,7 +230,7 @@ ActorDefinitionIdentifier.constructWith = function(type:number):ActorDefinitionI
 ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 1824],
+    itemStack: [ItemStack, 1864], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = [
@@ -288,7 +288,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 // player.ts
 Player.abstract({
     abilities:[Abilities, 0x908], // accessed in AbilityCommand::execute
-    // playerUIContainer:[PlayerUIContainer, 0x1210],
+    playerUIContainer:[PlayerUIContainer, 0x1128], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
     respawnPosition:[BlockPos, 0x1D04], // accessed in Player::setRespawnPosition
     respawnDimension:[int32_t, 0x1D10], // accessed in Player::setRespawnPosition
     // deviceId:[CxxString, 0x20A0],

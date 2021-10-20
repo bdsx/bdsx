@@ -15,7 +15,7 @@ import { serverInstance } from "./server";
 import type { SerializedSkin } from "./skin";
 
 export class Player extends Actor {
-    abilities: Abilities; // Level::getPlayerAbilities returns an instance of Abilities, but the values gotten are weird
+    abilities: Abilities;
     playerUIContainer: PlayerUIContainer;
     respawnPosition: BlockPos;
     respawnDimension: DimensionId;

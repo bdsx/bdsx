@@ -813,7 +813,7 @@ MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::han
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
 CommandRegistry.abstract({
-    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344] // from CommandRegistry::findCommand
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344] // accessed in CommandRegistry::findCommand
 });
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
