@@ -1,6 +1,6 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { BlockPos, Vec2, Vec3 } from "../bds/blockpos";
+import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
@@ -12,7 +12,9 @@ import { SharedPtr } from "../sharedpointer";
 import { Abilities, Ability } from "./abilities";
 import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Biome } from "./biome";
 import { Block, BlockLegacy, BlockSource } from "./block";
+import { ChunkSource, LevelChunk } from "./chunk";
 import { MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
 import { OnHitSubcomponent } from "./components";
@@ -23,7 +25,7 @@ import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
+import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemStack, NetworkItemStackDescriptor, PlayerInventory } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { CompoundTag } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -285,6 +287,7 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 // player.ts
 Player.abstract({
     abilities:[Abilities, 0x908], // accessed in AbilityCommand::execute
+    // playerUIContainer:[PlayerUIContainer, 0x1210],
     respawnPosition:[BlockPos, 0x1D04], // accessed in Player::setRespawnPosition
     respawnDimension:[int32_t, 0x1D10], // accessed in Player::setRespawnPosition
     // deviceId:[CxxString, 0x20A0],
@@ -535,6 +538,13 @@ ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, dat
 ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
 NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, {structureReturn:true}, ItemStack);
 
+Container.prototype.getSlots = procHacker.js("Container::getSlots", CxxVector.make(ItemStack.ref()), {this:Container, structureReturn:true});
+Container.prototype.getItemCount = procHacker.js("Container::getItemCount", int32_t, {this:Container}, ItemStack);
+Container.prototype.getContainerType = procHacker.js("Container::getContainerType", uint8_t, {this:Container});
+Container.prototype.setCustomName = procHacker.js("Container::setCustomName", void_t, {this:Container}, CxxString);
+
+Inventory.prototype.dropSlot = procHacker.js("Inventory::dropSlot", void_t, {this:Inventory}, int32_t, bool_t, bool_t, bool_t);
+
 PlayerInventory.prototype.getSlotWithItem = procHacker.js('PlayerInventory::getSlotWithItem', int32_t, {this: PlayerInventory}, ItemStack, bool_t, bool_t);
 PlayerInventory.prototype.addItem = procHacker.js("PlayerInventory::add", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
 PlayerInventory.prototype.clearSlot = procHacker.js("PlayerInventory::clearSlot", void_t, {this:PlayerInventory}, int32_t, int32_t);
@@ -585,6 +595,9 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     pk.dispose();
     return retval;
 };
+BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
+BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);
+BlockSource.prototype.getChunkSource = procHacker.js("BlockSource::getChunkSource", ChunkSource, {this:BlockSource});
 
 // abilties.ts
 Abilities.prototype.getCommandPermissionLevel = procHacker.js("Abilities::getCommandPermissions", int32_t, {this:Abilities});
@@ -691,3 +704,16 @@ EnchantUtils.hasEnchant = procHacker.js("EnchantUtils::hasEnchant", bool_t, null
 OnHitSubcomponent.prototype.readfromJSON = makefunc.js([0x08], void_t, {this:OnHitSubcomponent}, JsonValue);
 OnHitSubcomponent.prototype.writetoJSON = makefunc.js([0x10], void_t, {this:OnHitSubcomponent}, JsonValue);
 (OnHitSubcomponent.prototype as any)._getName = makefunc.js([0x20], StaticPointer, {this:OnHitSubcomponent});
+
+// chunk.ts
+LevelChunk.prototype.getBiome = procHacker.js("LevelChunk::getBiome", Biome, {this:LevelChunk});
+LevelChunk.prototype.getLevel = procHacker.js("LevelChunk::getLevel", Level, {this:LevelChunk});
+LevelChunk.prototype.getPosition = procHacker.js("LevelChunk::getPosition", ChunkPos, {this:LevelChunk});
+LevelChunk.prototype.getMin = procHacker.js("LevelChunk::getMin", BlockPos, {this:LevelChunk});
+LevelChunk.prototype.getMax = procHacker.js("LevelChunk::getMax", BlockPos, {this:LevelChunk});
+LevelChunk.prototype.toWorldPos = procHacker.js("LevelChunk::toWorldPos", BlockPos, {this:LevelChunk, structureReturn:true}, ChunkPos);
+ChunkSource.prototype.getLevel = procHacker.js("ChunkSource::getLevel", Level, {this:ChunkSource});
+ChunkSource.prototype.getLevel = procHacker.js("ChunkSource::getLevel", Level, {this:ChunkSource});
+
+// biome.ts
+Biome.prototype.getBiomeType = procHacker.js("Biome::getBiomeType", uint32_t, {this:Biome});

@@ -3,6 +3,7 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { abstract } from "../common";
 import { NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
+import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
@@ -16,7 +17,9 @@ import { Actor } from "./actor";
 import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
+import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
+import { Player } from "./player";
 import { procHacker } from "./proc";
 import { serverInstance } from "./server";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
@@ -80,6 +83,27 @@ export class MCRESULT extends NativeClass {
     result:uint32_t;
 }
 
+export enum CommandSelectionOrder {
+    Sorted,
+    InvertSorted,
+    Random,
+}
+
+export enum CommandSelectionType {
+    /** Used in @s */
+    Self,
+    /** Used in @e */
+    Entities,
+    /** Used in @a */
+    Players,
+    /** Used in @r */
+    DefaultPlayers,
+    /** Used in @c */
+    OwnedAgent,
+    /** Used in @v */
+    Agents,
+}
+
 @nativeClass(0xc0)
 export class CommandSelectorBase extends NativeClass {
     private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
@@ -103,6 +127,7 @@ export class CommandSelectorBase extends NativeClass {
         }
     }
 }
+/** @param args_1 forcePlayer */
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
 (CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
@@ -130,6 +155,28 @@ export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector 
         CommandSelectorBaseCtor(this, true);
     }
 }
+@nativeClass()
+export class CommandSelector<T> extends CommandSelectorBase {
+
+    static make<T>(type:Type<T>):NativeClassType<CommandSelector<T>> {
+        return Singleton.newInstance(CommandSelector, type, ()=>{
+            class CommandSelectorImpl extends CommandSelector<T> {
+            }
+            Object.defineProperty(CommandSelectorImpl, 'name', {value: templateName('CommandSelector', type.name)});
+            CommandSelectorImpl.define({});
+
+            return CommandSelectorImpl;
+        });
+    }
+}
+export const ActorCommandSelector = CommandSelector.make(Actor);
+ActorCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
+export const PlayerCommandSelector = CommandSelector.make(Player);
+PlayerCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, true);
+};
 
 @nativeClass()
 export class CommandFilePath extends NativeClass {
@@ -153,10 +200,20 @@ export class CommandItem extends NativeClass {
     version:int32_t;
     @nativeField(int32_t)
     id:int32_t;
+
+    createInstance(count:number):ItemStack {
+        abstract();
+    }
 }
+
+CommandItem.prototype.createInstance = procHacker.js('CommandItem::createInstance', ItemStack, {this:CommandItem, structureReturn:true}, int32_t);
 
 export class CommandMessage extends NativeClass {
     data:CxxVector<CommandMessage.MessageComponent>;
+
+    getMessage(origin:CommandOrigin):string {
+        abstract();
+    }
 }
 
 export namespace CommandMessage {
@@ -165,15 +222,15 @@ export namespace CommandMessage {
     export class MessageComponent extends NativeClass {
         @nativeField(CxxString)
         string:CxxString;
-        // Needs to implement this, but it crashes for me
-        // @nativeField(Wrapper.make(CxxVector.make(WildcardCommandSelector.make(Actor)).ref()))
-        // selection:Wrapper<CxxVector<WildcardCommandSelector<Actor>>>;
+        @nativeField(ActorCommandSelector.ref())
+        selection:WildcardCommandSelector<Actor>;
     }
 }
 
 CommandMessage.abstract({
     data: CxxVector.make(CommandMessage.MessageComponent),
 }, 0x18);
+CommandMessage.prototype.getMessage = procHacker.js('CommandMessage::getMessage', CxxString, {this:CommandMessage, structureReturn:true}, CommandOrigin);
 
 @nativeClass()
 export class CommandPosition extends NativeClass {
@@ -577,6 +634,8 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
+    signatures:CxxMap<CxxString, CommandRegistry.Signature>;
+
     registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
     }
@@ -725,6 +784,8 @@ const types = [
     bool_t,
     CxxString,
     ActorWildcardCommandSelector,
+    ActorCommandSelector,
+    PlayerCommandSelector,
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,
@@ -751,6 +812,9 @@ MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::han
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
+CommandRegistry.abstract({
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344] // from CommandRegistry::findCommand
+});
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);

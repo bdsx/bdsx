@@ -475,26 +475,34 @@ Tester.test({
             ['PositionTrackingDBServerBroadcast', 'PositionTrackingDBServerBroadcastPacket'],
             ['PositionTrackingDBClientRequest', 'PositionTrackingDBClientRequestPacket'],
             ['NPCDialoguePacket', 'NpcDialoguePacket'],
+            ['AddEntityPacket', 'AddEntity'],
+            ['EduUriResource', 'EduUriResourcePacket'],
+            ['CreatePhoto', 'CreatePhotoPacket'],
+            ['UpdateSubChunkBlocks', 'UpdateSubChunkBlocksPacket'],
         ]);
 
         for (const id in PacketIdToType) {
-            const Packet = PacketIdToType[+id as keyof PacketIdToType];
-            const packet = Packet.create();
+            try {
+                const Packet = PacketIdToType[+id as keyof PacketIdToType];
+                const packet = Packet.create();
 
-            let cxxname = packet.getName();
-            const renamed = wrongNames.get(cxxname);
-            if (renamed != null) cxxname = renamed;
+                let getNameResult = packet.getName();
+                const realname = wrongNames.get(getNameResult);
+                if (realname != null) getNameResult = realname;
 
-            let name = Packet.name;
+                let name = Packet.name;
 
-            this.equals(cxxname, name);
-            this.equals(packet.getId(), Packet.ID);
+                this.equals(getNameResult, name);
+                this.equals(packet.getId(), Packet.ID);
 
-            const idx = name.lastIndexOf('Packet');
-            if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
-            this.equals(MinecraftPacketIds[Packet.ID], name);
+                const idx = name.lastIndexOf('Packet');
+                if (idx !== -1) name = name.substr(0, idx) + name.substr(idx+6);
+                this.equals(MinecraftPacketIds[Packet.ID], name);
 
-            packet.dispose();
+                packet.dispose();
+            } catch (err) {
+                this.error(err.message);
+            }
         }
 
         for (const id in MinecraftPacketIds) {

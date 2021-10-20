@@ -5,15 +5,17 @@ import type { Abilities } from "./abilities";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import type { BlockPos, Vec3 } from "./blockpos";
-import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
+import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
+import { serverInstance } from "./server";
 import type { SerializedSkin } from "./skin";
 
 export class Player extends Actor {
-    abilities: Abilities;
+    abilities: Abilities; // Level::getPlayerAbilities returns an instance of Abilities, but the values gotten are weird
+    playerUIContainer: PlayerUIContainer;
     respawnPosition: BlockPos;
     respawnDimension: DimensionId;
     // deviceId: string;
@@ -129,9 +131,7 @@ export class ServerPlayer extends Player {
     }
 
     sendInventory(shouldSelectSlot: boolean = false): void {
-        setTimeout(() => {
-            this._sendInventory(shouldSelectSlot);
-        }, 50);
+        serverInstance.nextTick().then(() => this._sendInventory(shouldSelectSlot));
     }
 
     setAttribute(id: AttributeId, value: number): AttributeInstance | null {
