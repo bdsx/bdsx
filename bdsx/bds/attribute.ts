@@ -4,8 +4,8 @@ import { VoidPointer } from "../core";
 import { NativeClass } from "../nativeclass";
 import { float32_t } from "../nativetype";
 
-export enum AttributeId
-{
+// public: static class Attribute const
+export enum AttributeId {
 	PlayerHunger=1,
 	PlayerSaturation=2,
 	PlayerExhaustion=3,

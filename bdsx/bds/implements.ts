@@ -2,6 +2,7 @@ import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
+import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
@@ -10,6 +11,7 @@ import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
+import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
 import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -233,23 +235,9 @@ ItemActor.abstract({
     itemStack: [ItemStack, 1864], // accessed in ItemActor::isFireImmune
 });
 
-const attribNames = [
-    "minecraft:zombie.spawn.reinforcements",
-    "minecraft:player.hunger",
-    "minecraft:player.saturation",
-    "minecraft:player.exhaustion",
-    "minecraft:player.level",
-    "minecraft:player.experience",
-    "minecraft:health",
-    "minecraft:follow_range",
-    "minecraft:knockback_registance",
-    "minecraft:movement",
-    "minecraft:underwater_movement",
-    "minecraft:attack_damage",
-    "minecraft:absorption",
-    "minecraft:luck",
-    "minecraft:horse.jump_strength",
-];
+const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
+
+
 ServerPlayer.prototype.setAttribute = function(this:Actor, id:AttributeId, value:number):AttributeInstance|null {
     const attr = Actor.prototype.setAttribute.call(this, id, value);
     if (attr === null) return null;
@@ -599,7 +587,7 @@ Block.constructWith = function(blockName:string, data:number = 0):Block|null {
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
-BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
+BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);

@@ -66,7 +66,13 @@ export class Block extends NativeClass {
     static constructWith(blockName:BlockId|string, data:number = 0):Block|null {
         abstract();
     }
-    /** @deprecated */
+
+    static create(blockName:BlockId, data?: number):Block|null;
+    static create(blockName:string, data?: number):Block|null;
+
+    /**
+     * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
+     */
     static create(blockName:string, data:number = 0):Block|null {
         return this.constructWith(blockName, data);
     }
