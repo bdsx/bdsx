@@ -12,11 +12,9 @@ const interval = setInterval(()=>{
         const pos = player.getPosition();
         const blockpos = BlockPos.create(Math.floor(pos.x), Math.floor(pos.y)-2, Math.floor(pos.z));
         const block = region.getBlock(blockpos);
-        const blockToSet = Block.constructWith(dirtStone ? 'dirt' : 'stone')!;
         if (block.getName() !== 'minecraft:air') {
-            region.setBlock(blockpos, blockToSet);
+            region.setBlock(blockpos, Block.create(dirtStone ? 'dirt' : 'stone')!);
         }
-        blockToSet.destruct();
     }
     dirtStone = !dirtStone;
 }, 100);
