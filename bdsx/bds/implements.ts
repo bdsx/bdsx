@@ -6,6 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
+import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
@@ -330,10 +331,26 @@ Player.prototype.syncAbilties = function() {
 };
 Player.prototype.setRespawnPosition = procHacker.js('Player::setRespawnPosition', void_t, {this:Player}, BlockPos, int32_t);
 
+@nativeClass(null)
+class EntityIdentifierComponent extends NativeClass {
+    @nativeField(NetworkIdentifier)
+    networkIdentifier:NetworkIdentifier;
+    @nativeField(Certificate.ref(), 0xb8) // accessed in ServerNetworkHandler::_displayGameMessage
+    certifiate:Certificate;
+}
+
 EntityContextBase.prototype.isVaild = procHacker.js('EntityContextBase::isValid', bool_t, {this:EntityContextBase});
 EntityContextBase.prototype._enttRegistry = procHacker.js('EntityContextBase::_enttRegistry', VoidPointer, {this:EntityContextBase});
 
-const Registry_getEntityIdentifierComponent = procHacker.js('??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z', NetworkIdentifier, null, VoidPointer, int32_t.ref());
+const Registry_getEntityIdentifierComponent = procHacker.js('??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z', EntityIdentifierComponent, null, VoidPointer, int32_t.ref());
+
+Player.prototype.getCertificate = function() {
+    // part of ServerNetworkHandler::_displayGameMessage
+    const base = this.ctxbase;
+    if (!base.isVaild()) throw Error(`is not vaild`);
+    const registry = base._enttRegistry();
+    return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
+};
 
 ServerPlayer.abstract({});
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
@@ -346,9 +363,8 @@ ServerPlayer.prototype.getNetworkIdentifier = function () {
     const base = this.ctxbase;
     if (!base.isVaild()) throw Error(`is not vaild`);
     const registry = base._enttRegistry();
-    const id = base.entityId;
-    const res = Registry_getEntityIdentifierComponent(registry, id);
-    return res;
+    const res = Registry_getEntityIdentifierComponent(registry, base.entityId);
+    return res.networkIdentifier;
 };
 ServerPlayer.prototype.setArmor = procHacker.js("ServerPlayer::setArmor", void_t, {this: ServerPlayer}, uint32_t, ItemStack);
 

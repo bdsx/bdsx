@@ -618,6 +618,8 @@ Tester.test({
                         const playerlevel = actor.abilities.getPlayerPermissionLevel();
                         this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
 
+                        this.equals(actor.getCertificate().getXuid(), connectedXuid, 'xuid mismatch');
+
                         const pos = actor.respawnPosition;
                         const dim = actor.respawnDimension;
                         this.equals(dim, DimensionId.Undefined, 'respawn dimension mismatch');
@@ -688,10 +690,14 @@ Tester.test({
 
 let connectedNi: NetworkIdentifier;
 let connectedId: string;
+let connectedXuid:string;
 
 events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
 events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
-    connectedId = ptr.connreq!.cert.getId();
+    if (ptr.connreq === null) return;
+    const cert = ptr.connreq.cert;
+    connectedId = cert.getId();
+    connectedXuid = cert.getXuid();
 });
