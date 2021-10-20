@@ -169,7 +169,6 @@ const symbols = [
     'CommandRegistry::findCommand',
     'CommandRegistry::registerOverloadInternal',
     'CommandRegistry::serializeAvailableCommands',
-    'BlockSource::getBlock',
     'BlockSource::mayPlace',
     'BlockSource::checkBlockDestroyPermissions',
     'Block::getName',
@@ -394,6 +393,7 @@ const symbols2 = [
     '?spawnParticleEffect@Level@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVVec3@@PEAVDimension@@@Z',
     '?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z',
     '??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z',
+    '?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z',
 ] as const;
 
 export const proc = pdb.getList(

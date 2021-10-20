@@ -4,6 +4,7 @@ import { VoidPointer } from "../core";
 import { NativeClass } from "../nativeclass";
 import { float32_t } from "../nativetype";
 
+// public: static class Attribute const
 export enum AttributeId
 {
 	PlayerHunger=1,

@@ -599,7 +599,7 @@ Block.constructWith = function(blockName:string, data:number = 0):Block|null {
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
-BlockSource.prototype.getBlock = procHacker.js("BlockSource::getBlock", Block, {this:BlockSource}, BlockPos);
+BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
