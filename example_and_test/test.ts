@@ -4,7 +4,7 @@
 
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
-import { RelativeFloat } from "bdsx/bds/blockpos";
+import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
@@ -608,7 +608,21 @@ Tester.test({
                         const cmdlevel = actor.abilities.getCommandPermissionLevel();
                         this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');
                         const playerlevel = actor.abilities.getPlayerPermissionLevel();
-                        this.assert(PlayerPermission.VISITOR <= cmdlevel && cmdlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
+                        this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
+
+                        const pos = actor.respawnPosition;
+                        const dim = actor.respawnDimension;
+                        this.equals(dim, DimensionId.Undefined, 'respawn dimension mismatch');
+
+                        actor.setRespawnPosition(BlockPos.create(1,2,3), DimensionId.TheEnd);
+                        const respawnpointCheck = actor.respawnPosition.x === 1 &&
+                            actor.respawnPosition.y === 2 &&
+                            actor.respawnPosition.z === 3 &&
+                            actor.respawnDimension === DimensionId.TheEnd;
+                        this.assert(respawnpointCheck, 'respawn position mismatch');
+                        if (!respawnpointCheck) process.exit(-1); // terminate it for not saving it.
+
+                        actor.setRespawnPosition(pos, dim);
                     }
 
                     const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
@@ -650,6 +664,18 @@ Tester.test({
             }
         });
     },
+
+    testPlayerCount() {
+        events.queryRegenerate.once(v=>{
+            this.equals(v.currentPlayers, 0, 'player count mismatch');
+            this.equals(v.maxPlayers, serverInstance.getMaxPlayers(), 'max player mismatch');
+        });
+        events.packetAfter(MinecraftPacketIds.Login).once((packet, ni)=>{
+            events.queryRegenerate.once(v=>{
+                this.equals(v.currentPlayers, 1, 'player count mismatch');
+            });
+        });
+    }
 }, true);
 
 let connectedNi: NetworkIdentifier;

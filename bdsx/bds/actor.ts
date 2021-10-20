@@ -24,7 +24,8 @@ export type ActorUniqueID = bin64_t;
 export enum DimensionId { // int32_t
     Overworld = 0,
     Nether = 1,
-    TheEnd = 2
+    TheEnd = 2,
+    Undefined = 3,
 }
 
 export class ActorRuntimeID extends VoidPointer {
@@ -366,8 +367,22 @@ export class EntityRefTraits extends NativeClass {
     context:OwnerStorageEntity;
 }
 
+@nativeClass(null)
+export class EntityContextBase extends NativeClass {
+    @nativeField(int32_t, 0x8)
+    entityId:int32_t;
+
+    isVaild():boolean {
+        abstract();
+    }
+    _enttRegistry():VoidPointer {
+        abstract();
+    }
+}
+
 export class Actor extends NativeClass {
     vftable:VoidPointer;
+    ctxbase:EntityContextBase;
     /** @deprecated use getIdentifier */
     get identifier():EntityId {
         return this.getIdentifier();

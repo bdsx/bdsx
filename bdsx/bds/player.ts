@@ -5,7 +5,6 @@ import type { Abilities } from "./abilities";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import type { BlockPos, Vec3 } from "./blockpos";
-import type { Certificate } from "./connreq";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
@@ -17,7 +16,7 @@ export class Player extends Actor {
     abilities: Abilities;
     respawnPosition: BlockPos;
     respawnDimension: DimensionId;
-    deviceId: string;
+    // deviceId: string;
 
     protected _setName(name: string): void {
         abstract();
@@ -91,12 +90,18 @@ export class Player extends Actor {
         abstract();
     }
 
-    getCertificate(): Certificate {
+    setRespawnPosition(pos:BlockPos, dimension:DimensionId):void {
         abstract();
     }
+
+    // not found in 1.17.40.06
+    // getCertificate(): Certificate {
+    //     abstract();
+    // }
 }
 
 export class ServerPlayer extends Player {
+    /** @deprecated use getNetworkIdentifier() */
     networkIdentifier: NetworkIdentifier;
 
     protected _sendInventory(shouldSelectSlot: boolean): void {
@@ -104,6 +109,10 @@ export class ServerPlayer extends Player {
     }
 
     knockback(source: Actor, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+        abstract();
+    }
+
+    getNetworkIdentifier():NetworkIdentifier {
         abstract();
     }
 

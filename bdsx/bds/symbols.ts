@@ -255,7 +255,6 @@ const symbols = [
     'EnchantUtils::getEnchantLevel',
     'EnchantUtils::hasCurse',
     'EnchantUtils::hasEnchant',
-    'Player::getCertificate',
     'Level::getSeed',
     'SharedConstants::CurrentGameSemVersion',
     'SharedConstants::NetworkProtocolVersion',
@@ -319,6 +318,9 @@ const symbols = [
     'BlockLegacy::getRenderBlock',
     'ServerPlayer::setArmor',
     'ProjectileComponent::shoot',
+    'EntityContextBase::isValid',
+    'EntityContextBase::_enttRegistry',
+    'Player::setRespawnPosition',
 ] as const;
 
 // decorated symbols
@@ -372,6 +374,7 @@ const symbols2 = [
     '??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z',
     '?spawnParticleEffect@Level@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVVec3@@PEAVDimension@@@Z',
     '?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z',
+    '??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z',
 ] as const;
 
 export const proc = pdb.getList(

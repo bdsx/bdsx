@@ -278,9 +278,14 @@ export namespace MovePlayerPacket {
 }
 
 @nativeClass(null)
-export class RiderJumpPacket extends Packet {
+export class PassengerJumpPacket extends Packet {
     // unknown
 }
+
+/** @deprecated use PassengerJumpPacket */
+export const RiderJumpPacket = PassengerJumpPacket;
+/** @deprecated use PassengerJumpPacket */
+export type RiderJumpPacket = PassengerJumpPacket;
 
 @nativeClass(null)
 export class UpdateBlockPacket extends Packet {
@@ -1679,7 +1684,7 @@ export const PacketIdToType = {
     0x11: TakeItemActorPacket,
     0x12: MoveActorAbsolutePacket,
     0x13: MovePlayerPacket,
-    0x14: RiderJumpPacket,
+    0x14: PassengerJumpPacket,
     0x15: UpdateBlockPacket,
     0x16: AddPaintingPacket,
     0x17: TickSyncPacket,

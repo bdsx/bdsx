@@ -23,7 +23,9 @@ export enum MinecraftPacketIds {//int32_t
 	TakeItemActor = 0x11,
 	MoveActorAbsolute = 0x12,
 	MovePlayer = 0x13,
+	/** @deprecated use PassengerJump, follow the real class name */
 	RiderJump = 0x14,
+	PassengerJump = 0x14,
 	UpdateBlock = 0x15,
 	AddPainting = 0x16,
 	TickSync = 0x17,
