@@ -339,6 +339,7 @@ const symbols = [
     'LevelChunk::toWorldPos',
     'ChunkSource::getLevel',
     'Biome::getBiomeType',
+    'Attribute::getByName',
 ] as const;
 
 // decorated symbols

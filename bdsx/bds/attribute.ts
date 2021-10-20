@@ -5,8 +5,7 @@ import { NativeClass } from "../nativeclass";
 import { float32_t } from "../nativetype";
 
 // public: static class Attribute const
-export enum AttributeId
-{
+export enum AttributeId {
 	PlayerHunger=1,
 	PlayerSaturation=2,
 	PlayerExhaustion=3,
