@@ -275,11 +275,9 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 
 // player.ts
 Player.abstract({
-    abilities:[Abilities, 0x908], // accessed in AbilityCommand::execute
+    abilities:[Abilities, 0x908], // accessed in AbilityCommand::execute when calling Abilities::setAbility
     playerUIContainer:[PlayerUIContainer, 0x1128], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    respawnPosition:[BlockPos, 0x1D04], // accessed in Player::setRespawnPosition
-    respawnDimension:[int32_t, 0x1D10], // accessed in Player::setRespawnPosition
-    // deviceId:[CxxString, 0x20A0],
+    deviceId:[CxxString, 0x2080], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js("Player::setName", void_t, {this: Player}, CxxString);
 const PlayerListPacket$emplace = procHacker.js("PlayerListPacket::emplace", void_t, null, PlayerListPacket, PlayerListEntry);
@@ -318,6 +316,8 @@ Player.prototype.syncAbilties = function() {
     pk.dispose();
 };
 Player.prototype.setRespawnPosition = procHacker.js('Player::setRespawnPosition', void_t, {this:Player}, BlockPos, int32_t);
+Player.prototype.getSpawnDimension = procHacker.js('Player::getSpawnDimension', int32_t, {this:Player});
+Player.prototype.getSpawnPosition = procHacker.js('Player::getSpawnPosition', BlockPos, {this:Player});
 
 @nativeClass(null)
 class EntityIdentifierComponent extends NativeClass {

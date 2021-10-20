@@ -322,6 +322,8 @@ const symbols = [
     'EntityContextBase::isValid',
     'EntityContextBase::_enttRegistry',
     'Player::setRespawnPosition',
+    'Player::getSpawnDimension',
+    'Player::getSpawnPosition',
     'Container::getSlots',
     'Container::getItemCount',
     'Container::getContainerType',

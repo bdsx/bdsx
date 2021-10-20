@@ -17,9 +17,15 @@ import type { SerializedSkin } from "./skin";
 export class Player extends Actor {
     abilities: Abilities;
     playerUIContainer: PlayerUIContainer;
-    respawnPosition: BlockPos;
-    respawnDimension: DimensionId;
-    // deviceId: string;
+    /** @deprecated Use Player.prototype.getSpawnDimension */
+    get respawnDimension(): DimensionId {
+        return this.getSpawnDimension();
+    }
+    /** @deprecated Use Player.prototype.getSpawnPosition */
+    get respawnPosition(): BlockPos {
+        return this.getSpawnPosition();
+    }
+    deviceId: string;
 
     protected _setName(name: string): void {
         abstract();
@@ -93,7 +99,15 @@ export class Player extends Actor {
         abstract();
     }
 
-    setRespawnPosition(pos:BlockPos, dimension:DimensionId):void {
+    setRespawnPosition(pos: BlockPos, dimension: DimensionId):void {
+        abstract();
+    }
+
+    getSpawnDimension(): DimensionId {
+        abstract();
+    }
+
+    getSpawnPosition(): BlockPos {
         abstract();
     }
 
