@@ -383,17 +383,24 @@ export class EntityContextBase extends NativeClass {
 export class Actor extends NativeClass {
     vftable:VoidPointer;
     ctxbase:EntityContextBase;
-    /** @deprecated use getIdentifier */
+    /** @deprecated Use `this.getIdentifier()` instead */
     get identifier():EntityId {
         return this.getIdentifier();
     }
 
-    /** @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorDefinitionIdentifier.create(ActorType.Pig), -1, player) */
+    /**
+     * Summon a new entity
+     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorDefinitionIdentifier.create(ActorType.Pig), -1, player)
+     * */
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID, summoner?:Actor):Actor;
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:int64_as_float_t, summoner?:Actor):Actor;
     static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
         abstract();
     }
+
+    /**
+     * Get the Actor instance of an entity with its EntityContext
+     */
     static tryGetFromEntity(entity:EntityContext):Actor {
         abstract();
     }
@@ -409,19 +416,30 @@ export class Actor extends NativeClass {
         if(this.isItem()) return 0;
         return this._getArmorValue();
     }
+    /**
+     * Returns the Dimension instance of the entity currently in
+     */
     getDimension():Dimension {
         abstract();
     }
+    /**
+     * Returns the dimension id of the entity currently in
+     */
     getDimensionId():DimensionId {
         abstract();
     }
+    /**
+     * Returns the entity's identifier
+     */
     getIdentifier():EntityId {
         return this.getActorIdentifier().canonicalName.str as EntityId;
     }
+    /**
+     * Returns the ActorDefinitionIdentifier instance of the entity
+     */
     getActorIdentifier():ActorDefinitionIdentifier {
         abstract();
     }
-
     /**
      * @alias instanceof ServerPlayer
      */
@@ -434,15 +452,27 @@ export class Actor extends NativeClass {
     isItem():this is ItemActor {
         abstract();
     }
+    /**
+     * Returns the entity's attribute map
+     */
     getAttributes():BaseAttributeMap {
         abstract();
     }
+    /**
+     * Returns the entity's name
+     */
     getName():string {
         abstract();
     }
+    /**
+     * Changes the entity's name
+     */
     setName(name:string):void {
         abstract();
     }
+    /**
+     * Changes the entity's name
+     */
     setNameTag(name:string):void {
         this.setName(name);
     }
@@ -455,12 +485,21 @@ export class Actor extends NativeClass {
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
     }
+    /**
+     * Returns the entity's position
+     */
     getPosition():Vec3 {
         abstract();
     }
+    /**
+     * Returns the entity's rotation
+     */
     getRotation():Vec2 {
         abstract();
     }
+    /**
+     * Returns the BlockSource instance which the entity is ticking
+     */
     getRegion():BlockSource {
         abstract();
     }
@@ -474,23 +513,34 @@ export class Actor extends NativeClass {
         return this.getUniqueIdPointer().getBin64();
     }
     /**
-     * it returns address of the unique id field
+     * Returns address of the entity's unique id
      */
     getUniqueIdPointer():StaticPointer {
         abstract();
     }
-
+    /**
+     * Returns the entity's type
+     */
     getEntityTypeId():ActorType {
         abstract();
     }
+    /**
+     * Returns the entity's command permission level
+     */
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
+    /**
+     * Returns the entity's specific attribute
+     */
     getAttribute(id:AttributeId):number {
         const attr = this.getAttributes().getMutableInstance(id);
         if (attr === null) return 0;
         return attr.currentValue;
     }
+    /**
+     * Changes the entity's specific attribute
+     */
     setAttribute(id:AttributeId, value:number):AttributeInstance|null {
         if (id < 1) return null;
         if (id > 15) return null;
@@ -500,11 +550,16 @@ export class Actor extends NativeClass {
         attr.currentValue = value;
         return attr;
     }
+    /**
+     * Returns the entity's runtime id
+     */
     getRuntimeID():ActorRuntimeID {
         abstract();
     }
     /**
-     * @deprecated Need more implement
+     * Gets the entity component of bedrock scripting api
+     *
+     * @deprecated Needs more implement
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;
@@ -520,15 +575,24 @@ export class Actor extends NativeClass {
         };
         return (this as any).entity = entity;
     }
+    /**
+     * Adds an effect to the entity. If a weaker effect of the same type is already applied, it will be replaced. If a weaker or equal-strength effect is already applied but has a shorter duration, it will be replaced.
+     */
     addEffect(effect: MobEffectInstance): void {
         abstract();
     }
+    /**
+     * Removes the effect with the specified ID from the entity
+     */
     removeEffect(id: MobEffectIds):void {
         abstract();
     }
     protected _hasEffect(mobEffect: MobEffect):boolean {
         abstract();
     }
+    /**
+     * Returns whether the specified effect is active on the entity
+     */
     hasEffect(id: MobEffectIds):boolean {
         const effect = MobEffect.create(id);
         const retval = this._hasEffect(effect);
@@ -538,46 +602,85 @@ export class Actor extends NativeClass {
     protected _getEffect(mobEffect: MobEffect):MobEffectInstance | null {
         abstract();
     }
+    /**
+     * Returns the effect instance active on this entity with the specified ID, or null if the entity does not have the effect.
+     */
     getEffect(id: MobEffectIds):MobEffectInstance | null {
         const effect = MobEffect.create(id);
         const retval = this._getEffect(effect);
         effect.destruct();
         return retval;
     }
+    /**
+     * Adds a tag to the entity
+     *
+     * @returns {boolean} Whether the tag has been added successfully
+     */
     addTag(tag:string):boolean {
         abstract();
     }
+    /**
+     * Returns whether the entity has the tag
+     */
     hasTag(tag:string):boolean {
         abstract();
     }
+    /**
+     * Remove a tag from the entity
+     *
+     * @returns {boolean} Whether the tag has been removed successfully
+     */
     removeTag(tag:string):boolean {
         abstract();
     }
+    /**
+     * Teleports the entity to a specified position
+     */
     teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
         abstract();
     }
+    /**
+     * Returns the entity's armor
+     */
     getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
+    /**
+     * Sets the entity's sneaking status
+     */
     setSneaking(value:boolean):void {
         abstract();
     }
+    /**
+     * Returns the entity's health
+     */
     getHealth():number {
         abstract();
     }
+    /**
+     * Returns the entity's maximum health
+     */
     getMaxHealth():number {
         abstract();
     }
     /**
-     * Most of the time it will be reset by ticking
-     * @returns changed
+     * Changes a specific status flag of the entity
+     * @remarks Most of the time it will be reset by ticking
+     *
+     * @returns {boolean} Whether the flag has been changed successfully
      */
     setStatusFlag(flag:ActorFlags, value:boolean):boolean {
         abstract();
     }
+    /**
+     * Returns a specific status flag of the entity
+     */
     getStatusFlag(flag:ActorFlags):boolean {
         abstract();
     }
+    /**
+     * Returns the Level instance of the entity currently in
+     */
     getLevel():Level {
         abstract();
     }
@@ -587,6 +690,9 @@ export class Actor extends NativeClass {
     static fromUniqueId(lowbits:number, highbits:number, getRemovedActor:boolean = true):Actor|null {
         return Actor.fromUniqueIdBin(bin.make64(lowbits, highbits), getRemovedActor);
     }
+    /**
+     * Gets the entity from entity component of bedrock scripting api
+     */
     static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);

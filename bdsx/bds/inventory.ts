@@ -96,6 +96,9 @@ export enum CreativeItemCategory {
 }
 
 export class Item extends NativeClass {
+    /**
+     * Returns whether the item is allowed to be used in the offhand slot
+     */
     allowOffhand():boolean {
         abstract();
     }
@@ -106,13 +109,16 @@ export class Item extends NativeClass {
         if (name === null) throw Error(`item has not any names`);
         return name;
     }
-    /** @deprecated use getCommandNames2 */
+    /** @deprecated Use `this.getCommandNames2()` instead */
     getCommandNames():CxxVector<CxxStringWith8Bytes> {
         abstract();
     }
     getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
+    /**
+     * Returns the category of the item in creative inventory
+     */
     getCreativeCategory():number {
         abstract();
     }
@@ -123,7 +129,9 @@ export class Item extends NativeClass {
         abstract();
     }
     /**
-     * Will not affect client but allows /replaceitem
+     * Changes whether the item is allowed to be used in the offhand slot
+     *
+     * @remarks Will not affect client but allows /replaceitem
      */
     setAllowOffhand(value:boolean):void {
         abstract();
@@ -254,8 +262,9 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     /**
-     * it returns the enchantability.
-     * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
+     * Returns the item's enchantability
+     *
+     * @see https://minecraft.fandom.com/wiki/Enchanting_mechanics
      */
     getEnchantValue(): number {
         abstract();
@@ -276,7 +285,7 @@ export class ItemStack extends NativeClass {
     }
 
     /**
-     * Value is applied only to Damageable items
+     * @remarks The value is applied only to Damageable items
      */
     setDamageValue(value:number):void {
         abstract();
@@ -376,7 +385,10 @@ export class SimpleContainer extends Container {
 }
 
 export class Inventory extends FillingContainer {
-    /** Requires player.sendInventory */
+    /**
+     * Remove the items in the slot
+     * @remarks Requires `player.sendInventory()` to update the slot
+     * */
     dropSlot(slot:number, onlyClearContainer:boolean, dropAll:boolean, randomly:boolean):void {
         abstract();
     }

@@ -28,15 +28,15 @@ export class EntityRegistryOwned extends NativeClass {}
  * unknown instance
  */
 export class Minecraft$Something {
-    /** @deprecated use minecraft.getNetworkHandler() */
+    /** @deprecated Use `minecraft.getNetworkHandler()` instead */
     get network():NetworkHandler {
         return serverInstance.minecraft.getNetworkHandler();
     }
-    /** @deprecated use minecraft.getLevel() */
+    /** @deprecated Use `minecraft.getLevel()` instead */
     get level():ServerLevel {
         return serverInstance.minecraft.getLevel() as ServerLevel;
     }
-    /** @deprecated use minecraft.getServerNetworkHandler() */
+    /** @deprecated Use `minecraft.getServerNetworkHandler()` instead */
     get shandler():ServerNetworkHandler {
         return serverInstance.minecraft.getServerNetworkHandler();
     }
@@ -50,7 +50,7 @@ export class Minecraft extends NativeClass {
     vftable:VoidPointer;
     offset_20:VoidPointer;
     vanillaGameModuleServer:SharedPtr<VanilaGameModuleServer>; // VanilaGameModuleServer
-    /** @deprecated use Minecraft::getCommands */
+    /** @deprecated Use `Minecraft::getCommands` instead */
     get commands():MinecraftCommands {
         return this.getCommands();
     }
@@ -58,11 +58,11 @@ export class Minecraft extends NativeClass {
     get something():Minecraft$Something {
         return new Minecraft$Something();
     }
-    /** @deprecated use Minecraft::getNetworkHandler */
+    /** @deprecated Use `Minecraft::getNetworkHandler` instead */
     get network():NetworkHandler {
         return this.getNetworkHandler();
     }
-    /** @deprecated unusing */
+    /** @deprecated Unused */
     LoopbackPacketSender:LoopbackPacketSender;
 
     server:DedicatedServer;
@@ -128,41 +128,77 @@ export class ServerInstance extends NativeClass {
     createDimension(id:DimensionId):Dimension {
         return this.minecraft.getLevel().createDimension(id);
     }
+    /**
+     * Returns the number of current online players
+     */
     getActivePlayerCount():number {
         return this.minecraft.getLevel().getActivePlayerCount();
     }
+    /**
+     * Disconnects all clients with the given message
+     */
     disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
         this._disconnectAllClients(message);
     }
+    /**
+     * Disconnects a specific client with the given message
+     */
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
         return this.minecraft.getServerNetworkHandler().disconnectClient(client, message, skipMessage);
     }
+    /**
+     * Returns the server's message-of-the-day
+     */
     getMotd():string {
         return this.minecraft.getServerNetworkHandler().motd;
     }
+    /**
+     * Changes the server's message-of-the-day
+     */
     setMotd(motd:string):void {
         return this.minecraft.getServerNetworkHandler().setMotd(motd);
     }
+    /**
+     * Returns the server's maxiumum player capacity
+     */
     getMaxPlayers():number {
         return this.minecraft.getServerNetworkHandler().maxPlayers;
     }
+    /**
+     * Changes the server's maxiumum player capacity
+     */
     setMaxPlayers(count:number):void {
         this.minecraft.getServerNetworkHandler().setMaxNumPlayers(count);
     }
+    /**
+     * Returns an array of all online players
+     */
     getPlayers():ServerPlayer[] {
         return this.minecraft.getLevel().getPlayers();
     }
+    /**
+     * Resends all clients the updated command list
+     */
     updateCommandList():void {
         for (const player of this.getPlayers()) {
             player.sendNetworkPacket(this.minecraft.getCommands().getRegistry().serializeAvailableCommands());
         }
     }
+    /**
+     * Returns the server's current network protocol version
+     */
     getNetworkProtocolVersion():number {
         return proc["SharedConstants::NetworkProtocolVersion"].getInt32();
     }
+    /**
+     * Returns the server's current game version
+     */
     getGameVersion():SemVersion {
         return proc["SharedConstants::CurrentGameSemVersion"].as(SemVersion);
     }
+    /**
+     * Creates a promise that resolves on the next tick
+     */
     nextTick():Promise<void> {
         return new Promise(resolve=>{
             const listener = (): void => {

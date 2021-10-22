@@ -11,7 +11,7 @@ import { procHacker } from "./proc";
 export class Dimension extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    /** @deprecated Use getBlockSource() instead */
+    /** @deprecated Use `this.getBlockSource()` instead */
     get blockSource():BlockSource {
         return this.getBlockSource();
     }

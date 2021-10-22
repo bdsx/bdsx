@@ -59,7 +59,7 @@ export enum CommandTypeFlag {
 export enum CommandUsageFlag {
     Normal,
     Test,
-    /** @deprecated Use CommandVisibilityFlag */
+    /** @deprecated Use `CommandVisibilityFlag` */
     Hidden,
     _Unknown=0x80
 }

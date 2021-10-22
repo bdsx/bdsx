@@ -20,7 +20,7 @@ export enum Difficulty {
 
 export class Level extends NativeClass {
     vftable:VoidPointer;
-    /** @deprecated use getPlayers() */
+    /** @deprecated Use `this.getPlayers()` instead */
     get players():CxxVectorLike<ServerPlayer> {
         const players = new CxxVectorLike(this.getPlayers());
         Object.defineProperty(this, 'players', {
@@ -32,6 +32,9 @@ export class Level extends NativeClass {
         return players;
     }
 
+    /**
+     * Returns an array of all online players in the level
+     */
     getPlayers():ServerPlayer[] {
         abstract();
     }
@@ -47,64 +50,126 @@ export class Level extends NativeClass {
     createDimension(id:DimensionId):Dimension {
         abstract();
     }
+    /**
+     * Destroyes a block at the given position
+     *
+     * @returns {boolean} Whether the block was destroyed successfully
+     */
     destroyBlock(blockSource:BlockSource, blockPos:BlockPos, dropResources:boolean):boolean {
         abstract();
     }
+    /**
+     * Gets an entity with the given unique id
+     */
     fetchEntity(id:ActorUniqueID, fetchRemovedActor:boolean):Actor|null {
         abstract();
     }
+    /**
+     * Returns the number of current online players
+     */
     getActivePlayerCount():number {
         abstract();
     }
+    /**
+     * Returns the ActorFactory instance
+     */
     getActorFactory():ActorFactory {
         abstract();
     }
+    /**
+     * Returns the AdventureSettings instance
+     */
     getAdventureSettings():AdventureSettings {
         abstract();
     }
+    /**
+     * Returns the BlockPalette instance
+     */
     getBlockPalette():BlockPalette {
         abstract();
     }
+    /**
+     * Returns the Dimension instance
+     */
     getDimension(dimension:DimensionId):Dimension|null {
         abstract();
     }
+    /**
+     * Returns the LevelData instance
+     */
     getLevelData():LevelData {
         abstract();
     }
+    /**
+     * Returns the GameRules instance
+     */
     getGameRules():GameRules {
         abstract();
     }
+    /**
+     * Returns the Scoreboard instance
+     */
     getScoreboard():Scoreboard {
         abstract();
     }
+    /**
+     * Returns the level's random seed
+     */
     getSeed():number {
         abstract();
     }
+    /**
+     * Returns the Spawner instance
+     */
     getSpawner():Spawner {
         abstract();
     }
+    /**
+     * Returns the TagRegistry instance
+     */
     getTagRegistry():TagRegistry {
         abstract();
     }
+    /**
+     * Returns the level's time
+     */
     getTime():number {
         abstract();
     }
+    /**
+     * Returns whether the level has allow-cheats turned on
+     */
     hasCommandsEnabled():boolean {
         abstract();
     }
+    /**
+     * Changes the allow-cheats state of the level
+     */
     setCommandsEnabled(value:boolean):void {
         abstract();
     }
     setShouldSendSleepMessage(value:boolean):void {
         abstract();
     }
+    /**
+     * Changes the level's time
+     */
     setTime(time: number):void {
         abstract();
     }
+    /**
+     * Syncs the level's game rules with all clients
+     */
     syncGameRules():void {
         abstract();
     }
-    /** @param effectName accepts format like "minecraft:arrow_spell_emitter" */
+    /**
+     * Spawn a particle effect at the given position
+     *
+     * @param effectName accepts format like "minecraft:arrow_spell_emitter"
+     *
+     * @see https://www.digminecraft.com/lists/particle_list_pe.php
+     * */
     spawnParticleEffect(effectName:string, spawnLocation:Vec3, dimension:Dimension):void {
         abstract();
     }

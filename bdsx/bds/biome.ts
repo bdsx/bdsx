@@ -32,6 +32,9 @@ export class Biome extends NativeClass {
     @nativeField(CxxString)
     name:CxxString;
 
+    /**
+     * Returns the type of the biome (not the name)
+     */
     getBiomeType():VanillaBiomeTypes {
         abstract();
     }

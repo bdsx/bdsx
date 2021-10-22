@@ -17,11 +17,11 @@ import type { SerializedSkin } from "./skin";
 export class Player extends Actor {
     abilities: Abilities;
     playerUIContainer: PlayerUIContainer;
-    /** @deprecated Use Player.prototype.getSpawnDimension */
+    /** @deprecated Use `this.getSpawnDimension()` instead */
     get respawnDimension(): DimensionId {
         return this.getSpawnDimension();
     }
-    /** @deprecated Use Player.prototype.getSpawnPosition */
+    /** @deprecated Use `this.getSpawnPosition()` instead */
     get respawnPosition(): BlockPos {
         return this.getSpawnPosition();
     }
@@ -36,7 +36,7 @@ export class Player extends Actor {
      * @remarks Player inventory will not be updated. Use ServerPlayer.sendInventory() to update it.
      *
      * @param itemStack - Item to add
-     * @returns boolean - Whether the item has been added successfully (Full inventory can be a cause of failure)
+     * @returns {boolean} Whether the item has been added successfully (Full inventory can be a cause of failure)
      */
     addItem(itemStack: ItemStack): boolean {
         abstract();
@@ -50,7 +50,7 @@ export class Player extends Actor {
      *
      * @see DimensionId
      */
-    changeDimension(dimensionId: number, respawn: boolean): void {
+    changeDimension(dimensionId: DimensionId, respawn: boolean): void {
         abstract();
     }
 
@@ -87,7 +87,7 @@ export class Player extends Actor {
     }
 
     /**
-     * Returns the player's inventory
+     * Returns the player's inventory proxy
      */
     getInventory(): PlayerInventory {
         abstract();
@@ -174,7 +174,7 @@ export class Player extends Actor {
     }
 
     /**
-     * Syncs the player's abilities
+     * Syncs the player's abilities with the client
      */
     syncAbilties(): void {
         abstract();
@@ -214,7 +214,7 @@ export class Player extends Actor {
 }
 
 export class ServerPlayer extends Player {
-    /** @deprecated use getNetworkIdentifier() */
+    /** @deprecated Use `this.getNetworkIdentifier()` instead */
     networkIdentifier: NetworkIdentifier;
 
     protected _sendInventory(shouldSelectSlot: boolean): void {
@@ -222,7 +222,7 @@ export class ServerPlayer extends Player {
     }
 
     /**
-     * Apply knockback to the player
+     * Applies knockback to the player
      */
     knockback(source: Actor, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();

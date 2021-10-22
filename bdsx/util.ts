@@ -148,7 +148,7 @@ export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }):
 }
 
 /**
- * @deprecated use util.inspect
+ * @deprecated Use `util.inspect(v)` instead.
  */
 export function anyToString(v:unknown):string {
     return util.inspect(v);

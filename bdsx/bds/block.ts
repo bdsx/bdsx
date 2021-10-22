@@ -12,7 +12,9 @@ import { HashedString } from "./hashedstring";
 export class BlockLegacy extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    /** @deprecated use Block.getDescriptionId() instead */
+    /**
+     * @deprecated Use `this.getRenderBlock().getDescriptionId()` instead
+     */
     @nativeField(CxxString)
     descriptionId:CxxString;
 
@@ -24,7 +26,7 @@ export class BlockLegacy extends NativeClass {
         return name;
     }
     /**
-     * @deprecated use getCommandNames2
+     * @deprecated Use `this.getCommandNames2()` instead
      */
     getCommandNames():CxxVector<CxxStringWith8Bytes> {
         abstract();
@@ -32,18 +34,28 @@ export class BlockLegacy extends NativeClass {
     getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
+    /**
+     * Returns the category of the block in creative inventory
+     */
     getCreativeCategory():number {
         abstract();
     }
     /**
-     * Will not affect actual destroy time but will affect the speed of cracks
+     * Changes the time needed to destroy the block
+     * @remarks Will not affect actual destroy time but will affect the speed of cracks
      */
     setDestroyTime(time:number):void {
         abstract();
     }
+    /**
+     * Returns the time needed to destroy the block
+     */
     getDestroyTime():number {
         return this.getFloat32(0x12C);
     }
+    /**
+     * Returns the Block instance
+     */
     getRenderBlock():Block {
         abstract();
     }
