@@ -15,7 +15,7 @@ Ctrl+Shift+B -> tsc: watch
 > npm run watch
 ```
 
-### Publish the plugin
+### Publish the plugin to npm
 1. Create an npm account if you don't have one yet. [NPM Sign Up](https://www.npmjs.com/signup)
 2. Request for joining `@bdsx` organization at `#npm-bdsx-org-member-request` channel of [the discord server](https://discord.gg/pC9XdkC) with npm ID or EMail.
 3. Login with the command line.
@@ -43,7 +43,7 @@ Select the version.
 > npm i @bdsx/pluginname
 ```
 
-* With `plugins/` directory
+* With `plugins/` directory  
 Copy to `plugins/` directory
 
 ## Remove the plugin
