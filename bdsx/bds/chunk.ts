@@ -20,6 +20,9 @@ export class LevelChunk extends NativeClass {
     getMax():BlockPos {
         abstract();
     }
+    /**
+     * Converts a local ChunkBlockPos instance to a global BlockPos.
+     */
     toWorldPos(pos:ChunkBlockPos):BlockPos {
         abstract();
     }

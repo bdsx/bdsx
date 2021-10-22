@@ -16,6 +16,9 @@ export class Dimension extends NativeClass {
         return this.getBlockSource();
     }
 
+    /**
+     * Returns a BlockSource instance last ticked by a player
+     */
     getBlockSource():BlockSource {
         abstract();
     }

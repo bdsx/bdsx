@@ -9,15 +9,27 @@ export class Abilities extends NativeClass {
     protected _setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
         abstract();
     }
+    /**
+     * Returns the command permission level of the ability owner
+     */
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
+    /**
+     * Returns the player permission level of the ability owner
+     */
     getPlayerPermissionLevel():PlayerPermission {
         abstract();
     }
+    /**
+     * Changes the command permission level of the ability owner
+     */
     setCommandPermissionLevel(commandPermissionLevel:CommandPermissionLevel):void {
         abstract();
     }
+    /**
+     * Changes the player permission level of the ability owner
+     */
     setPlayerPermissionLevel(playerPermissionLevel:PlayerPermission):void {
         abstract();
     }

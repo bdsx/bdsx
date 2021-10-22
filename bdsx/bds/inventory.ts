@@ -399,7 +399,7 @@ export class PlayerUIContainer extends SimpleContainer {
 
 @nativeClass(null)
 export class PlayerInventory extends NativeClass {
-    @nativeField(Inventory.ref(), 0xB0)
+    @nativeField(Inventory.ref(), 0xB0) // accessed in PlayerInventory::getSlots when calling Container::getSlots
     container:Inventory;
 
     addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
@@ -424,7 +424,7 @@ export class PlayerInventory extends NativeClass {
         abstract();
     }
     getSelectedSlot():number {
-        return this.getInt8(0x10);
+        return this.getInt8(0x10); // accessed in PlayerInventory::getSelectedSlot `mov eax, [rcx+10h]`
     }
     getSlotWithItem(itemStack:ItemStack, checkAux:boolean, checkData:boolean):number {
         abstract();
@@ -490,7 +490,7 @@ export class ItemStackNetIdVariant extends NativeClass {
 export class NetworkItemStackDescriptor extends NativeClass {
     @nativeField(ItemDescriptor)
     descriptor:ItemDescriptor;
-    @nativeField(ItemStackNetIdVariant, 0x54)
+    @nativeField(ItemStackNetIdVariant, 0x54) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
     id:ItemStackNetIdVariant;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
@@ -537,7 +537,7 @@ export class InventoryTransactionItemGroup extends NativeClass {
 export class InventoryTransaction extends NativeClass {
     // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
     // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
-    @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40)
+    @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40) // accessed in InventoryTransaction::~InventoryTransaction when calling std::vector<InventoryTransactionItemGroup>::_Tidy
     content:CxxVector<InventoryTransactionItemGroup>;
 
     /** The packet will be cancelled if this is added wrongly */

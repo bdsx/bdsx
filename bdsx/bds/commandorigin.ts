@@ -37,6 +37,9 @@ export class CommandOrigin extends NativeClass {
     getRequestId():CxxString {
         abstract();
     }
+    /**
+     * @remarks Do not call this the second time, assign it to a variable when calling this
+     */
     getName():string {
         abstract();
     }
@@ -53,7 +56,7 @@ export class CommandOrigin extends NativeClass {
     /**
      * actually, it's nullable when the server is just started without any joining
      */
-    getDimension(): Dimension {
+    getDimension(): Dimension|null {
         abstract();
     }
     /**

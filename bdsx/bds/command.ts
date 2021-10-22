@@ -104,6 +104,9 @@ export enum CommandSelectionType {
     Agents,
 }
 
+/**
+ * @deprecated Use `ActorCommandSelector` instead
+ */
 @nativeClass(0xc0)
 export class CommandSelectorBase extends NativeClass {
     private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
@@ -132,6 +135,9 @@ const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelec
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
 (CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
 
+/**
+ * @deprecated Use `ActorWildcardCommandSelector` instead
+ */
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
 
@@ -155,6 +161,10 @@ export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector 
         CommandSelectorBaseCtor(this, true);
     }
 }
+
+/**
+ * @deprecated Use `ActorCommandSelector` instead
+ */
 @nativeClass()
 export class CommandSelector<T> extends CommandSelectorBase {
 
