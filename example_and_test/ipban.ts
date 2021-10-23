@@ -1,4 +1,3 @@
-import { NetworkIdentifier } from 'bdsx/bds/networkidentifier';
 import { ipfilter } from 'bdsx/core';
 import { promises as fs } from 'fs';
 import path = require('path');
@@ -41,8 +40,7 @@ async function save():Promise<void> {
     resolver!();
 }
 
-export function banIp(ni:NetworkIdentifier):void {
-    const ip = ni.toString();
+export function banIp(ip:string):void {
     ipfilter.add(ip, 60*60); // add to the filter, 1 hour.
     save(); // ipfilter does not keep it permanently. need to store it somewhere.
 }

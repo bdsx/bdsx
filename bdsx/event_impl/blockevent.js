@@ -48,6 +48,7 @@ event_1.events.pistonMove.pipe(v3_1.bdsx.events.pistonMove, function (ev) {
     const event = new PistonMoveEvent(ev.blockPos, ev.getRawBlockSource().as(block_1.BlockSource), ev.action);
     return this.fire(event);
 });
+/** @deprecated */
 class FarmlandDecayEvent {
     constructor(block, blockPos, blockSource, culprit) {
         this.block = block;
@@ -61,6 +62,7 @@ event_1.events.farmlandDecay.pipe(v3_1.bdsx.events.farmlandDecay, function (ev) 
     const event = new FarmlandDecayEvent(ev.block.getRawBlock().as(block_1.Block), ev.blockPos, ev.getRawBlockSource().as(block_1.BlockSource), actor_1.Actor.fromNewActor(ev.culprit.getRawEntity()));
     return this.fire(event);
 });
+/** @deprecated */
 class CampfireTryLightFire {
     constructor(blockPos, blockSource) {
         this.blockPos = blockPos;
@@ -72,6 +74,7 @@ event_1.events.campfireLight.pipe(v3_1.bdsx.events.campfireLight, function (ev) 
     const event = new CampfireTryLightFire(ev.blockPos, ev.getRawBlockSource().as(block_1.BlockSource));
     return this.fire(event);
 });
+/** @deprecated */
 class CampfireTryDouseFire {
     constructor(blockPos, blockSource) {
         this.blockPos = blockPos;

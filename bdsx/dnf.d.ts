@@ -16,10 +16,11 @@ export declare function dnf<T>(cls: Type<T>, key: keyof T): dnf.Tool<T>;
 export declare function dnf(nf: AnyFunction): dnf.Tool<void>;
 export declare namespace dnf {
     class Tool<THIS> {
-        readonly nf: AnyFunction;
-        readonly name: string;
-        readonly thisType: Type<THIS> | null;
+        nf: AnyFunction;
+        name: string;
+        thisType: Type<THIS> | null;
         constructor(nf: AnyFunction, name: string, thisType: Type<THIS> | null);
+        getVFTableOffset(): [number];
         /**
          * search overloads with types
          */
@@ -39,9 +40,9 @@ export declare namespace dnf {
         getRegistersForParameters(): [Register[], FloatRegister[]];
         overload(func: (this: THIS, ...args: any[]) => any, ...paramTypes: Type<any>[]): void;
         /**
-         * ignore original features.
+         * set only for JS calls
          */
-        overwrite(func: (this: THIS, ...args: any[]) => any): void;
+        set(func: (this: THIS, ...args: any[]) => any): void;
         reform<OPTS extends MakeFuncOptions<any> | null, RETURN extends ParamType, PARAMS extends ParamType[]>(returnType: RETURN, opts?: OPTS, ...params: PARAMS): FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN>;
     }
     type OverloadInfo = [number, makefunc.Paramable[], makefunc.Paramable, MakeFuncOptions<any> | null, unknown[]?];

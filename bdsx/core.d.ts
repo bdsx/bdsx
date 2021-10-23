@@ -17,11 +17,11 @@ export interface VoidPointer {
     /**
      * make cloned pointer with offset
      */
-    add(lowBits?: number, highBits?: number): NativePointer;
+    add(lowBits?: number | null, highBits?: number | null): NativePointer;
     /**
      * make cloned pointer with offset
      */
-    sub(lowBits?: number, highBits?: number): NativePointer;
+    sub(lowBits?: number | null, highBits?: number | null): NativePointer;
     /**
      * make cloned pointer with offset
      */
@@ -451,6 +451,7 @@ export declare namespace pdb {
      * get symbols from cache.
      * if symbols don't exist in cache. it reads pdb.
      * @returns 'out' the first parameter.
+     * @deprecated import item from `bdsx/minecraft`. and use `dnf(item).getAddress()`
      */
     function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath: string, out: OLD, names: KEYS, quiet?: boolean, undecorateFlags?: number): {
         [key in KEYS[number]]: NativePointer;

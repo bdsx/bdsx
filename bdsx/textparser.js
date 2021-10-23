@@ -30,6 +30,11 @@ class TextParser {
         this.i += str.length;
         return true;
     }
+    must(str) {
+        if (!this.context.startsWith(str, this.i))
+            throw Error(`Unexpected following(${str} expected)`);
+        this.i += str.length;
+    }
     skipSpaces() {
         NONSPACE.lastIndex = this.i;
         const res = NONSPACE.exec(this.context);

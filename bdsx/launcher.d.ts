@@ -1,6 +1,6 @@
 import { Dimension } from "./bds/dimension";
-import minecraft = require("./minecraft");
 import "./minecraft_impl";
+import minecraft = require("./minecraft");
 export declare namespace bedrockServer {
     let sessionId: string;
     function withLoading(): Promise<void>;

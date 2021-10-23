@@ -49,6 +49,7 @@ interface IFarmlandDecayEvent {
     blockSource: BlockSource;
     culprit: Actor;
 }
+/** @deprecated */
 export declare class FarmlandDecayEvent implements IFarmlandDecayEvent {
     block: Block;
     blockPos: BlockPos;
@@ -60,6 +61,7 @@ interface ICampfireTryLightFire {
     blockSource: BlockSource;
     blockPos: BlockPos;
 }
+/** @deprecated */
 export declare class CampfireTryLightFire implements ICampfireTryLightFire {
     blockPos: BlockPos;
     blockSource: BlockSource;
@@ -69,6 +71,7 @@ interface ICampfireTryDouseFire {
     blockSource: BlockSource;
     blockPos: BlockPos;
 }
+/** @deprecated */
 export declare class CampfireTryDouseFire implements ICampfireTryDouseFire {
     blockPos: BlockPos;
     blockSource: BlockSource;

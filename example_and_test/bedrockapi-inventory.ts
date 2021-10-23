@@ -1,5 +1,5 @@
-import { ArmorSlot } from "bdsx/bds/inventory";
-import { command } from "bdsx/command";
+import { ArmorSlot } from "bdsx/minecraft";
+import { bdsx } from "bdsx/v3";
 import { system } from "./bedrockapi-system";
 
 // with bedrock API
@@ -14,7 +14,7 @@ export function dumpInventory(entity:IEntity):void {
 
 // with bdsx API
 
-command.register('eq', 'get equipments').overload((param, origin)=>{
+bdsx.command.register('eq', 'get equipments').overload((param, origin)=>{
     const actor = origin.getEntity();
     if (actor === null) return;
     console.log(actor.getArmor(ArmorSlot.Head).getName());

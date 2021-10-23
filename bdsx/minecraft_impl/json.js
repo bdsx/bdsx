@@ -14,7 +14,7 @@ minecraft_1.Json.Value.prototype[nativetype_1.NativeType.ctor] = function () {
     const ptr = this;
     ptr.setUint8(minecraft_1.Json.ValueType.Null, 8);
 };
-(0, dnf_1.dnf)(minecraft_1.Json.Value, 'constructWith').overwrite(function (value) {
+(0, dnf_1.dnf)(minecraft_1.Json.Value, 'constructWith').set(function (value) {
     const ptr = this;
     switch (typeof value) {
         case 'boolean':

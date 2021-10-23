@@ -1,10 +1,8 @@
-import minecraft = require('./minecraft');
 import './minecraft_impl/enums';
 export declare enum PistonAction {
     Extend = 1,
     Retract = 3
 }
-export import DimensionId = minecraft.DimensionId;
 export declare enum AttributeId {
     ZombieSpawnReinforcementsChange = 1,
     PlayerHunger = 2,
@@ -98,21 +96,8 @@ export declare enum ContainerId {
     UI = 124,
     None = 255
 }
-export import DeviceOS = minecraft.BuildPlatform;
 export declare enum DisplaySlot {
     BelowName = "belowname",
     List = "list",
     Sidebar = "sidebar"
-}
-import AttributeName_ = AttributeName;
-import DeviceOS_ = DeviceOS;
-declare module "./common" {
-    /** @deprecated import it from 'bdsx/enums' */
-    type AttributeName = AttributeName_;
-    /** @deprecated import it from 'bdsx/enums' */
-    let AttributeName: typeof AttributeName_;
-    /** @deprecated import it from 'bdsx/enums' */
-    type DeviceOS = DeviceOS_;
-    /** @deprecated import it from 'bdsx/enums' */
-    let DeviceOS: typeof DeviceOS_;
 }

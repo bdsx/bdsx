@@ -48,6 +48,6 @@ ready_1.minecraftTsReady.promise.then(() => {
         return Level$removeEntityReferences.call(this, actor, b);
     });
     asmcode.removeActor = makefunc_1.makefunc.np(_removeActor, nativetype_1.void_t, null, minecraft_1.Actor);
-    (0, hook_1.hook)(minecraft_1.Actor, nativetype_1.NativeType.dtor).raw(asmcode.actorDestructorHook, { callOriginal: true });
+    (0, hook_1.hook)(minecraft_1.Actor, nativetype_1.NativeType.dtor).options({ callOriginal: true }).raw(asmcode.actorDestructorHook);
 });
 //# sourceMappingURL=actor.js.map

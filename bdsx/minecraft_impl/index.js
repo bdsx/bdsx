@@ -39,6 +39,7 @@ require("./packet");
 require("./packets");
 require("./pistonblockactor");
 require("./player");
+require("./playerinventory");
 require("./raknet/addressorguid");
 require("./raknet/raknetguid");
 require("./raknet/rakpeer");

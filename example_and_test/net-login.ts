@@ -1,11 +1,11 @@
 
 // Network Hooking: Get login IP and XUID
-import { DeviceOS } from "bdsx/enums";
+import { BuildPlatform } from "bdsx/minecraft";
 import { bdsx } from "bdsx/v3";
 
 bdsx.events.playerLogin.on(ev=>{
     const player = ev.player;
-    console.log(`Connection: ${player.name}> IP=${player.ip}, XUID=${player.xuid}, OS=${DeviceOS[ev.os] || 'UNKNOWN'}`);
+    console.log(`Connection: ${player.name}> IP=${player.ip}, XUID=${player.xuid}, OS=${BuildPlatform[ev.os] || 'UNKNOWN'}`);
 
     // sendPacket
     setTimeout(()=>{

@@ -47,6 +47,7 @@ export declare function intToVarString(n: number): string;
 export declare function numberWithFillZero(n: number, width: number, radix?: number): string;
 export declare function filterToIdentifierableString(name: string): string;
 export declare function printOnProgress(message: string): void;
+export declare function inheritMultiple<T>(child: AbstractClass<T>, base: AbstractClass<T>): void;
 export declare type DeferPromise<T> = Promise<T> & {
     resolve: (value?: T | PromiseLike<T>) => void;
     reject: (reason?: any) => void;

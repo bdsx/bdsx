@@ -118,6 +118,19 @@ exports.dnf = dnf;
             this.name = name;
             this.thisType = thisType;
         }
+        getVFTableOffset() {
+            if (this.thisType === null)
+                throw Error(`this type is not determined`);
+            const vftable = this.thisType.__vftable;
+            if (vftable == null)
+                throw Error(`${this.thisType.name}.__vftable not found`);
+            const addr = this.getAddress();
+            for (let offset = 0; offset < 0x1000; offset += 8) {
+                if (vftable.getPointer(offset).equals(addr))
+                    return [offset];
+            }
+            throw Error(`cannot find a function in the vftable`);
+        }
         /**
          * search overloads with types
          */
@@ -240,14 +253,19 @@ exports.dnf = dnf;
             overloads.push(func);
         }
         /**
-         * ignore original features.
+         * set only for JS calls
          */
-        overwrite(func) {
+        set(func) {
             this.nf[nativeCall] = func;
         }
         reform(returnType, opts, ...params) {
             const addr = this.getAddress();
-            return makefunc_1.makefunc.js(addr, returnType, opts, ...params);
+            const out = makefunc_1.makefunc.js(addr, returnType, opts, ...params);
+            out.overloadInfo = this.getInfo().slice();
+            out.overloadInfo[1] = params;
+            out.overloadInfo[2] = returnType;
+            out.overloadInfo[3] = opts || null;
+            return out;
         }
     }
     dnf.Tool = Tool;

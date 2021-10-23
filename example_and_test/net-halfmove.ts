@@ -4,19 +4,18 @@
  * CAUTION: this example is only works for two players. need to implement it more
  */
 
-import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
-import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { CANCEL } from "bdsx/common";
-import { events } from "bdsx/event";
+import { MinecraftPacketIds, NetworkIdentifier } from "bdsx/minecraft";
+import { bdsx } from "bdsx/v3";
 
 
 interface Counter {
     counter:number;
 }
 const map = new WeakMap<NetworkIdentifier, Counter>();
-events.packetSendRaw(MinecraftPacketIds.MovePlayer).on((packet, size, ni)=>{
+bdsx.events.packetSendRaw(MinecraftPacketIds.MovePlayer).on((packet, size, ni)=>{
     let field = map.get(ni);
-    if (field === undefined) map.set(ni, field = {counter: 0});
+    if (field == null) map.set(ni, field = {counter: 0});
 
     field.counter++;
     if (field.counter >= 2) {

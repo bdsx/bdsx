@@ -1,13 +1,13 @@
 
 // Parse raw packet
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/MovePlayerPacket.php
-import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { bin } from "bdsx/bin";
-import { events } from "bdsx/event";
+import { MinecraftPacketIds } from "bdsx/minecraft";
 import { RawPacket } from "bdsx/rawpacket";
+import { bdsx } from "bdsx/v3";
 import { setRecentSendedPacketForTest } from "./test";
 
-events.packetRaw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
+bdsx.events.packetRaw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
     console.log(`Packet Id: ${ptr.readVarInt()&0x3ff}`);
 
     const runtimeId = ptr.readVarBin();
@@ -34,7 +34,7 @@ events.packetRaw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
     packet.sendTo(ni);
 });
 // referenced from https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/CraftingEventPacket.php
-events.packetRaw(MinecraftPacketIds.CraftingEvent).on((ptr, size, ni)=>{
+bdsx.events.packetRaw(MinecraftPacketIds.CraftingEvent).on((ptr, size, ni)=>{
     console.log(`Packet Id: ${ptr.readVarInt()&0x3ff}`);
 
     const windowId = ptr.readUint8();

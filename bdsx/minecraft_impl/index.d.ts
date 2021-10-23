@@ -36,6 +36,7 @@ import './packet';
 import './packets';
 import './pistonblockactor';
 import './player';
+import './playerinventory';
 import './raknet/addressorguid';
 import './raknet/raknetguid';
 import './raknet/rakpeer';

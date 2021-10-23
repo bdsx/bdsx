@@ -30,7 +30,6 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
 * Requirements
     * [node.js](https://nodejs.org/)
     * Wine (if using Linux)
-    * OR just use Docker: `docker run -ti karikera/bdsx`
 * Recommended  
     * [VSCode](https://code.visualstudio.com/)
 
@@ -43,7 +42,6 @@ git clone https://github.com/bdsx/bdsx.git
 You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Linux. 
 
 ### Development with VSCode
-
 When starting BDSX with VSCode, you need to
 1. Open the project with VSCode
 2. Install the legacy debugger. the suggestion dialog will be opened up on the right bottom corner.
@@ -80,6 +78,9 @@ https://github.com/bdsx/bdsx/issues
 
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
+
+## BDSX Docker
+https://hub.docker.com/r/karikera/bdsx
 
 ## BDSX for Development
 https://github.com/bdsx/bdsx-dev

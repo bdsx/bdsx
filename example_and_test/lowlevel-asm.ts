@@ -1,6 +1,6 @@
 import { asm, Register } from "bdsx/assembler";
-import { proc } from "bdsx/bds/symbols";
 import { makefunc } from "bdsx/makefunc";
+import { printf } from "bdsx/minecraft";
 import { int16_t, int32_t, void_t } from "bdsx/nativetype";
 
 
@@ -16,8 +16,6 @@ import { int16_t, int32_t, void_t } from "bdsx/nativetype";
 // XMM2 = 3nd parameter for float
 // XMM3 = 4nd parameter for float
 // stack frame must be aligned with 16 bytes
-
-const printf = proc.printf;
 
 // return value
 // int func_return_1()

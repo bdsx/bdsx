@@ -34,6 +34,8 @@
  const util = require('./util');
  const packets = require('./bds/packets');
  const sharedpointer = require('./sharedpointer');
+const { AttributeName } = require("./enums");
+const { BuildPlatform } = require("./minecraft");
  const CANCEL = common.CANCEL;
  const abstract = common.abstract;
  //@ts-ignore
@@ -504,3 +506,8 @@
      hacktool.jump(from, to, Register.rax, originalCodeSize);
      return original;
  }
+
+//@ts-ignore
+common.AttributeName = AttributeName;
+//@ts-ignore
+common.DeviceOS = BuildPlatform;

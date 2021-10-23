@@ -3,9 +3,10 @@
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": 2017,
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": "./tsconfig.json"
     },
-    "ignorePatterns": ["**/*.js", "/bdsx/**/*"],
+    "ignorePatterns": ["**/*.js", "/bdsx/minecraft.d.ts", "/bdsx/minecraft_impl/enums.d.ts"],
     "plugins": [
         "@typescript-eslint",
         "import"

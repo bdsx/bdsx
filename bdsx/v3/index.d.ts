@@ -1,4 +1,94 @@
 declare namespace __tsb {
+// server.ts
+export namespace server {
+export namespace server {
+    function getMotd(): string;
+    function setMotd(motd: string): void;
+    function getMaxPlayers(): number;
+    function setMaxPlayers(count: number): void;
+    function disconnectAllClients(message?: string): void;
+    function getActivePlayerCount(): number;
+    function nextTick(): Promise<void>;
+    const networkProtocolVersion: number;
+    const bdsVersion: string;
+}
+
+}
+// entity.ts
+export namespace entity {
+import AttributeId = __tsb_enums.AttributeId;
+import MobEffectIds = __tsb_enums.MobEffectIds;
+import Actor = __tsb_minecraft.Actor;
+import ActorUniqueID = __tsb_minecraft.ActorUniqueID;
+import AttributeInstance = __tsb_minecraft.AttributeInstance;
+import DimensionId = __tsb_minecraft.DimensionId;
+import MobEffectInstance = __tsb_minecraft.MobEffectInstance;
+import Vec3 = __tsb_minecraft.Vec3;
+import bin64_t = __tsb_nativetype.bin64_t;
+const entityKey: unique symbol;
+const entityMapper: unique symbol;
+interface OptionalAttributeValues {
+    current?: number;
+    min?: number;
+    max?: number;
+    default?: number;
+}
+interface AttributeValues {
+    current: number;
+    min: number;
+    max: number;
+    default: number;
+}
+export class Entity {
+    protected actor: ActorX | null;
+    entity: IEntity | null;
+    constructor(actor: ActorX | null);
+    protected actorMust(): Actor;
+    get name(): string;
+    get identifier(): string;
+    get dimensionId(): DimensionId;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawEntity(): ActorX | null;
+    getPosition(): Vec3;
+    getUniqueID(): ActorUniqueID;
+    getUniqueIdBin(): bin64_t;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getAttributeInstance(id: AttributeId): AttributeInstance;
+    getAttributeValues(id: AttributeId): AttributeValues;
+    getAttribute(id: AttributeId): number;
+    setAttribute(id: AttributeId, value: number | OptionalAttributeValues): boolean;
+    teleport(pos: Vec3, dimensionId?: DimensionId): void;
+    addEffect(id: MobEffectIds, duration: number, amplifier?: number): void;
+    hasEffect(id: MobEffectIds): boolean;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getEffect(id: MobEffectIds): MobEffectInstance | null;
+    static registerMapper<T extends Actor>(rawClass: new (...args: any[]) => T, mapper: (actor: T) => (Entity | null)): void;
+    static fromUniqueId(lowBits: string | number, highBits: number): Entity;
+    static fromUniqueId(bin: string): Entity;
+    static fromRaw(actor: Actor): Entity | null;
+    /**
+     * from the scripting API entity.
+     */
+    static fromEntity(entity: IEntity): Entity | null;
+    toString(): string;
+}
+interface ActorX extends Actor {
+    [entityKey]?: Entity;
+    [entityMapper]?(): Entity | null;
+}
+export class EntityCreatedEvent {
+    entity: Entity;
+    constructor(entity: Entity);
+}
+export {};
+
+}
 // events\index.ts
 export namespace events {
 import Color = __tsb_colors.Color;
@@ -9,42 +99,43 @@ import MinecraftPacketIds = __tsb_minecraft.MinecraftPacketIds;
 import NetworkIdentifier = __tsb_minecraft.NetworkIdentifier;
 import Packet = __tsb_minecraft.Packet;
 import EntityCreatedEvent = __tsb.entity.EntityCreatedEvent;
-import BlockDestroyEvent = __tsb.blockevent4.BlockDestroyEvent;
-import BlockPlaceEvent = __tsb.blockevent4.BlockPlaceEvent;
-import CampfireTryDouseFire = __tsb.blockevent4.CampfireTryDouseFire;
-import CampfireTryLightFire = __tsb.blockevent4.CampfireTryLightFire;
-import FarmlandDecayEvent = __tsb.blockevent4.FarmlandDecayEvent;
-import PistonMoveEvent = __tsb.blockevent4.PistonMoveEvent;
+import BlockDestroyEvent = __tsb.blockevent.BlockDestroyEvent;
+import BlockPlaceEvent = __tsb.blockevent.BlockPlaceEvent;
+import CampfireTryDouseFire = __tsb.blockevent.CampfireTryDouseFire;
+import CampfireTryLightFire = __tsb.blockevent.CampfireTryLightFire;
+import FarmlandDecayEvent = __tsb.blockevent.FarmlandDecayEvent;
+import PistonMoveEvent = __tsb.blockevent.PistonMoveEvent;
 import CommandEvent = __tsb.commandevent.CommandEvent;
-import EntityDieEvent = __tsb.entityevent4.EntityDieEvent;
-import EntityHeathChangeEvent = __tsb.entityevent4.EntityHeathChangeEvent;
-import EntityHurtEvent = __tsb.entityevent4.EntityHurtEvent;
-import EntitySneakEvent = __tsb.entityevent4.EntitySneakEvent;
-import EntityStartRidingEvent = __tsb.entityevent4.EntityStartRidingEvent;
-import EntityStopRidingEvent = __tsb.entityevent4.EntityStopRidingEvent;
-import SplashPotionHitEvent = __tsb.entityevent4.SplashPotionHitEvent;
-import LevelExplodeEvent = __tsb.levelevent4.LevelExplodeEvent;
-import LevelSaveEvent = __tsb.levelevent4.LevelSaveEvent;
-import LevelTickEvent = __tsb.levelevent4.LevelTickEvent;
-import LevelWeatherChangeEvent = __tsb.levelevent4.LevelWeatherChangeEvent;
-import ObjectiveCreateEvent = __tsb.miscevent4.ObjectiveCreateEvent;
-import QueryRegenerateEvent = __tsb.miscevent4.QueryRegenerateEvent;
-import ScoreAddEvent = __tsb.miscevent4.ScoreAddEvent;
-import ScoreRemoveEvent = __tsb.miscevent4.ScoreRemoveEvent;
-import ScoreResetEvent = __tsb.miscevent4.ScoreResetEvent;
-import ScoreSetEvent = __tsb.miscevent4.ScoreSetEvent;
-import PlayerAttackEvent = __tsb.playerevent2.PlayerAttackEvent;
-import PlayerCritEvent = __tsb.playerevent2.PlayerCritEvent;
-import PlayerDisconnectEvent = __tsb.playerevent2.PlayerDisconnectEvent;
-import PlayerDropItemEvent = __tsb.playerevent2.PlayerDropItemEvent;
-import PlayerInventoryChangeEvent = __tsb.playerevent2.PlayerInventoryChangeEvent;
-import PlayerJoinEvent = __tsb.playerevent2.PlayerJoinEvent;
-import PlayerLevelUpEvent = __tsb.playerevent2.PlayerLevelUpEvent;
-import PlayerLoginEvent = __tsb.playerevent2.PlayerLoginEvent;
-import PlayerPickupItemEvent = __tsb.playerevent2.PlayerPickupItemEvent;
-import PlayerRespawnEvent = __tsb.playerevent2.PlayerRespawnEvent;
-import PlayerStartSwimmingEvent = __tsb.playerevent2.PlayerStartSwimmingEvent;
-import PlayerUseItemEvent = __tsb.playerevent2.PlayerUseItemEvent;
+import EntityDieEvent = __tsb.entityevent.EntityDieEvent;
+import EntityHeathChangeEvent = __tsb.entityevent.EntityHeathChangeEvent;
+import EntityHurtEvent = __tsb.entityevent.EntityHurtEvent;
+import EntitySneakEvent = __tsb.entityevent.EntitySneakEvent;
+import EntityStartRidingEvent = __tsb.entityevent.EntityStartRidingEvent;
+import EntityStopRidingEvent = __tsb.entityevent.EntityStopRidingEvent;
+import SplashPotionHitEvent = __tsb.entityevent.SplashPotionHitEvent;
+import LevelExplodeEvent = __tsb.levelevent.LevelExplodeEvent;
+import LevelSaveEvent = __tsb.levelevent.LevelSaveEvent;
+import LevelTickEvent = __tsb.levelevent.LevelTickEvent;
+import LevelWeatherChangeEvent = __tsb.levelevent.LevelWeatherChangeEvent;
+import ObjectiveCreateEvent = __tsb.miscevent.ObjectiveCreateEvent;
+import QueryRegenerateEvent = __tsb.miscevent.QueryRegenerateEvent;
+import ScoreAddEvent = __tsb.miscevent.ScoreAddEvent;
+import ScoreRemoveEvent = __tsb.miscevent.ScoreRemoveEvent;
+import ScoreResetEvent = __tsb.miscevent.ScoreResetEvent;
+import ScoreSetEvent = __tsb.miscevent.ScoreSetEvent;
+import PlayerAttackEvent = __tsb.playerevent.PlayerAttackEvent;
+import PlayerChatEvent = __tsb.playerevent.PlayerChatEvent;
+import PlayerCritEvent = __tsb.playerevent.PlayerCritEvent;
+import PlayerDisconnectEvent = __tsb.playerevent.PlayerDisconnectEvent;
+import PlayerDropItemEvent = __tsb.playerevent.PlayerDropItemEvent;
+import PlayerInventoryChangeEvent = __tsb.playerevent.PlayerInventoryChangeEvent;
+import PlayerJoinEvent = __tsb.playerevent.PlayerJoinEvent;
+import PlayerLevelUpEvent = __tsb.playerevent.PlayerLevelUpEvent;
+import PlayerLoginEvent = __tsb.playerevent.PlayerLoginEvent;
+import PlayerPickupItemEvent = __tsb.playerevent.PlayerPickupItemEvent;
+import PlayerRespawnEvent = __tsb.playerevent.PlayerRespawnEvent;
+import PlayerStartSwimmingEvent = __tsb.playerevent.PlayerStartSwimmingEvent;
+import PlayerUseItemEvent = __tsb.playerevent.PlayerUseItemEvent;
 export namespace events {
     type RawListener = (ptr: NativePointer, size: number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL | void | Promise<void>;
     type PacketListener<ID extends MinecraftPacketIds> = (packet: Packet.idMap[ID], networkIdentifier: NetworkIdentifier, packetId: ID) => CANCEL | void | Promise<void>;
@@ -104,6 +195,8 @@ export namespace events {
     const playerLogin: Event<(player: PlayerLoginEvent) => void>;
     /** Not cancellable */
     const playerDisconnect: Event<(player: PlayerDisconnectEvent) => void>;
+    /** Cancellable */
+    const playerChat: Event<(player: PlayerChatEvent) => void | CANCEL>;
     /** Cancellable */
     const levelExplode: Event<(event: LevelExplodeEvent) => void | CANCEL>;
     /** Not cancellable */
@@ -208,112 +301,6 @@ export namespace events {
 }
 
 }
-// events\commandevent.ts
-export namespace commandevent {
-import CommandContext = __tsb_minecraft.CommandContext;
-import command = __tsb.command.command;
-export class CommandEvent {
-    command: string;
-    readonly origin: command.Origin;
-    private readonly context;
-    constructor(command: string, origin: command.Origin, context: CommandContext);
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawContext(): CommandContext;
-}
-
-}
-// server.ts
-export namespace server {
-export namespace server {
-    function getMotd(): string;
-    function setMotd(motd: string): void;
-    function getMaxPlayers(): number;
-    function setMaxPlayers(count: number): void;
-    function disconnectAllClients(message?: string): void;
-    function getActivePlayerCount(): number;
-    function nextTick(): Promise<void>;
-    const networkProtocolVersion: number;
-    const bdsVersion: string;
-}
-
-}
-// entity.ts
-export namespace entity {
-import AttributeId = __tsb_enums.AttributeId;
-import DimensionId = __tsb_enums.DimensionId;
-import MobEffectIds = __tsb_enums.MobEffectIds;
-import Actor = __tsb_minecraft.Actor;
-import ActorUniqueID = __tsb_minecraft.ActorUniqueID;
-import AttributeInstance = __tsb_minecraft.AttributeInstance;
-import MobEffectInstance = __tsb_minecraft.MobEffectInstance;
-import Vec3 = __tsb_minecraft.Vec3;
-import bin64_t = __tsb_nativetype2.bin64_t;
-const entityKey: unique symbol;
-const entityMapper: unique symbol;
-interface OptionalAttributeValues {
-    current?: number;
-    min?: number;
-    max?: number;
-    default?: number;
-}
-interface AttributeValues {
-    current: number;
-    min: number;
-    max: number;
-    default: number;
-}
-export class Entity {
-    protected actor: ActorX | null;
-    entity: IEntity | null;
-    constructor(actor: ActorX | null);
-    protected actorMust(): Actor;
-    get name(): string;
-    get identifier(): string;
-    get dimensionId(): DimensionId;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawEntity(): ActorX | null;
-    getPosition(): Vec3;
-    getUniqueID(): ActorUniqueID;
-    getUniqueIdBin(): bin64_t;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getAttributeInstance(id: AttributeId): AttributeInstance;
-    getAttributeValues(id: AttributeId): AttributeValues;
-    getAttribute(id: AttributeId): number;
-    setAttribute(id: AttributeId, value: number | OptionalAttributeValues): boolean;
-    teleport(pos: Vec3, dimensionId?: DimensionId): void;
-    addEffect(id: MobEffectIds, duration: number, amplifier?: number): void;
-    hasEffect(id: MobEffectIds): boolean;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getEffect(id: MobEffectIds): MobEffectInstance | null;
-    static registerMapper<T extends Actor>(rawClass: new (...args: any[]) => T, mapper: (actor: T) => (Entity | null)): void;
-    static fromUniqueId(lowBits: string | number, highBits: number): Entity;
-    static fromUniqueId(bin: string): Entity;
-    static fromRaw(actor: Actor): Entity | null;
-    /**
-     * from the scripting API entity.
-     */
-    static fromEntity(entity: IEntity): Entity | null;
-    toString(): string;
-}
-interface ActorX extends Actor {
-    [entityKey]?: Entity;
-    [entityMapper]?(): Entity | null;
-}
-export class EntityCreatedEvent {
-    entity: Entity;
-    constructor(entity: Entity);
-}
-export {};
-
-}
 // player.ts
 export namespace player {
 import Actor = __tsb_minecraft.Actor;
@@ -323,6 +310,7 @@ import Packet = __tsb_minecraft.Packet;
 import PlayerRaw = __tsb_minecraft.Player;
 import ServerPlayer = __tsb_minecraft.ServerPlayer;
 import Entity = __tsb.entity.Entity;
+import Inventory = __tsb.inventory.Inventory;
 interface PlayerComponentClass {
     new (player: Player): PlayerComponent;
     available?(player: Player): boolean;
@@ -352,8 +340,10 @@ export class Player extends Entity {
     /** it can be undefined if the player entity is not created */
     entity: IEntity;
     protected actor: ServerPlayer | null;
+    private _inv;
     private readonly components;
     constructor(networkIdentifier: NetworkIdentifierX, _name: string, xuid: string);
+    protected actorMust(): ServerPlayer;
     /**
      * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
      */
@@ -361,6 +351,7 @@ export class Player extends Entity {
     get disconnected(): boolean;
     get name(): string;
     get ip(): string;
+    get inventory(): Inventory;
     addComponent(componentClass: PlayerComponentClass): PlayerComponent;
     /**
      * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
@@ -382,201 +373,83 @@ type PlayerNew = Player;
 export {};
 
 }
-// events\levelevent.ts
-export namespace levelevent4 {
-import Actor = __tsb_minecraft.Actor;
-import BlockSource = __tsb_minecraft.BlockSource;
-import Level = __tsb_minecraft.Level;
+// command.ts
+export namespace command {
+import BlockPos = __tsb_minecraft.BlockPos;
+import CommandOrigin = __tsb_minecraft.CommandOrigin;
+import CommandOutput = __tsb_minecraft.CommandOutput;
+import CommandPermissionLevel = __tsb_minecraft.CommandPermissionLevel;
+import Dimension = __tsb_minecraft.Dimension;
+import MCRESULT = __tsb_minecraft.MCRESULT;
+import RelativeFloatType = __tsb_minecraft.RelativeFloat;
 import Vec3 = __tsb_minecraft.Vec3;
-import EntityEvent = __tsb.entityevent4.EntityEvent;
-export class LevelExplodeEvent extends EntityEvent {
-    position: Vec3;
-    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
-    power: number;
-    /** If true, blocks in the explosion radius will be set on fire. */
-    causesFire: boolean;
-    /** If true, the explosion will destroy blocks in the explosion radius. */
-    breaksBlocks: boolean;
-    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
-    maxResistance: number;
-    allowUnderwater: boolean;
-    private level;
-    private blockSource;
-    constructor(actor: Actor, position: Vec3, 
-    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
-    power: number, 
-    /** If true, blocks in the explosion radius will be set on fire. */
-    causesFire: boolean, 
-    /** If true, the explosion will destroy blocks in the explosion radius. */
-    breaksBlocks: boolean, 
-    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
-    maxResistance: number, allowUnderwater: boolean, level: Level, blockSource: BlockSource);
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawLevel(): Level;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawBlockSource(): BlockSource;
-}
-export class LevelSaveEvent {
-    private level;
-    constructor(level: Level);
-}
-export class LevelTickEvent {
-    private level;
-    constructor(level: Level);
-}
-export class LevelWeatherChangeEvent {
-    rainLevel: number;
-    rainTime: number;
-    lightningLevel: number;
-    lightningTime: number;
-    private level;
-    constructor(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number, level: Level);
-}
-
-}
-// events\miscevent.ts
-export namespace miscevent4 {
-import Objective = __tsb_minecraft.Objective;
-import ObjectiveCriteria = __tsb_minecraft.ObjectiveCriteria;
-import ScoreboardIdentityRef = __tsb_minecraft.ScoreboardIdentityRef;
-export class QueryRegenerateEvent {
-    motd: string;
-    levelname: string;
-    currentPlayers: number;
-    maxPlayers: number;
-    isJoinableThroughServerScreen: boolean;
-    constructor(motd: string, levelname: string, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean);
-}
-export class ScoreResetEvent {
-    identityRef: ScoreboardIdentityRef;
-    objective: Objective;
-    constructor(identityRef: ScoreboardIdentityRef, objective: Objective);
-}
-export class ScoreSetEvent {
-    identityRef: ScoreboardIdentityRef;
-    objective: Objective;
-    /** The score to be set */
-    score: number;
-    constructor(identityRef: ScoreboardIdentityRef, objective: Objective, 
-    /** The score to be set */
-    score: number);
-}
-export class ScoreAddEvent extends ScoreSetEvent {
-    identityRef: ScoreboardIdentityRef;
-    objective: Objective;
-    /** The score to be added */
-    score: number;
-    constructor(identityRef: ScoreboardIdentityRef, objective: Objective, 
-    /** The score to be added */
-    score: number);
-}
-export class ScoreRemoveEvent extends ScoreSetEvent {
-    identityRef: ScoreboardIdentityRef;
-    objective: Objective;
-    /** The score to be removed */
-    score: number;
-    constructor(identityRef: ScoreboardIdentityRef, objective: Objective, 
-    /** The score to be removed */
-    score: number);
-}
-export class ObjectiveCreateEvent {
-    name: string;
-    displayName: string;
-    criteria: ObjectiveCriteria;
-    constructor(name: string, displayName: string, criteria: ObjectiveCriteria);
-}
-
-}
-// events\playerevent.ts
-export namespace playerevent2 {
-import DeviceOS = __tsb_enums.DeviceOS;
-import Actor = __tsb_minecraft.Actor;
-import CompletedUsingItemPacket = __tsb_minecraft.CompletedUsingItemPacket;
-import ConnectionRequest = __tsb_minecraft.ConnectionRequest;
-import LoginPacket = __tsb_minecraft.LoginPacket;
 import Entity = __tsb.entity.Entity;
-import Item = __tsb.item2.Item;
-import ItemEntity = __tsb.itementity2.ItemEntity;
-import Player = __tsb.player.Player;
-export class PlayerEvent {
-    player: Player;
-    constructor(player: Player);
+export namespace command {
+    abstract class Param<T> {
+        optional(): Param<T | undefined>;
+    }
+    class Origin {
+        private readonly origin;
+        private _pos;
+        private _blockPos;
+        private _entity;
+        constructor(origin: CommandOrigin);
+        /**
+         * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+         */
+        getRawOrigin(): CommandOrigin;
+        get isServerOrigin(): boolean;
+        get isScriptOrigin(): boolean;
+        get entity(): Entity | null;
+        get position(): Vec3;
+        get blockPosition(): BlockPos;
+    }
+    const Boolean: Param<boolean>;
+    const Integer: Param<number>;
+    const String: Param<string>;
+    const RawText: Param<string>;
+    const RelativeFloat: Param<RelativeFloatType>;
+    const EntityWildcard: Param<Entity[]>;
+    const Json: Param<any>;
+    class Factory {
+        readonly name: string;
+        constructor(name: string);
+        overload<PARAMS extends Record<string, Param<any>>>(callback: (params: {
+            [key in keyof PARAMS]: PARAMS[key] extends Param<infer T> ? T : never;
+        }, origin: CommandOrigin, output: CommandOutput) => void, parameters: PARAMS): this;
+        alias(alias: string): this;
+    }
+    function register(name: string, description: string, perm?: CommandPermissionLevel): Factory;
+    /**
+     * it does the same thing with bedrockServer.executeCommandOnConsole
+     * but call the internal function directly
+     */
+    function execute(command: string, dimension?: Dimension | null): MCRESULT;
+    /**
+     * resend the command list packet to clients
+     */
+    function update(): void;
 }
-interface LoginPacketWithConnectionRequest extends LoginPacket {
-    connreq: ConnectionRequest;
+
 }
-export class PlayerLoginEvent extends PlayerEvent {
-    private readonly packet;
-    constructor(player: Player, packet: LoginPacketWithConnectionRequest);
-    get os(): DeviceOS;
-    get deviceId(): string;
+// events\commandevent.ts
+export namespace commandevent {
+import CommandContext = __tsb_minecraft.CommandContext;
+import command = __tsb.command.command;
+export class CommandEvent {
+    command: string;
+    readonly origin: command.Origin;
+    private readonly context;
+    constructor(command: string, origin: command.Origin, context: CommandContext);
     /**
      * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
      */
-    getRawPacket(): LoginPacket;
+    getRawContext(): CommandContext;
 }
-export class PlayerDisconnectEvent extends PlayerEvent {
-}
-export class PlayerAttackEvent extends PlayerEvent {
-    private readonly _victimActor;
-    victim: Entity;
-    private readonly _victimEntity;
-    constructor(player: Player, _victimActor: Actor);
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawVictimEntity(): Actor;
-}
-export class PlayerDropItemEvent extends PlayerEvent {
-    item: Item;
-    constructor(player: Player, item: Item);
-}
-export class PlayerInventoryChangeEvent extends PlayerEvent {
-    readonly oldItem: Item;
-    readonly newItem: Item;
-    readonly slot: number;
-    constructor(player: Player, oldItem: Item, newItem: Item, slot: number);
-}
-export class PlayerRespawnEvent extends PlayerEvent {
-}
-export class PlayerLevelUpEvent extends PlayerEvent {
-    /** Amount of levels upgraded */
-    levels: number;
-    constructor(player: Player, 
-    /** Amount of levels upgraded */
-    levels: number);
-}
-export class PlayerJoinEvent extends PlayerEvent {
-    constructor(player: Player);
-}
-export class PlayerPickupItemEvent extends PlayerEvent {
-    itemActor: ItemEntity;
-    constructor(player: Player, itemActor: ItemEntity);
-}
-export class PlayerCritEvent extends PlayerEvent {
-}
-export class PlayerUseItemEvent extends PlayerEvent {
-    useMethod: PlayerUseItemEvent.Actions;
-    consumeItem: boolean;
-    item: Item;
-    constructor(player: Player, useMethod: PlayerUseItemEvent.Actions, consumeItem: boolean, item: Item);
-}
-export namespace PlayerUseItemEvent {
-    export import Actions = CompletedUsingItemPacket.Actions;
-}
-export class PlayerJumpEvent extends PlayerEvent {
-}
-export class PlayerStartSwimmingEvent extends PlayerEvent {
-}
-export {};
 
 }
 // events\blockevent.ts
-export namespace blockevent4 {
+export namespace blockevent {
 import PistonAction = __tsb_enums.PistonAction;
 import BlockRaw = __tsb_minecraft.Block;
 import BlockPos = __tsb_minecraft.BlockPos;
@@ -584,7 +457,7 @@ import BlockSource = __tsb_minecraft.BlockSource;
 import Block = __tsb.block.Block;
 import Entity = __tsb.entity.Entity;
 import Player = __tsb.player.Player;
-import PlayerEvent = __tsb.playerevent2.PlayerEvent;
+import PlayerEvent = __tsb.playerevent.PlayerEvent;
 export class BlockDestroyEvent extends PlayerEvent {
     blockPos: BlockPos;
     constructor(player: Player, blockPos: BlockPos);
@@ -621,7 +494,7 @@ export class CampfireTryDouseFire extends BlockEvent {
 
 }
 // events\entityevent.ts
-export namespace entityevent4 {
+export namespace entityevent {
 import Actor = __tsb_minecraft.Actor;
 import ActorDamageSource = __tsb_minecraft.ActorDamageSource;
 import Entity = __tsb.entity.Entity;
@@ -686,76 +559,236 @@ export class SplashPotionHitEvent extends EntityEvent {
 }
 
 }
-// command.ts
-export namespace command {
-import BlockPos = __tsb_minecraft.BlockPos;
-import CommandOrigin = __tsb_minecraft.CommandOrigin;
-import CommandOutput = __tsb_minecraft.CommandOutput;
-import CommandPermissionLevel = __tsb_minecraft.CommandPermissionLevel;
-import Dimension = __tsb_minecraft.Dimension;
-import MCRESULT = __tsb_minecraft.MCRESULT;
-import RelativeFloatType = __tsb_minecraft.RelativeFloat;
-import Vec3 = __tsb_minecraft.Vec3;
+// events\playerevent.ts
+export namespace playerevent {
+import Actor = __tsb_minecraft.Actor;
+import BuildPlatform = __tsb_minecraft.BuildPlatform;
+import CompletedUsingItemPacket = __tsb_minecraft.CompletedUsingItemPacket;
+import ConnectionRequest = __tsb_minecraft.ConnectionRequest;
+import LoginPacket = __tsb_minecraft.LoginPacket;
 import Entity = __tsb.entity.Entity;
-export namespace command {
-    abstract class Param<T> {
-        optional(): Param<T | undefined>;
-    }
-    class Origin {
-        private readonly origin;
-        private _pos;
-        private _blockPos;
-        private _entity;
-        constructor(origin: CommandOrigin);
-        /**
-         * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-         */
-        getRawOrigin(): CommandOrigin;
-        get isServerOrigin(): boolean;
-        get isScriptOrigin(): boolean;
-        get entity(): Entity | null;
-        get position(): Vec3;
-        get blockPosition(): BlockPos;
-    }
-    const Boolean: Param<boolean>;
-    const Integer: Param<number>;
-    const String: Param<string>;
-    const RawText: Param<string>;
-    const RelativeFloat: Param<RelativeFloatType>;
-    const EntityWildcard: Param<Entity[]>;
-    const Json: Param<any>;
-    class Factory {
-        readonly name: string;
-        constructor(name: string);
-        overload<PARAMS extends Record<string, Param<any>>>(callback: (params: {
-            [key in keyof PARAMS]: PARAMS[key] extends Param<infer T> ? T : never;
-        }, origin: CommandOrigin, output: CommandOutput) => void, parameters: PARAMS): this;
-        alias(alias: string): this;
-    }
-    function register(name: string, description: string, perm?: CommandPermissionLevel): Factory;
+import Item = __tsb.item.Item;
+import ItemEntity = __tsb.itementity.ItemEntity;
+import Player = __tsb.player.Player;
+export class PlayerEvent {
+    player: Player;
+    constructor(player: Player);
+}
+interface LoginPacketWithConnectionRequest extends LoginPacket {
+    connreq: ConnectionRequest;
+}
+export class PlayerLoginEvent extends PlayerEvent {
+    private readonly packet;
+    constructor(player: Player, packet: LoginPacketWithConnectionRequest);
+    get os(): BuildPlatform;
+    get deviceId(): string;
     /**
-     * it does the same thing with bedrockServer.executeCommandOnConsole
-     * but call the internal function directly
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
      */
-    function execute(command: string, dimension?: Dimension | null): MCRESULT;
+    getRawPacket(): LoginPacket;
+}
+export class PlayerDisconnectEvent extends PlayerEvent {
+}
+export class PlayerAttackEvent extends PlayerEvent {
+    private readonly _victimActor;
+    victim: Entity;
+    private readonly _victimEntity;
+    constructor(player: Player, _victimActor: Actor);
     /**
-     * resend the command list packet to clients
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
      */
-    function update(): void;
+    getRawVictimEntity(): Actor;
+}
+export class PlayerDropItemEvent extends PlayerEvent {
+    item: Item;
+    constructor(player: Player, item: Item);
+}
+export class PlayerInventoryChangeEvent extends PlayerEvent {
+    readonly oldItem: Item;
+    readonly newItem: Item;
+    readonly slot: number;
+    constructor(player: Player, oldItem: Item, newItem: Item, slot: number);
+}
+export class PlayerRespawnEvent extends PlayerEvent {
+}
+export class PlayerLevelUpEvent extends PlayerEvent {
+    /** Amount of levels upgraded */
+    levels: number;
+    constructor(player: Player, 
+    /** Amount of levels upgraded */
+    levels: number);
+}
+export class PlayerJoinEvent extends PlayerEvent {
+    constructor(player: Player);
+}
+export class PlayerPickupItemEvent extends PlayerEvent {
+    itemActor: ItemEntity;
+    constructor(player: Player, itemActor: ItemEntity);
+}
+export class PlayerCritEvent extends PlayerEvent {
+}
+export class PlayerUseItemEvent extends PlayerEvent {
+    useMethod: PlayerUseItemEvent.Actions;
+    consumeItem: boolean;
+    item: Item;
+    constructor(player: Player, useMethod: PlayerUseItemEvent.Actions, consumeItem: boolean, item: Item);
+}
+export namespace PlayerUseItemEvent {
+    export import Actions = CompletedUsingItemPacket.Actions;
+}
+export class PlayerJumpEvent extends PlayerEvent {
+}
+export class PlayerStartSwimmingEvent extends PlayerEvent {
+}
+export class PlayerChatEvent extends PlayerEvent {
+    message: string;
+    constructor(player: Player, message: string);
+}
+export {};
+
+}
+// inventory.ts
+export namespace inventory {
+import ItemStack = __tsb_minecraft.ItemStack;
+import PlayerInventory = __tsb_minecraft.PlayerInventory;
+export class Inventory {
+    private readonly inventory;
+    private _slotsArray;
+    constructor(inventory: PlayerInventory);
+    private _slots;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawContainer(): PlayerInventory;
+    get size(): number;
+    get(i: number): ItemStack;
 }
 
 }
-// itementity.ts
-export namespace itementity2 {
-import ItemActor = __tsb_minecraft.ItemActor;
-import Entity = __tsb.entity.Entity;
-export class ItemEntity extends Entity {
-    static fromRaw(actor: ItemActor): Entity;
+// events\miscevent.ts
+export namespace miscevent {
+import Objective = __tsb_minecraft.Objective;
+import ObjectiveCriteria = __tsb_minecraft.ObjectiveCriteria;
+import ScoreboardIdentityRef = __tsb_minecraft.ScoreboardIdentityRef;
+export class QueryRegenerateEvent {
+    motd: string;
+    levelname: string;
+    currentPlayers: number;
+    maxPlayers: number;
+    isJoinableThroughServerScreen: boolean;
+    constructor(motd: string, levelname: string, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean);
+}
+export class ScoreResetEvent {
+    identityRef: ScoreboardIdentityRef;
+    objective: Objective;
+    constructor(identityRef: ScoreboardIdentityRef, objective: Objective);
+}
+export class ScoreSetEvent {
+    identityRef: ScoreboardIdentityRef;
+    objective: Objective;
+    /** The score to be set */
+    score: number;
+    constructor(identityRef: ScoreboardIdentityRef, objective: Objective, 
+    /** The score to be set */
+    score: number);
+}
+export class ScoreAddEvent extends ScoreSetEvent {
+    identityRef: ScoreboardIdentityRef;
+    objective: Objective;
+    /** The score to be added */
+    score: number;
+    constructor(identityRef: ScoreboardIdentityRef, objective: Objective, 
+    /** The score to be added */
+    score: number);
+}
+export class ScoreRemoveEvent extends ScoreSetEvent {
+    identityRef: ScoreboardIdentityRef;
+    objective: Objective;
+    /** The score to be removed */
+    score: number;
+    constructor(identityRef: ScoreboardIdentityRef, objective: Objective, 
+    /** The score to be removed */
+    score: number);
+}
+export class ObjectiveCreateEvent {
+    name: string;
+    displayName: string;
+    criteria: ObjectiveCriteria;
+    constructor(name: string, displayName: string, criteria: ObjectiveCriteria);
+}
+
+}
+// events\levelevent.ts
+export namespace levelevent {
+import Actor = __tsb_minecraft.Actor;
+import BlockSource = __tsb_minecraft.BlockSource;
+import Level = __tsb_minecraft.Level;
+import Vec3 = __tsb_minecraft.Vec3;
+import EntityEvent = __tsb.entityevent.EntityEvent;
+export class LevelExplodeEvent extends EntityEvent {
+    position: Vec3;
+    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
+    power: number;
+    /** If true, blocks in the explosion radius will be set on fire. */
+    causesFire: boolean;
+    /** If true, the explosion will destroy blocks in the explosion radius. */
+    breaksBlocks: boolean;
+    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
+    maxResistance: number;
+    allowUnderwater: boolean;
+    private level;
+    private blockSource;
+    constructor(actor: Actor, position: Vec3, 
+    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
+    power: number, 
+    /** If true, blocks in the explosion radius will be set on fire. */
+    causesFire: boolean, 
+    /** If true, the explosion will destroy blocks in the explosion radius. */
+    breaksBlocks: boolean, 
+    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
+    maxResistance: number, allowUnderwater: boolean, level: Level, blockSource: BlockSource);
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawLevel(): Level;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawBlockSource(): BlockSource;
+}
+export class LevelSaveEvent {
+    private level;
+    constructor(level: Level);
+}
+export class LevelTickEvent {
+    private level;
+    constructor(level: Level);
+}
+export class LevelWeatherChangeEvent {
+    rainLevel: number;
+    rainTime: number;
+    lightningLevel: number;
+    lightningTime: number;
+    private level;
+    constructor(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number, level: Level);
+}
+
+}
+// block.ts
+export namespace block {
+import BlockRaw = __tsb_minecraft.Block;
+export class Block {
+    private readonly block;
+    constructor(block: BlockRaw);
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawBlock(): BlockRaw;
 }
 
 }
 // item.ts
-export namespace item2 {
+export namespace item {
 import ItemStack = __tsb_minecraft.ItemStack;
 import ItemRaw = __tsb_minecraft.Item;
 export class Item {
@@ -773,27 +806,23 @@ export class Item {
 }
 
 }
-// block.ts
-export namespace block {
-import BlockRaw = __tsb_minecraft.Block;
-export class Block {
-    private readonly block;
-    constructor(block: BlockRaw);
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawBlock(): BlockRaw;
+// itementity.ts
+export namespace itementity {
+import ItemActor = __tsb_minecraft.ItemActor;
+import Entity = __tsb.entity.Entity;
+export class ItemEntity extends Entity {
+    static fromRaw(actor: ItemActor): Entity;
 }
 
 }
 }
+import __tsb_enums = require('../enums');
+import __tsb_minecraft = require('../minecraft');
+import __tsb_nativetype = require('../nativetype');
 import __tsb_colors = require('colors');
 import __tsb_common = require('../common');
 import __tsb_core = require('../core');
 import __tsb_eventtarget = require('../eventtarget');
-import __tsb_minecraft = require('../minecraft');
-import __tsb_enums = require('../enums');
-import __tsb_nativetype2 = require('../nativetype');
 // index.ts
 import eventsModule = __tsb.events;
 import serverModule = __tsb.server;

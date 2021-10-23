@@ -4,7 +4,8 @@ import { Tester } from "bdsx/tester";
 import { system } from "./bedrockapi-system";
 import colors = require('colors');
 import { bdsx } from "bdsx/v3";
-import { AttributeId, DimensionId } from "bdsx/enums";
+import { AttributeId } from "bdsx/enums";
+import { DimensionId } from "bdsx/minecraft";
 
 system.listenForEvent('minecraft:entity_created', ev => {
     if (!Tester.isPassed()) return; // logging if test is passed

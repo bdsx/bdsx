@@ -7,6 +7,7 @@ export declare class TextParser {
     peek(): string;
     endsWith(str: string): boolean;
     nextIf(str: string): boolean;
+    must(str: string): void;
     skipSpaces(): void;
 }
 export declare class LanguageParser extends TextParser {

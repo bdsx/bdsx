@@ -1,5 +1,5 @@
 declare module "../minecraft" {
-    interface WildcardCommandSelector<T0 extends Actor> extends CommandSelectorBase {
+    interface WildcardCommandSelector<T extends Actor> extends CommandSelectorBase {
     }
 }
 export {};

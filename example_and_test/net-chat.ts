@@ -1,10 +1,9 @@
 
 // Chat Listening
-import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { CANCEL } from "bdsx/common";
-import { events } from "bdsx/event";
+import { bdsx } from "bdsx/v3";
 
-events.packetBefore(MinecraftPacketIds.Text).on(ev => {
+bdsx.events.playerChat.on(ev=>{
     if (ev.message === 'nochat') {
         return CANCEL; // canceling
     }

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DeferPromise = exports.printOnProgress = exports.filterToIdentifierableString = exports.numberWithFillZero = exports.intToVarString = exports.checkPowOf2 = exports.makeSignature = exports.arraySame = exports.arrayEquals = exports.str2array = exports.str2set = exports.anyToString = exports.isBaseOf = exports.getLineAt = exports.removeLine = exports.indexOfLine = exports._tickCallback = exports.unhex = exports.hex = exports.memcheck = exports.memdiff_contains = exports.memdiff = void 0;
+exports.DeferPromise = exports.inheritMultiple = exports.printOnProgress = exports.filterToIdentifierableString = exports.numberWithFillZero = exports.intToVarString = exports.checkPowOf2 = exports.makeSignature = exports.arraySame = exports.arrayEquals = exports.str2array = exports.str2set = exports.anyToString = exports.isBaseOf = exports.getLineAt = exports.removeLine = exports.indexOfLine = exports._tickCallback = exports.unhex = exports.hex = exports.memcheck = exports.memdiff_contains = exports.memdiff = void 0;
 const util = require("util");
 function memdiff(dst, src) {
     const size = src.length;
@@ -321,6 +321,16 @@ function printOnProgress(message) {
     console.log();
 }
 exports.printOnProgress = printOnProgress;
+function inheritMultiple(child, base) {
+    const childp = child.prototype;
+    const basep = base.prototype;
+    for (const key of Object.getOwnPropertyNames(basep)) {
+        if ((key in childp))
+            continue;
+        childp[key] = basep[key];
+    }
+}
+exports.inheritMultiple = inheritMultiple;
 var DeferPromise;
 (function (DeferPromise) {
     function make() {

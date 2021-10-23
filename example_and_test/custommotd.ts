@@ -1,6 +1,4 @@
-
-import { serverInstance } from "bdsx/bds/server";
-import { events } from "bdsx/event";
+import { bdsx } from "bdsx/v3";
 
 const name = 'BDSX-Example-Server';
 
@@ -11,10 +9,10 @@ const interval = setInterval(()=>{
     rainbowOffset = (rainbowOffset + 1) & rainbow.length;
 
     const coloredName = name.replace(/./g, v=>rainbow[(i++)%rainbow.length]+v);
-    serverInstance.setMotd(coloredName);
+    bdsx.server.setMotd(coloredName);
 }, 5000);
 
 // without this code, bdsx does not end even after BDS closed
-events.serverStop.on(()=>{
+bdsx.events.serverStop.on(()=>{
     clearInterval(interval);
 });

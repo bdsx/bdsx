@@ -1,4 +1,3 @@
-import { Color } from "colors";
 import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
@@ -9,63 +8,63 @@ import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, Entity
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
-/** @deprecated */
+/** @deprecated use bdsx.events */
 export declare namespace events {
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const blockDestroy: Event<(event: BlockDestroyEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const blockPlace: Event<(event: BlockPlaceEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const pistonMove: Event<(event: PistonMoveEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const farmlandDecay: Event<(event: FarmlandDecayEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const campfireLight: Event<(event: CampfireTryLightFire) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const campfireDouse: Event<(event: CampfireTryDouseFire) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityHurt: Event<(event: EntityHurtEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityHealthChange: Event<(event: EntityHeathChangeEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityDie: Event<(event: EntityDieEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entitySneak: Event<(event: EntitySneakEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityStartSwimming: Event<(event: EntityStartSwimmingEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityStartRiding: Event<(event: EntityStartRidingEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityStopRiding: Event<(event: EntityStopRidingEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerAttack: Event<(event: PlayerAttackEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerDropItem: Event<(event: PlayerDropItemEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerInventoryChange: Event<(event: PlayerInventoryChangeEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerRespawn: Event<(event: PlayerRespawnEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerLevelUp: Event<(event: PlayerLevelUpEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const entityCreated: Event<(event: EntityCreatedEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerJoin: Event<(event: PlayerJoinEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerPickupItem: Event<(event: PlayerPickupItemEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerCrit: Event<(event: PlayerCritEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const playerUseItem: Event<(event: PlayerUseItemEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const splashPotionHit: Event<(event: SplashPotionHitEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const levelExplode: Event<(event: LevelExplodeEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const levelTick: Event<(event: LevelTickEvent) => void>;
     /** Cancellable but you won't be able to stop the server */
     const levelSave: Event<(event: LevelSaveEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const levelWeatherChange: Event<(event: LevelWeatherChangeEvent) => void | CANCEL>;
     /**
      * before launched. after execute the main thread of BDS.
@@ -74,24 +73,29 @@ export declare namespace events {
     const serverLoading: Event<() => void>;
     /**
      * after BDS launched
+     * @deprecated use bdsx.events
      */
     const serverOpen: Event<() => void>;
     /**
      * on tick
+     * @deprecated use bdsx.events
      */
     const serverUpdate: Event<() => void>;
     /**
      * before system.shutdown, Minecraft is alive yet
+     * @deprecated use bdsx.events
      */
     const serverStop: Event<() => void>;
     /**
      * after BDS closed
+     * @deprecated use bdsx.events
      */
     const serverClose: Event<() => void>;
     /**
      * server console outputs
      */
-    const serverLog: Event<(log: string, color: Color) => CANCEL | void>;
+    const serverLog: Event<(log: string, color: import("colors").Color) => void | CANCEL>;
+    /** @deprecated use bdsx.events */
     enum PacketEventType {
         Raw = 0,
         Before = 1,
@@ -99,37 +103,38 @@ export declare namespace events {
         Send = 3,
         SendRaw = 4
     }
+    /** @deprecated use bdsx.events */
     function packetEvent(type: PacketEventType, packetId: MinecraftPacketIds): Event<(...args: any[]) => (CANCEL | void)> | null;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     function packetRaw(id: MinecraftPacketIds): Event<nethook.RawListener>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     function packetBefore<ID extends MinecraftPacketIds>(id: ID): Event<nethook.PacketListener<ID>>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     function packetAfter<ID extends MinecraftPacketIds>(id: ID): Event<nethook.PacketListener<ID>>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     function packetSend<ID extends MinecraftPacketIds>(id: ID): Event<nethook.PacketListener<ID>>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     function packetSendRaw(id: number): Event<nethook.SendRawListener>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const queryRegenerate: Event<(event: QueryRegenerateEvent) => void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const scoreReset: Event<(event: ScoreResetEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const scoreSet: Event<(event: ScoreSetEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const scoreAdd: Event<(event: ScoreAddEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const scoreRemove: Event<(event: ScoreRemoveEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const objectiveCreate: Event<(event: ObjectiveCreateEvent) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const error: Event<(error: any) => void | CANCEL>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     function errorFire(err: unknown): void;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const commandOutput: Event<(log: string) => CANCEL | void>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const command: Event<(command: string, originName: string, ctx: CommandContext) => void | number>;
-    /** @deprecated */
+    /** @deprecated use bdsx.events */
     const networkDisconnected: Event<(ni: NetworkIdentifier) => void>;
 }

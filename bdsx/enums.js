@@ -1,15 +1,13 @@
 "use strict";
 // enums but not found in BDS symbols
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DisplaySlot = exports.DeviceOS = exports.ContainerId = exports.AttributeName = exports.MobEffectIds = exports.AttributeId = exports.DimensionId = exports.PistonAction = void 0;
-const minecraft = require("./minecraft");
+exports.DisplaySlot = exports.ContainerId = exports.AttributeName = exports.MobEffectIds = exports.AttributeId = exports.PistonAction = void 0;
 require("./minecraft_impl/enums");
 var PistonAction;
 (function (PistonAction) {
     PistonAction[PistonAction["Extend"] = 1] = "Extend";
     PistonAction[PistonAction["Retract"] = 3] = "Retract";
 })(PistonAction = exports.PistonAction || (exports.PistonAction = {}));
-exports.DimensionId = minecraft.DimensionId;
 var AttributeId;
 (function (AttributeId) {
     AttributeId[AttributeId["ZombieSpawnReinforcementsChange"] = 1] = "ZombieSpawnReinforcementsChange";
@@ -107,14 +105,10 @@ var ContainerId;
     ContainerId[ContainerId["UI"] = 124] = "UI";
     ContainerId[ContainerId["None"] = 255] = "None";
 })(ContainerId = exports.ContainerId || (exports.ContainerId = {}));
-exports.DeviceOS = minecraft.BuildPlatform;
 var DisplaySlot;
 (function (DisplaySlot) {
     DisplaySlot["BelowName"] = "belowname";
     DisplaySlot["List"] = "list";
     DisplaySlot["Sidebar"] = "sidebar";
 })(DisplaySlot = exports.DisplaySlot || (exports.DisplaySlot = {}));
-const common = require("./common");
-common.AttributeName = AttributeName;
-common.DeviceOS = exports.DeviceOS;
 //# sourceMappingURL=enums.js.map
