@@ -631,7 +631,7 @@ Tester.test({
                             actor.respawnPosition.y === 2 &&
                             actor.respawnPosition.z === 3 &&
                             actor.respawnDimension === DimensionId.TheEnd;
-                        this.assert(respawnpointCheck, 'respawn position mismatch');
+                        this.assert(respawnpointCheck, 'respawn position/dimension mismatch');
                         if (!respawnpointCheck) process.exit(-1); // terminate it for not saving it.
 
                         actor.setRespawnPosition(pos, dim);
