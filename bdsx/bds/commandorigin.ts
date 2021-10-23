@@ -55,7 +55,6 @@ export class CommandOrigin extends NativeClass {
 
     /**
      * Returns the dimension of the recieved command
-     * @remarks Null when the server is just started without any joining
      */
     getDimension(): Dimension {
         abstract();
