@@ -54,13 +54,15 @@ export class CommandOrigin extends NativeClass {
     }
 
     /**
-     * @remarks Nullable when the server is just started without any joining
+     * Returns the dimension of the recieved command
+     * @remarks Null when the server is just started without any joining
      */
     getDimension(): Dimension {
         abstract();
     }
     /**
-     * it returns null if the command origin is the console
+     * Returns the entity that send the command
+     * @remarks Null if the command origin is the console
      */
     getEntity():Actor|null {
         abstract();
