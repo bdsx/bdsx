@@ -54,9 +54,9 @@ export class CommandOrigin extends NativeClass {
     }
 
     /**
-     * actually, it's nullable when the server is just started without any joining
+     * @remarks Nullable when the server is just started without any joining
      */
-    getDimension(): Dimension|null {
+    getDimension(): Dimension {
         abstract();
     }
     /**
