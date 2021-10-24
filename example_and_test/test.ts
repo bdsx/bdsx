@@ -6,9 +6,10 @@ import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
-import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
+import { CommandContext, CommandItem, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
+import { ItemStack } from "bdsx/bds/inventory";
 import { ServerLevel } from "bdsx/bds/level";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
@@ -39,6 +40,7 @@ import { getEnumKeys, hex } from "bdsx/util";
 let sendidcheck = 0;
 let nextTickPassed = false;
 let chatCancelCounter = 0;
+let expectedPlayerCount = 0;
 
 export function setRecentSendedPacketForTest(packetId: number): void {
     sendidcheck = packetId;
@@ -595,14 +597,15 @@ Tester.test({
         const system = server.registerSystem(0, 0);
         system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
             const level = serverInstance.minecraft.getLevel().as(ServerLevel);
-            this.equals(level.players.size(), 1, 'Unexpected player size');
-            this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
 
             try {
                 const uniqueId = ev.data.entity.__unique_id__;
                 const actor = Actor.fromEntity(ev.data.entity);
                 const bsapiIdentifier = ev.data.entity.__identifier__;
                 if (bsapiIdentifier === 'minecraft:player') {
+                    expectedPlayerCount++;
+                    this.equals(level.players.size(),  expectedPlayerCount, 'Unexpected player size');
+                    this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
@@ -710,7 +713,12 @@ Tester.test({
                 });
             }, 1000);
         });
-    }
+    },
+
+    etc() {
+        const item = ItemStack.constructWith('minecraft:acacia_boat');
+        item.destruct();
+    },
 }, true);
 
 let connectedNi: NetworkIdentifier;
