@@ -40,7 +40,6 @@ import { getEnumKeys, hex } from "bdsx/util";
 let sendidcheck = 0;
 let nextTickPassed = false;
 let chatCancelCounter = 0;
-let expectedPlayerCount = 0;
 
 export function setRecentSendedPacketForTest(packetId: number): void {
     sendidcheck = packetId;
@@ -603,8 +602,7 @@ Tester.test({
                 const actor = Actor.fromEntity(ev.data.entity);
                 const bsapiIdentifier = ev.data.entity.__identifier__;
                 if (bsapiIdentifier === 'minecraft:player') {
-                    expectedPlayerCount++;
-                    this.equals(level.players.size(),  expectedPlayerCount, 'Unexpected player size');
+                    this.equals(level.players.size(),  serverInstance.getActivePlayerCount(), 'Unexpected player size');
                     this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
@@ -702,17 +700,17 @@ Tester.test({
     },
 
     testPlayerCount() {
-        events.queryRegenerate.once(v=>{
+        events.queryRegenerate.once(this.wrap(v=>{
             this.equals(v.currentPlayers, 0, 'player count mismatch');
             this.equals(v.maxPlayers, serverInstance.getMaxPlayers(), 'max player mismatch');
-        });
-        events.packetAfter(MinecraftPacketIds.Login).once((packet, ni)=>{
-            setTimeout(()=>{
+        }));
+        events.packetAfter(MinecraftPacketIds.Login).once(this.wrap((packet, ni)=>{
+            setTimeout(this.wrap(()=>{
                 events.queryRegenerate.once(v=>{
                     this.equals(v.currentPlayers, 1, 'player count mismatch');
                 });
-            }, 1000);
-        });
+            }), 1000);
+        }));
     },
 
     etc() {
