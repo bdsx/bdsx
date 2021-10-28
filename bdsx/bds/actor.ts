@@ -347,6 +347,13 @@ export enum ActorFlags {
     Stalking,
     Emoting,
     Celebrating,
+    Admiring,
+    CelebratingSpecial,
+    OutOfControl,
+    RamAttack,
+    PlayingDead,
+    InAscendableBlock,
+    OverDescendableBlock
 }
 
 @nativeClass()
