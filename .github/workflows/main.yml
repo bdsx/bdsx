@@ -28,5 +28,5 @@ jobs:
 
       - name: ESLint
         run: |
-          npm list --depth=0 eslint eslint-plugin-github eslint-plugin-import eslint-plugin-unused-imports
+          npm list --depth=0 eslint eslint-plugin-github eslint-plugin-import
           npm run lint-bdsx
