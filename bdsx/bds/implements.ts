@@ -137,6 +137,8 @@ Actor.prototype.isPlayer = function() {
 Actor.prototype.isItem = function() {
     return this instanceof ItemActor;
 };
+Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
+
 (Actor as any)._singletoning = function(ptr:StaticPointer|null):Actor|null {
     if (ptr === null) return null;
     const binptr = ptr.getAddressBin();
