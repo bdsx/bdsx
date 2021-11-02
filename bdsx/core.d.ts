@@ -451,7 +451,6 @@ export declare namespace pdb {
      * get symbols from cache.
      * if symbols don't exist in cache. it reads pdb.
      * @returns 'out' the first parameter.
-     * @deprecated import item from `bdsx/minecraft`. and use `dnf(item).getAddress()`
      */
     function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath: string, out: OLD, names: KEYS, quiet?: boolean, undecorateFlags?: number): {
         [key in KEYS[number]]: NativePointer;

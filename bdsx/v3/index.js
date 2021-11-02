@@ -47,186 +47,6 @@ var server;
 });
 return exports;
 },
-// entity.ts
-entity(){
-if(__tsb.entity.exports!=null) return __tsb.entity.exports;
-const exports=__tsb.entity.exports={};
-exports.EntityCreatedEvent = exports.Entity = void 0;
-const enums_1 = require("../enums");
-const hook_1 = require("../hook");
-const mcglobal_1 = require("../mcglobal");
-const minecraft_1 = require("../minecraft");
-const util_1 = require("../util");
-const events_1 = __tsb.events();
-const colors = require("colors");
-const entityKey = Symbol('entity');
-const entityMapper = Symbol('entityMapper');
-const ATTRIBUTE_ID_MIN = enums_1.AttributeId.ZombieSpawnReinforcementsChange;
-const ATTRIBUTE_ID_MAX = enums_1.AttributeId.JumpStrength;
-class Entity {
-    constructor(actor) {
-        this.actor = actor;
-        this.entity = null;
-    }
-    actorMust() {
-        if (this.actor === null)
-            throw Error(`${this}'s actor is not ready`);
-        return this.actor;
-    }
-    get name() {
-        if (this.actor === null)
-            return 'unknown';
-        return this.actorMust().getNameTag();
-    }
-    get identifier() {
-        return this.actor.identifier;
-    }
-    get dimensionId() {
-        return this.actorMust().getDimensionId();
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawEntity() {
-        return this.actor;
-    }
-    // Actor.prototype.isItem = function() {
-    //     return this instanceof Item;
-    // };
-    getPosition() {
-        return this.actorMust().getPos();
-    }
-    getUniqueID() {
-        return this.actorMust().getUniqueID();
-    }
-    getUniqueIdBin() {
-        return this.actorMust().getUniqueID().value;
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getAttributeInstance(id) {
-        if (id < ATTRIBUTE_ID_MIN || id > ATTRIBUTE_ID_MAX)
-            throw Error(`AttributeId ${id}, Out of range`);
-        const instance = this.actorMust().getAttributes().getMutableInstance(id);
-        if (instance === null)
-            throw Error(`${this} has not ${enums_1.AttributeId[id]} attribute`);
-        return instance;
-    }
-    getAttributeValues(id) {
-        const attr = this.getAttributeInstance(id);
-        return {
-            current: attr.currentValue,
-            min: attr.minValue,
-            max: attr.maxValue,
-            default: attr.defaultValue,
-        };
-    }
-    getAttribute(id) {
-        const attr = this.getAttributeInstance(id);
-        return attr.currentValue;
-    }
-    setAttribute(id, value) {
-        const attr = this.getAttributeInstance(id);
-        if (typeof value === 'number') {
-            attr.currentValue = value;
-        }
-        else {
-            const { current, min, max, default: defaultv } = value;
-            if (current != null)
-                attr.currentValue = current;
-            if (min != null)
-                attr.minValue = min;
-            if (max != null)
-                attr.maxValue = max;
-            if (defaultv != null)
-                attr.defaultValue = defaultv;
-        }
-        return true;
-    }
-    teleport(pos, dimensionId = minecraft_1.DimensionId.Overworld) {
-        const actor = this.actorMust();
-        const cmd = minecraft_1.TeleportCommand.computeTarget(actor, pos, new minecraft_1.Vec3(true), dimensionId, minecraft_1.RelativeFloat.create(0, false), minecraft_1.RelativeFloat.create(0, false), 0);
-        minecraft_1.TeleportCommand.applyTarget(actor, cmd);
-    }
-    addEffect(id, duration, amplifier = 0) {
-        const mob = new minecraft_1.MobEffectInstance(true);
-        mob.constructWith(id, duration, amplifier);
-    }
-    hasEffect(id) {
-        const effect = minecraft_1.MobEffect.create(id);
-        const retval = this.actorMust().hasEffect(effect);
-        effect.destruct();
-        return retval;
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getEffect(id) {
-        const effect = minecraft_1.MobEffect.create(id);
-        const retval = this.actorMust().getEffect(effect);
-        effect.destruct();
-        return retval;
-    }
-    static registerMapper(rawClass, mapper) {
-        rawClass.prototype[entityMapper] = mapper;
-    }
-    static fromUniqueId(lowBitsOrBin, highBits) {
-        const id = minecraft_1.ActorUniqueID.create(lowBitsOrBin, highBits);
-        const actor = mcglobal_1.mcglobal.level.fetchEntity(id, true);
-        if (actor === null)
-            return null;
-        return Entity.fromRaw(actor);
-    }
-    static fromRaw(actor) {
-        const actorx = actor;
-        let entity = actorx[entityKey];
-        if (entity != null)
-            return entity;
-        entity = actorx[entityMapper]();
-        if (entity === null) {
-            console.error(colors.red(`failed to get the Entity of [${actorx.constructor.name}:${actorx}]`));
-            return null;
-        }
-        return actorx[entityKey] = entity;
-    }
-    /**
-     * from the scripting API entity.
-     */
-    static fromEntity(entity) {
-        const u = entity.__unique_id__;
-        return Entity.fromUniqueId(u["64bit_low"], u["64bit_high"]);
-    }
-    toString() {
-        if (this.actor !== null) {
-            return this.actor.getNameTag();
-        }
-        else {
-            return `[unknown ${this.constructor.name}]`;
-        }
-    }
-}
-exports.Entity = Entity;
-Entity.registerMapper(minecraft_1.Actor, actor => new Entity(actor));
-class EntityCreatedEvent {
-    constructor(entity) {
-        this.entity = entity;
-    }
-}
-exports.EntityCreatedEvent = EntityCreatedEvent;
-function onEntityCreated(actor) {
-    const entity = Entity.fromRaw(actor);
-    if (entity === null) {
-        return _onEntityCreated.call(this, actor);
-    }
-    const event = new EntityCreatedEvent(entity);
-    events_1.events.entityCreated.fire(event);
-    (0, util_1._tickCallback)();
-    return _onEntityCreated.call(this, event.entity.getRawEntity());
-}
-const _onEntityCreated = (0, hook_1.hook)(minecraft_1.ScriptServerActorEventListener, 'onActorCreated').call(onEntityCreated);
-return exports;
-},
 // events\index.ts
 events(){
 if(__tsb.events.exports!=null) return __tsb.events.exports;
@@ -284,6 +104,8 @@ var events;
     events.entityStopRiding = new eventtarget_1.Event;
     /** Not cancellable */
     events.entityCreated = new eventtarget_1.Event;
+    /** Not cancellable */
+    events.entityDeleted = new eventtarget_1.Event;
     /** Cancellable */
     events.splashPotionHit = new eventtarget_1.Event;
     ////////////////////////////////////////////////////////
@@ -458,6 +280,488 @@ var events;
 })(events = exports.events || (exports.events = {}));
 return exports;
 },
+// command.ts
+command(){
+if(__tsb.command.exports!=null) return __tsb.command.exports;
+const exports=__tsb.command.exports={};
+exports.command = void 0;
+const tslib_1 = __tsb.tslib;
+const assembler_1 = require("../assembler");
+const bin_1 = require("../bin");
+const capi_1 = require("../capi");
+const core_1 = require("../core");
+const dnf_1 = require("../dnf");
+const enums_1 = require("../enums");
+const jsonvalue_1 = require("../jsonvalue");
+const makefunc_1 = require("../makefunc");
+const mcglobal_1 = require("../mcglobal");
+const minecraft_1 = require("../minecraft");
+const nativeclass_1 = require("../nativeclass");
+const nativetype_1 = require("../nativetype");
+const sharedpointer_1 = require("../sharedpointer");
+const entity_1 = __tsb.entity();
+const events_1 = __tsb.events();
+const commandVersion = minecraft_1.CommandVersion.CurrentVersion;
+const commandContextRefCounterVftable = minecraft_1.std._Ref_count_obj2.make(minecraft_1.CommandContext).addressof_vftable;
+const CommandContextSharedPtr = sharedpointer_1.SharedPtr.make(minecraft_1.CommandContext);
+function createServerCommandOrigin(name, level, permissionLevel, dimension) {
+    const origin = capi_1.capi.malloc(minecraft_1.ServerCommandOrigin[nativetype_1.NativeType.size]).as(minecraft_1.ServerCommandOrigin);
+    origin.constructWith(name, level, permissionLevel, dimension);
+    return origin;
+}
+function createCommandContext(command, origin) {
+    const sharedptr = new CommandContextSharedPtr(true);
+    sharedptr.create(commandContextRefCounterVftable);
+    sharedptr.p.constructWith(command, origin, commandVersion);
+    return sharedptr;
+}
+function mandatory(command, key, keyForIsSet, desc, type = minecraft_1.CommandParameterDataType.NORMAL, name = key) {
+    const cmdclass = command;
+    const paramType = cmdclass.typeOf(key);
+    const offset = cmdclass.offsetOf(key);
+    const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet) : -1;
+    return manual(name, paramType, offset, flag_offset, false, desc, type);
+}
+function optional(command, key, keyForIsSet, desc, type = minecraft_1.CommandParameterDataType.NORMAL, name = key) {
+    const cmdclass = command;
+    const paramType = cmdclass.typeOf(key);
+    const offset = cmdclass.offsetOf(key);
+    const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet) : -1;
+    return manual(name, paramType, offset, flag_offset, true, desc, type);
+}
+function manual(name, paramType, offset, flag_offset = -1, optional = false, desc, type = minecraft_1.CommandParameterDataType.NORMAL) {
+    const param = minecraft_1.CommandParameterData.construct();
+    const getTypeId = (0, dnf_1.dnf)(minecraft_1.type_id).getByTemplates(null, minecraft_1.CommandRegistry, paramType);
+    if (getTypeId === null)
+        throw Error(`${paramType.name} type_id not found`);
+    param.tid.id = getTypeId().id;
+    const parser = (0, dnf_1.dnf)(minecraft_1.CommandRegistry, 'parse').getByTemplates(paramType);
+    if (parser === null)
+        throw Error(`${paramType.name} parser not found`);
+    param.parser = dnf_1.dnf.getAddressOf(parser);
+    param.name = name;
+    param.type = type;
+    if (desc != null) {
+        const ptr = new core_1.NativePointer;
+        ptr.setAddressFromBuffer(assembler_1.asm.const_str(desc));
+        param.desc = ptr;
+    }
+    else {
+        param.desc = null;
+    }
+    param.unk56 = -1;
+    param.offset = offset;
+    param.flag_offset = flag_offset;
+    param.optional = optional;
+    param.pad73 = false;
+    return param;
+}
+let CustomCommand = class CustomCommand extends minecraft_1.Command {
+    [nativetype_1.NativeType.ctor]() {
+        this.self_vftable.destructor = customCommandDtor;
+        this.self_vftable.execute = null;
+        this.vftable = this.self_vftable;
+    }
+    execute(origin, output) {
+        // empty
+    }
+};
+(0, tslib_1.__decorate)([
+    (0, nativeclass_1.nativeField)(minecraft_1.Command.VFTable)
+], CustomCommand.prototype, "self_vftable", void 0);
+CustomCommand = (0, tslib_1.__decorate)([
+    (0, nativeclass_1.nativeClass)()
+], CustomCommand);
+const customCommandDtor = makefunc_1.makefunc.np(function () {
+    this[nativetype_1.NativeType.dtor]();
+}, nativetype_1.void_t, { this: CustomCommand }, nativetype_1.int32_t);
+function registerOverloadClass(name, commandClass, params) {
+    const cls = commandClass;
+    const size = cls[nativetype_1.NativeType.size];
+    if (!size)
+        throw Error(`${cls.name}: size is not defined`);
+    const allocator = makefunc_1.makefunc.np((returnval) => {
+        const ptr = capi_1.capi.malloc(size);
+        const cmd = ptr.as(cls);
+        cmd.construct();
+        returnval.setPointer(cmd);
+        return returnval;
+    }, core_1.StaticPointer, null, core_1.StaticPointer);
+    const sig = mcglobal_1.mcglobal.commandRegistry.findCommand(name);
+    if (sig === null)
+        throw Error(`${name}: command not found`);
+    const overload = minecraft_1.CommandRegistry.Overload.construct();
+    overload.commandVersion = bin_1.bin.make64(1, 0x7fffffff);
+    overload.allocator = allocator;
+    overload.parameters.setFromArray(params);
+    overload.commandVersionOffset = -1;
+    sig.overloads.push(overload);
+    mcglobal_1.mcglobal.commandRegistry.registerOverloadInternal(sig, sig.overloads.back());
+    overload.destruct();
+}
+class ParamsBuilder {
+    constructor() {
+        this.fields = Object.create(null);
+        this.paramInfos = [];
+    }
+}
+var command;
+(function (command_1) {
+    class Param {
+        optional() {
+            return new OptionalParam(this);
+        }
+    }
+    command_1.Param = Param;
+    class ParamBase extends Param {
+        constructor(baseType) {
+            super();
+            this.baseType = baseType;
+        }
+        build(name, target) {
+            if (name in target.fields)
+                throw Error(`${name}: field name duplicated`);
+            target.fields[name] = this.baseType;
+            const out = { name };
+            target.paramInfos.push(out);
+            return out;
+        }
+    }
+    class ParamDirect extends ParamBase {
+        convert(out, native, info, origin) {
+            const name = info.name;
+            out[name] = native[name];
+        }
+    }
+    class ParamConverter extends ParamBase {
+        constructor(baseType, converter) {
+            super(baseType);
+            this.converter = converter;
+        }
+        convert(out, native, info, origin) {
+            const name = info.name;
+            out[name] = this.converter(native[name], origin);
+        }
+    }
+    class ExtendedParam extends Param {
+        constructor(base) {
+            super();
+            this.base = base;
+        }
+        optional() {
+            return this;
+        }
+    }
+    class OptionalParam extends ExtendedParam {
+        build(name, target) {
+            const info = this.base.build(name, target);
+            const optkey = name + '__set';
+            if (optkey in target.fields)
+                throw Error(`${optkey}: field name duplicated`);
+            target.fields[optkey] = nativetype_1.bool_t;
+            info.optkey = optkey;
+            return info;
+        }
+        convert(out, native, info, origin) {
+            const optkey = info.optkey;
+            if (optkey == null || native[optkey]) {
+                this.base.convert(out, native, info, origin);
+            }
+        }
+    }
+    class Origin {
+        constructor(origin) {
+            this.origin = origin;
+            this._pos = null;
+            this._blockPos = null;
+            this._entity = null;
+        }
+        /**
+         * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+         */
+        getRawOrigin() {
+            return this.origin;
+        }
+        get isServerOrigin() {
+            return this.origin.isServerCommandOrigin();
+        }
+        get isScriptOrigin() {
+            return this.origin.isScriptCommandOrigin();
+        }
+        get entity() {
+            if (this._entity !== null)
+                return this._entity;
+            const actor = this.origin.getEntity();
+            if (actor === null)
+                return null;
+            return entity_1.Entity.fromRaw(actor);
+        }
+        get position() {
+            if (this._pos !== null)
+                return this._pos;
+            return this._pos = this.origin.getWorldPosition();
+        }
+        get blockPosition() {
+            if (this._blockPos !== null)
+                return this._blockPos;
+            return this._blockPos = this.origin.getBlockPosition();
+        }
+    }
+    command_1.Origin = Origin;
+    command_1.Boolean = new ParamDirect(nativetype_1.bool_t);
+    command_1.Integer = new ParamDirect(nativetype_1.int32_t);
+    command_1.String = new ParamDirect(nativetype_1.CxxString);
+    command_1.RawText = new ParamConverter(minecraft_1.CommandRawText, value => value.getText());
+    command_1.RelativeFloat = new ParamDirect(minecraft_1.RelativeFloat);
+    command_1.EntityWildcard = new ParamConverter(minecraft_1.WildcardCommandSelector.make(minecraft_1.Actor), (selector, origin) => selector.newResults(origin));
+    command_1.Json = new ParamDirect(jsonvalue_1.JsonValue);
+    class Factory {
+        constructor(name) {
+            this.name = name;
+        }
+        overload(callback, parameters) {
+            const builder = new ParamsBuilder;
+            const paramInfos = builder.paramInfos;
+            class CustomCommandImpl extends CustomCommand {
+                [nativetype_1.NativeType.ctor]() {
+                    this.self_vftable.execute = customCommandExecute;
+                }
+                execute(origin, output) {
+                    try {
+                        const out = {};
+                        for (const info of paramInfos) {
+                            info.type.convert(out, this, info, origin);
+                        }
+                        callback(out, origin, output);
+                    }
+                    catch (err) {
+                        events_1.events.errorFire(err);
+                    }
+                }
+            }
+            parameters.__proto__ = null;
+            for (const name in parameters) {
+                const type = parameters[name];
+                type.build(name, builder);
+            }
+            const params = [];
+            CustomCommandImpl.define(builder.fields);
+            for (const { name, optkey } of builder.paramInfos) {
+                if (optkey != null)
+                    params.push(optional(CustomCommandImpl, name, optkey));
+                else
+                    params.push(mandatory(CustomCommandImpl, name, null));
+            }
+            const customCommandExecute = makefunc_1.makefunc.np(function (origin, output) {
+                this.execute(origin, output);
+            }, nativetype_1.void_t, { this: CustomCommandImpl }, minecraft_1.CommandOrigin, minecraft_1.CommandOutput);
+            registerOverloadClass(this.name, CustomCommandImpl, params);
+            for (const param of params) {
+                param.destruct();
+            }
+            return this;
+        }
+        alias(alias) {
+            mcglobal_1.mcglobal.commandRegistry.registerAlias(this.name, alias);
+            return this;
+        }
+    }
+    command_1.Factory = Factory;
+    function register(name, description, perm = minecraft_1.CommandPermissionLevel.Normal) {
+        const registry = mcglobal_1.mcglobal.commandRegistry;
+        const cmd = registry.findCommand(name);
+        if (cmd !== null)
+            throw Error(`${name}: command already registered`);
+        registry.registerCommand(name, description, perm, minecraft_1.CommandFlag.create(enums_1.CommandCheatFlag.NotCheat), minecraft_1.CommandFlag.create(enums_1.CommandUsageFlag._Unknown));
+        return new Factory(name);
+    }
+    command_1.register = register;
+    /**
+     * it does the same thing with bedrockServer.executeCommandOnConsole
+     * but call the internal function directly
+     */
+    function execute(command, dimension = null) {
+        const origin = createServerCommandOrigin('Server', mcglobal_1.mcglobal.level, 4, dimension);
+        const ctx = createCommandContext(command, origin);
+        const res = mcglobal_1.mcglobal.commands.executeCommand(ctx, true);
+        ctx.destruct();
+        origin.destruct();
+        return res;
+    }
+    command_1.execute = execute;
+    /**
+     * resend the command list packet to clients
+     */
+    function update() {
+        const serialized = mcglobal_1.mcglobal.commandRegistry.serializeAvailableCommands();
+        for (const player of mcglobal_1.mcglobal.level.players) {
+            player.sendNetworkPacket(serialized);
+        }
+    }
+    command_1.update = update;
+})(command = exports.command || (exports.command = {}));
+return exports;
+},
+// entity.ts
+entity(){
+if(__tsb.entity.exports!=null) return __tsb.entity.exports;
+const exports=__tsb.entity.exports={};
+exports.Entity = void 0;
+const enums_1 = require("../enums");
+const mcglobal_1 = require("../mcglobal");
+const minecraft_1 = require("../minecraft");
+const colors = require("colors");
+const entityKey = Symbol('entity');
+const entityMapper = Symbol('entityMapper');
+const ATTRIBUTE_ID_MIN = enums_1.AttributeId.ZombieSpawnReinforcementsChange;
+const ATTRIBUTE_ID_MAX = enums_1.AttributeId.JumpStrength;
+class Entity {
+    constructor(actor) {
+        this.actor = actor;
+        this.entity = null;
+    }
+    actorMust() {
+        if (this.actor === null)
+            throw Error(`${this}'s actor is not ready`);
+        return this.actor;
+    }
+    get name() {
+        if (this.actor === null)
+            return 'unknown';
+        return this.actorMust().getNameTag();
+    }
+    get identifier() {
+        return this.actor.identifier;
+    }
+    get dimensionId() {
+        return this.actorMust().getDimensionId();
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawEntity() {
+        return this.actor;
+    }
+    // Actor.prototype.isItem = function() {
+    //     return this instanceof Item;
+    // };
+    getPosition() {
+        return this.actorMust().getPos();
+    }
+    getUniqueID() {
+        return this.actorMust().getUniqueID();
+    }
+    getUniqueIdBin() {
+        return this.actorMust().getUniqueID().value;
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getAttributeInstance(id) {
+        if (id < ATTRIBUTE_ID_MIN || id > ATTRIBUTE_ID_MAX)
+            throw Error(`AttributeId ${id}, Out of range`);
+        const instance = this.actorMust().getAttributes().getMutableInstance(id);
+        if (instance === null)
+            throw Error(`${this} has not ${enums_1.AttributeId[id]} attribute`);
+        return instance;
+    }
+    getAttributeValues(id) {
+        const attr = this.getAttributeInstance(id);
+        return {
+            current: attr.currentValue,
+            min: attr.minValue,
+            max: attr.maxValue,
+            default: attr.defaultValue,
+        };
+    }
+    getAttribute(id) {
+        const attr = this.getAttributeInstance(id);
+        return attr.currentValue;
+    }
+    setAttribute(id, value) {
+        const attr = this.getAttributeInstance(id);
+        if (typeof value === 'number') {
+            attr.currentValue = value;
+        }
+        else {
+            const { current, min, max, default: defaultv } = value;
+            if (current != null)
+                attr.currentValue = current;
+            if (min != null)
+                attr.minValue = min;
+            if (max != null)
+                attr.maxValue = max;
+            if (defaultv != null)
+                attr.defaultValue = defaultv;
+        }
+        return true;
+    }
+    teleport(pos, dimensionId = minecraft_1.DimensionId.Overworld) {
+        const actor = this.actorMust();
+        const cmd = minecraft_1.TeleportCommand.computeTarget(actor, pos, new minecraft_1.Vec3(true), dimensionId, minecraft_1.RelativeFloat.create(0, false), minecraft_1.RelativeFloat.create(0, false), 0);
+        minecraft_1.TeleportCommand.applyTarget(actor, cmd);
+    }
+    addEffect(id, duration, amplifier = 0) {
+        const mob = new minecraft_1.MobEffectInstance(true);
+        mob.constructWith(id, duration, amplifier);
+    }
+    hasEffect(id) {
+        const effect = minecraft_1.MobEffect.create(id);
+        const retval = this.actorMust().hasEffect(effect);
+        effect.destruct();
+        return retval;
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getEffect(id) {
+        const effect = minecraft_1.MobEffect.create(id);
+        const retval = this.actorMust().getEffect(effect);
+        effect.destruct();
+        return retval;
+    }
+    static registerMapper(rawClass, mapper) {
+        rawClass.prototype[entityMapper] = mapper;
+    }
+    static fromUniqueId(lowBitsOrBin, highBits) {
+        const id = minecraft_1.ActorUniqueID.create(lowBitsOrBin, highBits);
+        const actor = mcglobal_1.mcglobal.level.fetchEntity(id, true);
+        if (actor === null)
+            return null;
+        return Entity.fromRaw(actor);
+    }
+    static fromRaw(actor) {
+        const actorx = actor;
+        let entity = actorx[entityKey];
+        if (entity != null)
+            return entity;
+        entity = actorx[entityMapper]();
+        if (entity === null) {
+            console.error(colors.red(`failed to get the Entity of [${actorx.constructor.name}:${actorx}]`));
+            return null;
+        }
+        return actorx[entityKey] = entity;
+    }
+    /**
+     * from the scripting API entity.
+     */
+    static fromEntity(entity) {
+        const u = entity.__unique_id__;
+        return Entity.fromUniqueId(u["64bit_low"], u["64bit_high"]);
+    }
+    toString() {
+        if (this.actor !== null) {
+            return this.actor.getNameTag();
+        }
+        else {
+            return `[unknown ${this.constructor.name}]`;
+        }
+    }
+}
+exports.Entity = Entity;
+Entity.registerMapper(minecraft_1.Actor, actor => new Entity(actor));
+return exports;
+},
 // player.ts
 player(){
 if(__tsb.player.exports!=null) return __tsb.player.exports;
@@ -609,334 +913,6 @@ events_1.events.serverOpen.on(() => {
 entity_1.Entity.registerMapper(minecraft_1.Player, actor => {
     const name = actor.getNameTag();
     return namemap.get(name) || null;
-});
-return exports;
-},
-// command.ts
-command(){
-if(__tsb.command.exports!=null) return __tsb.command.exports;
-const exports=__tsb.command.exports={};
-exports.command = void 0;
-const tslib_1 = __tsb.tslib;
-const command_1 = require("../bds/command");
-const bin_1 = require("../bin");
-const capi_1 = require("../capi");
-const core_1 = require("../core");
-const jsonvalue_1 = require("../jsonvalue");
-const makefunc_1 = require("../makefunc");
-const mcglobal_1 = require("../mcglobal");
-const minecraft_1 = require("../minecraft");
-const nativeclass_1 = require("../nativeclass");
-const nativetype_1 = require("../nativetype");
-const sharedpointer_1 = require("../sharedpointer");
-const entity_1 = __tsb.entity();
-const events_1 = __tsb.events();
-const commandVersion = minecraft_1.CommandVersion.CurrentVersion;
-const commandContextRefCounterVftable = minecraft_1.std._Ref_count_obj2.make(minecraft_1.CommandContext).__vftable;
-const CommandContextSharedPtr = sharedpointer_1.SharedPtr.make(minecraft_1.CommandContext);
-function createServerCommandOrigin(name, level, permissionLevel, dimension) {
-    const origin = capi_1.capi.malloc(minecraft_1.ServerCommandOrigin[nativetype_1.NativeType.size]).as(minecraft_1.ServerCommandOrigin);
-    origin.constructWith(name, level, permissionLevel, dimension);
-    return origin;
-}
-function createCommandContext(command, origin) {
-    const sharedptr = new CommandContextSharedPtr(true);
-    sharedptr.create(commandContextRefCounterVftable);
-    sharedptr.p.constructWith(command, origin, commandVersion);
-    return sharedptr;
-}
-let CustomCommand = class CustomCommand extends minecraft_1.Command {
-    [nativetype_1.NativeType.ctor]() {
-        this.self_vftable.destructor = customCommandDtor;
-        this.self_vftable.execute = null;
-        this.vftable = this.self_vftable;
-    }
-    execute(origin, output) {
-        // empty
-    }
-};
-(0, tslib_1.__decorate)([
-    (0, nativeclass_1.nativeField)(minecraft_1.Command.VFTable)
-], CustomCommand.prototype, "self_vftable", void 0);
-CustomCommand = (0, tslib_1.__decorate)([
-    (0, nativeclass_1.nativeClass)()
-], CustomCommand);
-const customCommandDtor = makefunc_1.makefunc.np(function () {
-    this[nativetype_1.NativeType.dtor]();
-}, nativetype_1.void_t, { this: CustomCommand }, nativetype_1.int32_t);
-function registerOverloadClass(name, commandClass, params) {
-    const cls = commandClass;
-    const size = cls[nativetype_1.NativeType.size];
-    if (!size)
-        throw Error(`${cls.name}: size is not defined`);
-    const allocator = makefunc_1.makefunc.np((returnval) => {
-        const ptr = capi_1.capi.malloc(size);
-        const cmd = ptr.as(cls);
-        cmd.construct();
-        returnval.setPointer(cmd);
-        return returnval;
-    }, core_1.StaticPointer, null, core_1.StaticPointer);
-    const sig = mcglobal_1.mcglobal.commandRegistry.findCommand(name);
-    if (sig === null)
-        throw Error(`${name}: command not found`);
-    const overload = minecraft_1.CommandRegistry.Overload.construct();
-    overload.commandVersion = bin_1.bin.make64(1, 0x7fffffff);
-    overload.allocator = allocator;
-    overload.parameters.setFromArray(params);
-    overload.commandVersionOffset = -1;
-    sig.overloads.push(overload);
-    mcglobal_1.mcglobal.commandRegistry.registerOverloadInternal(sig, sig.overloads.back());
-    overload.destruct();
-}
-class ParamsBuilder {
-    constructor() {
-        this.fields = Object.create(null);
-        this.paramInfos = [];
-    }
-}
-var command;
-(function (command_2) {
-    class Param {
-        optional() {
-            return new OptionalParam(this);
-        }
-    }
-    command_2.Param = Param;
-    class ParamBase extends Param {
-        constructor(baseType) {
-            super();
-            this.baseType = baseType;
-        }
-        build(name, target) {
-            if (name in target.fields)
-                throw Error(`${name}: field name duplicated`);
-            target.fields[name] = this.baseType;
-            const out = { name };
-            target.paramInfos.push(out);
-            return out;
-        }
-    }
-    class ParamDirect extends ParamBase {
-        convert(out, native, info, origin) {
-            const name = info.name;
-            out[name] = native[name];
-        }
-    }
-    class ParamConverter extends ParamBase {
-        constructor(baseType, converter) {
-            super(baseType);
-            this.converter = converter;
-        }
-        convert(out, native, info, origin) {
-            const name = info.name;
-            out[name] = this.converter(native[name], origin);
-        }
-    }
-    class ExtendedParam extends Param {
-        constructor(base) {
-            super();
-            this.base = base;
-        }
-        optional() {
-            return this;
-        }
-    }
-    class OptionalParam extends ExtendedParam {
-        build(name, target) {
-            const info = this.base.build(name, target);
-            const optkey = name + '__set';
-            if (optkey in target.fields)
-                throw Error(`${optkey}: field name duplicated`);
-            target.fields[optkey] = nativetype_1.bool_t;
-            info.optkey = optkey;
-            return info;
-        }
-        convert(out, native, info, origin) {
-            const optkey = info.optkey;
-            if (optkey == null || native[optkey]) {
-                this.base.convert(out, native, info, origin);
-            }
-        }
-    }
-    class Origin {
-        constructor(origin) {
-            this.origin = origin;
-            this._pos = null;
-            this._blockPos = null;
-            this._entity = null;
-        }
-        /**
-         * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-         */
-        getRawOrigin() {
-            return this.origin;
-        }
-        get isServerOrigin() {
-            return this.origin.isServerCommandOrigin();
-        }
-        get isScriptOrigin() {
-            return this.origin.isScriptCommandOrigin();
-        }
-        get entity() {
-            if (this._entity !== null)
-                return this._entity;
-            const actor = this.origin.getEntity();
-            if (actor === null)
-                return null;
-            return entity_1.Entity.fromRaw(actor);
-        }
-        get position() {
-            if (this._pos !== null)
-                return this._pos;
-            return this._pos = this.origin.getWorldPosition();
-        }
-        get blockPosition() {
-            if (this._blockPos !== null)
-                return this._blockPos;
-            return this._blockPos = this.origin.getBlockPosition();
-        }
-    }
-    command_2.Origin = Origin;
-    command_2.Boolean = new ParamDirect(nativetype_1.bool_t);
-    command_2.Integer = new ParamDirect(nativetype_1.int32_t);
-    command_2.String = new ParamDirect(nativetype_1.CxxString);
-    command_2.RawText = new ParamConverter(minecraft_1.CommandRawText, value => value.getText());
-    command_2.RelativeFloat = new ParamDirect(minecraft_1.RelativeFloat);
-    command_2.EntityWildcard = new ParamConverter(minecraft_1.WildcardCommandSelector.make(minecraft_1.Actor), (selector, origin) => selector.newResults(origin));
-    command_2.Json = new ParamDirect(jsonvalue_1.JsonValue);
-    class Factory {
-        constructor(name) {
-            this.name = name;
-        }
-        overload(callback, parameters) {
-            const builder = new ParamsBuilder;
-            const paramInfos = builder.paramInfos;
-            class CustomCommandImpl extends CustomCommand {
-                [nativetype_1.NativeType.ctor]() {
-                    this.self_vftable.execute = customCommandExecute;
-                }
-                execute(origin, output) {
-                    try {
-                        const out = {};
-                        for (const info of paramInfos) {
-                            info.type.convert(out, this, info, origin);
-                        }
-                        callback(out, origin, output);
-                    }
-                    catch (err) {
-                        events_1.events.errorFire(err);
-                    }
-                }
-            }
-            parameters.__proto__ = null;
-            for (const name in parameters) {
-                const type = parameters[name];
-                type.build(name, builder);
-            }
-            const params = [];
-            CustomCommandImpl.define(builder.fields);
-            for (const { name, optkey } of builder.paramInfos) {
-                if (optkey != null)
-                    params.push(CustomCommandImpl.optional(name, optkey));
-                else
-                    params.push(CustomCommandImpl.mandatory(name, null));
-            }
-            const customCommandExecute = makefunc_1.makefunc.np(function (origin, output) {
-                this.execute(origin, output);
-            }, nativetype_1.void_t, { this: CustomCommandImpl }, minecraft_1.CommandOrigin, minecraft_1.CommandOutput);
-            registerOverloadClass(this.name, CustomCommandImpl, params);
-            for (const param of params) {
-                param.destruct();
-            }
-            return this;
-        }
-        alias(alias) {
-            mcglobal_1.mcglobal.commandRegistry.registerAlias(this.name, alias);
-            return this;
-        }
-    }
-    command_2.Factory = Factory;
-    function register(name, description, perm = minecraft_1.CommandPermissionLevel.Normal) {
-        const registry = mcglobal_1.mcglobal.commandRegistry;
-        const cmd = registry.findCommand(name);
-        if (cmd !== null)
-            throw Error(`${name}: command already registered`);
-        registry.registerCommand(name, description, perm, minecraft_1.CommandFlag.create(command_1.CommandCheatFlag.NotCheat), minecraft_1.CommandFlag.create(command_1.CommandUsageFlag._Unknown));
-        return new Factory(name);
-    }
-    command_2.register = register;
-    /**
-     * it does the same thing with bedrockServer.executeCommandOnConsole
-     * but call the internal function directly
-     */
-    function execute(command, dimension = null) {
-        const origin = createServerCommandOrigin('Server', mcglobal_1.mcglobal.level, // I'm not sure it's always ServerLevel
-        4, dimension);
-        const ctx = createCommandContext(command, origin);
-        const res = mcglobal_1.mcglobal.commands.executeCommand(ctx, true);
-        ctx.destruct();
-        origin.destruct();
-        return res;
-    }
-    command_2.execute = execute;
-    /**
-     * resend the command list packet to clients
-     */
-    function update() {
-        const serialized = mcglobal_1.mcglobal.commandRegistry.serializeAvailableCommands();
-        for (const player of mcglobal_1.mcglobal.level.players) {
-            player.sendNetworkPacket(serialized);
-        }
-    }
-    command_2.update = update;
-})(command = exports.command || (exports.command = {}));
-return exports;
-},
-// events\commandevent.ts
-commandevent(){
-if(__tsb.commandevent.exports!=null) return __tsb.commandevent.exports;
-const exports=__tsb.commandevent.exports={};
-exports.CommandEvent = void 0;
-const _1 = __tsb.events();
-const hook_1 = require("../hook");
-const minecraft_1 = require("../minecraft");
-const util_1 = require("../util");
-const command_1 = __tsb.command();
-class CommandEvent {
-    constructor(command, origin, context) {
-        this.command = command;
-        this.origin = origin;
-        this.context = context;
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawContext() {
-        return this.context;
-    }
-}
-exports.CommandEvent = CommandEvent;
-_1.events.command.setInstaller(() => {
-    const executeCommandOriginal = (0, hook_1.hook)(minecraft_1.MinecraftCommands, 'executeCommand').call(function (ctxptr, mute) {
-        try {
-            const ctx = ctxptr.p;
-            const ev = new CommandEvent(ctx.command, new command_1.command.Origin(ctx.origin), ctx);
-            const resv = _1.events.command.fire(ev);
-            switch (typeof resv) {
-                case 'number':
-                    (0, util_1._tickCallback)();
-                    return minecraft_1.MCRESULT.create(resv);
-                default:
-                    (0, util_1._tickCallback)();
-                    ctx.command = ev.command;
-                    return executeCommandOriginal.call(this, ctxptr, mute);
-            }
-        }
-        catch (err) {
-            _1.events.errorFire(err);
-            return minecraft_1.MCRESULT.create(-1);
-        }
-    });
 });
 return exports;
 },
@@ -1111,15 +1087,178 @@ _1.events.campfireDouse.setInstaller(() => {
 });
 return exports;
 },
-// events\entityevent.ts
-entityevent(){
-if(__tsb.entityevent.exports!=null) return __tsb.entityevent.exports;
-const exports=__tsb.entityevent.exports={};
-exports.SplashPotionHitEvent = exports.EntitySneakEvent = exports.EntityStopRidingEvent = exports.EntityStartRidingEvent = exports.EntityDieEvent = exports.EntityHeathChangeEvent = exports.EntityHurtEvent = exports.EntityEvent = void 0;
+// events\levelevent.ts
+levelevent(){
+if(__tsb.levelevent.exports!=null) return __tsb.levelevent.exports;
+const exports=__tsb.levelevent.exports={};
+exports.LevelWeatherChangeEvent = exports.LevelTickEvent = exports.LevelSaveEvent = exports.LevelExplodeEvent = void 0;
 const _1 = __tsb.events();
 const common_1 = require("../common");
 const hook_1 = require("../hook");
 const minecraft_1 = require("../minecraft");
+const nativetype_1 = require("../nativetype");
+const util_1 = require("../util");
+const entityevent_1 = __tsb.entityevent();
+class LevelExplodeEvent extends entityevent_1.EntityEvent {
+    constructor(actor, position, 
+    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
+    power, 
+    /** If true, blocks in the explosion radius will be set on fire. */
+    causesFire, 
+    /** If true, the explosion will destroy blocks in the explosion radius. */
+    breaksBlocks, 
+    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
+    maxResistance, allowUnderwater, level, blockSource) {
+        super(actor);
+        this.position = position;
+        this.power = power;
+        this.causesFire = causesFire;
+        this.breaksBlocks = breaksBlocks;
+        this.maxResistance = maxResistance;
+        this.allowUnderwater = allowUnderwater;
+        this.level = level;
+        this.blockSource = blockSource;
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawLevel() {
+        return this.level;
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawBlockSource() {
+        return this.blockSource;
+    }
+}
+exports.LevelExplodeEvent = LevelExplodeEvent;
+class LevelSaveEvent {
+    constructor(level) {
+        this.level = level;
+    }
+}
+exports.LevelSaveEvent = LevelSaveEvent;
+class LevelTickEvent {
+    constructor(level) {
+        this.level = level;
+    }
+}
+exports.LevelTickEvent = LevelTickEvent;
+class LevelWeatherChangeEvent {
+    constructor(rainLevel, rainTime, lightningLevel, lightningTime, level) {
+        this.rainLevel = rainLevel;
+        this.rainTime = rainTime;
+        this.lightningLevel = lightningLevel;
+        this.lightningTime = lightningTime;
+        this.level = level;
+    }
+}
+exports.LevelWeatherChangeEvent = LevelWeatherChangeEvent;
+_1.events.levelExplode.setInstaller(() => {
+    function onLevelExplode(blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater) {
+        const event = new LevelExplodeEvent(entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater, this, blockSource);
+        const canceled = _1.events.levelExplode.fire(event) === common_1.CANCEL;
+        (0, util_1._tickCallback)();
+        if (!canceled) {
+            return _onLevelExplode.call(event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater, this, blockSource);
+        }
+    }
+    const _onLevelExplode = (0, hook_1.hook)(minecraft_1.Level, 'explode', minecraft_1.BlockSource, minecraft_1.Actor, minecraft_1.Vec3, nativetype_1.float32_t, nativetype_1.bool_t, nativetype_1.bool_t, nativetype_1.float32_t, nativetype_1.bool_t).call(onLevelExplode);
+});
+_1.events.levelSave.setInstaller(() => {
+    function onLevelSave() {
+        const event = new LevelSaveEvent(this);
+        const canceled = _1.events.levelSave.fire(event) === common_1.CANCEL;
+        (0, util_1._tickCallback)();
+        if (!canceled) {
+            return _onLevelSave.call(this);
+        }
+    }
+    const _onLevelSave = (0, hook_1.hook)(minecraft_1.Level, 'save').call(onLevelSave);
+});
+_1.events.levelTick.setInstaller(() => {
+    function onLevelTick() {
+        const event = new LevelTickEvent(this);
+        _1.events.levelTick.fire(event);
+        _onLevelTick.call(this);
+    }
+    const _onLevelTick = (0, hook_1.hook)(minecraft_1.Level, 'tick').call(onLevelTick);
+});
+_1.events.levelWeatherChange.setInstaller(() => {
+    function onLevelWeatherChange(rainLevel, rainTime, lightningLevel, lightningTime) {
+        const event = new LevelWeatherChangeEvent(rainLevel, rainTime, lightningLevel, lightningTime, this);
+        const canceled = _1.events.levelWeatherChange.fire(event) === common_1.CANCEL;
+        (0, util_1._tickCallback)();
+        if (!canceled) {
+            return _onLevelWeatherChange.call(event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime, this);
+        }
+    }
+    const _onLevelWeatherChange = (0, hook_1.hook)(minecraft_1.Level, 'updateWeather').call(onLevelWeatherChange);
+});
+return exports;
+},
+// events\commandevent.ts
+commandevent(){
+if(__tsb.commandevent.exports!=null) return __tsb.commandevent.exports;
+const exports=__tsb.commandevent.exports={};
+exports.CommandEvent = void 0;
+const _1 = __tsb.events();
+const hook_1 = require("../hook");
+const minecraft_1 = require("../minecraft");
+const util_1 = require("../util");
+const command_1 = __tsb.command();
+class CommandEvent {
+    constructor(command, origin, context) {
+        this.command = command;
+        this.origin = origin;
+        this.context = context;
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawContext() {
+        return this.context;
+    }
+}
+exports.CommandEvent = CommandEvent;
+_1.events.command.setInstaller(() => {
+    const executeCommandOriginal = (0, hook_1.hook)(minecraft_1.MinecraftCommands, 'executeCommand').call(function (ctxptr, mute) {
+        try {
+            const ctx = ctxptr.p;
+            const ev = new CommandEvent(ctx.command, new command_1.command.Origin(ctx.origin), ctx);
+            const resv = _1.events.command.fire(ev);
+            switch (typeof resv) {
+                case 'number':
+                    (0, util_1._tickCallback)();
+                    return minecraft_1.MCRESULT.create(resv);
+                default:
+                    (0, util_1._tickCallback)();
+                    ctx.command = ev.command;
+                    return executeCommandOriginal.call(this, ctxptr, mute);
+            }
+        }
+        catch (err) {
+            _1.events.errorFire(err);
+            return minecraft_1.MCRESULT.create(-1);
+        }
+    });
+});
+return exports;
+},
+// events\entityevent.ts
+entityevent(){
+if(__tsb.entityevent.exports!=null) return __tsb.entityevent.exports;
+const exports=__tsb.entityevent.exports={};
+exports.EntityDeletedEvent = exports.EntityCreateEvent = exports.SplashPotionHitEvent = exports.EntitySneakEvent = exports.EntityStopRidingEvent = exports.EntityStartRidingEvent = exports.EntityDieEvent = exports.EntityHeathChangeEvent = exports.EntityHurtEvent = exports.EntityEvent = void 0;
+const _1 = __tsb.events();
+const asmcode = require("../asm/asmcode");
+const common_1 = require("../common");
+const hook_1 = require("../hook");
+const makefunc_1 = require("../makefunc");
+const minecraft_1 = require("../minecraft");
+const actor_1 = require("../minecraft_impl/actor");
+const nativetype_1 = require("../nativetype");
 const util_1 = require("../util");
 const entity_1 = __tsb.entity();
 class EntityEvent {
@@ -1229,6 +1368,12 @@ class SplashPotionHitEvent extends EntityEvent {
     }
 }
 exports.SplashPotionHitEvent = SplashPotionHitEvent;
+class EntityCreateEvent extends EntityEvent {
+}
+exports.EntityCreateEvent = EntityCreateEvent;
+class EntityDeletedEvent extends EntityEvent {
+}
+exports.EntityDeletedEvent = EntityDeletedEvent;
 _1.events.entityHurt.setInstaller(() => {
     function onEntityHurt(actorDamageSource, damage, knock, ignite) {
         const event = new EntityHurtEvent(this, damage, knock, ignite, actorDamageSource);
@@ -1304,6 +1449,69 @@ _1.events.splashPotionHit.setInstaller(() => {
     }
     const _onSplashPotionHit = (0, hook_1.hook)(minecraft_1.SplashPotionEffectSubcomponent, 'doOnHitEffect').call(onSplashPotionHit);
 });
+function onEntityCreated(actor) {
+    const event = new EntityCreateEvent(actor);
+    _1.events.entityCreated.fire(event);
+    (0, util_1._tickCallback)();
+    return _onEntityCreated.call(this, actor);
+}
+const _onEntityCreated = (0, hook_1.hook)(minecraft_1.ScriptServerActorEventListener, 'onActorCreated').call(onEntityCreated);
+const Level$removeEntityReferences = (0, hook_1.hook)(minecraft_1.Level, 'removeEntityReferences').call(function (actor, b) {
+    const event = new EntityDeletedEvent(actor);
+    _1.events.entityDeleted.fire(event);
+    (0, actor_1.removeActorReference)(actor);
+    (0, util_1._tickCallback)();
+    return Level$removeEntityReferences.call(this, actor, b);
+});
+asmcode.removeActor = makefunc_1.makefunc.np(actor_1.removeActorReference, nativetype_1.void_t, null, minecraft_1.Actor);
+(0, hook_1.hook)(minecraft_1.Actor, nativetype_1.NativeType.dtor).options({ callOriginal: true }).raw(asmcode.actorDestructorHook);
+return exports;
+},
+// system.ts
+system(){
+if(__tsb.system.exports!=null) return __tsb.system.exports;
+const exports=__tsb.system.exports={};
+exports.system = void 0;
+const index_1 = __tsb.events();
+index_1.events.serverOpen.on(() => {
+    exports.system = server.registerSystem(0, 0);
+});
+return exports;
+},
+// inventory.ts
+inventory(){
+if(__tsb.inventory.exports!=null) return __tsb.inventory.exports;
+const exports=__tsb.inventory.exports={};
+exports.Inventory = void 0;
+class Inventory {
+    constructor(inventory) {
+        this.inventory = inventory;
+        this._slotsArray = null;
+    }
+    _slots() {
+        // assume that it's same until the end of the JS processing.
+        if (this._slotsArray !== null)
+            return this._slotsArray;
+        this._slotsArray = this.inventory.getSlots(); // it will process through the entire inventory, reduce to call it for optimizing.
+        process.nextTick(() => {
+            this._slotsArray = null;
+        });
+        return this._slotsArray;
+    }
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawContainer() {
+        return this.inventory;
+    }
+    get size() {
+        return this._slots().length;
+    }
+    get(i) {
+        return this._slots()[i];
+    }
+}
+exports.Inventory = Inventory;
 return exports;
 },
 // events\playerevent.ts
@@ -1315,6 +1523,7 @@ const _1 = __tsb.events();
 const common_1 = require("../common");
 const hook_1 = require("../hook");
 const minecraft_1 = require("../minecraft");
+const networkidentifier_1 = require("../minecraft_impl/networkidentifier");
 const util_1 = require("../util");
 const item_1 = __tsb.item();
 const itementity_1 = __tsb.itementity();
@@ -1572,6 +1781,17 @@ _1.events.playerPickupItem.setInstaller(() => {
     }
     const _onPlayerPickupItem = (0, hook_1.hook)(minecraft_1.Player, "take").call(onPlayerPickupItem);
 });
+(0, hook_1.hook)(minecraft_1.NetworkHandler, 'onConnectionClosed').options({ callOriginal: true }).call(ni => {
+    const player = player_1.Player.fromNetworkIdentifier(ni);
+    if (player !== null) {
+        const ev = new PlayerDisconnectEvent(player);
+        _1.events.playerDisconnect.fire(ev);
+        (0, util_1._tickCallback)();
+    }
+    // ni is used after onConnectionClosed. on some message processings.
+    // timeout for avoiding the re-allocation
+    (0, networkidentifier_1.removeNetworkIdentifierReference)(ni);
+});
 _1.events.packetAfter(minecraft_1.MinecraftPacketIds.Login).on((ptr, ni) => {
     const connreq = ptr.connreq;
     if (connreq === null)
@@ -1592,53 +1812,6 @@ _1.events.packetBefore(minecraft_1.MinecraftPacketIds.Text).on((ptr, ni) => {
         return common_1.CANCEL;
     }
     ptr.message = ev.message;
-});
-return exports;
-},
-// inventory.ts
-inventory(){
-if(__tsb.inventory.exports!=null) return __tsb.inventory.exports;
-const exports=__tsb.inventory.exports={};
-exports.Inventory = void 0;
-class Inventory {
-    constructor(inventory) {
-        this.inventory = inventory;
-        this._slotsArray = null;
-    }
-    _slots() {
-        // assume that it's same until the end of the JS processing.
-        if (this._slotsArray !== null)
-            return this._slotsArray;
-        this._slotsArray = this.inventory.getSlots(); // it will process through the entire inventory, reduce to call it for optimizing.
-        process.nextTick(() => {
-            this._slotsArray = null;
-        });
-        return this._slotsArray;
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawContainer() {
-        return this.inventory;
-    }
-    get size() {
-        return this._slots().length;
-    }
-    get(i) {
-        return this._slots()[i];
-    }
-}
-exports.Inventory = Inventory;
-return exports;
-},
-// system.ts
-system(){
-if(__tsb.system.exports!=null) return __tsb.system.exports;
-const exports=__tsb.system.exports={};
-exports.system = void 0;
-const index_1 = __tsb.events();
-index_1.events.serverOpen.on(() => {
-    exports.system = server.registerSystem(0, 0);
 });
 return exports;
 },
@@ -1787,117 +1960,6 @@ _1.events.objectiveCreate.setInstaller(() => {
 });
 return exports;
 },
-// events\levelevent.ts
-levelevent(){
-if(__tsb.levelevent.exports!=null) return __tsb.levelevent.exports;
-const exports=__tsb.levelevent.exports={};
-exports.LevelWeatherChangeEvent = exports.LevelTickEvent = exports.LevelSaveEvent = exports.LevelExplodeEvent = void 0;
-const _1 = __tsb.events();
-const common_1 = require("../common");
-const hook_1 = require("../hook");
-const minecraft_1 = require("../minecraft");
-const nativetype_1 = require("../nativetype");
-const util_1 = require("../util");
-const entityevent_1 = __tsb.entityevent();
-class LevelExplodeEvent extends entityevent_1.EntityEvent {
-    constructor(actor, position, 
-    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
-    power, 
-    /** If true, blocks in the explosion radius will be set on fire. */
-    causesFire, 
-    /** If true, the explosion will destroy blocks in the explosion radius. */
-    breaksBlocks, 
-    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
-    maxResistance, allowUnderwater, level, blockSource) {
-        super(actor);
-        this.position = position;
-        this.power = power;
-        this.causesFire = causesFire;
-        this.breaksBlocks = breaksBlocks;
-        this.maxResistance = maxResistance;
-        this.allowUnderwater = allowUnderwater;
-        this.level = level;
-        this.blockSource = blockSource;
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawLevel() {
-        return this.level;
-    }
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawBlockSource() {
-        return this.blockSource;
-    }
-}
-exports.LevelExplodeEvent = LevelExplodeEvent;
-class LevelSaveEvent {
-    constructor(level) {
-        this.level = level;
-    }
-}
-exports.LevelSaveEvent = LevelSaveEvent;
-class LevelTickEvent {
-    constructor(level) {
-        this.level = level;
-    }
-}
-exports.LevelTickEvent = LevelTickEvent;
-class LevelWeatherChangeEvent {
-    constructor(rainLevel, rainTime, lightningLevel, lightningTime, level) {
-        this.rainLevel = rainLevel;
-        this.rainTime = rainTime;
-        this.lightningLevel = lightningLevel;
-        this.lightningTime = lightningTime;
-        this.level = level;
-    }
-}
-exports.LevelWeatherChangeEvent = LevelWeatherChangeEvent;
-_1.events.levelExplode.setInstaller(() => {
-    function onLevelExplode(blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater) {
-        const event = new LevelExplodeEvent(entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater, this, blockSource);
-        const canceled = _1.events.levelExplode.fire(event) === common_1.CANCEL;
-        (0, util_1._tickCallback)();
-        if (!canceled) {
-            return _onLevelExplode.call(event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater, this, blockSource);
-        }
-    }
-    const _onLevelExplode = (0, hook_1.hook)(minecraft_1.Level, 'explode', minecraft_1.BlockSource, minecraft_1.Actor, minecraft_1.Vec3, nativetype_1.float32_t, nativetype_1.bool_t, nativetype_1.bool_t, nativetype_1.float32_t, nativetype_1.bool_t).call(onLevelExplode);
-});
-_1.events.levelSave.setInstaller(() => {
-    function onLevelSave() {
-        const event = new LevelSaveEvent(this);
-        const canceled = _1.events.levelSave.fire(event) === common_1.CANCEL;
-        (0, util_1._tickCallback)();
-        if (!canceled) {
-            return _onLevelSave.call(this);
-        }
-    }
-    const _onLevelSave = (0, hook_1.hook)(minecraft_1.Level, 'save').call(onLevelSave);
-});
-_1.events.levelTick.setInstaller(() => {
-    function onLevelTick() {
-        const event = new LevelTickEvent(this);
-        _1.events.levelTick.fire(event);
-        _onLevelTick.call(this);
-    }
-    const _onLevelTick = (0, hook_1.hook)(minecraft_1.Level, 'tick').call(onLevelTick);
-});
-_1.events.levelWeatherChange.setInstaller(() => {
-    function onLevelWeatherChange(rainLevel, rainTime, lightningLevel, lightningTime) {
-        const event = new LevelWeatherChangeEvent(rainLevel, rainTime, lightningLevel, lightningTime, this);
-        const canceled = _1.events.levelWeatherChange.fire(event) === common_1.CANCEL;
-        (0, util_1._tickCallback)();
-        if (!canceled) {
-            return _onLevelWeatherChange.call(event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime, this);
-        }
-    }
-    const _onLevelWeatherChange = (0, hook_1.hook)(minecraft_1.Level, 'updateWeather').call(onLevelWeatherChange);
-});
-return exports;
-},
 // block.ts
 block(){
 if(__tsb.block.exports!=null) return __tsb.block.exports;
@@ -1952,6 +2014,21 @@ class Item {
         if (this.item !== null)
             return this.item;
         return this.item = this.itemStack.getItem();
+    }
+    get isBlock() {
+        const itemStack = this.getRawItemStack();
+        return itemStack.vftable === minecraft_1.Block.addressof_vftable;
+    }
+    get id() {
+        const item = this.getRawItem();
+        if (item != null) {
+            const Name = item.getCommandName();
+            if (Name.includes(':'))
+                return Name;
+            else
+                return 'minecraft:' + Name;
+        }
+        return 'minecraft:air';
     }
 }
 exports.Item = Item;

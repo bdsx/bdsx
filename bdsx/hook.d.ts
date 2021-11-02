@@ -11,6 +11,7 @@ export declare function hook<THIS, NAME extends keyof THIS>(nf: {
     name: string;
     prototype: THIS;
 } | null, name: NAME): hook.Tool<THIS, ShouldFunction<THIS[NAME]>, EmptyOpts>;
+export declare function hook(ptr: VoidPointer): hook.PtrTool;
 declare type VoidReturnFunc<THIS, T extends AnyFunction> = T extends (...args: infer PARAMS) => any ? NonNullableParameters<THIS, (...args: PARAMS) => void> : never;
 export declare namespace hook {
     export interface Options {
@@ -31,10 +32,10 @@ export declare namespace hook {
     }
     export class PtrTool {
         name: string;
-        private ptr;
+        private readonly ptr;
         private _subject?;
-        private _offset?;
-        constructor(name: string, ptr: NativePointer);
+        protected _offset?: number;
+        constructor(name: string, ptr: VoidPointer);
         /**
          * @param offset offset from target
          * @returns
@@ -47,7 +48,6 @@ export declare namespace hook {
         subject(subject: string): this;
         getAddress(): NativePointer;
         /**
-         * @param offset offset from target
          * @param ptr target pointer
          * @param originalCode old codes
          * @param ignoreArea pairs of offset, ignores partial bytes.
@@ -68,12 +68,11 @@ export declare namespace hook {
          */
         check(originalCode: number[], ignoreArea?: number[] | null): boolean;
         /**
-         * @param offset offset from target
          * @param originalCode bytes comparing before hooking
          * @param ignoreArea pair offsets to ignore of originalCode
          */
         writeNop(originalCode: number[], ignoreArea?: number[] | null): void;
-        write(asm: X64Assembler | Uint8Array, offset?: number | null, originalCode?: number[] | null, ignoreArea?: number[] | null): void;
+        write(asm: X64Assembler | Uint8Array, originalCode?: number[] | null, ignoreArea?: number[] | null): void;
     }
     export interface Tool<THIS, T extends AnyFunction, OPTS extends Options> extends PtrTool {
     }
@@ -89,6 +88,7 @@ export declare namespace hook {
     export class Tool<THIS, T extends AnyFunction, OPTS extends Options> extends dnf.Tool<THIS> {
         private opts;
         constructor(nf: T, name: string, thisType: Type<THIS> | null, opts: OPTS);
+        getAddress(): NativePointer;
         options<NOPTS extends Options>(opts: NOPTS): Tool<THIS, T, NOPTS>;
         types<TYPES extends Type<any>[]>(...types: Type<any>[]): Tool<THIS, UnwrapFunc<T, TYPES>, OPTS>;
         /**

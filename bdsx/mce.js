@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mce = void 0;
 const tslib_1 = require("tslib");
-const proc_1 = require("./bds/proc");
 const bin_1 = require("./bin");
+const dnf_1 = require("./dnf");
+const minecraft_1 = require("./minecraft");
 const nativeclass_1 = require("./nativeclass");
 const nativetype_1 = require("./nativetype");
 const pointer_1 = require("./pointer");
@@ -37,6 +38,7 @@ var mce;
             return `${u1}-${u2}-${u3}-${u4}-${u5}`;
         },
     }, 'UUID');
+    /** @deprecated */
     mce.UUIDWrapper = pointer_1.Wrapper.make(mce.UUID);
     /** @deprecated */
     let Blob = class Blob extends nativeclass_1.NativeClass {
@@ -74,5 +76,5 @@ var mce;
     ], Image);
     mce.Image = Image;
 })(mce = exports.mce || (exports.mce = {}));
-const generateUUID = proc_1.procHacker.js("Crypto::Random::generateUUID", mce.UUIDWrapper, { structureReturn: true });
+const generateUUID = (0, dnf_1.dnf)(minecraft_1.Crypto.Random.generateUUID).reform(mce.UUIDWrapper, { structureReturn: true });
 //# sourceMappingURL=mce.js.map

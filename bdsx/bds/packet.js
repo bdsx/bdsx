@@ -6,7 +6,8 @@ const common_1 = require("../common");
 const nativeclass_1 = require("../nativeclass");
 const nativetype_1 = require("../nativetype");
 const sharedpointer_1 = require("../sharedpointer");
-const proc_1 = require("./proc");
+const minecraft = require("../minecraft");
+const hook_1 = require("../hook");
 /** @deprecated */
 exports.PacketReadResult = nativetype_1.uint32_t.extends({
     PacketReadNoError: 0,
@@ -81,5 +82,5 @@ exports.Packet = Packet;
 /** @deprecated */
 exports.PacketSharedPtr = sharedpointer_1.SharedPtr.make(Packet);
 /** @deprecated */
-exports.createPacketRaw = proc_1.procHacker.js("MinecraftPackets::createPacket", exports.PacketSharedPtr, null, exports.PacketSharedPtr, nativetype_1.int32_t);
+exports.createPacketRaw = (0, hook_1.hook)(minecraft.MinecraftPackets.createPacket).reform(exports.PacketSharedPtr, null, exports.PacketSharedPtr, nativetype_1.int32_t);
 //# sourceMappingURL=packet.js.map

@@ -72,7 +72,7 @@ assembler_1.X64Assembler.prototype.allocs = function () {
     }
     const defs = this.defs();
     for (const name in defs) {
-        out[name] = mem.add(defs[name] + buffersize);
+        out[name] = mem.add(defs[name][0] + buffersize);
     }
     const table = labels['#runtime_function_table'];
     if (table != null) {

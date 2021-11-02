@@ -18,6 +18,13 @@ import 'bdsx/checkcore';
 import 'bdsx/checkmodules';
 // import 'bdsx/permissions';
 
+{
+    const importTime = Date.now();
+    console.log(`minecraft.ts - importing`);
+    require('bdsx/minecraft');
+    console.log(`minecraft.ts - imported (${Math.round(Date.now()-importTime)}ms)`);
+}
+
 // install bdsx error handler
 import { installErrorHandler } from "bdsx/errorhandler";
 installErrorHandler();

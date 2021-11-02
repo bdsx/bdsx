@@ -9,50 +9,40 @@ import { CommandOrigin } from "./commandorigin";
 import { AvailableCommandsPacket } from "./packets";
 import { HasTypeId, typeid_t } from "./typeid";
 import minecraft = require('../minecraft');
+import enums = require('../enums');
 /** @deprecated */
 export declare const CommandPermissionLevel: typeof minecraft.CommandPermissionLevel;
 /** @deprecated */
 export declare type CommandPermissionLevel = minecraft.CommandPermissionLevel;
-export declare enum CommandCheatFlag {
-    Cheat = 0,
-    NotCheat = 64,
-    /** @deprecated */
-    NoCheat = 64,
-    None = 0
-}
-export declare enum CommandExecuteFlag {
-    Allowed = 0,
-    Disallowed = 16
-}
-export declare enum CommandSyncFlag {
-    Synced = 0,
-    Local = 8
-}
-export declare enum CommandTypeFlag {
-    None = 0,
-    Message = 32
-}
-export declare enum CommandUsageFlag {
-    Normal = 0,
-    Test = 1,
-    /** @deprecated Use CommandVisibilityFlag */
-    Hidden = 2,
-    _Unknown = 128
-}
-/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
-export declare enum CommandVisibilityFlag {
-    Visible = 0,
-    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
-    HiddenFromCommandBlockOrigin = 2,
-    HiddenFromPlayerOrigin = 4,
-    /** Still visible to console */
-    Hidden = 6
-}
+/** @deprecated import it from 'bdsx/enums' */
+export declare const CommandCheatFlag: typeof enums.CommandCheatFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare type CommandCheatFlag = enums.CommandCheatFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare const CommandExecuteFlag: typeof enums.CommandExecuteFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare type CommandExecuteFlag = enums.CommandExecuteFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare const CommandSyncFlag: typeof enums.CommandSyncFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare type CommandSyncFlag = enums.CommandSyncFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare const CommandTypeFlag: typeof enums.CommandTypeFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare type CommandTypeFlag = enums.CommandTypeFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare const CommandUsageFlag: typeof enums.CommandUsageFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare type CommandUsageFlag = enums.CommandUsageFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare const CommandVisibilityFlag: typeof enums.CommandVisibilityFlag;
+/** @deprecated import it from 'bdsx/enums' */
+export declare type CommandVisibilityFlag = enums.CommandVisibilityFlag;
 /** @deprecated **/
-export declare const CommandFlag: typeof CommandCheatFlag;
-/** @deprecated */
+export declare const CommandFlag: typeof enums.CommandCheatFlag;
+/** @deprecated import it from 'bdsx/minecraft' */
 export declare const MCRESULT: typeof minecraft.MCRESULT;
-/** @deprecated */
+/** @deprecated import it from 'bdsx/minecraft' */
 export declare type MCRESULT = minecraft.MCRESULT;
 /** @deprecated */
 export declare class CommandSelectorBase extends NativeClass {
@@ -112,11 +102,13 @@ export declare enum CommandOutputType {
     ScriptEngine = 4
 }
 declare type CommandOutputParameterType = string | boolean | number | Actor | BlockPos | Vec3 | Actor[];
+/** @deprecated import it from 'bdsx/minecraft'  */
 export declare class CommandOutputParameter extends NativeClass {
     string: CxxString;
     count: int32_t;
     static create(input: CommandOutputParameterType, count?: number): CommandOutputParameter;
 }
+/** @deprecated import it from 'bdsx/minecraft'  */
 export declare class CommandOutput extends NativeClass {
     getType(): CommandOutputType;
     constructAs(type: CommandOutputType): void;
@@ -126,10 +118,11 @@ export declare class CommandOutput extends NativeClass {
     protected _error(message: string, params: CxxVector<CommandOutputParameter>): void;
     error(message: string, params?: CommandOutputParameterType[] | CommandOutputParameter[]): void;
 }
+/** @deprecated import it from 'bdsx/minecraft'  */
 export declare class CommandOutputSender extends NativeClass {
     vftable: VoidPointer;
 }
-/** @deprecated */
+/** @deprecated import it from 'bdsx/minecraft'  */
 export declare class MinecraftCommands extends NativeClass {
     vftable: VoidPointer;
     sender: CommandOutputSender;
@@ -143,6 +136,7 @@ export declare enum CommandParameterDataType {
     SOFT_ENUM = 2,
     POSTFIX = 3
 }
+/** @deprecated import it from 'bdsx/minecraft'  */
 export declare class CommandParameterData extends NativeClass {
     tid: typeid_t<CommandRegistry>;
     parser: VoidPointer;
@@ -155,12 +149,9 @@ export declare class CommandParameterData extends NativeClass {
     optional: bool_t;
     pad73: bool_t;
 }
-export declare class CommandVFTable extends NativeClass {
-    destructor: VoidPointer;
-    execute: VoidPointer | null;
-}
+/** @deprecated import it from 'bdsx/minecraft'  */
 export declare class Command extends NativeClass {
-    vftable: CommandVFTable;
+    vftable: minecraft.Command.VFTable;
     u1: int32_t;
     u2: VoidPointer | null;
     u3: int32_t;
@@ -175,9 +166,15 @@ export declare class Command extends NativeClass {
     static manual(name: string, paramType: Type<any>, offset: number, flag_offset?: number, optional?: boolean, desc?: string | null, type?: CommandParameterDataType): CommandParameterData;
 }
 export declare namespace Command {
-    const VFTable: typeof CommandVFTable;
-    type VFTable = CommandVFTable;
+    /** @deprecated import it from 'bdsx/minecraft'  */
+    const VFTable: typeof minecraft.Command.VFTable;
+    /** @deprecated import it from 'bdsx/minecraft'  */
+    type VFTable = minecraft.Command.VFTable;
 }
+/** @deprecated use Command.VFTable in 'bdsx/minecraft'  */
+export declare const CommandVFTable: typeof minecraft.Command.VFTable;
+/** @deprecated use Command.VFTable in 'bdsx/minecraft'  */
+export declare type CommandVFTable = Command.VFTable;
 /** @deprecated */
 export declare class CommandRegistry extends HasTypeId {
     registerCommand(command: string, description: string, level: CommandPermissionLevel, flag1: CommandCheatFlag | CommandVisibilityFlag, flag2: CommandUsageFlag | CommandVisibilityFlag): void;

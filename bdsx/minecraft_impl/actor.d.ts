@@ -11,7 +11,7 @@ declare module "../minecraft" {
         function all(): IterableIterator<Actor>;
         function registerType(type: {
             new (): Actor;
-            __vftable: VoidPointer;
+            addressof_vftable: VoidPointer;
         }): void;
     }
 }

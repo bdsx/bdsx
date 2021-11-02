@@ -479,6 +479,7 @@ NativeClass[_b] = 1;
 NativeClass[_c] = 0;
 NativeClass[_d] = true;
 NativeClass[_e] = true;
+NativeClass.getIndex = makefunc_1.TypeIn.getIndex;
 NativeClass.prototype[nativetype_1.NativeType.size] = 0;
 NativeClass.prototype[nativetype_1.NativeType.ctor] = common_1.emptyFunc;
 NativeClass.prototype[nativetype_1.NativeType.dtor] = common_1.emptyFunc;

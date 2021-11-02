@@ -4,6 +4,7 @@ import './attributeinstance';
 import './baseattributemap';
 import './block';
 import './blockpos';
+import './command';
 import './commandcontext';
 import './commandflag';
 import './commandname';

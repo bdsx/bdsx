@@ -1,7 +1,7 @@
 "use strict";
 var WildcardCommandSelector_1, CommandOutputParameter_1, Command_1;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CommandRegistry = exports.Command = exports.CommandVFTable = exports.CommandParameterData = exports.CommandParameterDataType = exports.MinecraftCommands = exports.CommandOutputSender = exports.CommandOutput = exports.CommandOutputParameter = exports.CommandOutputType = exports.CommandContext = exports.CommandWildcardInt = exports.CommandRawText = exports.CommandPositionFloat = exports.CommandPosition = exports.CommandMessage = exports.CommandItem = exports.CommandFilePath = exports.ActorWildcardCommandSelector = exports.WildcardCommandSelector = exports.CommandSelectorBase = exports.MCRESULT = exports.CommandFlag = exports.CommandVisibilityFlag = exports.CommandUsageFlag = exports.CommandTypeFlag = exports.CommandSyncFlag = exports.CommandExecuteFlag = exports.CommandCheatFlag = exports.CommandPermissionLevel = void 0;
+exports.CommandRegistry = exports.CommandVFTable = exports.Command = exports.CommandParameterData = exports.CommandParameterDataType = exports.MinecraftCommands = exports.CommandOutputSender = exports.CommandOutput = exports.CommandOutputParameter = exports.CommandOutputType = exports.CommandContext = exports.CommandWildcardInt = exports.CommandRawText = exports.CommandPositionFloat = exports.CommandPosition = exports.CommandMessage = exports.CommandItem = exports.CommandFilePath = exports.ActorWildcardCommandSelector = exports.WildcardCommandSelector = exports.CommandSelectorBase = exports.MCRESULT = exports.CommandFlag = exports.CommandVisibilityFlag = exports.CommandUsageFlag = exports.CommandTypeFlag = exports.CommandSyncFlag = exports.CommandExecuteFlag = exports.CommandCheatFlag = exports.CommandPermissionLevel = void 0;
 const tslib_1 = require("tslib");
 const assembler_1 = require("../assembler");
 const bin_1 = require("../bin");
@@ -21,54 +21,26 @@ const connreq_1 = require("./connreq");
 const packets_1 = require("./packets");
 const proc_1 = require("./proc");
 const typeid_1 = require("./typeid");
-const minecraft = require("../minecraft");
 const dnf_1 = require("../dnf");
+const minecraft = require("../minecraft");
+const enums = require("../enums");
 /** @deprecated */
 exports.CommandPermissionLevel = minecraft.CommandPermissionLevel;
-var CommandCheatFlag;
-(function (CommandCheatFlag) {
-    CommandCheatFlag[CommandCheatFlag["Cheat"] = 0] = "Cheat";
-    CommandCheatFlag[CommandCheatFlag["NotCheat"] = 64] = "NotCheat";
-    /** @deprecated */
-    CommandCheatFlag[CommandCheatFlag["NoCheat"] = 64] = "NoCheat";
-    CommandCheatFlag[CommandCheatFlag["None"] = 0] = "None";
-})(CommandCheatFlag = exports.CommandCheatFlag || (exports.CommandCheatFlag = {}));
-var CommandExecuteFlag;
-(function (CommandExecuteFlag) {
-    CommandExecuteFlag[CommandExecuteFlag["Allowed"] = 0] = "Allowed";
-    CommandExecuteFlag[CommandExecuteFlag["Disallowed"] = 16] = "Disallowed";
-})(CommandExecuteFlag = exports.CommandExecuteFlag || (exports.CommandExecuteFlag = {}));
-var CommandSyncFlag;
-(function (CommandSyncFlag) {
-    CommandSyncFlag[CommandSyncFlag["Synced"] = 0] = "Synced";
-    CommandSyncFlag[CommandSyncFlag["Local"] = 8] = "Local";
-})(CommandSyncFlag = exports.CommandSyncFlag || (exports.CommandSyncFlag = {}));
-var CommandTypeFlag;
-(function (CommandTypeFlag) {
-    CommandTypeFlag[CommandTypeFlag["None"] = 0] = "None";
-    CommandTypeFlag[CommandTypeFlag["Message"] = 32] = "Message";
-})(CommandTypeFlag = exports.CommandTypeFlag || (exports.CommandTypeFlag = {}));
-var CommandUsageFlag;
-(function (CommandUsageFlag) {
-    CommandUsageFlag[CommandUsageFlag["Normal"] = 0] = "Normal";
-    CommandUsageFlag[CommandUsageFlag["Test"] = 1] = "Test";
-    /** @deprecated Use CommandVisibilityFlag */
-    CommandUsageFlag[CommandUsageFlag["Hidden"] = 2] = "Hidden";
-    CommandUsageFlag[CommandUsageFlag["_Unknown"] = 128] = "_Unknown";
-})(CommandUsageFlag = exports.CommandUsageFlag || (exports.CommandUsageFlag = {}));
-/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
-var CommandVisibilityFlag;
-(function (CommandVisibilityFlag) {
-    CommandVisibilityFlag[CommandVisibilityFlag["Visible"] = 0] = "Visible";
-    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
-    CommandVisibilityFlag[CommandVisibilityFlag["HiddenFromCommandBlockOrigin"] = 2] = "HiddenFromCommandBlockOrigin";
-    CommandVisibilityFlag[CommandVisibilityFlag["HiddenFromPlayerOrigin"] = 4] = "HiddenFromPlayerOrigin";
-    /** Still visible to console */
-    CommandVisibilityFlag[CommandVisibilityFlag["Hidden"] = 6] = "Hidden";
-})(CommandVisibilityFlag = exports.CommandVisibilityFlag || (exports.CommandVisibilityFlag = {}));
+/** @deprecated import it from 'bdsx/enums' */
+exports.CommandCheatFlag = enums.CommandCheatFlag;
+/** @deprecated import it from 'bdsx/enums' */
+exports.CommandExecuteFlag = enums.CommandExecuteFlag;
+/** @deprecated import it from 'bdsx/enums' */
+exports.CommandSyncFlag = enums.CommandSyncFlag;
+/** @deprecated import it from 'bdsx/enums' */
+exports.CommandTypeFlag = enums.CommandTypeFlag;
+/** @deprecated import it from 'bdsx/enums' */
+exports.CommandUsageFlag = enums.CommandUsageFlag;
+/** @deprecated import it from 'bdsx/enums' */
+exports.CommandVisibilityFlag = enums.CommandVisibilityFlag;
 /** @deprecated **/
-exports.CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
-/** @deprecated */
+exports.CommandFlag = exports.CommandCheatFlag; // CommandFlag is actually a class
+/** @deprecated import it from 'bdsx/minecraft' */
 exports.MCRESULT = minecraft.MCRESULT;
 /** @deprecated */
 let CommandSelectorBase = class CommandSelectorBase extends nativeclass_1.NativeClass {
@@ -86,9 +58,9 @@ CommandSelectorBase = (0, tslib_1.__decorate)([
     (0, nativeclass_1.nativeClass)(0xc0)
 ], CommandSelectorBase);
 exports.CommandSelectorBase = CommandSelectorBase;
-const CommandSelectorBaseCtor = proc_1.procHacker.js('CommandSelectorBase::CommandSelectorBase', nativetype_1.void_t, null, CommandSelectorBase, nativetype_1.bool_t);
-CommandSelectorBase.prototype[nativetype_1.NativeType.dtor] = proc_1.procHacker.js('CommandSelectorBase::~CommandSelectorBase', nativetype_1.void_t, { this: CommandSelectorBase });
-CommandSelectorBase.prototype._newResults = proc_1.procHacker.js('CommandSelectorBase::newResults', sharedpointer_1.SharedPtr.make(cxxvector_1.CxxVector.make(actor_1.Actor.ref())), { this: CommandSelectorBase, structureReturn: true }, commandorigin_1.CommandOrigin);
+const CommandSelectorBaseCtor = (0, dnf_1.dnf)(minecraft.CommandSelectorBase, 'constructWith').reform(nativetype_1.void_t, null, CommandSelectorBase, nativetype_1.bool_t);
+CommandSelectorBase.prototype[nativetype_1.NativeType.dtor] = minecraft.CommandSelectorBase[nativetype_1.NativeType.dtor];
+CommandSelectorBase.prototype._newResults = (0, dnf_1.dnf)(minecraft.CommandSelectorBase, 'newResults').reform(sharedpointer_1.SharedPtr.make(cxxvector_1.CxxVector.make(actor_1.Actor.ref())), { this: CommandSelectorBase, structureReturn: true }, commandorigin_1.CommandOrigin);
 let WildcardCommandSelector = WildcardCommandSelector_1 = class WildcardCommandSelector extends CommandSelectorBase {
     static make(type) {
         class WildcardCommandSelectorImpl extends WildcardCommandSelector_1 {
@@ -236,6 +208,7 @@ var CommandOutputType;
     CommandOutputType[CommandOutputType["Type3"] = 3] = "Type3";
     CommandOutputType[CommandOutputType["ScriptEngine"] = 4] = "ScriptEngine";
 })(CommandOutputType = exports.CommandOutputType || (exports.CommandOutputType = {}));
+/** @deprecated import it from 'bdsx/minecraft'  */
 let CommandOutputParameter = CommandOutputParameter_1 = class CommandOutputParameter extends nativeclass_1.NativeClass {
     static create(input, count) {
         const out = CommandOutputParameter_1.construct();
@@ -292,6 +265,7 @@ CommandOutputParameter = CommandOutputParameter_1 = (0, tslib_1.__decorate)([
     (0, nativeclass_1.nativeClass)(0x28)
 ], CommandOutputParameter);
 exports.CommandOutputParameter = CommandOutputParameter;
+/** @deprecated import it from 'bdsx/minecraft'  */
 let CommandOutput = class CommandOutput extends nativeclass_1.NativeClass {
     getType() {
         (0, common_1.abstract)();
@@ -358,6 +332,7 @@ CommandOutput = (0, tslib_1.__decorate)([
     (0, nativeclass_1.nativeClass)(0x30)
 ], CommandOutput);
 exports.CommandOutput = CommandOutput;
+/** @deprecated import it from 'bdsx/minecraft'  */
 let CommandOutputSender = class CommandOutputSender extends nativeclass_1.NativeClass {
 };
 (0, tslib_1.__decorate)([
@@ -367,7 +342,7 @@ CommandOutputSender = (0, tslib_1.__decorate)([
     (0, nativeclass_1.nativeClass)(null)
 ], CommandOutputSender);
 exports.CommandOutputSender = CommandOutputSender;
-/** @deprecated */
+/** @deprecated import it from 'bdsx/minecraft'  */
 let MinecraftCommands = class MinecraftCommands extends nativeclass_1.NativeClass {
     handleOutput(origin, output) {
         (0, common_1.abstract)();
@@ -396,6 +371,7 @@ var CommandParameterDataType;
     CommandParameterDataType[CommandParameterDataType["SOFT_ENUM"] = 2] = "SOFT_ENUM";
     CommandParameterDataType[CommandParameterDataType["POSTFIX"] = 3] = "POSTFIX";
 })(CommandParameterDataType = exports.CommandParameterDataType || (exports.CommandParameterDataType = {}));
+/** @deprecated import it from 'bdsx/minecraft'  */
 let CommandParameterData = class CommandParameterData extends nativeclass_1.NativeClass {
 };
 (0, tslib_1.__decorate)([
@@ -432,18 +408,7 @@ CommandParameterData = (0, tslib_1.__decorate)([
     (0, nativeclass_1.nativeClass)()
 ], CommandParameterData);
 exports.CommandParameterData = CommandParameterData;
-let CommandVFTable = class CommandVFTable extends nativeclass_1.NativeClass {
-};
-(0, tslib_1.__decorate)([
-    (0, nativeclass_1.nativeField)(core_1.VoidPointer)
-], CommandVFTable.prototype, "destructor", void 0);
-(0, tslib_1.__decorate)([
-    (0, nativeclass_1.nativeField)(core_1.VoidPointer)
-], CommandVFTable.prototype, "execute", void 0);
-CommandVFTable = (0, tslib_1.__decorate)([
-    (0, nativeclass_1.nativeClass)()
-], CommandVFTable);
-exports.CommandVFTable = CommandVFTable;
+/** @deprecated import it from 'bdsx/minecraft'  */
 let Command = Command_1 = class Command extends nativeclass_1.NativeClass {
     [nativetype_1.NativeType.ctor]() {
         this.vftable = null;
@@ -489,7 +454,7 @@ let Command = Command_1 = class Command extends nativeclass_1.NativeClass {
     }
 };
 (0, tslib_1.__decorate)([
-    (0, nativeclass_1.nativeField)(CommandVFTable.ref())
+    (0, nativeclass_1.nativeField)(minecraft.Command.VFTable.ref())
 ], Command.prototype, "vftable", void 0);
 (0, tslib_1.__decorate)([
     (0, nativeclass_1.nativeField)(nativetype_1.int32_t)
@@ -508,9 +473,12 @@ Command = Command_1 = (0, tslib_1.__decorate)([
 ], Command);
 exports.Command = Command;
 (function (Command) {
-    Command.VFTable = CommandVFTable;
+    /** @deprecated import it from 'bdsx/minecraft'  */
+    Command.VFTable = minecraft.Command.VFTable;
 })(Command = exports.Command || (exports.Command = {}));
 exports.Command = Command;
+/** @deprecated use Command.VFTable in 'bdsx/minecraft'  */
+exports.CommandVFTable = Command.VFTable;
 /** @deprecated */
 class CommandRegistry extends typeid_1.HasTypeId {
     registerCommand(command, description, level, flag1, flag2) {

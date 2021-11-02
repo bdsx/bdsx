@@ -1,22 +1,104 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EnumType = exports.NativeVarArgs = exports.MemberPointer = exports.NativeFunctionType = exports.NativeTemplateClass = void 0;
+exports.EnumType = exports.NativeVarArgs = exports.MemberPointer = exports.NativeFunctionType = exports.defineNativeAddressField = exports.defineNativeField = exports.makeNativeGetter = exports.NativeTemplateVariable = exports.NativeTemplateClass = void 0;
 const core_1 = require("./core");
+const dll_1 = require("./dll");
 const makefunc_1 = require("./makefunc");
 const nativeclass_1 = require("./nativeclass");
 const nativetype_1 = require("./nativetype");
 const singleton_1 = require("./singleton");
+const specializedList = Symbol('specializedList');
+function itemsEquals(items1, items2) {
+    const n = items1.length;
+    if (n !== items2.length)
+        return false;
+    for (let i = 0; i < n; i++) {
+        const item1 = items1[i];
+        const item2 = items2[i];
+        if (item1 instanceof Array) {
+            if (!(item2 instanceof Array))
+                return false;
+            if (!itemsEquals(item1, item2))
+                return false;
+        }
+        else {
+            if (item1 !== item2)
+                return false;
+        }
+    }
+    return true;
+}
+function makeTemplateClass(cls, items) {
+    class SpecializedTemplateClass extends cls {
+    }
+    SpecializedTemplateClass.templates = items;
+    Object.defineProperty(SpecializedTemplateClass, 'name', { value: `${cls.name}<${items.map(item => item.name || item.toString()).join(',')}>` });
+    return SpecializedTemplateClass;
+}
 class NativeTemplateClass extends nativeclass_1.NativeClass {
     static make(...items) {
-        class SpecializedTemplateClass extends this {
+        let list = this[specializedList];
+        if (list == null) {
+            this[specializedList] = list = [];
         }
-        SpecializedTemplateClass.templates = items;
-        Object.defineProperty(SpecializedTemplateClass, 'name', { value: `${this.name}<${items.map(item => item.name || item.toString()).join(',')}>` });
-        return SpecializedTemplateClass;
+        else {
+            for (const cls of list) {
+                if (itemsEquals(items, cls.templates))
+                    return cls;
+            }
+        }
+        const cls = makeTemplateClass(this, items);
+        list.push(cls);
+        return cls;
     }
 }
 exports.NativeTemplateClass = NativeTemplateClass;
-NativeTemplateClass.templates = [];
+const baseAddress = dll_1.dll.base;
+class NativeTemplateVariable {
+    constructor(type, rva) {
+        this.type = type;
+        this.rva = rva;
+    }
+    get value() {
+        return this.type[nativetype_1.NativeType.getter](baseAddress, this.rva);
+    }
+    set value(v) {
+        this.type[nativetype_1.NativeType.setter](baseAddress, v, this.rva);
+    }
+}
+exports.NativeTemplateVariable = NativeTemplateVariable;
+function makeNativeGetter(infos) {
+    return function () {
+        for (const [rva, type, args] of infos) {
+            if (itemsEquals(args, arguments))
+                return type[nativetype_1.NativeType.getter](dll_1.dll.base, rva);
+        }
+        throw Error(`overload not found`);
+    };
+}
+exports.makeNativeGetter = makeNativeGetter;
+function defineNativeField(target, key, rva, type) {
+    Object.defineProperty(target, key, {
+        get() {
+            return type[nativetype_1.NativeType.getter](baseAddress, rva);
+        },
+        set(value) {
+            return type[nativetype_1.NativeType.setter](baseAddress, value, rva);
+        }
+    });
+}
+exports.defineNativeField = defineNativeField;
+function defineNativeAddressField(target, key, rva, type) {
+    Object.defineProperty(target, key, {
+        get() {
+            return type[nativetype_1.NativeType.getter](baseAddress, rva);
+        },
+        set(value) {
+            return type[nativetype_1.NativeType.setter](baseAddress, value, rva);
+        }
+    });
+}
+exports.defineNativeAddressField = defineNativeAddressField;
 let warned = false;
 function warn() {
     if (warned)

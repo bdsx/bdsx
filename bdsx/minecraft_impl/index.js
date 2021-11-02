@@ -7,6 +7,7 @@ require("./attributeinstance");
 require("./baseattributemap");
 require("./block");
 require("./blockpos");
+require("./command");
 require("./commandcontext");
 require("./commandflag");
 require("./commandname");

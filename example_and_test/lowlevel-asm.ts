@@ -1,6 +1,6 @@
 import { asm, Register } from "bdsx/assembler";
 import { makefunc } from "bdsx/makefunc";
-import { printf } from "bdsx/minecraft";
+import { addressof_printf } from "bdsx/minecraft";
 import { int16_t, int32_t, void_t } from "bdsx/nativetype";
 
 
@@ -33,7 +33,7 @@ const func_call_printf = asm()
 .mov_r_r(Register.r8, Register.rdx) // mov rdx, rcx; set the 3rd parameter from the 2nd parameter
 .mov_r_r(Register.rdx, Register.rcx) // mov rdx, rcx; set the 2nd parameter from the 1st parameter
 .mov_r_c(Register.rcx, asm.const_str('[example/lowlevel-asm] %s, %s!\n')) // mov rcx, '...'; set the 1st parameter
-.call64(printf, Register.rax)  // mov rax, printf; call rax;
+.call64(addressof_printf, Register.rax)  // mov rax, printf; call rax;
 .alloc('func_call_printf');
 
 const func_call_printf_js = makefunc.js(func_call_printf, void_t, null, makefunc.Ansi, makefunc.Ansi); // make it as js

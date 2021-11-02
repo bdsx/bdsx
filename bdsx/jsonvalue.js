@@ -6,7 +6,7 @@ const makefunc_1 = require("./makefunc");
 const ready_1 = require("./minecraft_impl/ready");
 const nativetype_1 = require("./nativetype");
 exports.JsonValue = new nativetype_1.NativeType('Json::Value', 16, 8, () => true, undefined, common_1.abstract, common_1.abstract);
-ready_1.minecraftTsReady.promise.then(() => {
+(0, ready_1.minecraftTsReady)(() => {
     const { Json } = require('./minecraft');
     exports.JsonValue[nativetype_1.NativeType.getter] = (ptr, offset) => {
         const jsoninst = ptr.getPointerAs(Json.Value, offset);

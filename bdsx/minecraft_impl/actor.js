@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const asmcode = require("../asm/asmcode");
+exports.removeActorReference = void 0;
 const core_1 = require("../core");
-const hook_1 = require("../hook");
 const makefunc_1 = require("../makefunc");
 const minecraft_1 = require("../minecraft");
 const nativetype_1 = require("../nativetype");
@@ -14,10 +13,10 @@ minecraft_1.Actor.abstract({
 const actorMap = new Map();
 const typeMap = new Map();
 minecraft_1.Actor.registerType = function (type) {
-    typeMap.set(type.__vftable.getAddressBin(), type);
+    if (type.addressof_vftable == null)
+        throw Error(`${type.name} does not have addressof_vftable`);
+    typeMap.set(type.addressof_vftable.getAddressBin(), type);
 };
-minecraft_1.Actor.registerType(minecraft_1.ServerPlayer);
-minecraft_1.Actor.registerType(minecraft_1.ItemActor);
 function _singletoning(ptr) {
     if (ptr === null)
         return null;
@@ -39,15 +38,13 @@ minecraft_1.Actor[nativetype_1.NativeType.getter] = function (ptr, offset) {
 minecraft_1.Actor[makefunc_1.makefunc.getFromParam] = function (stackptr, offset) {
     return _singletoning(stackptr.getNullablePointer(offset));
 };
-function _removeActor(actor) {
+/** @internal */
+function removeActorReference(actor) {
     actorMap.delete(actor.getAddressBin());
 }
-ready_1.minecraftTsReady.promise.then(() => {
-    const Level$removeEntityReferences = (0, hook_1.hook)(minecraft_1.Level, 'removeEntityReferences').call(function (actor, b) {
-        _removeActor(actor);
-        return Level$removeEntityReferences.call(this, actor, b);
-    });
-    asmcode.removeActor = makefunc_1.makefunc.np(_removeActor, nativetype_1.void_t, null, minecraft_1.Actor);
-    (0, hook_1.hook)(minecraft_1.Actor, nativetype_1.NativeType.dtor).options({ callOriginal: true }).raw(asmcode.actorDestructorHook);
+exports.removeActorReference = removeActorReference;
+(0, ready_1.minecraftTsReady)(() => {
+    minecraft_1.Actor.registerType(minecraft_1.ServerPlayer);
+    minecraft_1.Actor.registerType(minecraft_1.ItemActor);
 });
 //# sourceMappingURL=actor.js.map

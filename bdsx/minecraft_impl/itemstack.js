@@ -19,30 +19,4 @@ minecraft_1.ItemStack.abstract({
     // something at 0x50
     canDestroyList: [cxxvector_1.CxxVector.make(minecraft_1.BlockLegacy.ref()), 0x58],
 }, 0x89);
-minecraft_1.ItemStack.prototype.getAmount = function () {
-    return this.amount;
-};
-minecraft_1.ItemStack.prototype.setAmount = function (amount) {
-    this.amount = amount;
-};
-minecraft_1.ItemStack.prototype.getItemSafe = function () {
-    if (this.isNull()) {
-        return null;
-    }
-    return this.getItem();
-};
-minecraft_1.ItemStack.prototype.getItemId = function () {
-    const item = this.getItem();
-    if (item != null) {
-        const Name = item.getCommandName();
-        if (Name.includes(':'))
-            return Name;
-        else
-            return 'minecraft:' + Name;
-    }
-    return 'minecraft:air';
-};
-minecraft_1.ItemStack.prototype.isBlock = function () {
-    return this.vftable === minecraft_1.Block.__vftable;
-};
 //# sourceMappingURL=itemstack.js.map

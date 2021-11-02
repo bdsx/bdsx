@@ -1,4 +1,4 @@
-import { AllocatedPointer, cgate, NativePointer, VoidPointer, VoidPointerConstructor } from './core';
+import { AllocatedPointer, cgate, NativePointer, StaticPointer, VoidPointer, VoidPointerConstructor } from './core';
 import { FunctionFromTypes_js, makefunc, MakeFuncOptions, ParamType } from './makefunc';
 interface VoidPointerConstructorEx extends VoidPointerConstructor {
     new (param?: VoidPointer | null): VoidPointer;
@@ -53,6 +53,7 @@ export declare class CriticalSection extends AllocatedPointer {
 }
 export declare namespace dll {
     const current: NativeModule;
+    const base: StaticPointer;
     namespace ntdll {
         const module: NativeModule;
         const wine_get_version: (() => string) | null;

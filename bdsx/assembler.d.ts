@@ -193,8 +193,9 @@ export declare class X64Assembler {
     writeInt16(value: number): this;
     writeInt32(value: number): this;
     getLabelOffset(name: string): number;
+    exists(identifierName: string): boolean;
     labels(skipPrivate?: boolean): Record<string, number>;
-    defs(): Record<string, number>;
+    defs(): Record<string, [number, OperationSize?]>;
     buffer(makeRuntimeFunctionTable?: boolean): Uint8Array;
     ret(): this;
     nop(): this;
@@ -544,10 +545,6 @@ export declare class X64Assembler {
     compileLine(lineText: string, lineNumber: number): void;
     compile(source: string, defines?: Record<string, number> | null, reportDirectWithFileName?: string | null): this;
     save(): Uint8Array;
-    toScript(bdsxLibPath: string, exportName?: string | null, generator?: string): {
-        js: string;
-        dts: string;
-    };
     static load(bin: Uint8Array): X64Assembler;
     private static call_c_info;
     private static jmp_c_info;

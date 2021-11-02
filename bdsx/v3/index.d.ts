@@ -14,81 +14,6 @@ export namespace server {
 }
 
 }
-// entity.ts
-export namespace entity {
-import AttributeId = __tsb_enums.AttributeId;
-import MobEffectIds = __tsb_enums.MobEffectIds;
-import Actor = __tsb_minecraft.Actor;
-import ActorUniqueID = __tsb_minecraft.ActorUniqueID;
-import AttributeInstance = __tsb_minecraft.AttributeInstance;
-import DimensionId = __tsb_minecraft.DimensionId;
-import MobEffectInstance = __tsb_minecraft.MobEffectInstance;
-import Vec3 = __tsb_minecraft.Vec3;
-import bin64_t = __tsb_nativetype.bin64_t;
-const entityKey: unique symbol;
-const entityMapper: unique symbol;
-interface OptionalAttributeValues {
-    current?: number;
-    min?: number;
-    max?: number;
-    default?: number;
-}
-interface AttributeValues {
-    current: number;
-    min: number;
-    max: number;
-    default: number;
-}
-export class Entity {
-    protected actor: ActorX | null;
-    entity: IEntity | null;
-    constructor(actor: ActorX | null);
-    protected actorMust(): Actor;
-    get name(): string;
-    get identifier(): string;
-    get dimensionId(): DimensionId;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawEntity(): ActorX | null;
-    getPosition(): Vec3;
-    getUniqueID(): ActorUniqueID;
-    getUniqueIdBin(): bin64_t;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getAttributeInstance(id: AttributeId): AttributeInstance;
-    getAttributeValues(id: AttributeId): AttributeValues;
-    getAttribute(id: AttributeId): number;
-    setAttribute(id: AttributeId, value: number | OptionalAttributeValues): boolean;
-    teleport(pos: Vec3, dimensionId?: DimensionId): void;
-    addEffect(id: MobEffectIds, duration: number, amplifier?: number): void;
-    hasEffect(id: MobEffectIds): boolean;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getEffect(id: MobEffectIds): MobEffectInstance | null;
-    static registerMapper<T extends Actor>(rawClass: new (...args: any[]) => T, mapper: (actor: T) => (Entity | null)): void;
-    static fromUniqueId(lowBits: string | number, highBits: number): Entity;
-    static fromUniqueId(bin: string): Entity;
-    static fromRaw(actor: Actor): Entity | null;
-    /**
-     * from the scripting API entity.
-     */
-    static fromEntity(entity: IEntity): Entity | null;
-    toString(): string;
-}
-interface ActorX extends Actor {
-    [entityKey]?: Entity;
-    [entityMapper]?(): Entity | null;
-}
-export class EntityCreatedEvent {
-    entity: Entity;
-    constructor(entity: Entity);
-}
-export {};
-
-}
 // events\index.ts
 export namespace events {
 import Color = __tsb_colors.Color;
@@ -98,7 +23,6 @@ import Event = __tsb_eventtarget.Event;
 import MinecraftPacketIds = __tsb_minecraft.MinecraftPacketIds;
 import NetworkIdentifier = __tsb_minecraft.NetworkIdentifier;
 import Packet = __tsb_minecraft.Packet;
-import EntityCreatedEvent = __tsb.entity.EntityCreatedEvent;
 import BlockDestroyEvent = __tsb.blockevent.BlockDestroyEvent;
 import BlockPlaceEvent = __tsb.blockevent.BlockPlaceEvent;
 import CampfireTryDouseFire = __tsb.blockevent.CampfireTryDouseFire;
@@ -106,6 +30,7 @@ import CampfireTryLightFire = __tsb.blockevent.CampfireTryLightFire;
 import FarmlandDecayEvent = __tsb.blockevent.FarmlandDecayEvent;
 import PistonMoveEvent = __tsb.blockevent.PistonMoveEvent;
 import CommandEvent = __tsb.commandevent.CommandEvent;
+import EntityCreateEvent = __tsb.entityevent.EntityCreateEvent;
 import EntityDieEvent = __tsb.entityevent.EntityDieEvent;
 import EntityHeathChangeEvent = __tsb.entityevent.EntityHeathChangeEvent;
 import EntityHurtEvent = __tsb.entityevent.EntityHurtEvent;
@@ -168,7 +93,9 @@ export namespace events {
     /** Cancellable but the client is still exiting though it will automatically ride again after rejoin */
     const entityStopRiding: Event<(event: EntityStopRidingEvent) => void | CANCEL>;
     /** Not cancellable */
-    const entityCreated: Event<(event: EntityCreatedEvent) => void>;
+    const entityCreated: Event<(event: EntityCreateEvent) => void>;
+    /** Not cancellable */
+    const entityDeleted: Event<(event: EntityCreateEvent) => void>;
     /** Cancellable */
     const splashPotionHit: Event<(event: SplashPotionHitEvent) => void | CANCEL>;
     /** Cancellable */
@@ -301,6 +228,136 @@ export namespace events {
 }
 
 }
+// command.ts
+export namespace command {
+import BlockPos = __tsb_minecraft.BlockPos;
+import CommandOrigin = __tsb_minecraft.CommandOrigin;
+import CommandOutput = __tsb_minecraft.CommandOutput;
+import CommandPermissionLevel = __tsb_minecraft.CommandPermissionLevel;
+import Dimension = __tsb_minecraft.Dimension;
+import MCRESULT = __tsb_minecraft.MCRESULT;
+import RelativeFloatType = __tsb_minecraft.RelativeFloat;
+import Vec3 = __tsb_minecraft.Vec3;
+import Entity = __tsb.entity.Entity;
+export namespace command {
+    abstract class Param<T> {
+        optional(): Param<T | undefined>;
+    }
+    class Origin {
+        private readonly origin;
+        private _pos;
+        private _blockPos;
+        private _entity;
+        constructor(origin: CommandOrigin);
+        /**
+         * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+         */
+        getRawOrigin(): CommandOrigin;
+        get isServerOrigin(): boolean;
+        get isScriptOrigin(): boolean;
+        get entity(): Entity | null;
+        get position(): Vec3;
+        get blockPosition(): BlockPos;
+    }
+    const Boolean: Param<boolean>;
+    const Integer: Param<number>;
+    const String: Param<string>;
+    const RawText: Param<string>;
+    const RelativeFloat: Param<RelativeFloatType>;
+    const EntityWildcard: Param<Entity[]>;
+    const Json: Param<any>;
+    class Factory {
+        readonly name: string;
+        constructor(name: string);
+        overload<PARAMS extends Record<string, Param<any>>>(callback: (params: {
+            [key in keyof PARAMS]: PARAMS[key] extends Param<infer T> ? T : never;
+        }, origin: CommandOrigin, output: CommandOutput) => void, parameters: PARAMS): this;
+        alias(alias: string): this;
+    }
+    function register(name: string, description: string, perm?: CommandPermissionLevel): Factory;
+    /**
+     * it does the same thing with bedrockServer.executeCommandOnConsole
+     * but call the internal function directly
+     */
+    function execute(command: string, dimension?: Dimension | null): MCRESULT;
+    /**
+     * resend the command list packet to clients
+     */
+    function update(): void;
+}
+
+}
+// entity.ts
+export namespace entity {
+import AttributeId = __tsb_enums.AttributeId;
+import MobEffectIds = __tsb_enums.MobEffectIds;
+import Actor = __tsb_minecraft.Actor;
+import ActorUniqueID = __tsb_minecraft.ActorUniqueID;
+import AttributeInstance = __tsb_minecraft.AttributeInstance;
+import DimensionId = __tsb_minecraft.DimensionId;
+import MobEffectInstance = __tsb_minecraft.MobEffectInstance;
+import Vec3 = __tsb_minecraft.Vec3;
+import bin64_t = __tsb_nativetype.bin64_t;
+const entityKey: unique symbol;
+const entityMapper: unique symbol;
+interface OptionalAttributeValues {
+    current?: number;
+    min?: number;
+    max?: number;
+    default?: number;
+}
+interface AttributeValues {
+    current: number;
+    min: number;
+    max: number;
+    default: number;
+}
+export class Entity {
+    protected actor: ActorX | null;
+    entity: IEntity | null;
+    constructor(actor: ActorX | null);
+    protected actorMust(): Actor;
+    get name(): string;
+    get identifier(): string;
+    get dimensionId(): DimensionId;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawEntity(): ActorX | null;
+    getPosition(): Vec3;
+    getUniqueID(): ActorUniqueID;
+    getUniqueIdBin(): bin64_t;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getAttributeInstance(id: AttributeId): AttributeInstance;
+    getAttributeValues(id: AttributeId): AttributeValues;
+    getAttribute(id: AttributeId): number;
+    setAttribute(id: AttributeId, value: number | OptionalAttributeValues): boolean;
+    teleport(pos: Vec3, dimensionId?: DimensionId): void;
+    addEffect(id: MobEffectIds, duration: number, amplifier?: number): void;
+    hasEffect(id: MobEffectIds): boolean;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getEffect(id: MobEffectIds): MobEffectInstance | null;
+    static registerMapper<T extends Actor>(rawClass: new (...args: any[]) => T, mapper: (actor: T) => (Entity | null)): void;
+    static fromUniqueId(lowBits: string | number, highBits: number): Entity;
+    static fromUniqueId(bin: string): Entity;
+    static fromRaw(actor: Actor): Entity | null;
+    /**
+     * from the scripting API entity.
+     */
+    static fromEntity(entity: IEntity): Entity | null;
+    toString(): string;
+}
+interface ActorX extends Actor {
+    [entityKey]?: Entity;
+    [entityMapper]?(): Entity | null;
+}
+export {};
+
+}
 // player.ts
 export namespace player {
 import Actor = __tsb_minecraft.Actor;
@@ -373,81 +430,6 @@ type PlayerNew = Player;
 export {};
 
 }
-// command.ts
-export namespace command {
-import BlockPos = __tsb_minecraft.BlockPos;
-import CommandOrigin = __tsb_minecraft.CommandOrigin;
-import CommandOutput = __tsb_minecraft.CommandOutput;
-import CommandPermissionLevel = __tsb_minecraft.CommandPermissionLevel;
-import Dimension = __tsb_minecraft.Dimension;
-import MCRESULT = __tsb_minecraft.MCRESULT;
-import RelativeFloatType = __tsb_minecraft.RelativeFloat;
-import Vec3 = __tsb_minecraft.Vec3;
-import Entity = __tsb.entity.Entity;
-export namespace command {
-    abstract class Param<T> {
-        optional(): Param<T | undefined>;
-    }
-    class Origin {
-        private readonly origin;
-        private _pos;
-        private _blockPos;
-        private _entity;
-        constructor(origin: CommandOrigin);
-        /**
-         * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-         */
-        getRawOrigin(): CommandOrigin;
-        get isServerOrigin(): boolean;
-        get isScriptOrigin(): boolean;
-        get entity(): Entity | null;
-        get position(): Vec3;
-        get blockPosition(): BlockPos;
-    }
-    const Boolean: Param<boolean>;
-    const Integer: Param<number>;
-    const String: Param<string>;
-    const RawText: Param<string>;
-    const RelativeFloat: Param<RelativeFloatType>;
-    const EntityWildcard: Param<Entity[]>;
-    const Json: Param<any>;
-    class Factory {
-        readonly name: string;
-        constructor(name: string);
-        overload<PARAMS extends Record<string, Param<any>>>(callback: (params: {
-            [key in keyof PARAMS]: PARAMS[key] extends Param<infer T> ? T : never;
-        }, origin: CommandOrigin, output: CommandOutput) => void, parameters: PARAMS): this;
-        alias(alias: string): this;
-    }
-    function register(name: string, description: string, perm?: CommandPermissionLevel): Factory;
-    /**
-     * it does the same thing with bedrockServer.executeCommandOnConsole
-     * but call the internal function directly
-     */
-    function execute(command: string, dimension?: Dimension | null): MCRESULT;
-    /**
-     * resend the command list packet to clients
-     */
-    function update(): void;
-}
-
-}
-// events\commandevent.ts
-export namespace commandevent {
-import CommandContext = __tsb_minecraft.CommandContext;
-import command = __tsb.command.command;
-export class CommandEvent {
-    command: string;
-    readonly origin: command.Origin;
-    private readonly context;
-    constructor(command: string, origin: command.Origin, context: CommandContext);
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawContext(): CommandContext;
-}
-
-}
 // events\blockevent.ts
 export namespace blockevent {
 import PistonAction = __tsb_enums.PistonAction;
@@ -490,6 +472,78 @@ export class FarmlandDecayEvent extends BlockEvent {
 export class CampfireTryLightFire extends BlockEvent {
 }
 export class CampfireTryDouseFire extends BlockEvent {
+}
+
+}
+// events\levelevent.ts
+export namespace levelevent {
+import Actor = __tsb_minecraft.Actor;
+import BlockSource = __tsb_minecraft.BlockSource;
+import Level = __tsb_minecraft.Level;
+import Vec3 = __tsb_minecraft.Vec3;
+import EntityEvent = __tsb.entityevent.EntityEvent;
+export class LevelExplodeEvent extends EntityEvent {
+    position: Vec3;
+    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
+    power: number;
+    /** If true, blocks in the explosion radius will be set on fire. */
+    causesFire: boolean;
+    /** If true, the explosion will destroy blocks in the explosion radius. */
+    breaksBlocks: boolean;
+    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
+    maxResistance: number;
+    allowUnderwater: boolean;
+    private level;
+    private blockSource;
+    constructor(actor: Actor, position: Vec3, 
+    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
+    power: number, 
+    /** If true, blocks in the explosion radius will be set on fire. */
+    causesFire: boolean, 
+    /** If true, the explosion will destroy blocks in the explosion radius. */
+    breaksBlocks: boolean, 
+    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
+    maxResistance: number, allowUnderwater: boolean, level: Level, blockSource: BlockSource);
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawLevel(): Level;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawBlockSource(): BlockSource;
+}
+export class LevelSaveEvent {
+    private level;
+    constructor(level: Level);
+}
+export class LevelTickEvent {
+    private level;
+    constructor(level: Level);
+}
+export class LevelWeatherChangeEvent {
+    rainLevel: number;
+    rainTime: number;
+    lightningLevel: number;
+    lightningTime: number;
+    private level;
+    constructor(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number, level: Level);
+}
+
+}
+// events\commandevent.ts
+export namespace commandevent {
+import CommandContext = __tsb_minecraft.CommandContext;
+import command = __tsb.command.command;
+export class CommandEvent {
+    command: string;
+    readonly origin: command.Origin;
+    private readonly context;
+    constructor(command: string, origin: command.Origin, context: CommandContext);
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawContext(): CommandContext;
 }
 
 }
@@ -556,6 +610,28 @@ export class EntitySneakEvent extends EntityEvent {
 export class SplashPotionHitEvent extends EntityEvent {
     potionEffect: number;
     constructor(entity: Actor, potionEffect: number);
+}
+export class EntityCreateEvent extends EntityEvent {
+}
+export class EntityDeletedEvent extends EntityEvent {
+}
+
+}
+// inventory.ts
+export namespace inventory {
+import ItemStack = __tsb_minecraft.ItemStack;
+import PlayerInventory = __tsb_minecraft.PlayerInventory;
+export class Inventory {
+    private readonly inventory;
+    private _slotsArray;
+    constructor(inventory: PlayerInventory);
+    private _slots;
+    /**
+     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
+     */
+    getRawContainer(): PlayerInventory;
+    get size(): number;
+    get(i: number): ItemStack;
 }
 
 }
@@ -647,24 +723,6 @@ export class PlayerChatEvent extends PlayerEvent {
 export {};
 
 }
-// inventory.ts
-export namespace inventory {
-import ItemStack = __tsb_minecraft.ItemStack;
-import PlayerInventory = __tsb_minecraft.PlayerInventory;
-export class Inventory {
-    private readonly inventory;
-    private _slotsArray;
-    constructor(inventory: PlayerInventory);
-    private _slots;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawContainer(): PlayerInventory;
-    get size(): number;
-    get(i: number): ItemStack;
-}
-
-}
 // events\miscevent.ts
 export namespace miscevent {
 import Objective = __tsb_minecraft.Objective;
@@ -718,62 +776,6 @@ export class ObjectiveCreateEvent {
 }
 
 }
-// events\levelevent.ts
-export namespace levelevent {
-import Actor = __tsb_minecraft.Actor;
-import BlockSource = __tsb_minecraft.BlockSource;
-import Level = __tsb_minecraft.Level;
-import Vec3 = __tsb_minecraft.Vec3;
-import EntityEvent = __tsb.entityevent.EntityEvent;
-export class LevelExplodeEvent extends EntityEvent {
-    position: Vec3;
-    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
-    power: number;
-    /** If true, blocks in the explosion radius will be set on fire. */
-    causesFire: boolean;
-    /** If true, the explosion will destroy blocks in the explosion radius. */
-    breaksBlocks: boolean;
-    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
-    maxResistance: number;
-    allowUnderwater: boolean;
-    private level;
-    private blockSource;
-    constructor(actor: Actor, position: Vec3, 
-    /** The radius of the explosion in blocks and the amount of damage the explosion deals. */
-    power: number, 
-    /** If true, blocks in the explosion radius will be set on fire. */
-    causesFire: boolean, 
-    /** If true, the explosion will destroy blocks in the explosion radius. */
-    breaksBlocks: boolean, 
-    /** A blocks explosion resistance will be capped at this value when an explosion occurs. */
-    maxResistance: number, allowUnderwater: boolean, level: Level, blockSource: BlockSource);
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawLevel(): Level;
-    /**
-     * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
-     */
-    getRawBlockSource(): BlockSource;
-}
-export class LevelSaveEvent {
-    private level;
-    constructor(level: Level);
-}
-export class LevelTickEvent {
-    private level;
-    constructor(level: Level);
-}
-export class LevelWeatherChangeEvent {
-    rainLevel: number;
-    rainTime: number;
-    lightningLevel: number;
-    lightningTime: number;
-    private level;
-    constructor(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number, level: Level);
-}
-
-}
 // block.ts
 export namespace block {
 import BlockRaw = __tsb_minecraft.Block;
@@ -803,6 +805,8 @@ export class Item {
      * @deprecated compatibility warning. it returns the native class of Bedrock Dedicated Server. it can be modified by updates.
      */
     getRawItem(): ItemRaw;
+    get isBlock(): boolean;
+    get id(): ItemId;
 }
 
 }
@@ -816,13 +820,13 @@ export class ItemEntity extends Entity {
 
 }
 }
-import __tsb_enums = require('../enums');
-import __tsb_minecraft = require('../minecraft');
-import __tsb_nativetype = require('../nativetype');
 import __tsb_colors = require('colors');
 import __tsb_common = require('../common');
 import __tsb_core = require('../core');
 import __tsb_eventtarget = require('../eventtarget');
+import __tsb_minecraft = require('../minecraft');
+import __tsb_enums = require('../enums');
+import __tsb_nativetype = require('../nativetype');
 // index.ts
 import eventsModule = __tsb.events;
 import serverModule = __tsb.server;

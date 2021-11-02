@@ -54,9 +54,14 @@ export declare type FunctionFromTypes_js<PTR extends VoidPointer | [number, numb
     pointer: PTR;
 };
 export declare type FunctionFromTypes_js_without_pointer<OPTS extends MakeFuncOptions<any> | null, PARAMS extends ParamType[], RETURN extends ParamType> = ((this: GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
+declare const typeIndex: unique symbol;
 export interface TypeIn<T> extends makefunc.Paramable {
+    [typeIndex]?: number;
     name: string;
     prototype: T;
+}
+export declare namespace TypeIn {
+    function getIndex(this: TypeIn<any>): number;
 }
 export declare namespace makefunc {
     const temporalKeeper: any[];
@@ -101,6 +106,7 @@ export declare namespace makefunc {
     class ParamableT<T, InputType = T> implements TypeIn<T> {
         readonly name: string;
         constructor(name: string, _getFromParam: (stackptr: StaticPointer, offset?: number) => T | null, _setToParam: (stackptr: StaticPointer, param: InputType extends VoidPointer ? (InputType | null) : InputType, offset?: number) => void, _ctor_move: (to: StaticPointer, from: StaticPointer) => void, isTypeOf: (v: unknown) => boolean, isTypeOfWeak?: (v: unknown) => boolean);
+        getIndex(): number;
     }
     /**
      * allocate temporal memory for using in NativeType

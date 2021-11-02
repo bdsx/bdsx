@@ -1,18 +1,31 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.minecraftTsReady = void 0;
-let resolver = null;
-var minecraftTsReady;
+let callbacks = [];
+function minecraftTsReady(callback) {
+    if (callbacks === null) {
+        callback();
+        return;
+    }
+    callbacks.push(callback);
+}
+exports.minecraftTsReady = minecraftTsReady;
 (function (minecraftTsReady) {
-    minecraftTsReady.promise = new Promise(resolve => {
-        resolver = resolve;
-    });
+    function isReady() {
+        return callbacks === null;
+    }
+    minecraftTsReady.isReady = isReady;
+    /**
+     * @internal
+     */
     function resolve() {
-        if (resolver === null)
+        if (callbacks === null)
             throw Error('minecraftTsReady is already resolved');
-        const r = resolver;
-        resolver = null;
-        r();
+        const cbs = callbacks;
+        callbacks = null;
+        for (const callback of cbs) {
+            callback();
+        }
     }
     minecraftTsReady.resolve = resolve;
 })(minecraftTsReady = exports.minecraftTsReady || (exports.minecraftTsReady = {}));

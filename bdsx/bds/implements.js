@@ -2,12 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const asmcode = require("../asm/asmcode");
 const assembler_1 = require("../assembler");
-const blockpos_1 = require("./blockpos");
-const loopbacksender_1 = require("./loopbacksender");
 const core_1 = require("../core");
 const cxxvector_1 = require("../cxxvector");
 const makefunc_1 = require("../makefunc");
 const mce_1 = require("../mce");
+const mcglobal_1 = require("../mcglobal");
 const nativetype_1 = require("../nativetype");
 const pointer_1 = require("../pointer");
 const sharedpointer_1 = require("../sharedpointer");
@@ -15,6 +14,7 @@ const abilities_1 = require("./abilities");
 const actor_1 = require("./actor");
 const attribute_1 = require("./attribute");
 const block_1 = require("./block");
+const blockpos_1 = require("./blockpos");
 const command_1 = require("./command");
 const commandname_1 = require("./commandname");
 const components_1 = require("./components");
@@ -27,6 +27,7 @@ const gamerules_1 = require("./gamerules");
 const hashedstring_1 = require("./hashedstring");
 const inventory_1 = require("./inventory");
 const level_1 = require("./level");
+const loopbacksender_1 = require("./loopbacksender");
 const nbt_1 = require("./nbt");
 const networkidentifier_1 = require("./networkidentifier");
 const packet_1 = require("./packet");
@@ -39,7 +40,6 @@ const scoreboard_1 = require("./scoreboard");
 const server_1 = require("./server");
 const skin_1 = require("./skin");
 const stream_1 = require("./stream");
-const mcglobal_1 = require("../mcglobal");
 // avoiding circular dependency
 // level.ts
 level_1.Level.prototype.createDimension = proc_1.procHacker.js("Level::createDimension", dimension_1.Dimension, { this: level_1.Level }, nativetype_1.int32_t);

@@ -89,7 +89,6 @@ export declare class NativeType<T, InputType = T> extends makefunc.ParamableT<T,
     [NativeTypeFn.align]: number;
     [NativeTypeFn.bitGetter]: (this: NativeType<T, InputType>, ptr: StaticPointer, shift: number, mask: number, offset?: number) => T;
     [NativeTypeFn.bitSetter]: (this: NativeType<T, InputType>, ptr: StaticPointer, value: InputType, shift: number, mask: number, offset?: number) => void;
-    readonly typeIndex: number;
     constructor(
     /**
      * pdb symbol name. it's used by type_id.pdbimport
@@ -142,9 +141,6 @@ export declare class NativeType<T, InputType = T> extends makefunc.ParamableT<T,
     ref(): NativeType<T, InputType>;
     [NativeTypeFn.descriptor](builder: NativeDescriptorBuilder, key: string, info: NativeDescriptorBuilder.Info): void;
     static defaultDescriptor(this: Type<any>, builder: NativeDescriptorBuilder, key: string, info: NativeDescriptorBuilder.Info): void;
-    static definePointedProperty<KEY extends keyof any, T>(target: {
-        [key in KEY]: T;
-    }, key: KEY, pointer: StaticPointer, type: Type<T>): void;
 }
 declare module './core' {
     interface VoidPointerConstructor {
@@ -211,6 +207,8 @@ export declare const StringUtf16: NativeType<string, string>;
 export declare type StringUtf16 = string;
 export declare const PointerLike: NativeType<NativePointer, string | Bufferable | VoidPointer>;
 export declare type PointerLike = VoidPointer | Bufferable;
+export declare const AddressOfIt: NativeType<NativePointer, string | Bufferable | VoidPointer>;
+export declare type AddressOfIt = VoidPointer;
 export declare const JsValueRef: NativeType<any, any>;
 export declare type JsValueRef = any;
 export declare type WrapArrayToTypeArray<T extends any[]> = {

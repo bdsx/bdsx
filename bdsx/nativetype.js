@@ -1,10 +1,10 @@
 "use strict";
 var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CxxStringWith8Bytes = exports.templateArgs = exports.JsValueRef = exports.PointerLike = exports.StringUtf16 = exports.StringUtf8 = exports.StringAnsi = exports.bin128_t = exports.bin64_t = exports.GslStringSpan = exports.CxxString = exports.float64_t = exports.float32_t = exports.int64_as_float_t = exports.long_t = exports.int32_t = exports.int16_t = exports.int8_t = exports.uint64_as_float_t = exports.ulong_t = exports.uint32_t = exports.uint16_t = exports.uint8_t = exports.bool_t = exports.void_t = exports.nullptr_t = exports.NativeType = exports.NativeDescriptorBuilder = void 0;
-const symbols_1 = require("./bds/symbols");
+exports.CxxStringWith8Bytes = exports.templateArgs = exports.JsValueRef = exports.AddressOfIt = exports.PointerLike = exports.StringUtf16 = exports.StringUtf8 = exports.StringAnsi = exports.bin128_t = exports.bin64_t = exports.GslStringSpan = exports.CxxString = exports.float64_t = exports.float32_t = exports.int64_as_float_t = exports.long_t = exports.int32_t = exports.int16_t = exports.int8_t = exports.uint64_as_float_t = exports.ulong_t = exports.uint32_t = exports.uint16_t = exports.uint8_t = exports.bool_t = exports.void_t = exports.nullptr_t = exports.NativeType = exports.NativeDescriptorBuilder = void 0;
 const common_1 = require("./common");
 const core_1 = require("./core");
+const dllraw_1 = require("./dllraw");
 const makefunc_1 = require("./makefunc");
 const singleton_1 = require("./singleton");
 const util_1 = require("./util");
@@ -97,7 +97,6 @@ function numericBitSetter(ptr, value, shift, mask, offset) {
     value = ((value << shift) & mask) | (this[NativeType.getter](ptr, offset) & ~mask);
     this[NativeType.setter](ptr, value, offset);
 }
-let typeIndexCounter = 0;
 class NativeType extends makefunc_1.makefunc.ParamableT {
     constructor(
     /**
@@ -149,7 +148,6 @@ class NativeType extends makefunc_1.makefunc.ParamableT {
         super(name, getFromParam, setToParam, ctor_move, isTypeOf, isTypeOfWeak);
         this[_a] = common_1.abstract;
         this[_b] = common_1.abstract;
-        this.typeIndex = ++typeIndexCounter;
         this[NativeType.size] = size;
         this[NativeType.align] = align;
         this[NativeType.getter] = get;
@@ -158,6 +156,7 @@ class NativeType extends makefunc_1.makefunc.ParamableT {
         this[NativeType.dtor] = dtor;
         this[NativeType.ctor_copy] = ctor_copy;
         this[NativeType.ctor_move] = ctor_move;
+        this.getIndex();
     }
     supportsBitMask() {
         return this[NativeTypeFn.bitGetter] !== common_1.abstract;
@@ -217,16 +216,6 @@ class NativeType extends makefunc_1.makefunc.ParamableT {
         builder.ctor_move.ptrUsed = true;
         builder.ctor_move.setPtrOffset(offset);
         builder.ctor_move.code += `${name}[NativeType.ctor_move](ptr, optr);\n`;
-    }
-    static definePointedProperty(target, key, pointer, type) {
-        Object.defineProperty(target, key, {
-            get() {
-                return type[NativeType.getter](pointer);
-            },
-            set(value) {
-                return type[NativeType.setter](pointer, value);
-            }
-        });
     }
 }
 exports.NativeType = NativeType;
@@ -305,8 +294,8 @@ exports.float32_t = new NativeType('float', 4, 4, isNumber, isNumber, (ptr, offs
 exports.float32_t[makefunc_1.makefunc.useXmmRegister] = true;
 exports.float64_t = new NativeType('double', 8, 8, isNumber, isNumber, (ptr, offset) => ptr.getFloat64(offset), (ptr, v, offset) => ptr.setFloat64(v, offset));
 exports.float64_t[makefunc_1.makefunc.useXmmRegister] = true;
-const string_ctor = makefunc_1.makefunc.js(symbols_1.proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], exports.void_t, null, core_1.VoidPointer);
-const string_dtor = makefunc_1.makefunc.js(symbols_1.proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], exports.void_t, null, core_1.VoidPointer);
+const string_ctor = makefunc_1.makefunc.js(dllraw_1.dllraw.bedrock_server['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], exports.void_t, null, core_1.VoidPointer);
+const string_dtor = makefunc_1.makefunc.js(dllraw_1.dllraw.bedrock_server['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAAXXZ'], exports.void_t, null, core_1.VoidPointer);
 exports.CxxString = new NativeType('std::basic_string<char,std::char_traits<char>,std::allocator<char> >', 0x20, 8, v => typeof v === 'string', undefined, (ptr, offset) => ptr.getCxxString(offset), (ptr, v, offset) => ptr.setCxxString(v, offset), (stackptr, offset) => {
     const ptr = stackptr.getPointer(offset);
     return ptr.getCxxString();
@@ -402,6 +391,15 @@ exports.PointerLike = new NativeType('void const *', 8, 8, v => {
         }
     }
     stackptr.setPointer(param, offset);
+});
+exports.AddressOfIt = new NativeType('void const &*', 8, 8, v => {
+    if (v === null)
+        return true;
+    return v instanceof core_1.VoidPointer;
+}, undefined, (stackptr, offset) => stackptr.add(offset), (stackptr, param, offset) => {
+    throw Error('Invalid usage');
+}, undefined, (stackptr, param, offset) => {
+    throw Error('Invalid usage');
 });
 exports.JsValueRef = new NativeType('JsValueRef', 8, 8, () => true, undefined, (ptr, offset) => ptr.getJsValueRef(offset), (ptr, param, offset) => ptr.setJsValueRef(param, offset));
 function templateArgs(...args) {

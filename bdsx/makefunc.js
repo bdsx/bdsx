@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.makefunc = void 0;
+exports.makefunc = exports.TypeIn = void 0;
 const asmcode = require("./asm/asmcode");
 const assembler_1 = require("./assembler");
-const symbols_1 = require("./bds/symbols");
 require("./codealloc");
 const common_1 = require("./common");
 const core_1 = require("./core");
@@ -11,6 +10,7 @@ const dllraw_1 = require("./dllraw");
 const functiongen_1 = require("./functiongen");
 const util_1 = require("./util");
 const util = require("util");
+const minecraft = require("./minecraft");
 const functionMap = new core_1.AllocatedPointer(0x100);
 core_1.chakraUtil.JsAddRef(functionMap);
 const callNativeFunction = core_1.chakraUtil.JsCreateFunction(asmcode.callNativeFunction, null);
@@ -25,7 +25,7 @@ function initFunctionMap() {
     asmcode.uv_async_alloc = core_1.uv_async.alloc;
     asmcode.uv_async_post = core_1.uv_async.post;
     asmcode.uv_async_call = core_1.uv_async.call;
-    asmcode.vsnprintf = symbols_1.proc2.vsnprintf;
+    asmcode.vsnprintf = minecraft.addressof_vsnprintf;
     asmcode.js_null = core_1.chakraUtil.asJsValueRef(null);
     asmcode.js_undefined = core_1.chakraUtil.asJsValueRef(undefined);
     asmcode.runtimeErrorRaise = core_1.runtimeError.raise;
@@ -64,6 +64,19 @@ function remapType(type) {
     }
     return type;
 }
+const typeIndex = Symbol('typeIndex');
+let typeIndexCounter = 0;
+var TypeIn;
+(function (TypeIn) {
+    function getIndex() {
+        let v = this[typeIndex];
+        if (v == null) {
+            v = this[typeIndex] = ++typeIndexCounter;
+        }
+        return v;
+    }
+    TypeIn.getIndex = getIndex;
+})(TypeIn = exports.TypeIn || (exports.TypeIn = {}));
 function invalidParameterError(paramName, expected, actual) {
     throw TypeError(`unexpected parameter type (${paramName}, expected=${expected}, actual=${actual != null ? actual.constructor.name : actual})`);
 }
@@ -91,10 +104,15 @@ var makefunc;
             this[makefunc.ctor_move] = _ctor_move;
             this.isTypeOf = isTypeOf;
             this.isTypeOfWeak = isTypeOfWeak;
+            this.getIndex();
+        }
+        getIndex() {
+            (0, common_1.abstract)();
         }
     }
     makefunc.ParamableT = ParamableT;
     ParamableT.prototype[makefunc.useXmmRegister] = false;
+    ParamableT.prototype.getIndex = TypeIn.getIndex;
     /**
      * allocate temporal memory for using in NativeType
      * it will removed at native returning
@@ -264,8 +282,11 @@ var makefunc;
             gen.writeln(`const func=vftable.getPointer(${vfoff});`);
         }
         else {
-            if (!(functionPointer instanceof core_1.VoidPointer))
+            if (!(functionPointer instanceof core_1.VoidPointer)) {
+                if (functionPointer == null)
+                    throw Error(`the function pointer is null`);
                 throw TypeError(`arg1, expected=*Pointer, actual=${functionPointer}`);
+            }
             gen.import('func', functionPointer);
         }
         const returnTypeIsClass = (0, util_1.isBaseOf)(returnTypeResolved, core_1.StructurePointer);

@@ -3,9 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HashedString = void 0;
 const tslib_1 = require("tslib");
 const core_1 = require("../core");
+const dnf_1 = require("../dnf");
 const nativeclass_1 = require("../nativeclass");
 const nativetype_1 = require("../nativetype");
-const proc_1 = require("./proc");
+const minecraft = require("../minecraft");
 let HashedString = class HashedString extends nativeclass_1.NativeClass {
     [nativetype_1.NativeType.ctor]() {
         this.hash = null;
@@ -26,5 +27,5 @@ HashedString = (0, tslib_1.__decorate)([
 ], HashedString);
 exports.HashedString = HashedString;
 const str_offset = HashedString.offsetOf('str');
-const computeHash = proc_1.procHacker.js('?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', core_1.VoidPointer, null, core_1.VoidPointer);
+const computeHash = (0, dnf_1.dnf)(minecraft.HashedString.computeHash).reform(core_1.VoidPointer, null, core_1.VoidPointer);
 //# sourceMappingURL=hashedstring.js.map

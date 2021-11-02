@@ -101,3 +101,38 @@ export declare enum DisplaySlot {
     List = "list",
     Sidebar = "sidebar"
 }
+export declare enum CommandCheatFlag {
+    Cheat = 0,
+    NotCheat = 64,
+    /** @deprecated */
+    NoCheat = 64,
+    None = 0
+}
+export declare enum CommandExecuteFlag {
+    Allowed = 0,
+    Disallowed = 16
+}
+export declare enum CommandSyncFlag {
+    Synced = 0,
+    Local = 8
+}
+export declare enum CommandTypeFlag {
+    None = 0,
+    Message = 32
+}
+export declare enum CommandUsageFlag {
+    Normal = 0,
+    Test = 1,
+    /** @deprecated Use CommandVisibilityFlag */
+    Hidden = 2,
+    _Unknown = 128
+}
+/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
+export declare enum CommandVisibilityFlag {
+    Visible = 0,
+    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
+    HiddenFromCommandBlockOrigin = 2,
+    HiddenFromPlayerOrigin = 4,
+    /** Still visible to console */
+    Hidden = 6
+}

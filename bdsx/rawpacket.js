@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RawPacket = void 0;
+const mcglobal_1 = require("./mcglobal");
 const minecraft_1 = require("./minecraft");
 const pointer_1 = require("./pointer");
 const sharedpointer_1 = require("./sharedpointer");
@@ -62,7 +63,7 @@ class RawPacket extends abstractstream_1.AbstractWriter {
     sendTo(target) {
         if (this.packet === null)
             throw Error('packetId is not defined. Please set it on constructor');
-        minecraft_1.networkHandler._sendInternal(target, this.packet, this.data);
+        mcglobal_1.mcglobal.networkHandler._sendInternal(target, this.packet, this.data);
     }
 }
 exports.RawPacket = RawPacket;

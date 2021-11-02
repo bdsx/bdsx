@@ -11,7 +11,9 @@ export declare namespace mce {
         generate(): UUID;
         toString(uuid: UUID): string;
     };
+    /** @deprecated */
     type UUID = string;
+    /** @deprecated */
     const UUIDWrapper: import("./pointer").WrapperType<string>;
     /** @deprecated */
     class Blob extends NativeClass {

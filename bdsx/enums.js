@@ -1,7 +1,7 @@
 "use strict";
 // enums but not found in BDS symbols
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DisplaySlot = exports.ContainerId = exports.AttributeName = exports.MobEffectIds = exports.AttributeId = exports.PistonAction = void 0;
+exports.CommandVisibilityFlag = exports.CommandUsageFlag = exports.CommandTypeFlag = exports.CommandSyncFlag = exports.CommandExecuteFlag = exports.CommandCheatFlag = exports.DisplaySlot = exports.ContainerId = exports.AttributeName = exports.MobEffectIds = exports.AttributeId = exports.PistonAction = void 0;
 require("./minecraft_impl/enums");
 var PistonAction;
 (function (PistonAction) {
@@ -111,4 +111,45 @@ var DisplaySlot;
     DisplaySlot["List"] = "list";
     DisplaySlot["Sidebar"] = "sidebar";
 })(DisplaySlot = exports.DisplaySlot || (exports.DisplaySlot = {}));
+var CommandCheatFlag;
+(function (CommandCheatFlag) {
+    CommandCheatFlag[CommandCheatFlag["Cheat"] = 0] = "Cheat";
+    CommandCheatFlag[CommandCheatFlag["NotCheat"] = 64] = "NotCheat";
+    /** @deprecated */
+    CommandCheatFlag[CommandCheatFlag["NoCheat"] = 64] = "NoCheat";
+    CommandCheatFlag[CommandCheatFlag["None"] = 0] = "None";
+})(CommandCheatFlag = exports.CommandCheatFlag || (exports.CommandCheatFlag = {}));
+var CommandExecuteFlag;
+(function (CommandExecuteFlag) {
+    CommandExecuteFlag[CommandExecuteFlag["Allowed"] = 0] = "Allowed";
+    CommandExecuteFlag[CommandExecuteFlag["Disallowed"] = 16] = "Disallowed";
+})(CommandExecuteFlag = exports.CommandExecuteFlag || (exports.CommandExecuteFlag = {}));
+var CommandSyncFlag;
+(function (CommandSyncFlag) {
+    CommandSyncFlag[CommandSyncFlag["Synced"] = 0] = "Synced";
+    CommandSyncFlag[CommandSyncFlag["Local"] = 8] = "Local";
+})(CommandSyncFlag = exports.CommandSyncFlag || (exports.CommandSyncFlag = {}));
+var CommandTypeFlag;
+(function (CommandTypeFlag) {
+    CommandTypeFlag[CommandTypeFlag["None"] = 0] = "None";
+    CommandTypeFlag[CommandTypeFlag["Message"] = 32] = "Message";
+})(CommandTypeFlag = exports.CommandTypeFlag || (exports.CommandTypeFlag = {}));
+var CommandUsageFlag;
+(function (CommandUsageFlag) {
+    CommandUsageFlag[CommandUsageFlag["Normal"] = 0] = "Normal";
+    CommandUsageFlag[CommandUsageFlag["Test"] = 1] = "Test";
+    /** @deprecated Use CommandVisibilityFlag */
+    CommandUsageFlag[CommandUsageFlag["Hidden"] = 2] = "Hidden";
+    CommandUsageFlag[CommandUsageFlag["_Unknown"] = 128] = "_Unknown";
+})(CommandUsageFlag = exports.CommandUsageFlag || (exports.CommandUsageFlag = {}));
+/** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
+var CommandVisibilityFlag;
+(function (CommandVisibilityFlag) {
+    CommandVisibilityFlag[CommandVisibilityFlag["Visible"] = 0] = "Visible";
+    /** Bug: Besides from being hidden from command blocks, players cannot see it also well, but they are still able to execute */
+    CommandVisibilityFlag[CommandVisibilityFlag["HiddenFromCommandBlockOrigin"] = 2] = "HiddenFromCommandBlockOrigin";
+    CommandVisibilityFlag[CommandVisibilityFlag["HiddenFromPlayerOrigin"] = 4] = "HiddenFromPlayerOrigin";
+    /** Still visible to console */
+    CommandVisibilityFlag[CommandVisibilityFlag["Hidden"] = 6] = "Hidden";
+})(CommandVisibilityFlag = exports.CommandVisibilityFlag || (exports.CommandVisibilityFlag = {}));
 //# sourceMappingURL=enums.js.map

@@ -4,6 +4,7 @@ exports.dnf = void 0;
 const assembler_1 = require("./assembler");
 const dll_1 = require("./dll");
 const makefunc_1 = require("./makefunc");
+const ready_1 = require("./minecraft_impl/ready");
 const util_1 = require("./util");
 var Prop;
 (function (Prop) {
@@ -97,7 +98,7 @@ function makeFunctionNativeCall(nf) {
                 const func = overload[nativeCall] || makeOverloadNativeCall(overload);
                 return func.apply(this, arguments);
             }
-            throw Error('overload not found');
+            throw Error(`overload not found`);
         };
     }
 }
@@ -121,9 +122,9 @@ exports.dnf = dnf;
         getVFTableOffset() {
             if (this.thisType === null)
                 throw Error(`this type is not determined`);
-            const vftable = this.thisType.__vftable;
+            const vftable = this.thisType.addressof_vftable;
             if (vftable == null)
-                throw Error(`${this.thisType.name}.__vftable not found`);
+                throw Error(`${this.thisType.name}.addressof_vftable not found`);
             const addr = this.getAddress();
             for (let offset = 0; offset < 0x1000; offset += 8) {
                 if (vftable.getPointer(offset).equals(addr))
@@ -204,10 +205,28 @@ exports.dnf = dnf;
             return null;
         }
         getAddress() {
-            return getAddressOf(this.nf);
+            return dll_1.dll.current.add(this.getInfo()[Prop.rva]);
         }
         getInfo() {
-            return getOverloadInfo(this.nf);
+            let nf = this.nf;
+            const overloads = nf.overloads;
+            if (overloads != null) {
+                if (overloads.length === 0) {
+                    throw Error(`${this.name} does not have overloads`);
+                }
+                else if (overloads.length >= 2) {
+                    throw Error(`${this.name} has multiple overloads`);
+                }
+                nf = overloads[0];
+            }
+            const info = nf.overloadInfo;
+            if (info == null) {
+                if (!ready_1.minecraftTsReady.isReady()) {
+                    throw Error(`minecraft.ts is not ready. use minecraftTsReady(callback) for using dnf`);
+                }
+                throw Error(`${this.name} does not have a overload info`);
+            }
+            return info;
         }
         getRegistersForParameters() {
             const info = this.getInfo();
@@ -244,6 +263,12 @@ exports.dnf = dnf;
             for (let i = 0; i < overloads.length; i++) {
                 const overload = overloads[i];
                 const info = overload.overloadInfo;
+                if (info == null) {
+                    if (!ready_1.minecraftTsReady.isReady()) {
+                        throw Error(`minecraft.ts is not ready. use minecraftTsReady(callback) for using dnf`);
+                    }
+                    throw Error(`it does not have a overload info`);
+                }
                 const paramTypes2 = info[1];
                 if ((0, util_1.arrayEquals)(paramTypes2, paramTypes)) {
                     overloads[i] = overload;
@@ -270,9 +295,9 @@ exports.dnf = dnf;
     }
     dnf.Tool = Tool;
     function makeOverload() {
-        function nf() {
+        const nf = 0 || function () {
             return (nf[nativeCall] || makeOverloadNativeCall(nf)).apply(this, arguments);
-        }
+        };
         return nf;
     }
     dnf.makeOverload = makeOverload;
@@ -293,6 +318,9 @@ exports.dnf = dnf;
         }
         const info = nf.overloadInfo;
         if (info == null) {
+            if (!ready_1.minecraftTsReady.isReady()) {
+                throw Error(`minecraft.ts is not ready. use minecraftTsReady(callback) for using dnf`);
+            }
             throw Error(`it does not have a overload info`);
         }
         return info;
@@ -302,9 +330,9 @@ exports.dnf = dnf;
      * make a deferred native function
      */
     function make() {
-        function nf() {
+        const nf = 0 || function () {
             return (nf[nativeCall] || makeFunctionNativeCall(nf)).apply(this, arguments);
-        }
+        };
         nf.isNativeFunction = true;
         return nf;
     }

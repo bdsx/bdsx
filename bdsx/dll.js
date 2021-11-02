@@ -106,6 +106,7 @@ NativeModule.prototype.getProcAddressByOrdinal = makefunc_1.makefunc.js(core_1.c
 var dll;
 (function (dll) {
     dll.current = NativeModule.get(null); // get the exe module, it's the address base of RVA
+    dll.base = dll.current.as(core_1.StaticPointer);
     let ntdll;
     (function (ntdll) {
         ntdll.module = NativeModule.get('ntdll.dll');
@@ -161,6 +162,7 @@ var dll;
         msvcp140.std_cin = msvcp140.module.getProcAddress("?cin@std@@3V?$basic_istream@DU?$char_traits@D@std@@@1@A");
     })(msvcp140 = dll.msvcp140 || (dll.msvcp140 = {}));
 })(dll = exports.dll || (exports.dll = {}));
+core_1.pdb.close();
 const RtlCaptureContext = dll.kernel32.module.getProcAddress('RtlCaptureContext');
 asmcode.RtlCaptureContext = RtlCaptureContext;
 asmcode.memset = dll.vcruntime140.memset.pointer;

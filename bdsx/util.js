@@ -329,6 +329,11 @@ function inheritMultiple(child, base) {
             continue;
         childp[key] = basep[key];
     }
+    for (const key of Object.getOwnPropertyNames(base)) {
+        if ((key in child))
+            continue;
+        child[key] = base[key];
+    }
 }
 exports.inheritMultiple = inheritMultiple;
 var DeferPromise;

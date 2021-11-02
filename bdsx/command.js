@@ -102,7 +102,7 @@ class CustomCommandFactory {
 exports.CustomCommandFactory = CustomCommandFactory;
 // executer
 const commandVersion = CommandVersion.CurrentVersion;
-const commandContextRefCounterVftable = minecraft.std._Ref_count_obj2.make(minecraft.CommandContext).__vftable;
+const commandContextRefCounterVftable = minecraft.std._Ref_count_obj2.make(minecraft.CommandContext).addressof_vftable;
 const CommandContextSharedPtr = sharedpointer_1.SharedPtr.make(command_1.CommandContext);
 function createCommandContext(command, commandOrigin) {
     const sharedptr = new CommandContextSharedPtr(true);

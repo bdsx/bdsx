@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { AnyFunction, Bufferable, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
-import { makefunc } from "./makefunc";
+import { makefunc, TypeIn } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import util = require('util');
 export declare type KeysFilter<T, FILTER> = {
@@ -48,6 +48,7 @@ export declare class NativeClass extends StructurePointer {
     /** @deprecated */
     static readonly symbol?: string;
     static isNativeClassType(type: Record<string, any>): type is typeof NativeClass;
+    static getIndex: typeof TypeIn.getIndex;
     [NativeType.size]: number;
     [NativeType.ctor](): void;
     [NativeType.dtor](): void;

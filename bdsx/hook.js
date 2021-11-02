@@ -38,7 +38,7 @@ function hook(nf, name) {
     else {
         name = '[Native Function]';
         if (nf instanceof core_1.VoidPointer) {
-            return new hook.PtrTool(name, nf.add());
+            return new hook.PtrTool(name, nf);
         }
         thisType = null;
         if (!(nf instanceof Function))
@@ -75,10 +75,9 @@ function nameWithOffset(name, offset) {
             return this;
         }
         getAddress() {
-            return this.ptr;
+            return this.ptr.add(this._offset);
         }
         /**
-         * @param offset offset from target
          * @param ptr target pointer
          * @param originalCode old codes
          * @param ignoreArea pairs of offset, ignores partial bytes.
@@ -125,17 +124,15 @@ function nameWithOffset(name, offset) {
          * @param ignoreArea pairs of offset, ignores partial bytes.
          */
         check(originalCode, ignoreArea) {
-            return this._check(this.getAddress(), originalCode, ignoreArea);
+            const ptr = this.getAddress();
+            return this._check(ptr, originalCode, ignoreArea);
         }
         /**
-         * @param offset offset from target
          * @param originalCode bytes comparing before hooking
          * @param ignoreArea pair offsets to ignore of originalCode
          */
         writeNop(originalCode, ignoreArea) {
             const ptr = this.getAddress();
-            if (this._offset != null)
-                ptr.move(this._offset);
             const size = originalCode.length;
             const unlock = new unlocker_1.MemoryUnlocker(ptr, size);
             if (this._check(ptr, originalCode, ignoreArea)) {
@@ -143,15 +140,13 @@ function nameWithOffset(name, offset) {
             }
             unlock.done();
         }
-        write(asm, offset, originalCode, ignoreArea) {
+        write(asm, originalCode, ignoreArea) {
             const ptr = this.getAddress();
-            if (this._offset != null)
-                ptr.move(this._offset);
             const buffer = asm instanceof Uint8Array ? asm : asm.buffer();
             const unlock = new unlocker_1.MemoryUnlocker(ptr, buffer.length);
             if (originalCode != null) {
                 if (originalCode.length < buffer.length) {
-                    console.error(colors.red(`${this._subject || this.name}: ${nameWithOffset(this.name, offset)}: writing space is too small`));
+                    console.error(colors.red(`${this._subject || this.name}: ${nameWithOffset(this.name, this._offset)}: writing space is too small`));
                     unlock.done();
                     return;
                 }
@@ -173,6 +168,12 @@ function nameWithOffset(name, offset) {
         constructor(nf, name, thisType, opts) {
             super(nf, name, thisType);
             this.opts = opts;
+        }
+        getAddress() {
+            let v = this.getInfo()[0];
+            if (this._offset != null)
+                v += this._offset;
+            return dll_1.dll.current.add(v);
         }
         options(opts) {
             this.opts = opts;
@@ -244,7 +245,7 @@ function nameWithOffset(name, offset) {
             return original;
         }
         call(callback) {
-            const [_, paramTypes, returnType, opts] = dnf_1.dnf.getOverloadInfo(this.nf);
+            const [_, paramTypes, returnType, opts] = this.getInfo();
             const original = this.raw(original => {
                 const nopts = {};
                 nopts.__proto__ = opts;

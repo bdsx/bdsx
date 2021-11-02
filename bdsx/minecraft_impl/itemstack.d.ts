@@ -24,11 +24,6 @@ declare module "../minecraft" {
          * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
          */
         getEnchantValue(): number;
-        getItemSafe(): Item | null;
-        getAmount(): number;
-        setAmount(amount: number): void;
-        getItemId(): ItemId;
-        isBlock(): boolean;
     }
     namespace ItemStack {
         /**

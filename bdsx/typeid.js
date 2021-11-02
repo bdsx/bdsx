@@ -5,11 +5,7 @@ exports.TypeIdCounter = void 0;
 const dnf_1 = require("./dnf");
 const minecraft_1 = require("./minecraft");
 const nativeclass_1 = require("./nativeclass");
-const nativetype_1 = require("./nativetype");
-const pointer_1 = require("./pointer");
-const counterWrapper = Symbol();
 const typeidmap = Symbol();
-const IdCounter = pointer_1.Wrapper.make(nativetype_1.uint16_t);
 /**
  * dummy class for typeid
  */
@@ -20,8 +16,8 @@ class TypeIdCounter extends nativeclass_1.NativeClass {
         if (typeid != null) {
             return typeid;
         }
-        const counter = this[counterWrapper];
-        if (counter.value === 0)
+        const TypeIdClass = minecraft_1.typeid_t.make(this);
+        if (TypeIdClass.count === 0)
             throw Error('Cannot make type_id before launch');
         const getTypeId = (0, dnf_1.dnf)(minecraft_1.type_id).getByTemplates(null, this, type);
         if (getTypeId != null) {
@@ -31,7 +27,7 @@ class TypeIdCounter extends nativeclass_1.NativeClass {
         }
         else {
             const newid = new minecraft_1.typeid_t(true);
-            newid.id = counter.value++;
+            newid.id = TypeIdClass.count++;
             map.set(type, newid);
             return newid;
         }
