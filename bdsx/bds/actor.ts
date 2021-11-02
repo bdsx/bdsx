@@ -459,6 +459,9 @@ export class Actor extends NativeClass {
     isItem():this is ItemActor {
         abstract();
     }
+    isSneaking(): boolean {
+        abstract();
+    }
     /**
      * Returns the entity's attribute map
      */
