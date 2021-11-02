@@ -16,15 +16,17 @@ import type { SerializedSkin } from "./skin";
 
 export class Player extends Actor {
     abilities: Abilities;
+
     playerUIContainer: PlayerUIContainer;
-    /** @deprecated Use `this.getSpawnDimension()` instead */
+
     get respawnDimension(): DimensionId {
         return this.getSpawnDimension();
     }
-    /** @deprecated Use `this.getSpawnPosition()` instead */
+
     get respawnPosition(): BlockPos {
         return this.getSpawnPosition();
     }
+
     deviceId: string;
 
     protected _setName(name: string): void {
@@ -80,10 +82,24 @@ export class Player extends Actor {
     }
 
     /**
+     * Property of getGameType
+     */
+    get gameType(): GameType {
+        return this.getGameType();
+    }
+
+    /**
      * Returns the player's gamemode
      */
     getGameType(): GameType {
         abstract();
+    }
+
+    /**
+     * Property of getInventory
+     */
+    get inventory(): PlayerInventory {
+        return this.getInventory();
     }
 
     /**
@@ -94,10 +110,24 @@ export class Player extends Actor {
     }
 
     /**
+     * Property of getMainhandSlot
+     */
+    get mainhandSlot(): ItemStack {
+        return this.getMainhandSlot();
+    }
+
+    /**
      * Returns the item currently held by the player
      */
     getMainhandSlot(): ItemStack {
         abstract();
+    }
+
+    /**
+     * Property of getOffhandSlot
+     */
+    get offhandSlot(): ItemStack {
+        return this.getOffhandSlot();
     }
 
     /**
@@ -108,11 +138,25 @@ export class Player extends Actor {
     }
 
     /**
+     * Property of getPermissionLevel
+     */
+    get permissionLevel(): PlayerPermission {
+        return this.getPermissionLevel();
+    }
+
+    /**
      * Returns the player's permission level
      * @see PlayerPermission
      */
     getPermissionLevel(): PlayerPermission {
         abstract();
+    }
+
+    /**
+     * Property of getSkin
+     */
+    get skin(): SerializedSkin {
+        return this.getSkin();
     }
 
     /**
@@ -130,6 +174,13 @@ export class Player extends Actor {
      */
     startCooldown(item: Item): void {
         abstract();
+    }
+
+    /**
+     * Property of setGameType
+     */
+    set gameType(gameType: GameType) {
+        this.setGameType(gameType);
     }
 
     /**
@@ -186,7 +237,7 @@ export class Player extends Actor {
      * @param pos - Respawn position
      * @param dimension - Dimension
      */
-    setRespawnPosition(pos: BlockPos, dimension: DimensionId):void {
+    setRespawnPosition(pos: BlockPos, dimension: DimensionId): void {
         abstract();
     }
 
@@ -206,6 +257,13 @@ export class Player extends Actor {
     }
 
     /**
+     * Property of getCertificate
+     */
+    get certificate(): Certificate {
+        return this.getCertificate();
+    }
+
+    /**
      * Returns the player's certificate
      */
     getCertificate(): Certificate {
@@ -214,8 +272,6 @@ export class Player extends Actor {
 }
 
 export class ServerPlayer extends Player {
-    /** @deprecated Use `this.getNetworkIdentifier()` instead */
-    networkIdentifier: NetworkIdentifier;
 
     protected _sendInventory(shouldSelectSlot: boolean): void {
         abstract();
@@ -229,9 +285,16 @@ export class ServerPlayer extends Player {
     }
 
     /**
+     * Property of getNetworkIdentifier
+     */
+    get networkIdentifier() {
+        return this.getNetworkIdentifier();
+    }
+
+    /**
      * Returns the player's NetworkIdentifier
      */
-    getNetworkIdentifier():NetworkIdentifier {
+    getNetworkIdentifier(): NetworkIdentifier {
         abstract();
     }
 
@@ -285,7 +348,7 @@ export class ServerPlayer extends Player {
      * @param slot - Armor slot
      * @param itemStack - Armor item to set
      */
-    setArmor(slot: ArmorSlot, itemStack:ItemStack): void {
+    setArmor(slot: ArmorSlot, itemStack: ItemStack): void {
         abstract();
     }
 
@@ -593,6 +656,7 @@ export class PlayerListEntry extends NativeClass {
     static constructWith(player: Player): PlayerListEntry {
         abstract();
     }
+
     /** @deprecated */
     static create(player: Player): PlayerListEntry {
         return PlayerListEntry.constructWith(player);
