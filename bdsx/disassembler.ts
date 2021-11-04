@@ -208,8 +208,16 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             if (wordoper) return new asm.Operation(asm.code.cbw, []);
             if (size === OperationSize.qword) return new asm.Operation(asm.code.cdqe, []);
             return new asm.Operation(asm.code.cwde, []);
+        } else if (v === 0xc2) { // ret
+            const v = ptr.readInt16();
+            return new asm.Operation(asm.code.ret_c, [v]);
         } else if (v === 0xc3) { // ret
             return new asm.Operation(asm.code.ret, []);
+        } else if (v === 0xca) { // retf
+            const v = ptr.readInt16();
+            return new asm.Operation(asm.code.retf_c, [v]);
+        } else if (v === 0xcb) { // retf
+            return new asm.Operation(asm.code.retf, []);
         } else if (v === 0xcc) { // int3
             return new asm.Operation(asm.code.int3, []);
         } else if (v === 0xcd) { // int

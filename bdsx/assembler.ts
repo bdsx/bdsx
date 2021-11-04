@@ -723,6 +723,20 @@ export class X64Assembler {
         return this.put(0xc3);
     }
 
+    ret_c(n:number):this {
+        this.put(0xc2);
+        return this.writeInt16(n);
+    }
+
+    retf(): this {
+        return this.put(0xcb);
+    }
+
+    retf_c(n:number):this {
+        this.put(0xca);
+        return this.writeInt16(n);
+    }
+
     nop(): this {
         return this.put(0x90);
     }
