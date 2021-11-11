@@ -191,6 +191,14 @@ export class Player extends Actor {
     }
 
     /**
+     * Sets the player's bed respawn position
+     * @param pos - Position of the bed
+     */
+    setBedRespawnPosition(pos: BlockPos): void {
+        abstract();
+    }
+
+    /**
      * Returns the Dimension ID of the player's respawn point
      * @remarks Currently, it's always the Overworld
      */
@@ -202,6 +210,20 @@ export class Player extends Actor {
      * Returns the position of the player's respawn point
      */
     getSpawnPosition(): BlockPos {
+        abstract();
+    }
+
+    /**
+     *Clears the player's respawn position
+     */
+    clearRespawnPosition(): void {
+        abstract();
+    }
+
+    /**
+     * Returns if the player has respawn position
+     */
+    hasRespawnPosition(): boolean {
         abstract();
     }
 
