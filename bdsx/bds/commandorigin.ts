@@ -104,8 +104,8 @@ const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 // void destruct(CommandOrigin* origin);
 CommandOrigin.prototype.destruct = makefunc.js([0x00], void_t, {this: CommandOrigin});
 
-// std::string CommandOrigin::getRequestId();
-CommandOrigin.prototype.getRequestId = makefunc.js([0x08], CxxString, {this: CommandOrigin, structureReturn: true});
+// std::string& CommandOrigin::getRequestId();
+CommandOrigin.prototype.getRequestId = makefunc.js([0x08], CxxString, {this: CommandOrigin});
 
 // std::string CommandOrigin::getName();
 CommandOrigin.prototype.getName = makefunc.js([0x10], CxxString, {this: CommandOrigin, structureReturn: true});

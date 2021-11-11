@@ -4,7 +4,6 @@ import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat } from "bdsx/bds/blockpos";
 import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
-import { serverInstance } from "bdsx/bds/server";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
@@ -13,7 +12,7 @@ import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{
     output.success(
         `raw text example> origin=${origin.getName()}\n`+
-        `text: `+param.rawtext.text);
+        `text: ${param.rawtext.text}`);
 }, { rawtext:CommandRawText });
 
 // optional

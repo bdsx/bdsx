@@ -20,6 +20,7 @@ import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
+import { command } from "bdsx/command";
 import { AttributeName, CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
@@ -452,6 +453,7 @@ Tester.test({
                 const size = level.players.size();
                 this.equals(size, 0, 'origin.getLevel().players.size is not zero');
                 this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
+                this.equals(ctx.origin.getRequestId(), '00000000-0000-0000-0000-000000000000', 'unexpected id');
                 events.command.remove(cb);
             }
         };
@@ -467,6 +469,21 @@ Tester.test({
             };
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
+        });
+        command.register('registertest', 'bdsx command test').overload((param, origin, output)=>{
+            output.success('passed');
+        }, {});
+
+        await new Promise<void>((resolve) => {
+            const outputcb = (output:string) => {
+                if (output === 'passed') {
+                    events.commandOutput.remove(outputcb);
+                    resolve();
+                    return CANCEL;
+                }
+            };
+            events.commandOutput.on(outputcb);
+            bedrockServer.executeCommandOnConsole('registertest');
         });
     },
 

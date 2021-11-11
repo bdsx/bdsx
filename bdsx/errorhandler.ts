@@ -62,7 +62,7 @@ export function installErrorHandler():void {
                 events.errorFire(err);
             }
         }, ms, ...args);
-    };
+    } as any;
     const oldSetTimeout = setTimeout;
     global.setTimeout = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
         return oldSetTimeout((...args:any[])=>{
