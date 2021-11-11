@@ -1,10 +1,9 @@
 // Chat Listening
-import { MinecraftPacketIds } from "bdsx/bds/packetids";
-import { CANCEL } from "bdsx/common";
-import { events } from "bdsx/event";
-import { system } from "./bedrockapi-system";
+console.log("[LOGGER] Prepare logging, please wait...!");
+import { command, nethook, MinecraftPacketIds } from 'bdsx';
 
-events.packetBefore(MinecraftPacketIds.Text).on(ev => {
-    console.log(`[Chat] ${ev.message}`) //logging to console
-	
+nethook.before(MinecraftPacketIds.Text).on((packet, networkIdentifier) => {
+    const name = packet.name;
+    const message = packet.message;
+    console.log(`[INFO] <${name}> ${message}`); //log the ingame chat to console
 });
