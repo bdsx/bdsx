@@ -181,6 +181,7 @@ Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Ac
 Actor.prototype.setName = procHacker.js("Actor::setNameTag", void_t, {this:Actor}, CxxString);
 Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.hasTag = procHacker.js("Actor::hasTag", bool_t, {this:Actor}, CxxString);
+Actor.prototype.despawn = procHacker.js("Actor::despawn", void_t, {this:Actor});
 Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
 Actor.prototype.getRotation = procHacker.js("Actor::getRotation", Vec2, {this:Actor, structureReturn: true});
