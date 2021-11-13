@@ -680,9 +680,19 @@ Tester.test({
     },
 
     chat() {
+        const MAX_CHAT = 6;
+        events.packetSend(MinecraftPacketIds.Text).on(ev => {
+            if (chatCancelCounter >= 2) return;
+            if (ev.message === 'TEST YEY!') {
+                chatCancelCounter ++;
+                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
+                if (chatCancelCounter === 2) return CANCEL; // canceling
+            }
+        });
+
         events.packetBefore(MinecraftPacketIds.Text).on((packet, ni) => {
+            if (chatCancelCounter < 2) return;
             if (packet.message == "TEST YEY!") {
-                const MAX_CHAT = 5;
                 chatCancelCounter++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
                 this.equals(connectedNi, ni, 'the network identifier does not match');
@@ -721,6 +731,8 @@ Tester.test({
             this.equals(v.currentPlayers, 0, 'player count mismatch');
             this.equals(v.maxPlayers, serverInstance.getMaxPlayers(), 'max player mismatch');
         }));
+        serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement();
+
         events.packetAfter(MinecraftPacketIds.Login).once(this.wrap((packet, ni)=>{
             setTimeout(this.wrap(()=>{
                 events.queryRegenerate.once(v=>{

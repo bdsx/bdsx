@@ -484,6 +484,7 @@ export proc packetAfterHook
 endp
 
 export def onPacketSend:qword
+export def packetSendAllCancelPoint:qword
 export proc packetSendAllHook
     stack 28h
     mov r8,r15
@@ -491,6 +492,12 @@ export proc packetSendAllHook
     mov rcx,r14
     call onPacketSend
     unwind
+
+    test eax, eax
+    jz _pass
+    mov rax, packetSendAllCancelPoint
+    mov [rsp], rax
+_pass:
 
     ; original codes
     mov rax, [r15]

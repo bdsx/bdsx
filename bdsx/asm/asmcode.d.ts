@@ -108,6 +108,8 @@ export namespace asmcode {
     export const packetAfterHook:NativePointer;
     export let onPacketSend:VoidPointer;
     export const addressof_onPacketSend:NativePointer;
+    export let packetSendAllCancelPoint:VoidPointer;
+    export const addressof_packetSendAllCancelPoint:NativePointer;
     export const packetSendAllHook:NativePointer;
     export let getLineProcessTask:VoidPointer;
     export const addressof_getLineProcessTask:NativePointer;
