@@ -227,7 +227,7 @@ bedrockServer.withLoading().then(()=>{
         });
     const onPacketSendNp = makefunc.np(onPacketSend, int32_t, null, NetworkHandler, NetworkIdentifier, Packet);
     asmcode.onPacketSend = onPacketSendNp;
-    asmcode.packetSendAllCancelPoint = asmcode.packetSendAllHook.add(0xC5);
+    asmcode.packetSendAllCancelPoint = proc['LoopbackPacketSender::sendToClients'].add(0xb5);
     procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0x90,
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
