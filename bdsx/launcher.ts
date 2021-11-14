@@ -385,9 +385,11 @@ export namespace bedrockServer
      * it does the same thing with executeCommandOnConsole
      * but call the internal function directly
      */
-    export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
+    export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT|null {
+        const level = bd_server.serverInstance.minecraft.getLevel() as ServerLevel;
+        if (level === null) return null;
         const origin = createServerCommandOrigin('Server',
-            bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
+            level, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
 

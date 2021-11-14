@@ -8,7 +8,7 @@ export class LevelChunk extends NativeClass {
     getBiome(pos:ChunkBlockPos):Biome {
         abstract();
     }
-    getLevel():Level {
+    getLevel():Level|null {
         abstract();
     }
     getPosition():ChunkPos {
@@ -30,7 +30,7 @@ export class LevelChunk extends NativeClass {
 
 @nativeClass(null)
 export class ChunkSource extends NativeClass {
-    getLevel():Level {
+    getLevel():Level|null {
         abstract();
     }
 }

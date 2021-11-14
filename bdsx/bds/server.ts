@@ -67,7 +67,7 @@ export class Minecraft extends NativeClass {
 
     server:DedicatedServer;
 
-    getLevel():Level {
+    getLevel():Level|null {
         abstract();
     }
     getNetworkHandler():NetworkHandler {
@@ -125,14 +125,18 @@ export class ServerInstance extends NativeClass {
         abstract();
     }
 
-    createDimension(id:DimensionId):Dimension {
-        return this.minecraft.getLevel().createDimension(id);
+    createDimension(id:DimensionId):Dimension|null {
+        const level = this.minecraft.getLevel();
+        if (level === null) return null;
+        return level.createDimension(id);
     }
     /**
      * Returns the number of current online players
      */
-    getActivePlayerCount():number {
-        return this.minecraft.getLevel().getActivePlayerCount();
+    getActivePlayerCount():number|null {
+        const level = this.minecraft.getLevel();
+        if (level === null) return null;
+        return level.getActivePlayerCount();
     }
     /**
      * Disconnects all clients with the given message
@@ -173,14 +177,18 @@ export class ServerInstance extends NativeClass {
     /**
      * Returns an array of all online players
      */
-    getPlayers():ServerPlayer[] {
-        return this.minecraft.getLevel().getPlayers();
+    getPlayers():ServerPlayer[]|null {
+        const level = this.minecraft.getLevel();
+        if (level === null) return null;
+        return level.getPlayers();
     }
     /**
      * Resends all clients the updated command list
      */
     updateCommandList():void {
-        for (const player of this.getPlayers()) {
+        let players = this.getPlayers();
+        if (players === null) return;
+        for (const player of players) {
             player.sendNetworkPacket(this.minecraft.getCommands().getRegistry().serializeAvailableCommands());
         }
     }

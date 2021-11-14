@@ -694,7 +694,7 @@ export class Actor extends NativeClass {
     /**
      * Returns the Level instance of the entity currently in
      */
-    getLevel():Level {
+    getLevel():Level|null {
         abstract();
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {

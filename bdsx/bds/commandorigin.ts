@@ -49,7 +49,7 @@ export class CommandOrigin extends NativeClass {
     getWorldPosition(): Vec3 {
         abstract();
     }
-    getLevel(): Level {
+    getLevel(): Level|null {
         abstract();
     }
 
