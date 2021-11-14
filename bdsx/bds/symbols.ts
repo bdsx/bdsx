@@ -62,6 +62,7 @@ const symbols = [
     'Actor::removeTag',
     'Actor::setNameTag',
     'Actor::hurt',
+    'Actor::despawn',
     'Actor::getArmor',
     'Actor::burn',
     'Actor::setSneaking',
