@@ -489,6 +489,9 @@ export class Actor extends NativeClass {
     setScoreTag(text:string):void{
         abstract();
     }
+    despawn():void{
+        abstract();
+    }
     getScoreTag():string{
         abstract();
     }
