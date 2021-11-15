@@ -581,6 +581,7 @@ declare module "./core"
     interface VoidPointer
     {
         [asm.splitTwo32Bits]():[number, number];
+        [util.inspect.custom](depth:number, options:Record<string, any>):unknown;
     }
 }
 declare global

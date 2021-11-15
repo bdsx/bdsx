@@ -11,6 +11,7 @@ declare module "./assembler"
     namespace asm
     {
         function const_str(str:string, encoding?:BufferEncoding):Buffer;
+        function getFunctionNameFromEntryAddress(address:VoidPointer):string|null;
         function getFunctionName(address:VoidPointer):string|null;
         function setFunctionNames(base:VoidPointer, labels:Record<string, number>):void;
     }
@@ -22,12 +23,15 @@ asm.const_str = function(str:string, encoding:BufferEncoding='utf-8'):Buffer {
     chakraUtil.JsAddRef(buf);
     return buf;
 };
+asm.getFunctionNameFromEntryAddress = function(address:VoidPointer):string|null {
+    return nativeFunctionNames.get(address.getAddressBin()) || null;
+};
 asm.getFunctionName = function(address:VoidPointer):string|null {
-    const looked = runtimeError.lookUpFunctionEntry(address);
-    if (looked === null) return null;
-    const rva = looked[1];
+    const info = runtimeError.lookUpFunctionEntry(address);
+    if (info === null) return null;
+    const rva = info[1];
     if (rva == null) return null;
-    return nativeFunctionNames.get((looked[0].add(rva)).getAddressBin()) || null;
+    return nativeFunctionNames.get(info[0].add(rva).getAddressBin()) || null;
 };
 asm.setFunctionNames = function(base:VoidPointer, labels:Record<string, number>):void {
     (labels as any).__proto__ = null;

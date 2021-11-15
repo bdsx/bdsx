@@ -6,7 +6,7 @@ import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
-import { CommandContext, CommandItem, CommandPermissionLevel } from "bdsx/bds/command";
+import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack } from "bdsx/bds/inventory";

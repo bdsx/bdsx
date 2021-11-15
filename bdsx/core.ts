@@ -4,6 +4,7 @@ import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 export interface VoidPointerConstructor
 {
     new():VoidPointer;
+    prototype:VoidPointer;
 
     fromAddress<T extends VoidPointer>(this:{new():T}, addressLow:number, addressHigh?:number):T;
     fromAddressBin<T extends VoidPointer>(this:{new():T}, addressBin:string):T;
