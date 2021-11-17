@@ -13,7 +13,7 @@ import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
-import { CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
+import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
 import { remapAndPrintError, remapError } from "./source-map-support";
@@ -265,18 +265,19 @@ function _launch(asyncResolve:()=>void):void {
                 cgate.nodeLoopOnce();
             } catch (err) {
                 events.errorFire(err);
-                remapAndPrintError(err);
             }
         }, void_t, null, VoidPointer),
         [Register.rcx], []);
 
+    procHacker.hookingRawWithCallOriginal('Minecraft::startLeaveGame',
+        makefunc.np((mc, b)=>{
+            events.serverLeave.fire();
+            _tickCallback();
+        }, void_t, null, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
     procHacker.hookingRawWithCallOriginal('ScriptEngine::shutdown',
         makefunc.np(()=>{
-            try {
-                events.serverStop.fire();
-            } catch (err) {
-                remapAndPrintError(err);
-            }
+            events.serverStop.fire();
+            _tickCallback();
         }, void_t), [Register.rcx], []);
 
     // keep ScriptEngine variables. idk why it needs.

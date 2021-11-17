@@ -104,6 +104,7 @@ const symbols = [
     'Minecraft::getNetworkHandler',
     'Minecraft::getServerNetworkHandler',
     'Minecraft::getCommands',
+    'Minecraft::startLeaveGame',
     'std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate',
     "std::_Ref_count_obj2<CommandContext>::`vftable'",
     'CommandContext::CommandContext',
