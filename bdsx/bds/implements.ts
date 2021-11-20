@@ -241,7 +241,7 @@ ItemActor.abstract({
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
 
 
-ServerPlayer.prototype.setAttribute = function(this:Actor, id:AttributeId, value:number):AttributeInstance|null {
+ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):AttributeInstance|null {
     const attr = Actor.prototype.setAttribute.call(this, id, value);
     if (attr === null) return null;
     const packet = UpdateAttributesPacket.create();
@@ -254,9 +254,7 @@ ServerPlayer.prototype.setAttribute = function(this:Actor, id:AttributeId, value
     data.default = attr.defaultValue;
     packet.attributes.push(data);
     data.destruct();
-    if (this instanceof ServerPlayer) {
-        this.sendNetworkPacket(packet);
-    }
+    this.sendNetworkPacket(packet);
     packet.dispose();
     return attr;
 };
