@@ -122,7 +122,15 @@ export namespace events {
     export const serverUpdate = new Event<()=>void>();
 
     /**
+     * before serverStop, Minecraft is alive yet
+     * LoopbackPacketSender is alive yet
+     */
+    export const serverLeave = new Event<()=>void>();
+
+    /**
      * before system.shutdown, Minecraft is alive yet
+     * LoopbackPacketSender is destroyed
+     * some commands are failed on this event. use `events.serverLeave` intead.
      */
     export const serverStop = new Event<()=>void>();
 

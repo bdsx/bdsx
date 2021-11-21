@@ -1,4 +1,4 @@
-import { Actor, ActorDamageSource, ItemActor } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ItemStack } from "../bds/inventory";
 import { MinecraftPacketIds } from "../bds/packetids";
@@ -10,6 +10,7 @@ import { NativePointer, VoidPointer } from "../core";
 import { events } from "../event";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { Wrapper } from "../pointer";
 import { _tickCallback } from "../util";
 
 
@@ -386,16 +387,16 @@ const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onA
 // }
 // const _onEntityDeath = procHacker.hooking('ScriptServerActorEventListener::onActorDeath', bool_t, null, ScriptCustomEventPacket, Actor, ActorDamageSource, int32_t)(onEntityDeath);
 
-function onPlayerAttack(player:Player, victim:Actor):boolean {
+function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCause>):boolean {
     const event = new PlayerAttackEvent(player, victim);
     const canceled = events.playerAttack.fire(event) === CANCEL;
     _tickCallback();
     if (canceled) {
         return false;
     }
-    return _onPlayerAttack(event.player, event.victim);
+    return _onPlayerAttack(event.player, event.victim, cause);
 }
-const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
+const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor, Wrapper.make(int32_t))(onPlayerAttack);
 
 function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
     const event = new PlayerDropItemEvent(player, itemStack);

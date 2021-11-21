@@ -489,6 +489,9 @@ export class Actor extends NativeClass {
     setScoreTag(text:string):void{
         abstract();
     }
+    despawn():void{
+        abstract();
+    }
     getScoreTag():string{
         abstract();
     }
@@ -556,7 +559,7 @@ export class Actor extends NativeClass {
         if (id > 15) return null;
 
         const attr = this.getAttributes().getMutableInstance(id);
-        if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || `Attribute${id}`}`);
+        if (attr === null) throw Error(`${this.getIdentifier()} has not ${AttributeId[id] || `Attribute${id}`}`);
         attr.currentValue = value;
         return attr;
     }

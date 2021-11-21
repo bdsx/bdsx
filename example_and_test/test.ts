@@ -6,7 +6,7 @@ import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
-import { CommandContext, CommandItem, CommandPermissionLevel } from "bdsx/bds/command";
+import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack } from "bdsx/bds/inventory";
@@ -20,6 +20,7 @@ import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
+import { command } from "bdsx/command";
 import { AttributeName, CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
@@ -452,6 +453,7 @@ Tester.test({
                 const size = level.players.size();
                 this.equals(size, 0, 'origin.getLevel().players.size is not zero');
                 this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
+                this.equals(ctx.origin.getRequestId(), '00000000-0000-0000-0000-000000000000', 'unexpected id');
                 events.command.remove(cb);
             }
         };
@@ -467,6 +469,21 @@ Tester.test({
             };
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
+        });
+        command.register('registertest', 'bdsx command test').overload((param, origin, output)=>{
+            output.success('passed');
+        }, {});
+
+        await new Promise<void>((resolve) => {
+            const outputcb = (output:string) => {
+                if (output === 'passed') {
+                    events.commandOutput.remove(outputcb);
+                    resolve();
+                    return CANCEL;
+                }
+            };
+            events.commandOutput.on(outputcb);
+            bedrockServer.executeCommandOnConsole('registertest');
         });
     },
 
@@ -663,9 +680,19 @@ Tester.test({
     },
 
     chat() {
+        const MAX_CHAT = 6;
+        events.packetSend(MinecraftPacketIds.Text).on(ev => {
+            if (chatCancelCounter >= 2) return;
+            if (ev.message === 'TEST YEY!') {
+                chatCancelCounter ++;
+                this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
+                if (chatCancelCounter === 2) return CANCEL; // canceling
+            }
+        });
+
         events.packetBefore(MinecraftPacketIds.Text).on((packet, ni) => {
+            if (chatCancelCounter < 2) return;
             if (packet.message == "TEST YEY!") {
-                const MAX_CHAT = 5;
                 chatCancelCounter++;
                 this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
                 this.equals(connectedNi, ni, 'the network identifier does not match');
@@ -704,6 +731,8 @@ Tester.test({
             this.equals(v.currentPlayers, 0, 'player count mismatch');
             this.equals(v.maxPlayers, serverInstance.getMaxPlayers(), 'max player mismatch');
         }));
+        serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement();
+
         events.packetAfter(MinecraftPacketIds.Login).once(this.wrap((packet, ni)=>{
             setTimeout(this.wrap(()=>{
                 events.queryRegenerate.once(v=>{

@@ -11,7 +11,7 @@ import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { bool_t, int32_t, int64_as_float_t, void_t } from "../nativetype";
+import { bool_t, int32_t, int64_as_float_t, uint8_t, void_t } from "../nativetype";
 import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
@@ -108,7 +108,10 @@ function onPacketAfter(rbp:OnPacketRBP):void {
             const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) break;
+                    if (listener(typedPacket, ni, packetId) === CANCEL) {
+                        _tickCallback();
+                        break;
+                    }
                 } catch (err) {
                     events.errorFire(err);
                 }
@@ -119,7 +122,7 @@ function onPacketAfter(rbp:OnPacketRBP):void {
         remapAndPrintError(err);
     }
 }
-function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet):void{
+function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet):number{
     try {
         const packetId = packet.getId();
         const target = events.packetSend(packetId);
@@ -128,7 +131,10 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
             const typedPacket = packet.as(TypedPacket);
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) break;
+                    if (listener(typedPacket, ni, packetId) === CANCEL) {
+                        _tickCallback();
+                        return 1;
+                    }
                 } catch (err) {
                     events.errorFire(err);
                 }
@@ -138,6 +144,7 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
     } catch (err) {
         remapAndPrintError(err);
     }
+    return 0;
 }
 function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
     try {
@@ -212,9 +219,15 @@ bedrockServer.withLoading().then(()=>{
             0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
         ], []);
 
-    const onPacketSendNp = makefunc.np(onPacketSend, void_t, null, NetworkHandler, NetworkIdentifier, Packet);
+    const sendOriginal = procHacker.hooking('NetworkHandler::send',
+        void_t, null, NetworkHandler, NetworkIdentifier, Packet, uint8_t)(
+        (nh, ni, packet, b)=>{
+            if (onPacketSend(nh, ni, packet) !== 0) return;
+            sendOriginal(nh, ni, packet, b);
+        });
+    const onPacketSendNp = makefunc.np(onPacketSend, int32_t, null, NetworkHandler, NetworkIdentifier, Packet);
     asmcode.onPacketSend = onPacketSendNp;
-    procHacker.hookingRawWithCallOriginal('NetworkHandler::send', onPacketSendNp, [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
+    asmcode.packetSendAllCancelPoint = proc['LoopbackPacketSender::sendToClients'].add(0xb5);
     procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0x90,
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [

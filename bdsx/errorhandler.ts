@@ -1,6 +1,6 @@
 
 import { asm } from "./assembler";
-import { ipfilter, jshook, runtimeError } from "./core";
+import { ipfilter, jshook, runtimeError, VoidPointer } from "./core";
 import { events } from "./event";
 import { remapError } from "./source-map-support";
 import { numberWithFillZero } from "./util";
@@ -62,7 +62,7 @@ export function installErrorHandler():void {
                 events.errorFire(err);
             }
         }, ms, ...args);
-    };
+    } as any;
     const oldSetTimeout = setTimeout;
     global.setTimeout = function(callback: (...args: any[]) => void, ms: number, ...args: any[]):NodeJS.Timeout {
         return oldSetTimeout((...args:any[])=>{
@@ -121,7 +121,6 @@ export function installErrorHandler():void {
 
             let insideChakra = false;
             for (const frame of err.nativeStack) {
-
                 let moduleName = frame.moduleName;
                 if (moduleName != null) {
                     moduleName = path.basename(moduleName);
@@ -135,27 +134,43 @@ export function installErrorHandler():void {
                     console.error('   at <ChakraCore>');
                     continue;
                 }
-                let out = '';
+                let out = '   at ';
+                const info = runtimeError.lookUpFunctionEntry(frame.address);
                 const funcname = frame.functionName;
+                let funcinfo:{
+                    address:VoidPointer,
+                    offset:number
+                }|null = null;
+
+                if (info !== null && info[1] != null) {
+                    const address = info[0].add(info[1]);
+                    funcinfo = {
+                        address,
+                        offset: frame.address.subptr(address)
+                    };
+                }
                 if (funcname !== null) {
-                    out = `   at ${moduleName}!${frame.functionName}`;
+                    out = `${moduleName}!${frame.functionName}`;
+                    if (funcinfo !== null) {
+                        out += `+0x${funcinfo.offset.toString(16)}`;
+                    }
                 } else {
-                    const name = asm.getFunctionName(frame.address);
-                    if (name !== null) {
-                        out = `   at <asm> ${name}`;
+                    let asmname:string|null;
+                    if (funcinfo !== null && (asmname = asm.getFunctionNameFromEntryAddress(funcinfo.address)) !== null) {
+                        out = `<asm> ${asmname}+0x${funcinfo.offset.toString(16)}`;
                     } else {
                         // unknown
                         const addr = frame.address.getAddressAsFloat();
                         if (addr >= 0x1000) {
                             if (insideChakra) continue;
-                            out = '   at <unknown> ';
+                            out = '<unknown> ';
                         } else {
-                            out = '   at <invalid> ';
+                            out = '<invalid> ';
                         }
                         if (frame.base == null) {
                             out += frame.address;
                         } else {
-                            out += `${moduleName}+${frame.address.subptr(frame.base)}`;
+                            out += `${moduleName}+0x${frame.address.subptr(frame.base).toString(16)}`;
                         }
                     }
                 }

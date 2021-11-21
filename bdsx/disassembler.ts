@@ -467,8 +467,13 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
             } else {
                 const oper = (v >> 3) & 7;
                 if ((v & 0x04) !== 0) {
-                    if ((v&1) === 0) size = OperationSize.byte;
-                    const chr = ptr.readInt32();
+                    let chr:number;
+                    if ((v&1) === 0) {
+                        size = OperationSize.byte;
+                        chr = ptr.readInt8();
+                    } else {
+                        chr = ptr.readInt32();
+                    }
                     return walk_oper_r_c(oper, Register.rax, chr, size);
                 }
                 const info = walk_offset(rex, ptr);
