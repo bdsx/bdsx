@@ -3,7 +3,7 @@ import { mce } from "../mce";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
-import { BlockPos, Vec3 } from "./blockpos";
+import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
@@ -745,8 +745,15 @@ export class PlayerInputPacket extends Packet {
 }
 
 @nativeClass(null)
-export class LevelChunkPacket extends Packet {
-    // unknown
+export class LevelChunkPacket extends Packet { // accessed from LevelChunkPacket::write
+    @nativeField(ChunkPos)
+    pos:ChunkPos;
+    @nativeField(bool_t)
+    cacheEnabled:bool_t;
+    @nativeField(CxxString)
+    serializedChunk:CxxString;
+    @nativeField(uint32_t)
+    subChunksCount:uint32_t;
 }
 
 @nativeClass(null)
@@ -1442,6 +1449,7 @@ export class NetworkSettingsPacket extends Packet {
     // unknown
 }
 
+
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {
     @nativeField(float32_t)
@@ -1454,8 +1462,14 @@ export class PlayerAuthInputPacket extends Packet {
     moveX: float32_t;
     @nativeField(float32_t)
     moveZ: float32_t;
+
+    /** @deprecated */
+    get heaYaw():float32_t {
+        return this.headYaw;
+    }
+
     @nativeField(float32_t)
-    heaYaw: float32_t;
+    headYaw: float32_t;
     @nativeField(bin64_t)
     inputFlags: bin64_t;
     @nativeField(uint32_t)
