@@ -566,7 +566,7 @@ Tester.test({
                     this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni, id='+packetId);
                 }
                 this.assert(size > 0, `packetSendRaw, packet size is too little`);
-                if (chatCancelCounter === 0) {
+                if (chatCancelCounter === 0 && packetId !== MinecraftPacketIds.PacketViolationWarning) {
                     this.equals(packetId, sendidcheck, `packetSendRaw, different packetId on sendRaw. id=${packetId}`);
                 }
                 this.equals(packetId, (ptr.readVarUint() & 0x3ff), `packetSendRaw, different packetId in buffer. id=${packetId}`);
