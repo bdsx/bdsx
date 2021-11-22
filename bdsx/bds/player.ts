@@ -237,7 +237,9 @@ export class Player extends Actor {
 
 export class ServerPlayer extends Player {
     /** @deprecated Use `this.getNetworkIdentifier()` instead */
-    networkIdentifier: NetworkIdentifier;
+    get networkIdentifier(): NetworkIdentifier {
+        return this.getNetworkIdentifier();
+    }
 
     protected _sendInventory(shouldSelectSlot: boolean): void {
         abstract();

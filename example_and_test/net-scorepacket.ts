@@ -11,7 +11,7 @@ command.register('example_score', 'score packet example').overload((params, orig
         displaypacket.objectiveName = 'objective';
         displaypacket.displayName = 'name';
         displaypacket.criteriaName = 'dummy';
-        displaypacket.sendTo(actor.networkIdentifier);
+        displaypacket.sendTo(actor.getNetworkIdentifier());
         displaypacket.dispose();
 
         // SetScorePacket
@@ -26,7 +26,7 @@ command.register('example_score', 'score packet example').overload((params, orig
         const packet = SetScorePacket.create();
         packet.type = SetScorePacket.Type.CHANGE;
         packet.entries.push(entry);
-        packet.sendTo(actor.networkIdentifier);
+        packet.sendTo(actor.getNetworkIdentifier());
         packet.dispose();
 
         entry.destruct();
