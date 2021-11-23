@@ -1,6 +1,7 @@
 
 import fs = require('fs');
 import path = require('path');
+import { inspect } from 'util';
 import { anyToString } from './util';
 
 export class FileLog {
@@ -25,7 +26,7 @@ export class FileLog {
     }
 
     log(...message:any[]):void {
-        this.appending += message.map(anyToString).join(' ');
+        this.appending += message.map(x => inspect(x)).join(' ');
         if (!this.flushing) {
             this.flushing = true;
             this._flush();

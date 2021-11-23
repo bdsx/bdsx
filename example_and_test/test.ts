@@ -450,9 +450,10 @@ Tester.test({
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const level = ctx.origin.getLevel();
                 this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
-                const size = level.players.size();
+                const players = level.getPlayers();
+                const size = players.length;
                 this.equals(size, 0, 'origin.getLevel().players.size is not zero');
-                this.assert(level.players.capacity() < 64, 'origin.getLevel().players has too big capacity');
+                this.assert(players.length < 64, 'origin.getLevel().players has too big capacity');
                 this.equals(ctx.origin.getRequestId(), '00000000-0000-0000-0000-000000000000', 'unexpected id');
                 events.command.remove(cb);
             }
@@ -625,9 +626,9 @@ Tester.test({
                 }
 
                 if (actor !== null) {
-                    const actorIdentifier = actor.identifier;
+                    const actorIdentifier = actor.getIdentifier();
                     if (actorIdentifier !== 'minecraft:item') {
-                        this.equals(bsapiIdentifier, actor.identifier, 'invalid Actor.identifier');
+                        this.equals(bsapiIdentifier, actorIdentifier, 'invalid Actor.identifier');
                     }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
@@ -640,15 +641,16 @@ Tester.test({
 
                         this.equals(actor.getCertificate().getXuid(), connectedXuid, 'xuid mismatch');
 
-                        const pos = actor.respawnPosition;
-                        const dim = actor.respawnDimension;
+                        const pos = actor.getSpawnPosition();
+                        const dim = actor.getSpawnDimension();
                         this.equals(dim, DimensionId.Undefined, 'respawn dimension mismatch');
 
                         actor.setRespawnPosition(BlockPos.create(1,2,3), DimensionId.TheEnd);
-                        const respawnpointCheck = actor.respawnPosition.x === 1 &&
-                            actor.respawnPosition.y === 2 &&
-                            actor.respawnPosition.z === 3 &&
-                            actor.respawnDimension === DimensionId.TheEnd;
+                        const newPos = actor.getSpawnPosition()
+                        const respawnpointCheck = newPos.x === 1 &&
+                            newPos.y === 2 &&
+                            newPos.z === 3 &&
+                            actor.getSpawnDimension() === DimensionId.TheEnd;
                         this.assert(respawnpointCheck, 'respawn position/dimension mismatch');
                         if (!respawnpointCheck) process.exit(-1); // terminate it for not saving it.
 
