@@ -102,6 +102,19 @@ export class Block extends NativeClass {
     }
 }
 
+// Neighbors causes block updates around
+// Network causes the block to be sent to clients
+// Uses of other flags unknown
+enum BlockUpdateFlags {
+    NONE      = 0b0000,
+    NEIGHBORS = 0b0001,
+    NETWORK   = 0b0010,
+    NOGRAPHIC = 0b0100,
+    PRIORITY  = 0b1000,
+
+    ALL = NEIGHBORS | NETWORK,
+    ALL_PRIORITY = ALL | PRIORITY,
+}
 @nativeClass(null)
 export class BlockSource extends NativeClass {
     @nativeField(VoidPointer)
@@ -119,8 +132,15 @@ export class BlockSource extends NativeClass {
     getBlock(blockPos:BlockPos):Block {
         abstract();
     }
-    setBlock(blockPos:BlockPos, block:Block):boolean {
-        abstract();
+    /**
+     *
+     * @param blockPos Position of the block to place
+     * @param block The Block to place
+     * @param updateFlags BlockUpdateFlags, to place without ticking neighbor updates use only BlockUpdateFlags.NETWORK
+     * @returns true if the block was placed, false if it was not
+     */
+    setBlock(blockPos:BlockPos, block:Block, updateFlags = BlockUpdateFlags.ALL):boolean {
+        return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags);
     }
     getChunk(pos:ChunkPos):LevelChunk {
         abstract();

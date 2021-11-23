@@ -598,16 +598,6 @@ Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
 BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
-BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
-    const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
-    const pk = UpdateBlockPacket.create();
-    UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block.getRuntimeId(), 3);
-    for (const player of serverInstance.getPlayers()) {
-        player.sendNetworkPacket(pk);
-    }
-    pk.dispose();
-    return retval;
-};
 BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);
 BlockSource.prototype.getChunkSource = procHacker.js("BlockSource::getChunkSource", ChunkSource, {this:BlockSource});
