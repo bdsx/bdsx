@@ -136,7 +136,7 @@ class PackDirectory {
                     await fsutil.unlinkQuiet(packPath);
                     continue;
                 }
-                console.trace(colors.red(`[MCAddons] ${this.managedPath}/${packName}: ${err && err.message}`));
+                console.trace(colors.red(`[MCAddons] ${this.managedPath}/${packName}: ${err && err.message || err}`));
             }
         }
     }
@@ -372,7 +372,7 @@ class BdsxPackDirectory {
                 await this._addDirectory(mpack);
             }
         } catch (err) {
-            console.trace(colors.red(`[MCAddons] addons/${mpack.managedName}: ${err && err.message}`));
+            console.trace(colors.red(`[MCAddons] addons/${mpack.managedName}: ${err && err.message || err}`));
         }
     }
 

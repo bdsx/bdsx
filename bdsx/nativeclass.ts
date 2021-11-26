@@ -5,6 +5,7 @@ import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPoi
 import { makefunc } from "./makefunc";
 import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
+import { remapAndPrintError } from "./source-map-support";
 import { isBaseOf } from "./util";
 import util = require('util');
 
@@ -126,7 +127,7 @@ class StructureDefinition {
     align:number;
     bitoffset = 0;
     bitTargetSize = 0;
-    fields:Record<keyof any, NativeFieldInfo> = Object.create(null);
+    fields:Record<keyof any, NativeFieldInfo> = {};
 
     constructor(supercls:NativeClassType<any>) {
         this.eof = supercls[NativeType.size];
@@ -160,7 +161,10 @@ class StructureDefinition {
 
         const superfield = supercls[fieldmap];
         if (superfield != null) (this.fields as any).__proto__ = superfield;
+        else (this.fields as any).__proto__ = null;
         Object.freeze(this.fields);
+        const test = Object.create(null);
+        test.__proto__ = superfield;
 
         const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
         if (ctor !== null) {
@@ -501,7 +505,12 @@ export class NativeClass extends StructurePointer {
     }
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
-        return this._toJsonOnce(()=>new (CircularDetector.makeTemporalClass(this.constructor.name, this, options)));
+        try {
+            return this._toJsonOnce(()=>new (CircularDetector.makeTemporalClass(this.constructor.name, this, options)));
+        } catch (err) {
+            remapAndPrintError(err);
+            return 'Error: '+err.message;
+        }
     }
 }
 
