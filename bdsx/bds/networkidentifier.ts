@@ -151,7 +151,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
 }
 export let networkHandler:NetworkHandler;
 
-procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{
     try {
         events.networkDisconnected.fire(ni);
         _tickCallback();

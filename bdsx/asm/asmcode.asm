@@ -557,13 +557,13 @@ export proc packetSendAllHook
     mov rcx,r14
     call onPacketSend
     xor eax, eax
-    unwind
 
     test eax, eax
     jz _pass
     mov rax, packetSendAllCancelPoint
-    mov [rsp], rax
+    mov [rsp+28h], rax
 _pass:
+    unwind
 
     ; original codes
     mov rax, [r15]
