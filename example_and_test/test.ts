@@ -56,6 +56,13 @@ class VectorClass extends NativeClass {
     vector3:CxxVector<CxxVector<CxxString>>;
 }
 
+/**
+ * too many packets to hook. skip them.
+ */
+const tooHeavy = new Set<number>();
+tooHeavy.add(0xae);
+tooHeavy.add(0xaf);
+
 Tester.test({
     async globals() {
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
@@ -100,6 +107,7 @@ Tester.test({
             if (!nonsamehex) this.equals(hex(opers.asm().buffer()), hexcode.toUpperCase());
         };
 
+        assert('8b 0c 31', 'mov ecx, dword ptr [rcx+rsi]');
         assert('f3 0f 11 89 a4 03 00 00', 'movss dword ptr [rcx+0x3a4], xmm1');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
         assert('80 79 48 00 74 18 48 83 C1 38', 'cmp byte ptr [rcx+0x48], 0x0;je 0x18;add rcx, 0x38');
@@ -538,6 +546,7 @@ Tester.test({
         let sendpacket = 0;
         let ignoreEndingPacketsAfter = 0; // ignore ni check of send for the avoiding disconnected ni.
         for (let i = 0; i < 255; i++) {
+            if (tooHeavy.has(i)) continue;
             events.packetRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
                 this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetRaw, Invalid ni, id='+packetId);
                 idcheck = packetId;

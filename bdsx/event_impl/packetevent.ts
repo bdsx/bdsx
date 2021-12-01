@@ -38,8 +38,7 @@ class OnPacketRBP extends NativeClass {
     stream:ReadOnlyBinaryStream;
 }
 
-let sendInternalOriginal:(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper)=>void;
-
+asmcode.createPacketRaw = proc["MinecraftPackets::createPacket"];
 function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
     try {
         const target = events.packetRaw(packetId);
@@ -146,7 +145,7 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
     }
     return 0;
 }
-function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
+function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):number {
     try {
         const packetId = packet.getId();
         const target = events.packetSendRaw(packetId);
@@ -155,7 +154,7 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
                 try {
                     if (listener(data.valueptr, data.length, ni, packetId) === CANCEL) {
                         _tickCallback();
-                        return;
+                        return 1;
                     }
                 } catch (err) {
                     events.errorFire(err);
@@ -166,7 +165,7 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
     } catch (err) {
         remapAndPrintError(err);
     }
-    sendInternalOriginal(handler, ni, packet, data);
+    return 0;
 }
 
 bedrockServer.withLoading().then(()=>{
@@ -208,7 +207,7 @@ bedrockServer.withLoading().then(()=>{
         Register.rax, false, packetViolationOriginalCode, []);
 
     // hook after
-    asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP, int32_t);
+    asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP);
     procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x475,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
@@ -219,14 +218,8 @@ bedrockServer.withLoading().then(()=>{
             0xFF, 0x50, 0x08, // call qword ptr ds:[rax+8]
         ], []);
 
-    const sendOriginal = procHacker.hooking('NetworkHandler::send',
-        void_t, null, NetworkHandler, NetworkIdentifier, Packet, uint8_t)(
-        (nh, ni, packet, b)=>{
-            if (onPacketSend(nh, ni, packet) !== 0) return;
-            sendOriginal(nh, ni, packet, b);
-        });
-    const onPacketSendNp = makefunc.np(onPacketSend, int32_t, null, NetworkHandler, NetworkIdentifier, Packet);
-    asmcode.onPacketSend = onPacketSendNp;
+    asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, NetworkHandler, NetworkIdentifier, Packet);
+    asmcode.sendOriginal = procHacker.hookingRaw('NetworkHandler::send', asmcode.packetSendHook);
     asmcode.packetSendAllCancelPoint = proc['LoopbackPacketSender::sendToClients'].add(0xb5);
     procHacker.patching('hook-packet-send-all', 'LoopbackPacketSender::sendToClients', 0x90,
         asmcode.packetSendAllHook, // original code depended
@@ -237,6 +230,6 @@ bedrockServer.withLoading().then(()=>{
             0xFF, 0x50, 0x18, // call qword ptr ds:[rax+18]
         ], []);
 
-    sendInternalOriginal = procHacker.hooking('NetworkHandler::_sendInternal', void_t, null,
-        NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper)(onPacketSendInternal);
+    asmcode.onPacketSendInternal = makefunc.np(onPacketSendInternal, int32_t, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
+    asmcode.sendInternalOriginal = procHacker.hookingRaw('NetworkHandler::_sendInternal', asmcode.packetSendInternalHook);
 });

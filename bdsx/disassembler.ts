@@ -133,8 +133,13 @@ function walk_addr_binary_oper(opername:string, dwordBit:number, readBit:number,
             args = [info.r2, info.r1];
         } else {
             const offset = readConst(info.offset, ptr);
-            name = `${opername}_${sig}_rp`;
-            args = [info.r2, info.r1, 1, offset];
+            if (info.r3 !== null) {
+                name = `${opername}_${sig}_rrp`;
+                args = [info.r2, info.r1, info.r3, 1, offset];
+            } else {
+                name = `${opername}_${sig}_rp`;
+                args = [info.r2, info.r1, 1, offset];
+            }
         }
     } else {
         if (info.offset === null){ // mov_r_r
@@ -142,8 +147,13 @@ function walk_addr_binary_oper(opername:string, dwordBit:number, readBit:number,
             args = [info.r1, info.r2];
         } else {
             const offset = readConst(info.offset, ptr);
-            name = `${opername}_rp_${sig}`;
-            args = [info.r1, 1, offset, info.r2];
+            if (info.r3 !== null) {
+                name = `${opername}_rrp_${sig}`;
+                args = [info.r1, info.r2, 1, offset, info.r2];
+            } else {
+                name = `${opername}_rp_${sig}`;
+                args = [info.r1, 1, offset, info.r2];
+            }
         }
     }
     if (size !== null) args.push(size);

@@ -211,7 +211,7 @@ export namespace makefunc {
      * it will removed at native returning
      */
     export function tempValue(type:Paramable, value:unknown):StaticPointer {
-        const ptr = tempAlloc(type[size]);
+        const ptr = tempAlloc(Math.max(type[size], 8)); // XXX: setToParam needs 8 bytes for primitive types
         type[setToParam](ptr, value);
         return ptr;
     }

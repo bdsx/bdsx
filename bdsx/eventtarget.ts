@@ -149,7 +149,7 @@ export class EventEx<T extends (...args: any[]) => any> extends Event<T> {
         super.on(listener);
     }
     remove(listener: T): boolean {
-        if (!this.remove(listener)) return false;
+        if (!super.remove(listener)) return false;
         if (this.isEmpty()) this.onCleared();
         return true;
     }

@@ -516,6 +516,8 @@ float64_t[makefunc.useXmmRegister] = true;
 const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
 const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], void_t, null, VoidPointer);
 
+const strbufCache:AllocatedPointer[] = [];
+
 export const CxxString = new NativeType<string>(
     'std::basic_string<char,std::char_traits<char>,std::allocator<char> >',
     0x20, 8,
@@ -528,10 +530,15 @@ export const CxxString = new NativeType<string>(
         return ptr.getCxxString();
     },
     (stackptr, param, offset)=>{
-        const buf = new AllocatedPointer(0x20);
+        const buf = strbufCache.pop() || new AllocatedPointer(0x20);
         string_ctor(buf);
         buf.setCxxString(param);
-        makefunc.temporalDtors.push(()=>string_dtor(buf));
+        makefunc.temporalDtors.push(()=>{
+            string_dtor(buf);
+            if (strbufCache.length < 8) {
+                strbufCache.push(buf);
+            }
+        });
         stackptr.setPointer(buf, offset);
     },
     string_ctor,

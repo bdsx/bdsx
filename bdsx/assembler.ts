@@ -146,6 +146,31 @@ const COMMENT_REGEXP = /[;#]/;
 export type Value64 = number|string|Value64Castable;
 export type AsmMultiplyConstant = 1|2|4|8;
 
+const sizeInfo = new Map<OperationSize, {
+    fnname:string,
+    jstype:string,
+    size:number,
+}>();
+sizeInfo.set(OperationSize.byte, {
+    fnname: 'Uint8',
+    jstype: 'number',
+    size: 1,
+});
+sizeInfo.set(OperationSize.word, {
+    fnname: 'Uint16',
+    jstype: 'number',
+    size: 2,
+});
+sizeInfo.set(OperationSize.dword, {
+    fnname: 'Int32',
+    jstype: 'number',
+    size: 4,
+});
+sizeInfo.set(OperationSize.qword, {
+    fnname: 'Pointer',
+    jstype: 'VoidPointer',
+    size: 8,
+});
 function isZero(value:Value64):boolean {
     switch (typeof value) {
     case 'string':
@@ -413,10 +438,10 @@ class Label extends AddressIdentifier {
 }
 
 class Defination extends AddressIdentifier {
-
     constructor(name:string,
         chunk:AsmChunk|null,
         offset:number,
+        public arraySize:number|null,
         public size:OperationSize|undefined) {
         super(name, chunk, offset);
     }
@@ -444,7 +469,7 @@ interface TypeInfo {
     size:OperationSize;
     bytes:number;
     align:number;
-    arraySize:number;
+    arraySize:number|null;
 }
 
 const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0, 1);
@@ -976,7 +1001,7 @@ export class X64Assembler {
         return this._movabs_rax_mem(address, 1, size);
     }
 
-    def(name:string, size:OperationSize, bytes:number, align:number, exportDef:boolean = false):this {
+    def(name:string, size:OperationSize, bytes:number, align:number, arraySize:number|null = null, exportDef:boolean = false):this {
         if (align < 1) align = 1;
         checkPowOf2(align);
         if (align > this.memoryChunkAlign) {
@@ -988,7 +1013,7 @@ export class X64Assembler {
         this.memoryChunkSize = offset + bytes;
         if (name === '') return this;
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
-        this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, size));
+        this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, arraySize, size));
         if (!exportDef) this.scope.add(name);
         return this;
     }
@@ -1041,11 +1066,19 @@ export class X64Assembler {
         return this._mov(dest, src, null, multiply, offset, 0, MovOper.Write, size);
     }
 
+    mov_rrp_r(dest1:Register, dest2:Register, multiply:AsmMultiplyConstant, offset:number, src:Register, size = OperationSize.qword):this {
+        return this._mov(dest1, src, dest2, multiply, offset, 0, MovOper.Write, size);
+    }
+
     /**
      * move register pointer to register
      */
     mov_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size = OperationSize.qword):this {
         return this._mov(src, dest, null, multiply, offset, 0, MovOper.Read, size);
+    }
+
+    mov_r_rrp(dest:Register, src1:Register, src2:Register, multiply:AsmMultiplyConstant, offset:number, size = OperationSize.qword):this {
+        return this._mov(src1, dest, src2, multiply, offset, 0, MovOper.Read, size);
     }
 
     private _imul(r1:Register, r2:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize, oper:MovOper):this {
@@ -2473,7 +2506,7 @@ export class X64Assembler {
 
         function parseType(type:string):TypeInfo {
 
-            let arraySize = 0;
+            let arraySize:number|null = null;
             let brace = type.indexOf('[');
             let type_base = type;
             if (brace !== -1) {
@@ -2493,14 +2526,16 @@ export class X64Assembler {
             const size = sizemap.get(type_base);
             if (size == null) throw parser.error(`Unexpected type name '${type}'`);
 
-            return {bytes: size.bytes * Math.max(arraySize, 1), size:size.size, align:size.bytes, arraySize};
+            let bytes = size.bytes;
+            if (arraySize !== null) bytes *= arraySize;
+            return {bytes, size:size.size, align:size.bytes, arraySize};
         }
 
         const readConstString = (addressCommand:boolean, encoding:BufferEncoding):void=>{
             const quotedString = parser.readQuotedStringTo('"');
             if (quotedString === null) throw parser.error('Invalid quoted string');
             if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(64), 0, 1);
-            const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
+            const id = new Defination('[const]', this.constChunk, this.constChunk.size, null, OperationSize.void);
             this.constChunk.write(Buffer.from(quotedString+'\0', encoding));
             this.constChunk.ids.push(id);
             command += '_rp';
@@ -2554,7 +2589,7 @@ export class X64Assembler {
                 const type = parser.readAll();
                 const res = parseType(type);
                 try {
-                    this.def(name, res.size, res.bytes, res.align, exportDef);
+                    this.def(name, res.size, res.bytes, res.align, res.arraySize, exportDef);
                 } catch (err) {
                     throw parser.error(err.message);
                 }
@@ -2930,43 +2965,28 @@ export class X64Assembler {
             } else if (id instanceof Defination) {
                 const off = buffer.length + id.offset;
                 if (id.size != null) {
-                    switch (id.size) {
-                    case OperationSize.byte:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getUint8(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n):number{`);
-                        js.writeln(`    buffer.setUint8(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:number;`);
-                        break;
-                    case OperationSize.word:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getUint16(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n){`);
-                        js.writeln(`    buffer.setUint16(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:number;`);
-                        break;
-                    case OperationSize.dword:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getInt32(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n){`);
-                        js.writeln(`    buffer.setInt32(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:number;`);
-                        break;
-                    case OperationSize.qword:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getPointer(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n){`);
-                        js.writeln(`    buffer.setPointer(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:VoidPointer;`);
-                        break;
+                    const info = sizeInfo.get(id.size);
+                    if (info != null) {
+                        if (id.arraySize !== null) {
+                            const nameUpper = name.charAt(0).toUpperCase()+name.substr(1);
+                            const sizemul = info.size === 1 ? '' : '*'+info.size;
+                            js.writeln(`get${nameUpper}(idx){`);
+                            js.writeln(`    return buffer.get${info.fnname}(${off}+idx${sizemul});`);
+                            js.writeln(`},`);
+                            js.writeln(`set${nameUpper}(n, idx){`);
+                            js.writeln(`    buffer.set${info.fnname}(n, ${off}+idx${sizemul});`);
+                            js.writeln(`},`);
+                            dts.writeln(`export function get${nameUpper}(idx:number):${info.jstype};`);
+                            dts.writeln(`export function set${nameUpper}(n:${info.jstype}, idx:number):void;`);
+                        } else {
+                            js.writeln(`get ${name}(){`);
+                            js.writeln(`    return buffer.get${info.fnname}(${off});`);
+                            js.writeln(`},`);
+                            js.writeln(`set ${name}(n){`);
+                            js.writeln(`    buffer.set${info.fnname}(n, ${off});`);
+                            js.writeln(`},`);
+                            dts.writeln(`export let ${name}:${info.jstype};`);
+                        }
                     }
                 }
                 js.writeln(`get ${addrof}(){`);
@@ -3038,7 +3058,7 @@ export class X64Assembler {
         }
         for (const [name, offset] of defs) {
             if (out.ids.has(name)) throw Error(`${name} is already defined`);
-            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, undefined);
+            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, null, undefined);
             out.ids.set(name, def);
         }
         return out;
