@@ -430,7 +430,7 @@ export class ServerPlayer extends Player {
      * @param title - Text above the bossbar
      * @param percent - Bossbar filling percentage
      */
-    setBossBar(title: string, percent: number): void {
+    setBossBar(title: string, percent: number, color?: BossEventPacket.Colors): void {
         this.removeBossBar();
         const pk = BossEventPacket.create();
         pk.entityUniqueId = this.getUniqueIdBin();
@@ -438,6 +438,7 @@ export class ServerPlayer extends Player {
         pk.type = BossEventPacket.Types.Show;
         pk.title = title;
         pk.healthPercent = percent;
+        if(color) pk.color = color;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
