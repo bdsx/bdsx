@@ -34,7 +34,7 @@ asm.getFunctionName = function(address:VoidPointer):string|null {
     return nativeFunctionNames.get(info[0].add(rva).getAddressBin()) || null;
 };
 asm.setFunctionNames = function(base:VoidPointer, labels:Record<string, number>):void {
-    (labels as any).__proto__ = null;
+    delete labels.__proto__;
     for (const name in labels) {
         const address = labels[name];
         nativeFunctionNames.set(base.add(address).getAddressBin(), name);
