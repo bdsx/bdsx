@@ -260,6 +260,11 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         ...params: PARAMS):
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
         return callback=>{
+            if (opts == null) {
+                opts = {name:`hook of ${key}`} as OPTS;
+            } else if (opts.name == null) {
+                opts.name = `hook of ${key}`;
+            }
             const original = this.hookingRaw(key, original=>{
                 const nopts:MakeFuncOptions<any> = opts! || {};
                 nopts.onError = original;

@@ -2505,7 +2505,6 @@ export class X64Assembler {
         }
 
         function parseType(type:string):TypeInfo {
-
             let arraySize:number|null = null;
             let brace = type.indexOf('[');
             let type_base = type;
@@ -2816,7 +2815,7 @@ export class X64Assembler {
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
-            (defines as any).__proto__ = null;
+            Object.setPrototypeOf(defines,  null);
             for (const name in defines) {
                 this.const(name, defines[name]);
             }

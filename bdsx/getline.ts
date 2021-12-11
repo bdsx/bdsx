@@ -28,7 +28,7 @@ asmcode.getLineProcessTask = makefunc.np((asyncTask:StaticPointer)=>{
     str[NativeType.dtor]();
     const cb:GetLineCallback = asyncTask.getJsValueRef(uv_async.sizeOfTask+string_size);
     cb(value);
-}, void_t, null, StaticPointer);
+}, void_t, {name: 'getLineProcessTask'}, StaticPointer);
 asmcode.std_getline = getline;
 asmcode.std_string_ctor = string_ctor;
 

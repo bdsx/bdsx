@@ -267,7 +267,7 @@ procHacker.hookingRawWithCallOriginal(
     'Level::removeEntityReferences',
     makefunc.np((level, actor, b)=>{
         _removeActor(actor);
-    }, void_t, null, Level, Actor, bool_t),
+    }, void_t, {name: 'hook of Level::removeEntityReferences'}, Level, Actor, bool_t),
     [Register.rcx, Register.rdx, Register.r8], []
 );
 

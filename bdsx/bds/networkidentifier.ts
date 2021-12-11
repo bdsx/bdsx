@@ -163,5 +163,5 @@ procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAX
     setTimeout(()=>{
         identifiers.delete(ni);
     }, 3000);
-}, void_t, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
+}, void_t, {name: 'hook of NetworkIdentifier dtor'}, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);
