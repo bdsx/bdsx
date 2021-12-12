@@ -7,6 +7,7 @@ import { Player } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
+import { decay } from "../decay";
 import { events } from "../event";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
@@ -297,6 +298,7 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
     const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);
     const canceled = events.entityHurt.fire(event) === CANCEL;
     _tickCallback();
+    decay(actorDamageSource);
     if (canceled) {
         return false;
     }
@@ -318,6 +320,7 @@ function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
     const event = new EntityDieEvent(entity, damageSource);
     events.entityDie.fire(event);
     _tickCallback();
+    decay(damageSource);
     return _onEntityDie(event.entity, event.damageSource);
 }
 const _onEntityDie = procHacker.hooking('Mob::die', bool_t, null, Actor, ActorDamageSource)(onEntityDie);
@@ -362,19 +365,21 @@ function onEntityStopRiding(entity:Actor, exitFromRider:boolean, actorIsBeingDes
 }
 const _onEntityStopRiding = procHacker.hooking('Actor::stopRiding', void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
-function onEntitySneak(Script:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
+function onEntitySneak(packet:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
     const event = new EntitySneakEvent(entity, isSneaking);
     events.entitySneak.fire(event);
     _tickCallback();
-    return _onEntitySneak(Script, event.entity, event.isSneaking);
+    decay(packet);
+    return _onEntitySneak(packet, event.entity, event.isSneaking);
 }
 const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
 
-function onEntityCreated(Script:ScriptCustomEventPacket, entity:Actor):boolean {
+function onEntityCreated(packet:ScriptCustomEventPacket, entity:Actor):boolean {
     const event = new EntityCreatedEvent(entity);
     events.entityCreated.fire(event);
     _tickCallback();
-    return _onEntityCreated(Script, event.entity);
+    decay(packet);
+    return _onEntityCreated(packet, event.entity);
 }
 const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onActorCreated', bool_t, null, ScriptCustomEventPacket, Actor)(onEntityCreated);
 
@@ -402,6 +407,7 @@ function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):
     const event = new PlayerDropItemEvent(player, itemStack);
     const canceled = events.playerDropItem.fire(event) === CANCEL;
     _tickCallback();
+    decay(itemStack);
     if (canceled) {
         return false;
     }
@@ -413,6 +419,8 @@ function onPlayerInventoryChange(player:Player, container:VoidPointer, slot:numb
     const event = new PlayerInventoryChangeEvent(player, oldItemStack, newItemStack, slot);
     events.playerInventoryChange.fire(event);
     _tickCallback();
+    decay(oldItemStack);
+    decay(newItemStack);
     return _onPlayerInventoryChange(event.player, container, slot, event.oldItemStack, event.newItemStack, unknown);
 }
 const _onPlayerInventoryChange = procHacker.hooking("Player::inventoryChanged", void_t, null, Player, VoidPointer, int32_t, ItemStack, ItemStack, bool_t)(onPlayerInventoryChange);
@@ -459,8 +467,9 @@ function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSub
     _tickCallback();
     if (!canceled) {
         splashPotionEffectSubcomponent.potionEffect = event.potionEffect;
-        return _onSplashPotionHit(splashPotionEffectSubcomponent, event.entity, projectileComponent);
+        _onSplashPotionHit(splashPotionEffectSubcomponent, event.entity, projectileComponent);
     }
+    decay(splashPotionEffectSubcomponent);
 }
 const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::doOnHitEffect", void_t, null, SplashPotionEffectSubcomponent, Actor, ProjectileComponent)(onSplashPotionHit);
 

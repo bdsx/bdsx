@@ -4,6 +4,7 @@ import { Vec3 } from "../bds/blockpos";
 import { Level } from "../bds/level";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
+import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { _tickCallback } from "../util";
@@ -80,6 +81,7 @@ function onLevelExplode(level:Level, blockSource:BlockSource, entity:Actor, posi
     const event = new LevelExplodeEvent(level, blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater);
     const canceled = events.levelExplode.fire(event) === CANCEL;
     _tickCallback();
+    decay(level);
     if (!canceled) {
         return _onLevelExplode(event.level, event.blockSource, event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater);
     }
@@ -90,6 +92,7 @@ function onLevelSave(level:Level):void {
     const event = new LevelSaveEvent(level);
     const canceled = events.levelSave.fire(event) === CANCEL;
     _tickCallback();
+    decay(level);
     if (!canceled) {
         return _onLevelSave(event.level);
     }
@@ -99,6 +102,8 @@ const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLe
 function onLevelTick(level:Level):void {
     const event = new LevelTickEvent(level);
     events.levelTick.fire(event);
+    _tickCallback();
+    decay(level);
     _onLevelTick(event.level);
 }
 const _onLevelTick = procHacker.hooking("Level::tick", void_t, null, Level)(onLevelTick);
@@ -107,6 +112,7 @@ function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
     const canceled = events.levelWeatherChange.fire(event) === CANCEL;
     _tickCallback();
+    decay(level);
     if (!canceled) {
         return _onLevelWeatherChange(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);
     }

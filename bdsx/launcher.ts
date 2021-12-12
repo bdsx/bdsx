@@ -9,6 +9,7 @@ import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
+import { decay } from "./decay";
 import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
@@ -16,7 +17,7 @@ import { makefunc } from "./makefunc";
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
-import { remapAndPrintError, remapError } from "./source-map-support";
+import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { _tickCallback } from "./util";
 
@@ -141,6 +142,7 @@ function _launch(asyncResolve:()=>void):void {
         events.serverClose.fire();
         events.serverClose.clear();
         _tickCallback();
+        decay(bd_server.serverInstance);
     }
 
     // // call game thread entry

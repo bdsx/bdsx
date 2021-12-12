@@ -3,6 +3,7 @@ import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnu
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
+import { decay } from './decay';
 import { events } from './event';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
@@ -165,6 +166,9 @@ export class CustomCommandFactory {
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
             this.execute(origin, output);
+            decay(this);
+            decay(origin);
+            decay(output);
         }, void_t, {this:CustomCommandImpl, name: `${this.name} command::execute`}, CommandOrigin, CommandOutput);
 
         this.registry.registerOverload(this.name, CustomCommandImpl, params);

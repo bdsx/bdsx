@@ -5,6 +5,7 @@ import { bin } from "../bin";
 import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
+import { decay } from "../decay";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
@@ -261,6 +262,7 @@ ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):Att
 
 function _removeActor(actor:Actor):void {
     actorMaps.delete(actor.getAddressBin());
+    decay(actor);
 }
 
 procHacker.hookingRawWithCallOriginal(
