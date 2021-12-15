@@ -9,6 +9,8 @@ import { nativeClass, NativeClass, nativeField } from "./nativeclass";
 import { bool_t, int32_t, NativeType, uint16_t } from './nativetype';
 import { Wrapper } from './pointer';
 import child_process = require('child_process');
+import fs = require('fs');
+import path = require('path');
 
 function initWineExec():(commandLine:string, cwd?:string)=>void {
     @nativeClass()
@@ -123,17 +125,41 @@ function initWineExec():(commandLine:string, cwd?:string)=>void {
     };
 }
 
-if (capi.isRunningOnWine()) {
-    exports.wineCompatibleExecSync = initWineExec();
-} else {
-    exports.wineCompatibleExecSync = (commandLine:string, cwd?:string)=>{
-        child_process.execSync(commandLine, {stdio:'inherit', cwd:cwd != null ? cwd : fsutil.projectPath});
-    };
+export namespace wineCompatible {
+    /**
+     * it uses /bin/sh if it's on Wine.
+     * use child_process.execSync on Windows.
+     * @param cwd default is the project root.
+     */
+    export declare function execSync(commandLine:string, cwd?:string):void;
+    /**
+     * bdsx cannot detect broken symlinks on Wine.
+     * use shell for deleting them.
+     * use fs methods on Windows.
+     */
+    export declare function removeRecursiveSync(path:string):void;
 }
 
-/**
- * it uses /bin/sh if it's on Wine.
- * use child_process.execSync on Windows.
- * @param cwd default is the project root.
- */
-export declare function wineCompatibleExecSync(commandLine:string, cwd?:string):void;
+if (capi.isRunningOnWine()) {
+    wineCompatible.execSync = initWineExec();
+    wineCompatible.removeRecursiveSync = function(filepath:string) {
+        if (!filepath.startsWith('Z:')) throw Error(`${filepath}: no linux path`);
+        wineCompatible.execSync('rm -rf '+filepath.substr(2).replace(/\\/g, '/'), process.cwd());
+    };
+} else {
+    wineCompatible.execSync = (commandLine:string, cwd?:string)=>{
+        child_process.execSync(commandLine, {stdio:'inherit', cwd:cwd != null ? cwd : fsutil.projectPath});
+    };
+    wineCompatible.removeRecursiveSync = function(filepath:string) {
+        const s = fs.statSync(filepath);
+        if (s.isDirectory()) {
+            const files = fs.readdirSync(filepath);
+            for (const file of files) {
+                wineCompatible.removeRecursiveSync(path.join(filepath, file));
+            }
+            fs.rmdirSync(filepath);
+        } else {
+            fs.unlinkSync(filepath);
+        }
+    };
+}
