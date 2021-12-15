@@ -1,9 +1,10 @@
 import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ItemStack } from "../bds/inventory";
+import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
-import { Player } from "../bds/player";
+import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
@@ -198,6 +199,19 @@ interface IPlayerJoinEvent {
 export class PlayerJoinEvent implements IPlayerJoinEvent {
     constructor(
         readonly player: Player,
+    ) {
+    }
+}
+
+interface IPlayerLeftEvent {
+    player: ServerPlayer;
+    skipMessage: boolean;
+}
+
+export class PlayerLeftEvent implements IPlayerLeftEvent {
+    constructor(
+        public player: ServerPlayer,
+        public skipMessage: boolean,
     ) {
     }
 }
@@ -459,6 +473,15 @@ function onPlayerPickupItem(player:Player, itemActor:ItemActor, orgCount:number,
     return _onPlayerPickupItem(event.player, itemActor, orgCount, favoredSlot);
 }
 const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, ItemActor, int32_t, int32_t)(onPlayerPickupItem);
+
+function onPlayerLeft(networkHandler: ServerNetworkHandler, player: ServerPlayer, skipMessage: boolean):void {
+    const event = new PlayerLeftEvent(player, skipMessage);
+    events.playerLeft.fire(event);
+    _tickCallback();
+    return _onPlayerLeft(networkHandler, event.player, event.skipMessage);
+}
+
+const _onPlayerLeft = procHacker.hooking("ServerNetworkHandler::_onPlayerLeft", void_t, null, ServerNetworkHandler, ServerPlayer, bool_t)(onPlayerLeft);
 
 
 function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSubcomponent, entity: Actor, projectileComponent: ProjectileComponent):void {
