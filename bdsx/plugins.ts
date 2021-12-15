@@ -1,10 +1,10 @@
 
 import { ConcurrencyQueue } from './concurrency';
 import { fsutil } from './fsutil';
+import { wineCompatibleExecSync } from './winecompatible';
 import { remapAndPrintError } from './source-map-support';
 import path = require('path');
 import colors = require('colors');
-import child_process = require('child_process');
 
 const PLUGINS_BDSX_PATH = 'file:../bdsx';
 
@@ -241,7 +241,7 @@ export async function loadAllPlugins():Promise<void> {
             await mainpkg.save();
         }
         if (needToNpmInstall) {
-            child_process.execSync('npm i', {stdio:'inherit', cwd:projpath});
+            wineCompatibleExecSync('npm i');
         }
         await taskQueue.onceEnd();
 
