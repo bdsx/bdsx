@@ -24,6 +24,7 @@ function getDecayed<T extends VoidPointer>(v:T):T {
         properties[key] = { get: _ };
     }
     Object.defineProperties(obj, properties);
+    obj[decayed] = obj;
     return v[decayed] = obj;
 }
 
