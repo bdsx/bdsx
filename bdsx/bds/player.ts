@@ -429,6 +429,7 @@ export class ServerPlayer extends Player {
      *
      * @param title - Text above the bossbar
      * @param percent - Bossbar filling percentage
+     * @param color - Bossbar color
      */
     setBossBar(title: string, percent: number, color?: BossEventPacket.Colors): void {
         this.removeBossBar();
