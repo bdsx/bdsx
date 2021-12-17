@@ -362,6 +362,9 @@ export class ItemStack extends NativeClass {
     constructItemEnchantsFromUserData():ItemEnchants {
         abstract();
     }
+    saveEnchantsToUserData(itemEnchants:ItemEnchants):void {
+        abstract();
+    }
 }
 
 export class Container extends NativeClass {

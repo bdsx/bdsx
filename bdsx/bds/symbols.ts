@@ -347,6 +347,7 @@ const symbols = [
     'ChunkSource::getLevel',
     'Biome::getBiomeType',
     'Attribute::getByName',
+    'ItemStackBase::saveEnchantsToUserData',
 ] as const;
 
 // decorated symbols
