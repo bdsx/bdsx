@@ -150,14 +150,14 @@ export function installErrorHandler():void {
                     };
                 }
                 if (funcname !== null) {
-                    out = `${moduleName}!${frame.functionName}`;
+                    out += `${moduleName}!${frame.functionName}`;
                     if (funcinfo !== null) {
                         out += `+0x${funcinfo.offset.toString(16)}`;
                     }
                 } else {
                     let asmname:string|null;
                     if (funcinfo !== null && (asmname = asm.getFunctionNameFromEntryAddress(funcinfo.address)) !== null) {
-                        out = `<asm> ${asmname}+0x${funcinfo.offset.toString(16)}`;
+                        out += `<asm> ${asmname}+0x${funcinfo.offset.toString(16)}`;
                     } else {
                         // unknown
                         const addr = frame.address.getAddressAsFloat();

@@ -269,49 +269,49 @@ Tester.test({
     },
 
     makefunc() {
-        const test = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).make(int32_t, {structureReturn:true});
-        this.equals(test(), 1, 'structureReturn int32_t');
-        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float64_t, null, float32_t);
+        const structureReturn = asm().mov_rp_c(Register.rcx, 1, 0, 1, OperationSize.dword).mov_r_r(Register.rax, Register.rcx).make(int32_t, {structureReturn:true, name: 'test, structureReturn'});
+        this.equals(structureReturn(), 1, 'structureReturn int32_t');
+        const floatToDouble = asm().cvtss2sd_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float64_t, {name: 'test, floatToDouble'}, float32_t);
         this.equals(floatToDouble(123), 123, 'float to double');
-        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float32_t, null, float64_t);
+        const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float32_t, {name: 'test, doubleToFloat'}, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
-        const getbool = asm().mov_r_c(Register.rax, 0x100).make(bool_t);
+        const getbool = asm().mov_r_c(Register.rax, 0x100).make(bool_t, {name: 'test, return 100'});
         this.equals(getbool(), false, 'bool return');
-        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, null, bool_t);
+        const bool2int = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, {name: 'test, return param'}, bool_t);
         this.equals(bool2int(true), 1, 'bool to int');
-        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int32_t, null, int32_t);
+        const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int32_t, {name: 'test, int2short_as_int'}, int32_t);
         this.equals(int2short_as_int(-1), 0xffff, 'int to short old');
-        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int16_t, null, int32_t);
+        const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int16_t, {name: 'test, int2short'}, int32_t);
         this.equals(int2short(-1), -1, 'int to short');
         this.equals(int2short(0xffff), -1, 'int to short');
-        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(uint16_t, null, int32_t);
+        const int2ushort = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(uint16_t, {name: 'test, int2ushort'}, int32_t);
         this.equals(int2ushort(-1), 0xffff, 'int to ushort');
         this.equals(int2ushort(0xffff), 0xffff, 'int to ushort');
-        const string2string = asm().mov_r_r(Register.rax, Register.rcx).make(CxxString, null, CxxString);
+        const string2string = asm().mov_r_r(Register.rax, Register.rcx).make(CxxString, {name: 'test, string2string'}, CxxString);
         this.equals(string2string('test'), 'test', 'string to string');
         this.equals(string2string('testtesta'), 'testtesta', 'test string over 8 bytes');
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
-        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer);
+        const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer, {name: 'test, nullreturn'});
         this.equals(nullreturn(), null, 'nullreturn does not return null');
 
-        const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, {name: 'test, overTheFour'}, int32_t, int32_t, int32_t, int32_t, int32_t);
         this.equals(overTheFour(0, 0, 0, 0, 1234), 1234, 'makefunc.js, overTheFour failed');
-        const overTheFiveNative = makefunc.np(overTheFour, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
-        const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, null, int32_t, int32_t, int32_t, int32_t, int32_t);
+        const overTheFiveNative = makefunc.np(overTheFour, int32_t, {name: 'test, overTheFiveNative'}, int32_t, int32_t, int32_t, int32_t, int32_t);
+        const overTheFiveRewrap = makefunc.js(overTheFiveNative, int32_t, {name: 'test, overTheFiveRewrap'}, int32_t, int32_t, int32_t, int32_t, int32_t);
         this.equals(overTheFiveRewrap(0, 0, 0, 0, 1234), 1234, 'makefunc.np, overTheFour failed');
 
         const CxxStringVectorToArray = CxxVectorToArray.make(CxxString);
         const CxxStringVector = CxxVector.make(CxxString);
-        const class_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVector);
+        const class_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, {name: 'test, class_to_array'}, CxxStringVector);
         const clsvector = CxxStringVector.construct();
         clsvector.push('a','b','c','d');
         this.equals(class_to_array(clsvector).join(','), 'a,b,c,d', 'CxxVectorToArray, class_to_array');
         clsvector.destruct();
 
-        const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, null, CxxStringVectorToArray);
+        const array_to_array = asm().mov_r_r(Register.rax, Register.rcx).make(CxxStringVectorToArray, {name: 'test, array_to_array'}, CxxStringVectorToArray);
         this.equals(array_to_array(['a','b','c','d']).join(','), 'a,b,c,d', 'CxxVectorToArray, array_to_array');
 
-        const rfloat_to_bin = asm().mov_r_r(Register.rax, Register.rcx).make(bin64_t, null, RelativeFloat);
+        const rfloat_to_bin = asm().mov_r_r(Register.rax, Register.rcx).make(bin64_t, {name: 'test, rfloat_to_bin'}, RelativeFloat);
         const value = RelativeFloat.create(123, true);
         this.equals(rfloat_to_bin(value), value.bin_value, 'rfloat_to_bin');
     },

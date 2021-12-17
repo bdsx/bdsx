@@ -2,9 +2,9 @@
 import { ConcurrencyQueue } from './concurrency';
 import { fsutil } from './fsutil';
 import { remapAndPrintError } from './source-map-support';
+import { wineCompatible } from './winecompatible';
 import path = require('path');
 import colors = require('colors');
-import child_process = require('child_process');
 
 const PLUGINS_BDSX_PATH = 'file:../bdsx';
 
@@ -66,21 +66,26 @@ export async function loadAllPlugins():Promise<void> {
         }
 
         async fix():Promise<void> {
-            const json = await this.getJson();
-            const deps = json.dependencies;
             let modified = false;
-            if (deps != null && deps.bdsx != null && deps.bdsx !== PLUGINS_BDSX_PATH) {
-                deps.bdsx = PLUGINS_BDSX_PATH;
-                modified = true;
-            }
-            const devDeps = json.devDependencies;
-            if (devDeps != null && devDeps.bdsx != null && devDeps.bdsx !== PLUGINS_BDSX_PATH) {
-                devDeps.bdsx = PLUGINS_BDSX_PATH;
-                modified = true;
-            }
-            if (json.scripts && json.scripts.prepare === 'tsc') {
-                json.scripts.prepare = 'tsc || exit 0';
-                modified = true;
+            try {
+                const json = await this.getJson();
+                const deps = json.dependencies;
+                if (deps != null && deps.bdsx != null && deps.bdsx !== PLUGINS_BDSX_PATH) {
+                    deps.bdsx = PLUGINS_BDSX_PATH;
+                    modified = true;
+                }
+                const devDeps = json.devDependencies;
+                if (devDeps != null && devDeps.bdsx != null && devDeps.bdsx !== PLUGINS_BDSX_PATH) {
+                    devDeps.bdsx = PLUGINS_BDSX_PATH;
+                    modified = true;
+                }
+                if (json.scripts && json.scripts.prepare === 'tsc') {
+                    json.scripts.prepare = 'tsc || exit 0';
+                    modified = true;
+                }
+            } catch (err) {
+                if (err.code === 'ENOENT') return;
+                throw err;
             }
 
             if (modified) {
@@ -130,13 +135,21 @@ export async function loadAllPlugins():Promise<void> {
                 } catch (err) {
                     this.loaded = false;
                     if (parentjson && /^file:(:?\.[\\/])?plugins[\\/]/.test(parentjson.dependencies[this.name])) {
+                        let directoryFound = false;
+                        const directoryPath = `${pluginspath}${path.sep}${this.name.substr(BDSX_SCOPE.length)}`;
                         try {
-                            await fsutil.stat(`${pluginspath}${path.sep}${this.name.substr(BDSX_SCOPE.length)}`);
+                            await fsutil.stat(directoryPath);
+                            directoryFound = true;
+                            await fsutil.stat(`${directoryPath}${path.sep}package.json`);
                         } catch (err) {
                             if (err.code === 'ENOENT') {
                                 console.error(colors.red(`[BDSX-Plugins] ${this.name}: removed`));
+                                if (directoryFound) {
+                                    wineCompatible.removeRecursiveSync(directoryPath);
+                                }
                                 delete parentjson.dependencies[this.name];
                                 packagejsonModified = true;
+                                needToNpmInstall = true;
                                 PackageJson.all.delete(this.name);
                                 counter.unref();
                                 return;
@@ -241,7 +254,7 @@ export async function loadAllPlugins():Promise<void> {
             await mainpkg.save();
         }
         if (needToNpmInstall) {
-            child_process.execSync('npm i', {stdio:'inherit', cwd:projpath});
+            wineCompatible.execSync('npm i');
         }
         await taskQueue.onceEnd();
 

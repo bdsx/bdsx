@@ -3,6 +3,7 @@ import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, Score
 import { serverInstance } from "../bds/server";
 import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
+import { decay } from "../decay";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
@@ -73,6 +74,8 @@ function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard
     const event = new ScoreResetEvent(identityRef, objective);
     const canceled = events.scoreReset.fire(event) === CANCEL;
     _tickCallback();
+    decay(identityRef);
+    decay(scoreboard);
     if (canceled) {
         scoreboard.sync(identityRef.scoreboardId, objective);
         return false;
@@ -134,6 +137,8 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
         break;
     }
     _tickCallback();
+    decay(identityRef);
+    decay(objective);
     if (canceled) {
         return false;
     }
@@ -155,12 +160,13 @@ export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
 }
 
 const _onObjectiveCreate = procHacker.hooking("Scoreboard::addObjective", Objective, null, Scoreboard, CxxString, CxxString, ObjectiveCriteria)(onObjectiveCreate);
-function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective {
+function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective|null {
     const event = new ObjectiveCreateEvent(name, displayName, criteria);
     const canceled = events.objectiveCreate.fire(event) === CANCEL;
     _tickCallback();
+    decay(criteria);
     if (canceled) {
-        return VoidPointer as any;
+        return null;
     }
     return _onObjectiveCreate(scoreboard, event.name, event.displayName, event.criteria);
 }

@@ -24,12 +24,12 @@ import './net-chat';
 import './net-disconnect';
 import './net-halfmove';
 import './net-login';
+import './net-ping';
 import './net-printall';
 import './net-rawpacket';
 import './net-scorepacket';
 import './net-sendhook';
 import './net-transferserver';
-import './net-ping'
 import './setblock';
 import './test';
 // import './permissions';

@@ -9,6 +9,7 @@ import { proc, procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { CANCEL, Encoding } from "./common";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
+import { decay } from "./decay";
 import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
@@ -16,7 +17,7 @@ import { makefunc } from "./makefunc";
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { CxxStringWrapper, Wrapper } from "./pointer";
 import { SharedPtr } from "./sharedpointer";
-import { remapAndPrintError, remapError } from "./source-map-support";
+import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { _tickCallback } from "./util";
 
@@ -90,7 +91,7 @@ function patchForStdio():void {
         if (events.serverLog.fire(line, color) === CANCEL) return;
         line = color(line);
         console.log(line);
-    }, void_t, {onError:asmcode.jsend_returnZero}, int32_t, StaticPointer, int64_as_float_t);
+    }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
@@ -100,7 +101,7 @@ function patchForStdio():void {
         if (events.commandOutput.fire(line) !== CANCEL) {
             console.log(line);
         }
-    }, void_t, {onError: asmcode.jsend_returnZero}, int64_as_float_t, StaticPointer);
+    }, void_t, {onError: asmcode.jsend_returnZero, name:`CommandOutputSenderHookCallback`}, int64_as_float_t, StaticPointer);
     procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x1A9, asmcode.CommandOutputSenderHook, Register.rax, true, [
         0xE8, 0xFF, 0xFF, 0xFF, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64,char const * __ptr64 const,uns>
         0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,   // lea rdx,qword ptr ds:[<class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::flush<char,struct std::char_traits<char> >(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64)>]
@@ -141,6 +142,7 @@ function _launch(asyncResolve:()=>void):void {
         events.serverClose.fire();
         events.serverClose.clear();
         _tickCallback();
+        decay(bd_server.serverInstance);
     }
 
     // // call game thread entry
@@ -197,7 +199,7 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.bedrock_server_exe_args = bedrock_server_exe.args;
     asmcode.bedrock_server_exe_argc = bedrock_server_exe.argc;
     asmcode.bedrock_server_exe_main = bedrock_server_exe.main;
-    asmcode.finishCallback = makefunc.np(finishCallback, void_t, null);
+    asmcode.finishCallback = makefunc.np(finishCallback, void_t);
 
     {
         // restore main
@@ -223,7 +225,7 @@ function _launch(asyncResolve:()=>void):void {
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
-    asmcode.updateEvTargetFire = makefunc.np(()=>events.serverUpdate.fire(), void_t, null);
+    asmcode.updateEvTargetFire = makefunc.np(()=>events.serverUpdate.fire(), void_t, {name: 'events.serverUpdate.fire'});
 
     procHacker.patching('update-hook',
         '<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()', // caller of ServerInstance::_update
@@ -267,19 +269,19 @@ function _launch(asyncResolve:()=>void):void {
             } catch (err) {
                 events.errorFire(err);
             }
-        }, void_t, null, VoidPointer),
+        }, void_t, {name: 'hook of ScriptEngine::startScriptLoading'}, VoidPointer),
         [Register.rcx], []);
 
     procHacker.hookingRawWithCallOriginal('Minecraft::startLeaveGame',
         makefunc.np((mc, b)=>{
             events.serverLeave.fire();
             _tickCallback();
-        }, void_t, null, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
+        }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
     procHacker.hookingRawWithCallOriginal('ScriptEngine::shutdown',
         makefunc.np(()=>{
             events.serverStop.fire();
             _tickCallback();
-        }, void_t), [Register.rcx], []);
+        }, void_t, {name: 'hook of ScriptEngine::shutdown'}), [Register.rcx], []);
 
     // keep ScriptEngine variables. idk why it needs.
     procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());

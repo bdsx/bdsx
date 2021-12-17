@@ -6,6 +6,7 @@ import { ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer } from "../core";
+import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { _tickCallback } from "../util";
@@ -48,6 +49,9 @@ function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos,
     const event = new BlockDestroyEvent(actor as ServerPlayer, blockPos, blockSource, itemStack, generateParticle);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
     _tickCallback();
+    decay(blockSource);
+    decay(blockPos);
+    decay(itemStack);
     if (canceled) {
         return false;
     } else {
@@ -60,6 +64,9 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
     const event = new BlockPlaceEvent(actor as ServerPlayer, block, blockSource, blockPos);
     const canceled = events.blockPlace.fire(event) === CANCEL;
     _tickCallback();
+    decay(blockSource);
+    decay(block);
+    decay(blockPos);
     if (canceled) {
         return false;
     } else {
@@ -89,6 +96,8 @@ function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):v
     const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
     events.pistonMove.fire(event);
     _tickCallback();
+    decay(pistonBlockActor);
+    decay(blockSource);
     return _onPistonMove(pistonBlockActor, event.blockSource);
 }
 const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);
@@ -112,6 +121,10 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
     const event = new FarmlandDecayEvent(block, blockPos, blockSource, culprit);
     const canceled = events.farmlandDecay.fire(event) === CANCEL;
     _tickCallback();
+    decay(block);
+    decay(blockSource);
+    decay(blockPos);
+    decay(culprit);
     if (!canceled) {
         return _onFarmlandDecay(event.block, event.blockSource, event.blockPos, event.culprit, fallDistance);
     }
@@ -135,6 +148,8 @@ function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool
     const event = new CampfireTryLightFire(blockPos, blockSource);
     const canceled = events.campfireLight.fire(event) === CANCEL;
     _tickCallback();
+    decay(blockSource);
+    decay(blockPos);
     if (canceled) return false;
     else return _CampfireTryLightFire(event.blockSource, event.blockPos);
 }
@@ -157,6 +172,8 @@ function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool
     const event = new CampfireTryDouseFire(blockPos, blockSource);
     const canceled = events.campfireDouse.fire(event) === CANCEL;
     _tickCallback();
+    decay(blockSource);
+    decay(blockPos);
     if (canceled) return false;
     else return _CampfireTryDouseFire(event.blockSource, event.blockPos);
 }

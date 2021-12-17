@@ -667,7 +667,7 @@ export class CommandRegistry extends HasTypeId {
 
             returnval.setPointer(cmd);
             return returnval;
-        }, StaticPointer, null, StaticPointer);
+        }, StaticPointer, {name: `${name} command::allocator`}, StaticPointer);
 
         const sig = this.findCommand(name);
         if (sig === null) throw Error(`${name}: command not found`);

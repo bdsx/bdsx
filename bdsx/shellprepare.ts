@@ -6,8 +6,7 @@ const BDSX_PERMANENT = process.env.BDSX_PERMANENT === 'true';
 const DATA_FILE_PATH = './bedrock_server/bdsx_shell_data.ini';
 const RESTART_TIME_THRESHOLD = 30000;
 
-const data:Record<string, string> = {};
-(data as any).__proto__ = null;
+const data:Record<string, string> = Object.create(null);
 try {
     const lines = fs.readFileSync(DATA_FILE_PATH, 'utf8');
     let matched:RegExpExecArray|null;

@@ -7,11 +7,12 @@ import { PacketIdToType } from "../bds/packets";
 import { proc, procHacker } from "../bds/proc";
 import { abstract, CANCEL } from "../common";
 import { VoidPointer } from "../core";
+import { decay } from "../decay";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { bool_t, int32_t, int64_as_float_t, uint8_t, void_t } from "../nativetype";
+import { bool_t, int32_t, int64_as_float_t, void_t } from "../nativetype";
 import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
@@ -49,18 +50,26 @@ function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkH
             const data = s.data;
             const rawpacketptr = data.valueptr;
 
-            for (const listener of target.allListeners()) {
-                try {
+            const ptrs:VoidPointer[] = [];
+            try {
+                for (const listener of target.allListeners()) {
                     const ptr = rawpacketptr.add();
-                    if (listener(ptr, data.length, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        return null;
+                    ptrs.push(ptr);
+                    try {
+                        if (listener(ptr, data.length, ni, packetId) === CANCEL) {
+                            _tickCallback();
+                            return null;
+                        }
+                    } catch (err) {
+                        events.errorFire(err);
                     }
-                } catch (err) {
-                    events.errorFire(err);
+                }
+                _tickCallback();
+            } finally {
+                for (const ptr of ptrs) {
+                    decay(ptr);
                 }
             }
-            _tickCallback();
         }
         return createPacketRaw(rbp.packet, packetId);
     } catch (err) {
@@ -78,18 +87,21 @@ function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packet
             const ni = nethook.lastSender;
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
-            for (const listener of target.allListeners()) {
-                try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) {
-                        result.streamReadResult = StreamReadResult.Ignore;
-                        _tickCallback();
-                        return result;
+            try {
+                for (const listener of target.allListeners()) {
+                    try {
+                        if (listener(typedPacket, ni, packetId) === CANCEL) {
+                            result.streamReadResult = StreamReadResult.Ignore;
+                            return result;
+                        }
+                    } catch (err) {
+                        events.errorFire(err);
                     }
-                } catch (err) {
-                    events.errorFire(err);
                 }
+            } finally {
+                _tickCallback();
+                decay(typedPacket);
             }
-            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -105,17 +117,20 @@ function onPacketAfter(rbp:OnPacketRBP):void {
             const ni = nethook.lastSender;
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
-            for (const listener of target.allListeners()) {
-                try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        break;
+            try {
+                for (const listener of target.allListeners()) {
+                    try {
+                        if (listener(typedPacket, ni, packetId) === CANCEL) {
+                            break;
+                        }
+                    } catch (err) {
+                        events.errorFire(err);
                     }
-                } catch (err) {
-                    events.errorFire(err);
                 }
+            } finally {
+                _tickCallback();
+                decay(typedPacket);
             }
-            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -128,17 +143,20 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
         if (target !== null && !target.isEmpty()) {
             const TypedPacket = PacketIdToType[packetId] || Packet;
             const typedPacket = packet.as(TypedPacket);
-            for (const listener of target.allListeners()) {
-                try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        return 1;
+            try {
+                for (const listener of target.allListeners()) {
+                    try {
+                        if (listener(typedPacket, ni, packetId) === CANCEL) {
+                            return 1;
+                        }
+                    } catch (err) {
+                        events.errorFire(err);
                     }
-                } catch (err) {
-                    events.errorFire(err);
                 }
+            } finally {
+                _tickCallback();
+                decay(typedPacket);
             }
-            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -150,17 +168,21 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
         const packetId = packet.getId();
         const target = events.packetSendRaw(packetId);
         if (target !== null && !target.isEmpty()) {
-            for (const listener of target.allListeners()) {
-                try {
-                    if (listener(data.valueptr, data.length, ni, packetId) === CANCEL) {
-                        _tickCallback();
-                        return 1;
+            const dataptr = data.valueptr;
+            try {
+                for (const listener of target.allListeners()) {
+                    try {
+                        if (listener(dataptr, data.length, ni, packetId) === CANCEL) {
+                            return 1;
+                        }
+                    } catch (err) {
+                        events.errorFire(err);
                     }
-                } catch (err) {
-                    events.errorFire(err);
                 }
+            } finally {
+                _tickCallback();
+                decay(dataptr);
             }
-            _tickCallback();
         }
     } catch (err) {
         remapAndPrintError(err);
@@ -180,7 +202,7 @@ bedrockServer.withLoading().then(()=>{
         ], [10, 14]);
 
     // hook before
-    asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, null, ExtendedStreamReadResult, OnPacketRBP, int32_t);
+    asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, {name: 'onPacketBefore'}, ExtendedStreamReadResult, OnPacketRBP, int32_t);
     procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2f4,
         asmcode.packetBeforeHook, // original code depended
         Register.rax,

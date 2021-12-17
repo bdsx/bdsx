@@ -160,11 +160,8 @@ class StructureDefinition {
         const superproto = supercls.prototype;
 
         const superfield = supercls[fieldmap];
-        if (superfield != null) (this.fields as any).__proto__ = superfield;
-        else (this.fields as any).__proto__ = null;
+        Object.setPrototypeOf(this.fields, superfield || null);
         Object.freeze(this.fields);
-        const test = Object.create(null);
-        test.__proto__ = superfield;
 
         const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
         if (ctor !== null) {
