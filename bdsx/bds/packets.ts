@@ -331,7 +331,12 @@ export class LevelSoundEventPacketV1 extends Packet {
 
 @nativeClass(null)
 export class LevelEventPacket extends Packet {
-    // unknown
+    @nativeField(int32_t)
+    eventId:int32_t;
+    @nativeField(Vec3)
+    pos:Vec3;
+    @nativeField(int32_t)
+    data:int32_t;
 }
 
 @nativeClass(null)
