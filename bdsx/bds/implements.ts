@@ -144,7 +144,7 @@ Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Ac
     if (ptr === null) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
-    if (actor) return actor;
+    if (actor != null) return actor;
     if (ptr.getPointer().equals(ServerPlayer_vftable)) {
         actor = ptr.as(ServerPlayer);
     } else if (ptr.getPointer().equals(ItemActor_vftable)) {
@@ -262,7 +262,7 @@ ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):Att
 
 function _removeActor(actor:Actor):void {
     actorMaps.delete(actor.getAddressBin());
-    // decay(actor);
+    decay(actor);
 }
 
 procHacker.hookingRawWithCallOriginal(
