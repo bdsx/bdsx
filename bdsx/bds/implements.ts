@@ -145,7 +145,7 @@ Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Ac
     if (ptr === null) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
-    if (actor) return actor;
+    if (actor != null) return actor;
     if (ptr.getPointer().equals(ServerPlayer_vftable)) {
         actor = ptr.as(ServerPlayer);
     } else if (ptr.getPointer().equals(ItemActor_vftable)) {
