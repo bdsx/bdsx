@@ -107,7 +107,7 @@ Level.prototype.getEntities = function() {
     return out;
 };
 Level.prototype.getTime = procHacker.js("Level::getTime", int64_as_float_t, {this:Level});
-Level.prototype.getCurrentTick = procHacker.js("Level::getCurrentTick", int64_as_float_t.ref(), {this:Level}); // You can run the server for 1.4202551784875594e+22 years till it exceeds the max safe integer 
+Level.prototype.getCurrentTick = procHacker.js("Level::getCurrentTick", int64_as_float_t.ref(), {this:Level});// You can run the server for 1.4202551784875594e+22 years till it exceeds the max safe integer
 
 Level.abstract({
     vftable: VoidPointer,
