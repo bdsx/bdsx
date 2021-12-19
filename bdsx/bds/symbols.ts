@@ -41,6 +41,7 @@ const symbols = [
     'ServerNetworkHandler::disconnectClient',
     'ServerNetworkHandler::updateServerAnnouncement',
     'ServerNetworkHandler::setMaxNumPlayers',
+    'ServerNetworkHandler::_onPlayerLeft',
     'ServerPlayer::changeDimension',
     'ServerPlayer::knockback',
     'ServerPlayer::openInventory',
@@ -347,6 +348,7 @@ const symbols = [
     'ChunkSource::getLevel',
     'Biome::getBiomeType',
     'Attribute::getByName',
+    'ItemStackBase::saveEnchantsToUserData',
 ] as const;
 
 // decorated symbols
