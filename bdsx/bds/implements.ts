@@ -262,7 +262,7 @@ ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):Att
 
 function _removeActor(actor:Actor):void {
     actorMaps.delete(actor.getAddressBin());
-    decay(actor);
+    // decay(actor);
 }
 
 procHacker.hookingRawWithCallOriginal(
