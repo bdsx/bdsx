@@ -349,6 +349,8 @@ const symbols = [
     'Biome::getBiomeType',
     'Attribute::getByName',
     'ItemStackBase::saveEnchantsToUserData',
+    'BlockEventCoordinator::sendBlockDestructionStarted',
+    'Level::getCurrentTick',
 ] as const;
 
 // decorated symbols
