@@ -75,14 +75,10 @@ const _onBlockDestroy = procHacker.hooking("BlockSource::checkBlockDestroyPermis
 
 function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Player, blockPos:BlockPos):void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
-    const canceled = events.blockDestructionStart.fire(event) === CANCEL;
+    events.blockDestructionStart.fire(event);
     _tickCallback();
     decay(blockPos);
-    if (canceled) {
-        return;
-    } else {
-        return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
-    }
+    return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
 }
 const _onBlockDestructionStart = procHacker.hooking("BlockEventCoordinator::sendBlockDestructionStarted", void_t, null, StaticPointer, Player, BlockPos)(onBlockDestructionStart);
 

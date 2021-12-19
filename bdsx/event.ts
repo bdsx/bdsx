@@ -56,8 +56,8 @@ export namespace events {
 
     /** Cancellable */
     export const blockDestroy = new Event<(event: BlockDestroyEvent) => void | CANCEL>();
-    /** Cancellable */
-    export const blockDestructionStart = new Event<(event: BlockDestructionStartEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const blockDestructionStart = new Event<(event: BlockDestructionStartEvent) => void>();
     /** Cancellable */
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
     /** Not cancellable */
