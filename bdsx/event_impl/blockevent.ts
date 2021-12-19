@@ -146,7 +146,6 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
     decay(block);
     decay(blockSource);
     decay(blockPos);
-    decay(culprit);
     if (!canceled) {
         return _onFarmlandDecay(event.block, event.blockSource, event.blockPos, event.culprit, fallDistance);
     }
