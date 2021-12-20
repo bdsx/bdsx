@@ -107,6 +107,7 @@ Level.prototype.getEntities = function() {
     return out;
 };
 Level.prototype.getTime = procHacker.js("Level::getTime", int64_as_float_t, {this:Level});
+Level.prototype.getCurrentTick = procHacker.js("Level::getCurrentTick", int64_as_float_t.ref(), {this:Level});// You can run the server for 1.4202551784875594e+22 years till it exceeds the max safe integer
 
 Level.abstract({
     vftable: VoidPointer,
@@ -144,7 +145,7 @@ Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Ac
     if (ptr === null) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
-    if (actor) return actor;
+    if (actor != null) return actor;
     if (ptr.getPointer().equals(ServerPlayer_vftable)) {
         actor = ptr.as(ServerPlayer);
     } else if (ptr.getPointer().equals(ItemActor_vftable)) {
@@ -544,6 +545,7 @@ ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValu
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
 ItemStack.prototype.constructItemEnchantsFromUserData = procHacker.js("ItemStackBase::constructItemEnchantsFromUserData", ItemEnchants, {this:ItemStack, structureReturn: true});
+ItemStack.prototype.saveEnchantsToUserData = procHacker.js("ItemStackBase::saveEnchantsToUserData", void_t, {this:ItemStack}, ItemEnchants);
 const CommandUtils$createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
 ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();

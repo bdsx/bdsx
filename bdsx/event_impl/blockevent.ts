@@ -2,10 +2,10 @@ import { Actor } from "../bds/actor";
 import { Block, BlockSource } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
-import { ServerPlayer } from "../bds/player";
+import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
-import { NativePointer } from "../core";
+import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
@@ -25,6 +25,18 @@ export class BlockDestroyEvent implements IBlockDestroyEvent {
         public blockSource: BlockSource,
         public itemStack: ItemStack,
         public generateParticle: boolean
+    ) {
+    }
+}
+
+interface IBlockDestructionStartEvent {
+    player: ServerPlayer;
+    blockPos: BlockPos;
+}
+export class BlockDestructionStartEvent implements IBlockDestructionStartEvent {
+    constructor(
+        public player: ServerPlayer,
+        public blockPos: BlockPos,
     ) {
     }
 }
@@ -59,6 +71,16 @@ function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos,
     }
 }
 const _onBlockDestroy = procHacker.hooking("BlockSource::checkBlockDestroyPermissions", bool_t, null, BlockSource, Actor, BlockPos, ItemStack, bool_t)(onBlockDestroy);
+
+
+function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Player, blockPos:BlockPos):void {
+    const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
+    events.blockDestructionStart.fire(event);
+    _tickCallback();
+    decay(blockPos);
+    return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
+}
+const _onBlockDestructionStart = procHacker.hooking("BlockEventCoordinator::sendBlockDestructionStarted", void_t, null, StaticPointer, Player, BlockPos)(onBlockDestructionStart);
 
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, facing:number, actor:Actor, ignoreEntities:boolean):boolean {
     const event = new BlockPlaceEvent(actor as ServerPlayer, block, blockSource, blockPos);
@@ -124,7 +146,6 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
     decay(block);
     decay(blockSource);
     decay(blockPos);
-    decay(culprit);
     if (!canceled) {
         return _onFarmlandDecay(event.block, event.blockSource, event.blockPos, event.culprit, fallDistance);
     }
