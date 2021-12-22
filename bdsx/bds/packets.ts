@@ -1489,6 +1489,37 @@ export class PlayerAuthInputPacket extends Packet {
     delta: Vec3;
 }
 
+export namespace PlayerAuthInputPacket {
+    export enum InputData {
+        Ascend,
+        Descend,
+        NorthJump,
+        JumpDown,
+        SprintDown,
+        ChangeHeight,
+        Jumping,
+        AutoJumpingInWater,
+        Sneaking,
+        SneakDown,
+        Up,
+        Down,
+        Left,
+        Right,
+        UpLeft,
+        UpRight,
+        WantUp,
+        WantDown,
+        WantDownSlow,
+        WantUpSlow,
+        Sprinting,
+        AscendScaffolding,
+        DescendScaffolding,
+        SneakToggleDown,
+        PersistSneak,
+        // These are all from IDA, PlayerAuthInputPacket::InputData in 1.14.60.5, 25-36 were not implemented
+    }
+}
+
 @nativeClass(null)
 export class CreativeContentPacket extends Packet {
     // unknown

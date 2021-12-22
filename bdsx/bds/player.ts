@@ -4,6 +4,7 @@ import { float32_t, int32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
+import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import { Certificate } from "./connreq";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer } from "./inventory";
@@ -231,6 +232,20 @@ export class Player extends Actor {
      * Returns the player's certificate
      */
     getCertificate(): Certificate {
+        abstract();
+    }
+
+    /**
+     * Returns the multiplier for the player block destroy time, with every factor accounnted, except for if the tool is correct, the faster the higher
+     */
+    getDestroySpeed(block: Block): number {
+        abstract();
+    }
+
+    /**
+     * Returns if the tool is correct to break a block
+     */
+    canDestroy(block: Block): boolean {
         abstract();
     }
 }
