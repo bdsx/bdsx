@@ -482,7 +482,7 @@ export class Actor extends NativeClass {
         this.setNameTag(name);
     }
     /**
-     * Changes the entity's name
+     * Changes the entity's nametag
      */
     setNameTag(name:string):void {
         abstract();
