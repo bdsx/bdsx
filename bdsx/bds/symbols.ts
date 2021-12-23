@@ -62,6 +62,7 @@ const symbols = [
     'Actor::hasTag',
     'Actor::removeTag',
     'Actor::setNameTag',
+    'Actor::setNameTagVisible',
     'Actor::hurt',
     'Actor::despawn',
     'Actor::getArmor',
@@ -352,7 +353,7 @@ const symbols = [
     'BlockEventCoordinator::sendBlockDestructionStarted',
     'Level::getCurrentTick',
     'Player::getDestroySpeed',
-    'Player::canDestroy',
+    'Player::canDestroy'
 ] as const;
 
 // decorated symbols
