@@ -352,6 +352,8 @@ const symbols = [
     'ItemStackBase::saveEnchantsToUserData',
     'BlockEventCoordinator::sendBlockDestructionStarted',
     'Level::getCurrentTick',
+    'Player::getDestroySpeed',
+    'Player::canDestroy'
 ] as const;
 
 // decorated symbols
