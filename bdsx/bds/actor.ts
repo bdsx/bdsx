@@ -487,16 +487,28 @@ export class Actor extends NativeClass {
     setNameTag(name:string):void {
         abstract();
     }
+    /**
+     * Set if the entity's nametag is visible
+     */
     setNameTagVisible(visible: boolean): void {
         abstract();
     }
+    /**
+     * Set a text under the entity's name (original is name of objective for scoreboard)
+     */
     setScoreTag(text:string):void{
         abstract();
     }
-    despawn():void{
+    /**
+     * Returns a text under the entity's name (original is name of objective for scoreboard)
+     */
+    getScoreTag():string{
         abstract();
     }
-    getScoreTag():string{
+    /**
+     * Despawn the entity. Don't use for Player
+     */
+    despawn():void{
         abstract();
     }
     getNetworkIdentifier():NetworkIdentifier {
