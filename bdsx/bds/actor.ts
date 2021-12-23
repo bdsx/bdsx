@@ -476,15 +476,19 @@ export class Actor extends NativeClass {
     }
     /**
      * Changes the entity's name
+     * @deprecated Use `setNameTag` instead. BDS doesn't have `Actor::setName`
      */
     setName(name:string):void {
-        abstract();
+        this.setNameTag(name);
     }
     /**
      * Changes the entity's name
      */
     setNameTag(name:string):void {
-        this.setName(name);
+        abstract();
+    }
+    setNameTagVisible(visible: boolean): void {
+        abstract();
     }
     setScoreTag(text:string):void{
         abstract();
