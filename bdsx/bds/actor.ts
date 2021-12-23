@@ -474,9 +474,12 @@ export class Actor extends NativeClass {
     getName():string {
         abstract();
     }
+
     /**
      * Changes the entity's name
-     * @deprecated Use `setNameTag` instead. BDS doesn't have `Actor::setName`
+     *
+     * Calls Player::setName if it's Player.
+     * or it calls Actor::setNameTag.
      */
     setName(name:string):void {
         this.setNameTag(name);
