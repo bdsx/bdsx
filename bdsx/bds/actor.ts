@@ -506,7 +506,7 @@ export class Actor extends NativeClass {
         abstract();
     }
     /**
-     * Despawn the entity. Don't use for Player
+     * Despawn the entity. Don't use for this Player.
      */
     despawn():void{
         abstract();
