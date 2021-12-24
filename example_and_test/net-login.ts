@@ -16,6 +16,7 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
     const xuid = cert.getXuid();
     const username = cert.getId();
 
+    // sendLog
     console.log(`Connection: ${username}> IP=${ip}, XUID=${xuid}, OS=${DeviceOS[connreq.getDeviceOS()] || 'UNKNOWN'}`);
     if (username) connectionList.set(networkIdentifier, username);
 

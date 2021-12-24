@@ -8,6 +8,9 @@ import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
 
 export class Scoreboard extends NativeClass {
+    /**
+     * Resends the scoreboard to all clients
+     */
     sync(id:ScoreboardId, objective:Objective):void {
         abstract();
     }
@@ -17,7 +20,7 @@ export class Scoreboard extends NativeClass {
     }
 
     /**
-     *  @param name currently only 'dummy'
+     *  @param name Currently accepts only 'dummy'
      */
     getCriteria(name:string):ObjectiveCriteria|null {
         abstract();
@@ -135,7 +138,7 @@ export class ObjectiveCriteria extends NativeClass {
 
 @nativeClass(null)
 export class Objective extends NativeClass {
-    @nativeField(CxxString, 0x40)
+    @nativeField(CxxString, 0x40) // accessed in Objective::serialize, low possibility to be changed through updates
     name:CxxString;
     @nativeField(CxxString)
     displayName:CxxString;

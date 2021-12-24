@@ -29,7 +29,7 @@ export class NetworkHandler extends NativeClass {
         abstract();
     }
 
-    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
+    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection|null {
         abstract();
     }
 }
@@ -151,7 +151,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
 }
 export let networkHandler:NetworkHandler;
 
-procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{
     try {
         events.networkDisconnected.fire(ni);
         _tickCallback();
@@ -163,5 +163,5 @@ procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', ma
     setTimeout(()=>{
         identifiers.delete(ni);
     }, 3000);
-}, void_t, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
+}, void_t, {name: 'hook of NetworkIdentifier dtor'}, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);

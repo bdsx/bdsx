@@ -37,6 +37,9 @@ export class CommandOrigin extends NativeClass {
     getRequestId():CxxString {
         abstract();
     }
+    /**
+     * @remarks Do not call this the second time, assign it to a variable when calling this
+     */
     getName():string {
         abstract();
     }
@@ -51,13 +54,14 @@ export class CommandOrigin extends NativeClass {
     }
 
     /**
-     * actually, it's nullable when the server is just started without any joining
+     * Returns the dimension of the recieved command
      */
     getDimension(): Dimension {
         abstract();
     }
     /**
-     * it returns null if the command origin is the console
+     * Returns the entity that send the command
+     * @remarks Null if the command origin is the console
      */
     getEntity():Actor|null {
         abstract();
@@ -100,8 +104,8 @@ const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 // void destruct(CommandOrigin* origin);
 CommandOrigin.prototype.destruct = makefunc.js([0x00], void_t, {this: CommandOrigin});
 
-// std::string CommandOrigin::getRequestId();
-CommandOrigin.prototype.getRequestId = makefunc.js([0x08], CxxString, {this: CommandOrigin, structureReturn: true});
+// std::string& CommandOrigin::getRequestId();
+CommandOrigin.prototype.getRequestId = makefunc.js([0x08], CxxString, {this: CommandOrigin});
 
 // std::string CommandOrigin::getName();
 CommandOrigin.prototype.getName = makefunc.js([0x10], CxxString, {this: CommandOrigin, structureReturn: true});

@@ -842,7 +842,6 @@ function parseDeco(
             if (base === null) throw Error(`null base`);
             base = base.decorate(`[${number}]`, parser.getFrom(sourceFrom));
             base.arraySize = +number;
-            +number;
         } else {
             parser.i--;
             printParserState(base);

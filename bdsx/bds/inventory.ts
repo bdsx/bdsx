@@ -96,6 +96,9 @@ export enum CreativeItemCategory {
 }
 
 export class Item extends NativeClass {
+    /**
+     * Returns whether the item is allowed to be used in the offhand slot
+     */
     allowOffhand():boolean {
         abstract();
     }
@@ -106,13 +109,16 @@ export class Item extends NativeClass {
         if (name === null) throw Error(`item has not any names`);
         return name;
     }
-    /** @deprecated use getCommandNames2 */
+    /** @deprecated Use `this.getCommandNames2()` instead */
     getCommandNames():CxxVector<CxxStringWith8Bytes> {
         abstract();
     }
     getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
+    /**
+     * Returns the category of the item in creative inventory
+     */
     getCreativeCategory():number {
         abstract();
     }
@@ -123,7 +129,9 @@ export class Item extends NativeClass {
         abstract();
     }
     /**
-     * Will not affect client but allows /replaceitem
+     * Changes whether the item is allowed to be used in the offhand slot
+     *
+     * @remarks Will not affect client but allows /replaceitem
      */
     setAllowOffhand(value:boolean):void {
         abstract();
@@ -160,8 +168,14 @@ export class ItemStack extends NativeClass {
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
-    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+    static constructWith(itemName:ItemId, amount?:number, data?:number): ItemStack;
+    static constructWith(itemName:string, amount?:number, data?:number): ItemStack;
+    static constructWith(itemName:ItemId|string, amount:number = 1, data:number = 0):ItemStack {
         abstract();
+    }
+    /** @deprecated */
+    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+        return ItemStack.constructWith(itemName, amount, data);
     }
     static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
         abstract();
@@ -192,7 +206,7 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     cloneItem(): ItemStack{
-        const itemStack = ItemStack.create('air');
+        const itemStack = ItemStack.constructWith('air');
         this._cloneItem(itemStack);
         return itemStack;
     }
@@ -251,8 +265,9 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     /**
-     * it returns the enchantability.
-     * (See enchantability on https://minecraft.fandom.com/wiki/Enchanting_mechanics)
+     * Returns the item's enchantability
+     *
+     * @see https://minecraft.fandom.com/wiki/Enchanting_mechanics
      */
     getEnchantValue():number {
         abstract();
@@ -273,7 +288,7 @@ export class ItemStack extends NativeClass {
     }
 
     /**
-     * Value is applied only to Damageable items
+     * @remarks The value is applied only to Damageable items
      */
     setDamageValue(value:number):void {
         abstract();
@@ -366,9 +381,49 @@ export class ItemStack extends NativeClass {
     constructItemEnchantsFromUserData():ItemEnchants {
         abstract();
     }
+    saveEnchantsToUserData(itemEnchants:ItemEnchants):void {
+        abstract();
+    }
 }
 
+export class Container extends NativeClass {
+    getSlots():CxxVector<ItemStack> {
+        abstract();
+    }
+    getItemCount(compare:ItemStack):int32_t {
+        abstract();
+    }
+    getContainerType():ContainerType {
+        abstract();
+    }
+    setCustomName(name:string):void {
+        abstract();
+    }
+}
+
+export class FillingContainer extends Container {
+}
+export class SimpleContainer extends Container {
+}
+
+export class Inventory extends FillingContainer {
+    /**
+     * Remove the items in the slot
+     * @remarks Requires `player.sendInventory()` to update the slot
+     * */
+    dropSlot(slot:number, onlyClearContainer:boolean, dropAll:boolean, randomly:boolean):void {
+        abstract();
+    }
+}
+
+export class PlayerUIContainer extends SimpleContainer {
+}
+
+@nativeClass(null)
 export class PlayerInventory extends NativeClass {
+    @nativeField(Inventory.ref(), 0xB0) // accessed in PlayerInventory::getSlots when calling Container::getSlots
+    container:Inventory;
+
     addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
         abstract();
     }
@@ -391,7 +446,7 @@ export class PlayerInventory extends NativeClass {
         abstract();
     }
     getSelectedSlot():number {
-        return this.getInt8(0x10);
+        return this.getInt8(0x10); // accessed in PlayerInventory::getSelectedSlot `mov eax, [rcx+10h]`
     }
     getSlotWithItem(itemStack:ItemStack, checkAux:boolean, checkData:boolean):number {
         abstract();
@@ -457,8 +512,12 @@ export class ItemStackNetIdVariant extends NativeClass {
 export class NetworkItemStackDescriptor extends NativeClass {
     @nativeField(ItemDescriptor)
     descriptor:ItemDescriptor;
-    @nativeField(ItemStackNetIdVariant, 0x54)
+    @nativeField(ItemStackNetIdVariant, 0x54) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
     id:ItemStackNetIdVariant;
+
+    static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
+        abstract();
+    }
 }
 
 @nativeClass()
@@ -500,7 +559,7 @@ export class InventoryTransactionItemGroup extends NativeClass {
 export class InventoryTransaction extends NativeClass {
     // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
     // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
-    @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40)
+    @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40) // accessed in InventoryTransaction::~InventoryTransaction when calling std::vector<InventoryTransactionItemGroup>::_Tidy
     content:CxxVector<InventoryTransactionItemGroup>;
 
     /** The packet will be cancelled if this is added wrongly */

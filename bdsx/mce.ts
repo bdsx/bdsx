@@ -23,12 +23,13 @@ export namespace mce
             return generateUUID().value;
         },
         toString(uuid:UUID) {
-            const hex = bin.hex(uuid);
-            const u1 = hex.substr(0, 8);
-            const u2 = hex.substr(8, 4);
-            const u3 = hex.substr(12, 4);
-            const u4 = hex.substr(16, 4);
-            const u5 = hex.substr(20);
+            const hex = bin.reversedHex(uuid);
+            const u4 = hex.substr(0, 4);
+            const u5 = hex.substr(4, 12);
+
+            const u1 = hex.substr(16, 8);
+            const u2 = hex.substr(24, 4);
+            const u3 = hex.substr(28, 4);
             return `${u1}-${u2}-${u3}-${u4}-${u5}`;
         },
     }, 'UUID');

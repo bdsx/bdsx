@@ -148,7 +148,7 @@ export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }):
 }
 
 /**
- * @deprecated use util.inspect
+ * @deprecated Use `util.inspect(v)` instead.
  */
 export function anyToString(v:unknown):string {
     return util.inspect(v);
@@ -205,6 +205,11 @@ export function printOnProgress(message:string):void {
     process.stdout.write(message);
     process.stdout.clearLine(1);
     console.log();
+}
+
+export function getEnumKeys<T extends Record<string, number|string>>(enumType:T):(keyof T)[] {
+    const NUMBERIC = /^[1-9][0-9]*$/;
+    return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
 }
 
 export const ESCAPE = "§";

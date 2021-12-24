@@ -1,10 +1,11 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { CxxVector } from "../cxxvector";
+import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
-import { BlockPos } from "./blockpos";
-import { CommandName } from "./commandname";
+import type { BlockPos, ChunkPos } from "./blockpos";
+import type { ChunkSource, LevelChunk } from "./chunk";
+import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 import { CompoundTag } from "./nbt";
 
@@ -12,7 +13,9 @@ import { CompoundTag } from "./nbt";
 export class BlockLegacy extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    /** @deprecated use Block.getDescriptionId() instead */
+    /**
+     * @deprecated Use `this.getRenderBlock().getDescriptionId()` instead
+     */
     @nativeField(CxxString)
     descriptionId:CxxString;
 
@@ -24,7 +27,7 @@ export class BlockLegacy extends NativeClass {
         return name;
     }
     /**
-     * @deprecated use getCommandNames2
+     * @deprecated Use `this.getCommandNames2()` instead
      */
     getCommandNames():CxxVector<CxxStringWith8Bytes> {
         abstract();
@@ -32,17 +35,30 @@ export class BlockLegacy extends NativeClass {
     getCommandNames2():CxxVector<CommandName> {
         abstract();
     }
+    /**
+     * Returns the category of the block in creative inventory
+     */
     getCreativeCategory():number {
         abstract();
     }
     /**
-     * Will not affect actual destroy time but will affect the speed of cracks
+     * Changes the time needed to destroy the block
+     * @remarks Will not affect actual destroy time but will affect the speed of cracks
      */
     setDestroyTime(time:number):void {
         abstract();
     }
+    /**
+     * Returns the time needed to destroy the block
+     */
     getDestroyTime():number {
-        return this.getFloat32(0x12C);
+        return this.getFloat32(0x12C); // accessed in BlockLegacy::setDestroyTime
+    }
+    /**
+     * Returns the Block instance
+     */
+    getRenderBlock():Block {
+        abstract();
     }
 }
 
@@ -58,8 +74,20 @@ export class Block extends NativeClass {
     /**
      * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
      */
-    static create(blockName:string, data:number = 0):Block|null {
+    static constructWith(blockName:BlockId, data?: number):Block|null;
+    static constructWith(blockName:string, data?: number):Block|null;
+    static constructWith(blockName:BlockId|string, data:number = 0):Block|null {
         abstract();
+    }
+
+    static create(blockName:BlockId, data?: number):Block|null;
+    static create(blockName:string, data?: number):Block|null;
+
+    /**
+     * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
+     */
+    static create(blockName:string, data:number = 0):Block|null {
+        return this.constructWith(blockName, data);
     }
     protected _getName():HashedString {
         abstract();
@@ -75,6 +103,19 @@ export class Block extends NativeClass {
     }
 }
 
+// Neighbors causes block updates around
+// Network causes the block to be sent to clients
+// Uses of other flags unknown
+enum BlockUpdateFlags {
+    NONE      = 0b0000,
+    NEIGHBORS = 0b0001,
+    NETWORK   = 0b0010,
+    NOGRAPHIC = 0b0100,
+    PRIORITY  = 0b1000,
+
+    ALL = NEIGHBORS | NETWORK,
+    ALL_PRIORITY = ALL | PRIORITY,
+}
 @nativeClass(null)
 export class BlockSource extends NativeClass {
     @nativeField(VoidPointer)
@@ -92,7 +133,23 @@ export class BlockSource extends NativeClass {
     getBlock(blockPos:BlockPos):Block {
         abstract();
     }
-    setBlock(blockPos:BlockPos, block:Block):boolean {
+    /**
+     *
+     * @param blockPos Position of the block to place
+     * @param block The Block to place
+     * @param updateFlags BlockUpdateFlags, to place without ticking neighbor updates use only BlockUpdateFlags.NETWORK
+     * @returns true if the block was placed, false if it was not
+     */
+    setBlock(blockPos:BlockPos, block:Block, updateFlags = BlockUpdateFlags.ALL):boolean {
+        return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags);
+    }
+    getChunk(pos:ChunkPos):LevelChunk {
+        abstract();
+    }
+    getChunkAt(pos:BlockPos):LevelChunk {
+        abstract();
+    }
+    getChunkSource():ChunkSource {
         abstract();
     }
     getBlockEntity(blockPos:BlockPos):BlockActor|null {

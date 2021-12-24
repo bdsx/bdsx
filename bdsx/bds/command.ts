@@ -3,19 +3,25 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { abstract } from "../common";
 import { NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
+import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
+import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
+import { getEnumKeys } from "../util";
 import { Actor } from "./actor";
 import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
+import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
+import { Player } from "./player";
 import { procHacker } from "./proc";
+import { serverInstance } from "./server";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
 export enum CommandPermissionLevel {
@@ -53,7 +59,7 @@ export enum CommandTypeFlag {
 export enum CommandUsageFlag {
     Normal,
     Test,
-    /** @deprecated Use CommandVisibilityFlag */
+    /** @deprecated Use `CommandVisibilityFlag` */
     Hidden,
     _Unknown=0x80
 }
@@ -77,38 +83,109 @@ export class MCRESULT extends NativeClass {
     result:uint32_t;
 }
 
+export enum CommandSelectionOrder {
+    Sorted,
+    InvertSorted,
+    Random,
+}
+
+export enum CommandSelectionType {
+    /** Used in @s */
+    Self,
+    /** Used in @e */
+    Entities,
+    /** Used in @a */
+    Players,
+    /** Used in @r */
+    DefaultPlayers,
+    /** Used in @c */
+    OwnedAgent,
+    /** Used in @v */
+    Agents,
+}
+
+/**
+ * @deprecated Use `ActorCommandSelector` instead
+ */
 @nativeClass(0xc0)
 export class CommandSelectorBase extends NativeClass {
     private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
         abstract();
     }
-    newResults(origin:CommandOrigin):Actor[] {
+    newResults<T extends Actor>(origin:CommandOrigin, typeFilter?:new(...args:any[])=>T):T[] {
         const list = this._newResults(origin);
-        const actors = list.p!.toArray();
-        list.dispose();
-        return actors;
+        if (typeFilter != null) {
+            const out:T[] = [];
+            for (const actor of list.p!) {
+                if (actor instanceof typeFilter) {
+                    out.push(actor as T);
+                }
+            }
+            list.dispose();
+            return out;
+        } else {
+            const actors = list.p!.toArray();
+            list.dispose();
+            return actors as T[];
+        }
     }
 }
+/** @param args_1 forcePlayer */
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
 (CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
 
+/**
+ * @deprecated Use `ActorWildcardCommandSelector` instead
+ */
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
 
     static make<T>(type:Type<T>):NativeClassType<WildcardCommandSelector<T>> {
-        class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
-        }
-        Object.defineProperty(WildcardCommandSelectorImpl, 'name', {value: templateName('WildcardCommandSelector', type.name)});
-        WildcardCommandSelectorImpl.define({});
+        return Singleton.newInstance(WildcardCommandSelector, type, ()=>{
+            class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
+            }
+            Object.defineProperty(WildcardCommandSelectorImpl, 'name', {value: templateName('WildcardCommandSelector', type.name)});
+            WildcardCommandSelectorImpl.define({});
 
-        return WildcardCommandSelectorImpl;
+            return WildcardCommandSelectorImpl;
+        });
+    }
+}
+export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
+ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
+export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector {
+    [NativeType.ctor]():void {
+        CommandSelectorBaseCtor(this, true);
     }
 }
 
-export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor);
-ActorWildcardCommandSelector.prototype[NativeType.ctor] = function() {
+/**
+ * @deprecated Use `ActorCommandSelector` instead
+ */
+@nativeClass()
+export class CommandSelector<T> extends CommandSelectorBase {
+
+    static make<T>(type:Type<T>):NativeClassType<CommandSelector<T>> {
+        return Singleton.newInstance(CommandSelector, type, ()=>{
+            class CommandSelectorImpl extends CommandSelector<T> {
+            }
+            Object.defineProperty(CommandSelectorImpl, 'name', {value: templateName('CommandSelector', type.name)});
+            CommandSelectorImpl.define({});
+
+            return CommandSelectorImpl;
+        });
+    }
+}
+export const ActorCommandSelector = CommandSelector.make(Actor);
+ActorCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
+};
+export const PlayerCommandSelector = CommandSelector.make(Player);
+PlayerCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, true);
 };
 
 @nativeClass()
@@ -133,10 +210,20 @@ export class CommandItem extends NativeClass {
     version:int32_t;
     @nativeField(int32_t)
     id:int32_t;
+
+    createInstance(count:number):ItemStack {
+        abstract();
+    }
 }
+
+CommandItem.prototype.createInstance = procHacker.js('CommandItem::createInstance', ItemStack, {this:CommandItem, structureReturn:true}, int32_t);
 
 export class CommandMessage extends NativeClass {
     data:CxxVector<CommandMessage.MessageComponent>;
+
+    getMessage(origin:CommandOrigin):string {
+        abstract();
+    }
 }
 
 export namespace CommandMessage {
@@ -145,15 +232,15 @@ export namespace CommandMessage {
     export class MessageComponent extends NativeClass {
         @nativeField(CxxString)
         string:CxxString;
-        // Needs to implement this, but it crashes for me
-        // @nativeField(Wrapper.make(CxxVector.make(WildcardCommandSelector.make(Actor)).ref()))
-        // selection:Wrapper<CxxVector<WildcardCommandSelector<Actor>>>;
+        @nativeField(ActorCommandSelector.ref())
+        selection:WildcardCommandSelector<Actor>;
     }
 }
 
 CommandMessage.abstract({
     data: CxxVector.make(CommandMessage.MessageComponent),
 }, 0x18);
+CommandMessage.prototype.getMessage = procHacker.js('CommandMessage::getMessage', CxxString, {this:CommandMessage, structureReturn:true}, CommandOrigin);
 
 @nativeClass()
 export class CommandPosition extends NativeClass {
@@ -345,6 +432,7 @@ export class MinecraftCommands extends NativeClass {
 export enum CommandParameterDataType { NORMAL, ENUM, SOFT_ENUM, POSTFIX }
 
 const parsers = new Map<Type<any>, VoidPointer>();
+let enumParser:VoidPointer;
 
 @nativeClass()
 export class CommandParameterData extends NativeClass {
@@ -376,6 +464,89 @@ export class CommandVFTable extends NativeClass {
     destructor:VoidPointer;
     @nativeField(VoidPointer)
     execute:VoidPointer|null;
+}
+
+export class CommandEnum<V extends string|number|symbol> extends NativeType<string> {
+    public readonly mapper = new Map<string, V>();
+
+    constructor(name:string) {
+        super(name,
+            CxxString[NativeType.size],
+            CxxString[NativeType.align],
+            CxxString.isTypeOf,
+            CxxString.isTypeOfWeak,
+            CxxString[NativeType.getter],
+            CxxString[NativeType.setter],
+            CxxString[makefunc.getFromParam],
+            CxxString[makefunc.setToParam],
+            CxxString[NativeType.ctor],
+            CxxString[NativeType.dtor],
+            CxxString[NativeType.ctor_copy],
+            CxxString[NativeType.ctor_move]);
+    }
+
+    protected _init():void {
+        for (const value of this.mapper.keys()) {
+            if (value === "") throw Error(`${value}: enum value cannot be empty`); // It will be ignored by CommandRegistry::addEnumValues if it is empty
+
+            /*
+                Allowed special characters:
+                - (
+                - )
+                - -
+                - .
+                - ?
+                - _
+                and the ones whose ascii code is bigger than 127, like §, ©, etc.
+            */
+            const regex = /[ -'*-,/:->@[-^`{-~]/g;
+            let invalidCharacters = '';
+            let matched:RegExpExecArray|null;
+            while ((matched = regex.exec(value)) !== null) {
+                invalidCharacters += matched[0];
+            }
+            if (invalidCharacters !== '') throw Error(`${value}: enum value contains invalid characters (${invalidCharacters})`);
+        }
+
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const enumId = registry.addEnumValues(this.name, [...this.mapper.keys()]);
+        type_id.register(CommandRegistry, this, enumId);
+    }
+}
+
+export class CommandStringEnum<T extends string[]> extends CommandEnum<T[number]> {
+    public readonly values:T;
+
+    constructor(name:string, ...values:T) {
+        super(name);
+        this.values = values;
+
+        for (const value of values) {
+            const lower = value.toLocaleLowerCase();
+            if (this.mapper.has(lower)) {
+                throw Error(`${value}: enum value duplicated`);
+            }
+            this.mapper.set(lower, value);
+        }
+        this._init();
+    }
+}
+
+export class CommandIndexEnum<T extends number|string> extends CommandEnum<T> {
+    public readonly enum:Record<string, T>;
+    constructor(name:string, enumType:Record<string, T>) {
+        super(name);
+        this.enum = enumType;
+
+        for (const key of getEnumKeys(enumType)) {
+            const lower = key.toLocaleLowerCase();
+            if (this.mapper.has(lower)) {
+                throw Error(`${key}: enum value duplicated`);
+            }
+            this.mapper.set(lower, enumType[key]);
+        }
+        this._init();
+    }
 }
 
 @nativeClass()
@@ -439,7 +610,15 @@ export class Command extends NativeClass {
         type:CommandParameterDataType = CommandParameterDataType.NORMAL):CommandParameterData {
         const param = CommandParameterData.construct();
         param.tid.id = type_id(CommandRegistry, paramType).id;
-        param.parser = CommandRegistry.getParser(paramType);
+        if (paramType instanceof CommandEnum) {
+            if (desc != null) {
+                throw Error(`CommandEnum does not support description`);
+            }
+            desc = paramType.name;
+            param.parser = enumParser;
+        } else {
+            param.parser = CommandRegistry.getParser(paramType);
+        }
         param.name = name;
         param.type = type;
         if (desc != null) {
@@ -465,6 +644,8 @@ export namespace Command {
 }
 
 export class CommandRegistry extends HasTypeId {
+    signatures:CxxMap<CxxString, CommandRegistry.Signature>;
+
     registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
     }
@@ -486,7 +667,7 @@ export class CommandRegistry extends HasTypeId {
 
             returnval.setPointer(cmd);
             return returnval;
-        }, StaticPointer, null, StaticPointer);
+        }, StaticPointer, {name: `${name} command::allocator`}, StaticPointer);
 
         const sig = this.findCommand(name);
         if (sig === null) throw Error(`${name}: command not found`);
@@ -527,6 +708,18 @@ export class CommandRegistry extends HasTypeId {
         const parser = parsers.get(type);
         if (parser != null) return parser;
         throw Error(`${type.symbol || type.name} parser not found`);
+    }
+
+    _addEnumValues(name:CxxString, values:CxxVector<CxxString>):number {
+        abstract();
+    }
+
+    addEnumValues(name:string, values:string[]):number {
+        const _values = CxxVector.make(CxxString).construct();
+        _values.setFromArray(values);
+        const ret = this._addEnumValues(name, _values);
+        _values.destruct();
+        return ret;
     }
 }
 
@@ -579,6 +772,8 @@ export namespace CommandRegistry {
 
 function loadParserFromPdb(types:Type<any>[]):void {
     const symbols = types.map(type=>templateName('CommandRegistry::parse', type.symbol || type.name));
+    const enumParserSymbol = 'CommandRegistry::parseEnum<int,CommandRegistry::DefaultIdConverter<int> >';
+    symbols.push(enumParserSymbol);
 
     pdb.setOptions(SYMOPT_PUBLICS_ONLY); // XXX: CommandRegistry::parse<bool> does not found without it.
     const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
@@ -589,6 +784,8 @@ function loadParserFromPdb(types:Type<any>[]):void {
         if (addr == null) continue;
         parsers.set(types[i], addr);
     }
+
+    enumParser = addrs[enumParserSymbol];
 }
 
 const types = [
@@ -597,6 +794,8 @@ const types = [
     bool_t,
     CxxString,
     ActorWildcardCommandSelector,
+    ActorCommandSelector,
+    PlayerCommandSelector,
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,
@@ -606,10 +805,12 @@ const types = [
     CommandPositionFloat,
     CommandRawText,
     CommandWildcardInt,
-    JsonValue
+    JsonValue,
 ];
 type_id.pdbimport(CommandRegistry, types);
 loadParserFromPdb(types);
+type_id.clone(CommandRegistry, ActorWildcardCommandSelector, PlayerWildcardCommandSelector);
+parsers.set(PlayerWildcardCommandSelector, parsers.get(ActorWildcardCommandSelector)!);
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
@@ -621,10 +822,14 @@ MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::han
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
+CommandRegistry.abstract({
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344] // accessed in CommandRegistry::findCommand
+});
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
 CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+CommandRegistry.prototype._addEnumValues = procHacker.js("?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z", int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
 (CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js("CommandRegistry::serializeAvailableCommands", AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';

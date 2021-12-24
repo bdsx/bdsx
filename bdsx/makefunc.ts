@@ -108,6 +108,11 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * jump to onError when JsCallFunction is failed (js exception, wrong thread, etc)
      */
     onError?:VoidPointer|null;
+
+    /**
+     * code chunk name, default: js function name
+     */
+    name?:string;
 }
 type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> =
     OPTS extends MakeFuncOptions<infer THIS> ?
@@ -211,7 +216,7 @@ export namespace makefunc {
      * it will removed at native returning
      */
     export function tempValue(type:Paramable, value:unknown):StaticPointer {
-        const ptr = tempAlloc(type[size]);
+        const ptr = tempAlloc(Math.max(type[size], 8)); // XXX: setToParam needs 8 bytes for primitive types
         type[setToParam](ptr, value);
         return ptr;
     }
@@ -236,7 +241,7 @@ export namespace makefunc {
         .mov_r_c(Register.r11, onError)
         .jmp64(callJsFunction, Register.rax)
         .unwind()
-        .alloc(opts.name || 'makefunc.npRaw');
+        .alloc(opts.name || func.name || `#np_call`);
     }
 
     /**
@@ -329,6 +334,10 @@ export namespace makefunc {
         gen.writeln('temporalDtors.length = dtorIdx;');
         gen.writeln('temporalKeeper.length = keepIdx;');
 
+        if (jsfunction.name) {
+            if (opts == null) opts = {name: jsfunction.name} as OPTS;
+            else if (opts.name == null) opts.name = jsfunction.name;
+        }
         return npRaw(gen.generate('stackptr'), options.onError || asmcode.jsend_crash, opts);
     }
 
@@ -581,6 +590,7 @@ declare module "./core"
     interface VoidPointer
     {
         [asm.splitTwo32Bits]():[number, number];
+        [util.inspect.custom](depth:number, options:Record<string, any>):unknown;
     }
 }
 declare global

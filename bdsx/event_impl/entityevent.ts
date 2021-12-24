@@ -1,15 +1,18 @@
-import { Actor, ActorDamageSource, ItemActor } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ItemStack } from "../bds/inventory";
+import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
-import { Player } from "../bds/player";
+import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
+import { decay } from "../decay";
 import { events } from "../event";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { Wrapper } from "../pointer";
 import { _tickCallback } from "../util";
 
 
@@ -200,6 +203,19 @@ export class PlayerJoinEvent implements IPlayerJoinEvent {
     }
 }
 
+interface IPlayerLeftEvent {
+    player: ServerPlayer;
+    skipMessage: boolean;
+}
+
+export class PlayerLeftEvent implements IPlayerLeftEvent {
+    constructor(
+        public player: ServerPlayer,
+        public skipMessage: boolean,
+    ) {
+    }
+}
+
 interface IPlayerPickupItemEvent {
     player: Player;
     itemActor: ItemActor;
@@ -259,6 +275,14 @@ export class SplashPotionHitEvent implements ISplashPotionHitEvent {
     }
 }
 
+interface IProjectileShootEvent {
+    projectile: Actor;
+    shooter: Actor;
+}
+export class ProjectileShootEvent implements IProjectileShootEvent {
+    constructor(public projectile: Actor, public shooter: Actor) {}
+}
+
 // function onPlayerJump(player: Player):void {
 //     const event = new PlayerJumpEvent(player);
 //     console.log(player.getName());
@@ -288,6 +312,7 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
     const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);
     const canceled = events.entityHurt.fire(event) === CANCEL;
     _tickCallback();
+    decay(actorDamageSource);
     if (canceled) {
         return false;
     }
@@ -309,6 +334,7 @@ function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
     const event = new EntityDieEvent(entity, damageSource);
     events.entityDie.fire(event);
     _tickCallback();
+    decay(damageSource);
     return _onEntityDie(event.entity, event.damageSource);
 }
 const _onEntityDie = procHacker.hooking('Mob::die', bool_t, null, Actor, ActorDamageSource)(onEntityDie);
@@ -345,27 +371,30 @@ const _onEntityStartRiding = procHacker.hooking('Actor::startRiding', bool_t, nu
 
 function onEntityStopRiding(entity:Actor, exitFromRider:boolean, actorIsBeingDestroyed:boolean, switchingRides:boolean):void {
     const event = new EntityStopRidingEvent(entity, exitFromRider, actorIsBeingDestroyed, switchingRides);
-    const notCanceled = events.entityStopRiding.fire(event) !== CANCEL;
+    const canceled = events.entityStopRiding.fire(event) === CANCEL;
     _tickCallback();
-    if (notCanceled) {
-        return _onEntityStopRiding(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
+    if (canceled) {
+        return;
     }
+    return _onEntityStopRiding(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
 }
 const _onEntityStopRiding = procHacker.hooking('Actor::stopRiding', void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
-function onEntitySneak(Script:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
+function onEntitySneak(packet:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
     const event = new EntitySneakEvent(entity, isSneaking);
     events.entitySneak.fire(event);
     _tickCallback();
-    return _onEntitySneak(Script, event.entity, event.isSneaking);
+    decay(packet);
+    return _onEntitySneak(packet, event.entity, event.isSneaking);
 }
 const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
 
-function onEntityCreated(Script:ScriptCustomEventPacket, entity:Actor):boolean {
+function onEntityCreated(packet:ScriptCustomEventPacket, entity:Actor):boolean {
     const event = new EntityCreatedEvent(entity);
     events.entityCreated.fire(event);
     _tickCallback();
-    return _onEntityCreated(Script, event.entity);
+    decay(packet);
+    return _onEntityCreated(packet, event.entity);
 }
 const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onActorCreated', bool_t, null, ScriptCustomEventPacket, Actor)(onEntityCreated);
 
@@ -378,21 +407,22 @@ const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onA
 // }
 // const _onEntityDeath = procHacker.hooking('ScriptServerActorEventListener::onActorDeath', bool_t, null, ScriptCustomEventPacket, Actor, ActorDamageSource, int32_t)(onEntityDeath);
 
-function onPlayerAttack(player:Player, victim:Actor):boolean {
+function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCause>):boolean {
     const event = new PlayerAttackEvent(player, victim);
     const canceled = events.playerAttack.fire(event) === CANCEL;
     _tickCallback();
     if (canceled) {
         return false;
     }
-    return _onPlayerAttack(event.player, event.victim);
+    return _onPlayerAttack(event.player, event.victim, cause);
 }
-const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor)(onPlayerAttack);
+const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor, Wrapper.make(int32_t))(onPlayerAttack);
 
 function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
     const event = new PlayerDropItemEvent(player, itemStack);
     const canceled = events.playerDropItem.fire(event) === CANCEL;
     _tickCallback();
+    decay(itemStack);
     if (canceled) {
         return false;
     }
@@ -404,6 +434,8 @@ function onPlayerInventoryChange(player:Player, container:VoidPointer, slot:numb
     const event = new PlayerInventoryChangeEvent(player, oldItemStack, newItemStack, slot);
     events.playerInventoryChange.fire(event);
     _tickCallback();
+    decay(oldItemStack);
+    decay(newItemStack);
     return _onPlayerInventoryChange(event.player, container, slot, event.oldItemStack, event.newItemStack, unknown);
 }
 const _onPlayerInventoryChange = procHacker.hooking("Player::inventoryChanged", void_t, null, Player, VoidPointer, int32_t, ItemStack, ItemStack, bool_t)(onPlayerInventoryChange);
@@ -418,11 +450,12 @@ const _onPlayerRespawn = procHacker.hooking("Player::respawn", void_t, null, Pla
 
 function onPlayerLevelUp(player:Player, levels:int32_t):void {
     const event = new PlayerLevelUpEvent(player, levels);
-    const notCanceled = events.playerLevelUp.fire(event) !== CANCEL;
+    const canceled = events.playerLevelUp.fire(event) === CANCEL;
     _tickCallback();
-    if (notCanceled) {
-        return _onPlayerLevelUp(event.player, event.levels);
+    if (canceled) {
+        return;
     }
+    return _onPlayerLevelUp(event.player, event.levels);
 }
 const _onPlayerLevelUp = procHacker.hooking("Player::addLevels", void_t, null, Player, int32_t)(onPlayerLevelUp);
 
@@ -443,6 +476,15 @@ function onPlayerPickupItem(player:Player, itemActor:ItemActor, orgCount:number,
 }
 const _onPlayerPickupItem = procHacker.hooking("Player::take", bool_t, null, Player, ItemActor, int32_t, int32_t)(onPlayerPickupItem);
 
+function onPlayerLeft(networkHandler: ServerNetworkHandler, player: ServerPlayer, skipMessage: boolean):void {
+    const event = new PlayerLeftEvent(player, skipMessage);
+    events.playerLeft.fire(event);
+    _tickCallback();
+    return _onPlayerLeft(networkHandler, event.player, event.skipMessage);
+}
+
+const _onPlayerLeft = procHacker.hooking("ServerNetworkHandler::_onPlayerLeft", void_t, null, ServerNetworkHandler, ServerPlayer, bool_t)(onPlayerLeft);
+
 
 function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSubcomponent, entity: Actor, projectileComponent: ProjectileComponent):void {
     const event = new SplashPotionHitEvent(entity, splashPotionEffectSubcomponent.potionEffect);
@@ -450,7 +492,17 @@ function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSub
     _tickCallback();
     if (!canceled) {
         splashPotionEffectSubcomponent.potionEffect = event.potionEffect;
-        return _onSplashPotionHit(splashPotionEffectSubcomponent, event.entity, projectileComponent);
+        _onSplashPotionHit(splashPotionEffectSubcomponent, event.entity, projectileComponent);
     }
+    decay(splashPotionEffectSubcomponent);
 }
 const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::doOnHitEffect", void_t, null, SplashPotionEffectSubcomponent, Actor, ProjectileComponent)(onSplashPotionHit);
+
+
+function onProjectileShoot(projectileComponent: ProjectileComponent, projectile: Actor, shooter: Actor): void {
+    const event = new ProjectileShootEvent(projectile, shooter);
+    events.projectileShoot.fire(event);
+    _tickCallback();
+    return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
+}
+const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);

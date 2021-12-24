@@ -1,11 +1,12 @@
 import { Color } from "colors";
+import { asmcode } from "./asm/asmcode";
 import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
-import { Event } from "./eventtarget";
-import type { BlockDestroyEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
+import { Event, EventEx } from "./eventtarget";
+import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -14,17 +15,35 @@ import { remapStack } from "./source-map-support";
 const PACKET_ID_COUNT = 0x100;
 const PACKET_EVENT_COUNT = 0x500;
 
-function getNetEventTarget(type:events.PacketEventType, packetId:MinecraftPacketIds):Event<(...args:any[])=>(CANCEL|void)> {
+asmcode.addressof_enabledPacket.fill(0, 256);
+
+class PacketEvent extends EventEx<(...args:any[])=>(CANCEL|void)> {
+    constructor(public readonly id:number) {
+        super();
+    }
+
+    onStarted():void {
+        const v = asmcode.getEnabledPacket(this.id);
+        asmcode.setEnabledPacket(v+1, this.id);
+    }
+
+    onCleared():void {
+        const v = asmcode.getEnabledPacket(this.id);
+        asmcode.setEnabledPacket(v-1, this.id);
+    }
+}
+
+function getNetEventTarget(type:events.PacketEventType, packetId:MinecraftPacketIds):PacketEvent {
     if ((packetId>>>0) >= PACKET_ID_COUNT) {
         throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
     }
     const id = type*PACKET_ID_COUNT + packetId;
     let target = packetAllTargets[id];
     if (target !== null) return target;
-    packetAllTargets[id] = target = new Event;
+    packetAllTargets[id] = target = new PacketEvent(packetId);
     return target;
 }
-const packetAllTargets = new Array<Event<(...args:any[])=>(CANCEL|void)>|null>(PACKET_EVENT_COUNT);
+const packetAllTargets = new Array<PacketEvent|null>(PACKET_EVENT_COUNT);
 for (let i=0;i<PACKET_EVENT_COUNT;i++) {
     packetAllTargets[i] = null;
 }
@@ -37,6 +56,8 @@ export namespace events {
 
     /** Cancellable */
     export const blockDestroy = new Event<(event: BlockDestroyEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const blockDestructionStart = new Event<(event: BlockDestructionStartEvent) => void>();
     /** Cancellable */
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
     /** Not cancellable */
@@ -79,6 +100,8 @@ export namespace events {
     export const entityCreated = new Event<(event: EntityCreatedEvent) => void>();
     /** Not cancellable */
     export const playerJoin = new Event<(event: PlayerJoinEvent) => void>();
+    /** Not cancellable */
+    export const playerLeft = new Event<(event: PlayerLeftEvent) => void>();
     /** Cancellable */
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
     /** Not cancellable */
@@ -87,6 +110,8 @@ export namespace events {
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
     /** Cancellable */
     export const splashPotionHit = new Event<(event: SplashPotionHitEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const projectileShoot = new Event <(event:ProjectileShootEvent)=> void> ();
 
     ////////////////////////////////////////////////////////
     // Level events
@@ -115,12 +140,21 @@ export namespace events {
     export const serverOpen = new Event<()=>void>();
 
     /**
-     * on tick
+     * on internal update. but it's not tick.
+     * @deprecated useless and incomprehensible
      */
     export const serverUpdate = new Event<()=>void>();
 
     /**
+     * before serverStop, Minecraft is alive yet
+     * LoopbackPacketSender is alive yet
+     */
+    export const serverLeave = new Event<()=>void>();
+
+    /**
      * before system.shutdown, Minecraft is alive yet
+     * LoopbackPacketSender is destroyed
+     * some commands are failed on this event. use `events.serverLeave` intead.
      */
     export const serverStop = new Event<()=>void>();
 

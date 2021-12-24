@@ -6,15 +6,20 @@ import { nativeClass, NativeClass, NativeClassType, nativeField } from "./native
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import util = require('util');
 
-export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
-{
+export interface WrapperType<T> extends NativeClassType<Wrapper<T>> {
     new(ptr?:boolean):Wrapper<T>;
+    create(this:{new(b?:boolean):Wrapper<T>}, value:T):Wrapper<T>;
 }
 
 export abstract class Wrapper<T> extends NativeClass {
     abstract value:T;
     abstract type:Type<T>;
 
+    static create<T>(this:{new(b?:boolean):Wrapper<T>}, value:T):Wrapper<T> {
+        const out = new this(true);
+        out.value = value;
+        return out;
+    }
     static make<T>(type:{new():T}|NativeType<T>):WrapperType<T>{
         class TypedWrapper extends Wrapper<T>{
             value:any;

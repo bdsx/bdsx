@@ -9,7 +9,6 @@
     "ignorePatterns": ["**/*.js"],
     "plugins": [
         "@typescript-eslint",
-        "unused-imports",
         "import",
         "github"
     ],
@@ -39,7 +38,6 @@
         }
       ],
       "github/array-foreach": "error",
-      "unused-imports/no-unused-imports": "error",
       "import/no-cycle": "error",
       "import/no-default-export": "error",
       "prefer-arrow-callback": "error",

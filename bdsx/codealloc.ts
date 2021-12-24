@@ -11,6 +11,7 @@ declare module "./assembler"
     namespace asm
     {
         function const_str(str:string, encoding?:BufferEncoding):Buffer;
+        function getFunctionNameFromEntryAddress(address:VoidPointer):string|null;
         function getFunctionName(address:VoidPointer):string|null;
         function setFunctionNames(base:VoidPointer, labels:Record<string, number>):void;
     }
@@ -22,15 +23,18 @@ asm.const_str = function(str:string, encoding:BufferEncoding='utf-8'):Buffer {
     chakraUtil.JsAddRef(buf);
     return buf;
 };
+asm.getFunctionNameFromEntryAddress = function(address:VoidPointer):string|null {
+    return nativeFunctionNames.get(address.getAddressBin()) || null;
+};
 asm.getFunctionName = function(address:VoidPointer):string|null {
-    const looked = runtimeError.lookUpFunctionEntry(address);
-    if (looked === null) return null;
-    const rva = looked[1];
+    const info = runtimeError.lookUpFunctionEntry(address);
+    if (info === null) return null;
+    const rva = info[1];
     if (rva == null) return null;
-    return nativeFunctionNames.get((looked[0].add(rva)).getAddressBin()) || null;
+    return nativeFunctionNames.get(info[0].add(rva).getAddressBin()) || null;
 };
 asm.setFunctionNames = function(base:VoidPointer, labels:Record<string, number>):void {
-    (labels as any).__proto__ = null;
+    Object.setPrototypeOf(labels, null);
     for (const name in labels) {
         const address = labels[name];
         nativeFunctionNames.set(base.add(address).getAddressBin(), name);
@@ -49,6 +53,15 @@ function report(size:number):void {
     }, 10).unref();
 }
 
+function hasZeroLabel(labels:Record<string, number>):boolean {
+    for (const name in labels) {
+        if (labels[name] === 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 X64Assembler.prototype.alloc = function(name?:string|null):StaticPointer {
     const buffer = this.buffer(true);
     const memsize = this.getDefAreaSize();
@@ -62,8 +75,12 @@ X64Assembler.prototype.alloc = function(name?:string|null):StaticPointer {
         runtimeError.addFunctionTable(mem.add(table), size / SIZE_OF_RF | 0, mem);
     }
     const labels = this.labels(true);
-    if (name == null) name = '#anonymous';
-    labels[name] = 0;
+    if (!hasZeroLabel(labels)) {
+        if (name == null) {
+            name = '#anonymous';
+        }
+        labels[name] = 0;
+    }
     asm.setFunctionNames(mem, labels);
     report(totalsize);
     return mem;

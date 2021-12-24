@@ -3,7 +3,7 @@ import { mce } from "../mce";
 import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
-import { BlockPos, Vec3 } from "./blockpos";
+import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
@@ -279,9 +279,14 @@ export namespace MovePlayerPacket {
 }
 
 @nativeClass(null)
-export class RiderJumpPacket extends Packet {
+export class PassengerJumpPacket extends Packet {
     // unknown
 }
+
+/** @deprecated use PassengerJumpPacket */
+export const RiderJumpPacket = PassengerJumpPacket;
+/** @deprecated use PassengerJumpPacket */
+export type RiderJumpPacket = PassengerJumpPacket;
 
 @nativeClass(null)
 export class UpdateBlockPacket extends Packet {
@@ -327,7 +332,12 @@ export class LevelSoundEventPacketV1 extends Packet {
 
 @nativeClass(null)
 export class LevelEventPacket extends Packet {
-    // unknown
+    @nativeField(int32_t)
+    eventId:int32_t;
+    @nativeField(Vec3)
+    pos:Vec3;
+    @nativeField(int32_t)
+    data:int32_t;
 }
 
 @nativeClass(null)
@@ -744,8 +754,15 @@ export class PlayerInputPacket extends Packet {
 }
 
 @nativeClass(null)
-export class LevelChunkPacket extends Packet {
-    // unknown
+export class LevelChunkPacket extends Packet { // accessed from LevelChunkPacket::write
+    @nativeField(ChunkPos)
+    pos:ChunkPos;
+    @nativeField(bool_t)
+    cacheEnabled:bool_t;
+    @nativeField(CxxString)
+    serializedChunk:CxxString;
+    @nativeField(uint32_t)
+    subChunksCount:uint32_t;
 }
 
 @nativeClass(null)
@@ -1441,6 +1458,7 @@ export class NetworkSettingsPacket extends Packet {
     // unknown
 }
 
+
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {
     @nativeField(float32_t)
@@ -1453,8 +1471,14 @@ export class PlayerAuthInputPacket extends Packet {
     moveX: float32_t;
     @nativeField(float32_t)
     moveZ: float32_t;
+
+    /** @deprecated */
+    get heaYaw():float32_t {
+        return this.headYaw;
+    }
+
     @nativeField(float32_t)
-    heaYaw: float32_t;
+    headYaw: float32_t;
     @nativeField(bin64_t)
     inputFlags: bin64_t;
     @nativeField(uint32_t)
@@ -1467,6 +1491,37 @@ export class PlayerAuthInputPacket extends Packet {
     tick: bin64_t;
     @nativeField(Vec3)
     delta: Vec3;
+}
+
+export namespace PlayerAuthInputPacket {
+    export enum InputData {
+        Ascend,
+        Descend,
+        NorthJump,
+        JumpDown,
+        SprintDown,
+        ChangeHeight,
+        Jumping,
+        AutoJumpingInWater,
+        Sneaking,
+        SneakDown,
+        Up,
+        Down,
+        Left,
+        Right,
+        UpLeft,
+        UpRight,
+        WantUp,
+        WantDown,
+        WantDownSlow,
+        WantUpSlow,
+        Sprinting,
+        AscendScaffolding,
+        DescendScaffolding,
+        SneakToggleDown,
+        PersistSneak,
+        // These are all from IDA, PlayerAuthInputPacket::InputData in 1.14.60.5, 25-36 were not implemented
+    }
 }
 
 @nativeClass(null)
@@ -1664,6 +1719,46 @@ export namespace NpcDialoguePacket {
     }
 }
 
+// export class ActorFall extends Packet {
+//     // unknown
+// }
+
+export class BlockPalette extends Packet {
+    // unknown
+}
+
+export class VideoStreamConnect_DEPRECATED extends Packet {
+    // unknown
+}
+
+export class AddEntity extends Packet {
+    // unknown
+}
+
+// export class UpdateBlockProperties extends Packet {
+//     // unknown
+// }
+
+export class EduUriResourcePacket extends Packet {
+    // unknown
+}
+
+export class CreatePhotoPacket extends Packet {
+    // unknown
+}
+
+export class UpdateSubChunkBlocksPacket extends Packet {
+    // unknown
+}
+/** @deprecated use UpdateSubChunkBlocksPacket, follow the real class name */
+export const UpdateSubChunkBlocks = UpdateSubChunkBlocksPacket;
+/** @deprecated use UpdateSubChunkBlocksPacket, follow the real class name */
+export type UpdateSubChunkBlocks = UpdateSubChunkBlocksPacket;
+
+// export class PhotoInfoRequest extends Packet {
+//     // unknown
+// }
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -1680,10 +1775,11 @@ export const PacketIdToType = {
     0x0d: AddActorPacket,
     0x0e: RemoveActorPacket,
     0x0f: AddItemActorPacket,
+    // 0x10: UNUSED_PLS_USE_ME, // DEPRECATED
     0x11: TakeItemActorPacket,
     0x12: MoveActorAbsolutePacket,
     0x13: MovePlayerPacket,
-    0x14: RiderJumpPacket,
+    0x14: PassengerJumpPacket,
     0x15: UpdateBlockPacket,
     0x16: AddPaintingPacket,
     0x17: TickSyncPacket,
@@ -1700,6 +1796,7 @@ export const PacketIdToType = {
     0x22: BlockPickRequestPacket,
     0x23: ActorPickRequestPacket,
     0x24: PlayerActionPacket,
+    // 0x25: ActorFall, // DEPRECATED
     0x26: HurtArmorPacket,
     0x27: SetActorDataPacket,
     0x28: SetActorMotionPacket,
@@ -1776,6 +1873,7 @@ export const PacketIdToType = {
     0x71: SetLocalPlayerAsInitializedPacket,
     0x72: UpdateSoftEnumPacket,
     0x73: NetworkStackLatencyPacket,
+    // 0x74: BlockPalette, // DEPRECATED
     0x75: ScriptCustomEventPacket,
     0x76: SpawnParticleEffectPacket,
     0x77: AvailableActorIdentifiersPacket,
@@ -1785,12 +1883,15 @@ export const PacketIdToType = {
     0x7b: LevelSoundEventPacket,
     0x7c: LevelEventGenericPacket,
     0x7d: LecternUpdatePacket,
+    // 0x7e: VideoStreamConnect_DEPRECATED,
+    0x7f: AddEntity, // DEPRECATED
     0x80: RemoveEntityPacket,
     0x81: ClientCacheStatusPacket,
     0x82: OnScreenTextureAnimationPacket,
     0x83: MapCreateLockedCopy,
     0x84: StructureTemplateDataRequestPacket,
     0x85: StructureTemplateDataExportPacket,
+    // 0x86: UpdateBlockProperties, // DEPRECATED
     0x87: ClientCacheBlobStatusPacket,
     0x88: ClientCacheMissResponsePacket,
     0x89: EducationSettingsPacket,
@@ -1826,6 +1927,10 @@ export const PacketIdToType = {
     0xa7: RemoveVolumeEntityPacket,
     0xa8: SimulationTypePacket,
     0xa9: NpcDialoguePacket,
+    0xaa: EduUriResourcePacket,
+    0xab: CreatePhotoPacket,
+    0xac: UpdateSubChunkBlocks,
+    // 0xad: PhotoInfoRequest
 };
 (PacketIdToType as any).__proto__ = null;
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
