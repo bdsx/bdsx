@@ -193,7 +193,7 @@ export class StructureTemplate extends NativeClass {
     }
 }
 
-@nativeClass(0x88)
+@nativeClass(0xC0) // Last few lines of Minecraft::Minecraft
 export class StructureManager extends NativeClass {
     getOrCreate(name:string):StructureTemplate {
         abstract();

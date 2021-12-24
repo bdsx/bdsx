@@ -122,6 +122,7 @@ export class Level extends NativeClass {
     protected _getStructureManager(structureManager:StructureManager):StructureManager {
         abstract();
     }
+    /** Constructs a StructureManager instance, you need to destruct it later */
     getStructureManager():StructureManager {
         return this._getStructureManager(StructureManager.construct());
     }
