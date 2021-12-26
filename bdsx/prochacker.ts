@@ -1,7 +1,9 @@
 import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
-import { NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
+import { capi } from "./capi";
+import { bedrock_server_exe, NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
 import { disasm } from "./disassembler";
 import { dll } from "./dll";
+import { fsutil } from "./fsutil";
 import { hacktool } from "./hacktool";
 import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { MemoryUnlocker } from "./unlocker";
@@ -382,6 +384,22 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param undecorate if it's set with UNDNAME_*, it uses undecorated(demangled) symbols
      */
     static load<KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, names:KEYS, undecorate?:number):ProcHacker<{[key in KEYS[number]]: NativePointer}> {
+        if (capi.isRunningOnWine()) {
+            let matched = false;
+            try {
+                const firstLine = fsutil.readFirstLineSync(cacheFilePath);
+                matched = firstLine === bedrock_server_exe.md5;
+            } catch (err) {
+                if (err.code === 'ENOENT') {
+                    // not found
+                } else {
+                    throw err;
+                }
+            }
+            if (!matched) {
+                console.error(colors.yellow('[BDSX] PDB cache may not be generated on Linux. Please generate it on Windows and copy the file to the Linux machine'));
+            }
+        }
         return new ProcHacker(pdb.getList(cacheFilePath, {}, names, false, undecorate));
     }
 }
