@@ -1,5 +1,5 @@
 # BDSX : BDS + node.js
-![logo](bdsx/icon/icon.png)  
+![logo](bdsx/images/icon.png)  
 BDSX is a modification of Minecraft Bedrock Dedicated Server, supporting [node.js](https://nodejs.org/). Because it is based on the offical BDS software, it includes all the features of vanilla Minecraft, but includes other features as well, such as hooking functions and packets to change behavior. 
 
 ## Features
@@ -84,6 +84,9 @@ https://github.com/bdsx/bdsx/issues
 
 ## Discord for Q&A
 https://discord.gg/pC9XdkC
+
+## Hosting Support
+[<img src="bdsx/images/supports/emh.png" height="15"> https://easyminecrafthosting.com/](https://easyminecrafthosting.com/) (Europe)
 
 ## BDSX Core
 https://github.com/bdsx/bdsx-core
