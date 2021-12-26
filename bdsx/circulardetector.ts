@@ -25,7 +25,9 @@ export class CircularDetector {
     check<T>(instance:VoidPointer, allocator:()=>T, cb:(value:T)=>void):T {
         const key = instance.getAddressBin();
         const res = this.map.get(key);
-        if (res != null) return res as T;
+        if (res != null && (res as any).constructor?.name === instance.constructor.name) {
+            return res as T;
+        }
         const value = allocator();
         this.map.set(key, value);
         cb(value);
