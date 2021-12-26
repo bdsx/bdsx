@@ -474,25 +474,44 @@ export class Actor extends NativeClass {
     getName():string {
         abstract();
     }
+
     /**
      * Changes the entity's name
+     *
+     * Calls Player::setName if it's Player.
+     * or it calls Actor::setNameTag.
      */
     setName(name:string):void {
+        this.setNameTag(name);
+    }
+    /**
+     * Changes the entity's nametag
+     */
+    setNameTag(name:string):void {
         abstract();
     }
     /**
-     * Changes the entity's name
+     * Set if the entity's nametag is visible
      */
-    setNameTag(name:string):void {
-        this.setName(name);
+    setNameTagVisible(visible: boolean): void {
+        abstract();
     }
+    /**
+     * Set a text under the entity's name (original is name of objective for scoreboard)
+     */
     setScoreTag(text:string):void{
         abstract();
     }
-    despawn():void{
+    /**
+     * Returns a text under the entity's name (original is name of objective for scoreboard)
+     */
+    getScoreTag():string{
         abstract();
     }
-    getScoreTag():string{
+    /**
+     * Despawn the entity. Don't use for this Player.
+     */
+    despawn():void{
         abstract();
     }
     getNetworkIdentifier():NetworkIdentifier {
