@@ -140,7 +140,8 @@ export namespace events {
     export const serverOpen = new Event<()=>void>();
 
     /**
-     * on tick
+     * on internal update. but it's not tick.
+     * @deprecated useless and incomprehensible
      */
     export const serverUpdate = new Event<()=>void>();
 
