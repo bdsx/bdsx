@@ -86,7 +86,7 @@ https://github.com/bdsx/bdsx/issues
 https://discord.gg/pC9XdkC
 
 ## Hosting Support
-[<img src="bdsx/images/supports/emh.png" height="15"> https://easyminecrafthosting.com/](https://easyminecrafthosting.com/) (Europe)
+[<img src="bdsx/images/supports/emh.png" height="15"> https://easyminecrafthosting.com/](https://easyminecrafthosting.com/) (Latin America)
 
 ## BDSX Core
 https://github.com/bdsx/bdsx-core
