@@ -24,14 +24,14 @@ export class CircularDetector {
     }
 
     check<T>(instance:VoidPointer, allocator:()=>T, cb:(value:T)=>void):T {
-        let ctorKey = this.map.get(instance.constructor) as number|undefined;
+        let ctorKey = this.map.get(instance.constructor) as string|undefined;
         if (ctorKey == null) {
-            ctorKey = this.keyCounter++;
+            ctorKey = bin.makeVar(this.keyCounter++);
             this.map.set(instance.constructor, ctorKey);
         }
 
         const key = instance.getAddressBin();
-        const res = this.map.get(key+bin.makeVar(ctorKey));
+        const res = this.map.get(key+ctorKey);
         if (res != null) return res as T;
         const value = allocator();
         this.map.set(key, value);
