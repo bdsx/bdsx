@@ -1,4 +1,4 @@
-import { capi } from "bdsx/capi";
+import { capi } from "./capi";
 
 export namespace Config {
 
