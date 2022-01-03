@@ -25,6 +25,7 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
+import { Config } from "../config";
 
 declare module 'colors'
 {
@@ -143,6 +144,15 @@ function _launch(asyncResolve:()=>void):void {
         events.serverClose.clear();
         _tickCallback();
         decay(bd_server.serverInstance);
+    }
+
+    // replace unicode encoder
+    if (Config.REPLACE_UNICODE_ENCODER) {
+        asmcode.Core_String_toWide_string_span = cgate.toWide;
+        procHacker.write('?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PEBD@Z', 0,
+            asm().jmp64(asmcode.Core_String_toWide_charptr, Register.rax));
+        procHacker.write('?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z', 0,
+            asm().jmp64(cgate.toWide, Register.rax));
     }
 
     // // call game thread entry
@@ -419,16 +429,18 @@ export namespace bedrockServer
         abstract close():void;
 
         static install():DefaultStdInHandler {
-            if (stdInHandler !== null) throw remapError(Error('Already opened'));
-            return stdInHandler = new DefaultStdInHandlerGetLine;
+            if (Config.USE_NATIVE_STDIN_HANDLER) {
+                return NativeStdInHandler.install();
+            } else {
+                return NodeStdInHandler.install();
+            }
         }
     }
 
     /**
      * this handler has bugs on Linux+Wine
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    class DefaultStdInHandlerJs extends DefaultStdInHandler {
+    export class NodeStdInHandler extends DefaultStdInHandler {
         private readonly rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
@@ -449,9 +461,14 @@ export namespace bedrockServer
             this.rl.removeAllListeners();
             events.serverClose.remove(this.onclose);
         }
+
+        static install():NodeStdInHandler {
+            if (stdInHandler !== null) throw remapError(Error('Already opened'));
+            return stdInHandler = new NodeStdInHandler;
+        }
     }
 
-    class DefaultStdInHandlerGetLine extends DefaultStdInHandler {
+    export class NativeStdInHandler extends DefaultStdInHandler {
         private readonly getline = new GetLine(line=>this.online(line));
         constructor() {
             super();
@@ -463,6 +480,11 @@ export namespace bedrockServer
             console.assert(stdInHandler !== null);
             stdInHandler = null;
             this.getline.close();
+        }
+
+        static install():NativeStdInHandler {
+            if (stdInHandler !== null) throw remapError(Error('Already opened'));
+            return stdInHandler = new NativeStdInHandler;
         }
     }
 }

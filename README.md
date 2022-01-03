@@ -54,9 +54,9 @@ You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Lin
 ```sh
 [bdsx project]
 ├ [bdsx] # Core Library
-├ [example_and_test] # Examples for using the BDSX api and tests of the BDSX api
+├ [example_and_test] # Examples for using the BDSX API and tests of the BDSX API
 ├ [bedrock_server] # BDS instalation
-├ launcher.ts # Script for launching BDS.
+├ launcher.ts # Script for launching BDS
 ├ index.ts # Main entry point. This file is required by the launcher when BDS is fully started.
 ├ bdsx.sh # Executable for Linux
 └ bdsx.bat # Executable for Windows 
