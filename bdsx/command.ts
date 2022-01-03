@@ -141,6 +141,7 @@ export class CustomCommandFactory {
                 type = type[0];
             }
             if (key in fields) throw Error(`${key}: field name duplicated`);
+            if (!CommandRegistry.hasParser(type)) throw Error(`CommandFactory.overload does not support ${type.name}`);
             fields[key] = type;
 
             if (optional) {

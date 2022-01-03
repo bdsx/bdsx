@@ -1,3 +1,4 @@
+import { Config } from "../config";
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
@@ -25,7 +26,6 @@ import readline = require("readline");
 import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
-import { Config } from "../config";
 
 declare module 'colors'
 {

@@ -469,8 +469,8 @@ export class CommandVFTable extends NativeClass {
 export class CommandEnum<V extends string|number|symbol> extends NativeType<string> {
     public readonly mapper = new Map<string, V>();
 
-    constructor(name:string) {
-        super(name,
+    constructor(symbol:string, name?:string) {
+        super(symbol, name || symbol,
             CxxString[NativeType.size],
             CxxString[NativeType.align],
             CxxString.isTypeOf,
@@ -707,7 +707,12 @@ export class CommandRegistry extends HasTypeId {
     static getParser<T>(type:Type<T>):VoidPointer {
         const parser = parsers.get(type);
         if (parser != null) return parser;
-        throw Error(`${type.symbol || type.name} parser not found`);
+        throw Error(`${type.name} parser not found`);
+    }
+
+    static hasParser<T>(type:Type<T>):boolean {
+        if (type instanceof CommandEnum) return true;
+        return parsers.has(type);
     }
 
     _addEnumValues(name:CxxString, values:CxxVector<CxxString>):number {
