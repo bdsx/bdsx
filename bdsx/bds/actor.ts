@@ -212,6 +212,14 @@ export class ActorDamageSource extends NativeClass{
     @nativeField(int32_t, 0x08)
     cause: int32_t;
 
+    /**
+     *
+     * @param cause damage cause
+     */
+    setCause(cause: ActorDamageCause): void {
+        abstract();
+    }
+
     /** @deprecated Has to be confirmed working */
     getDamagingEntityUniqueID():ActorUniqueID {
         abstract();
