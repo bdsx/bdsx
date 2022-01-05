@@ -1,7 +1,7 @@
 import { dllraw } from "./dllraw";
 
 export namespace Config {
-    export const WINE = dllraw.ntdll.wine_get_version === null;
+    export const WINE = dllraw.ntdll.wine_get_version !== null;
 
     /**
      * handle stdin with the hooking method.
