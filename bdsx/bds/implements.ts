@@ -209,6 +209,9 @@ Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Act
 
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
+Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, { this: Actor });
+
+(Actor.prototype as any).hurt_ = procHacker.js("Actor::hurt", bool_t, {this:Actor}, ActorDamageSource, int32_t, bool_t, bool_t);
 
 Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z", bool_t, {this:Actor}, int32_t, bool_t);
 Actor.prototype.getStatusFlag = procHacker.js("Actor::getStatusFlag", bool_t, {this:Actor}, int32_t);
