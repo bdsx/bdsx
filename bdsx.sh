@@ -37,7 +37,7 @@ if [ $? != 1 ]; then break; fi
 
 # launch
 cd bedrock_server
-DISPLAY=:0 WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
+WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
 echo exit=$?>>bdsx_shell_data.ini
 cd ..
 
