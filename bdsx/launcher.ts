@@ -127,6 +127,13 @@ function patchForStdio():void {
 }
 
 function _launch(asyncResolve:()=>void):void {
+    // check memory corruption for debug core
+    if (cgate.memcheck != null) {
+        setInterval(()=>{
+            cgate.memcheck!();
+        }, 5000);
+    }
+
     ipfilter.init(ip=>{
         console.error(`[BDSX] traffic exceeded threshold for IP: ${ip}`);
     });

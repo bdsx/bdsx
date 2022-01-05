@@ -1,5 +1,5 @@
 
-import { capi } from './capi';
+import { Config } from './config';
 import { cgate, VoidPointer } from './core';
 import { dll } from "./dll";
 import { dllraw } from './dllraw';
@@ -140,7 +140,7 @@ export namespace wineCompatible {
     export declare function removeRecursiveSync(path:string):void;
 }
 
-if (capi.isRunningOnWine()) {
+if (Config.WINE) {
     wineCompatible.execSync = initWineExec();
     wineCompatible.removeRecursiveSync = function(filepath:string) {
         if (!filepath.startsWith('Z:')) throw Error(`${filepath}: no linux path`);

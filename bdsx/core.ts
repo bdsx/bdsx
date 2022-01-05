@@ -721,6 +721,12 @@ export declare namespace cgate
     export function allocExecutableMemory(size:number, alignment?:number):StaticPointer;
 
     export function nodeLoopOnce():void;
+
+    /**
+     * check memory corruption
+     * Only for the debug built core
+     */
+    export const memcheck:(()=>void)|undefined;
 }
 
 export declare namespace chakraUtil {

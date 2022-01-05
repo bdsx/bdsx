@@ -1,4 +1,5 @@
 import { asmcode } from "./asm/asmcode";
+import { Config } from "./config";
 import { chakraUtil, NativePointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc } from "./makefunc";
@@ -33,8 +34,11 @@ export namespace capi {
      */
     export const free:(ptr:VoidPointer)=>void = dll.ucrtbase.free;
 
+    /**
+     * @deprecated use Config.IS_WINE
+     */
     export function isRunningOnWine():boolean {
-        return dll.ntdll.wine_get_version !== null;
+        return Config.WINE;
     }
 
     /**

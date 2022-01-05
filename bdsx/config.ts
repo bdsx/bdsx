@@ -1,6 +1,7 @@
-import { capi } from "./capi";
+import { dllraw } from "./dllraw";
 
 export namespace Config {
+    export const WINE = dllraw.ntdll.wine_get_version === null;
 
     /**
      * handle stdin with the hooking method.
@@ -15,6 +16,6 @@ export namespace Config {
      *
      * the original encoder crashes sometimes on Linux+Wine.
      */
-    export const REPLACE_UNICODE_ENCODER = capi.isRunningOnWine();
+    export const REPLACE_UNICODE_ENCODER = WINE;
 }
 

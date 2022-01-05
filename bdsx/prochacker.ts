@@ -1,5 +1,5 @@
 import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
-import { capi } from "./capi";
+import { Config } from "./config";
 import { bedrock_server_exe, NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
 import { disasm } from "./disassembler";
 import { dll } from "./dll";
@@ -384,7 +384,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param undecorate if it's set with UNDNAME_*, it uses undecorated(demangled) symbols
      */
     static load<KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, names:KEYS, undecorate?:number):ProcHacker<{[key in KEYS[number]]: NativePointer}> {
-        if (capi.isRunningOnWine()) {
+        if (Config.WINE) {
             let matched = false;
             try {
                 const firstLine = fsutil.readFirstLineSync(cacheFilePath);
