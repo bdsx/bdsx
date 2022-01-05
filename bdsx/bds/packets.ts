@@ -160,7 +160,7 @@ export class ResourcePackClientResponsePacket extends Packet {
 @nativeClass(null)
 export class TextPacket extends Packet {
     @nativeField(uint8_t)
-    type:uint8_t;
+    type:TextPacket.Types;
     @nativeField(CxxString)
     name:CxxString;
     @nativeField(CxxString)

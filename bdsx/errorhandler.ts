@@ -1,11 +1,14 @@
 
 import { asm } from "./assembler";
-import { ipfilter, jshook, runtimeError, VoidPointer } from "./core";
+import { cgate, ipfilter, jshook, runtimeError, VoidPointer } from "./core";
 import { events } from "./event";
 import { remapError } from "./source-map-support";
 import { numberWithFillZero } from "./util";
-import { EXCEPTION_ACCESS_VIOLATION } from "./windows_h";
+import { EXCEPTION_ACCESS_VIOLATION, MAX_PATH } from "./windows_h";
 import path = require("path");
+import { int32_t } from "./nativetype";
+import { makefunc } from "./makefunc";
+import { dllraw } from "./dllraw";
 
 enum JsErrorCode {
     JsNoError = 0,
@@ -48,6 +51,20 @@ enum JsErrorCode {
     JsErrorCategoryFatal = 0x40000,
     JsErrorFatal,
     JsErrorWrongRuntime,
+}
+
+
+let GetModuleFileNameW:((addr:VoidPointer, buffer:Uint16Array, size:int32_t)=>int32_t)|null = null;
+
+function getDllNameFromAddress(addr:VoidPointer):string|null {
+    if (GetModuleFileNameW === null) {
+        GetModuleFileNameW = makefunc.js(cgate.GetProcAddress(dllraw.kernel32.module, 'GetModuleFileNameW'), int32_t, null, VoidPointer, makefunc.Buffer, int32_t);
+    }
+
+    const buffer = new Uint16Array(MAX_PATH);
+    const n = GetModuleFileNameW(addr, buffer, MAX_PATH);
+    if (n === 0) return null;
+    return String.fromCharCode(...buffer.subarray(0, n));
 }
 
 export function installErrorHandler():void {
@@ -124,17 +141,24 @@ export function installErrorHandler():void {
                 let moduleName = frame.moduleName;
                 if (moduleName != null) {
                     moduleName = path.basename(moduleName);
+                } else if (frame.base === null) {
+                    moduleName = 'null';
                 } else {
-                    moduleName = frame.base != null ? frame.base.toString() : 'null';
+                    moduleName = getDllNameFromAddress(frame.base);
+                    if (moduleName === null) {
+                        moduleName = frame.base.toString();
+                    } else {
+                        moduleName = path.basename(moduleName);
+                    }
                 }
                 const isChakraDll = moduleName.toLowerCase() === 'chakracore.dll';
                 if (isChakraDll) {
                     if (insideChakra) continue;
                     insideChakra = true;
-                    console.error('   at <ChakraCore>');
+                    console.error('   at (ChakraCore)');
                     continue;
                 }
-                let out = '   at ';
+                let out = `   at ${frame.address} `;
                 const info = runtimeError.lookUpFunctionEntry(frame.address);
                 const funcname = frame.functionName;
                 let funcinfo:{
@@ -157,15 +181,15 @@ export function installErrorHandler():void {
                 } else {
                     let asmname:string|null;
                     if (funcinfo !== null && (asmname = asm.getFunctionNameFromEntryAddress(funcinfo.address)) !== null) {
-                        out += `<asm> ${asmname}+0x${funcinfo.offset.toString(16)}`;
+                        out += `(asm) ${asmname}+0x${funcinfo.offset.toString(16)}`;
                     } else {
                         // unknown
                         const addr = frame.address.getAddressAsFloat();
                         if (addr >= 0x1000) {
                             if (insideChakra) continue;
-                            out = '<unknown> ';
+                            out += '(unknown) ';
                         } else {
-                            out = '<invalid> ';
+                            out += '(invalid) ';
                         }
                         if (frame.base == null) {
                             out += frame.address;

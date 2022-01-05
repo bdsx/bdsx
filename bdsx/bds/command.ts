@@ -274,7 +274,7 @@ export class CommandRawText extends NativeClass {
 export class CommandWildcardInt extends NativeClass {
     @nativeField(bool_t)
     isWildcard:bool_t;
-    @nativeField(int32_t, 0x04)
+    @nativeField(int32_t)
     value:int32_t;
 }
 
