@@ -209,7 +209,6 @@ Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Act
 
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
-Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
 
 Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z", bool_t, {this:Actor}, int32_t, bool_t);
 Actor.prototype.getStatusFlag = procHacker.js("Actor::getStatusFlag", bool_t, {this:Actor}, int32_t);
@@ -235,10 +234,10 @@ ActorDefinitionIdentifier.constructWith = function(type:number):ActorDefinitionI
     return identifier;
 };
 
-const ActorDamageSource$ActorDamageSource = procHacker.js("ActorDamageSource::ActorDamageSource", void_t, null, ActorDamageSource, int32_t, bool_t, bool_t);
-ActorDamageSource.constructWith = function (cause: ActorDamageCause, knock: boolean, ignite: boolean): ActorDamageSource {
+const ActorDamageSource$ActorDamageSource = procHacker.js("ActorDamageSource::ActorDamageSource", void_t, null, ActorDamageSource, int32_t);
+ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamageSource {
     const source = ActorDamageSource.construct();
-    ActorDamageSource$ActorDamageSource(source, cause, knock, ignite);
+    ActorDamageSource$ActorDamageSource(source, cause);
     return source;
 };
 
