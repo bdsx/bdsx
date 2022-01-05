@@ -14,7 +14,7 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockLegacy, BlockSource } from "./block";
@@ -233,6 +233,13 @@ ActorDefinitionIdentifier.constructWith = function(type:number):ActorDefinitionI
     const identifier = ActorDefinitionIdentifier.construct();
     ActorDefinitionIdentifier$ActorDefinitionIdentifier(identifier, type);
     return identifier;
+};
+
+const ActorDamageSource$ActorDamageSource = procHacker.js("ActorDamageSource::ActorDamageSource", void_t, null, ActorDamageSource, int32_t, bool_t, bool_t);
+ActorDamageSource.constructWith = function (cause: ActorDamageCause, knock: boolean, ignite: boolean): ActorDamageSource {
+    const source = ActorDamageSource.construct();
+    ActorDamageSource$ActorDamageSource(source, cause, knock, ignite);
+    return source;
 };
 
 ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
