@@ -32,4 +32,6 @@ import './net-sendhook';
 import './net-transferserver';
 import './setblock';
 import './test';
+import './lowlevel-checkdisconnect';
+import './lowlevel-checkclientcacheblobstatus';
 // import './permissions';

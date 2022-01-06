@@ -376,7 +376,7 @@ PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
 
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
-    return ServerNetworkHandler$_getServerPlayer(serverInstance.minecraft.getServerNetworkHandler(), this, 0);
+    return serverInstance.minecraft.getServerNetworkHandler()._getServerPlayer(this, 0);
 };
 NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
 
@@ -422,7 +422,7 @@ Packet.prototype.write = makefunc.js([0x18], void_t, {this:Packet}, BinaryStream
 Packet.prototype.read = makefunc.js([0x20], int32_t, {this:Packet}, BinaryStream);
 Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
 
-const ServerNetworkHandler$_getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, null, ServerNetworkHandler, NetworkIdentifier, int32_t);
+ServerNetworkHandler.prototype._getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {this:ServerNetworkHandler}, NetworkIdentifier, int32_t);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", void_t, {this: ServerNetworkHandler}, NetworkIdentifier, int32_t, CxxString, bool_t);
 ServerNetworkHandler.prototype.allowIncomingConnections = procHacker.js("ServerNetworkHandler::allowIncomingConnections", void_t, {this:ServerNetworkHandler}, CxxString, bool_t);
 ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", void_t, {this:ServerNetworkHandler});
