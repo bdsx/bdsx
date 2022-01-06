@@ -248,6 +248,122 @@ export class Player extends Actor {
     canDestroy(block: Block): boolean {
         abstract();
     }
+
+    /**
+     * Returns the player's XP points
+     */
+    getXp(): number {
+        return Math.round(this.getXpProgress() * this.getXpNeededForNextLevel());
+    }
+
+    /**
+     * Returns the player's progression to the next level, between 0.0 and 1.0
+     */
+    getXpProgress(): number {
+        return this.getAttribute(AttributeId.PlayerExperience);
+    }
+
+    /**
+     * Returns the player's XP level
+     */
+    getXpLevel(): number {
+        return this.getAttribute(AttributeId.PlayerLevel);
+    }
+
+    /**
+     * Sets the player's XP points
+     *
+     * @param xp - between 1 and the maximum XP points for the level
+     */
+    setXp(xp: number): void {
+        this.setAttribute(AttributeId.PlayerExperience, xp / this.getXpNeededForNextLevel() > 1 ? 1 : xp / this.getXpNeededForNextLevel());
+    }
+
+    /**
+     * Sets the player's progression to the next XP level
+     *
+     * @param progress - between 0.0 and 1.0
+     */
+    setXpProgress(progress: number): void {
+        this.setAttribute(AttributeId.PlayerExperience, progress > 1 ? 1 : progress);
+    }
+
+    /**
+     * Sets the player's XP level
+     *
+     * @param level - between 0 and 24791
+     */
+    setXpLevel(level: number): void {
+        this.setAttribute(AttributeId.PlayerLevel, level > 24791 ? 24791 : level < 0 ? 0 : level);
+    }
+
+    /**
+     * Adds XP points to the player, recalculating their level & progress
+     *
+     * @param xp - XP to add
+     */
+    addXp(xp: number): void {
+        abstract();
+    }
+
+    /**
+     * Adds progress to the player's XP level
+     *
+     * @param progress - between 0.0 and 1.0
+     */
+    addXpProgress(progress: number): void {
+        this.setAttribute(AttributeId.PlayerExperience, this.getXpProgress() + progress > 1 ? 1 : this.getXpProgress() + progress);
+    }
+
+    /**
+     * Adds XP levels to the player
+     *
+     * @param levels - levels to add
+     */
+    addXpLevels(levels: number): void {
+        abstract();
+    }
+
+    /**
+     * Subtracts XP points from the player
+     *
+     * @param xp - between 1 and the current XP points for the level
+     */
+    subtractXp(xp: number): void {
+        this.addXp(-xp);
+    }
+
+    /**
+     * Subtracts progress from the player's XP level
+     *
+     * @param progress - between 0.0 and the current XP progress
+     */
+    subtractXpProgress(progress: number): void {
+        this.addXpProgress(progress > this.getXpProgress() ? -this.getXpProgress() : -progress);
+    }
+
+    /**
+     * Subtracts XP levels from the player
+     *
+     * @param levels - between 1 and the player's XP level
+     */
+    subtractXpLevels(levels: number): void {
+        this.addXpLevels(levels > this.getXpLevel() ? -this.getXpLevel() : -levels);
+    }
+
+    /**
+     * Returns the total XP needed for the next level
+     */
+    getXpNeededForNextLevel(): number {
+        abstract();
+    }
+
+    /**
+     * Returns the remaining XP needed for the next level
+     */
+    getRemainingXpForNextLevel(): number {
+        return this.getXpNeededForNextLevel() - this.getXp();
+    }
 }
 
 export class ServerPlayer extends Player {
