@@ -356,6 +356,8 @@ const symbols = [
     'Level::getCurrentTick',
     'Player::getDestroySpeed',
     'Player::canDestroy',
+    'Player::addExperience',
+    'Player::getXpNeededForNextLevel',
 ] as const;
 
 // decorated symbols
