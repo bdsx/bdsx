@@ -351,8 +351,8 @@ Player.prototype.getCertificate = function() {
 };
 Player.prototype.getDestroySpeed = procHacker.js('Player::getDestroySpeed', float32_t, {this:Player}, Block.ref());
 Player.prototype.canDestroy = procHacker.js('Player::canDestroy', bool_t, {this:Player}, Block.ref());
-Player.prototype.addXp = procHacker.js('Player::addExperience', void_t, {this:Player}, int32_t);
-Player.prototype.addXpLevels = procHacker.js('Player::addLevels', void_t, {this:Player}, int32_t);
+Player.prototype.addExperience = procHacker.js('Player::addExperience', void_t, {this:Player}, int32_t);
+Player.prototype.addExperienceLevels = procHacker.js('Player::addLevels', void_t, {this:Player}, int32_t);
 Player.prototype.getXpNeededForNextLevel = procHacker.js('Player::getXpNeededForNextLevel', int32_t, {this:Player});
 
 ServerPlayer.abstract({});
