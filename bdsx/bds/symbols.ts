@@ -283,6 +283,7 @@ const symbols = [
     'Player::startSwimming',
     'RakNetInstance::getPort',
     'ScoreboardIdentityRef::removeFromObjective',
+    'ActorDamageSource::ActorDamageSource',
     'ActorDamageSource::getDamagingEntityUniqueID',
     'ActorDamageSource::setCause',
     'Player::inventoryChanged',
