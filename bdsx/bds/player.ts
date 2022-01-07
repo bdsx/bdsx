@@ -252,21 +252,21 @@ export class Player extends Actor {
     /**
      * Returns the player's XP points
      */
-    getXp(): number {
-        return Math.round(this.getXpProgress() * this.getXpNeededForNextLevel());
+    getExperience(): number {
+        return Math.round(this.getExperienceProgress() * this.getXpNeededForNextLevel());
     }
 
     /**
      * Returns the player's progression to the next level, between 0.0 and 1.0
      */
-    getXpProgress(): number {
+    getExperienceProgress(): number {
         return this.getAttribute(AttributeId.PlayerExperience);
     }
 
     /**
      * Returns the player's XP level
      */
-    getXpLevel(): number {
+    getExperienceLevel(): number {
         return this.getAttribute(AttributeId.PlayerLevel);
     }
 
@@ -275,7 +275,7 @@ export class Player extends Actor {
      *
      * @param xp - between 1 and the maximum XP points for the level
      */
-    setXp(xp: number): void {
+    setExperience(xp: number): void {
         this.setAttribute(AttributeId.PlayerExperience, xp / this.getXpNeededForNextLevel() > 1 ? 1 : xp / this.getXpNeededForNextLevel());
     }
 
@@ -284,7 +284,7 @@ export class Player extends Actor {
      *
      * @param progress - between 0.0 and 1.0
      */
-    setXpProgress(progress: number): void {
+    setExperienceProgress(progress: number): void {
         this.setAttribute(AttributeId.PlayerExperience, progress > 1 ? 1 : progress);
     }
 
@@ -293,7 +293,7 @@ export class Player extends Actor {
      *
      * @param level - between 0 and 24791
      */
-    setXpLevel(level: number): void {
+    setExperienceLevel(level: number): void {
         this.setAttribute(AttributeId.PlayerLevel, level > 24791 ? 24791 : level < 0 ? 0 : level);
     }
 
@@ -302,7 +302,7 @@ export class Player extends Actor {
      *
      * @param xp - XP to add
      */
-    addXp(xp: number): void {
+    addExperience(xp: number): void {
         abstract();
     }
 
@@ -311,9 +311,9 @@ export class Player extends Actor {
      *
      * @param progress - between 0.0 and 1.0
      */
-    addXpProgress(progress: number): void {
-        if (-progress > this.getXpProgress()) this.setXpProgress(0);
-        else this.setAttribute(AttributeId.PlayerExperience, this.getXpProgress() + progress > 1 ? 1 : this.getXpProgress() + progress);
+    addExperienceProgress(progress: number): void {
+        if (-progress > this.getExperienceProgress()) this.setExperienceProgress(0);
+        else this.setAttribute(AttributeId.PlayerExperience, this.getExperienceProgress() + progress > 1 ? 1 : this.getExperienceProgress() + progress);
     }
 
     /**
@@ -321,7 +321,7 @@ export class Player extends Actor {
      *
      * @param levels - levels to add
      */
-    addXpLevels(levels: number): void {
+    addExperienceLevels(levels: number): void {
         abstract();
     }
 
@@ -330,8 +330,8 @@ export class Player extends Actor {
      *
      * @param xp - between 1 and the current XP points for the level
      */
-    subtractXp(xp: number): void {
-        this.addXp(-xp);
+    subtractExperience(xp: number): void {
+        this.addExperience(-xp);
     }
 
     /**
@@ -339,8 +339,8 @@ export class Player extends Actor {
      *
      * @param progress - between 0.0 and the current XP progress
      */
-    subtractXpProgress(progress: number): void {
-        this.addXpProgress(progress > this.getXpProgress() ? -this.getXpProgress() : -progress);
+    subtractExperienceProgress(progress: number): void {
+        this.addExperienceProgress(progress > this.getExperienceProgress() ? -this.getExperienceProgress() : -progress);
     }
 
     /**
@@ -348,8 +348,8 @@ export class Player extends Actor {
      *
      * @param levels - between 1 and the player's XP level
      */
-    subtractXpLevels(levels: number): void {
-        this.addXpLevels(levels > this.getXpLevel() ? -this.getXpLevel() : -levels);
+    subtractExperienceLevels(levels: number): void {
+        this.addExperienceLevels(levels > this.getExperienceLevel() ? -this.getExperienceLevel() : -levels);
     }
 
     /**
@@ -363,7 +363,7 @@ export class Player extends Actor {
      * Returns the remaining XP needed for the next level
      */
     getRemainingXpForNextLevel(): number {
-        return this.getXpNeededForNextLevel() - this.getXp();
+        return this.getXpNeededForNextLevel() - this.getExperience();
     }
 }
 
