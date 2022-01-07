@@ -312,7 +312,8 @@ export class Player extends Actor {
      * @param progress - between 0.0 and 1.0
      */
     addXpProgress(progress: number): void {
-        this.setAttribute(AttributeId.PlayerExperience, this.getXpProgress() + progress > 1 ? 1 : this.getXpProgress() + progress);
+        if (-progress > this.getXpProgress()) this.setXpProgress(0);
+        else this.setAttribute(AttributeId.PlayerExperience, this.getXpProgress() + progress > 1 ? 1 : this.getXpProgress() + progress);
     }
 
     /**
