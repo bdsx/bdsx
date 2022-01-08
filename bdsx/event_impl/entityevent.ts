@@ -371,11 +371,12 @@ const _onEntityStartRiding = procHacker.hooking('Actor::startRiding', bool_t, nu
 
 function onEntityStopRiding(entity:Actor, exitFromRider:boolean, actorIsBeingDestroyed:boolean, switchingRides:boolean):void {
     const event = new EntityStopRidingEvent(entity, exitFromRider, actorIsBeingDestroyed, switchingRides);
-    const notCanceled = events.entityStopRiding.fire(event) !== CANCEL;
+    const canceled = events.entityStopRiding.fire(event) === CANCEL;
     _tickCallback();
-    if (notCanceled) {
-        return _onEntityStopRiding(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
+    if (canceled) {
+        return;
     }
+    return _onEntityStopRiding(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
 }
 const _onEntityStopRiding = procHacker.hooking('Actor::stopRiding', void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
@@ -449,11 +450,12 @@ const _onPlayerRespawn = procHacker.hooking("Player::respawn", void_t, null, Pla
 
 function onPlayerLevelUp(player:Player, levels:int32_t):void {
     const event = new PlayerLevelUpEvent(player, levels);
-    const notCanceled = events.playerLevelUp.fire(event) !== CANCEL;
+    const canceled = events.playerLevelUp.fire(event) === CANCEL;
     _tickCallback();
-    if (notCanceled) {
-        return _onPlayerLevelUp(event.player, event.levels);
+    if (canceled) {
+        return;
     }
+    return _onPlayerLevelUp(event.player, event.levels);
 }
 const _onPlayerLevelUp = procHacker.hooking("Player::addLevels", void_t, null, Player, int32_t)(onPlayerLevelUp);
 

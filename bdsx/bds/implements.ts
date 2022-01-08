@@ -180,7 +180,8 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
 (Actor.prototype as any)._getArmorValue = procHacker.js("Mob::getArmorValue", int32_t, {this:Actor});
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
-Actor.prototype.setName = procHacker.js("Actor::setNameTag", void_t, {this:Actor}, CxxString);
+Actor.prototype.setNameTag = procHacker.js("Actor::setNameTag", void_t, {this:Actor}, CxxString);
+Actor.prototype.setNameTagVisible = procHacker.js("Actor::setNameTagVisible", void_t, {this:Actor}, bool_t);
 Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.hasTag = procHacker.js("Actor::hasTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.despawn = procHacker.js("Actor::despawn", void_t, {this:Actor});
@@ -347,7 +348,6 @@ Player.prototype.getCertificate = function() {
     const registry = base._enttRegistry();
     return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
 };
-
 Player.prototype.getDestroySpeed = procHacker.js('Player::getDestroySpeed', float32_t, {this:Player}, Block.ref());
 Player.prototype.canDestroy = procHacker.js('Player::canDestroy', bool_t, {this:Player}, Block.ref());
 
