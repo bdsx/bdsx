@@ -218,7 +218,7 @@ Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, { t
 (Actor.prototype as any).hurt_ = procHacker.js("Actor::hurt", bool_t, {this:Actor}, ActorDamageSource, int32_t, bool_t, bool_t);
 
 Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z", bool_t, {this:Actor}, int32_t, bool_t);
-Actor.prototype.getStatusFlag = procHacker.js("Actor::getStatusFlag", bool_t, {this:Actor}, int32_t);
+Actor.prototype.getStatusFlag = procHacker.js("?getStatusFlag@Actor@@QEBA_NW4ActorFlags@@@Z", bool_t, {this:Actor}, int32_t);
 
 Actor.prototype.getLevel = procHacker.js("Actor::getLevel", Level, {this:Actor});
 
