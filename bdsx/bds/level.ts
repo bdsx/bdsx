@@ -47,9 +47,6 @@ export class Level extends NativeClass {
     getEntities():Actor[] {
         abstract();
     }
-    /**
-     * `false` is recommended for `getRemoved`
-     */
     getRuntimeEntity(runtimeId: ActorRuntimeID, getRemoved: boolean): Actor | null {
         abstract();
     }
@@ -69,7 +66,6 @@ export class Level extends NativeClass {
     }
     /**
      * Gets an entity with the given unique id
-     * `false` is recommended for `getRemoved`
      */
     fetchEntity(runtimeId:ActorUniqueID, getRemoved:boolean):Actor | null {
         abstract();
