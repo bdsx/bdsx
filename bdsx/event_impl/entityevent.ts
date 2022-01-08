@@ -1,11 +1,12 @@
 import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
-import { ItemStack } from "../bds/inventory";
-import { ServerNetworkHandler } from "../bds/networkidentifier";
+import { ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
+import { NetworkIdentifier, ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
+import { serverInstance } from "../bds/server";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { decay } from "../decay";
@@ -418,15 +419,50 @@ function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCa
 }
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor, Wrapper.make(int32_t))(onPlayerAttack);
 
-function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
-    const event = new PlayerDropItemEvent(player, itemStack);
-    const canceled = events.playerDropItem.fire(event) === CANCEL;
-    _tickCallback();
-    decay(itemStack);
-    if (canceled) {
-        return false;
+events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
+    if (pk.legacyRequestId) {
+        const transaction = pk.transaction.data;
+        const src = InventorySource.create(ContainerId.Inventory, InventorySourceType.ContainerInventory);
+        const actions = transaction.getActions(src);
+        const player = ni.getActor()!;
+        const itemStack = player.getInventory().getItem(actions[0].slot, ContainerId.Inventory);
+        src.destruct();
+        const event = new PlayerDropItemEvent(player, itemStack);
+        const canceled = events.playerDropItem.fire(event) === CANCEL;
+        _tickCallback();
+        decay(itemStack);
+        if (canceled) {
+            serverInstance.nextTick().then(() => {
+                ni.getActor()!.sendInventory();
+            });
+            return CANCEL;
+        }
     }
-    return _onPlayerDropItem(event.player, event.itemStack, randomly);
+});
+
+const insideContainer = new Map<NetworkIdentifier, boolean>();
+events.packetSend(MinecraftPacketIds.ContainerOpen).on((pk, ni) => {
+    insideContainer.set(ni, true);
+});
+events.packetSend(MinecraftPacketIds.ContainerClose).on((pk, ni) => {
+    insideContainer.set(ni, false);
+});
+events.networkDisconnected.on(ni => {
+    insideContainer.delete(ni);
+});
+
+function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
+    if (insideContainer.get(player.getNetworkIdentifier())) {
+        const event = new PlayerDropItemEvent(player, itemStack);
+        const canceled = events.playerDropItem.fire(event) === CANCEL;
+        _tickCallback();
+        decay(itemStack);
+        if (canceled) {
+            return false;
+        }
+        return _onPlayerDropItem(event.player, event.itemStack, randomly);
+    }
+    return _onPlayerDropItem(player, itemStack, randomly);
 }
 const _onPlayerDropItem = procHacker.hooking("Player::drop", bool_t, null, Player, ItemStack, bool_t)(onPlayerDropItem);
 
