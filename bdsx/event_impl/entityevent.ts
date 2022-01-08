@@ -424,18 +424,20 @@ events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
         const transaction = pk.transaction.data;
         const src = InventorySource.create(ContainerId.Inventory, InventorySourceType.ContainerInventory);
         const actions = transaction.getActions(src);
-        const player = ni.getActor()!;
-        const itemStack = player.getInventory().getItem(actions[0].slot, ContainerId.Inventory);
-        src.destruct();
-        const event = new PlayerDropItemEvent(player, itemStack);
-        const canceled = events.playerDropItem.fire(event) === CANCEL;
-        _tickCallback();
-        decay(itemStack);
-        if (canceled) {
-            serverInstance.nextTick().then(() => {
-                ni.getActor()!.sendInventory();
-            });
-            return CANCEL;
+        if (actions.length === 1) {
+            const player = ni.getActor()!;
+            const itemStack = player.getInventory().getItem(actions[0].slot, ContainerId.Inventory);
+            src.destruct();
+            const event = new PlayerDropItemEvent(player, itemStack);
+            const canceled = events.playerDropItem.fire(event) === CANCEL;
+            _tickCallback();
+            decay(itemStack);
+            if (canceled) {
+                serverInstance.nextTick().then(() => {
+                    ni.getActor()!.sendInventory();
+                });
+                return CANCEL;
+            }
         }
     }
 });
