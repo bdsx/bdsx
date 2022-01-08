@@ -641,3 +641,24 @@ _loop:
     ; goto _loop;
     jmp _loop
 endp
+
+export def Core_String_toWide_string_span:qword
+export proc Core_String_toWide_charptr
+    stack 38h
+    xor eax, eax
+
+    mov r8, rdx
+_strlen:
+    mov al, byte ptr [rdx]
+    add rdx, 1
+    test eax, eax
+    jnz _strlen
+
+    sub rdx, r8
+    sub rdx, 1
+    mov [rsp+10h], rdx ; length
+    mov [rsp+18h], r8 ; data
+
+    lea rdx, [rsp+10h]
+    call Core_String_toWide_string_span
+endp

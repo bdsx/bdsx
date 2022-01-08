@@ -81,6 +81,9 @@ export class ServerNetworkHandler extends NativeClass {
     setMaxNumPlayers(n:number):void {
         abstract();
     }
+    _getServerPlayer(client:NetworkIdentifier, number: number):ServerPlayer|null {
+        abstract();
+    }
 }
 
 export namespace ServerNetworkHandler

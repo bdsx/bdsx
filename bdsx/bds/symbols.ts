@@ -232,6 +232,8 @@ const symbols = [
     'Level::tick',
     'Level::getUsers',
     'Level::getEntities',
+    'Level::getRuntimeEntity',
+    'Level::getRuntimePlayer',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',
@@ -282,7 +284,9 @@ const symbols = [
     'Player::startSwimming',
     'RakNetInstance::getPort',
     'ScoreboardIdentityRef::removeFromObjective',
+    'ActorDamageSource::ActorDamageSource',
     'ActorDamageSource::getDamagingEntityUniqueID',
+    'ActorDamageSource::setCause',
     'Player::inventoryChanged',
     'ItemStackBase::getMaxStackSize',
     'ItemStack::clone',
@@ -352,7 +356,9 @@ const symbols = [
     'BlockEventCoordinator::sendBlockDestructionStarted',
     'Level::getCurrentTick',
     'Player::getDestroySpeed',
-    'Player::canDestroy'
+    'Player::canDestroy',
+    'Player::addExperience',
+    'Player::getXpNeededForNextLevel',
 ] as const;
 
 // decorated symbols
@@ -410,6 +416,8 @@ const symbols2 = [
     '??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z',
     '?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z',
     '?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z',
+    '?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PEBD@Z',
+    '?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z',
 ] as const;
 
 export const proc = pdb.getList(

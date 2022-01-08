@@ -22,8 +22,8 @@ export class SharedPtrBase<T> extends NativeClass {
         this.weakRef = 1;
     }
     addRef():void {
-        this.interlockedIncrement32(8); // useRef
-        this.interlockedIncrement32(16); // weakRef
+        this.interlockedIncrement32(0x8); // useRef
+        this.interlockedIncrement32(0xc); // weakRef
     }
     release():void {
         if (this.interlockedDecrement32(0x8) === 0) {
