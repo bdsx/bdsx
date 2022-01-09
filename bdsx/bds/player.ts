@@ -367,6 +367,27 @@ export class Player extends Actor {
     }
 }
 
+interface RawTextObject$Text {
+    text: string;
+}
+interface RawTextObject$Translate {
+    translte: string;
+    with?: string[];
+}
+
+interface RawTextObject$Score {
+    score: {
+        name: string;
+        objective: string;
+    };
+}
+
+type RawTextObjectProperties = RawTextObject$Text | RawTextObject$Translate | RawTextObject$Score;
+
+interface RawTextObject {
+    rawtext: RawTextObjectProperties[];
+}
+
 export class ServerPlayer extends Player {
     /** @deprecated Use `this.getNetworkIdentifier()` instead */
     get networkIdentifier(): NetworkIdentifier {
@@ -469,10 +490,18 @@ export class ServerPlayer extends Player {
      */
     sendWhisper(message: string, author: string): void {
         const pk = TextPacket.create();
-        pk.type = TextPacket.Types.Chat;
+        pk.type = TextPacket.Types.Whisper;
         pk.name = author;
         pk.message = message;
         this.sendNetworkPacket(pk);
+    }
+
+    sendTextObject(object:RawTextObject): void {
+        const pk = TextPacket.create();
+        pk.type = TextPacket.Types.TextObject;
+        pk.message = JSON.stringify(object);
+        this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
