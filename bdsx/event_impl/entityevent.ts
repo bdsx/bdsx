@@ -443,7 +443,7 @@ events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
     }
 });
 
-const hasOpenContainer = Symbol();
+const hasOpenContainer = Symbol('hasOpenContainer');
 events.packetSend(MinecraftPacketIds.ContainerOpen).on((pk, ni) => {
     const player = ni.getActor()!;
     (player as any)[hasOpenContainer] = true;
