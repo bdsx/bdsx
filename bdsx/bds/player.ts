@@ -248,6 +248,143 @@ export class Player extends Actor {
     canDestroy(block: Block): boolean {
         abstract();
     }
+
+    /**
+     * Returns the player's XP points
+     */
+    getExperience(): number {
+        return Math.round(this.getExperienceProgress() * this.getXpNeededForNextLevel());
+    }
+
+    /**
+     * Returns the player's progression to the next level, between 0.0 and 1.0
+     */
+    getExperienceProgress(): number {
+        return this.getAttribute(AttributeId.PlayerExperience);
+    }
+
+    /**
+     * Returns the player's XP level
+     */
+    getExperienceLevel(): number {
+        return this.getAttribute(AttributeId.PlayerLevel);
+    }
+
+    /**
+     * Sets the player's XP points
+     *
+     * @param xp - between 1 and the maximum XP points for the level
+     */
+    setExperience(xp: number): void {
+        this.setAttribute(AttributeId.PlayerExperience, xp / this.getXpNeededForNextLevel() > 1 ? 1 : xp / this.getXpNeededForNextLevel());
+    }
+
+    /**
+     * Sets the player's progression to the next XP level
+     *
+     * @param progress - between 0.0 and 1.0
+     */
+    setExperienceProgress(progress: number): void {
+        this.setAttribute(AttributeId.PlayerExperience, progress > 1 ? 1 : progress);
+    }
+
+    /**
+     * Sets the player's XP level
+     *
+     * @param level - between 0 and 24791
+     */
+    setExperienceLevel(level: number): void {
+        this.setAttribute(AttributeId.PlayerLevel, level > 24791 ? 24791 : level < 0 ? 0 : level);
+    }
+
+    /**
+     * Adds XP points to the player, recalculating their level & progress
+     *
+     * @param xp - XP to add
+     */
+    addExperience(xp: number): void {
+        abstract();
+    }
+
+    /**
+     * Adds progress to the player's XP level
+     *
+     * @param progress - between 0.0 and 1.0
+     */
+    addExperienceProgress(progress: number): void {
+        if (-progress > this.getExperienceProgress()) this.setExperienceProgress(0);
+        else this.setAttribute(AttributeId.PlayerExperience, this.getExperienceProgress() + progress > 1 ? 1 : this.getExperienceProgress() + progress);
+    }
+
+    /**
+     * Adds XP levels to the player
+     *
+     * @param levels - levels to add
+     */
+    addExperienceLevels(levels: number): void {
+        abstract();
+    }
+
+    /**
+     * Subtracts XP points from the player
+     *
+     * @param xp - between 1 and the current XP points for the level
+     */
+    subtractExperience(xp: number): void {
+        this.addExperience(-xp);
+    }
+
+    /**
+     * Subtracts progress from the player's XP level
+     *
+     * @param progress - between 0.0 and the current XP progress
+     */
+    subtractExperienceProgress(progress: number): void {
+        this.addExperienceProgress(progress > this.getExperienceProgress() ? -this.getExperienceProgress() : -progress);
+    }
+
+    /**
+     * Subtracts XP levels from the player
+     *
+     * @param levels - between 1 and the player's XP level
+     */
+    subtractExperienceLevels(levels: number): void {
+        this.addExperienceLevels(levels > this.getExperienceLevel() ? -this.getExperienceLevel() : -levels);
+    }
+
+    /**
+     * Returns the total XP needed for the next level
+     */
+    getXpNeededForNextLevel(): number {
+        abstract();
+    }
+
+    /**
+     * Returns the remaining XP needed for the next level
+     */
+    getRemainingXpForNextLevel(): number {
+        return this.getXpNeededForNextLevel() - this.getExperience();
+    }
+}
+
+interface RawTextObject$Text {
+    text: string;
+}
+interface RawTextObject$Translate {
+    translte: string;
+    with?: string[];
+}
+interface RawTextObject$Score {
+    score: {
+        name: string;
+        objective: string;
+    };
+}
+
+type RawTextObjectProperties = RawTextObject$Text | RawTextObject$Translate | RawTextObject$Score;
+
+interface RawTextObject {
+    rawtext: RawTextObjectProperties[];
 }
 
 export class ServerPlayer extends Player {
@@ -341,6 +478,7 @@ export class ServerPlayer extends Player {
         pk.name = author;
         pk.message = message;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -352,10 +490,26 @@ export class ServerPlayer extends Player {
      */
     sendWhisper(message: string, author: string): void {
         const pk = TextPacket.create();
-        pk.type = TextPacket.Types.Chat;
+        pk.type = TextPacket.Types.Whisper;
         pk.name = author;
         pk.message = message;
         this.sendNetworkPacket(pk);
+        pk.dispose();
+    }
+
+    /**
+     * Sends a JSON-Object to the player
+     * For the format for that object, reference:
+     * @see https://minecraft.fandom.com/wiki/Commands/tellraw
+     *
+     * @param object JSON-Object to encode and send
+     */
+    sendTextObject(object:RawTextObject): void {
+        const pk = TextPacket.create();
+        pk.type = TextPacket.Types.TextObject;
+        pk.message = JSON.stringify(object);
+        this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -368,6 +522,7 @@ export class ServerPlayer extends Player {
         pk.type = TextPacket.Types.Raw;
         pk.message = message;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -386,6 +541,7 @@ export class ServerPlayer extends Player {
         }
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -403,6 +559,7 @@ export class ServerPlayer extends Player {
         }
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -421,6 +578,7 @@ export class ServerPlayer extends Player {
         }
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -436,6 +594,7 @@ export class ServerPlayer extends Player {
         pk.params.push(...params);
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**

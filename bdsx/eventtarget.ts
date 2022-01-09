@@ -91,6 +91,13 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
         return undefined;
     }
 
+    private static reportError(err:unknown):void {
+        const res = Event.errorHandler._fireWithoutErrorHandling(err);
+        if (res == null) {
+            remapAndPrintError(err as any);
+        }
+    }
+
     /**
      * return value if it canceled
      */
@@ -101,7 +108,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
                 if (ret === CANCEL) return CANCEL as any;
                 if (typeof ret === 'number') return ret as any;
             } catch (err) {
-                Event.errorHandler._fireWithoutErrorHandling(err);
+                Event.reportError(err);
             }
         }
     }
@@ -117,7 +124,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
                 if (ret === CANCEL) return CANCEL as any;
                 if (typeof ret === 'number') return ret as any;
             } catch (err) {
-                Event.errorHandler._fireWithoutErrorHandling(err);
+                Event.reportError(err);
             }
         }
     }

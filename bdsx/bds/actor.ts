@@ -213,6 +213,18 @@ export class ActorDamageSource extends NativeClass{
     @nativeField(int32_t, 0x08)
     cause: int32_t;
 
+    static constructWith(cause: ActorDamageCause): ActorDamageSource {
+        abstract();
+    }
+
+    /**
+     *
+     * @param cause damage cause
+     */
+    setCause(cause: ActorDamageCause): void {
+        abstract();
+    }
+
     /** @deprecated Has to be confirmed working */
     getDamagingEntityUniqueID():ActorUniqueID {
         abstract();
@@ -620,6 +632,7 @@ export class Actor extends NativeClass {
     removeEffect(id: MobEffectIds):void {
         abstract();
     }
+
     protected _hasEffect(mobEffect: MobEffect):boolean {
         abstract();
     }
@@ -632,6 +645,7 @@ export class Actor extends NativeClass {
         effect.destruct();
         return retval;
     }
+
     protected _getEffect(mobEffect: MobEffect):MobEffectInstance | null {
         abstract();
     }
@@ -703,6 +717,16 @@ export class Actor extends NativeClass {
         const tag = CompoundTag.constructWith({});
         this.save(tag);
         return tag;
+    }
+
+    protected hurt_(source: ActorDamageSource, damage:number, knock: boolean, ignite: boolean): boolean {
+        abstract();
+    }
+    hurt(cause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
+        const source = ActorDamageSource.constructWith(cause);
+        const retval = this.hurt_(source, damage, knock, ignite);
+        source.destruct();
+        return retval;
     }
     /**
      * Changes a specific status flag of the entity

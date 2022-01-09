@@ -178,10 +178,12 @@ export class ServerInstance extends NativeClass {
     /**
      * Resends all clients the updated command list
      */
-    updateCommandList():void {
+    updateCommandList(): void {
+        const pk = this.minecraft.getCommands().getRegistry().serializeAvailableCommands();
         for (const player of this.getPlayers()) {
-            player.sendNetworkPacket(this.minecraft.getCommands().getRegistry().serializeAvailableCommands());
+            player.sendNetworkPacket(pk);
         }
+        pk.dispose();
     }
     /**
      * Returns the server's current network protocol version

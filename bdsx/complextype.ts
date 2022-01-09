@@ -104,7 +104,8 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
             return makefunc.js(ptr, returnType, opts, ...params);
         }
         return new NativeFunctionType<Func>(
-            `${returnType.name} (__cdecl*)(${params.map(param=>param.name).join(',')})`,
+            `${returnType.symbol || returnType.name} (__cdecl*)(${params.map(param=>param.symbol || param.name).join(',')})`,
+            `${returnType.name}(${params.map(param=>param.name).join(',')})`,
             8, 8,
             v=>v instanceof Function,
             undefined,
@@ -136,7 +137,7 @@ export class MemberPointer<B, T> extends VoidPointer {
 }
 
 export const NativeVarArgs = new NativeType<any[]>(
-    '...',
+    '...', 'NativeVarArgs',
     0,
     0,
     ()=>{ throw Error('Unexpected usage'); },

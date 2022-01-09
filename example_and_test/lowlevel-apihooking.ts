@@ -6,7 +6,7 @@ import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
 import { ItemStack } from "bdsx/bds/inventory";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { TextPacket } from "bdsx/bds/packets";
-import { capi } from "bdsx/capi";
+import { Config } from "bdsx/config";
 import { pdb } from "bdsx/core";
 import { UNDNAME_NAME_ONLY } from "bdsx/dbghelp";
 import { bool_t, int32_t, int8_t } from "bdsx/nativetype";
@@ -19,8 +19,7 @@ function sendText(ni:NetworkIdentifier, message:string):void {
     packet.dispose();
 }
 
-if (!capi.isRunningOnWine()) { // Skip for Linux, pdb is not working on Wine.
-    // the API hooking is possible on Wine with the generated cache.
+if (!Config.WINE) { // Skip for Linux, pdb searching is not working on Wine. but it's possible with the generated cache.
 
     //////////////////////////
     // hook the block breaking

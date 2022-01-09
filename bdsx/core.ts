@@ -704,9 +704,16 @@ export declare namespace cgate
     export const nodeLoop: VoidPointer;
 
     /**
-     * just dummy function
+     * std::wstring toUtf16(string_span<char>*)
+     * converting utf8 to utf16
      */
-    export const tester: VoidPointer;
+    export const toWide: VoidPointer;
+
+    /**
+     * std::string toUtf8(string_span<charw_t>*)
+     * converting utf16 to utf8
+     */
+    export const toUtf8: VoidPointer;
 
     /**
      * it will allocate a executable memory by VirtualAlloc
@@ -714,6 +721,12 @@ export declare namespace cgate
     export function allocExecutableMemory(size:number, alignment?:number):StaticPointer;
 
     export function nodeLoopOnce():void;
+
+    /**
+     * check memory corruption
+     * Only for the debug built core
+     */
+    export const memcheck:(()=>void)|undefined;
 }
 
 export declare namespace chakraUtil {

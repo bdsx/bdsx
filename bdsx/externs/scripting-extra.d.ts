@@ -7,7 +7,11 @@ declare global
         /**
          * This component contains all the blockstates on a block object. Blockstates control all different aspects of blocks from their orientation to the type of wood they are. Blockstates are represented by numbers, bools, or strings. Please see the Blockstates Documentation to see the valid values for each state. This component allows for the getting and setting of these states.
          */
-        "minecraft:blockstate":IComponent<IBlockStateComponent>
+        "minecraft:blockstate":IComponent<IBlockStateComponent>;
+        /**
+         * This component represents the contents of an entity's hands. The component contains an array of ItemStack JS API Objects representing each slot in the hand container. NOTE: Currently items and containers are read-only. Slot 0 is main-hand Slot 1 is off-hand.
+         */
+        "minecraft:hand_container":IComponent<IItemStack[]>;
     }
     type MinecraftComponentName = keyof MinecraftComponentNameMap;
 

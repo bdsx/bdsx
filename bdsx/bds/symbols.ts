@@ -233,6 +233,8 @@ const symbols = [
     'Level::tick',
     'Level::getUsers',
     'Level::getEntities',
+    'Level::getRuntimeEntity',
+    'Level::getRuntimePlayer',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',
@@ -322,14 +324,15 @@ const symbols = [
     'Scoreboard::getTrackedIds',
     'ItemStackBase::getRawNameId',
     'ItemStackBase::_setItem',
-    'Actor::getStatusFlag',
     'ItemStackBase::constructItemEnchantsFromUserData',
     'CommandUtils::spawnEntityAt',
     'Actor::startSwimming',
     'Player::startSwimming',
     'RakNetInstance::getPort',
     'ScoreboardIdentityRef::removeFromObjective',
+    'ActorDamageSource::ActorDamageSource',
     'ActorDamageSource::getDamagingEntityUniqueID',
+    'ActorDamageSource::setCause',
     'Player::inventoryChanged',
     'ItemStackBase::getMaxStackSize',
     'ItemStack::clone',
@@ -399,7 +402,9 @@ const symbols = [
     'BlockEventCoordinator::sendBlockDestructionStarted',
     'Level::getCurrentTick',
     'Player::getDestroySpeed',
-    'Player::canDestroy'
+    'Player::canDestroy',
+    'Player::addExperience',
+    'Player::getXpNeededForNextLevel',
 ] as const;
 
 // decorated symbols
@@ -461,6 +466,7 @@ const symbols2 = [
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',
     '?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z',
+    '?getStatusFlag@Actor@@QEBA_NW4ActorFlags@@@Z',
     '?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z',
     '??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z',
     '?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z',
@@ -472,6 +478,8 @@ const symbols2 = [
     '??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z',
     '?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z',
     '?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z',
+    '?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PEBD@Z',
+    '?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z',
 ] as const;
 
 export const proc = pdb.getList(

@@ -211,6 +211,7 @@ export class TextLineParser extends TextParser {
 
             let content:string;
             if (res === null) {
+                if (this.i === context.length) break;
                 content = context.substr(this.i);
             } else {
                 if (res.index === 0) {

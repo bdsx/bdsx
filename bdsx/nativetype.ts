@@ -156,6 +156,10 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         /**
          * pdb symbol name. it's used by type_id.pdbimport
          */
+        public readonly symbol:string,
+        /**
+         * name for displaying
+         */
         name:string,
         size:number,
         align:number,
@@ -216,9 +220,10 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         return this[NativeTypeFn.bitGetter] !== abstract;
     }
 
-    extends<FIELDS>(fields?:FIELDS, name?:string):NativeType<T>&FIELDS {
+    extends<FIELDS>(fields?:FIELDS, symbol?:string, name?:string):NativeType<T>&FIELDS {
         const type = this;
         const ntype = new NativeType(
+            symbol ?? this.symbol,
             name ?? this.name,
             type[NativeType.size],
             type[NativeType.align],
@@ -305,6 +310,7 @@ NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
         `${type.name}*`,
+        `${type.symbol}*`,
         8, 8,
         type.isTypeOf,
         type.isTypeOfWeak,
@@ -349,7 +355,7 @@ function int32To64(ptr:StaticPointer, v:unknown, offset?:number):void {
 }
 
 export const void_t = new NativeType<void>(
-    'void',
+    'void', 'void_t',
     0, 1,
     v=>v === undefined,
     undefined,
@@ -360,7 +366,7 @@ export const void_t = new NativeType<void>(
     emptyFunc);
 export type void_t = void;
 export const bool_t = new NativeType<boolean>(
-    'bool',
+    'bool', 'bool_t',
     1, 1,
     v=>typeof v === 'boolean',
     undefined,
@@ -378,7 +384,7 @@ bool_t[NativeTypeFn.bitSetter] = (ptr, value, shift, mask, offset)=>{
     ptr.setUint8(nvalue, offset);
 };
 export const uint8_t = new NativeType<number>(
-    'unsigned char',
+    'unsigned char', 'uint8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xff,
     isNumber,
@@ -390,7 +396,7 @@ export type uint8_t = number;
 uint8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint16_t = new NativeType<number>(
-    'unsigned short',
+    'unsigned short', 'uint16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xffff,
     isNumber,
@@ -402,7 +408,7 @@ export type uint16_t = number;
 uint16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint32_t = new NativeType<number>(
-    'unsigned int',
+    'unsigned int', 'uint32_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -414,7 +420,7 @@ export type uint32_t = number;
 uint32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const ulong_t = new NativeType<number>(
-    'unsigned long',
+    'unsigned long', 'ulong_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -426,7 +432,7 @@ export type ulong_t = number;
 ulong_t[NativeTypeFn.bitGetter] = numericBitGetter;
 ulong_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint64_as_float_t = new NativeType<number>(
-    'unsigned __int64',
+    'unsigned __int64', 'uint64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && 0 <= v && v < 0x10000000000000000,
     isNumber,
@@ -434,7 +440,7 @@ export const uint64_as_float_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
-    'char',
+    'char', 'int8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && -0x80 <= v && v <= 0x7f,
     isNumber,
@@ -446,7 +452,7 @@ export type int8_t = number;
 int8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int16_t = new NativeType<number>(
-    'short',
+    'short', 'int16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && -0x8000 <= v && v <= 0x7fff,
     isNumber,
@@ -458,7 +464,7 @@ export type int16_t = number;
 int16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int32_t = new NativeType<number>(
-    'int',
+    'int', 'int32_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -470,7 +476,7 @@ export type int32_t = number;
 int32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const long_t = new NativeType<number>(
-    'long',
+    'long', 'long_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -482,7 +488,7 @@ export type long_t = number;
 long_t[NativeTypeFn.bitGetter] = numericBitGetter;
 long_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int64_as_float_t = new NativeType<number>(
-    '__int64',
+    '__int64', 'int64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && -0x8000000000000000 <= v && v < 0x8000000000000000,
     isNumber,
@@ -493,7 +499,7 @@ export const int64_as_float_t = new NativeType<number>(
 export type int64_as_float_t = number;
 
 export const float32_t = new NativeType<number>(
-    'float',
+    'float', 'float32_t',
     4, 4,
     isNumber,
     isNumber,
@@ -504,7 +510,7 @@ export const float32_t = new NativeType<number>(
 export type float32_t = number;
 float32_t[makefunc.useXmmRegister] = true;
 export const float64_t = new NativeType<number>(
-    'double',
+    'double', 'float64_t',
     8, 8,
     isNumber,
     isNumber,
@@ -519,7 +525,7 @@ const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<ch
 const strbufCache:AllocatedPointer[] = [];
 
 export const CxxString = new NativeType<string>(
-    'std::basic_string<char,std::char_traits<char>,std::allocator<char> >',
+    'std::basic_string<char,std::char_traits<char>,std::allocator<char> >', 'CxxString',
     0x20, 8,
     v=>typeof v === 'string',
     undefined,
@@ -552,7 +558,7 @@ export const CxxString = new NativeType<string>(
 export type CxxString = string;
 
 export const bin64_t = new NativeType<string>(
-    'unsigned __int64',
+    'unsigned __int64', 'bin64_t',
     8, 8,
     v=>typeof v === 'string' && v.length === 4,
     undefined,
@@ -566,7 +572,7 @@ export const bin64_t = new NativeType<string>(
 export type bin64_t = string;
 
 export const bin128_t = new NativeType<string>(
-    'unsigned __int128',
+    'unsigned __int128', 'bin128_t',
     16, 8,
     v=>typeof v === 'string' && v.length === 8,
     undefined,

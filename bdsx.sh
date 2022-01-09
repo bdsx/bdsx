@@ -12,7 +12,6 @@ else
   echo 'Error: bdsx requires wine. Please install wine first' >&2
   exit $?
 fi
-DISPLAY=:0 winecfg
 
 # enable linux executables on wine
 k='HKLM\System\CurrentControlSet\Control\Session Manager\Environment'
@@ -38,7 +37,7 @@ if [ $? != 1 ]; then break; fi
 
 # launch
 cd bedrock_server
-LD_LIBRARY_PATH=/usr/lib/wine/x86_64-unix WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
+WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
 echo exit=$?>>bdsx_shell_data.ini
 cd ..
 

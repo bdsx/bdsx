@@ -2,13 +2,13 @@ import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
-import type { Actor, ActorDefinitionIdentifier, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor } from "./actor";
+import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor } from "./actor";
 import type { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
 import type { GameRules } from "./gamerules";
 import type { ItemStack } from "./inventory";
-import type { ServerPlayer } from "./player";
+import type { Player, ServerPlayer } from "./player";
 import type { Scoreboard } from "./scoreboard";
 import { StructureManager } from "./structure";
 
@@ -48,6 +48,12 @@ export class Level extends NativeClass {
     getEntities():Actor[] {
         abstract();
     }
+    getRuntimeEntity(runtimeId: ActorRuntimeID, getRemoved: boolean): Actor | null {
+        abstract();
+    }
+    getRuntimePlayer(runtimeId: ActorRuntimeID): Player | null {
+        abstract();
+    }
     createDimension(id:DimensionId):Dimension {
         abstract();
     }
@@ -62,7 +68,7 @@ export class Level extends NativeClass {
     /**
      * Gets an entity with the given unique id
      */
-    fetchEntity(id:ActorUniqueID, fetchRemovedActor:boolean):Actor|null {
+    fetchEntity(runtimeId:ActorUniqueID, getRemoved:boolean):Actor | null {
         abstract();
     }
     /**

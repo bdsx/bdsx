@@ -1,7 +1,7 @@
-import { msAlloc } from "./msalloc";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
+import { msAlloc } from "./msalloc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
@@ -543,14 +543,14 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
 }
 
 function getVectorName(type:Type<any>):string {
-    return templateName('std::vector', type.name, templateName('std::allocator', type.name));
+    return templateName('std::vector', type.symbol || type.name, templateName('std::allocator', type.symbol || type.name));
 }
 
 export class CxxVectorToArray<T> extends NativeType<T[]> {
     public readonly type:CxxVectorType<T>;
 
     private constructor(public readonly compType:Type<T>) {
-        super(getVectorName(compType), VECTOR_SIZE, 8,
+        super(getVectorName(compType), `CxxVectorToArray<${compType.name}>`, VECTOR_SIZE, 8,
             v=>v instanceof Array,
             undefined,
             (ptr, offset)=>ptr.addAs(this.type, offset, offset! >> 31).toArray(),
