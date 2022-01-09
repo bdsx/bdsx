@@ -802,7 +802,7 @@ ByteArrayTag.constructWith = function(data:Uint8Array):IntArrayTag {
 };
 StringTag.constructWith = procHacker.js("??0StringTag@@QEAA@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StringTag, {structureReturn:true}, CxxString);
 const ListTag$ListTag = procHacker.js("??0ListTag@@QEAA@XZ", ListTag, {structureReturn:true});
-ListTag.constructWith = function(data):ListTag {
+(ListTag as any).constructWith = function(data: Tag[] = []):ListTag {
     const tag = ListTag$ListTag();
     for (const e of data) {
         tag.push(e);
@@ -831,7 +831,7 @@ ListTag.prototype.push = function(tag:Tag):void_t {
     ListTag$add.call(this, ptr);
 };
 ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:ListTag});
-CompoundTag.prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
+(CompoundTag as any).prototype.set = procHacker.js("?put@CompoundTag@@QEAAAEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAV2@@Z", Tag, {this:CompoundTag}, CxxString, Tag);
 
 // structure.ts
 StructureSettings.prototype[NativeType.ctor] = procHacker.js("StructureSettings::StructureSettings", StructureSettings, {this:StructureSettings});

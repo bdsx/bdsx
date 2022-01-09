@@ -237,16 +237,16 @@ export class StringTag extends Tag {
 }
 
 @nativeClass(0x28)
-export class ListTag extends Tag {
+export class ListTag<T extends Tag = Tag> extends Tag {
     @nativeField(CxxVector.make(Tag.ref()))
-    data:CxxVector<Tag>;
+    data:CxxVector<T>;
     @nativeField(uint8_t, 0x20)
     type:Tag.Type;
 
-    get(idx:number):Tag {
-        return this.data.get(idx);
+    get<_T extends Tag = T>(idx:number):_T {
+        return this.data.get(idx) as any;
     }
-    set(idx:number, tag:Tag):void {
+    set(idx:number, tag:T):void {
         this.type = tag.getId();
         return this.data.set(idx, tag);
     }
@@ -260,7 +260,7 @@ export class ListTag extends Tag {
         abstract();
     }
 
-    static constructWith(data:Tag[]):ListTag {
+    static constructWith<T extends Tag = Tag>(data?:T[]):ListTag<T> {
         abstract();
     }
 
@@ -278,10 +278,10 @@ export class CompoundTag extends Tag {
     @nativeField(CxxMap.make(CxxString, CompoundTagVariant))
     data:CxxMap<CxxString, CompoundTagVariant>;
 
-    get(key:string):Tag|null {
-        return this.data.get(key);
+    get<T extends Tag>(key:string):T|null {
+        return this.data.get(key) as T;
     }
-    set(key:string, tag:Tag):Tag {
+    set<T extends Tag>(key:string, tag:T):T {
         abstract();
     }
     contains(key:string):boolean {
