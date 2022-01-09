@@ -145,11 +145,15 @@ export class PlayerAttackEvent implements IPlayerAttackEvent {
 interface IPlayerDropItemEvent {
     player: Player;
     itemStack: ItemStack;
+    inContainer: boolean;
+    hotbarSlot?: number;
 }
 export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     constructor(
         public player: Player,
         public itemStack: ItemStack,
+        public inContainer: boolean,
+        public hotbarSlot?: number,
     ) {
     }
 }
@@ -427,7 +431,7 @@ events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
             const player = ni.getActor()!;
             const itemStack = player.getInventory().getItem(actions[0].slot, ContainerId.Inventory);
             src.destruct();
-            const event = new PlayerDropItemEvent(player, itemStack);
+            const event = new PlayerDropItemEvent(player, itemStack, false, actions[0].slot);
             const canceled = events.playerDropItem.fire(event) === CANCEL;
             _tickCallback();
             decay(itemStack);
@@ -451,7 +455,7 @@ events.packetSend(MinecraftPacketIds.ContainerClose).on((pk, ni) => {
 
 function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
     if ((player as any)[hasOpenContainer]) {
-        const event = new PlayerDropItemEvent(player, itemStack);
+        const event = new PlayerDropItemEvent(player, itemStack, true);
         const canceled = events.playerDropItem.fire(event) === CANCEL;
         _tickCallback();
         decay(itemStack);
