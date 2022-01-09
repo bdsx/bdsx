@@ -374,7 +374,6 @@ interface RawTextObject$Translate {
     translte: string;
     with?: string[];
 }
-
 interface RawTextObject$Score {
     score: {
         name: string;
@@ -502,6 +501,7 @@ export class ServerPlayer extends Player {
      * Sends a JSON-Object to the player
      * For the format for that object, reference:
      * @see https://minecraft.fandom.com/wiki/Commands/tellraw
+     *
      * @param object JSON-Object to encode and send
      */
     sendTextObject(object:RawTextObject): void {
