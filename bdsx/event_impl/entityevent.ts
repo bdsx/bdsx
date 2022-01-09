@@ -1,7 +1,7 @@
 import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
-import { NetworkIdentifier, ServerNetworkHandler } from "../bds/networkidentifier";
+import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
 import { Player, ServerPlayer } from "../bds/player";
@@ -442,19 +442,18 @@ events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
     }
 });
 
-const insideContainer = new Map<NetworkIdentifier, boolean>();
+const hasOpenContainer = Symbol();
 events.packetSend(MinecraftPacketIds.ContainerOpen).on((pk, ni) => {
-    insideContainer.set(ni, true);
+    const player = ni.getActor()!;
+    (player as any)[hasOpenContainer] = true;
 });
 events.packetSend(MinecraftPacketIds.ContainerClose).on((pk, ni) => {
-    insideContainer.set(ni, false);
-});
-events.networkDisconnected.on(ni => {
-    insideContainer.delete(ni);
+    const player = ni.getActor()!;
+    (player as any)[hasOpenContainer] = false;
 });
 
 function onPlayerDropItem(player:Player, itemStack:ItemStack, randomly:boolean):boolean {
-    if (insideContainer.get(player.getNetworkIdentifier())) {
+    if ((player as any)[hasOpenContainer]) {
         const event = new PlayerDropItemEvent(player, itemStack);
         const canceled = events.playerDropItem.fire(event) === CANCEL;
         _tickCallback();
