@@ -419,7 +419,6 @@ function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCa
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor, Wrapper.make(int32_t))(onPlayerAttack);
 
 events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
-    console.log(pk);
     if (pk.transaction.type === ComplexInventoryTransaction.Type.NormalTransaction) {
         const transaction = pk.transaction.data;
         const src = InventorySource.create(ContainerId.Inventory, InventorySourceType.ContainerInventory);
