@@ -84,6 +84,7 @@ Level.prototype.setTime = function(time: number):void {
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(packet);
     }
+    packet.dispose();
 };
 
 Level.prototype.getPlayers = function() {
