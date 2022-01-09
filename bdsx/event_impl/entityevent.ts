@@ -1,12 +1,11 @@
 import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
-import { ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
+import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
-import { serverInstance } from "../bds/server";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { decay } from "../decay";
@@ -420,7 +419,8 @@ function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCa
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor, Wrapper.make(int32_t))(onPlayerAttack);
 
 events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
-    if (pk.legacyRequestId) {
+    console.log(pk);
+    if (pk.transaction.type === ComplexInventoryTransaction.Type.NormalTransaction) {
         const transaction = pk.transaction.data;
         const src = InventorySource.create(ContainerId.Inventory, InventorySourceType.ContainerInventory);
         const actions = transaction.getActions(src);
@@ -433,9 +433,7 @@ events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
             _tickCallback();
             decay(itemStack);
             if (canceled) {
-                serverInstance.nextTick().then(() => {
-                    ni.getActor()!.sendInventory();
-                });
+                ni.getActor()!.sendInventory();
                 return CANCEL;
             }
         }
