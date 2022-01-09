@@ -479,6 +479,7 @@ export class ServerPlayer extends Player {
         pk.name = author;
         pk.message = message;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -494,6 +495,7 @@ export class ServerPlayer extends Player {
         pk.name = author;
         pk.message = message;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     sendTextObject(object:RawTextObject): void {
@@ -514,6 +516,7 @@ export class ServerPlayer extends Player {
         pk.type = TextPacket.Types.Raw;
         pk.message = message;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -532,6 +535,7 @@ export class ServerPlayer extends Player {
         }
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -549,6 +553,7 @@ export class ServerPlayer extends Player {
         }
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -567,6 +572,7 @@ export class ServerPlayer extends Player {
         }
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
@@ -582,6 +588,7 @@ export class ServerPlayer extends Player {
         pk.params.push(...params);
         pk.needsTranslation = true;
         this.sendNetworkPacket(pk);
+        pk.dispose();
     }
 
     /**
