@@ -34,4 +34,5 @@ import './setblock';
 import './test';
 import './lowlevel-checkdisconnect';
 import './lowlevel-checkclientcacheblobstatus';
+import './event-playerdropitem';
 // import './permissions';
