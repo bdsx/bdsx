@@ -12,8 +12,8 @@ export class typeid_t<T> extends NativeClass{
     id:uint16_t;
 }
 
-const counterWrapper = Symbol();
-const typeidmap = Symbol();
+const counterWrapper = Symbol('IdCounter');
+const typeidmap = Symbol('typeidmap');
 
 const IdCounter = Wrapper.make(uint16_t);
 type IdCounter = Wrapper<uint16_t>;

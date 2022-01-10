@@ -17,9 +17,9 @@ export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:a
 
 type StructureFields<T> = {[key in KeysWithoutFunction<T>]?:Type<T[key]>|[Type<T[key]>, number]};
 
-const isNativeClass = Symbol();
-const isSealed = Symbol();
-const fieldmap = Symbol();
+const isNativeClass = Symbol('isNativeClass');
+const isSealed = Symbol('isSealed');
+const fieldmap = Symbol('fieldmap');
 
 function accessor(key:string|number):string {
     if (typeof key === 'number') return `[${key}]`;

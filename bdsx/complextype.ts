@@ -91,7 +91,7 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
         opts?: OPTS,
         ...params: PARAMS):NativeFunctionType<FunctionFromTypes_js_without_pointer<OPTS, PARAMS, RETURN>> {
 
-        const makefunc_np = Symbol();
+        const makefunc_np = Symbol('[native function]');
         type Func = FunctionFromTypes_js_without_pointer<OPTS, PARAMS, RETURN> & {[makefunc_np]?:VoidPointer};
         function getNp(func:Func):VoidPointer {
             const ptr = func[makefunc_np];
