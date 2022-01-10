@@ -88,7 +88,7 @@ export namespace events {
     export const entityStopRiding = new Event<(event: EntityStopRidingEvent) => void | CANCEL>();
     /** Cancellable */
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
-    /** Cancellable but only when player is in container screens*/
+    /** Cancellable */
     export const playerDropItem = new Event<(event: PlayerDropItemEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerInventoryChange = new Event<(event: PlayerInventoryChangeEvent) => void | CANCEL>();
