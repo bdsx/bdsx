@@ -14,7 +14,7 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
+import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockLegacy, BlockSource } from "./block";
@@ -254,7 +254,7 @@ ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamag
     return source;
 };
 
-ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageByActorSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
+ActorDamageByActorSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageByActorSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, { this: ActorDamageSource }, int32_t);
 
 ItemActor.abstract({

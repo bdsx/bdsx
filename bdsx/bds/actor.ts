@@ -224,9 +224,22 @@ export class ActorDamageSource extends NativeClass{
         abstract();
     }
 
+    getDamagingEntity():Actor|null {
+        const uniqueId = this.as(ActorDamageByActorSource).getDamagingEntityUniqueID();
+        return Actor.fromUniqueIdBin(uniqueId);
+    }
+}
+
+export class ActorDamageByActorSource extends ActorDamageSource {
     getDamagingEntityUniqueID():ActorUniqueID {
         abstract();
     }
+}
+
+export class ActorDamageByChildActorSource extends ActorDamageSource {
+}
+
+export class ActorDamageByBlockSource extends ActorDamageSource {
 }
 
 export enum ActorDamageCause {
