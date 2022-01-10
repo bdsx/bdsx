@@ -367,24 +367,25 @@ export class Player extends Actor {
     }
 }
 
-interface RawTextObject$Text {
-    text: string;
+namespace RawTextObject {
+    export interface Text {
+        text: string;
+    }
+    export interface Translate {
+        translte: string;
+        with?: string[];
+    }
+    export interface Score {
+        score: {
+            name: string;
+            objective: string;
+        };
+    }
+    export type Properties = Text | Translate | Score;
 }
-interface RawTextObject$Translate {
-    translte: string;
-    with?: string[];
-}
-interface RawTextObject$Score {
-    score: {
-        name: string;
-        objective: string;
-    };
-}
-
-type RawTextObjectProperties = RawTextObject$Text | RawTextObject$Translate | RawTextObject$Score;
 
 interface RawTextObject {
-    rawtext: RawTextObjectProperties[];
+    rawtext: RawTextObject.Properties[];
 }
 
 export class ServerPlayer extends Player {
