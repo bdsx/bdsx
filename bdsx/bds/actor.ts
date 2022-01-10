@@ -224,7 +224,6 @@ export class ActorDamageSource extends NativeClass{
         abstract();
     }
 
-    /** @deprecated Has to be confirmed working */
     getDamagingEntityUniqueID():ActorUniqueID {
         abstract();
     }

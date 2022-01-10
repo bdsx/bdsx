@@ -285,7 +285,7 @@ const symbols = [
     'RakNetInstance::getPort',
     'ScoreboardIdentityRef::removeFromObjective',
     'ActorDamageSource::ActorDamageSource',
-    'ActorDamageSource::getDamagingEntityUniqueID',
+    'ActorDamageByActorSource::getDamagingEntityUniqueID',
     'ActorDamageSource::setCause',
     'Player::inventoryChanged',
     'ItemStackBase::getMaxStackSize',

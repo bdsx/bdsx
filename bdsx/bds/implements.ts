@@ -254,7 +254,7 @@ ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamag
     return source;
 };
 
-ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
+ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.js("ActorDamageByActorSource::getDamagingEntityUniqueID", ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, { this: ActorDamageSource }, int32_t);
 
 ItemActor.abstract({
