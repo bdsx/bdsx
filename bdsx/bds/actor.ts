@@ -224,7 +224,7 @@ export class ActorDamageSource extends NativeClass{
         abstract();
     }
 
-    getDamagingEntityUniqueID():ActorUniqueID {
+    getDamagingEntityUniqueID():ActorUniqueID|undefined {
         abstract();
     }
 }
