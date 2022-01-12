@@ -614,7 +614,7 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(uint32_t)
     actionType:ItemUseInventoryTransaction.ActionType;
     @nativeField(BlockPos)
-    pos:BlockPos;
+    clickPos:BlockPos;
     @nativeField(uint32_t)
     targetBlockId:uint32_t;
     @nativeField(int32_t)
@@ -624,9 +624,14 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(NetworkItemStackDescriptor, {offset: 0x04, relative: true})
     descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
-    @nativeField(Vec3)
-    clickPos:Vec3;
+    fromPos: Vec3;
+
+    /**
+     * @deprecated Access to clickPos
+     */
+    get pos(): BlockPos {
+        return this.clickPos;
+    }
 }
 
 export namespace ItemUseInventoryTransaction {
