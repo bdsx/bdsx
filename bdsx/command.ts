@@ -181,6 +181,14 @@ export class CustomCommandFactory {
     }
 }
 
+export class CustomCommandFactoryWithSignature extends CustomCommandFactory {
+    constructor(
+        registry:CommandRegistry, name:string,
+        public signature:CommandRegistry.Signature) {
+        super(registry, name);
+    }
+}
+
 const commandEnumStored = Symbol('commandEnum');
 function _enum<VALUES extends Record<string, string|number>>(name:string, values:VALUES):CommandEnum<VALUES[keyof VALUES]>;
 function _enum<VALUES extends string[]>(name:string, ...values:VALUES):CommandEnum<VALUES[number]>;
@@ -201,6 +209,12 @@ function _enum(name:string, ...values:(string|Record<string, number|string>)[]):
 }
 
 export const command ={
+    find(name:string):CustomCommandFactoryWithSignature {
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const cmd = registry.findCommand(name);
+        if (cmd === null) throw Error(`${name}: command not found`);
+        return new CustomCommandFactoryWithSignature(registry, name, cmd);
+    },
     register(name:string,
         description:string,
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,

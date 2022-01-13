@@ -2,11 +2,13 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, CommandPermissionLevel, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
+
+command.find('say').signature.permissionLevel = CommandPermissionLevel.Admin; // change the say permission
 
 // raw text
 command.register('aaa', 'bdsx command example').overload((param, origin, output)=>{

@@ -612,7 +612,7 @@ ItemStack.prototype.getMaxDamage = procHacker.js("ItemStackBase::getMaxDamage", 
 ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValue", int32_t, {this:ItemStack});
 ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
 ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
-ItemStack.prototype.allocateAndSave = procHacker.js("ItemStackBase::save", CompoundTag.ref(), {this:ItemStack});
+ItemStack.prototype.allocateAndSave = procHacker.js("ItemStackBase::save", CompoundTag.ref(), {this:ItemStack, structureReturn: true});
 const ItemStack$load = procHacker.js("?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z", void_t, null, ItemStack, CompoundTag);
 ItemStack.prototype.load = function(tag) {
     if (tag instanceof Tag) {
@@ -811,7 +811,7 @@ IdentityDefinition.prototype.getIdentityType = procHacker.js("IdentityDefinition
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
-MobEffectInstance.prototype.allocateAndSave = procHacker.js("MobEffectInstance::save", CompoundTag.ref(), {this:MobEffectInstance});
+MobEffectInstance.prototype.allocateAndSave = procHacker.js("MobEffectInstance::save", CompoundTag.ref(), {this:MobEffectInstance, structureReturn: true});
 const MobEffectInstance$load = procHacker.js("MobEffectInstance::load", void_t, null, MobEffectInstance, CompoundTag);
 MobEffectInstance.prototype.load = function(tag) {
     if (tag instanceof Tag) {

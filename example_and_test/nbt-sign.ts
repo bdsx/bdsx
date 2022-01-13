@@ -1,6 +1,7 @@
 import { Block } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
 import { command } from "bdsx/command";
+import { events } from "bdsx/event";
 
 command.register('sign', 'generate signed block').overload((params, origin, output)=>{
     const actor = origin.getEntity();
@@ -18,3 +19,7 @@ command.register('sign', 'generate signed block').overload((params, origin, outp
         });
     }
 }, {});
+
+events.playerUseItem.on(ev=>{
+    ev.itemStack.save();
+});
