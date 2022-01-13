@@ -20,7 +20,7 @@
     "bdsx": "file:bdsx",
     "blessed": "^0.1.81",
     "colors": "1.4.0 || ^1.4.3",
-    "follow-redirects": "^1.14.4",
+    "follow-redirects": "^1.14.7",
     "glob": "^7.2.0",
     "node-html-parser": "^4.1.5",
     "progress": "^2.0.3",
