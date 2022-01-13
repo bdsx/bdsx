@@ -13,7 +13,6 @@ command.register('sign', 'generate signed block').overload((params, origin, outp
         const block = Block.create('minecraft:standing_sign')!;
         region.setBlock(blockpos, block);
         const blockActor = region.getBlockEntity(blockpos)!;
-        console.log(blockActor.save());
         blockActor.load({
             Text: 'be happy'
         });
