@@ -60,16 +60,13 @@ export function memcheck(code:Uint8Array, originalCode:number[], skip?:number[])
     return diff;
 }
 
-export function hexn(value:number, size:number):string {
-    const out:number[] = [];
-    for (let i=0;i<size;) {
-        const v = value & 0xff;
-        const n1 = (v >> 4);
-        if (n1 < 10) out.push(n1+0x30);
-        else out.push(n1+(0x41-10));
-        const n2 = (v & 0x0f);
-        if (n2 < 10) out.push(n2+0x30);
-        else out.push(n2+(0x41-10));
+export function hexn(value:number, hexcount:number):string {
+    const out:number[] = new Array(hexcount);
+    for (let i=hexcount-1;i>=0;i--) {
+        const n = value & 0xf;
+        value >>= 4;
+        if (n < 10) out[i] = n+0x30;
+        else out[i] = n+(0x41-10);
     }
     return String.fromCharCode(...out);
 }

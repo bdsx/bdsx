@@ -68,8 +68,8 @@ type GetTypeFromParam<T> =
 
 type OptionalCheck<T, OPTS extends boolean|CommandFieldOptions> =
     (OPTS extends true ? true : OPTS extends {optional:true} ? true : false) extends true ?
-    GetTypeFromParam<T> :
-    GetTypeFromParam<T>|undefined;
+    GetTypeFromParam<T>|undefined :
+    GetTypeFromParam<T>;
 
 export class CustomCommandFactory {
 

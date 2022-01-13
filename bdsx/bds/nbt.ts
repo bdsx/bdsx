@@ -8,7 +8,7 @@ import { nativeClass, NativeClass, NativeClassType, nativeField } from "../nativ
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import util = require("util");
-import { hex } from "../util";
+import { hexn } from "../util";
 
 @nativeClass()
 export class TagMemoryChunk extends NativeClass {
@@ -677,6 +677,7 @@ export namespace NBT {
         }
     }
 
+    const INT64_AS_STR_THRESHOLD = bin.make(0x1000000000000, 4);
     export class Int64 extends Primitive {
         private _value:bin64_t;
         constructor(n:bin64_t) {
@@ -694,11 +695,10 @@ export namespace NBT {
         }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             let param:string;
-            if (bin.compare(this._value, bin.MAX_SAFE_INTEGER) > 0) {
+            if (bin.compare(this._value, INT64_AS_STR_THRESHOLD) > 0) {
                 const v = this._value;
-                v.charCodeAt(0);
-                
-                param = options.stylize(bin.make64(), 'string');
+                const bin64 = `"\\u${hexn(v.charCodeAt(0), 4)}\\u${hexn(v.charCodeAt(1), 4)}\\u${hexn(v.charCodeAt(2), 4)}\\u${hexn(v.charCodeAt(3), 4)}"`;
+                param = options.stylize(bin64, 'string');
             } else {
                 param = options.stylize(bin.toString(this._value), 'number');
             }

@@ -609,11 +609,21 @@ export namespace bin {
         const alen = a.length;
         const blen = b.length;
 
-        let diff = blen - alen;
-        if (diff !== 0) return diff;
+        let diff = alen - blen;
+        if (diff < 0) {
+            for (let i=alen; i!==blen;i++) {
+                if (a.charCodeAt(i) === 0) continue;
+                return 1;
+            }
+        } else if (diff > 0) {
+            for (let i=blen; i!==alen;i++) {
+                if (a.charCodeAt(i) === 0) continue;
+                return -1;
+            }
+        }
 
-        for (let i=0;i<blen;i++) {
-            diff = b.charCodeAt(i) - a.charCodeAt(i);
+        for (let i=blen-1;i>=0;i--) {
+            diff = a.charCodeAt(i) - b.charCodeAt(i);
             if (diff !== 0) return diff;
         }
         return 0;
