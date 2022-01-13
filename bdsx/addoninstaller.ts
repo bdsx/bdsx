@@ -393,8 +393,8 @@ class BdsxPackDirectory {
         if (this.loaded) return;
         this.loaded = true;
         const managedInfos:BdsxAddonJson = await readObjectJson(this.bdsxAddonsJsonPath);
-        for (const name in managedInfos) {
-            const mpack = ManagedPack.fromJson(name, managedInfos[name]);
+        for (const [name, info] of Object.entries(managedInfos)) {
+            const mpack = ManagedPack.fromJson(name, info);
             this.managedPacks.set(name, mpack);
         }
 
@@ -578,12 +578,11 @@ async function readObjectJson(path:string):Promise<Record<string, any>> {
         const json = await fsutil.readFile(path);
         const result = JSON.parse(json);
         if (result === null || !(result instanceof Object)) {
-            return Object.create(null);
+            return {};
         }
-        result.__proto__ = null;
         return result;
     } catch (err) {
-        return Object.create(null);
+        return {};
     }
 }
 

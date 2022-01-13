@@ -1,6 +1,5 @@
 
-export enum SymTagEnum
-{
+export enum SymTagEnum {
     SymTagNull,
     SymTagExe,
     SymTagCompiland,

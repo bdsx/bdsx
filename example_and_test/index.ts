@@ -35,4 +35,5 @@ import './test';
 import './lowlevel-checkdisconnect';
 import './lowlevel-checkclientcacheblobstatus';
 import './event-playerdropitem';
+import './nbt-sign';
 // import './permissions';

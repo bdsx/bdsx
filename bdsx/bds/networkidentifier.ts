@@ -34,8 +34,7 @@ export class NetworkHandler extends NativeClass {
     }
 }
 
-export namespace NetworkHandler
-{
+export namespace NetworkHandler {
     export class Connection extends NativeClass {
         networkIdentifier:NetworkIdentifier;
     }
@@ -86,8 +85,7 @@ export class ServerNetworkHandler extends NativeClass {
     }
 }
 
-export namespace ServerNetworkHandler
-{
+export namespace ServerNetworkHandler {
     export type Client = ServerNetworkHandler$Client;
 }
 
@@ -133,25 +131,19 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
-    }
-    static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
-    }
-
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
-    private static _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
-        let ni = identifiers.get(ptr);
-        if (ni != null) return ni;
-        ni = new NetworkIdentifier(true);
-        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-        identifiers.add(ni);
-        return ni;
-    }
 }
+NetworkIdentifier.setResolver(ptr=>{
+    if (ptr === null) return null;
+    let ni = identifiers.get(ptr.as(NetworkIdentifier));
+    if (ni != null) return ni;
+    ni = new NetworkIdentifier(true);
+    (ni as any).copyFrom(ptr, NetworkIdentifier[NativeType.size]);
+    identifiers.add(ni);
+    return ni;
+});
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{

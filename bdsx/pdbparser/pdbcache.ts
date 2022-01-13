@@ -53,10 +53,10 @@ function makePdbCache():number {
             if (item.startsWith('\x7f')) { // ?
                 continue;
             }
-            if (/^_CTA[0-9]\?/.test(item)) { // ?
+            if (/^_CTA\d\?/.test(item)) { // ?
                 continue;
             }
-            if (/^_TI[0-9]\?/.test(item)) { // ?
+            if (/^_TI\d\?/.test(item)) { // ?
                 continue;
             }
             if (item.startsWith('_TI5?')) { // ?

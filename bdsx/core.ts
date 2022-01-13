@@ -1,8 +1,7 @@
 
 import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 
-export interface VoidPointerConstructor
-{
+export interface VoidPointerConstructor {
     new():VoidPointer;
     prototype:VoidPointer;
 
@@ -87,6 +86,7 @@ export declare class PrivatePointer extends VoidPointer {
 
     protected fill(bytevalue:number, bytes:number, offset?: number): void;
     protected copyFrom(from: VoidPointer, bytes:number, this_offset?: number, from_offset?:number): void;
+    protected copyTo(dest:Bufferable|VoidPointer, bytes:number, offset?:number): void;
     protected setBoolean(value: boolean, offset?: number): void;
     protected setUint8(value: number, offset?: number): void;
     protected setUint16(value: number, offset?: number): void;
@@ -193,6 +193,7 @@ export declare class StaticPointer extends PrivatePointer {
 
     fill(bytevalue:number, bytes:number, offset?: number): void;
     copyFrom(from: VoidPointer, bytes:number, this_offset?: number, from_offset?:number): void;
+    copyTo(dest:Bufferable|VoidPointer, bytes:number, offset?:number): void;
     setBoolean(value: boolean, offset?: number): void;
     setUint8(value: number, offset?: number): void;
     setUint16(value: number, offset?: number): void;
@@ -506,8 +507,7 @@ export declare class MultiThreadQueue extends VoidPointer {
 /**
  * native debug information handlers
  */
-export declare namespace pdb
-{
+export declare namespace pdb {
     export const coreCachePath:string;
 
     export function close():void;
@@ -576,8 +576,7 @@ export declare namespace pdb
 /**
  * native error handling
  */
-export declare namespace runtimeError
-{
+export declare namespace runtimeError {
     export function codeToString(code:number):string;
     export function setHandler(handler:(err:RuntimeError)=>void):void;
 
@@ -595,8 +594,7 @@ export declare namespace runtimeError
 	export function addFunctionTable(functionTable:VoidPointer, entryCount:number, baseAddress:VoidPointer):void;
 }
 
-export declare namespace bedrock_server_exe
-{
+export declare namespace bedrock_server_exe {
     export const md5:string;
 
     export const argc: number;
@@ -622,8 +620,7 @@ export declare namespace bedrock_server_exe
     export function forceKill(exitcode:number):never;
 }
 
-export declare namespace uv_async
-{
+export declare namespace uv_async {
     /**
      * init uv_async for asyncCall
      * need to call before using uv_async.call.
@@ -665,8 +662,7 @@ export declare namespace uv_async
     export const post: VoidPointer;
 }
 
-export declare namespace cgate
-{
+export declare namespace cgate {
     export const bdsxCoreVersion:string;
 
     /**
@@ -742,8 +738,7 @@ export declare namespace chakraUtil {
     export function asJsValueRef(value:unknown):VoidPointer;
 }
 
-export declare namespace ipfilter
-{
+export declare namespace ipfilter {
     /**
      * block ip
      * It does not store permanently
@@ -826,8 +821,7 @@ export declare namespace ipfilter
 
 type ErrorListener = (err:Error)=>void;
 
-export declare namespace jshook
-{
+export declare namespace jshook {
     export function init():void;
     /** @deprecated */
     export function init(onError:ErrorListener):void;
@@ -837,8 +831,7 @@ export declare namespace jshook
     export const fireErrorPointer:VoidPointer;
 }
 
-export declare namespace cxxException
-{
+export declare namespace cxxException {
     /**
      * void trycatch(void* param, void(*try)(void* param), void(*catch)(void* param, const char* error));
      */

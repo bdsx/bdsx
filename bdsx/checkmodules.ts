@@ -43,7 +43,7 @@ function checkVersion(installed:number[], required:string):boolean {
     }
 
     const requiredNums = required.split('.');
-    if (comparison === null && !/^[0-9]+$/.test(requiredNums[0])) return true;
+    if (comparison === null && !/^\d+$/.test(requiredNums[0])) return true;
 
     let last = requiredNums[requiredNums.length-1];
     if (last === 'x') {
@@ -68,7 +68,7 @@ function checkVersion(installed:number[], required:string):boolean {
 }
 
 function checkVersionSyntax(pkgname:string, installed:string, requireds:string):boolean {
-    const installedSplited = installed.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
+    const installedSplited = installed.match(/^(\d+)\.(\d+)\.(\d+)$/);
     if (installedSplited === null) {
         throw Error(`${pkgname}: Invalid installed version string (${installed})`);
     }
@@ -92,10 +92,7 @@ const packagejson = JSON.parse(fs.readFileSync(packagejsonPath, 'utf-8'));
 let needUpdate = false;
 
 const requiredDeps = packagejson.dependencies;
-(requiredDeps as any).__proto__ = null;
-
-for (const name in requiredDeps) {
-    const requiredVersion = requiredDeps[name];
+for (const [name, requiredVersion] of Object.entries<string>(requiredDeps)) {
     if (/^file:(?:\.[\\/])?plugins[\\/]/.test(requiredVersion)) continue;
     try {
         const installed = require(`${name}/package.json`);

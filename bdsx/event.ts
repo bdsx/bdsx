@@ -171,8 +171,7 @@ export namespace events {
     ////////////////////////////////////////////////////////
     // Packet events
 
-    export enum PacketEventType
-    {
+    export enum PacketEventType {
         Raw,
         Before,
         After,

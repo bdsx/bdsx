@@ -14,7 +14,7 @@ import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
 import type { ArmorSlot, ItemStack } from "./inventory";
 import type { Level } from "./level";
-import { CompoundTag } from "./nbt";
+import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -710,11 +710,22 @@ export class Actor extends NativeClass {
     getMaxHealth():number {
         abstract();
     }
-    save(tag:CompoundTag):boolean {
+    /**
+     * @param tag this function stores nbt values to this parameter
+     */
+    save(tag:CompoundTag):boolean;
+    /**
+     * it returns JS converted NBT
+     */
+    save():Record<string, any>;
+    save(tag?:CompoundTag):any {
         abstract();
     }
-    constructAndSave():CompoundTag {
-        const tag = CompoundTag.constructWith({});
+    load(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
+    allocateAndSave():CompoundTag {
+        const tag = CompoundTag.allocate();
         this.save(tag);
         return tag;
     }
@@ -762,16 +773,7 @@ export class Actor extends NativeClass {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);
     }
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):Actor {
-        return Actor._singletoning(ptr.add(offset, offset! >> 31))!;
-    }
-    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):Actor|null {
-        return Actor._singletoning(stackptr.getNullablePointer(offset));
-    }
     static all():IterableIterator<Actor> {
-        abstract();
-    }
-    private static _singletoning(ptr:StaticPointer|null):Actor|null {
         abstract();
     }
     _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {

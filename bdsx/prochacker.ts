@@ -139,8 +139,8 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
     append<NT extends Record<string, NativePointer>>(nmap:NT):ProcHacker<T&NT> {
         const map = this.map as any;
-        for (const key in nmap) {
-            map[key] = nmap[key];
+        for (const [key, v] of Object.entries(nmap)) {
+            map[key] = v;
         }
         return this as any;
     }

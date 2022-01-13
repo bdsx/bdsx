@@ -101,7 +101,7 @@ export async function loadAllPlugins():Promise<void> {
             }
             if (packagejson.dependencies == null) return true;
             const counter = new PromCounter;
-            for (const name in packagejson.dependencies) {
+            for (const name of Object.keys(packagejson.dependencies)) {
                 if (!name.startsWith(BDSX_SCOPE)) continue;
                 PackageJson.get(name).requestLoad(counter, rootPackage ? packagejson : null);
             }

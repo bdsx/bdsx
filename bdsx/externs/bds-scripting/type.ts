@@ -108,7 +108,7 @@ export class DocField {
     }
 }
 
-const PARAM = /^param([0-9]+):(.+)$/;
+const PARAM = /^param(\d+):(.+)$/;
 
 export class DocMethod {
     public readonly params:DocField[] = [];
@@ -126,7 +126,6 @@ export class DocMethod {
             method.deleted = true;
         } else {
             method.desc = docfix.desc || '';
-            Object.setPrototypeOf(docfix, null);
             for (const param in docfix) {
                 const reg = PARAM.exec(param);
                 if (reg === null) continue;
@@ -229,9 +228,7 @@ export class DocType {
                 break;
             }
 
-            Object.setPrototypeOf(docfix, null);
-            for (const key in docfix) {
-                const item = docfix[key];
+            for (const [key, item] of Object.entries(docfix)) {
                 if (key.startsWith('field:')) {
                     const type = DocType.fromDocFix(item as DocFixItem|string);
                     out.fields.push(new DocField(key.substr(6), type));

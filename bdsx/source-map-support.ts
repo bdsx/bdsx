@@ -18,8 +18,7 @@ interface UrlAndMap {
     map: string;
 }
 
-declare module 'source-map'
-{
+declare module 'source-map' {
     interface SourceMapConsumer {
         sources: string[];
     }

@@ -83,8 +83,7 @@ export type TypesFromParamIds_np2js<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_np2js<T[key]> : T[key];
 };
 
-export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
-{
+export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> {
     /**
      * *Pointer, 'this' parameter passes as first parameter.
      */
@@ -566,10 +565,8 @@ export interface MakeFuncOptionsWithName<THIS extends { new(): VoidPointer|void;
     name?:string;
 }
 
-declare module "./assembler"
-{
-    interface X64Assembler
-    {
+declare module "./assembler" {
+    interface X64Assembler {
         /**
          * asm.alloc + makefunc.js
          * allocates it on the executable memory. and make it as a JS function.
@@ -578,26 +575,21 @@ declare module "./assembler"
             returnType: RETURN, opts?: OPTS, ...params: PARAMS):
             FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN>;
     }
-    namespace asm
-    {
+    namespace asm {
         function const_str(str:string, encoding?:BufferEncoding):Buffer;
     }
 }
-declare module "./core"
-{
+declare module "./core" {
     interface VoidPointerConstructor extends makefunc.Paramable{
         isTypeOf<T>(this:{new():T}, v:unknown):v is T;
     }
-    interface VoidPointer
-    {
+    interface VoidPointer {
         [asm.splitTwo32Bits]():[number, number];
         [util.inspect.custom](depth:number, options:Record<string, any>):unknown;
     }
 }
-declare global
-{
-    interface Uint8Array
-    {
+declare global {
+    interface Uint8Array {
         [asm.splitTwo32Bits]():[number, number];
     }
 }
@@ -606,8 +598,8 @@ VoidPointer.prototype[util.inspect.custom] = function() {
     return `${this.constructor.name} { ${this.toString()} }`;
 };
 VoidPointer[makefunc.size] = 8;
-VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS{
-    return ptr.getPointerAs(this, offset);
+VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS|null{
+    return ptr.getNullablePointerAs(this, offset);
 };
 VoidPointer[makefunc.setter] = function<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:VoidPointer, offset?:number):void{
     ptr.setPointer(value, offset);

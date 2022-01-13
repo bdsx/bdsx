@@ -464,7 +464,7 @@ let insideOfClass = false;
 let isStatic = false;
 
 
-const adjustorRegExp = /^(.+)`adjustor{([0-9]+)}'$/;
+const adjustorRegExp = /^(.+)`adjustor{(\d+)}'$/;
 const idremap:Record<string, string> = {'{':'','}':'',',':'_','<':'_','>':'_'};
 const recursiveCheck = new Set<Identifier>();
 
@@ -1615,13 +1615,13 @@ for (const [key, value] of PdbIdentifier.global.children) {
         // private symbols
     } else if (value.isLambda) {
         // lambdas
-    } else if (value.isConstant && /^[0-9]+$/.test(key)) {
+    } else if (value.isConstant && /^\d+$/.test(key)) {
         // numbers
     } else if (key.startsWith('{')) {
         // code chunk?
     } else if (key.startsWith('__imp_')) {
         // import
-    } else if (/^main\$dtor\$[0-9]+$/.test(key)) {
+    } else if (/^main\$dtor\$\d+$/.test(key)) {
         // dtor in main
     } else {
         ids.push(value);

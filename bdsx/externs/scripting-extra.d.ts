@@ -1,8 +1,7 @@
 
 /// Referenced from https://github.com/minecraft-addon-tools/minecraft-scripting-types
 
-declare global
-{
+declare global {
     interface MinecraftComponentNameMap {
         /**
          * This component contains all the blockstates on a block object. Blockstates control all different aspects of blocks from their orientation to the type of wood they are. Blockstates are represented by numbers, bools, or strings. Please see the Blockstates Documentation to see the valid values for each state. This component allows for the getting and setting of these states.

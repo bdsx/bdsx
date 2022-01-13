@@ -8,8 +8,7 @@ import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
 import colors = require('colors');
 
-export enum Register
-{
+export enum Register {
     absolute=-2,
     rip=-1,
     rax,
@@ -30,8 +29,7 @@ export enum Register
     r15,
 }
 
-export enum FloatRegister
-{
+export enum FloatRegister {
     xmm0,
     xmm1,
     xmm2,
@@ -50,8 +48,7 @@ export enum FloatRegister
     xmm15,
 }
 
-enum MovOper
-{
+enum MovOper {
     Register,
     Const,
     Read,
@@ -74,8 +71,7 @@ enum FloatOperSize {
     doublePrecision
 }
 
-export enum OperationSize
-{
+export enum OperationSize {
     void,
     byte,
     word,
@@ -99,8 +95,7 @@ const sizemap = new Map<string, TypeSize>([
     ['xmmword', {bytes: 16, size: OperationSize.xmmword} ],
 ]);
 
-export enum Operator
-{
+export enum Operator {
     add,
     or,
     adc,
@@ -111,8 +106,7 @@ export enum Operator
     cmp,
 }
 
-export enum JumpOperation
-{
+export enum JumpOperation {
     jo,
     jno,
     jb,
@@ -131,8 +125,7 @@ export enum JumpOperation
     jg,
 }
 
-export interface Value64Castable
-{
+export interface Value64Castable {
     [asm.splitTwo32Bits]():[number, number];
 }
 
@@ -2815,7 +2808,6 @@ export class X64Assembler {
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
-            Object.setPrototypeOf(defines,  null);
             for (const name in defines) {
                 this.const(name, defines[name]);
             }
@@ -3125,8 +3117,7 @@ const REVERSE_MAP:Record<string, string> = {
     jg: 'jle',
 };
 
-interface Code extends X64Assembler
-{
+interface Code extends X64Assembler {
     [key:string]: any;
 }
 
@@ -3235,8 +3226,7 @@ for (const [name, [type, reg, size]] of regmap) {
 
 const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
 
-export namespace asm
-{
+export namespace asm {
     export const code:Code = X64Assembler.prototype;
     defaultOperationSize.set(code.call_rp, OperationSize.qword);
     defaultOperationSize.set(code.jmp_rp, OperationSize.qword);

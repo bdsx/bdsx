@@ -239,8 +239,8 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
             type[NativeType.ctor_move],
         );
         if (fields != null) {
-            for (const field in fields) {
-                (ntype as any)[field] = fields[field];
+            for (const [field, value] of Object.entries(fields)) {
+                (ntype as any)[field] = value;
             }
         }
         return ntype as any;
@@ -322,10 +322,8 @@ function makeReference<T>(type:NativeType<T>):NativeType<T> {
 }
 
 
-declare module './core'
-{
-    interface VoidPointerConstructor
-    {
+declare module './core' {
+    interface VoidPointerConstructor {
         [NativeType.align]:number;
         [NativeType.ctor](ptr:StaticPointer):void;
         [NativeType.dtor](ptr:StaticPointer):void;
@@ -550,12 +548,43 @@ export const CxxString = new NativeType<string>(
     string_ctor,
     string_dtor,
     (to, from)=>{
+        string_ctor(to);
         to.setCxxString(from.getCxxString());
     }, (to, from)=>{
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
 export type CxxString = string;
+
+function impossible():never {
+    throw Error(`Impossible to set`);
+}
+
+export const GslStringSpan = new NativeType<string>(
+    'gsl::basic_string_span<char const,-1>', 'GslStringSpan',
+    0x10, 8,
+    v=>typeof v === 'string',
+    undefined,
+    (ptr, offset)=>{
+        const length = ptr.getInt64AsFloat(offset);
+        return ptr.getPointer((offset||0)+8).getString(length);
+    },
+    impossible,
+    (stackptr, offset)=>{
+        const strptr = stackptr.getPointer(offset);
+        const length = strptr.getInt64AsFloat(0);
+        return strptr.getPointer(8).getString(length);
+    },
+    (stackptr, param, offset)=>{
+        const str = Buffer.from(param, 'utf8');
+        const buf = new AllocatedPointer(0x10);
+        buf.setPointer(VoidPointer.fromAddressBuffer(str), 8);
+        buf.setInt64WithFloat(str.length, 0);
+        makefunc.temporalKeeper.push(buf, str);
+        stackptr.setPointer(buf, offset);
+    }
+);
+export type GslStringSpan = string;
 
 export const bin64_t = new NativeType<string>(
     'unsigned __int64', 'bin64_t',

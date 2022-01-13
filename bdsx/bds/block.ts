@@ -7,7 +7,7 @@ import type { BlockPos, ChunkPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
-import { CompoundTag } from "./nbt";
+import { CompoundTag, NBT } from "./nbt";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -162,11 +162,22 @@ export class BlockActor extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
 
-    save(tag:CompoundTag):boolean{
+    /**
+     * @param tag this function stores nbt values to this parameter
+     */
+    save(tag:CompoundTag):boolean;
+    /**
+     * it returns JS converted NBT
+     */
+    save():Record<string, any>;
+    save(tag?:CompoundTag):any{
+        abstract();
+    }
+    load(tag:CompoundTag|NBT.Compound):void{
         abstract();
     }
     constructAndSave():CompoundTag{
-        const tag = CompoundTag.constructWith({});
+        const tag = CompoundTag.construct();
         this.save(tag);
         return tag;
     }

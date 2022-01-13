@@ -6,7 +6,7 @@ import { CxxString, int32_t } from "../nativetype";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import type { BlockPalette } from "./level";
-import { CompoundTag, TagPointer } from "./nbt";
+import { CompoundTag, NBT } from "./nbt";
 
 export enum Rotation {
     None,
@@ -151,23 +151,16 @@ export class StructureTemplateData extends NativeClass {
     @nativeField(BlockPos)
     structureWorldOrigin:BlockPos;
 
-    protected _save(ptr:TagPointer):TagPointer {
+    save():Record<string, any> {
+        const tag = this.allocateAndSave();
+        const out = tag.value();
+        tag.dispose();
+        return out;
+    }
+    allocateAndSave():CompoundTag {
         abstract();
     }
-    save(tag:CompoundTag):void {
-        const ptr = new TagPointer(true);
-        ptr.value = tag;
-        this._save(ptr);
-        tag.construct(ptr.value as CompoundTag);
-        ptr.value.destruct();
-        ptr.destruct();
-    }
-    constructAndSave():CompoundTag {
-        const tag = CompoundTag.constructWith({});
-        this.save(tag);
-        return tag;
-    }
-    load(tag:CompoundTag):boolean {
+    load(tag:CompoundTag|NBT.Compound):boolean {
         abstract();
     }
 }

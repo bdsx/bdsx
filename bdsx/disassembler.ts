@@ -515,8 +515,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
     return null;
 }
 
-export namespace disasm
-{
+export namespace disasm {
     export interface Options {
         /**
          * returns asm.Operator - it will assume the size from the moved distance.

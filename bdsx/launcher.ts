@@ -27,8 +27,7 @@ import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
 
-declare module 'colors'
-{
+declare module 'colors' {
 
     export const brightRed:Color;
     export const brightGreen:Color;
@@ -129,9 +128,12 @@ function patchForStdio():void {
 function _launch(asyncResolve:()=>void):void {
     // check memory corruption for debug core
     if (cgate.memcheck != null) {
-        setInterval(()=>{
+        const memcheck = setInterval(()=>{
             cgate.memcheck!();
         }, 5000);
+        events.serverClose.on(()=>{
+            clearInterval(memcheck);
+        });
     }
 
     ipfilter.init(ip=>{
@@ -342,8 +344,7 @@ function sessionIdGrabber(text: string): void {
 }
 events.serverLog.on(sessionIdGrabber);
 
-export namespace bedrockServer
-{
+export namespace bedrockServer {
     export let sessionId: string;
 
     export function withLoading():Promise<void> {

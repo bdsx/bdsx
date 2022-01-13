@@ -7,8 +7,7 @@ import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
 import { isBaseOf } from "./util";
 
-export interface CxxPairType<A, B> extends NativeClassType<CxxPair<A, B>>
-{
+export interface CxxPairType<A, B> extends NativeClassType<CxxPair<A, B>> {
     new(address?:VoidPointer|boolean):CxxPair<A, B>;
     readonly firstType:Type<any>;
     readonly secondType:Type<any>;

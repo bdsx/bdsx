@@ -48,8 +48,7 @@ function add_with_offset(a:number[], b:string, offset:number):void {
     a.push(v);
 }
 
-export namespace bin
-{
+export namespace bin {
     export function isZero(value:string):boolean {
         for (let i=0;i<value.length;i++) {
             if (value.charCodeAt(i) !== 0) return false;
@@ -175,10 +174,124 @@ export namespace bin
         }
         return String.fromCharCode(...dest);
     }
+    /**
+     * similar to parseInt but make it as a bin.
+     * throw the error if it's not a number.
+     */
+    export function parse(v:string, radix?:number):string {
+        let idx = 0;
+        if (radix == null) {
+            _loop: for (;;) {
+                const chr = v.charCodeAt(idx);
+                switch (chr) {
+                case 0x09: case 0x0d: case 0x20: // space
+                    idx++;
+                    continue;
+                case 0x30: // zero start
+                    idx++;
+                    switch (v.charCodeAt(idx)) {
+                    case 0x30: case 0x31: case 0x32: case 0x33: case 0x34:
+                    case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // numeric
+                        radix = 10;
+                        break;
+                    case 0x58: case 0x78: // X x
+                        idx++;
+                        radix = 16;
+                        break;
+                    case 0x42: case 0x62: // B b
+                        idx++;
+                        radix = 2;
+                        break;
+                    case 0x4f: case 0x6f: // O o
+                        idx++;
+                        radix = 8;
+                        break;
+                    default:
+                        throw Error(`${v}: is not a number`);
+                    }
+                    break _loop;
+                case 0x31: case 0x32: case 0x33: case 0x34:
+                case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // numeric
+                    radix = 10;
+                    break _loop;
+                default:
+                    throw Error(`${v}: is not a number`);
+                }
+            }
+        }
+        if (radix < 2 || radix > 36) throw Error(`toString() radix argument must be between 2 and 36`);
+
+        const values:number[] = [0];
+        function mulRadix():void {
+            n *= radix!;
+
+            let i=1;
+            let carry = n >>> 16;
+            n &= 0xffff;
+
+            for (;;) {
+                if (i === values.length) {
+                    if (carry !== 0) {
+                        values.push(carry);
+                    }
+                    break;
+                }
+                const n = values[i] * radix! + carry;
+                values[i++] = n & 0xffff;
+                carry = n >> 16;
+            }
+        }
+        function carry():void {
+            let i=1;
+            for (;;) {
+                if (i === values.length) {
+                    values.push(1);
+                    break;
+                }
+                const n = values[i];
+                if (n === 0xffff) {
+                    values[i] = 0;
+                    continue;
+                }
+                values[i++] = n+1;
+            }
+        }
+        let n = 0;
+
+        for (;;) {
+            if (idx === v.length) {
+                values[0] = n;
+                return String.fromCharCode(...values);
+            }
+            mulRadix();
+            const chr = v.charCodeAt(idx++);
+
+            let add:number;
+            if (0x30 <= chr && chr <= 0x39) {
+                // numeric
+                add = chr - 0x30;
+            } else if (0x41 <= chr && chr <= 0x5a) {
+                // upper case
+                add = chr - (0x41 - 10);
+            } else if (0x61 <= chr && chr <= 0x7a) {
+                // lower case
+                add = chr - (0x61 - 10);
+            } else {
+                throw Error(`${v}: is not a number`);
+            }
+            if (add >= radix) throw Error(`${v}: is not a number`);
+            n += add;
+            if (n > 0xffff) {
+                n -= 0x10000;
+                carry();
+            }
+        }
+    }
     export function toString(v:string, radix = 10):string {
+        if (radix < 2 || radix > 36) throw Error(`toString() radix argument must be between 2 and 36`);
         let len = v.length;
         do {
-            if (len === 0) return '\0';
+            if (len === 0) return '0';
             len--;
         }
         while(v.charCodeAt(len) === 0);
@@ -492,4 +605,18 @@ export namespace bin
         if (n > 4) return v.substr(0, 4);
         return v+'\0'.repeat(4-n);
     }
+    export function compare(a:string, b:string):number {
+        const alen = a.length;
+        const blen = b.length;
+
+        let diff = blen - alen;
+        if (diff !== 0) return diff;
+
+        for (let i=0;i<blen;i++) {
+            diff = b.charCodeAt(i) - a.charCodeAt(i);
+            if (diff !== 0) return diff;
+        }
+        return 0;
+    }
+    export const MAX_SAFE_INTEGER = makeVar(Number.MAX_SAFE_INTEGER);
 }

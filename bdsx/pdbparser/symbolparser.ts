@@ -484,7 +484,7 @@ export class PdbIdentifier {
             if (this.parent !== PdbIdentifier.global) {
                 throw Error(`${this}: constant parent is not global`);
             }
-            if (/^-?[0-9]+$/.test(this.name)) {
+            if (/^-?\d+$/.test(this.name)) {
                 return int_t;
             } else {
                 throw Error(`${this}: unexpected constant`);
@@ -833,7 +833,7 @@ function parseDeco(
                 printParserState(base);
                 throw Error(`Invalid number ${number}`);
             }
-            if (!/^[0-9]+$/.test(number)) {
+            if (!/^\d+$/.test(number)) {
                 printParserState(base);
                 throw Error(`Unexpected index ${number}`);
             }
@@ -898,7 +898,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                         printParserState();
                         throw Error(`Unexpected end`);
                     }
-                    if (!/^[0-9]+$/.test(idname)) {
+                    if (!/^\d+$/.test(idname)) {
                         printParserState();
                         throw Error(`Unexpected identifier ${idname}`);
                     }
@@ -964,7 +964,7 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 let isUnsigned = 0;
                 let castTo:PdbIdentifier|null = null;
 
-                if (scope === PdbIdentifier.global && /^[0-9]+$/.test(idname)) {
+                if (scope === PdbIdentifier.global && /^\d+$/.test(idname)) {
                     id = PdbIdentifier.global.constVal(idname);
                 } else if (idname === '__cdecl' || idname === '__stdcall') {
                     if (scope === PdbIdentifier.global) {
@@ -1066,10 +1066,10 @@ function parseIdentity(eof:string, info:{isTypeInside?:boolean, scope?:PdbIdenti
                 id.release();
                 const adjustor = parser.readTo("'");
                 let matched:RegExpMatchArray|null;
-                if ((matched = adjustor.match(/^adjustor{([0-9]+)}$/))) {
+                if ((matched = adjustor.match(/^adjustor{(\d+)}$/))) {
                     id = scope.make(id.name+'`'+adjustor+"'");
                     id.adjustors.push(PdbIdentifier.global.constVal(matched[1]));
-                } else if ((matched = adjustor.match(/^vtordisp{([0-9]+),([0-9]+)}$/))) {
+                } else if ((matched = adjustor.match(/^vtordisp{(\d+),(\d+)}$/))) {
                     id = scope.make(id.name+'`'+adjustor+"'");
                     const v1 = PdbIdentifier.global.constVal(matched[1]);
                     const v2 = PdbIdentifier.global.constVal(matched[2]);

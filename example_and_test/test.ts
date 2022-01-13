@@ -11,6 +11,7 @@ import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack } from "bdsx/bds/inventory";
 import { ServerLevel } from "bdsx/bds/level";
+import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
@@ -36,7 +37,7 @@ import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uin
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
-import { getEnumKeys, hex } from "bdsx/util";
+import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
 
 let sendidcheck = 0;
 let nextTickPassed = false;
@@ -181,6 +182,9 @@ Tester.test({
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 16), '\u0100\u0010\u0001\u0000', 'bin.bitshr(16)', v=>bin.toString(v, 16));
         this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 20), '\u0000\u0000\u1001\u0100', 'bin.bitshl(20)', v=>bin.toString(v, 16));
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 20), '\u0010\u1001\u0000\u0000', 'bin.bitshr(20)', v=>bin.toString(v, 16));
+
+        const longnumber = '123123123123123123123123123123123123123123123123123123123123123';
+        this.equals(bin.toString(bin.parse(longnumber)), longnumber, 'bin.parse');
     },
 
     hashset() {
@@ -535,7 +539,7 @@ Tester.test({
         }
 
         for (const id in MinecraftPacketIds) {
-            if (!/^[0-9]+$/.test(id)) continue;
+            if (!/^\d+$/.test(id)) continue;
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
         }
@@ -756,6 +760,60 @@ Tester.test({
     etc() {
         const item = ItemStack.constructWith('minecraft:acacia_boat');
         item.destruct();
+    },
+
+    nbt() {
+        const tagTypes:typeof Tag[] = [
+            EndTag,
+            ByteTag,
+            ShortTag,
+            IntTag,
+            Int64Tag,
+            FloatTag,
+            DoubleTag,
+            ByteArrayTag,
+            StringTag,
+            ListTag,
+            CompoundTag,
+            IntArrayTag,
+        ];
+
+        for (let i=0;i<10;i++) {
+            for (const tagType of tagTypes) {
+                const allocated = tagType.allocate();
+                allocated.dispose();
+            }
+
+            const barray = ByteArrayTag.allocateWith([1,2,3,4,5]);
+            const iarray = IntArrayTag.allocateWith([1,2,3,4]);
+            const str = StringTag.allocateWith('12345678901234567890');
+            const map = CompoundTag.allocate();
+            const list = ListTag.allocate();
+            list.push(str);
+
+            for (let j=0;j<10;j++) {
+                map.set('barray', barray);
+                map.set('iarray', iarray);
+                map.set('str', str);
+                map.set('list', list);
+            }
+            const cloned = iarray.allocateClone();
+            barray.dispose();
+            iarray.dispose();
+            str.dispose();
+            list.dispose();
+
+            this.assert(arrayEquals(cloned.toInt32Array(), [1,2,3,4]), 'IntArrayTag check');
+            cloned.dispose();
+
+            const mapvalue = map.value();
+            this.assert(mapvalue.barray instanceof Uint8Array && arrayEquals([1,2,3,4,5], mapvalue.barray), 'ByteArrayTag check');
+            this.assert(mapvalue.iarray instanceof Int32Array && arrayEquals([1,2,3,4], mapvalue.iarray), 'IntArrayTag check');
+            this.equals(mapvalue.str, '12345678901234567890', 'StringTag check');
+            this.assert(mapvalue.list instanceof Array && arrayEquals(['12345678901234567890'], mapvalue.list), 'ListTag check');
+            this.equals(Object.keys(mapvalue).length, map.size(), 'Compound key count check');
+            map.dispose();
+        }
     },
 }, true);
 

@@ -1932,9 +1932,8 @@ export const PacketIdToType = {
     0xac: UpdateSubChunkBlocks,
     // 0xad: PhotoInfoRequest
 };
-(PacketIdToType as any).__proto__ = null;
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
-for (const packetId in PacketIdToType) {
-    PacketIdToType[packetId as unknown as keyof PacketIdToType].ID = +packetId;
+for (const [packetId, type] of Object.entries(PacketIdToType)) {
+    type.ID = +packetId;
 }

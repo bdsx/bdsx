@@ -7,8 +7,7 @@ import { procHacker } from "./proc";
 
 const portDelineator = '|'.charCodeAt(0);
 
-export namespace RakNet
-{
+export namespace RakNet {
     @nativeClass(0x88)
     export class SystemAddress extends NativeClass {
         @nativeField(uint16_t, 0x80)

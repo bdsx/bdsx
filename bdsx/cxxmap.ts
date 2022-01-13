@@ -1,6 +1,4 @@
 
-
-
 // Visual C++ uses red black tree for std::map
 // https://en.wikipedia.org/wiki/Red%E2%80%93black_tree
 
@@ -17,7 +15,6 @@ enum _Redbl { // colors for link to parent
     _Red,
     _Black
 }
-
 
 interface CxxTreeNodeType<T extends NativeClass> extends NativeClassType<CxxTreeNode<T>> {
 }
@@ -135,6 +132,20 @@ export abstract class CxxMap<K, V> extends NativeClass {
     [NativeType.dtor]():void {
         this.clear();
         NativeClass.delete(this.getPointerAs(this.nodeType, 0));
+    }
+    [NativeType.ctor_move](from:CxxMap<K, V>):void {
+        this.setPointer(from._Myhead, 0);
+        this.setUint64WithFloat(from.size(), 8);
+
+        const newhead = capi.malloc(0x20).as(this.nodeType) as CxxTreeNode<CxxPair<K, V>>; // allocate without value size
+        this.setPointer(newhead, 0);
+        this.setUint64WithFloat(0, 8);
+
+        newhead._Left = newhead;
+        newhead._Parent = newhead;
+        newhead._Right = newhead;
+        newhead._Color = _Redbl._Black;
+        newhead._Isnil = 1;
     }
 
     /**

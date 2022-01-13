@@ -10,8 +10,6 @@ import { chakraUtil } from '../../core';
 import { fsutil } from '../../fsutil';
 import { Tester } from '../../tester';
 
-
-
 Tester.test({
     async asmtest() {
         const filepath = path.join(__dirname, 'asmtest.asm');

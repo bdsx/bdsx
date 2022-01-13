@@ -118,11 +118,10 @@ export class CustomCommandFactory {
             }
         }
 
-        (parameters as any).__proto__ = null;
-        const fields:Record<string, Type<any>> = Object.create(null);
-        for (const key in parameters) {
+        const fields:Record<string, Type<any>> = {};
+        for (const [key, type_] of Object.entries(parameters)) {
+            let type = type_;
             let optional = false;
-            let type:Type<any>|[Type<any>, CommandFieldOptions|boolean] = parameters[key];
             const info:ParamInfo = {
                 key: key as keyof CustomCommandImpl,
                 name: key,

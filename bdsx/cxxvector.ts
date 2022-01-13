@@ -8,8 +8,7 @@ import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
 import util = require('util');
 
-export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>>
-{
+export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
     new(address?:VoidPointer|boolean):CxxVector<T>;
     componentType:Type<any>;
 }
@@ -209,6 +208,18 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         // empty
     }
 
+    private _reserve(newCapBytes:number, oldCapBytes:number, oldptr:NativePointer, oldSizeBytes:number):void {
+        const compsize = this.componentType[NativeType.size];
+        const allocated = msAlloc.allocate(newCapBytes);
+        this.setPointer(allocated, 0);
+
+        const size = getSize(oldSizeBytes, compsize);
+        this._move_alloc(allocated, oldptr, size);
+        msAlloc.deallocate(oldptr, oldCapBytes);
+        this.setPointer(allocated, 8);
+        allocated.move(newCapBytes - oldSizeBytes);
+        this.setPointer(allocated, 16);
+    }
     private _resize(newSizeBytes:number, oldCapBytes:number, oldptr:NativePointer, oldSizeBytes:number):void {
         const newcapBytes = Math.max(newSizeBytes, oldCapBytes*2);
         const compsize = this.componentType[NativeType.size];
@@ -362,6 +373,21 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         for (let i=0;i<n;i++) {
             this.set(i+start, items[i]);
         }
+    }
+
+    reserve(newSize:number):void {
+        const compsize = this.componentType[NativeType.size];
+        const begin = this.getPointer(0);
+        const end = this.getPointer(8);
+        const oldSizeBytes = end.subptr(begin);
+        const oldSize = getSize(oldSizeBytes, compsize);
+        if (newSize <= oldSize) return;
+
+        const newCapBytes = newSize*compsize;
+        const cap = this.getPointer(16);
+        const oldCapBytes = cap.subptr(begin);
+        if (newCapBytes <= oldCapBytes) return;
+        this._reserve(newCapBytes, oldCapBytes, begin, oldSizeBytes);
     }
 
     resize(newSize:number):void {
@@ -553,8 +579,8 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
         super(getVectorName(compType), `CxxVectorToArray<${compType.name}>`, VECTOR_SIZE, 8,
             v=>v instanceof Array,
             undefined,
-            (ptr, offset)=>ptr.addAs(this.type, offset, offset! >> 31).toArray(),
-            (ptr, v, offset)=>ptr.addAs(this.type, offset, offset! >> 31).setFromArray(v),
+            (ptr, offset)=>ptr.addAs(this.type, offset).toArray(),
+            (ptr, v, offset)=>ptr.addAs(this.type, offset).setFromArray(v),
             stackptr=>stackptr.getPointerAs(this.type).toArray(),
             (stackptr, param, offset)=>{
                 const buf = new this.type(true);

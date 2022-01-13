@@ -20,5 +20,9 @@ To make it easy to guess for everyone, use the known official name of Minecraft 
 but it's more reasonable using the TS namespace instead.  
 So, Except in cases where it is impossible to create the namespace, please don't use the $ sign.
 
+### 6. Avoid multiple accessing of the native field
+If the native field is the object type. it will allocate a new object per accessing.  
+Please assign it to the local variable and reuse it.
+
 ## Tips
 * `./bdsx` directory is using ESLint for the code formatting. it would be better to use ESLint Extension for VSCode.

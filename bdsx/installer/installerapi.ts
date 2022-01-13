@@ -64,8 +64,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         });
     }
 
-    interface InstallInfo
-    {
+    interface InstallInfo {
         bdsVersion?:string|null;
         bdsxCoreVersion?:string|null;
         files?:string[];

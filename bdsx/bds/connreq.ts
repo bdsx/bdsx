@@ -6,8 +6,7 @@ import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { proc, proc2 } from "./proc";
 
-export enum JsonValueType
-{
+export enum JsonValueType {
     Null = 0,
     Int32 = 1,
     Int64 = 2,
@@ -58,10 +57,9 @@ export class JsonValue extends NativeClass {
                 this.type = JsonValueType.Null;
             } else {
                 jsonValueCtorWithType(this, JsonValueType.Object);
-                for (const key in value) {
-                    if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+                for (const [key, kv] of Object.entries(value)) {
                     const child = jsonValueResolveReference(this, key, false);
-                    child.setValue((value as any)[key]);
+                    child.setValue(kv);
                 }
             }
             break;
@@ -77,8 +75,15 @@ export class JsonValue extends NativeClass {
         abstract();
     }
 
-    isMember(name:string):void {
+    isMember(name:string):boolean {
         abstract();
+    }
+
+    getByInt(key:number):JsonValue {
+        return jsonValueGetByInt(this, key);
+    }
+    getByString(key:string):JsonValue {
+        return jsonValueGetByString(this, key);
     }
 
     get(key:string|number):JsonValue {
@@ -101,6 +106,78 @@ export class JsonValue extends NativeClass {
     setValue(value:unknown):void {
         this.destruct();
         this.constructWith(value);
+    }
+
+    proxy():any {
+        switch (this.type) {
+        case JsonValueType.Array: {
+            const self = this;
+            const base:Record<string|symbol, any> = {};
+            return new Proxy(base, {
+                get(target, prop){
+                    if (typeof prop === 'symbol' || !/^\d+$/.test(prop)) {
+                        return base[prop];
+                    } else {
+                        const idx = +prop|0;
+                        if (idx < 0 || idx >= self.size()) return undefined;
+                        let v = base[idx];
+                        if (!(v instanceof JsonValue)) {
+                            v = self.getByInt(+prop|0);
+                            base[prop] = v;
+                        }
+                        return v.proxy();
+                    }
+                },
+                set(base, prop, value){
+                    if (typeof prop === 'symbol' || !/^\d+$/.test(prop)) {
+                        base[prop] = value;
+                    } else {
+                        let v = base[prop];
+                        if (!(v instanceof JsonValue)) {
+                            v = self.getByInt(+prop|0);
+                            base[prop] = v;
+                        }
+                        v.setValue(value);
+                    }
+                    return true;
+                }
+            });
+        }
+        case JsonValueType.Object: {
+            const self = this;
+            const base:Record<string|symbol, any> = {};
+            return new Proxy(base, {
+                get(base, prop){
+                    if (typeof prop === 'symbol') {
+                        return base[prop];
+                    } else {
+                        if (!self.isMember(prop)) return undefined;
+                        let v = base[prop];
+                        if (!(v instanceof JsonValue)) {
+                            v = self.getByString(prop);
+                            base[prop] = v;
+                        }
+                        return v.proxy();
+                    }
+                },
+                set(base, prop, value){
+                    if (typeof prop === 'symbol') {
+                        base[prop] = value;
+                    } else {
+                        let v = base[prop];
+                        if (!(v instanceof JsonValue)) {
+                            v = self.getByString(prop);
+                            base[prop] = v;
+                        }
+                        v.setValue(value);
+                    }
+                    return true;
+                }
+            });
+        }
+        default:
+            return this.value();
+        }
     }
 
     value():any {
@@ -144,6 +221,7 @@ export class JsonValue extends NativeClass {
         return this.value()+'';
     }
 }
+
 const jsonValueCtorWithType = makefunc.js(proc2['??0Value@Json@@QEAA@W4ValueType@1@@Z'], JsonValue, null, JsonValue, int32_t);
 const jsonValueCtorWithString = makefunc.js(proc2['??0Value@Json@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z'], JsonValue, null, JsonValue, CxxString);
 const jsonValueGetByInt = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, int32_t);
