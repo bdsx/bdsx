@@ -182,6 +182,8 @@ Tester.test({
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 16), '\u0100\u0010\u0001\u0000', 'bin.bitshr(16)', v=>bin.toString(v, 16));
         this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 20), '\u0000\u0000\u1001\u0100', 'bin.bitshl(20)', v=>bin.toString(v, 16));
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 20), '\u0010\u1001\u0000\u0000', 'bin.bitshr(20)', v=>bin.toString(v, 16));
+        this.equals(bin.toString(bin.parse("18446744069414584321")), '18446744069414584321', 'bin.parse');
+        this.equals(bin.toString(bin.parse("0x123456789", null, 2), 16), '23456789', 'bin.parse, limit count');
 
         const longnumber = '123123123123123123123123123123123123123123123123123123123123123';
         this.equals(bin.toString(bin.parse(longnumber)), longnumber, 'bin.parse');

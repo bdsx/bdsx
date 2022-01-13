@@ -218,7 +218,7 @@ export class Int64Tag extends Tag {
         return bin.toString(this.data);
     }
     set dataAsString(data:string) {
-        this.data = bin.parse(data);
+        this.data = bin.parse(data, 4);
     }
 
     value():NBT.Int64 {
