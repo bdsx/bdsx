@@ -15,6 +15,7 @@ command.register('sign', 'generate signed block').overload((params, origin, outp
         region.setBlock(blockpos, block);
         const blockActor = region.getBlockEntity(blockpos)!;
         blockActor.load({
+            ...blockActor.save(),
             Text: 'be happy'
         });
     }
