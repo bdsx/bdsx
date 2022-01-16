@@ -144,7 +144,6 @@ export const ResourcePackStacksPacket = ResourcePackStackPacket;
 /** @deprecated use ResourcePackStackPacket, follow the real class name */
 export type ResourcePackStacksPacket = ResourcePackStackPacket;
 
-
 export enum ResourcePackResponse {
     Cancel = 1,
     Downloading,
@@ -988,36 +987,30 @@ export class CommandRequestPacket extends Packet {
     command:CxxString;
 }
 
-
 @nativeClass(null)
 export class CommandBlockUpdatePacket extends Packet {
     // unknown
 }
-
 
 @nativeClass(null)
 export class CommandOutputPacket extends Packet {
     // unknown
 }
 
-
 @nativeClass(null)
 export class ResourcePackDataInfoPacket extends Packet {
     // unknown
 }
-
 
 @nativeClass(null)
 export class ResourcePackChunkDataPacket extends Packet {
     // unknown
 }
 
-
 @nativeClass(null)
 export class ResourcePackChunkRequestPacket extends Packet {
     // unknown
 }
-
 
 @nativeClass(null)
 export class TransferPacket extends Packet {
@@ -1457,7 +1450,6 @@ export namespace CompletedUsingItemPacket {
 export class NetworkSettingsPacket extends Packet {
     // unknown
 }
-
 
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {

@@ -53,7 +53,6 @@ enum JsErrorCode {
     JsErrorWrongRuntime,
 }
 
-
 let GetModuleFileNameW:((addr:VoidPointer, buffer:Uint16Array, size:int32_t)=>int32_t)|null = null;
 
 function getDllNameFromAddress(addr:VoidPointer):string|null {

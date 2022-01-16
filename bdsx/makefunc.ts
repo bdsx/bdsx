@@ -117,7 +117,6 @@ type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> =
     OPTS extends MakeFuncOptions<infer THIS> ?
     THIS extends { new(): VoidPointer; } ? InstanceType<THIS> : void : void;
 
-
 export type FunctionFromTypes_np<
     OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
@@ -138,7 +137,6 @@ export type FunctionFromTypes_js_without_pointer<
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
     ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
-
 
 function invalidParameterError(paramName:string, expected:string, actual:unknown):never {
     throw TypeError(`unexpected parameter type (${paramName}, expected=${expected}, actual=${actual != null ? (actual as any).constructor.name : actual})`);

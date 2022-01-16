@@ -534,7 +534,6 @@ namespace operation {
     export const binaryExponent = new polynominal.Operator(16, (a,b)=>a**b, (a,b)=>a.exponent(b));
 }
 
-
 interface OperatorSet {
     unaryPrefix?:polynominal.Operator;
     unarySuffix?:polynominal.Operator;

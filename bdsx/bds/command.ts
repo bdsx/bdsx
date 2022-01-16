@@ -269,7 +269,6 @@ export class CommandRawText extends NativeClass {
     text:CxxString;
 }
 
-
 @nativeClass()
 export class CommandWildcardInt extends NativeClass {
     @nativeField(bool_t)

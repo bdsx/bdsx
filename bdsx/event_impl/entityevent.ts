@@ -15,7 +15,6 @@ import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { _tickCallback } from "../util";
 
-
 interface IEntityHurtEvent {
     entity: Actor;
     damage: number;
@@ -295,7 +294,6 @@ export class ProjectileShootEvent implements IProjectileShootEvent {
 // }
 // const _onPlayerJump = procHacker.hooking('Player::jumpFromGround', void_t, null, Player)(onPlayerJump);
 
-
 function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, consumeItem:boolean):void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
     events.playerUseItem.fire(event);
@@ -401,7 +399,6 @@ function onEntityCreated(packet:ScriptCustomEventPacket, entity:Actor):boolean {
     return _onEntityCreated(packet, event.entity);
 }
 const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onActorCreated', bool_t, null, ScriptCustomEventPacket, Actor)(onEntityCreated);
-
 
 // function onEntityDeath(Script:ScriptCustomEventPacket, entity:Actor, actorDamageSource:ActorDamageSource, ActorType:number):boolean {
 //     const event = new EntityDeathEvent(entity, actorDamageSource, ActorType);
@@ -523,7 +520,6 @@ function onPlayerLeft(networkHandler: ServerNetworkHandler, player: ServerPlayer
 
 const _onPlayerLeft = procHacker.hooking("ServerNetworkHandler::_onPlayerLeft", void_t, null, ServerNetworkHandler, ServerPlayer, bool_t)(onPlayerLeft);
 
-
 function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSubcomponent, entity: Actor, projectileComponent: ProjectileComponent):void {
     const event = new SplashPotionHitEvent(entity, splashPotionEffectSubcomponent.potionEffect);
     const canceled = events.splashPotionHit.fire(event) === CANCEL;
@@ -535,7 +531,6 @@ function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSub
     decay(splashPotionEffectSubcomponent);
 }
 const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::doOnHitEffect", void_t, null, SplashPotionEffectSubcomponent, Actor, ProjectileComponent)(onSplashPotionHit);
-
 
 function onProjectileShoot(projectileComponent: ProjectileComponent, projectile: Actor, shooter: Actor): void {
     const event = new ProjectileShootEvent(projectile, shooter);

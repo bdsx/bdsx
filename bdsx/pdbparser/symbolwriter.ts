@@ -463,7 +463,6 @@ function getFieldType(item:Identifier):FieldType {
 let insideOfClass = false;
 let isStatic = false;
 
-
 const adjustorRegExp = /^(.+)`adjustor{(\d+)}'$/;
 const idremap:Record<string, string> = {'{':'','}':'',',':'_','<':'_','>':'_'};
 const recursiveCheck = new Set<Identifier>();

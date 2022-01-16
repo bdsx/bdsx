@@ -4,7 +4,6 @@ import { bin64_t } from "./nativetype";
 import { hex, unhex } from "./util";
 import colors = require('colors');
 
-
 interface OffsetInfo {
     offset:OperationSize|null;
     multiply:AsmMultiplyConstant;

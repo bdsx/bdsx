@@ -467,7 +467,6 @@ interface TypeInfo {
 
 const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0, 1);
 
-
 const UNW_VERSION = 0x01;
 const UNW_FLAG_NHANDLER = 0x0;
 const UNW_FLAG_EHANDLER = 0x1; // The function has an exception handler that should be called when looking for functions that need to examine exceptions.
@@ -1466,7 +1465,6 @@ export class X64Assembler {
         return this._set_o(JumpOperation.jg, r, null, multiply, offset, MovOper.Read);
     }
 
-
     /**
      * push register
      */
@@ -1541,7 +1539,6 @@ export class X64Assembler {
     xchg_r_rp(r1:Register, r2:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._xchg(r1, r2, multiply, offset, size, MovOper.Read);
     }
-
 
     private _oper(movoper:MovOper, oper:Operator, r1:Register, r2:Register|null, multiply:AsmMultiplyConstant, offset:number, chr:number, size:OperationSize):this {
         if (chr !== (chr|0) && (chr>>>0) !== chr) {
@@ -1731,7 +1728,6 @@ export class X64Assembler {
     sal_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
         return this._shift_r_c(dest, true, false, chr, size);
     }
-
 
     private _movsx(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, destsize:OperationSize, srcsize:OperationSize, oper:MovOper):this {
         if (destsize == null || srcsize == null) throw Error(`Need operand size`);

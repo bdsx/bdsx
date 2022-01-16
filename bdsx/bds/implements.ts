@@ -306,7 +306,6 @@ ItemActor.abstract({
 
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
 
-
 ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):AttributeInstance|null {
     const attr = Actor.prototype.setAttribute.call(this, id, value);
     if (attr === null) return null;
@@ -919,7 +918,7 @@ ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:
 
 CompoundTag.prototype[NativeType.ctor] = procHacker.js("??0CompoundTag@@QEAA@XZ", void_t, {this:CompoundTag});
 CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", void_t, {this:CompoundTag});
-CompoundTag.prototype.get = procHacker.js('CompoundTag::get', Tag, {this:CompoundTag}, GslStringSpan);
+CompoundTag.prototype.get = procHacker.js('CompoundTag::get', Tag, {this:CompoundTag}, GslStringSpan) as any;
 const CompoundTag$put = procHacker.js('?put@CompoundTag@@QEAAPEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@4@@Z', void_t, null, CompoundTag, CxxStringWrapper, TagPointer);
 CompoundTag.prototype.setAllocated = function(key, value) {
     CompoundTag$put(this,

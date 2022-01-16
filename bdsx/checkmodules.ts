@@ -3,7 +3,6 @@ import path = require('path');
 import fs = require('fs');
 import colors = require('colors');
 
-
 function checkVersion(installed:number[], required:string):boolean {
     let ifGreater = false;
     let ifEqual = false;

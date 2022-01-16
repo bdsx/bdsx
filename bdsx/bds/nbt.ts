@@ -494,7 +494,7 @@ export class CompoundTag extends Tag {
             this.set(k, v);
         }
     }
-    get(key:string):Tag|null {
+    get<T extends Tag>(key:string):T|null {
         abstract();
     }
     /**
@@ -536,7 +536,6 @@ export class CompoundTag extends Tag {
             this.set(k, v.get());
         }
     }
-
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
         const map = new Map<CxxString, Tag>();

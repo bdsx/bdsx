@@ -233,7 +233,6 @@ const customCommandDtor = makefunc.np(function(){
     this[NativeType.dtor]();
 }, void_t, {this:CustomCommand, name:'CustomCommand::destructor'}, int32_t);
 
-
 bedrockServer.withLoading().then(()=>{
     executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
         MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), bool_t)(executeCommand);

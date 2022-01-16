@@ -3,7 +3,6 @@ import { NativeType } from "../nativetype";
 import { makeSignature } from "../util";
 import { IMAGE_DOS_HEADER, IMAGE_FIRST_SECTION, IMAGE_NT_HEADERS64, IMAGE_SECTION_HEADER } from "../windows_h";
 
-
 const DOS_MAGIC = makeSignature('MZ');
 const NT_MAGIC = makeSignature('PE');
 

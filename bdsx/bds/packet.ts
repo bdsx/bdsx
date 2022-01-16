@@ -18,7 +18,6 @@ export const PacketReadResult = uint32_t.extends({
 });
 export type PacketReadResult = uint32_t;
 
-
 export const StreamReadResult = int32_t.extends({
     Disconnect: 0,
     Pass: 1,
@@ -83,7 +82,6 @@ export class Packet extends MantleClass {
         return packet;
     }
 }
-
 
 export const PacketSharedPtr = SharedPtr.make(Packet);
 export type PacketSharedPtr = SharedPtr<Packet>;

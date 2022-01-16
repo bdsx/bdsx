@@ -72,7 +72,6 @@ function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos,
 }
 const _onBlockDestroy = procHacker.hooking("BlockSource::checkBlockDestroyPermissions", bool_t, null, BlockSource, Actor, BlockPos, ItemStack, bool_t)(onBlockDestroy);
 
-
 function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Player, blockPos:BlockPos):void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
     events.blockDestructionStart.fire(event);
