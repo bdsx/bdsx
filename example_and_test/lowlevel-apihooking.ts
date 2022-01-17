@@ -1,5 +1,6 @@
 
 // Low Level - API Hooking
+import { asmcode } from "bdsx/asm/asmcode";
 import { Block } from "bdsx/bds/block";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
@@ -9,7 +10,8 @@ import { TextPacket } from "bdsx/bds/packets";
 import { Config } from "bdsx/config";
 import { pdb } from "bdsx/core";
 import { UNDNAME_NAME_ONLY } from "bdsx/dbghelp";
-import { bool_t, int32_t, int8_t } from "bdsx/nativetype";
+import { makefunc } from "bdsx/makefunc";
+import { bool_t, int32_t, int8_t, uint32_t, void_t } from "bdsx/nativetype";
 import { ProcHacker } from "bdsx/prochacker";
 
 function sendText(ni:NetworkIdentifier, message:string):void {
@@ -27,6 +29,7 @@ if (!Config.WINE) { // Skip for Linux, pdb searching is not working on Wine. but
         'SurvivalMode::destroyBlock',
         'GameMode::useItemOn',
         'MapItemSavedData::_updateTrackedEntityDecoration',
+        'BedrockLog::log',
     ], UNDNAME_NAME_ONLY);
     pdb.close(); // close the pdb to reduce the resource usage.
 
@@ -57,4 +60,15 @@ if (!Config.WINE) { // Skip for Linux, pdb searching is not working on Wine. but
     //////////////////////////
     // hide the map marker
     hacker.hooking('MapItemSavedData::_updateTrackedEntityDecoration', bool_t)(()=>false);
+
+
+    //////////////////////////
+    // Cross thread hooking
+    // it will synchronize the thread and call the JS engine.
+
+    // void BedrockLog::log(enum BedrockLog::LogCategory,class std::bitset<3>,enum BedrockLog::LogRule,enum LogAreaID,unsigned int,char const *,int,char const *,...)
+    hacker.hooking('BedrockLog::log', void_t, {crossThread: true}, int32_t, int32_t, int32_t, int32_t, uint32_t, makefunc.Utf8)(
+        (category, bitset, logrule, logarea, n, message)=>{
+        console.log(message);
+    });
 }

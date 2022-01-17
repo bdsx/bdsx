@@ -163,13 +163,17 @@ function _launch(asyncResolve:()=>void):void {
             asm().jmp64(cgate.toWide, Register.rax));
     }
 
-    // // call game thread entry
+    // events
+    asmcode.SetEvent = dll.kernel32.SetEvent.pointer;
+    asmcode.CloseHandle = dll.kernel32.CloseHandle.pointer;
+    asmcode.CreateEventW = dll.kernel32.CreateEventW.pointer;
+    asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
+
+    // call game thread entry
     asmcode.gameThreadInner = proc['<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
-    asmcode.SetEvent = dll.kernel32.SetEvent.pointer;
 
     // hook game thread
-    asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
     asmcode._Cnd_do_broadcast_at_thread_exit = dll.msvcp140._Cnd_do_broadcast_at_thread_exit;
 
     procHacker.patching(
