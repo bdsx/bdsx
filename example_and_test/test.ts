@@ -40,7 +40,6 @@ import { Tester } from "bdsx/tester";
 import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
 
 let sendidcheck = 0;
-let nextTickPassed = false;
 let chatCancelCounter = 0;
 
 export function setRecentSendedPacketForTest(packetId: number): void {
@@ -87,17 +86,6 @@ Tester.test({
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
-    },
-
-    async nexttick() {
-        nextTickPassed = await Promise.race([
-            new Promise<boolean>(resolve => process.nextTick(() => resolve(true))),
-            new Promise<boolean>(resolve => setTimeout(() => {
-                if (nextTickPassed) return;
-                this.fail();
-                resolve(false);
-            }, 1000))
-        ]);
     },
 
     disasm() {
@@ -815,6 +803,23 @@ Tester.test({
             this.assert(mapvalue.list instanceof Array && arrayEquals(['12345678901234567890'], mapvalue.list), 'ListTag check');
             this.equals(Object.keys(mapvalue).length, map.size(), 'Compound key count check');
             map.dispose();
+        }
+    },
+    async nexttick() {
+        let timer:NodeJS.Timer;
+        for (let i=0;i<10;i++) {
+            await Promise.race([
+                new Promise<boolean>(resolve => process.nextTick(() => {
+                    clearTimeout(timer);
+                    resolve(true);
+                })),
+                new Promise<boolean>(resolve => {
+                    timer = setTimeout(() => {
+                        this.fail();
+                        resolve(false);
+                    }, 1000);
+                })
+            ]);
         }
     },
 }, true);

@@ -10,7 +10,6 @@ import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
 import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
 import { SharedPtr } from './sharedpointer';
-import { _tickCallback } from './util';
 import colors = require('colors');
 
 let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
@@ -22,10 +21,8 @@ function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<Co
         switch (typeof resv) {
         case 'number':
             res.result = resv;
-            _tickCallback();
             return res;
         default:
-            _tickCallback();
             return executeCommandOriginal(cmd, res, ctxptr, b);
         }
     } catch (err) {

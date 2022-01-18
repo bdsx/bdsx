@@ -31,6 +31,7 @@ import { bedrockServer } from "bdsx/launcher";
 import { loadAllPlugins } from "bdsx/plugins";
 
 import { events } from "bdsx/event";
+import { _tickCallback } from "bdsx/util";
 
 console.log(
 "  _____      _____ \n".green +

@@ -247,7 +247,10 @@ function _launch(asyncResolve:()=>void):void {
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
-    asmcode.updateEvTargetFire = makefunc.np(()=>events.serverUpdate.fire(), void_t, {name: 'events.serverUpdate.fire'});
+    asmcode.updateEvTargetFire = makefunc.np(()=>{
+        events.serverUpdate.fire();
+        _tickCallback();
+    }, void_t, {name: 'events.serverUpdate.fire'});
 
     procHacker.patching('update-hook',
         '<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()', // caller of ServerInstance::_update
@@ -275,6 +278,7 @@ function _launch(asyncResolve:()=>void):void {
     procHacker.hookingRawWithCallOriginal('ScriptEngine::startScriptLoading',
         makefunc.np((scriptEngine:VoidPointer)=>{
             try {
+                _tickCallback();
                 cgate.nodeLoopOnce();
 
                 bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
@@ -283,7 +287,6 @@ function _launch(asyncResolve:()=>void):void {
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it
                 asyncResolve();
-                _tickCallback();
 
                 procHacker.js('ScriptEngine::_processSystemInitialize', void_t, null, VoidPointer)(scriptEngine);
                 _tickCallback();
@@ -297,7 +300,6 @@ function _launch(asyncResolve:()=>void):void {
     procHacker.hookingRawWithCallOriginal('Minecraft::startLeaveGame',
         makefunc.np((mc, b)=>{
             events.serverLeave.fire();
-            _tickCallback();
         }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
     procHacker.hookingRawWithCallOriginal('ScriptEngine::shutdown',
         makefunc.np(()=>{

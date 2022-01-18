@@ -9,7 +9,6 @@ import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
-import { _tickCallback } from "../util";
 
 interface IBlockDestroyEvent {
     player: ServerPlayer;
@@ -60,7 +59,6 @@ export class BlockPlaceEvent implements IBlockPlaceEvent {
 function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos, itemStack:ItemStack, generateParticle:bool_t):boolean {
     const event = new BlockDestroyEvent(actor as ServerPlayer, blockPos, blockSource, itemStack, generateParticle);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
-    _tickCallback();
     decay(blockSource);
     decay(blockPos);
     decay(itemStack);
@@ -75,7 +73,6 @@ const _onBlockDestroy = procHacker.hooking("BlockSource::checkBlockDestroyPermis
 function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Player, blockPos:BlockPos):void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
     events.blockDestructionStart.fire(event);
-    _tickCallback();
     decay(blockPos);
     return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
 }
@@ -84,7 +81,6 @@ const _onBlockDestructionStart = procHacker.hooking("BlockEventCoordinator::send
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, facing:number, actor:Actor, ignoreEntities:boolean):boolean {
     const event = new BlockPlaceEvent(actor as ServerPlayer, block, blockSource, blockPos);
     const canceled = events.blockPlace.fire(event) === CANCEL;
-    _tickCallback();
     decay(blockSource);
     decay(block);
     decay(blockPos);
@@ -116,7 +112,6 @@ export class PistonMoveEvent implements IPistonMoveEvent {
 function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):void_t {
     const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
     events.pistonMove.fire(event);
-    _tickCallback();
     decay(pistonBlockActor);
     decay(blockSource);
     return _onPistonMove(pistonBlockActor, event.blockSource);
@@ -141,7 +136,6 @@ export class FarmlandDecayEvent implements IFarmlandDecayEvent {
 function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: BlockPos, culprit: Actor, fallDistance: float32_t):void_t {
     const event = new FarmlandDecayEvent(block, blockPos, blockSource, culprit);
     const canceled = events.farmlandDecay.fire(event) === CANCEL;
-    _tickCallback();
     decay(block);
     decay(blockSource);
     decay(blockPos);
@@ -167,7 +161,6 @@ export class CampfireTryLightFire implements ICampfireTryLightFire {
 function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryLightFire(blockPos, blockSource);
     const canceled = events.campfireLight.fire(event) === CANCEL;
-    _tickCallback();
     decay(blockSource);
     decay(blockPos);
     if (canceled) return false;
@@ -191,7 +184,6 @@ export class CampfireTryDouseFire implements ICampfireTryDouseFire {
 function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryDouseFire(blockPos, blockSource);
     const canceled = events.campfireDouse.fire(event) === CANCEL;
-    _tickCallback();
     decay(blockSource);
     decay(blockPos);
     if (canceled) return false;

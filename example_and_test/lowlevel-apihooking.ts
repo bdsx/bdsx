@@ -1,6 +1,5 @@
 
 // Low Level - API Hooking
-import { asmcode } from "bdsx/asm/asmcode";
 import { Block } from "bdsx/bds/block";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
