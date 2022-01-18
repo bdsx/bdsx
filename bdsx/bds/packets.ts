@@ -1024,6 +1024,10 @@ export class TransferPacket extends Packet {
 export class PlaySoundPacket extends Packet {
     @nativeField(CxxString)
     soundName:CxxString;
+    /**
+     * coordinates that are 8 times larger.
+     * packet.pos.x = pos.x * 8
+     */
     @nativeField(BlockPos)
     pos:BlockPos;
     @nativeField(float32_t)
