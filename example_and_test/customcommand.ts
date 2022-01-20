@@ -1,8 +1,8 @@
 
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
-import { RelativeFloat } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandPermissionLevel, CommandRawText } from "bdsx/bds/command";
+import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
+import { ActorWildcardCommandSelector, CommandPermissionLevel, CommandPosition, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
@@ -88,6 +88,18 @@ command.register('hhh', 'json example').overload((param, origin, output)=>{
         `value: ${JSON.stringify(param.json.value())}`);
 }, {
     json: JsonValue,
+});
+
+// CommandPosition, more useful than three of `RelativeFloat`
+command.register('iii', 'position example').overload((param, origin, output)=>{
+    const pos = param.position.getPosition(origin, Vec3.create(0, 0, 0)).toJSON();
+    const blockPos = param.position.getBlockPosition(origin, Vec3.create(0, 0, 0)).toJSON()
+    output.success(
+        `position example> origin=${origin.getName()}\n` +
+        `Pos: §a${pos.x.toFixed(2)}§f, §a${pos.y.toFixed(2)}§f, §a${pos.z.toFixed(2)}§f\n`+
+        `BlockPos: §a${blockPos.x}§f, §a${blockPos.y}§f, §a${blockPos.z}`);
+}, {
+    position: CommandPosition,
 });
 
 // hook direct
