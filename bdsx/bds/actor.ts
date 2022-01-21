@@ -767,6 +767,7 @@ export class Actor extends NativeClass {
     }
     /**
      * Gets the entity from entity component of bedrock scripting api
+     * @deprecated bedrock scripting API will be removed.
      */
     static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;

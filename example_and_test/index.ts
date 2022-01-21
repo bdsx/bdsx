@@ -4,12 +4,6 @@ console.log("[example/index] Hello, World!");
 
 import './actor-effects';
 import './attribute';
-import './bedrockapi-components';
-import './bedrockapi-events';
-import './bedrockapi-executecommand';
-import './bedrockapi-getblock';
-import './bedrockapi-inventory';
-import './bedrockapi-system';
 import './customcommand';
 import './custommotd';
 import './form';

@@ -614,25 +614,20 @@ Tester.test({
     },
 
     actor() {
-        const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
+        events.entityCreated.on(this.wrap(ev => {
             const level = serverInstance.minecraft.getLevel().as(ServerLevel);
 
             try {
-                const uniqueId = ev.data.entity.__unique_id__;
-                const actor = Actor.fromEntity(ev.data.entity);
-                const bsapiIdentifier = ev.data.entity.__identifier__;
-                if (bsapiIdentifier === 'minecraft:player') {
+                const actor = ev.entity;
+                const identifier = actor.getIdentifier();
+                this.assert(identifier.startsWith('minecraft:'), 'Invalid identifier');
+                if (identifier === 'minecraft:player') {
                     this.equals(level.players.size(),  serverInstance.getActivePlayerCount(), 'Unexpected player size');
                     this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
                 if (actor !== null) {
-                    const actorIdentifier = actor.getIdentifier();
-                    if (actorIdentifier !== 'minecraft:item') {
-                        this.equals(bsapiIdentifier, actorIdentifier, 'invalid Actor.identifier');
-                    }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
@@ -660,14 +655,9 @@ Tester.test({
                         actor.setRespawnPosition(pos, dim);
                     }
 
-                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
-                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
-                    this.equals(actualId, expectedId,
-                        `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
-
-                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                    if (identifier === 'minecraft:player') {
                         this.assert(level.getPlayers()[0] === actor, 'the joined player is not a first player');
-                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
+                        const name = actor.getName();
                         this.equals(name, connectedId, 'id does not match');
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
@@ -675,7 +665,7 @@ Tester.test({
                         this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
                         this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
                     } else {
-                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
+                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${identifier})`);
                     }
                 }
             } catch (err) {
