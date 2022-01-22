@@ -391,8 +391,12 @@ export class EntityContextBase extends NativeClass {
     @nativeField(int32_t, 0x8)
     entityId:int32_t;
 
-    isVaild():boolean {
+    isValid():boolean {
         abstract();
+    }
+    /**@deprecated use `isValid` instead*/
+    isVaild(): boolean {
+        return this.isValid();
     }
     _enttRegistry():VoidPointer {
         abstract();

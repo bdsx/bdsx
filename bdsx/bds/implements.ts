@@ -398,7 +398,7 @@ class EntityIdentifierComponent extends NativeClass {
     certifiate:Certificate;
 }
 
-EntityContextBase.prototype.isVaild = procHacker.js('EntityContextBase::isValid', bool_t, {this:EntityContextBase});
+EntityContextBase.prototype.isValid = procHacker.js('EntityContextBase::isValid', bool_t, {this:EntityContextBase});
 EntityContextBase.prototype._enttRegistry = procHacker.js('EntityContextBase::_enttRegistry', VoidPointer, {this:EntityContextBase});
 
 const Registry_getEntityIdentifierComponent = procHacker.js('??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z', EntityIdentifierComponent, null, VoidPointer, int32_t.ref());
@@ -406,7 +406,7 @@ const Registry_getEntityIdentifierComponent = procHacker.js('??$try_get@VUserEnt
 Player.prototype.getCertificate = function() {
     // part of ServerNetworkHandler::_displayGameMessage
     const base = this.ctxbase;
-    if (!base.isVaild()) throw Error(`is not vaild`);
+    if (!base.isValid()) throw Error(`is not valid`);
     const registry = base._enttRegistry();
     return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
 };
@@ -425,7 +425,7 @@ ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetw
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     // part of ServerPlayer::sendNetworkPacket
     const base = this.ctxbase;
-    if (!base.isVaild()) throw Error(`is not vaild`);
+    if (!base.isValid()) throw Error(`is not valid`);
     const registry = base._enttRegistry();
     const res = Registry_getEntityIdentifierComponent(registry, base.entityId);
     return res.networkIdentifier;
