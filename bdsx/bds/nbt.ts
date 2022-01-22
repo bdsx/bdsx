@@ -611,9 +611,8 @@ export namespace NBT {
         constructor(protected _value:number) {
             super();
         }
-        get value():number {
-            return this._value;
-        }
+        abstract get value(): number;
+        abstract set value(n: number);
         toExponential(fractionDigits?:number|undefined):string {
             return this._value.toExponential(fractionDigits);
         }
@@ -637,6 +636,9 @@ export namespace NBT {
         constructor(n:number) {
             super(n & 0xff);
         }
+        get value(): number {
+            return this._value;
+        }
         set value(n:number) {
             this._value = n & 0xff;
         }
@@ -651,6 +653,9 @@ export namespace NBT {
         constructor(n:number) {
             super(n & 0xff);
         }
+        get value(): number {
+            return this._value;
+        }
         set value(n:number) {
             this._value = n << 16 >> 16;
         }
@@ -664,6 +669,9 @@ export namespace NBT {
     export class Int extends Numeric {
         constructor(n:number) {
             super(n & 0xff);
+        }
+        get value(): number {
+            return this._value;
         }
         set value(n:number) {
             this._value = n|0;
@@ -708,6 +716,9 @@ export namespace NBT {
         constructor(n:number) {
             super(Math.fround(n));
         }
+        get value(): number {
+            return this._value;
+        }
         set value(n:number) {
             this._value = Math.fround(n);
         }
@@ -721,6 +732,9 @@ export namespace NBT {
     export class Double extends Numeric {
         set value(n:number) {
             this._value = n;
+        }
+        get value(): number {
+            return this._value;
         }
         allocate():DoubleTag {
             return DoubleTag.allocateWith(this._value);
