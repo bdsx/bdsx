@@ -376,7 +376,7 @@ Player.prototype.setSleeping = procHacker.js("Player::setSleeping", void_t, {thi
 Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
 const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
-Player.prototype.syncAbilties = function() {
+Player.prototype.syncAbilities = function() {
     const pk = AdventureSettingsPacket.create();
     AdventureSettingsPacket$AdventureSettingsPacket(pk, serverInstance.minecraft.getLevel().getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
     this.sendPacket(pk);
