@@ -490,6 +490,8 @@ const symbols2 = [
     '?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PEBD@Z',
     '?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z',
     '?put@CompoundTag@@QEAAPEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@4@@Z',
+    '?isRiding@Actor@@QEBA_NXZ',
+    '?isRiding@Actor@@QEBA_NPEAV1@@Z',
 ] as const;
 
 export const proc = pdb.getList(

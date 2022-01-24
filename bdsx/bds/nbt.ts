@@ -7,8 +7,8 @@ import { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
-import util = require("util");
 import { hexn } from "../util";
+import util = require("util");
 
 @nativeClass()
 export class TagMemoryChunk extends NativeClass {
@@ -255,7 +255,7 @@ export class Int64Tag extends Tag {
     }
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
-        return `LongTag ${util.inspect(this.dataAsString, options)}`;
+        return `LongTag ${this.dataAsString.yellow}`;
     }
 }
 
