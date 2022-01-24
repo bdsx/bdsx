@@ -492,6 +492,8 @@ const symbols2 = [
     '?put@CompoundTag@@QEAAPEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@4@@Z',
     '?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z',
     '?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z'
+    '?isRiding@Actor@@QEBA_NXZ',
+    '?isRiding@Actor@@QEBA_NPEAV1@@Z',
 ] as const;
 
 export const proc = pdb.getList(

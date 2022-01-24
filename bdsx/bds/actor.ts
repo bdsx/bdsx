@@ -2,9 +2,8 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { makefunc } from "../makefunc";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, int64_as_float_t, NativeType } from "../nativetype";
+import { bin64_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
@@ -763,6 +762,18 @@ export class Actor extends NativeClass {
     getLevel():Level {
         abstract();
     }
+    /**
+     * Returns if the player is riding any entities
+     */
+    isRiding(): boolean {
+        abstract();
+    }
+    // /**
+    //  * Returns if the player is riding a specific entity (Idk how to test it)
+    //  */
+    // isRidingEntity(entity: Actor): boolean {
+    //     abstract();
+    // }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();
     }
