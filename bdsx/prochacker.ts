@@ -269,7 +269,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             }
             const original = this.hookingRaw(key, original=>{
                 const nopts:MakeFuncOptions<any> = opts! || {};
-                nopts.onError = original;
+                if (nopts.onError == null) nopts.onError = original;
                 return makefunc.np(callback, returnType, nopts as any, ...params);
             }, opts);
             return makefunc.js(original, returnType, opts, ...params);

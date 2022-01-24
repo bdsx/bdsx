@@ -410,6 +410,7 @@ declare global {
         listenForEvent(eventIdentifier:string, listener: (ev:IEventData<any>)=>void): boolean | null;
     }
 
+    /** @deprecated it will be removed https://www.minecraft.net/en-us/creator/article/removing-the-additional-modding-capabilities-feature  */
     const server: IServer;
 }
 

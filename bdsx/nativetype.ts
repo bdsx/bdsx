@@ -321,7 +321,6 @@ function makeReference<T>(type:NativeType<T>):NativeType<T> {
     );
 }
 
-
 declare module './core' {
     interface VoidPointerConstructor {
         [NativeType.align]:number;

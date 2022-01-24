@@ -148,36 +148,36 @@ endp
 
 ; r10 = jsfunc, r11 = onError
 export proc callJsFunction
-    stack 88h
-    mov [rsp+80h], r11 ; onError
+    stack 98h
+    mov [rsp+90h], r11 ; onError
     ; 78h is unused
 
-    mov [rsp+38h], rcx
-    mov [rsp+40h], rdx
-    mov [rsp+48h], r8
-    mov [rsp+50h], r9
+    mov [rsp+48h], rcx
+    mov [rsp+50h], rdx
+    mov [rsp+58h], r8
+    mov [rsp+60h], r9
 
-    movsd [rsp+58h], xmm0
-    movsd [rsp+60h], xmm1
-    movsd [rsp+68h], xmm2
-    movsd [rsp+70h], xmm3
+    movsd [rsp+68h], xmm0
+    movsd [rsp+70h], xmm1
+    movsd [rsp+78h], xmm2
+    movsd [rsp+80h], xmm3
 
-    mov [rsp+20h], r10 ; jsfunc
+    mov [rsp+30h], r10 ; jsfunc
 
     ; make stack pointer
-    lea r8, [rsp+30h] ; result = &args[1]
-    lea rdx, [rsp+38h] ; stackptr
+    lea r8, [rsp+40h] ; result = &args[1]
+    lea rdx, [rsp+48h] ; stackptr
     mov rcx, NativePointer
     call pointer_np2js
     test eax, eax
     jnz _error
 
-    mov rcx, [rsp+20h] ; function = jsfunc
-    lea r9, [rsp+20h] ; result, ignored
+    mov rcx, [rsp+30h] ; function = jsfunc
+    lea r9, [rsp+28h] ; result, ignored
     mov r8, 2
     mov rax, js_null
-    lea rdx, [rsp+28h] ; args
-    mov [rsp+28h], rax ; args[0] = null
+    lea rdx, [rsp+38h] ; args
+    mov [rsp+38h], rax ; args[0] = null
     ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
     call JsCallFunction
     test eax, eax
@@ -188,19 +188,101 @@ export proc callJsFunction
     unwind
     ret
 _error:
-    mov rcx, [rsp+38h]
-    mov rdx, [rsp+40h]
-    mov r8, [rsp+48h]
-    mov r9, [rsp+50h]
-    movsd xmm0, [rsp+58h]
-    movsd xmm1, [rsp+60h]
-    movsd xmm2, [rsp+68h]
-    movsd xmm3, [rsp+70h]
+    mov rcx, [rsp+48h]
+    mov rdx, [rsp+50h]
+    mov r8, [rsp+58h]
+    mov r9, [rsp+60h]
+    movsd xmm0, [rsp+68h]
+    movsd xmm1, [rsp+70h]
+    movsd xmm2, [rsp+78h]
+    movsd xmm3, [rsp+80h]
     unwind
-    jmp [rsp-8h] ; onError, -88h + 80h
+    jmp [rsp-8h] ; onError, -98h + 90h
 endp
 
 export def jshook_fireError:qword
+
+export def CreateEventW:qword
+export def CloseHandle:qword
+export def SetEvent:qword
+export def WaitForSingleObject:qword
+
+proc crosscall_on_gamethread
+    keep rbx
+    stack 20h
+    mov rbx, [rcx+asyncSize] ; stackptr
+
+    ; make stack pointer
+    lea r8, [rbx+40h] ; result = &args[1]
+    lea rdx, [rbx+48h] ; stackptr
+    mov rcx, NativePointer
+    call pointer_np2js
+    test eax, eax
+    jnz _error
+
+    mov rcx, [rbx+30h] ; function = jsfunc
+    lea r9, [rbx+28h] ; result, ignored
+    mov r8, 2
+    mov rax, js_null
+    lea rdx, [rbx+38h] ; args
+    mov [rbx+38h], rax ; args[0] = null
+    ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
+    call JsCallFunction
+    test eax, eax
+    jnz _error
+    mov rax, raxValue
+    movsd xmm0, xmm0Value
+
+    mov rcx, [rbx+20h] ; event
+    mov [rbx+28h], rax
+    movsd [rbx+30h], xmm0
+    call SetEvent
+    unwind
+    ret
+
+_error:
+    unwind
+    jmp jsend_crash
+endp
+
+export proc jsend_crossthread
+    const JsErrorNoCurrentContext 0x10003
+    stack 98h
+
+    cmp eax, JsErrorNoCurrentContext
+    jne _crash
+
+    xor ecx, ecx
+    xor edx, edx
+    xor r8, r8
+    xor r9, r9
+    call CreateEventW
+    mov [rsp+20h], rax ; event
+
+    lea rcx, crosscall_on_gamethread
+    mov rdx, 8
+    call uv_async_alloc
+
+    mov [rsp+18h], rax ; AsyncTask
+    mov rcx, rax
+    call uv_async_post
+
+    mov rax, [rsp+18h] ; AsyncTask
+    mov rdx, rsp ; stackptr
+    mov rcx, [rsp+20h] ; event
+    mov [rax+asyncSize], rdx
+    mov edx, -1
+    call WaitForSingleObject
+
+    mov rcx, [rsp+20h]
+    call CloseHandle
+
+    mov rax, [rsp+28h]
+    movsd xmm0, [rsp+30h]
+    unwind
+    ret
+_crash:
+endp
 
 export proc jsend_crash
     mov ecx, eax
@@ -318,9 +400,9 @@ export proc raise_runtime_error
     mov [rsp+alignOffset+8], rcx; exception_ptrs.ContextRecord
     call RtlCaptureContext; RtlCaptureContext(&ContextRecord)
 
-    lea r8, [sizeofEXCEPTION_RECORD-8]
+    lea r8, [sizeofEXCEPTION_RECORD-4]
+    lea rcx, [rdx+4] ; ExceptionRecord+4
     xor edx, edx
-    lea rcx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset+8] ; ExceptionRecord
     call memset
 
     lea rcx, [rsp+8] ; exception_ptrs
@@ -354,7 +436,6 @@ endp
 def gamelambdaptr:qword
 export def gameThreadInner:qword ; void gamethread(void* lambda);
 export def free:qword
-export def SetEvent:qword
 export def evWaitGameThreadEnd:qword
 proc gameThreadEntry
     stack 28h
@@ -364,7 +445,6 @@ proc gameThreadEntry
     call SetEvent
 endp
 
-export def WaitForSingleObject:qword
 export def _Cnd_do_broadcast_at_thread_exit:qword
 
 export proc gameThreadHook

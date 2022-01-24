@@ -258,7 +258,16 @@ export class CommandPosition extends NativeClass {
     isZRelative:bool_t;
     @nativeField(bool_t)
     local:bool_t;
+
+    getPosition(origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
+        abstract();
+    }
+    getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3): BlockPos {
+        abstract();
+    }
 }
+CommandPosition.prototype.getPosition = procHacker.js("?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z", Vec3, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
+CommandPosition.prototype.getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 
 export class CommandPositionFloat extends CommandPosition {
 }
@@ -268,7 +277,6 @@ export class CommandRawText extends NativeClass {
     @nativeField(CxxString)
     text:CxxString;
 }
-
 
 @nativeClass()
 export class CommandWildcardInt extends NativeClass {

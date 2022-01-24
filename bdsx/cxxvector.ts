@@ -15,7 +15,6 @@ export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
 
 const VECTOR_SIZE = 0x18;
 
-
 function getSize(bytes:number, compsize:number):number {
     if (bytes % compsize !== 0) {
         throw Error(`invalid vector size (bytes=0x${bytes.toString(16)}, compsize=0x${compsize.toString(16)})`);

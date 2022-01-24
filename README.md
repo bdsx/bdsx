@@ -70,8 +70,8 @@ You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Lin
 ## Make a bdsx plugin
 Please check `plugin-example/README.md`.
 
-## Docker Image
-https://hub.docker.com/r/karikera/bdsx
+## Discord
+https://discord.gg/pC9XdkC
 
 ## BDSX Discussions
 https://github.com/bdsx/bdsx/discussions
@@ -79,14 +79,14 @@ https://github.com/bdsx/bdsx/discussions
 ## BDSX Wiki (Include JS API Reference)
 https://github.com/bdsx/bdsx/wiki
 
-## Bug Report and Q&A
-https://github.com/bdsx/bdsx/issues
-
-## Discord for Q&A
-https://discord.gg/pC9XdkC
-
 ## Hosting Support
 [<img src="bdsx/images/supports/emh.png" height="15"> https://easyminecrafthosting.com/](https://easyminecrafthosting.com/) (Latin America)
+
+## Docker Image
+https://hub.docker.com/r/karikera/bdsx
+
+## Bug Report
+https://github.com/bdsx/bdsx/issues
 
 ## BDSX Core
 https://github.com/bdsx/bdsx-core

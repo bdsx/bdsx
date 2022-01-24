@@ -316,7 +316,6 @@ export declare class NativePointer extends StaticPointer {
     setAddressFromString(str:string):void;
     setAddressWithFloat(value:number):void;
 
-
     readBoolean(): boolean;
     readUint8(): number;
     readUint16(): number;
@@ -799,7 +798,6 @@ export declare namespace ipfilter {
      * IP of the last sender
      */
     export function getLastSender():string;
-
 
     /**
      * it's called in bedrockServer.launch

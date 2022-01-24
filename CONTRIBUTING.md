@@ -26,3 +26,9 @@ Please assign it to the local variable and reuse it.
 
 ## Tips
 * `./bdsx` directory is using ESLint for the code formatting. it would be better to use ESLint Extension for VSCode.
+
+## About NPM Modules
+* @types/node@12 - BDSX uses chakra-node and it's not updated more. need to use v12.
+* eslint@7 and plugins - eslint@8 has an indent issue about the TS decorator. Waiting for the patch.
+* source-map - JS version issue about chakra-core.
+* strip-json-comments - JS version issue about chakra-core.

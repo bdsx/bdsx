@@ -113,7 +113,6 @@ function repeatedLaunch():void {
     exit(0);
 }
 
-
 if (data.exit == null) {
     firstLaunch();
 } else {

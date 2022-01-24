@@ -48,7 +48,6 @@ for (let i=0;i<PACKET_EVENT_COUNT;i++) {
     packetAllTargets[i] = null;
 }
 
-
 export namespace events {
 
     ////////////////////////////////////////////////////////
@@ -270,14 +269,12 @@ export namespace events {
       */
     export const commandOutput = new Event<(log:string)=>CANCEL|void>();
 
-
      /**
       * command input
       * Commands will be canceled if you return a error code.
       * 0 means success for error codes but others are unknown.
       */
     export const command = new Event<(command: string, originName: string, ctx: CommandContext) => void | number>();
-
 
     /**
       * network identifier disconnected

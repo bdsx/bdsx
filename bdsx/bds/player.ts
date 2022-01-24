@@ -177,8 +177,15 @@ export class Player extends Actor {
     /**
      * Syncs the player's abilities with the client
      */
-    syncAbilties(): void {
+    syncAbilities(): void {
         abstract();
+    }
+
+    /**
+     * @deprecated Typo!
+     */
+    syncAbilties(): void {
+        this.syncAbilities();
     }
 
     /**

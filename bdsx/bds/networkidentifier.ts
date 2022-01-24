@@ -10,7 +10,6 @@ import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { remapAndPrintError } from "../source-map-support";
-import { _tickCallback } from "../util";
 import type { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
@@ -149,7 +148,6 @@ export let networkHandler:NetworkHandler;
 procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{
     try {
         events.networkDisconnected.fire(ni);
-        _tickCallback();
     } catch (err) {
         remapAndPrintError(err);
     }

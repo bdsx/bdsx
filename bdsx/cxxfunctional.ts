@@ -32,7 +32,6 @@ export const CxxLess = {
 
 export type CxxLess<T> = (a:T, b:T)=>boolean;
 
-
 function compare(a:VoidPointer, alen:number, b:VoidPointer, blen:number):number {
     const diff = dll.vcruntime140.memcmp(a, b, Math.min(alen, blen));
     if (diff !== 0) return diff;

@@ -55,7 +55,7 @@
       "no-debugger": "warn",
       "import/export": "off",
       "eol-last": "error",
-      "no-multiple-empty-lines": "error",
+      "no-multiple-empty-lines": ["error", {"max":1}],
       "no-restricted-imports": ["error", {
         "patterns": [{
           "group": ["bdsx/*"],

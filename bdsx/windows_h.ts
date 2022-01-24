@@ -663,7 +663,6 @@ export const SUBLANG_CUSTOM_DEFAULT =                      0x03;    // default c
 export const SUBLANG_CUSTOM_UNSPECIFIED =                  0x04;    // custom language/locale
 export const SUBLANG_UI_CUSTOM_DEFAULT =                   0x05;    // Default custom MUI language/locale
 
-
 export const SUBLANG_AFRIKAANS_SOUTH_AFRICA =              0x01;    // Afrikaans (South Africa) 0x0436 af-ZA
 export const SUBLANG_ALBANIAN_ALBANIA =                    0x01;    // Albanian (Albania) 0x041c sq-AL
 export const SUBLANG_ALSATIAN_FRANCE =                     0x01;    // Alsatian (France) 0x0484
@@ -902,6 +901,5 @@ export const SUBLANG_YAKUT_RUSSIA =                        0x01;    // Deprecate
 export const SUBLANG_YI_PRC =                              0x01;    // Yi (PRC)) 0x0478
 export const SUBLANG_YORUBA_NIGERIA =                      0x01;    // Yoruba (Nigeria) 046a yo-NG
 export const SUBLANG_ZULU_SOUTH_AFRICA =                   0x01;    // isiZulu / Zulu (South Africa) 0x0435 zu-ZA
-
 
 export const ERROR_MOD_NOT_FOUND = 126;

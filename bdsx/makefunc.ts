@@ -109,6 +109,14 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> {
     onError?:VoidPointer|null;
 
     /**
+     * allow calling this function from somewhere other than the game thread.
+     * it will ignore the onError parameter.
+     *
+     * technically it's possible to block the worker till the end of JS processing.
+     */
+    crossThread?:boolean;
+
+    /**
      * code chunk name, default: js function name
      */
     name?:string;
@@ -116,7 +124,6 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> {
 type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> =
     OPTS extends MakeFuncOptions<infer THIS> ?
     THIS extends { new(): VoidPointer; } ? InstanceType<THIS> : void : void;
-
 
 export type FunctionFromTypes_np<
     OPTS extends MakeFuncOptions<any>|null,
@@ -138,7 +145,6 @@ export type FunctionFromTypes_js_without_pointer<
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
     ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
-
 
 function invalidParameterError(paramName:string, expected:string, actual:unknown):never {
     throw TypeError(`unexpected parameter type (${paramName}, expected=${expected}, actual=${actual != null ? (actual as any).constructor.name : actual})`);
@@ -338,7 +344,7 @@ export namespace makefunc {
             if (opts == null) opts = {name: jsfunction.name} as OPTS;
             else if (opts.name == null) opts.name = jsfunction.name;
         }
-        return npRaw(gen.generate('stackptr'), options.onError || asmcode.jsend_crash, opts);
+        return npRaw(gen.generate('stackptr'), options.crossThread ? asmcode.jsend_crossthread : (options.onError || asmcode.jsend_crash), opts);
     }
 
     /**
@@ -493,24 +499,15 @@ export namespace makefunc {
 
     export const Ansi = new ParamableT<string>(
         'Ansi',
-        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Ansi),
-        (stackptr, param, offset)=>{
-            if (param === null) {
-                stackptr.setPointer(null, offset);
-            } else {
-                const buf = tempAlloc(param.length*2+1);
-                const len = buf.setString(param, 0, Encoding.Ansi);
-                buf.setUint8(0, len);
-                stackptr.setPointer(buf, offset);
-            }
-        },
+        (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Ansi),
+        (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Ansi), offset),
         abstract,
         v=>v === null || typeof v === 'string'
     );
 
     export const Utf8 = new ParamableT<string>(
         'Utf8',
-        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf8),
+        (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf8),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param), offset),
         abstract,
         v=>v === null || typeof v === 'string'
@@ -518,7 +515,7 @@ export namespace makefunc {
 
     export const Utf16 = new ParamableT<string>(
         'Utf16',
-        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf16),
+        (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf16),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Utf16), offset),
         abstract,
         v=>v === null || typeof v === 'string'

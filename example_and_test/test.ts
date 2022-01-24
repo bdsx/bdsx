@@ -40,7 +40,6 @@ import { Tester } from "bdsx/tester";
 import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
 
 let sendidcheck = 0;
-let nextTickPassed = false;
 let chatCancelCounter = 0;
 
 export function setRecentSendedPacketForTest(packetId: number): void {
@@ -87,17 +86,6 @@ Tester.test({
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
-    },
-
-    async nexttick() {
-        nextTickPassed = await Promise.race([
-            new Promise<boolean>(resolve => process.nextTick(() => resolve(true))),
-            new Promise<boolean>(resolve => setTimeout(() => {
-                if (nextTickPassed) return;
-                this.fail();
-                resolve(false);
-            }, 1000))
-        ]);
     },
 
     disasm() {
@@ -182,6 +170,8 @@ Tester.test({
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 16), '\u0100\u0010\u0001\u0000', 'bin.bitshr(16)', v=>bin.toString(v, 16));
         this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 20), '\u0000\u0000\u1001\u0100', 'bin.bitshl(20)', v=>bin.toString(v, 16));
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 20), '\u0010\u1001\u0000\u0000', 'bin.bitshr(20)', v=>bin.toString(v, 16));
+        this.equals(bin.toString(bin.parse("18446744069414584321")), '18446744069414584321', 'bin.parse');
+        this.equals(bin.toString(bin.parse("0x123456789", null, 2), 16), '23456789', 'bin.parse, limit count');
 
         const longnumber = '123123123123123123123123123123123123123123123123123123123123123';
         this.equals(bin.toString(bin.parse(longnumber)), longnumber, 'bin.parse');
@@ -624,25 +614,20 @@ Tester.test({
     },
 
     actor() {
-        const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
+        events.entityCreated.on(this.wrap(ev => {
             const level = serverInstance.minecraft.getLevel().as(ServerLevel);
 
             try {
-                const uniqueId = ev.data.entity.__unique_id__;
-                const actor = Actor.fromEntity(ev.data.entity);
-                const bsapiIdentifier = ev.data.entity.__identifier__;
-                if (bsapiIdentifier === 'minecraft:player') {
+                const actor = ev.entity;
+                const identifier = actor.getIdentifier();
+                this.assert(identifier.startsWith('minecraft:'), 'Invalid identifier');
+                if (identifier === 'minecraft:player') {
                     this.equals(level.players.size(),  serverInstance.getActivePlayerCount(), 'Unexpected player size');
                     this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
                 if (actor !== null) {
-                    const actorIdentifier = actor.getIdentifier();
-                    if (actorIdentifier !== 'minecraft:item') {
-                        this.equals(bsapiIdentifier, actorIdentifier, 'invalid Actor.identifier');
-                    }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
@@ -670,14 +655,9 @@ Tester.test({
                         actor.setRespawnPosition(pos, dim);
                     }
 
-                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
-                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
-                    this.equals(actualId, expectedId,
-                        `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
-
-                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                    if (identifier === 'minecraft:player') {
                         this.assert(level.getPlayers()[0] === actor, 'the joined player is not a first player');
-                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
+                        const name = actor.getName();
                         this.equals(name, connectedId, 'id does not match');
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
@@ -685,7 +665,7 @@ Tester.test({
                         this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
                         this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
                     } else {
-                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
+                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${identifier})`);
                     }
                 }
             } catch (err) {
@@ -813,6 +793,23 @@ Tester.test({
             this.assert(mapvalue.list instanceof Array && arrayEquals(['12345678901234567890'], mapvalue.list), 'ListTag check');
             this.equals(Object.keys(mapvalue).length, map.size(), 'Compound key count check');
             map.dispose();
+        }
+    },
+    async nexttick() {
+        let timer:NodeJS.Timer;
+        for (let i=0;i<10;i++) {
+            await Promise.race([
+                new Promise<boolean>(resolve => process.nextTick(() => {
+                    clearTimeout(timer);
+                    resolve(true);
+                })),
+                new Promise<boolean>(resolve => {
+                    timer = setTimeout(() => {
+                        this.fail();
+                        resolve(false);
+                    }, 1000);
+                })
+            ]);
         }
     },
 }, true);

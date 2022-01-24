@@ -171,7 +171,6 @@ export abstract class CxxMap<K, V> extends NativeClass {
         return {bound, parent, isRight};
     }
 
-
     private _Lrotate(_Wherenode:CxxTreeNode<CxxPair<K, V>>):void { // promote right node to root of subtree
         const _Pnode    = _Wherenode._Right;
         _Wherenode._Right = _Pnode._Left;

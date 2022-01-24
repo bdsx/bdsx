@@ -1,4 +1,5 @@
 
+import { serverInstance } from "./bds/server";
 import { remapError, remapStackLine } from "./source-map-support";
 import { getLineAt } from "./util";
 import colors = require('colors');
@@ -124,13 +125,7 @@ export class Tester {
 
         // pass one tick, wait until result of the list command example
         if (waitOneTick) {
-            const system = server.registerSystem(0, 0);
-            await new Promise<void>(resolve=>{
-                system.update = ()=>{
-                    resolve();
-                    system.update = undefined;
-                };
-            });
+            await serverInstance.nextTick();
         }
 
         Tester._log(`node version: ${process.versions.node}`);
