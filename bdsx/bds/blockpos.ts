@@ -15,8 +15,8 @@ export enum Facing {
 export class BlockPos extends NativeClass {
     @nativeField(int32_t)
     x:int32_t;
-    @nativeField(uint32_t)
-    y:uint32_t;
+    @nativeField(int32_t)
+    y:int32_t;
     @nativeField(int32_t)
     z:int32_t;
 
