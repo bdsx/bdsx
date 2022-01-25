@@ -11,6 +11,7 @@ import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherCha
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
+import { ItemUseEvent, ItemUseOnBlockEvent } from "./event_impl/entityevent";
 
 const PACKET_ID_COUNT = 0x100;
 const PACKET_EVENT_COUNT = 0x500;
@@ -111,8 +112,20 @@ export namespace events {
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
-    /** Not cancellable */
+    /** @deprecated use `ItemUse` */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
+    /** Cancellable.
+     * Triggered when a player uses an item. Cancelling this event will prevent the item from being used
+     * (e.g : splash potion won't be thrown, food won't be consumed, etc...)
+     *
+     * @remarks use `itemUseOnBlock` to cancel the usage of an item on a block (e.g : flint and steel)
+     */
+    export const itemUse = new Event<(event: ItemUseEvent) => void | CANCEL>();
+    /** Cancellable.
+     * Triggered when a player uses an item on a block. Cancelling this event will prevent the item from being used
+     * (e.g : flint and steel won't ignite block, seeds won't be planted, etc...)
+     */
+    export const itemUseOnBlock = new Event<(event: ItemUseOnBlockEvent) => void | CANCEL>();
     /** Cancellable */
     export const splashPotionHit = new Event<(event: SplashPotionHitEvent) => void | CANCEL>();
     /** Not cancellable */

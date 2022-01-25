@@ -11,7 +11,7 @@ import { NativePointer, VoidPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { makefunc } from "../makefunc";
-import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 
 interface IEntityHurtEvent {
@@ -255,6 +255,44 @@ export class PlayerUseItemEvent implements IPlayerUseItemEvent {
     }
 }
 
+interface IItemUseEvent {
+    itemStack: ItemStack;
+    player: Player;
+}
+export class ItemUseEvent implements IItemUseEvent {
+    constructor(
+        public itemStack: ItemStack,
+        public player: Player
+    ) {
+    }
+}
+
+interface IItemUseOnBlockEvent {
+    itemStack: ItemStack;
+    actor: Actor;
+    x: number;
+    y: number;
+    z: number;
+    face: number;
+    clickX: number;
+    clickY: number;
+    clickZ: number;
+}
+export class ItemUseOnBlockEvent {
+    constructor(
+        public itemStack: ItemStack,
+        public actor: Actor,
+        public x: number,
+        public y: number,
+        public z: number,
+        public face: number,
+        public clickX: number,
+        public clickY: number,
+        public clickZ: number,
+    ) {
+    }
+}
+
 interface IPlayerJumpEvent {
     player: Player;
 }
@@ -299,6 +337,27 @@ function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, 
     return _onPlayerUseItem(event.player, event.itemStack, event.useMethod, event.consumeItem);
 }
 const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Player, ItemStack, int32_t, bool_t)(onPlayerUseItem);
+
+
+function onItemUse(itemStack: ItemStack, player: Player): ItemStack {
+    const event = new ItemUseEvent(itemStack, player);
+    const canceled = events.itemUse.fire(event) === CANCEL;
+    if(canceled) {
+        return itemStack;
+    }
+    return _onItemUse(event.itemStack, event.player);
+}
+const _onItemUse = procHacker.hooking("ItemStack::use", ItemStack, null, ItemStack, Player)(onItemUse);
+
+function onItemUseOnBlock(itemStack: ItemStack, actor: Actor, x: int32_t, y: int32_t, z: int32_t, face: uint8_t, clickX: float32_t, clickY: float32_t, clickZ: float32_t): bool_t {
+    const event = new ItemUseOnBlockEvent(itemStack, actor, x, y, z, face, clickX, clickY, clickZ);
+    const canceled = events.itemUseOnBlock.fire(event) === CANCEL;
+    if(canceled) {
+        return false;
+    }
+    return _onItemUseOnBlock(event.itemStack, event.actor, event.x, event.y, event.z, event.face, event.clickX, event.clickY, event.clickZ);
+}
+const _onItemUseOnBlock = procHacker.hooking("ItemStack::useOn", bool_t, null, ItemStack, Actor, int32_t, int32_t, int32_t, uint8_t, float32_t, float32_t, float32_t)(onItemUseOnBlock);
 
 function onPlayerCrit(player: Player):void {
     const event = new PlayerCritEvent(player);
