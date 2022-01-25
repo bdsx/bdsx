@@ -422,7 +422,9 @@ const symbols = [
     'Player::canDestroy',
     'Player::addExperience',
     'Player::getXpNeededForNextLevel',
-    'ButtonBlock::use'
+    'ButtonBlock::use',
+    'ItemStack::use',
+    'ItemStack::useOn'
 ] as const;
 
 // decorated symbols
