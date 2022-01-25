@@ -6,12 +6,11 @@ import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
 import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent, ItemUseEvent, ItemUseOnBlockEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapStack } from "./source-map-support";
-import { ItemUseEvent, ItemUseOnBlockEvent } from "./event_impl/entityevent";
 
 const PACKET_ID_COUNT = 0x100;
 const PACKET_EVENT_COUNT = 0x500;
