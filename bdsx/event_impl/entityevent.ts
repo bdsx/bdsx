@@ -338,7 +338,6 @@ function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, 
 }
 const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Player, ItemStack, int32_t, bool_t)(onPlayerUseItem);
 
-
 function onItemUse(itemStack: ItemStack, player: Player): ItemStack {
     const event = new ItemUseEvent(itemStack, player);
     const canceled = events.itemUse.fire(event) === CANCEL;
