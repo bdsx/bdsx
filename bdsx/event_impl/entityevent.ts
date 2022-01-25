@@ -278,7 +278,7 @@ interface IItemUseOnBlockEvent {
     clickY: number;
     clickZ: number;
 }
-export class ItemUseOnBlockEvent {
+export class ItemUseOnBlockEvent implements IItemUseOnBlockEvent {
     constructor(
         public itemStack: ItemStack,
         public actor: Actor,
