@@ -190,3 +190,8 @@ export class BlockActor extends NativeClass {
         return tag;
     }
 }
+
+@nativeClass(null)
+export class ButtonBlock extends BlockLegacy {
+    // unknown
+}
