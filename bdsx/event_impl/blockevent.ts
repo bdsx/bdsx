@@ -196,17 +196,17 @@ interface IOnButtonPress {
     buttonBlock: ButtonBlock;
     player: Player;
     blockPos: BlockPos;
-    pressingDirection: uint8_t;
+    playerOrientation: uint8_t;
 }
 export class ButtonPressEvent implements IOnButtonPress {
-    constructor(public buttonBlock: ButtonBlock, public player: Player, public blockPos: BlockPos, public pressingDirection: uint8_t) { }
+    constructor(public buttonBlock: ButtonBlock, public player: Player, public blockPos: BlockPos, public playerOrientation: uint8_t) { }
 }
 
-function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, pressingDirection: uint8_t): boolean {
-    const event = new ButtonPressEvent(buttonBlock, player, blockPos, pressingDirection);
+function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: uint8_t): boolean {
+    const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);
     const canceled = events.buttonPress.fire(event) === CANCEL;
     if (canceled) return false;
 
-    return _onButtonPress(buttonBlock, player, blockPos, pressingDirection);
+    return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
 }
 const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
