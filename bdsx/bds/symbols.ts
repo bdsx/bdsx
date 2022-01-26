@@ -48,6 +48,7 @@ const symbols = [
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
     'ServerPlayer::setPlayerGameType',
+    'PlayerListEntry::~PlayerListEntry',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
     'Actor::getHealth',

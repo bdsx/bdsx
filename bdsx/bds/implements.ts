@@ -440,6 +440,7 @@ PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
     const entry = PlayerListEntry.construct();
     return PlayerListEntry$PlayerListEntry(entry, player);
 };
+PlayerListEntry.prototype[NativeType.dtor] = procHacker.js('PlayerListEntry::~PlayerListEntry', void_t, {this:PlayerListEntry});
 
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
