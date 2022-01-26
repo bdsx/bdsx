@@ -147,9 +147,9 @@ export class StructureTemplateData extends AbstractClass {
     @nativeField(int32_t)
     formatVersion:int32_t;
     @nativeField(BlockPos)
-    size:BlockPos;
+    readonly size:BlockPos;
     @nativeField(BlockPos)
-    structureWorldOrigin:BlockPos;
+    readonly structureWorldOrigin:BlockPos;
 
     save():Record<string, any> {
         const tag = this.allocateAndSave();

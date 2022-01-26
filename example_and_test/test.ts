@@ -708,7 +708,7 @@ Tester.test({
             @nativeField(int32_t)
             id:int32_t;
             @nativeField(HashedString)
-            name:HashedString;
+            readonly name:HashedString;
         }
         const getByName = procHacker.js('Attribute::getByName', Attribute, null, HashedString);
         for (const key of getEnumKeys(AttributeId)) {

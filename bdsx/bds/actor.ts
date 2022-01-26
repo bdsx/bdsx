@@ -196,7 +196,7 @@ export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     fullName:CxxString;
     @nativeField(HashedString)
-    canonicalName:HashedString;
+    readonly canonicalName:HashedString;
 
     static constructWith(type:ActorType):ActorDefinitionIdentifier {
         abstract();

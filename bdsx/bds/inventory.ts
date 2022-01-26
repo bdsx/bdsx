@@ -500,9 +500,9 @@ export class ItemStackNetIdVariant extends AbstractClass {
 @nativeClass(0x80)
 export class NetworkItemStackDescriptor extends NativeClass {
     @nativeField(ItemDescriptor)
-    descriptor:ItemDescriptor;
+    readonly descriptor:ItemDescriptor;
     @nativeField(ItemStackNetIdVariant, 0x54) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
-    id:ItemStackNetIdVariant;
+    readonly id:ItemStackNetIdVariant;
     @nativeField(CxxString, 0x60)
     _unknown:CxxString;
 
@@ -617,7 +617,7 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(uint32_t)
     actionType:ItemUseInventoryTransaction.ActionType;
     @nativeField(BlockPos)
-    pos:BlockPos;
+    readonly pos:BlockPos;
     @nativeField(uint32_t)
     targetBlockId:uint32_t;
     @nativeField(int32_t)
@@ -625,15 +625,15 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(int32_t)
     slot:int32_t;
     @nativeField(NetworkItemStackDescriptor, {offset: 0x04, relative: true})
-    descriptor:NetworkItemStackDescriptor;
+    readonly descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
+    readonly fromPos:Vec3;
     /**
      * relative clicked coordinate from the block.
      * range: 0 <= x <= 1
      */
     @nativeField(Vec3)
-    clickPos:Vec3;
+    readonly clickPos:Vec3;
 }
 
 export namespace ItemUseInventoryTransaction {
@@ -655,9 +655,9 @@ export class ItemUseOnActorInventoryTransaction extends ComplexInventoryTransact
     @nativeField(NetworkItemStackDescriptor)
     descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
+    readonly fromPos:Vec3;
     @nativeField(Vec3)
-    hitPos:Vec3;
+    readonly hitPos:Vec3;
 }
 
 export namespace ItemUseOnActorInventoryTransaction {
@@ -677,7 +677,7 @@ export class ItemReleaseInventoryTransaction extends ComplexInventoryTransaction
     @nativeField(NetworkItemStackDescriptor)
     descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
+    readonly fromPos:Vec3;
 }
 
 export namespace ItemReleaseInventoryTransaction {
