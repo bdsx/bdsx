@@ -191,6 +191,9 @@ export class ItemStack extends NativeClass {
     protected _getArmorValue(): number{
         abstract();
     }
+    remove(amount: number): void{
+        abstract();
+    }
     getArmorValue(): number{
         if(!this.isArmorItem) return 0;
         return this._getArmorValue();
