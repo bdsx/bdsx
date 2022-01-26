@@ -1,7 +1,7 @@
 import { abstract } from "../common";
-import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { SharedPtr } from "../sharedpointer";
+import { AbstractClass, AbstractMantleClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
+import { SharedPtr } from "../sharedpointer";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
@@ -26,8 +26,8 @@ export const StreamReadResult = int32_t.extends({
 });
 export type StreamReadResult = int32_t;
 
-@nativeClass()
-export class ExtendedStreamReadResult extends NativeClass {
+@nativeClass(null)
+export class ExtendedStreamReadResult extends AbstractClass {
     @nativeField(StreamReadResult)
 	streamReadResult:StreamReadResult;
     @nativeField(int32_t)
@@ -38,7 +38,7 @@ export class ExtendedStreamReadResult extends NativeClass {
 const sharedptr_of_packet = Symbol('sharedptr');
 
 @nativeClass(0x30)
-export class Packet extends MantleClass {
+export class Packet extends AbstractMantleClass {
     static ID:number;
     [sharedptr_of_packet]?:SharedPtr<any>|null;
 

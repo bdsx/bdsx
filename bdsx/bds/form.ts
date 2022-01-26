@@ -286,7 +286,7 @@ export class SimpleForm extends Form<FormDataSimple> {
             type: 'form',
             title,
             content,
-            buttons
+            buttons,
         });
     }
     getTitle():string {
@@ -358,7 +358,7 @@ export class CustomForm extends Form<FormDataCustom> {
         super({
             type: 'custom_form',
             title,
-            content: content as FormItem[]
+            content: content as FormItem[],
         });
     }
     getTitle():string {

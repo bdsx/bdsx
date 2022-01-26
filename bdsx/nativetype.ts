@@ -262,12 +262,12 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
             if (!(type instanceof NativeType)) throw Error(`${this.name} does not support the bit mask`);
             builder.desc[key] = {
                 get(this: StaticPointer) { return type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset); },
-                set(this: StaticPointer, value:any) { return type[NativeTypeFn.bitSetter](this, value, bitmask[0], bitmask[1], offset); }
+                set(this: StaticPointer, value:any) { return type[NativeTypeFn.bitSetter](this, value, bitmask[0], bitmask[1], offset); },
             };
         } else {
             builder.desc[key] = {
                 get(this: StaticPointer) { return type[NativeType.getter](this, offset); },
-                set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); }
+                set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); },
             };
         }
 
@@ -301,7 +301,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
             },
             set(value:T):void {
                 return type[NativeType.setter](pointer, value);
-            }
+            },
         });
     }
 }
@@ -581,7 +581,7 @@ export const GslStringSpan = new NativeType<string>(
         buf.setInt64WithFloat(str.length, 0);
         makefunc.temporalKeeper.push(buf, str);
         stackptr.setPointer(buf, offset);
-    }
+    },
 );
 export type GslStringSpan = string;
 
@@ -607,7 +607,7 @@ export const bin128_t = new NativeType<string>(
     (ptr, offset)=>ptr.getBin(8, offset),
     (ptr, v, offset)=>ptr.setBin(v, offset),
     ()=>{ throw Error('bin128_t does not support the function type'); },
-    ()=>{ throw Error('bin128_t does not support the function type'); }
+    ()=>{ throw Error('bin128_t does not support the function type'); },
 ).extends({
     one:'\u0001\0\0\0',
     zero:'\0\0\0\0',

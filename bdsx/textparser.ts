@@ -281,7 +281,7 @@ export class TextLineParser extends TextParser {
         return new ParsingError(message, {
             column: this.matchedIndex,
             width: this.matchedWidth,
-            line: this.lineNumber
+            line: this.lineNumber,
         });
     }
 
@@ -289,7 +289,7 @@ export class TextLineParser extends TextParser {
         return {
             line: this.lineNumber,
             column: this.matchedIndex,
-            width: this.matchedWidth
+            width: this.matchedWidth,
         };
     }
 }
@@ -335,7 +335,7 @@ export class ParsingError extends Error {
 
     constructor(
         message:string,
-        public readonly pos:SourcePosition|null
+        public readonly pos:SourcePosition|null,
     ) {
         super(pos !== null ? `${message}, line:${pos.line}` : message);
         this.errors.push(new ErrorPosition(message, 'error', pos));

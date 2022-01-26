@@ -32,7 +32,7 @@ export enum GameRuleId {
     ShowTags,
     FreezeDamage,
     RespawnBlocksExplode,
-    ShowBorderEffect
+    ShowBorderEffect,
 }
 
 export class GameRules extends NativeClass {

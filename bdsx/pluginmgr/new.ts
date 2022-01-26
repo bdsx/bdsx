@@ -89,9 +89,9 @@ events.serverClose.on(()=>{
         "scripts": {
             "build": "tsc",
             "watch": "tsc -w",
-            "prepare": "tsc || exit 0"
+            "prepare": "tsc || exit 0",
         },
-        "devDependencies": destdeps
+        "devDependencies": destdeps,
     };
     fsutil.writeJsonSync(`${targetdir}package.json`, examplejson);
 }
@@ -131,21 +131,21 @@ events.serverClose.on(()=>{
         "parser": "@typescript-eslint/parser",
         "parserOptions": {
             "ecmaVersion": 2017,
-            "sourceType": "module"
+            "sourceType": "module",
         },
         "ignorePatterns": ["**/*.js"],
         "plugins": [
             "@typescript-eslint",
-            "import"
+            "import",
         ],
         "rules": {
             "no-restricted-imports": ["error", {
                 "patterns": [{
                     "group": ["**/bdsx/*", "!/bdsx/*"],
-                    "message": "Please use the absolute path for bdsx libraries."
-                }]
-            }]
-        }
+                    "message": "Please use the absolute path for bdsx libraries.",
+                }],
+            }],
+        },
     };
     fsutil.writeJsonSync(`${targetdir}.eslintrc.json`, eslint);
 }

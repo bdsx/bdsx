@@ -2,7 +2,7 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
@@ -196,7 +196,7 @@ export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     fullName:CxxString;
     @nativeField(HashedString)
-    canonicalName:HashedString;
+    readonly canonicalName:HashedString;
 
     static constructWith(type:ActorType):ActorDefinitionIdentifier {
         abstract();
@@ -364,29 +364,28 @@ export enum ActorFlags {
     RamAttack,
     PlayingDead,
     InAscendableBlock,
-    OverDescendableBlock
+    OverDescendableBlock,
 }
 
-@nativeClass()
-export class EntityContext extends NativeClass {
-
+@nativeClass(null)
+export class EntityContext extends AbstractClass {
 }
 
-@nativeClass()
-export class OwnerStorageEntity extends NativeClass {
+@nativeClass(null)
+export class OwnerStorageEntity extends AbstractClass {
     _getStackRef():EntityContext {
         abstract();
     }
 }
 
 @nativeClass(0x18)
-export class EntityRefTraits extends NativeClass {
+export class EntityRefTraits extends AbstractClass {
     @nativeField(OwnerStorageEntity)
     context:OwnerStorageEntity;
 }
 
 @nativeClass(null)
-export class EntityContextBase extends NativeClass {
+export class EntityContextBase extends AbstractClass {
     @nativeField(int32_t, 0x8)
     entityId:int32_t;
 
@@ -402,7 +401,7 @@ export class EntityContextBase extends NativeClass {
     }
 }
 
-export class Actor extends NativeClass {
+export class Actor extends AbstractClass {
     vftable:VoidPointer;
     ctxbase:EntityContextBase;
     /** @deprecated Use `this.getIdentifier()` instead */
@@ -614,7 +613,7 @@ export class Actor extends NativeClass {
         entity = {
             __unique_id__:{
                 "64bit_low": this.getUniqueIdLow(),
-                "64bit_high": this.getUniqueIdHigh()
+                "64bit_high": this.getUniqueIdHigh(),
             },
             __identifier__:this.identifier,
             __type__:(this.getEntityTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',

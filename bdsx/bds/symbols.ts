@@ -48,6 +48,7 @@ const symbols = [
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
     'ServerPlayer::setPlayerGameType',
+    'PlayerListEntry::~PlayerListEntry',
     'MinecraftCommands::executeCommand',
     "ServerPlayer::`vftable'",
     'Actor::getHealth',
@@ -253,6 +254,8 @@ const symbols = [
     'Objective::getPlayerScore',
     'ScoreboardIdentityRef::modifyScoreInObjective',
     'Scoreboard::getScoreboardIdentityRef',
+    'ItemDescriptor::~ItemDescriptor',
+    'NetworkItemStackDescriptor::~NetworkItemStackDescriptor',
     'InventoryTransaction::addItemToContent',
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
@@ -423,7 +426,7 @@ const symbols = [
     'Player::canDestroy',
     'Player::addExperience',
     'Player::getXpNeededForNextLevel',
-    'ButtonBlock::use'
+    'ButtonBlock::use',
 ] as const;
 
 // decorated symbols
@@ -496,6 +499,9 @@ const symbols2 = [
     '?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z',
     '?isRiding@Actor@@QEBA_NXZ',
     '?isRiding@Actor@@QEBA_NPEAV1@@Z',
+    '??0NetworkItemStackDescriptor@@QEAA@AEBVItemStackDescriptor@@@Z',
+    '??0ItemDescriptor@@QEAA@XZ',
+    '??0ItemDescriptor@@QEAA@AEBV0@@Z',
 ] as const;
 
 export const proc = pdb.getList(
@@ -503,7 +509,7 @@ export const proc = pdb.getList(
     {},
     symbols,
     false,
-    UNDNAME_NAME_ONLY
+    UNDNAME_NAME_ONLY,
 );
 export const proc2 = pdb.getList(pdb.coreCachePath, {}, symbols2);
 

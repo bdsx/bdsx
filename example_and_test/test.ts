@@ -9,12 +9,12 @@ import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { ItemStack } from "bdsx/bds/inventory";
+import { ContainerId, ContainerType, ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import { ServerLevel } from "bdsx/bds/level";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
-import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
+import { AttributeData, ContainerOpenPacket, InventoryContentPacket, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
 import { serverInstance } from "bdsx/bds/server";
@@ -32,7 +32,7 @@ import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
@@ -702,13 +702,13 @@ Tester.test({
 
     attributeNames():void {
         @nativeClass(null)
-        class Attribute extends NativeClass {
+        class Attribute extends AbstractClass {
             @nativeField(int32_t)
             u:int32_t;
             @nativeField(int32_t)
             id:int32_t;
             @nativeField(HashedString)
-            name:HashedString;
+            readonly name:HashedString;
         }
         const getByName = procHacker.js('Attribute::getByName', Attribute, null, HashedString);
         for (const key of getEnumKeys(AttributeId)) {

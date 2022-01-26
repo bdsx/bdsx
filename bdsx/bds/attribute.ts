@@ -1,7 +1,7 @@
 
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { NativeClass } from "../nativeclass";
+import { AbstractClass } from "../nativeclass";
 import { float32_t } from "../nativetype";
 
 // public: static class Attribute const
@@ -24,7 +24,7 @@ export enum AttributeId {
 	JumpStrength=16, // for horse?
 }
 
-export class AttributeInstance extends NativeClass {
+export class AttributeInstance extends AbstractClass {
 	vftable:VoidPointer;
 	u1:VoidPointer;
 	u2:VoidPointer;
@@ -33,7 +33,7 @@ export class AttributeInstance extends NativeClass {
 	maxValue:float32_t;
 	defaultValue:float32_t;
 }
-export class BaseAttributeMap extends NativeClass {
+export class BaseAttributeMap extends AbstractClass {
     getMutableInstance(type:AttributeId):AttributeInstance|null {
         abstract();
     }

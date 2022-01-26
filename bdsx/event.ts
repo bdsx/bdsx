@@ -181,7 +181,7 @@ export namespace events {
         Before,
         After,
         Send,
-        SendRaw
+        SendRaw,
     }
 
     export function packetEvent(type:PacketEventType, packetId:MinecraftPacketIds):Event<(...args:any[])=>(CANCEL|void)>|null {

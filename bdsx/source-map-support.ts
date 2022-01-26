@@ -70,7 +70,7 @@ retrieveFileHandlers.push((path) => {
         // existsSync/readFileSync can't handle file protocol, but once stripped, it works
         path = path.replace(/file:\/\/\/(\w:)?/, (protocol, drive)=> drive ?
             '' : // file:///C:/dir/file -> C:/dir/file
-            '/' // file:///root-dir/file -> /root-dir/file
+            '/', // file:///root-dir/file -> /root-dir/file
         );
     }
     if (path in fileContentsCache) {
@@ -148,7 +148,7 @@ retrieveMapHandlers.push(source => {
 
     return {
         url: sourceMappingURL!,
-        map: sourceMapData
+        map: sourceMapData,
     };
 });
 
@@ -167,7 +167,7 @@ export function mapSourcePosition(position: Position): Position {
         if (urlAndMap) {
             sourceMap = sourceMapCache[position.source] = {
                 url: urlAndMap.url,
-                map: new SourceMapConsumer(urlAndMap.map as any)
+                map: new SourceMapConsumer(urlAndMap.map as any),
             };
 
             // Load all sources stored inline with the source map into the file cache
@@ -184,7 +184,7 @@ export function mapSourcePosition(position: Position): Position {
         } else {
             sourceMap = sourceMapCache[position.source] = {
                 url: null,
-                map: null
+                map: null,
             };
         }
     }
@@ -309,7 +309,7 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
     const position = mapSourcePosition({
         source: file,
         line: line,
-        column: column
+        column: column,
     });
     state.curPosition = position;
     return {
