@@ -11,7 +11,7 @@ import { decay } from "../decay";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
-import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, int32_t, int64_as_float_t, void_t } from "../nativetype";
 import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
@@ -19,7 +19,7 @@ import { SharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
 
 @nativeClass(null)
-class ReadOnlyBinaryStream extends NativeClass {
+class ReadOnlyBinaryStream extends AbstractClass {
     @nativeField(CxxStringWrapper.ref(), 0x38)
     data:CxxStringWrapper;
 
@@ -31,7 +31,7 @@ class ReadOnlyBinaryStream extends NativeClass {
 ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnlyBinaryStream}, VoidPointer, int64_as_float_t);
 
 @nativeClass(null)
-class OnPacketRBP extends NativeClass {
+class OnPacketRBP extends AbstractClass {
     @nativeField(SharedPtr.make(Packet), 0xb8)
     packet:SharedPtr<Packet>;
     @nativeField(ReadOnlyBinaryStream, 0x100)

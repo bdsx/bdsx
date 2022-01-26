@@ -252,6 +252,8 @@ const symbols = [
     'Objective::getPlayerScore',
     'ScoreboardIdentityRef::modifyScoreInObjective',
     'Scoreboard::getScoreboardIdentityRef',
+    'ItemDescriptor::~ItemDescriptor',
+    'NetworkItemStackDescriptor::~NetworkItemStackDescriptor',
     'InventoryTransaction::addItemToContent',
     'InventoryTransaction::getActions',
     'InventoryTransactionItemGroup::getItemInstance',
@@ -495,6 +497,9 @@ const symbols2 = [
     '?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z',
     '?isRiding@Actor@@QEBA_NXZ',
     '?isRiding@Actor@@QEBA_NPEAV1@@Z',
+    '??0NetworkItemStackDescriptor@@QEAA@AEBVItemStackDescriptor@@@Z',
+    '??0ItemDescriptor@@QEAA@XZ',
+    '??0ItemDescriptor@@QEAA@AEBV0@@Z',
 ] as const;
 
 export const proc = pdb.getList(

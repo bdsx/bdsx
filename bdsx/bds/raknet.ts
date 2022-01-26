@@ -1,15 +1,15 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
 import { makefunc } from "../makefunc";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
 import { procHacker } from "./proc";
 
 const portDelineator = '|'.charCodeAt(0);
 
 export namespace RakNet {
     @nativeClass(0x88)
-    export class SystemAddress extends NativeClass {
+    export class SystemAddress extends AbstractClass {
         @nativeField(uint16_t, 0x80)
         debugPort:uint16_t;
         @nativeField(uint16_t, 0x82)
@@ -45,7 +45,7 @@ export namespace RakNet {
     }
 
     @nativeClass()
-    export class RakPeer extends NativeClass {
+    export class RakPeer extends AbstractClass {
         @nativeField(VoidPointer)
         vftable:VoidPointer;
 

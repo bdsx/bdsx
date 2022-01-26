@@ -1,6 +1,6 @@
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
-import { MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID, ActorUniqueID } from "./actor";
 import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
@@ -62,7 +62,7 @@ export enum PackType {
 }
 
 // @nativeClass(0x88)
-// export class PackIdVersion extends NativeClass {
+// export class PackIdVersion extends AbstractClass {
 //     @nativeField(mce.UUID)
 //     uuid:mce.UUID
 //     @nativeField(SemVersion, 0x10)
@@ -72,7 +72,7 @@ export enum PackType {
 // }
 
 // @nativeClass(0xA8)
-// export class PackInstanceId extends NativeClass {
+// export class PackInstanceId extends AbstractClass {
 //     @nativeField(PackIdVersion)
 //     packId:PackIdVersion;
 //     @nativeField(CxxString)
@@ -80,7 +80,7 @@ export enum PackType {
 // }
 
 // @nativeClass(0x18)
-// export class ContentIdentity extends NativeClass {
+// export class ContentIdentity extends AbstractClass {
 //     @nativeField(mce.UUID)
 //     uuid:mce.UUID
 //     @nativeField(bool_t, 0x10)
@@ -88,7 +88,7 @@ export enum PackType {
 // }
 
 // @nativeClass(0xF0)
-// export class ResourcePackInfoData extends NativeClass {
+// export class ResourcePackInfoData extends AbstractClass {
 //     @nativeField(PackIdVersion)
 //     packId:PackIdVersion;
 //     @nativeField(bin64_t)
@@ -106,7 +106,7 @@ export enum PackType {
 // }
 
 // @nativeClass(null)
-// export class ResourcePacksInfoData extends NativeClass {
+// export class ResourcePacksInfoData extends AbstractClass {
 //     @nativeField(bool_t)
 //     texturePackRequired:bool_t;
 //     @nativeField(bool_t)
@@ -423,7 +423,7 @@ export class MobEffectPacket extends Packet {
     // unknown
 }
 
-@nativeClass(0x40)
+@nativeClass()
 export class AttributeData extends NativeClass {
     @nativeField(float32_t)
     current:number;
@@ -960,7 +960,7 @@ class AvailableCommandsCommandData extends NativeClass {
 }
 
 @nativeClass(0x38)
-class AvailableCommandsEnumData extends NativeClass{
+class AvailableCommandsEnumData extends AbstractClass{
 }
 
 @nativeClass(null)

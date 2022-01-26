@@ -1,6 +1,6 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString } from "../nativetype";
 
 export enum VanillaBiomeTypes {
@@ -26,7 +26,7 @@ export enum VanillaBiomeTypes {
 }
 
 @nativeClass(null)
-export class Biome extends NativeClass {
+export class Biome extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(CxxString)

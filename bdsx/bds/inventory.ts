@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
@@ -409,7 +409,7 @@ export class PlayerUIContainer extends SimpleContainer {
 }
 
 @nativeClass(null)
-export class PlayerInventory extends NativeClass {
+export class PlayerInventory extends AbstractClass {
     @nativeField(Inventory.ref(), 0xB0) // accessed in PlayerInventory::getSlots when calling Container::getSlots
     container:Inventory;
 
@@ -490,11 +490,11 @@ export class InventorySource extends NativeClass {
     }
 }
 
-//@nativeClass(0x48)
-export class ItemDescriptor extends NativeClass {
+@nativeClass(0x48)
+export class ItemDescriptor extends AbstractClass {
 }
 
-export class ItemStackNetIdVariant extends NativeClass {
+export class ItemStackNetIdVariant extends AbstractClass {
 }
 
 @nativeClass(0x80)
@@ -503,6 +503,8 @@ export class NetworkItemStackDescriptor extends NativeClass {
     descriptor:ItemDescriptor;
     @nativeField(ItemStackNetIdVariant, 0x54) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
     id:ItemStackNetIdVariant;
+    @nativeField(CxxString, 0x60)
+    _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
         abstract();
@@ -510,7 +512,7 @@ export class NetworkItemStackDescriptor extends NativeClass {
 }
 
 @nativeClass()
-export class InventoryAction extends NativeClass {
+export class InventoryAction extends AbstractClass {
     @nativeField(InventorySource)
     source:InventorySource;
     @nativeField(uint32_t)
@@ -526,7 +528,7 @@ export class InventoryAction extends NativeClass {
 }
 
 @nativeClass(0x18)
-export class InventoryTransactionItemGroup extends NativeClass {
+export class InventoryTransactionItemGroup extends AbstractClass {
     @nativeField(int32_t)
     itemId:int32_t;
     @nativeField(int32_t)
@@ -545,7 +547,7 @@ export class InventoryTransactionItemGroup extends NativeClass {
 }
 
 @nativeClass(0x58)
-export class InventoryTransaction extends NativeClass {
+export class InventoryTransaction extends AbstractClass {
     // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
     // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
     @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40) // accessed in InventoryTransaction::~InventoryTransaction when calling std::vector<InventoryTransactionItemGroup>::_Tidy
@@ -565,7 +567,7 @@ export class InventoryTransaction extends NativeClass {
 }
 
 @nativeClass()
-export class ComplexInventoryTransaction extends NativeClass {
+export class ComplexInventoryTransaction extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(uint8_t)

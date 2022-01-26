@@ -2,7 +2,7 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
@@ -367,26 +367,25 @@ export enum ActorFlags {
     OverDescendableBlock
 }
 
-@nativeClass()
-export class EntityContext extends NativeClass {
-
+@nativeClass(null)
+export class EntityContext extends AbstractClass {
 }
 
-@nativeClass()
-export class OwnerStorageEntity extends NativeClass {
+@nativeClass(null)
+export class OwnerStorageEntity extends AbstractClass {
     _getStackRef():EntityContext {
         abstract();
     }
 }
 
 @nativeClass(0x18)
-export class EntityRefTraits extends NativeClass {
+export class EntityRefTraits extends AbstractClass {
     @nativeField(OwnerStorageEntity)
     context:OwnerStorageEntity;
 }
 
 @nativeClass(null)
-export class EntityContextBase extends NativeClass {
+export class EntityContextBase extends AbstractClass {
     @nativeField(int32_t, 0x8)
     entityId:int32_t;
 
@@ -402,7 +401,7 @@ export class EntityContextBase extends NativeClass {
     }
 }
 
-export class Actor extends NativeClass {
+export class Actor extends AbstractClass {
     vftable:VoidPointer;
     ctxbase:EntityContextBase;
     /** @deprecated Use `this.getIdentifier()` instead */

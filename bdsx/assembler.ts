@@ -1235,6 +1235,7 @@ export class X64Assembler {
     }
 
     jmp_c(offset:number):this {
+        if (offset === 0) return this;
         if (INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0xeb, offset);
         } else {

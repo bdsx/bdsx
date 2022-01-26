@@ -1,7 +1,7 @@
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t } from "../nativetype";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -24,7 +24,7 @@ export enum Mirror {
 }
 
 @nativeClass(0x60)
-export class StructureSettings extends NativeClass {
+export class StructureSettings extends AbstractClass {
     static constructWith(size:BlockPos, ignoreEntities:boolean = false, ignoreBlocks:boolean = false):StructureSettings {
         abstract();
     }
@@ -141,7 +141,7 @@ export class StructureSettings extends NativeClass {
 }
 
 @nativeClass(0xB8)
-export class StructureTemplateData extends NativeClass {
+export class StructureTemplateData extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(int32_t)
@@ -166,7 +166,7 @@ export class StructureTemplateData extends NativeClass {
 }
 
 @nativeClass()
-export class StructureTemplate extends NativeClass {
+export class StructureTemplate extends AbstractClass {
     @nativeField(CxxString)
     name:CxxString;
     @nativeField(StructureTemplateData)
@@ -187,7 +187,7 @@ export class StructureTemplate extends NativeClass {
 }
 
 @nativeClass(0xC0) // Last few lines of Minecraft::Minecraft
-export class StructureManager extends NativeClass {
+export class StructureManager extends AbstractClass {
     getOrCreate(name:string):StructureTemplate {
         abstract();
     }

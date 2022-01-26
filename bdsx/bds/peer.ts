@@ -1,13 +1,13 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { SharedPtr } from "../sharedpointer";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString } from "../nativetype";
+import { SharedPtr } from "../sharedpointer";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";
 
 @nativeClass(null)
-export class RaknetNetworkPeer extends NativeClass {
+export class RaknetNetworkPeer extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(VoidPointer)
@@ -21,19 +21,19 @@ export class RaknetNetworkPeer extends NativeClass {
 }
 
 @nativeClass(null)
-export class EncryptedNetworkPeer extends NativeClass {
+export class EncryptedNetworkPeer extends AbstractClass {
     @nativeField(SharedPtr.make(RaknetNetworkPeer))
     peer:SharedPtr<RaknetNetworkPeer>;
 }
 
 @nativeClass(null)
-export class CompressedNetworkPeer extends NativeClass {
+export class CompressedNetworkPeer extends AbstractClass {
     @nativeField(EncryptedNetworkPeer.ref(), 0x48)
     peer:EncryptedNetworkPeer;
 }
 
 @nativeClass(null)
-export class BatchedNetworkPeer extends NativeClass {
+export class BatchedNetworkPeer extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(CompressedNetworkPeer.ref())
