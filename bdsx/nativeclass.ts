@@ -343,7 +343,7 @@ export class NativeClass extends StructurePointer {
                 const value = type[NativeType.getter](this, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
-            }
+            },
         };
         if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
@@ -632,7 +632,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
                 const value = this.addAs(type, offset, offset >> 31);
                 Object.defineProperty(this, key, {value});
                 return value;
-            }
+            },
         };
         if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
@@ -813,7 +813,7 @@ function makeReference<T extends NativeClass>(type:{new():T, symbol?:string}):Na
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
         (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),
-        (stackptr, v, offset)=>stackptr.setPointer(v, offset)
+        (stackptr, v, offset)=>stackptr.setPointer(v, offset),
     );
 }
 

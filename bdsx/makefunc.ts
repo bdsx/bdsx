@@ -502,7 +502,7 @@ export namespace makefunc {
         (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Ansi),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Ansi), offset),
         abstract,
-        v=>v === null || typeof v === 'string'
+        v=>v === null || typeof v === 'string',
     );
 
     export const Utf8 = new ParamableT<string>(
@@ -510,7 +510,7 @@ export namespace makefunc {
         (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf8),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param), offset),
         abstract,
-        v=>v === null || typeof v === 'string'
+        v=>v === null || typeof v === 'string',
     );
 
     export const Utf16 = new ParamableT<string>(
@@ -518,7 +518,7 @@ export namespace makefunc {
         (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf16),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Utf16), offset),
         abstract,
-        v=>v === null || typeof v === 'string'
+        v=>v === null || typeof v === 'string',
     );
 
     export const Buffer = new ParamableT<VoidPointer|Bufferable>(
@@ -543,7 +543,7 @@ export namespace makefunc {
             if (v instanceof Int8Array) return true;
             if (v instanceof Int16Array) return true;
             return false;
-        }
+        },
     );
 
     export const JsValueRef = new ParamableT<any>(
@@ -551,7 +551,7 @@ export namespace makefunc {
         (stackptr, offset)=>stackptr.getJsValueRef(offset),
         (stackptr, param, offset)=>stackptr.setJsValueRef(param, offset),
         abstract,
-        ()=>true
+        ()=>true,
     );
 }
 

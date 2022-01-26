@@ -82,7 +82,7 @@ export enum ArmorSlot {
     Torso,
     Chest = 1,
     Legs,
-    Feet
+    Feet,
 }
 
 export enum CreativeItemCategory {

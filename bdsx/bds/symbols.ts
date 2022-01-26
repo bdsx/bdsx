@@ -424,7 +424,7 @@ const symbols = [
     'Player::canDestroy',
     'Player::addExperience',
     'Player::getXpNeededForNextLevel',
-    'ButtonBlock::use'
+    'ButtonBlock::use',
 ] as const;
 
 // decorated symbols
@@ -507,7 +507,7 @@ export const proc = pdb.getList(
     {},
     symbols,
     false,
-    UNDNAME_NAME_ONLY
+    UNDNAME_NAME_ONLY,
 );
 export const proc2 = pdb.getList(pdb.coreCachePath, {}, symbols2);
 

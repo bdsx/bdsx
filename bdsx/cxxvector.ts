@@ -598,7 +598,7 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
             (to, from)=>{
                 dll.vcruntime140.memcpy(to, from, VECTOR_SIZE);
                 dll.vcruntime140.memset(from, 0, VECTOR_SIZE);
-            }
+            },
         );
         this.type = CxxVector.make(this.compType);
     }

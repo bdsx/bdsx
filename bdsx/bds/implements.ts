@@ -337,7 +337,7 @@ procHacker.hookingRawWithCallOriginal(
     makefunc.np((level, actor, b)=>{
         _removeActor(actor);
     }, void_t, {name: 'hook of Level::removeEntityReferences'}, Level, Actor, bool_t),
-    [Register.rcx, Register.rdx, Register.r8], []
+    [Register.rcx, Register.rdx, Register.r8], [],
 );
 
 asmcode.removeActor = makefunc.np(_removeActor, void_t, null, Actor);
@@ -458,7 +458,7 @@ NetworkHandler.Connection.abstract({
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x58]
+    instance: [RakNetInstance.ref(), 0x58],
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
@@ -531,7 +531,7 @@ BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstan
 
 // server.ts
 VanilaGameModuleServer.abstract({
-    listener:[VanilaServerGameplayEventListener.ref(), 0x8]
+    listener:[VanilaServerGameplayEventListener.ref(), 0x8],
 });
 DedicatedServer.abstract({});
 Minecraft.abstract({
@@ -556,7 +556,7 @@ ServerInstance.abstract({
 
 // gamemode.ts
 GameMode.define({
-    actor: [Actor.ref(), 8]
+    actor: [Actor.ref(), 8],
 });
 
 // inventory.ts

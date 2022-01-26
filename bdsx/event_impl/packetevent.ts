@@ -191,7 +191,7 @@ bedrockServer.withLoading().then(()=>{
             0x8B, 0xD6,                               // mov edx,esi
             0x48, 0x8D, 0x8D, 0xB8, 0x00, 0x00, 0x00, // lea rcx,qword ptr ss:[rbp+78]
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF,             // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
-            0x90                                      // nop
+            0x90,                                     // nop
         ], [10, 14]);
 
     // hook before

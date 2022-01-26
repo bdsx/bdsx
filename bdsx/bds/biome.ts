@@ -22,7 +22,7 @@ export enum VanillaBiomeTypes {
     Swamp = 15,
     Taiga = 16,
     TheEnd = 17,
-    DataDriven = 18
+    DataDriven = 18,
 }
 
 @nativeClass(null)

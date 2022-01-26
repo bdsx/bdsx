@@ -13,7 +13,7 @@ import util = require('util');
 
 enum _Redbl { // colors for link to parent
     _Red,
-    _Black
+    _Black,
 }
 
 interface CxxTreeNodeType<T extends NativeClass> extends NativeClassType<CxxTreeNode<T>> {
@@ -610,7 +610,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
             CxxMapImpl.prototype.nodeType = nodetype;
             CxxMapImpl.prototype.key_comp = key_comp;
             Object.defineProperty(CxxMapImpl, 'name', {
-                value:getMapName(comptype)
+                value:getMapName(comptype),
             });
             return CxxMapImpl;
         });

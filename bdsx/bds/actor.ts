@@ -364,7 +364,7 @@ export enum ActorFlags {
     RamAttack,
     PlayingDead,
     InAscendableBlock,
-    OverDescendableBlock
+    OverDescendableBlock,
 }
 
 @nativeClass(null)
@@ -613,7 +613,7 @@ export class Actor extends AbstractClass {
         entity = {
             __unique_id__:{
                 "64bit_low": this.getUniqueIdLow(),
-                "64bit_high": this.getUniqueIdHigh()
+                "64bit_high": this.getUniqueIdHigh(),
             },
             __identifier__:this.identifier,
             __type__:(this.getEntityTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',

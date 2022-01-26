@@ -280,7 +280,7 @@ export const TextFormat = {
     STRIKETHROUGH: ESCAPE + "m",
     UNDERLINE: ESCAPE + "n",
     ITALIC: ESCAPE + "o",
-    THIN: ESCAPE + "¶"
+    THIN: ESCAPE + "¶",
 };
 
 Object.freeze(TextFormat);

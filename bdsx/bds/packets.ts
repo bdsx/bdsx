@@ -192,7 +192,7 @@ export namespace TextPacket {
         Announcement,
         TextObject,
         /** @deprecated **/
-        ObjectWhisper = 9
+        ObjectWhisper = 9,
     }
 }
 

@@ -816,7 +816,7 @@ export enum GameType {
     Adventure,
     SurvivalSpectator,
     CreativeSpectator,
-    Default
+    Default,
 }
 
 /**
@@ -826,5 +826,5 @@ export enum PlayerPermission {
     VISITOR,
     MEMBER,
     OPERATOR,
-    CUSTOM
+    CUSTOM,
 }
