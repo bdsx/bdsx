@@ -121,6 +121,7 @@ const symbols = [
     'Item::isFood',
     'Item::getCreativeCategory',
     'Item::setAllowOffhand',
+    'ItemStackBase::remove',
     'ItemStackBase::getId',
     'ItemStackBase::getItem',
     'ItemStackBase::getName',
