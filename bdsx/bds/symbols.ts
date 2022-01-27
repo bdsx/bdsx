@@ -415,6 +415,7 @@ const symbols = [
     'LevelChunk::getMin',
     'LevelChunk::getMax',
     'LevelChunk::toWorldPos',
+    'LevelChunk::isFullyLoaded',
     'ChunkSource::getLevel',
     'Biome::getBiomeType',
     'Attribute::getByName',
