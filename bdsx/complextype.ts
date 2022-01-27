@@ -3,7 +3,6 @@ import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamT
 import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 
-
 export interface OverloadedFunction {
     (...args:any[]):any;
     overload(ptr:VoidPointer, returnType:makefunc.Paramable, opts?:{this?:Type<any>}|null, ...args:Type<any>[]):this;

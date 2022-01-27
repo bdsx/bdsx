@@ -69,7 +69,6 @@ export class MobEffect extends NativeClass {
     // @nativeField(VoidPointer, 0xF8) // std::vector<std::pair<Attribute const*,std::shared_ptr<AttributeModifier>>>
     // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), SharedPtr<AttributeModifier>>;
 
-
     static create(id: MobEffectIds): MobEffect {
         abstract();
     }

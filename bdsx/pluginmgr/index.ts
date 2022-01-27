@@ -1,5 +1,4 @@
 
-
 import child_process = require('child_process');
 import blessed = require('blessed');
 import { fsutil } from '../fsutil';
@@ -48,7 +47,6 @@ function exec(command:string):Promise<string>{
         });
     });
 }
-
 
 function execWithoutError(command:string):Promise<string>{
     return new Promise((resolve, reject)=>{

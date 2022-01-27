@@ -232,7 +232,6 @@ JsonValue.prototype.isMember = makefunc.js(proc['Json::Value::isMember'], bool_t
 JsonValue.prototype.size = makefunc.js(proc['Json::Value::size'], int32_t, {this:JsonValue});
 JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['Json::Value::~Value'], void_t, {this:JsonValue});
 
-
 @nativeClass(null)
 export class Certificate extends NativeClass {
     @nativeField(JsonValue, 0x50)

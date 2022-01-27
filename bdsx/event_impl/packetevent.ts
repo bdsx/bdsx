@@ -17,7 +17,6 @@ import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
-import { _tickCallback } from "../util";
 
 @nativeClass(null)
 class ReadOnlyBinaryStream extends NativeClass {
@@ -57,14 +56,12 @@ function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkH
                     ptrs.push(ptr);
                     try {
                         if (listener(ptr, data.length, ni, packetId) === CANCEL) {
-                            _tickCallback();
                             return null;
                         }
                     } catch (err) {
                         events.errorFire(err);
                     }
                 }
-                _tickCallback();
             } finally {
                 for (const ptr of ptrs) {
                     decay(ptr);
@@ -99,7 +96,6 @@ function onPacketBefore(result:ExtendedStreamReadResult, rbp:OnPacketRBP, packet
                     }
                 }
             } finally {
-                _tickCallback();
                 decay(typedPacket);
             }
         }
@@ -128,7 +124,6 @@ function onPacketAfter(rbp:OnPacketRBP):void {
                     }
                 }
             } finally {
-                _tickCallback();
                 decay(typedPacket);
             }
         }
@@ -154,7 +149,6 @@ function onPacketSend(handler:NetworkHandler, ni:NetworkIdentifier, packet:Packe
                     }
                 }
             } finally {
-                _tickCallback();
                 decay(typedPacket);
             }
         }
@@ -180,7 +174,6 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
                     }
                 }
             } finally {
-                _tickCallback();
                 decay(dataptr);
             }
         }

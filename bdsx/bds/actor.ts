@@ -393,8 +393,12 @@ export class EntityContextBase extends NativeClass {
     @nativeField(int32_t, 0x8)
     entityId:int32_t;
 
-    isVaild():boolean {
+    isValid():boolean {
         abstract();
+    }
+    /**@deprecated use `isValid` instead*/
+    isVaild(): boolean {
+        return this.isValid();
     }
     _enttRegistry():VoidPointer {
         abstract();
@@ -784,6 +788,7 @@ export class Actor extends NativeClass {
     }
     /**
      * Gets the entity from entity component of bedrock scripting api
+     * @deprecated bedrock scripting API will be removed.
      */
     static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;

@@ -146,12 +146,12 @@ export namespace bin {
         }
         return String.fromCharCode(...out);
     }
-    export function make(n:number, size:number):string {
+    export function make(n:number, wordsize:number):string {
         n = Math.floor(n);
         if (n < 0) n = 0;
 
-        const out:number[] = new Array(size);
-        for (let i=0;i<size;i++) {
+        const out:number[] = new Array(wordsize);
+        for (let i=0;i<wordsize;i++) {
             out[i] = n % 0x10000;
             n = Math.floor(n / 0x10000);
         }
@@ -178,7 +178,7 @@ export namespace bin {
      * similar to parseInt but make it as a bin.
      * throw the error if it's not a number.
      */
-    export function parse(v:string, radix?:number):string {
+    export function parse(v:string, radix?:number|null, wordsize?:number|null):string {
         let idx = 0;
         if (radix == null) {
             _loop: for (;;) {
@@ -238,7 +238,7 @@ export namespace bin {
                 }
                 const n = values[i] * radix! + carry;
                 values[i++] = n & 0xffff;
-                carry = n >> 16;
+                carry = n >>> 16;
             }
         }
         function carry():void {
@@ -254,6 +254,7 @@ export namespace bin {
                     continue;
                 }
                 values[i++] = n+1;
+                break;
             }
         }
         let n = 0;
@@ -261,6 +262,13 @@ export namespace bin {
         for (;;) {
             if (idx === v.length) {
                 values[0] = n;
+                if (wordsize != null) {
+                    const oldsize = values.length;
+                    values.length = wordsize;
+                    for (let i=oldsize;i<wordsize;i++) {
+                        values[i] = 0;
+                    }
+                }
                 return String.fromCharCode(...values);
             }
             mulRadix();
@@ -346,8 +354,8 @@ export namespace bin {
         // if (v !== 0) values.push(v);
         return String.fromCharCode(...values);
     }
-    export function zero(size:number):string {
-        return '\0'.repeat(size);
+    export function zero(wordsize:number):string {
+        return '\0'.repeat(wordsize);
     }
     export function sub(a:string, b:string):string {
         const alen = a.length;

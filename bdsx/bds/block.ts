@@ -176,8 +176,16 @@ export class BlockActor extends NativeClass {
     load(tag:CompoundTag|NBT.Compound):void{
         abstract();
     }
+    /**
+     * @deprecated use allocateAndSave
+     */
     constructAndSave():CompoundTag{
         const tag = CompoundTag.construct();
+        this.save(tag);
+        return tag;
+    }
+    allocateAndSave():CompoundTag{
+        const tag = CompoundTag.allocate();
         this.save(tag);
         return tag;
     }

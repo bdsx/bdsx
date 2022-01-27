@@ -626,6 +626,10 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
     fromPos:Vec3;
+    /**
+     * relative clicked coordinate from the block.
+     * range: 0 <= x <= 1
+     */
     @nativeField(Vec3)
     clickPos:Vec3;
 }

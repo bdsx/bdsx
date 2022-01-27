@@ -11,7 +11,6 @@ import util = require('util');
 
 type FieldMapItem = [Type<any>, number]|Type<any>;
 
-
 export type KeysFilter<T, FILTER> = {[key in keyof T]:T[key] extends FILTER ? key: never}[keyof T];
 export type KeysWithoutFunction<T> = {[key in keyof T]:T[key] extends (...args:any[])=>any ? never: key}[keyof T];
 
