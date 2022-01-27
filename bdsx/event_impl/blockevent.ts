@@ -1,5 +1,5 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource } from "../bds/block";
+import { Block, BlockSource, ButtonBlock } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
@@ -8,7 +8,7 @@ import { CANCEL } from "../common";
 import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
-import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 
 interface IBlockDestroyEvent {
     player: ServerPlayer;
@@ -23,7 +23,7 @@ export class BlockDestroyEvent implements IBlockDestroyEvent {
         public blockPos: BlockPos,
         public blockSource: BlockSource,
         public itemStack: ItemStack,
-        public generateParticle: boolean
+        public generateParticle: boolean,
     ) {
     }
 }
@@ -153,7 +153,7 @@ interface ICampfireTryLightFire {
 export class CampfireTryLightFire implements ICampfireTryLightFire {
     constructor(
         public blockPos: BlockPos,
-        public blockSource: BlockSource
+        public blockSource: BlockSource,
     ) {
     }
 }
@@ -176,7 +176,7 @@ interface ICampfireTryDouseFire {
 export class CampfireTryDouseFire implements ICampfireTryDouseFire {
     constructor(
         public blockPos: BlockPos,
-        public blockSource: BlockSource
+        public blockSource: BlockSource,
     ) {
     }
 }
@@ -191,3 +191,22 @@ function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool
 }
 
 const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);
+
+interface IOnButtonPress {
+    buttonBlock: ButtonBlock;
+    player: Player;
+    blockPos: BlockPos;
+    playerOrientation: uint8_t;
+}
+export class ButtonPressEvent implements IOnButtonPress {
+    constructor(public buttonBlock: ButtonBlock, public player: Player, public blockPos: BlockPos, public playerOrientation: uint8_t) { }
+}
+
+function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: uint8_t): boolean {
+    const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);
+    const canceled = events.buttonPress.fire(event) === CANCEL;
+    if (canceled) return false;
+
+    return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
+}
+const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);

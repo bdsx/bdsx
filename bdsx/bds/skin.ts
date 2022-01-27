@@ -1,5 +1,5 @@
 import { mce } from "../mce";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, int8_t } from "../nativetype";
 import { JsonValue } from "./connreq";
 
@@ -11,7 +11,7 @@ export enum TrustedSkinFlag {
 }
 
 @nativeClass(null)
-export class SerializedSkin extends NativeClass {
+export class SerializedSkin extends AbstractClass {
     @nativeField(CxxString)
     skinId:CxxString;
     @nativeField(CxxString)

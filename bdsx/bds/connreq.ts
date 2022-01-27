@@ -140,7 +140,7 @@ export class JsonValue extends NativeClass {
                         v.setValue(value);
                     }
                     return true;
-                }
+                },
             });
         }
         case JsonValueType.Object: {
@@ -172,7 +172,7 @@ export class JsonValue extends NativeClass {
                         v.setValue(value);
                     }
                     return true;
-                }
+                },
             });
         }
         default:

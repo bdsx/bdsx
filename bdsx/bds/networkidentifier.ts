@@ -6,7 +6,7 @@ import { dll } from "../dll";
 import { events } from "../event";
 import { Hashable, HashSet } from "../hashset";
 import { makefunc } from "../makefunc";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { remapAndPrintError } from "../source-map-support";
@@ -16,7 +16,7 @@ import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-export class NetworkHandler extends NativeClass {
+export class NetworkHandler extends AbstractClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
 
@@ -34,17 +34,17 @@ export class NetworkHandler extends NativeClass {
 }
 
 export namespace NetworkHandler {
-    export class Connection extends NativeClass {
+    export class Connection extends AbstractClass {
         networkIdentifier:NetworkIdentifier;
     }
 }
 
 @nativeClass(null)
-class ServerNetworkHandler$Client extends NativeClass {
+class ServerNetworkHandler$Client extends AbstractClass {
 }
 
 @nativeClass(null)
-export class ServerNetworkHandler extends NativeClass {
+export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
     @nativeField(CxxString, 0x268)

@@ -94,7 +94,7 @@ function initWineExec():(commandLine:string, cwd?:string)=>void {
         bool_t,
         null,
         VoidPointer,
-        Int32Wrapper
+        Int32Wrapper,
     );
 
     /**

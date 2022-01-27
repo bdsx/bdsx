@@ -378,7 +378,7 @@ export namespace polynominal {
             throw new ParsingError(message, {
                 column: offset + parser.i-word.length,
                 width: word.length,
-                line: lineNumber
+                line: lineNumber,
             });
         }
 
@@ -542,21 +542,21 @@ interface OperatorSet {
 const OPERATORS = new Map<string, OperatorSet>();
 
 OPERATORS.set('**', {
-    binary: operation.binaryExponent
+    binary: operation.binaryExponent,
 });
 
 OPERATORS.set('*', {
-    binary: operation.binaryMultiply
+    binary: operation.binaryMultiply,
 });
 OPERATORS.set('/', { binary: new polynominal.Operator(15, (a,b)=>a/b, (a,b)=>a.multiply(b.exponent(new polynominal.Constant(-1)))) });
 
 OPERATORS.set('+', {
     unaryPrefix: new polynominal.Operator(17, v=>v, v=>v),
-    binary: operation.binaryPlus
+    binary: operation.binaryPlus,
 });
 OPERATORS.set('-', {
     unaryPrefix: new polynominal.Operator(17, v=>-v, v=>v.multiply(new polynominal.Constant(-1))),
-    binary: new polynominal.Operator(14, (a,b)=>a-b, (a,b)=>a.add(b.multiply(new polynominal.Constant(-1))))
+    binary: new polynominal.Operator(14, (a,b)=>a-b, (a,b)=>a.add(b.multiply(new polynominal.Constant(-1)))),
 });
 OPERATORS.set('~', { unaryPrefix: new polynominal.Operator(17, v=>~v) });
 

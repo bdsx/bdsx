@@ -152,7 +152,7 @@ export function getLineAt(context:string, lineIndex:number):string {
     else return context.substring(idx, next);
 }
 
-export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }): t is { new(...args: any[]): BASE } {
+export function isBaseOf<BASE extends { new(...args: any[]): any }>(t: unknown, base: BASE): t is BASE {
     if (typeof t !== 'function') return false;
     if (t === base) return true;
     return t.prototype instanceof base;
@@ -280,7 +280,7 @@ export const TextFormat = {
     STRIKETHROUGH: ESCAPE + "m",
     UNDERLINE: ESCAPE + "n",
     ITALIC: ESCAPE + "o",
-    THIN: ESCAPE + "¶"
+    THIN: ESCAPE + "¶",
 };
 
 Object.freeze(TextFormat);

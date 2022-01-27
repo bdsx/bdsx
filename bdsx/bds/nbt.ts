@@ -4,7 +4,7 @@ import { abstract, TypedArrayBuffer } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
-import { nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { hexn } from "../util";
@@ -458,7 +458,7 @@ export class ListTag<T extends Tag = Tag> extends Tag {
 }
 
 @nativeClass(0x30)
-export class CompoundTagVariant extends NativeClass {
+export class CompoundTagVariant extends AbstractClass {
     get():Tag {
         return Tag.from(this as any)!;
     }

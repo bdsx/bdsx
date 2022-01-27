@@ -5,7 +5,7 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
-import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
@@ -68,6 +68,9 @@ export namespace events {
     export const campfireLight = new Event<(event: CampfireTryLightFire) => void | CANCEL>();
     /** Cancellable but requires additional stimulation */
     export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
+    /** Cancellable but the client will have the motion and sound*/
+    export const buttonPress = new Event<(event: ButtonPressEvent) => void | CANCEL>();
+
     ////////////////////////////////////////////////////////
     // Entity events
 
@@ -178,7 +181,7 @@ export namespace events {
         Before,
         After,
         Send,
-        SendRaw
+        SendRaw,
     }
 
     export function packetEvent(type:PacketEventType, packetId:MinecraftPacketIds):Event<(...args:any[])=>(CANCEL|void)>|null {

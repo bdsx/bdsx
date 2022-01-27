@@ -218,7 +218,7 @@ function setBasicType(name:string|PdbIdentifier, jsTypeName:string, paramVarName
 
 enum IdType {
     Type,
-    Value
+    Value,
 }
 
 class ImportName {
@@ -591,7 +591,7 @@ class TsFile extends TsFileBase {
                     parentInfo.totalCount,
                     parentInfo.totalVariadicCount,
                     0,
-                    null
+                    null,
                 );
             } else {
                 if (variadicType !== null) {
@@ -607,7 +607,7 @@ class TsFile extends TsFileBase {
                     count + parentInfo.totalCount,
                     parentInfo.totalVariadicCount+ +variadicCount,
                     count,
-                    variadicType
+                    variadicType,
                 );
             }
         } else if (item.templateBase !== null) {
@@ -632,7 +632,7 @@ class TsFile extends TsFileBase {
                 base.totalCount,
                 base.totalVariadicCount,
                 base.count,
-                base.variadicType
+                base.variadicType,
             );
         } else {
             if (parentInfo.parameters.length === 0) {
@@ -645,7 +645,7 @@ class TsFile extends TsFileBase {
                     parentInfo.totalCount,
                     parentInfo.totalVariadicCount,
                     0,
-                    null
+                    null,
                 );
             }
         }
@@ -806,7 +806,7 @@ class TsFile extends TsFileBase {
         }
         return {
             declaration,
-            parameterNames: parameters
+            parameterNames: parameters,
         };
     }
 
