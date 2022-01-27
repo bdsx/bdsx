@@ -796,7 +796,7 @@ export class ServerPlayer extends Player {
     }
 }
 
-@nativeClass(0x282)
+@nativeClass(0x2f0)
 export class PlayerListEntry extends AbstractClass {
     static constructWith(player: Player): PlayerListEntry {
         abstract();

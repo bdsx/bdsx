@@ -437,7 +437,7 @@ ServerPlayer.prototype.setArmor = procHacker.js("ServerPlayer::setArmor", void_t
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
 PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
-    const entry = PlayerListEntry.construct();
+    const entry = new PlayerListEntry(true);
     return PlayerListEntry$PlayerListEntry(entry, player);
 };
 PlayerListEntry.prototype[NativeType.dtor] = procHacker.js('PlayerListEntry::~PlayerListEntry', void_t, {this:PlayerListEntry});
