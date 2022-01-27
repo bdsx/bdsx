@@ -20,6 +20,9 @@ export class LevelChunk extends NativeClass {
     getMax():BlockPos {
         abstract();
     }
+    isFullyLoaded(): boolean {
+        abstract();
+    }
     /**
      * Converts a local ChunkBlockPos instance to a global BlockPos.
      */

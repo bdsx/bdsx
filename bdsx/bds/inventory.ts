@@ -195,7 +195,7 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     getArmorValue(): number{
-        if(!this.isArmorItem) return 0;
+        if(!this.isArmorItem()) return 0;
         return this._getArmorValue();
     }
     setAuxValue(value: number): void{
