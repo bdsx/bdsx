@@ -292,11 +292,11 @@ export class UpdateBlockPacket extends Packet {
     @nativeField(BlockPos)
     readonly blockPos: BlockPos;
     @nativeField(uint32_t)
-    blockRuntimeId: uint32_t;
+    dataLayerId: uint32_t;
     @nativeField(uint8_t)
     flags: uint8_t;
     @nativeField(uint32_t)
-    dataLayerId: uint32_t;
+    blockRuntimeId: uint32_t;
 }
 export namespace UpdateBlockPacket {
     export enum Flags {
