@@ -111,7 +111,7 @@ export namespace events {
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
-    /** @deprecated use `ItemUse` */
+    /** Not cancellable */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
     /** Cancellable.
      * Triggered when a player uses an item. Cancelling this event will prevent the item from being used

@@ -334,6 +334,7 @@ export class ProjectileShootEvent implements IProjectileShootEvent {
 function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, consumeItem:boolean):void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
     events.playerUseItem.fire(event);
+    decay(itemStack);
     return _onPlayerUseItem(event.player, event.itemStack, event.useMethod, event.consumeItem);
 }
 const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Player, ItemStack, int32_t, bool_t)(onPlayerUseItem);
@@ -341,6 +342,7 @@ const _onPlayerUseItem = procHacker.hooking('Player::useItem', void_t, null, Pla
 function onItemUse(itemStack: ItemStack, player: Player): ItemStack {
     const event = new ItemUseEvent(itemStack, player);
     const canceled = events.itemUse.fire(event) === CANCEL;
+    decay(itemStack);
     if(canceled) {
         return itemStack;
     }
@@ -351,6 +353,7 @@ const _onItemUse = procHacker.hooking("ItemStack::use", ItemStack, null, ItemSta
 function onItemUseOnBlock(itemStack: ItemStack, actor: Actor, x: int32_t, y: int32_t, z: int32_t, face: uint8_t, clickX: float32_t, clickY: float32_t, clickZ: float32_t): bool_t {
     const event = new ItemUseOnBlockEvent(itemStack, actor, x, y, z, face, clickX, clickY, clickZ);
     const canceled = events.itemUseOnBlock.fire(event) === CANCEL;
+    decay(itemStack);
     if(canceled) {
         return false;
     }
