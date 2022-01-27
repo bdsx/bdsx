@@ -22,6 +22,8 @@ export class Scoreboard extends NativeClass {
     /**
      *  @param name Currently accepts only 'dummy'
      */
+    getCriteria(name:"dummy"):ObjectiveCriteria;
+    getCriteria(name:string):ObjectiveCriteria|null;
     getCriteria(name:string):ObjectiveCriteria|null {
         abstract();
     }

@@ -263,6 +263,16 @@ Actor.prototype.load = function(tag:CompoundTag|NBT.Compound):void {
         tag.dispose();
     }
 };
+const Actor$readAdditionalSaveData = makefunc.js([0x828], void_t, {this:Actor}, CompoundTag, DefaultDataLoaderHelper);
+Actor.prototype.readAdditionalSaveData = function(tag:CompoundTag|NBT.Compound):void {
+    if (tag instanceof Tag) {
+        Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
+    } else {
+        tag = NBT.allocate(tag) as CompoundTag;
+        Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
+        tag.dispose();
+    }
+};
 
 (Actor.prototype as any).hurt_ = procHacker.js("Actor::hurt", bool_t, {this:Actor}, ActorDamageSource, int32_t, bool_t, bool_t);
 
@@ -286,10 +296,15 @@ Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", vo
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_getStackRef', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
 
-const ActorDefinitionIdentifier$ActorDefinitionIdentifier = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
-ActorDefinitionIdentifier.constructWith = function(type:number):ActorDefinitionIdentifier {
+const ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
+const ActorDefinitionIdentifier$ActorDefinitionIdentifier$CxxString = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, null, ActorDefinitionIdentifier, CxxString);
+ActorDefinitionIdentifier.constructWith = function(type:string|number):ActorDefinitionIdentifier {
     const identifier = ActorDefinitionIdentifier.construct();
-    ActorDefinitionIdentifier$ActorDefinitionIdentifier(identifier, type);
+    if (typeof type === "number") {
+        ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType(identifier, type);
+    } else {
+        ActorDefinitionIdentifier$ActorDefinitionIdentifier$CxxString(identifier, type);
+    }
     return identifier;
 };
 
