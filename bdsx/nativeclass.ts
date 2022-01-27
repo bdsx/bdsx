@@ -44,11 +44,13 @@ export interface NativeClassType<T extends NativeClass> extends Type<T> {
     from(ptr:StaticPointer):T|null;
 }
 
-function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, superproto:NativeClassType<any>):((()=>void)|null)[] {
+function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, superproto:NativeClass):((()=>void)|null)[] {
     function override(ctx:NativeDescriptorBuilder.UseContext, type:typeof NativeType.ctor|typeof NativeType.dtor, fnname:string):void{
         const superfn = superproto[type];
         const manualfn = clazz.prototype[type];
-        if (ctx.used) {
+        if (superfn === abstractClassError) {
+            ctx.used = false;
+        } else if (ctx.used) {
             if (superproto[type] !== emptyFunc) {
                 ctx.code = `superproto[NativeType.${fnname}].call(this);\n`+ctx.code;
             }
@@ -59,7 +61,7 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
             let prefix = '\nfunction(){\n';
             if (ctx.ptrUsed) prefix += 'const ptr=this.add();\n';
             ctx.code = prefix+ctx.code;
-        } else if (superfn !== manualfn) {
+        } else if (clazz.prototype.hasOwnProperty(type)) {
             clazz.prototype[type] = function(this:unknown){
                 superfn.call(this);
                 manualfn.call(this);
@@ -69,8 +71,9 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
 
     override(builder.ctor, NativeType.ctor, 'ctor');
     override(builder.dtor, NativeType.dtor, 'dtor');
+    const hasCtorCopy = clazz.prototype.hasOwnProperty(NativeType.ctor_copy);
     if (builder.ctor_copy.used) {
-        if (clazz.prototype.hasOwnProperty(NativeType.ctor_copy)) {
+        if (hasCtorCopy) {
             builder.ctor_copy.used = false;
         } else {
             let code = '\nfunction(o){\n';
@@ -84,6 +87,9 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
     }
     if (builder.ctor_move.used) {
         if (clazz.prototype.hasOwnProperty(NativeType.ctor_move)) {
+            builder.ctor_move.used = false;
+        } else if (hasCtorCopy) {
+            clazz.prototype[NativeType.ctor_move] = clazz.prototype[NativeType.ctor_copy];
             builder.ctor_move.used = false;
         } else {
             let code = '\nfunction(o){\n';
@@ -163,30 +169,35 @@ class StructureDefinition {
         Object.setPrototypeOf(this.fields, superfield || null);
         Object.freeze(this.fields);
 
+        const clazzproto = clazz.prototype;
         const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
-        if (ctor !== null) {
-            clazz.prototype[NativeType.ctor] = ctor;
+        if (ctor !== null && clazzproto[NativeType.ctor] !== abstractClassError) {
+            clazzproto[NativeType.ctor] = ctor;
         }
-        if (dtor !== null) {
-            clazz.prototype[NativeType.dtor] = dtor;
+        if (dtor !== null && clazzproto[NativeType.dtor] !== abstractClassError) {
+            clazzproto[NativeType.dtor] = dtor;
         }
-        if (ctor_copy !== null) {
-            clazz.prototype[NativeType.ctor_copy] = ctor_copy;
+        if (ctor_copy !== null && clazzproto[NativeType.ctor_copy] !== abstractClassError) {
+            clazzproto[NativeType.ctor_copy] = ctor_copy;
         }
-        if (ctor_move !== null) {
-            clazz.prototype[NativeType.ctor_move] = ctor_move;
+        if (clazzproto[NativeType.ctor_copy] !== callCtorCopyForAbstractClass) {
+            if (ctor_move !== null) {
+                clazzproto[NativeType.ctor_move] = ctor_move;
+            } else {
+                clazzproto[NativeType.ctor_move] = callCtorCopy;
+            }
         }
 
         clazz[StructurePointer.contentSize] =
-        clazz.prototype[NativeType.size] =
+        clazzproto[NativeType.size] =
         clazz[NativeType.size] = size!;
         clazz[NativeType.align] = this.align;
-        Object.defineProperties(clazz.prototype, propmap.desc);
+        Object.defineProperties(clazzproto, propmap.desc);
     }
 
     field(key:string, type:Type<any>, fieldOffset?:NativeFieldOptions|number|null, bitField?:number|null):void {
         if (isBaseOf(type, NativeClass)) {
-            sealClass(type as NativeClassType<any>);
+            sealClass(type);
         }
 
         const alignofType = type[NativeType.align];
@@ -332,7 +343,7 @@ export class NativeClass extends StructurePointer {
                 const value = type[NativeType.getter](this, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
-            }
+            },
         };
         if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
@@ -525,10 +536,20 @@ function resolverGetFromParam(this:NativeClassType<any>, stackptr:StaticPointer,
     return this[resolver]!(stackptr.getNullablePointer(offset));
 }
 
+function genCallCtorCopy():(this:NativeClass, other:NativeClass)=>void {
+    function callCtorCopy(this:NativeClass, other:NativeClass):void {
+        this[NativeType.ctor_copy](other);
+    }
+    return callCtorCopy;
+}
+const callCtorCopy = genCallCtorCopy();
+const callCtorCopyForAbstractClass = genCallCtorCopy();
+
 NativeClass.prototype[NativeType.size] = 0;
 NativeClass.prototype[NativeType.ctor] = emptyFunc;
 NativeClass.prototype[NativeType.dtor] = emptyFunc;
 NativeClass.prototype[NativeType.ctor_copy] = emptyFunc;
+NativeClass.prototype[NativeType.ctor_move] = emptyFunc;
 
 function sealClass<T extends NativeClass>(cls:NativeClassType<T>):void {
     let node = cls as any;
@@ -611,7 +632,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
                 const value = this.addAs(type, offset, offset >> 31);
                 Object.defineProperty(this, key, {value});
                 return value;
-            }
+            },
         };
         if (noInitialize) return;
         if (type[NativeType.ctor] !== emptyFunc) {
@@ -792,7 +813,7 @@ function makeReference<T extends NativeClass>(type:{new():T, symbol?:string}):Na
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
         (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),
-        (stackptr, v, offset)=>stackptr.setPointer(v, offset)
+        (stackptr, v, offset)=>stackptr.setPointer(v, offset),
     );
 }
 
@@ -812,3 +833,23 @@ export namespace nativeClassUtil {
         }
     }
 }
+
+/**
+ * this class is not constructible.
+ * if the NativeClass does not have full fields. Please inherit it instead of NativeClass.
+ */
+export class AbstractClass extends NativeClass {
+}
+
+export type AbstractMantleClass = MantleClass;
+export const AbstractMantleClass = AbstractClass as typeof MantleClass;
+
+function abstractClassError(this:Record<string, unknown>):never {
+    throw Error(`${this.constructor.name} is not constructible. it needs to provide the constructor or the destructor for using them`);
+}
+
+const abstractproto = AbstractClass.prototype;
+abstractproto[NativeType.ctor] = abstractClassError;
+abstractproto[NativeType.dtor] = abstractClassError;
+abstractproto[NativeType.ctor_copy] = abstractClassError;
+abstractproto[NativeType.ctor_move] = callCtorCopyForAbstractClass;

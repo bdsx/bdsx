@@ -169,7 +169,7 @@ export function installErrorHandler():void {
                     const address = info[0].add(info[1]);
                     funcinfo = {
                         address,
-                        offset: frame.address.subptr(address)
+                        offset: frame.address.subptr(address),
                     };
                 }
                 if (funcname !== null) {

@@ -6,8 +6,8 @@ import { fsutil } from '../fsutil';
 const SELECTABLE_ITEM_STYLE = {
     fg: 'magenta',
     selected: {
-        bg: 'blue'
-    }
+        bg: 'blue',
+    },
 };
 
 interface PackageInfoJson {
@@ -37,7 +37,7 @@ interface PackageInfoJson {
 function exec(command:string):Promise<string>{
     return new Promise((resolve, reject)=>{
         child_process.exec(command, {
-            encoding: 'utf-8'
+            encoding: 'utf-8',
         }, (err, output)=>{
             if (err) {
                 reject(err);
@@ -51,7 +51,7 @@ function exec(command:string):Promise<string>{
 function execWithoutError(command:string):Promise<string>{
     return new Promise((resolve, reject)=>{
         child_process.exec(command, {
-            encoding: 'utf-8'
+            encoding: 'utf-8',
         }, (err, output)=>{
             resolve(output);
         });
@@ -110,7 +110,7 @@ function loadingWrap<T>(text:string, prom:Promise<T>):Promise<T>{
     const loading = blessed.loading({
         border: 'line',
         top: 3,
-        width: '100%-1'
+        width: '100%-1',
     });
     screen.append(loading);
     loading.load(text);
@@ -142,8 +142,8 @@ function searchAndSelect(prefixes:string[], deps:Record<string, {version:string}
             style: {
                 fg: 'blue',
                 focus: {
-                    fg: 'white'
-                }
+                    fg: 'white',
+                },
             },
         });
 
@@ -154,9 +154,9 @@ function searchAndSelect(prefixes:string[], deps:Record<string, {version:string}
             style: {
                 header: {
                     fg: 'blue',
-                    bold: true
+                    bold: true,
                 },
-                cell: SELECTABLE_ITEM_STYLE
+                cell: SELECTABLE_ITEM_STYLE,
             },
             top: 3,
             scrollable: true,
@@ -329,7 +329,7 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
     for (;;) {
         if (screen === null)  {
             screen = blessed.screen({
-                smartCSR: true
+                smartCSR: true,
             });
             screen.title = 'BDSX Plugin Manager';
             screen.key(['q', 'C-c'], (ch, key)=>process.exit(0));

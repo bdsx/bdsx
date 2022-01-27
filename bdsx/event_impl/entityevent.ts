@@ -109,7 +109,7 @@ interface IEntityCreatedEvent {
 }
 export class EntityCreatedEvent implements IEntityCreatedEvent {
     constructor(
-        public entity: Actor
+        public entity: Actor,
     ) {
     }
 }
@@ -234,7 +234,7 @@ interface IPlayerCritEvent {
 }
 export class PlayerCritEvent implements IPlayerCritEvent {
     constructor(
-        public player: Player
+        public player: Player,
     ) {
     }
 }
@@ -250,7 +250,7 @@ export class PlayerUseItemEvent implements IPlayerUseItemEvent {
         public player: Player,
         public useMethod: CompletedUsingItemPacket.Actions,
         public consumeItem: boolean,
-        public itemStack: ItemStack
+        public itemStack: ItemStack,
     ) {
     }
 }
@@ -298,7 +298,7 @@ interface IPlayerJumpEvent {
 }
 export class PlayerJumpEvent implements IPlayerJumpEvent {
     constructor(
-        public player: Player
+        public player: Player,
     ) {
     }
 }

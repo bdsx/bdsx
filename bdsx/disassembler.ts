@@ -602,7 +602,7 @@ export namespace disasm {
         if (typeof opts === 'boolean') {
             quiet = opts;
             opts = {
-                quiet:opts
+                quiet:opts,
             };
         } else {
             quiet = !!(opts && opts.quiet);

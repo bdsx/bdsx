@@ -28,7 +28,7 @@ export class Level extends NativeClass {
             get(){
                 players.setFromArray(this.getPlayers());
                 return players;
-            }
+            },
         });
         return players;
     }

@@ -27,7 +27,7 @@ export const CxxLess = {
         const fn = lesses.get(type);
         if (fn != null) throw Error(`std::less<${type.name}> is already defined`);
         lesses.set(type, less);
-    }
+    },
 };
 
 export type CxxLess<T> = (a:T, b:T)=>boolean;

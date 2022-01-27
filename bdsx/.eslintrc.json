@@ -38,6 +38,7 @@
         }
       ],
       "@typescript-eslint/brace-style": ["error", "1tbs", {"allowSingleLine": true}],
+      "@typescript-eslint/comma-dangle": ["error", "always-multiline"],
       "github/array-foreach": "error",
       "import/no-cycle": "error",
       "import/no-default-export": "error",

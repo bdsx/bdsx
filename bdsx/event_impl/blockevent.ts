@@ -23,7 +23,7 @@ export class BlockDestroyEvent implements IBlockDestroyEvent {
         public blockPos: BlockPos,
         public blockSource: BlockSource,
         public itemStack: ItemStack,
-        public generateParticle: boolean
+        public generateParticle: boolean,
     ) {
     }
 }
@@ -153,7 +153,7 @@ interface ICampfireTryLightFire {
 export class CampfireTryLightFire implements ICampfireTryLightFire {
     constructor(
         public blockPos: BlockPos,
-        public blockSource: BlockSource
+        public blockSource: BlockSource,
     ) {
     }
 }
@@ -176,7 +176,7 @@ interface ICampfireTryDouseFire {
 export class CampfireTryDouseFire implements ICampfireTryDouseFire {
     constructor(
         public blockPos: BlockPos,
-        public blockSource: BlockSource
+        public blockSource: BlockSource,
     ) {
     }
 }

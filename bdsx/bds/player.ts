@@ -1,5 +1,5 @@
 import { abstract } from "../common";
-import { nativeClass, NativeClass } from "../nativeclass";
+import { AbstractClass, nativeClass } from "../nativeclass";
 import { float32_t, int32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
 import { Actor, ActorUniqueID, DimensionId } from "./actor";
@@ -796,8 +796,8 @@ export class ServerPlayer extends Player {
     }
 }
 
-@nativeClass(0x282)
-export class PlayerListEntry extends NativeClass {
+@nativeClass(0x2f0)
+export class PlayerListEntry extends AbstractClass {
     static constructWith(player: Player): PlayerListEntry {
         abstract();
     }
@@ -816,7 +816,7 @@ export enum GameType {
     Adventure,
     SurvivalSpectator,
     CreativeSpectator,
-    Default
+    Default,
 }
 
 /**
@@ -826,5 +826,5 @@ export enum PlayerPermission {
     VISITOR,
     MEMBER,
     OPERATOR,
-    CUSTOM
+    CUSTOM,
 }
