@@ -111,11 +111,15 @@ export namespace events {
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
-    /** Not cancellable */
+    /** Not cancellable.
+     * Triggered when a player finishes consuming an item.
+     * (e.g : food, potion, etc...)
+     */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
     /** Cancellable.
-     * Triggered when a player uses an item. Cancelling this event will prevent the item from being used
+     * Triggered when a player uses an item. Cancelling this event will prevent the item from being used.
      * (e.g : splash potion won't be thrown, food won't be consumed, etc...)
+     * To note : this event is triggered with every item, even if they are not consumable.
      *
      * @remarks use `itemUseOnBlock` to cancel the usage of an item on a block (e.g : flint and steel)
      */
@@ -123,6 +127,7 @@ export namespace events {
     /** Cancellable.
      * Triggered when a player uses an item on a block. Cancelling this event will prevent the item from being used
      * (e.g : flint and steel won't ignite block, seeds won't be planted, etc...)
+     * To note : this event is triggered with every item, even if they are not usable on blocks.
      */
     export const itemUseOnBlock = new Event<(event: ItemUseOnBlockEvent) => void | CANCEL>();
     /** Cancellable */
