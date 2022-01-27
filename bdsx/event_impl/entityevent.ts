@@ -262,7 +262,7 @@ interface IItemUseEvent {
 export class ItemUseEvent implements IItemUseEvent {
     constructor(
         public itemStack: ItemStack,
-        public player: Player
+        public player: Player,
     ) {
     }
 }
