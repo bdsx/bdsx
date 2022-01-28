@@ -595,6 +595,7 @@ const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void
 function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
     const event = new PlayerSleepInBedEvent(player, pos);
     const canceled = events.playerSleepInBed.fire(event) === CANCEL;
+    decay(pos);
     if(canceled) {
         return BedSleepingResult.OTHER_PROBLEM;
     }
