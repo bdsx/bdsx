@@ -597,7 +597,7 @@ Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", 
 Item.prototype.isArmor = makefunc.js([0x40], bool_t, {this:Item});
 Item.prototype.getArmorValue = makefunc.js([0xc0], int32_t, {this:Item});
 
-ArmorItem.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, { this: ArmorItem });
+ArmorItem.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, {this:ArmorItem});
 
 const ItemStackVectorDeletingDestructor = makefunc.js([0], void_t, {this:ItemStack}, int32_t);
 ItemStack.prototype[NativeType.dtor] = function(){
