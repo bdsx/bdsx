@@ -563,16 +563,6 @@ GameMode.define({
 // inventory.ts
 const ArmorItem_vftable = proc["ArmorItem::`vftable'"];
 
-Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
-Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
-Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
-Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
-Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:Item, structureReturn: true});
-Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
-Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
-Item.prototype.getArmorValue = function () { return 0; };
-Item.prototype.isArmor = function () { return this instanceof ArmorItem; };
-
 Item.setResolver((ptr) => {
     if (ptr === null) return null;
     const address = ptr.getPointer();
@@ -582,7 +572,17 @@ Item.setResolver((ptr) => {
     return ptr.as(Item);
 });
 
-ArmorItem.prototype.getArmorValue = procHacker.js("ArmorItem::getArmorValue", int32_t, {this:ItemStack});
+Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
+Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
+Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
+Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
+Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:Item, structureReturn: true});
+Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
+Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
+Item.prototype.isArmor = makefunc.js([0x40], bool_t, {this:Item});
+Item.prototype.getArmorValue = makefunc.js([0xc0], int32_t, {this:Item});
+
+ArmorItem.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, { this: ArmorItem });
 
 const ItemStackVectorDeletingDestructor = makefunc.js([0], void_t, {this:ItemStack}, int32_t);
 ItemStack.prototype[NativeType.dtor] = function(){
