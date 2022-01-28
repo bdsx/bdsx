@@ -8,8 +8,7 @@ import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
 import colors = require('colors');
 
-export enum Register
-{
+export enum Register {
     absolute=-2,
     rip=-1,
     rax,
@@ -30,8 +29,7 @@ export enum Register
     r15,
 }
 
-export enum FloatRegister
-{
+export enum FloatRegister {
     xmm0,
     xmm1,
     xmm2,
@@ -50,8 +48,7 @@ export enum FloatRegister
     xmm15,
 }
 
-enum MovOper
-{
+enum MovOper {
     Register,
     Const,
     Read,
@@ -71,18 +68,17 @@ enum FloatOper {
 enum FloatOperSize {
     xmmword,
     singlePrecision,
-    doublePrecision
+    doublePrecision,
 }
 
-export enum OperationSize
-{
+export enum OperationSize {
     void,
     byte,
     word,
     dword,
     qword,
     mmword,
-    xmmword
+    xmmword,
 }
 
 interface TypeSize {
@@ -99,8 +95,7 @@ const sizemap = new Map<string, TypeSize>([
     ['xmmword', {bytes: 16, size: OperationSize.xmmword} ],
 ]);
 
-export enum Operator
-{
+export enum Operator {
     add,
     or,
     adc,
@@ -111,8 +106,7 @@ export enum Operator
     cmp,
 }
 
-export enum JumpOperation
-{
+export enum JumpOperation {
     jo,
     jno,
     jb,
@@ -131,8 +125,7 @@ export enum JumpOperation
     jg,
 }
 
-export interface Value64Castable
-{
+export interface Value64Castable {
     [asm.splitTwo32Bits]():[number, number];
 }
 
@@ -474,7 +467,6 @@ interface TypeInfo {
 
 const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0, 1);
 
-
 const UNW_VERSION = 0x01;
 const UNW_FLAG_NHANDLER = 0x0;
 const UNW_FLAG_EHANDLER = 0x1; // The function has an exception handler that should be called when looking for functions that need to examine exceptions.
@@ -512,7 +504,7 @@ export enum FFOperation {
     call_far,
     jmp,
     jmp_far,
-    push
+    push,
 }
 
 interface RUNTIME_FUNCTION {
@@ -556,7 +548,7 @@ export class X64Assembler {
             throw new ParsingError(message, {
                 column: offset + column,
                 width: width,
-                line: lineNumber
+                line: lineNumber,
             });
         }
 
@@ -608,7 +600,7 @@ export class X64Assembler {
             r1: regs[0],
             r2: regs[1],
             multiply: mult,
-            offset: poly.constant
+            offset: poly.constant,
         };
     }
 
@@ -1243,6 +1235,7 @@ export class X64Assembler {
     }
 
     jmp_c(offset:number):this {
+        if (offset === 0) return this;
         if (INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0xeb, offset);
         } else {
@@ -1473,7 +1466,6 @@ export class X64Assembler {
         return this._set_o(JumpOperation.jg, r, null, multiply, offset, MovOper.Read);
     }
 
-
     /**
      * push register
      */
@@ -1548,7 +1540,6 @@ export class X64Assembler {
     xchg_r_rp(r1:Register, r2:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._xchg(r1, r2, multiply, offset, size, MovOper.Read);
     }
-
 
     private _oper(movoper:MovOper, oper:Operator, r1:Register, r2:Register|null, multiply:AsmMultiplyConstant, offset:number, chr:number, size:OperationSize):this {
         if (chr !== (chr|0) && (chr>>>0) !== chr) {
@@ -1738,7 +1729,6 @@ export class X64Assembler {
     sal_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
         return this._shift_r_c(dest, true, false, chr, size);
     }
-
 
     private _movsx(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, destsize:OperationSize, srcsize:OperationSize, oper:MovOper):this {
         if (destsize == null || srcsize == null) throw Error(`Need operand size`);
@@ -2815,7 +2805,6 @@ export class X64Assembler {
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
-            Object.setPrototypeOf(defines,  null);
             for (const name in defines) {
                 this.const(name, defines[name]);
             }
@@ -3125,8 +3114,7 @@ const REVERSE_MAP:Record<string, string> = {
     jg: 'jle',
 };
 
-interface Code extends X64Assembler
-{
+interface Code extends X64Assembler {
     [key:string]: any;
 }
 
@@ -3235,8 +3223,7 @@ for (const [name, [type, reg, size]] of regmap) {
 
 const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
 
-export namespace asm
-{
+export namespace asm {
     export const code:Code = X64Assembler.prototype;
     defaultOperationSize.set(code.call_rp, OperationSize.qword);
     defaultOperationSize.set(code.jmp_rp, OperationSize.qword);
@@ -3344,7 +3331,7 @@ export namespace asm
                         throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
                     }
                     out.push({
-                        type, argi: argi_ori, parami:i, register: r
+                        type, argi: argi_ori, parami:i, register: r,
                     });
                 } else if (type === 'cp') {
                     const r = this.args[argi++];
@@ -3362,22 +3349,22 @@ export namespace asm
                     const offset = this.args[argi++];
                     out.push({
                         type, argi: argi_ori, parami:i, register: r,
-                        multiply, offset
+                        multiply, offset,
                     });
                 } else if (type === 'c') {
                     const constant = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, constant
+                        type, argi: argi_ori, parami:i, constant,
                     });
                 } else if (type === 'f') {
                     const freg = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, register:freg
+                        type, argi: argi_ori, parami:i, register:freg,
                     });
                 } else if (type === 'label') {
                     const label = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, label
+                        type, argi: argi_ori, parami:i, label,
                     });
                 } else {
                     argi ++;

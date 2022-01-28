@@ -1,16 +1,15 @@
 import { abstract } from "../common";
-import { StaticPointer, VoidPointer } from "../core";
+import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { makefunc } from "../makefunc";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, NativeType, uint32_t, uint8_t } from "../nativetype";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandName } from "./commandname";
 import type { ItemEnchants } from "./enchants";
 import type { BlockPalette } from "./level";
-import { CompoundTag } from "./nbt";
+import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
 
 /**
@@ -83,7 +82,7 @@ export enum ArmorSlot {
     Torso,
     Chest = 1,
     Legs,
-    Feet
+    Feet,
 }
 
 export enum CreativeItemCategory {
@@ -122,10 +121,16 @@ export class Item extends NativeClass {
     getCreativeCategory():number {
         abstract();
     }
+    getArmorValue():number{
+        abstract();
+    }
     isDamageable():boolean {
         abstract();
     }
     isFood():boolean {
+        abstract();
+    }
+    isArmor():boolean {
         abstract();
     }
     /**
@@ -136,6 +141,12 @@ export class Item extends NativeClass {
     setAllowOffhand(value:boolean):void {
         abstract();
     }
+}
+
+/**
+ * @deprecated rough. don't use it yet.
+ */
+export class ArmorItem extends Item {
 }
 
 export class ComponentItem extends NativeClass {
@@ -189,12 +200,12 @@ export class ItemStack extends NativeClass {
     protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
-    protected _getArmorValue(): number{
+    remove(amount: number): void{
         abstract();
     }
     getArmorValue(): number{
-        if(!this.isArmorItem) return 0;
-        return this._getArmorValue();
+        const item = this.getItem();
+        return item !== null ? item.getArmorValue() : 0;
     }
     setAuxValue(value: number): void{
         abstract();
@@ -266,10 +277,10 @@ export class ItemStack extends NativeClass {
      *
      * @see https://minecraft.fandom.com/wiki/Enchanting_mechanics
      */
-    getEnchantValue(): number {
+    getEnchantValue():number {
         abstract();
     }
-    isEnchanted(): boolean {
+    isEnchanted():boolean {
         abstract();
     }
     setCustomLore(lores:string[]|string):void {
@@ -294,9 +305,6 @@ export class ItemStack extends NativeClass {
         abstract();
     }
     startCoolDown(player:ServerPlayer):void {
-        abstract();
-    }
-    load(compoundTag:CompoundTag):void {
         abstract();
     }
     sameItem(item:ItemStack):boolean {
@@ -359,6 +367,18 @@ export class ItemStack extends NativeClass {
     getAttackDamage():number {
         abstract();
     }
+    save():Record<string, any> {
+        const tag = this.allocateAndSave();
+        const out = tag.value();
+        tag.dispose();
+        return out;
+    }
+    allocateAndSave():CompoundTag {
+        abstract();
+    }
+    load(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
     constructItemEnchantsFromUserData():ItemEnchants {
         abstract();
     }
@@ -401,7 +421,7 @@ export class PlayerUIContainer extends SimpleContainer {
 }
 
 @nativeClass(null)
-export class PlayerInventory extends NativeClass {
+export class PlayerInventory extends AbstractClass {
     @nativeField(Inventory.ref(), 0xB0) // accessed in PlayerInventory::getSlots when calling Container::getSlots
     container:Inventory;
 
@@ -482,19 +502,21 @@ export class InventorySource extends NativeClass {
     }
 }
 
-//@nativeClass(0x48)
-export class ItemDescriptor extends NativeClass {
+@nativeClass(0x48)
+export class ItemDescriptor extends AbstractClass {
 }
 
-export class ItemStackNetIdVariant extends NativeClass {
+export class ItemStackNetIdVariant extends AbstractClass {
 }
 
 @nativeClass(0x80)
 export class NetworkItemStackDescriptor extends NativeClass {
     @nativeField(ItemDescriptor)
-    descriptor:ItemDescriptor;
+    readonly descriptor:ItemDescriptor;
     @nativeField(ItemStackNetIdVariant, 0x54) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
-    id:ItemStackNetIdVariant;
+    readonly id:ItemStackNetIdVariant;
+    @nativeField(CxxString, 0x60)
+    _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
         abstract();
@@ -502,7 +524,7 @@ export class NetworkItemStackDescriptor extends NativeClass {
 }
 
 @nativeClass()
-export class InventoryAction extends NativeClass {
+export class InventoryAction extends AbstractClass {
     @nativeField(InventorySource)
     source:InventorySource;
     @nativeField(uint32_t)
@@ -518,7 +540,7 @@ export class InventoryAction extends NativeClass {
 }
 
 @nativeClass(0x18)
-export class InventoryTransactionItemGroup extends NativeClass {
+export class InventoryTransactionItemGroup extends AbstractClass {
     @nativeField(int32_t)
     itemId:int32_t;
     @nativeField(int32_t)
@@ -537,7 +559,7 @@ export class InventoryTransactionItemGroup extends NativeClass {
 }
 
 @nativeClass(0x58)
-export class InventoryTransaction extends NativeClass {
+export class InventoryTransaction extends AbstractClass {
     // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
     // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
     @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40) // accessed in InventoryTransaction::~InventoryTransaction when calling std::vector<InventoryTransactionItemGroup>::_Tidy
@@ -557,7 +579,7 @@ export class InventoryTransaction extends NativeClass {
 }
 
 @nativeClass()
-export class ComplexInventoryTransaction extends NativeClass {
+export class ComplexInventoryTransaction extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(uint8_t)
@@ -576,28 +598,21 @@ export class ComplexInventoryTransaction extends NativeClass {
     isItemReleaseTransaction():this is ItemReleaseInventoryTransaction {
         return this.type === ComplexInventoryTransaction.Type.ItemReleaseTransaction;
     }
-
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):ComplexInventoryTransaction {
-        return ComplexInventoryTransaction._toVariantType(ptr.add(offset, offset! >> 31))!;
-    }
-    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):ComplexInventoryTransaction|null {
-        return ComplexInventoryTransaction._toVariantType(stackptr.getNullablePointer(offset));
-    }
-    private static _toVariantType(ptr:StaticPointer|null):ComplexInventoryTransaction|null {
-        if (ptr === null) return null;
-        const transaction = ptr.as(ComplexInventoryTransaction);
-        switch (transaction.type) {
-        case ComplexInventoryTransaction.Type.ItemUseTransaction:
-            return ptr.as(ItemUseInventoryTransaction);
-        case ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction:
-            return ptr.as(ItemUseOnActorInventoryTransaction);
-        case ComplexInventoryTransaction.Type.ItemReleaseTransaction:
-            return ptr.as(ItemReleaseInventoryTransaction);
-        default:
-            return transaction;
-        }
-    }
 }
+ComplexInventoryTransaction.setResolver(ptr=>{
+    if (ptr === null) return null;
+    const transaction = ptr.as(ComplexInventoryTransaction);
+    switch (transaction.type) {
+    case ComplexInventoryTransaction.Type.ItemUseTransaction:
+        return ptr.as(ItemUseInventoryTransaction);
+    case ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction:
+        return ptr.as(ItemUseOnActorInventoryTransaction);
+    case ComplexInventoryTransaction.Type.ItemReleaseTransaction:
+        return ptr.as(ItemReleaseInventoryTransaction);
+    default:
+        return transaction;
+    }
+});
 
 export namespace ComplexInventoryTransaction {
     export enum Type {
@@ -614,7 +629,7 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(uint32_t)
     actionType:ItemUseInventoryTransaction.ActionType;
     @nativeField(BlockPos)
-    pos:BlockPos;
+    readonly pos:BlockPos;
     @nativeField(uint32_t)
     targetBlockId:uint32_t;
     @nativeField(int32_t)
@@ -622,11 +637,15 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(int32_t)
     slot:int32_t;
     @nativeField(NetworkItemStackDescriptor, {offset: 0x04, relative: true})
-    descriptor:NetworkItemStackDescriptor;
+    readonly descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
+    readonly fromPos:Vec3;
+    /**
+     * relative clicked coordinate from the block.
+     * range: 0 <= x <= 1
+     */
     @nativeField(Vec3)
-    clickPos:Vec3;
+    readonly clickPos:Vec3;
 }
 
 export namespace ItemUseInventoryTransaction {
@@ -648,9 +667,9 @@ export class ItemUseOnActorInventoryTransaction extends ComplexInventoryTransact
     @nativeField(NetworkItemStackDescriptor)
     descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
+    readonly fromPos:Vec3;
     @nativeField(Vec3)
-    hitPos:Vec3;
+    readonly hitPos:Vec3;
 }
 
 export namespace ItemUseOnActorInventoryTransaction {
@@ -670,7 +689,7 @@ export class ItemReleaseInventoryTransaction extends ComplexInventoryTransaction
     @nativeField(NetworkItemStackDescriptor)
     descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    fromPos:Vec3;
+    readonly fromPos:Vec3;
 }
 
 export namespace ItemReleaseInventoryTransaction {

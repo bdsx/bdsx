@@ -4,8 +4,7 @@ import { MantleClass, nativeClass, NativeClass, nativeField } from "./nativeclas
 import { bin128_t, bin64_t, uint16_t, uint32_t, uint64_as_float_t, uint8_t } from "./nativetype";
 import { Wrapper } from "./pointer";
 
-export namespace mce
-{
+export namespace mce {
     export const UUID = bin128_t.extends({
         v1(uuid:UUID):uint32_t {
             return uuid.charCodeAt(0) | (uuid.charCodeAt(1)<<16);

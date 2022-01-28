@@ -10,8 +10,6 @@ import { chakraUtil } from '../../core';
 import { fsutil } from '../../fsutil';
 import { Tester } from '../../tester';
 
-
-
 Tester.test({
     async asmtest() {
         const filepath = path.join(__dirname, 'asmtest.asm');
@@ -26,5 +24,5 @@ Tester.test({
         const testfn = chakraUtil.JsCreateFunction(codebuf.test, null);
         const result = testfn();
         this.assert(result === 123, 'unexpected result');
-    }
+    },
 });

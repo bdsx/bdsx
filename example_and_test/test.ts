@@ -9,11 +9,12 @@ import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { ItemStack } from "bdsx/bds/inventory";
+import { ContainerId, ContainerType, ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import { ServerLevel } from "bdsx/bds/level";
+import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
-import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
+import { AttributeData, ContainerOpenPacket, InventoryContentPacket, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
 import { serverInstance } from "bdsx/bds/server";
@@ -31,15 +32,14 @@ import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
-import { nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
-import { getEnumKeys, hex } from "bdsx/util";
+import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
 
 let sendidcheck = 0;
-let nextTickPassed = false;
 let chatCancelCounter = 0;
 
 export function setRecentSendedPacketForTest(packetId: number): void {
@@ -86,17 +86,6 @@ Tester.test({
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
-    },
-
-    async nexttick() {
-        nextTickPassed = await Promise.race([
-            new Promise<boolean>(resolve => process.nextTick(() => resolve(true))),
-            new Promise<boolean>(resolve => setTimeout(() => {
-                if (nextTickPassed) return;
-                this.fail();
-                resolve(false);
-            }, 1000))
-        ]);
     },
 
     disasm() {
@@ -181,6 +170,11 @@ Tester.test({
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 16), '\u0100\u0010\u0001\u0000', 'bin.bitshr(16)', v=>bin.toString(v, 16));
         this.equals(bin.bitshl('\u1000\u0100\u0010\u1001', 20), '\u0000\u0000\u1001\u0100', 'bin.bitshl(20)', v=>bin.toString(v, 16));
         this.equals(bin.bitshr('\u1001\u0100\u0010\u0001', 20), '\u0010\u1001\u0000\u0000', 'bin.bitshr(20)', v=>bin.toString(v, 16));
+        this.equals(bin.toString(bin.parse("18446744069414584321")), '18446744069414584321', 'bin.parse');
+        this.equals(bin.toString(bin.parse("0x123456789", null, 2), 16), '23456789', 'bin.parse, limit count');
+
+        const longnumber = '123123123123123123123123123123123123123123123123123123123123123';
+        this.equals(bin.toString(bin.parse(longnumber)), longnumber, 'bin.parse');
     },
 
     hashset() {
@@ -535,7 +529,7 @@ Tester.test({
         }
 
         for (const id in MinecraftPacketIds) {
-            if (!/^[0-9]+$/.test(id)) continue;
+            if (!/^\d+$/.test(id)) continue;
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
         }
@@ -620,25 +614,20 @@ Tester.test({
     },
 
     actor() {
-        const system = server.registerSystem(0, 0);
-        system.listenForEvent('minecraft:entity_created', this.wrap(ev => {
+        events.entityCreated.on(this.wrap(ev => {
             const level = serverInstance.minecraft.getLevel().as(ServerLevel);
 
             try {
-                const uniqueId = ev.data.entity.__unique_id__;
-                const actor = Actor.fromEntity(ev.data.entity);
-                const bsapiIdentifier = ev.data.entity.__identifier__;
-                if (bsapiIdentifier === 'minecraft:player') {
+                const actor = ev.entity;
+                const identifier = actor.getIdentifier();
+                this.assert(identifier.startsWith('minecraft:'), 'Invalid identifier');
+                if (identifier === 'minecraft:player') {
                     this.equals(level.players.size(),  serverInstance.getActivePlayerCount(), 'Unexpected player size');
                     this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
                 if (actor !== null) {
-                    const actorIdentifier = actor.getIdentifier();
-                    if (actorIdentifier !== 'minecraft:item') {
-                        this.equals(bsapiIdentifier, actorIdentifier, 'invalid Actor.identifier');
-                    }
                     this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
@@ -666,22 +655,20 @@ Tester.test({
                         actor.setRespawnPosition(pos, dim);
                     }
 
-                    const actualId = actor.getUniqueIdLow() + ':' + actor.getUniqueIdHigh();
-                    const expectedId = uniqueId["64bit_low"] + ':' + uniqueId["64bit_high"];
-                    this.equals(actualId, expectedId,
-                        `Actor uniqueId does not match (actual=${actualId}, expected=${expectedId})`);
-
-                    if (ev.data.entity.__identifier__ === 'minecraft:player') {
+                    if (identifier === 'minecraft:player') {
                         this.assert(level.getPlayers()[0] === actor, 'the joined player is not a first player');
-                        const name = system.getComponent(ev.data.entity, 'minecraft:nameable')!.data.name;
+                        const name = actor.getName();
                         this.equals(name, connectedId, 'id does not match');
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
                         this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                         this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
                         this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
+
+                        actor.setName('test');
+                        this.equals(actor.getName(), 'test', 'name is not set');
                     } else {
-                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${ev.data.entity.__identifier__})`);
+                        this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${identifier})`);
                     }
                 }
             } catch (err) {
@@ -718,13 +705,13 @@ Tester.test({
 
     attributeNames():void {
         @nativeClass(null)
-        class Attribute extends NativeClass {
+        class Attribute extends AbstractClass {
             @nativeField(int32_t)
             u:int32_t;
             @nativeField(int32_t)
             id:int32_t;
             @nativeField(HashedString)
-            name:HashedString;
+            readonly name:HashedString;
         }
         const getByName = procHacker.js('Attribute::getByName', Attribute, null, HashedString);
         for (const key of getEnumKeys(AttributeId)) {
@@ -756,6 +743,77 @@ Tester.test({
     etc() {
         const item = ItemStack.constructWith('minecraft:acacia_boat');
         item.destruct();
+    },
+
+    nbt() {
+        const tagTypes:typeof Tag[] = [
+            EndTag,
+            ByteTag,
+            ShortTag,
+            IntTag,
+            Int64Tag,
+            FloatTag,
+            DoubleTag,
+            ByteArrayTag,
+            StringTag,
+            ListTag,
+            CompoundTag,
+            IntArrayTag,
+        ];
+
+        for (let i=0;i<10;i++) {
+            for (const tagType of tagTypes) {
+                const allocated = tagType.allocate();
+                allocated.dispose();
+            }
+
+            const barray = ByteArrayTag.allocateWith([1,2,3,4,5]);
+            const iarray = IntArrayTag.allocateWith([1,2,3,4]);
+            const str = StringTag.allocateWith('12345678901234567890');
+            const map = CompoundTag.allocate();
+            const list = ListTag.allocate();
+            list.push(str);
+
+            for (let j=0;j<10;j++) {
+                map.set('barray', barray);
+                map.set('iarray', iarray);
+                map.set('str', str);
+                map.set('list', list);
+            }
+            const cloned = iarray.allocateClone();
+            barray.dispose();
+            iarray.dispose();
+            str.dispose();
+            list.dispose();
+
+            this.assert(arrayEquals(cloned.toInt32Array(), [1,2,3,4]), 'IntArrayTag check');
+            cloned.dispose();
+
+            const mapvalue = map.value();
+            this.assert(mapvalue.barray instanceof Uint8Array && arrayEquals([1,2,3,4,5], mapvalue.barray), 'ByteArrayTag check');
+            this.assert(mapvalue.iarray instanceof Int32Array && arrayEquals([1,2,3,4], mapvalue.iarray), 'IntArrayTag check');
+            this.equals(mapvalue.str, '12345678901234567890', 'StringTag check');
+            this.assert(mapvalue.list instanceof Array && arrayEquals(['12345678901234567890'], mapvalue.list), 'ListTag check');
+            this.equals(Object.keys(mapvalue).length, map.size(), 'Compound key count check');
+            map.dispose();
+        }
+    },
+    async nexttick() {
+        let timer:NodeJS.Timer;
+        for (let i=0;i<10;i++) {
+            await Promise.race([
+                new Promise<boolean>(resolve => process.nextTick(() => {
+                    clearTimeout(timer);
+                    resolve(true);
+                })),
+                new Promise<boolean>(resolve => {
+                    timer = setTimeout(() => {
+                        this.fail();
+                        resolve(false);
+                    }, 1000);
+                })
+            ]);
+        }
     },
 }, true);
 

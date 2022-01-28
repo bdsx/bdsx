@@ -385,7 +385,7 @@ class BdsxPackDirectory {
             isDirectory: true,
             mtime: Date.now(),
             name: zip.name,
-            size: 0
+            size: 0,
         };
     }
 
@@ -393,8 +393,8 @@ class BdsxPackDirectory {
         if (this.loaded) return;
         this.loaded = true;
         const managedInfos:BdsxAddonJson = await readObjectJson(this.bdsxAddonsJsonPath);
-        for (const name in managedInfos) {
-            const mpack = ManagedPack.fromJson(name, managedInfos[name]);
+        for (const [name, info] of Object.entries(managedInfos)) {
+            const mpack = ManagedPack.fromJson(name, info);
             this.managedPacks.set(name, mpack);
         }
 
@@ -436,7 +436,7 @@ abstract class PackManager<T> {
 
     constructor(
         public readonly provider:Provider,
-        public readonly jsonPath:string
+        public readonly jsonPath:string,
     ) {
     }
 
@@ -499,7 +499,7 @@ class WorldPackManager extends PackManager<WorldPack> {
         await this._load();
         const wpack:WorldPack = {
             pack_id: pack.uuid,
-            version: pack.version
+            version: pack.version,
         };
         const already = this.data.findIndex(v=>v.pack_id === mpack.uuid);
         if (already !== -1) {
@@ -555,7 +555,7 @@ class ServerPackManager extends PackManager<ServerPack> {
             file_system: "RawPath",
             path: `${pack.directoryType}/${pack.name}`,
             uuid: pack.uuid,
-            version: `${pack.version[0]}.${pack.version[1]}.${pack.version[2]}`
+            version: `${pack.version[0]}.${pack.version[1]}.${pack.version[2]}`,
         };
         if (already !== -1) {
             this.data.splice(already, 1, spack);
@@ -578,12 +578,11 @@ async function readObjectJson(path:string):Promise<Record<string, any>> {
         const json = await fsutil.readFile(path);
         const result = JSON.parse(json);
         if (result === null || !(result instanceof Object)) {
-            return Object.create(null);
+            return {};
         }
-        result.__proto__ = null;
         return result;
     } catch (err) {
-        return Object.create(null);
+        return {};
     }
 }
 
@@ -610,7 +609,7 @@ async function readdirWithStats(dirPath:string):Promise<FileInfo[]> {
                 base:fileName,
                 isDirectory: stat.isDirectory(),
                 mtime: stat.mtimeMs,
-                size: stat.size
+                size: stat.size,
             });
         }
         return out;
@@ -639,7 +638,7 @@ async function unzip(name:string, zip:FileInfo, targetDir:FileInfo, getRootFiles
                         base: fileName,
                         isDirectory: rootedFile[2] !== '' || entry.type === 'Directory',
                         mtime: entry.vars.lastModifiedTime,
-                        size: entry.extra.uncompressedSize
+                        size: entry.extra.uncompressedSize,
                     });
                 }
             }

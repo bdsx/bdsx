@@ -25,7 +25,7 @@ function build():void {
             return {
                 options: ts.getDefaultCompilerOptions(),
                 fileNames: glob.sync('**/*.ts'),
-                errors: []
+                errors: [],
             };
         }
         const configFileJson = ts.readConfigFile(configPath, ts.sys.readFile);
@@ -112,7 +112,6 @@ function repeatedLaunch():void {
     }
     exit(0);
 }
-
 
 if (data.exit == null) {
     firstLaunch();

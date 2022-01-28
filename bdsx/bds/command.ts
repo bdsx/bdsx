@@ -61,7 +61,7 @@ export enum CommandUsageFlag {
     Test,
     /** @deprecated Use `CommandVisibilityFlag` */
     Hidden,
-    _Unknown=0x80
+    _Unknown=0x80,
 }
 
 /** Putting in flag1 or flag2 are both ok, you can also combine with other flags like CommandCheatFlag.NoCheat | CommandVisibilityFlag.HiddenFromCommandBlockOrigin but combining is actually not quite useful */
@@ -258,7 +258,16 @@ export class CommandPosition extends NativeClass {
     isZRelative:bool_t;
     @nativeField(bool_t)
     local:bool_t;
+
+    getPosition(origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
+        abstract();
+    }
+    getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3): BlockPos {
+        abstract();
+    }
 }
+CommandPosition.prototype.getPosition = procHacker.js("?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z", Vec3, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
+CommandPosition.prototype.getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 
 export class CommandPositionFloat extends CommandPosition {
 }
@@ -268,7 +277,6 @@ export class CommandRawText extends NativeClass {
     @nativeField(CxxString)
     text:CxxString;
 }
-
 
 @nativeClass()
 export class CommandWildcardInt extends NativeClass {
@@ -828,7 +836,7 @@ MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::han
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
 CommandRegistry.abstract({
-    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344] // accessed in CommandRegistry::findCommand
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344], // accessed in CommandRegistry::findCommand
 });
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
 CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);

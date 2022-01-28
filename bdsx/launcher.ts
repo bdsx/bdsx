@@ -27,8 +27,7 @@ import colors = require('colors');
 import bd_server = require("./bds/server");
 import nimodule = require("./bds/networkidentifier");
 
-declare module 'colors'
-{
+declare module 'colors' {
 
     export const brightRed:Color;
     export const brightGreen:Color;
@@ -110,13 +109,12 @@ function patchForStdio():void {
         0xFF, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,         // call qword ptr ds:[<&??5?$basic_istream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@P6AAEAV01@AEAV01@@Z@Z>]
     ], [1, 5,  8, 12,  17, 21]);
 
-
     // hook stdin
     asmcode.commandQueue = commandQueue;
     asmcode.MultiThreadQueueTryDequeue = MultiThreadQueue.tryDequeue;
     procHacker.patching('hook-stdin-command', 'ConsoleInputReader::getLine', 0, asmcode.ConsoleInputReader_getLine_hook, Register.rax, false, [
         0xE9, 0x3B, 0xF6, 0xFF, 0xFF,  // jmp SPSCQueue::tryDequeue
-        0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC // int3 ...
+        0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, // int3 ...
     ], [3, 7, 21, 25, 38, 42]);
 
     // remove original stdin thread
@@ -129,9 +127,12 @@ function patchForStdio():void {
 function _launch(asyncResolve:()=>void):void {
     // check memory corruption for debug core
     if (cgate.memcheck != null) {
-        setInterval(()=>{
+        const memcheck = setInterval(()=>{
             cgate.memcheck!();
         }, 5000);
+        events.serverClose.on(()=>{
+            clearInterval(memcheck);
+        });
     }
 
     ipfilter.init(ip=>{
@@ -162,13 +163,17 @@ function _launch(asyncResolve:()=>void):void {
             asm().jmp64(cgate.toWide, Register.rax));
     }
 
-    // // call game thread entry
+    // events
+    asmcode.SetEvent = dll.kernel32.SetEvent.pointer;
+    asmcode.CloseHandle = dll.kernel32.CloseHandle.pointer;
+    asmcode.CreateEventW = dll.kernel32.CreateEventW.pointer;
+    asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
+
+    // call game thread entry
     asmcode.gameThreadInner = proc['<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
-    asmcode.SetEvent = dll.kernel32.SetEvent.pointer;
 
     // hook game thread
-    asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
     asmcode._Cnd_do_broadcast_at_thread_exit = dll.msvcp140._Cnd_do_broadcast_at_thread_exit;
 
     procHacker.patching(
@@ -182,7 +187,7 @@ function _launch(asyncResolve:()=>void):void {
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server.<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()>
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
         ],
-        [4, 8, 9, 13]
+        [4, 8, 9, 13],
     );
 
     // get server instance
@@ -191,7 +196,7 @@ function _launch(asyncResolve:()=>void):void {
     // it removes errors when run commands on shutdown.
     procHacker.nopping('skip-command-list-destruction', 'ScriptEngine::~ScriptEngine', 0x7d, [
         0x48, 0x8D, 0x4B, 0x78,      // lea rcx,qword ptr ds:[rbx+78]
-        0xE8, 0x6A, 0xF5, 0xFF, 0xFF // call <bedrock_server.public: __cdecl std::deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >::~deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >(void) __ptr64>
+        0xE8, 0x6A, 0xF5, 0xFF, 0xFF, // call <bedrock_server.public: __cdecl std::deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >::~deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >(void) __ptr64>
     ], [5, 9]);
 
     // enable script
@@ -242,7 +247,10 @@ function _launch(asyncResolve:()=>void):void {
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
-    asmcode.updateEvTargetFire = makefunc.np(()=>events.serverUpdate.fire(), void_t, {name: 'events.serverUpdate.fire'});
+    asmcode.updateEvTargetFire = makefunc.np(()=>{
+        events.serverUpdate.fire();
+        _tickCallback();
+    }, void_t, {name: 'events.serverUpdate.fire'});
 
     procHacker.patching('update-hook',
         '<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()', // caller of ServerInstance::_update
@@ -270,6 +278,7 @@ function _launch(asyncResolve:()=>void):void {
     procHacker.hookingRawWithCallOriginal('ScriptEngine::startScriptLoading',
         makefunc.np((scriptEngine:VoidPointer)=>{
             try {
+                _tickCallback();
                 cgate.nodeLoopOnce();
 
                 bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
@@ -278,7 +287,6 @@ function _launch(asyncResolve:()=>void):void {
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it
                 asyncResolve();
-                _tickCallback();
 
                 procHacker.js('ScriptEngine::_processSystemInitialize', void_t, null, VoidPointer)(scriptEngine);
                 _tickCallback();
@@ -292,7 +300,6 @@ function _launch(asyncResolve:()=>void):void {
     procHacker.hookingRawWithCallOriginal('Minecraft::startLeaveGame',
         makefunc.np((mc, b)=>{
             events.serverLeave.fire();
-            _tickCallback();
         }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
     procHacker.hookingRawWithCallOriginal('ScriptEngine::shutdown',
         makefunc.np(()=>{
@@ -342,8 +349,7 @@ function sessionIdGrabber(text: string): void {
 }
 events.serverLog.on(sessionIdGrabber);
 
-export namespace bedrockServer
-{
+export namespace bedrockServer {
     export let sessionId: string;
 
     export function withLoading():Promise<void> {
@@ -450,7 +456,7 @@ export namespace bedrockServer
     export class NodeStdInHandler extends DefaultStdInHandler {
         private readonly rl = readline.createInterface({
             input: process.stdin,
-            output: process.stdout
+            output: process.stdout,
         });
 
         constructor() {

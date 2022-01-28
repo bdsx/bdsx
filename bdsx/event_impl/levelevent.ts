@@ -7,20 +7,8 @@ import { CANCEL } from "../common";
 import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
-import { _tickCallback } from "../util";
 
-interface ILevelExplodeEvent {
-    level: Level;
-    blockSource: BlockSource;
-    entity: Actor;
-    position: Vec3;
-    power: number;
-    causesFire: boolean;
-    breaksBlocks: boolean;
-    maxResistance: number;
-    allowUnderwater: boolean;
-}
-export class LevelExplodeEvent implements ILevelExplodeEvent {
+export class LevelExplodeEvent {
     constructor(
         public level: Level,
         public blockSource: BlockSource,
@@ -39,34 +27,21 @@ export class LevelExplodeEvent implements ILevelExplodeEvent {
     }
 }
 
-interface ILevelSaveEvent {
-    level: Level;
-}
-export class LevelSaveEvent implements ILevelSaveEvent {
+export class LevelSaveEvent {
     constructor(
         public level: Level,
     ) {
     }
 }
 
-interface ILevelTickEvent {
-    level: Level;
-}
-export class LevelTickEvent implements ILevelTickEvent {
+export class LevelTickEvent {
     constructor(
         public level: Level,
     ) {
     }
 }
 
-interface ILevelWeatherChangeEvent {
-    level: Level;
-    rainLevel: number;
-    rainTime: number;
-    lightningLevel: number;
-    lightningTime: number;
-}
-export class LevelWeatherChangeEvent implements ILevelWeatherChangeEvent {
+export class LevelWeatherChangeEvent {
     constructor(
         public level: Level,
         public rainLevel: number,
@@ -80,7 +55,6 @@ export class LevelWeatherChangeEvent implements ILevelWeatherChangeEvent {
 function onLevelExplode(level:Level, blockSource:BlockSource, entity:Actor, position:Vec3, power:float32_t, causesFire:bool_t, breaksBlocks:bool_t, maxResistance:float32_t, allowUnderwater:bool_t):void {
     const event = new LevelExplodeEvent(level, blockSource, entity, position, power, causesFire, breaksBlocks, maxResistance, allowUnderwater);
     const canceled = events.levelExplode.fire(event) === CANCEL;
-    _tickCallback();
     decay(level);
     if (!canceled) {
         return _onLevelExplode(event.level, event.blockSource, event.entity, event.position, event.power, event.causesFire, event.breaksBlocks, event.maxResistance, event.allowUnderwater);
@@ -91,7 +65,6 @@ const _onLevelExplode = procHacker.hooking("?explode@Level@@UEAAXAEAVBlockSource
 function onLevelSave(level:Level):void {
     const event = new LevelSaveEvent(level);
     const canceled = events.levelSave.fire(event) === CANCEL;
-    _tickCallback();
     decay(level);
     if (!canceled) {
         return _onLevelSave(event.level);
@@ -102,7 +75,6 @@ const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLe
 function onLevelTick(level:Level):void {
     const event = new LevelTickEvent(level);
     events.levelTick.fire(event);
-    _tickCallback();
     decay(level);
     _onLevelTick(event.level);
 }
@@ -111,7 +83,6 @@ const _onLevelTick = procHacker.hooking("Level::tick", void_t, null, Level)(onLe
 function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
     const canceled = events.levelWeatherChange.fire(event) === CANCEL;
-    _tickCallback();
     decay(level);
     if (!canceled) {
         return _onLevelWeatherChange(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);

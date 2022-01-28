@@ -8,17 +8,8 @@ import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, uint8_t } from "../nativetype";
-import { _tickCallback } from "../util";
 
-interface IQueryRegenerateEvent {
-    motd: string,
-    levelname: string,
-    currentPlayers: number,
-    maxPlayers: number,
-    isJoinableThroughServerScreen: boolean,
-
-}
-export class QueryRegenerateEvent implements IQueryRegenerateEvent {
+export class QueryRegenerateEvent {
     constructor(
         public motd: string,
         public levelname: string,
@@ -52,16 +43,11 @@ function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServer
     events.queryRegenerate.fire(event);
     data.motd = event.motd;
     data.levelname = event.levelname;
-    _tickCallback();
     return _onQueryRegenerate(rakNetServerLocator, data);
 }
 bedrockServer.afterOpen().then(() => serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
 
-interface IScoreResetEvent {
-    identityRef:ScoreboardIdentityRef;
-    objective:Objective;
-}
-export class ScoreResetEvent implements IScoreResetEvent {
+export class ScoreResetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
         public objective:Objective,
@@ -73,7 +59,6 @@ const _onScoreReset = procHacker.hooking("ScoreboardIdentityRef::removeFromObjec
 function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard, objective: Objective): boolean {
     const event = new ScoreResetEvent(identityRef, objective);
     const canceled = events.scoreReset.fire(event) === CANCEL;
-    _tickCallback();
     decay(identityRef);
     decay(scoreboard);
     if (canceled) {
@@ -83,12 +68,7 @@ function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard
     return _onScoreReset(event.identityRef, scoreboard, event.objective);
 }
 
-interface IScoreSetEvent {
-    identityRef:ScoreboardIdentityRef;
-    objective:Objective;
-    score:number;
-}
-export class ScoreSetEvent implements IScoreSetEvent {
+export class ScoreSetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
         public objective:Objective,
@@ -136,7 +116,6 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
         canceled = events.scoreRemove.fire(event) === CANCEL;
         break;
     }
-    _tickCallback();
     decay(identityRef);
     decay(objective);
     if (canceled) {
@@ -145,12 +124,7 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
     return _onScoreModify(event.identityRef, result, event.objective, event.score, mode);
 }
 
-interface IObjectiveCreateEvent {
-    name:string;
-    displayName:string;
-    criteria:ObjectiveCriteria;
-}
-export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
+export class ObjectiveCreateEvent {
     constructor(
         public name:string,
         public displayName:string,
@@ -163,7 +137,6 @@ const _onObjectiveCreate = procHacker.hooking("Scoreboard::addObjective", Object
 function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective|null {
     const event = new ObjectiveCreateEvent(name, displayName, criteria);
     const canceled = events.objectiveCreate.fire(event) === CANCEL;
-    _tickCallback();
     decay(criteria);
     if (canceled) {
         return null;

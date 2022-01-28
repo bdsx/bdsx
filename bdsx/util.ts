@@ -59,6 +59,17 @@ export function memcheck(code:Uint8Array, originalCode:number[], skip?:number[])
     }
     return diff;
 }
+
+export function hexn(value:number, hexcount:number):string {
+    const out:number[] = new Array(hexcount);
+    for (let i=hexcount-1;i>=0;i--) {
+        const n = value & 0xf;
+        value >>= 4;
+        if (n < 10) out[i] = n+0x30;
+        else out[i] = n+(0x41-10);
+    }
+    return String.fromCharCode(...out);
+}
 export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
     const size = values.length;
     if (size === 0) return '';
@@ -141,7 +152,7 @@ export function getLineAt(context:string, lineIndex:number):string {
     else return context.substring(idx, next);
 }
 
-export function isBaseOf<BASE>(t: unknown, base: { new(...args: any[]): BASE }): t is { new(...args: any[]): BASE } {
+export function isBaseOf<BASE extends { new(...args: any[]): any }>(t: unknown, base: BASE): t is BASE {
     if (typeof t !== 'function') return false;
     if (t === base) return true;
     return t.prototype instanceof base;
@@ -162,11 +173,43 @@ export function str2set(str:string):Set<number>{
     return out;
 }
 
-export function arrayEquals(arr1:any[], arr2:any[], count:number):boolean {
+export function arrayEquals(arr1:ArrayLike<any>, arr2:ArrayLike<any>, count?:number):boolean {
+    if (count == null) {
+        count = arr1.length;
+        if (count !== arr2.length) return false;
+    }
     for (let i=0;i<count;i++) {
         if (arr1[i] !== arr2[i]) return false;
     }
     return true;
+}
+
+export function assertDeepEquals(a:unknown, b:unknown):void {
+    if (a === b) return;
+    _failed:{
+        if (typeof a !== 'object' || typeof b !== 'object') {
+            break _failed;
+        }
+        if (a === null || b === null) {
+            break _failed;
+        }
+        if (a.constructor !== b.constructor) {
+            break _failed;
+        }
+        assertDeepEquals(Object.getPrototypeOf(a), Object.getPrototypeOf(b));
+        for (const [key, value] of Object.entries(a)) {
+            if (!(key in b)) {
+                break _failed;
+            }
+            assertDeepEquals(value, (b as any)[key]);
+        }
+        for (const key of Object.keys(b)) {
+            if (!(key in a)) {
+                break _failed;
+            }
+        }
+    }
+    throw Error('assertion failed');
 }
 
 export function makeSignature(sig:string):number {
@@ -197,7 +240,7 @@ export function numberWithFillZero(n:number, width:number, radix?:number):string
 
 export function filterToIdentifierableString(name:string):string {
     name = name.replace(/[^a-zA-Z_$0-9]/g, '');
-    return /^[0-9]/.test(name) ? '_'+name : name;
+    return /^\d/.test(name) ? '_'+name : name;
 }
 
 export function printOnProgress(message:string):void {
@@ -208,7 +251,7 @@ export function printOnProgress(message:string):void {
 }
 
 export function getEnumKeys<T extends Record<string, number|string>>(enumType:T):(keyof T)[] {
-    const NUMBERIC = /^[1-9][0-9]*$/;
+    const NUMBERIC = /^[1-9]\d*$/;
     return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
 }
 
@@ -237,7 +280,7 @@ export const TextFormat = {
     STRIKETHROUGH: ESCAPE + "m",
     UNDERLINE: ESCAPE + "n",
     ITALIC: ESCAPE + "o",
-    THIN: ESCAPE + "¶"
+    THIN: ESCAPE + "¶",
 };
 
 Object.freeze(TextFormat);

@@ -25,7 +25,7 @@
                 "return": { "$ref": "#/definitions/type" }
             },
             "patternProperties": {
-                "^param[0-9]+:": { "$ref": "#/definitions/type" }
+                "^param\\d+:": { "$ref": "#/definitions/type" }
             },
             "additionalProperties": false
         }

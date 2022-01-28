@@ -4,7 +4,6 @@ import { bin64_t } from "./nativetype";
 import { hex, unhex } from "./util";
 import colors = require('colors');
 
-
 interface OffsetInfo {
     offset:OperationSize|null;
     multiply:AsmMultiplyConstant;
@@ -515,8 +514,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
     return null;
 }
 
-export namespace disasm
-{
+export namespace disasm {
     export interface Options {
         /**
          * returns asm.Operator - it will assume the size from the moved distance.
@@ -604,7 +602,7 @@ export namespace disasm
         if (typeof opts === 'boolean') {
             quiet = opts;
             opts = {
-                quiet:opts
+                quiet:opts,
             };
         } else {
             quiet = !!(opts && opts.quiet);

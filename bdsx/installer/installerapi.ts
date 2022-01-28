@@ -38,7 +38,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
 
             const rl = readline.createInterface({
                 input: process.stdin,
-                output: process.stdout
+                output: process.stdout,
             });
 
             rl.question(`${question} `, async(answer)=>{
@@ -64,8 +64,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         });
     }
 
-    interface InstallInfo
-    {
+    interface InstallInfo {
         bdsVersion?:string|null;
         bdsxCoreVersion?:string|null;
         files?:string[];
@@ -277,7 +276,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         },
         async postinstall(writedFiles) {
             installInfo.files = writedFiles.filter(file=>!KEEPS.has(file));
-        }
+        },
     });
 
     const bdsxCore = new InstallItem({

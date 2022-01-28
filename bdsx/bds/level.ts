@@ -10,6 +10,7 @@ import type { GameRules } from "./gamerules";
 import type { ItemStack } from "./inventory";
 import type { Player, ServerPlayer } from "./player";
 import type { Scoreboard } from "./scoreboard";
+import { StructureManager } from "./structure";
 
 export enum Difficulty {
     Peaceful,
@@ -27,7 +28,7 @@ export class Level extends NativeClass {
             get(){
                 players.setFromArray(this.getPlayers());
                 return players;
-            }
+            },
         });
         return players;
     }
@@ -124,6 +125,13 @@ export class Level extends NativeClass {
     getSeed():number {
         abstract();
     }
+    protected _getStructureManager(structureManager:StructureManager):StructureManager {
+        abstract();
+    }
+    /** Constructs a StructureManager instance, you need to destruct it later */
+    getStructureManager():StructureManager {
+        return this._getStructureManager(StructureManager.construct());
+    }
     /**
      * Returns the Spawner instance
      */
@@ -183,6 +191,18 @@ export class Level extends NativeClass {
      * @see https://www.digminecraft.com/lists/particle_list_pe.php
      * */
     spawnParticleEffect(effectName:string, spawnLocation:Vec3, dimension:Dimension):void {
+        abstract();
+    }
+    /**
+     * Returns a random Player
+     */
+    getRandomPlayer(): Player {
+        abstract();
+    }
+    /**
+     * Updates the level's weather
+     */
+    updateWeather(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number): void {
         abstract();
     }
 }
@@ -311,4 +331,13 @@ export enum LevelEvent {
     AllPlayersSleeping = 0x2648,
     JumpPrevented = 0x2652,
     ParticleLegacyEvent = 0x4000,
+}
+
+export enum BedSleepingResult {
+    OK_2 = 0 ,
+    NOT_POSSIBLE_HERE = 1,
+    NOT_POSSIBLE_NOW = 2,
+    TOO_FAR_AWAY = 3,
+    OTHER_PROBLEM = 4,
+    NOT_SAFE = 5,
 }

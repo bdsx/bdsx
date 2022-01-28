@@ -139,8 +139,8 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
     append<NT extends Record<string, NativePointer>>(nmap:NT):ProcHacker<T&NT> {
         const map = this.map as any;
-        for (const key in nmap) {
-            map[key] = nmap[key];
+        for (const [key, v] of Object.entries(nmap)) {
+            map[key] = v;
         }
         return this as any;
     }
@@ -269,7 +269,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
             }
             const original = this.hookingRaw(key, original=>{
                 const nopts:MakeFuncOptions<any> = opts! || {};
-                nopts.onError = original;
+                if (nopts.onError == null) nopts.onError = original;
                 return makefunc.np(callback, returnType, nopts as any, ...params);
             }, opts);
             return makefunc.js(original, returnType, opts, ...params);

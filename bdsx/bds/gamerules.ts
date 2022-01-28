@@ -31,6 +31,8 @@ export enum GameRuleId {
     SpawnRadius,
     ShowTags,
     FreezeDamage,
+    RespawnBlocksExplode,
+    ShowBorderEffect,
 }
 
 export class GameRules extends NativeClass {

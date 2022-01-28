@@ -53,7 +53,6 @@ enum JsErrorCode {
     JsErrorWrongRuntime,
 }
 
-
 let GetModuleFileNameW:((addr:VoidPointer, buffer:Uint16Array, size:int32_t)=>int32_t)|null = null;
 
 function getDllNameFromAddress(addr:VoidPointer):string|null {
@@ -122,7 +121,7 @@ export function installErrorHandler():void {
             console.error('[ Native Stack ]');
 
             const chakraErrorNumber = err.code & 0x0fffffff;
-            if (JsErrorCode[chakraErrorNumber] != null) {
+            if ((err.code & 0xf0000000) === (0xE0000000|0) && JsErrorCode[chakraErrorNumber] != null) {
                 console.error(`${JsErrorCode[chakraErrorNumber]}(0x${numberWithFillZero(chakraErrorNumber, 8, 16)})`);
             } else {
                 let errmsg = `${runtimeError.codeToString(err.code)}(0x${numberWithFillZero(err.code, 8, 16)})`;
@@ -170,7 +169,7 @@ export function installErrorHandler():void {
                     const address = info[0].add(info[1]);
                     funcinfo = {
                         address,
-                        offset: frame.address.subptr(address)
+                        offset: frame.address.subptr(address),
                     };
                 }
                 if (funcname !== null) {

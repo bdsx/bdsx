@@ -2,9 +2,8 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { makefunc } from "../makefunc";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, int64_as_float_t, NativeType } from "../nativetype";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
@@ -14,6 +13,7 @@ import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
 import type { ArmorSlot, ItemStack } from "./inventory";
 import type { Level } from "./level";
+import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
@@ -196,14 +196,17 @@ export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     fullName:CxxString;
     @nativeField(HashedString)
-    canonicalName:HashedString;
+    readonly canonicalName:HashedString;
 
-    static constructWith(type:ActorType):ActorDefinitionIdentifier {
+    static constructWith(fullName:EntityId):ActorDefinitionIdentifier;
+    static constructWith(fullName:string):ActorDefinitionIdentifier;
+    static constructWith(type:ActorType):ActorDefinitionIdentifier;
+    static constructWith(type:string|ActorType):ActorDefinitionIdentifier {
         abstract();
     }
     /** @deprecated */
-    static create(type:ActorType):ActorDefinitionIdentifier {
-        return ActorDefinitionIdentifier.constructWith(type);
+    static create(type:string|ActorType):ActorDefinitionIdentifier {
+        return ActorDefinitionIdentifier.constructWith(type as any);
     }
 }
 
@@ -225,12 +228,10 @@ export class ActorDamageSource extends NativeClass{
     }
 
     getDamagingEntity():Actor|null {
-        const uniqueId = this.as(ActorDamageByActorSource).getDamagingEntityUniqueID();
+        const uniqueId = this.getDamagingEntityUniqueID();
         return Actor.fromUniqueIdBin(uniqueId);
     }
-}
 
-export class ActorDamageByActorSource extends ActorDamageSource {
     getDamagingEntityUniqueID():ActorUniqueID {
         abstract();
     }
@@ -377,41 +378,44 @@ export enum ActorFlags {
     RamAttack,
     PlayingDead,
     InAscendableBlock,
-    OverDescendableBlock
+    OverDescendableBlock,
 }
 
-@nativeClass()
-export class EntityContext extends NativeClass {
-
+@nativeClass(null)
+export class EntityContext extends AbstractClass {
 }
 
-@nativeClass()
-export class OwnerStorageEntity extends NativeClass {
+@nativeClass(null)
+export class OwnerStorageEntity extends AbstractClass {
     _getStackRef():EntityContext {
         abstract();
     }
 }
 
 @nativeClass(0x18)
-export class EntityRefTraits extends NativeClass {
+export class EntityRefTraits extends AbstractClass {
     @nativeField(OwnerStorageEntity)
     context:OwnerStorageEntity;
 }
 
 @nativeClass(null)
-export class EntityContextBase extends NativeClass {
+export class EntityContextBase extends AbstractClass {
     @nativeField(int32_t, 0x8)
     entityId:int32_t;
 
-    isVaild():boolean {
+    isValid():boolean {
         abstract();
+    }
+    /**@deprecated use `isValid` instead*/
+    isVaild(): boolean {
+        return this.isValid();
     }
     _enttRegistry():VoidPointer {
         abstract();
     }
 }
 
-export class Actor extends NativeClass {
+export class Actor extends AbstractClass {
     vftable:VoidPointer;
     ctxbase:EntityContextBase;
     /** @deprecated Use `this.getIdentifier()` instead */
@@ -623,7 +627,7 @@ export class Actor extends NativeClass {
         entity = {
             __unique_id__:{
                 "64bit_low": this.getUniqueIdLow(),
-                "64bit_high": this.getUniqueIdHigh()
+                "64bit_high": this.getUniqueIdHigh(),
             },
             __identifier__:this.identifier,
             __type__:(this.getEntityTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
@@ -721,6 +725,28 @@ export class Actor extends NativeClass {
     getMaxHealth():number {
         abstract();
     }
+    /**
+     * @param tag this function stores nbt values to this parameter
+     */
+    save(tag:CompoundTag):boolean;
+    /**
+     * it returns JS converted NBT
+     */
+    save():Record<string, any>;
+    save(tag?:CompoundTag):any {
+        abstract();
+    }
+    readAdditionalSaveData(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
+    load(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
+    allocateAndSave():CompoundTag {
+        const tag = CompoundTag.allocate();
+        this.save(tag);
+        return tag;
+    }
 
     protected hurt_(source: ActorDamageSource, damage:number, knock: boolean, ignite: boolean): boolean {
         abstract();
@@ -752,6 +778,18 @@ export class Actor extends NativeClass {
     getLevel():Level {
         abstract();
     }
+    /**
+     * Returns if the player is riding any entities
+     */
+    isRiding(): boolean {
+        abstract();
+    }
+    // /**
+    //  * Returns if the player is riding a specific entity (Idk how to test it)
+    //  */
+    // isRidingEntity(entity: Actor): boolean {
+    //     abstract();
+    // }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();
     }
@@ -760,21 +798,13 @@ export class Actor extends NativeClass {
     }
     /**
      * Gets the entity from entity component of bedrock scripting api
+     * @deprecated bedrock scripting API will be removed.
      */
     static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);
     }
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):Actor {
-        return Actor._singletoning(ptr.add(offset, offset! >> 31))!;
-    }
-    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):Actor|null {
-        return Actor._singletoning(stackptr.getNullablePointer(offset));
-    }
     static all():IterableIterator<Actor> {
-        abstract();
-    }
-    private static _singletoning(ptr:StaticPointer|null):Actor|null {
         abstract();
     }
     _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {

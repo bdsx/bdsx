@@ -15,10 +15,16 @@ export enum Facing {
 export class BlockPos extends NativeClass {
     @nativeField(int32_t)
     x:int32_t;
-    @nativeField(uint32_t)
-    y:uint32_t;
+    @nativeField(int32_t)
+    y:int32_t;
     @nativeField(int32_t)
     z:int32_t;
+
+    set(pos:BlockPos|{x:number, y:number, z:number}):void {
+        this.x = pos.x;
+        this.y = pos.y;
+        this.z = pos.z;
+    }
 
     static create(x:number, y:number, z:number):BlockPos {
         const v = new BlockPos(true);
@@ -39,6 +45,11 @@ export class ChunkPos extends NativeClass {
     x:int32_t;
     @nativeField(int32_t)
     z:int32_t;
+
+    set(pos:ChunkPos|{x:number, z:number}):void {
+        this.x = pos.x;
+        this.z = pos.z;
+    }
 
     static create(x:number, z:number):ChunkPos;
     static create(pos:BlockPos):ChunkPos;
@@ -68,6 +79,12 @@ export class ChunkBlockPos extends NativeClass {
     @nativeField(uint8_t)
     z:uint8_t;
 
+    set(pos:ChunkBlockPos|{x:number, y:number, z:number}):void {
+        this.x = pos.x;
+        this.y = pos.y;
+        this.z = pos.z;
+    }
+
     static create(x:number, y:number, z:number):ChunkBlockPos;
     static create(pos:BlockPos):ChunkBlockPos;
     static create(a:number|BlockPos, b?:number, c?:number):ChunkBlockPos {
@@ -96,6 +113,11 @@ export class Vec2 extends NativeClass {
     @nativeField(float32_t)
     y:float32_t;
 
+    set(pos:Vec2|{x:number, y:number}):void {
+        this.x = pos.x;
+        this.y = pos.y;
+    }
+
     static create(x:number, y:number):Vec2 {
         const v = new Vec2(true);
         v.x = x;
@@ -116,6 +138,12 @@ export class Vec3 extends NativeClass {
     y:float32_t;
     @nativeField(float32_t)
     z:float32_t;
+
+    set(pos:Vec3|{x:number, y:number, z:number}):void {
+        this.x = pos.x;
+        this.y = pos.y;
+        this.z = pos.z;
+    }
 
     static create(x:number, y:number, z:number):Vec3 {
         const v = new Vec3(true);
@@ -140,6 +168,11 @@ export class RelativeFloat extends NativeClass {
 
     @nativeField(bin64_t, 0)
     bin_value:bin64_t;
+
+    set(pos:RelativeFloat|{value:number, is_relative:boolean}):void {
+        this.value = pos.value;
+        this.is_relative = pos.is_relative;
+    }
 
     static create(value:number, is_relative:boolean):RelativeFloat {
         const v = new RelativeFloat(true);

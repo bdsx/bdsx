@@ -1,7 +1,7 @@
 import { NativePointer, pdb } from "../core";
 import { UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
-import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { templateName } from "../templatename";
@@ -12,8 +12,8 @@ export class typeid_t<T> extends NativeClass{
     id:uint16_t;
 }
 
-const counterWrapper = Symbol();
-const typeidmap = Symbol();
+const counterWrapper = Symbol('IdCounter');
+const typeidmap = Symbol('typeidmap');
 
 const IdCounter = Wrapper.make(uint16_t);
 type IdCounter = Wrapper<uint16_t>;
@@ -21,7 +21,7 @@ type IdCounter = Wrapper<uint16_t>;
 /**
  * dummy class for typeid
  */
-export class HasTypeId extends NativeClass {
+export class HasTypeId extends AbstractClass {
     static [counterWrapper]:IdCounter;
     static readonly [typeidmap] = new WeakMap<Type<any>, typeid_t<any>|NativePointer>();
 }

@@ -13,9 +13,9 @@ export class ProjectileComponent extends NativeClass {
     // @nativeField(ActorUniqueID, 0x08)
     // ownerId: ActorUniqueID;
     // @nativeField(Vec3)
-    // thrownPos: Vec3;
+    // readonly thrownPos: Vec3;
     // @nativeField(Vec3)
-    // apexPos: Vec3;
+    // readonly apexPos: Vec3;
 
     /* TODO
         ProjectileComponent::getShooterAngle

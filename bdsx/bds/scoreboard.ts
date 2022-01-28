@@ -2,12 +2,12 @@ import { bin } from "../bin";
 import { abstract } from "../common";
 import { AllocatedPointer, StaticPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
 
-export class Scoreboard extends NativeClass {
+export class Scoreboard extends AbstractClass {
     /**
      * Resends the scoreboard to all clients
      */
@@ -22,6 +22,8 @@ export class Scoreboard extends NativeClass {
     /**
      *  @param name Currently accepts only 'dummy'
      */
+    getCriteria(name:"dummy"):ObjectiveCriteria;
+    getCriteria(name:string):ObjectiveCriteria|null;
     getCriteria(name:string):ObjectiveCriteria|null {
         abstract();
     }
@@ -127,7 +129,7 @@ export class Scoreboard extends NativeClass {
 }
 
 @nativeClass(null)
-export class ObjectiveCriteria extends NativeClass {
+export class ObjectiveCriteria extends AbstractClass {
     @nativeField(CxxString)
     name:CxxString;
     @nativeField(bool_t)
@@ -137,7 +139,7 @@ export class ObjectiveCriteria extends NativeClass {
 }
 
 @nativeClass(null)
-export class Objective extends NativeClass {
+export class Objective extends AbstractClass {
     @nativeField(CxxString, 0x40) // accessed in Objective::serialize, low possibility to be changed through updates
     name:CxxString;
     @nativeField(CxxString)
@@ -155,14 +157,14 @@ export class Objective extends NativeClass {
 }
 
 @nativeClass(null)
-export class DisplayObjective extends NativeClass {
+export class DisplayObjective extends AbstractClass {
     @nativeField(Objective.ref())
     objective:Objective|null;
     @nativeField(uint8_t)
     order:ObjectiveSortOrder;
 }
 
-export class IdentityDefinition extends NativeClass {
+export class IdentityDefinition extends AbstractClass {
     getEntityId():ActorUniqueID {
         abstract();
     }
@@ -237,7 +239,7 @@ export class ScoreInfo extends NativeClass {
 export class ScoreboardIdentityRef extends NativeClass {
     @nativeField(uint32_t)
     objectiveReferences:uint32_t;
-    @nativeField(ScoreboardId, 0x08)
+    @nativeField(ScoreboardId)
     scoreboardId:ScoreboardId;
 
     protected _modifyScoreInObjective(result:StaticPointer, objective:Objective, score:number, action:PlayerScoreSetFunction):boolean {

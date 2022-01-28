@@ -1,6 +1,5 @@
 import { cgate } from "./core";
 
-
 export namespace dllraw {
 
     export namespace kernel32 {

@@ -20,5 +20,24 @@ To make it easy to guess for everyone, use the known official name of Minecraft 
 but it's more reasonable using the TS namespace instead.  
 So, Except in cases where it is impossible to create the namespace, please don't use the $ sign.
 
+### 6. Avoid multiple accessing of the native field
+If the native field is the object type. it will allocate a new object per accessing.  
+Please assign it to the local variable and reuse it.
+
+### 7. About nativeClass(null) 
+`nativeClass(null)` defines the class as an unknown size, and it prevents using the wrong calculated size.  
+`nativeClass()` will assume the class size from the fields.
+
+### 8. About AbstractClass 
+AbstractClass indicates it's not constructible.  
+NativeClass will construct each field. but if the field is not provided, it will not be constructed.  
+using the field without constructing can make the runtime error.
+
 ## Tips
 * `./bdsx` directory is using ESLint for the code formatting. it would be better to use ESLint Extension for VSCode.
+
+## About NPM Modules
+* @types/node@12 - BDSX uses chakra-node and it's not updated more. need to use v12.
+* eslint@7 and plugins - eslint@8 has an indent issue about the TS decorator. Waiting for the patch.
+* source-map - JS version issue about chakra-core.
+* strip-json-comments - JS version issue about chakra-core.

@@ -1,6 +1,5 @@
 import { bin } from "./bin";
 
-
 const i32buf = new Int32Array(2);
 const f32buf = new Float32Array(i32buf.buffer);
 const f64buf = new Float64Array(i32buf.buffer);

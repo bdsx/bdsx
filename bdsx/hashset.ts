@@ -2,8 +2,7 @@
 const hashkey = Symbol('hash');
 const nextlink = Symbol('hash_next');
 
-export interface Hashable
-{
+export interface Hashable {
     [hashkey]?:number;
     [nextlink]?:Hashable|null;
     hash():number;

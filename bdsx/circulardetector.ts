@@ -10,17 +10,16 @@ export class CircularDetector {
 
     static decreaseDepth(options:Record<string, any>):Record<string, any> {
         return Object.assign({}, options, {
-            depth: options.depth === null ? null : (options as any).depth - 1
+            depth: options.depth === null ? null : (options as any).depth - 1,
         });
     }
     static makeTemporalClass(name:string, instance:VoidPointer, options:Record<string, any>):new()=>Record<string, any> {
         if (options.seen.length === 0) {
             name += `<${options.stylize(instance.toString(), 'number')}>`;
         }
-
-        class DummyClass {}
-        Object.defineProperty(DummyClass, 'name', { value: name });
-        return DummyClass as any;
+        class Class{}
+        Object.defineProperty(Class, 'name', {value:name});
+        return Class;
     }
 
     check<T>(instance:VoidPointer, allocator:()=>T, cb:(value:T)=>void):T {

@@ -6,18 +6,17 @@ import { dll } from "../dll";
 import { events } from "../event";
 import { Hashable, HashSet } from "../hashset";
 import { makefunc } from "../makefunc";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { remapAndPrintError } from "../source-map-support";
-import { _tickCallback } from "../util";
 import type { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-export class NetworkHandler extends NativeClass {
+export class NetworkHandler extends AbstractClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
 
@@ -34,19 +33,18 @@ export class NetworkHandler extends NativeClass {
     }
 }
 
-export namespace NetworkHandler
-{
-    export class Connection extends NativeClass {
+export namespace NetworkHandler {
+    export class Connection extends AbstractClass {
         networkIdentifier:NetworkIdentifier;
     }
 }
 
 @nativeClass(null)
-class ServerNetworkHandler$Client extends NativeClass {
+class ServerNetworkHandler$Client extends AbstractClass {
 }
 
 @nativeClass(null)
-export class ServerNetworkHandler extends NativeClass {
+export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
     @nativeField(CxxString, 0x268)
@@ -86,8 +84,7 @@ export class ServerNetworkHandler extends NativeClass {
     }
 }
 
-export namespace ServerNetworkHandler
-{
+export namespace ServerNetworkHandler {
     export type Client = ServerNetworkHandler$Client;
 }
 
@@ -133,31 +130,24 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
-    }
-    static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
-    }
-
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
-    private static _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
-        let ni = identifiers.get(ptr);
-        if (ni != null) return ni;
-        ni = new NetworkIdentifier(true);
-        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-        identifiers.add(ni);
-        return ni;
-    }
 }
+NetworkIdentifier.setResolver(ptr=>{
+    if (ptr === null) return null;
+    let ni = identifiers.get(ptr.as(NetworkIdentifier));
+    if (ni != null) return ni;
+    ni = new NetworkIdentifier(true);
+    (ni as any).copyFrom(ptr, NetworkIdentifier[NativeType.size]);
+    identifiers.add(ni);
+    return ni;
+});
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{
     try {
         events.networkDisconnected.fire(ni);
-        _tickCallback();
     } catch (err) {
         remapAndPrintError(err);
     }

@@ -37,6 +37,8 @@
           "allowSingleExtends": true
         }
       ],
+      "@typescript-eslint/brace-style": ["error", "1tbs", {"allowSingleLine": true}],
+      "@typescript-eslint/comma-dangle": ["error", "always-multiline"],
       "github/array-foreach": "error",
       "import/no-cycle": "error",
       "import/no-default-export": "error",
@@ -49,12 +51,12 @@
       "no-empty": ["error", {"allowEmptyCatch": true}],
       "no-trailing-spaces": "error",
       "indent": ["error", 4, {"ignoreComments": true, "MemberExpression": 0 }],
-      "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
       "no-prototype-builtins": "off",
       "prefer-rest-params": "off",
       "no-debugger": "warn",
       "import/export": "off",
       "eol-last": "error",
+      "no-multiple-empty-lines": ["error", {"max":1}],
       "no-restricted-imports": ["error", {
         "patterns": [{
           "group": ["bdsx/*"],

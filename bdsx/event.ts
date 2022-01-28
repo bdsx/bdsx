@@ -5,8 +5,8 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
-import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
+import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerSleepInBedEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -48,7 +48,6 @@ for (let i=0;i<PACKET_EVENT_COUNT;i++) {
     packetAllTargets[i] = null;
 }
 
-
 export namespace events {
 
     ////////////////////////////////////////////////////////
@@ -69,6 +68,9 @@ export namespace events {
     export const campfireLight = new Event<(event: CampfireTryLightFire) => void | CANCEL>();
     /** Cancellable but requires additional stimulation */
     export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
+    /** Cancellable but the client will have the motion and sound*/
+    export const buttonPress = new Event<(event: ButtonPressEvent) => void | CANCEL>();
+
     ////////////////////////////////////////////////////////
     // Entity events
 
@@ -76,7 +78,10 @@ export namespace events {
     export const entityHurt = new Event<(event: EntityHurtEvent) => void | CANCEL>();
     /** Not cancellable */
     export const entityHealthChange = new Event<(event: EntityHeathChangeEvent) => void>();
-    /** Not cancellable */
+    /**
+     * Not cancellable.
+     * it can be occured multiple times even it already died.
+     */
     export const entityDie = new Event<(event: EntityDieEvent) => void>();
     /** Not cancellable */
     export const entitySneak = new Event<(event: EntitySneakEvent) => void>();
@@ -106,13 +111,34 @@ export namespace events {
     export const playerPickupItem = new Event<(event: PlayerPickupItemEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerCrit = new Event<(event: PlayerCritEvent) => void>();
-    /** Not cancellable */
+    /** Not cancellable.
+     * Triggered when a player finishes consuming an item.
+     * (e.g : food, potion, etc...)
+     */
     export const playerUseItem = new Event<(event: PlayerUseItemEvent) => void>();
+    /** Cancellable.
+     * Triggered when a player uses an item. Cancelling this event will prevent the item from being used.
+     * (e.g : splash potion won't be thrown, food won't be consumed, etc...)
+     * To note : this event is triggered with every item, even if they are not consumable.
+     *
+     * @remarks use `itemUseOnBlock` to cancel the usage of an item on a block (e.g : flint and steel)
+     */
+    export const itemUse = new Event<(event: ItemUseEvent) => void | CANCEL>();
+    /** Cancellable.
+     * Triggered when a player uses an item on a block. Cancelling this event will prevent the item from being used
+     * (e.g : flint and steel won't ignite block, seeds won't be planted, etc...)
+     * To note : this event is triggered with every item, even if they are not usable on blocks.
+     */
+    export const itemUseOnBlock = new Event<(event: ItemUseOnBlockEvent) => void | CANCEL>();
     /** Cancellable */
     export const splashPotionHit = new Event<(event: SplashPotionHitEvent) => void | CANCEL>();
     /** Not cancellable */
     export const projectileShoot = new Event <(event:ProjectileShootEvent)=> void> ();
-
+    /** Cancellable
+     * Triggered when a player sleeps in a bed.
+     * Cancelling this event will prevent the player from sleeping.
+     */
+    export const playerSleepInBed = new Event<(event: PlayerSleepInBedEvent) => void | CANCEL>();
     ////////////////////////////////////////////////////////
     // Level events
 
@@ -171,13 +197,12 @@ export namespace events {
     ////////////////////////////////////////////////////////
     // Packet events
 
-    export enum PacketEventType
-    {
+    export enum PacketEventType {
         Raw,
         Before,
         After,
         Send,
-        SendRaw
+        SendRaw,
     }
 
     export function packetEvent(type:PacketEventType, packetId:MinecraftPacketIds):Event<(...args:any[])=>(CANCEL|void)>|null {
@@ -268,14 +293,12 @@ export namespace events {
       */
     export const commandOutput = new Event<(log:string)=>CANCEL|void>();
 
-
      /**
       * command input
       * Commands will be canceled if you return a error code.
       * 0 means success for error codes but others are unknown.
       */
     export const command = new Event<(command: string, originName: string, ctx: CommandContext) => void | number>();
-
 
     /**
       * network identifier disconnected

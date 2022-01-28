@@ -61,7 +61,7 @@ export enum Encoding {
 	Buffer=-1,
 	Utf8=0,
 	None,
-	Ansi
+	Ansi,
 }
 
 export type TypeFromEncoding<T extends Encoding> = T extends Encoding.Buffer ? Uint8Array : string;
