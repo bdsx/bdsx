@@ -237,11 +237,6 @@ export class ActorDamageSource extends NativeClass{
     }
 }
 
-export class ActorDamageByChildActorSource extends ActorDamageSource {
-}
-
-export class ActorDamageByBlockSource extends ActorDamageSource {
-}
 
 export enum ActorDamageCause {
     /** The kill command */
