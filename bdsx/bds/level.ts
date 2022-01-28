@@ -332,3 +332,12 @@ export enum LevelEvent {
     JumpPrevented = 0x2652,
     ParticleLegacyEvent = 0x4000,
 }
+
+export enum BedSleepingResult {
+    OK_2 = 0 ,
+    NOT_POSSIBLE_HERE = 1,
+    NOT_POSSIBLE_NOW = 2,
+    TOO_FAR_AWAY = 3,
+    OTHER_PROBLEM = 4,
+    NOT_SAFE = 5,
+}
