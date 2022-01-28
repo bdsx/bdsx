@@ -206,9 +206,6 @@ export class ItemStack extends NativeClass {
     remove(amount: number): void{
         abstract();
     }
-    /**
-     * @deprecated Use {@link Item.getArmorValue} instead
-     */
     getArmorValue(): number{
         return this.getItem()?.getArmorValue() ?? 0;
     }
