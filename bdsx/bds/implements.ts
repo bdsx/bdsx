@@ -569,8 +569,9 @@ Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
 Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:Item, structureReturn: true});
 Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
-Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, { this: Item });
-Item.prototype.isArmorItem = function () { return this instanceof ArmorItem; };
+Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
+Item.prototype.getArmorValue = function () { return 0; };
+Item.prototype.isArmor = function () { return this instanceof ArmorItem; };
 
 Item.setResolver((ptr) => {
     if (ptr === null) return null;
@@ -581,11 +582,12 @@ Item.setResolver((ptr) => {
     return ptr.as(Item);
 });
 
+ArmorItem.prototype.getArmorValue = procHacker.js("ArmorItem::getArmorValue", int32_t, {this:ItemStack});
+
 const ItemStackVectorDeletingDestructor = makefunc.js([0], void_t, {this:ItemStack}, int32_t);
 ItemStack.prototype[NativeType.dtor] = function(){
     ItemStackVectorDeletingDestructor.call(this, 0);
 };
-(ItemStack.prototype as any)._getArmorValue = procHacker.js('ArmorItem::getArmorValue', int32_t, { this: ItemStack });
 ItemStack.prototype.remove = procHacker.js("ItemStackBase::remove", void_t, { this: ItemStack }, int32_t);
 ItemStack.prototype.setAuxValue = procHacker.js('ItemStackBase::setAuxValue', void_t, {this: ItemStack}, int16_t);
 ItemStack.prototype.getAuxValue = procHacker.js('ItemStackBase::getAuxValue', int16_t, {this: ItemStack});

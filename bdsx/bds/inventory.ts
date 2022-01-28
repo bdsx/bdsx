@@ -121,10 +121,19 @@ export class Item extends NativeClass {
     getCreativeCategory():number {
         abstract();
     }
+    getArmorValue():number{
+        abstract();
+    }
     isDamageable():boolean {
         abstract();
     }
     isFood():boolean {
+        abstract();
+    }
+    /**
+     * @alias instanceof ArmorItem
+     */
+    isArmor():this is ArmorItem {
         abstract();
     }
     /**
@@ -133,6 +142,12 @@ export class Item extends NativeClass {
      * @remarks Will not affect client but allows /replaceitem
      */
     setAllowOffhand(value:boolean):void {
+        abstract();
+    }
+}
+
+export class ArmorItem extends Item {
+    getArmorValue():number {
         abstract();
     }
 }
@@ -188,15 +203,14 @@ export class ItemStack extends NativeClass {
     protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
-    protected _getArmorValue(): number{
-        abstract();
-    }
     remove(amount: number): void{
         abstract();
     }
+    /**
+     * @deprecated Use {@link Item.getArmorValue} instead
+     */
     getArmorValue(): number{
-        if(!this.isArmorItem()) return 0;
-        return this._getArmorValue();
+        return this.getItem()?.getArmorValue() ?? 0;
     }
     setAuxValue(value: number): void{
         abstract();
