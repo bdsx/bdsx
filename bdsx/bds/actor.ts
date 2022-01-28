@@ -725,10 +725,10 @@ export class Actor extends AbstractClass {
     save(tag?:CompoundTag):any {
         abstract();
     }
-    load(tag:CompoundTag|NBT.Compound):void {
+    readAdditionalSaveData(tag:CompoundTag|NBT.Compound):void {
         abstract();
     }
-    readAdditionalSaveData(tag:CompoundTag|NBT.Compound):void {
+    load(tag:CompoundTag|NBT.Compound):void {
         abstract();
     }
     allocateAndSave():CompoundTag {

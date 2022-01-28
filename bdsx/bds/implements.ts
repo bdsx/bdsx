@@ -252,6 +252,16 @@ class DefaultDataLoaderHelper extends NativeClass {
         return v;
     }
 }
+const Actor$readAdditionalSaveData = makefunc.js([0x828], void_t, {this:Actor}, CompoundTag, DefaultDataLoaderHelper);
+Actor.prototype.readAdditionalSaveData = function(tag:CompoundTag|NBT.Compound):void {
+    if (tag instanceof Tag) {
+        Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
+    } else {
+        tag = NBT.allocate(tag) as CompoundTag;
+        Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
+        tag.dispose();
+    }
+};
 
 const Actor$load = procHacker.js('Actor::load', void_t, {this:Actor}, CompoundTag, DefaultDataLoaderHelper);
 Actor.prototype.load = function(tag:CompoundTag|NBT.Compound):void {
@@ -260,16 +270,6 @@ Actor.prototype.load = function(tag:CompoundTag|NBT.Compound):void {
     } else {
         tag = NBT.allocate(tag) as CompoundTag;
         Actor$load.call(this, tag, DefaultDataLoaderHelper.create());
-        tag.dispose();
-    }
-};
-const Actor$readAdditionalSaveData = makefunc.js([0x828], void_t, {this:Actor}, CompoundTag, DefaultDataLoaderHelper);
-Actor.prototype.readAdditionalSaveData = function(tag:CompoundTag|NBT.Compound):void {
-    if (tag instanceof Tag) {
-        Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
-    } else {
-        tag = NBT.allocate(tag) as CompoundTag;
-        Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
         tag.dispose();
     }
 };
