@@ -361,7 +361,6 @@ const symbols = [
     'ItemStackBase::toDebugString',
     'ItemStackBase::getAuxValue',
     'ItemStackBase::setAuxValue',
-    'ArmorItem::getArmorValue',
     'Mob::getArmorValue',
     'IdentityDefinition::getEntityId',
     'IdentityDefinition::getPlayerId',
