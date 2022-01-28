@@ -121,6 +121,9 @@ Level.prototype.getRuntimePlayer = procHacker.js("Level::getRuntimePlayer", Play
 
 Level.prototype.getTime = procHacker.js("Level::getTime", int64_as_float_t, {this:Level});
 Level.prototype.getCurrentTick = procHacker.js("Level::getCurrentTick", int64_as_float_t.ref(), {this:Level});// You can run the server for 1.4202551784875594e+22 years till it exceeds the max safe integer
+Level.prototype.getRandomPlayer = procHacker.js("Level::getRandomPlayer", Player, {this:Level});
+
+Level.prototype.updateWeather = procHacker.js("Level::updateWeather", void_t, {this:Level}, float32_t, int32_t, float32_t, int32_t);
 
 Level.abstract({
     vftable: VoidPointer,

@@ -193,6 +193,18 @@ export class Level extends NativeClass {
     spawnParticleEffect(effectName:string, spawnLocation:Vec3, dimension:Dimension):void {
         abstract();
     }
+    /**
+     * Returns a random Player
+     */
+    getRandomPlayer(): Player {
+        abstract();
+    }
+    /**
+     * Updates the level's weather
+     */
+    updateWeather(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number): void {
+        abstract();
+    }
 }
 
 export class ServerLevel extends Level {
