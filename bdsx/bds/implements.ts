@@ -579,17 +579,6 @@ GameMode.define({
 });
 
 // inventory.ts
-const ArmorItem_vftable = proc["ArmorItem::`vftable'"];
-
-Item.setResolver((ptr) => {
-    if (ptr === null) return null;
-    const address = ptr.getPointer();
-    if (address.equals(ArmorItem_vftable)) {
-        return ptr.as(ArmorItem);
-    }
-    return ptr.as(Item);
-});
-
 Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
