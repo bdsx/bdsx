@@ -147,8 +147,8 @@ Spawner.prototype.spawnMob = function(region:BlockSource, id:ActorDefinitionIden
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();
-const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
-const ItemActor_vftable = proc["ItemActor::`vftable'"];
+const ServerPlayer$vftable = proc["ServerPlayer::`vftable'"];
+const ItemActor$vftable = proc["ItemActor::`vftable'"];
 Actor.abstract({
     vftable: VoidPointer,
     ctxbase: EntityContextBase,
@@ -167,9 +167,9 @@ Actor.setResolver(ptr=>{
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
     if (actor != null) return actor;
-    if (ptr.getPointer().equals(ServerPlayer_vftable)) {
+    if (ptr.getPointer().equals(ServerPlayer$vftable)) {
         actor = ptr.as(ServerPlayer);
-    } else if (ptr.getPointer().equals(ItemActor_vftable)) {
+    } else if (ptr.getPointer().equals(ItemActor$vftable)) {
         actor = ptr.as(ItemActor);
     } else {
         actor = ptr.as(Actor);
