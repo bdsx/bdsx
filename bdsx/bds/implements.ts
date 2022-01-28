@@ -260,9 +260,11 @@ Actor.prototype.runCommand = function(command:string):void {
     const origin = createActorCommandOrigin(this);
 
     const ctx = createCommandContext(command, origin);
-    serverInstance.minecraft.getCommands().executeCommand(ctx, true);
+    const result = serverInstance.minecraft.getCommands().executeCommand(ctx, true);
 
     origin.destruct();
+
+    return result;
 };
 
 @nativeClass()
