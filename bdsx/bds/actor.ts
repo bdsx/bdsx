@@ -7,7 +7,7 @@ import { bin64_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
-import type { CommandPermissionLevel } from "./command";
+import type { CommandPermissionLevel, MCRESULT } from "./command";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
@@ -808,7 +808,7 @@ export class Actor extends AbstractClass {
             obj.type = this.getEntityTypeId();
         });
     }
-    runCommand(command:string): void{
+    runCommand(command:string): MCRESULT{
         abstract();
     }
 }
