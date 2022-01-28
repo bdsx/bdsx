@@ -23,7 +23,7 @@ import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
 import { MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
-import { ActorCommandOrigin, CommandOrigin } from "./commandorigin";
+import { ActorCommandOrigin } from "./commandorigin";
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";

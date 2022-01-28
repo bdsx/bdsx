@@ -431,7 +431,7 @@ const symbols = [
     'ItemStack::useOn',
     'Level::getRandomPlayer',
     'Player::startSleepInBed',
-    'ActorCommandOrigin::ActorCommandOrigin'
+    'ActorCommandOrigin::ActorCommandOrigin',
 ] as const;
 
 // decorated symbols

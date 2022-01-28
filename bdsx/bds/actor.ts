@@ -237,7 +237,6 @@ export class ActorDamageSource extends NativeClass{
     }
 }
 
-
 export enum ActorDamageCause {
     /** The kill command */
     Override,
@@ -809,7 +808,6 @@ export class Actor extends AbstractClass {
             obj.type = this.getEntityTypeId();
         });
     }
-
     runCommand(command:string): void{
         abstract();
     }
