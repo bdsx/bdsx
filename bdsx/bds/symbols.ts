@@ -430,6 +430,8 @@ const symbols = [
     'ButtonBlock::use',
     'ItemStack::use',
     'ItemStack::useOn',
+    'Level::getRandomPlayer',
+    'Player::startSleepInBed',
 ] as const;
 
 // decorated symbols

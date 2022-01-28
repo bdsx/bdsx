@@ -13,6 +13,8 @@ import { events } from "../event";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
+import { BlockPos } from "../bds/blockpos";
+import { BedSleepingResult } from "../bds/level";
 
 interface IEntityHurtEvent {
     entity: Actor;
@@ -323,6 +325,18 @@ export class ProjectileShootEvent implements IProjectileShootEvent {
     constructor(public projectile: Actor, public shooter: Actor) {}
 }
 
+interface IPlayerSleepInBedEvent {
+    player: Player,
+    pos: BlockPos,
+}
+export class PlayerSleepInBedEvent implements IPlayerSleepInBedEvent {
+    constructor(
+        public player: Player,
+        public pos: BlockPos,
+    ) {
+    }
+}
+
 // function onPlayerJump(player: Player):void {
 //     const event = new PlayerJumpEvent(player);
 //     console.log(player.getName());
@@ -577,3 +591,14 @@ function onProjectileShoot(projectileComponent: ProjectileComponent, projectile:
     return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
 }
 const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
+
+function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
+    const event = new PlayerSleepInBedEvent(player, pos);
+    const canceled = events.playerSleepInBed.fire(event) === CANCEL;
+    decay(pos);
+    if(canceled) {
+        return BedSleepingResult.OTHER_PROBLEM;
+    }
+    return _onPlayerSleepInBed(event.player, event.pos);
+}
+const _onPlayerSleepInBed = procHacker.hooking("Player::startSleepInBed", uint8_t, null, Player, BlockPos)(onPlayerSleepInBed);
