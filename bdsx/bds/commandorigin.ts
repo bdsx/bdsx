@@ -84,6 +84,11 @@ export class PlayerCommandOrigin extends CommandOrigin {
     // Actor*(*getEntity)(CommandOrigin* origin);
 }
 
+@nativeClass(0x58)
+export class ActorCommandOrigin extends CommandOrigin {
+    // Actor*(*getEntity)(CommandOrigin* origin);
+}
+
 @nativeClass(null)
 export class ScriptCommandOrigin extends PlayerCommandOrigin {
     // struct VFTable

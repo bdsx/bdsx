@@ -814,6 +814,10 @@ export class Actor extends AbstractClass {
             obj.type = this.getEntityTypeId();
         });
     }
+
+    runCommand(command:string): void{
+        abstract();
+    }
 }
 
 export class ItemActor extends Actor {
