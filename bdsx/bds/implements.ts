@@ -23,7 +23,7 @@ import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
 import { MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
-import { ActorCommandOrigin } from "./commandorigin";
+import { ActorCommandOrigin, CommandOrigin } from "./commandorigin";
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
@@ -243,7 +243,7 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
 };
 
 const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
-function createActorCommandOrigin(actor:Actor){
+function createActorCommandOrigin(actor:Actor): Wrapper<CommandOrigin>{
     const wrapper = new CommandOriginWrapper(true);
     const origin = capi.malloc(ActorCommandOrigin[NativeType.size]).as(ActorCommandOrigin);
     wrapper.value = origin;
