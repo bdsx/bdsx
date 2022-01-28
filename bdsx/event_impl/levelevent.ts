@@ -8,18 +8,7 @@ import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 
-interface ILevelExplodeEvent {
-    level: Level;
-    blockSource: BlockSource;
-    entity: Actor;
-    position: Vec3;
-    power: number;
-    causesFire: boolean;
-    breaksBlocks: boolean;
-    maxResistance: number;
-    allowUnderwater: boolean;
-}
-export class LevelExplodeEvent implements ILevelExplodeEvent {
+export class LevelExplodeEvent {
     constructor(
         public level: Level,
         public blockSource: BlockSource,
@@ -38,34 +27,21 @@ export class LevelExplodeEvent implements ILevelExplodeEvent {
     }
 }
 
-interface ILevelSaveEvent {
-    level: Level;
-}
-export class LevelSaveEvent implements ILevelSaveEvent {
+export class LevelSaveEvent {
     constructor(
         public level: Level,
     ) {
     }
 }
 
-interface ILevelTickEvent {
-    level: Level;
-}
-export class LevelTickEvent implements ILevelTickEvent {
+export class LevelTickEvent {
     constructor(
         public level: Level,
     ) {
     }
 }
 
-interface ILevelWeatherChangeEvent {
-    level: Level;
-    rainLevel: number;
-    rainTime: number;
-    lightningLevel: number;
-    lightningTime: number;
-}
-export class LevelWeatherChangeEvent implements ILevelWeatherChangeEvent {
+export class LevelWeatherChangeEvent {
     constructor(
         public level: Level,
         public rainLevel: number,

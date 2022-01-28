@@ -9,15 +9,7 @@ import { bedrockServer } from "../launcher";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, int32_t, uint8_t } from "../nativetype";
 
-interface IQueryRegenerateEvent {
-    motd: string,
-    levelname: string,
-    currentPlayers: number,
-    maxPlayers: number,
-    isJoinableThroughServerScreen: boolean,
-
-}
-export class QueryRegenerateEvent implements IQueryRegenerateEvent {
+export class QueryRegenerateEvent {
     constructor(
         public motd: string,
         public levelname: string,
@@ -55,11 +47,7 @@ function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServer
 }
 bedrockServer.afterOpen().then(() => serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
 
-interface IScoreResetEvent {
-    identityRef:ScoreboardIdentityRef;
-    objective:Objective;
-}
-export class ScoreResetEvent implements IScoreResetEvent {
+export class ScoreResetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
         public objective:Objective,
@@ -80,12 +68,7 @@ function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard
     return _onScoreReset(event.identityRef, scoreboard, event.objective);
 }
 
-interface IScoreSetEvent {
-    identityRef:ScoreboardIdentityRef;
-    objective:Objective;
-    score:number;
-}
-export class ScoreSetEvent implements IScoreSetEvent {
+export class ScoreSetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
         public objective:Objective,
@@ -141,12 +124,7 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
     return _onScoreModify(event.identityRef, result, event.objective, event.score, mode);
 }
 
-interface IObjectiveCreateEvent {
-    name:string;
-    displayName:string;
-    criteria:ObjectiveCriteria;
-}
-export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
+export class ObjectiveCreateEvent {
     constructor(
         public name:string,
         public displayName:string,

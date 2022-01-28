@@ -643,7 +643,7 @@ ItemStack.prototype.load = function(tag) {
         ItemStack$load(this, tag);
     } else {
         const allocated = NBT.allocate(tag);
-        const res = ItemStack$load(this, allocated as CompoundTag);
+        ItemStack$load(this, allocated as CompoundTag);
         allocated.dispose();
     }
 };
