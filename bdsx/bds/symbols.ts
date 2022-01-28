@@ -430,6 +430,7 @@ const symbols = [
     'ButtonBlock::use',
     'ItemStack::use',
     'ItemStack::useOn',
+    "ArmorItem::`vftable'",
 ] as const;
 
 // decorated symbols

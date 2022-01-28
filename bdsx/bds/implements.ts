@@ -29,7 +29,7 @@ import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer } from "./inventory";
+import { ArmorItem, ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -561,13 +561,25 @@ GameMode.define({
 });
 
 // inventory.ts
+const ArmorItem_vftable = proc["ArmorItem::`vftable'"];
+
 Item.prototype.allowOffhand = procHacker.js("Item::allowOffhand", bool_t, {this:Item});
 Item.prototype.isDamageable = procHacker.js("Item::isDamageable", bool_t, {this:Item});
 Item.prototype.isFood = procHacker.js("Item::isFood", bool_t, {this:Item});
 Item.prototype.setAllowOffhand = procHacker.js("Item::setAllowOffhand", void_t, {this:Item}, bool_t);
 Item.prototype.getCommandNames = procHacker.js("Item::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:Item, structureReturn: true});
 Item.prototype.getCommandNames2 = procHacker.js("Item::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
-Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, {this:Item});
+Item.prototype.getCreativeCategory = procHacker.js("Item::getCreativeCategory", int32_t, { this: Item });
+Item.prototype.isArmorItem = function () { return this instanceof ArmorItem; };
+
+Item.setResolver((ptr) => {
+    if (ptr === null) return null;
+    const address = ptr.getPointer();
+    if (address.equals(ArmorItem_vftable)) {
+        return ptr.as(ArmorItem);
+    }
+    return ptr.as(Item);
+});
 
 const ItemStackVectorDeletingDestructor = makefunc.js([0], void_t, {this:ItemStack}, int32_t);
 ItemStack.prototype[NativeType.dtor] = function(){
