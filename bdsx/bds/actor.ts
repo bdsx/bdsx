@@ -198,12 +198,15 @@ export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(HashedString)
     readonly canonicalName:HashedString;
 
-    static constructWith(type:ActorType):ActorDefinitionIdentifier {
+    static constructWith(fullName:EntityId):ActorDefinitionIdentifier;
+    static constructWith(fullName:string):ActorDefinitionIdentifier;
+    static constructWith(type:ActorType):ActorDefinitionIdentifier;
+    static constructWith(type:string|ActorType):ActorDefinitionIdentifier {
         abstract();
     }
     /** @deprecated */
-    static create(type:ActorType):ActorDefinitionIdentifier {
-        return ActorDefinitionIdentifier.constructWith(type);
+    static create(type:string|ActorType):ActorDefinitionIdentifier {
+        return ActorDefinitionIdentifier.constructWith(type as any);
     }
 }
 
@@ -720,6 +723,9 @@ export class Actor extends AbstractClass {
      */
     save():Record<string, any>;
     save(tag?:CompoundTag):any {
+        abstract();
+    }
+    readAdditionalSaveData(tag:CompoundTag|NBT.Compound):void {
         abstract();
     }
     load(tag:CompoundTag|NBT.Compound):void {
