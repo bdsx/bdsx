@@ -263,7 +263,7 @@ Actor.prototype.runCommand = function(command:string):void {
     serverInstance.minecraft.getCommands().executeCommand(ctx, true);
 
     origin.destruct();
-}
+};
 
 @nativeClass()
 class DefaultDataLoaderHelper extends NativeClass {
