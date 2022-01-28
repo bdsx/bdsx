@@ -432,7 +432,6 @@ const symbols = [
     'ItemStack::useOn',
     'Level::getRandomPlayer',
     'Player::startSleepInBed',
-    "ArmorItem::`vftable'",
 ] as const;
 
 // decorated symbols
