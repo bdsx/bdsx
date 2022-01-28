@@ -57,7 +57,7 @@ export abstract class Wrapper<T> extends NativeClass {
                 set(v:Wrapper<any>){
                     obj = v;
                     ptr.setPointer(v, offset);
-                }
+                },
             });
         }
         builder.desc[key] = {
@@ -65,7 +65,7 @@ export abstract class Wrapper<T> extends NativeClass {
             get(this:StaticPointer) {
                 init(this);
                 return obj;
-            }
+            },
         };
     }
 }

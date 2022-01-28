@@ -68,7 +68,7 @@ enum FloatOper {
 enum FloatOperSize {
     xmmword,
     singlePrecision,
-    doublePrecision
+    doublePrecision,
 }
 
 export enum OperationSize {
@@ -78,7 +78,7 @@ export enum OperationSize {
     dword,
     qword,
     mmword,
-    xmmword
+    xmmword,
 }
 
 interface TypeSize {
@@ -504,7 +504,7 @@ export enum FFOperation {
     call_far,
     jmp,
     jmp_far,
-    push
+    push,
 }
 
 interface RUNTIME_FUNCTION {
@@ -548,7 +548,7 @@ export class X64Assembler {
             throw new ParsingError(message, {
                 column: offset + column,
                 width: width,
-                line: lineNumber
+                line: lineNumber,
             });
         }
 
@@ -600,7 +600,7 @@ export class X64Assembler {
             r1: regs[0],
             r2: regs[1],
             multiply: mult,
-            offset: poly.constant
+            offset: poly.constant,
         };
     }
 
@@ -1235,6 +1235,7 @@ export class X64Assembler {
     }
 
     jmp_c(offset:number):this {
+        if (offset === 0) return this;
         if (INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0xeb, offset);
         } else {
@@ -3330,7 +3331,7 @@ export namespace asm {
                         throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
                     }
                     out.push({
-                        type, argi: argi_ori, parami:i, register: r
+                        type, argi: argi_ori, parami:i, register: r,
                     });
                 } else if (type === 'cp') {
                     const r = this.args[argi++];
@@ -3348,22 +3349,22 @@ export namespace asm {
                     const offset = this.args[argi++];
                     out.push({
                         type, argi: argi_ori, parami:i, register: r,
-                        multiply, offset
+                        multiply, offset,
                     });
                 } else if (type === 'c') {
                     const constant = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, constant
+                        type, argi: argi_ori, parami:i, constant,
                     });
                 } else if (type === 'f') {
                     const freg = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, register:freg
+                        type, argi: argi_ori, parami:i, register:freg,
                     });
                 } else if (type === 'label') {
                     const label = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, label
+                        type, argi: argi_ori, parami:i, label,
                     });
                 } else {
                     argi ++;

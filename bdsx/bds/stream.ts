@@ -1,5 +1,5 @@
-import { NativeClass } from "../nativeclass";
+import { AbstractClass } from "../nativeclass";
 
-export class BinaryStream extends NativeClass {
+export class BinaryStream extends AbstractClass {
 
 }

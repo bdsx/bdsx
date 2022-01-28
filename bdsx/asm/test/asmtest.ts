@@ -24,5 +24,5 @@ Tester.test({
         const testfn = chakraUtil.JsCreateFunction(codebuf.test, null);
         const result = testfn();
         this.assert(result === 123, 'unexpected result');
-    }
+    },
 });

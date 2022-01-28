@@ -143,10 +143,10 @@ export class BlockSource extends NativeClass {
     setBlock(blockPos:BlockPos, block:Block, updateFlags = BlockUpdateFlags.ALL):boolean {
         return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags);
     }
-    getChunk(pos:ChunkPos):LevelChunk {
+    getChunk(pos:ChunkPos):LevelChunk|null {
         abstract();
     }
-    getChunkAt(pos:BlockPos):LevelChunk {
+    getChunkAt(pos:BlockPos):LevelChunk|null {
         abstract();
     }
     getChunkSource():ChunkSource {
@@ -189,4 +189,9 @@ export class BlockActor extends NativeClass {
         this.save(tag);
         return tag;
     }
+}
+
+@nativeClass(null)
+export class ButtonBlock extends BlockLegacy {
+    // unknown
 }

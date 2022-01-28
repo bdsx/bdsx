@@ -13,7 +13,7 @@ export class OverloadedEntry {
     constructor(
         public readonly thisType:Type<any>|null,
         public readonly args:Type<any>[],
-        public readonly func:(...args:any[])=>any
+        public readonly func:(...args:any[])=>any,
     ) {
     }
 
@@ -147,6 +147,6 @@ export const NativeVarArgs = new NativeType<any[]>(
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
-    ()=>{ throw Error('Unexpected usage'); }
+    ()=>{ throw Error('Unexpected usage'); },
 );
 export type NativeVarArgs = any[];

@@ -3,7 +3,7 @@ import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { events } from "../event";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
 import { DimensionId } from "./actor";
@@ -14,14 +14,14 @@ import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./netwo
 import type { ServerPlayer } from "./player";
 import { proc } from "./symbols";
 
-export class MinecraftEventing extends NativeClass {}
-export class ResourcePackManager extends NativeClass {}
-export class Whitelist extends NativeClass {}
-export class PrivateKeyManager extends NativeClass {}
-export class ServerMetrics extends NativeClass {}
+export class MinecraftEventing extends AbstractClass {}
+export class ResourcePackManager extends AbstractClass {}
+export class Whitelist extends AbstractClass {}
+export class PrivateKeyManager extends AbstractClass {}
+export class ServerMetrics extends AbstractClass {}
 export class ServerMetricsImpl extends ServerMetrics {}
-export class VanilaServerGameplayEventListener extends NativeClass {}
-export class EntityRegistryOwned extends NativeClass {}
+export class VanilaServerGameplayEventListener extends AbstractClass {}
+export class EntityRegistryOwned extends AbstractClass {}
 
 /**
  * @deprecated
@@ -42,11 +42,11 @@ export class Minecraft$Something {
     }
 }
 
-export class VanilaGameModuleServer extends NativeClass {
+export class VanilaGameModuleServer extends AbstractClass {
     listener:VanilaServerGameplayEventListener;
 }
 
-export class Minecraft extends NativeClass {
+export class Minecraft extends AbstractClass {
     vftable:VoidPointer;
     offset_20:VoidPointer;
     vanillaGameModuleServer:SharedPtr<VanilaGameModuleServer>; // VanilaGameModuleServer
@@ -81,15 +81,15 @@ export class Minecraft extends NativeClass {
     }
 }
 
-export class DedicatedServer extends NativeClass {
+export class DedicatedServer extends AbstractClass {
 }
 
-export class ScriptFramework extends NativeClass {
+export class ScriptFramework extends AbstractClass {
     vftable:VoidPointer;
 }
 
 @nativeClass(0x70)
-export class SemVersion extends NativeClass {
+export class SemVersion extends AbstractClass {
     @nativeField(uint16_t)
     major:uint16_t;
     @nativeField(uint16_t)
@@ -114,7 +114,7 @@ export class BaseGameVersion extends SemVersion {
 export class MinecraftServerScriptEngine extends ScriptFramework {
 }
 
-export class ServerInstance extends NativeClass {
+export class ServerInstance extends AbstractClass {
     vftable:VoidPointer;
     server:DedicatedServer;
     minecraft:Minecraft;
