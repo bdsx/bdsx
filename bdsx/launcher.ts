@@ -170,6 +170,13 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
 
     // call game thread entry
+    asmcode.gameThreadStart = makefunc.np(()=>{
+        // empty
+    }, void_t);
+    asmcode.gameThreadFinish = makefunc.np(()=>{
+        decay(bd_server.serverInstance);
+        decay(nimodule.networkHandler);
+    }, void_t);
     asmcode.gameThreadInner = proc['<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
 

@@ -345,20 +345,24 @@ ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):Att
     return attr;
 };
 
-function _removeActor(actor:Actor):void {
-    actorMaps.delete(actor.getAddressBin());
-    decay(actor);
+function _removeActor(actorptr:VoidPointer):void {
+    const addrbin = actorptr.getAddressBin();
+    const actor = actorMaps.get(addrbin);
+    if (actor != null) {
+        actorMaps.delete(addrbin);
+        decay(actor);
+    }
 }
 
 procHacker.hookingRawWithCallOriginal(
     'Level::removeEntityReferences',
     makefunc.np((level, actor, b)=>{
         _removeActor(actor);
-    }, void_t, {name: 'hook of Level::removeEntityReferences'}, Level, Actor, bool_t),
+    }, void_t, {name: 'hook of Level::removeEntityReferences'}, Level, VoidPointer, bool_t),
     [Register.rcx, Register.rdx, Register.r8], [],
 );
 
-asmcode.removeActor = makefunc.np(_removeActor, void_t, null, Actor);
+asmcode.removeActor = makefunc.np(_removeActor, void_t, null, VoidPointer);
 procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts

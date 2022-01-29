@@ -49,21 +49,15 @@ function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkH
             const data = s.data;
             const rawpacketptr = data.valueptr;
 
-            const ptrs:VoidPointer[] = [];
-            try {
-                for (const listener of target.allListeners()) {
-                    const ptr = rawpacketptr.add();
-                    ptrs.push(ptr);
-                    try {
-                        if (listener(ptr, data.length, ni, packetId) === CANCEL) {
-                            return null;
-                        }
-                    } catch (err) {
-                        events.errorFire(err);
+            for (const listener of target.allListeners()) {
+                const ptr = rawpacketptr.add();
+                try {
+                    if (listener(ptr, data.length, ni, packetId) === CANCEL) {
+                        return null;
                     }
-                }
-            } finally {
-                for (const ptr of ptrs) {
+                } catch (err) {
+                    events.errorFire(err);
+                } finally {
                     decay(ptr);
                 }
             }

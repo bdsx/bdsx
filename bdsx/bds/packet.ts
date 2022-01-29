@@ -69,14 +69,27 @@ export class Packet extends AbstractMantleClass {
         this[sharedptr_of_packet] = null;
     }
 
+    /**
+     * @deprecated unintuitive, the returning value need to be `dispose()`
+     */
     static create<T extends Packet>(this:{new(alloc?:boolean):T, ID:number, ref():any}):T {
-        const id = this.ID;
-        if (id === undefined) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
-        const cls = SharedPtr.make(this);
-        const sharedptr = new cls(true);
+        return (this as any).allocate();
+    }
+
+    /**
+     * @return the returning value need to be `dispose()`
+     */
+    static allocate<T>(this:new()=>T, copyFrom?:T|null):T {
+        if (copyFrom != null) throw Error(`not implemented, unable to copy the packet class`);
+
+        const packetThis = this as any as {new():(T&Packet), ID:number};
+        const id = (this as any).ID;
+        if (id == null) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
+        const SharedPacket = SharedPtr.make(packetThis);
+        const sharedptr = new SharedPacket(true);
         createPacketRaw(sharedptr, id);
 
-        const packet = sharedptr.p as T;
+        const packet = sharedptr.p;
         if (packet === null) throw Error(`${this.name} is not created`);
         packet[sharedptr_of_packet] = sharedptr;
         return packet;
