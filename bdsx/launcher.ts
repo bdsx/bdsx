@@ -1,8 +1,8 @@
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
-import { CommandContext, MCRESULT } from "./bds/command";
-import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
+import { CommandContext, createCommandContext, MCRESULT } from "./bds/command";
+import { CommandOrigin, CommandOriginWrapper, ServerCommandOrigin } from "./bds/commandorigin";
 import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
 import { proc, procHacker } from "./bds/proc";
@@ -312,19 +312,6 @@ function _launch(asyncResolve:()=>void):void {
 }
 
 const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointer);
-
-const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
-const commandContextRefCounterVftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
-export const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
-const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
-    CommandContext, CxxString, CommandOriginWrapper, int32_t);
-const CommandContextSharedPtr = SharedPtr.make(CommandContext);
-export function createCommandContext(command:CxxString, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
-    const sharedptr = new CommandContextSharedPtr(true);
-    sharedptr.create(commandContextRefCounterVftable);
-    commandContextConstructor(sharedptr.p, command, commandOrigin, commandVersion);
-    return sharedptr;
-}
 
 const serverCommandOriginConstructor = procHacker.js('ServerCommandOrigin::ServerCommandOrigin', void_t, null,
     ServerCommandOrigin, CxxString, ServerLevel, int32_t, Dimension);

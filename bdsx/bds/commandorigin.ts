@@ -6,6 +6,7 @@ import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString, NativeType, void_t } from "../nativetype";
+import { Wrapper } from "../pointer";
 import { Actor } from "./actor";
 import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
@@ -78,6 +79,8 @@ export class CommandOrigin extends NativeClass {
         capi.free(v);
     }
 }
+
+export const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
 
 @nativeClass(null)
 export class PlayerCommandOrigin extends CommandOrigin {

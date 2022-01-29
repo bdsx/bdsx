@@ -7,7 +7,6 @@ import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
-import { CommandOriginWrapper, createCommandContext } from "../launcher";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
@@ -21,9 +20,9 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { MinecraftCommands, MCRESULT } from "./command";
+import { MinecraftCommands, MCRESULT, createCommandContext } from "./command";
 import { CommandName } from "./commandname";
-import { ActorCommandOrigin, CommandOrigin } from "./commandorigin";
+import { ActorCommandOrigin, CommandOrigin, CommandOriginWrapper } from "./commandorigin";
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
@@ -254,8 +253,6 @@ function createActorCommandOrigin(actor:Actor): Wrapper<CommandOrigin>{
 }
 
 Actor.prototype.runCommand = function(command:string):MCRESULT {
-    const hashStr = HashedString.construct();
-    hashStr.set(command);
 
     const origin = createActorCommandOrigin(this);
 

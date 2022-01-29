@@ -9,19 +9,20 @@ import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
+import { Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
 import { Actor } from "./actor";
 import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
-import { CommandOrigin } from "./commandorigin";
+import { CommandOrigin, CommandOriginWrapper } from "./commandorigin";
 import { JsonValue } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
 import { Player } from "./player";
-import { procHacker } from "./proc";
+import { proc, procHacker } from "./proc";
 import { serverInstance } from "./server";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
@@ -293,6 +294,18 @@ export class CommandContext extends NativeClass {
     command:CxxString;
     @nativeField(CommandOrigin.ref())
     origin:CommandOrigin;
+}
+
+const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
+const commandContextRefCounterVftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
+const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
+    CommandContext, CxxString, CommandOriginWrapper, int32_t);
+const CommandContextSharedPtr = SharedPtr.make(CommandContext);
+export function createCommandContext(command:CxxString, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
+    const sharedptr = new CommandContextSharedPtr(true);
+    sharedptr.create(commandContextRefCounterVftable);
+    commandContextConstructor(sharedptr.p, command, commandOrigin, commandVersion);
+    return sharedptr;
 }
 
 export enum CommandOutputType {
