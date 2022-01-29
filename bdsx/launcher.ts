@@ -322,11 +322,11 @@ const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointe
 
 const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
 const commandContextRefCounterVftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
-const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
+export const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
 const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
     CommandContext, CxxString, CommandOriginWrapper, int32_t);
 const CommandContextSharedPtr = SharedPtr.make(CommandContext);
-function createCommandContext(command:CxxString, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
+export function createCommandContext(command:CxxString, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
     const sharedptr = new CommandContextSharedPtr(true);
     sharedptr.create(commandContextRefCounterVftable);
     commandContextConstructor(sharedptr.p, command, commandOrigin, commandVersion);

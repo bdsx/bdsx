@@ -2,10 +2,12 @@ import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
+import { capi } from "../capi";
 import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
+import { CommandOriginWrapper, createCommandContext } from "../launcher";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
@@ -19,8 +21,9 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { MinecraftCommands } from "./command";
+import { MinecraftCommands, MCRESULT } from "./command";
 import { CommandName } from "./commandname";
+import { ActorCommandOrigin, CommandOrigin } from "./commandorigin";
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
@@ -237,6 +240,31 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
         tag.dispose();
         return nbt;
     }
+};
+
+const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
+function createActorCommandOrigin(actor:Actor): Wrapper<CommandOrigin>{
+    const wrapper = new CommandOriginWrapper(true);
+    const origin = capi.malloc(ActorCommandOrigin[NativeType.size]).as(ActorCommandOrigin);
+    wrapper.value = origin;
+
+    ActorCommandOrigin$ActorCommandOrigin(origin, actor);
+
+    return wrapper;
+}
+
+Actor.prototype.runCommand = function(command:string):MCRESULT {
+    const hashStr = HashedString.construct();
+    hashStr.set(command);
+
+    const origin = createActorCommandOrigin(this);
+
+    const ctx = createCommandContext(command, origin);
+    const result = serverInstance.minecraft.getCommands().executeCommand(ctx, true);
+
+    origin.destruct();
+
+    return result;
 };
 
 @nativeClass()

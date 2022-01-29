@@ -17,6 +17,7 @@ import { Actor } from "./actor";
 import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
+import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
 import { Player } from "./player";
@@ -433,6 +434,9 @@ export class MinecraftCommands extends NativeClass {
         abstract();
     }
     getRegistry():CommandRegistry {
+        abstract();
+    }
+    runCommand(command:HashedString, origin:CommandOrigin, ccVersion:number): void{
         abstract();
     }
 }
