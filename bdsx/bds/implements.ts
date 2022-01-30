@@ -319,7 +319,7 @@ ActorDamageSource.prototype.getDamagingEntityUniqueID = makefunc.js([0x40], Acto
 ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, { this: ActorDamageSource }, int32_t);
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 1864], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 1856], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
