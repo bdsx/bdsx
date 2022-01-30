@@ -92,8 +92,12 @@ command.register('hhh', 'json example').overload((param, origin, output)=>{
 
 // CommandPosition, more useful than three of `RelativeFloat`
 command.register('iii', 'position example').overload((param, origin, output)=>{
-    const pos = param.position.getPosition(origin, Vec3.create(0, 0, 0)).toJSON();
-    const blockPos = param.position.getBlockPosition(origin, Vec3.create(0, 0, 0)).toJSON()
+    // without offset :
+    const pos = param.position.getPosition(origin).toJSON();
+
+    // with offset :
+    const blockPos = param.position.getBlockPosition(origin, Vec3.create(0, 4, 0)).toJSON();
+
     output.success(
         `position example> origin=${origin.getName()}\n` +
         `Pos: §a${pos.x.toFixed(2)}§f, §a${pos.y.toFixed(2)}§f, §a${pos.z.toFixed(2)}§f\n`+

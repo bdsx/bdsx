@@ -262,15 +262,21 @@ export class CommandPosition extends NativeClass {
     @nativeField(bool_t)
     local:bool_t;
 
-    getPosition(origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
+    protected _getPosition(origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
         abstract();
     }
-    getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3): BlockPos {
+    getPosition(origin: CommandOrigin, offsetFromBase: Vec3 = Vec3.create(0, 0, 0)): Vec3 {
+        return this._getPosition(origin, offsetFromBase);
+    }
+    protected _getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3): BlockPos {
         abstract();
+    }
+    getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3 = Vec3.create(0, 0, 0)): BlockPos {
+        return this._getBlockPosition(origin, offsetFromBase);
     }
 }
-CommandPosition.prototype.getPosition = procHacker.js("?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z", Vec3, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
-CommandPosition.prototype.getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
+(CommandPosition.prototype as any)._getPosition = procHacker.js("?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z", Vec3, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
+(CommandPosition.prototype as any)._getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 
 export class CommandPositionFloat extends CommandPosition {
 }
