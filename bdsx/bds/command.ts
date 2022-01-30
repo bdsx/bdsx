@@ -85,7 +85,16 @@ export const CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
 export class MCRESULT extends NativeClass {
     @nativeField(uint32_t)
     result:uint32_t;
+
+    getFullCode():number {
+        abstract();
+    }
+    isSuccess():boolean {
+        abstract();
+    }
 }
+MCRESULT.prototype.getFullCode = procHacker.js("MCRESULT::getFullCode", int32_t, {this:MCRESULT});
+MCRESULT.prototype.isSuccess = procHacker.js("MCRESULT::isSuccess", bool_t, {this:MCRESULT});
 
 export enum CommandSelectionOrder {
     Sorted,

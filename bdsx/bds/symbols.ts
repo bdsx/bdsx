@@ -432,6 +432,8 @@ const symbols = [
     'Level::getRandomPlayer',
     'Player::startSleepInBed',
     'ActorCommandOrigin::ActorCommandOrigin',
+    'MCRESULT::getFullCode',
+    'MCRESULT::isSuccess',
 ] as const;
 
 // decorated symbols
