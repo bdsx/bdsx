@@ -96,6 +96,7 @@ command.register('iii', 'position example').overload((param, origin, output)=>{
     const pos = param.position.getPosition(origin).toJSON();
 
     // with offset :
+    // the offset is used for relative position
     const blockPos = param.position.getBlockPosition(origin, Vec3.create(0, 4, 0)).toJSON();
 
     output.success(
