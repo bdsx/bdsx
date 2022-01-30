@@ -14,7 +14,7 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
@@ -183,7 +183,7 @@ Actor.all = function():IterableIterator<Actor> {
     return actorMaps.values();
 };
 
-Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier|ActorType, id:ActorUniqueID|int64_as_float_t, summoner:Actor|null = null):Actor {
     const ptr = new AllocatedPointer(8);
     switch (typeof id) {
     case "number":
@@ -193,7 +193,14 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
         ptr.setBin(id);
         break;
     }
-    return CommandUtils.spawnEntityAt(region, pos, type, ptr, summoner ?? new VoidPointer());
+    if (!(type instanceof ActorDefinitionIdentifier)) {
+        type = ActorDefinitionIdentifier.constructWith(type);
+        const res = CommandUtils.spawnEntityAt(region, pos, type, ptr, summoner);
+        type.destruct();
+        return res;
+    } else {
+        return CommandUtils.spawnEntityAt(region, pos, type, ptr, summoner);
+    }
 };
 (Actor.prototype as any)._getArmorValue = procHacker.js("Mob::getArmorValue", int32_t, {this:Actor});
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
