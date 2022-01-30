@@ -7,7 +7,6 @@ import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
-import { CommandOriginWrapper, createCommandContext } from "../launcher";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
@@ -21,7 +20,7 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { MinecraftCommands, MCRESULT } from "./command";
+import { CommandContext, MCRESULT, MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
 import { ActorCommandOrigin, CommandOrigin } from "./commandorigin";
 import { OnHitSubcomponent } from "./components";
@@ -242,29 +241,12 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
     }
 };
 
-const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
-function createActorCommandOrigin(actor:Actor): Wrapper<CommandOrigin>{
-    const wrapper = new CommandOriginWrapper(true);
-    const origin = capi.malloc(ActorCommandOrigin[NativeType.size]).as(ActorCommandOrigin);
-    wrapper.value = origin;
-
-    ActorCommandOrigin$ActorCommandOrigin(origin, actor);
-
-    return wrapper;
-}
-
-Actor.prototype.runCommand = function(command:string):MCRESULT {
-    const hashStr = HashedString.construct();
-    hashStr.set(command);
-
-    const origin = createActorCommandOrigin(this);
-
-    const ctx = createCommandContext(command, origin);
-    const result = serverInstance.minecraft.getCommands().executeCommand(ctx, true);
-
-    origin.destruct();
-
-    return result;
+Actor.prototype.runCommand = function(command:string, mute:boolean = true):MCRESULT {
+    const origin = ActorCommandOrigin.allocateWith(this);
+    const ctx = CommandContext.constructSharedPtr(command, origin);
+    const res = serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
+    // ctx, origin: no need to destruct, it's destructed by internal functions.
+    return res;
 };
 
 @nativeClass()

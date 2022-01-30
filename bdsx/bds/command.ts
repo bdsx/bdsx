@@ -9,6 +9,7 @@ import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
+import { Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
@@ -23,6 +24,7 @@ import { AvailableCommandsPacket } from "./packets";
 import { Player } from "./player";
 import { procHacker } from "./proc";
 import { serverInstance } from "./server";
+import { proc } from "./symbols";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
 export enum CommandPermissionLevel {
@@ -293,7 +295,25 @@ export class CommandContext extends NativeClass {
     command:CxxString;
     @nativeField(CommandOrigin.ref())
     origin:CommandOrigin;
+
+    /**
+     * @param commandOrigin it's destructed by the destruction of CommandContext
+     */
+    static constructSharedPtr(command:string, commandOrigin:CommandOrigin):SharedPtr<CommandContext> {
+        const sharedptr = new CommandContextSharedPtr(true);
+        sharedptr.create(commandContextRefCounter$Vftable);
+        commandContextConstructor(sharedptr.p, command, CommandOriginWrapper.create(commandOrigin), commandVersion);
+        sharedptr.destruct();
+        return sharedptr;
+    }
 }
+
+const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
+const commandContextRefCounter$Vftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
+const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
+const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
+    CommandContext, CxxString, CommandOriginWrapper, int32_t);
+const CommandContextSharedPtr = SharedPtr.make(CommandContext);
 
 export enum CommandOutputType {
     None = 0,
@@ -430,6 +450,9 @@ export class MinecraftCommands extends NativeClass {
     handleOutput(origin:CommandOrigin, output:CommandOutput):void {
         abstract();
     }
+    /**
+     * @param ctx it's destructed by this function
+     */
     executeCommand(ctx:SharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
         abstract();
     }
