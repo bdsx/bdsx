@@ -1,3 +1,4 @@
+import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { makefunc } from "../makefunc";
@@ -19,6 +20,7 @@ export enum JsonValueType {
 
 @nativeClass(0x10)
 export class JsonValue extends NativeClass {
+    static readonly [CommandParameterType.symbol]:true;
     static readonly symbol = 'Json::Value';
 
     @nativeField(uint8_t, 8)
