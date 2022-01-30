@@ -1,5 +1,6 @@
 
 import { proc, proc2 } from './bds/symbols';
+import { CommandParameterType } from './commandparam';
 import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
@@ -307,6 +308,10 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
 }
 NativeType.prototype[NativeTypeFn.descriptor] = NativeType.defaultDescriptor;
 
+export class CommandParameterNativeType<T> extends NativeType<T> {
+    readonly [CommandParameterType.symbol]:true;
+}
+
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
         `${type.name}*`,
@@ -362,7 +367,7 @@ export const void_t = new NativeType<void>(
     emptyFunc,
     emptyFunc);
 export type void_t = void;
-export const bool_t = new NativeType<boolean>(
+export const bool_t = new CommandParameterNativeType<boolean>(
     'bool', 'bool_t',
     1, 1,
     v=>typeof v === 'boolean',
@@ -460,7 +465,7 @@ export const int16_t = new NativeType<number>(
 export type int16_t = number;
 int16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int16_t[NativeTypeFn.bitSetter] = numericBitSetter;
-export const int32_t = new NativeType<number>(
+export const int32_t = new CommandParameterNativeType<number>(
     'int', 'int32_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
@@ -495,7 +500,7 @@ export const int64_as_float_t = new NativeType<number>(
     int32To64);
 export type int64_as_float_t = number;
 
-export const float32_t = new NativeType<number>(
+export const float32_t = new CommandParameterNativeType<number>(
     'float', 'float32_t',
     4, 4,
     isNumber,
@@ -521,7 +526,7 @@ const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<ch
 
 const strbufCache:AllocatedPointer[] = [];
 
-export const CxxString = new NativeType<string>(
+export const CxxString = new CommandParameterNativeType<string>(
     'std::basic_string<char,std::char_traits<char>,std::allocator<char> >', 'CxxString',
     0x20, 8,
     v=>typeof v === 'string',
