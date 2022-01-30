@@ -309,7 +309,6 @@ export class CommandContext extends NativeClass {
         const sharedptr = new CommandContextSharedPtr(true);
         sharedptr.create(commandContextRefCounter$Vftable);
         commandContextConstructor(sharedptr.p, command, CommandOriginWrapper.create(commandOrigin), commandVersion);
-        sharedptr.destruct();
         return sharedptr;
     }
 }
