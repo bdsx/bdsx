@@ -121,10 +121,16 @@ export class Item extends NativeClass {
     getCreativeCategory():number {
         abstract();
     }
+    getArmorValue():number{
+        abstract();
+    }
     isDamageable():boolean {
         abstract();
     }
     isFood():boolean {
+        abstract();
+    }
+    isArmor():boolean {
         abstract();
     }
     /**
@@ -135,6 +141,12 @@ export class Item extends NativeClass {
     setAllowOffhand(value:boolean):void {
         abstract();
     }
+}
+
+/**
+ * @deprecated rough. don't use it yet.
+ */
+export class ArmorItem extends Item {
 }
 
 export class ComponentItem extends NativeClass {
@@ -188,15 +200,12 @@ export class ItemStack extends NativeClass {
     protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
-    protected _getArmorValue(): number{
-        abstract();
-    }
     remove(amount: number): void{
         abstract();
     }
     getArmorValue(): number{
-        if(!this.isArmorItem()) return 0;
-        return this._getArmorValue();
+        const item = this.getItem();
+        return item !== null ? item.getArmorValue() : 0;
     }
     setAuxValue(value: number): void{
         abstract();

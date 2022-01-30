@@ -3,6 +3,7 @@ import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnu
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
+import { CommandParameterType } from './commandparam';
 import { decay } from './decay';
 import { events } from './event';
 import { bedrockServer } from './launcher';
@@ -60,7 +61,7 @@ interface CommandFieldOptions {
 }
 type GetTypeFromParam<T> =
     T extends CommandEnum<infer KEYS> ? KEYS :
-    T extends Type<infer F> ? F :
+    T extends CommandParameterType<infer F> ? F :
     never;
 
 type OptionalCheck<T, OPTS extends boolean|CommandFieldOptions> =
@@ -74,11 +75,11 @@ export class CustomCommandFactory {
         public readonly registry:CommandRegistry,
         public readonly name:string) {
     }
-    overload<PARAMS extends Record<string, Type<any>|[Type<any>, CommandFieldOptions|boolean]>>(
+    overload<PARAMS extends Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]>>(
         callback:(params:{
             [key in keyof PARAMS]:
                 PARAMS[key] extends [infer T, infer OPTS] ? OptionalCheck<T, OPTS> :
-                PARAMS[key] extends Type<any> ? GetTypeFromParam<PARAMS[key]> :
+                PARAMS[key] extends CommandParameterType<any> ? GetTypeFromParam<PARAMS[key]> :
                 never
             }, origin:CommandOrigin, output:CommandOutput)=>void,
         parameters:PARAMS):this {
@@ -137,7 +138,7 @@ export class CustomCommandFactory {
                 type = type[0];
             }
             if (key in fields) throw Error(`${key}: field name duplicated`);
-            if (!CommandRegistry.hasParser(type)) throw Error(`CommandFactory.overload does not support ${type.name}`);
+            if (!CommandRegistry.hasParser(type)) throw Error(`CommandFactory.overload does not support ${type.name}, Please check bdsx/bds/commandparsertypes.ts`);
             fields[key] = type;
 
             if (optional) {

@@ -170,6 +170,13 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
 
     // call game thread entry
+    asmcode.gameThreadStart = makefunc.np(()=>{
+        // empty
+    }, void_t);
+    asmcode.gameThreadFinish = makefunc.np(()=>{
+        decay(bd_server.serverInstance);
+        decay(nimodule.networkHandler);
+    }, void_t);
     asmcode.gameThreadInner = proc['<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
 
@@ -313,30 +320,6 @@ function _launch(asyncResolve:()=>void):void {
 
 const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointer);
 
-const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
-const commandContextRefCounterVftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
-const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
-const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
-    CommandContext, CxxString, CommandOriginWrapper, int32_t);
-const CommandContextSharedPtr = SharedPtr.make(CommandContext);
-function createCommandContext(command:CxxString, commandOrigin:Wrapper<CommandOrigin>):SharedPtr<CommandContext> {
-    const sharedptr = new CommandContextSharedPtr(true);
-    sharedptr.create(commandContextRefCounterVftable);
-    commandContextConstructor(sharedptr.p, command, commandOrigin, commandVersion);
-    return sharedptr;
-}
-
-const serverCommandOriginConstructor = procHacker.js('ServerCommandOrigin::ServerCommandOrigin', void_t, null,
-    ServerCommandOrigin, CxxString, ServerLevel, int32_t, Dimension);
-
-function createServerCommandOrigin(name:CxxString, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):Wrapper<CommandOrigin> {
-    const wrapper = new CommandOriginWrapper(true);
-    const origin = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
-    wrapper.value = origin;
-    serverCommandOriginConstructor(origin, name, level, permissionLevel, dimension);
-    return wrapper;
-}
-
 const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
 ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
 
@@ -413,17 +396,14 @@ export namespace bedrockServer {
      * but call the internal function directly
      */
     export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
-        const origin = createServerCommandOrigin('Server',
-            bd_server.serverInstance.minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
+        const minecraft = bd_server.serverInstance.minecraft;
+        const origin = ServerCommandOrigin.allocateWith('Server',
+            minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
-
-        const ctx = createCommandContext(command, origin);
-        const res = bd_server.serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
-
-        // ctx: no need to destruct, it's destructed by executeCommand.
-        origin.destruct();
-
+        const ctx = CommandContext.constructSharedPtr(command, origin);
+        const res = minecraft.getCommands().executeCommand(ctx, mute);
+        // ctx, origin: no need to destruct, it's destructed by internal functions.
         return res;
     }
 

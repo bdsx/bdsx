@@ -73,6 +73,10 @@ export namespace asmcode {
     export let MultiThreadQueueTryDequeue:VoidPointer;
     export const addressof_MultiThreadQueueTryDequeue:NativePointer;
     export const ConsoleInputReader_getLine_hook:NativePointer;
+    export let gameThreadStart:VoidPointer;
+    export const addressof_gameThreadStart:NativePointer;
+    export let gameThreadFinish:VoidPointer;
+    export const addressof_gameThreadFinish:NativePointer;
     export let gameThreadInner:VoidPointer;
     export const addressof_gameThreadInner:NativePointer;
     export let free:VoidPointer;

@@ -10,14 +10,7 @@ import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 
-interface IBlockDestroyEvent {
-    player: ServerPlayer;
-    blockSource: BlockSource,
-    blockPos: BlockPos;
-    itemStack: ItemStack;
-    generateParticle: boolean;
-}
-export class BlockDestroyEvent implements IBlockDestroyEvent {
+export class BlockDestroyEvent {
     constructor(
         public player: ServerPlayer,
         public blockPos: BlockPos,
@@ -28,11 +21,7 @@ export class BlockDestroyEvent implements IBlockDestroyEvent {
     }
 }
 
-interface IBlockDestructionStartEvent {
-    player: ServerPlayer;
-    blockPos: BlockPos;
-}
-export class BlockDestructionStartEvent implements IBlockDestructionStartEvent {
+export class BlockDestructionStartEvent {
     constructor(
         public player: ServerPlayer,
         public blockPos: BlockPos,
@@ -40,13 +29,7 @@ export class BlockDestructionStartEvent implements IBlockDestructionStartEvent {
     }
 }
 
-interface IBlockPlaceEvent {
-    player: ServerPlayer,
-    block: Block,
-    blockSource: BlockSource,
-    blockPos: BlockPos;
-}
-export class BlockPlaceEvent implements IBlockPlaceEvent {
+export class BlockPlaceEvent {
     constructor(
         public player: ServerPlayer,
         public block: Block,
@@ -96,12 +79,7 @@ export enum PistonAction {
     Extend = 1,
     Retract = 3,
 }
-interface IPistonMoveEvent {
-    blockPos: BlockPos;
-    blockSource: BlockSource;
-    readonly action: PistonAction;
-}
-export class PistonMoveEvent implements IPistonMoveEvent {
+export class PistonMoveEvent {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
@@ -118,13 +96,7 @@ function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):v
 }
 const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);
 
-interface IFarmlandDecayEvent {
-    block: Block;
-    blockPos: BlockPos;
-    blockSource: BlockSource;
-    culprit: Actor;
-}
-export class FarmlandDecayEvent implements IFarmlandDecayEvent {
+export class FarmlandDecayEvent {
     constructor(
         public block: Block,
         public blockPos: BlockPos,
@@ -145,12 +117,7 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
 }
 const _onFarmlandDecay = procHacker.hooking("FarmBlock::transformOnFall", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
 
-interface ICampfireTryLightFire {
-    blockSource: BlockSource;
-    blockPos: BlockPos;
-}
-
-export class CampfireTryLightFire implements ICampfireTryLightFire {
+export class CampfireTryLightFire {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
@@ -169,11 +136,7 @@ function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool
 
 const _CampfireTryLightFire = procHacker.hooking("?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryLightFire);
 
-interface ICampfireTryDouseFire {
-    blockSource: BlockSource;
-    blockPos: BlockPos;
-}
-export class CampfireTryDouseFire implements ICampfireTryDouseFire {
+export class CampfireTryDouseFire {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
@@ -192,13 +155,7 @@ function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool
 
 const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);
 
-interface IOnButtonPress {
-    buttonBlock: ButtonBlock;
-    player: Player;
-    blockPos: BlockPos;
-    playerOrientation: uint8_t;
-}
-export class ButtonPressEvent implements IOnButtonPress {
+export class ButtonPressEvent {
     constructor(public buttonBlock: ButtonBlock, public player: Player, public blockPos: BlockPos, public playerOrientation: uint8_t) { }
 }
 

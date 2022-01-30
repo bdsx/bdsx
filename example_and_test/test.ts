@@ -488,6 +488,17 @@ Tester.test({
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('registertest');
         });
+        await new Promise<void>((resolve) => {
+            const outputcb = (output:string) => {
+                if (output === 'passed') {
+                    events.commandOutput.remove(outputcb);
+                    resolve();
+                    return CANCEL;
+                }
+            };
+            events.commandOutput.on(outputcb);
+            bedrockServer.executeCommand('registertest', false);
+        });
     },
 
     async checkPacketNames() {

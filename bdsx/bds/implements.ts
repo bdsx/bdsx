@@ -19,8 +19,10 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { MinecraftCommands } from "./command";
+import { CommandContext, MCRESULT, MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
+import { ActorCommandOrigin } from "./commandorigin";
+import './commandparsertypes';
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
@@ -121,6 +123,9 @@ Level.prototype.getRuntimePlayer = procHacker.js("Level::getRuntimePlayer", Play
 
 Level.prototype.getTime = procHacker.js("Level::getTime", int64_as_float_t, {this:Level});
 Level.prototype.getCurrentTick = procHacker.js("Level::getCurrentTick", int64_as_float_t.ref(), {this:Level});// You can run the server for 1.4202551784875594e+22 years till it exceeds the max safe integer
+Level.prototype.getRandomPlayer = procHacker.js("Level::getRandomPlayer", Player, {this:Level});
+
+Level.prototype.updateWeather = procHacker.js("Level::updateWeather", void_t, {this:Level}, float32_t, int32_t, float32_t, int32_t);
 
 Level.abstract({
     vftable: VoidPointer,
@@ -144,8 +149,8 @@ Spawner.prototype.spawnMob = function(region:BlockSource, id:ActorDefinitionIden
 
 // actor.ts
 const actorMaps = new Map<string, Actor>();
-const ServerPlayer_vftable = proc["ServerPlayer::`vftable'"];
-const ItemActor_vftable = proc["ItemActor::`vftable'"];
+const ServerPlayer$vftable = proc["ServerPlayer::`vftable'"];
+const ItemActor$vftable = proc["ItemActor::`vftable'"];
 Actor.abstract({
     vftable: VoidPointer,
     ctxbase: EntityContextBase,
@@ -164,9 +169,9 @@ Actor.setResolver(ptr=>{
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
     if (actor != null) return actor;
-    if (ptr.getPointer().equals(ServerPlayer_vftable)) {
+    if (ptr.getPointer().equals(ServerPlayer$vftable)) {
         actor = ptr.as(ServerPlayer);
-    } else if (ptr.getPointer().equals(ItemActor_vftable)) {
+    } else if (ptr.getPointer().equals(ItemActor$vftable)) {
         actor = ptr.as(ItemActor);
     } else {
         actor = ptr.as(Actor);
@@ -234,6 +239,14 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
         tag.dispose();
         return nbt;
     }
+};
+
+Actor.prototype.runCommand = function(command:string, mute:boolean = true):MCRESULT {
+    const origin = ActorCommandOrigin.allocateWith(this);
+    const ctx = CommandContext.constructSharedPtr(command, origin);
+    const res = serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
+    // ctx, origin: no need to destruct, it's destructed by internal functions.
+    return res;
 };
 
 @nativeClass()
@@ -342,20 +355,24 @@ ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):Att
     return attr;
 };
 
-function _removeActor(actor:Actor):void {
-    actorMaps.delete(actor.getAddressBin());
-    decay(actor);
+function _removeActor(actorptr:VoidPointer):void {
+    const addrbin = actorptr.getAddressBin();
+    const actor = actorMaps.get(addrbin);
+    if (actor != null) {
+        actorMaps.delete(addrbin);
+        decay(actor);
+    }
 }
 
 procHacker.hookingRawWithCallOriginal(
     'Level::removeEntityReferences',
     makefunc.np((level, actor, b)=>{
         _removeActor(actor);
-    }, void_t, {name: 'hook of Level::removeEntityReferences'}, Level, Actor, bool_t),
+    }, void_t, {name: 'hook of Level::removeEntityReferences'}, Level, VoidPointer, bool_t),
     [Register.rcx, Register.rdx, Register.r8], [],
 );
 
-asmcode.removeActor = makefunc.np(_removeActor, void_t, null, Actor);
+asmcode.removeActor = makefunc.np(_removeActor, void_t, null, VoidPointer);
 procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts
@@ -588,7 +605,9 @@ const ItemStackVectorDeletingDestructor = makefunc.js([0], void_t, {this:ItemSta
 ItemStack.prototype[NativeType.dtor] = function(){
     ItemStackVectorDeletingDestructor.call(this, 0);
 };
-(ItemStack.prototype as any)._getArmorValue = procHacker.js('ArmorItem::getArmorValue', int32_t, { this: ItemStack });
+
+Item.prototype.isArmor = makefunc.js([0x40], bool_t, {this:Item});
+Item.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, {this:Item});
 ItemStack.prototype.remove = procHacker.js("ItemStackBase::remove", void_t, { this: ItemStack }, int32_t);
 ItemStack.prototype.setAuxValue = procHacker.js('ItemStackBase::setAuxValue', void_t, {this: ItemStack}, int16_t);
 ItemStack.prototype.getAuxValue = procHacker.js('ItemStackBase::getAuxValue', int16_t, {this: ItemStack});
@@ -638,7 +657,7 @@ ItemStack.prototype.load = function(tag) {
         ItemStack$load(this, tag);
     } else {
         const allocated = NBT.allocate(tag);
-        const res = ItemStack$load(this, allocated as CompoundTag);
+        ItemStack$load(this, allocated as CompoundTag);
         allocated.dispose();
     }
 };

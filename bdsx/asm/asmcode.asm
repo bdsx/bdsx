@@ -434,13 +434,17 @@ export proc ConsoleInputReader_getLine_hook
 endp
 
 def gamelambdaptr:qword
+export def gameThreadStart:qword;
+export def gameThreadFinish:qword;
 export def gameThreadInner:qword ; void gamethread(void* lambda);
 export def free:qword
 export def evWaitGameThreadEnd:qword
 proc gameThreadEntry
     stack 28h
+    call gameThreadStart
     mov rcx, gamelambdaptr
     call gameThreadInner
+    call gameThreadFinish
     mov rcx, evWaitGameThreadEnd
     call SetEvent
 endp

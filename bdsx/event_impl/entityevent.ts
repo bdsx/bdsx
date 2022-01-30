@@ -13,15 +13,10 @@ import { events } from "../event";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
+import { BlockPos } from "../bds/blockpos";
+import { BedSleepingResult } from "../bds/level";
 
-interface IEntityHurtEvent {
-    entity: Actor;
-    damage: number;
-    damageSource: ActorDamageSource;
-    knock: boolean,
-    ignite: boolean,
-}
-export class EntityHurtEvent implements IEntityHurtEvent {
+export class EntityHurtEvent {
     constructor(
         public entity: Actor,
         public damage: number,
@@ -32,12 +27,7 @@ export class EntityHurtEvent implements IEntityHurtEvent {
     }
 }
 
-interface IEntityHeathChangeEvent {
-    entity: Actor;
-    readonly oldHealth: number;
-    readonly newHealth: number;
-}
-export class EntityHeathChangeEvent implements IEntityHeathChangeEvent {
+export class EntityHeathChangeEvent {
     constructor(
         public entity: Actor,
         readonly oldHealth: number,
@@ -46,44 +36,27 @@ export class EntityHeathChangeEvent implements IEntityHeathChangeEvent {
     }
 }
 
-interface IEntityDieEvent {
-    entity: Actor;
-    damageSource: ActorDamageSource;
-}
-export class EntityDieEvent implements IEntityDieEvent {
+export class EntityDieEvent {
     constructor(
         public entity: Actor,
         public damageSource: ActorDamageSource,
     ) {
     }
 }
-interface IEntityStartSwimmingEvent {
-    entity: Actor;
-}
-export class EntityStartSwimmingEvent implements IEntityStartSwimmingEvent {
+export class EntityStartSwimmingEvent {
     constructor(
         public entity: Actor,
     ) {
     }
 }
-interface IEntityStartRidingEvent {
-    entity: Actor;
-    ride: Actor;
-}
-export class EntityStartRidingEvent implements IEntityStartRidingEvent {
+export class EntityStartRidingEvent {
     constructor(
         public entity: Actor,
         public ride: Actor,
     ) {
     }
 }
-interface IEntityStopRidingEvent {
-    entity: Actor;
-    exitFromRider: boolean;
-    actorIsBeingDestroyed: boolean;
-    switchingRides: boolean;
-}
-export class EntityStopRidingEvent implements IEntityStopRidingEvent {
+export class EntityStopRidingEvent {
     constructor(
         public entity: Actor,
         public exitFromRider: boolean,
@@ -92,11 +65,7 @@ export class EntityStopRidingEvent implements IEntityStopRidingEvent {
     ) {
     }
 }
-interface IEntitySneakEvent {
-    entity: Actor;
-    isSneaking: boolean;
-}
-export class EntitySneakEvent implements IEntitySneakEvent {
+export class EntitySneakEvent {
     constructor(
         public entity: Actor,
         public isSneaking: boolean,
@@ -104,10 +73,7 @@ export class EntitySneakEvent implements IEntitySneakEvent {
     }
 }
 
-interface IEntityCreatedEvent {
-    entity: Actor;
-}
-export class EntityCreatedEvent implements IEntityCreatedEvent {
+export class EntityCreatedEvent {
     constructor(
         public entity: Actor,
     ) {
@@ -119,7 +85,7 @@ export class EntityCreatedEvent implements IEntityCreatedEvent {
 //     damageSource: ActorDamageSource;
 //     ActorType: number;
 // }
-// export class EntityDeathEvent implements IEntityDeathEvent {
+// export class EntityDeathEvent {
 //     constructor(
 //         public entity: Actor,
 //         public damageSource: ActorDamageSource,
@@ -128,11 +94,7 @@ export class EntityCreatedEvent implements IEntityCreatedEvent {
 //     }
 // }
 
-interface IPlayerAttackEvent {
-    player: Player;
-    victim: Actor;
-}
-export class PlayerAttackEvent implements IPlayerAttackEvent {
+export class PlayerAttackEvent {
     constructor(
         public player: Player,
         public victim: Actor,
@@ -140,13 +102,7 @@ export class PlayerAttackEvent implements IPlayerAttackEvent {
     }
 }
 
-interface IPlayerDropItemEvent {
-    player: Player;
-    itemStack: ItemStack;
-    inContainer: boolean;
-    hotbarSlot?: number;
-}
-export class PlayerDropItemEvent implements IPlayerDropItemEvent {
+export class PlayerDropItemEvent {
     constructor(
         public player: Player,
         public itemStack: ItemStack,
@@ -156,13 +112,7 @@ export class PlayerDropItemEvent implements IPlayerDropItemEvent {
     }
 }
 
-interface IPlayerInventoryChangeEvent {
-    player: Player;
-    readonly oldItemStack: ItemStack;
-    readonly newItemStack: ItemStack;
-    readonly slot:number;
-}
-export class PlayerInventoryChangeEvent implements IPlayerInventoryChangeEvent {
+export class PlayerInventoryChangeEvent {
     constructor(
         public player: Player,
         readonly oldItemStack: ItemStack,
@@ -172,21 +122,14 @@ export class PlayerInventoryChangeEvent implements IPlayerInventoryChangeEvent {
     }
 }
 
-interface IPlayerRespawnEvent {
-    player: Player;
-}
-export class PlayerRespawnEvent implements IPlayerRespawnEvent {
+export class PlayerRespawnEvent {
     constructor(
         public player: Player,
     ) {
     }
 }
 
-interface IPlayerLevelUpEvent {
-    player: Player;
-    levels: number;
-}
-export class PlayerLevelUpEvent implements IPlayerLevelUpEvent {
+export class PlayerLevelUpEvent {
     constructor(
         public player: Player,
         /** Amount of levels upgraded */
@@ -195,22 +138,14 @@ export class PlayerLevelUpEvent implements IPlayerLevelUpEvent {
     }
 }
 
-interface IPlayerJoinEvent {
-    readonly player: Player;
-}
-export class PlayerJoinEvent implements IPlayerJoinEvent {
+export class PlayerJoinEvent {
     constructor(
         readonly player: Player,
     ) {
     }
 }
 
-interface IPlayerLeftEvent {
-    player: ServerPlayer;
-    skipMessage: boolean;
-}
-
-export class PlayerLeftEvent implements IPlayerLeftEvent {
+export class PlayerLeftEvent {
     constructor(
         public player: ServerPlayer,
         public skipMessage: boolean,
@@ -218,34 +153,21 @@ export class PlayerLeftEvent implements IPlayerLeftEvent {
     }
 }
 
-interface IPlayerPickupItemEvent {
-    player: Player;
-    itemActor: ItemActor;
-}
-export class PlayerPickupItemEvent implements IPlayerPickupItemEvent {
+export class PlayerPickupItemEvent {
     constructor(
         public player: Player,
         public itemActor: ItemActor,
     ) {
     }
 }
-interface IPlayerCritEvent {
-    player: Player;
-}
-export class PlayerCritEvent implements IPlayerCritEvent {
+export class PlayerCritEvent {
     constructor(
         public player: Player,
     ) {
     }
 }
 
-interface IPlayerUseItemEvent {
-    player: Player;
-    useMethod: CompletedUsingItemPacket.Actions;
-    consumeItem: boolean;
-    itemStack: ItemStack;
-}
-export class PlayerUseItemEvent implements IPlayerUseItemEvent {
+export class PlayerUseItemEvent {
     constructor(
         public player: Player,
         public useMethod: CompletedUsingItemPacket.Actions,
@@ -255,11 +177,7 @@ export class PlayerUseItemEvent implements IPlayerUseItemEvent {
     }
 }
 
-interface IItemUseEvent {
-    itemStack: ItemStack;
-    player: Player;
-}
-export class ItemUseEvent implements IItemUseEvent {
+export class ItemUseEvent {
     constructor(
         public itemStack: ItemStack,
         public player: Player,
@@ -267,18 +185,7 @@ export class ItemUseEvent implements IItemUseEvent {
     }
 }
 
-interface IItemUseOnBlockEvent {
-    itemStack: ItemStack;
-    actor: Actor;
-    x: number;
-    y: number;
-    z: number;
-    face: number;
-    clickX: number;
-    clickY: number;
-    clickZ: number;
-}
-export class ItemUseOnBlockEvent implements IItemUseOnBlockEvent {
+export class ItemUseOnBlockEvent {
     constructor(
         public itemStack: ItemStack,
         public actor: Actor,
@@ -293,21 +200,14 @@ export class ItemUseOnBlockEvent implements IItemUseOnBlockEvent {
     }
 }
 
-interface IPlayerJumpEvent {
-    player: Player;
-}
-export class PlayerJumpEvent implements IPlayerJumpEvent {
+export class PlayerJumpEvent {
     constructor(
         public player: Player,
     ) {
     }
 }
 
-interface ISplashPotionHitEvent {
-    entity: Actor;
-    potionEffect: number;
-}
-export class SplashPotionHitEvent implements ISplashPotionHitEvent {
+export class SplashPotionHitEvent {
     constructor(
         public entity: Actor,
         public potionEffect: number,
@@ -315,12 +215,16 @@ export class SplashPotionHitEvent implements ISplashPotionHitEvent {
     }
 }
 
-interface IProjectileShootEvent {
-    projectile: Actor;
-    shooter: Actor;
-}
-export class ProjectileShootEvent implements IProjectileShootEvent {
+export class ProjectileShootEvent {
     constructor(public projectile: Actor, public shooter: Actor) {}
+}
+
+export class PlayerSleepInBedEvent {
+    constructor(
+        public player: Player,
+        public pos: BlockPos,
+    ) {
+    }
 }
 
 // function onPlayerJump(player: Player):void {
@@ -577,3 +481,14 @@ function onProjectileShoot(projectileComponent: ProjectileComponent, projectile:
     return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
 }
 const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
+
+function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
+    const event = new PlayerSleepInBedEvent(player, pos);
+    const canceled = events.playerSleepInBed.fire(event) === CANCEL;
+    decay(pos);
+    if(canceled) {
+        return BedSleepingResult.OTHER_PROBLEM;
+    }
+    return _onPlayerSleepInBed(event.player, event.pos);
+}
+const _onPlayerSleepInBed = procHacker.hooking("Player::startSleepInBed", uint8_t, null, Player, BlockPos)(onPlayerSleepInBed);

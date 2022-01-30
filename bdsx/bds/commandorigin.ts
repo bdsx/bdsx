@@ -4,16 +4,17 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { CxxString, NativeType, void_t } from "../nativetype";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
+import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { Actor } from "./actor";
 import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
+import { procHacker } from "./proc";
 import { proc } from "./symbols";
 
 @nativeClass(null)
-export class CommandOrigin extends NativeClass {
+export class CommandOrigin extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(mce.UUID)
@@ -84,6 +85,24 @@ export class PlayerCommandOrigin extends CommandOrigin {
     // Actor*(*getEntity)(CommandOrigin* origin);
 }
 
+@nativeClass(0x58)
+export class ActorCommandOrigin extends CommandOrigin {
+    // Actor*(*getEntity)(CommandOrigin* origin);
+
+    static constructWith(actor:Actor):ActorCommandOrigin {
+        const origin = new ActorCommandOrigin(true);
+        ActorCommandOrigin$ActorCommandOrigin(origin, actor);
+        return origin;
+    }
+    static allocateWith(actor:Actor):ActorCommandOrigin {
+        const origin = capi.malloc(ActorCommandOrigin[NativeType.size]).as(ActorCommandOrigin);
+        ActorCommandOrigin$ActorCommandOrigin(origin, actor);
+        return origin;
+    }
+}
+
+const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
+
 @nativeClass(null)
 export class ScriptCommandOrigin extends PlayerCommandOrigin {
     // struct VFTable
@@ -94,12 +113,25 @@ export class ScriptCommandOrigin extends PlayerCommandOrigin {
     // VFTable* vftable;
 }
 
+const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
+
 @nativeClass(0x58)
 export class ServerCommandOrigin extends CommandOrigin {
+    static constructWith(name:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
+        const ptr = new ServerCommandOrigin(true);
+        ServerCommandOrigin$ServerCommandOrigin(ptr, name, level, permissionLevel, dimension);
+        return ptr;
+    }
+    static allocateWith(name:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
+        const ptr = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
+        ServerCommandOrigin$ServerCommandOrigin(ptr, name, level, permissionLevel, dimension);
+        return ptr;
+    }
 }
 
+const ServerCommandOrigin$ServerCommandOrigin = procHacker.js('ServerCommandOrigin::ServerCommandOrigin', void_t, null, ServerCommandOrigin,
+    CxxString, ServerLevel, int32_t, Dimension);
 const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
-const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 
 // void destruct(CommandOrigin* origin);
 CommandOrigin.prototype.destruct = makefunc.js([0x00], void_t, {this: CommandOrigin});
