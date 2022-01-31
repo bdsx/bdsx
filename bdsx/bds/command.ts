@@ -299,7 +299,19 @@ export class CommandPosition extends NativeClass {
 (CommandPosition.prototype as any)._getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 
 export class CommandPositionFloat extends CommandPosition {
-    static readonly [CommandParameterType.symbol]:true;
+    static readonly [CommandParameterType.symbol]: true;
+
+    static constructWith(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPositionFloat {
+        const ret = CommandPosition.construct();
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        ret.isXRelative = isXRelative;
+        ret.isYRelative = isYRelative;
+        ret.isZRelative = isZRelative;
+        ret.local = local;
+        return ret;
+    }
 }
 
 @nativeClass()
