@@ -434,6 +434,7 @@ const symbols = [
     'Player::startSleepInBed',
     'MCRESULT::getFullCode',
     'MCRESULT::isSuccess',
+    'BlockActor::setChanged',
     'VirtualCommandOrigin::VirtualCommandOrigin',
 ] as const;
 

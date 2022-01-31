@@ -189,6 +189,9 @@ export class BlockActor extends NativeClass {
         this.save(tag);
         return tag;
     }
+    setChanged(): void{
+        abstract();
+    }
 }
 
 @nativeClass(null)
