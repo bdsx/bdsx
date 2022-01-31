@@ -106,18 +106,7 @@ export class ActorCommandOrigin extends CommandOrigin {
 const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
 
 @nativeClass(0x50)
-export class VirtualCommandOrigin extends CommandOrigin {
-    /**
-     * @param unknown `execute` command use 0x11
-     */
-    static allocateWith(origin:CommandOrigin, actor:Actor, pos:Command.CommandPositionFloat, unknown:int32_t):VirtualCommandOrigin {
-        const self = capi.malloc(VirtualCommandOrigin[NativeType.size]).as(VirtualCommandOrigin);
-        VirtualCommandOrigin$VirtualCommandOrigin(self, origin, actor, pos, unknown);
-        return self;
-    }
-}
-
-const VirtualCommandOrigin$VirtualCommandOrigin = makefunc.js(proc["VirtualCommandOrigin::VirtualCommandOrigin"], void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, Command.CommandPositionFloat, int32_t);
+export class VirtualCommandOrigin extends CommandOrigin {}
 
 @nativeClass(null)
 export class ScriptCommandOrigin extends PlayerCommandOrigin {
