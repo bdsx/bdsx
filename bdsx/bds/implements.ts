@@ -20,9 +20,9 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { CommandContext, CommandPermissionLevel, CommandPosition, CommandPositionFloat, MCRESULT, MinecraftCommands } from "./command";
+import { CommandContext, CommandPermissionLevel, CommandPositionFloat, MCRESULT, MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
-import { ActorCommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
+import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import './commandparsertypes';
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
@@ -249,6 +249,7 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
     }
 };
 
+const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("VirtualCommandOrigin::VirtualCommandOrigin", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
     const actorPos = this.getPosition();
     const cmdPos = CommandPositionFloat.constructWith(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
@@ -259,7 +260,9 @@ Actor.prototype.runCommand = function(command:string, mute:boolean = true, permi
         permissionLevel,
         this.getDimension());
 
-    const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos, 0x11);//0x11: From running `execute` command manually
+    const origin = capi.malloc(VirtualCommandOrigin[NativeType.size]).as(VirtualCommandOrigin);
+    VirtualCommandOrigin$VirtualCommandOrigin(origin, serverOrigin, this, cmdPos, 0x11); // 0x11: From running `execute` command manually
+
     serverOrigin.destruct();
     capi.free(serverOrigin);
     cmdPos.destruct();
