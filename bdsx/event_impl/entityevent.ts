@@ -1,6 +1,8 @@
 import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
+import { BlockPos } from "../bds/blockpos";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
+import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
@@ -13,8 +15,6 @@ import { events } from "../event";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
-import { BlockPos } from "../bds/blockpos";
-import { BedSleepingResult } from "../bds/level";
 
 export class EntityHurtEvent {
     constructor(

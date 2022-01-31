@@ -1,6 +1,6 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString } from "../nativetype";
 
 export enum VanillaBiomeTypes {

@@ -13,8 +13,6 @@ import { Level, ServerLevel } from "./level";
 import { procHacker } from "./proc";
 import { proc } from "./symbols";
 
-import Command = require("./command");
-
 @nativeClass(null)
 export class CommandOrigin extends AbstractClass {
     @nativeField(VoidPointer)

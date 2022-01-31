@@ -1,7 +1,7 @@
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t } from "../nativetype";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";

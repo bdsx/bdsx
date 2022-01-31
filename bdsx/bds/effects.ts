@@ -7,7 +7,7 @@ import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, float32_t, int32_t, uint32_t } from "../nativetype";
 import { HashedString } from "./hashedstring";
-import { CompoundTag, NBT, Tag } from "./nbt";
+import { CompoundTag } from "./nbt";
 
 export enum MobEffectIds {
     Empty,
