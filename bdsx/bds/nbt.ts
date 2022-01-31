@@ -651,7 +651,7 @@ export namespace NBT {
     }
     export class Short extends Numeric {
         constructor(n:number) {
-            super(n & 0xffff);
+            super(n << 16 >> 16);
         }
         get value(): number {
             return this._value;
@@ -668,7 +668,7 @@ export namespace NBT {
     }
     export class Int extends Numeric {
         constructor(n:number) {
-            super(n & 0xffffffff);
+            super(n|0);
         }
         get value(): number {
             return this._value;
