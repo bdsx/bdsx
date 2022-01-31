@@ -668,7 +668,7 @@ export namespace NBT {
     }
     export class Int extends Numeric {
         constructor(n:number) {
-            super(n);
+            super(n & 0xffffffff);
         }
         get value(): number {
             return this._value;
