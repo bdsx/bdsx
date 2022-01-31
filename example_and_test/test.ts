@@ -3,18 +3,18 @@
  */
 
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
-import { Actor, ActorType, DimensionId } from "bdsx/bds/actor";
+import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { ContainerId, ContainerType, ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
+import { ItemStack } from "bdsx/bds/inventory";
 import { ServerLevel } from "bdsx/bds/level";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
-import { AttributeData, ContainerOpenPacket, InventoryContentPacket, PacketIdToType } from "bdsx/bds/packets";
+import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
 import { serverInstance } from "bdsx/bds/server";
@@ -825,6 +825,16 @@ Tester.test({
                 })
             ]);
         }
+    },
+
+    itemActor() {
+        events.playerJoin.once(this.wrap((ev)=>{
+            const pos = ev.player.getPosition();
+            const region = ev.player.getRegion();
+            const actor = Actor.summonAt(region, pos, ActorType.Item, -1);
+            this.assert(actor instanceof ItemActor, 'ItemActor summoning');
+            this.assert((actor as ItemActor).itemStack.vftable.equals(proc["ItemStack::`vftable'"]), 'ItemActor.itemStack is not ItemStack');
+        }));
     },
 }, true);
 

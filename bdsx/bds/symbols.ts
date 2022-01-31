@@ -429,6 +429,7 @@ const symbols = [
     'ButtonBlock::use',
     'ItemStack::use',
     'ItemStack::useOn',
+    "ItemStack::`vftable'",
     'Level::getRandomPlayer',
     'Player::startSleepInBed',
     'MCRESULT::getFullCode',
