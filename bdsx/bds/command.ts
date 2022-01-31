@@ -1,12 +1,10 @@
-import { asm } from "../assembler";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
-import { AllocatedPointer, NativePointer, pdb, StaticPointer, VoidPointer } from "../core";
+import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
-import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
 import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
@@ -16,9 +14,8 @@ import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
 import { Actor } from "./actor";
-import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
+import { BlockPos, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
-import { JsonValue } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
@@ -273,6 +270,18 @@ export class CommandPosition extends NativeClass {
     @nativeField(bool_t)
     local:bool_t;
 
+    static constructWith(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPosition {
+        const ret = CommandPosition.construct();
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        ret.isXRelative = isXRelative;
+        ret.isYRelative = isYRelative;
+        ret.isZRelative = isZRelative;
+        ret.local = local;
+        return ret;
+    }
+
     protected _getPosition(origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
         abstract();
     }
@@ -290,7 +299,19 @@ export class CommandPosition extends NativeClass {
 (CommandPosition.prototype as any)._getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 
 export class CommandPositionFloat extends CommandPosition {
-    static readonly [CommandParameterType.symbol]:true;
+    static readonly [CommandParameterType.symbol]: true;
+
+    static constructWith(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPositionFloat {
+        const ret = CommandPosition.construct();
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        ret.isXRelative = isXRelative;
+        ret.isYRelative = isYRelative;
+        ret.isZRelative = isZRelative;
+        ret.local = local;
+        return ret;
+    }
 }
 
 @nativeClass()

@@ -432,10 +432,10 @@ const symbols = [
     "ItemStack::`vftable'",
     'Level::getRandomPlayer',
     'Player::startSleepInBed',
-    'ActorCommandOrigin::ActorCommandOrigin',
     'MCRESULT::getFullCode',
     'MCRESULT::isSuccess',
     'BlockActor::setChanged',
+    'VirtualCommandOrigin::VirtualCommandOrigin',
 ] as const;
 
 // decorated symbols

@@ -103,6 +103,9 @@ export class ActorCommandOrigin extends CommandOrigin {
 
 const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
 
+@nativeClass(0x50)
+export class VirtualCommandOrigin extends CommandOrigin {}
+
 @nativeClass(null)
 export class ScriptCommandOrigin extends PlayerCommandOrigin {
     // struct VFTable
