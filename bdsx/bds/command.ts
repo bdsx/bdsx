@@ -15,6 +15,7 @@ import { SharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
+import { ULONGLONG } from "../windows_h";
 import { Actor } from "./actor";
 import { BlockPos, RelativeFloat, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
@@ -272,6 +273,18 @@ export class CommandPosition extends NativeClass {
     isZRelative:bool_t;
     @nativeField(bool_t)
     local:bool_t;
+
+    static constructWith(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPosition {
+        const ret = CommandPosition.construct();
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        ret.isXRelative = isXRelative;
+        ret.isYRelative = isYRelative;
+        ret.isZRelative = isZRelative;
+        ret.local = local;
+        return ret;
+    }
 
     protected _getPosition(origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
         abstract();
