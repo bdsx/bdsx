@@ -1,11 +1,15 @@
+import * as colors from 'colors';
+import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
 import { CommandContext, MCRESULT } from "./bds/command";
-import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
+import { ServerCommandOrigin } from "./bds/commandorigin";
 import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
+import * as nimodule from './bds/networkidentifier';
 import { proc, procHacker } from "./bds/proc";
+import * as bd_server from './bds/server';
 import { capi } from "./capi";
 import { CANCEL, Encoding } from "./common";
 import { Config } from "./config";
@@ -16,16 +20,10 @@ import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
-import { CxxStringWrapper, Wrapper } from "./pointer";
-import { SharedPtr } from "./sharedpointer";
+import { CxxStringWrapper } from "./pointer";
 import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { _tickCallback } from "./util";
-
-import readline = require("readline");
-import colors = require('colors');
-import bd_server = require("./bds/server");
-import nimodule = require("./bds/networkidentifier");
 
 declare module 'colors' {
 
@@ -242,8 +240,8 @@ function _launch(asyncResolve:()=>void):void {
     // and bdsx will hijack the game thread and run it on the node thread.
     const [threadHandle] = capi.createThread(asmcode.wrapped_main, null);
 
-    require('./bds/implements');
-    require('./event_impl');
+    import('./bds/implements');
+    import('./event_impl');
 
     loadingIsFired = true;
     events.serverLoading.fire();
@@ -288,8 +286,12 @@ function _launch(asyncResolve:()=>void):void {
                 _tickCallback();
                 cgate.nodeLoopOnce();
 
-                bd_server.serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
-                nimodule.networkHandler = bd_server.serverInstance.networkHandler;
+                Object.defineProperty(bd_server, 'serverInstance', {
+                    value:asmcode.serverInstance.as(bd_server.ServerInstance),
+                });
+                Object.defineProperty(nimodule, 'networkHandler', {
+                    value:bd_server.serverInstance.networkHandler,
+                });
                 openIsFired = true;
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it

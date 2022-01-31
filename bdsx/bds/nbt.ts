@@ -1,3 +1,4 @@
+import * as util from "util";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { abstract, TypedArrayBuffer } from "../common";
@@ -8,7 +9,6 @@ import { AbstractClass, nativeClass, NativeClass, NativeClassType, nativeField }
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { hexn } from "../util";
-import util = require("util");
 
 @nativeClass()
 export class TagMemoryChunk extends NativeClass {

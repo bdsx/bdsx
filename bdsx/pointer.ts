@@ -1,11 +1,10 @@
+import * as util from 'util';
 import { CircularDetector } from "./circulardetector";
 import { abstract, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
-import { dll } from "./dll";
+import { msAlloc } from "./msalloc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
-import util = require('util');
-import { msAlloc } from "./msalloc";
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>> {
     new(ptr?:boolean):Wrapper<T>;

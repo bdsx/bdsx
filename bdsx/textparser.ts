@@ -1,5 +1,5 @@
 
-import colors = require('colors');
+import * as colors from 'colors';
 import { str2set } from './util';
 
 const SPACE_REG = /^([\s\uFEFF\xA0]*)(.*[^\s\uFEFF\xA0])[\s\uFEFF\xA0]*$/;

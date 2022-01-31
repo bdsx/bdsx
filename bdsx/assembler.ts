@@ -1,3 +1,4 @@
+import * as colors from 'colors';
 import { bin } from "./bin";
 import { fsutil } from "./fsutil";
 import { polynominal } from "./polynominal";
@@ -6,7 +7,6 @@ import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } f
 import { checkPowOf2, getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
-import colors = require('colors');
 
 export enum Register {
     absolute=-2,

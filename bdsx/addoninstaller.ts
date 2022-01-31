@@ -1,11 +1,11 @@
 
-import fs = require('fs');
-import path = require('path');
-import unzipper = require('unzipper');
-import colors = require('colors');
-import stripJsonComments = require('strip-json-comments');
+import * as colors from 'colors';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as ProgressBar from 'progress';
+import * as stripJsonComments from 'strip-json-comments';
+import * as unzipper from 'unzipper';
 import { fsutil } from './fsutil';
-import ProgressBar = require('progress');
 import { serverProperties } from './serverproperties';
 
 interface ServerPack {

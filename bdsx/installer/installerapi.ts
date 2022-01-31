@@ -1,14 +1,14 @@
 
-import fs_ori = require('fs');
-import unzipper = require('unzipper');
-import path = require('path');
-import readline = require('readline');
-import ProgressBar = require('progress');
 import { https } from 'follow-redirects';
-import BDSX_CORE_VERSION = require('../version-bdsx.json');
-import BDS_VERSION = require('../version-bds.json');
+import * as fs_ori from 'fs';
+import * as path from 'path';
+import * as ProgressBar from 'progress';
+import * as readline from 'readline';
+import * as unzipper from 'unzipper';
 import { fsutil } from '../fsutil';
 import { printOnProgress } from '../util';
+import * as BDS_VERSION from '../version-bds.json';
+import * as BDSX_CORE_VERSION from '../version-bdsx.json';
 
 const BDSX_YES = process.env.BDSX_YES;
 const sep = path.sep;

@@ -1,8 +1,8 @@
+import * as ProgressBar from 'progress';
 import { pdb } from "../core";
 import { templateName } from "../templatename";
 import { LanguageParser } from "../textparser";
 import { PdbCache } from "./pdbcache";
-import ProgressBar = require('progress');
 
 const OPERATORS = new Set<string>([
     '::',

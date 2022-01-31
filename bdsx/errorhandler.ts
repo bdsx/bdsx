@@ -1,14 +1,14 @@
 
+import * as path from "path";
 import { asm } from "./assembler";
 import { cgate, ipfilter, jshook, runtimeError, VoidPointer } from "./core";
+import { dllraw } from "./dllraw";
 import { events } from "./event";
+import { makefunc } from "./makefunc";
+import { int32_t } from "./nativetype";
 import { remapError } from "./source-map-support";
 import { numberWithFillZero } from "./util";
 import { EXCEPTION_ACCESS_VIOLATION, MAX_PATH } from "./windows_h";
-import path = require("path");
-import { int32_t } from "./nativetype";
-import { makefunc } from "./makefunc";
-import { dllraw } from "./dllraw";
 
 enum JsErrorCode {
     JsNoError = 0,

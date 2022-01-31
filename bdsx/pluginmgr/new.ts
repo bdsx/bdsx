@@ -1,8 +1,8 @@
 
-import fs = require('fs');
-import path = require('path');
-import colors = require('colors');
-import child_process = require('child_process');
+import * as child_process from 'child_process';
+import * as colors from 'colors';
+import * as fs from 'fs';
+import * as path from 'path';
 import { fsutil } from '../fsutil';
 
 if (process.argv[2] == null) {

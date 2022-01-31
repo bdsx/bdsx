@@ -2,8 +2,7 @@
 import { install } from '../../source-map-support';
 install();
 
-import path = require('path');
-
+import * as path from 'path';
 import { asm } from "../../assembler";
 import '../../codealloc';
 import { chakraUtil } from '../../core';

@@ -1,7 +1,7 @@
 
-import path = require('path');
-import fs = require('fs');
-import colors = require('colors');
+import * as colors from 'colors';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function checkVersion(installed:number[], required:string):boolean {
     let ifGreater = false;
@@ -94,6 +94,7 @@ const requiredDeps = packagejson.dependencies;
 for (const [name, requiredVersion] of Object.entries<string>(requiredDeps)) {
     if (/^file:(?:\.[\\/])?plugins[\\/]/.test(requiredVersion)) continue;
     try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const installed = require(`${name}/package.json`);
         const installedVersion = installed.version;
         if (!checkVersionSyntax(name, installedVersion, requiredVersion)) {

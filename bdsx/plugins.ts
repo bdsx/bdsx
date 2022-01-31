@@ -1,10 +1,10 @@
 
+import * as colors from 'colors';
+import * as path from 'path';
 import { ConcurrencyQueue } from './concurrency';
 import { fsutil } from './fsutil';
 import { remapAndPrintError } from './source-map-support';
 import { wineCompatible } from './winecompatible';
-import path = require('path');
-import colors = require('colors');
 
 const PLUGINS_BDSX_PATH = 'file:../bdsx';
 
@@ -267,7 +267,7 @@ export async function loadAllPlugins():Promise<void> {
             for (const pkg of PackageJson.all.values()) {
                 try {
                     console.log(colors.green(`[BDSX-Plugins] Loading ${pkg.name} (${++index}/${pluginCount})`));
-                    require(pkg.name);
+                    import(pkg.name);
                     loadedPlugins.push(pkg.name);
                     loadedPackages.push({name:pkg.name, loaded:(pkg as any).loaded, jsonpath:(pkg as any).jsonpath, json:(pkg as any).json});
                 } catch (err) {

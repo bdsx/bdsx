@@ -2,7 +2,7 @@
  * util for managing the async tasks
  */
 
-import os = require('os');
+import * as os from 'os';
 
 const EMPTY = Symbol(); // it don't use description because it's not used as a property key.
 

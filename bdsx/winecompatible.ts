@@ -1,4 +1,7 @@
 
+import * as child_process from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Config } from './config';
 import { cgate, VoidPointer } from './core';
 import { dll } from "./dll";
@@ -8,9 +11,6 @@ import { makefunc } from './makefunc';
 import { nativeClass, NativeClass, nativeField } from "./nativeclass";
 import { bool_t, int32_t, NativeType, uint16_t } from './nativetype';
 import { Wrapper } from './pointer';
-import child_process = require('child_process');
-import fs = require('fs');
-import path = require('path');
 
 function initWineExec():(commandLine:string, cwd?:string)=>void {
     @nativeClass()

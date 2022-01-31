@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import glob = require('glob');
-import fs = require('fs');
+import * as glob from 'glob';
+import * as fs from 'fs';
 
 const BDSX_PERMANENT = process.env.BDSX_PERMANENT === 'true';
 const DATA_FILE_PATH = './bedrock_server/bdsx_shell_data.ini';

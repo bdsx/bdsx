@@ -1,5 +1,5 @@
 
-import util = require('util');
+import * as util from 'util';
 
 export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
     const size = src.length;

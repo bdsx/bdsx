@@ -8,7 +8,7 @@ import { hacktool } from "./hacktool";
 import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
-import colors = require('colors');
+import * as colors from 'colors';
 
 const FREE_REGS:Register[] = [
     Register.rax,

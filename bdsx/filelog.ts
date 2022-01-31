@@ -1,8 +1,7 @@
 
-import fs = require('fs');
-import path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
 import { inspect } from 'util';
-import { anyToString } from './util';
 
 export class FileLog {
 

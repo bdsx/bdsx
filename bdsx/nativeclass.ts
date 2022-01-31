@@ -1,3 +1,4 @@
+import * as util from 'util';
 import { capi } from "./capi";
 import { CircularDetector } from "./circulardetector";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
@@ -7,7 +8,6 @@ import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { remapAndPrintError } from "./source-map-support";
 import { isBaseOf } from "./util";
-import util = require('util');
 
 type FieldMapItem = [Type<any>, number]|Type<any>;
 

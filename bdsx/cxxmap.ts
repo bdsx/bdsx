@@ -2,6 +2,7 @@
 // Visual C++ uses red black tree for std::map
 // https://en.wikipedia.org/wiki/Red%E2%80%93black_tree
 
+import * as util from 'util';
 import { capi } from "./capi";
 import { CxxLess } from "./cxxfunctional";
 import { CxxPair, CxxPairType } from "./cxxpair";
@@ -9,7 +10,6 @@ import { NativeClass, nativeClass, NativeClassType, nativeField } from "./native
 import { int8_t, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { templateName } from "./templatename";
-import util = require('util');
 
 enum _Redbl { // colors for link to parent
     _Red,

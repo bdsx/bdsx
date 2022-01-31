@@ -1,8 +1,8 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { styling } from "../externs/bds-scripting/styling";
 import { imageSections } from "./imagesections";
 import { PdbIdentifier } from "./symbolparser";
-import fs = require('fs');
-import path = require('path');
-import { styling } from "../externs/bds-scripting/styling";
 
 const specialNameRemap = new Map<string, string>();
 specialNameRemap.set("`vector deleting destructor'", '__vector_deleting_destructor');

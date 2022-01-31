@@ -1,5 +1,5 @@
+import * as https from 'https';
 import { HTMLElement, NodeType, parse as parseHtml } from "node-html-parser";
-import https = require('https');
 
 export class HtmlRule {
     constructor(public readonly filter: htmlutil.Filter) {

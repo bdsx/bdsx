@@ -1,8 +1,8 @@
+import * as colors from 'colors';
 import { asm, AsmMultiplyConstant, FFOperation, JumpOperation, OperationSize, Operator, Register } from "./assembler";
 import { NativePointer, VoidPointer } from "./core";
 import { bin64_t } from "./nativetype";
 import { hex, unhex } from "./util";
-import colors = require('colors');
 
 interface OffsetInfo {
     offset:OperationSize|null;

@@ -1,8 +1,8 @@
 
+import * as colors from 'colors';
 import { serverInstance } from "./bds/server";
 import { remapError, remapStackLine } from "./source-map-support";
 import { getLineAt } from "./util";
-import colors = require('colors');
 
 let testnum = 1;
 let testcount = 0;

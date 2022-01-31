@@ -1,6 +1,6 @@
 
-import child_process = require('child_process');
-import blessed = require('blessed');
+import * as blessed from 'blessed';
+import * as child_process from 'child_process';
 import { fsutil } from '../fsutil';
 
 const SELECTABLE_ITEM_STYLE = {

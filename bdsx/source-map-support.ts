@@ -1,10 +1,10 @@
 
+import * as colors from 'colors';
+import * as fs from 'fs';
+import * as path from 'path';
 import { SourceMapConsumer } from 'source-map';
+import * as util from 'util';
 import { getLineAt, indexOfLine, removeLine } from './util';
-import path = require('path');
-import fs = require('fs');
-import util = require('util');
-import colors = require('colors');
 
 const HIDE_UNDERSCOPE = true;
 
