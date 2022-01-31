@@ -435,6 +435,7 @@ const symbols = [
     'ActorCommandOrigin::ActorCommandOrigin',
     'MCRESULT::getFullCode',
     'MCRESULT::isSuccess',
+    'BlockActor::setChanged',
 ] as const;
 
 // decorated symbols
