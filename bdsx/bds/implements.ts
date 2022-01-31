@@ -247,7 +247,7 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
         tag.dispose();
         return nbt;
     }
-};/*
+};
 
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
     const actorPos = this.getPosition();
@@ -262,12 +262,13 @@ Actor.prototype.runCommand = function(command:string, mute:boolean = true, permi
     const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos, 0x11);//0x11: From running `execute` command manually
     serverOrigin.destruct();
     capi.free(serverOrigin);
+    cmdPos.destruct();
 
     const ctx = CommandContext.constructSharedPtr(command, origin);
     const res = serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
     // ctx, origin: no need to destruct, it's destructed by internal functions.
     return res;
-}; */
+};
 
 @nativeClass()
 class DefaultDataLoaderHelper extends NativeClass {
