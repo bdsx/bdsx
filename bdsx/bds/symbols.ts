@@ -431,9 +431,9 @@ const symbols = [
     'ItemStack::useOn',
     'Level::getRandomPlayer',
     'Player::startSleepInBed',
-    'ActorCommandOrigin::ActorCommandOrigin',
     'MCRESULT::getFullCode',
     'MCRESULT::isSuccess',
+    'VirtualCommandOrigin::VirtualCommandOrigin',
 ] as const;
 
 // decorated symbols

@@ -2,6 +2,7 @@ import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
+import { capi } from "../capi";
 import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
@@ -19,9 +20,9 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { CommandContext, MCRESULT, MinecraftCommands } from "./command";
+import { CommandContext, CommandPermissionLevel, CommandPosition, CommandPositionFloat, MCRESULT, MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
-import { ActorCommandOrigin } from "./commandorigin";
+import { ActorCommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import './commandparsertypes';
 import { OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
@@ -239,15 +240,27 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
         tag.dispose();
         return nbt;
     }
-};
+};/*
 
-Actor.prototype.runCommand = function(command:string, mute:boolean = true):MCRESULT {
-    const origin = ActorCommandOrigin.allocateWith(this);
+Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
+    const actorPos = this.getPosition();
+    const cmdPos = CommandPositionFloat.constructWith(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
+
+    const serverOrigin = ServerCommandOrigin.allocateWith(
+        "Server",
+        this.getLevel(),
+        permissionLevel,
+        this.getDimension());
+
+    const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos, 0x11);//0x11: From running `execute` command manually
+    serverOrigin.destruct();
+    capi.free(serverOrigin);
+
     const ctx = CommandContext.constructSharedPtr(command, origin);
     const res = serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
     // ctx, origin: no need to destruct, it's destructed by internal functions.
     return res;
-};
+}; */
 
 @nativeClass()
 class DefaultDataLoaderHelper extends NativeClass {
