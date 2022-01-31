@@ -14,7 +14,7 @@ import { bool_t, int32_t, int8_t, uint32_t, void_t } from "bdsx/nativetype";
 import { ProcHacker } from "bdsx/prochacker";
 
 function sendText(ni:NetworkIdentifier, message:string):void {
-    const packet = TextPacket.create();
+    const packet = TextPacket.allocate();
     packet.message = message;
     packet.sendTo(ni);
     packet.dispose();

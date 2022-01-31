@@ -808,7 +808,7 @@ export class Actor extends AbstractClass {
             obj.type = this.getEntityTypeId();
         });
     }
-    runCommand(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel|undefined = undefined): MCRESULT{
+    runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
         abstract();
     }
 }

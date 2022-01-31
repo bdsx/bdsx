@@ -14,7 +14,7 @@ command.register('transferserver', "Transfer servers").overload((params, origin,
 });
 
 export function transferServer(networkIdentifier:NetworkIdentifier, address:string, port:number):void {
-    const transferPacket = TransferPacket.create();
+    const transferPacket = TransferPacket.allocate();
     transferPacket.address = address;
     transferPacket.port = port;
     transferPacket.sendTo(networkIdentifier);

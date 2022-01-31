@@ -7,6 +7,7 @@ import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { Actor } from "./actor";
+import type { CommandPositionFloat } from "./command";
 import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
@@ -85,7 +86,7 @@ export class PlayerCommandOrigin extends CommandOrigin {
     // Actor*(*getEntity)(CommandOrigin* origin);
 }
 
-@nativeClass(0x58)
+@nativeClass(0x28)
 export class ActorCommandOrigin extends CommandOrigin {
     // Actor*(*getEntity)(CommandOrigin* origin);
 
@@ -104,7 +105,11 @@ export class ActorCommandOrigin extends CommandOrigin {
 const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
 
 @nativeClass(0x50)
-export class VirtualCommandOrigin extends CommandOrigin {}
+export class VirtualCommandOrigin extends CommandOrigin {
+    static allocateWith(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
+        abstract();
+    }
+}
 
 @nativeClass(null)
 export class ScriptCommandOrigin extends PlayerCommandOrigin {
@@ -118,7 +123,7 @@ export class ScriptCommandOrigin extends PlayerCommandOrigin {
 
 const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 
-@nativeClass(0x58)
+@nativeClass(0x48)
 export class ServerCommandOrigin extends CommandOrigin {
     static constructWith(name:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
         const ptr = new ServerCommandOrigin(true);

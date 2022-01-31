@@ -79,7 +79,7 @@ Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShoul
 const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
 Level.prototype.syncGameRules = function() {
     const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
-    wrapper.value = GameRulesChangedPacket.create();
+    wrapper.value = GameRulesChangedPacket.allocate();
     GameRules$createAllGameRulesPacket.call(this.getGameRules(), wrapper);
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(wrapper.value);
@@ -90,7 +90,7 @@ Level.prototype.spawnParticleEffect = procHacker.js("?spawnParticleEffect@Level@
 const level$setTime = procHacker.js("Level::setTime", void_t, {this:Level}, int64_as_float_t);
 Level.prototype.setTime = function(time: number):void {
     level$setTime.call(this, time);
-    const packet = SetTimePacket.create();
+    const packet = SetTimePacket.allocate();
     packet.time = time;
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(packet);
@@ -170,9 +170,10 @@ Actor.setResolver(ptr=>{
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
     if (actor != null) return actor;
-    if (ptr.getPointer().equals(ServerPlayer$vftable)) {
+    const vftable = ptr.getPointer();
+    if (vftable.equals(ServerPlayer$vftable)) {
         actor = ptr.as(ServerPlayer);
-    } else if (ptr.getPointer().equals(ItemActor$vftable)) {
+    } else if (vftable.equals(ItemActor$vftable)) {
         actor = ptr.as(ItemActor);
     } else {
         actor = ptr.as(Actor);
@@ -252,20 +253,15 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("VirtualCommandOrigin::VirtualCommandOrigin", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
     const actorPos = this.getPosition();
-    const cmdPos = CommandPositionFloat.constructWith(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
+    const cmdPos = CommandPositionFloat.create(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
 
-    const serverOrigin = ServerCommandOrigin.allocateWith(
+    const serverOrigin = ServerCommandOrigin.constructWith(
         "Server",
-        this.getLevel(),
+        this.getLevel() as ServerLevel,
         permissionLevel,
         this.getDimension());
-
-    const origin = capi.malloc(VirtualCommandOrigin[NativeType.size]).as(VirtualCommandOrigin);
-    VirtualCommandOrigin$VirtualCommandOrigin(origin, serverOrigin, this, cmdPos, 0x11); // 0x11: From running `execute` command manually
-
+    const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos);
     serverOrigin.destruct();
-    capi.free(serverOrigin);
-    cmdPos.destruct();
 
     const ctx = CommandContext.constructSharedPtr(command, origin);
     const res = serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
@@ -364,7 +360,7 @@ const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
 ServerPlayer.prototype.setAttribute = function(id:AttributeId, value:number):AttributeInstance|null {
     const attr = Actor.prototype.setAttribute.call(this, id, value);
     if (attr === null) return null;
-    const packet = UpdateAttributesPacket.create();
+    const packet = UpdateAttributesPacket.allocate();
     packet.actorId = this.getRuntimeID();
     const data = AttributeData.construct();
     data.name.set(attribNames[id - 1]);
@@ -410,7 +406,7 @@ const PlayerListPacket$emplace = procHacker.js("PlayerListPacket::emplace", void
 Player.prototype.setName = function(name:string):void {
     (this as any)._setName(name);
     const entry = PlayerListEntry.constructWith(this);
-    const pk = PlayerListPacket.create();
+    const pk = PlayerListPacket.allocate();
     PlayerListPacket$emplace(pk, entry);
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(pk);
@@ -436,7 +432,7 @@ Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:
 Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
 const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
 Player.prototype.syncAbilities = function() {
-    const pk = AdventureSettingsPacket.create();
+    const pk = AdventureSettingsPacket.allocate();
     AdventureSettingsPacket$AdventureSettingsPacket(pk, serverInstance.minecraft.getLevel().getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
     this.sendPacket(pk);
     pk.dispose();
@@ -750,7 +746,7 @@ BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVB
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
-    const pk = UpdateBlockPacket.create();
+    const pk = UpdateBlockPacket.allocate();
     UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block.getRuntimeId(), 3);
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(pk);
@@ -1082,6 +1078,13 @@ LevelChunk.prototype.isFullyLoaded = procHacker.js("LevelChunk::isFullyLoaded", 
 LevelChunk.prototype.toWorldPos = procHacker.js("LevelChunk::toWorldPos", BlockPos, {this:LevelChunk, structureReturn:true}, ChunkPos);
 ChunkSource.prototype.getLevel = procHacker.js("ChunkSource::getLevel", Level, {this:ChunkSource});
 ChunkSource.prototype.getLevel = procHacker.js("ChunkSource::getLevel", Level, {this:ChunkSource});
+
+// origin.ts
+VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
+    const out = capi.malloc(VirtualCommandOrigin[NativeType.size]).as(VirtualCommandOrigin);
+    VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, 0x11); // 0x11: From running `execute` command manually
+    return out;
+};
 
 // biome.ts
 Biome.prototype.getBiomeType = procHacker.js("Biome::getBiomeType", uint32_t, {this:Biome});

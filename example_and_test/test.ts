@@ -473,7 +473,7 @@ Tester.test({
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
         });
-        command.register('registertest', 'bdsx command test').overload((param, origin, output)=>{
+        command.register('testcommand', 'bdsx command test').overload((param, origin, output)=>{
             output.success('passed');
         }, {});
 
@@ -486,7 +486,7 @@ Tester.test({
                 }
             };
             events.commandOutput.on(outputcb);
-            bedrockServer.executeCommandOnConsole('registertest');
+            bedrockServer.executeCommandOnConsole('testcommand');
         });
         await new Promise<void>((resolve) => {
             const outputcb = (output:string) => {
@@ -497,7 +497,7 @@ Tester.test({
                 }
             };
             events.commandOutput.on(outputcb);
-            bedrockServer.executeCommand('registertest', false);
+            this.assert(bedrockServer.executeCommand('testcommand', false).isSuccess(), 'testcommand failed');
         });
     },
 
@@ -518,7 +518,7 @@ Tester.test({
         for (const id in PacketIdToType) {
             try {
                 const Packet = PacketIdToType[+id as keyof PacketIdToType];
-                const packet = Packet.create();
+                const packet = Packet.allocate();
 
                 let getNameResult = packet.getName();
                 const realname = wrongNames.get(getNameResult);
@@ -834,6 +834,13 @@ Tester.test({
             const actor = Actor.summonAt(region, pos, ActorType.Item, -1);
             this.assert(actor instanceof ItemActor, 'ItemActor summoning');
             this.assert((actor as ItemActor).itemStack.vftable.equals(proc["ItemStack::`vftable'"]), 'ItemActor.itemStack is not ItemStack');
+            actor.despawn();
+        }));
+    },
+
+    actorRunCommand() {
+        events.playerJoin.once(this.wrap((ev)=>{
+            this.assert(ev.player.runCommand('testcommand').isSuccess(), 'Actor.runCommand failed');
         }));
     },
 }, true);

@@ -270,8 +270,8 @@ export class CommandPosition extends NativeClass {
     @nativeField(bool_t)
     local:bool_t;
 
-    static constructWith(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPosition {
-        const ret = CommandPosition.construct();
+    static create(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPosition {
+        const ret = new CommandPosition(true);
         ret.x = x;
         ret.y = y;
         ret.z = z;
@@ -298,10 +298,11 @@ export class CommandPosition extends NativeClass {
 (CommandPosition.prototype as any)._getPosition = procHacker.js("?getPosition@CommandPosition@@QEBA?AVVec3@@AEBVCommandOrigin@@AEBV2@@Z", Vec3, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 (CommandPosition.prototype as any)._getBlockPosition = procHacker.js("?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@AEBVCommandOrigin@@AEBVVec3@@@Z", BlockPos, { this:CommandPosition,structureReturn:true }, CommandOrigin, Vec3);
 
+@nativeClass()
 export class CommandPositionFloat extends CommandPosition {
     static readonly [CommandParameterType.symbol]: true;
 
-    static constructWith(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPositionFloat {
+    static create(x:number, isXRelative:boolean, y:number, isYRelative:boolean, z:number, isZRelative:boolean, local:boolean):CommandPositionFloat {
         const ret = CommandPosition.construct();
         ret.x = x;
         ret.y = y;
@@ -769,7 +770,7 @@ export class CommandRegistry extends HasTypeId {
     }
 
     serializeAvailableCommands():AvailableCommandsPacket {
-        const pk = AvailableCommandsPacket.create();
+        const pk = AvailableCommandsPacket.allocate();
         this._serializeAvailableCommands(pk);
         return pk;
     }

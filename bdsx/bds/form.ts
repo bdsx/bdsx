@@ -215,7 +215,7 @@ export class Form<DATA extends FormData> {
     static sendTo<T extends FormData['type']>(target:NetworkIdentifier, data:FormData&{type:T}, opts?:Form.Options):Promise<FormResponse<T>> {
         return new Promise((resolve:(res:FormResponse<T>)=>void, reject)=>{
             const submitted = new SentForm(target, resolve, reject);
-            const pk = ModalFormRequestPacket.create();
+            const pk = ModalFormRequestPacket.allocate();
             pk.id = submitted.id;
             if (opts != null) opts.id = pk.id;
             pk.content = JSON.stringify(data);
@@ -228,7 +228,7 @@ export class Form<DATA extends FormData> {
                     for (const button of formdata.buttons) {
                         if (button.image?.type === "url") {
                             setTimeout(() => {
-                                const pk = SetTitlePacket.create();
+                                const pk = SetTitlePacket.allocate();
                                 pk.sendTo(target);
                                 pk.dispose();
                             }, 1000);

@@ -6,7 +6,7 @@ command.register('example_score', 'score packet example').overload((params, orig
     if (actor?.isPlayer()) {
 
         // SetDisplayObjectivePacket
-        const displaypacket = SetDisplayObjectivePacket.create();
+        const displaypacket = SetDisplayObjectivePacket.allocate();
         displaypacket.displaySlot = 'sidebar';
         displaypacket.objectiveName = 'objective';
         displaypacket.displayName = 'name';
@@ -23,7 +23,7 @@ command.register('example_score', 'score packet example').overload((params, orig
         entry.playerEntityUniqueId = actor.getUniqueIdBin();
         entry.score = 1000;
 
-        const packet = SetScorePacket.create();
+        const packet = SetScorePacket.allocate();
         packet.type = SetScorePacket.Type.CHANGE;
         packet.entries.push(entry);
         packet.sendTo(actor.getNetworkIdentifier());
