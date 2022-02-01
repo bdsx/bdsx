@@ -6,7 +6,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxVector } from "../cxxvector";
 import { makefunc } from "../makefunc";
-import { KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
+import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
@@ -114,8 +114,8 @@ export enum CommandSelectionType {
     Agents,
 }
 
-@nativeClass(0xc0)
-export class CommandSelectorBase extends NativeClass {
+@nativeClass(0xc1, 8)
+export class CommandSelectorBase extends AbstractClass {
     private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
         abstract();
     }
@@ -137,6 +137,7 @@ export class CommandSelectorBase extends NativeClass {
         }
     }
 }
+
 /** @param args_1 forcePlayer */
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
@@ -144,7 +145,6 @@ CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorB
 
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
-
     static make<T>(type:Type<T>):NativeClassType<WildcardCommandSelector<T>> {
         return Singleton.newInstance(WildcardCommandSelector, type, ()=>{
             class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
