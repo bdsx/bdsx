@@ -253,7 +253,7 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("VirtualCommandOrigin::VirtualCommandOrigin", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
     const actorPos = this.getPosition();
-    const cmdPos = CommandPositionFloat.create(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
+    const cmdPos = CommandPositionFloat.create(actorPos.x, false, (actorPos.y - 1.62) | 0, false, actorPos.z, false, false);
 
     const serverOrigin = ServerCommandOrigin.constructWith(
         "Server",
