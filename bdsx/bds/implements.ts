@@ -55,6 +55,7 @@ import { StructureManager, StructureSettings, StructureTemplate, StructureTempla
 namespace CommandUtils {
     export const createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
     export const spawnEntityAt = procHacker.js("CommandUtils::spawnEntityAt", Actor, null, BlockSource, Vec3, ActorDefinitionIdentifier, StaticPointer, VoidPointer);
+    export const getFeetPos = procHacker.js("CommandUtils::getFeetPos", Vec3, {structureReturn:true}, Actor);
 }
 
 // level.ts
@@ -163,7 +164,6 @@ Actor.prototype.isPlayer = function() {
 Actor.prototype.isItem = function() {
     return this instanceof ItemActor;
 };
-Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
 
 Actor.setResolver(ptr=>{
     if (ptr === null) return null;
@@ -220,11 +220,12 @@ Actor.prototype.setScoreTag = procHacker.js("Actor::setScoreTag", void_t, {this:
 Actor.prototype.getRegion = procHacker.js("Actor::getRegionConst", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("Actor::getUniqueID", StaticPointer, {this:Actor});
 Actor.prototype.getEntityTypeId = makefunc.js([0x550], int32_t, {this:Actor}); // ActorType getEntityTypeId()
-Actor.prototype.getRuntimeID = procHacker.js('Actor::getRuntimeID', ActorRuntimeID, {this:Actor, structureReturn: true});
-Actor.prototype.getDimension = procHacker.js('Actor::getDimension', Dimension, {this:Actor});
-Actor.prototype.getDimensionId = procHacker.js('Actor::getDimensionId', int32_t, {this:Actor, structureReturn: true});
-Actor.prototype.getActorIdentifier = procHacker.js('Actor::getActorIdentifier', ActorDefinitionIdentifier, {this:Actor});
-Actor.prototype.getCommandPermissionLevel = procHacker.js('Actor::getCommandPermissionLevel', int32_t, {this:Actor});
+Actor.prototype.getRuntimeID = procHacker.js("Actor::getRuntimeID", ActorRuntimeID, {this:Actor, structureReturn: true});
+Actor.prototype.getDimension = procHacker.js("Actor::getDimension", Dimension, {this:Actor});
+Actor.prototype.getDimensionId = procHacker.js("Actor::getDimensionId", int32_t, {this:Actor, structureReturn: true});
+Actor.prototype.getActorIdentifier = procHacker.js("Actor::getActorIdentifier", ActorDefinitionIdentifier, {this:Actor});
+Actor.prototype.getCommandPermissionLevel = procHacker.js("Actor::getCommandPermissionLevel", int32_t, {this:Actor});
+
 const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
 Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld) {
@@ -234,6 +235,7 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
 };
 Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 
+Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
@@ -252,8 +254,8 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
 
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("VirtualCommandOrigin::VirtualCommandOrigin", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
-    const actorPos = this.getPosition();
-    const cmdPos = CommandPositionFloat.create(actorPos.x, false, (actorPos.y - 1.62) | 0, false, actorPos.z, false, false);
+    const actorPos = CommandUtils.getFeetPos(this);
+    const cmdPos = CommandPositionFloat.create(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
 
     const serverOrigin = ServerCommandOrigin.constructWith(
         "Server",

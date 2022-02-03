@@ -436,6 +436,7 @@ const symbols = [
     'MCRESULT::isSuccess',
     'BlockActor::setChanged',
     'VirtualCommandOrigin::VirtualCommandOrigin',
+    'CommandUtils::getFeetPos',
 ] as const;
 
 // decorated symbols
