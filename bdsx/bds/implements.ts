@@ -10,7 +10,7 @@ import { decay } from "../decay";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, GslStringSpan, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, GslSpanToArray, GslStringSpan, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
@@ -252,16 +252,7 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
     }
 };
 
-Actor.prototype.getTags = function (): string[] {
-    const entityTag = this.allocateAndSave();
-    const tags_vector = entityTag.get<ListTag<StringTag>>("Tags")?.data ?? [];
-    const tags = [];
-    for(const strTag of tags_vector){
-        tags.push(strTag.data);
-    }
-    entityTag.dispose();
-    return tags;
-};
+Actor.prototype.getTags = procHacker.js('Actor::getTags', GslSpanToArray.make(CxxString), {this:Actor, structureReturn: true});
 
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("VirtualCommandOrigin::VirtualCommandOrigin", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {

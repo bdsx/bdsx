@@ -5,6 +5,7 @@ import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
 import { Singleton } from './singleton';
+import { templateName } from './templatename';
 import { filterToIdentifierableString } from './util';
 
 namespace NativeTypeFn {
@@ -624,3 +625,44 @@ export type bin128_t = string;
 export const CxxStringWith8Bytes = CxxString.extends();
 CxxStringWith8Bytes[NativeType.size] = 0x28;
 export type CxxStringWith8Bytes = string;
+
+function getSpanName(type:Type<any>):string {
+    return templateName('gsl::span', type.symbol || type.name, '-1');
+}
+
+export class GslSpanToArray<T> extends NativeType<T[]> {
+    private constructor(public readonly compType:Type<T>) {
+        super(getSpanName(compType), `GslSpanToArray<${compType.name}>`, 0x10, 8,
+            v=>v instanceof Array,
+            undefined,
+            (ptr, offset)=>{
+                const length = ptr.getInt64AsFloat(offset);
+                const out:T[] = new Array(length);
+                const compptr = ptr.getPointer(offset == null ? 8 : offset+8);
+                const compsize = this.compType[makefunc.size];
+                for (let i=0,compoffset=0; i!==length; i++,compoffset+=compsize) {
+                    out[i] = this.compType[makefunc.getter](compptr, compoffset);
+                }
+                return out;
+            },
+            impossible,
+            (stackptr, offset)=>this[NativeType.getter](stackptr.getPointer(offset)),
+            (stackptr, array, offset)=>{
+                const compsize = this.compType[makefunc.size];
+                const buf = new AllocatedPointer(array.length * compsize);
+                makefunc.temporalKeeper.push(buf);
+                let compoffset = 0;
+                for (const comp of array) {
+                    this.compType[makefunc.setter](buf, comp, compoffset);
+                    compoffset += compsize;
+                }
+                stackptr.setPointer(buf, offset);
+            },
+            ptr=>ptr.fill(0, 0x10),
+        );
+    }
+
+    static make<T>(compType:Type<T>):GslSpanToArray<T> {
+        return Singleton.newInstance<GslSpanToArray<T>>(GslSpanToArray, compType, ()=>new GslSpanToArray<T>(compType));
+    }
+}
