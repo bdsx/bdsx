@@ -252,6 +252,17 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
     }
 };
 
+Actor.prototype.getTags = function (): string[] {
+    const entityTag = this.allocateAndSave();
+    const tags_vector = entityTag.get<ListTag<StringTag>>("Tags")?.data ?? [];
+    const tags = [];
+    for(const strTag of tags_vector){
+        tags.push(strTag.data);
+    }
+    entityTag.dispose();
+    return tags;
+};
+
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("VirtualCommandOrigin::VirtualCommandOrigin", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
 Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
     const actorPos = CommandUtils.getFeetPos(this);

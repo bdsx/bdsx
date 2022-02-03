@@ -470,6 +470,13 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Returns tags the entity has.
+     * Related functions: {@link addTag}, {@link removeTag}, {@link hasTag}
+     */
+    getTags(): string[] {
+        abstract();
+    }
+    /**
      * @alias instanceof ServerPlayer
      */
     isPlayer():this is ServerPlayer {
