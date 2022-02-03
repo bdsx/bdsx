@@ -437,6 +437,7 @@ const symbols = [
     'BlockActor::setChanged',
     'VirtualCommandOrigin::VirtualCommandOrigin',
     'CommandUtils::getFeetPos',
+    'Actor::isInvisible',
 ] as const;
 
 // decorated symbols

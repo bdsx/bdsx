@@ -773,6 +773,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Returns if the entity is invisible
+     */
+    isInvisible(): boolean {
+        abstract();
+    }
+    /**
      * Returns if the player is riding any entities
      */
     isRiding(): boolean {
