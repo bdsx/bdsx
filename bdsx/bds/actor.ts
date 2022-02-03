@@ -470,13 +470,6 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
-     * Returns tags the entity has.
-     * Related functions: {@link addTag}, {@link removeTag}, {@link hasTag}
-     */
-    getTags(): string[] {
-        abstract();
-    }
-    /**
      * @alias instanceof ServerPlayer
      */
     isPlayer():this is ServerPlayer {
@@ -675,25 +668,33 @@ export class Actor extends AbstractClass {
         return retval;
     }
     /**
-     * Adds a tag to the entity
-     *
+     * Adds a tag to the entity.
+     * Related functions: {@link getTags}, {@link removeTag}, {@link hasTag}
      * @returns {boolean} Whether the tag has been added successfully
      */
     addTag(tag:string):boolean {
         abstract();
     }
     /**
-     * Returns whether the entity has the tag
+     * Returns whether the entity has the tag.
+     * Related functions: {@link getTags}, {@link addTag}, {@link removeTag}
      */
     hasTag(tag:string):boolean {
         abstract();
     }
     /**
-     * Remove a tag from the entity
-     *
+     * Removes a tag from the entity.
+     * Related functions: {@link getTags}, {@link addTag}, {@link hasTag}
      * @returns {boolean} Whether the tag has been removed successfully
      */
     removeTag(tag:string):boolean {
+        abstract();
+    }
+    /**
+     * Returns tags the entity has.
+     * Related functions: {@link addTag}, {@link removeTag}, {@link hasTag}
+     */
+    getTags(): string[] {
         abstract();
     }
     /**
