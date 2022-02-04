@@ -213,7 +213,10 @@ Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, Cx
 Actor.prototype.hasTag = procHacker.js("Actor::hasTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.despawn = procHacker.js("Actor::despawn", void_t, {this:Actor});
 Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Actor}, CxxString);
-Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
+Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, { this: Actor });
+Actor.prototype.getFeetPos = function ():Vec3 {
+    return CommandUtils.getFeetPos(this);
+};
 Actor.prototype.getRotation = procHacker.js("Actor::getRotation", Vec2, {this:Actor, structureReturn: true});
 Actor.prototype.getScoreTag = procHacker.js("Actor::getScoreTag", CxxString, {this:Actor});
 Actor.prototype.setScoreTag = procHacker.js("Actor::setScoreTag", void_t, {this:Actor}, CxxString);
