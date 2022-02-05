@@ -3,7 +3,7 @@ import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
 import { bool_t, CxxString, float32_t, int32_t, Type } from "../nativetype";
 import { templateName } from "../templatename";
 import { RelativeFloat } from "./blockpos";
-import { ActorCommandSelector, ActorWildcardCommandSelector, CommandFilePath, CommandItem, CommandMessage, CommandPosition, CommandPositionFloat, CommandRawText, CommandRegistry, CommandWildcardInt, PlayerCommandSelector, PlayerWildcardCommandSelector } from "./command";
+import { ActorCommandSelector, ActorWildcardCommandSelector, CommandBlock, CommandFilePath, CommandItem, CommandMessage, CommandMobEffect, CommandPosition, CommandPositionFloat, CommandRawText, CommandRegistry, CommandWildcardInt, PlayerCommandSelector, PlayerWildcardCommandSelector } from "./command";
 import { JsonValue } from "./connreq";
 import { type_id } from "./typeid";
 
@@ -28,6 +28,8 @@ const types = [
     CommandRawText,
     CommandWildcardInt,
     JsonValue,
+    CommandBlock,
+    CommandMobEffect,
 ];
 
 function loadParserFromPdb(types:Type<any>[]):void {

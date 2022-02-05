@@ -222,7 +222,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         return this[NativeTypeFn.bitGetter] !== abstract;
     }
 
-    extends<FIELDS>(fields?:FIELDS, symbol?:string, name?:string):NativeType<T>&FIELDS {
+    extends<FIELDS>(fields?:FIELDS, symbol?:string, name?:string):null extends FIELDS ? NativeType<T> : NativeType<T>&FIELDS {
         const type = this;
         const ntype = new NativeType(
             symbol ?? this.symbol,
@@ -316,7 +316,7 @@ export class CommandParameterNativeType<T> extends NativeType<T> {
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
         `${type.name}*`,
-        `${type.symbol}*`,
+        `${type.symbol} * __ptr64`,
         8, 8,
         type.isTypeOf,
         type.isTypeOfWeak,

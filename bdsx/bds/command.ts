@@ -14,8 +14,10 @@ import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
 import { Actor } from "./actor";
+import { Block } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
+import { MobEffect } from "./effects";
 import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
@@ -356,6 +358,8 @@ const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
 const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
     CommandContext, CxxString, CommandOriginWrapper, int32_t);
 const CommandContextSharedPtr = SharedPtr.make(CommandContext);
+export const CommandBlock = Block.ref().extends(null, 'Block const * __ptr64', 'Block*') as CommandParameterNativeType<Block>;
+export const CommandMobEffect = MobEffect.ref().extends(null, 'MobEffect const * __ptr64', 'MobEffect*') as CommandParameterNativeType<MobEffect>;
 
 export enum CommandOutputType {
     None = 0,
