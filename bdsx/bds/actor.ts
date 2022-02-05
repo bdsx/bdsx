@@ -546,6 +546,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Returns the entity's feet position
+     */
+    getFeetPos():Vec3 {
+        abstract();
+    }
+    /**
      * Returns the entity's rotation
      */
     getRotation():Vec2 {
