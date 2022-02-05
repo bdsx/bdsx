@@ -14,10 +14,10 @@ import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
 import { Actor } from "./actor";
-import { Block } from "./block";
+import { Block as BlockClass } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
-import { MobEffect } from "./effects";
+import { MobEffect as MobEffectClass } from "./effects";
 import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
@@ -358,8 +358,6 @@ const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
 const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
     CommandContext, CxxString, CommandOriginWrapper, int32_t);
 const CommandContextSharedPtr = SharedPtr.make(CommandContext);
-export const CommandBlock = Block.ref().extends(null, 'Block const * __ptr64', 'Block*') as CommandParameterNativeType<Block>;
-export const CommandMobEffect = MobEffect.ref().extends(null, 'MobEffect const * __ptr64', 'MobEffect*') as CommandParameterNativeType<MobEffect>;
 
 export enum CommandOutputType {
     None = 0,
@@ -716,7 +714,13 @@ export class Command extends NativeClass {
 export namespace Command {
     export const VFTable = CommandVFTable;
     export type VFTable = CommandVFTable;
+    export const Block = BlockClass.ref().extends(null, 'Block const * __ptr64', 'Block*') as CommandParameterNativeType<BlockClass>;
+    export const MobEffect = MobEffectClass.ref().extends(null, 'MobEffect const * __ptr64', 'MobEffect*') as CommandParameterNativeType<MobEffectClass>;
 }
+/** @deprecated use Command.Block */
+export const CommandBlock = Command.Block;
+/** @deprecated use Command.MobEffect */
+export const CommandMobEffect = Command.MobEffect;
 
 export class CommandRegistry extends HasTypeId {
     signatures:CxxMap<CxxString, CommandRegistry.Signature>;

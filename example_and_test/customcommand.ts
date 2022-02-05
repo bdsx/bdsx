@@ -2,7 +2,7 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, CommandBlock, CommandPermissionLevel, CommandPosition, CommandRawText } from "bdsx/bds/command";
+import { ActorWildcardCommandSelector, Command, CommandBlock, CommandPermissionLevel, CommandPosition, CommandRawText } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
@@ -113,7 +113,7 @@ command.register('jjj', 'block example').overload((param, origin, output)=>{
         `block example> origin=${origin.getName()}\n`+
         `block name: ${param.block.getName()}`);
 }, {
-    block: CommandBlock,
+    block: Command.Block,
 });
 
 // hook direct
