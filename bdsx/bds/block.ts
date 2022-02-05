@@ -7,6 +7,7 @@ import type { BlockPos, ChunkPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
+import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
 
 @nativeClass(null)
@@ -190,6 +191,9 @@ export class BlockActor extends NativeClass {
         return tag;
     }
     setChanged(): void{
+        abstract();
+    }
+    getContainer(): Container | null{
         abstract();
     }
 }

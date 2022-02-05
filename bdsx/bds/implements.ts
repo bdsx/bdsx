@@ -782,7 +782,8 @@ BlockActor.prototype.load = function(tag) {
         allocated.dispose();
     }
 };
-BlockActor.prototype.setChanged = procHacker.js("BlockActor::setChanged", void_t, {this:BlockActor});
+BlockActor.prototype.setChanged = procHacker.js("BlockActor::setChanged", void_t, { this: BlockActor });
+BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: BlockActor });
 
 BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);
