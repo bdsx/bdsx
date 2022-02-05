@@ -689,9 +689,14 @@ export class InventoryContentPacket extends Packet {
     readonly slots:CxxVector<NetworkItemStackDescriptor>;
 }
 
-@nativeClass(null)
+@nativeClass()
 export class InventorySlotPacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    containerId: ContainerId;
+    @nativeField(uint32_t)
+    slot: uint32_t;
+    @nativeField(NetworkItemStackDescriptor)
+    descriptor: NetworkItemStackDescriptor;
 }
 
 @nativeClass(null)
