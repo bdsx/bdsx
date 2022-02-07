@@ -238,6 +238,8 @@ const symbols = [
     'Level::getEntities',
     'Level::getRuntimeEntity',
     'Level::getRuntimePlayer',
+    'Level::setDefaultSpawn',
+    'Level::getDefaultSpawn',
     'ServerLevel::setCommandsEnabled',
     'ServerLevel::setShouldSendSleepMessage',
     'CommandUtils::createItemStack',

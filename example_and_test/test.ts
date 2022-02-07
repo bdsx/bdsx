@@ -754,6 +754,10 @@ Tester.test({
     etc() {
         const item = ItemStack.constructWith('minecraft:acacia_boat');
         item.destruct();
+
+        const level = serverInstance.minecraft.getLevel();
+        const pos = level.getDefaultSpawn();
+        level.setDefaultSpawn(pos);
     },
 
     nbt() {

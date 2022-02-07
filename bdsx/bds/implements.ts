@@ -129,6 +129,10 @@ Level.prototype.getRandomPlayer = procHacker.js("Level::getRandomPlayer", Player
 
 Level.prototype.updateWeather = procHacker.js("Level::updateWeather", void_t, {this:Level}, float32_t, int32_t, float32_t, int32_t);
 
+Level.prototype.setDefaultSpawn = procHacker.js('Level::setDefaultSpawn', void_t, {this:Level}, BlockPos);
+
+Level.prototype.getDefaultSpawn = procHacker.js('Level::getDefaultSpawn', BlockPos, {this:Level});
+
 Level.abstract({
     vftable: VoidPointer,
 });

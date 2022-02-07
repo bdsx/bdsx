@@ -205,6 +205,14 @@ export class Level extends NativeClass {
     updateWeather(rainLevel: number, rainTime: number, lightningLevel: number, lightningTime: number): void {
         abstract();
     }
+
+    setDefaultSpawn(pos:BlockPos):void {
+        abstract();
+    }
+
+    getDefaultSpawn():BlockPos {
+        abstract();
+    }
 }
 
 export class ServerLevel extends Level {
