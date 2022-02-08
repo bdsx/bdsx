@@ -184,8 +184,8 @@ Actor.setResolver(ptr => {
         actor = ptr.as(ItemActor);
     } else {
         actor = ptr.as(Actor);
+        if (actor.hasType(ActorType.Mob)) actor = actor.as(Mob);
     }
-    if (actor.hasType(ActorType.Mob)) actor = actor.as(Mob);
     actorMaps.set(binptr, actor);
     return actor;
 });
