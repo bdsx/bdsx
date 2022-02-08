@@ -20,9 +20,9 @@ export enum ContainerId {
     /** Used as the minimum value of a player's container counter. */
     First,
     /** Used as the maximum value of a player's container counter. */
-    Last = 0x64,
+    Last = 100,
     /** Used in InventoryContentPacket */
-    Offhand = 0x77,
+    Offhand = 119,
     /** Used in InventoryContentPacket */
     Armor,
     /** Used in InventoryContentPacket */

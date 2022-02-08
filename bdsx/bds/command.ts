@@ -360,11 +360,11 @@ const commandContextConstructor = procHacker.js('CommandContext::CommandContext'
 const CommandContextSharedPtr = SharedPtr.make(CommandContext);
 
 export enum CommandOutputType {
-    None = 0x00,
-    LastOutput = 0x01,
-    Silent = 0x02,
-    Type3 = 0x03, // user / server console / command block
-    ScriptEngine = 0x04,
+    None = 0,
+    LastOutput = 1,
+    Silent = 2,
+    Type3 = 3, // user / server console / command block
+    ScriptEngine = 4,
 }
 
 type CommandOutputParameterType = string|boolean|number|Actor|BlockPos|Vec3|Actor[];

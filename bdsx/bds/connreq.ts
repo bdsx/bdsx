@@ -8,14 +8,14 @@ import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "../nati
 import { proc, proc2 } from "./proc";
 
 export enum JsonValueType {
-    Null = 0x00,
-    Int32 = 0x01,
-    Int64 = 0x02,
-    Float64 = 0x03,
-    String = 0x04,
-    Boolean = 0x05,
-    Array = 0x06,
-    Object = 0x07,
+    Null = 0,
+    Int32 = 1,
+    Int64 = 2,
+    Float64 = 3,
+    String = 4,
+    Boolean = 5,
+    Array = 6,
+    Object = 7,
 }
 
 @nativeClass(0x10)
