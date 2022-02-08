@@ -846,9 +846,6 @@ export class Mob extends Actor {
     /**
      * Applies knockback to the mob
      */
-    protected _knockback(source: VoidPointer, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
-        abstract();
-    }
     knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
     }

@@ -146,11 +146,11 @@ BlockPalette.prototype.getBlockLegacy = procHacker.js("BlockPalette::getBlockLeg
 
 const Spawner$spawnItem = procHacker.js("Spawner::spawnItem", ItemActor, null, Spawner, BlockSource, ItemStack, VoidPointer, Vec3, int32_t);
 Spawner.prototype.spawnItem = function(region:BlockSource, itemStack:ItemStack, pos:Vec3, throwTime:number):ItemActor {
-    return Spawner$spawnItem(this, region, itemStack, new VoidPointer(), pos, throwTime);
+    return Spawner$spawnItem(this, region, itemStack, null, pos, throwTime);
 };
 const Spawner$spawnMob = procHacker.js("Spawner::spawnMob", Actor, null, Spawner, BlockSource, ActorDefinitionIdentifier, VoidPointer, Vec3, bool_t, bool_t, bool_t);
 Spawner.prototype.spawnMob = function(region:BlockSource, id:ActorDefinitionIdentifier, pos:Vec3, naturalSpawn = false, surface = true, fromSpawner = false):Actor {
-    return Spawner$spawnMob(this, region, id, new VoidPointer(), pos, naturalSpawn, surface, fromSpawner);
+    return Spawner$spawnMob(this, region, id, null, pos, naturalSpawn, surface, fromSpawner);
 };
 
 // actor.ts
@@ -342,13 +342,9 @@ Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
 Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
-(Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, { this: Actor }, MobEffect);
+(Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
 
-(Mob.prototype as any)._knockback = makefunc.js([0x898], VoidPointer, { this: Mob }, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
-Mob.prototype.knockback = function (source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t) {
-    const src = source === null ? new VoidPointer() : source;
-    (this as any)._knockback(src, damage, xd, zd, power, height, heightCap);
-};
+Mob.prototype.knockback = makefunc.js([0x898], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_getStackRef', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
