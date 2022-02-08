@@ -222,7 +222,7 @@ Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, Cx
 Actor.prototype.hasTag = procHacker.js("Actor::hasTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.despawn = procHacker.js("Actor::despawn", void_t, {this:Actor});
 Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Actor}, CxxString);
-Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, { this: Actor });
+Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
 Actor.prototype.getFeetPos = function ():Vec3 {
     return CommandUtils.getFeetPos(this);
 };
@@ -245,7 +245,7 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
     TeleportCommand$computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
     TeleportCommand$applyTarget(this, alloc);
 };
-Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, { this: Actor }, int32_t);
+Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 
 const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", bool_t, {this:Actor}, int32_t);
 
@@ -370,7 +370,7 @@ ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamag
 };
 
 ActorDamageSource.prototype.getDamagingEntityUniqueID = makefunc.js([0x40], ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
-ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, { this: ActorDamageSource }, int32_t);
+ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, {this:ActorDamageSource}, int32_t);
 
 ItemActor.abstract({
     itemStack: [ItemStack, 1856], // accessed in ItemActor::isFireImmune
@@ -547,9 +547,9 @@ BatchedNetworkPeer.prototype.sendPacket = procHacker.js('BatchedNetworkPeer::sen
 
 RakNetInstance.prototype.getPort = procHacker.js("RakNetInstance::getPort", uint16_t, {this:RakNetInstance});
 
-RakNet.RakPeer.prototype.GetAveragePing = procHacker.js("?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
-RakNet.RakPeer.prototype.GetLastPing = procHacker.js("?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
-RakNet.RakPeer.prototype.GetLowestPing = procHacker.js("?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, { this: RakNet.RakPeer }, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetAveragePing = procHacker.js("?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z", int32_t, {this:RakNet.RakPeer}, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetLastPing = procHacker.js("?GetLastPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, {this:RakNet.RakPeer}, RakNet.AddressOrGUID);
+RakNet.RakPeer.prototype.GetLowestPing = procHacker.js("?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, {this:RakNet.RakPeer}, RakNet.AddressOrGUID);
 
 // packet.ts
 Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void {
@@ -648,7 +648,7 @@ ItemStack.prototype[NativeType.dtor] = function(){
 
 Item.prototype.isArmor = makefunc.js([0x40], bool_t, {this:Item});
 Item.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, {this:Item});
-ItemStack.prototype.remove = procHacker.js("ItemStackBase::remove", void_t, { this: ItemStack }, int32_t);
+ItemStack.prototype.remove = procHacker.js("ItemStackBase::remove", void_t, {this:ItemStack}, int32_t);
 ItemStack.prototype.setAuxValue = procHacker.js('ItemStackBase::setAuxValue', void_t, {this: ItemStack}, int16_t);
 ItemStack.prototype.getAuxValue = procHacker.js('ItemStackBase::getAuxValue', int16_t, {this: ItemStack});
 ItemStack.prototype.toString = procHacker.js('ItemStackBase::toString', CxxString, {this: ItemStack, structureReturn: true});
@@ -747,6 +747,8 @@ BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNa
 BlockLegacy.prototype.getCommandNames2 = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:Block});
 BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTime", void_t, {this:Block}, float32_t);
+BlockLegacy.prototype.getBlockEntityType = procHacker.js("BlockLegacy::getBlockEntityType", int32_t, {this:BlockLegacy});
+
 BlockLegacy.prototype.getRenderBlock = procHacker.js("BlockLegacy::getRenderBlock", Block, {this:BlockLegacy});
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.constructWith = function(blockName:string, data:number = 0):Block|null {
@@ -761,6 +763,8 @@ Block.constructWith = function(blockName:string, data:number = 0):Block|null {
 };
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
+Block.prototype.getBlockEntityType = procHacker.js('Block::getBlockEntityType', int32_t, {this:Block});
+
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
 BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
@@ -797,8 +801,9 @@ BlockActor.prototype.load = function(tag) {
         allocated.dispose();
     }
 };
-BlockActor.prototype.setChanged = procHacker.js("BlockActor::setChanged", void_t, { this: BlockActor });
+BlockActor.prototype.setChanged = procHacker.js("BlockActor::setChanged", void_t, {this:BlockActor});
 BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: BlockActor });
+BlockActor.prototype.getType = procHacker.js("BlockActor::getType", int32_t.ref(), {this:BlockActor});
 
 BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);

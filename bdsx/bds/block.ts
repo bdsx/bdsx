@@ -61,6 +61,9 @@ export class BlockLegacy extends NativeClass {
     getRenderBlock():Block {
         abstract();
     }
+    getBlockEntityType(): BlockActorType {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -100,6 +103,9 @@ export class Block extends NativeClass {
         abstract();
     }
     getRuntimeId():int32_t {
+        abstract();
+    }
+    getBlockEntityType(): BlockActorType {
         abstract();
     }
 }
@@ -196,6 +202,13 @@ export class BlockActor extends NativeClass {
     getContainer(): Container | null{
         abstract();
     }
+    getType(): BlockActorType {
+        abstract();
+    }
+}
+
+enum BlockActorType {
+
 }
 
 @nativeClass(null)
