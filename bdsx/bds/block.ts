@@ -219,7 +219,7 @@ export enum BlockActorType {
     BrewingStand = 0x08,
     EnchantingTable = 0x09,
     DaylightDetector = 0x0a,
-    Noteblock = 0x0b,
+    Music = 0x0b,
     Comparator = 0x0c,
     Dispenser = 0x0d,
     Dropper = 0x0e,
