@@ -651,10 +651,10 @@ export class ContainerOpenPacket extends Packet {
     type:ContainerType;
     @nativeField(BlockPos)
     readonly pos:BlockPos;
-    @nativeField(bin64_t)
-    entityUniqueId:bin64_t;
     @nativeField(int64_as_float_t, {ghost: true})
     entityUniqueIdAsNumber:int64_as_float_t;
+    @nativeField(bin64_t)
+    entityUniqueId:bin64_t;
 }
 
 @nativeClass(null)

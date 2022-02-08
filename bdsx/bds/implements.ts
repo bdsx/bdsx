@@ -182,9 +182,10 @@ Actor.setResolver(ptr => {
         actor = ptr.as(ServerPlayer);
     } else if (vftable.equals(ItemActor$vftable)) {
         actor = ptr.as(ItemActor);
+    } else if (Actor$hasType.call(ptr, ActorType.Mob)) {
+        actor = ptr.as(Mob);
     } else {
         actor = ptr.as(Actor);
-        if (actor.hasType(ActorType.Mob)) actor = actor.as(Mob);
     }
     actorMaps.set(binptr, actor);
     return actor;
@@ -246,7 +247,7 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
 };
 Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, { this: Actor }, int32_t);
 
-Actor.prototype.hasType = procHacker.js("Actor::hasType", bool_t, {this:Actor}, int32_t);
+const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", bool_t, {this:Actor}, int32_t);
 
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);

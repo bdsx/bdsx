@@ -79,6 +79,9 @@ export class ServerNetworkHandler extends AbstractClass {
     setMaxNumPlayers(n:number):void {
         abstract();
     }
+    /**
+     * it's the same with `client.getActor()`
+     */
     _getServerPlayer(client:NetworkIdentifier, number: number):ServerPlayer|null {
         abstract();
     }
