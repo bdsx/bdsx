@@ -3,7 +3,7 @@ import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, int64_as_float_t } from "../nativetype";
+import { bin64_t, CxxString, float32_t, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
@@ -470,6 +470,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * @alias instanceof Mob
+     */
+    isMob():this is Mob {
+        abstract();
+    }
+    /**
      * @alias instanceof ServerPlayer
      */
     isPlayer():this is ServerPlayer {
@@ -482,6 +488,9 @@ export class Actor extends AbstractClass {
         abstract();
     }
     isSneaking(): boolean {
+        abstract();
+    }
+    hasType(type:ActorType): boolean {
         abstract();
     }
     /**
@@ -829,6 +838,18 @@ export class Actor extends AbstractClass {
         });
     }
     runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
+        abstract();
+    }
+}
+
+export class Mob extends Actor {
+    /**
+     * Applies knockback to the mob
+     */
+    protected _knockback(source: VoidPointer, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+        abstract();
+    }
+    knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
     }
 }
