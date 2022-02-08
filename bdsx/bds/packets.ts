@@ -305,8 +305,8 @@ export namespace UpdateBlockPacket {
         Network,
         All,
         NoGraphic,
-        Priority = 8,
-        AllPriority = 11,
+        Priority = 0x08,
+        AllPriority = 0x0b,
     }
     export enum DataLayerIds {
         Normal,
@@ -626,11 +626,11 @@ export class AnimatePacket extends Packet {
 }
 export namespace AnimatePacket {
     export enum Actions {
-        SwingArm = 1,
-        WakeUp = 3,
+        SwingArm = 0x01,
+        WakeUp = 0x03,
         CriticalHit,
         MagicCriticalHit,
-        RowRight = 128,
+        RowRight = 0x80,
         RowLeft,
     }
 }
