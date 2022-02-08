@@ -156,7 +156,7 @@ export class ComponentItem extends NativeClass {
 export class ItemStack extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    @nativeField(Item.ref())
+    @nativeField(Item.ref().ref())
     item:Item;
     @nativeField(CompoundTag.ref())
     userData: CompoundTag;

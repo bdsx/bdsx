@@ -1,8 +1,7 @@
 import { abstract } from "../common";
 import { AbstractClass, nativeClass } from "../nativeclass";
-import { float32_t, int32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
-import { Actor, ActorUniqueID, DimensionId } from "./actor";
+import { ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
@@ -15,7 +14,7 @@ import { DisplaySlot } from "./scoreboard";
 import { serverInstance } from "./server";
 import type { SerializedSkin } from "./skin";
 
-export class Player extends Actor {
+export class Player extends Mob {
     abilities: Abilities;
     playerUIContainer: PlayerUIContainer;
     /** @deprecated Use `this.getSpawnDimension()` instead */
@@ -400,18 +399,6 @@ export class ServerPlayer extends Player {
     get networkIdentifier(): NetworkIdentifier {
         return this.getNetworkIdentifier();
     }
-
-    protected _sendInventory(shouldSelectSlot: boolean): void {
-        abstract();
-    }
-
-    /**
-     * Applies knockback to the player
-     */
-    knockback(source: Actor, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
-        abstract();
-    }
-
     /**
      * Returns the player's NetworkIdentifier
      */
@@ -443,6 +430,9 @@ export class ServerPlayer extends Player {
         abstract();
     }
 
+    protected _sendInventory(shouldSelectSlot: boolean): void {
+        abstract();
+    }
     /**
      * Updates the player's inventory
      * @remarks The shouldSelectSlot parameter seems to be pointless

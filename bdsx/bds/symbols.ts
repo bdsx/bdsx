@@ -441,6 +441,7 @@ const symbols = [
     'VirtualCommandOrigin::VirtualCommandOrigin',
     'CommandUtils::getFeetPos',
     'Actor::isInvisible',
+    'Actor::hasType',
 ] as const;
 
 // decorated symbols

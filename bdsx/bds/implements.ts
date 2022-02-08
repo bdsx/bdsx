@@ -15,7 +15,7 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, OwnerStorageEntity } from "./actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
@@ -162,6 +162,9 @@ Actor.abstract({
     ctxbase: EntityContextBase,
 });
 
+Actor.prototype.isMob = function() {
+    return this instanceof Mob;
+};
 Actor.prototype.isPlayer = function() {
     return this instanceof ServerPlayer;
 };
@@ -169,7 +172,7 @@ Actor.prototype.isItem = function() {
     return this instanceof ItemActor;
 };
 
-Actor.setResolver(ptr=>{
+Actor.setResolver(ptr => {
     if (ptr === null) return null;
     const binptr = ptr.getAddressBin();
     let actor = actorMaps.get(binptr);
@@ -181,6 +184,7 @@ Actor.setResolver(ptr=>{
         actor = ptr.as(ItemActor);
     } else {
         actor = ptr.as(Actor);
+        if (actor.hasType(ActorType.Mob)) actor = actor.as(Mob);
     }
     actorMaps.set(binptr, actor);
     return actor;
@@ -240,7 +244,9 @@ Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionI
     TeleportCommand$computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
     TeleportCommand$applyTarget(this, alloc);
 };
-Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
+Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, { this: Actor }, int32_t);
+
+Actor.prototype.hasType = procHacker.js("Actor::hasType", bool_t, {this:Actor}, int32_t);
 
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
@@ -336,7 +342,13 @@ Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
 Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z", void_t, {this:Actor}, MobEffectInstance);
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
-(Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
+(Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, { this: Actor }, MobEffect);
+
+(Mob.prototype as any)._knockback = makefunc.js([0x898], VoidPointer, { this: Mob }, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
+Mob.prototype.knockback = function (source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t) {
+    const src = source === null ? new VoidPointer() : source;
+    (this as any)._knockback(src, damage, xd, zd, power, height, heightCap);
+};
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_getStackRef', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
@@ -485,7 +497,6 @@ Player.prototype.getXpNeededForNextLevel = procHacker.js('Player::getXpNeededFor
 
 ServerPlayer.abstract({});
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
-ServerPlayer.prototype.knockback = procHacker.js("ServerPlayer::knockback", void_t, {this: ServerPlayer}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", void_t, {this: ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", void_t, {this: ServerPlayer}, VoidPointer);
