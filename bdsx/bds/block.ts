@@ -207,8 +207,48 @@ export class BlockActor extends NativeClass {
     }
 }
 
-enum BlockActorType {
-
+export enum BlockActorType {
+    None = 0,
+    Furnace = 1,
+    Chest = 2,
+    NetherReactor = 3,
+    Sign = 4,
+    MobSpawner = 5,
+    FlowerPot = 7,
+    BrewingStand = 8,
+    EnchantingTable = 9,
+    DaylightDetector = 10,
+    Noteblock = 11,
+    Comparator,
+    Dispenser = 13,
+    Dropper = 14,
+    Hopper = 15,
+    Cauldron = 16,
+    ItemFrame = 17,
+    Piston = 18,
+    MovingBlock = 19,
+    Beacon = 21,
+    EndGateway = 22,
+    EnderChest = 23,
+    ShulkerBox = 25,
+    CommandBlock = 26,
+    Bed = 27,
+    Banner = 28,
+    StructureBlock = 32,
+    Jukebox = 33,
+    ChemistryTable = 34,
+    Conduit = 35,
+    Jigsaw = 36,
+    Lectern = 37,
+    BlastFurnace = 38,
+    Smoker = 39,
+    Bell = 40,
+    Campfire = 41,
+    Barrel = 42,
+    Beehive = 43,
+    SculkSensor = 45,
+    SporeBlossom = 46,
+    SculkCatalyst = 48,
 }
 
 @nativeClass(null)
