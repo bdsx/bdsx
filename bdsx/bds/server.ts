@@ -20,8 +20,13 @@ export class Whitelist extends AbstractClass {}
 export class PrivateKeyManager extends AbstractClass {}
 export class ServerMetrics extends AbstractClass {}
 export class ServerMetricsImpl extends ServerMetrics {}
-export class VanilaServerGameplayEventListener extends AbstractClass {}
 export class EntityRegistryOwned extends AbstractClass {}
+
+export class VanillaServerGameplayEventListener extends AbstractClass {}
+/**
+ * @deprecated typo, use `VanillaServerGameplayEventListener` instead.
+ */
+export class VanilaServerGameplayEventListener extends VanillaServerGameplayEventListener {}
 
 /**
  * @deprecated
@@ -43,7 +48,7 @@ export class Minecraft$Something {
 }
 
 export class VanilaGameModuleServer extends AbstractClass {
-    listener:VanilaServerGameplayEventListener;
+    listener:VanillaServerGameplayEventListener;
 }
 
 export class Minecraft extends AbstractClass {
