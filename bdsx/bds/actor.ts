@@ -768,10 +768,13 @@ export class Actor extends AbstractClass {
     protected hurt_(source: ActorDamageSource, damage:number, knock: boolean, ignite: boolean): boolean {
         abstract();
     }
-    hurt(cause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
-        const source = ActorDamageSource.constructWith(cause);
+    hurt(source: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean;
+    hurt(cause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean;
+    hurt(sourceOrCause: ActorDamageSource|ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
+        const isSource = sourceOrCause instanceof ActorDamageSource;
+        const source = isSource ? sourceOrCause : ActorDamageSource.constructWith(sourceOrCause);
         const retval = this.hurt_(source, damage, knock, ignite);
-        source.destruct();
+        if(!isSource) source.destruct();
         return retval;
     }
     /**
