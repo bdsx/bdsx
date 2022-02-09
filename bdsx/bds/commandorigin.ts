@@ -141,7 +141,7 @@ const ServerCommandOrigin$ServerCommandOrigin = procHacker.js('ServerCommandOrig
     CxxString, ServerLevel, int32_t, Dimension);
 const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
 
-// void destruct(CommandOrigin* origin);
+// void CommandOrigin::destruct();
 CommandOrigin.prototype.destruct = makefunc.js([0x00], void_t, {this: CommandOrigin});
 
 // std::string& CommandOrigin::getRequestId();
@@ -153,17 +153,19 @@ CommandOrigin.prototype.getName = makefunc.js([0x10], CxxString, {this: CommandO
 // BlockPos CommandOrigin::getBlockPosition();
 CommandOrigin.prototype.getBlockPosition = makefunc.js([0x18], BlockPos, {this: CommandOrigin, structureReturn: true});
 
-// Vec3 getWorldPosition(CommandOrigin* origin);
+// Vec3 CommandOrigin::getWorldPosition();
 CommandOrigin.prototype.getWorldPosition = makefunc.js([0x20], Vec3, {this: CommandOrigin, structureReturn: true});
 
-// Level* getLevel(CommandOrigin* origin);
-CommandOrigin.prototype.getLevel = makefunc.js([0x28], Level, {this: CommandOrigin});
+// std::optional<Vec2> CommandOrigin::getRotation();
 
-// Dimension* (*getDimension)(CommandOrigin* origin);
-CommandOrigin.prototype.getDimension = makefunc.js([0x30], Dimension, {this: CommandOrigin});
+// Level* CommandOrigin::getLevel();
+CommandOrigin.prototype.getLevel = makefunc.js([0x30], Level, {this: CommandOrigin});
 
-// Actor* getEntity(CommandOrigin* origin);
-CommandOrigin.prototype.getEntity = makefunc.js([0x38], Actor, {this: CommandOrigin});
+// Dimension* (*CommandOrigin::getDimension)();
+CommandOrigin.prototype.getDimension = makefunc.js([0x38], Dimension, {this: CommandOrigin});
+
+// Actor* CommandOrigin::getEntity();
+CommandOrigin.prototype.getEntity = makefunc.js([0x40], Actor, {this: CommandOrigin});
 
 // void handleCommandOutputCallback(Json::Value &&);
 const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);

@@ -7,6 +7,7 @@ import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
+import { dll } from "../dll";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
@@ -17,6 +18,7 @@ import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
 import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
+import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
@@ -373,7 +375,7 @@ ActorDamageSource.prototype.getDamagingEntityUniqueID = makefunc.js([0x40], Acto
 ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, {this:ActorDamageSource}, int32_t);
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 1856], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x728], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
@@ -418,9 +420,9 @@ procHacker.hookingRawWithCallOriginal('Actor::~Actor', asmcode.actorDestructorHo
 
 // player.ts
 Player.abstract({
-    abilities:[Abilities, 0x900], // accessed in AbilityCommand::execute when calling Abilities::setAbility
-    playerUIContainer:[PlayerUIContainer, 0x1120], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId:[CxxString, 0x2088], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
+    abilities:[Abilities, 0x8e8], // accessed in AbilityCommand::execute when calling Abilities::setAbility
+    playerUIContainer:[PlayerUIContainer, 0x1110], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId:[CxxString, 0x2078], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js("Player::setName", void_t, {this: Player}, CxxString);
 const PlayerListPacket$emplace = procHacker.js("PlayerListPacket::emplace", void_t, null, PlayerListPacket, PlayerListEntry);
@@ -614,14 +616,21 @@ Minecraft.abstract({
 });
 Minecraft.prototype.getLevel = procHacker.js("Minecraft::getLevel", Level, {this:Minecraft});
 Minecraft.prototype.getNetworkHandler = procHacker.js("Minecraft::getNetworkHandler", NetworkHandler, {this:Minecraft});
-Minecraft.prototype.getServerNetworkHandler = procHacker.js("Minecraft::getServerNetworkHandler", ServerNetworkHandler, {this:Minecraft});
+const Minecraft$getServerNetworkHandler = procHacker.js("Minecraft::getServerNetworkHandler", Bedrock.NonOwnerPointer.make(ServerNetworkHandler), {this:Minecraft, structureReturn: true});
+Minecraft.prototype.getServerNetworkHandler = function() {
+    const ptr = Minecraft$getServerNetworkHandler.call(this) as Bedrock.NonOwnerPointer<ServerNetworkHandler>;
+    const out = ptr.get();
+    // console.log(ptr.sharedptr.p+' '+out);
+    ptr.dispose(); // the output will be alive if it has the reference anyway.
+    return out!;
+};
 Minecraft.prototype.getCommands = procHacker.js("Minecraft::getCommands", MinecraftCommands, {this:Minecraft});
 ScriptFramework.abstract({
     vftable:VoidPointer,
 });
 ServerInstance.abstract({
     vftable:VoidPointer,
-    server:[DedicatedServer.ref(), 0x98],
+    server:[DedicatedServer.ref(), 0x98], // checked the this pointer on ServerInstance::startServerThread with the debug break
     minecraft:[Minecraft.ref(), 0xa0],
     networkHandler:[NetworkHandler.ref(), 0xa8],
 });

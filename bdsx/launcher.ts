@@ -149,7 +149,9 @@ function _launch(asyncResolve:()=>void):void {
         events.serverClose.fire();
         events.serverClose.clear();
         _tickCallback();
-        decay(bd_server.serverInstance);
+        if (openIsFired) {
+            decay(bd_server.serverInstance);
+        }
     }
 
     // replace unicode encoder

@@ -12,7 +12,6 @@ import './inventory';
 import './ipban';
 import './lowlevel-apihooking';
 import './lowlevel-asm';
-import './lowlevel-checkdisconnect';
 import './lowlevel-dll';
 import './lowlevel-nativeclass';
 import './lowlevel-string-and-vector';

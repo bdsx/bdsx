@@ -32,10 +32,11 @@ ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnly
 
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
+    // stack memories of NetworkHandler::_sortAndPacketizeEvents
     @nativeField(SharedPtr.make(Packet), 0xb8)
-    packet:SharedPtr<Packet>;
-    @nativeField(ReadOnlyBinaryStream, 0x100)
-    stream:ReadOnlyBinaryStream;
+    packet:SharedPtr<Packet>; // accessed in NetworkHandler::_sortAndPacketizeEvents before calling MinecraftPackets::createPacket
+    @nativeField(ReadOnlyBinaryStream, 0x120)
+    stream:ReadOnlyBinaryStream; // accessed in NetworkHandler::_sortAndPacketizeEvents at getting the packet id
 }
 
 asmcode.createPacketRaw = proc["MinecraftPackets::createPacket"];
