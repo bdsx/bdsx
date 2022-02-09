@@ -27,6 +27,9 @@ export class VanillaServerGameplayEventListener extends AbstractClass {}
  * @deprecated typo, use {@link VanillaServerGameplayEventListener} instead.
  */
 export type VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
+/**
+ * @deprecated typo, use {@link VanillaServerGameplayEventListener} instead.
+ */
 export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
 
 /**
