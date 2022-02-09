@@ -26,7 +26,7 @@ export class VanillaServerGameplayEventListener extends AbstractClass {}
 /**
  * @deprecated typo, use `VanillaServerGameplayEventListener` instead.
  */
-export class VanilaServerGameplayEventListener extends VanillaServerGameplayEventListener {}
+export type VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
 
 /**
  * @deprecated
@@ -48,7 +48,7 @@ export class Minecraft$Something {
 }
 
 export class VanilaGameModuleServer extends AbstractClass {
-    listener:VanillaServerGameplayEventListener;
+    listener: VanillaServerGameplayEventListener;
 }
 
 export class Minecraft extends AbstractClass {
