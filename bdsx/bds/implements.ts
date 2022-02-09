@@ -46,7 +46,7 @@ import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
-import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanilaServerGameplayEventListener } from "./server";
+import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanillaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
@@ -606,7 +606,7 @@ BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstan
 
 // server.ts
 VanilaGameModuleServer.abstract({
-    listener:[VanilaServerGameplayEventListener.ref(), 0x8],
+    listener:[VanillaServerGameplayEventListener.ref(), 0x8],
 });
 DedicatedServer.abstract({});
 Minecraft.abstract({
