@@ -24,9 +24,10 @@ export class EntityRegistryOwned extends AbstractClass {}
 
 export class VanillaServerGameplayEventListener extends AbstractClass {}
 /**
- * @deprecated typo, use `VanillaServerGameplayEventListener` instead.
+ * @deprecated typo, use {@link VanillaServerGameplayEventListener} instead.
  */
 export type VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
+export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
 
 /**
  * @deprecated
