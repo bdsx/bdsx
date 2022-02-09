@@ -620,7 +620,6 @@ const Minecraft$getServerNetworkHandler = procHacker.js("Minecraft::getServerNet
 Minecraft.prototype.getServerNetworkHandler = function() {
     const ptr = Minecraft$getServerNetworkHandler.call(this) as Bedrock.NonOwnerPointer<ServerNetworkHandler>;
     const out = ptr.get();
-    // console.log(ptr.sharedptr.p+' '+out);
     ptr.dispose(); // the output will be alive if it has the reference anyway.
     return out!;
 };

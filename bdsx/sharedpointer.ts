@@ -28,9 +28,9 @@ export class SharedPtrBase<T> extends NativeClass {
     release():void {
         if (this.interlockedDecrement32(0x8) === 0) {
             this._Destroy();
-        }
-        if (this.interlockedDecrement32(0xc) === 0) {
-            this._DeleteThis();
+            if (this.interlockedDecrement32(0xc) === 0) {
+                this._DeleteThis();
+            }
         }
     }
     _DeleteThis():void {
