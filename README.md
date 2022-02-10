@@ -76,7 +76,7 @@ https://discord.gg/pC9XdkC
 ## BDSX Discussions
 https://github.com/bdsx/bdsx/discussions
 
-## BDSX Wiki (Include JS API Reference)
+## BDSX Wiki
 https://github.com/bdsx/bdsx/wiki
 
 ## Hosting Support
