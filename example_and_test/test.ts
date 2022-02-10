@@ -96,6 +96,7 @@ Tester.test({
             if (!nonsamehex) this.equals(hex(opers.asm().buffer()), hexcode.toUpperCase());
         };
 
+        assert('83 39 00', 'cmp dword ptr [rcx], 0x0');
         assert('8b 0c 31', 'mov ecx, dword ptr [rcx+rsi]');
         assert('f3 0f 11 89 a4 03 00 00', 'movss dword ptr [rcx+0x3a4], xmm1');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
@@ -665,6 +666,10 @@ Tester.test({
                         if (!respawnpointCheck) process.exit(-1); // terminate it for not saving it.
 
                         actor.setRespawnPosition(pos, dim);
+
+                        const item = ItemStack.constructWith('minecraft:bread');
+                        actor.addItem(item);
+                        item.destruct();
                     }
 
                     if (identifier === 'minecraft:player') {
