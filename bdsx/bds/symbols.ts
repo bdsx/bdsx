@@ -445,6 +445,7 @@ const symbols = [
     'CommandUtils::getFeetPos',
     'Actor::isInvisible',
     'Actor::hasType',
+    'Player::setCursorSelectedItem',
 ] as const;
 
 // decorated symbols

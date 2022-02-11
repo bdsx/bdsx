@@ -371,6 +371,10 @@ export class Player extends Mob {
     getRemainingXpForNextLevel(): number {
         return this.getXpNeededForNextLevel() - this.getExperience();
     }
+
+    setCursorSelectedItem(item: ItemStack): void {
+        abstract();
+    }
 }
 
 namespace RawTextObject {
