@@ -811,7 +811,7 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
-     * Returns if the player is riding any entities
+     * Returns if the entity is riding (on an entity)
      */
     isRiding(): boolean;
     isRiding(entity: Actor): boolean;
