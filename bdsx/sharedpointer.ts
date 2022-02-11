@@ -28,9 +28,9 @@ export class SharedPtrBase<T> extends NativeClass {
     release():void {
         if (this.interlockedDecrement32(0x8) === 0) {
             this._Destroy();
-        }
-        if (this.interlockedDecrement32(0xc) === 0) {
-            this._DeleteThis();
+            if (this.interlockedDecrement32(0xc) === 0) {
+                this._DeleteThis();
+            }
         }
     }
     _DeleteThis():void {
@@ -115,7 +115,7 @@ export abstract class SharedPtr<T extends NativeClass> extends NativeClass {
     }
     abstract create(vftable:VoidPointer):void;
 
-    static make<T extends NativeClass>(cls:{new():T}):NativeClassType<SharedPtr<T>> {
+    static make<T extends NativeClass>(cls:new()=>T):NativeClassType<SharedPtr<T>> {
         const clazz = cls as NativeClassType<T>;
         return Singleton.newInstance(SharedPtr, cls, ()=>{
             const Base = SharedPtrBase.make(clazz);

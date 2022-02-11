@@ -485,7 +485,7 @@ export def updateEvTargetFire:qword
 
 export proc updateWithSleep
     stack 28h
-    mov rcx, [rsp+50h]
+    mov rcx, [rsp+50h] ; rsp+20h + 30h(this function stack)
     call cgateNodeLoop
     unwind
     jmp updateEvTargetFire
@@ -530,7 +530,7 @@ export proc packetBeforeHook
 
     ; original codes
     mov rax,qword ptr[rcx]
-    lea r8,qword ptr[rbp+100h]
+    lea r8,qword ptr[rbp+120h]
     lea rdx,qword ptr[rbp-20h]
     call qword ptr[rax+20h]
 
@@ -628,7 +628,7 @@ export def packetSendAllCancelPoint:qword
 export proc packetSendAllHook
     stack 28h
 
-    mov rax, [r15] ; packet.vftale
+    mov rax, [r15] ; packet.vftable
     call [rax+8] ; packet.getId(), just constant return
 
     lea r10, enabledPacket
@@ -636,9 +636,9 @@ export proc packetSendAllHook
     test al, al
     jz _pass
 
-    mov r8,r15
-    mov rdx,rbx
-    mov rcx,r14
+    mov r8,r15 ; packet
+    mov rdx,rbx ; NetworkIdentifier
+    mov rcx,r14 ; NetworkHandler
     call onPacketSend
     xor eax, eax
 
@@ -651,7 +651,7 @@ _pass:
 
     ; original codes
     mov rax, [r15]
-    lea rdx, [r14+248h]
+    lea rdx, [r14+250h]
     mov rcx, r15
     jmp qword ptr[rax+18h]
 endp

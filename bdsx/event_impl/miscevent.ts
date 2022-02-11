@@ -7,7 +7,7 @@ import { decay } from "../decay";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int32_t, uint8_t } from "../nativetype";
+import { bool_t, CxxString, int32_t, uint8_t, void_t } from "../nativetype";
 
 export class QueryRegenerateEvent {
     constructor(
@@ -37,8 +37,8 @@ class AnnounceServerData extends NativeClass {
 // CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t
 //  motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean
 
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", bin64_t, null, VoidPointer, AnnounceServerData)(onQueryRegenerate);
-function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServerData):bin64_t {
+const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", void_t, null, VoidPointer, AnnounceServerData)(onQueryRegenerate);
+function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServerData):void {
     const event = new QueryRegenerateEvent(data.motd, data.levelname, data.currentPlayers, data.maxPlayers, data.isJoinableThroughServerScreen);
     events.queryRegenerate.fire(event);
     data.motd = event.motd;

@@ -47,9 +47,9 @@ class ServerNetworkHandler$Client extends AbstractClass {
 export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
-    @nativeField(CxxString, 0x268)
+    @nativeField(CxxString, 0x278) // accessed in ServerNetworkHandler::allowIncomingConnections
     readonly motd:CxxString;
-    @nativeField(int32_t, 0x2e0)
+    @nativeField(int32_t, 0x2f0) // accessed in ServerNetworkHandler:setMaxNumPlayers
     readonly maxPlayers: int32_t;
 
     protected _disconnectClient(client:NetworkIdentifier, unknown:number, message:CxxString, skipMessage:boolean):void {
@@ -59,13 +59,13 @@ export class ServerNetworkHandler extends AbstractClass {
         this._disconnectClient(client, 0, message, skipMessage);
     }
     /**
-     * Alias of allowIncomingConnections
+     * @alias allowIncomingConnections
      */
     setMotd(motd:string):void {
         this.allowIncomingConnections(motd, true);
     }
     /**
-     * @deprecated
+     * @deprecated use setMaxNumPlayers
      */
     setMaxPlayers(count:number):void {
         this.setMaxNumPlayers(count);

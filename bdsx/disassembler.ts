@@ -46,7 +46,8 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
     let r3:Register|null = null;
     let multiply:AsmMultiplyConstant = 1;
 
-    if ((v & 0xc0) !== 0xc0) {
+    const v2bits = v & 0xc0;
+    if (v2bits !== 0xc0) {
         if (r1 === Register.rsp) {
             const next = ptr.readUint8();
             if (next !== 0x24) {
@@ -56,7 +57,7 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
             }
         }
     }
-    if ((v & 0xc0) === 0) {
+    if (v2bits === 0) {
         if (r1 === Register.rbp) {
             if (r3 !== null) {
                 return {
@@ -78,7 +79,7 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
         }
     }
 
-    switch (v & 0xc0) {
+    switch (v2bits) {
     case 0x40:
         return {
             offset: OperationSize.byte,
@@ -103,19 +104,20 @@ function walk_offset(rex:number, ptr:NativePointer):OffsetInfo|null {
             r3,
             multiply,
         };
+    default: // 0x00
+        return {
+            offset: OperationSize.void,
+            r1,
+            r2,
+            r3,
+            multiply,
+        };
     }
-    return {
-        offset: OperationSize.void,
-        r1,
-        r2,
-        r3,
-        multiply,
-    };
 }
 function walk_oper_r_c(oper:Operator, register:Register, chr:number, size:OperationSize):asm.Operation {
     return new asm.Operation(asm.code[`${Operator[oper]}_r_c`], [register, chr, size]);
 }
-function walk_oper_rp_c(oper:Operator, register:Register, multiply:AsmMultiplyConstant, offset:number, chr:number, size:OperationSize):asm.Operation {
+function walk_oper_rp_c(oper:Operator, register:Register, multiply:AsmMultiplyConstant, offset:number|bin64_t, chr:number, size:OperationSize):asm.Operation {
     return new asm.Operation(asm.code[`${Operator[oper]}_rp_c`], [register, multiply, offset, chr, size]);
 }
 function walk_ojmp(jumpoper:JumpOperation, offset:number):asm.Operation {
@@ -319,7 +321,7 @@ function walk_raw(ptr:NativePointer):asm.Operation|null {
                 const chr = readConstNumber(constsize, ptr);
                 return walk_oper_r_c(info.r2 & 7, info.r1, chr, size);
             } else {
-                const offset = readConstNumber(info.offset, ptr);
+                const offset = readConst(info.offset, ptr);
                 const chr = readConstNumber(constsize, ptr);
                 return walk_oper_rp_c(info.r2 & 7, info.r1, 1, offset, chr, size);
             }

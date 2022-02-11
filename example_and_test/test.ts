@@ -96,6 +96,7 @@ Tester.test({
             if (!nonsamehex) this.equals(hex(opers.asm().buffer()), hexcode.toUpperCase());
         };
 
+        assert('83 39 00', 'cmp dword ptr [rcx], 0x0');
         assert('8b 0c 31', 'mov ecx, dword ptr [rcx+rsi]');
         assert('f3 0f 11 89 a4 03 00 00', 'movss dword ptr [rcx+0x3a4], xmm1');
         assert('0F 84 7A 06 00 00 55 56 57 41 54 41 55 41 56', 'je 0x67a;push rbp;push rsi;push rdi;push r12;push r13;push r14');
@@ -445,7 +446,8 @@ Tester.test({
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                this.assert(ctx.origin.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'unexpected dimension');
+                this.assert(ctx.origin.vftable.equals(proc["ServerCommandOrigin::`vftable'"]), 'invalid origin');
+                this.assert(ctx.origin.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
@@ -596,7 +598,7 @@ Tester.test({
             conns.add(ni);
 
             const connreq = ptr.connreq;
-            this.assert(connreq !== null, 'no ConnectionRequest');
+            this.assert(connreq !== null, 'no ConnectionRequest, client version mismatched?');
             if (connreq !== null) {
                 const cert = connreq.cert;
                 let uuid = cert.json.value()["extraData"]["identity"];
@@ -664,6 +666,10 @@ Tester.test({
                         if (!respawnpointCheck) process.exit(-1); // terminate it for not saving it.
 
                         actor.setRespawnPosition(pos, dim);
+
+                        const item = ItemStack.constructWith('minecraft:bread');
+                        actor.addItem(item);
+                        item.destruct();
                     }
 
                     if (identifier === 'minecraft:player') {
