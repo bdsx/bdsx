@@ -492,7 +492,7 @@ Player.prototype.canDestroy = procHacker.js('Player::canDestroy', bool_t, {this:
 Player.prototype.addExperience = procHacker.js('Player::addExperience', void_t, {this:Player}, int32_t);
 Player.prototype.addExperienceLevels = procHacker.js('Player::addLevels', void_t, {this:Player}, int32_t);
 Player.prototype.getXpNeededForNextLevel = procHacker.js('Player::getXpNeededForNextLevel', int32_t, {this:Player});
-Player.prototype.setCursorSelectedItem = procHacker.js("Player::setCursorSelectedItem", void_t, { this: Player }, ItemStack);
+Player.prototype.setCursorSelectedItem = procHacker.js("Player::setCursorSelectedItem", void_t, {this:Player}, ItemStack);
 Player.prototype.getCursorSelectedItem = function (): ItemStack {
     return this.getPlayerUIItem(PlayerUISlot.CursorSelected);
 };
