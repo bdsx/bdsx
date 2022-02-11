@@ -6,7 +6,7 @@ import { AttributeId, AttributeInstance } from "./attribute";
 import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import { Certificate } from "./connreq";
-import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer } from "./inventory";
+import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
@@ -372,7 +372,16 @@ export class Player extends Mob {
         return this.getXpNeededForNextLevel() - this.getExperience();
     }
 
-    setCursorSelectedItem(item: ItemStack): void {
+    getCursorSelectedItem(): ItemStack {
+        abstract();
+    }
+    setCursorSelectedItem(itemStack: ItemStack): void {
+        abstract();
+    }
+    getPlayerUIItem(slot: PlayerUISlot): ItemStack {
+        abstract();
+    }
+    setPlayerUIItem(slot: PlayerUISlot, itemStack: ItemStack): void {
         abstract();
     }
 }

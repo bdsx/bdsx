@@ -446,6 +446,8 @@ const symbols = [
     'Actor::isInvisible',
     'Actor::hasType',
     'Player::setCursorSelectedItem',
+    'Player::getPlayerUIItem',
+    'Player::setPlayerUIItem',
 ] as const;
 
 // decorated symbols
