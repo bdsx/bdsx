@@ -1,14 +1,12 @@
 import { AttributeId } from "bdsx/bds/attribute";
+import { serverInstance } from "bdsx/bds/server";
 import { events } from "bdsx/event";
-import { connectionList } from "./net-login";
 
 // Change attributes
 let healthCounter = 5;
 const interval = setInterval(()=>{
-    for (const ni of connectionList.keys()) {
-        const actor = ni.getActor();
-        if (!actor) continue;
-        actor.setAttribute(AttributeId.Health, healthCounter);
+    for (const player of serverInstance.getPlayers()) {
+        player.setAttribute(AttributeId.Health, healthCounter);
     }
 
     healthCounter ++;
