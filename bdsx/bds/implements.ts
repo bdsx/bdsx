@@ -334,8 +334,8 @@ Actor.prototype.getStatusFlag = procHacker.js("?getStatusFlag@Actor@@QEBA_NW4Act
 Actor.prototype.getLevel = procHacker.js("Actor::getLevel", Level, {this:Actor});
 
 Actor.prototype.isInvisible = procHacker.js("Actor::isInvisible", bool_t, {this:Actor});
-Actor.prototype.isRiding = procHacker.js("?isRiding@Actor@@QEBA_NXZ", bool_t, {this:Actor});
-// Actor.prototype.isRidingEntity = procHacker.js("?isRiding@Actor@@QEBA_NPEAV1@@Z", bool_t, {this:Actor}, Actor);
+(Actor.prototype as any)._isRiding = procHacker.js("?isRiding@Actor@@QEBA_NXZ", bool_t, {this:Actor});
+(Actor.prototype as any)._isRidingOn = procHacker.js("?isRiding@Actor@@QEBA_NPEAV1@@Z", bool_t, {this:Actor}, Actor);
 
 Actor.fromUniqueIdBin = function(bin, getRemovedActor = true) {
     return serverInstance.minecraft.getLevel().fetchEntity(bin, getRemovedActor);

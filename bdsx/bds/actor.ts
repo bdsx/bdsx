@@ -804,18 +804,21 @@ export class Actor extends AbstractClass {
     isInvisible(): boolean {
         abstract();
     }
+    protected _isRiding(): boolean {
+        abstract();
+    }
+    protected _isRidingOn(entity: Actor): boolean {
+        abstract();
+    }
     /**
      * Returns if the player is riding any entities
      */
-    isRiding(): boolean {
-        abstract();
+    isRiding(): boolean;
+    isRiding(entity: Actor): boolean;
+    isRiding(entity?: Actor): boolean {
+        if (entity) return this._isRidingOn(entity);
+        return this._isRiding();
     }
-    // /**
-    //  * Returns if the player is riding a specific entity (Idk how to test it)
-    //  */
-    // isRidingEntity(entity: Actor): boolean {
-    //     abstract();
-    // }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();
     }
