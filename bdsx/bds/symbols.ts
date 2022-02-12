@@ -522,6 +522,7 @@ const symbols2 = [
     '??0NetworkItemStackDescriptor@@QEAA@AEBVItemStackDescriptor@@@Z',
     '??0ItemDescriptor@@QEAA@XZ',
     '??0ItemDescriptor@@QEAA@AEBV0@@Z',
+    '?load@ItemStackBase@@QEAAXAEBVCompoundTag@@@Z',
 ] as const;
 
 export const proc = pdb.getList(

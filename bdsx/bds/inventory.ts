@@ -351,6 +351,9 @@ export class ItemStackBase extends NativeClass {
         tag.dispose();
         return out;
     }
+    load(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
     allocateAndSave():CompoundTag {
         abstract();
     }
@@ -379,6 +382,9 @@ export class ItemStack extends ItemStackBase {
     static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
         abstract();
     }
+    static fromTag(tag: CompoundTag|NBT.Compound):ItemStack {
+        abstract();
+    }
 
     protected _cloneItem(itemStack: ItemStack):void {
         abstract();
@@ -387,10 +393,6 @@ export class ItemStack extends ItemStackBase {
         const itemStack = ItemStack.constructWith("minecraft:air");
         this._cloneItem(itemStack);
         return itemStack;
-    }
-
-    load(tag:CompoundTag|NBT.Compound):void {
-        abstract();
     }
 }
 
