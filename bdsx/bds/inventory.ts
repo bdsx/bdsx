@@ -152,8 +152,8 @@ export class ArmorItem extends Item {
 export class ComponentItem extends NativeClass {
 }
 
-@nativeClass(0x90)
-export class ItemStack extends NativeClass {
+@nativeClass(0x88)
+export class ItemStackBase extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
     @nativeField(Item.ref().ref())
@@ -175,29 +175,12 @@ export class ItemStack extends NativeClass {
     @nativeField(CxxVector.make(BlockLegacy.ref()), 0x38)
     canPlaceOn:CxxVector<BlockLegacy>;
     @nativeField(CxxVector.make(BlockLegacy.ref()), 0x58)
-    canDestroy:CxxVector<BlockLegacy>;
-    /**
-     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
-     */
-    static constructWith(itemName:ItemId, amount?:number, data?:number): ItemStack;
-    static constructWith(itemName:string, amount?:number, data?:number): ItemStack;
-    static constructWith(itemName:ItemId|string, amount:number = 1, data:number = 0):ItemStack {
-        abstract();
-    }
-    /** @deprecated */
-    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
-        return ItemStack.constructWith(itemName, amount, data);
-    }
-    static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
-        abstract();
-    }
+    canDestroy: CxxVector<BlockLegacy>;
+
     protected _getItem():Item {
         abstract();
     }
     protected _setCustomLore(name:CxxVector<string>):void {
-        abstract();
-    }
-    protected _cloneItem(itemStack: ItemStack):void {
         abstract();
     }
     remove(amount: number): void{
@@ -212,11 +195,6 @@ export class ItemStack extends NativeClass {
     }
     getAuxValue():number{
         abstract();
-    }
-    cloneItem(): ItemStack{
-        const itemStack = ItemStack.constructWith('air');
-        this._cloneItem(itemStack);
-        return itemStack;
     }
     getMaxStackSize(): number{
         abstract();
@@ -376,13 +354,42 @@ export class ItemStack extends NativeClass {
     allocateAndSave():CompoundTag {
         abstract();
     }
-    load(tag:CompoundTag|NBT.Compound):void {
-        abstract();
-    }
     constructItemEnchantsFromUserData():ItemEnchants {
         abstract();
     }
     saveEnchantsToUserData(itemEnchants:ItemEnchants):void {
+        abstract();
+    }
+}
+
+@nativeClass(0x90)
+export class ItemStack extends ItemStackBase {
+    /**
+     * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
+     */
+    static constructWith(itemName:ItemId, amount?:number, data?:number): ItemStack;
+    static constructWith(itemName:string, amount?:number, data?:number): ItemStack;
+    static constructWith(itemName:ItemId|string, amount:number = 1, data:number = 0):ItemStack {
+        abstract();
+    }
+    /** @deprecated */
+    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+        return ItemStack.constructWith(itemName, amount, data);
+    }
+    static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
+        abstract();
+    }
+
+    protected _cloneItem(itemStack: ItemStack):void {
+        abstract();
+    }
+    cloneItem(): ItemStack {
+        const itemStack = ItemStack.constructWith("minecraft:air");
+        this._cloneItem(itemStack);
+        return itemStack;
+    }
+
+    load(tag:CompoundTag|NBT.Compound):void {
         abstract();
     }
 }

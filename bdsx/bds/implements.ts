@@ -33,7 +33,7 @@ import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
-import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
+import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, ItemStackBase, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -661,49 +661,55 @@ ItemStack.prototype[NativeType.dtor] = function(){
 
 Item.prototype.isArmor = makefunc.js([0x40], bool_t, {this:Item});
 Item.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, {this:Item});
-ItemStack.prototype.remove = procHacker.js("ItemStackBase::remove", void_t, {this:ItemStack}, int32_t);
-ItemStack.prototype.setAuxValue = procHacker.js('ItemStackBase::setAuxValue', void_t, {this: ItemStack}, int16_t);
-ItemStack.prototype.getAuxValue = procHacker.js('ItemStackBase::getAuxValue', int16_t, {this: ItemStack});
-ItemStack.prototype.toString = procHacker.js('ItemStackBase::toString', CxxString, {this: ItemStack, structureReturn: true});
-ItemStack.prototype.toDebugString = procHacker.js('ItemStackBase::toDebugString', CxxString, {this: ItemStack, structureReturn: true});
-ItemStack.prototype.getMaxStackSize = procHacker.js('ItemStackBase::getMaxStackSize', int32_t, {this: ItemStack});
-(ItemStack.prototype as any)._cloneItem = procHacker.js('ItemStack::clone', void_t, {this: ItemStack}, ItemStack);
-ItemStack.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStack});
-ItemStack.prototype.getRawNameId = procHacker.js("ItemStackBase::getRawNameId", CxxString, {this:ItemStack, structureReturn: true});
-(ItemStack.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStack});
-ItemStack.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxString, {this:ItemStack, structureReturn:true});
-ItemStack.prototype.setCustomName = procHacker.js("ItemStackBase::setCustomName", void_t, {this:ItemStack}, CxxString);
-(ItemStack.prototype as any)._setCustomLore = procHacker.js("ItemStackBase::setCustomLore", void_t, {this:ItemStack}, CxxVector.make(CxxStringWrapper));
-ItemStack.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStack});
-ItemStack.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", bool_t, {this:ItemStack});
-ItemStack.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", bool_t, {this:ItemStack});
-ItemStack.prototype.isNull = procHacker.js("ItemStackBase::isNull", bool_t, {this:ItemStack});
-ItemStack.prototype.getEnchantValue = procHacker.js("ItemStackBase::getEnchantValue", int32_t, {this:ItemStack});
-ItemStack.prototype.isEnchanted = procHacker.js("ItemStackBase::isEnchanted", bool_t, {this:ItemStack});
-ItemStack.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamageValue", void_t, {this:ItemStack}, int32_t);
-ItemStack.prototype.setItem = procHacker.js("ItemStackBase::_setItem", bool_t, {this:ItemStack}, int32_t);
-ItemStack.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", void_t, {this:ItemStack}, ServerPlayer);
-ItemStack.prototype.sameItem = procHacker.js("?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z", bool_t, {this:ItemStack}, ItemStack);
-ItemStack.prototype.isStackedByData = procHacker.js("ItemStackBase::isStackedByData", bool_t, {this:ItemStack});
-ItemStack.prototype.isStackable = procHacker.js("ItemStackBase::isStackable", bool_t, {this:ItemStack});
-ItemStack.prototype.isPotionItem = procHacker.js("ItemStackBase::isPotionItem", bool_t, {this:ItemStack});
-ItemStack.prototype.isPattern = procHacker.js("ItemStackBase::isPattern", bool_t, {this:ItemStack});
-ItemStack.prototype.isMusicDiscItem = procHacker.js("ItemStackBase::isMusicDiscItem", bool_t, {this:ItemStack});
-ItemStack.prototype.isLiquidClipItem = procHacker.js("ItemStackBase::isLiquidClipItem", bool_t, {this:ItemStack});
-ItemStack.prototype.isHorseArmorItem = procHacker.js("ItemStackBase::isHorseArmorItem", bool_t, {this:ItemStack});
-ItemStack.prototype.isGlint = procHacker.js("ItemStackBase::isGlint", bool_t, {this:ItemStack});
-ItemStack.prototype.isFullStack = procHacker.js("ItemStackBase::isFullStack", bool_t, {this:ItemStack});
-ItemStack.prototype.isFireResistant = procHacker.js("ItemStackBase::isFireResistant", bool_t, {this:ItemStack});
-ItemStack.prototype.isExplodable = procHacker.js("ItemStackBase::isExplodable", bool_t, {this:ItemStack});
-ItemStack.prototype.isDamaged = procHacker.js("ItemStackBase::isDamaged", bool_t, {this:ItemStack});
-ItemStack.prototype.isDamageableItem = procHacker.js("ItemStackBase::isDamageableItem", bool_t, {this:ItemStack});
-ItemStack.prototype.isArmorItem = procHacker.js("ItemStackBase::isArmorItem", bool_t, {this:ItemStack});
-ItemStack.prototype.getComponentItem = procHacker.js("ItemStackBase::getComponentItem", ComponentItem, {this:ItemStack});
-ItemStack.prototype.getMaxDamage = procHacker.js("ItemStackBase::getMaxDamage", int32_t, {this:ItemStack});
-ItemStack.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValue", int32_t, {this:ItemStack});
-ItemStack.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStack});
-ItemStack.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStack});
-ItemStack.prototype.allocateAndSave = procHacker.js("ItemStackBase::save", CompoundTag.ref(), {this:ItemStack, structureReturn: true});
+
+ItemStackBase.prototype.toString = makefunc.js([0x28], CxxString, {this:ItemStackBase,structureReturn:true});
+ItemStackBase.prototype.toDebugString = makefunc.js([0x30], CxxString, {this:ItemStackBase,structureReturn:true});
+
+ItemStackBase.prototype.remove = procHacker.js("ItemStackBase::remove", void_t, {this:ItemStackBase}, int32_t);
+ItemStackBase.prototype.setAuxValue = procHacker.js('ItemStackBase::setAuxValue', void_t, {this:ItemStackBase}, int16_t);
+ItemStackBase.prototype.getAuxValue = procHacker.js('ItemStackBase::getAuxValue', int16_t, {this:ItemStackBase});
+ItemStackBase.prototype.getMaxStackSize = procHacker.js('ItemStackBase::getMaxStackSize', int32_t, {this:ItemStackBase});
+ItemStackBase.prototype.getId = procHacker.js("ItemStackBase::getId", int16_t, {this:ItemStackBase});
+ItemStackBase.prototype.getRawNameId = procHacker.js("ItemStackBase::getRawNameId", CxxString, {this:ItemStackBase, structureReturn: true});
+ItemStackBase.prototype.getCustomName = procHacker.js("ItemStackBase::getName", CxxString, {this:ItemStackBase, structureReturn:true});
+ItemStackBase.prototype.setCustomName = procHacker.js("ItemStackBase::setCustomName", void_t, {this:ItemStackBase}, CxxString);
+ItemStackBase.prototype.getUserData = procHacker.js("ItemStackBase::getUserData", CompoundTag, {this:ItemStackBase});
+ItemStackBase.prototype.hasCustomName = procHacker.js("ItemStackBase::hasCustomHoverName", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isBlock = procHacker.js("ItemStackBase::isBlock", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isNull = procHacker.js("ItemStackBase::isNull", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.getEnchantValue = procHacker.js("ItemStackBase::getEnchantValue", int32_t, {this:ItemStackBase});
+ItemStackBase.prototype.isEnchanted = procHacker.js("ItemStackBase::isEnchanted", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamageValue", void_t, {this:ItemStackBase}, int32_t);
+ItemStackBase.prototype.setItem = procHacker.js("ItemStackBase::_setItem", bool_t, {this:ItemStackBase}, int32_t);
+ItemStackBase.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", void_t, {this:ItemStackBase}, ServerPlayer);
+ItemStackBase.prototype.sameItem = procHacker.js("?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z", bool_t, {this:ItemStackBase}, ItemStack);
+ItemStackBase.prototype.isStackedByData = procHacker.js("ItemStackBase::isStackedByData", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isStackable = procHacker.js("ItemStackBase::isStackable", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isPotionItem = procHacker.js("ItemStackBase::isPotionItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isPattern = procHacker.js("ItemStackBase::isPattern", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isMusicDiscItem = procHacker.js("ItemStackBase::isMusicDiscItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isLiquidClipItem = procHacker.js("ItemStackBase::isLiquidClipItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isHorseArmorItem = procHacker.js("ItemStackBase::isHorseArmorItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isGlint = procHacker.js("ItemStackBase::isGlint", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isFullStack = procHacker.js("ItemStackBase::isFullStack", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isFireResistant = procHacker.js("ItemStackBase::isFireResistant", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isExplodable = procHacker.js("ItemStackBase::isExplodable", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isDamaged = procHacker.js("ItemStackBase::isDamaged", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isDamageableItem = procHacker.js("ItemStackBase::isDamageableItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.isArmorItem = procHacker.js("ItemStackBase::isArmorItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.getComponentItem = procHacker.js("ItemStackBase::getComponentItem", ComponentItem, {this:ItemStackBase});
+ItemStackBase.prototype.getMaxDamage = procHacker.js("ItemStackBase::getMaxDamage", int32_t, {this:ItemStackBase});
+ItemStackBase.prototype.getDamageValue = procHacker.js("ItemStackBase::getDamageValue", int32_t, {this:ItemStackBase});
+ItemStackBase.prototype.isWearableItem = procHacker.js("ItemStackBase::isWearableItem", bool_t, {this:ItemStackBase});
+ItemStackBase.prototype.getAttackDamage = procHacker.js("ItemStackBase::getAttackDamage", int32_t, {this:ItemStackBase});
+ItemStackBase.prototype.allocateAndSave = procHacker.js("ItemStackBase::save", CompoundTag.ref(), {this:ItemStackBase, structureReturn:true});
+
+(ItemStackBase.prototype as any)._getItem = procHacker.js("ItemStackBase::getItem", Item, {this:ItemStackBase});
+(ItemStackBase.prototype as any)._setCustomLore = procHacker.js("ItemStackBase::setCustomLore", void_t, {this:ItemStackBase}, CxxVector.make(CxxStringWrapper));
+
+ItemStackBase.prototype.constructItemEnchantsFromUserData = procHacker.js("ItemStackBase::constructItemEnchantsFromUserData", ItemEnchants, {this:ItemStackBase, structureReturn:true});
+ItemStackBase.prototype.saveEnchantsToUserData = procHacker.js("ItemStackBase::saveEnchantsToUserData", void_t, {this:ItemStackBase}, ItemEnchants);
+
 const ItemStack$load = procHacker.js("?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z", void_t, null, ItemStack, CompoundTag);
 ItemStack.prototype.load = function(tag) {
     if (tag instanceof Tag) {
@@ -714,8 +720,7 @@ ItemStack.prototype.load = function(tag) {
         allocated.dispose();
     }
 };
-ItemStack.prototype.constructItemEnchantsFromUserData = procHacker.js("ItemStackBase::constructItemEnchantsFromUserData", ItemEnchants, {this:ItemStack, structureReturn: true});
-ItemStack.prototype.saveEnchantsToUserData = procHacker.js("ItemStackBase::saveEnchantsToUserData", void_t, {this:ItemStack}, ItemEnchants);
+(ItemStack.prototype as any)._cloneItem = procHacker.js("ItemStack::clone", void_t, {this:ItemStack}, ItemStack);
 ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();
     CommandUtils.createItemStack(itemStack, itemName, amount, data);
