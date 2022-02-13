@@ -1,3 +1,4 @@
+import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
@@ -1660,7 +1661,8 @@ export class CorrectPlayerMovePredictionPacket extends Packet {
 
 @nativeClass(null)
 export class ItemComponentPacket extends Packet {
-    // unknown
+    @nativeField(CxxVector.make(CxxPair.make(CxxString, CompoundTag)))
+    entries: CxxVector<CxxPair<CxxString, CompoundTag>>;
 }
 
 @nativeClass(null)
