@@ -69,7 +69,7 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
         let found = this.array[idx];
         for (;;) {
             if (found === null) return null;
-            if (found[hashkey] === hash) return found;
+            if (found[hashkey] === hash && item.equals(found)) return found;
             found = found[nextlink] as T;
         }
     }
@@ -82,7 +82,7 @@ export class HashSet<T extends Hashable> implements Iterable<T> {
         let found = this.array[idx];
         for (;;) {
             if (found === null) return false;
-            if (found[hashkey] === hash) return true;
+            if (found[hashkey] === hash && item.equals(found)) return true;
             found = found[nextlink] as T;
         }
     }
