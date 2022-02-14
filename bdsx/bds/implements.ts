@@ -730,17 +730,16 @@ ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, dat
 ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
 NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, { structureReturn: true }, ItemStack);
 
-const ItemStack$fromTag = procHacker.js("?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z", void_t, null, ItemStack, CompoundTag);
+const ItemStack$fromTag = procHacker.js("?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z", ItemStack, {structureReturn:true}, CompoundTag);
 ItemStack.fromTag = function(tag) {
-    const itemStack = ItemStack.construct();
     if (tag instanceof Tag) {
-        ItemStack$fromTag(itemStack, tag);
+        return ItemStack$fromTag(tag);
     } else {
         const allocated = NBT.allocate(tag);
-        ItemStack$fromTag(itemStack, allocated as CompoundTag);
+        const res = ItemStack$fromTag(allocated as CompoundTag);
         allocated.dispose();
+        return res;
     }
-    return itemStack;
 };
 
 Container.prototype.getSlots = procHacker.js("Container::getSlots", CxxVector.make(ItemStack.ref()), {this:Container, structureReturn:true});
