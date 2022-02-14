@@ -1,4 +1,5 @@
 import { MobEffectInstance } from "bdsx/bds/effects";
+import { serverInstance } from "bdsx/bds/server";
 import { events } from "bdsx/event";
 import { connectionList } from "./net-login";
 
@@ -8,14 +9,12 @@ const strengthId = 5;
 let doingRegen = true;
 
 const interval = setInterval(()=>{
-    for (const ni of connectionList.keys()) {
-        const actor = ni.getActor();
-        if (!actor) continue;
+    for (const player of serverInstance.getPlayers()) {
         doingRegen = !doingRegen;
         let effect;
         if(doingRegen) effect = MobEffectInstance.create(strengthId, 20, 1, false, false, false);
         else effect = MobEffectInstance.create(regenId, 20, 1, false, true, false);
-        actor.addEffect(effect);
+        player.addEffect(effect);
     }
 }, 1000);
 events.serverStop.on(()=>{

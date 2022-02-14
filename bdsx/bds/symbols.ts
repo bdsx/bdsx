@@ -445,6 +445,9 @@ const symbols = [
     'CommandUtils::getFeetPos',
     'Actor::isInvisible',
     'Actor::hasType',
+    'Player::setCursorSelectedItem',
+    'Player::getPlayerUIItem',
+    'Player::setPlayerUIItem',
 ] as const;
 
 // decorated symbols
@@ -493,8 +496,6 @@ const symbols2 = [
     '??0CompoundTag@@QEAA@XZ',
     '??0IntArrayTag@@QEAA@XZ',
     '?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z',
-    'sprintf',
-    'vsnprintf',
     '?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z',
     '?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z',
     '?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z',

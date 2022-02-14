@@ -420,6 +420,10 @@ export class Inventory extends FillingContainer {
 export class PlayerUIContainer extends SimpleContainer {
 }
 
+export enum PlayerUISlot {
+    CursorSelected,
+}
+
 @nativeClass(null)
 export class PlayerInventory extends AbstractClass {
     @nativeField(Inventory.ref(), 0xB0) // accessed in PlayerInventory::getSlots when calling Container::getSlots
