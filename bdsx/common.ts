@@ -37,7 +37,7 @@ export enum AttributeName {
 	JumpStrength="minecraft:horse.jump_strength",
 }
 
-// https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
+// https://github.com/pmmp/BedrockProtocol/blob/master/src/types/DeviceOS.php
 export enum DeviceOS {
 	UNKNOWN = -1,
 	ANDROID = 1,
