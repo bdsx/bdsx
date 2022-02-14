@@ -87,7 +87,10 @@ class PackageInfo {
     }
 
     static async search(name: string, deps?:Record<string, {version:string}>): Promise<PackageInfo[]> {
-        const output = await execWithoutError(`npm search --json "${name}"`);
+        const output = await execWithoutError(`npm search --json "${name}" --searchlimit=50`);
+        if (output === '\n]\n\n') { // a bug? empty list
+            return [];
+        }
         const result = JSON.parse(output) as PackageInfoJson[];
         return result.map(item => new PackageInfo(item, deps));
     }

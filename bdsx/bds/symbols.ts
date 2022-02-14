@@ -189,7 +189,7 @@ const symbols = [
     'CommandItem::createInstance',
     'CommandMessage::getMessage',
     'ScriptServerActorEventListener::onActorSneakChanged',
-    'ScriptServerActorEventListener::onActorCreated',
+    'ActorEventCoordinator::sendActorCreated',
     'ScriptServerActorEventListener::onActorDeath',
     'Dimension::getDimensionId',
     'TeleportCommand::computeTarget',

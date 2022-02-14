@@ -340,21 +340,19 @@ function onEntityStopRiding(entity:Actor, exitFromRider:boolean, actorIsBeingDes
 }
 const _onEntityStopRiding = procHacker.hooking('Actor::stopRiding', void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
-function onEntitySneak(packet:ScriptCustomEventPacket, entity:Actor, isSneaking:boolean):boolean {
+function onEntitySneak(scriptServerActorEventListener:VoidPointer, entity:Actor, isSneaking:boolean):boolean {
     const event = new EntitySneakEvent(entity, isSneaking);
     events.entitySneak.fire(event);
-    decay(packet);
-    return _onEntitySneak(packet, event.entity, event.isSneaking);
+    return _onEntitySneak(scriptServerActorEventListener, event.entity, event.isSneaking);
 }
-const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, ScriptCustomEventPacket, Actor, bool_t)(onEntitySneak);
+const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, VoidPointer, Actor, bool_t)(onEntitySneak);
 
-function onEntityCreated(packet:ScriptCustomEventPacket, entity:Actor):boolean {
+function onEntityCreated(actorEventCoordinator:VoidPointer, entity:Actor):void {
     const event = new EntityCreatedEvent(entity);
+    _onEntityCreated(actorEventCoordinator, event.entity);
     events.entityCreated.fire(event);
-    decay(packet);
-    return _onEntityCreated(packet, event.entity);
 }
-const _onEntityCreated = procHacker.hooking('ScriptServerActorEventListener::onActorCreated', bool_t, null, ScriptCustomEventPacket, Actor)(onEntityCreated);
+const _onEntityCreated = procHacker.hooking('ActorEventCoordinator::sendActorCreated', void_t, null, VoidPointer, Actor)(onEntityCreated);
 
 // function onEntityDeath(Script:ScriptCustomEventPacket, entity:Actor, actorDamageSource:ActorDamageSource, ActorType:number):boolean {
 //     const event = new EntityDeathEvent(entity, actorDamageSource, ActorType);
