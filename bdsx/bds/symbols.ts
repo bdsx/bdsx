@@ -448,6 +448,7 @@ const symbols = [
     'Player::setCursorSelectedItem',
     'Player::getPlayerUIItem',
     'Player::setPlayerUIItem',
+    'Player::getPlatform',
 ] as const;
 
 // decorated symbols
