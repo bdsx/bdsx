@@ -1,4 +1,4 @@
-import { abstract, DeviceOS } from "../common";
+import { abstract, BuildPlatform } from "../common";
 import { AbstractClass, nativeClass } from "../nativeclass";
 import type { Abilities } from "./abilities";
 import { ActorUniqueID, DimensionId, Mob } from "./actor";
@@ -384,7 +384,7 @@ export class Player extends Mob {
     setPlayerUIItem(slot: PlayerUISlot, itemStack: ItemStack): void {
         abstract();
     }
-    getPlatform(): DeviceOS {
+    getPlatform(): BuildPlatform {
         abstract();
     }
 }
