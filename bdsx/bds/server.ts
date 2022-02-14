@@ -23,13 +23,9 @@ export class ServerMetricsImpl extends ServerMetrics {}
 export class EntityRegistryOwned extends AbstractClass {}
 
 export class VanillaServerGameplayEventListener extends AbstractClass {}
-/**
- * @deprecated typo, use {@link VanillaServerGameplayEventListener} instead.
- */
+/** @deprecated typo, use {@link VanillaServerGameplayEventListener} instead. */
 export type VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
-/**
- * @deprecated typo, use {@link VanillaServerGameplayEventListener} instead.
- */
+/** @deprecated typo, use {@link VanillaServerGameplayEventListener} instead. */
 export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
 
 /**
@@ -51,14 +47,18 @@ export class Minecraft$Something {
     }
 }
 
-export class VanilaGameModuleServer extends AbstractClass {
+export class VanillaGameModuleServer extends AbstractClass {
     listener: VanillaServerGameplayEventListener;
 }
+/** @deprecated typo, use {@link VanillaGameModuleServer} */
+export type VanilaGameModuleServer = VanillaGameModuleServer;
+/** @deprecated typo, use {@link VanillaGameModuleServer} */
+export const VanilaGameModuleServer = VanillaGameModuleServer;
 
 export class Minecraft extends AbstractClass {
     vftable:VoidPointer;
     offset_20:VoidPointer;
-    vanillaGameModuleServer:SharedPtr<VanilaGameModuleServer>; // VanilaGameModuleServer
+    vanillaGameModuleServer:SharedPtr<VanillaGameModuleServer>; // VanilaGameModuleServer
     /** @deprecated Use `Minecraft::getCommands` instead */
     get commands():MinecraftCommands {
         return this.getCommands();

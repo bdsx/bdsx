@@ -45,7 +45,7 @@ import { proc, procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
-import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanilaGameModuleServer, VanillaServerGameplayEventListener } from "./server";
+import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanillaGameModuleServer, VanillaServerGameplayEventListener } from "./server";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
@@ -611,13 +611,13 @@ AttributeInstance.abstract({
 BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstance@BaseAttributeMap@@QEAAPEAVAttributeInstance@@I@Z", AttributeInstance, {this:BaseAttributeMap}, int32_t);
 
 // server.ts
-VanilaGameModuleServer.abstract({
+VanillaGameModuleServer.abstract({
     listener:[VanillaServerGameplayEventListener.ref(), 0x8],
 });
 DedicatedServer.abstract({});
 Minecraft.abstract({
     vftable:VoidPointer,
-    vanillaGameModuleServer:[SharedPtr, 0x28], // VanilaGameModuleServer
+    vanillaGameModuleServer:[SharedPtr, 0x28], // VanillaGameModuleServer
     server:DedicatedServer.ref(),
 });
 Minecraft.prototype.getLevel = procHacker.js("Minecraft::getLevel", Level, {this:Minecraft});
