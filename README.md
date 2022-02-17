@@ -28,7 +28,7 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
 
 ## Usage
 * Requirements
-    * [node.js](https://nodejs.org/)
+    * [node.js](https://nodejs.org/) Please make sure your node is up to date.
     * [GIT](https://git-scm.com/download)
     * Wine (if using Linux)
 * Recommended  
@@ -48,7 +48,11 @@ When starting BDSX with VSCode, you need to
 5. Press `F5` to build and run in VSCode
 
 ### Launch with the executable
-You can now run the program by running `bdsx.bat` on Windows or `bdsx.sh` on Linux.
+To start BDSX manually:
+1. Open a terminal to the bdsx folder
+2. Run `npm i` to install npm packages and BDS
+3. Run `bdsx.bat` (or `bdsx.sh` on Linux) to start BDSX
+    - Alternatively, use `tsc` to compile the typescript and use `bedrock_server.exe ..` in the `bedrock_server` directory. If on Linux, use `wine bedrock_server.exe ..` instead. 
 
 ## File Structure
 ```sh
