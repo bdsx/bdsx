@@ -506,6 +506,9 @@ export class Actor extends AbstractClass {
         abstract();
     }
 
+    setHurtTime(time:number):void {
+        abstract();
+    }
     /**
      * Changes the entity's name
      *
