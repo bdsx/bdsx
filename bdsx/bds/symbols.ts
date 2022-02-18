@@ -477,6 +477,7 @@ const symbols2 = [
     '??_7ServerLevel@@6BILevel@@@',
     '??0CommandOutput@@QEAA@W4CommandOutputType@@@Z',
     '?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z',
+    '?setHurtTime@Actor@@QEAAXH@Z',
     '??0MobEffectInstance@@QEAA@IHH_N00@Z',
     '?addEffect@Actor@@QEAAXAEBVMobEffectInstance@@@Z',
     '?removeEffect@Actor@@QEAAXH@Z',
