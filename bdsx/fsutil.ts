@@ -37,7 +37,7 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 }
 
 export namespace fsutil {
-    export const projectPath = path.resolve(process.cwd(), process.argv[1]);
+    export const projectPath = path.join(__dirname, '..');
 
     /** @deprecated use fsutil.projectPath */
     export function getProjectPath():string {
