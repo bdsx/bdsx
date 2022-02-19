@@ -132,6 +132,9 @@ export class Player extends Mob {
         abstract();
     }
     
+    /**
+     * Changes the player's permissions
+     */
     setPermissions(permissions: CommandPermissionLevel): void {
         abstract();
     }
