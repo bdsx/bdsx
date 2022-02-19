@@ -5,6 +5,7 @@ import { ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
+import { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
@@ -13,7 +14,6 @@ import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePa
 import { DisplaySlot } from "./scoreboard";
 import { serverInstance } from "./server";
 import type { SerializedSkin } from "./skin";
-import { CommandPermissionLevel } from "./command";
 
 export class Player extends Mob {
     abilities: Abilities;
