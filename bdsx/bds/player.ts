@@ -13,7 +13,7 @@ import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePa
 import { DisplaySlot } from "./scoreboard";
 import { serverInstance } from "./server";
 import type { SerializedSkin } from "./skin";
-import { CommandPermissionLevel } from "./command";
+import type { CommandPermissionLevel } from "./command";
 
 export class Player extends Mob {
     abilities: Abilities;
@@ -132,14 +132,12 @@ export class Player extends Mob {
     startCooldown(item: Item): void {
         abstract();
     }
-    
     /**
      * Changes the player's permissions
      */
     setPermissions(permissions: CommandPermissionLevel): void {
         abstract();
     }
-    
     /**
      * Changes the player's gamemode
      *
