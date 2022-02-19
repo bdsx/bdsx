@@ -163,6 +163,7 @@ export class PlayerPickupItemEvent {
 export class PlayerCritEvent {
     constructor(
         public player: Player,
+        public victim: Actor,
     ) {
     }
 }
@@ -268,12 +269,12 @@ function onItemUseOnBlock(itemStack: ItemStack, actor: Actor, x: int32_t, y: int
 }
 const _onItemUseOnBlock = procHacker.hooking("ItemStack::useOn", bool_t, null, ItemStack, Actor, int32_t, int32_t, int32_t, uint8_t, Vec3)(onItemUseOnBlock);
 
-function onPlayerCrit(player: Player):void {
-    const event = new PlayerCritEvent(player);
+function onPlayerCrit(player: Player, victim: Actor):void {
+    const event = new PlayerCritEvent(player, victim);
     events.playerCrit.fire(event);
-    return _onPlayerCrit(event.player);
+    return _onPlayerCrit(player, victim);
 }
-const _onPlayerCrit = procHacker.hooking('Player::_crit', void_t, null, Player)(onPlayerCrit);
+const _onPlayerCrit = procHacker.hooking("Player::_crit", void_t, null, Player, Actor)(onPlayerCrit);
 
 function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean):boolean {
     const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);
