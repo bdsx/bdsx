@@ -131,7 +131,11 @@ export class Player extends Mob {
     startCooldown(item: Item): void {
         abstract();
     }
-
+    
+    setPermissions(permissions: CommandPermissionLevel): void {
+        abstract();
+    }
+    
     /**
      * Changes the player's gamemode
      *
