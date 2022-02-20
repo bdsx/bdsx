@@ -39,6 +39,9 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 export namespace fsutil {
     // Don't use __dirname (it is incorrectly in node_modules on Linux)
     // Maybe use a different method based on platform?
+    /**
+     * This is only accurate when hooked from BDS, do not use it from external scripts
+     */
     export const projectPath = path.resolve(process.cwd(), process.argv[1]);
 
     /** @deprecated use fsutil.projectPath */
