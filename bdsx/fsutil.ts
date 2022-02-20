@@ -37,7 +37,9 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 }
 
 export namespace fsutil {
-    export const projectPath = path.join(__dirname, '..');
+    // Don't use __dirname (it is incorrectly in node_modules on Linux)
+    // Maybe use a different method based on platform?
+    export const projectPath = path.resolve(process.cwd(), process.argv[1]);
 
     /** @deprecated use fsutil.projectPath */
     export function getProjectPath():string {
