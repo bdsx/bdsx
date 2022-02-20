@@ -4,8 +4,7 @@ import * as path from 'path';
 import { fsutil } from '../fsutil';
 
 export const shellPrepareData = {
-    // FIXME: dirty hack to account for both BDS and external
-    path:process.cwd().endsWith("bedrock_server") ? path.join(process.cwd(), 'bdsx_shell_data.ini') : path.join(process.cwd(), 'bedrock_server', 'bdsx_shell_data.ini'),
+    path:path.join(fsutil.projectPath, 'bedrock_server/bdsx_shell_data.ini'),
     load():Record<string, string> {
         const data:Record<string, string> = Object.create(null);
         try {
