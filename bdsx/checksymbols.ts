@@ -4,13 +4,20 @@ import { join } from 'path';
 
 const missing: string[] = [];
 
-const iniSymbols = readFileSync(join(__dirname, 'bds', 'pdb.ini'), 'utf8').split('\n').map(l => l.split(' = ')[0].trim());
+const iniSymbols = new Set<string>(); // use Set for the better key search
+const regexp = /^[ \t\0]*(.*[^ \t\0])[ \t\0]*=/gm; // use the similar rule with bdsx-core
+const content = readFileSync(join(__dirname, 'bds', 'pdb.ini'), 'utf8');
+let matched:RegExpExecArray|null = null;
+while ((matched = regexp.exec(content)) !== null) {
+    iniSymbols.add(matched[1]);
+}
+
 for(const symbol of undecoratedSymbols) {
-    if(!iniSymbols.includes(symbol)) missing.push(symbol);
+    if(!iniSymbols.has(symbol)) missing.push(symbol);
 }
 
 for(const symbol of decoratedSymbols) {
-    if(!iniSymbols.includes(symbol)) missing.push(symbol);
+    if(!iniSymbols.has(symbol)) missing.push(symbol);
 }
 
 if(missing.length > 0) {

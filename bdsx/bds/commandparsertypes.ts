@@ -40,6 +40,7 @@ function loadParserFromPdb(types:Type<any>[]):void {
     pdb.setOptions(SYMOPT_PUBLICS_ONLY); // XXX: CommandRegistry::parse<bool> does not found without it.
     const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
     pdb.setOptions(0);
+    pdb.close();
 
     for (let i=0;i<types.length;i++) {
         const addr = addrs[symbols[i]];
