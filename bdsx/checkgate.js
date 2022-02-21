@@ -32,6 +32,7 @@ checkJsCache('./installer/installerapi');
 checkJsCache('./fsutil');
 checkJsCache('./pluginmgr/index');
 checkJsCache('./pluginmgr/new');
+checkJsCache('./checksymbols');
 
 const importTarget = process.argv.splice(2, 1)[0];
 require(importTarget);
