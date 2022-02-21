@@ -18,5 +18,8 @@ if(missing.length > 0) {
     for(const symbol of missing) {
         console.log(`  ${symbol}`);
     }
+    console.log(`Please add these symbols to bdsx/bds/pdb.ini`);
     process.exit(1);
+} else {
+    console.log(`All symbols are present`);
 }
