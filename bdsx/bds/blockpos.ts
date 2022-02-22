@@ -21,7 +21,7 @@ export class BlockPos extends NativeClass {
     @nativeField(int32_t)
     z:int32_t;
 
-    set(pos:BlockPos|{x:number, y:number, z:number}):void {
+    set(pos:{x:number, y:number, z:number}):void {
         this.x = pos.x;
         this.y = pos.y;
         this.z = pos.z;
@@ -29,7 +29,7 @@ export class BlockPos extends NativeClass {
 
     static create(pos: Vec3): BlockPos;
     static create(x:number, y:number, z:number):BlockPos;
-    static create(a:number|Vec3, b?:number, c?:number):BlockPos {
+    static create(a:number|{x:number, y:number, z:number}, b?:number, c?:number):BlockPos {
         const v = new BlockPos(true);
         if(typeof a === "number") {
             v.x = a;
