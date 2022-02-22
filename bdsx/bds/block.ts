@@ -9,6 +9,8 @@ import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
+import { ItemStack } from "./inventory";
+import { Player } from "bdsx/bds/player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -267,4 +269,17 @@ export class ButtonBlock extends BlockLegacy {
 @nativeClass(null)
 export class ChestBlock extends BlockLegacy {
 
+}
+
+@nativeClass(null)
+export class ChestBlockActor extends BlockActor {
+    isLargeChest(): boolean {
+        abstract();
+    }
+    getContainer(): Container {
+        abstract();
+    }
+    openBy(player: Player): void {
+        abstract();
+    }
 }

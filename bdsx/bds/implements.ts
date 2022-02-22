@@ -19,7 +19,7 @@ import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, 
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
-import { Block, BlockActor, BlockLegacy, BlockSource } from "./block";
+import { Block, BlockActor, BlockLegacy, BlockSource, ChestBlockActor } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
 import { CommandContext, CommandPermissionLevel, CommandPositionFloat, MCRESULT, MinecraftCommands } from "./command";
 import { CommandName } from "./commandname";
@@ -839,6 +839,10 @@ BlockActor.prototype.load = function(tag) {
 BlockActor.prototype.setChanged = procHacker.js("BlockActor::setChanged", void_t, {this:BlockActor});
 BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: BlockActor });
 BlockActor.prototype.getType = procHacker.js("BlockActor::getType", int32_t.ref(), {this:BlockActor});
+
+ChestBlockActor.prototype.isLargeChest = procHacker.js("ChestBlockActor::isLargeChest", bool_t, {this:ChestBlockActor});
+ChestBlockActor.prototype.getContainer = procHacker.js("ChestBlockActor::getContainer", Container, {this:ChestBlockActor});
+ChestBlockActor.prototype.openBy = procHacker.js("ChestBlockActor::openBy", void_t, {this:ChestBlockActor}, Player);
 
 BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);
