@@ -821,7 +821,7 @@ export class ServerPlayer extends Player {
      * @param volume - Volume of the sound (defaults to 1)
      * @param pitch - Pitch of the sound (defaults to 1)
      */
-    playSound(soundName: string, pos: BlockPos|Vec3 = this.getPosition(), volume: number = 1.0, pitch: number = 1.0): void {
+    playSound(soundName: string, pos: {x:number,y:number,z:number} = this.getPosition(), volume: number = 1.0, pitch: number = 1.0): void {
         const pk = PlaySoundPacket.allocate();
         pk.soundName = soundName;
         pk.pos.x = pos.x * 8;
