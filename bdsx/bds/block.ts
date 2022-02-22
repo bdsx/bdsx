@@ -263,3 +263,8 @@ export enum PistonAction {
 export class ButtonBlock extends BlockLegacy {
     // unknown
 }
+
+@nativeClass(null)
+export class ChestBlock extends BlockLegacy {
+
+}
