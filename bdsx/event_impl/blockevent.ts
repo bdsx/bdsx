@@ -79,7 +79,7 @@ export class ButtonPressEvent {
         public buttonBlock: ButtonBlock,
         public player: Player,
         public blockPos: BlockPos,
-        public playerOrientation: uint8_t
+        public playerOrientation: number,
     ) {
     }
 }
@@ -173,7 +173,7 @@ function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool
 
 const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);
 
-function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: uint8_t): boolean {
+function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: number): boolean {
     const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);
     const canceled = events.buttonPress.fire(event) === CANCEL;
     if (canceled) return false;
