@@ -73,7 +73,7 @@ Run `bdsx.bat` (or `bdsx.sh` on Linux) to start BDSX
 > For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well.  
 
 ## Make a bdsx plugin
-Please check `plugin-example/README.md`.
+Please check [`plugin-example/README.md`](plugin-example/README.md).
 
 ## Discord
 https://discord.gg/pC9XdkC
