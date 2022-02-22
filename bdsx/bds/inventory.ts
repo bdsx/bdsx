@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, NativeType, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -584,6 +584,13 @@ export class NetworkItemStackDescriptor extends NativeClass {
     _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
+        abstract();
+    }
+
+    /**
+     * Calls move constructor of NetworkItemStackDescriptor for `this`
+     */
+    [NativeType.ctor_move](temp: NetworkItemStackDescriptor): void {
         abstract();
     }
 }
