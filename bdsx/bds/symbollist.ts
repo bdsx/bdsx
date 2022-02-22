@@ -97,7 +97,6 @@ export const undecoratedSymbols = [
     'Json::Value::size',
     'Json::Value::resolveReference',
     'MinecraftServerScriptEngine::onServerUpdateEnd',
-    'printf',
     "ServerCommandOrigin::`vftable'",
     "ScriptCommandOrigin::`vftable'",
     'Minecraft::getLevel',
@@ -451,6 +450,7 @@ export const undecoratedSymbols = [
 export const decoratedSymbols = [
     'sprintf',
     'vsnprintf',
+    'printf',
     '??$_Allocate@$0BA@U_Default_allocate_traits@std@@$0A@@std@@YAPEAX_K@Z',
     '?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z',
     '??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ',
