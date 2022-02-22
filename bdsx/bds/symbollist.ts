@@ -446,6 +446,7 @@ export const undecoratedSymbols = [
     'Player::setPlayerUIItem',
     'Player::getPlatform',
     'Player::getXuid',
+    'ChestBlock::use',
 ] as const;
 
 // decorated symbols

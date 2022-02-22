@@ -5,7 +5,7 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
-import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
 import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerJumpEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerSleepInBedEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
@@ -70,6 +70,10 @@ export namespace events {
     export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
     /** Cancellable but the client will have the motion and sound*/
     export const buttonPress = new Event<(event: ButtonPressEvent) => void | CANCEL>();
+    /** Cancellable.
+     * Triggered when a player opens a chest. Cancelling this event will prevent the player from opening the chest.
+     */
+    export const chestOpen = new Event<(event: ChestOpenEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Entity events

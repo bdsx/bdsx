@@ -1,5 +1,5 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource, ButtonBlock, PistonAction } from "../bds/block";
+import { Block, BlockSource, ButtonBlock, ChestBlock, PistonAction } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
@@ -80,6 +80,16 @@ export class ButtonPressEvent {
         public player: Player,
         public blockPos: BlockPos,
         public playerOrientation: uint8_t
+    ) {
+    }
+}
+
+export class ChestOpenEvent {
+    constructor(
+        public chestBlock: ChestBlock,
+        public player: Player,
+        public blockPos: BlockPos,
+        public face: number,
     ) {
     }
 }
@@ -173,4 +183,12 @@ function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: Block
 
 const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
 
+function onChestOpen(chestBlock: ChestBlock, player: Player, blockPos: BlockPos, face: number): boolean {
+    const event = new ChestOpenEvent(chestBlock, player, blockPos, face);
+    const canceled = events.chestOpen.fire(event) === CANCEL;
+    if (canceled) return false;
 
+    return _onChestOpen(chestBlock, player, blockPos, face);
+}
+
+const _onChestOpen = procHacker.hooking("ChestBlock::use", bool_t, null, ChestBlock, Player, BlockPos, uint8_t)(onChestOpen);
