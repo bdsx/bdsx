@@ -72,6 +72,7 @@ export namespace events {
     export const buttonPress = new Event<(event: ButtonPressEvent) => void | CANCEL>();
     /** Cancellable.
      * Triggered when a player opens a chest. Cancelling this event will prevent the player from opening the chest.
+     * To note : This event works for all chest types (normal chests, trapped chests, ender chests).
      */
     export const chestOpen = new Event<(event: ChestOpenEvent) => void | CANCEL>();
 
