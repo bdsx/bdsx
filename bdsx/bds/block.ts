@@ -273,12 +273,23 @@ export class ChestBlock extends BlockLegacy {
 
 @nativeClass(null)
 export class ChestBlockActor extends BlockActor {
+    /**
+     * Returns whether the chest is a double chest
+     */
     isLargeChest(): boolean {
         abstract();
     }
+    /**
+     * Returns the chest's container
+     */
     getContainer(): Container {
         abstract();
     }
+    /**
+     * Makes a player open the chest
+     *
+     * @param player - Player that will open the chest
+     */
     openBy(player: Player): void {
         abstract();
     }
