@@ -586,6 +586,13 @@ export class NetworkItemStackDescriptor extends NativeClass {
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
         abstract();
     }
+    /**
+     * Calls move constructor of NetworkItemStackDescriptor for `this`
+     * @param temp no need to destruct
+     */
+    moveFrom(temp: NetworkItemStackDescriptor): void {
+        abstract();
+    }
 }
 
 @nativeClass()
