@@ -393,6 +393,12 @@ export class Player extends Mob {
     getPlatform(): BuildPlatform {
         abstract();
     }
+    /**
+     * Returns the player's XUID
+     */
+    getXuid(): string {
+        abstract();
+    }
 }
 
 namespace RawTextObject {

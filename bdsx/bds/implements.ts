@@ -501,6 +501,7 @@ Player.prototype.getCursorSelectedItem = function (): ItemStack {
 Player.prototype.getPlayerUIItem = procHacker.js("Player::getPlayerUIItem", ItemStack.ref(), {this:Player}, int32_t);
 Player.prototype.setPlayerUIItem = procHacker.js("Player::setPlayerUIItem", void_t, {this:Player}, int32_t, ItemStack.ref());
 Player.prototype.getPlatform = procHacker.js("Player::getPlatform", int32_t, {this:Player});
+Player.prototype.getXuid = procHacker.js("Player::getXuid", CxxString, {this:Player, structureReturn:true});
 
 ServerPlayer.abstract({});
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js("ServerPlayer::sendInventory", void_t, {this:ServerPlayer}, bool_t);
