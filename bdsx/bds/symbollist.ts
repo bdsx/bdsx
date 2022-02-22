@@ -522,4 +522,5 @@ export const decoratedSymbols = [
     '??0ItemDescriptor@@QEAA@AEBV0@@Z',
     '?load@ItemStackBase@@QEAAXAEBVCompoundTag@@@Z',
     '?jumpFromGround@Player@@UEAAXXZ',
+    '??0NetworkItemStackDescriptor@@QEAA@$$QEAV0@@Z',
 ] as const;
