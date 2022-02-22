@@ -1,5 +1,5 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource, ButtonBlock } from "../bds/block";
+import { Block, BlockSource, ButtonBlock, PistonAction } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
@@ -35,6 +35,51 @@ export class BlockPlaceEvent {
         public block: Block,
         public blockSource: BlockSource,
         public blockPos: BlockPos,
+    ) {
+    }
+}
+
+export class PistonMoveEvent {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public action: PistonAction,
+    ) {
+    }
+}
+
+export class FarmlandDecayEvent {
+    constructor(
+        public block: Block,
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public culprit: Actor,
+    ) {
+    }
+}
+
+export class CampfireTryLightFire {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+    ) {
+    }
+}
+
+export class CampfireTryDouseFire {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+    ) {
+    }
+}
+
+export class ButtonPressEvent {
+    constructor(
+        public buttonBlock: ButtonBlock,
+        public player: Player,
+        public blockPos: BlockPos,
+        public playerOrientation: uint8_t
     ) {
     }
 }
@@ -75,18 +120,6 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
 }
 const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
-export enum PistonAction {
-    Extend = 1,
-    Retract = 3,
-}
-export class PistonMoveEvent {
-    constructor(
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-        public action: PistonAction,
-    ) {
-    }
-}
 function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):void_t {
     const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
     events.pistonMove.fire(event);
@@ -96,15 +129,6 @@ function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):v
 }
 const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);
 
-export class FarmlandDecayEvent {
-    constructor(
-        public block: Block,
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-        public culprit: Actor,
-    ) {
-    }
-}
 function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: BlockPos, culprit: Actor, fallDistance: float32_t):void_t {
     const event = new FarmlandDecayEvent(block, blockPos, blockSource, culprit);
     const canceled = events.farmlandDecay.fire(event) === CANCEL;
@@ -117,14 +141,6 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
 }
 const _onFarmlandDecay = procHacker.hooking("FarmBlock::transformOnFall", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
 
-export class CampfireTryLightFire {
-    constructor(
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-    ) {
-    }
-}
-
 function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryLightFire(blockPos, blockSource);
     const canceled = events.campfireLight.fire(event) === CANCEL;
@@ -135,14 +151,6 @@ function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool
 }
 
 const _CampfireTryLightFire = procHacker.hooking("?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryLightFire);
-
-export class CampfireTryDouseFire {
-    constructor(
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-    ) {
-    }
-}
 
 function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryDouseFire(blockPos, blockSource);
@@ -155,10 +163,6 @@ function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool
 
 const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);
 
-export class ButtonPressEvent {
-    constructor(public buttonBlock: ButtonBlock, public player: Player, public blockPos: BlockPos, public playerOrientation: uint8_t) { }
-}
-
 function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: uint8_t): boolean {
     const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);
     const canceled = events.buttonPress.fire(event) === CANCEL;
@@ -166,4 +170,7 @@ function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: Block
 
     return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
 }
+
 const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
+
+
