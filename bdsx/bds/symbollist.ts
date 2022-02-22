@@ -25,7 +25,6 @@ export const undecoratedSymbols = [
     'Player::teleportTo',
     'Player::startCooldown',
     'Player::getPlayerPermissionLevel',
-    'Player::jumpFromGround',
     'Player::useItem',
     'Player::isSleeping',
     'Player::setSleeping',
@@ -522,4 +521,5 @@ export const decoratedSymbols = [
     '??0ItemDescriptor@@QEAA@XZ',
     '??0ItemDescriptor@@QEAA@AEBV0@@Z',
     '?load@ItemStackBase@@QEAAXAEBVCompoundTag@@@Z',
+    '?jumpFromGround@Player@@UEAAXXZ',
 ] as const;

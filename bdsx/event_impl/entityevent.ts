@@ -228,13 +228,12 @@ export class PlayerSleepInBedEvent {
     }
 }
 
-// function onPlayerJump(player: Player):void {
-//     const event = new PlayerJumpEvent(player);
-//     console.log(player.getName());
-//     // events.playerUseItem.fire(event);    Not work yet
-//     return _onPlayerJump(event.player);
-// }
-// const _onPlayerJump = procHacker.hooking('Player::jumpFromGround', void_t, null, Player)(onPlayerJump);
+function onPlayerJump(player: Player):void {
+    const event = new PlayerJumpEvent(player);
+    events.playerJump.fire(event);
+    return _onPlayerJump(event.player);
+}
+const _onPlayerJump = procHacker.hooking("?jumpFromGround@Player@@UEAAXXZ", void_t, null, Player)(onPlayerJump);
 
 function onPlayerUseItem(player: Player, itemStack:ItemStack, useMethod:number, consumeItem:boolean):void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
