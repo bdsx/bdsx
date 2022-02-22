@@ -10,7 +10,7 @@ import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
 import { ItemStack } from "./inventory";
-import { Player } from "bdsx/bds/player";
+import { Player } from "./player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
