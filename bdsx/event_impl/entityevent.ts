@@ -140,7 +140,7 @@ export class PlayerLevelUpEvent {
 
 export class PlayerJoinEvent {
     constructor(
-        readonly player: Player,
+        readonly player: ServerPlayer,
     ) {
     }
 }
