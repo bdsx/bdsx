@@ -732,7 +732,9 @@ ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, dat
     return itemStack;
 };
 ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
-NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, { structureReturn: true }, ItemStack);
+NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, {structureReturn:true}, ItemStack);
+
+NetworkItemStackDescriptor.prototype[NativeType.ctor_move] = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@$$QEAV0@@Z", void_t, {this:NetworkItemStackDescriptor}, NetworkItemStackDescriptor);
 
 const ItemStack$fromTag = procHacker.js("?fromTag@ItemStack@@SA?AV1@AEBVCompoundTag@@@Z", ItemStack, {structureReturn:true}, CompoundTag);
 ItemStack.fromTag = function(tag) {
