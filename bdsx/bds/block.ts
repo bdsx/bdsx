@@ -3,7 +3,8 @@ import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
-import type { BlockPos, ChunkPos } from "./blockpos";
+import type { ChunkPos } from "./blockpos";
+import { BlockPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
@@ -169,6 +170,8 @@ export class BlockSource extends NativeClass {
 export class BlockActor extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
+    @nativeField(BlockPos, 0x2C)
+    blockPos:BlockPos;
 
     /**
      * @param tag this function stores nbt values to this parameter
@@ -205,6 +208,9 @@ export class BlockActor extends NativeClass {
     }
     getType(): BlockActorType {
         abstract();
+    }
+    getBlockPos(): BlockPos {
+        return this.blockPos;
     }
 }
 
