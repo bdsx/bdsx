@@ -843,7 +843,6 @@ BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: Bloc
 BlockActor.prototype.getType = procHacker.js("BlockActor::getType", int32_t.ref(), {this:BlockActor});
 
 ChestBlockActor.prototype.isLargeChest = procHacker.js("ChestBlockActor::isLargeChest", bool_t, {this:ChestBlockActor});
-ChestBlockActor.prototype.getContainer = procHacker.js("ChestBlockActor::getContainer", Container, {this:ChestBlockActor});
 ChestBlockActor.prototype.openBy = procHacker.js("ChestBlockActor::openBy", void_t, {this:ChestBlockActor}, Player);
 
 BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);

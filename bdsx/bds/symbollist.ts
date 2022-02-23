@@ -448,7 +448,6 @@ export const undecoratedSymbols = [
     'Player::getXuid',
     'ChestBlock::use',
     'ChestBlockActor::isLargeChest',
-    'ChestBlockActor::getContainer',
     'ChestBlockActor::openBy',
 ] as const;
 

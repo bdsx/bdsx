@@ -279,12 +279,6 @@ export class ChestBlockActor extends BlockActor {
         abstract();
     }
     /**
-     * Returns the chest's container
-     */
-    getContainer(): Container {
-        abstract();
-    }
-    /**
      * Makes a player open the chest
      *
      * @param player - Player that will open the chest
