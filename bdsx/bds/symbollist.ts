@@ -450,6 +450,7 @@ export const undecoratedSymbols = [
     'ChestBlockActor::isLargeChest',
     'ChestBlockActor::openBy',
     'ChestBlockActor::pairWith',
+    'ChestBlockActor::getPairedChestPosition',
 ] as const;
 
 // decorated symbols

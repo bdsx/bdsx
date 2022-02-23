@@ -292,4 +292,12 @@ export class ChestBlockActor extends BlockActor {
     openBy(player: Player): void {
         abstract();
     }
+    /**
+     * Returns the position of the other chest forming the double chest.
+     *
+     * @remarks If the chest is not a double chest, BlockPos ZERO (0,0,0) is returned.
+     */
+    getPairedChestPosition(): BlockPos {
+        abstract();
+    }
 }

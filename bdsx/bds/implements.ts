@@ -844,6 +844,7 @@ BlockActor.prototype.getType = procHacker.js("BlockActor::getType", int32_t.ref(
 
 ChestBlockActor.prototype.isLargeChest = procHacker.js("ChestBlockActor::isLargeChest", bool_t, {this:ChestBlockActor});
 ChestBlockActor.prototype.openBy = procHacker.js("ChestBlockActor::openBy", void_t, {this:ChestBlockActor}, Player);
+ChestBlockActor.prototype.getPairedChestPosition = procHacker.js("ChestBlockActor::getPairedChestPosition", BlockPos, {this:ChestBlockActor});
 
 BlockSource.prototype.getChunk = procHacker.js("BlockSource::getChunk", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("BlockSource::getChunkAt", LevelChunk, {this:BlockSource}, BlockPos);
