@@ -9,8 +9,7 @@ import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
-import { ItemStack } from "./inventory";
-import { Player } from "./player";
+import type { Player } from "./player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
