@@ -1,5 +1,5 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource, ButtonBlock, ChestBlock, PistonAction } from "../bds/block";
+import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor, PistonAction } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
@@ -94,6 +94,18 @@ export class ChestOpenEvent {
     }
 }
 
+export class ChestPairEvent {
+    /**
+     * @param lead - Whether the chest is the lead chest.
+     */
+    constructor(
+        readonly chest: ChestBlockActor,
+        readonly chest2: ChestBlockActor,
+        readonly lead: boolean,
+    ) {
+    }
+}
+
 function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos, itemStack:ItemStack, generateParticle:bool_t):boolean {
     const event = new BlockDestroyEvent(actor as ServerPlayer, blockPos, blockSource, itemStack, generateParticle);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
@@ -176,8 +188,8 @@ const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@S
 function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: number): boolean {
     const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);
     const canceled = events.buttonPress.fire(event) === CANCEL;
+    decay(blockPos);
     if (canceled) return false;
-
     return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
 }
 
@@ -186,9 +198,18 @@ const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, Butt
 function onChestOpen(chestBlock: ChestBlock, player: Player, blockPos: BlockPos, face: number): boolean {
     const event = new ChestOpenEvent(chestBlock, player, blockPos, face);
     const canceled = events.chestOpen.fire(event) === CANCEL;
+    decay(blockPos);
     if (canceled) return false;
-
     return _onChestOpen(chestBlock, player, blockPos, face);
 }
 
 const _onChestOpen = procHacker.hooking("ChestBlock::use", bool_t, null, ChestBlock, Player, BlockPos, uint8_t)(onChestOpen);
+
+function onChestPair(chest: ChestBlockActor, chest2: ChestBlockActor, lead: bool_t): void {
+    const event = new ChestPairEvent(chest, chest2, lead);
+    const canceled = events.chestPair.fire(event) === CANCEL;
+    if (canceled) return;
+    return _onChestPair(chest, chest2, lead);
+}
+
+const _onChestPair = procHacker.hooking("ChestBlockActor::pairWith", void_t, null, ChestBlockActor, ChestBlockActor, bool_t)(onChestPair);
