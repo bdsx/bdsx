@@ -1,7 +1,7 @@
 import { NativePointer, pdb } from "../core";
 import { UNDNAME_NAME_ONLY } from "../dbghelp";
 import { makefunc } from "../makefunc";
-import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { templateName } from "../templatename";
@@ -12,8 +12,8 @@ export class typeid_t<T> extends NativeClass{
     id:uint16_t;
 }
 
-const counterWrapper = Symbol();
-const typeidmap = Symbol();
+const counterWrapper = Symbol('IdCounter');
+const typeidmap = Symbol('typeidmap');
 
 const IdCounter = Wrapper.make(uint16_t);
 type IdCounter = Wrapper<uint16_t>;
@@ -21,7 +21,7 @@ type IdCounter = Wrapper<uint16_t>;
 /**
  * dummy class for typeid
  */
-export class HasTypeId extends NativeClass {
+export class HasTypeId extends AbstractClass {
     static [counterWrapper]:IdCounter;
     static readonly [typeidmap] = new WeakMap<Type<any>, typeid_t<any>|NativePointer>();
 }
@@ -66,5 +66,24 @@ export namespace type_id {
             if (addr == null) continue;
             map.set(types[i], addr);
         }
+    }
+    export function clone(base:typeof HasTypeId, oriType:Type<any>, newType:Type<any>):void {
+        const map = base[typeidmap];
+        let typeid = map.get(oriType);
+        if (typeid == null) {
+            throw Error(`type_id ${oriType.name} not found`);
+        }
+        if (!(typeid instanceof typeid_t)) {
+            typeid = makefunc.js(typeid, typeid_t, {structureReturn: true})();
+            map.set(oriType, typeid);
+        }
+        map.set(newType, typeid);
+
+    }
+    export function register(base:typeof HasTypeId, type:Type<any>, id:number):void {
+        const map = base[typeidmap];
+        const newid = new typeid_t<any>(true);
+        newid.id = id;
+        map.set(type, newid);
     }
 }

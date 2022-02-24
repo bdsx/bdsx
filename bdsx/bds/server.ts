@@ -3,7 +3,7 @@ import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { events } from "../event";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
 import { DimensionId } from "./actor";
@@ -11,45 +11,55 @@ import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
+import type { ServerPlayer } from "./player";
 import { proc } from "./symbols";
 
-export class MinecraftEventing extends NativeClass {}
-export class ResourcePackManager extends NativeClass {}
-export class Whitelist extends NativeClass {}
-export class PrivateKeyManager extends NativeClass {}
-export class ServerMetrics extends NativeClass {}
+export class MinecraftEventing extends AbstractClass {}
+export class ResourcePackManager extends AbstractClass {}
+export class Whitelist extends AbstractClass {}
+export class PrivateKeyManager extends AbstractClass {}
+export class ServerMetrics extends AbstractClass {}
 export class ServerMetricsImpl extends ServerMetrics {}
-export class VanilaServerGameplayEventListener extends NativeClass {}
-export class EntityRegistryOwned extends NativeClass {}
+export class EntityRegistryOwned extends AbstractClass {}
+
+export class VanillaServerGameplayEventListener extends AbstractClass {}
+/** @deprecated typo, use {@link VanillaServerGameplayEventListener} instead. */
+export type VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
+/** @deprecated typo, use {@link VanillaServerGameplayEventListener} instead. */
+export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListener;
 
 /**
  * @deprecated
  * unknown instance
  */
-export class Minecraft$Something extends NativeClass {
-    /** @deprecated use minecraft.getNetworkHandler() */
+export class Minecraft$Something {
+    /** @deprecated Use `minecraft.getNetworkHandler()` instead */
     get network():NetworkHandler {
         return serverInstance.minecraft.getNetworkHandler();
     }
-    /** @deprecated use minecraft.getLevel() */
+    /** @deprecated Use `minecraft.getLevel()` instead */
     get level():ServerLevel {
         return serverInstance.minecraft.getLevel() as ServerLevel;
     }
-    /** @deprecated use minecraft.getServerNetworkHandler() */
+    /** @deprecated Use `minecraft.getServerNetworkHandler()` instead */
     get shandler():ServerNetworkHandler {
         return serverInstance.minecraft.getServerNetworkHandler();
     }
 }
 
-export class VanilaGameModuleServer extends NativeClass {
-    listener:VanilaServerGameplayEventListener;
+export class VanillaGameModuleServer extends AbstractClass {
+    listener: VanillaServerGameplayEventListener;
 }
+/** @deprecated typo, use {@link VanillaGameModuleServer} */
+export type VanilaGameModuleServer = VanillaGameModuleServer;
+/** @deprecated typo, use {@link VanillaGameModuleServer} */
+export const VanilaGameModuleServer = VanillaGameModuleServer;
 
-export class Minecraft extends NativeClass {
+export class Minecraft extends AbstractClass {
     vftable:VoidPointer;
     offset_20:VoidPointer;
-    vanillaGameModuleServer:SharedPtr<VanilaGameModuleServer>; // VanilaGameModuleServer
-    /** @deprecated use Minecraft::getCommands */
+    vanillaGameModuleServer:SharedPtr<VanillaGameModuleServer>; // VanilaGameModuleServer
+    /** @deprecated Use `Minecraft::getCommands` instead */
     get commands():MinecraftCommands {
         return this.getCommands();
     }
@@ -57,11 +67,11 @@ export class Minecraft extends NativeClass {
     get something():Minecraft$Something {
         return new Minecraft$Something();
     }
-    /** @deprecated use Minecraft::getNetworkHandler */
+    /** @deprecated Use `Minecraft::getNetworkHandler` instead */
     get network():NetworkHandler {
         return this.getNetworkHandler();
     }
-    /** @deprecated unusing */
+    /** @deprecated Unused */
     LoopbackPacketSender:LoopbackPacketSender;
 
     server:DedicatedServer;
@@ -78,18 +88,17 @@ export class Minecraft extends NativeClass {
     getCommands():MinecraftCommands {
         abstract();
     }
-
 }
 
-export class DedicatedServer extends NativeClass {
+export class DedicatedServer extends AbstractClass {
 }
 
-export class ScriptFramework extends NativeClass {
+export class ScriptFramework extends AbstractClass {
     vftable:VoidPointer;
 }
 
 @nativeClass(0x70)
-export class SemVersion extends NativeClass {
+export class SemVersion extends AbstractClass {
     @nativeField(uint16_t)
     major:uint16_t;
     @nativeField(uint16_t)
@@ -114,7 +123,7 @@ export class BaseGameVersion extends SemVersion {
 export class MinecraftServerScriptEngine extends ScriptFramework {
 }
 
-export class ServerInstance extends NativeClass {
+export class ServerInstance extends AbstractClass {
     vftable:VoidPointer;
     server:DedicatedServer;
     minecraft:Minecraft;
@@ -127,38 +136,79 @@ export class ServerInstance extends NativeClass {
     createDimension(id:DimensionId):Dimension {
         return this.minecraft.getLevel().createDimension(id);
     }
+    /**
+     * Returns the number of current online players
+     */
     getActivePlayerCount():number {
         return this.minecraft.getLevel().getActivePlayerCount();
     }
+    /**
+     * Disconnects all clients with the given message
+     */
     disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
         this._disconnectAllClients(message);
     }
+    /**
+     * Disconnects a specific client with the given message
+     */
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
         return this.minecraft.getServerNetworkHandler().disconnectClient(client, message, skipMessage);
     }
+    /**
+     * Returns the server's message-of-the-day
+     */
     getMotd():string {
         return this.minecraft.getServerNetworkHandler().motd;
     }
+    /**
+     * Changes the server's message-of-the-day
+     */
     setMotd(motd:string):void {
         return this.minecraft.getServerNetworkHandler().setMotd(motd);
     }
+    /**
+     * Returns the server's maxiumum player capacity
+     */
     getMaxPlayers():number {
         return this.minecraft.getServerNetworkHandler().maxPlayers;
     }
+    /**
+     * Changes the server's maxiumum player capacity
+     */
     setMaxPlayers(count:number):void {
         this.minecraft.getServerNetworkHandler().setMaxNumPlayers(count);
     }
-    updateCommandList():void {
-        for (const player of this.minecraft.getLevel().players.toArray()) {
-            player.sendNetworkPacket(this.minecraft.commands.getRegistry().serializeAvailableCommands());
-        }
+    /**
+     * Returns an array of all online players
+     */
+    getPlayers():ServerPlayer[] {
+        return this.minecraft.getLevel().getPlayers();
     }
+    /**
+     * Resends all clients the updated command list
+     */
+    updateCommandList(): void {
+        const pk = this.minecraft.getCommands().getRegistry().serializeAvailableCommands();
+        for (const player of this.getPlayers()) {
+            player.sendNetworkPacket(pk);
+        }
+        pk.dispose();
+    }
+    /**
+     * Returns the server's current network protocol version
+     */
     getNetworkProtocolVersion():number {
         return proc["SharedConstants::NetworkProtocolVersion"].getInt32();
     }
+    /**
+     * Returns the server's current game version
+     */
     getGameVersion():SemVersion {
         return proc["SharedConstants::CurrentGameSemVersion"].as(SemVersion);
     }
+    /**
+     * Creates a promise that resolves on the next tick
+     */
     nextTick():Promise<void> {
         return new Promise(resolve=>{
             const listener = (): void => {

@@ -1,6 +1,5 @@
 
-export enum SymTagEnum
-{
+export enum SymTagEnum {
     SymTagNull,
     SymTagExe,
     SymTagCompiland,
@@ -43,7 +42,7 @@ export enum SymTagEnum
     SymTagExport,
     SymTagHeapAllocationSite,
     SymTagCoffGroup,
-    SymTagMax
+    SymTagMax,
 }
 
 export const SYMFLAG_VALUEPRESENT        = 0x00000001;

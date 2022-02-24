@@ -148,36 +148,36 @@ endp
 
 ; r10 = jsfunc, r11 = onError
 export proc callJsFunction
-    stack 88h
-    mov [rsp+80h], r11 ; onError
+    stack 98h
+    mov [rsp+90h], r11 ; onError
     ; 78h is unused
 
-    mov [rsp+38h], rcx
-    mov [rsp+40h], rdx
-    mov [rsp+48h], r8
-    mov [rsp+50h], r9
+    mov [rsp+48h], rcx
+    mov [rsp+50h], rdx
+    mov [rsp+58h], r8
+    mov [rsp+60h], r9
 
-    movsd [rsp+58h], xmm0
-    movsd [rsp+60h], xmm1
-    movsd [rsp+68h], xmm2
-    movsd [rsp+70h], xmm3
+    movsd [rsp+68h], xmm0
+    movsd [rsp+70h], xmm1
+    movsd [rsp+78h], xmm2
+    movsd [rsp+80h], xmm3
 
-    mov [rsp+20h], r10 ; jsfunc
+    mov [rsp+30h], r10 ; jsfunc
 
     ; make stack pointer
-    lea r8, [rsp+30h] ; result = &args[1]
-    lea rdx, [rsp+38h] ; stackptr
+    lea r8, [rsp+40h] ; result = &args[1]
+    lea rdx, [rsp+48h] ; stackptr
     mov rcx, NativePointer
     call pointer_np2js
     test eax, eax
     jnz _error
 
-    mov rcx, [rsp+20h] ; function = jsfunc
-    lea r9, [rsp+20h] ; result, ignored
+    mov rcx, [rsp+30h] ; function = jsfunc
+    lea r9, [rsp+28h] ; result, ignored
     mov r8, 2
     mov rax, js_null
-    lea rdx, [rsp+28h] ; args
-    mov [rsp+28h], rax ; args[0] = null
+    lea rdx, [rsp+38h] ; args
+    mov [rsp+38h], rax ; args[0] = null
     ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
     call JsCallFunction
     test eax, eax
@@ -188,19 +188,101 @@ export proc callJsFunction
     unwind
     ret
 _error:
-    mov rcx, [rsp+38h]
-    mov rdx, [rsp+40h]
-    mov r8, [rsp+48h]
-    mov r9, [rsp+50h]
-    movsd xmm0, [rsp+58h]
-    movsd xmm1, [rsp+60h]
-    movsd xmm2, [rsp+68h]
-    movsd xmm3, [rsp+70h]
+    mov rcx, [rsp+48h]
+    mov rdx, [rsp+50h]
+    mov r8, [rsp+58h]
+    mov r9, [rsp+60h]
+    movsd xmm0, [rsp+68h]
+    movsd xmm1, [rsp+70h]
+    movsd xmm2, [rsp+78h]
+    movsd xmm3, [rsp+80h]
     unwind
-    jmp [rsp-8h] ; onError, -88h + 80h
+    jmp [rsp-8h] ; onError, -98h + 90h
 endp
 
 export def jshook_fireError:qword
+
+export def CreateEventW:qword
+export def CloseHandle:qword
+export def SetEvent:qword
+export def WaitForSingleObject:qword
+
+proc crosscall_on_gamethread
+    keep rbx
+    stack 20h
+    mov rbx, [rcx+asyncSize] ; stackptr
+
+    ; make stack pointer
+    lea r8, [rbx+40h] ; result = &args[1]
+    lea rdx, [rbx+48h] ; stackptr
+    mov rcx, NativePointer
+    call pointer_np2js
+    test eax, eax
+    jnz _error
+
+    mov rcx, [rbx+30h] ; function = jsfunc
+    lea r9, [rbx+28h] ; result, ignored
+    mov r8, 2
+    mov rax, js_null
+    lea rdx, [rbx+38h] ; args
+    mov [rbx+38h], rax ; args[0] = null
+    ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
+    call JsCallFunction
+    test eax, eax
+    jnz _error
+    mov rax, raxValue
+    movsd xmm0, xmm0Value
+
+    mov rcx, [rbx+20h] ; event
+    mov [rbx+28h], rax
+    movsd [rbx+30h], xmm0
+    call SetEvent
+    unwind
+    ret
+
+_error:
+    unwind
+    jmp jsend_crash
+endp
+
+export proc jsend_crossthread
+    const JsErrorNoCurrentContext 0x10003
+    stack 98h
+
+    cmp eax, JsErrorNoCurrentContext
+    jne _crash
+
+    xor ecx, ecx
+    xor edx, edx
+    xor r8, r8
+    xor r9, r9
+    call CreateEventW
+    mov [rsp+20h], rax ; event
+
+    lea rcx, crosscall_on_gamethread
+    mov rdx, 8
+    call uv_async_alloc
+
+    mov [rsp+18h], rax ; AsyncTask
+    mov rcx, rax
+    call uv_async_post
+
+    mov rax, [rsp+18h] ; AsyncTask
+    mov rdx, rsp ; stackptr
+    mov rcx, [rsp+20h] ; event
+    mov [rax+asyncSize], rdx
+    mov edx, -1
+    call WaitForSingleObject
+
+    mov rcx, [rsp+20h]
+    call CloseHandle
+
+    mov rax, [rsp+28h]
+    movsd xmm0, [rsp+30h]
+    unwind
+    ret
+_crash:
+endp
 
 export proc jsend_crash
     mov ecx, eax
@@ -318,9 +400,9 @@ export proc raise_runtime_error
     mov [rsp+alignOffset+8], rcx; exception_ptrs.ContextRecord
     call RtlCaptureContext; RtlCaptureContext(&ContextRecord)
 
-    lea r8, [sizeofEXCEPTION_RECORD-8]
+    lea r8, [sizeofEXCEPTION_RECORD-4]
+    lea rcx, [rdx+4] ; ExceptionRecord+4
     xor edx, edx
-    lea rcx, [rsp+sizeofEXCEPTION_POINTERS+alignOffset+8] ; ExceptionRecord
     call memset
 
     lea rcx, [rsp+8] ; exception_ptrs
@@ -352,19 +434,21 @@ export proc ConsoleInputReader_getLine_hook
 endp
 
 def gamelambdaptr:qword
+export def gameThreadStart:qword;
+export def gameThreadFinish:qword;
 export def gameThreadInner:qword ; void gamethread(void* lambda);
 export def free:qword
-export def SetEvent:qword
 export def evWaitGameThreadEnd:qword
 proc gameThreadEntry
     stack 28h
+    call gameThreadStart
     mov rcx, gamelambdaptr
     call gameThreadInner
+    call gameThreadFinish
     mov rcx, evWaitGameThreadEnd
     call SetEvent
 endp
 
-export def WaitForSingleObject:qword
 export def _Cnd_do_broadcast_at_thread_exit:qword
 
 export proc gameThreadHook
@@ -401,7 +485,7 @@ export def updateEvTargetFire:qword
 
 export proc updateWithSleep
     stack 28h
-    mov rcx, [rsp+50h]
+    mov rcx, [rsp+50h] ; rsp+20h + 30h(this function stack)
     call cgateNodeLoop
     unwind
     jmp updateEvTargetFire
@@ -421,24 +505,23 @@ skip_dtor:
     ret
 endp
 
-export def NetworkIdentifierGetHash:qword
-
-export proc networkIdentifierHash
-    stack 8
-    call NetworkIdentifierGetHash
-    mov rcx, rax
-    shr rcx, 32
-    xor eax, ecx
-endp
-
-
 export def onPacketRaw:qword
+export def createPacketRaw:qword
+export def enabledPacket:byte[256]
+
 export proc packetRawHook
-    stack 28h
-    mov rcx, rbp ; rbp
+    unwind
     mov edx, esi ; packetId
+    lea rax, enabledPacket
+    mov al, byte ptr[rax+rdx]
+    test al, al
+    jz _skipEvent
+    mov rcx, rbp ; rbp
     mov r8, r14 ; Connection
-    call onPacketRaw
+    jmp onPacketRaw
+_skipEvent:
+    lea rcx, [rbp+0xb8]
+    jmp createPacketRaw
 endp
 
 export def onPacketBefore:qword
@@ -447,14 +530,21 @@ export proc packetBeforeHook
 
     ; original codes
     mov rax,qword ptr[rcx]
-    lea r8,[rbp+c0h]
-    lea rdx,[rbp-60h]
+    lea r8,qword ptr[rbp+120h]
+    lea rdx,qword ptr[rbp-20h]
     call qword ptr[rax+20h]
 
+    lea rcx, enabledPacket
+    mov cl, byte ptr[rcx+rsi]
+    unwind
+    test cl, cl
+    jz _skipEvent
     mov rcx, rax ; read result
     mov rdx, rbp ; rbp
     mov r8d, esi ; packetId
-    call onPacketBefore
+    jmp onPacketBefore
+_skipEvent:
+    ret
 endp
 
 export def PacketViolationHandlerHandleViolationAfter:qword
@@ -483,31 +573,119 @@ export proc packetAfterHook
 
     ; orignal codes
     mov rax,[rcx]
-    lea r9,[rbp+78h]
+    lea r9,[rbp+b8h] ; packet
     mov r8,rsi
     mov rdx,r14
     call [rax+8]
 
+    mov rax,[rbp+b8h] ; packet
+    mov rax, [rax] ; packet.vftable
+    call [rax+8] ; packet.getId()
+    lea r10, enabledPacket
+    mov al, byte ptr[r10+rax]
+    unwind
+    test al, al
+    jz _skipEvent
     mov rcx, rbp ; rbp
-    mov edx, esi ; packetId
-
-    call onPacketAfter
+    jmp onPacketAfter
+_skipEvent:
+    ret
 endp
 
+export def sendOriginal:qword
 export def onPacketSend:qword
+export proc packetSendHook
+    stack 48h
+
+    mov rax, [r8] ; packet.vftable
+    call [rax+8] ; packet.getId(), just constant return
+
+    lea r10, enabledPacket
+    mov al, byte ptr[rax+r10]
+    test al, al
+    jz _skipEvent
+
+    mov [rsp+20h], rcx
+    mov [rsp+28h], rdx
+    mov [rsp+30h], r8 ; packet
+    mov [rsp+38h], r9
+    call onPacketSend
+    mov rcx, [rsp+20h]
+    mov rdx, [rsp+28h]
+    mov r8, [rsp+30h]
+    mov r9, [rsp+38h]
+    test eax, eax
+    jnz _skipSend
+_skipEvent:
+    unwind
+    jmp sendOriginal
+_skipSend:
+    unwind
+    ret
+endp
+
+export def packetSendAllCancelPoint:qword
 export proc packetSendAllHook
     stack 28h
-    mov r8,r15
-    mov rdx,rbx
-    mov rcx,r14
+
+    mov rax, [r15] ; packet.vftable
+    call [rax+8] ; packet.getId(), just constant return
+
+    lea r10, enabledPacket
+    mov al, byte ptr[rax+r10]
+    test al, al
+    jz _pass
+
+    mov r8,r15 ; packet
+    mov rdx,rbx ; NetworkIdentifier
+    mov rcx,r14 ; NetworkHandler
     call onPacketSend
+    xor eax, eax
+
+    test eax, eax
+    jz _pass
+    mov rax, packetSendAllCancelPoint
+    mov [rsp+28h], rax
+_pass:
     unwind
 
-    ; original code
+    ; original codes
     mov rax, [r15]
-    lea rdx, [r14+220h]
+    lea rdx, [r14+250h]
     mov rcx, r15
     jmp qword ptr[rax+18h]
+endp
+
+export def onPacketSendInternal:qword
+export def sendInternalOriginal:qword
+export proc packetSendInternalHook
+    stack 48h
+
+    mov rax, [r8] ; packet.vftable
+    call [rax+8] ; packet.getId(), just constant return
+
+    lea r10, enabledPacket
+    mov al, byte ptr[rax+r10]
+    test al, al
+    jz _skipEvent
+
+    mov [rsp+20h], rcx
+    mov [rsp+28h], rdx
+    mov [rsp+30h], r8
+    mov [rsp+38h], r9
+    call onPacketSendInternal
+    mov rcx, [rsp+20h]
+    mov rdx, [rsp+28h]
+    mov r8, [rsp+30h]
+    mov r9, [rsp+38h]
+    test eax, eax
+    jnz _skipSend
+_skipEvent:
+    unwind
+    jmp sendInternalOriginal
+_skipSend:
+    unwind
+    ret
 endp
 
 export def getLineProcessTask:qword
@@ -546,4 +724,25 @@ _loop:
 
     ; goto _loop;
     jmp _loop
+endp
+
+export def Core_String_toWide_string_span:qword
+export proc Core_String_toWide_charptr
+    stack 38h
+    xor eax, eax
+
+    mov r8, rdx
+_strlen:
+    mov al, byte ptr [rdx]
+    add rdx, 1
+    test eax, eax
+    jnz _strlen
+
+    sub rdx, r8
+    sub rdx, 1
+    mov [rsp+10h], rdx ; length
+    mov [rsp+18h], r8 ; data
+
+    lea rdx, [rsp+10h]
+    call Core_String_toWide_string_span
 endp

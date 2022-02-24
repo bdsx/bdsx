@@ -2,6 +2,7 @@
 import { CANCEL } from './common';
 import { remapAndPrintError } from './source-map-support';
 
+/** @deprecated unusing */
 export interface CapsuledEvent<T extends (...args: any[]) => any> {
     /**
      * return true if there are no connected listeners
@@ -38,6 +39,15 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
         this.listeners.push(listener);
     }
 
+    once(listener: T): void {
+        const that = this;
+        function callback(...args:any[]):any{
+            that.remove(callback as T);
+            return listener(...args);
+        }
+        this.listeners.push(callback as T);
+    }
+
     onFirst(listener: T): void {
         this.listeners.unshift(listener);
     }
@@ -69,7 +79,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
      * return value if it canceled
      */
     private _fireWithoutErrorHandling(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
-        for (const listener of this.listeners) {
+        for (const listener of this.listeners.slice()) {
             try {
                 const ret = listener(...v);
                 if (ret === CANCEL) return CANCEL as any;
@@ -81,17 +91,24 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
         return undefined;
     }
 
+    private static reportError(err:unknown):void {
+        const res = Event.errorHandler._fireWithoutErrorHandling(err);
+        if (res == null) {
+            remapAndPrintError(err as any);
+        }
+    }
+
     /**
      * return value if it canceled
      */
     fire(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
-        for (const listener of this.listeners) {
+        for (const listener of this.listeners.slice()) {
             try {
                 const ret = listener(...v);
                 if (ret === CANCEL) return CANCEL as any;
                 if (typeof ret === 'number') return ret as any;
             } catch (err) {
-                Event.errorHandler._fireWithoutErrorHandling(err);
+                Event.reportError(err);
             }
         }
     }
@@ -101,13 +118,13 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
      * return value if it canceled
      */
     fireReverse(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
-        for (const listener of this.listeners) {
+        for (const listener of this.listeners.slice()) {
             try {
                 const ret = listener(...v);
                 if (ret === CANCEL) return CANCEL as any;
                 if (typeof ret === 'number') return ret as any;
             } catch (err) {
-                Event.errorHandler._fireWithoutErrorHandling(err);
+                Event.reportError(err);
             }
         }
     }
@@ -139,7 +156,7 @@ export class EventEx<T extends (...args: any[]) => any> extends Event<T> {
         super.on(listener);
     }
     remove(listener: T): boolean {
-        if (!this.remove(listener)) return false;
+        if (!super.remove(listener)) return false;
         if (this.isEmpty()) this.onCleared();
         return true;
     }

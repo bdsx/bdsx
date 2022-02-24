@@ -18,11 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: NPM Install 
+      - name: NPM Install
         run: npm i
 
       - name: TypeScript Check
-        run: tsc --noEmit
-        
+        run: |
+          npm list --depth=0 typescript
+          tsc --noEmit
+
       - name: ESLint
-        run: npm run lint-bdsx
+        run: |
+          npm list --depth=0 eslint eslint-plugin-github eslint-plugin-import
+          npm run lint-bdsx

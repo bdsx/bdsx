@@ -1,3 +1,4 @@
+import * as util from 'util';
 import { asmcode } from "./asm/asmcode";
 import { asm, Register, X64Assembler } from "./assembler";
 import { proc2 } from "./bds/symbols";
@@ -7,7 +8,6 @@ import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, runtimeErro
 import { dllraw } from "./dllraw";
 import { FunctionGen } from "./functiongen";
 import { isBaseOf } from "./util";
-import util = require('util');
 
 export type ParamType = makefunc.Paramable;
 
@@ -49,7 +49,9 @@ const makefuncTypeMap:makefunc.Paramable[] = [];
 function remapType(type:ParamType):makefunc.Paramable {
     if (typeof type === 'number') {
         if (makefuncTypeMap.length === 0) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { RawTypeId } = require('./legacy');
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { bool_t, int32_t, int64_as_float_t, float64_t, float32_t, bin64_t, void_t } = require('./nativetype') as typeof import('./nativetype');
             makefuncTypeMap[RawTypeId.Boolean] = bool_t;
             makefuncTypeMap[RawTypeId.Int32] = int32_t;
@@ -83,8 +85,7 @@ export type TypesFromParamIds_np2js<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_np2js<T[key]> : T[key];
 };
 
-export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
-{
+export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }> {
     /**
      * *Pointer, 'this' parameter passes as first parameter.
      */
@@ -108,11 +109,23 @@ export interface MakeFuncOptions<THIS extends { new(): VoidPointer|void; }>
      * jump to onError when JsCallFunction is failed (js exception, wrong thread, etc)
      */
     onError?:VoidPointer|null;
+
+    /**
+     * allow calling this function from somewhere other than the game thread.
+     * it will ignore the onError parameter.
+     *
+     * technically it's possible to block the worker till the end of JS processing.
+     */
+    crossThread?:boolean;
+
+    /**
+     * code chunk name, default: js function name
+     */
+    name?:string;
 }
 type GetThisFromOpts<OPTS extends MakeFuncOptions<any>|null> =
     OPTS extends MakeFuncOptions<infer THIS> ?
     THIS extends { new(): VoidPointer; } ? InstanceType<THIS> : void : void;
-
 
 export type FunctionFromTypes_np<
     OPTS extends MakeFuncOptions<any>|null,
@@ -135,7 +148,6 @@ export type FunctionFromTypes_js_without_pointer<
     RETURN extends ParamType> =
     ((this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_js2np<PARAMS>) => TypeFrom_np2js<RETURN>);
 
-
 function invalidParameterError(paramName:string, expected:string, actual:unknown):never {
     throw TypeError(`unexpected parameter type (${paramName}, expected=${expected}, actual=${actual != null ? (actual as any).constructor.name : actual})`);
 }
@@ -155,6 +167,7 @@ export namespace makefunc {
     export const registerDirect = Symbol('makefunc.registerDirect');
 
     export interface Paramable {
+        symbol?:string;
         name:string;
         [getter](ptr:StaticPointer, offset?:number):any;
         [setter](ptr:StaticPointer, value:any, offset?:number):void;
@@ -211,7 +224,7 @@ export namespace makefunc {
      * it will removed at native returning
      */
     export function tempValue(type:Paramable, value:unknown):StaticPointer {
-        const ptr = tempAlloc(type[size]);
+        const ptr = tempAlloc(Math.max(type[size], 8)); // XXX: setToParam needs 8 bytes for primitive types
         type[setToParam](ptr, value);
         return ptr;
     }
@@ -226,17 +239,17 @@ export namespace makefunc {
         return ptr;
     }
 
-    export function npRaw(func:(stackptr:NativePointer)=>void, onError:VoidPointer, opts?:{name?:string, jsDebugBreak?:boolean}|null):VoidPointer {
+    export function npRaw(func:(stackptr:NativePointer)=>void, onError:VoidPointer, opts?:{name?:string, nativeDebugBreak?:boolean}|null):VoidPointer {
         chakraUtil.JsAddRef(func);
         const code = asm();
         if (opts == null) opts = {};
-        if (opts.jsDebugBreak) code.debugBreak();
+        if (opts.nativeDebugBreak) code.debugBreak();
         return code
         .mov_r_c(Register.r10, chakraUtil.asJsValueRef(func))
         .mov_r_c(Register.r11, onError)
         .jmp64(callJsFunction, Register.rax)
         .unwind()
-        .alloc(opts.name || 'makefunc.npRaw');
+        .alloc(opts.name || func.name || `#np_call`);
     }
 
     /**
@@ -329,7 +342,11 @@ export namespace makefunc {
         gen.writeln('temporalDtors.length = dtorIdx;');
         gen.writeln('temporalKeeper.length = keepIdx;');
 
-        return npRaw(gen.generate('stackptr'), options.onError || asmcode.jsend_crash, opts);
+        if (jsfunction.name) {
+            if (opts == null) opts = {name: jsfunction.name} as OPTS;
+            else if (opts.name == null) opts.name = jsfunction.name;
+        }
+        return npRaw(gen.generate('stackptr'), options.crossThread ? asmcode.jsend_crossthread : (options.onError || asmcode.jsend_crash), opts);
     }
 
     /**
@@ -484,35 +501,26 @@ export namespace makefunc {
 
     export const Ansi = new ParamableT<string>(
         'Ansi',
-        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Ansi),
-        (stackptr, param, offset)=>{
-            if (param === null) {
-                stackptr.setPointer(null, offset);
-            } else {
-                const buf = tempAlloc(param.length*2+1);
-                const len = buf.setString(param, 0, Encoding.Ansi);
-                buf.setUint8(len, 0);
-                stackptr.setPointer(buf, offset);
-            }
-        },
+        (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Ansi),
+        (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Ansi), offset),
         abstract,
-        v=>v === null || typeof v === 'string'
+        v=>v === null || typeof v === 'string',
     );
 
     export const Utf8 = new ParamableT<string>(
         'Utf8',
-        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf8),
+        (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf8),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param), offset),
         abstract,
-        v=>v === null || typeof v === 'string'
+        v=>v === null || typeof v === 'string',
     );
 
     export const Utf16 = new ParamableT<string>(
         'Utf16',
-        (stackptr, offset)=>stackptr.getPointer().getString(undefined, offset, Encoding.Utf16),
+        (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf16),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Utf16), offset),
         abstract,
-        v=>v === null || typeof v === 'string'
+        v=>v === null || typeof v === 'string',
     );
 
     export const Buffer = new ParamableT<VoidPointer|Bufferable>(
@@ -537,7 +545,7 @@ export namespace makefunc {
             if (v instanceof Int8Array) return true;
             if (v instanceof Int16Array) return true;
             return false;
-        }
+        },
     );
 
     export const JsValueRef = new ParamableT<any>(
@@ -545,7 +553,7 @@ export namespace makefunc {
         (stackptr, offset)=>stackptr.getJsValueRef(offset),
         (stackptr, param, offset)=>stackptr.setJsValueRef(param, offset),
         abstract,
-        ()=>true
+        ()=>true,
     );
 }
 
@@ -556,10 +564,8 @@ export interface MakeFuncOptionsWithName<THIS extends { new(): VoidPointer|void;
     name?:string;
 }
 
-declare module "./assembler"
-{
-    interface X64Assembler
-    {
+declare module "./assembler" {
+    interface X64Assembler {
         /**
          * asm.alloc + makefunc.js
          * allocates it on the executable memory. and make it as a JS function.
@@ -568,25 +574,21 @@ declare module "./assembler"
             returnType: RETURN, opts?: OPTS, ...params: PARAMS):
             FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN>;
     }
-    namespace asm
-    {
+    namespace asm {
         function const_str(str:string, encoding?:BufferEncoding):Buffer;
     }
 }
-declare module "./core"
-{
+declare module "./core" {
     interface VoidPointerConstructor extends makefunc.Paramable{
         isTypeOf<T>(this:{new():T}, v:unknown):v is T;
     }
-    interface VoidPointer
-    {
+    interface VoidPointer {
         [asm.splitTwo32Bits]():[number, number];
+        [util.inspect.custom](depth:number, options:Record<string, any>):unknown;
     }
 }
-declare global
-{
-    interface Uint8Array
-    {
+declare global {
+    interface Uint8Array {
         [asm.splitTwo32Bits]():[number, number];
     }
 }
@@ -595,8 +597,8 @@ VoidPointer.prototype[util.inspect.custom] = function() {
     return `${this.constructor.name} { ${this.toString()} }`;
 };
 VoidPointer[makefunc.size] = 8;
-VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS{
-    return ptr.getPointerAs(this, offset);
+VoidPointer[makefunc.getter] = function<THIS extends VoidPointer>(this:{new(ptr?:VoidPointer):THIS}, ptr:StaticPointer, offset?:number):THIS|null{
+    return ptr.getNullablePointerAs(this, offset);
 };
 VoidPointer[makefunc.setter] = function<THIS extends VoidPointer>(this:{new():THIS}, ptr:StaticPointer, value:VoidPointer, offset?:number):void{
     ptr.setPointer(value, offset);

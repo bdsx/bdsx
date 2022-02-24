@@ -1,9 +1,9 @@
 
-import path = require('path');
-import fs = require('fs');
+import * as fs from 'fs';
+import * as path from 'path';
 import { pdb } from '../core';
-import { dll } from '../dll';
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_COMPLETE, UNDNAME_NAME_ONLY } from '../dbghelp';
+import { dll } from '../dll';
 
 const cachepath = path.join(__dirname, 'pdbcachedata.bin');
 const VERSION = 0;
@@ -53,10 +53,10 @@ function makePdbCache():number {
             if (item.startsWith('\x7f')) { // ?
                 continue;
             }
-            if (/^_CTA[0-9]\?/.test(item)) { // ?
+            if (/^_CTA\d\?/.test(item)) { // ?
                 continue;
             }
-            if (/^_TI[0-9]\?/.test(item)) { // ?
+            if (/^_TI\d\?/.test(item)) { // ?
                 continue;
             }
             if (item.startsWith('_TI5?')) { // ?
@@ -123,6 +123,10 @@ export class PdbCache implements Iterable<SymbolInfo> {
     constructor() {
         this.fd = makePdbCache();
         this.total = this._readInt();
+    }
+
+    static clearCache():void {
+        try { fs.unlinkSync(cachepath); } catch(err) {}
     }
 
     close():void {

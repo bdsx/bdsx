@@ -3,7 +3,7 @@
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { TextPacket } from "bdsx/bds/packets";
-import { DeviceOS } from "bdsx/common";
+import { BuildPlatform } from "bdsx/common";
 import { events } from "bdsx/event";
 
 export const connectionList = new Map<NetworkIdentifier, string>();
@@ -16,13 +16,14 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
     const xuid = cert.getXuid();
     const username = cert.getId();
 
-    console.log(`Connection: ${username}> IP=${ip}, XUID=${xuid}, OS=${DeviceOS[connreq.getDeviceOS()] || 'UNKNOWN'}`);
+    // sendLog
+    console.log(`Connection: ${username}> IP=${ip}, XUID=${xuid}, PLATFORM=${BuildPlatform[connreq.getDeviceOS()] || 'UNKNOWN'}`);
     if (username) connectionList.set(networkIdentifier, username);
 
     // sendPacket
     setTimeout(()=>{
         if (!connectionList.has(networkIdentifier)) return;
-        const textPacket = TextPacket.create();
+        const textPacket = TextPacket.allocate();
         textPacket.message = '[message packet from bdsx]';
         textPacket.sendTo(networkIdentifier);
         textPacket.dispose();

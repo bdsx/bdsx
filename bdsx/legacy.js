@@ -477,7 +477,7 @@ command.CustomCommandFactory.prototype.override = function override(callback, ..
     CustomCommandImpl.define(fields);
     const customCommandExecute = makefunc.np(function (origin, output) {
         this.execute(origin, output);
-    }, void_t, { this: CustomCommandImpl }, CommandOrigin, CommandOutput);
+    }, void_t, { this: CustomCommandImpl, name: `${this.name} command::execute` }, CommandOrigin, CommandOutput);
     const params = [];
     for (const [name, type, optkey] of parameters) {
         if (optkey !== undefined) {

@@ -1,12 +1,14 @@
 import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
-import { NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
+import { Config } from "./config";
+import { bedrock_server_exe, NativePointer, pdb, StaticPointer, VoidPointer } from "./core";
 import { disasm } from "./disassembler";
 import { dll } from "./dll";
+import { fsutil } from "./fsutil";
 import { hacktool } from "./hacktool";
 import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
-import colors = require('colors');
+import * as colors from 'colors';
 
 const FREE_REGS:Register[] = [
     Register.rax,
@@ -137,8 +139,8 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
 
     append<NT extends Record<string, NativePointer>>(nmap:NT):ProcHacker<T&NT> {
         const map = this.map as any;
-        for (const key in nmap) {
-            map[key] = nmap[key];
+        for (const [key, v] of Object.entries(nmap)) {
+            map[key] = v;
         }
         return this as any;
     }
@@ -260,9 +262,14 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         ...params: PARAMS):
         (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>)=>FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
         return callback=>{
+            if (opts == null) {
+                opts = {name:`hook of ${key}`} as OPTS;
+            } else if (opts.name == null) {
+                opts.name = `hook of ${key}`;
+            }
             const original = this.hookingRaw(key, original=>{
                 const nopts:MakeFuncOptions<any> = opts! || {};
-                nopts.onError = original;
+                if (nopts.onError == null) nopts.onError = original;
                 return makefunc.np(callback, returnType, nopts as any, ...params);
             }, opts);
             return makefunc.js(original, returnType, opts, ...params);
@@ -377,6 +384,22 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param undecorate if it's set with UNDNAME_*, it uses undecorated(demangled) symbols
      */
     static load<KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, names:KEYS, undecorate?:number):ProcHacker<{[key in KEYS[number]]: NativePointer}> {
+        if (Config.WINE) {
+            let matched = false;
+            try {
+                const firstLine = fsutil.readFirstLineSync(cacheFilePath);
+                matched = firstLine === bedrock_server_exe.md5;
+            } catch (err) {
+                if (err.code === 'ENOENT') {
+                    // not found
+                } else {
+                    throw err;
+                }
+            }
+            if (!matched) {
+                console.error(colors.yellow('[BDSX] PDB cache may not be generated on Linux. Please generate it on Windows and copy the file to the Linux machine'));
+            }
+        }
         return new ProcHacker(pdb.getList(cacheFilePath, {}, names, false, undecorate));
     }
 }

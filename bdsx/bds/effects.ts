@@ -7,6 +7,7 @@ import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, float32_t, int32_t, uint32_t } from "../nativetype";
 import { HashedString } from "./hashedstring";
+import { CompoundTag } from "./nbt";
 
 export enum MobEffectIds {
     Empty,
@@ -64,10 +65,9 @@ export class MobEffect extends NativeClass {
     @nativeField(bool_t)
     showParticles: bool_t;
     @nativeField(HashedString, 0x98)
-    componentName: HashedString;
+    readonly componentName: HashedString;
     // @nativeField(VoidPointer, 0xF8) // std::vector<std::pair<Attribute const*,std::shared_ptr<AttributeModifier>>>
     // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), SharedPtr<AttributeModifier>>;
-
 
     static create(id: MobEffectIds): MobEffect {
         abstract();
@@ -77,7 +77,7 @@ export class MobEffect extends NativeClass {
     }
 }
 
-@nativeClass()
+@nativeClass(0x80)
 export class MobEffectInstance extends NativeClass {
     @nativeField(uint32_t)
     id: uint32_t;
@@ -87,6 +87,7 @@ export class MobEffectInstance extends NativeClass {
     durationEasy: int32_t;
     @nativeField(int32_t)
     durationNormal: int32_t;
+
     @nativeField(int32_t)
     durationHard: int32_t;
     @nativeField(int32_t)
@@ -105,7 +106,7 @@ export class MobEffectInstance extends NativeClass {
      */
     static create(id: MobEffectIds, duration: number = 600, amplifier: number = 0, ambient: boolean = false, showParticles: boolean = true, displayAnimation: boolean = false): MobEffectInstance {
         const effect = new MobEffectInstance(true);
-        (effect as any)._create(id, duration, amplifier, ambient, showParticles, displayAnimation);
+        effect._create(id, duration, amplifier, ambient, showParticles, displayAnimation);
         return effect;
     }
 
@@ -113,10 +114,25 @@ export class MobEffectInstance extends NativeClass {
         abstract();
     }
 
-    getSplashDuration(): number {
+    getSplashDuration():number {
         return this.duration * 0.75;
     }
-    getLingerDuration(): number {
+    getLingerDuration():number {
         return this.duration * 0.25;
+    }
+    save():Record<string, any> {
+        const tag = this.allocateAndSave();
+        const out = tag.value();
+        tag.dispose();
+        return out;
+    }
+    allocateAndSave():CompoundTag {
+        abstract();
+    }
+    load(tag:CompoundTag): void {
+        abstract();
+    }
+    static load(tag:CompoundTag): void {
+        abstract();
     }
 }

@@ -3,7 +3,6 @@ import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamT
 import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 
-
 export interface OverloadedFunction {
     (...args:any[]):any;
     overload(ptr:VoidPointer, returnType:makefunc.Paramable, opts?:{this?:Type<any>}|null, ...args:Type<any>[]):this;
@@ -14,7 +13,7 @@ export class OverloadedEntry {
     constructor(
         public readonly thisType:Type<any>|null,
         public readonly args:Type<any>[],
-        public readonly func:(...args:any[])=>any
+        public readonly func:(...args:any[])=>any,
     ) {
     }
 
@@ -91,7 +90,7 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
         opts?: OPTS,
         ...params: PARAMS):NativeFunctionType<FunctionFromTypes_js_without_pointer<OPTS, PARAMS, RETURN>> {
 
-        const makefunc_np = Symbol();
+        const makefunc_np = Symbol('[native function]');
         type Func = FunctionFromTypes_js_without_pointer<OPTS, PARAMS, RETURN> & {[makefunc_np]?:VoidPointer};
         function getNp(func:Func):VoidPointer {
             const ptr = func[makefunc_np];
@@ -104,7 +103,8 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
             return makefunc.js(ptr, returnType, opts, ...params);
         }
         return new NativeFunctionType<Func>(
-            `${returnType.name} (__cdecl*)(${params.map(param=>param.name).join(',')})`,
+            `${returnType.symbol || returnType.name} (__cdecl*)(${params.map(param=>param.symbol || param.name).join(',')})`,
+            `${returnType.name}(${params.map(param=>param.name).join(',')})`,
             8, 8,
             v=>v instanceof Function,
             undefined,
@@ -136,7 +136,7 @@ export class MemberPointer<B, T> extends VoidPointer {
 }
 
 export const NativeVarArgs = new NativeType<any[]>(
-    '...',
+    '...', 'NativeVarArgs',
     0,
     0,
     ()=>{ throw Error('Unexpected usage'); },
@@ -147,6 +147,6 @@ export const NativeVarArgs = new NativeType<any[]>(
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
     ()=>{ throw Error('Unexpected usage'); },
-    ()=>{ throw Error('Unexpected usage'); }
+    ()=>{ throw Error('Unexpected usage'); },
 );
 export type NativeVarArgs = any[];

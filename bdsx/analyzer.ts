@@ -1,10 +1,10 @@
+import { bin } from "./bin";
 import { NativePointer, pdb, VoidPointer } from "./core";
 
 let analyzeMap:Map<string, string>|undefined;
 let symbols:Record<string, NativePointer>|null = null;
 
-export namespace analyzer
-{
+export namespace analyzer {
     export function loadMap():void{
         if (analyzeMap) return;
         analyzeMap = new Map<string, string>();
@@ -13,8 +13,8 @@ export namespace analyzer
             (symbols as any).__proto__ = null;
         }
 
-        for (const name in symbols) {
-            analyzeMap.set(symbols[name]+'', name);
+        for (const [name, value] of Object.entries(symbols)) {
+            analyzeMap.set(value.getAddressBin(), name);
         }
     }
 
@@ -38,12 +38,12 @@ export namespace analyzer
 
                 try {
                     const addr2 = addr.getPointer();
-                    const addr2str = addr2+'';
-                    const addr2name = analyzeMap!.get(addr2str);
+                    const addr2bin = addr2.getAddressBin();
+                    const addr2name = analyzeMap!.get(addr2bin);
                     if (addr2name) {
-                        console.log(`${offset}: ${addrstr}: ${addr2name}(${addr2str})`);
+                        console.log(`${offset}: ${addrstr}: ${addr2name}(0x${bin.reversedHex(addr2bin)})`);
                     } else {
-                        console.log(`${offset}: ${addrstr}: ${addr2str}`);
+                        console.log(`${offset}: ${addrstr}: ${addr2bin}`);
                     }
                 } catch (err) {
                     const nums:number[] = [];

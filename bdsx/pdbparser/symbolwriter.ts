@@ -1,8 +1,8 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { styling } from "../externs/bds-scripting/styling";
 import { imageSections } from "./imagesections";
 import { PdbIdentifier } from "./symbolparser";
-import fs = require('fs');
-import path = require('path');
-import { styling } from "../externs/bds-scripting/styling";
 
 const specialNameRemap = new Map<string, string>();
 specialNameRemap.set("`vector deleting destructor'", '__vector_deleting_destructor');
@@ -218,7 +218,7 @@ function setBasicType(name:string|PdbIdentifier, jsTypeName:string, paramVarName
 
 enum IdType {
     Type,
-    Value
+    Value,
 }
 
 class ImportName {
@@ -463,8 +463,7 @@ function getFieldType(item:Identifier):FieldType {
 let insideOfClass = false;
 let isStatic = false;
 
-
-const adjustorRegExp = /^(.+)`adjustor{([0-9]+)}'$/;
+const adjustorRegExp = /^(.+)`adjustor{(\d+)}'$/;
 const idremap:Record<string, string> = {'{':'','}':'',',':'_','<':'_','>':'_'};
 const recursiveCheck = new Set<Identifier>();
 
@@ -592,7 +591,7 @@ class TsFile extends TsFileBase {
                     parentInfo.totalCount,
                     parentInfo.totalVariadicCount,
                     0,
-                    null
+                    null,
                 );
             } else {
                 if (variadicType !== null) {
@@ -608,7 +607,7 @@ class TsFile extends TsFileBase {
                     count + parentInfo.totalCount,
                     parentInfo.totalVariadicCount+ +variadicCount,
                     count,
-                    variadicType
+                    variadicType,
                 );
             }
         } else if (item.templateBase !== null) {
@@ -633,7 +632,7 @@ class TsFile extends TsFileBase {
                 base.totalCount,
                 base.totalVariadicCount,
                 base.count,
-                base.variadicType
+                base.variadicType,
             );
         } else {
             if (parentInfo.parameters.length === 0) {
@@ -646,7 +645,7 @@ class TsFile extends TsFileBase {
                     parentInfo.totalCount,
                     parentInfo.totalVariadicCount,
                     0,
-                    null
+                    null,
                 );
             }
         }
@@ -807,7 +806,7 @@ class TsFile extends TsFileBase {
         }
         return {
             declaration,
-            parameterNames: parameters
+            parameterNames: parameters,
         };
     }
 
@@ -1615,13 +1614,13 @@ for (const [key, value] of PdbIdentifier.global.children) {
         // private symbols
     } else if (value.isLambda) {
         // lambdas
-    } else if (value.isConstant && /^[0-9]+$/.test(key)) {
+    } else if (value.isConstant && /^\d+$/.test(key)) {
         // numbers
     } else if (key.startsWith('{')) {
         // code chunk?
     } else if (key.startsWith('__imp_')) {
         // import
-    } else if (/^main\$dtor\$[0-9]+$/.test(key)) {
+    } else if (/^main\$dtor\$\d+$/.test(key)) {
         // dtor in main
     } else {
         ids.push(value);

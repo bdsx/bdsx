@@ -1,6 +1,5 @@
 
-declare global
-{
+declare global {
     interface MinecraftParticleEffectMap {
         /**
          * Beacon effects

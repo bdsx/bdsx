@@ -1,5 +1,5 @@
-import path = require('path');
-import fs = require('fs');
+import * as fs from 'fs';
+import * as path from 'path';
 import { fsutil } from "./fsutil";
 
 /**

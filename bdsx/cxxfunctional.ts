@@ -27,11 +27,10 @@ export const CxxLess = {
         const fn = lesses.get(type);
         if (fn != null) throw Error(`std::less<${type.name}> is already defined`);
         lesses.set(type, less);
-    }
+    },
 };
 
 export type CxxLess<T> = (a:T, b:T)=>boolean;
-
 
 function compare(a:VoidPointer, alen:number, b:VoidPointer, blen:number):number {
     const diff = dll.vcruntime140.memcmp(a, b, Math.min(alen, blen));

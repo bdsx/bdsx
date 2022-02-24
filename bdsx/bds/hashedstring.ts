@@ -9,9 +9,12 @@ export class HashedString extends NativeClass {
     hash:VoidPointer|null;
     @nativeField(CxxString)
     str:CxxString;
+    @nativeField(HashedString.ref())
+    recentCompared:HashedString|null;
 
     [NativeType.ctor]():void {
         this.hash = null;
+        this.recentCompared = null;
     }
 
     set(str:string):void {

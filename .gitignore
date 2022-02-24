@@ -13,5 +13,5 @@ node_modules
 !/bdsx/native.js
 !/bdsx/netevent.js
 !/bdsx/checkgate.js
-/package-lock.json
+!/bdsx/asm/asmcode.js
 /plugin-example/package-lock.json

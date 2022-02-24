@@ -1,13 +1,10 @@
 
-declare global
-{
+declare global {
     namespace NodeJS {
-        interface Process
-        {
+        interface Process {
             jsEngine?:'chakracore';
         }
-        interface ProcessVersions
-        {
+        interface ProcessVersions {
             chakracore?:string;
         }
     }

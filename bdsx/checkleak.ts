@@ -1,5 +1,5 @@
 
-import colors = require('colors');
+import * as colors from 'colors';
 
 /**
  * check the memory leak of the input function.

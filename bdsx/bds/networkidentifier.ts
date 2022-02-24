@@ -6,20 +6,17 @@ import { dll } from "../dll";
 import { events } from "../event";
 import { Hashable, HashSet } from "../hashset";
 import { makefunc } from "../makefunc";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
-import { SharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
-import { _tickCallback } from "../util";
 import type { Packet } from "./packet";
-import { BatchedNetworkPeer, EncryptedNetworkPeer } from "./peer";
 import type { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-export class NetworkHandler extends NativeClass {
+export class NetworkHandler extends AbstractClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
 
@@ -31,35 +28,28 @@ export class NetworkHandler extends NativeClass {
         abstract();
     }
 
-    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection {
+    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection|null {
         abstract();
     }
 }
 
-export namespace NetworkHandler
-{
-    export class Connection extends NativeClass {
+export namespace NetworkHandler {
+    export class Connection extends AbstractClass {
         networkIdentifier:NetworkIdentifier;
-        u1:VoidPointer;
-        u2:VoidPointer;
-        u3:VoidPointer;
-        epeer:SharedPtr<EncryptedNetworkPeer>;
-        bpeer:SharedPtr<BatchedNetworkPeer>;
-        bpeer2:SharedPtr<BatchedNetworkPeer>;
     }
 }
 
 @nativeClass(null)
-class ServerNetworkHandler$Client extends NativeClass {
+class ServerNetworkHandler$Client extends AbstractClass {
 }
 
 @nativeClass(null)
-export class ServerNetworkHandler extends NativeClass {
+export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
-    @nativeField(CxxString, 0x260)
+    @nativeField(CxxString, 0x278) // accessed in ServerNetworkHandler::allowIncomingConnections
     readonly motd:CxxString;
-    @nativeField(int32_t, 0x2D8)
+    @nativeField(int32_t, 0x2f0) // accessed in ServerNetworkHandler:setMaxNumPlayers
     readonly maxPlayers: int32_t;
 
     protected _disconnectClient(client:NetworkIdentifier, unknown:number, message:CxxString, skipMessage:boolean):void {
@@ -69,13 +59,13 @@ export class ServerNetworkHandler extends NativeClass {
         this._disconnectClient(client, 0, message, skipMessage);
     }
     /**
-     * Alias of allowIncomingConnections
+     * @alias allowIncomingConnections
      */
     setMotd(motd:string):void {
         this.allowIncomingConnections(motd, true);
     }
     /**
-     * @deprecated
+     * @deprecated use setMaxNumPlayers
      */
     setMaxPlayers(count:number):void {
         this.setMaxNumPlayers(count);
@@ -89,10 +79,15 @@ export class ServerNetworkHandler extends NativeClass {
     setMaxNumPlayers(n:number):void {
         abstract();
     }
+    /**
+     * it's the same with `client.getActor()`
+     */
+    _getServerPlayer(client:NetworkIdentifier, number: number):ServerPlayer|null {
+        abstract();
+    }
 }
 
-export namespace ServerNetworkHandler
-{
+export namespace ServerNetworkHandler {
     export type Client = ServerNetworkHandler$Client;
 }
 
@@ -100,6 +95,8 @@ const identifiers = new HashSet<NetworkIdentifier>();
 
 @nativeClass()
 export class NetworkIdentifier extends NativeClass implements Hashable {
+    @nativeField(bin64_t)
+    unknown:bin64_t;
     @nativeField(RakNet.AddressOrGUID)
     public address:RakNet.AddressOrGUID;
 
@@ -136,32 +133,24 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     static fromPointer(ptr:StaticPointer):NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.addAs(NetworkIdentifier, offset, offset! >> 31));
-    }
-    static [makefunc.getFromParam](ptr:StaticPointer, offset?:number):NetworkIdentifier {
-        return NetworkIdentifier._singletoning(ptr.getPointerAs(NetworkIdentifier, offset));
-    }
-
     static all():IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
-    private static _singletoning(ptr:NetworkIdentifier):NetworkIdentifier {
-        let ni = identifiers.get(ptr);
-        if (ni != null) return ni;
-        ni = new NetworkIdentifier(true);
-        ni.copyFrom(ptr, NetworkIdentifier[NativeType.size]);
-        identifiers.add(ni);
-        return ni;
-    }
 }
-
+NetworkIdentifier.setResolver(ptr=>{
+    if (ptr === null) return null;
+    let ni = identifiers.get(ptr.as(NetworkIdentifier));
+    if (ni != null) return ni;
+    ni = new NetworkIdentifier(true);
+    (ni as any).copyFrom(ptr, NetworkIdentifier[NativeType.size]);
+    identifiers.add(ni);
+    return ni;
+});
 export let networkHandler:NetworkHandler;
 
-procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', makefunc.np((handler, ni, msg)=>{
+procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{
     try {
         events.networkDisconnected.fire(ni);
-        _tickCallback();
     } catch (err) {
         remapAndPrintError(err);
     }
@@ -170,5 +159,5 @@ procHacker.hookingRawWithCallOriginal('NetworkHandler::onConnectionClosed#1', ma
     setTimeout(()=>{
         identifiers.delete(ni);
     }, 3000);
-}, void_t, null, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
+}, void_t, {name: 'hook of NetworkIdentifier dtor'}, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
 [Register.rcx, Register.rdx, Register.r8, Register.r9], []);

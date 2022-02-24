@@ -1,7 +1,7 @@
 import { NetworkIdentifier } from 'bdsx/bds/networkidentifier';
 import { ipfilter } from 'bdsx/core';
 import { promises as fs } from 'fs';
-import path = require('path');
+import * as path from 'path';
 
 /**
  * ipfilter blocks at the earliest phase of the program.

@@ -2,9 +2,9 @@
  * util for managing the async tasks
  */
 
-import os = require('os');
+import * as os from 'os';
 
-const EMPTY = Symbol();
+const EMPTY = Symbol(); // it don't use description because it's not used as a property key.
 
 const cpuCount = os.cpus().length;
 const concurrencyCount = Math.min(Math.max(cpuCount*2, 8), cpuCount);

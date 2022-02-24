@@ -2,8 +2,7 @@ import { asm, FloatRegister, Register } from "./assembler";
 import { StaticPointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 
-export namespace hacktool
-{
+export namespace hacktool {
     /**
      * @param keepRegister
      * @param keepFloatRegister

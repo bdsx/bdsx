@@ -2,9 +2,10 @@
 // fsutil.ts should be compatible with old node.js
 // it's used by BDS installer
 
-import fs = require('fs');
-import path = require('path');
-import os = require('os');
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { BufferWriter } from './writer/bufferstream';
 
 class DirentFromStat extends (fs.Dirent || class{}) {
     constructor(name:string, private readonly stat:fs.Stats) {
@@ -36,7 +37,15 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 }
 
 export namespace fsutil {
-    export const projectPath = path.resolve(process.cwd(), process.argv[1]);
+    let dirname = path.dirname(__dirname);
+    const dirparsed = path.parse(dirname);
+    if (dirparsed.base === 'node_modules') {
+        // bypass the issue on Wine & BDSX
+        // Wine & node cannot resolve the linked module path.
+        dirname = dirparsed.dir;
+    }
+
+    export const projectPath = dirname;
 
     /** @deprecated use fsutil.projectPath */
     export function getProjectPath():string {
@@ -283,6 +292,32 @@ export namespace fsutil {
                 else resolve();
             });
         });
+    }
+    export function readFirstLineSync(path:string):string {
+        const fd = fs.openSync(path, 'r');
+        const BUF_SIZE = 4*1024;
+        const writer = new BufferWriter(new Uint8Array(BUF_SIZE), 0);
+        for (;;) {
+            const off = writer.size;
+            writer.resize(off + BUF_SIZE);
+            const readlen = fs.readSync(fd, writer.array, off, BUF_SIZE, null);
+            writer.size = off + readlen;
+
+            const buf = writer.buffer();
+            let idx:number;
+            if (readlen !== 0) {
+                idx = buf.indexOf(0x0a, off); // ASCII of \n
+                if (idx === -1) continue;
+                if (writer.array[idx-1] === 0xd) { // ASCII of \r
+                    idx --;
+                }
+            } else {
+                idx = buf.length;
+            }
+            fs.closeSync(fd);
+
+            return Buffer.from(buf.buffer, buf.byteOffset, idx).toString();
+        }
     }
 
     export class DirectoryMaker {

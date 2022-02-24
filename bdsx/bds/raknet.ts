@@ -1,17 +1,18 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
 import { makefunc } from "../makefunc";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
 import { procHacker } from "./proc";
 
 const portDelineator = '|'.charCodeAt(0);
 
-export namespace RakNet
-{
-    @nativeClass(136)
-    export class SystemAddress extends NativeClass {
-        @nativeField(uint16_t, 130)
+export namespace RakNet {
+    @nativeClass(0x88)
+    export class SystemAddress extends AbstractClass {
+        @nativeField(uint16_t, 0x80)
+        debugPort:uint16_t;
+        @nativeField(uint16_t, 0x82)
         systemIndex:uint16_t;
 
         // void SystemAddress::ToString(bool writePort, char *dest, char portDelineator) const
@@ -34,14 +35,30 @@ export namespace RakNet
         g:bin64_t;
         @nativeField(uint16_t)
         systemIndex:uint16_t;
+
+        equals(other:VoidPointer|null):boolean {
+            if (other instanceof RakNetGUID) {
+                return this.g === other.g;
+            }
+            return false;
+        }
     }
 
     @nativeClass()
-    export class RakPeer extends NativeClass {
+    export class RakPeer extends AbstractClass {
         @nativeField(VoidPointer)
         vftable:VoidPointer;
 
         GetSystemAddressFromIndex(idx:number):SystemAddress {
+            abstract();
+        }
+        GetAveragePing(address:RakNet.AddressOrGUID):number {
+            abstract();
+        }
+        GetLastPing(address:RakNet.AddressOrGUID):number {
+            abstract();
+        }
+        GetLowestPing(address:RakNet.AddressOrGUID):number {
             abstract();
         }
     }
@@ -59,7 +76,7 @@ export namespace RakNet
 
         GetSystemIndex():uint16_t {
             const rakNetGuid = this.rakNetGuid;
-            if (rakNetGuid !== UNASSIGNED_RAKNET_GUID) {
+            if (rakNetGuid.g !== UNASSIGNED_RAKNET_GUID.g) {
                 return rakNetGuid.systemIndex;
             } else {
                 return this.systemAddress.systemIndex;

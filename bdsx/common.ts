@@ -1,5 +1,5 @@
 
-import colors = require('colors');
+import * as colors from 'colors';
 
 if ((global as any).bdsx != null) {
     console.error(colors.red('[BDSX] multiple imported'));
@@ -27,40 +27,45 @@ export enum AttributeName {
 	PlayerExperience="minecraft:player.experience",
 	Health="minecraft:health",
 	FollowRange="minecraft:follow_range",
-	KnockbackResistance="minecraft:knockback_registance",
+	KnockbackResistance="minecraft:knockback_resistance",
 	MovementSpeed="minecraft:movement",
 	UnderwaterMovementSpeed="minecraft:underwater_movement",
+	LavaMovementSpeed="minecraft:lava_movement",
 	AttackDamage="minecraft:attack_damage",
 	Absorption="minecraft:absorption",
 	Luck="minecraft:luck",
 	JumpStrength="minecraft:horse.jump_strength",
 }
 
-// https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/types/DeviceOS.php
-export enum DeviceOS {
-	UNKNOWN = -1,
-	ANDROID = 1,
-	IOS = 2,
-	OSX = 3,
-	AMAZON = 4,
-	GEAR_VR = 5,
-	HOLOLENS = 6,
-	WINDOWS_10 = 7,
-	WIN32 = 8,
-	DEDICATED = 9,
-	TVOS = 10,
-	PLAYSTATION = 11,
-	NINTENDO = 12,
-	XBOX = 13,
-	WINDOWS_PHONE = 14,
+// https://github.com/pmmp/BedrockProtocol/blob/master/src/types/DeviceOS.php
+export enum BuildPlatform {
+    UNKNOWN = -1,
+    ANDROID = 1,
+    IOS = 2,
+    OSX = 3,
+    AMAZON = 4,
+    GEAR_VR = 5,
+    HOLOLENS = 6,
+    WINDOWS_10 = 7,
+    WIN32 = 8,
+    DEDICATED = 9,
+    TVOS = 10,
+    PLAYSTATION = 11,
+    NINTENDO = 12,
+    XBOX = 13,
+    WINDOWS_PHONE = 14,
 }
+/** @deprecated use {@link BuildPlatform}, matching to official name */
+export type DeviceOS = BuildPlatform;
+/** @deprecated use {@link BuildPlatform}, matching to official name */
+export const DeviceOS = BuildPlatform;
 
 export enum Encoding {
 	Utf16=-2,
 	Buffer=-1,
 	Utf8=0,
 	None,
-	Ansi
+	Ansi,
 }
 
 export type TypeFromEncoding<T extends Encoding> = T extends Encoding.Buffer ? Uint8Array : string;

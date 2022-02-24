@@ -1,23 +1,35 @@
 import { abstract } from "../common";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, float32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
 
 @nativeClass(0x140)
-export class Abilities extends NativeClass {
+export class Abilities extends AbstractClass {
     protected _setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
         abstract();
     }
+    /**
+     * Returns the command permission level of the ability owner
+     */
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
+    /**
+     * Returns the player permission level of the ability owner
+     */
     getPlayerPermissionLevel():PlayerPermission {
         abstract();
     }
+    /**
+     * Changes the command permission level of the ability owner
+     */
     setCommandPermissionLevel(commandPermissionLevel:CommandPermissionLevel):void {
         abstract();
     }
+    /**
+     * Changes the player permission level of the ability owner
+     */
     setPlayerPermissionLevel(playerPermissionLevel:PlayerPermission):void {
         abstract();
     }
@@ -34,6 +46,13 @@ export class Abilities extends NativeClass {
             break;
         }
     }
+
+    static getAbilityName(abilityIndex:AbilitiesIndex):string {
+        abstract();
+    }
+    static nameToAbilityIndex(name:string):AbilitiesIndex {
+        abstract();
+    }
 }
 
 export enum AbilitiesIndex {
@@ -45,7 +64,10 @@ export enum AbilitiesIndex {
     AttackMobs,
     OperatorCommands,
     Teleport,
+    /** Both are 8 */
     ExposedAbilityCount,
+
+    Invulnerable = 8,
     Flying,
     MayFly,
     Instabuild,
@@ -55,6 +77,7 @@ export enum AbilitiesIndex {
     Muted,
     WorldBuilder,
     NoClip,
+    AbilityCount,
 }
 
 export class Ability extends NativeClass {
@@ -126,11 +149,11 @@ export namespace Ability {
         All = 15,
     }
 
-    @nativeClass(0x04)
+    @nativeClass()
     export class Value extends NativeClass {
-        @nativeField(bool_t, 0x00)
+        @nativeField(bool_t, {ghost:true})
         boolVal:bool_t;
-        @nativeField(float32_t, 0x00)
+        @nativeField(float32_t)
         floatVal:float32_t;
     }
 }

@@ -2,15 +2,12 @@
 import { install } from '../../source-map-support';
 install();
 
-import path = require('path');
-
+import * as path from 'path';
 import { asm } from "../../assembler";
 import '../../codealloc';
 import { chakraUtil } from '../../core';
 import { fsutil } from '../../fsutil';
 import { Tester } from '../../tester';
-
-
 
 Tester.test({
     async asmtest() {
@@ -26,5 +23,5 @@ Tester.test({
         const testfn = chakraUtil.JsCreateFunction(codebuf.test, null);
         const result = testfn();
         this.assert(result === 123, 'unexpected result');
-    }
+    },
 });

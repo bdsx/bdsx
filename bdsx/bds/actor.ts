@@ -2,18 +2,19 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { makefunc } from "../makefunc";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, int64_as_float_t, NativeType } from "../nativetype";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { bin64_t, CxxString, float32_t, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import { BlockSource } from "./block";
-import { Vec2, Vec3 } from "./blockpos";
-import type { CommandPermissionLevel } from "./command";
+import type { BlockSource } from "./block";
+import type { Vec2, Vec3 } from "./blockpos";
+import type { CommandPermissionLevel, MCRESULT } from "./command";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
 import type { ArmorSlot, ItemStack } from "./inventory";
-import { NetworkIdentifier } from "./networkidentifier";
+import type { Level } from "./level";
+import { CompoundTag, NBT } from "./nbt";
+import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
 
@@ -23,7 +24,8 @@ export type ActorUniqueID = bin64_t;
 export enum DimensionId { // int32_t
     Overworld = 0,
     Nether = 1,
-    TheEnd = 2
+    TheEnd = 2,
+    Undefined = 3,
 }
 
 export class ActorRuntimeID extends VoidPointer {
@@ -183,7 +185,7 @@ export enum ActorType {
     VillagerV2 = 0x1000373,
 }
 
-@nativeClass(0xA9)
+@nativeClass(0xb0)
 export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     namespace:CxxString;
@@ -194,10 +196,17 @@ export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     fullName:CxxString;
     @nativeField(HashedString)
-    canonicalName:HashedString;
+    readonly canonicalName:HashedString;
 
-    static create(type:ActorType):ActorDefinitionIdentifier {
+    static constructWith(fullName:EntityId):ActorDefinitionIdentifier;
+    static constructWith(fullName:string):ActorDefinitionIdentifier;
+    static constructWith(type:ActorType):ActorDefinitionIdentifier;
+    static constructWith(type:string|ActorType):ActorDefinitionIdentifier {
         abstract();
+    }
+    /** @deprecated */
+    static create(type:string|ActorType):ActorDefinitionIdentifier {
+        return ActorDefinitionIdentifier.constructWith(type as any);
     }
 }
 
@@ -206,7 +215,23 @@ export class ActorDamageSource extends NativeClass{
     @nativeField(int32_t, 0x08)
     cause: int32_t;
 
-    /** @deprecated Has to be confirmed working */
+    static constructWith(cause: ActorDamageCause): ActorDamageSource {
+        abstract();
+    }
+
+    /**
+     *
+     * @param cause damage cause
+     */
+    setCause(cause: ActorDamageCause): void {
+        abstract();
+    }
+
+    getDamagingEntity():Actor|null {
+        const uniqueId = this.getDamagingEntityUniqueID();
+        return Actor.fromUniqueIdBin(uniqueId);
+    }
+
     getDamagingEntityUniqueID():ActorUniqueID {
         abstract();
     }
@@ -341,16 +366,71 @@ export enum ActorFlags {
     Stalking,
     Emoting,
     Celebrating,
+    Admiring,
+    CelebratingSpecial,
+    OutOfControl,
+    RamAttack,
+    PlayingDead,
+    InAscendableBlock,
+    OverDescendableBlock,
 }
 
-export class Actor extends NativeClass {
-    vftable:VoidPointer;
-    identifier:EntityId;
+@nativeClass(null)
+export class EntityContext extends AbstractClass {
+}
 
-    /** @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorDefinitionIdentifier.create(ActorType.Pig), -1, player) */
-    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID, summoner?:Actor):Actor;
-    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:int64_as_float_t, summoner?:Actor):Actor;
-    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+@nativeClass(null)
+export class OwnerStorageEntity extends AbstractClass {
+    _getStackRef():EntityContext {
+        abstract();
+    }
+}
+
+@nativeClass(0x18)
+export class EntityRefTraits extends AbstractClass {
+    @nativeField(OwnerStorageEntity)
+    context:OwnerStorageEntity;
+}
+
+@nativeClass(null)
+export class EntityContextBase extends AbstractClass {
+    @nativeField(int32_t, 0x8)
+    entityId:int32_t;
+
+    isValid():boolean {
+        abstract();
+    }
+    /**@deprecated use `isValid` instead*/
+    isVaild(): boolean {
+        return this.isValid();
+    }
+    _enttRegistry():VoidPointer {
+        abstract();
+    }
+}
+
+export class Actor extends AbstractClass {
+    vftable:VoidPointer;
+    ctxbase:EntityContextBase;
+    /** @deprecated Use `this.getIdentifier()` instead */
+    get identifier():EntityId {
+        return this.getIdentifier();
+    }
+
+    /**
+     * Summon a new entity
+     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, -1, player)
+     * */
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier|ActorType, id:ActorUniqueID, summoner?:Actor):Actor;
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier|ActorType, id:int64_as_float_t, summoner?:Actor):Actor;
+    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier|ActorType, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+        abstract();
+    }
+
+    /**
+     * Get the Actor instance of an entity with its EntityContext
+     */
+    static tryGetFromEntity(entity:EntityContext):Actor {
         abstract();
     }
 
@@ -365,48 +445,139 @@ export class Actor extends NativeClass {
         if(this.isItem()) return 0;
         return this._getArmorValue();
     }
+    /**
+     * Returns the Dimension instance of the entity currently in
+     */
     getDimension():Dimension {
         abstract();
     }
+    /**
+     * Returns the dimension id of the entity currently in
+     */
     getDimensionId():DimensionId {
         abstract();
     }
     /**
-     * it's same with this.identifier
+     * Returns the entity's identifier
      */
-    getIdentifier():string {
-        return this.identifier;
+    getIdentifier():EntityId {
+        return this.getActorIdentifier().canonicalName.str as EntityId;
     }
+    /**
+     * Returns the ActorDefinitionIdentifier instance of the entity
+     */
+    getActorIdentifier():ActorDefinitionIdentifier {
+        abstract();
+    }
+    /**
+     * @alias instanceof Mob
+     */
+    isMob():this is Mob {
+        abstract();
+    }
+    /**
+     * @alias instanceof ServerPlayer
+     */
     isPlayer():this is ServerPlayer {
         abstract();
     }
+    /**
+     * @alias instanceof ItemActor
+     */
     isItem():this is ItemActor {
         abstract();
     }
+    isSneaking(): boolean {
+        abstract();
+    }
+    hasType(type:ActorType): boolean {
+        abstract();
+    }
+    /**
+     * Kills the entity (itself)
+     */
+    kill(): void {
+        abstract();
+    }
+    /**
+     * Returns the entity's attribute map
+     */
     getAttributes():BaseAttributeMap {
         abstract();
     }
+    /**
+     * Returns the entity's name
+     */
     getName():string {
         abstract();
     }
-    setName(name:string):void {
+
+    setHurtTime(time:number):void {
         abstract();
     }
+    /**
+     * Changes the entity's name
+     *
+     * Calls Player::setName if it's Player.
+     * or it calls Actor::setNameTag.
+     */
+    setName(name:string):void {
+        this.setNameTag(name);
+    }
+    /**
+     * Changes the entity's nametag
+     */
+    setNameTag(name:string):void {
+        abstract();
+    }
+    /**
+     * Set if the entity's nametag is visible
+     */
+    setNameTagVisible(visible: boolean): void {
+        abstract();
+    }
+    /**
+     * Set a text under the entity's name (original is name of objective for scoreboard)
+     */
     setScoreTag(text:string):void{
         abstract();
     }
+    /**
+     * Returns a text under the entity's name (original is name of objective for scoreboard)
+     */
     getScoreTag():string{
+        abstract();
+    }
+    /**
+     * Despawn the entity. Don't use for this Player.
+     */
+    despawn():void{
         abstract();
     }
     getNetworkIdentifier():NetworkIdentifier {
         throw Error(`this is not player`);
     }
+    /**
+     * Returns the entity's position
+     */
     getPosition():Vec3 {
         abstract();
     }
+    /**
+     * Returns the entity's feet position
+     */
+    getFeetPos():Vec3 {
+        abstract();
+    }
+    /**
+     * Returns the entity's rotation
+     */
     getRotation():Vec2 {
         abstract();
     }
+    /**
+     * Returns the BlockSource instance which the entity is ticking
+     */
     getRegion():BlockSource {
         abstract();
     }
@@ -420,37 +591,53 @@ export class Actor extends NativeClass {
         return this.getUniqueIdPointer().getBin64();
     }
     /**
-     * it returns address of the unique id field
+     * Returns address of the entity's unique id
      */
     getUniqueIdPointer():StaticPointer {
         abstract();
     }
-
+    /**
+     * Returns the entity's type
+     */
     getEntityTypeId():ActorType {
         abstract();
     }
+    /**
+     * Returns the entity's command permission level
+     */
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
+    /**
+     * Returns the entity's specific attribute
+     */
     getAttribute(id:AttributeId):number {
         const attr = this.getAttributes().getMutableInstance(id);
         if (attr === null) return 0;
         return attr.currentValue;
     }
+    /**
+     * Changes the entity's specific attribute
+     */
     setAttribute(id:AttributeId, value:number):AttributeInstance|null {
         if (id < 1) return null;
         if (id > 15) return null;
 
         const attr = this.getAttributes().getMutableInstance(id);
-        if (attr === null) throw Error(`${this.identifier} has not ${AttributeId[id] || `Attribute${id}`}`);
+        if (attr === null) throw Error(`${this.getIdentifier()} has not ${AttributeId[id] || `Attribute${id}`}`);
         attr.currentValue = value;
         return attr;
     }
+    /**
+     * Returns the entity's runtime id
+     */
     getRuntimeID():ActorRuntimeID {
         abstract();
     }
     /**
-     * @deprecated Need more implement
+     * Gets the entity component of bedrock scripting api
+     *
+     * @deprecated Needs more implement
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;
@@ -458,7 +645,7 @@ export class Actor extends NativeClass {
         entity = {
             __unique_id__:{
                 "64bit_low": this.getUniqueIdLow(),
-                "64bit_high": this.getUniqueIdHigh()
+                "64bit_high": this.getUniqueIdHigh(),
             },
             __identifier__:this.identifier,
             __type__:(this.getEntityTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
@@ -466,63 +653,180 @@ export class Actor extends NativeClass {
         };
         return (this as any).entity = entity;
     }
+    /**
+     * Adds an effect to the entity. If a weaker effect of the same type is already applied, it will be replaced. If a weaker or equal-strength effect is already applied but has a shorter duration, it will be replaced.
+     */
     addEffect(effect: MobEffectInstance): void {
         abstract();
     }
+    /**
+     * Removes the effect with the specified ID from the entity
+     */
     removeEffect(id: MobEffectIds):void {
         abstract();
     }
+
     protected _hasEffect(mobEffect: MobEffect):boolean {
         abstract();
     }
+    /**
+     * Returns whether the specified effect is active on the entity
+     */
     hasEffect(id: MobEffectIds):boolean {
         const effect = MobEffect.create(id);
         const retval = this._hasEffect(effect);
         effect.destruct();
         return retval;
     }
+
     protected _getEffect(mobEffect: MobEffect):MobEffectInstance | null {
         abstract();
     }
+    /**
+     * Returns the effect instance active on this entity with the specified ID, or null if the entity does not have the effect.
+     */
     getEffect(id: MobEffectIds):MobEffectInstance | null {
         const effect = MobEffect.create(id);
         const retval = this._getEffect(effect);
         effect.destruct();
         return retval;
     }
+    /**
+     * Adds a tag to the entity.
+     * Related functions: {@link getTags}, {@link removeTag}, {@link hasTag}
+     * @returns {boolean} Whether the tag has been added successfully
+     */
     addTag(tag:string):boolean {
         abstract();
     }
+    /**
+     * Returns whether the entity has the tag.
+     * Related functions: {@link getTags}, {@link addTag}, {@link removeTag}
+     */
     hasTag(tag:string):boolean {
         abstract();
     }
+    /**
+     * Removes a tag from the entity.
+     * Related functions: {@link getTags}, {@link addTag}, {@link hasTag}
+     * @returns {boolean} Whether the tag has been removed successfully
+     */
     removeTag(tag:string):boolean {
         abstract();
     }
+    /**
+     * Returns tags the entity has.
+     * Related functions: {@link addTag}, {@link removeTag}, {@link hasTag}
+     */
+    getTags(): string[] {
+        abstract();
+    }
+    /**
+     * Teleports the entity to a specified position
+     */
     teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
         abstract();
     }
+    /**
+     * Returns the entity's armor
+     */
     getArmor(slot:ArmorSlot):ItemStack {
         abstract();
     }
+    /**
+     * Sets the entity's sneaking status
+     */
     setSneaking(value:boolean):void {
         abstract();
     }
+    /**
+     * Returns the entity's health
+     */
     getHealth():number {
         abstract();
     }
+    /**
+     * Returns the entity's maximum health
+     */
     getMaxHealth():number {
         abstract();
     }
     /**
-     * Most of the time it will be reset by ticking
-     * @returns changed
+     * @param tag this function stores nbt values to this parameter
+     */
+    save(tag:CompoundTag):boolean;
+    /**
+     * it returns JS converted NBT
+     */
+    save():Record<string, any>;
+    save(tag?:CompoundTag):any {
+        abstract();
+    }
+    readAdditionalSaveData(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
+    load(tag:CompoundTag|NBT.Compound):void {
+        abstract();
+    }
+    allocateAndSave():CompoundTag {
+        const tag = CompoundTag.allocate();
+        this.save(tag);
+        return tag;
+    }
+
+    protected hurt_(source: ActorDamageSource, damage:number, knock: boolean, ignite: boolean): boolean {
+        abstract();
+    }
+    hurt(source: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean;
+    hurt(cause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean;
+    hurt(sourceOrCause: ActorDamageSource|ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
+        const isSource = sourceOrCause instanceof ActorDamageSource;
+        const source = isSource ? sourceOrCause : ActorDamageSource.constructWith(sourceOrCause);
+        const retval = this.hurt_(source, damage, knock, ignite);
+        if(!isSource) source.destruct();
+        return retval;
+    }
+    /**
+     * Changes a specific status flag of the entity
+     * @remarks Most of the time it will be reset by ticking
+     *
+     * @returns {boolean} Whether the flag has been changed successfully
      */
     setStatusFlag(flag:ActorFlags, value:boolean):boolean {
         abstract();
     }
+    /**
+     * Returns a specific status flag of the entity
+     */
     getStatusFlag(flag:ActorFlags):boolean {
         abstract();
+    }
+    /**
+     * Returns the Level instance of the entity currently in
+     */
+    getLevel():Level {
+        abstract();
+    }
+    /**
+     * Returns if the entity is invisible
+     */
+    isInvisible(): boolean {
+        abstract();
+    }
+    protected _isRiding(): boolean {
+        abstract();
+    }
+    protected _isRidingOn(entity: Actor): boolean {
+        abstract();
+    }
+    /**
+     * Returns if the entity is riding (on an entity)
+     */
+    isRiding(): boolean;
+    isRiding(entity: Actor): boolean;
+    isRiding(entity?: Actor): boolean {
+        if (entity) return this._isRidingOn(entity);
+        return this._isRiding();
     }
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();
@@ -530,20 +834,15 @@ export class Actor extends NativeClass {
     static fromUniqueId(lowbits:number, highbits:number, getRemovedActor:boolean = true):Actor|null {
         return Actor.fromUniqueIdBin(bin.make64(lowbits, highbits), getRemovedActor);
     }
+    /**
+     * Gets the entity from entity component of bedrock scripting api
+     * @deprecated bedrock scripting API will be removed.
+     */
     static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);
     }
-    static [NativeType.getter](ptr:StaticPointer, offset?:number):Actor {
-        return Actor._singletoning(ptr.add(offset, offset! >> 31))!;
-    }
-    static [makefunc.getFromParam](stackptr:StaticPointer, offset?:number):Actor|null {
-        return Actor._singletoning(stackptr.getNullablePointer(offset));
-    }
     static all():IterableIterator<Actor> {
-        abstract();
-    }
-    private static _singletoning(ptr:StaticPointer|null):Actor|null {
         abstract();
     }
     _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
@@ -552,6 +851,18 @@ export class Actor extends NativeClass {
             obj.pos = this.getPosition();
             obj.type = this.getEntityTypeId();
         });
+    }
+    runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
+        abstract();
+    }
+}
+
+export class Mob extends Actor {
+    /**
+     * Applies knockback to the mob
+     */
+    knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+        abstract();
     }
 }
 

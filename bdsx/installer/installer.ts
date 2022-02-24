@@ -10,6 +10,6 @@ for (let i=3;i<argv.length;i++) {
     }
 }
 
-if (!installBDS(bdsPath, agreeOption)) {
-    process.exit(-1);
-}
+installBDS(bdsPath, agreeOption).then(res=>{
+    if (!res) process.exit(-1);
+});

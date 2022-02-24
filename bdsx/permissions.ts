@@ -1,7 +1,6 @@
 import * as path from "path";
-import { fsutil } from "./fsutil";
-import { Player } from "./bds/player";
 import { events } from "./event";
+import { fsutil } from "./fsutil";
 
 throw new Error("The permissions system is currently on hold. Please wait to use it until it is finished.");
 
@@ -60,41 +59,41 @@ export namespace Permissions {
             this.parent = rootNode;
             this.defaultValue = defaultValue;
         }
-        getUser(player: Player): boolean;
-        getUser(playerXuid: string): boolean;
-        getUser(player: string | Player): boolean {
-            if(typeof player !== 'string') player = player.getCertificate().getXuid();
-            if(!this.isUserDefined(player)) return this.parent.getUser(player);
-            return allPermissions.get(player)![this.getFullName()]!;
-        }
-        isUserDefined(player: Player): boolean;
-        isUserDefined(playerXuid: string): boolean;
-        isUserDefined(player: string | Player): boolean {
-            if(typeof player !== 'string') player = player.getCertificate().getXuid();
-            const userPermissions = allPermissions.get(player);
-            if(!userPermissions) return false;
-            return userPermissions[this.getFullName()] !== undefined;
-        }
-        setUser(player: Player, value: boolean | null): void;
-        setUser(playerXuid: string, value: boolean | null): void;
-        setUser(player: string | Player, value: boolean | null): void {
-            if(typeof player !== 'string') player = player.getCertificate().getXuid();
-            if(typeof value === 'boolean') {
-                let userPermissions;
-                if(allPermissions.has(player)) {
-                    userPermissions = allPermissions.get(player)!;
-                } else {
-                    userPermissions = {};
-                    allPermissions.set(player, userPermissions);
-                }
-                userPermissions[this.getFullName()] = value;
-            } else if(allPermissions.has(player)) {
-                const userPermissions = allPermissions.get(player)!;
-                userPermissions[this.getFullName()] = undefined;
-                if(Object.keys(userPermissions).length === 0) allPermissions.delete(player);
-            }
-            dirty = true;
-        }
+        // getUser(player: Player): boolean;
+        // getUser(playerXuid: string): boolean;
+        // getUser(player: string | Player): boolean {
+        //     if(typeof player !== 'string') player = player.getCertificate().getXuid();
+        //     if(!this.isUserDefined(player)) return this.parent.getUser(player);
+        //     return allPermissions.get(player)![this.getFullName()]!;
+        // }
+        // isUserDefined(player: Player): boolean;
+        // isUserDefined(playerXuid: string): boolean;
+        // isUserDefined(player: string | Player): boolean {
+        //     if(typeof player !== 'string') player = player.getCertificate().getXuid();
+        //     const userPermissions = allPermissions.get(player);
+        //     if(!userPermissions) return false;
+        //     return userPermissions[this.getFullName()] !== undefined;
+        // }
+        // setUser(player: Player, value: boolean | null): void;
+        // setUser(playerXuid: string, value: boolean | null): void;
+        // setUser(player: string | Player, value: boolean | null): void {
+        //     if(typeof player !== 'string') player = player.getCertificate().getXuid();
+        //     if(typeof value === 'boolean') {
+        //         let userPermissions;
+        //         if(allPermissions.has(player)) {
+        //             userPermissions = allPermissions.get(player)!;
+        //         } else {
+        //             userPermissions = {};
+        //             allPermissions.set(player, userPermissions);
+        //         }
+        //         userPermissions[this.getFullName()] = value;
+        //     } else if(allPermissions.has(player)) {
+        //         const userPermissions = allPermissions.get(player)!;
+        //         userPermissions[this.getFullName()] = undefined;
+        //         if(Object.keys(userPermissions).length === 0) allPermissions.delete(player);
+        //     }
+        //     dirty = true;
+        // }
         getFullName(): string {
             const ret = this.parent.getFullName() + "." + this.name;
             if(ret.startsWith('.')) return ret.substr(1);
@@ -106,11 +105,11 @@ export namespace Permissions {
         return rootNode.getChild(permission);
     }
 
-    export function getUserAllPermissions(player: Player): any;
-    export function getUserAllPermissions(playerXuid: string): any;
-    export function getUserAllPermissions(player: string | Player): any {
-        return allPermissions.get(typeof player === 'string' ? player : player.getCertificate().getXuid()) ?? {};
-    }
+    // export function getUserAllPermissions(player: Player): any;
+    // export function getUserAllPermissions(playerXuid: string): any;
+    // export function getUserAllPermissions(player: string | Player): any {
+    //     return allPermissions.get(typeof player === 'string' ? player : player.getCertificate().getXuid()) ?? {};
+    // }
 
     export function registerPermission(name: string, description: string, parent: RootPermissionNode | null, defaultValue: boolean): PermissionNode {
         const permission = new PermissionNode(name, description, defaultValue);

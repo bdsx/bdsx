@@ -1,9 +1,10 @@
 
-import path = require('path');
+import * as path from 'path';
+import { FileWriter } from '../../writer/filewriter';
+import * as docfixJson from './docfix.json';
 import { HtmlSearcher, htmlutil } from './htmlutil';
 import { styling } from './styling';
 import { DocField, DocFixItem, DocMethod, DocType as DocType } from './type';
-import { FileWriter } from '../../writer/filewriter';
 
 const DOCURL_SCRIPTING = 'https://bedrock.dev/docs/stable/Scripting';
 const DOCURL_ADDONS = 'https://bedrock.dev/docs/stable/Addons';
@@ -11,15 +12,10 @@ const DOCURL_ADDONS = 'https://bedrock.dev/docs/stable/Addons';
 const OUT_SCRIPTING = path.join(__dirname, '../generated.scripting.d.ts');
 const OUT_ADDONS = path.join(__dirname, '../generated.addons.d.ts');
 
-const docfixRaw = require('./docfix.json') as Record<string, DocFixItem|string|null>;
-docfixRaw.__proto__ = null;
 const docfix = new Map<string, DocType>();
-for (const name in docfixRaw) {
-    const item = docfixRaw[name];
+for (const [name, item] of Object.entries(docfixJson as any as Record<string, DocFixItem|string|null>)) {
     docfix.set(name, DocType.fromDocFix(item));
 }
-
-
 
 const BINDING_SUFFIX = ' Bindings';
 const COMPONENT_SUFFIX = ' Components';

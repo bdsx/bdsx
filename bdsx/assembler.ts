@@ -1,3 +1,4 @@
+import * as colors from 'colors';
 import { bin } from "./bin";
 import { fsutil } from "./fsutil";
 import { polynominal } from "./polynominal";
@@ -6,10 +7,8 @@ import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } f
 import { checkPowOf2, getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
-import colors = require('colors');
 
-export enum Register
-{
+export enum Register {
     absolute=-2,
     rip=-1,
     rax,
@@ -30,8 +29,7 @@ export enum Register
     r15,
 }
 
-export enum FloatRegister
-{
+export enum FloatRegister {
     xmm0,
     xmm1,
     xmm2,
@@ -50,8 +48,7 @@ export enum FloatRegister
     xmm15,
 }
 
-enum MovOper
-{
+enum MovOper {
     Register,
     Const,
     Read,
@@ -71,18 +68,17 @@ enum FloatOper {
 enum FloatOperSize {
     xmmword,
     singlePrecision,
-    doublePrecision
+    doublePrecision,
 }
 
-export enum OperationSize
-{
+export enum OperationSize {
     void,
     byte,
     word,
     dword,
     qword,
     mmword,
-    xmmword
+    xmmword,
 }
 
 interface TypeSize {
@@ -99,8 +95,7 @@ const sizemap = new Map<string, TypeSize>([
     ['xmmword', {bytes: 16, size: OperationSize.xmmword} ],
 ]);
 
-export enum Operator
-{
+export enum Operator {
     add,
     or,
     adc,
@@ -111,8 +106,7 @@ export enum Operator
     cmp,
 }
 
-export enum JumpOperation
-{
+export enum JumpOperation {
     jo,
     jno,
     jb,
@@ -131,8 +125,7 @@ export enum JumpOperation
     jg,
 }
 
-export interface Value64Castable
-{
+export interface Value64Castable {
     [asm.splitTwo32Bits]():[number, number];
 }
 
@@ -146,6 +139,31 @@ const COMMENT_REGEXP = /[;#]/;
 export type Value64 = number|string|Value64Castable;
 export type AsmMultiplyConstant = 1|2|4|8;
 
+const sizeInfo = new Map<OperationSize, {
+    fnname:string,
+    jstype:string,
+    size:number,
+}>();
+sizeInfo.set(OperationSize.byte, {
+    fnname: 'Uint8',
+    jstype: 'number',
+    size: 1,
+});
+sizeInfo.set(OperationSize.word, {
+    fnname: 'Uint16',
+    jstype: 'number',
+    size: 2,
+});
+sizeInfo.set(OperationSize.dword, {
+    fnname: 'Int32',
+    jstype: 'number',
+    size: 4,
+});
+sizeInfo.set(OperationSize.qword, {
+    fnname: 'Pointer',
+    jstype: 'VoidPointer',
+    size: 8,
+});
 function isZero(value:Value64):boolean {
     switch (typeof value) {
     case 'string':
@@ -413,10 +431,10 @@ class Label extends AddressIdentifier {
 }
 
 class Defination extends AddressIdentifier {
-
     constructor(name:string,
         chunk:AsmChunk|null,
         offset:number,
+        public arraySize:number|null,
         public size:OperationSize|undefined) {
         super(name, chunk, offset);
     }
@@ -444,11 +462,10 @@ interface TypeInfo {
     size:OperationSize;
     bytes:number;
     align:number;
-    arraySize:number;
+    arraySize:number|null;
 }
 
 const MEMORY_INDICATE_CHUNK = new AsmChunk(new Uint8Array(0), 0, 1);
-
 
 const UNW_VERSION = 0x01;
 const UNW_FLAG_NHANDLER = 0x0;
@@ -487,7 +504,7 @@ export enum FFOperation {
     call_far,
     jmp,
     jmp_far,
-    push
+    push,
 }
 
 interface RUNTIME_FUNCTION {
@@ -531,7 +548,7 @@ export class X64Assembler {
             throw new ParsingError(message, {
                 column: offset + column,
                 width: width,
-                line: lineNumber
+                line: lineNumber,
             });
         }
 
@@ -583,7 +600,7 @@ export class X64Assembler {
             r1: regs[0],
             r2: regs[1],
             multiply: mult,
-            offset: poly.constant
+            offset: poly.constant,
         };
     }
 
@@ -721,6 +738,20 @@ export class X64Assembler {
 
     ret(): this {
         return this.put(0xc3);
+    }
+
+    ret_c(n:number):this {
+        this.put(0xc2);
+        return this.writeInt16(n);
+    }
+
+    retf(): this {
+        return this.put(0xcb);
+    }
+
+    retf_c(n:number):this {
+        this.put(0xca);
+        return this.writeInt16(n);
     }
 
     nop(): this {
@@ -962,7 +993,7 @@ export class X64Assembler {
         return this._movabs_rax_mem(address, 1, size);
     }
 
-    def(name:string, size:OperationSize, bytes:number, align:number, exportDef:boolean = false):this {
+    def(name:string, size:OperationSize, bytes:number, align:number, arraySize:number|null = null, exportDef:boolean = false):this {
         if (align < 1) align = 1;
         checkPowOf2(align);
         if (align > this.memoryChunkAlign) {
@@ -974,7 +1005,7 @@ export class X64Assembler {
         this.memoryChunkSize = offset + bytes;
         if (name === '') return this;
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
-        this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, size));
+        this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, arraySize, size));
         if (!exportDef) this.scope.add(name);
         return this;
     }
@@ -1027,11 +1058,19 @@ export class X64Assembler {
         return this._mov(dest, src, null, multiply, offset, 0, MovOper.Write, size);
     }
 
+    mov_rrp_r(dest1:Register, dest2:Register, multiply:AsmMultiplyConstant, offset:number, src:Register, size = OperationSize.qword):this {
+        return this._mov(dest1, src, dest2, multiply, offset, 0, MovOper.Write, size);
+    }
+
     /**
      * move register pointer to register
      */
     mov_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, size = OperationSize.qword):this {
         return this._mov(src, dest, null, multiply, offset, 0, MovOper.Read, size);
+    }
+
+    mov_r_rrp(dest:Register, src1:Register, src2:Register, multiply:AsmMultiplyConstant, offset:number, size = OperationSize.qword):this {
+        return this._mov(src1, dest, src2, multiply, offset, 0, MovOper.Read, size);
     }
 
     private _imul(r1:Register, r2:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize, oper:MovOper):this {
@@ -1196,6 +1235,7 @@ export class X64Assembler {
     }
 
     jmp_c(offset:number):this {
+        if (offset === 0) return this;
         if (INT8_MIN <= offset && offset <= INT8_MAX) {
             return this.write(0xeb, offset);
         } else {
@@ -1426,7 +1466,6 @@ export class X64Assembler {
         return this._set_o(JumpOperation.jg, r, null, multiply, offset, MovOper.Read);
     }
 
-
     /**
      * push register
      */
@@ -1501,7 +1540,6 @@ export class X64Assembler {
     xchg_r_rp(r1:Register, r2:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize = OperationSize.qword):this {
         return this._xchg(r1, r2, multiply, offset, size, MovOper.Read);
     }
-
 
     private _oper(movoper:MovOper, oper:Operator, r1:Register, r2:Register|null, multiply:AsmMultiplyConstant, offset:number, chr:number, size:OperationSize):this {
         if (chr !== (chr|0) && (chr>>>0) !== chr) {
@@ -1660,19 +1698,36 @@ export class X64Assembler {
         return this._oper(MovOper.Write, Operator.and, dest, src, multiply, offset, 0, size);
     }
 
-    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+    private _shift_r_c(dest:Register, signed:boolean, right:boolean, chr:number, size = OperationSize.qword):this {
         this._rex(dest, 0, null, size);
-        this.put(0xc1);
-        this.put(0xe8 | dest);
-        this.put(chr%128);
+        let operbit = 0xe0;
+        if (right) {
+            operbit |= 0x08;
+            if (signed) operbit |= 0x10;
+        }
+
+        if (chr === 1) {
+            this.put(0xd1);
+            this.put(operbit | dest);
+        } else {
+            this.put(0xc1);
+            this.put(operbit | dest);
+            this.put(chr%128);
+        }
         return this;
     }
+
+    shr_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+        return this._shift_r_c(dest, false, true, chr, size);
+    }
     shl_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
-        this._rex(dest, 0, null, size);
-        this.put(0xc1);
-        this.put(0xe0 | dest);
-        this.put(chr%128);
-        return this;
+        return this._shift_r_c(dest, false, false, chr, size);
+    }
+    sar_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+        return this._shift_r_c(dest, true, true, chr, size);
+    }
+    sal_r_c(dest:Register, chr:number, size = OperationSize.qword):this {
+        return this._shift_r_c(dest, true, false, chr, size);
     }
 
     private _movsx(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, destsize:OperationSize, srcsize:OperationSize, oper:MovOper):this {
@@ -2440,8 +2495,7 @@ export class X64Assembler {
         }
 
         function parseType(type:string):TypeInfo {
-
-            let arraySize = 0;
+            let arraySize:number|null = null;
             let brace = type.indexOf('[');
             let type_base = type;
             if (brace !== -1) {
@@ -2461,14 +2515,16 @@ export class X64Assembler {
             const size = sizemap.get(type_base);
             if (size == null) throw parser.error(`Unexpected type name '${type}'`);
 
-            return {bytes: size.bytes * Math.max(arraySize, 1), size:size.size, align:size.bytes, arraySize};
+            let bytes = size.bytes;
+            if (arraySize !== null) bytes *= arraySize;
+            return {bytes, size:size.size, align:size.bytes, arraySize};
         }
 
         const readConstString = (addressCommand:boolean, encoding:BufferEncoding):void=>{
             const quotedString = parser.readQuotedStringTo('"');
             if (quotedString === null) throw parser.error('Invalid quoted string');
             if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(64), 0, 1);
-            const id = new Defination('[const]', this.constChunk, this.constChunk.size, OperationSize.void);
+            const id = new Defination('[const]', this.constChunk, this.constChunk.size, null, OperationSize.void);
             this.constChunk.write(Buffer.from(quotedString+'\0', encoding));
             this.constChunk.ids.push(id);
             command += '_rp';
@@ -2522,7 +2578,7 @@ export class X64Assembler {
                 const type = parser.readAll();
                 const res = parseType(type);
                 try {
-                    this.def(name, res.size, res.bytes, res.align, exportDef);
+                    this.def(name, res.size, res.bytes, res.align, res.arraySize, exportDef);
                 } catch (err) {
                     throw parser.error(err.message);
                 }
@@ -2749,7 +2805,6 @@ export class X64Assembler {
         let p = 0;
         let lineNumber = 1;
         if (defines != null) {
-            (defines as any).__proto__ = null;
             for (const name in defines) {
                 this.const(name, defines[name]);
             }
@@ -2898,43 +2953,28 @@ export class X64Assembler {
             } else if (id instanceof Defination) {
                 const off = buffer.length + id.offset;
                 if (id.size != null) {
-                    switch (id.size) {
-                    case OperationSize.byte:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getUint8(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n):number{`);
-                        js.writeln(`    buffer.setUint8(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:number;`);
-                        break;
-                    case OperationSize.word:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getUint16(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n){`);
-                        js.writeln(`    buffer.setUint16(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:number;`);
-                        break;
-                    case OperationSize.dword:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getInt32(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n){`);
-                        js.writeln(`    buffer.setInt32(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:number;`);
-                        break;
-                    case OperationSize.qword:
-                        js.writeln(`get ${name}(){`);
-                        js.writeln(`    return buffer.getPointer(${off});`);
-                        js.writeln(`},`);
-                        js.writeln(`set ${name}(n){`);
-                        js.writeln(`    buffer.setPointer(n, ${off});`);
-                        js.writeln(`},`);
-                        dts.writeln(`export let ${name}:VoidPointer;`);
-                        break;
+                    const info = sizeInfo.get(id.size);
+                    if (info != null) {
+                        if (id.arraySize !== null) {
+                            const nameUpper = name.charAt(0).toUpperCase()+name.substr(1);
+                            const sizemul = info.size === 1 ? '' : '*'+info.size;
+                            js.writeln(`get${nameUpper}(idx){`);
+                            js.writeln(`    return buffer.get${info.fnname}(${off}+idx${sizemul});`);
+                            js.writeln(`},`);
+                            js.writeln(`set${nameUpper}(n, idx){`);
+                            js.writeln(`    buffer.set${info.fnname}(n, ${off}+idx${sizemul});`);
+                            js.writeln(`},`);
+                            dts.writeln(`export function get${nameUpper}(idx:number):${info.jstype};`);
+                            dts.writeln(`export function set${nameUpper}(n:${info.jstype}, idx:number):void;`);
+                        } else {
+                            js.writeln(`get ${name}(){`);
+                            js.writeln(`    return buffer.get${info.fnname}(${off});`);
+                            js.writeln(`},`);
+                            js.writeln(`set ${name}(n){`);
+                            js.writeln(`    buffer.set${info.fnname}(n, ${off});`);
+                            js.writeln(`},`);
+                            dts.writeln(`export let ${name}:${info.jstype};`);
+                        }
                     }
                 }
                 js.writeln(`get ${addrof}(){`);
@@ -3006,7 +3046,7 @@ export class X64Assembler {
         }
         for (const [name, offset] of defs) {
             if (out.ids.has(name)) throw Error(`${name} is already defined`);
-            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, undefined);
+            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, null, undefined);
             out.ids.set(name, def);
         }
         return out;
@@ -3074,8 +3114,7 @@ const REVERSE_MAP:Record<string, string> = {
     jg: 'jle',
 };
 
-interface Code extends X64Assembler
-{
+interface Code extends X64Assembler {
     [key:string]: any;
 }
 
@@ -3184,8 +3223,7 @@ for (const [name, [type, reg, size]] of regmap) {
 
 const defaultOperationSize = new WeakMap<(...args:any[])=>any, OperationSize>();
 
-export namespace asm
-{
+export namespace asm {
     export const code:Code = X64Assembler.prototype;
     defaultOperationSize.set(code.call_rp, OperationSize.qword);
     defaultOperationSize.set(code.jmp_rp, OperationSize.qword);
@@ -3293,7 +3331,7 @@ export namespace asm
                         throw Error(`${this.code.name}: Invalid parameter ${r} at ${i}`);
                     }
                     out.push({
-                        type, argi: argi_ori, parami:i, register: r
+                        type, argi: argi_ori, parami:i, register: r,
                     });
                 } else if (type === 'cp') {
                     const r = this.args[argi++];
@@ -3311,22 +3349,22 @@ export namespace asm
                     const offset = this.args[argi++];
                     out.push({
                         type, argi: argi_ori, parami:i, register: r,
-                        multiply, offset
+                        multiply, offset,
                     });
                 } else if (type === 'c') {
                     const constant = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, constant
+                        type, argi: argi_ori, parami:i, constant,
                     });
                 } else if (type === 'f') {
                     const freg = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, register:freg
+                        type, argi: argi_ori, parami:i, register:freg,
                     });
                 } else if (type === 'label') {
                     const label = this.args[argi++];
                     out.push({
-                        type, argi: argi_ori, parami:i, label
+                        type, argi: argi_ori, parami:i, label,
                     });
                 } else {
                     argi ++;

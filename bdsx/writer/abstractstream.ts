@@ -1,7 +1,6 @@
 import { floatbits } from "../floatbits";
 import { TextDecoder, TextEncoder } from "util";
 
-
 const UINT32_CAP = 0x100000000;
 const UINT64_CAP = 0x10000000000000000;
 const INT64_CAP = 0x8000000000000000;

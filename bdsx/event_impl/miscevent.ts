@@ -3,21 +3,13 @@ import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, Score
 import { serverInstance } from "../bds/server";
 import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
+import { decay } from "../decay";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
-import { bin64_t, bool_t, CxxString, int32_t, uint8_t } from "../nativetype";
-import { CxxStringWrapper } from "../pointer";
-import { _tickCallback } from "../util";
+import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { bool_t, CxxString, int32_t, uint8_t, void_t } from "../nativetype";
 
-interface IQueryRegenerateEvent {
-    motd: string,
-    levelname: string,
-    currentPlayers: number,
-    maxPlayers: number,
-    isJoinableThroughServerScreen: boolean,
-
-}
-export class QueryRegenerateEvent implements IQueryRegenerateEvent {
+export class QueryRegenerateEvent {
     constructor(
         public motd: string,
         public levelname: string,
@@ -28,22 +20,34 @@ export class QueryRegenerateEvent implements IQueryRegenerateEvent {
     }
 }
 
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::announceServer", bin64_t, null, VoidPointer, CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t)(onQueryRegenerate);
-function onQueryRegenerate(rakNetServerLocator: VoidPointer, motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean):bin64_t {
-    const event = new QueryRegenerateEvent(motd.value, levelname.value, currentPlayers, maxPlayers, isJoinableThroughServerScreen);
+@nativeClass()
+class AnnounceServerData extends NativeClass {
+    @nativeField(CxxString)
+    motd:CxxString;
+    @nativeField(CxxString)
+    levelname:CxxString;
+    @nativeField(int32_t, {relative: true, offset: 4})
+    currentPlayers:int32_t;
+    @nativeField(int32_t)
+    maxPlayers:int32_t;
+    @nativeField(bool_t)
+    isJoinableThroughServerScreen:bool_t;
+}
+
+// CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t
+//  motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean
+
+const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", void_t, null, VoidPointer, AnnounceServerData)(onQueryRegenerate);
+function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServerData):void {
+    const event = new QueryRegenerateEvent(data.motd, data.levelname, data.currentPlayers, data.maxPlayers, data.isJoinableThroughServerScreen);
     events.queryRegenerate.fire(event);
-    motd.value = event.motd;
-    levelname.value = event.levelname;
-    _tickCallback();
-    return _onQueryRegenerate(rakNetServerLocator, motd, levelname, gameType, event.currentPlayers, event.maxPlayers, event.isJoinableThroughServerScreen);
+    data.motd = event.motd;
+    data.levelname = event.levelname;
+    return _onQueryRegenerate(rakNetServerLocator, data);
 }
 bedrockServer.afterOpen().then(() => serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
 
-interface IScoreResetEvent {
-    identityRef:ScoreboardIdentityRef;
-    objective:Objective;
-}
-export class ScoreResetEvent implements IScoreResetEvent {
+export class ScoreResetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
         public objective:Objective,
@@ -55,7 +59,8 @@ const _onScoreReset = procHacker.hooking("ScoreboardIdentityRef::removeFromObjec
 function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard, objective: Objective): boolean {
     const event = new ScoreResetEvent(identityRef, objective);
     const canceled = events.scoreReset.fire(event) === CANCEL;
-    _tickCallback();
+    decay(identityRef);
+    decay(scoreboard);
     if (canceled) {
         scoreboard.sync(identityRef.scoreboardId, objective);
         return false;
@@ -63,12 +68,7 @@ function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard
     return _onScoreReset(event.identityRef, scoreboard, event.objective);
 }
 
-interface IScoreSetEvent {
-    identityRef:ScoreboardIdentityRef;
-    objective:Objective;
-    score:number;
-}
-export class ScoreSetEvent implements IScoreSetEvent {
+export class ScoreSetEvent {
     constructor(
         public identityRef:ScoreboardIdentityRef,
         public objective:Objective,
@@ -116,19 +116,15 @@ function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer
         canceled = events.scoreRemove.fire(event) === CANCEL;
         break;
     }
-    _tickCallback();
+    decay(identityRef);
+    decay(objective);
     if (canceled) {
         return false;
     }
     return _onScoreModify(event.identityRef, result, event.objective, event.score, mode);
 }
 
-interface IObjectiveCreateEvent {
-    name:string;
-    displayName:string;
-    criteria:ObjectiveCriteria;
-}
-export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
+export class ObjectiveCreateEvent {
     constructor(
         public name:string,
         public displayName:string,
@@ -138,12 +134,12 @@ export class ObjectiveCreateEvent implements IObjectiveCreateEvent {
 }
 
 const _onObjectiveCreate = procHacker.hooking("Scoreboard::addObjective", Objective, null, Scoreboard, CxxString, CxxString, ObjectiveCriteria)(onObjectiveCreate);
-function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective {
+function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective|null {
     const event = new ObjectiveCreateEvent(name, displayName, criteria);
     const canceled = events.objectiveCreate.fire(event) === CANCEL;
-    _tickCallback();
+    decay(criteria);
     if (canceled) {
-        return VoidPointer as any;
+        return null;
     }
     return _onObjectiveCreate(scoreboard, event.name, event.displayName, event.criteria);
 }

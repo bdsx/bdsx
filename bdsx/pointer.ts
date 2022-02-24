@@ -1,24 +1,34 @@
+import * as util from 'util';
 import { CircularDetector } from "./circulardetector";
 import { abstract, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, StaticPointer, VoidPointer } from "./core";
-import { dll } from "./dll";
+import { msAlloc } from "./msalloc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
-import util = require('util');
 
-export interface WrapperType<T> extends NativeClassType<Wrapper<T>>
-{
+export interface WrapperType<T> extends NativeClassType<Wrapper<T>> {
     new(ptr?:boolean):Wrapper<T>;
+    create(this:{new(b?:boolean):Wrapper<T>}, value:T):Wrapper<T>;
 }
 
 export abstract class Wrapper<T> extends NativeClass {
     abstract value:T;
     abstract type:Type<T>;
 
-    static make<T>(type:{new():T}|NativeType<T>):WrapperType<T>{
+    static create<T>(this:new(b?:boolean)=>Wrapper<T>, value:T):Wrapper<T> {
+        const out = new this(true);
+        out.value = value;
+        return out;
+    }
+    static make<T>(type:(new()=>T)|NativeType<T>):WrapperType<T>{
         class TypedWrapper extends Wrapper<T>{
             value:any;
             type:Type<T>;
+            static constructWith<T2>(this:new(b?:boolean)=>Wrapper<T2>, v:T2):Wrapper<T2> {
+                const wrapper = TypedWrapper.construct();
+                wrapper.value = v;
+                return wrapper as any;
+            }
         }
         Object.defineProperty(TypedWrapper, 'name', {value: type.name});
         TypedWrapper.prototype.type = type as any;
@@ -46,7 +56,7 @@ export abstract class Wrapper<T> extends NativeClass {
                 set(v:Wrapper<any>){
                     obj = v;
                     ptr.setPointer(v, offset);
-                }
+                },
             });
         }
         builder.desc[key] = {
@@ -54,7 +64,7 @@ export abstract class Wrapper<T> extends NativeClass {
             get(this:StaticPointer) {
                 init(this);
                 return obj;
-            }
+            },
         };
     }
 }
@@ -100,9 +110,10 @@ export class CxxStringWrapper extends NativeClass {
         if (nsize > capacity) {
             const orivalue = this.valueptr;
             this.capacity = nsize;
-            const dest = dll.ucrtbase.malloc(nsize + 1);
+
+            const dest = msAlloc.allocate(nsize + 1);
             dest.copyFrom(orivalue, this.length);
-            if (capacity >= 0x10) dll.ucrtbase.free(orivalue);
+            if (capacity >= 0x10) msAlloc.deallocate(orivalue, capacity);
             this.setPointer(dest);
             if (dest === null) {
                 this.setString("[out of memory]\0");
@@ -116,6 +127,12 @@ export class CxxStringWrapper extends NativeClass {
     resize(nsize:number):void {
         this.reserve(nsize);
         this.length = nsize;
+    }
+
+    static constructWith(str:string):CxxStringWrapper {
+        const v = CxxStringWrapper.construct();
+        v.value = str;
+        return v;
     }
 
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
