@@ -725,8 +725,7 @@ ItemStackBase.prototype.load = function(tag) {
         allocated.dispose();
     }
 };
-
-(ItemStack.prototype as any)._cloneItem = procHacker.js("ItemStack::clone", void_t, {this:ItemStack}, ItemStack);
+ItemStack.prototype.clone = procHacker.js("ItemStack::clone", void_t, {this:ItemStack}, ItemStack);
 ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
     const itemStack = ItemStack.construct();
     CommandUtils.createItemStack(itemStack, itemName, amount, data);
