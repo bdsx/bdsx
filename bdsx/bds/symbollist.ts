@@ -452,6 +452,7 @@ export const undecoratedSymbols = [
     'ChestBlockActor::pairWith',
     'ChestBlockActor::getPairedChestPosition',
     'BlockActor::getPosition',
+    'BlockActor::setCustomName',
 ] as const;
 
 // decorated symbols

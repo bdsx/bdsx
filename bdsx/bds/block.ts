@@ -10,7 +10,7 @@ import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
-import type { Player } from "./player";
+import type { Player, ServerPlayer } from "./player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -201,6 +201,16 @@ export class BlockActor extends NativeClass {
     setChanged(): void{
         abstract();
     }
+    /**
+     * Sets a custom name to the block. (e.g : chest, furnace...)
+     *
+     * @param name - Name to set
+     *
+     * @remarks This will not update the block client-side. use `BlockActor.updateClientSide()` to do so.
+     */
+    setCustomName(name: string):void{
+        abstract();
+    }
     getContainer(): Container | null{
         abstract();
     }
@@ -208,6 +218,14 @@ export class BlockActor extends NativeClass {
         abstract();
     }
     getPosition(): BlockPos {
+        abstract();
+    }
+    /**
+     * Updates the block actor client-side.
+     *
+     * @param player - The player to update the block for.
+     */
+    updateClientSide(player: ServerPlayer): void {
         abstract();
     }
 }
