@@ -385,13 +385,12 @@ export class ItemStack extends ItemStackBase {
     static fromTag(tag: CompoundTag|NBT.Compound):ItemStack {
         abstract();
     }
-
-    protected _cloneItem(itemStack: ItemStack):void {
+    clone(itemStack: ItemStack):void {
         abstract();
     }
     cloneItem(): ItemStack {
         const itemStack = ItemStack.constructWith("minecraft:air");
-        this._cloneItem(itemStack);
+        this.clone(itemStack);
         return itemStack;
     }
 }
