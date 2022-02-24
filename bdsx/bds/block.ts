@@ -170,8 +170,6 @@ export class BlockSource extends NativeClass {
 export class BlockActor extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-    @nativeField(BlockPos, 0x2C)
-    blockPos:BlockPos;
 
     /**
      * @param tag this function stores nbt values to this parameter
@@ -209,8 +207,8 @@ export class BlockActor extends NativeClass {
     getType(): BlockActorType {
         abstract();
     }
-    getBlockPos(): BlockPos {
-        return this.blockPos;
+    getPosition(): BlockPos {
+        abstract();
     }
 }
 

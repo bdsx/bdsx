@@ -841,6 +841,7 @@ BlockActor.prototype.load = function(tag) {
 BlockActor.prototype.setChanged = procHacker.js("BlockActor::setChanged", void_t, {this:BlockActor});
 BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: BlockActor });
 BlockActor.prototype.getType = procHacker.js("BlockActor::getType", int32_t.ref(), {this:BlockActor});
+BlockActor.prototype.getPosition = procHacker.js("BlockActor::getPosition", BlockPos, {this:BlockActor});
 
 ChestBlockActor.prototype.isLargeChest = procHacker.js("ChestBlockActor::isLargeChest", bool_t, {this:ChestBlockActor});
 ChestBlockActor.prototype.openBy = procHacker.js("ChestBlockActor::openBy", void_t, {this:ChestBlockActor}, Player);
