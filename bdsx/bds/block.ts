@@ -286,6 +286,8 @@ export class ChestBlockActor extends BlockActor {
      * Makes a player open the chest
      *
      * @param player - Player that will open the chest
+     *
+     * @remarks The chest must be in range of the player !
      */
     openBy(player: Player): void {
         abstract();
