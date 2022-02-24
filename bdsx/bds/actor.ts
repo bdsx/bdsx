@@ -494,6 +494,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Kills the entity (itself)
+     */
+    kill(): void {
+        abstract();
+    }
+    /**
      * Returns the entity's attribute map
      */
     getAttributes():BaseAttributeMap {
