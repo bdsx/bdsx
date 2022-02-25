@@ -864,6 +864,18 @@ export class Mob extends Actor {
     knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
     }
+    protected _sendInventory(shouldSelectSlot: boolean): void {
+        abstract();
+    }
+    /**
+     * Updates the mob's inventory
+     * @remarks used in PlayerHotbarPacket if the mob is a player
+     *
+     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
+     */
+    sendInventory(shouldSelectSlot:boolean = false): void {
+        this._sendInventory(shouldSelectSlot);
+    }
 }
 
 export class ItemActor extends Actor {

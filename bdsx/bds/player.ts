@@ -458,19 +458,6 @@ export class ServerPlayer extends Player {
         abstract();
     }
 
-    protected _sendInventory(shouldSelectSlot: boolean): void {
-        abstract();
-    }
-    /**
-     * Updates the player's inventory
-     * @remarks The shouldSelectSlot parameter seems to be pointless
-     *
-     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
-     */
-    sendInventory(shouldSelectSlot: boolean = false): void {
-        serverInstance.nextTick().then(() => this._sendInventory(shouldSelectSlot));
-    }
-
     /**
      * Updates a player's attribute
      *
