@@ -470,6 +470,18 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Returns the item currently held by the entity
+     */
+    getMainhandSlot(): ItemStack {
+        abstract();
+    }
+    /**
+     * Returns the item currently in the entity's offhand slot
+     */
+    getOffhandSlot(): ItemStack {
+        abstract();
+    }
+    /**
      * @alias instanceof Mob
      */
     isMob():this is Mob {

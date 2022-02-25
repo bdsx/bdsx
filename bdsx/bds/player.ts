@@ -95,20 +95,6 @@ export class Player extends Mob {
     }
 
     /**
-     * Returns the item currently held by the player
-     */
-    getMainhandSlot(): ItemStack {
-        abstract();
-    }
-
-    /**
-     * Returns the item currently in the player's offhand slot
-     */
-    getOffhandSlot(): ItemStack {
-        abstract();
-    }
-
-    /**
      * Returns the player's permission level
      * @see PlayerPermission
      */

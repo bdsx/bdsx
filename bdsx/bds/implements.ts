@@ -238,6 +238,8 @@ Actor.prototype.getDimension = procHacker.js("Actor::getDimension", Dimension, {
 Actor.prototype.getDimensionId = procHacker.js("Actor::getDimensionId", int32_t, {this:Actor, structureReturn: true});
 Actor.prototype.getActorIdentifier = procHacker.js("Actor::getActorIdentifier", ActorDefinitionIdentifier, {this:Actor});
 Actor.prototype.getCommandPermissionLevel = procHacker.js("Actor::getCommandPermissionLevel", int32_t, {this:Actor});
+Actor.prototype.getMainhandSlot = makefunc.js([0x508], ItemStack, {this:Actor});
+Actor.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Actor});
 
 const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
@@ -445,7 +447,6 @@ Player.prototype.teleportTo = procHacker.js("Player::teleportTo", void_t, {this:
 Player.prototype.getGameType = procHacker.js("Player::getPlayerGameType", int32_t, {this:Player});
 Player.prototype.getInventory = procHacker.js("Player::getSupplies", PlayerInventory, {this:Player});
 Player.prototype.getMainhandSlot = procHacker.js("Player::getCarriedItem", ItemStack, {this:Player});
-Player.prototype.getOffhandSlot = procHacker.js("Actor::getOffhandSlot", ItemStack, {this:Player});
 Player.prototype.getCommandPermissionLevel = procHacker.js('Player::getCommandPermissionLevel', int32_t, {this:Actor});
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
 Player.prototype.getSkin = procHacker.js("Player::getSkin", SerializedSkin, {this:Player});
