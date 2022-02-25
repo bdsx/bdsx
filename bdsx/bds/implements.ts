@@ -847,9 +847,10 @@ BlockActor.prototype.updateClientSide = function(player: ServerPlayer): void {
     const pk = BlockActorDataPacket.allocate();
     const nbtData = this.allocateAndSave();
     pk.pos.set(this.getPosition());
+    pk.data.destruct();
     pk.data.construct(nbtData);
     player.sendNetworkPacket(pk);
-    nbtData.destruct();
+    nbtData.dispose();
     pk.dispose();
 };
 
