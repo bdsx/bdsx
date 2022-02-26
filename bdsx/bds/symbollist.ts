@@ -184,7 +184,6 @@ export const undecoratedSymbols = [
     'CommandSelectorBase::newResults',
     'CommandItem::createInstance',
     'CommandMessage::getMessage',
-    'ScriptServerActorEventListener::onActorSneakChanged',
     'ActorEventCoordinator::sendActorCreated',
     'ScriptServerActorEventListener::onActorDeath',
     'Dimension::getDimensionId',
@@ -446,6 +445,7 @@ export const undecoratedSymbols = [
     'Player::setPlayerUIItem',
     'Player::getPlatform',
     'Player::getXuid',
+    'ActorEventCoordinator::sendActorSneakChanged',
 ] as const;
 
 // decorated symbols
