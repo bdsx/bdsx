@@ -667,9 +667,13 @@ Tester.test({
 
                         actor.setRespawnPosition(pos, dim);
 
-                        const item = ItemStack.constructWith('minecraft:bread');
+                        const item = ItemStack.constructWith('minecraft:cobblestone');
+                        const cloned = item.clone();
                         actor.addItem(item);
                         item.destruct();
+
+                        actor.addItem(cloned);
+                        cloned.destruct();
                     }
 
                     if (identifier === 'minecraft:player') {

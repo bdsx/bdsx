@@ -637,7 +637,7 @@ export class Actor extends AbstractClass {
     /**
      * Gets the entity component of bedrock scripting api
      *
-     * @deprecated Needs more implement
+     * @deprecated bedrock scripting API will be removed.
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;

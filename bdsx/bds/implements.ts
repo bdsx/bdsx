@@ -54,7 +54,7 @@ import { StructureManager, StructureSettings, StructureTemplate, StructureTempla
 
 // utils
 namespace CommandUtils {
-    export const createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, null, ItemStack, CxxString, int32_t, int32_t);
+    export const createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, {structureReturn:true}, CxxString, int32_t, int32_t);
     export const spawnEntityAt = procHacker.js("CommandUtils::spawnEntityAt", Actor, null, BlockSource, Vec3, ActorDefinitionIdentifier, StaticPointer, VoidPointer);
     export const getFeetPos = procHacker.js("CommandUtils::getFeetPos", Vec3, {structureReturn:true}, Actor);
 }
@@ -725,11 +725,14 @@ ItemStackBase.prototype.load = function(tag) {
         allocated.dispose();
     }
 };
-ItemStack.prototype.clone = procHacker.js("ItemStack::clone", void_t, {this:ItemStack}, ItemStack);
+const ItemStack$clone = procHacker.js("ItemStack::clone", void_t, null, ItemStack, ItemStack);
+
+ItemStack.prototype.clone = function(target:ItemStack = new ItemStack(true)) {
+    ItemStack$clone(this, target);
+    return target;
+};
 ItemStack.constructWith = function(itemName: CxxString, amount: int32_t = 1, data: int32_t = 0):ItemStack {
-    const itemStack = ItemStack.construct();
-    CommandUtils.createItemStack(itemStack, itemName, amount, data);
-    return itemStack;
+    return CommandUtils.createItemStack(itemName, amount, data);
 };
 ItemStack.fromDescriptor = procHacker.js("ItemStack::fromDescriptor", ItemStack, {structureReturn:true}, NetworkItemStackDescriptor, BlockPalette, bool_t);
 NetworkItemStackDescriptor.constructWith = procHacker.js("??0NetworkItemStackDescriptor@@QEAA@AEBVItemStack@@@Z", NetworkItemStackDescriptor, {structureReturn:true}, ItemStack);
