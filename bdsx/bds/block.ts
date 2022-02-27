@@ -65,6 +65,9 @@ export class BlockLegacy extends NativeClass {
     getBlockEntityType(): BlockActorType {
         abstract();
     }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
+        abstract();
+    }
 }
 
 @nativeClass(null)

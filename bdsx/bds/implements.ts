@@ -791,6 +791,8 @@ BlockLegacy.prototype.setDestroyTime = procHacker.js("BlockLegacy::setDestroyTim
 BlockLegacy.prototype.getBlockEntityType = procHacker.js("BlockLegacy::getBlockEntityType", int32_t, {this:BlockLegacy});
 
 BlockLegacy.prototype.getRenderBlock = procHacker.js("BlockLegacy::getRenderBlock", Block, {this:BlockLegacy});
+BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Player, BlockPos, uint8_t);
+
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.constructWith = function(blockName:string, data:number = 0):Block|null {
     const itemStack = ItemStack.constructWith(blockName, 1, data);
