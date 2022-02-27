@@ -808,6 +808,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Returns if the entity is alive
+     */
+    isAlive(): boolean {
+        abstract();
+    }
+    /**
      * Returns if the entity is invisible
      */
     isInvisible(): boolean {
