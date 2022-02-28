@@ -448,6 +448,7 @@ export const undecoratedSymbols = [
     'Block::use',
     'ActorEventCoordinator::sendActorSneakChanged',
     'VanillaServerGameplayEventListener::onBlockInteractedWith',
+    'ItemStack::EMPTY_ITEM',
 ] as const;
 
 // decorated symbols

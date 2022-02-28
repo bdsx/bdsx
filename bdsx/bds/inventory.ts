@@ -11,6 +11,7 @@ import type { ItemEnchants } from "./enchants";
 import type { BlockPalette } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
+import { proc } from "./symbols";
 
 /**
  * Values from 1 to 100 are for a player's container counter.
@@ -367,6 +368,7 @@ export class ItemStackBase extends NativeClass {
 
 @nativeClass(0x90)
 export class ItemStack extends ItemStackBase {
+    static readonly EMPTY_ITEM: ItemStack = proc["ItemStack::EMPTY_ITEM"].as(ItemStack);
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
