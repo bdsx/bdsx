@@ -4,6 +4,7 @@ import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
+import { VanillaServerGameplayEventListener } from "../bds/server";
 import { CANCEL } from "../common";
 import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
@@ -167,3 +168,20 @@ function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: Block
     return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
 }
 const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
+
+export class BlockInteractedWithEvent {
+    constructor(public player: Player, public blockPos: BlockPos) {}
+}
+const _onBlockInteractedWith = procHacker.hooking(
+    "VanillaServerGameplayEventListener::onBlockInteractedWith",
+    int32_t,
+    null,
+    VanillaServerGameplayEventListener,
+    Player,
+    BlockPos,
+)((self, player, pos) => {
+    const event = new BlockInteractedWithEvent(player, pos);
+    const canceled = events.blockInteractedWith.fire(event) === CANCEL;
+    if (canceled) return 1;
+    return _onBlockInteractedWith(self, player, pos);
+});

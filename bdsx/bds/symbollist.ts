@@ -447,6 +447,7 @@ export const undecoratedSymbols = [
     'Player::getPlatform',
     'Player::getXuid',
     'Block::use',
+    'VanillaServerGameplayEventListener::onBlockInteractedWith',
 ] as const;
 
 // decorated symbols
