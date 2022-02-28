@@ -445,6 +445,7 @@ export const undecoratedSymbols = [
     'Player::setPlayerUIItem',
     'Player::getPlatform',
     'Player::getXuid',
+    'Block::use',
     'ActorEventCoordinator::sendActorSneakChanged',
 ] as const;
 

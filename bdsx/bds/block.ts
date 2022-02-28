@@ -9,6 +9,7 @@ import type { CommandName } from "./commandname";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
+import type { Player } from "./player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -64,6 +65,9 @@ export class BlockLegacy extends NativeClass {
     getBlockEntityType(): BlockActorType {
         abstract();
     }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -106,6 +110,9 @@ export class Block extends NativeClass {
         abstract();
     }
     getBlockEntityType(): BlockActorType {
+        abstract();
+    }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
         abstract();
     }
 }

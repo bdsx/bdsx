@@ -677,7 +677,7 @@ export class Actor extends AbstractClass {
     /**
      * Gets the entity component of bedrock scripting api
      *
-     * @deprecated Needs more implement
+     * @deprecated bedrock scripting API will be removed.
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;
@@ -845,6 +845,12 @@ export class Actor extends AbstractClass {
      * Returns the Level instance of the entity currently in
      */
     getLevel():Level {
+        abstract();
+    }
+    /**
+     * Returns if the entity is alive
+     */
+    isAlive(): boolean {
         abstract();
     }
     /**
