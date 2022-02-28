@@ -95,20 +95,6 @@ export class Player extends Mob {
     }
 
     /**
-     * Returns the item currently held by the player
-     */
-    getMainhandSlot(): ItemStack {
-        abstract();
-    }
-
-    /**
-     * Returns the item currently in the player's offhand slot
-     */
-    getOffhandSlot(): ItemStack {
-        abstract();
-    }
-
-    /**
      * Returns the player's permission level
      * @see PlayerPermission
      */
@@ -456,19 +442,6 @@ export class ServerPlayer extends Player {
      */
     sendNetworkPacket(packet: Packet): void {
         abstract();
-    }
-
-    protected _sendInventory(shouldSelectSlot: boolean): void {
-        abstract();
-    }
-    /**
-     * Updates the player's inventory
-     * @remarks The shouldSelectSlot parameter seems to be pointless
-     *
-     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
-     */
-    sendInventory(shouldSelectSlot: boolean = false): void {
-        serverInstance.nextTick().then(() => this._sendInventory(shouldSelectSlot));
     }
 
     /**

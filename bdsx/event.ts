@@ -80,6 +80,8 @@ export namespace events {
      * To note : This event works for all chest types that can be doubled (normal chests, trapped chests).
      */
     export const chestPair = new Event<(event: ChestPairEvent) => void | CANCEL>();
+    /** Cancellable but only in a few cases (e.g. interacting with the blocks such as anvil, grindstone, enchanting table, etc.*/
+    export const blockInteractedWith = new Event<(event: BlockInteractedWithEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Entity events

@@ -340,12 +340,12 @@ function onEntityStopRiding(entity:Actor, exitFromRider:boolean, actorIsBeingDes
 }
 const _onEntityStopRiding = procHacker.hooking('Actor::stopRiding', void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
-function onEntitySneak(scriptServerActorEventListener:VoidPointer, entity:Actor, isSneaking:boolean):boolean {
+function onEntitySneak(actorEventCoordinator:VoidPointer, entity:Actor, isSneaking:boolean): void {
     const event = new EntitySneakEvent(entity, isSneaking);
     events.entitySneak.fire(event);
-    return _onEntitySneak(scriptServerActorEventListener, event.entity, event.isSneaking);
+    return _onEntitySneak(actorEventCoordinator, entity, isSneaking);
 }
-const _onEntitySneak = procHacker.hooking('ScriptServerActorEventListener::onActorSneakChanged', bool_t, null, VoidPointer, Actor, bool_t)(onEntitySneak);
+const _onEntitySneak = procHacker.hooking('ActorEventCoordinator::sendActorSneakChanged', void_t, null, VoidPointer, Actor, bool_t)(onEntitySneak);
 
 function onEntityCreated(actorEventCoordinator:VoidPointer, entity:Actor):void {
     const event = new EntityCreatedEvent(entity);

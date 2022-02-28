@@ -4,6 +4,7 @@ import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
+import { VanillaServerGameplayEventListener } from "../bds/server";
 import { CANCEL } from "../common";
 import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
@@ -221,3 +222,20 @@ function onChestPair(chest: ChestBlockActor, chest2: ChestBlockActor, lead: bool
 }
 
 const _onChestPair = procHacker.hooking("ChestBlockActor::pairWith", void_t, null, ChestBlockActor, ChestBlockActor, bool_t)(onChestPair);
+
+export class BlockInteractedWithEvent {
+    constructor(public player: Player, public blockPos: BlockPos) {}
+}
+const _onBlockInteractedWith = procHacker.hooking(
+    "VanillaServerGameplayEventListener::onBlockInteractedWith",
+    int32_t,
+    null,
+    VanillaServerGameplayEventListener,
+    Player,
+    BlockPos,
+)((self, player, pos) => {
+    const event = new BlockInteractedWithEvent(player, pos);
+    const canceled = events.blockInteractedWith.fire(event) === CANCEL;
+    if (canceled) return 1;
+    return _onBlockInteractedWith(self, player, pos);
+});

@@ -184,7 +184,6 @@ export const undecoratedSymbols = [
     'CommandSelectorBase::newResults',
     'CommandItem::createInstance',
     'CommandMessage::getMessage',
-    'ScriptServerActorEventListener::onActorSneakChanged',
     'ActorEventCoordinator::sendActorCreated',
     'ScriptServerActorEventListener::onActorDeath',
     'Dimension::getDimensionId',
@@ -453,6 +452,10 @@ export const undecoratedSymbols = [
     'ChestBlockActor::getPairedChestPosition',
     'BlockActor::getPosition',
     'BlockActor::setCustomName',
+    'Block::use',
+    'ActorEventCoordinator::sendActorSneakChanged',
+    'VanillaServerGameplayEventListener::onBlockInteractedWith',
+    'ItemStack::EMPTY_ITEM',
 ] as const;
 
 // decorated symbols

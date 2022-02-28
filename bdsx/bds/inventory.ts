@@ -11,6 +11,7 @@ import type { ItemEnchants } from "./enchants";
 import type { BlockPalette } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
+import { proc } from "./symbols";
 
 /**
  * Values from 1 to 100 are for a player's container counter.
@@ -102,10 +103,10 @@ export class Item extends NativeClass {
         abstract();
     }
     getCommandName():string {
-        const names = this.getCommandNames();
-        const name = names.get(0);
+        const names = this.getCommandNames2();
+        const name = names.get(0)?.name;
         names.destruct();
-        if (name === null) throw Error(`item has not any names`);
+        if (name == null) throw Error(`item has not any names`);
         return name;
     }
     /** @deprecated Use `this.getCommandNames2()` instead */
@@ -367,6 +368,7 @@ export class ItemStackBase extends NativeClass {
 
 @nativeClass(0x90)
 export class ItemStack extends ItemStackBase {
+    static readonly EMPTY_ITEM: ItemStack = proc["ItemStack::EMPTY_ITEM"].as(ItemStack);
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
@@ -386,12 +388,22 @@ export class ItemStack extends ItemStackBase {
         abstract();
     }
 
-    protected _cloneItem(itemStack: ItemStack):void {
+    clone():ItemStack;
+
+    /**
+     * @deprecated use clone()
+     */
+    clone(itemStack: ItemStack):void;
+
+    clone(itemStack?: ItemStack):ItemStack|void {
         abstract();
     }
+    /**
+     * @deprecated use clone()
+     */
     cloneItem(): ItemStack {
         const itemStack = ItemStack.constructWith("minecraft:air");
-        this._cloneItem(itemStack);
+        this.clone(itemStack);
         return itemStack;
     }
 }
