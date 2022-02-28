@@ -1,5 +1,5 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor, PistonAction } from "../bds/block";
+import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
@@ -39,6 +39,10 @@ export class BlockPlaceEvent {
     }
 }
 
+export enum PistonAction {
+    Extend = 1,
+    Retract = 3,
+}
 export class PistonMoveEvent {
     constructor(
         public blockPos: BlockPos,

@@ -277,11 +277,6 @@ export enum BlockActorType {
     SculkCatalyst = 0x30,
 }
 
-export enum PistonAction {
-    Extend = 1,
-    Retract = 3,
-}
-
 @nativeClass(null)
 export class ButtonBlock extends BlockLegacy {
     // unknown
