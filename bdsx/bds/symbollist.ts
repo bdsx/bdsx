@@ -184,7 +184,6 @@ export const undecoratedSymbols = [
     'CommandSelectorBase::newResults',
     'CommandItem::createInstance',
     'CommandMessage::getMessage',
-    'ScriptServerActorEventListener::onActorSneakChanged',
     'ActorEventCoordinator::sendActorCreated',
     'ScriptServerActorEventListener::onActorDeath',
     'Dimension::getDimensionId',
@@ -447,6 +446,7 @@ export const undecoratedSymbols = [
     'Player::getPlatform',
     'Player::getXuid',
     'Block::use',
+    'ActorEventCoordinator::sendActorSneakChanged',
     'VanillaServerGameplayEventListener::onBlockInteractedWith',
 ] as const;
 

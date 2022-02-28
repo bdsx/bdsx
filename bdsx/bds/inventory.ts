@@ -102,10 +102,10 @@ export class Item extends NativeClass {
         abstract();
     }
     getCommandName():string {
-        const names = this.getCommandNames();
-        const name = names.get(0);
+        const names = this.getCommandNames2();
+        const name = names.get(0)?.name;
         names.destruct();
-        if (name === null) throw Error(`item has not any names`);
+        if (name == null) throw Error(`item has not any names`);
         return name;
     }
     /** @deprecated Use `this.getCommandNames2()` instead */

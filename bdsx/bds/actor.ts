@@ -469,6 +469,46 @@ export class Actor extends AbstractClass {
     getActorIdentifier():ActorDefinitionIdentifier {
         abstract();
     }
+
+    /**
+     * Returns the item currently in the entity's mainhand slot
+     */
+    getCarriedItem(): ItemStack {
+        abstract();
+    }
+    /**
+     * @alias of getCarriedItem
+     */
+    getMainhandSlot(): ItemStack {
+        return this.getCarriedItem();
+    }
+
+    /**
+     * Sets the item currently in the entity's mainhand slot
+     */
+    setCarriedItem(item: ItemStack): void {
+        abstract();
+    }
+    /**
+     * @alias of setCarriedItem
+     */
+    setMainhandSlot(item: ItemStack): void {
+        this.setCarriedItem(item);
+    }
+
+    /**
+     * Returns the item currently in the entity's offhand slot
+     */
+    getOffhandSlot(): ItemStack {
+        abstract();
+    }
+    /**
+     * Sets the item currently in the entity's offhand slot
+     */
+    setOffhandSlot(item: ItemStack): void {
+        abstract();
+    }
+
     /**
      * @alias instanceof Mob
      */
@@ -869,6 +909,18 @@ export class Mob extends Actor {
      */
     knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
+    }
+    protected _sendInventory(shouldSelectSlot: boolean): void {
+        abstract();
+    }
+    /**
+     * Updates the mob's inventory
+     * @remarks used in PlayerHotbarPacket if the mob is a player
+     *
+     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
+     */
+    sendInventory(shouldSelectSlot:boolean = false): void {
+        this._sendInventory(shouldSelectSlot);
     }
 }
 
