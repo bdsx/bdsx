@@ -789,7 +789,7 @@ export class ServerPlayer extends Player {
     /**
      * Plays a sound to the player
      *
-     * @param soundName - Sound name, lke "random.burp". See {@link https://minecraft.fandom.com/wiki/Sounds.json/Bedrock_Edition_values}
+     * @param soundName - Sound name, like "random.burp". See {@link https://minecraft.fandom.com/wiki/Sounds.json/Bedrock_Edition_values}
      * @param pos - Position where the sound is played (defaults to player position)
      * @param volume - Volume of the sound (defaults to 1)
      * @param pitch - Pitch of the sound (defaults to 1)
