@@ -534,4 +534,5 @@ export const decoratedSymbols = [
     '?load@ItemStackBase@@QEAAXAEBVCompoundTag@@@Z',
     '?jumpFromGround@Player@@UEAAXXZ',
     '??0NetworkItemStackDescriptor@@QEAA@$$QEAV0@@Z',
+    '??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@',
 ] as const;

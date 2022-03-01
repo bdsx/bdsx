@@ -177,6 +177,9 @@ export class BlockActor extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
 
+    isChestBlockActor(): this is ChestBlockActor {
+        abstract();
+    }
     /**
      * @param tag this function stores nbt values to this parameter
      */
