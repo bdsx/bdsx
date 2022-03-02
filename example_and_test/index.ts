@@ -16,6 +16,7 @@ import './lowlevel-dll';
 import './lowlevel-nativeclass';
 import './lowlevel-string-and-vector';
 import './nbt-sign';
+import './blockcustomname';
 import './net-chat';
 import './net-disconnect';
 import './net-halfmove';

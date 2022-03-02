@@ -55,6 +55,7 @@ class Liner {
 (global as any).server = createAbstractObject('BDS is not launched yet. `server` is available after the launch');
 
 let launched = false;
+let closed = false;
 let loadingIsFired = false;
 let openIsFired = false;
 
@@ -142,16 +143,15 @@ function _launch(asyncResolve:()=>void):void {
 
     uv_async.open();
 
-    // uv async callback, when BDS closed perfectly
+    // uv async callback, when BDS closed perfectly (end of the main function)
     function finishCallback():void {
+        closed = true; // for if BDS failed to execute the game thread.
+
         uv_async.close();
         threadHandle.close();
         events.serverClose.fire();
         events.serverClose.clear();
         _tickCallback();
-        if (openIsFired) {
-            decay(bd_server.serverInstance);
-        }
     }
 
     // replace unicode encoder
@@ -174,6 +174,7 @@ function _launch(asyncResolve:()=>void):void {
         // empty
     }, void_t);
     asmcode.gameThreadFinish = makefunc.np(()=>{
+        closed = true;
         decay(bd_server.serverInstance);
         decay(nimodule.networkHandler);
     }, void_t);
@@ -324,9 +325,6 @@ function _launch(asyncResolve:()=>void):void {
 
 const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointer);
 
-const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
-ServerCommandOrigin[NativeType.dtor] = ()=>deleteServerCommandOrigin.call(this, 1);
-
 function sessionIdGrabber(text: string): void {
     const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d:\d{3} INFO\] Session ID (.*)$/);
     if(tmp) {
@@ -360,6 +358,10 @@ export namespace bedrockServer {
 
     export function isLaunched():boolean {
         return launched;
+    }
+
+    export function isClosed():boolean {
+        return closed;
     }
 
     /**

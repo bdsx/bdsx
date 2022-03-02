@@ -11,8 +11,8 @@ command.register('sign', 'generate signed block').overload((params, origin, outp
         output.error('actor not found');
     } else {
         const region = actor.getRegion();
-        const pos = actor.getPosition();
-        const blockpos = BlockPos.create(Math.floor(pos.x), Math.floor(pos.y)-1, Math.floor(pos.z));
+        const pos = actor.getFeetPos();
+        const blockpos = BlockPos.create(Math.floor(pos.x), Math.floor(pos.y), Math.floor(pos.z));
         const block = Block.create('minecraft:standing_sign')!;
         region.setBlock(blockpos, block);
         const blockActor = region.getBlockEntity(blockpos)!;

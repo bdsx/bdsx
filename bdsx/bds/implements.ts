@@ -38,7 +38,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, GameRulesChangedPacket, PlayerListPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket, BlockActorDataPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, PlayerListPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, PlayerListEntry, ServerPlayer } from "./player";
 import { proc, procHacker } from "./proc";
@@ -567,6 +567,10 @@ RakNet.RakPeer.prototype.GetLastPing = procHacker.js("?GetLastPing@RakPeer@RakNe
 RakNet.RakPeer.prototype.GetLowestPing = procHacker.js("?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, {this:RakNet.RakPeer}, RakNet.AddressOrGUID);
 
 // packet.ts
+const Packet$dtor = makefunc.js([0, 0], void_t, {this:Packet}, int32_t);
+Packet.prototype[NativeType.dtor] = function() {
+    Packet$dtor.call(this, 1);
+};
 Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void {
     networkHandler.send(target, this, unknownarg);
 };
@@ -825,6 +829,8 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
     return retval;
 };
 BlockSource.prototype.getBlockEntity = procHacker.js("?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z", BlockActor, {this:BlockSource}, BlockPos);
+BlockSource.prototype.getDimension = procHacker.js('BlockSource::getDimension', Dimension, {this:BlockSource});
+BlockSource.prototype.getDimensionId = procHacker.js('BlockSource::getDimensionId', int32_t, {this:BlockSource});
 const BlockActor$load = makefunc.js([0x8], void_t, {this:BlockActor}, Level, CompoundTag, DefaultDataLoaderHelper);
 const BlockActor$save = makefunc.js([0x10], bool_t, {this:BlockActor}, CompoundTag);
 BlockActor.prototype.save = function(tag?:CompoundTag):any {
@@ -852,12 +858,13 @@ BlockActor.prototype.setCustomName = procHacker.js("BlockActor::setCustomName", 
 BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: BlockActor });
 BlockActor.prototype.getType = procHacker.js("BlockActor::getType", int32_t.ref(), {this:BlockActor});
 BlockActor.prototype.getPosition = procHacker.js("BlockActor::getPosition", BlockPos, {this:BlockActor});
+BlockActor.prototype.getServerUpdatePacket = procHacker.js('BlockActor::getServerUpdatePacket', BlockActorDataPacket.ref(), {this:BlockActor, structureReturn: true}, BlockSource);
 BlockActor.prototype.updateClientSide = function(player: ServerPlayer): void {
     const pk = BlockActorDataPacket.allocate();
     const nbtData = this.allocateAndSave();
     pk.pos.set(this.getPosition());
     pk.data.destruct();
-    pk.data.construct(nbtData);
+    pk.data[NativeType.ctor_move](nbtData);
     player.sendNetworkPacket(pk);
     nbtData.dispose();
     pk.dispose();
@@ -1073,6 +1080,7 @@ ListTag.prototype.size = procHacker.js("ListTag::size", int64_as_float_t, {this:
 
 CompoundTag.prototype[NativeType.ctor] = procHacker.js("??0CompoundTag@@QEAA@XZ", void_t, {this:CompoundTag});
 CompoundTag.prototype[NativeType.dtor] = procHacker.js("CompoundTag::~CompoundTag", void_t, {this:CompoundTag});
+CompoundTag.prototype[NativeType.ctor_move] = procHacker.js('??0CompoundTag@@QEAA@$$QEAV0@@Z', void_t, {this:CompoundTag}, CompoundTag);
 CompoundTag.prototype.get = procHacker.js('CompoundTag::get', Tag, {this:CompoundTag}, GslStringSpan) as any;
 const CompoundTag$put = procHacker.js('?put@CompoundTag@@QEAAPEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@4@@Z', void_t, null, CompoundTag, CxxStringWrapper, TagPointer);
 CompoundTag.prototype.setAllocated = function(key, value) {

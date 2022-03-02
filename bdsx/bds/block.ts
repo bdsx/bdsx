@@ -3,13 +3,16 @@ import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
+import type { DimensionId } from "./actor";
 import type { ChunkPos } from "./blockpos";
 import { BlockPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
+import type { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
+import type { BlockActorDataPacket } from "./packets";
 import type { Player, ServerPlayer } from "./player";
 
 @nativeClass(null)
@@ -170,6 +173,12 @@ export class BlockSource extends NativeClass {
     getBlockEntity(blockPos:BlockPos):BlockActor|null {
         abstract();
     }
+    getDimension():Dimension {
+        abstract();
+    }
+    getDimensionId():DimensionId {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -226,6 +235,17 @@ export class BlockActor extends NativeClass {
     getPosition(): BlockPos {
         abstract();
     }
+
+    /**
+     * make a packet for updating the client-side.
+     * it has a risk about memoryleaks but following the original function name.
+     *
+     * @return allocated BlockActorDataPacket. it needs to be disposed of.
+     */
+    getServerUpdatePacket(blockSource:BlockSource):BlockActorDataPacket {
+        abstract();
+    }
+
     /**
      * Updates the block actor client-side.
      *

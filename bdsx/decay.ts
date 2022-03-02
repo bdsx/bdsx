@@ -34,3 +34,9 @@ function getDecayed<T extends VoidPointer>(v:T):T {
 export function decay(obj:VoidPointer):void {
     (obj as any).__proto__ = getDecayed((obj as any).__proto__);
 }
+
+export namespace decay {
+    export function isDecayed(obj:VoidPointer):boolean {
+        return obj[decayed] === (obj as any).__proto__;
+    }
+}
