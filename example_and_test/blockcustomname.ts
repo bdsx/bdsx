@@ -53,7 +53,7 @@ function getBlockSource(dimensionId:DimensionId, blockpos:BlockPos):BlockSource|
         const chunk = region.getChunkAt(blockpos);
         if (chunk === null) continue; // chunk is not accessible
         if (!chunk.isFullyLoaded()) return null; // chunk is not loaded
-        return player.getRegion();
+        return region;
     }
     return null;
 }
