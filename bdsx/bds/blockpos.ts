@@ -15,6 +15,10 @@ export enum Facing {
     Max,
 }
 
+export namespace Facing {
+    export const convertYRotationToFacingDirection: (yRotation: number) => number = procHacker.js("Facing::convertYRotationToFacingDirection", uint8_t, null, float32_t);
+}
+
 @nativeClass()
 export class BlockPos extends NativeClass {
     @nativeField(int32_t)
