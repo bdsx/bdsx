@@ -323,6 +323,13 @@ export class Player extends Mob {
     }
 
     /**
+     * Reset the XP levels of the player
+     */
+    resetExperienceLevels(): void {
+        abstract();
+    }
+
+    /**
      * Subtracts XP points from the player
      *
      * @param xp - between 1 and the current XP points for the level
@@ -384,6 +391,18 @@ export class Player extends Mob {
     getXuid(): string {
         abstract();
     }
+    forceAllowEating(): boolean {
+        abstract();
+    }
+    getSpeed(): number {
+        abstract();
+    }
+    hasOpenContainer(): boolean {
+        abstract();
+    }
+    isHungry(): boolean {
+        abstract();
+    }
 }
 
 namespace RawTextObject {
@@ -431,6 +450,10 @@ export class ServerPlayer extends Player {
      * Opens the player's inventory
      */
     openInventory(): void {
+        abstract();
+    }
+
+    resendAllChunks(): void {
         abstract();
     }
 

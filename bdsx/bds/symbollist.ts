@@ -485,6 +485,15 @@ export const undecoratedSymbols = [
     'OnFireSystem::setOnFireNoEffects',
     'Player::getXuid',
     'Item::getSerializedName',
+    'ServerPlayer::resendAllChunks',
+    'ScoreboardId::isValid',
+    'MobEffectInstance::getComponentName',
+    'Scoreboard::createScoreboardId',
+    'Player::forceAllowEating',
+    'Player::getSpeed',
+    'Player::hasOpenContainer',
+    'Player::isHungry',
+    'Player::resetPlayerLevel',
 ] as const;
 
 // decorated symbols
@@ -565,4 +574,5 @@ export const decoratedSymbols = [
     '??0NetworkItemStackDescriptor@@QEAA@$$QEAV0@@Z',
     '??0CompoundTag@@QEAA@$$QEAV0@@Z',
     '??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@',
+    '?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
 ] as const;

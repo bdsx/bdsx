@@ -514,6 +514,7 @@ Player.prototype.getDestroySpeed = procHacker.js('Player::getDestroySpeed', floa
 Player.prototype.canDestroy = procHacker.js('Player::canDestroy', bool_t, {this:Player}, Block.ref());
 Player.prototype.addExperience = procHacker.js('Player::addExperience', void_t, {this:Player}, int32_t);
 Player.prototype.addExperienceLevels = procHacker.js('Player::addLevels', void_t, {this:Player}, int32_t);
+Player.prototype.resetExperienceLevels = procHacker.js('Player::resetPlayerLevel', void_t, {this:Player});
 Player.prototype.getXpNeededForNextLevel = procHacker.js('Player::getXpNeededForNextLevel', int32_t, {this:Player});
 Player.prototype.setCursorSelectedItem = procHacker.js("Player::setCursorSelectedItem", void_t, {this:Player}, ItemStack);
 Player.prototype.getCursorSelectedItem = function (): ItemStack {
@@ -523,10 +524,15 @@ Player.prototype.getPlayerUIItem = procHacker.js("Player::getPlayerUIItem", Item
 Player.prototype.setPlayerUIItem = procHacker.js("Player::setPlayerUIItem", void_t, {this:Player}, int32_t, ItemStack.ref());
 Player.prototype.getPlatform = procHacker.js("Player::getPlatform", int32_t, {this:Player});
 Player.prototype.getXuid = procHacker.js("Player::getXuid", CxxString, {this:Player, structureReturn:true});
+Player.prototype.forceAllowEating = procHacker.js("Player::forceAllowEating", bool_t, {this:Player});
+Player.prototype.getSpeed = procHacker.js("Player::getSpeed", float32_t, {this:Player});
+Player.prototype.hasOpenContainer = procHacker.js("Player::hasOpenContainer", bool_t, {this:Player});
+Player.prototype.isHungry = procHacker.js("Player::isHungry", bool_t, {this:Player});
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});
 ServerPlayer.prototype.openInventory = procHacker.js("ServerPlayer::openInventory", void_t, {this: ServerPlayer});
+ServerPlayer.prototype.resendAllChunks = procHacker.js("ServerPlayer::resendAllChunks", void_t, {this: ServerPlayer});
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("ServerPlayer::sendNetworkPacket", void_t, {this: ServerPlayer}, VoidPointer);
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     // part of ServerPlayer::sendNetworkPacket
@@ -988,6 +994,7 @@ GameRule.prototype.getFloat = procHacker.js("GameRule::getFloat", float32_t, {th
 Scoreboard.prototype.clearDisplayObjective = procHacker.js("ServerScoreboard::clearDisplayObjective", Objective, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.setDisplayObjective = procHacker.js("ServerScoreboard::setDisplayObjective", DisplayObjective, {this:Scoreboard}, CxxString, Objective, uint8_t);
 Scoreboard.prototype.addObjective = procHacker.js("Scoreboard::addObjective", Objective, {this:Scoreboard}, CxxString, CxxString, ObjectiveCriteria);
+Scoreboard.prototype.createScoreboardId = procHacker.js("?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", ScoreboardId, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getCriteria = procHacker.js("Scoreboard::getCriteria", ObjectiveCriteria, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getDisplayObjective = procHacker.js("Scoreboard::getDisplayObjective", DisplayObjective, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getObjective = procHacker.js("Scoreboard::getObjective", Objective, {this:Scoreboard}, CxxString);
@@ -1011,11 +1018,14 @@ IdentityDefinition.prototype.getPlayerId = procHacker.js("IdentityDefinition::ge
 IdentityDefinition.prototype.getFakePlayerName = procHacker.js("IdentityDefinition::getFakePlayerName", CxxString, {this:IdentityDefinition});
 IdentityDefinition.prototype.getIdentityType = procHacker.js("IdentityDefinition::getIdentityType", uint8_t, {this:IdentityDefinition});
 
+ScoreboardId.prototype.isValid = procHacker.js("ScoreboardId::isValid", bool_t, {this:ScoreboardId});
+
 (ScoreboardIdentityRef.prototype as any)._modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, StaticPointer, Objective, int32_t, uint8_t);
 
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
+(MobEffectInstance.prototype as any)._getComponentName = procHacker.js("MobEffectInstance::getComponentName", HashedString, {this:MobEffectInstance});
 MobEffectInstance.prototype.allocateAndSave = procHacker.js("MobEffectInstance::save", CompoundTag.ref(), {this:MobEffectInstance, structureReturn: true});
 const MobEffectInstance$load = procHacker.js("MobEffectInstance::load", void_t, null, MobEffectInstance, CompoundTag);
 MobEffectInstance.prototype.load = function(tag) {

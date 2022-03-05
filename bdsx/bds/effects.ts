@@ -120,6 +120,12 @@ export class MobEffectInstance extends NativeClass {
     getLingerDuration():number {
         return this.duration * 0.25;
     }
+    protected _getComponentName():HashedString {
+        abstract();
+    }
+    getComponentName():string {
+        return this._getComponentName().str;
+    }
     save():Record<string, any> {
         const tag = this.allocateAndSave();
         const out = tag.value();
