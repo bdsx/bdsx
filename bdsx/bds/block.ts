@@ -12,7 +12,7 @@ import type { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
-import { BlockActorDataPacket } from "./packets";
+import type { BlockActorDataPacket } from "./packets";
 import type { Player, ServerPlayer } from "./player";
 
 @nativeClass(null)
