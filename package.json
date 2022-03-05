@@ -14,7 +14,8 @@
     "build": "tsc",
     "newplugin": "ts-node ./bdsx/checkgate ./pluginmgr/new",
     "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr",
-    "shellprepare": "ts-node ./bdsx/shellprepare"
+    "shellprepare": "ts-node ./bdsx/shellprepare",
+    "checksymbols": "ts-node ./bdsx/checkgate ./checksymbols"
   },
   "dependencies": {
     "bdsx": "file:bdsx",

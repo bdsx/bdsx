@@ -3,12 +3,17 @@ import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
-import type { BlockPos, ChunkPos } from "./blockpos";
+import type { DimensionId } from "./actor";
+import type { ChunkPos } from "./blockpos";
+import { BlockPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
+import type { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
+import { BlockActorDataPacket } from "./packets";
+import type { Player, ServerPlayer } from "./player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -70,6 +75,9 @@ export class BlockLegacy extends NativeClass {
     getStateFromLegacyData(data:number):Block {
         abstract();
     }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -115,6 +123,9 @@ export class Block extends NativeClass {
         abstract();
     }
     hasBlockEntity():boolean {
+        abstract();
+    }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
         abstract();
     }
 }
@@ -171,6 +182,12 @@ export class BlockSource extends NativeClass {
     getBlockEntity(blockPos:BlockPos):BlockActor|null {
         abstract();
     }
+    getDimension():Dimension {
+        abstract();
+    }
+    getDimensionId():DimensionId {
+        abstract();
+    }
     removeBlockEntity(blockPos:BlockPos):void {
         abstract();
     }
@@ -181,6 +198,9 @@ export class BlockActor extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
 
+    isChestBlockActor(): this is ChestBlockActor {
+        abstract();
+    }
     /**
      * @param tag this function stores nbt values to this parameter
      */
@@ -211,6 +231,16 @@ export class BlockActor extends NativeClass {
     setChanged(): void{
         abstract();
     }
+    /**
+     * Sets a custom name to the block. (e.g : chest, furnace...)
+     *
+     * @param name - Name to set
+     *
+     * @remarks This will not update the block client-side. use `BlockActor.updateClientSide()` to do so.
+     */
+    setCustomName(name: string):void{
+        abstract();
+    }
     getContainer(): Container | null{
         abstract();
     }
@@ -218,6 +248,25 @@ export class BlockActor extends NativeClass {
         abstract();
     }
     getPosition(): BlockPos {
+        abstract();
+    }
+
+    /**
+     * make a packet for updating the client-side.
+     * it has a risk about memoryleaks but following the original function name.
+     *
+     * @return allocated BlockActorDataPacket. it needs to be disposed of.
+     */
+    getServerUpdatePacket(blockSource:BlockSource):BlockActorDataPacket {
+        abstract();
+    }
+
+    /**
+     * Updates the block actor client-side.
+     *
+     * @param player - The player to update the block for.
+     */
+    updateClientSide(player: ServerPlayer): void {
         abstract();
     }
 }
@@ -272,4 +321,37 @@ export enum BlockActorType {
 @nativeClass(null)
 export class ButtonBlock extends BlockLegacy {
     // unknown
+}
+
+@nativeClass(null)
+export class ChestBlock extends BlockLegacy {
+
+}
+
+@nativeClass(null)
+export class ChestBlockActor extends BlockActor {
+    /**
+     * Returns whether the chest is a double chest
+     */
+    isLargeChest(): boolean {
+        abstract();
+    }
+    /**
+     * Makes a player open the chest
+     *
+     * @param player - Player that will open the chest
+     *
+     * @remarks The chest must be in range of the player !
+     */
+    openBy(player: Player): void {
+        abstract();
+    }
+    /**
+     * Returns the position of the other chest forming the double chest.
+     *
+     * @remarks If the chest is not a double chest, BlockPos ZERO (0,0,0) is returned.
+     */
+    getPairedChestPosition(): BlockPos {
+        abstract();
+    }
 }

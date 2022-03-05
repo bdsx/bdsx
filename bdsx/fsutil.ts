@@ -37,7 +37,15 @@ class DirentFromStat extends (fs.Dirent || class{}) {
 }
 
 export namespace fsutil {
-    export const projectPath = path.resolve(process.cwd(), process.argv[1]);
+    let dirname = path.dirname(__dirname);
+    const dirparsed = path.parse(dirname);
+    if (dirparsed.base === 'node_modules') {
+        // bypass the issue on Wine & BDSX
+        // Wine & node cannot resolve the linked module path.
+        dirname = dirparsed.dir;
+    }
+
+    export const projectPath = dirname;
 
     /** @deprecated use fsutil.projectPath */
     export function getProjectPath():string {

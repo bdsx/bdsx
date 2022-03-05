@@ -6,7 +6,13 @@ import { ActorWildcardCommandSelector, Command, CommandPermissionLevel, CommandP
 import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
+import { fsutil } from "bdsx/fsutil";
+import { bedrockServer } from "bdsx/launcher";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
+import { shellPrepareData } from "bdsx/shellprepare/data";
+import * as path from 'path';
+import * as fs from 'fs';
+import { serverInstance } from "bdsx/bds/server";
 
 command.find('say').signature.permissionLevel = CommandPermissionLevel.Admin; // change the say permission
 
@@ -116,6 +122,23 @@ command.register('jjj', 'block example').overload((param, origin, output)=>{
     block: Command.Block,
 });
 
+// disable examples
+command.register('disable_example', 'disable examples').overload((param, origin, output)=>{
+    const indexPath = path.join(fsutil.projectPath, 'index.ts');
+    if (fs.statSync(indexPath).size >= 150) {
+        output.error('Failed to disable, index.ts is modified.');
+    } else {
+        const content = '\r\n// Please start your own codes from here!';
+        fs.writeFileSync(indexPath, content);
+        fs.writeFileSync(path.join(fsutil.projectPath, 'index.js'), content);
+
+        const data = shellPrepareData.load();
+        data.relaunch = '1';
+        shellPrepareData.save(data);
+        bedrockServer.stop();
+    }
+}, {});
+
 // hook direct
 events.command.on((cmd, origin, ctx)=>{
     switch (cmd) {
@@ -132,3 +155,4 @@ events.command.on((cmd, origin, ctx)=>{
 	}
     return 0; // suppress the command, It will mute 'Unknown command' message.
 });
+

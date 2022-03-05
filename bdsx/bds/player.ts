@@ -5,13 +5,13 @@ import { ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
+import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
+import { BossEventPacket, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
-import { serverInstance } from "./server";
 import type { SerializedSkin } from "./skin";
 
 export class Player extends Mob {
@@ -94,20 +94,6 @@ export class Player extends Mob {
     }
 
     /**
-     * Returns the item currently held by the player
-     */
-    getMainhandSlot(): ItemStack {
-        abstract();
-    }
-
-    /**
-     * Returns the item currently in the player's offhand slot
-     */
-    getOffhandSlot(): ItemStack {
-        abstract();
-    }
-
-    /**
      * Returns the player's permission level
      * @see PlayerPermission
      */
@@ -131,7 +117,12 @@ export class Player extends Mob {
     startCooldown(item: Item): void {
         abstract();
     }
-
+    /**
+     * Changes the player's permissions
+     */
+    setPermissions(permissions: CommandPermissionLevel): void {
+        abstract();
+    }
     /**
      * Changes the player's gamemode
      *
@@ -387,6 +378,9 @@ export class Player extends Mob {
     getPlatform(): BuildPlatform {
         abstract();
     }
+    /**
+     * Returns the player's XUID
+     */
     getXuid(): string {
         abstract();
     }
@@ -447,19 +441,6 @@ export class ServerPlayer extends Player {
      */
     sendNetworkPacket(packet: Packet): void {
         abstract();
-    }
-
-    protected _sendInventory(shouldSelectSlot: boolean): void {
-        abstract();
-    }
-    /**
-     * Updates the player's inventory
-     * @remarks The shouldSelectSlot parameter seems to be pointless
-     *
-     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
-     */
-    sendInventory(shouldSelectSlot: boolean = false): void {
-        serverInstance.nextTick().then(() => this._sendInventory(shouldSelectSlot));
     }
 
     /**
@@ -800,6 +781,26 @@ export class ServerPlayer extends Player {
         const pk = TransferPacket.allocate();
         pk.address = address;
         pk.port = port;
+        this.sendNetworkPacket(pk);
+        pk.dispose();
+    }
+
+    /**
+     * Plays a sound to the player
+     *
+     * @param soundName - Sound name, like "random.burp". See {@link https://minecraft.fandom.com/wiki/Sounds.json/Bedrock_Edition_values}
+     * @param pos - Position where the sound is played (defaults to player position)
+     * @param volume - Volume of the sound (defaults to 1)
+     * @param pitch - Pitch of the sound (defaults to 1)
+     */
+    playSound(soundName: string, pos: {x:number,y:number,z:number} = this.getPosition(), volume: number = 1.0, pitch: number = 1.0): void {
+        const pk = PlaySoundPacket.allocate();
+        pk.soundName = soundName;
+        pk.pos.x = pos.x * 8;
+        pk.pos.y = pos.y * 8;
+        pk.pos.z = pos.z * 8;
+        pk.volume = volume;
+        pk.pitch = pitch;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }

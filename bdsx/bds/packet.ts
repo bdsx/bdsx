@@ -1,3 +1,4 @@
+import { capi } from "../capi";
 import { abstract } from "../common";
 import { AbstractClass, AbstractMantleClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
@@ -65,8 +66,15 @@ export class Packet extends AbstractMantleClass {
         abstract();
     }
     dispose():void {
-        this[sharedptr_of_packet]!.dispose();
-        this[sharedptr_of_packet] = null;
+        const sharedptr = this[sharedptr_of_packet];
+        if (sharedptr === undefined) { // it was allocated with malloc
+            this.destruct();
+            capi.free(this);
+        } else {
+            // it was allocated as sharedptr
+            sharedptr!.dispose();
+            this[sharedptr_of_packet] = null;
+        }
     }
 
     /**

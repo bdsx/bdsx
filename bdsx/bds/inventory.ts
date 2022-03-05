@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, NativeType, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -11,6 +11,7 @@ import type { ItemEnchants } from "./enchants";
 import type { BlockPalette } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
+import { proc } from "./symbols";
 
 /**
  * Values from 1 to 100 are for a player's container counter.
@@ -102,10 +103,10 @@ export class Item extends NativeClass {
         abstract();
     }
     getCommandName():string {
-        const names = this.getCommandNames();
-        const name = names.get(0);
+        const names = this.getCommandNames2();
+        const name = names.get(0)?.name;
         names.destruct();
-        if (name === null) throw Error(`item has not any names`);
+        if (name == null) throw Error(`item has not any names`);
         return name;
     }
     /** @deprecated Use `this.getCommandNames2()` instead */
@@ -370,6 +371,7 @@ export class ItemStackBase extends NativeClass {
 
 @nativeClass(0x90)
 export class ItemStack extends ItemStackBase {
+    static readonly EMPTY_ITEM: ItemStack = proc["ItemStack::EMPTY_ITEM"].as(ItemStack);
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
@@ -389,12 +391,22 @@ export class ItemStack extends ItemStackBase {
         abstract();
     }
 
-    protected _cloneItem(itemStack: ItemStack):void {
+    clone():ItemStack;
+
+    /**
+     * @deprecated use clone()
+     */
+    clone(itemStack: ItemStack):void;
+
+    clone(itemStack?: ItemStack):ItemStack|void {
         abstract();
     }
+    /**
+     * @deprecated use clone()
+     */
     cloneItem(): ItemStack {
         const itemStack = ItemStack.constructWith("minecraft:air");
-        this._cloneItem(itemStack);
+        this.clone(itemStack);
         return itemStack;
     }
 }
@@ -454,7 +466,59 @@ export class PlayerUIContainer extends SimpleContainer {
 }
 
 export enum PlayerUISlot {
-    CursorSelected,
+    CursorSelected = 0,
+    AnvilInput = 1,
+    AnvilMaterial = 2,
+    StoneCutterInput = 3,
+    Trade2Ingredient1 = 4,
+    Trade2Ingredient2 = 5,
+    TradeIngredient1 = 6,
+    TradeIngredient2 = 7,
+    MaterialReducerInput = 8,
+    LoomInput = 9,
+    LoomDye = 10,
+    LoomMaterial = 11,
+    CartographyInput = 12,
+    CartographyAdditional = 13,
+    EnchantingInput = 14,
+    EnchantingMaterial = 15,
+    GrindstoneInput = 16,
+    GrindstoneAdditional = 17,
+    CompoundCreatorInput1 = 18,
+    CompoundCreatorInput2 = 19,
+    CompoundCreatorInput3 = 20,
+    CompoundCreatorInput4 = 21,
+    CompoundCreatorInput5 = 22,
+    CompoundCreatorInput6 = 23,
+    CompoundCreatorInput7 = 24,
+    CompoundCreatorInput8 = 25,
+    CompoundCreatorInput9 = 26,
+    BeaconPayment = 27,
+    Crafting2x2Input1 = 28,
+    Crafting2x2Input2 = 29,
+    Crafting2x2Input3 = 30,
+    Crafting2x2Input4 = 31,
+    Crafting3x3Input1 = 32,
+    Crafting3x3Input2 = 33,
+    Crafting3x3Input3 = 34,
+    Crafting3x3Input4 = 35,
+    Crafting3x3Input5 = 36,
+    Crafting3x3Input6 = 37,
+    Crafting3x3Input7 = 38,
+    Crafting3x3Input8 = 39,
+    Crafting3x3Input9 = 40,
+    MaterialReducerOutput1 = 41,
+    MaterialReducerOutput2 = 42,
+    MaterialReducerOutput3 = 43,
+    MaterialReducerOutput4 = 44,
+    MaterialReducerOutput5 = 45,
+    MaterialReducerOutput6 = 46,
+    MaterialReducerOutput7 = 47,
+    MaterialReducerOutput8 = 48,
+    MaterialReducerOutput9 = 49,
+    CreatedItemOutput = 50,
+    SmithingTableInput = 51,
+    SmithingTableMaterial = 52,
 }
 
 @nativeClass(null)
@@ -556,6 +620,13 @@ export class NetworkItemStackDescriptor extends NativeClass {
     _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
+        abstract();
+    }
+
+    /**
+     * Calls move constructor of NetworkItemStackDescriptor for `this`
+     */
+    [NativeType.ctor_move](temp: NetworkItemStackDescriptor): void {
         abstract();
     }
 }

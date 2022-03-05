@@ -193,3 +193,8 @@ CommandOrigin.prototype.getOriginType = makefunc.js([0xb8], uint8_t, {this: Comm
 
 // void handleCommandOutputCallback(Json::Value &&);
 const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);
+
+const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
+ServerCommandOrigin.prototype[NativeType.dtor] = function() {
+    deleteServerCommandOrigin.call(this, 1);
+};

@@ -5,8 +5,8 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
-import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
-import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerSleepInBedEvent } from "./event_impl/entityevent";
+import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerJumpEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerSleepInBedEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -70,6 +70,18 @@ export namespace events {
     export const campfireDouse = new Event<(event: CampfireTryDouseFire) => void | CANCEL>();
     /** Cancellable but the client will have the motion and sound*/
     export const buttonPress = new Event<(event: ButtonPressEvent) => void | CANCEL>();
+    /** Cancellable.
+     * Triggered when a player opens a chest. Cancelling this event will prevent the player from opening the chest.
+     * To note : This event works for all chest types (normal chests, trapped chests, ender chests).
+     */
+    export const chestOpen = new Event<(event: ChestOpenEvent) => void | CANCEL>();
+    /** Cancellable.
+     * Triggered when 2 chests are paired to form a double chest. Cancelling this event will prevent the chests from pairing.
+     * To note : This event works for all chest types that can be doubled (normal chests, trapped chests).
+     */
+    export const chestPair = new Event<(event: ChestPairEvent) => void | CANCEL>();
+    /** Cancellable but only in a few cases (e.g. interacting with the blocks such as anvil, grindstone, enchanting table, etc.*/
+    export const blockInteractedWith = new Event<(event: BlockInteractedWithEvent) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Entity events
@@ -133,12 +145,15 @@ export namespace events {
     /** Cancellable */
     export const splashPotionHit = new Event<(event: SplashPotionHitEvent) => void | CANCEL>();
     /** Not cancellable */
-    export const projectileShoot = new Event <(event:ProjectileShootEvent)=> void> ();
+    export const projectileShoot = new Event <(event:ProjectileShootEvent) => void> ();
     /** Cancellable
      * Triggered when a player sleeps in a bed.
      * Cancelling this event will prevent the player from sleeping.
      */
     export const playerSleepInBed = new Event<(event: PlayerSleepInBedEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const playerJump = new Event<(event: PlayerJumpEvent) => void | CANCEL>();
+
     ////////////////////////////////////////////////////////
     // Level events
 

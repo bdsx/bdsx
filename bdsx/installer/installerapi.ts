@@ -72,6 +72,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
 
     const KEEPS = new Set([
         `${sep}whitelist.json`,
+        `${sep}allowlist.json`,
         `${sep}valid_known_packs.json`,
         `${sep}server.properties`,
         `${sep}permissions.json`,

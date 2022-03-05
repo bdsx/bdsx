@@ -8,7 +8,7 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel, MCRESULT } from "./command";
-import { Dimension } from "./dimension";
+import type { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
 import type { ArmorSlot, ItemStack, SimpleContainer } from "./inventory";
@@ -17,7 +17,6 @@ import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
-import { serverInstance } from "./server";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -470,6 +469,46 @@ export class Actor extends AbstractClass {
     getActorIdentifier():ActorDefinitionIdentifier {
         abstract();
     }
+
+    /**
+     * Returns the item currently in the entity's mainhand slot
+     */
+    getCarriedItem(): ItemStack {
+        abstract();
+    }
+    /**
+     * @alias of getCarriedItem
+     */
+    getMainhandSlot(): ItemStack {
+        return this.getCarriedItem();
+    }
+
+    /**
+     * Sets the item currently in the entity's mainhand slot
+     */
+    setCarriedItem(item: ItemStack): void {
+        abstract();
+    }
+    /**
+     * @alias of setCarriedItem
+     */
+    setMainhandSlot(item: ItemStack): void {
+        this.setCarriedItem(item);
+    }
+
+    /**
+     * Returns the item currently in the entity's offhand slot
+     */
+    getOffhandSlot(): ItemStack {
+        abstract();
+    }
+    /**
+     * Sets the item currently in the entity's offhand slot
+     */
+    setOffhandSlot(item: ItemStack): void {
+        abstract();
+    }
+
     /**
      * @alias instanceof Mob
      */
@@ -495,6 +534,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Kills the entity (itself)
+     */
+    kill(): void {
+        abstract();
+    }
+    /**
      * Returns the entity's attribute map
      */
     getAttributes():BaseAttributeMap {
@@ -507,6 +552,9 @@ export class Actor extends AbstractClass {
         abstract();
     }
 
+    setHurtTime(time:number):void {
+        abstract();
+    }
     /**
      * Changes the entity's name
      *
@@ -629,7 +677,7 @@ export class Actor extends AbstractClass {
     /**
      * Gets the entity component of bedrock scripting api
      *
-     * @deprecated Needs more implement
+     * @deprecated bedrock scripting API will be removed.
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;
@@ -800,6 +848,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Returns if the entity is alive
+     */
+    isAlive(): boolean {
+        abstract();
+    }
+    /**
      * Returns if the entity is invisible
      */
     isInvisible(): boolean {
@@ -882,17 +936,24 @@ export class Mob extends Actor {
     sendArmorSlot(slot:ArmorSlot):void {
         abstract();
     }
-    protected _sendInventory(shouldSelectSlot: boolean): void {
-        abstract();
-    }
-    sendInventory(shouldSelectSlot: boolean = false): void {
-        serverInstance.nextTick().then(() => this._sendInventory(shouldSelectSlot));
-    }
     setSprinting(shouldSprint:boolean):void {
         abstract();
     }
     kill():void {
         abstract();
+    }
+
+    protected _sendInventory(shouldSelectSlot: boolean): void {
+        abstract();
+    }
+    /**
+     * Updates the mob's inventory
+     * @remarks used in PlayerHotbarPacket if the mob is a player
+     *
+     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
+     */
+    sendInventory(shouldSelectSlot:boolean = false): void {
+        this._sendInventory(shouldSelectSlot);
     }
 }
 

@@ -1,9 +1,10 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource, ButtonBlock } from "../bds/block";
+import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
+import { VanillaServerGameplayEventListener } from "../bds/server";
 import { CANCEL } from "../common";
 import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
@@ -35,6 +36,77 @@ export class BlockPlaceEvent {
         public block: Block,
         public blockSource: BlockSource,
         public blockPos: BlockPos,
+    ) {
+    }
+}
+
+export enum PistonAction {
+    Extend = 1,
+    Retract = 3,
+}
+export class PistonMoveEvent {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public action: PistonAction,
+    ) {
+    }
+}
+
+export class FarmlandDecayEvent {
+    constructor(
+        public block: Block,
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public culprit: Actor,
+    ) {
+    }
+}
+
+export class CampfireTryLightFire {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+    ) {
+    }
+}
+
+export class CampfireTryDouseFire {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+    ) {
+    }
+}
+
+export class ButtonPressEvent {
+    constructor(
+        public buttonBlock: ButtonBlock,
+        public player: Player,
+        public blockPos: BlockPos,
+        public playerOrientation: number,
+    ) {
+    }
+}
+
+export class ChestOpenEvent {
+    constructor(
+        public chestBlock: ChestBlock,
+        public player: Player,
+        public blockPos: BlockPos,
+        public face: number,
+    ) {
+    }
+}
+
+export class ChestPairEvent {
+    /**
+     * @param lead - Whether the chest is the lead chest.
+     */
+    constructor(
+        readonly chest: ChestBlockActor,
+        readonly chest2: ChestBlockActor,
+        readonly lead: boolean,
     ) {
     }
 }
@@ -75,18 +147,6 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
 }
 const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
-export enum PistonAction {
-    Extend = 1,
-    Retract = 3,
-}
-export class PistonMoveEvent {
-    constructor(
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-        public action: PistonAction,
-    ) {
-    }
-}
 function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):void_t {
     const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
     events.pistonMove.fire(event);
@@ -96,15 +156,6 @@ function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):v
 }
 const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);
 
-export class FarmlandDecayEvent {
-    constructor(
-        public block: Block,
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-        public culprit: Actor,
-    ) {
-    }
-}
 function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: BlockPos, culprit: Actor, fallDistance: float32_t):void_t {
     const event = new FarmlandDecayEvent(block, blockPos, blockSource, culprit);
     const canceled = events.farmlandDecay.fire(event) === CANCEL;
@@ -117,14 +168,6 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
 }
 const _onFarmlandDecay = procHacker.hooking("FarmBlock::transformOnFall", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
 
-export class CampfireTryLightFire {
-    constructor(
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-    ) {
-    }
-}
-
 function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryLightFire(blockPos, blockSource);
     const canceled = events.campfireLight.fire(event) === CANCEL;
@@ -135,14 +178,6 @@ function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool
 }
 
 const _CampfireTryLightFire = procHacker.hooking("?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryLightFire);
-
-export class CampfireTryDouseFire {
-    constructor(
-        public blockPos: BlockPos,
-        public blockSource: BlockSource,
-    ) {
-    }
-}
 
 function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryDouseFire(blockPos, blockSource);
@@ -155,15 +190,52 @@ function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool
 
 const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);
 
-export class ButtonPressEvent {
-    constructor(public buttonBlock: ButtonBlock, public player: Player, public blockPos: BlockPos, public playerOrientation: uint8_t) { }
-}
-
-function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: uint8_t): boolean {
+function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: number): boolean {
     const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);
     const canceled = events.buttonPress.fire(event) === CANCEL;
+    decay(blockPos);
+    decay(buttonBlock);
     if (canceled) return false;
-
     return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
 }
+
 const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
+
+function onChestOpen(chestBlock: ChestBlock, player: Player, blockPos: BlockPos, face: number): boolean {
+    const event = new ChestOpenEvent(chestBlock, player, blockPos, face);
+    const canceled = events.chestOpen.fire(event) === CANCEL;
+    decay(blockPos);
+    decay(chestBlock);
+    if (canceled) return false;
+    return _onChestOpen(chestBlock, player, blockPos, face);
+}
+
+const _onChestOpen = procHacker.hooking("ChestBlock::use", bool_t, null, ChestBlock, Player, BlockPos, uint8_t)(onChestOpen);
+
+function onChestPair(chest: ChestBlockActor, chest2: ChestBlockActor, lead: bool_t): void {
+    const event = new ChestPairEvent(chest, chest2, lead);
+    const canceled = events.chestPair.fire(event) === CANCEL;
+    decay(chest);
+    decay(chest2);
+    if (canceled) return;
+    return _onChestPair(chest, chest2, lead);
+}
+
+const _onChestPair = procHacker.hooking("ChestBlockActor::pairWith", void_t, null, ChestBlockActor, ChestBlockActor, bool_t)(onChestPair);
+
+export class BlockInteractedWithEvent {
+    constructor(public player: Player, public blockPos: BlockPos) {}
+}
+const _onBlockInteractedWith = procHacker.hooking(
+    "VanillaServerGameplayEventListener::onBlockInteractedWith",
+    int32_t,
+    null,
+    VanillaServerGameplayEventListener,
+    Player,
+    BlockPos,
+)((self, player, pos) => {
+    const event = new BlockInteractedWithEvent(player, pos);
+    const canceled = events.blockInteractedWith.fire(event) === CANCEL;
+    if (canceled) return 1;
+    return _onBlockInteractedWith(self, player, pos);
+});

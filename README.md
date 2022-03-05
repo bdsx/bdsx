@@ -60,7 +60,7 @@ Run `bdsx.bat` (or `bdsx.sh` on Linux) to start BDSX
 [bdsx project]
 ├ [bdsx] # Core Library
 ├ [example_and_test] # Examples for using the BDSX API and tests of the BDSX API
-├ [bedrock_server] # BDS instalation
+├ [bedrock_server] # BDS installation
 ├ launcher.ts # Script for launching BDS
 ├ index.ts # Main entry point. This file is required by the launcher when BDS is fully started.
 ├ bdsx.sh # Executable for Linux
@@ -73,7 +73,7 @@ Run `bdsx.bat` (or `bdsx.sh` on Linux) to start BDSX
 > For examples, see the `example_and_test` folder. There are some plugins available on npm in the @bdsx organization as well.  
 
 ## Make a bdsx plugin
-Please check `plugin-example/README.md`.
+Please check [`plugin-example/README.md`](plugin-example/README.md).
 
 ## Discord
 https://discord.gg/pC9XdkC
