@@ -484,6 +484,7 @@ export const undecoratedSymbols = [
     'OnFireSystem::setOnFire',
     'OnFireSystem::setOnFireNoEffects',
     'Player::getXuid',
+    'Item::getSerializedName',
 ] as const;
 
 // decorated symbols

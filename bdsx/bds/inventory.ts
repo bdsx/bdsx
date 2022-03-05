@@ -142,6 +142,9 @@ export class Item extends NativeClass {
     setAllowOffhand(value:boolean):void {
         abstract();
     }
+    getSerializedName():CxxString {
+        abstract();
+    }
 }
 
 /**
