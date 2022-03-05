@@ -1,6 +1,8 @@
 import { CommandParameterType } from "../commandparam";
+import { abstract } from "../common";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint16_t, uint8_t } from "../nativetype";
+import { procHacker } from "./proc";
 
 export enum Facing {
     Down,
@@ -9,6 +11,7 @@ export enum Facing {
     South,
     West,
     East,
+
     Max,
 }
 
@@ -27,6 +30,10 @@ export class BlockPos extends NativeClass {
         this.z = pos.z;
     }
 
+    relative(facing:Facing, steps:number):BlockPos {
+        abstract();
+    }
+
     static create(x:number, y:number, z:number):BlockPos {
         const v = new BlockPos(true);
         v.x = x;
@@ -39,6 +46,8 @@ export class BlockPos extends NativeClass {
         return {x:this.x, y:this.y, z:this.z};
     }
 }
+
+BlockPos.prototype.relative = procHacker.js("BlockPos::relative", BlockPos, {this:BlockPos, structureReturn:true}, uint8_t, int32_t);
 
 @nativeClass()
 export class ChunkPos extends NativeClass {

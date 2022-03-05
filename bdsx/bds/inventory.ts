@@ -211,6 +211,9 @@ export class ItemStackBase extends NativeClass {
     isNull():boolean {
         abstract();
     }
+    setNull():void {
+        abstract();
+    }
     getAmount():number {
         return this.amount;
     }
@@ -397,13 +400,34 @@ export class ItemStack extends ItemStackBase {
 }
 
 export class Container extends NativeClass {
+    addItem(item:ItemStack):void {
+        abstract();
+    }
+    addItemToFirstEmptySlot(item:ItemStack):boolean {
+        abstract();
+    }
     getSlots():CxxVector<ItemStack> {
+        abstract();
+    }
+    getItem(slot:number):ItemStack {
         abstract();
     }
     getItemCount(compare:ItemStack):int32_t {
         abstract();
     }
     getContainerType():ContainerType {
+        abstract();
+    }
+    hasRoomForItem(item:ItemStack):boolean {
+        abstract();
+    }
+    isEmpty():boolean {
+        abstract();
+    }
+    removeAllItems():void {
+        abstract();
+    }
+    removeItem(slot:number, count:number):void {
         abstract();
     }
     setCustomName(name:string):void {

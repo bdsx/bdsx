@@ -387,6 +387,9 @@ export class Player extends Mob {
     getPlatform(): BuildPlatform {
         abstract();
     }
+    getXuid(): string {
+        abstract();
+    }
 }
 
 namespace RawTextObject {

@@ -5,7 +5,7 @@ import { VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
-import { CxxString, int32_t, NativeType, void_t } from "../nativetype";
+import { CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Actor } from "./actor";
 import type { CommandPositionFloat } from "./command";
 import { JsonValue } from "./connreq";
@@ -13,6 +13,24 @@ import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { procHacker } from "./proc";
 import { proc } from "./symbols";
+
+export enum CommandOriginType {
+    Player,
+    CommandBlock,
+    MinecartCommandBlock,
+    DevConsole,
+    Test,
+    AutomationPlayer,
+    ClientAutomation,
+    Server,
+    Entity,
+    Virtual,
+    GameArgument,
+    EntityServer,
+    Precompiled,
+    GameMasterEntityServer,
+    Scripting,
+}
 
 @nativeClass(null)
 export class CommandOrigin extends AbstractClass {
@@ -52,6 +70,9 @@ export class CommandOrigin extends AbstractClass {
         abstract();
     }
     getLevel(): Level {
+        abstract();
+    }
+    getOriginType():CommandOriginType {
         abstract();
     }
 
@@ -166,6 +187,9 @@ CommandOrigin.prototype.getDimension = makefunc.js([0x38], Dimension, {this: Com
 
 // Actor* CommandOrigin::getEntity();
 CommandOrigin.prototype.getEntity = makefunc.js([0x40], Actor, {this: CommandOrigin});
+
+// enum CommandOriginType CommandOrigin::getOriginType();
+CommandOrigin.prototype.getOriginType = makefunc.js([0xb8], uint8_t, {this: CommandOrigin});
 
 // void handleCommandOutputCallback(Json::Value &&);
 const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);

@@ -64,6 +64,12 @@ export class BlockLegacy extends NativeClass {
     getBlockEntityType(): BlockActorType {
         abstract();
     }
+    getBlockItemId():number {
+        abstract();
+    }
+    getStateFromLegacyData(data:number):Block {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -106,6 +112,9 @@ export class Block extends NativeClass {
         abstract();
     }
     getBlockEntityType(): BlockActorType {
+        abstract();
+    }
+    hasBlockEntity():boolean {
         abstract();
     }
 }
@@ -162,6 +171,9 @@ export class BlockSource extends NativeClass {
     getBlockEntity(blockPos:BlockPos):BlockActor|null {
         abstract();
     }
+    removeBlockEntity(blockPos:BlockPos):void {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -203,6 +215,9 @@ export class BlockActor extends NativeClass {
         abstract();
     }
     getType(): BlockActorType {
+        abstract();
+    }
+    getPosition(): BlockPos {
         abstract();
     }
 }

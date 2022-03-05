@@ -11,12 +11,13 @@ import type { CommandPermissionLevel, MCRESULT } from "./command";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
-import type { ArmorSlot, ItemStack } from "./inventory";
+import type { ArmorSlot, ItemStack, SimpleContainer } from "./inventory";
 import type { Level } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
+import { serverInstance } from "./server";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -204,7 +205,7 @@ export class ActorDefinitionIdentifier extends NativeClass {
     static constructWith(type:string|ActorType):ActorDefinitionIdentifier {
         abstract();
     }
-    /** @deprecated */
+    /**@deprecated use {@link constructWith()} instead*/
     static create(type:string|ActorType):ActorDefinitionIdentifier {
         return ActorDefinitionIdentifier.constructWith(type as any);
     }
@@ -400,7 +401,7 @@ export class EntityContextBase extends AbstractClass {
     isValid():boolean {
         abstract();
     }
-    /**@deprecated use `isValid` instead*/
+    /**@deprecated use {@link isValid()} instead*/
     isVaild(): boolean {
         return this.isValid();
     }
@@ -412,7 +413,7 @@ export class EntityContextBase extends AbstractClass {
 export class Actor extends AbstractClass {
     vftable:VoidPointer;
     ctxbase:EntityContextBase;
-    /** @deprecated Use `this.getIdentifier()` instead */
+    /** @deprecated use {@link getIdentifier()} instead */
     get identifier():EntityId {
         return this.getIdentifier();
     }
@@ -819,6 +820,23 @@ export class Actor extends AbstractClass {
         if (entity) return this._isRidingOn(entity);
         return this._isRiding();
     }
+
+    isInWater(): boolean {
+        abstract();
+    }
+
+    getArmorContainer(): SimpleContainer {
+        abstract();
+    }
+
+    setOnFire(seconds:number):void {
+        abstract();
+    }
+
+    setOnFireNoEffects(seconds:number):void {
+        abstract();
+    }
+
     static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
         abstract();
     }
@@ -853,6 +871,27 @@ export class Mob extends Actor {
      * Applies knockback to the mob
      */
     knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+        abstract();
+    }
+    getSpeed():number {
+        abstract();
+    }
+    isSprinting():boolean {
+        abstract();
+    }
+    sendArmorSlot(slot:ArmorSlot):void {
+        abstract();
+    }
+    protected _sendInventory(shouldSelectSlot: boolean): void {
+        abstract();
+    }
+    sendInventory(shouldSelectSlot: boolean = false): void {
+        serverInstance.nextTick().then(() => this._sendInventory(shouldSelectSlot));
+    }
+    setSprinting(shouldSprint:boolean):void {
+        abstract();
+    }
+    kill():void {
         abstract();
     }
 }

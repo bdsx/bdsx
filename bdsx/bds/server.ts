@@ -6,7 +6,7 @@ import { events } from "../event";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { SharedPtr } from "../sharedpointer";
-import { DimensionId } from "./actor";
+import type { DimensionId } from "./actor";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
