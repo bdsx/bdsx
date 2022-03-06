@@ -1025,6 +1025,8 @@ ScoreboardId.prototype.isValid = procHacker.js("ScoreboardId::isValid", bool_t, 
 
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
+MobEffect.prototype.getId = procHacker.js("MobEffect::getId", uint32_t, {this:MobEffect});
+
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
 (MobEffectInstance.prototype as any)._getComponentName = procHacker.js("MobEffectInstance::getComponentName", HashedString, {this:MobEffectInstance});
 MobEffectInstance.prototype.getAmplifier = procHacker.js("MobEffectInstance::getAmplifier", int32_t, {this:MobEffectInstance});

@@ -499,6 +499,7 @@ export const undecoratedSymbols = [
     'CommandOutput::empty',
     'CommandOutput::getSuccessCount',
     'MobEffectInstance::getAmplifier',
+    'MobEffect::getId',
 ] as const;
 
 // decorated symbols
