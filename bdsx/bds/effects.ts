@@ -120,6 +120,9 @@ export class MobEffectInstance extends NativeClass {
     getLingerDuration():number {
         return this.duration * 0.25;
     }
+    getAmplifier(): number {
+        abstract();
+    }
     protected _getComponentName():HashedString {
         abstract();
     }
