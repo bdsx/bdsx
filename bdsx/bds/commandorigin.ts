@@ -11,6 +11,7 @@ import type { CommandPositionFloat } from "./command";
 import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
+import { CompoundTag } from "./nbt";
 import { procHacker } from "./proc";
 import { proc } from "./symbols";
 
@@ -99,6 +100,16 @@ export class CommandOrigin extends AbstractClass {
         handleCommandOutputCallback.call(this, v);
         v.destruct();
         capi.free(v);
+    }
+
+    save():Record<string, any> {
+        const tag = this.allocateAndSave();
+        const out = tag.value();
+        tag.destruct(); // calling capi.free crashes
+        return out;
+    }
+    allocateAndSave(): CompoundTag {
+        abstract();
     }
 }
 
@@ -193,6 +204,9 @@ CommandOrigin.prototype.getOriginType = makefunc.js([0xb8], uint8_t, {this: Comm
 
 // void handleCommandOutputCallback(Json::Value &&);
 const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);
+
+// struct CompoundTag CommandOrigin::serialize(void)
+CommandOrigin.prototype.allocateAndSave = makefunc.js([0xe8], CompoundTag, {this:CommandOrigin, structureReturn:true});
 
 const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
 ServerCommandOrigin.prototype[NativeType.dtor] = function() {
