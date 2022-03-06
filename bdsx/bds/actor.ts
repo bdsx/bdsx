@@ -889,6 +889,10 @@ export class Actor extends AbstractClass {
         return this.isPassenger(ride);
     }
 
+    setVelocity(dest: Vec3): void {
+        abstract();
+    }
+
     isInWater(): boolean {
         abstract();
     }

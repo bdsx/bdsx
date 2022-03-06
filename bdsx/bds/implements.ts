@@ -345,6 +345,7 @@ Actor.prototype.isInvisible = procHacker.js("Actor::isInvisible", bool_t, {this:
 (Actor.prototype as any)._isRiding = procHacker.js("?isRiding@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 (Actor.prototype as any)._isRidingOn = procHacker.js("?isRiding@Actor@@QEBA_NPEAV1@@Z", bool_t, {this:Actor}, Actor);
 (Actor.prototype as any)._isPassenger = procHacker.js("?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z", bool_t, {this:Actor}, ActorUniqueID.ref());
+Actor.prototype.setVelocity = procHacker.js("Actor::setVelocity", void_t, {this:Actor}, Vec3);
 Actor.prototype.isInWater = procHacker.js("Actor::isInWater", bool_t, {this:Actor});
 Actor.prototype.getArmorContainer = procHacker.js("Actor::getArmorContainer", SimpleContainer, {this:Actor});
 
