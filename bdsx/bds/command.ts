@@ -746,7 +746,6 @@ export class Command extends NativeClass {
         param.offset = offset;
         param.flag_offset = flag_offset;
         param.optional = optional;
-        console.log("OP", options);
         param.options = options;
         return param;
     }
