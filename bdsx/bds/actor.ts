@@ -713,9 +713,8 @@ export class Actor extends AbstractClass {
      * Returns whether the specified effect is active on the entity
      */
     hasEffect(id: MobEffectIds):boolean {
-        const effect = MobEffect.constructWith(id);
+        const effect = MobEffect.create(id);
         const retval = this._hasEffect(effect);
-        effect.destruct();
         return retval;
     }
 
@@ -726,9 +725,8 @@ export class Actor extends AbstractClass {
      * Returns the effect instance active on this entity with the specified ID, or null if the entity does not have the effect.
      */
     getEffect(id: MobEffectIds):MobEffectInstance | null {
-        const effect = MobEffect.constructWith(id);
+        const effect = MobEffect.create(id);
         const retval = this._getEffect(effect);
-        effect.destruct();
         return retval;
     }
     removeAllEffects(): void {
