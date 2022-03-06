@@ -1024,7 +1024,7 @@ ScoreboardId.prototype.isValid = procHacker.js("ScoreboardId::isValid", bool_t, 
 (ScoreboardIdentityRef.prototype as any)._modifyScoreInObjective = procHacker.js("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, {this:ScoreboardIdentityRef}, StaticPointer, Objective, int32_t, uint8_t);
 
 // effects.ts
-MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
+MobEffect.constructWith = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
 MobEffect.prototype.getId = procHacker.js("MobEffect::getId", uint32_t, {this:MobEffect});
 
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);

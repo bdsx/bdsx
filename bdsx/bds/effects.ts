@@ -69,6 +69,10 @@ export class MobEffect extends NativeClass {
     // @nativeField(VoidPointer, 0xF8) // std::vector<std::pair<Attribute const*,std::shared_ptr<AttributeModifier>>>
     // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), SharedPtr<AttributeModifier>>;
 
+    static constructWith(id: MobEffectIds): MobEffect {
+        abstract();
+    }
+    /** @deprecated Use {@link constructWith} instead */
     static create(id: MobEffectIds): MobEffect {
         abstract();
     }
