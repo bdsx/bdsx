@@ -426,6 +426,9 @@ export class CommandOutput extends NativeClass {
     constructAs(type:CommandOutputType):void {
         abstract();
     }
+    empty():boolean {
+        abstract();
+    }
     protected _successNoMessage():void {
         abstract();
     }
@@ -437,7 +440,7 @@ export class CommandOutput extends NativeClass {
             this._successNoMessage();
         } else {
             const _params = (CxxVector.make(CommandOutputParameter)).construct();
-            if (params.length > 0) {
+            if (params.length) {
                 if (params[0] instanceof CommandOutputParameter) {
                     for (const param of params as CommandOutputParameter[]) {
                         _params.push(param);
@@ -460,7 +463,7 @@ export class CommandOutput extends NativeClass {
     }
     error(message:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
         const _params = (CxxVector.make(CommandOutputParameter)).construct();
-        if (params.length > 0) {
+        if (params.length) {
             if (params[0] instanceof CommandOutputParameter) {
                 for (const param of params as CommandOutputParameter[]) {
                     _params.push(param);
@@ -475,6 +478,28 @@ export class CommandOutput extends NativeClass {
             }
         }
         this._error(message, _params);
+        _params.destruct();
+    }
+    protected _addMessage(message:string, params:CxxVector<CommandOutputParameter>):void {
+        abstract();
+    }
+    addMessage(message:string, params:CommandOutputParameterType[]|CommandOutputParameter[] = []):void {
+        const _params = (CxxVector.make(CommandOutputParameter)).construct();
+        if (params.length) {
+            if (params[0] instanceof CommandOutputParameter) {
+                for (const param of params as CommandOutputParameter[]) {
+                    _params.push(param);
+                    param.destruct();
+                }
+            } else {
+                for (const param of params as CommandOutputParameterType[]) {
+                    const _param = CommandOutputParameter.create(param);
+                    _params.push(_param);
+                    _param.destruct();
+                }
+            }
+        }
+        this._addMessage(message, _params);
         _params.destruct();
     }
 }
@@ -863,9 +888,11 @@ export namespace CommandRegistry {
 
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructAs = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
+CommandOutput.prototype.empty = procHacker.js('CommandOutput::empty', bool_t, {this:CommandOutput});
 (CommandOutput.prototype as any)._successNoMessage = procHacker.js('?success@CommandOutput@@QEAAXXZ', void_t, {this:CommandOutput});
 (CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 (CommandOutput.prototype as any)._error = procHacker.js('?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
+(CommandOutput.prototype as any)._addMessage = procHacker.js('CommandOutput::addMessage', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 
 MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts

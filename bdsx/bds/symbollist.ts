@@ -495,6 +495,8 @@ export const undecoratedSymbols = [
     'Player::isHungry',
     'Player::resetPlayerLevel',
     'Facing::convertYRotationToFacingDirection',
+    'CommandOutput::addMessage',
+    'CommandOutput::empty',
 ] as const;
 
 // decorated symbols
