@@ -102,14 +102,21 @@ export class CommandOrigin extends AbstractClass {
         capi.free(v);
     }
 
-    save():Record<string, any> {
-        const tag = this.allocateAndSave();
-        const out = tag.value();
-        tag.destruct(); // calling capi.free crashes
-        return out;
-    }
-    allocateAndSave(): CompoundTag {
+    /**
+     * @param tag this function stores nbt values to this parameter
+     */
+    save(tag:CompoundTag):boolean;
+     /**
+      * it returns JS converted NBT
+      */
+    save():Record<string, any>;
+    save(tag?:CompoundTag):any{
         abstract();
+    }
+    allocateAndSave():CompoundTag{
+        const tag = CompoundTag.allocate();
+        this.save(tag);
+        return tag;
     }
 }
 
@@ -206,7 +213,17 @@ CommandOrigin.prototype.getOriginType = makefunc.js([0xb8], uint8_t, {this: Comm
 const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);
 
 // struct CompoundTag CommandOrigin::serialize(void)
-CommandOrigin.prototype.allocateAndSave = makefunc.js([0xe8], CompoundTag, {this:CommandOrigin, structureReturn:true});
+const serializeCommandOrigin = makefunc.js([0xe8], CompoundTag, {this:CommandOrigin}, CompoundTag);
+CommandOrigin.prototype.save = function(tag?:CompoundTag):any {
+    if (tag != null) {
+        return serializeCommandOrigin.call(this, tag);
+    }
+    tag = CompoundTag.allocate();
+    if (!serializeCommandOrigin.call(this, tag)) return null;
+    const res = tag.value();
+    tag.dispose();
+    return res;
+};
 
 const deleteServerCommandOrigin = makefunc.js([0, 0], void_t, {this:ServerCommandOrigin}, int32_t);
 ServerCommandOrigin.prototype[NativeType.dtor] = function() {
