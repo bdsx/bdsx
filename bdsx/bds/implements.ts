@@ -357,6 +357,7 @@ Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectI
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
 (Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
+Actor.prototype.removeAllEffects = procHacker.js("Actor::removeAllEffects", void_t, {this:Actor});
 Actor.prototype.setOnFire = function(seconds:number) {
     OnFireSystem.setOnFire(this, seconds);
 };

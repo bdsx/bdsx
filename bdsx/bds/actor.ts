@@ -731,6 +731,9 @@ export class Actor extends AbstractClass {
         effect.destruct();
         return retval;
     }
+    removeAllEffects(): void {
+        abstract();
+    }
     /**
      * Adds a tag to the entity.
      * Related functions: {@link getTags}, {@link removeTag}, {@link hasTag}

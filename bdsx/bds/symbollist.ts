@@ -500,6 +500,7 @@ export const undecoratedSymbols = [
     'CommandOutput::getSuccessCount',
     'MobEffectInstance::getAmplifier',
     'MobEffect::getId',
+    'Actor::removeAllEffects',
 ] as const;
 
 // decorated symbols
