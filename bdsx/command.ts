@@ -1,6 +1,6 @@
 
 import * as colors from 'colors';
-import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandOutput, CommandParameterData, CommandParameterDataType, CommandPermissionLevel, CommandRegistry, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRegistry, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
@@ -58,6 +58,7 @@ interface CommandFieldOptions {
     optional?:boolean;
     description?:string;
     name?:string;
+    options?:CommandParameterOption;
 }
 type GetTypeFromParam<T> =
     T extends CommandEnum<infer KEYS> ? KEYS :
@@ -89,6 +90,7 @@ export class CustomCommandFactory {
             optkey:keyof CustomCommandImpl|null;
             description?:string;
             name:string;
+            options:CommandParameterOption;
         }
         const paramInfos:ParamInfo[] = [];
         class CustomCommandImpl extends CustomCommand {
@@ -124,6 +126,7 @@ export class CustomCommandFactory {
                 key: key as keyof CustomCommandImpl,
                 name: key,
                 optkey: null,
+                options: CommandParameterOption.None,
             };
 
             if (type instanceof Array) {
@@ -133,6 +136,7 @@ export class CustomCommandFactory {
                 } else {
                     optional = !!opts.optional;
                     info.description = opts.description;
+                    if (opts.options != null) info.options = opts.options;
                     if (opts.name != null) info.name = opts.name;
                 }
                 type = type[0];
@@ -153,13 +157,13 @@ export class CustomCommandFactory {
         CustomCommandImpl.define(fields);
 
         const params:CommandParameterData[] = [];
-        for (const {key, optkey, description, name} of paramInfos) {
+        for (const {key, optkey, description, name, options} of paramInfos) {
             const type = fields[key as string];
             const dataType = type instanceof CommandEnum ?
                 CommandParameterDataType.ENUM :
                 CommandParameterDataType.NORMAL;
-            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, description, dataType, name));
-            else params.push(CustomCommandImpl.mandatory(key, null, description, dataType, name));
+            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, description, dataType, name, options));
+            else params.push(CustomCommandImpl.mandatory(key, null, description, dataType, name, options));
         }
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){

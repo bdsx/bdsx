@@ -497,6 +497,7 @@ export const undecoratedSymbols = [
     'Facing::convertYRotationToFacingDirection',
     'CommandOutput::addMessage',
     'CommandOutput::empty',
+    'CommandOutput::getSuccessCount',
 ] as const;
 
 // decorated symbols
