@@ -874,6 +874,17 @@ export class Actor extends AbstractClass {
         if (entity) return this._isRidingOn(entity);
         return this._isRiding();
     }
+    protected _isPassenger(ride:ActorUniqueID): boolean {
+        abstract();
+    }
+    isPassenger(ride: ActorUniqueID): boolean;
+    isPassenger(ride: Actor): boolean;
+    isPassenger(ride: ActorUniqueID | Actor): boolean {
+        if (ride instanceof Actor) {
+            return this._isPassenger(ride.getUniqueIdBin());
+        }
+        return this.isPassenger(ride);
+    }
 
     isInWater(): boolean {
         abstract();
