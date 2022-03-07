@@ -1,7 +1,6 @@
 import { MobEffectInstance } from "bdsx/bds/effects";
 import { serverInstance } from "bdsx/bds/server";
 import { events } from "bdsx/event";
-import { connectionList } from "./net-login";
 
 const regenId = 10;
 const strengthId = 5;
