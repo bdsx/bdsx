@@ -502,7 +502,7 @@ export const undecoratedSymbols = [
     'MobEffect::getId',
     'Actor::removeAllEffects',
     'Level::getPlayerByXuid',
-    'Actor::isMoving'
+    'Actor::isMoving',
 ] as const;
 
 // decorated symbols
