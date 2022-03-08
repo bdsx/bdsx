@@ -939,6 +939,7 @@ Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCom
 Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
 (Abilities.prototype as any)._setAbility = procHacker.js("Abilities::setAbility", void_t, {this:Abilities}, uint8_t, bool_t);
+Abilities.prototype.isFlying = procHacker.js("Abilities::isFlying", bool_t, {this:Abilities});
 
 const Abilities$getAbilityName = procHacker.js("Abilities::getAbilityName", StaticPointer, null, uint16_t);
 Abilities.getAbilityName = function(abilityIndex:uint16_t):string {

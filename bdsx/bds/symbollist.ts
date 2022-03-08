@@ -504,6 +504,7 @@ export const undecoratedSymbols = [
     'Actor::setVelocity',
     'Level::getPlayerByXuid',
     'Actor::isMoving',
+    'Abilities::isFlying',
 ] as const;
 
 // decorated symbols

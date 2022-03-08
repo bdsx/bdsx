@@ -47,6 +47,10 @@ export class Abilities extends AbstractClass {
         }
     }
 
+    isFlying(): boolean {
+        abstract();
+    }
+
     static getAbilityName(abilityIndex:AbilitiesIndex):string {
         abstract();
     }
