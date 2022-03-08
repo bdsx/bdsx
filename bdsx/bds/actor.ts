@@ -860,6 +860,14 @@ export class Actor extends AbstractClass {
     isInvisible(): boolean {
         abstract();
     }
+    /**
+     * Makes `this` rides on the ride
+     * @param ride ride, vehicle
+     * @returns Returns whether riding was successful
+     */
+    startRiding(ride: Actor): boolean {
+        abstract();
+    }
     protected _isRiding(): boolean {
         abstract();
     }
