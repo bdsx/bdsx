@@ -930,6 +930,9 @@ export class Actor extends AbstractClass {
     runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
         abstract();
     }
+    isMoving(): boolean {
+        abstract();
+    }
 }
 
 export class Mob extends Actor {

@@ -83,6 +83,7 @@ Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegis
 Level.prototype.hasCommandsEnabled = procHacker.js("Level::hasCommandsEnabled", bool_t, {this:Level});
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
+Level.prototype.getPlayerByXuid = procHacker.js("Level::getPlayerByXuid", Player, {this:Level}, CxxString);
 const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
 Level.prototype.syncGameRules = function() {
     const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
@@ -258,6 +259,7 @@ const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", 
 
 Actor.prototype.kill = makefunc.js([0x7b0], void_t, {this:Actor});
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
+Actor.prototype.isMoving = procHacker.js("Actor::isMoving", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
