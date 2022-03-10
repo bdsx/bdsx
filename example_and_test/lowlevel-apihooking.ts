@@ -6,19 +6,13 @@ import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
 import { ItemStack } from "bdsx/bds/inventory";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { TextPacket } from "bdsx/bds/packets";
+import { ServerPlayer } from "bdsx/bds/player";
 import { Config } from "bdsx/config";
 import { pdb } from "bdsx/core";
 import { UNDNAME_NAME_ONLY } from "bdsx/dbghelp";
 import { makefunc } from "bdsx/makefunc";
 import { bool_t, int32_t, int8_t, uint32_t, void_t } from "bdsx/nativetype";
 import { ProcHacker } from "bdsx/prochacker";
-
-function sendText(ni:NetworkIdentifier, message:string):void {
-    const packet = TextPacket.allocate();
-    packet.message = message;
-    packet.sendTo(ni);
-    packet.dispose();
-}
 
 if (!Config.WINE) { // Skip for Linux, pdb searching is not working on Wine. but it's possible with the generated cache.
 
@@ -35,9 +29,10 @@ if (!Config.WINE) { // Skip for Linux, pdb searching is not working on Wine. but
     let halfMiss = false;
     function onDestroyBlock(gameMode:SurvivalMode, blockPos:BlockPos, v:number):boolean {
         halfMiss = !halfMiss;
-        const ni = gameMode.actor.getNetworkIdentifier();
-
-        sendText(ni, `${halfMiss ? 'missed' : 'destroyed'}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`);
+        const actor = gameMode.actor;
+        if (actor instanceof ServerPlayer) {
+            actor.sendMessage(`${halfMiss ? 'missed' : 'destroyed'}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`);
+        }
 
         if (halfMiss) return false;
         return originalFunc(gameMode, blockPos, v);
@@ -50,10 +45,13 @@ if (!Config.WINE) { // Skip for Linux, pdb searching is not working on Wine. but
     // hook the item using on block
     const itemUseOn = hacker.hooking('GameMode::useItemOn',
         bool_t, null, GameMode, ItemStack, BlockPos, int8_t, Vec3, Block)(
-        (gamemode, item, blockpos, n, pos, block)=>{
+        (gameMode, item, blockpos, n, pos, block)=>{
 
-        sendText(gamemode.actor.getNetworkIdentifier(), `${item.getName()} using at ${blockpos.x} ${blockpos.y} ${blockpos.z}`);
-        return itemUseOn(gamemode, item, blockpos, n, pos, block);
+        const actor = gameMode.actor;
+        if (actor instanceof ServerPlayer) {
+            actor.sendMessage(`${item.getName()} using at ${blockpos.x} ${blockpos.y} ${blockpos.z}`);
+        }
+        return itemUseOn(gameMode, item, blockpos, n, pos, block);
     });
 
     //////////////////////////
