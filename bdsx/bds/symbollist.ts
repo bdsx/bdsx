@@ -134,7 +134,6 @@ export const undecoratedSymbols = [
     'ItemStackBase::setCustomLore',
     'ItemStackBase::setDamageValue',
     'ItemStackBase::startCoolDown',
-    'ItemStackBase::sameItem',
     'ItemStackBase::load',
     'ItemStackBase::isStackedByData',
     'ItemStackBase::isStackable',
