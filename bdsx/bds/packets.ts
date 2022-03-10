@@ -1934,7 +1934,7 @@ export const PacketIdToType = {
     0x82: OnScreenTextureAnimationPacket,
     0x83: MapCreateLockedCopy,
     0x84: StructureTemplateDataRequestPacket,
-    0x85: StructureTemplateDataExportPacket,
+    0x85: StructureTemplateDataResponsePacket,
     // 0x86: UpdateBlockProperties, // DEPRECATED
     0x87: ClientCacheBlobStatusPacket,
     0x88: ClientCacheMissResponsePacket,
@@ -1973,7 +1973,7 @@ export const PacketIdToType = {
     0xa9: NpcDialoguePacket,
     0xaa: EduUriResourcePacket,
     0xab: CreatePhotoPacket,
-    0xac: UpdateSubChunkBlocks,
+    0xac: UpdateSubChunkBlocksPacket,
     // 0xad: PhotoInfoRequest
     0xb0: PlayerStartItemCooldownPacket,
     0xb1: ScriptMessagePacket,
