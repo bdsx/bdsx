@@ -60,8 +60,8 @@ class VectorClass extends NativeClass {
  * too many packets to hook. skip them.
  */
 const tooHeavy = new Set<number>();
-tooHeavy.add(0xae);
-tooHeavy.add(0xaf);
+tooHeavy.add(0xae); // SubChunkPacket
+tooHeavy.add(0xaf); // SubChunkRequestPacket
 
 Tester.test({
     async globals() {

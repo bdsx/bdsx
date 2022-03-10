@@ -814,9 +814,13 @@ export class SimpleEventPacket extends Packet {
 }
 
 @nativeClass(null)
-export class TelemetryEventPacket extends Packet {
+export class EventPacket extends Packet {
     // unknown
 }
+/** @deprecated use EventPacket, follow the real class name */
+export const TelemetryEventPacket = EventPacket;
+/** @deprecated use EventPacket, follow the real class name */
+export type TelemetryEventPacket = EventPacket;
 
 @nativeClass(null)
 export class SpawnExperienceOrbPacket extends Packet {
@@ -1004,6 +1008,16 @@ export class CommandOutputPacket extends Packet {
 }
 
 @nativeClass(null)
+export class UpdateTradePacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class UpdateEquipPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
 export class ResourcePackDataInfoPacket extends Packet {
     // unknown
 }
@@ -1105,9 +1119,13 @@ export class SubClientLoginPacket extends Packet {
 }
 
 @nativeClass(null)
-export class WSConnectPacket extends Packet {
+export class AutomationClientConnect extends Packet {
     // unknown
 }
+/** @deprecated use UpdateSubChunkBlocksPacket, follow the real class name */
+export const WSConnect = AutomationClientConnect;
+/** @deprecated use UpdateSubChunkBlocksPacket, follow the real class name */
+export type WSConnect = AutomationClientConnect;
 
 @nativeClass(null)
 export class SetLastHurtByPacket extends Packet {
@@ -1389,9 +1407,13 @@ export class StructureTemplateDataRequestPacket extends Packet {
 }
 
 @nativeClass(null)
-export class StructureTemplateDataExportPacket extends Packet {
+export class StructureTemplateDataResponsePacket extends Packet {
     // unknown
 }
+/** @deprecated use StructureTemplateDataResponsePacket, follow the real class name */
+export const StructureTemplateDataExportPacket = StructureTemplateDataResponsePacket;
+/** @deprecated use StructureTemplateDataResponsePacket, follow the real class name */
+export type StructureTemplateDataExportPacket = StructureTemplateDataResponsePacket;
 
 @nativeClass(null)
 export class ClientCacheBlobStatusPacket extends Packet {
@@ -1726,10 +1748,12 @@ export namespace NpcDialoguePacket {
 //     // unknown
 // }
 
+/**@deprecated not available */
 export class BlockPalette extends Packet {
     // unknown
 }
 
+/**@deprecated not available */
 export class VideoStreamConnect_DEPRECATED extends Packet {
     // unknown
 }
@@ -1761,6 +1785,21 @@ export type UpdateSubChunkBlocks = UpdateSubChunkBlocksPacket;
 // export class PhotoInfoRequest extends Packet {
 //     // unknown
 // }
+
+@nativeClass(null)
+export class PlayerStartItemCooldownPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class ScriptMessagePacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class CodeBuilderSourcePacket extends Packet {
+    // unknown
+}
 
 export const PacketIdToType = {
     0x01: LoginPacket,
@@ -1827,7 +1866,7 @@ export const PacketIdToType = {
     0x3e: SetPlayerGameTypePacket,
     0x3f: PlayerListPacket,
     0x40: SimpleEventPacket,
-    0x41: TelemetryEventPacket,
+    0x41: EventPacket,
     0x42: SpawnExperienceOrbPacket,
     0x43: MapItemDataPacket,
     0x44: MapInfoRequestPacket,
@@ -1842,6 +1881,8 @@ export const PacketIdToType = {
     0x4d: CommandRequestPacket,
     0x4e: CommandBlockUpdatePacket,
     0x4f: CommandOutputPacket,
+    0x50: UpdateTradePacket,
+    0x51: UpdateEquipPacket,
     0x52: ResourcePackDataInfoPacket,
     0x53: ResourcePackChunkDataPacket,
     0x54: ResourcePackChunkRequestPacket,
@@ -1855,7 +1896,7 @@ export const PacketIdToType = {
     0x5c: PurchaseReceiptPacket,
     0x5d: PlayerSkinPacket,
     0x5e: SubClientLoginPacket,
-    0x5f: WSConnectPacket,
+    0x5f: AutomationClientConnect,
     0x60: SetLastHurtByPacket,
     0x61: BookEditPacket,
     0x62: NpcRequestPacket,
@@ -1934,6 +1975,9 @@ export const PacketIdToType = {
     0xab: CreatePhotoPacket,
     0xac: UpdateSubChunkBlocks,
     // 0xad: PhotoInfoRequest
+    0xb0: PlayerStartItemCooldownPacket,
+    0xb1: ScriptMessagePacket,
+    0xb2: CodeBuilderSourcePacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
