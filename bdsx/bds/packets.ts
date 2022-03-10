@@ -1009,7 +1009,20 @@ export class CommandOutputPacket extends Packet {
 
 @nativeClass(null)
 export class UpdateTradePacket extends Packet {
-    // unknown
+    @nativeField(uint8_t)
+    containerId: ContainerId;
+    @nativeField(uint8_t)
+    containerType: ContainerType;
+    @nativeField(CxxString)
+    displayName: CxxString;
+    @nativeField(uint8_t, 0x5c)
+    traderTier:uint8_t;
+    @nativeField(bin64_t, 0x60)
+    entityId: bin64_t;
+    @nativeField(bin64_t, 0x68)
+    lastTradingPlayer: bin64_t;
+    @nativeField(CompoundTag, 0x70)
+    data: CompoundTag;
 }
 
 @nativeClass(null)
