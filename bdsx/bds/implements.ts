@@ -838,11 +838,9 @@ BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Pla
 Block.create = function(blockName:string, data:number = 0):Block|null {
     const itemStack = ItemStack.constructWith(blockName, 1, data);
     const block = itemStack.block;
+    const isBlock = itemStack.isBlock();
     itemStack.destruct();
-    if (itemStack.isBlock()) {
-        return block;
-    }
-    return null;
+    return isBlock ? block : null;
 };
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
