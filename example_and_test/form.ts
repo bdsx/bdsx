@@ -3,7 +3,7 @@ import { command } from "bdsx/command";
 
 command.register('form', 'form example').overload(async(param, origin, output)=>{
     const actor = origin.getEntity();
-    if (actor === null) {
+    if (!actor?.isPlayer()) {
         console.log("it's the command for players");
         return;
     }

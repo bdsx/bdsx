@@ -83,6 +83,7 @@ Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegis
 Level.prototype.hasCommandsEnabled = procHacker.js("Level::hasCommandsEnabled", bool_t, {this:Level});
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
+Level.prototype.getPlayerByXuid = procHacker.js("Level::getPlayerByXuid", Player, {this:Level}, CxxString);
 const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
 Level.prototype.syncGameRules = function() {
     const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
@@ -258,9 +259,12 @@ const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", 
 
 Actor.prototype.kill = makefunc.js([0x7b0], void_t, {this:Actor});
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
+Actor.prototype.isMoving = procHacker.js("Actor::isMoving", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
+Actor.prototype.startRiding = makefunc.js([0x1a8], bool_t, {this:Actor}, Actor);
+
 const Actor$save = procHacker.js("Actor::save", bool_t, {this:Actor}, CompoundTag);
 Actor.prototype.save = function(tag?:CompoundTag):any {
     if (tag != null) {
@@ -345,6 +349,7 @@ Actor.prototype.isInvisible = procHacker.js("Actor::isInvisible", bool_t, {this:
 (Actor.prototype as any)._isRiding = procHacker.js("?isRiding@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 (Actor.prototype as any)._isRidingOn = procHacker.js("?isRiding@Actor@@QEBA_NPEAV1@@Z", bool_t, {this:Actor}, Actor);
 (Actor.prototype as any)._isPassenger = procHacker.js("?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z", bool_t, {this:Actor}, ActorUniqueID.ref());
+Actor.prototype.setVelocity = procHacker.js("Actor::setVelocity", void_t, {this:Actor}, Vec3);
 Actor.prototype.isInWater = procHacker.js("Actor::isInWater", bool_t, {this:Actor});
 Actor.prototype.getArmorContainer = procHacker.js("Actor::getArmorContainer", SimpleContainer, {this:Actor});
 
@@ -934,6 +939,7 @@ Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCom
 Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
 (Abilities.prototype as any)._setAbility = procHacker.js("Abilities::setAbility", void_t, {this:Abilities}, uint8_t, bool_t);
+Abilities.prototype.isFlying = procHacker.js("Abilities::isFlying", bool_t, {this:Abilities});
 
 const Abilities$getAbilityName = procHacker.js("Abilities::getAbilityName", StaticPointer, null, uint16_t);
 Abilities.getAbilityName = function(abilityIndex:uint16_t):string {

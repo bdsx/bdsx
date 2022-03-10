@@ -860,6 +860,14 @@ export class Actor extends AbstractClass {
     isInvisible(): boolean {
         abstract();
     }
+    /**
+     * Makes `this` rides on the ride
+     * @param ride ride, vehicle
+     * @returns Returns whether riding was successful
+     */
+    startRiding(ride: Actor): boolean {
+        abstract();
+    }
     protected _isRiding(): boolean {
         abstract();
     }
@@ -885,6 +893,10 @@ export class Actor extends AbstractClass {
             return this._isPassenger(ride.getUniqueIdBin());
         }
         return this.isPassenger(ride);
+    }
+
+    setVelocity(dest: Vec3): void {
+        abstract();
     }
 
     isInWater(): boolean {
@@ -928,6 +940,9 @@ export class Actor extends AbstractClass {
         });
     }
     runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
+        abstract();
+    }
+    isMoving(): boolean {
         abstract();
     }
 }
