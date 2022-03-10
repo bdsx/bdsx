@@ -295,6 +295,9 @@ export class ItemStackBase extends NativeClass {
     sameItem(item:ItemStack):boolean {
         abstract();
     }
+    sameItemAndAux(item: ItemStack): boolean {
+        abstract();
+    }
     isStackedByData():boolean {
         abstract();
     }

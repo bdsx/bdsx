@@ -726,6 +726,7 @@ ItemStackBase.prototype.setDamageValue = procHacker.js("ItemStackBase::setDamage
 ItemStackBase.prototype.setItem = procHacker.js("ItemStackBase::_setItem", bool_t, {this:ItemStackBase}, int32_t);
 ItemStackBase.prototype.startCoolDown = procHacker.js("ItemStackBase::startCoolDown", void_t, {this:ItemStackBase}, ServerPlayer);
 ItemStackBase.prototype.sameItem = procHacker.js("?sameItem@ItemStackBase@@QEBA_NAEBV1@@Z", bool_t, {this:ItemStackBase}, ItemStackBase);
+ItemStackBase.prototype.sameItemAndAux = procHacker.js("?sameItemAndAux@ItemStackBase@@QEBA_NAEBV1@@Z", bool_t, {this:ItemStackBase}, ItemStackBase);
 ItemStackBase.prototype.isStackedByData = procHacker.js("ItemStackBase::isStackedByData", bool_t, {this:ItemStackBase});
 ItemStackBase.prototype.isStackable = procHacker.js("ItemStackBase::isStackable", bool_t, {this:ItemStackBase});
 ItemStackBase.prototype.isPotionItem = procHacker.js("ItemStackBase::isPotionItem", bool_t, {this:ItemStackBase});

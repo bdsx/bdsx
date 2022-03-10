@@ -749,7 +749,12 @@ export class Command extends NativeClass {
         param.options = options;
         return param;
     }
+
+    static isWildcard(selectorBase: CommandSelectorBase): boolean {
+        abstract();
+    }
 }
+Command.isWildcard = procHacker.js("?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z", bool_t, null, CommandSelectorBase);
 
 export namespace Command {
     export const VFTable = CommandVFTable;
