@@ -121,7 +121,7 @@ Level.prototype.getEntities = function() {
     const out:Actor[] = [];
     for (const refTraits of (this as any)._getEntities()) {
         const entity = Actor.tryGetFromEntity(refTraits.context._getStackRef());
-        if (!(entity instanceof Actor)) continue;
+        if (entity === null) continue;
         out.push(entity);
     }
     return out;
