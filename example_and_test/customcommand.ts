@@ -128,6 +128,21 @@ command.register('jjj', 'block example').overload((param, origin, output)=>{
     block: Command.Block,
 });
 
+// multiple overloads example
+command.register('kkk', 'multiple overloads example')
+    .overload((param, origin, output) => {
+        output.success(`overload example: Add ${param.name}.`);
+}, {
+        option: command.enum("option.add", "add"),
+        name: CxxString,
+})
+    .overload((param, origin, output) => {
+        output.success(`overload example: Remove ${param.id}.`);
+} ,{
+        option: command.enum("option.remove", "remove"),
+        id: int32_t,
+});
+
 // disable examples
 command.register('disable_example', 'disable examples').overload((param, origin, output)=>{
     const indexPath = path.join(fsutil.projectPath, 'index.ts');
