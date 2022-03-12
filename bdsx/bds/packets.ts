@@ -1017,10 +1017,10 @@ export class UpdateTradePacket extends Packet {
     displayName: CxxString;
     @nativeField(uint8_t, 0x5c)
     traderTier:uint8_t;
-    @nativeField(bin64_t, 0x60)
-    entityId: bin64_t;
-    @nativeField(bin64_t, 0x68)
-    lastTradingPlayer: bin64_t;
+    @nativeField(ActorUniqueID, 0x60)
+    entityId: ActorUniqueID;
+    @nativeField(ActorUniqueID, 0x68)
+    lastTradingPlayer: ActorUniqueID;
     @nativeField(CompoundTag, 0x70)
     data: CompoundTag;
 }
