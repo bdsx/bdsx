@@ -430,7 +430,7 @@ export class Actor extends AbstractClass {
     /**
      * Get the Actor instance of an entity with its EntityContext
      */
-    static tryGetFromEntity(entity:EntityContext):Actor {
+    static tryGetFromEntity(entity:EntityContext):Actor|null {
         abstract();
     }
 
