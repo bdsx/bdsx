@@ -77,9 +77,7 @@ export enum MinecraftPacketIds {//int32_t
 	SetPlayerGameType = 0x3e,
 	PlayerList = 0x3f,
 	SimpleEvent = 0x40,
-	/** @deprecated use Event, matching to official name */
 	TelemetryEvent = 0x41,
-	Event = 0x41,
 	SpawnExperienceOrb = 0x42,
 	MapItemData = 0x43,
 	MapInfoRequest = 0x44,
@@ -95,7 +93,7 @@ export enum MinecraftPacketIds {//int32_t
 	CommandBlockUpdate = 0x4e,
 	CommandOutput = 0x4f,
 	UpdateTrade = 0x50,
-	UpdateEquipPacket = 0x51,
+	UpdateEquip = 0x51,
 	ResourcePackDataInfo = 0x52,
 	ResourcePackChunkData = 0x53,
 	ResourcePackChunkRequest = 0x54,
@@ -109,9 +107,7 @@ export enum MinecraftPacketIds {//int32_t
 	PurchaseReceipt = 0x5c,
 	PlayerSkin = 0x5d,
 	SubClientLogin = 0x5e,
-	/** @deprecated use AutomationClientConnect, matching to official name */
 	WSConnect = 0x5f,
-	AutomationClientConnect = 0x5f,
 	SetLastHurtBy = 0x60,
 	BookEdit = 0x61,
 	NpcRequest = 0x62,
@@ -153,9 +149,7 @@ export enum MinecraftPacketIds {//int32_t
 	OnScreenTextureAnimation = 0x82,
 	MapCreateLockedCopy = 0x83,
 	StructureTemplateDataRequest = 0x84,
-	/** @deprecated use StructureTemplateDataResponse, matching to official name */
 	StructureTemplateDataExport = 0x85,
-	StructureTemplateDataResponse = 0x85,
 	// UpdateBlockProperties = 0x86, // DEPRECATED
 	ClientCacheBlobStatus = 0x87,
 	ClientCacheMissResponse = 0x88,

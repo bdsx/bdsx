@@ -814,13 +814,9 @@ export class SimpleEventPacket extends Packet {
 }
 
 @nativeClass(null)
-export class EventPacket extends Packet {
+export class TelemetryEventPacket extends Packet {
     // unknown
 }
-/** @deprecated use EventPacket, follow the real class name */
-export const TelemetryEventPacket = EventPacket;
-/** @deprecated use EventPacket, follow the real class name */
-export type TelemetryEventPacket = EventPacket;
 
 @nativeClass(null)
 export class SpawnExperienceOrbPacket extends Packet {
@@ -1132,13 +1128,9 @@ export class SubClientLoginPacket extends Packet {
 }
 
 @nativeClass(null)
-export class AutomationClientConnect extends Packet {
+export class WSConnectPacket extends Packet {
     // unknown
 }
-/** @deprecated use UpdateSubChunkBlocksPacket, follow the real class name */
-export const WSConnect = AutomationClientConnect;
-/** @deprecated use UpdateSubChunkBlocksPacket, follow the real class name */
-export type WSConnect = AutomationClientConnect;
 
 @nativeClass(null)
 export class SetLastHurtByPacket extends Packet {
@@ -1420,13 +1412,9 @@ export class StructureTemplateDataRequestPacket extends Packet {
 }
 
 @nativeClass(null)
-export class StructureTemplateDataResponsePacket extends Packet {
+export class StructureTemplateDataExportPacket extends Packet {
     // unknown
 }
-/** @deprecated use StructureTemplateDataResponsePacket, follow the real class name */
-export const StructureTemplateDataExportPacket = StructureTemplateDataResponsePacket;
-/** @deprecated use StructureTemplateDataResponsePacket, follow the real class name */
-export type StructureTemplateDataExportPacket = StructureTemplateDataResponsePacket;
 
 @nativeClass(null)
 export class ClientCacheBlobStatusPacket extends Packet {
@@ -1879,7 +1867,7 @@ export const PacketIdToType = {
     0x3e: SetPlayerGameTypePacket,
     0x3f: PlayerListPacket,
     0x40: SimpleEventPacket,
-    0x41: EventPacket,
+    0x41: TelemetryEventPacket,
     0x42: SpawnExperienceOrbPacket,
     0x43: MapItemDataPacket,
     0x44: MapInfoRequestPacket,
@@ -1909,7 +1897,7 @@ export const PacketIdToType = {
     0x5c: PurchaseReceiptPacket,
     0x5d: PlayerSkinPacket,
     0x5e: SubClientLoginPacket,
-    0x5f: AutomationClientConnect,
+    0x5f: WSConnectPacket,
     0x60: SetLastHurtByPacket,
     0x61: BookEditPacket,
     0x62: NpcRequestPacket,
@@ -1947,7 +1935,7 @@ export const PacketIdToType = {
     0x82: OnScreenTextureAnimationPacket,
     0x83: MapCreateLockedCopy,
     0x84: StructureTemplateDataRequestPacket,
-    0x85: StructureTemplateDataResponsePacket,
+    0x85: StructureTemplateDataExportPacket,
     // 0x86: UpdateBlockProperties, // DEPRECATED
     0x87: ClientCacheBlobStatusPacket,
     0x88: ClientCacheMissResponsePacket,
