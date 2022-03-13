@@ -4,9 +4,9 @@ import { Actor } from "./actor";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import { HashedString } from "./hashedstring";
-import { ItemDescriptor, ItemStack, ItemStackBase } from "./inventory";
+import type { ItemDescriptor, ItemStack, ItemStackBase } from "./inventory";
 import { CompoundTag } from "./nbt";
-import { Player } from "./player";
+import type { Player } from "./player";
 
 export class ItemComponent extends NativeClass {
     getIdentifier(): string | null {
