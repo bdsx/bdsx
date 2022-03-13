@@ -895,6 +895,11 @@ export class Actor extends AbstractClass {
         return this.isPassenger(ride);
     }
 
+    /**
+     * The result is smooth movement only with `server-authoritative-movement=server-auth-with-rewind` & `correct-player-movement=true` in `server.properties`.
+     *
+     * If the entity is a Player, it works with only `server-authoritative-movement=server-auth-with-rewind` & `correct-player-movement=true` in `server.properties`.
+     */
     setVelocity(dest: Vec3): void {
         abstract();
     }
