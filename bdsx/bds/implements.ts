@@ -1254,9 +1254,7 @@ VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, 
 // biome.ts
 Biome.prototype.getBiomeType = procHacker.js("Biome::getBiomeType", uint32_t, {this:Biome});
 
-
 //ItemComponent.ts
-
 const cooldown$vftable = proc["CooldownItemComponent::`vftable'"];
 const Armor$vftable = proc["ArmorItemComponent::`vftable'"];
 const Durability$vftable = proc["DurabilityItemComponent::`vftable'"];
@@ -1278,6 +1276,7 @@ const Shooter$vftable = proc["ShooterItemComponent::`vftable'"];
 const Throwable$vftable = proc["ThrowableItemComponent::`vftable'"];
 const Weapon$vftable = proc["WeaponItemComponent::`vftable'"];
 const Wearable$vftable = proc["WearableItemComponent::`vftable'"];
+
 ItemComponent.setResolver((ptr) => {
     if (ptr === null) return null;
     const vftable = ptr.getPointer();
@@ -1410,8 +1409,6 @@ ItemComponent.prototype.isWeapon = function () {
 ItemComponent.prototype.isWearable = function () {
     return this instanceof WearableItemComponent;
 };
-
-// ItemComponent.prototype.buildNetworkTag = makefunc.js([0x28], Wrapper.make(CompoundTag), {this:ItemComponent});
 
 (CooldownItemComponent.prototype as any)._getIdentifier = procHacker.js("CooldownItemComponent::getIdentifier", HashedString, {this:CooldownItemComponent});
 (ArmorItemComponent.prototype as any)._getIdentifier = procHacker.js("ArmorItemComponent::getIdentifier", HashedString, {this:ArmorItemComponent});

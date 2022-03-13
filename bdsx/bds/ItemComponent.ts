@@ -1,6 +1,5 @@
 import { abstract } from "../common";
 import { NativeClass } from "../nativeclass";
-import { Wrapper } from "../pointer";
 import { Actor } from "./actor";
 import { Block, BlockLegacy, BlockSource } from "./block";
 import { Vec3 } from "./blockpos";

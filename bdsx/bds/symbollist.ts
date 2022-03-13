@@ -584,7 +584,7 @@ export const undecoratedSymbols = [
     'ThrowableItemComponent::buildNetworkTag',
     'WeaponItemComponent::buildNetworkTag',
     'WearableItemComponent::buildNetworkTag',
-    'ComponentItem::initializeFromNetwork'
+    'ComponentItem::initializeFromNetwork',
 ] as const;
 
 // decorated symbols
