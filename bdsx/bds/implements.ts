@@ -34,6 +34,7 @@ import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString } from "./hashedstring";
 import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, ItemStackBase, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer, PlayerUISlot, SimpleContainer } from "./inventory";
+import { ArmorItemComponent, CooldownItemComponent, DiggerItemComponent, DisplayNameItemComponent, DurabilityItemComponent, DyePowderItemComponent, EntityPlacerItemComponent, FoodItemComponent, FuelItemComponent, IconItemComponent, ItemComponent, KnockbackResistanceItemComponent, OnUseItemComponent, PlanterItemComponent, ProjectileItemComponent, RecordItemComponent, RenderOffsetsItemComponent, RepairableItemComponent, ShooterItemComponent, ThrowableItemComponent, WeaponItemComponent, WearableItemComponent } from "./ItemComponent";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
@@ -476,6 +477,7 @@ Player.prototype.getCommandPermissionLevel = procHacker.js('Player::getCommandPe
 Player.prototype.getPermissionLevel = procHacker.js("Player::getPlayerPermissionLevel", int32_t, {this:Player});
 Player.prototype.getSkin = procHacker.js("Player::getSkin", SerializedSkin, {this:Player});
 Player.prototype.startCooldown = procHacker.js("Player::startCooldown", void_t, {this:Player}, Item);
+Player.prototype.getItemCooldownLeft = procHacker.js("Player::getItemCooldownLeft", int32_t, {this:Player}, HashedString);
 Player.prototype.setGameType = procHacker.js("ServerPlayer::setPlayerGameType", void_t, {this:Player}, int32_t);
 Player.prototype.setPermissions = makefunc.js([0xbc8], void_t, {this:Player}, int32_t);
 Player.prototype.setSize = procHacker.js("Player::setSize", void_t, {this:Player}, float32_t, float32_t);
@@ -788,6 +790,11 @@ ItemStack.fromTag = function(tag) {
         return res;
     }
 };
+
+ComponentItem.prototype.getCooldownType = procHacker.js("ComponentItem::getCooldownType", HashedString, {this:ComponentItem});
+ComponentItem.prototype.initializeFromNetwork = procHacker.js("ComponentItem::initializeFromNetwork", void_t, {this:ComponentItem}, CompoundTag);
+ComponentItem.prototype.buildNetworkTag = procHacker.js("ComponentItem::buildNetworkTag", CompoundTag.ref(), {this:ComponentItem, structureReturn:true});
+(ComponentItem.prototype as any)._getComponent = procHacker.js("ComponentItem::getComponent", ItemComponent, {this:ComponentItem}, HashedString);
 
 Container.prototype.addItem = procHacker.js("Container::addItem", void_t, {this:Container}, ItemStack);
 Container.prototype.addItemToFirstEmptySlot = procHacker.js("Container::addItemToFirstEmptySlot", bool_t, {this:Container}, ItemStack);
@@ -1246,3 +1253,219 @@ VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, 
 
 // biome.ts
 Biome.prototype.getBiomeType = procHacker.js("Biome::getBiomeType", uint32_t, {this:Biome});
+
+
+//ItemComponent.ts
+
+const cooldown$vftable = proc["CooldownItemComponent::`vftable'"];
+const Armor$vftable = proc["ArmorItemComponent::`vftable'"];
+const Durability$vftable = proc["DurabilityItemComponent::`vftable'"];
+const Digger$vftable = proc["DiggerItemComponent::`vftable'"];
+const DisplayName$vftable = proc["DisplayNameItemComponent::`vftable'"];
+const DyePowder$vftable = proc["DyePowderItemComponent::`vftable'"];
+const EntityPlacer$vftable = proc["EntityPlacerItemComponent::`vftable'"];
+const Food$vftable = proc["FoodItemComponent::`vftable'"];
+const Fuel$vftable = proc["FuelItemComponent::`vftable'"];
+const Icon$vftable = proc["IconItemComponent::`vftable'"];
+const KnockbackResistance$vftable = proc["KnockbackResistanceItemComponent::`vftable'"];
+const OnUse$vftable = proc["OnUseItemComponent::`vftable'"];
+const Planter$vftable = proc["PlanterItemComponent::`vftable'"];
+const Projectile$vftable = proc["ProjectileItemComponent::`vftable'"];
+const Record$vftable = proc["RecordItemComponent::`vftable'"];
+const RenderOffsets$vftable = proc["RenderOffsetsItemComponent::`vftable'"];
+const Repairable$vftable = proc["RepairableItemComponent::`vftable'"];
+const Shooter$vftable = proc["ShooterItemComponent::`vftable'"];
+const Throwable$vftable = proc["ThrowableItemComponent::`vftable'"];
+const Weapon$vftable = proc["WeaponItemComponent::`vftable'"];
+const Wearable$vftable = proc["WearableItemComponent::`vftable'"];
+ItemComponent.setResolver((ptr) => {
+    if (ptr === null) return null;
+    const vftable = ptr.getPointer();
+    if (vftable.equals(cooldown$vftable)) {
+        return ptr.as(CooldownItemComponent);
+    }
+    if (vftable.equals(Armor$vftable)) {
+        return ptr.as(ArmorItemComponent);
+    }
+    if (vftable.equals(Durability$vftable)) {
+        return ptr.as(DurabilityItemComponent);
+    }
+    if (vftable.equals(Digger$vftable)) {
+        return ptr.as(DiggerItemComponent);
+    }
+    if (vftable.equals(DisplayName$vftable)) {
+        return ptr.as(DisplayNameItemComponent);
+    }
+    if (vftable.equals(DyePowder$vftable)) {
+        return ptr.as(DyePowderItemComponent);
+    }
+    if (vftable.equals(EntityPlacer$vftable)) {
+        return ptr.as(EntityPlacerItemComponent);
+    }
+    if (vftable.equals(Food$vftable)) {
+        return ptr.as(FoodItemComponent);
+    }
+    if (vftable.equals(Fuel$vftable)) {
+        return ptr.as(FuelItemComponent);
+    }
+    if (vftable.equals(Icon$vftable)) {
+        return ptr.as(IconItemComponent);
+    }
+    if (vftable.equals(KnockbackResistance$vftable)) {
+        return ptr.as(KnockbackResistanceItemComponent);
+    }
+    if (vftable.equals(OnUse$vftable)) {
+        return ptr.as(OnUseItemComponent);
+    }
+    if (vftable.equals(Planter$vftable)) {
+        return ptr.as(PlanterItemComponent);
+    }
+    if (vftable.equals(Projectile$vftable)) {
+        return ptr.as(ProjectileItemComponent);
+    }
+    if (vftable.equals(Record$vftable)) {
+        return ptr.as(RecordItemComponent);
+    }
+    if (vftable.equals(RenderOffsets$vftable)) {
+        return ptr.as(RenderOffsetsItemComponent);
+    }
+    if (vftable.equals(Repairable$vftable)) {
+        return ptr.as(RepairableItemComponent);
+    }
+    if (vftable.equals(Shooter$vftable)) {
+        return ptr.as(ShooterItemComponent);
+    }
+    if (vftable.equals(Throwable$vftable)) {
+        return ptr.as(ThrowableItemComponent);
+    }
+    if (vftable.equals(Weapon$vftable)) {
+        return ptr.as(WeaponItemComponent);
+    }
+    if (vftable.equals(Wearable$vftable)) {
+        return ptr.as(WearableItemComponent);
+    }
+    return ptr.as(ItemComponent);
+});
+
+ItemComponent.prototype.isCooldown = function () {
+    return this instanceof CooldownItemComponent;
+};
+ItemComponent.prototype.isArmor = function () {
+    return this instanceof ArmorItemComponent;
+};
+ItemComponent.prototype.isDurability = function () {
+    return this instanceof DurabilityItemComponent;
+};
+ItemComponent.prototype.isDigger = function () {
+    return this instanceof DiggerItemComponent;
+};
+ItemComponent.prototype.isDisplayName = function () {
+    return this instanceof DisplayNameItemComponent;
+};
+ItemComponent.prototype.isDyePowder = function () {
+    return this instanceof DyePowderItemComponent;
+};
+ItemComponent.prototype.isEntityPlacer = function () {
+    return this instanceof EntityPlacerItemComponent;
+};
+ItemComponent.prototype.isFood = function () {
+    return this instanceof FoodItemComponent;
+};
+ItemComponent.prototype.isFuel = function () {
+    return this instanceof FuelItemComponent;
+};
+ItemComponent.prototype.isIcon = function () {
+    return this instanceof IconItemComponent;
+};
+ItemComponent.prototype.isKnockbackResistance = function () {
+    return this instanceof KnockbackResistanceItemComponent;
+};
+ItemComponent.prototype.isOnUse = function () {
+    return this instanceof OnUseItemComponent;
+};
+ItemComponent.prototype.isPlanter = function () {
+    return this instanceof PlanterItemComponent;
+};
+ItemComponent.prototype.isProjectile = function () {
+    return this instanceof ProjectileItemComponent;
+};
+ItemComponent.prototype.isRecord = function () {
+    return this instanceof RecordItemComponent;
+};
+ItemComponent.prototype.isRenderOffsets = function () {
+    return this instanceof RenderOffsetsItemComponent;
+};
+ItemComponent.prototype.isRepairable = function () {
+    return this instanceof RepairableItemComponent;
+};
+ItemComponent.prototype.isShooter = function () {
+    return this instanceof ShooterItemComponent;
+};
+ItemComponent.prototype.isThrowable = function () {
+    return this instanceof ThrowableItemComponent;
+};
+ItemComponent.prototype.isWeapon = function () {
+    return this instanceof WeaponItemComponent;
+};
+ItemComponent.prototype.isWearable = function () {
+    return this instanceof WearableItemComponent;
+};
+
+// ItemComponent.prototype.buildNetworkTag = makefunc.js([0x28], Wrapper.make(CompoundTag), {this:ItemComponent});
+
+(CooldownItemComponent.prototype as any)._getIdentifier = procHacker.js("CooldownItemComponent::getIdentifier", HashedString, {this:CooldownItemComponent});
+(ArmorItemComponent.prototype as any)._getIdentifier = procHacker.js("ArmorItemComponent::getIdentifier", HashedString, {this:ArmorItemComponent});
+(DurabilityItemComponent.prototype as any)._getIdentifier = procHacker.js("DurabilityItemComponent::getIdentifier", HashedString, {this:DurabilityItemComponent});
+(DiggerItemComponent.prototype as any)._getIdentifier = procHacker.js("DiggerItemComponent::getIdentifier", HashedString, {this:DiggerItemComponent});
+(DisplayNameItemComponent.prototype as any)._getIdentifier = procHacker.js("DisplayNameItemComponent::getIdentifier", HashedString, {this:DisplayNameItemComponent});
+(DyePowderItemComponent.prototype as any)._getIdentifier = procHacker.js("DyePowderItemComponent::getIdentifier", HashedString, {this:DyePowderItemComponent});
+(EntityPlacerItemComponent.prototype as any)._getIdentifier = procHacker.js("EntityPlacerItemComponent::getIdentifier", HashedString, {this:EntityPlacerItemComponent});
+(FoodItemComponent.prototype as any)._getIdentifier = procHacker.js("FoodItemComponent::getIdentifier", HashedString, {this:FoodItemComponent});
+(FuelItemComponent.prototype as any)._getIdentifier = procHacker.js("FuelItemComponent::getIdentifier", HashedString, {this:FuelItemComponent});
+(IconItemComponent.prototype as any)._getIdentifier = procHacker.js("IconItemComponent::getIdentifier", HashedString, {this:IconItemComponent});
+(KnockbackResistanceItemComponent.prototype as any)._getIdentifier = procHacker.js("KnockbackResistanceItemComponent::getIdentifier", HashedString, {this:KnockbackResistanceItemComponent});
+(OnUseItemComponent.prototype as any)._getIdentifier = procHacker.js("OnUseItemComponent::getIdentifier", HashedString, {this:OnUseItemComponent});
+(PlanterItemComponent.prototype as any)._getIdentifier = procHacker.js("PlanterItemComponent::getIdentifier", HashedString, {this:PlanterItemComponent});
+(ProjectileItemComponent.prototype as any)._getIdentifier = procHacker.js("ProjectileItemComponent::getIdentifier", HashedString, {this:ProjectileItemComponent});
+(RecordItemComponent.prototype as any)._getIdentifier = procHacker.js("RecordItemComponent::getIdentifier", HashedString, {this:RecordItemComponent});
+(RenderOffsetsItemComponent.prototype as any)._getIdentifier = procHacker.js("RenderOffsetsItemComponent::getIdentifier", HashedString, {this:RenderOffsetsItemComponent});
+(RepairableItemComponent.prototype as any)._getIdentifier = procHacker.js("RepairableItemComponent::getIdentifier", HashedString, {this:RepairableItemComponent});
+(ShooterItemComponent.prototype as any)._getIdentifier = procHacker.js("ShooterItemComponent::getIdentifier", HashedString, {this:ShooterItemComponent});
+(ThrowableItemComponent.prototype as any)._getIdentifier = procHacker.js("ThrowableItemComponent::getIdentifier", HashedString, {this:ThrowableItemComponent});
+(WeaponItemComponent.prototype as any)._getIdentifier = procHacker.js("WeaponItemComponent::getIdentifier", HashedString, {this:WeaponItemComponent});
+(WearableItemComponent.prototype as any)._getIdentifier = procHacker.js("WearableItemComponent::getIdentifier", HashedString, {this:WearableItemComponent});
+
+DurabilityItemComponent.prototype.getDamageChance = procHacker.js("DurabilityItemComponent::getDamageChance", int32_t, {this:DurabilityItemComponent}, int32_t);
+DiggerItemComponent.prototype.mineBlock = procHacker.js("DiggerItemComponent::mineBlock", bool_t, {this:DiggerItemComponent}, ItemStack, Block, int32_t, int32_t, int32_t, Actor);
+EntityPlacerItemComponent.prototype.positionAndRotateActor = procHacker.js("EntityPlacerItemComponent::_positionAndRotateActor", void_t, {this:EntityPlacerItemComponent}, Actor, Vec3, int8_t, Vec3, BlockLegacy);
+EntityPlacerItemComponent.prototype.setActorCustomName = procHacker.js("EntityPlacerItemComponent::_setActorCustomName", void_t, {this:EntityPlacerItemComponent}, Actor, ItemStack);
+FoodItemComponent.prototype.canAlwaysEat = procHacker.js("FoodItemComponent::canAlwaysEat", bool_t, {this:FoodItemComponent});
+FoodItemComponent.prototype.getUsingConvertsToItemDescriptor = procHacker.js("FoodItemComponent::getUsingConvertsToItemDescriptor", ItemDescriptor, {this:FoodItemComponent});
+KnockbackResistanceItemComponent.prototype.getProtectionValue = procHacker.js("KnockbackResistanceItemComponent::getProtectionValue", float32_t, {this:KnockbackResistanceItemComponent});
+ProjectileItemComponent.prototype.getShootDir = procHacker.js("ProjectileItemComponent::getShootDir", Vec3, {this:ProjectileItemComponent}, Player, float32_t);
+ProjectileItemComponent.prototype.shootProjectile = procHacker.js("ProjectileItemComponent::shootProjectile", Actor, {this:ProjectileItemComponent}, BlockSource, Vec3, Vec3, float32_t, Player);
+RecordItemComponent.prototype.getAlias = procHacker.js("RecordItemComponent::getAlias", CxxString, {this:RecordItemComponent});
+RepairableItemComponent.prototype.handleItemRepair = procHacker.js("RepairableItemComponent::handleItemRepair", int32_t, {this:RepairableItemComponent}, ItemStackBase, ItemStackBase);
+ThrowableItemComponent.prototype.getLaunchPower = procHacker.js("ThrowableItemComponent::_getLaunchPower", float32_t, {this:ThrowableItemComponent}, int32_t, int32_t, int32_t);
+
+(CooldownItemComponent.prototype as any)._buildNetworkTag = procHacker.js("CooldownItemComponent::buildNetworkTag", CompoundTag.ref(), {this:CooldownItemComponent, structureReturn:true});
+(ArmorItemComponent.prototype as any)._buildNetworkTag = procHacker.js("ArmorItemComponent::buildNetworkTag", CompoundTag.ref(), {this:ArmorItemComponent, structureReturn:true});
+(DurabilityItemComponent.prototype as any)._buildNetworkTag = procHacker.js("DurabilityItemComponent::buildNetworkTag", CompoundTag.ref(), {this:DurabilityItemComponent, structureReturn:true});
+(DiggerItemComponent.prototype as any)._buildNetworkTag = procHacker.js("DiggerItemComponent::buildNetworkTag", CompoundTag.ref(), {this:DiggerItemComponent, structureReturn:true});
+(DisplayNameItemComponent.prototype as any)._buildNetworkTag = procHacker.js("DisplayNameItemComponent::buildNetworkTag", CompoundTag.ref(), {this:DisplayNameItemComponent, structureReturn:true});
+(DyePowderItemComponent.prototype as any)._buildNetworkTag = procHacker.js("DyePowderItemComponent::buildNetworkTag", CompoundTag.ref(), {this:DyePowderItemComponent, structureReturn:true});
+(EntityPlacerItemComponent.prototype as any)._buildNetworkTag = procHacker.js("EntityPlacerItemComponent::buildNetworkTag", CompoundTag, {this:EntityPlacerItemComponent, structureReturn:true});
+(FoodItemComponent.prototype as any)._buildNetworkTag = procHacker.js("FoodItemComponent::buildNetworkTag", CompoundTag.ref(), {this:FoodItemComponent, structureReturn:true});
+(FuelItemComponent.prototype as any)._buildNetworkTag = procHacker.js("FuelItemComponent::buildNetworkTag", CompoundTag.ref(), {this:FuelItemComponent, structureReturn:true});
+(IconItemComponent.prototype as any)._buildNetworkTag = procHacker.js("IconItemComponent::buildNetworkTag", CompoundTag.ref(), {this:IconItemComponent, structureReturn:true});
+(KnockbackResistanceItemComponent.prototype as any)._buildNetworkTag = procHacker.js("KnockbackResistanceItemComponent::buildNetworkTag", CompoundTag.ref(), {this:KnockbackResistanceItemComponent, structureReturn:true});
+(OnUseItemComponent.prototype as any)._buildNetworkTag = procHacker.js("OnUseItemComponent::buildNetworkTag", CompoundTag.ref(), {this:OnUseItemComponent, structureReturn:true});
+(PlanterItemComponent.prototype as any)._buildNetworkTag = procHacker.js("PlanterItemComponent::buildNetworkTag", CompoundTag.ref(), {this:PlanterItemComponent, structureReturn:true});
+(ProjectileItemComponent.prototype as any)._buildNetworkTag = procHacker.js("ProjectileItemComponent::buildNetworkTag", CompoundTag.ref(), {this:ProjectileItemComponent, structureReturn:true});
+(RecordItemComponent.prototype as any)._buildNetworkTag = procHacker.js("RecordItemComponent::buildNetworkTag", CompoundTag.ref(), {this:RecordItemComponent, structureReturn:true});
+(RenderOffsetsItemComponent.prototype as any)._buildNetworkTag = procHacker.js("RenderOffsetsItemComponent::buildNetworkTag", CompoundTag, {this:RenderOffsetsItemComponent, structureReturn:true});
+(RepairableItemComponent.prototype as any)._buildNetworkTag = procHacker.js("RepairableItemComponent::buildNetworkTag", CompoundTag.ref(), {this:RepairableItemComponent, structureReturn:true});
+(ShooterItemComponent.prototype as any)._buildNetworkTag = procHacker.js("ShooterItemComponent::buildNetworkTag", CompoundTag.ref(), {this:ShooterItemComponent, structureReturn:true});
+(ThrowableItemComponent.prototype as any)._buildNetworkTag = procHacker.js("ThrowableItemComponent::buildNetworkTag", CompoundTag.ref(), {this:ThrowableItemComponent, structureReturn:true});
+(WeaponItemComponent.prototype as any)._buildNetworkTag = procHacker.js("WeaponItemComponent::buildNetworkTag", CompoundTag.ref(), {this:WeaponItemComponent, structureReturn:true});
+(WearableItemComponent.prototype as any)._buildNetworkTag = procHacker.js("WearableItemComponent::buildNetworkTag", CompoundTag.ref(), {this:WearableItemComponent, structureReturn:true});
