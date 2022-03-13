@@ -892,7 +892,7 @@ export class Actor extends AbstractClass {
         if (ride instanceof Actor) {
             return this._isPassenger(ride.getUniqueIdBin());
         }
-        return this.isPassenger(ride);
+        return this._isPassenger(ride);
     }
 
     /**
