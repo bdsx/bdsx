@@ -505,7 +505,8 @@ Tester.test({
     },
 
     async checkPacketNames() {
-        const wrongNames = new Map<string, string>([
+        const wrongNames = new Map<string, string | string[]>([
+            ['', ['UpdateTradePacket', 'UpdateEquipPacket']],
             ['ShowModalFormPacket', 'ModalFormRequestPacket'],
             ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
             ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
@@ -525,9 +526,13 @@ Tester.test({
 
                 let getNameResult = packet.getName();
                 const realname = wrongNames.get(getNameResult);
-                if (realname != null) getNameResult = realname;
-
                 let name = Packet.name;
+
+                if (Array.isArray(realname)) {
+                    getNameResult = realname.find((v) => v === name) ?? getNameResult;
+                } else if (realname != null) {
+                    getNameResult = realname;
+                }
 
                 this.equals(getNameResult, name);
                 this.equals(packet.getId(), Packet.ID);
