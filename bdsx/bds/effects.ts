@@ -69,6 +69,16 @@ export class MobEffect extends NativeClass {
     // @nativeField(VoidPointer, 0xF8) // std::vector<std::pair<Attribute const*,std::shared_ptr<AttributeModifier>>>
     // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), SharedPtr<AttributeModifier>>;
 
+    /**
+     * @deprecated
+     */
+    static constructWith(id: MobEffectIds): MobEffect {
+        abstract();
+    }
+
+    /**
+     * @remark DO NOT DESTRUCT
+     */
     static create(id: MobEffectIds): MobEffect {
         abstract();
     }
@@ -119,6 +129,9 @@ export class MobEffectInstance extends NativeClass {
     }
     getLingerDuration():number {
         return this.duration * 0.25;
+    }
+    getAmplifier(): number {
+        abstract();
     }
     protected _getComponentName():HashedString {
         abstract();

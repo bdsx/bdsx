@@ -10,7 +10,8 @@
     "plugins": [
         "@typescript-eslint",
         "import",
-        "github"
+        "github",
+        "unicorn"
     ],
     "extends": [
       "eslint:recommended",
@@ -43,6 +44,15 @@
       "github/array-foreach": "error",
       "import/no-cycle": "error",
       "import/no-default-export": "error",
+      "unicorn/filename-case": [
+        "error",
+        {
+          "cases": {
+            "kebabCase": true,
+            "snakeCase": true
+          }
+        }
+      ],
       "prefer-arrow-callback": "error",
       "eqeqeq": ["error", "always", {"null": "ignore"}],
       "no-throw-literal": "error",
