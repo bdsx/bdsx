@@ -134,7 +134,6 @@ export const undecoratedSymbols = [
     'ItemStackBase::setCustomLore',
     'ItemStackBase::setDamageValue',
     'ItemStackBase::startCoolDown',
-    'ItemStackBase::sameItem',
     'ItemStackBase::load',
     'ItemStackBase::isStackedByData',
     'ItemStackBase::isStackable',
@@ -588,4 +587,6 @@ export const decoratedSymbols = [
     '??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@',
     '?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z',
+    '?sameItemAndAux@ItemStackBase@@QEBA_NAEBV1@@Z',
+    '?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z',
 ] as const;

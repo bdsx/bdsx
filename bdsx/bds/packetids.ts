@@ -92,6 +92,8 @@ export enum MinecraftPacketIds {//int32_t
 	CommandRequest = 0x4d,
 	CommandBlockUpdate = 0x4e,
 	CommandOutput = 0x4f,
+	UpdateTrade = 0x50,
+	UpdateEquip = 0x51,
 	ResourcePackDataInfo = 0x52,
 	ResourcePackChunkData = 0x53,
 	ResourcePackChunkRequest = 0x54,
@@ -192,5 +194,8 @@ export enum MinecraftPacketIds {//int32_t
 	CreatePhoto = 0xab,
 	UpdateSubChunkBlocks = 0xac,
 	// PhotoInfoRequest = 0xad,
+	PlayerStartItemCooldown = 0xb0,
+	ScriptMessage = 0xb1,
+	CodeBuilderSource = 0xb2,
 }
 (MinecraftPacketIds as any).__proto__ = null;

@@ -1004,6 +1004,29 @@ export class CommandOutputPacket extends Packet {
 }
 
 @nativeClass(null)
+export class UpdateTradePacket extends Packet {
+    @nativeField(uint8_t)
+    containerId: ContainerId;
+    @nativeField(uint8_t)
+    containerType: ContainerType;
+    @nativeField(CxxString)
+    displayName: CxxString;
+    @nativeField(uint8_t, 0x5c)
+    traderTier:uint8_t;
+    @nativeField(ActorUniqueID, 0x60)
+    entityId: ActorUniqueID;
+    @nativeField(ActorUniqueID, 0x68)
+    lastTradingPlayer: ActorUniqueID;
+    @nativeField(CompoundTag, 0x70)
+    data: CompoundTag;
+}
+
+@nativeClass(null)
+export class UpdateEquipPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
 export class ResourcePackDataInfoPacket extends Packet {
     // unknown
 }
@@ -1726,10 +1749,12 @@ export namespace NpcDialoguePacket {
 //     // unknown
 // }
 
+/**@deprecated not available */
 export class BlockPalette extends Packet {
     // unknown
 }
 
+/**@deprecated not available */
 export class VideoStreamConnect_DEPRECATED extends Packet {
     // unknown
 }
@@ -1761,6 +1786,21 @@ export type UpdateSubChunkBlocks = UpdateSubChunkBlocksPacket;
 // export class PhotoInfoRequest extends Packet {
 //     // unknown
 // }
+
+@nativeClass(null)
+export class PlayerStartItemCooldownPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class ScriptMessagePacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class CodeBuilderSourcePacket extends Packet {
+    // unknown
+}
 
 export const PacketIdToType = {
     0x01: LoginPacket,
@@ -1842,6 +1882,8 @@ export const PacketIdToType = {
     0x4d: CommandRequestPacket,
     0x4e: CommandBlockUpdatePacket,
     0x4f: CommandOutputPacket,
+    0x50: UpdateTradePacket,
+    0x51: UpdateEquipPacket,
     0x52: ResourcePackDataInfoPacket,
     0x53: ResourcePackChunkDataPacket,
     0x54: ResourcePackChunkRequestPacket,
@@ -1932,8 +1974,11 @@ export const PacketIdToType = {
     0xa9: NpcDialoguePacket,
     0xaa: EduUriResourcePacket,
     0xab: CreatePhotoPacket,
-    0xac: UpdateSubChunkBlocks,
+    0xac: UpdateSubChunkBlocksPacket,
     // 0xad: PhotoInfoRequest
+    0xb0: PlayerStartItemCooldownPacket,
+    0xb1: ScriptMessagePacket,
+    0xb2: CodeBuilderSourcePacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
