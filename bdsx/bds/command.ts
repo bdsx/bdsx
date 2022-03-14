@@ -4,10 +4,11 @@ import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
+import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { makefunc } from "../makefunc";
-import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, uint8_t, void_t } from "../nativetype";
+import { AbstractClass, KeysFilter, MantleClass, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, uint64_as_float_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
@@ -79,6 +80,12 @@ export enum CommandVisibilityFlag {
 
 /** @deprecated **/
 export const CommandFlag = CommandCheatFlag; // CommandFlag is actually a class
+
+export enum SoftEnumUpdateType {
+    Add,
+    Remove,
+    Replace,
+}
 
 @nativeClass()
 export class MCRESULT extends NativeClass {
@@ -579,23 +586,24 @@ export class CommandVFTable extends NativeClass {
     execute:VoidPointer|null;
 }
 
-export class CommandEnum<V extends string|number|symbol> extends CommandParameterNativeType<string> {
+// All built-in enums are parsed (if they have enum parsers) to uint32_t*
+export class CommandEnum<V extends string|number|symbol> extends CommandParameterNativeType<uint32_t> {
     public readonly mapper = new Map<string, V>();
 
     constructor(symbol:string, name?:string) {
         super(symbol, name || symbol,
-            CxxString[NativeType.size],
-            CxxString[NativeType.align],
-            CxxString.isTypeOf,
-            CxxString.isTypeOfWeak,
-            CxxString[NativeType.getter],
-            CxxString[NativeType.setter],
-            CxxString[makefunc.getFromParam],
-            CxxString[makefunc.setToParam],
-            CxxString[NativeType.ctor],
-            CxxString[NativeType.dtor],
-            CxxString[NativeType.ctor_copy],
-            CxxString[NativeType.ctor_move]);
+            uint32_t[NativeType.size],
+            uint32_t[NativeType.align],
+            uint32_t.isTypeOf,
+            uint32_t.isTypeOfWeak,
+            uint32_t[NativeType.getter],
+            uint32_t[NativeType.setter],
+            uint32_t[makefunc.getFromParam],
+            uint32_t[makefunc.setToParam],
+            uint32_t[NativeType.ctor],
+            uint32_t[NativeType.dtor],
+            uint32_t[NativeType.ctor_copy],
+            uint32_t[NativeType.ctor_move]);
     }
 
     protected _init():void {
@@ -622,7 +630,34 @@ export class CommandEnum<V extends string|number|symbol> extends CommandParamete
         }
 
         const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const exists = registry.hasEnum(this.name);
         const enumId = registry.addEnumValues(this.name, [...this.mapper.keys()]);
+        const cmdenum = registry.getEnum(this.name)!;
+        if (exists) {
+            // Provide additional parsing on top of the original parser
+            const original = makefunc.js(cmdenum.parser, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
+            cmdenum.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
+                original(registry, storage, tokenPtr, origin, version, error, errorParams);
+                // Some built-in enums have no enum parsers, but they have parsers for other types, for example: Item
+                const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
+                const text = token.getText();
+                const shouldOverride = this.mapper.has(text);
+                if (shouldOverride) {
+                    const values = registry.getEnumValues(this.name)!;
+                    const idx = values.indexOf(text.toLowerCase());
+                    storage.setUint32(idx);
+                }
+                return true;
+            }, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
+        } else {
+            cmdenum.parser = makefunc.np((storage, token, origin, version, error, errorParams) => {
+                const values = registry.getEnumValues(this.name)!;
+                const text = token.getText();
+                const idx = values.indexOf(text.toLowerCase());
+                storage.setUint32(idx);
+                return true;
+            }, bool_t, {this:CommandRegistry}, MantleClass.ref(), CommandRegistry.ParseToken.ref().ref(), CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
+        }
         type_id.register(CommandRegistry, this, enumId);
     }
 }
@@ -662,108 +697,103 @@ export class CommandIndexEnum<T extends number|string> extends CommandEnum<T> {
     }
 }
 
-const parsers = new Map<Type<any>, VoidPointer>();
-let enumParser:VoidPointer;
-
-@nativeClass()
-export class Command extends NativeClass {
-    @nativeField(CommandVFTable.ref())
-    vftable:CommandVFTable; // 0x00
-    @nativeField(int32_t)
-    u1:int32_t; // 0x08
-    @nativeField(VoidPointer)
-    u2:VoidPointer|null; // 0x10
-    @nativeField(int32_t)
-    u3:int32_t; // 0x18
-    @nativeField(int16_t)
-    u4:int16_t; // 0x1c
-
-    [NativeType.ctor]():void {
-        this.vftable = null as any;
-        this.u3 = -1;
-        this.u1 = 0;
-        this.u2 = null;
-        this.u4 = 5;
+export class CommandSoftEnum extends CommandParameterNativeType<string> {
+    constructor(symbol:string, values:string[]) {
+        super(symbol, symbol,
+            CxxString[NativeType.size],
+            CxxString[NativeType.align],
+            CxxString.isTypeOf,
+            CxxString.isTypeOfWeak,
+            CxxString[NativeType.getter],
+            CxxString[NativeType.setter],
+            CxxString[makefunc.getFromParam],
+            CxxString[makefunc.setToParam],
+            CxxString[NativeType.ctor],
+            CxxString[NativeType.dtor],
+            CxxString[NativeType.ctor_copy],
+            CxxString[NativeType.ctor_move]);
+        this.checkValues(values);
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        registry.addSoftEnum(this.name, values);
+        // No type id should be registered, it is the type of string
     }
 
-    static mandatory<CMD extends Command,
-        KEY extends keyof CMD,
-        KEY_ISSET extends KeysFilter<CMD, bool_t>|null>(
-        this:{new():CMD},
-        key:KEY,
-        keyForIsSet:KEY_ISSET,
-        desc?:string|null,
-        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
-        name:string = key as string,
-        options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
-        const cmdclass = this as NativeClassType<any>;
-        const paramType = cmdclass.typeOf(key as string);
-        const offset = cmdclass.offsetOf(key as string);
-        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        return Command.manual(name, paramType, offset, flag_offset, false, desc, type, options);
-    }
-    static optional<CMD extends Command,
-        KEY extends keyof CMD,
-        KEY_ISSET extends KeysFilter<CMD, bool_t>|null>(
-        this:{new():CMD},
-        key:KEY,
-        keyForIsSet:KEY_ISSET,
-        desc?:string|null,
-        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
-        name:string = key as string,
-        options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
-        const cmdclass = this as NativeClassType<any>;
-        const paramType = cmdclass.typeOf(key as string);
-        const offset = cmdclass.offsetOf(key as string);
-        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        return Command.manual(name, paramType, offset, flag_offset, true, desc, type, options);
-    }
-    static manual(
-        name:string,
-        paramType:Type<any>,
-        offset:number,
-        flag_offset:number = -1,
-        optional:boolean = false,
-        desc?:string|null,
-        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
-        options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
-        const param = CommandParameterData.construct();
-        param.tid.id = type_id(CommandRegistry, paramType).id;
-        if (paramType instanceof CommandEnum) {
-            if (desc != null) {
-                throw Error(`CommandEnum does not support description`);
+    protected checkValues(values: string[]): void {
+        for (const value of values) {
+            if (value === "") throw Error(`${value}: soft enum value cannot be empty`); // It will be ignored by CommandRegistry::addSoftEnum if it is empty
+
+            /*
+                Allowed special characters:
+                - (
+                - )
+                - -
+                - .
+                - ?
+                - _
+                and the ones whose ascii code is bigger than 127, like §, ©, etc.
+            */
+            const regex = /[ -'*-,/:->@[-^`{-~]/g;
+            let invalidCharacters = '';
+            let matched:RegExpExecArray|null;
+            while ((matched = regex.exec(value)) !== null) {
+                invalidCharacters += matched[0];
             }
-            desc = paramType.name;
-            param.parser = enumParser;
-        } else {
-            param.parser = CommandRegistry.getParser(paramType);
+            if (invalidCharacters !== '') throw Error(`${value}: soft enum value contains invalid characters (${invalidCharacters})`);
         }
-        param.name = name;
-        param.type = type;
-        param.desc = desc != null ? AllocatedPointer.fromString(desc) : null;
+    }
 
-        param.unk56 = -1;
-        param.offset = offset;
-        param.flag_offset = flag_offset;
-        param.optional = optional;
-        param.options = options;
-        return param;
+    protected updateValues(mode: SoftEnumUpdateType, values:string[]):void {
+        this.checkValues(values);
+        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        registry.updateSoftEnum(mode, this.name, values);
+    }
+
+    addValues(...values:string[]):void;
+    addValues(values:string[]):void;
+    addValues(...values:(string|string[])[]):void {
+        const first = values[0];
+        if (Array.isArray(first)) {
+            this.updateValues(SoftEnumUpdateType.Add, first);
+        } else {
+            this.updateValues(SoftEnumUpdateType.Add, values as string[]);
+        }
+    }
+
+    removeValues(...values:string[]):void;
+    removeValues(values:string[]):void;
+    removeValues(...values:(string|string[])[]):void {
+        const first = values[0];
+        if (Array.isArray(first)) {
+            this.updateValues(SoftEnumUpdateType.Remove, first);
+        } else {
+            this.updateValues(SoftEnumUpdateType.Remove, values as string[]);
+        }
+    }
+
+    replaceValues(...values:string[]):void;
+    replaceValues(values:string[]):void;
+    replaceValues(...values:(string|string[])[]):void {
+        const first = values[0];
+        if (Array.isArray(first)) {
+            this.updateValues(SoftEnumUpdateType.Replace, first);
+        } else {
+            this.updateValues(SoftEnumUpdateType.Replace, values as string[]);
+        }
     }
 }
 
-export namespace Command {
-    export const VFTable = CommandVFTable;
-    export type VFTable = CommandVFTable;
-    export const Block = BlockClass.ref().extends(null, 'Block const * __ptr64', 'Block*') as CommandParameterNativeType<BlockClass>;
-    export const MobEffect = MobEffectClass.ref().extends(null, 'MobEffect const * __ptr64', 'MobEffect*') as CommandParameterNativeType<MobEffectClass>;
-}
-/** @deprecated use Command.Block */
-export const CommandBlock = Command.Block;
-/** @deprecated use Command.MobEffect */
-export const CommandMobEffect = Command.MobEffect;
+const parsers = new Map<Type<any>, VoidPointer>();
 
 export class CommandRegistry extends HasTypeId {
+    enumValues:CxxVector<CxxString>;
+    enums:CxxVector<CommandRegistry.Enum>;
+    postfixes:CxxVector<CxxString>;
+    enumLookup:CxxMap<CxxString, uint32_t>;
+    enumValueLookup:CxxMap<CxxString, uint64_as_float_t>;
+    commandSymbols:CxxVector<CommandRegistry.Symbol>;
     signatures:CxxMap<CxxString, CommandRegistry.Signature>;
+    softEnums:CxxVector<CommandRegistry.SoftEnum>;
+    softEnumLookup:CxxMap<CxxString, uint32_t>;
 
     registerCommand(command:string, description:string, level:CommandPermissionLevel, flag1:CommandCheatFlag|CommandVisibilityFlag, flag2:CommandUsageFlag|CommandVisibilityFlag):void {
         abstract();
@@ -790,7 +820,6 @@ export class CommandRegistry extends HasTypeId {
 
         const sig = this.findCommand(name);
         if (sig === null) throw Error(`${name}: command not found`);
-
         const overload = CommandRegistry.Overload.construct();
         overload.commandVersion = bin.make64(1, 0x7fffffff);
         overload.allocator = allocator;
@@ -830,27 +859,72 @@ export class CommandRegistry extends HasTypeId {
     }
 
     static hasParser<T>(type:Type<T>):boolean {
-        if (type instanceof CommandEnum) return true;
+        if (type instanceof CommandEnum || type instanceof CommandSoftEnum) return true;
         return parsers.has(type);
     }
 
     static setParser(type:Type<any>, parserFnPointer:VoidPointer):void {
         parsers.set(type, parserFnPointer);
     }
-    static setEnumParser(parserFnPointer:VoidPointer):void {
-        enumParser = parserFnPointer;
+
+    hasEnum(name:string):boolean {
+        return this.enumLookup.has(name);
     }
 
-    _addEnumValues(name:CxxString, values:CxxVector<CxxString>):number {
-        abstract();
+    getEnum(name:string):CommandRegistry.Enum|null {
+        const enumIndex = this.enumLookup.get(name);
+        if (enumIndex == null) return null;
+        return this.enums.get(enumIndex);
     }
 
     addEnumValues(name:string, values:string[]):number {
         const _values = CxxVector.make(CxxString).construct();
         _values.setFromArray(values);
-        const ret = this._addEnumValues(name, _values);
+        const ret = CommandRegistry$addEnumValues.call(this, name, _values);
         _values.destruct();
         return ret;
+    }
+
+    getEnumValues(name:string):string[]|null {
+        const values = new Array<string>();
+        const _enum = this.getEnum(name);
+        if (!_enum) return null;
+        for (const {first: valueIndex} of _enum.values) {
+            values.push(this.enumValues.get(valueIndex));
+        }
+        return values;
+    }
+
+    hasSoftEnum(name:string):boolean {
+        return this.softEnumLookup.has(name);
+    }
+
+    getSoftEnum(name:string):CommandRegistry.SoftEnum|null {
+        const enumIndex = this.softEnumLookup.get(name);
+        if (enumIndex == null) return null;
+        return this.softEnums.get(enumIndex);
+    }
+
+    addSoftEnum(name:string, values:string[]):number {
+        const _values = CxxVector.make(CxxString).construct();
+        _values.setFromArray(values);
+        const ret = CommandRegistry$addSoftEnum.call(this, name, _values);
+        _values.destruct();
+        return ret;
+    }
+
+    getSoftEnumValues(name:string):string[]|null {
+        const values = new Array<string>();
+        const _enum = this.getSoftEnum(name);
+        if (!_enum) return null;
+        return _enum.list.toArray();
+    }
+
+    updateSoftEnum(type:SoftEnumUpdateType, name:string, values:string[]):void {
+        const _values = CxxVector.make(CxxString).construct();
+        _values.setFromArray(values);
+        CommandSoftEnumRegistry$updateSoftEnum(this, type, name, _values);
+        _values.destruct();
     }
 }
 
@@ -898,8 +972,162 @@ export namespace CommandRegistry {
 
     @nativeClass(null)
     export class ParseToken extends NativeClass {
+        @nativeField(MantleClass.ref(), 0x18)
+        text:MantleClass;
+        @nativeField(uint32_t)
+        length:uint32_t;
+        @nativeField(CommandRegistry.Symbol)
+        type:CommandRegistry.Symbol;
+
+        getText():string {
+            return this.text.getString().slice(0, this.length);
+        }
+    }
+
+    @nativeClass()
+    export class Enum extends NativeClass {
+        @nativeField(CxxString)
+        name:CxxString;
+        @nativeField(typeid_t)
+        tid:typeid_t<CommandRegistry>;
+        @nativeField(VoidPointer)
+        parser:VoidPointer;
+        @nativeField(CxxVector.make(CxxPair.make(uint64_as_float_t, uint64_as_float_t)))
+        values:CxxVector<CxxPair<uint64_as_float_t, uint64_as_float_t>>;
+    }
+
+    @nativeClass()
+    export class SoftEnum extends NativeClass {
+        @nativeField(CxxString)
+        name:CxxString;
+        @nativeField(CxxVector.make(CxxString))
+        list:CxxVector<CxxString>;
     }
 }
+
+@nativeClass()
+export class Command extends NativeClass {
+    @nativeField(CommandVFTable.ref())
+    vftable:CommandVFTable; // 0x00
+
+    /** @deprecated */
+    @nativeField(int32_t, {ghost:true})
+    u1:int32_t; // 0x08
+    @nativeField(int32_t)
+    version:int32_t; // 0x08
+
+    /** @deprecated */
+    @nativeField(VoidPointer, {ghost:true})
+    u2:VoidPointer|null; // 0x10
+    @nativeField(CommandRegistry.ref())
+    registry:CommandRegistry|null; // 0x10
+
+    /** @deprecated */
+    @nativeField(int32_t, {ghost:true})
+    u3:int32_t; // 0x18
+    @nativeField(int32_t)
+    commandSymbol:int32_t; // 0x18
+
+    /** @deprecated */
+    @nativeField(int16_t, {ghost:true})
+    u4:int16_t; // 0x1c
+    @nativeField(int16_t)
+    permissionLevel:int16_t; // 0x1c
+
+    // IDA also shows this field but it seems everything has been working well without it, so I'm not sure if it's needed
+    // @nativeField(uint8_t)
+    // flags:uint8_t; // 0x1e
+
+    [NativeType.ctor]():void {
+        this.vftable = null as any;
+        this.version = 0;
+        this.registry = null;
+        this.commandSymbol = -1;
+        this.permissionLevel = 5;
+        // this.flags = 0;
+    }
+
+    static mandatory<CMD extends Command,
+        KEY extends keyof CMD,
+        KEY_ISSET extends KeysFilter<CMD, bool_t>|null>(
+        this:{new():CMD},
+        key:KEY,
+        keyForIsSet:KEY_ISSET,
+        desc?:string|null,
+        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
+        name:string = key as string,
+        options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
+        const cmdclass = this as NativeClassType<any>;
+        const paramType = cmdclass.typeOf(key as string);
+        const offset = cmdclass.offsetOf(key as string);
+        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
+        return Command.manual(name, paramType, offset, flag_offset, false, desc, type, options);
+    }
+    static optional<CMD extends Command,
+        KEY extends keyof CMD,
+        KEY_ISSET extends KeysFilter<CMD, bool_t>|null>(
+        this:{new():CMD},
+        key:KEY,
+        keyForIsSet:KEY_ISSET,
+        desc?:string|null,
+        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
+        name:string = key as string,
+        options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
+        const cmdclass = this as NativeClassType<any>;
+        const paramType = cmdclass.typeOf(key as string);
+        const offset = cmdclass.offsetOf(key as string);
+        const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
+        return Command.manual(name, paramType, offset, flag_offset, true, desc, type, options);
+    }
+    static manual(
+        name:string,
+        paramType:Type<any>,
+        offset:number,
+        flag_offset:number = -1,
+        optional:boolean = false,
+        desc?:string|null,
+        type:CommandParameterDataType = CommandParameterDataType.NORMAL,
+        options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
+        const param = CommandParameterData.construct();
+        param.tid.id = type_id(CommandRegistry, paramType).id;
+        if (paramType instanceof CommandEnum) {
+            const registry = serverInstance.minecraft.getCommands().getRegistry();
+            const cmdenum = registry.getEnum(paramType.name)!;
+            if (desc != null) throw Error(`CommandEnum does not support description`);
+            desc = cmdenum.name;
+            // the parser is inside the enum, defining it in param.parser does nothing
+        } else if (paramType instanceof CommandSoftEnum) {
+            const registry = serverInstance.minecraft.getCommands().getRegistry();
+            // a soft enum is a string with autocompletions, for example, objectives in /scoreboard
+            if (desc != null) throw Error(`CommandSoftEnum does not support description`);
+            desc = paramType.name;
+            param.parser = CommandRegistry.getParser(CxxString);
+        } else {
+            param.parser = CommandRegistry.getParser(paramType);
+        }
+        param.name = name;
+        param.type = type;
+        param.desc = desc != null ? AllocatedPointer.fromString(desc) : null;
+
+        param.unk56 = -1;
+        param.offset = offset;
+        param.flag_offset = flag_offset;
+        param.optional = optional;
+        param.options = options;
+        return param;
+    }
+}
+
+export namespace Command {
+    export const VFTable = CommandVFTable;
+    export type VFTable = CommandVFTable;
+    export const Block = BlockClass.ref().extends(null, 'Block const * __ptr64', 'Block*') as CommandParameterNativeType<BlockClass>;
+    export const MobEffect = MobEffectClass.ref().extends(null, 'MobEffect const * __ptr64', 'MobEffect*') as CommandParameterNativeType<MobEffectClass>;
+}
+/** @deprecated use Command.Block */
+export const CommandBlock = Command.Block;
+/** @deprecated use Command.MobEffect */
+export const CommandMobEffect = Command.MobEffect;
 
 CommandOutput.prototype.getSuccessCount = procHacker.js('CommandOutput::getSuccessCount', int32_t, {this:CommandOutput});
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
@@ -915,14 +1143,26 @@ MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::han
 MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
 
 CommandRegistry.abstract({
+    enumValues: [CxxVector.make(CxxString), 192],
+    enums: [CxxVector.make(CommandRegistry.Enum), 216], // accessed in CommandRegistry::addEnumValuesToExisting
+    enumLookup: [CxxMap.make(CxxString, uint32_t), 288],
+    enumValueLookup: [CxxMap.make(CxxString, uint64_as_float_t), 304], // accessed in CommandRegistry::findEnumValue
+    commandSymbols: [CxxVector.make(CommandRegistry.Symbol), 320], // accessed in CommandRegistry::findEnumValue
     signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344], // accessed in CommandRegistry::findCommand
+    softEnums: [CxxVector.make(CommandRegistry.SoftEnum), 488],
+    softEnumLookup: [CxxMap.make(CxxString, uint32_t), 512],
 });
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
-CommandRegistry.prototype.registerCommand = procHacker.js("CommandRegistry::registerCommand", void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
-CommandRegistry.prototype.registerAlias = procHacker.js("CommandRegistry::registerAlias", void_t, {this:CommandRegistry}, CxxString, CxxString);
-CommandRegistry.prototype.findCommand = procHacker.js("CommandRegistry::findCommand", CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
-CommandRegistry.prototype._addEnumValues = procHacker.js("?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z", int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
-(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js("CommandRegistry::serializeAvailableCommands", AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
+CommandRegistry.prototype.registerCommand = procHacker.js('CommandRegistry::registerCommand', void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
+CommandRegistry.prototype.registerAlias = procHacker.js('CommandRegistry::registerAlias', void_t, {this:CommandRegistry}, CxxString, CxxString);
+CommandRegistry.prototype.findCommand = procHacker.js('CommandRegistry::findCommand', CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+const CommandRegistry$addEnumValues = procHacker.js('?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z', int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
+const CommandRegistry$addSoftEnum = procHacker.js('CommandRegistry::addSoftEnum', int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
+(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js('CommandRegistry::serializeAvailableCommands', AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
+
+// CommandSoftEnumRegistry is a class with only one field, which is a pointer to CommandRegistry.
+// I can only find one member function so I am not sure if a dedicated class is needed.
+const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js('CommandSoftEnumRegistry::updateSoftEnum', void_t, null, CommandRegistry.ref().ref(), uint8_t, CxxString, CxxVector.make(CxxString));
 
 'CommandRegistry::parse<AutomaticID<Dimension,int> >';
 'CommandRegistry::parse<Block const * __ptr64>';

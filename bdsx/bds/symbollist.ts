@@ -498,6 +498,8 @@ export const undecoratedSymbols = [
     'CommandOutput::addMessage',
     'CommandOutput::empty',
     'CommandOutput::getSuccessCount',
+    'CommandSoftEnumRegistry::updateSoftEnum',
+    'CommandRegistry::addSoftEnum',
 ] as const;
 
 // decorated symbols

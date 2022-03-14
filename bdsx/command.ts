@@ -1,6 +1,6 @@
 
 import * as colors from 'colors';
-import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRegistry, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRegistry, CommandSoftEnum, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
@@ -104,8 +104,10 @@ export class CustomCommandFactory {
                         if (optkey == null || this[optkey]) {
                             const type = fields[key.toString()];
                             if (type instanceof CommandEnum) {
-                                // match the case
-                                nobj[key] = type.mapper.get((this[key] as any as string).toLowerCase());
+                                const values = this.registry!.getEnumValues(type.name)!;
+                                const enumKey = values[this[key] as any as number];
+                                // match the case, if it is not found from the mapper, then it is defined from Minecraft itself, which should be numbers
+                                nobj[key] = type.mapper.get(enumKey?.toLowerCase()) ?? this[key];
                             } else {
                                 nobj[key] = this[key];
                             }
@@ -159,9 +161,9 @@ export class CustomCommandFactory {
         const params:CommandParameterData[] = [];
         for (const {key, optkey, description, name, options} of paramInfos) {
             const type = fields[key as string];
-            const dataType = type instanceof CommandEnum ?
-                CommandParameterDataType.ENUM :
-                CommandParameterDataType.NORMAL;
+            const dataType = type instanceof CommandEnum ? CommandParameterDataType.ENUM :
+                type instanceof CommandSoftEnum ? CommandParameterDataType.SOFT_ENUM :
+                    CommandParameterDataType.NORMAL;
             if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, description, dataType, name, options));
             else params.push(CustomCommandImpl.mandatory(key, null, description, dataType, name, options));
         }
@@ -210,6 +212,17 @@ function _enum(name:string, ...values:(string|Record<string, number|string>)[]):
     }
 }
 
+function softEnum(name:string, ...values:string[]):CommandSoftEnum;
+function softEnum(name:string, values:string[]):CommandSoftEnum;
+function softEnum(name:string, ...values:(string|string[])[]):CommandSoftEnum {
+    const first = values[0];
+    if (Array.isArray(first)) {
+        return new CommandSoftEnum(name, first);
+    } else {
+        return new CommandSoftEnum(name, values as string[]);
+    }
+}
+
 export const command ={
     find(name:string):CustomCommandFactoryWithSignature {
         const registry = serverInstance.minecraft.getCommands().getRegistry();
@@ -228,6 +241,7 @@ export const command ={
         registry.registerCommand(name, description, perm, flags1, flags2);
         return new CustomCommandFactory(registry, name);
     },
+    softEnum,
     enum:_enum,
 };
 
