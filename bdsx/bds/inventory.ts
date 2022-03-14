@@ -9,7 +9,7 @@ import { BlockPos, Vec3 } from "./blockpos";
 import { CommandName } from "./commandname";
 import type { ItemEnchants } from "./enchants";
 import { HashedString } from "./hashedstring";
-import type { ItemComponent } from "./temComponent";
+import type { ItemComponent } from "./itemComponent";
 import type { BlockPalette } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
