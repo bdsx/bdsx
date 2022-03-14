@@ -712,38 +712,12 @@ export class CommandSoftEnum extends CommandParameterNativeType<string> {
             CxxString[NativeType.dtor],
             CxxString[NativeType.ctor_copy],
             CxxString[NativeType.ctor_move]);
-        this.checkValues(values);
         const registry = serverInstance.minecraft.getCommands().getRegistry();
         registry.addSoftEnum(this.name, values);
         // No type id should be registered, it is the type of string
     }
 
-    protected checkValues(values: string[]): void {
-        for (const value of values) {
-            if (value === "") throw Error(`${value}: soft enum value cannot be empty`); // It will be ignored by CommandRegistry::addSoftEnum if it is empty
-
-            /*
-                Allowed special characters:
-                - (
-                - )
-                - -
-                - .
-                - ?
-                - _
-                and the ones whose ascii code is bigger than 127, like §, ©, etc.
-            */
-            const regex = /[ -'*-,/:->@[-^`{-~]/g;
-            let invalidCharacters = '';
-            let matched:RegExpExecArray|null;
-            while ((matched = regex.exec(value)) !== null) {
-                invalidCharacters += matched[0];
-            }
-            if (invalidCharacters !== '') throw Error(`${value}: soft enum value contains invalid characters (${invalidCharacters})`);
-        }
-    }
-
     protected updateValues(mode: SoftEnumUpdateType, values:string[]):void {
-        this.checkValues(values);
         const registry = serverInstance.minecraft.getCommands().getRegistry();
         registry.updateSoftEnum(mode, this.name, values);
     }
