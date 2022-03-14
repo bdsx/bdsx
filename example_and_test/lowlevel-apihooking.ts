@@ -4,8 +4,6 @@ import { Block } from "bdsx/bds/block";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
 import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
 import { ItemStack } from "bdsx/bds/inventory";
-import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
-import { TextPacket } from "bdsx/bds/packets";
 import { ServerPlayer } from "bdsx/bds/player";
 import { Config } from "bdsx/config";
 import { pdb } from "bdsx/core";
