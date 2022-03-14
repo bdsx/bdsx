@@ -5,6 +5,7 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
+import { Block } from "bdsx/bds/block";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
@@ -856,6 +857,12 @@ Tester.test({
         events.playerJoin.once(this.wrap((ev)=>{
             this.assert(ev.player.runCommand('testcommand').isSuccess(), 'Actor.runCommand failed');
         }));
+    },
+
+    block() {
+        this.assert(Block.create('minecraft:dirt') !== null, 'minecraft:dirt is null');
+        this.assert(Block.create('minecraft:air') !== null, 'minecraft:air is null');
+        this.assert(Block.create('minecraft:element_111') !== null, 'minecraft:element_111 is null');
     },
 }, true);
 

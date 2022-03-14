@@ -5,6 +5,7 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
+import { CxxMap } from "../cxxmap";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
 import { makefunc } from "../makefunc";
@@ -829,6 +830,10 @@ InventoryTransaction.prototype.addItemToContent = procHacker.js("InventoryTransa
 InventoryTransactionItemGroup.prototype.getItemStack = procHacker.js("InventoryTransactionItemGroup::getItemInstance", ItemStack, {this:InventoryTransaction, structureReturn:true});
 
 // block.ts
+namespace BlockTypeRegistry {
+    export const mBlockLookupMap = proc['BlockTypeRegistry::mBlockLookupMap'].as(CxxMap.make(CxxString, SharedPtr.make(BlockLegacy)));
+}
+
 BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:BlockLegacy, structureReturn: true});
 BlockLegacy.prototype.getCommandNames2 = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CommandName), {this:BlockLegacy, structureReturn: true});
 BlockLegacy.prototype.getCreativeCategory = procHacker.js("BlockLegacy::getCreativeCategory", int32_t, {this:BlockLegacy});
@@ -842,6 +847,14 @@ BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Pla
 
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.create = function(blockName:string, data:number = 0):Block|null {
+    const legacy = BlockTypeRegistry.mBlockLookupMap.get(blockName);
+    if (legacy !== null) {
+        return legacy.p!.getRenderBlock();
+    }
+
+    // Old method
+    // the fallback of failing of the new method
+    // for examples, it handles names without minecraft: prefix
     const itemStack = ItemStack.constructWith(blockName, 1, data);
     const block = itemStack.block;
     const isBlock = itemStack.isBlock();

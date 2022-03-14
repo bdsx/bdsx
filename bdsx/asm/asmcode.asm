@@ -9,19 +9,6 @@
 # I may have to make my own compiler
 # It's also my own assembler compiler
 
-const JsUndefined 0
-const JsNull 1
-const JsNumber 2
-const JsString 3
-const JsBoolean 4
-const JsObject 5
-const JsFunction 6
-const JsError 7
-const JsArray 8
-const JsSymbol 9
-const JsArrayBuffer 10
-const JsTypedArray 11
-const JsDataView 12
 const EXCEPTION_BREAKPOINT:dword 80000003h
 const EXCEPTION_NONCONTINUABLE_EXCEPTION:dword 0xC0000025
 
