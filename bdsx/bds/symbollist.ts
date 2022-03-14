@@ -500,6 +500,13 @@ export const undecoratedSymbols = [
     'CommandOutput::getSuccessCount',
     'CommandSoftEnumRegistry::updateSoftEnum',
     'CommandRegistry::addSoftEnum',
+    'MobEffectInstance::getAmplifier',
+    'MobEffect::getId',
+    'Actor::removeAllEffects',
+    'Actor::setVelocity',
+    'Level::getPlayerByXuid',
+    'Actor::isMoving',
+    'Abilities::isFlying',
 ] as const;
 
 // decorated symbols
@@ -581,4 +588,5 @@ export const decoratedSymbols = [
     '??0CompoundTag@@QEAA@$$QEAV0@@Z',
     '??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@',
     '?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
+    '?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z',
 ] as const;

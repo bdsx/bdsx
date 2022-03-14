@@ -83,6 +83,7 @@ Level.prototype.getTagRegistry = procHacker.js("Level::getTagRegistry", TagRegis
 Level.prototype.hasCommandsEnabled = procHacker.js("Level::hasCommandsEnabled", bool_t, {this:Level});
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
+Level.prototype.getPlayerByXuid = procHacker.js("Level::getPlayerByXuid", Player, {this:Level}, CxxString);
 const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
 Level.prototype.syncGameRules = function() {
     const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
@@ -120,7 +121,7 @@ Level.prototype.getEntities = function() {
     const out:Actor[] = [];
     for (const refTraits of (this as any)._getEntities()) {
         const entity = Actor.tryGetFromEntity(refTraits.context._getStackRef());
-        if (!(entity instanceof Actor)) continue;
+        if (entity === null) continue;
         out.push(entity);
     }
     return out;
@@ -258,9 +259,12 @@ const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", 
 
 Actor.prototype.kill = makefunc.js([0x7b0], void_t, {this:Actor});
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
+Actor.prototype.isMoving = procHacker.js("Actor::isMoving", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("Actor::getHealth", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("Actor::getMaxHealth", int32_t, {this:Actor});
+Actor.prototype.startRiding = makefunc.js([0x1a8], bool_t, {this:Actor}, Actor);
+
 const Actor$save = procHacker.js("Actor::save", bool_t, {this:Actor}, CompoundTag);
 Actor.prototype.save = function(tag?:CompoundTag):any {
     if (tag != null) {
@@ -344,6 +348,8 @@ Actor.prototype.isAlive = makefunc.js([0x328], bool_t, {this:Actor});
 Actor.prototype.isInvisible = procHacker.js("Actor::isInvisible", bool_t, {this:Actor});
 (Actor.prototype as any)._isRiding = procHacker.js("?isRiding@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 (Actor.prototype as any)._isRidingOn = procHacker.js("?isRiding@Actor@@QEBA_NPEAV1@@Z", bool_t, {this:Actor}, Actor);
+(Actor.prototype as any)._isPassenger = procHacker.js("?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z", bool_t, {this:Actor}, ActorUniqueID.ref());
+Actor.prototype.setVelocity = procHacker.js("Actor::setVelocity", void_t, {this:Actor}, Vec3);
 Actor.prototype.isInWater = procHacker.js("Actor::isInWater", bool_t, {this:Actor});
 Actor.prototype.getArmorContainer = procHacker.js("Actor::getArmorContainer", SimpleContainer, {this:Actor});
 
@@ -356,6 +362,7 @@ Actor.prototype.addEffect = procHacker.js("?addEffect@Actor@@QEAAXAEBVMobEffectI
 Actor.prototype.removeEffect = procHacker.js("?removeEffect@Actor@@QEAAXH@Z", void_t, {this:Actor}, int32_t);
 (Actor.prototype as any)._hasEffect = procHacker.js("Actor::hasEffect", bool_t, {this:Actor}, MobEffect);
 (Actor.prototype as any)._getEffect = procHacker.js("Actor::getEffect", MobEffectInstance, {this:Actor}, MobEffect);
+Actor.prototype.removeAllEffects = procHacker.js("Actor::removeAllEffects", void_t, {this:Actor});
 Actor.prototype.setOnFire = function(seconds:number) {
     OnFireSystem.setOnFire(this, seconds);
 };
@@ -833,15 +840,12 @@ BlockLegacy.prototype.getRenderBlock = procHacker.js("BlockLegacy::getRenderBloc
 BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Player, BlockPos, uint8_t);
 
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
-Block.constructWith = function(blockName:string, data:number = 0):Block|null {
+Block.create = function(blockName:string, data:number = 0):Block|null {
     const itemStack = ItemStack.constructWith(blockName, 1, data);
-    if (itemStack.isBlock()) {
-        const block = itemStack.block;
-        itemStack.destruct();
-        return block;
-    }
+    const block = itemStack.block;
+    const isBlock = itemStack.isBlock();
     itemStack.destruct();
-    return null;
+    return isBlock ? block : null;
 };
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
@@ -935,6 +939,7 @@ Abilities.prototype.setCommandPermissionLevel = procHacker.js("Abilities::setCom
 Abilities.prototype.setPlayerPermissionLevel = procHacker.js("Abilities::setPlayerPermissions", void_t, {this:Abilities}, int32_t);
 Abilities.prototype.getAbility = procHacker.js("Abilities::getAbility", Ability, {this:Abilities}, uint8_t);
 (Abilities.prototype as any)._setAbility = procHacker.js("Abilities::setAbility", void_t, {this:Abilities}, uint8_t, bool_t);
+Abilities.prototype.isFlying = procHacker.js("Abilities::isFlying", bool_t, {this:Abilities});
 
 const Abilities$getAbilityName = procHacker.js("Abilities::getAbilityName", StaticPointer, null, uint16_t);
 Abilities.getAbilityName = function(abilityIndex:uint16_t):string {
@@ -1024,8 +1029,11 @@ ScoreboardId.prototype.isValid = procHacker.js("ScoreboardId::isValid", bool_t, 
 
 // effects.ts
 MobEffect.create = procHacker.js("MobEffect::getById", MobEffect, null, int32_t);
+MobEffect.prototype.getId = procHacker.js("MobEffect::getId", uint32_t, {this:MobEffect});
+
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
 (MobEffectInstance.prototype as any)._getComponentName = procHacker.js("MobEffectInstance::getComponentName", HashedString, {this:MobEffectInstance});
+MobEffectInstance.prototype.getAmplifier = procHacker.js("MobEffectInstance::getAmplifier", int32_t, {this:MobEffectInstance});
 MobEffectInstance.prototype.allocateAndSave = procHacker.js("MobEffectInstance::save", CompoundTag.ref(), {this:MobEffectInstance, structureReturn: true});
 const MobEffectInstance$load = procHacker.js("MobEffectInstance::load", void_t, null, MobEffectInstance, CompoundTag);
 MobEffectInstance.prototype.load = function(tag) {

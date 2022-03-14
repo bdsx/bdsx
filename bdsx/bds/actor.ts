@@ -430,7 +430,7 @@ export class Actor extends AbstractClass {
     /**
      * Get the Actor instance of an entity with its EntityContext
      */
-    static tryGetFromEntity(entity:EntityContext):Actor {
+    static tryGetFromEntity(entity:EntityContext):Actor|null {
         abstract();
     }
 
@@ -715,7 +715,6 @@ export class Actor extends AbstractClass {
     hasEffect(id: MobEffectIds):boolean {
         const effect = MobEffect.create(id);
         const retval = this._hasEffect(effect);
-        effect.destruct();
         return retval;
     }
 
@@ -728,8 +727,10 @@ export class Actor extends AbstractClass {
     getEffect(id: MobEffectIds):MobEffectInstance | null {
         const effect = MobEffect.create(id);
         const retval = this._getEffect(effect);
-        effect.destruct();
         return retval;
+    }
+    removeAllEffects(): void {
+        abstract();
     }
     /**
      * Adds a tag to the entity.
@@ -859,6 +860,14 @@ export class Actor extends AbstractClass {
     isInvisible(): boolean {
         abstract();
     }
+    /**
+     * Makes `this` rides on the ride
+     * @param ride ride, vehicle
+     * @returns Returns whether riding was successful
+     */
+    startRiding(ride: Actor): boolean {
+        abstract();
+    }
     protected _isRiding(): boolean {
         abstract();
     }
@@ -873,6 +882,26 @@ export class Actor extends AbstractClass {
     isRiding(entity?: Actor): boolean {
         if (entity) return this._isRidingOn(entity);
         return this._isRiding();
+    }
+    protected _isPassenger(ride:ActorUniqueID): boolean {
+        abstract();
+    }
+    isPassenger(ride: ActorUniqueID): boolean;
+    isPassenger(ride: Actor): boolean;
+    isPassenger(ride: ActorUniqueID | Actor): boolean {
+        if (ride instanceof Actor) {
+            return this._isPassenger(ride.getUniqueIdBin());
+        }
+        return this._isPassenger(ride);
+    }
+
+    /**
+     * The result is smooth movement only with `server-authoritative-movement=server-auth-with-rewind` & `correct-player-movement=true` in `server.properties`.
+     *
+     * If the entity is a Player, it works with only `server-authoritative-movement=server-auth-with-rewind` & `correct-player-movement=true` in `server.properties`.
+     */
+    setVelocity(dest: Vec3): void {
+        abstract();
     }
 
     isInWater(): boolean {
@@ -916,6 +945,9 @@ export class Actor extends AbstractClass {
         });
     }
     runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
+        abstract();
+    }
+    isMoving(): boolean {
         abstract();
     }
 }

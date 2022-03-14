@@ -2,17 +2,17 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
-import { ActorWildcardCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText } from "bdsx/bds/command";
+import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, PlayerCommandSelector } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
+import { ServerPlayer } from "bdsx/bds/player";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
 import { fsutil } from "bdsx/fsutil";
 import { bedrockServer } from "bdsx/launcher";
 import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
 import { shellPrepareData } from "bdsx/shellprepare/data";
-import * as path from 'path';
 import * as fs from 'fs';
-import { serverInstance } from "bdsx/bds/server";
+import * as path from 'path';
 
 command.find('say').signature.permissionLevel = CommandPermissionLevel.Admin; // change the say permission
 
@@ -57,13 +57,19 @@ command.register('ddd', 'relative float example').overload((param, origin, outpu
 // entity
 command.register('eee', 'entity example').overload((param, origin, output)=>{
     let out = `entity example> origin=${origin.getName()}`;
-    for (const actor of param.target.newResults(origin)) {
-        out += '\n'+actor.getName();
+    for (const actor of param.actors.newResults(origin)) {
+        out += "\n" + "Entity:" + actor.getName() + ", " + actor.getIdentifier();
     }
     output.success(out);
+    if (param.players) {
+        for (const player of param.players.newResults(origin, ServerPlayer)) {
+            out += "\n" + "Player:" + player.getName() + ", " + player.getIdentifier(); // must be minecraft:player
+        }
+        output.success(out);
+    }
 }, {
-    //You can set as player-only with PlayerWildcardCommandSelector
-    target: ActorWildcardCommandSelector,
+    actors: ActorCommandSelector,
+    players: [PlayerCommandSelector, true] // player-only
 });
 
 // boolean
@@ -120,6 +126,21 @@ command.register('jjj', 'block example').overload((param, origin, output)=>{
         `block name: ${param.block.getName()}`);
 }, {
     block: Command.Block,
+});
+
+// multiple overloads example
+command.register('kkk', 'multiple overloads example')
+    .overload((param, origin, output) => {
+        output.success(`overload example: Add ${param.name}.`);
+}, {
+        option: command.enum("option.add", "add"),
+        name: CxxString,
+})
+    .overload((param, origin, output) => {
+        output.success(`overload example: Remove ${param.id}.`);
+} ,{
+        option: command.enum("option.remove", "remove"),
+        id: int32_t,
 });
 
 // disable examples
