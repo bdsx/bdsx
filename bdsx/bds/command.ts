@@ -638,15 +638,11 @@ export class CommandEnum<V extends string|number|symbol> extends CommandParamete
             const original = makefunc.js(cmdenum.parser, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
             cmdenum.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
                 original(registry, storage, tokenPtr, origin, version, error, errorParams);
-                // Some built-in enums have no enum parsers, but they have parsers for other types, for example: Item
                 const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
                 const text = token.getText();
-                const shouldOverride = this.mapper.has(text);
-                if (shouldOverride) {
-                    const values = registry.getEnumValues(this.name)!;
-                    const idx = values.indexOf(text.toLowerCase());
-                    storage.setUint32(idx);
-                }
+                const values = registry.getEnumValues(this.name)!;
+                const idx = values.indexOf(text.toLowerCase());
+                storage.setUint32(idx);
                 return true;
             }, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
         } else {
