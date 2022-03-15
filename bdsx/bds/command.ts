@@ -754,12 +754,7 @@ export class CommandSoftEnum extends CommandParameterNativeType<string> {
             this.updateValues(SoftEnumUpdateType.Replace, values as string[]);
         }
     }
-
-    static isWildcard(selectorBase: CommandSelectorBase): boolean {
-        abstract();
-    }
 }
-Command.isWildcard = procHacker.js("?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z", bool_t, null, CommandSelectorBase);
 
 const parsers = new Map<Type<any>, VoidPointer>();
 
@@ -1095,7 +1090,12 @@ export class Command extends NativeClass {
         param.options = options;
         return param;
     }
+
+    static isWildcard(selectorBase: CommandSelectorBase): boolean {
+        abstract();
+    }
 }
+Command.isWildcard = procHacker.js("?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z", bool_t, null, CommandSelectorBase);
 
 export namespace Command {
     export const VFTable = CommandVFTable;
