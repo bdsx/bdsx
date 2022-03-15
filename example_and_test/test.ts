@@ -5,6 +5,7 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
+import { Block } from "bdsx/bds/block";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
@@ -60,8 +61,8 @@ class VectorClass extends NativeClass {
  * too many packets to hook. skip them.
  */
 const tooHeavy = new Set<number>();
-tooHeavy.add(0xae);
-tooHeavy.add(0xaf);
+tooHeavy.add(0xae); // SubChunkPacket
+tooHeavy.add(0xaf); // SubChunkRequestPacket
 
 Tester.test({
     async globals() {
@@ -504,7 +505,8 @@ Tester.test({
     },
 
     async checkPacketNames() {
-        const wrongNames = new Map<string, string>([
+        const wrongNames = new Map<string, string | string[]>([
+            ['', ['UpdateTradePacket', 'UpdateEquipPacket']],
             ['ShowModalFormPacket', 'ModalFormRequestPacket'],
             ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
             ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
@@ -524,9 +526,13 @@ Tester.test({
 
                 let getNameResult = packet.getName();
                 const realname = wrongNames.get(getNameResult);
-                if (realname != null) getNameResult = realname;
-
                 let name = Packet.name;
+
+                if (Array.isArray(realname)) {
+                    getNameResult = realname.find((v) => v === name) ?? getNameResult;
+                } else if (realname != null) {
+                    getNameResult = realname;
+                }
 
                 this.equals(getNameResult, name);
                 this.equals(packet.getId(), Packet.ID);
@@ -856,6 +862,12 @@ Tester.test({
         events.playerJoin.once(this.wrap((ev)=>{
             this.assert(ev.player.runCommand('testcommand').isSuccess(), 'Actor.runCommand failed');
         }));
+    },
+
+    block() {
+        this.assert(Block.create('minecraft:dirt') !== null, 'minecraft:dirt is null');
+        this.assert(Block.create('minecraft:air') !== null, 'minecraft:air is null');
+        this.assert(Block.create('minecraft:element_111') !== null, 'minecraft:element_111 is null');
     },
 }, true);
 
