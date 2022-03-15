@@ -1,6 +1,6 @@
 node_modules
 /bedrock_server/*
-!/bedrock_server/vcruntime140_1.dll
+!/bedrock_server/vcruntime140_1_.dll
 !/bedrock_server/dbghelp.dll
 /npm-debug.log
 /pdbcache_by_example.ini

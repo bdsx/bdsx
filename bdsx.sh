@@ -37,7 +37,7 @@ if [ $? != 1 ]; then break; fi
 
 # launch
 cd bedrock_server
-WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
+WINEDLLOVERRIDES="VCRUNTIME140_1=n,b" WINEDEBUG=fixme-all $WINE ./bedrock_server.exe ..
 echo exit=$?>>bdsx_shell_data.ini
 cd ..
 
