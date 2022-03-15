@@ -504,7 +504,7 @@ export const undecoratedSymbols = [
     'Level::getPlayerByXuid',
     'Actor::isMoving',
     'Abilities::isFlying',
-    'BlockTypeRegistry::mBlockLookupMap',
+    'BlockTypeRegistry::lookupByName',
 ] as const;
 
 // decorated symbols

@@ -67,7 +67,7 @@ export class MobEffect extends NativeClass {
     @nativeField(HashedString, 0x98)
     readonly componentName: HashedString;
     // @nativeField(VoidPointer, 0xF8) // std::vector<std::pair<Attribute const*,std::shared_ptr<AttributeModifier>>>
-    // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), SharedPtr<AttributeModifier>>;
+    // attributeModifiers: CxxVector<CxxPair<Attribute.ref(), CxxSharedPtr<AttributeModifier>>;
 
     /**
      * @deprecated

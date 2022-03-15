@@ -865,9 +865,11 @@ Tester.test({
     },
 
     block() {
-        this.assert(Block.create('minecraft:dirt') !== null, 'minecraft:dirt is null');
-        this.assert(Block.create('minecraft:air') !== null, 'minecraft:air is null');
-        this.assert(Block.create('minecraft:element_111') !== null, 'minecraft:element_111 is null');
+        this.equals(Block.create('dirt')?.getName(), 'minecraft:dirt');
+        this.equals(Block.create('minecraft:dirt')?.getName(), 'minecraft:dirt');
+        this.equals(Block.create('minecraft:air')?.getName(), 'minecraft:air');
+        this.equals(Block.create('minecraft:element_111')?.getName(), 'minecraft:element_111');
+        this.equals(Block.create('minecraft:_no_block_'), null, 'minecraft:_no_block_ is not null');
     },
 }, true);
 

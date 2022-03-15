@@ -5,7 +5,6 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { AttributeName } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
-import { CxxMap } from "../cxxmap";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
 import { makefunc } from "../makefunc";
@@ -13,7 +12,7 @@ import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, GslSpanToArray, GslStringSpan, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
 import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity } from "./actor";
@@ -47,6 +46,7 @@ import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
 import { DedicatedServer, Minecraft, ScriptFramework, serverInstance, ServerInstance, VanillaGameModuleServer, VanillaServerGameplayEventListener } from "./server";
+import { WeakPtr } from "./sharedptr";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
@@ -658,7 +658,7 @@ VanillaGameModuleServer.abstract({
 DedicatedServer.abstract({});
 Minecraft.abstract({
     vftable:VoidPointer,
-    vanillaGameModuleServer:[SharedPtr, 0x28], // VanillaGameModuleServer
+    vanillaGameModuleServer:[CxxSharedPtr, 0x28], // VanillaGameModuleServer
     server:DedicatedServer.ref(),
 });
 Minecraft.prototype.getLevel = procHacker.js("Minecraft::getLevel", Level, {this:Minecraft});
@@ -831,7 +831,7 @@ InventoryTransactionItemGroup.prototype.getItemStack = procHacker.js("InventoryT
 
 // block.ts
 namespace BlockTypeRegistry {
-    export const mBlockLookupMap = proc['BlockTypeRegistry::mBlockLookupMap'].as(CxxMap.make(CxxString, SharedPtr.make(BlockLegacy)));
+    export const lookupByName = procHacker.js('BlockTypeRegistry::lookupByName', WeakPtr.make(BlockLegacy), {structureReturn: true}, CxxString, bool_t);
 }
 
 BlockLegacy.prototype.getCommandNames = procHacker.js("BlockLegacy::getCommandNames", CxxVector.make(CxxStringWith8Bytes), {this:BlockLegacy, structureReturn: true});
@@ -847,14 +847,16 @@ BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Pla
 
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.create = function(blockName:string, data:number = 0):Block|null {
-    const legacy = BlockTypeRegistry.mBlockLookupMap.get(blockName);
+    const legacyptr = BlockTypeRegistry.lookupByName(blockName, false);
+    const legacy = legacyptr.value();
+    legacyptr.dispose(); // it cannot delete `legacy` because it's WeakPtr
     if (legacy !== null) {
-        return legacy.p!.getRenderBlock();
+        return legacy.getRenderBlock();
     }
 
     // Old method
     // the fallback of failing of the new method
-    // for examples, it handles names without minecraft: prefix
+    // it may be meaningless
     const itemStack = ItemStack.constructWith(blockName, 1, data);
     const block = itemStack.block;
     const isBlock = itemStack.isBlock();

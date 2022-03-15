@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString } from "../nativetype";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import { RakNet } from "./raknet";
 import { BinaryStream } from "./stream";
 
@@ -22,8 +22,8 @@ export class RaknetNetworkPeer extends AbstractClass {
 
 @nativeClass(null)
 export class EncryptedNetworkPeer extends AbstractClass {
-    @nativeField(SharedPtr.make(RaknetNetworkPeer))
-    peer:SharedPtr<RaknetNetworkPeer>;
+    @nativeField(CxxSharedPtr.make(RaknetNetworkPeer))
+    peer:CxxSharedPtr<RaknetNetworkPeer>;
 }
 
 @nativeClass(null)

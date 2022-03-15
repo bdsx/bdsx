@@ -11,10 +11,10 @@ import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
 import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
-import { SharedPtr } from './sharedpointer';
+import { CxxSharedPtr } from './sharedpointer';
 
-let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
-function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t):MCRESULT {
+let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
+function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t):MCRESULT {
     try {
         const ctx = ctxptr.p!;
         const name = ctx.origin.getName();
@@ -237,5 +237,5 @@ const customCommandDtor = makefunc.np(function(){
 
 bedrockServer.withLoading().then(()=>{
     executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
-        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), bool_t)(executeCommand);
+        MinecraftCommands, MCRESULT, CxxSharedPtr.make(CommandContext), bool_t)(executeCommand);
 });
