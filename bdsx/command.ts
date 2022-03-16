@@ -104,10 +104,7 @@ export class CustomCommandFactory {
                         if (optkey == null || this[optkey]) {
                             const type = fields[key.toString()];
                             if (type instanceof CommandEnum) {
-                                const values = this.registry!.getEnumValues(type.name)!;
-                                const enumKey = values[this[key] as any as number];
-                                // match the case, if it is not found from the mapper, then it is defined from Minecraft itself, which should be numbers
-                                nobj[key] = type.mapper.get(enumKey?.toLowerCase()) ?? this[key];
+                                nobj[key] = type.getResult();
                             } else {
                                 nobj[key] = this[key];
                             }

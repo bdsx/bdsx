@@ -586,24 +586,25 @@ export class CommandVFTable extends NativeClass {
     execute:VoidPointer|null;
 }
 
-// All built-in enums are parsed (if they have enum parsers) to uint32_t*
-export class CommandEnum<V extends string|number|symbol> extends CommandParameterNativeType<uint32_t> {
+export class CommandEnum<V extends string|number|symbol> extends CommandParameterNativeType<string> {
     public readonly mapper = new Map<string, V>();
+
+    private results = new Array<V>();
 
     constructor(symbol:string, name?:string) {
         super(symbol, name || symbol,
-            uint32_t[NativeType.size],
-            uint32_t[NativeType.align],
-            uint32_t.isTypeOf,
-            uint32_t.isTypeOfWeak,
-            uint32_t[NativeType.getter],
-            uint32_t[NativeType.setter],
-            uint32_t[makefunc.getFromParam],
-            uint32_t[makefunc.setToParam],
-            uint32_t[NativeType.ctor],
-            uint32_t[NativeType.dtor],
-            uint32_t[NativeType.ctor_copy],
-            uint32_t[NativeType.ctor_move]);
+            CxxString[NativeType.size],
+            CxxString[NativeType.align],
+            CxxString.isTypeOf,
+            CxxString.isTypeOfWeak,
+            CxxString[NativeType.getter],
+            CxxString[NativeType.setter],
+            CxxString[makefunc.getFromParam],
+            CxxString[makefunc.setToParam],
+            CxxString[NativeType.ctor],
+            CxxString[NativeType.dtor],
+            CxxString[NativeType.ctor_copy],
+            CxxString[NativeType.ctor_move]);
     }
 
     protected _init():void {
@@ -633,28 +634,44 @@ export class CommandEnum<V extends string|number|symbol> extends CommandParamete
         const exists = registry.hasEnum(this.name);
         const enumId = registry.addEnumValues(this.name, [...this.mapper.keys()]);
         const cmdenum = registry.getEnum(this.name)!;
-        if (exists) {
-            // Provide additional parsing on top of the original parser
-            const original = makefunc.js(cmdenum.parser, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
-            cmdenum.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
-                original(registry, storage, tokenPtr, origin, version, error, errorParams);
-                const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
-                const text = token.getText();
-                const values = registry.getEnumValues(this.name)!;
-                const idx = values.indexOf(text.toLowerCase());
-                storage.setUint32(idx);
-                return true;
-            }, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
-        } else {
-            cmdenum.parser = makefunc.np((storage, token, origin, version, error, errorParams) => {
-                const values = registry.getEnumValues(this.name)!;
-                const text = token.getText();
-                const idx = values.indexOf(text.toLowerCase());
-                storage.setUint32(idx);
-                return true;
-            }, bool_t, {this:CommandRegistry}, MantleClass.ref(), CommandRegistry.ParseToken.ref().ref(), CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
-        }
+
+        const isCxxStringParser = cmdenum.isCxxStringParser();
+        const isIntParser = cmdenum.isIntParser();
+
+        if (!exists) cmdenum.parser = enumParser;
+        // Provide additional parsing on top of the original parser
+        const original = makefunc.js(cmdenum.parser, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
+        cmdenum.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
+            const ret = original(registry, storage, tokenPtr, origin, version, error, errorParams);
+            const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
+            const text = token.getText().toLocaleLowerCase();
+            const mapped = this.mapper.get(text);
+            if (mapped != null) {
+                this.results.push(mapped);
+            } else { // Not on the map, it is defined before
+                let result: V;
+                if (isIntParser) {
+                    result = storage.getInt32() as V;
+                } else if (isCxxStringParser) {
+                    result = storage.getCxxString() as V;
+                } else {
+                    // in this case, the value is parsed to some NativeClass, follow the type of the custom enum
+                    if (this instanceof CommandStringEnum) {
+                        result = text as V;
+                    } else {
+                        const values = registry.getEnumValues(this.name)!;
+                        result = values.indexOf(text) as V;
+                    }
+                }
+                this.results.push(result);
+            }
+            return ret;
+        }, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
         type_id.register(CommandRegistry, this, enumId);
+    }
+
+    getResult():V | null {
+        return this.results.shift() ?? null;
     }
 }
 
@@ -753,6 +770,7 @@ export class CommandSoftEnum extends CommandParameterNativeType<string> {
 }
 
 const parsers = new Map<Type<any>, VoidPointer>();
+let enumParser: VoidPointer;
 
 export class CommandRegistry extends HasTypeId {
     enumValues:CxxVector<CxxString>;
@@ -835,6 +853,10 @@ export class CommandRegistry extends HasTypeId {
 
     static setParser(type:Type<any>, parserFnPointer:VoidPointer):void {
         parsers.set(type, parserFnPointer);
+    }
+
+    static setEnumParser(parserFnPointer:VoidPointer):void {
+        enumParser = parserFnPointer;
     }
 
     hasEnum(name:string):boolean {
@@ -964,6 +986,14 @@ export namespace CommandRegistry {
         parser:VoidPointer;
         @nativeField(CxxVector.make(CxxPair.make(uint64_as_float_t, uint64_as_float_t)))
         values:CxxVector<CxxPair<uint64_as_float_t, uint64_as_float_t>>;
+
+        isCxxStringParser():boolean {
+            return this.parser.equals(CommandRegistry.getParser(CxxString));
+        }
+
+        isIntParser():boolean {
+            return this.parser.equals(enumParser);
+        }
     }
 
     @nativeClass()

@@ -34,6 +34,8 @@ const types = [
 
 function loadParserFromPdb(types:Type<any>[]):void {
     const symbols = types.map(type=>templateName('CommandRegistry::parse', type.symbol || type.name));
+    const enumParserSymbol = 'CommandRegistry::parseEnum<int,CommandRegistry::DefaultIdConverter<int> >';
+    symbols.push(enumParserSymbol);
 
     pdb.setOptions(SYMOPT_PUBLICS_ONLY); // XXX: CommandRegistry::parse<bool> does not found without it.
     const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
@@ -45,6 +47,7 @@ function loadParserFromPdb(types:Type<any>[]):void {
         if (addr == null) continue;
         CommandRegistry.setParser(types[i], addr);
     }
+    CommandRegistry.setEnumParser(addrs[enumParserSymbol]);
 }
 
 type_id.pdbimport(CommandRegistry, types);
