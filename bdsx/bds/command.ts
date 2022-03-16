@@ -757,9 +757,9 @@ export class CommandSoftEnum extends CommandParameterNativeType<string> {
         }
     }
 
-    replaceValues(...values:string[]):void;
-    replaceValues(values:string[]):void;
-    replaceValues(...values:(string|string[])[]):void {
+    setValues(...values:string[]):void;
+    setValues(values:string[]):void;
+    setValues(...values:(string|string[])[]):void {
         const first = values[0];
         if (Array.isArray(first)) {
             this.updateValues(SoftEnumUpdateType.Replace, first);
