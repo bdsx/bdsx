@@ -1,3 +1,4 @@
+import * as colors from "colors";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { CommandParameterType } from "../commandparam";
@@ -206,12 +207,15 @@ PlayerCommandSelector.prototype[NativeType.ctor] = function () {
 @nativeClass()
 export class CommandFilePath extends NativeClass {
     static readonly [CommandParameterType.symbol]:true;
+
     @nativeField(CxxString)
     text:CxxString;
 }
 
 @nativeClass()
 class CommandIntegerRange extends NativeClass { // Not exporting yet, not supported
+    static readonly [CommandParameterType.symbol]:true;
+
     @nativeField(int32_t)
     min:int32_t;
     @nativeField(int32_t)
@@ -335,11 +339,42 @@ export class CommandRawText extends NativeClass {
 @nativeClass()
 export class CommandWildcardInt extends NativeClass {
     static readonly [CommandParameterType.symbol]:true;
+
     @nativeField(bool_t)
     isWildcard:bool_t;
     @nativeField(int32_t)
     value:int32_t;
 }
+
+// It is a special enum that cannot be used in `command.enum`, it is just a uint8_t.
+// However, it might be confusing with only numbers, so I tried to create some methods for it.
+// @nativeClass()
+// export class CommandOperator extends NativeClass {
+//     static readonly [CommandParameterType.symbol]:true;
+//     static readonly symbol = 'enum CommandOperator';
+
+//     @nativeField(uint8_t)
+//     value:uint8_t;
+
+//     toString(): string {
+//         switch (this.value) {
+//         case 1: return '=';
+//         case 2: return '+=';
+//         case 3: return '-=';
+//         case 4: return '*=';
+//         case 5: return '/=';
+//         case 6: return '%=';
+//         case 7: return '<';
+//         case 8: return '>';
+//         case 9: return '><';
+//         default: return "invalid";
+//         }
+//     }
+
+//     valueOf():number {
+//         return this.value;
+//     }
+// }
 
 @nativeClass(0x30)
 export class CommandContext extends NativeClass {
@@ -559,10 +594,19 @@ export class CommandParameterData extends NativeClass {
     parser:VoidPointer; // bool (CommandRegistry::*)(void *, CommandRegistry::ParseToken const &, CommandOrigin const &, int, std::string &,std::vector<std::string> &) const;
     @nativeField(CxxString)
     name:CxxString;
+
+    /** @deprecated Use {@link enumNameOrPostfix} instead */
+    @nativeField(VoidPointer, {ghost:true})
+    desc:VoidPointer|null;
     @nativeField(VoidPointer)
-    desc:VoidPointer|null; // char*
-    @nativeField(int32_t)
+    enumNameOrPostfix:VoidPointer|null; // char*
+
+    /** @deprecated Use {@link enumOrPostfixSymbol} instead */
+    @nativeField(int32_t, {ghost:true})
     unk56:int32_t;
+    @nativeField(int32_t)
+    enumOrPostfixSymbol:int32_t;
+
     @nativeField(int32_t)
     type:CommandParameterDataType;
     @nativeField(int32_t)
@@ -571,7 +615,8 @@ export class CommandParameterData extends NativeClass {
     flag_offset:int32_t;
     @nativeField(bool_t)
     optional:bool_t;
-    /** @deprecated */
+
+    /** @deprecated Use {@link options} instead */
     @nativeField(bool_t, {ghost:true})
     pad73:bool_t;
     @nativeField(uint8_t)
@@ -775,7 +820,6 @@ let enumParser: VoidPointer;
 export class CommandRegistry extends HasTypeId {
     enumValues:CxxVector<CxxString>;
     enums:CxxVector<CommandRegistry.Enum>;
-    postfixes:CxxVector<CxxString>;
     enumLookup:CxxMap<CxxString, uint32_t>;
     enumValueLookup:CxxMap<CxxString, uint64_as_float_t>;
     commandSymbols:CxxVector<CommandRegistry.Symbol>;
@@ -1053,7 +1097,7 @@ export class Command extends NativeClass {
         this:{new():CMD},
         key:KEY,
         keyForIsSet:KEY_ISSET,
-        desc?:string|null,
+        enumNameOrPostfix?:string|null,
         type:CommandParameterDataType = CommandParameterDataType.NORMAL,
         name:string = key as string,
         options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
@@ -1061,7 +1105,7 @@ export class Command extends NativeClass {
         const paramType = cmdclass.typeOf(key as string);
         const offset = cmdclass.offsetOf(key as string);
         const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        return Command.manual(name, paramType, offset, flag_offset, false, desc, type, options);
+        return Command.manual(name, paramType, offset, flag_offset, false, enumNameOrPostfix, type, options);
     }
     static optional<CMD extends Command,
         KEY extends keyof CMD,
@@ -1069,7 +1113,7 @@ export class Command extends NativeClass {
         this:{new():CMD},
         key:KEY,
         keyForIsSet:KEY_ISSET,
-        desc?:string|null,
+        enumNameOrPostfix?:string|null,
         type:CommandParameterDataType = CommandParameterDataType.NORMAL,
         name:string = key as string,
         options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
@@ -1077,7 +1121,7 @@ export class Command extends NativeClass {
         const paramType = cmdclass.typeOf(key as string);
         const offset = cmdclass.offsetOf(key as string);
         const flag_offset = keyForIsSet !== null ? cmdclass.offsetOf(keyForIsSet as string) : -1;
-        return Command.manual(name, paramType, offset, flag_offset, true, desc, type, options);
+        return Command.manual(name, paramType, offset, flag_offset, true, enumNameOrPostfix, type, options);
     }
     static manual(
         name:string,
@@ -1085,7 +1129,7 @@ export class Command extends NativeClass {
         offset:number,
         flag_offset:number = -1,
         optional:boolean = false,
-        desc?:string|null,
+        enumNameOrPostfix?:string|null,
         type:CommandParameterDataType = CommandParameterDataType.NORMAL,
         options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
         const param = CommandParameterData.construct();
@@ -1093,21 +1137,29 @@ export class Command extends NativeClass {
         if (paramType instanceof CommandEnum) {
             const registry = serverInstance.minecraft.getCommands().getRegistry();
             const cmdenum = registry.getEnum(paramType.name)!;
-            if (desc != null) throw Error(`CommandEnum does not support description`);
-            desc = cmdenum.name;
+            if (enumNameOrPostfix != null) throw Error(`CommandEnum does not support postfix`);
+            enumNameOrPostfix = cmdenum.name;
             // the parser is inside the enum, defining it in param.parser does nothing
         } else if (paramType instanceof CommandSoftEnum) {
-            const registry = serverInstance.minecraft.getCommands().getRegistry();
             // a soft enum is a string with autocompletions, for example, objectives in /scoreboard
-            if (desc != null) throw Error(`CommandSoftEnum does not support description`);
-            desc = paramType.name;
+            if (enumNameOrPostfix != null) throw Error(`CommandSoftEnum does not support postfix`);
+            enumNameOrPostfix = paramType.name;
             param.parser = CommandRegistry.getParser(CxxString);
         } else {
+            if (enumNameOrPostfix) {
+                const typename = paramType.name;
+                if (paramType.name === "int32_t") {
+                    type = CommandParameterDataType.POSTFIX;
+                } else {
+                    console.error(colors.yellow(`${typename} does not support postfix`));
+                    enumNameOrPostfix = null;
+                }
+            }
             param.parser = CommandRegistry.getParser(paramType);
         }
         param.name = name;
         param.type = type;
-        param.desc = desc != null ? AllocatedPointer.fromString(desc) : null;
+        param.desc = enumNameOrPostfix != null ? AllocatedPointer.fromString(enumNameOrPostfix) : null;
 
         param.unk56 = -1;
         param.offset = offset;

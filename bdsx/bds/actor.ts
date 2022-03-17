@@ -400,7 +400,7 @@ export class EntityContextBase extends AbstractClass {
     isValid():boolean {
         abstract();
     }
-    /**@deprecated use {@link isValid()} instead*/
+    /**@deprecated use {@link isValid()} instead */
     isVaild(): boolean {
         return this.isValid();
     }

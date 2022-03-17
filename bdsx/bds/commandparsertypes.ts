@@ -27,6 +27,7 @@ const types = [
     CommandPositionFloat,
     CommandRawText,
     CommandWildcardInt,
+    // CommandOperator,
     JsonValue,
     Command.Block,
     Command.MobEffect,

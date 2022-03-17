@@ -56,7 +56,9 @@ export class CustomCommand extends Command {
 
 interface CommandFieldOptions {
     optional?:boolean;
+    /** @deprecated Use {@link postfix} instead */
     description?:string;
+    postfix?:string;
     name?:string;
     options?:CommandParameterOption;
 }
@@ -88,7 +90,7 @@ export class CustomCommandFactory {
         interface ParamInfo {
             key:keyof CustomCommandImpl;
             optkey:keyof CustomCommandImpl|null;
-            description?:string;
+            postfix?:string;
             name:string;
             options:CommandParameterOption;
         }
@@ -134,7 +136,7 @@ export class CustomCommandFactory {
                     optional = opts;
                 } else {
                     optional = !!opts.optional;
-                    info.description = opts.description;
+                    info.postfix = opts.postfix ?? opts.description;
                     if (opts.options != null) info.options = opts.options;
                     if (opts.name != null) info.name = opts.name;
                 }
@@ -156,13 +158,13 @@ export class CustomCommandFactory {
         CustomCommandImpl.define(fields);
 
         const params:CommandParameterData[] = [];
-        for (const {key, optkey, description, name, options} of paramInfos) {
+        for (const {key, optkey, postfix, name, options} of paramInfos) {
             const type = fields[key as string];
             const dataType = type instanceof CommandEnum ? CommandParameterDataType.ENUM :
                 type instanceof CommandSoftEnum ? CommandParameterDataType.SOFT_ENUM :
                     CommandParameterDataType.NORMAL;
-            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, description, dataType, name, options));
-            else params.push(CustomCommandImpl.mandatory(key, null, description, dataType, name, options));
+            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, postfix, dataType, name, options));
+            else params.push(CustomCommandImpl.mandatory(key, null, postfix, dataType, name, options));
         }
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
