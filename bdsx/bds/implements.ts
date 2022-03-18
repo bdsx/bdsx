@@ -370,6 +370,7 @@ Actor.prototype.setOnFire = function(seconds:number) {
 Actor.prototype.setOnFireNoEffects = function(seconds:number) {
     OnFireSystem.setOnFireNoEffects(this, seconds);
 };
+Actor.prototype.consumeTotem = makefunc.js([0x528], bool_t, {this:Actor});
 
 Mob.prototype.knockback = makefunc.js([0x898], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("Mob::getSpeed", float32_t, {this:Mob});

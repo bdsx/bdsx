@@ -950,6 +950,9 @@ export class Actor extends AbstractClass {
     isMoving(): boolean {
         abstract();
     }
+    consumeTotem(): boolean {
+        abstract();
+    }
 }
 
 export class Mob extends Actor {
