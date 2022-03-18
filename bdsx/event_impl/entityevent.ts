@@ -502,7 +502,7 @@ const _onPlayerSleepInBed = procHacker.hooking("Player::startSleepInBed", uint8_
 
 function onConsumeTotem(entity: Actor): boolean {
     const event = new EntityConsumeTotemEvent(entity, entity.getEquippedTotem());
-    events.consumeTotem.fire(event);
+    events.entityConsumeTotem.fire(event);
     return _onConsumeTotem(entity);
 }
 const _onConsumeTotem = procHacker.hooking("Actor::consumeTotem", bool_t, null, Actor)(onConsumeTotem);

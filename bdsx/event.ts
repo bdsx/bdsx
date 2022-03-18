@@ -154,7 +154,7 @@ export namespace events {
     /** Not cancellable */
     export const playerJump = new Event<(event: PlayerJumpEvent) => void | CANCEL>();
     /** Not cancellable */
-    export const consumeTotem = new Event<(event: EntityConsumeTotemEvent) => void>();
+    export const entityConsumeTotem = new Event<(event: EntityConsumeTotemEvent) => void>();
     ////////////////////////////////////////////////////////
     // Level events
 
