@@ -5,7 +5,7 @@ import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySou
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
-import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
+import { AddEntity, CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
@@ -226,6 +226,10 @@ export class PlayerSleepInBedEvent {
         public pos: BlockPos,
     ) {
     }
+}
+
+export class EntityConsumeTotemEvent {
+    constructor(public entity: Actor) { }
 }
 
 function onPlayerJump(player: Player):void {
@@ -495,3 +499,11 @@ function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
     return _onPlayerSleepInBed(event.player, event.pos);
 }
 const _onPlayerSleepInBed = procHacker.hooking("Player::startSleepInBed", uint8_t, null, Player, BlockPos)(onPlayerSleepInBed);
+
+function onConsumeTotem(entity: Actor): boolean {
+    const event = new EntityConsumeTotemEvent(entity);
+    const canceled = events.consumeTotem.fire(event) === CANCEL;
+    if (canceled) return false;
+    return _onConsumeTotem(entity);
+}
+const _onConsumeTotem = procHacker.hooking("Actor::consumeTotem", bool_t, null, Actor)(onConsumeTotem);
