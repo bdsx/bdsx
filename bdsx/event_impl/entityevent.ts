@@ -229,7 +229,7 @@ export class PlayerSleepInBedEvent {
 }
 
 export class EntityConsumeTotemEvent {
-    constructor(public entity: Actor) { }
+    constructor(public entity: Actor, public totem: ItemStack) { }
 }
 
 function onPlayerJump(player: Player):void {
@@ -501,9 +501,8 @@ function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
 const _onPlayerSleepInBed = procHacker.hooking("Player::startSleepInBed", uint8_t, null, Player, BlockPos)(onPlayerSleepInBed);
 
 function onConsumeTotem(entity: Actor): boolean {
-    const event = new EntityConsumeTotemEvent(entity);
-    const canceled = events.consumeTotem.fire(event) === CANCEL;
-    if (canceled) return false;
+    const event = new EntityConsumeTotemEvent(entity, entity.getEquippedTotem());
+    events.consumeTotem.fire(event);
     return _onConsumeTotem(entity);
 }
 const _onConsumeTotem = procHacker.hooking("Actor::consumeTotem", bool_t, null, Actor)(onConsumeTotem);

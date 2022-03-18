@@ -153,8 +153,8 @@ export namespace events {
     export const playerSleepInBed = new Event<(event: PlayerSleepInBedEvent) => void | CANCEL>();
     /** Not cancellable */
     export const playerJump = new Event<(event: PlayerJumpEvent) => void | CANCEL>();
-
-    export const consumeTotem = new Event<(event: EntityConsumeTotemEvent) => void | CANCEL>();
+    /** Not cancellable */
+    export const consumeTotem = new Event<(event: EntityConsumeTotemEvent) => void>();
     ////////////////////////////////////////////////////////
     // Level events
 
