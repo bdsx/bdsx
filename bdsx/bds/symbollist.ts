@@ -507,6 +507,7 @@ export const undecoratedSymbols = [
     'BlockTypeRegistry::lookupByName',
     'Actor::consumeTotem',
     'Actor::hasTotemEquipped',
+    'Actor::hasFamily',
 ] as const;
 
 // decorated symbols

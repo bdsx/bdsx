@@ -956,8 +956,20 @@ export class Actor extends AbstractClass {
     consumeTotem(): boolean {
         abstract();
     }
-    hasTotemEquipped(): bool_t {
+    hasTotemEquipped(): boolean {
         abstract();
+    }
+    protected hasFamily_(familyType: HashedString): boolean {
+        abstract();
+    }
+    hasFamily(familyType: HashedString | string): boolean {
+        if (familyType instanceof HashedString) {
+            return this.hasFamily_(familyType);
+        }
+        const hashStr = HashedString.constructWith(familyType);
+        const hasFamily = this.hasFamily_(hashStr);
+        hashStr.destruct();
+        return hasFamily;
     }
 }
 
