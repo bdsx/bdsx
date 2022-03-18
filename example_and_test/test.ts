@@ -680,6 +680,10 @@ Tester.test({
 
                         actor.addItem(cloned);
                         cloned.destruct();
+
+                        // test for hasFamily
+                        this.assert(actor.hasFamily("player") === true, "the actor must be a Player");
+                        this.assert(actor.hasFamily("undead") === false,"the actor must be not a Undead Mob");
                     }
 
                     if (identifier === 'minecraft:player') {
