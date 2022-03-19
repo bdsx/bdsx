@@ -138,12 +138,16 @@ export class CommandSelectorBase extends AbstractClass {
             return actors as T[];
         }
     }
+    getName():string {
+        abstract();
+    }
 }
 
 /** @param args_1 forcePlayer */
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
 (CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', CxxSharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
+CommandSelectorBase.prototype.getName = procHacker.js('CommandSelectorBase::getName', CxxString, {this:CommandSelectorBase, structureReturn: true});
 
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
