@@ -5,7 +5,7 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
-import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, FallOnBlockEvent, BlockOnLightningHitEvent, BlockOnProjectileHitEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FarmlandDecayEvent, PistonMoveEvent } from "./event_impl/blockevent";
+import type { BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FallOnBlockEvent, FarmlandDecayEvent, LightningHitBlockEvent, PistonMoveEvent, ProjectileHitBlockEvent } from "./event_impl/blockevent";
 import type { EntityConsumeTotemEvent, EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerJumpEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerSleepInBedEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
@@ -84,9 +84,9 @@ export namespace events {
     export const blockInteractedWith = new Event<(event: BlockInteractedWithEvent) => void | CANCEL>();
 
     /** Not cancellable */
-    export const blockProjectileHit = new Event<(event: BlockOnProjectileHitEvent) => void>();
+    export const projectileHitBlock = new Event<(event: ProjectileHitBlockEvent) => void>();
     /** Not cancellable */
-    export const blockLightningHit = new Event<(event: BlockOnLightningHitEvent) => void>();
+    export const lightningHitBlock = new Event<(event: LightningHitBlockEvent) => void>();
     /** Not cancellable */
     export const fallOnBlock = new Event<(event: FallOnBlockEvent) => void>();
 

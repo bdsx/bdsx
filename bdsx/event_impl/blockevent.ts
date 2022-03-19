@@ -240,22 +240,22 @@ const _onBlockInteractedWith = procHacker.hooking(
     return _onBlockInteractedWith(self, player, pos);
 });
 
-export class BlockOnProjectileHitEvent {
+export class ProjectileHitBlockEvent {
     constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public projectile: Actor) {}
 }
 function onProjectileHit(block: Block, region: BlockSource, blockPos: BlockPos, projectile: Actor): void {
-    const event = new BlockOnProjectileHitEvent(block, region, blockPos, projectile);
-    events.blockProjectileHit.fire(event);
+    const event = new ProjectileHitBlockEvent(block, region, blockPos, projectile);
+    events.projectileHitBlock.fire(event);
     return _onProjectileHit(block, region, blockPos, projectile);
 }
 const _onProjectileHit = procHacker.hooking("Block::onProjectileHit", void_t, null, Block, BlockSource, BlockPos, Actor)(onProjectileHit);
 
-export class BlockOnLightningHitEvent {
+export class LightningHitBlockEvent {
     constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos) {}
 }
 function onLightningHit(block: Block, region: BlockSource, blockPos: BlockPos): void {
-    const event = new BlockOnLightningHitEvent(block, region, blockPos);
-    events.blockLightningHit.fire(event);
+    const event = new LightningHitBlockEvent(block, region, blockPos);
+    events.lightningHitBlock.fire(event);
     return _onLightningHit(block, region, blockPos);
 }
 const _onLightningHit = procHacker.hooking("Block::onLightningHit", void_t, null, Block, BlockSource, BlockPos)(onLightningHit);
