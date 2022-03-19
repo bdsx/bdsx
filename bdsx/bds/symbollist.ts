@@ -508,6 +508,9 @@ export const undecoratedSymbols = [
     'Actor::consumeTotem',
     'Actor::hasTotemEquipped',
     'Actor::hasFamily',
+    'Block::onProjectileHit',
+    'Block::onLightningHit',
+    'Block::onFallOn',
 ] as const;
 
 // decorated symbols

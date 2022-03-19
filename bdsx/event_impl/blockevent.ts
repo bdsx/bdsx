@@ -239,3 +239,33 @@ const _onBlockInteractedWith = procHacker.hooking(
     if (canceled) return 1;
     return _onBlockInteractedWith(self, player, pos);
 });
+
+export class BlockOnProjectileHitEvent {
+    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public projectile: Actor) {}
+}
+function onProjectileHit(block: Block, region: BlockSource, blockPos: BlockPos, projectile: Actor): void {
+    const event = new BlockOnProjectileHitEvent(block, region, blockPos, projectile);
+    events.blockLightningHit.fire(event);
+    return _onProjectileHit(block, region, blockPos, projectile);
+}
+const _onProjectileHit = procHacker.hooking("Block::onProjectileHit", void_t, null, Block, BlockSource, BlockPos, Actor)(onProjectileHit);
+
+export class BlockOnLightningHitEvent {
+    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos) {}
+}
+function onLightningHit(block: Block, region: BlockSource, blockPos: BlockPos): void {
+    const event = new BlockOnLightningHitEvent(block, region, blockPos);
+    events.blockLightningHit.fire(event);
+    return _onLightningHit(block, region, blockPos);
+}
+const _onLightningHit = procHacker.hooking("Block::onLightningHit", void_t, null, Block, BlockSource, BlockPos)(onLightningHit);
+
+export class FallOnBlockEvent {
+    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public entity: Actor) {}
+}
+function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity: Actor): void {
+    const event = new FallOnBlockEvent(block, region, blockPos, entity);
+    events.blockLightningHit.fire(event);
+    return _onFallOn(block, region, blockPos, entity);
+}
+const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor)(onFallOn);
