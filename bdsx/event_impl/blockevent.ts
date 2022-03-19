@@ -245,7 +245,7 @@ export class BlockOnProjectileHitEvent {
 }
 function onProjectileHit(block: Block, region: BlockSource, blockPos: BlockPos, projectile: Actor): void {
     const event = new BlockOnProjectileHitEvent(block, region, blockPos, projectile);
-    events.blockLightningHit.fire(event);
+    events.blockProjectileHit.fire(event);
     return _onProjectileHit(block, region, blockPos, projectile);
 }
 const _onProjectileHit = procHacker.hooking("Block::onProjectileHit", void_t, null, Block, BlockSource, BlockPos, Actor)(onProjectileHit);
@@ -265,7 +265,7 @@ export class FallOnBlockEvent {
 }
 function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity: Actor): void {
     const event = new FallOnBlockEvent(block, region, blockPos, entity);
-    events.blockLightningHit.fire(event);
+    events.fallOnBlock.fire(event);
     return _onFallOn(block, region, blockPos, entity);
 }
 const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor)(onFallOn);
