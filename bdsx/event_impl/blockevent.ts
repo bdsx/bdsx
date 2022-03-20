@@ -246,6 +246,9 @@ export class ProjectileHitBlockEvent {
 function onProjectileHit(block: Block, region: BlockSource, blockPos: BlockPos, projectile: Actor): void {
     const event = new ProjectileHitBlockEvent(block, region, blockPos, projectile);
     events.projectileHitBlock.fire(event);
+    decay(block);
+    decay(region);
+    decay(blockPos);
     return _onProjectileHit(block, region, blockPos, projectile);
 }
 const _onProjectileHit = procHacker.hooking("Block::onProjectileHit", void_t, null, Block, BlockSource, BlockPos, Actor)(onProjectileHit);
@@ -256,16 +259,22 @@ export class LightningHitBlockEvent {
 function onLightningHit(block: Block, region: BlockSource, blockPos: BlockPos): void {
     const event = new LightningHitBlockEvent(block, region, blockPos);
     events.lightningHitBlock.fire(event);
+    decay(block);
+    decay(region);
+    decay(blockPos);
     return _onLightningHit(block, region, blockPos);
 }
 const _onLightningHit = procHacker.hooking("Block::onLightningHit", void_t, null, Block, BlockSource, BlockPos)(onLightningHit);
 
 export class FallOnBlockEvent {
-    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public entity: Actor) {}
+    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public entity: Actor, public height: number) {}
 }
-function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity: Actor): void {
-    const event = new FallOnBlockEvent(block, region, blockPos, entity);
+function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity: Actor, height: number): void {
+    const event = new FallOnBlockEvent(block, region, blockPos, entity, height);
     events.fallOnBlock.fire(event);
-    return _onFallOn(block, region, blockPos, entity);
+    decay(block);
+    decay(region);
+    decay(blockPos);
+    return _onFallOn(block, region, blockPos, entity, height);
 }
-const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor)(onFallOn);
+const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFallOn);
