@@ -267,14 +267,14 @@ function onLightningHit(block: Block, region: BlockSource, blockPos: BlockPos): 
 const _onLightningHit = procHacker.hooking("Block::onLightningHit", void_t, null, Block, BlockSource, BlockPos)(onLightningHit);
 
 export class FallOnBlockEvent {
-    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public entity: Actor) {}
+    constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public entity: Actor, public height: number) {}
 }
-function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity: Actor): void {
-    const event = new FallOnBlockEvent(block, region, blockPos, entity);
+function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity: Actor, height: number): void {
+    const event = new FallOnBlockEvent(block, region, blockPos, entity, height);
     events.fallOnBlock.fire(event);
     decay(block);
     decay(region);
     decay(blockPos);
-    return _onFallOn(block, region, blockPos, entity);
+    return _onFallOn(block, region, blockPos, entity, height);
 }
-const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor)(onFallOn);
+const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFallOn);
