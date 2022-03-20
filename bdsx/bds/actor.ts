@@ -3,7 +3,7 @@ import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
@@ -373,6 +373,26 @@ export enum ActorFlags {
     PlayingDead,
     InAscendableBlock,
     OverDescendableBlock,
+}
+
+export enum ActorLinkType {
+    None,
+    Riding,
+    Passenger,
+}
+
+@nativeClass()
+export class ActorLink extends NativeClass {
+    @nativeField(uint8_t)
+    type:ActorLinkType;
+    @nativeField(ActorUniqueID, 0x08)
+    A:ActorUniqueID;
+    @nativeField(ActorUniqueID)
+    B:ActorUniqueID;
+    @nativeField(bool_t)
+    immediate:bool_t;
+    @nativeField(bool_t)
+    causedByRider:bool_t;
 }
 
 @nativeClass(null)

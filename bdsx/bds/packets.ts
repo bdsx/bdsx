@@ -3,8 +3,9 @@ import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
-import { ActorRuntimeID, ActorUniqueID } from "./actor";
-import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
+import { ActorDefinitionIdentifier, ActorLink, ActorRuntimeID, ActorUniqueID } from "./actor";
+import { AttributeInstanceHandle } from "./attribute";
+import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
@@ -221,7 +222,28 @@ export class AddPlayerPacket extends Packet {
 
 @nativeClass(null)
 export class AddActorPacket extends Packet {
-    // unknown
+    @nativeField(CxxVector.make(ActorLink))
+    readonly links:CxxVector<ActorLink>;
+    @nativeField(Vec3)
+    readonly pos:Vec3;
+    @nativeField(Vec3)
+    readonly velocity:Vec3;
+    @nativeField(Vec2)
+    readonly rot:Vec2;
+    @nativeField(float32_t)
+    headYaw:float32_t;
+    @nativeField(ActorUniqueID)
+    entityId:ActorUniqueID;
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID;
+    // @nativeField(SynchedActorData.ref())
+    // readonly entityData:SynchedActorData;
+    // @nativeField(CxxVector.make(DataItem.ref()))
+    // readonly data:CxxVector<DataItem>;
+    @nativeField(ActorDefinitionIdentifier, {offset:0x08 + 0x18, relative:true})
+    readonly type:ActorDefinitionIdentifier;
+    @nativeField(CxxVector.make(AttributeInstanceHandle))
+    readonly attributeHandles:CxxVector<AttributeInstanceHandle>;
 }
 
 @nativeClass(null)
@@ -602,7 +624,8 @@ export class SetActorMotionPacket extends Packet {
 
 @nativeClass(null)
 export class SetActorLinkPacket extends Packet {
-    // unknown
+    @nativeField(ActorLink)
+    link:ActorLink;
 }
 
 @nativeClass(null)
