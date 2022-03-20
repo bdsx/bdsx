@@ -5,6 +5,7 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
+import { Block } from "bdsx/bds/block";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
@@ -60,8 +61,8 @@ class VectorClass extends NativeClass {
  * too many packets to hook. skip them.
  */
 const tooHeavy = new Set<number>();
-tooHeavy.add(0xae);
-tooHeavy.add(0xaf);
+tooHeavy.add(0xae); // SubChunkPacket
+tooHeavy.add(0xaf); // SubChunkRequestPacket
 
 Tester.test({
     async globals() {
@@ -504,7 +505,8 @@ Tester.test({
     },
 
     async checkPacketNames() {
-        const wrongNames = new Map<string, string>([
+        const wrongNames = new Map<string, string | string[]>([
+            ['', ['UpdateTradePacket', 'UpdateEquipPacket']],
             ['ShowModalFormPacket', 'ModalFormRequestPacket'],
             ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
             ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
@@ -524,9 +526,13 @@ Tester.test({
 
                 let getNameResult = packet.getName();
                 const realname = wrongNames.get(getNameResult);
-                if (realname != null) getNameResult = realname;
-
                 let name = Packet.name;
+
+                if (Array.isArray(realname)) {
+                    getNameResult = realname.find((v) => v === name) ?? getNameResult;
+                } else if (realname != null) {
+                    getNameResult = realname;
+                }
 
                 this.equals(getNameResult, name);
                 this.equals(packet.getId(), Packet.ID);
@@ -674,6 +680,10 @@ Tester.test({
 
                         actor.addItem(cloned);
                         cloned.destruct();
+
+                        // test for hasFamily
+                        this.assert(actor.hasFamily("player") === true, "the actor must be a Player");
+                        this.assert(actor.hasFamily("undead") === false,"the actor must be not a Undead Mob");
                     }
 
                     if (identifier === 'minecraft:player') {
@@ -856,6 +866,14 @@ Tester.test({
         events.playerJoin.once(this.wrap((ev)=>{
             this.assert(ev.player.runCommand('testcommand').isSuccess(), 'Actor.runCommand failed');
         }));
+    },
+
+    block() {
+        this.equals(Block.create('dirt')?.getName(), 'minecraft:dirt');
+        this.equals(Block.create('minecraft:dirt')?.getName(), 'minecraft:dirt');
+        this.equals(Block.create('minecraft:air')?.getName(), 'minecraft:air');
+        this.equals(Block.create('minecraft:element_111')?.getName(), 'minecraft:element_111');
+        this.equals(Block.create('minecraft:_no_block_'), null, 'minecraft:_no_block_ is not null');
     },
 }, true);
 

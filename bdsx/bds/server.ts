@@ -5,7 +5,7 @@ import { VoidPointer } from "../core";
 import { events } from "../event";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import type { DimensionId } from "./actor";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
@@ -58,7 +58,7 @@ export const VanilaGameModuleServer = VanillaGameModuleServer;
 export class Minecraft extends AbstractClass {
     vftable:VoidPointer;
     offset_20:VoidPointer;
-    vanillaGameModuleServer:SharedPtr<VanillaGameModuleServer>; // VanilaGameModuleServer
+    vanillaGameModuleServer:CxxSharedPtr<VanillaGameModuleServer>; // VanilaGameModuleServer
     /** @deprecated Use `Minecraft::getCommands` instead */
     get commands():MinecraftCommands {
         return this.getCommands();

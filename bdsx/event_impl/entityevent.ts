@@ -5,7 +5,7 @@ import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySou
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
-import { CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
+import { AddEntity, CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
@@ -226,6 +226,10 @@ export class PlayerSleepInBedEvent {
         public pos: BlockPos,
     ) {
     }
+}
+
+export class EntityConsumeTotemEvent {
+    constructor(public entity: Actor, public totem: ItemStack) { }
 }
 
 function onPlayerJump(player: Player):void {
@@ -481,6 +485,7 @@ const _onSplashPotionHit = procHacker.hooking("SplashPotionEffectSubcomponent::d
 function onProjectileShoot(projectileComponent: ProjectileComponent, projectile: Actor, shooter: Actor): void {
     const event = new ProjectileShootEvent(projectile, shooter);
     events.projectileShoot.fire(event);
+    decay(projectileComponent);
     return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
 }
 const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
@@ -495,3 +500,10 @@ function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
     return _onPlayerSleepInBed(event.player, event.pos);
 }
 const _onPlayerSleepInBed = procHacker.hooking("Player::startSleepInBed", uint8_t, null, Player, BlockPos)(onPlayerSleepInBed);
+
+function onConsumeTotem(entity: Actor): boolean {
+    const event = new EntityConsumeTotemEvent(entity, entity.getEquippedTotem());
+    events.entityConsumeTotem.fire(event);
+    return _onConsumeTotem(entity);
+}
+const _onConsumeTotem = procHacker.hooking("Actor::consumeTotem", bool_t, null, Actor)(onConsumeTotem);

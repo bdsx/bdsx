@@ -102,13 +102,14 @@ export class Block extends NativeClass {
     }
 
     /**
-     * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
-     * @remark DO NOT DESTRUCT
+     * @param blockName Formats like 'minecraft:wool'
+     * @return Block instance. No need to destruct
      */
     static create(blockName:BlockId, data?: number):Block|null;
 
     /**
-     * @remark DO NOT DESTRUCT
+     * minecraft: prefix recommended. that is a little more optimized
+     * @return Block instance. No need to destruct
      */
     static create(blockName:string, data?: number):Block|null;
     static create(blockName:string, data:number = 0):Block|null {

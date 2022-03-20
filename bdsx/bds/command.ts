@@ -9,7 +9,7 @@ import { makefunc } from "../makefunc";
 import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
@@ -118,7 +118,7 @@ export enum CommandSelectionType {
 
 @nativeClass(0xc1, 8)
 export class CommandSelectorBase extends AbstractClass {
-    private _newResults(origin:CommandOrigin):SharedPtr<CxxVector<Actor>> {
+    private _newResults(origin:CommandOrigin):CxxSharedPtr<CxxVector<Actor>> {
         abstract();
     }
     newResults<T extends Actor>(origin:CommandOrigin, typeFilter?:new(...args:any[])=>T):T[] {
@@ -138,12 +138,16 @@ export class CommandSelectorBase extends AbstractClass {
             return actors as T[];
         }
     }
+    getName():string {
+        abstract();
+    }
 }
 
 /** @param args_1 forcePlayer */
 const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
 CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
-(CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', SharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
+(CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', CxxSharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
+CommandSelectorBase.prototype.getName = procHacker.js('CommandSelectorBase::getName', CxxString, {this:CommandSelectorBase, structureReturn: true});
 
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
@@ -344,10 +348,10 @@ export class CommandContext extends NativeClass {
     /**
      * @param commandOrigin it's destructed by the destruction of CommandContext
      */
-    static constructSharedPtr(command:string, commandOrigin:CommandOrigin):SharedPtr<CommandContext> {
+    static constructSharedPtr(command:string, commandOrigin:CommandOrigin):CxxSharedPtr<CommandContext> {
         const sharedptr = new CommandContextSharedPtr(true);
         sharedptr.create(commandContextRefCounter$Vftable);
-        commandContextConstructor(sharedptr.p, command, CommandOriginWrapper.create(commandOrigin), commandVersion);
+        CommandContext$CommandContext(sharedptr.p, command, CommandOriginWrapper.create(commandOrigin), commandVersion);
         return sharedptr;
     }
 }
@@ -355,9 +359,9 @@ export class CommandContext extends NativeClass {
 const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
 const commandContextRefCounter$Vftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
 const commandVersion = proc['CommandVersion::CurrentVersion'].getInt32();
-const commandContextConstructor = procHacker.js('CommandContext::CommandContext', void_t, null,
+const CommandContext$CommandContext = procHacker.js('CommandContext::CommandContext', void_t, null,
     CommandContext, CxxString, CommandOriginWrapper, int32_t);
-const CommandContextSharedPtr = SharedPtr.make(CommandContext);
+const CommandContextSharedPtr = CxxSharedPtr.make(CommandContext);
 
 export enum CommandOutputType {
     None = 0,
@@ -525,7 +529,7 @@ export class MinecraftCommands extends NativeClass {
     /**
      * @param ctx it's destructed by this function
      */
-    executeCommand(ctx:SharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
+    executeCommand(ctx:CxxSharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
         abstract();
     }
     getRegistry():CommandRegistry {
@@ -749,7 +753,12 @@ export class Command extends NativeClass {
         param.options = options;
         return param;
     }
+
+    static isWildcard(selectorBase: CommandSelectorBase): boolean {
+        abstract();
+    }
 }
+Command.isWildcard = procHacker.js("?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z", bool_t, null, CommandSelectorBase);
 
 export namespace Command {
     export const VFTable = CommandVFTable;

@@ -3,7 +3,7 @@ import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, CxxString, float32_t, int32_t, int64_as_float_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import type { Vec2, Vec3 } from "./blockpos";
@@ -949,6 +949,27 @@ export class Actor extends AbstractClass {
     }
     isMoving(): boolean {
         abstract();
+    }
+    getEquippedTotem(): ItemStack {
+        abstract();
+    }
+    consumeTotem(): boolean {
+        abstract();
+    }
+    hasTotemEquipped(): boolean {
+        abstract();
+    }
+    protected hasFamily_(familyType: HashedString): boolean {
+        abstract();
+    }
+    hasFamily(familyType: HashedString | string): boolean {
+        if (familyType instanceof HashedString) {
+            return this.hasFamily_(familyType);
+        }
+        const hashStr = HashedString.constructWith(familyType);
+        const hasFamily = this.hasFamily_(hashStr);
+        hashStr.destruct();
+        return hasFamily;
     }
 }
 

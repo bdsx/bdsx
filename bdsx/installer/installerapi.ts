@@ -287,7 +287,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         targetPath: bdsPath,
         key: 'bdsxCoreVersion',
         keyFile: 'Chakra.dll',
-        oldFiles: ['mods'],
+        oldFiles: ['mods', 'Chakra.pdb'],
     });
 
     try {

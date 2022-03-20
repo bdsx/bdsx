@@ -361,8 +361,8 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
-     * call the constructor
-     * alias of [NativeType.ctor]() and [Native.ctor_copy]();
+     * call the constructor.
+     * alias of \[NativeType.ctor]() and \[Native.ctor_copy]();
      */
     construct(copyFrom?:this|null):void {
         if (copyFrom == null) {
@@ -373,8 +373,8 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
-     * call the destructor
-     * alias of [NativeType.dtor]();
+     * call the destructor.
+     * alias of \[NativeType.dtor]();
      */
     destruct():void {
         this[NativeType.dtor]();

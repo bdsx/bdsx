@@ -134,7 +134,6 @@ export const undecoratedSymbols = [
     'ItemStackBase::setCustomLore',
     'ItemStackBase::setDamageValue',
     'ItemStackBase::startCoolDown',
-    'ItemStackBase::sameItem',
     'ItemStackBase::load',
     'ItemStackBase::isStackedByData',
     'ItemStackBase::isStackable',
@@ -585,6 +584,14 @@ export const undecoratedSymbols = [
     'WeaponItemComponent::buildNetworkTag',
     'WearableItemComponent::buildNetworkTag',
     'ComponentItem::initializeFromNetwork',
+    'BlockTypeRegistry::lookupByName',
+    'Actor::consumeTotem',
+    'Actor::hasTotemEquipped',
+    'Actor::hasFamily',
+    'Block::onProjectileHit',
+    'Block::onLightningHit',
+    'Block::onFallOn',
+    'CommandSelectorBase::getName',
 ] as const;
 
 // decorated symbols
@@ -667,4 +674,7 @@ export const decoratedSymbols = [
     '??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@',
     '?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z',
+    '?sameItemAndAux@ItemStackBase@@QEBA_NAEBV1@@Z',
+    '?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z',
+    '??0HashedString@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
 ] as const;

@@ -2,7 +2,7 @@ import { capi } from "../capi";
 import { abstract } from "../common";
 import { AbstractClass, AbstractMantleClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { procHacker } from "./proc";
@@ -41,7 +41,7 @@ const sharedptr_of_packet = Symbol('sharedptr');
 @nativeClass(0x30)
 export class Packet extends AbstractMantleClass {
     static ID:number;
-    [sharedptr_of_packet]?:SharedPtr<any>|null;
+    [sharedptr_of_packet]?:CxxSharedPtr<any>|null;
 
     getId():MinecraftPacketIds {
         abstract();
@@ -93,7 +93,7 @@ export class Packet extends AbstractMantleClass {
         const packetThis = this as any as {new():(T&Packet), ID:number};
         const id = (this as any).ID;
         if (id == null) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
-        const SharedPacket = SharedPtr.make(packetThis);
+        const SharedPacket = CxxSharedPtr.make(packetThis);
         const sharedptr = new SharedPacket(true);
         createPacketRaw(sharedptr, id);
 
@@ -104,7 +104,7 @@ export class Packet extends AbstractMantleClass {
     }
 }
 
-export const PacketSharedPtr = SharedPtr.make(Packet);
-export type PacketSharedPtr = SharedPtr<Packet>;
+export const PacketSharedPtr = CxxSharedPtr.make(Packet);
+export type PacketSharedPtr = CxxSharedPtr<Packet>;
 
 export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, int32_t);
