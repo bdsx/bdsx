@@ -1275,92 +1275,92 @@ VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, 
 Biome.prototype.getBiomeType = procHacker.js("Biome::getBiomeType", uint32_t, {this:Biome});
 
 //item_component.ts
-const cooldown$vftable = proc["CooldownItemComponent::`vftable'"];
-const Armor$vftable = proc["ArmorItemComponent::`vftable'"];
-const Durability$vftable = proc["DurabilityItemComponent::`vftable'"];
-const Digger$vftable = proc["DiggerItemComponent::`vftable'"];
-const DisplayName$vftable = proc["DisplayNameItemComponent::`vftable'"];
-const DyePowder$vftable = proc["DyePowderItemComponent::`vftable'"];
-const EntityPlacer$vftable = proc["EntityPlacerItemComponent::`vftable'"];
-const Food$vftable = proc["FoodItemComponent::`vftable'"];
-const Fuel$vftable = proc["FuelItemComponent::`vftable'"];
-const Icon$vftable = proc["IconItemComponent::`vftable'"];
-const KnockbackResistance$vftable = proc["KnockbackResistanceItemComponent::`vftable'"];
-const OnUse$vftable = proc["OnUseItemComponent::`vftable'"];
-const Planter$vftable = proc["PlanterItemComponent::`vftable'"];
-const Projectile$vftable = proc["ProjectileItemComponent::`vftable'"];
-const Record$vftable = proc["RecordItemComponent::`vftable'"];
-const RenderOffsets$vftable = proc["RenderOffsetsItemComponent::`vftable'"];
-const Repairable$vftable = proc["RepairableItemComponent::`vftable'"];
-const Shooter$vftable = proc["ShooterItemComponent::`vftable'"];
-const Throwable$vftable = proc["ThrowableItemComponent::`vftable'"];
-const Weapon$vftable = proc["WeaponItemComponent::`vftable'"];
-const Wearable$vftable = proc["WearableItemComponent::`vftable'"];
+const CooldownItemComponent$vftable = proc["CooldownItemComponent::`vftable'"];
+const ArmorItemComponent$vftable = proc["ArmorItemComponent::`vftable'"];
+const DurabilityItemComponent$vftable = proc["DurabilityItemComponent::`vftable'"];
+const DiggerItemComponent$vftable = proc["DiggerItemComponent::`vftable'"];
+const DisplayNameItemComponent$vftable = proc["DisplayNameItemComponent::`vftable'"];
+const DyePowderItemComponent$vftable = proc["DyePowderItemComponent::`vftable'"];
+const EntityPlacerItemComponent$vftable = proc["EntityPlacerItemComponent::`vftable'"];
+const FoodItemComponent$vftable = proc["FoodItemComponent::`vftable'"];
+const FuelItemComponent$vftable = proc["FuelItemComponent::`vftable'"];
+const IconItemComponent$vftable = proc["IconItemComponent::`vftable'"];
+const KnockbackResistanceItemComponent$vftable = proc["KnockbackResistanceItemComponent::`vftable'"];
+const OnUseItemComponent$vftable = proc["OnUseItemComponent::`vftable'"];
+const PlanterItemComponent$vftable = proc["PlanterItemComponent::`vftable'"];
+const ProjectileItemComponent$vftable = proc["ProjectileItemComponent::`vftable'"];
+const RecordItemComponent$vftable = proc["RecordItemComponent::`vftable'"];
+const RenderOffsetsItemComponent$vftable = proc["RenderOffsetsItemComponent::`vftable'"];
+const RepairableItemComponent$vftable = proc["RepairableItemComponent::`vftable'"];
+const ShooterItemComponent$vftable = proc["ShooterItemComponent::`vftable'"];
+const ThrowableItemComponent$vftable = proc["ThrowableItemComponent::`vftable'"];
+const WeaponItemComponent$vftable = proc["WeaponItemComponent::`vftable'"];
+const WearableItemComponent$vftable = proc["WearableItemComponent::`vftable'"];
 
 ItemComponent.setResolver((ptr) => {
     if (ptr === null) return null;
     const vftable = ptr.getPointer();
-    if (vftable.equals(cooldown$vftable)) {
+    if (vftable.equals(CooldownItemComponent$vftable)) {
         return ptr.as(CooldownItemComponent);
     }
-    if (vftable.equals(Armor$vftable)) {
+    if (vftable.equals(ArmorItemComponent$vftable)) {
         return ptr.as(ArmorItemComponent);
     }
-    if (vftable.equals(Durability$vftable)) {
+    if (vftable.equals(DurabilityItemComponent$vftable)) {
         return ptr.as(DurabilityItemComponent);
     }
-    if (vftable.equals(Digger$vftable)) {
+    if (vftable.equals(DiggerItemComponent$vftable)) {
         return ptr.as(DiggerItemComponent);
     }
-    if (vftable.equals(DisplayName$vftable)) {
+    if (vftable.equals(DisplayNameItemComponent$vftable)) {
         return ptr.as(DisplayNameItemComponent);
     }
-    if (vftable.equals(DyePowder$vftable)) {
+    if (vftable.equals(DyePowderItemComponent$vftable)) {
         return ptr.as(DyePowderItemComponent);
     }
-    if (vftable.equals(EntityPlacer$vftable)) {
+    if (vftable.equals(EntityPlacerItemComponent$vftable)) {
         return ptr.as(EntityPlacerItemComponent);
     }
-    if (vftable.equals(Food$vftable)) {
+    if (vftable.equals(FoodItemComponent$vftable)) {
         return ptr.as(FoodItemComponent);
     }
-    if (vftable.equals(Fuel$vftable)) {
+    if (vftable.equals(FuelItemComponent$vftable)) {
         return ptr.as(FuelItemComponent);
     }
-    if (vftable.equals(Icon$vftable)) {
+    if (vftable.equals(IconItemComponent$vftable)) {
         return ptr.as(IconItemComponent);
     }
-    if (vftable.equals(KnockbackResistance$vftable)) {
+    if (vftable.equals(KnockbackResistanceItemComponent$vftable)) {
         return ptr.as(KnockbackResistanceItemComponent);
     }
-    if (vftable.equals(OnUse$vftable)) {
+    if (vftable.equals(OnUseItemComponent$vftable)) {
         return ptr.as(OnUseItemComponent);
     }
-    if (vftable.equals(Planter$vftable)) {
+    if (vftable.equals(PlanterItemComponent$vftable)) {
         return ptr.as(PlanterItemComponent);
     }
-    if (vftable.equals(Projectile$vftable)) {
+    if (vftable.equals(ProjectileItemComponent$vftable)) {
         return ptr.as(ProjectileItemComponent);
     }
-    if (vftable.equals(Record$vftable)) {
+    if (vftable.equals(RecordItemComponent$vftable)) {
         return ptr.as(RecordItemComponent);
     }
-    if (vftable.equals(RenderOffsets$vftable)) {
+    if (vftable.equals(RenderOffsetsItemComponent$vftable)) {
         return ptr.as(RenderOffsetsItemComponent);
     }
-    if (vftable.equals(Repairable$vftable)) {
+    if (vftable.equals(RepairableItemComponent$vftable)) {
         return ptr.as(RepairableItemComponent);
     }
-    if (vftable.equals(Shooter$vftable)) {
+    if (vftable.equals(ShooterItemComponent$vftable)) {
         return ptr.as(ShooterItemComponent);
     }
-    if (vftable.equals(Throwable$vftable)) {
+    if (vftable.equals(ThrowableItemComponent$vftable)) {
         return ptr.as(ThrowableItemComponent);
     }
-    if (vftable.equals(Weapon$vftable)) {
+    if (vftable.equals(WeaponItemComponent$vftable)) {
         return ptr.as(WeaponItemComponent);
     }
-    if (vftable.equals(Wearable$vftable)) {
+    if (vftable.equals(WearableItemComponent$vftable)) {
         return ptr.as(WearableItemComponent);
     }
     return ptr.as(ItemComponent);
