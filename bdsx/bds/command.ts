@@ -17,7 +17,6 @@ import { Actor } from "./actor";
 import { Block as BlockClass } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandOrigin } from "./commandorigin";
-import { JsonValue } from "./connreq";
 import { MobEffect as MobEffectClass } from "./effects";
 import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
@@ -368,12 +367,8 @@ export enum CommandOutputType {
     None = 0,
     LastOutput = 1,
     Silent = 2,
-    /** @deprecated */
-    Type3 = 3,
-    AllOutput = 3, // user / server console / command block
-    /** @deprecated */
+    Type3 = 3, // user / server console / command block
     ScriptEngine = 4,
-    DataSet = 4,
 }
 
 type CommandOutputParameterType = string|boolean|number|Actor|BlockPos|Vec3|Actor[];
@@ -520,10 +515,6 @@ export class CommandOutput extends NativeClass {
 export class CommandOutputSender extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
-
-    _toJson(commandOutput:CommandOutput):JsonValue {
-        abstract();
-    }
 }
 
 @nativeClass(null)
@@ -927,8 +918,6 @@ CommandOutput.prototype.empty = procHacker.js('CommandOutput::empty', bool_t, {t
 (CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 (CommandOutput.prototype as any)._error = procHacker.js('?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 (CommandOutput.prototype as any)._addMessage = procHacker.js('CommandOutput::addMessage', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
-
-CommandOutputSender.prototype._toJson = procHacker.js('CommandOutputSender::_toJson', JsonValue, {this:CommandOutputSender, structureReturn:true}, CommandOutput);
 
 MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
