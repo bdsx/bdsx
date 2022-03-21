@@ -512,6 +512,8 @@ export const undecoratedSymbols = [
     'Block::onLightningHit',
     'Block::onFallOn',
     'CommandSelectorBase::getName',
+    'Player::isHurt',
+    'Player::isSpawned',
 ] as const;
 
 // decorated symbols

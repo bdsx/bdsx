@@ -540,6 +540,8 @@ Player.prototype.forceAllowEating = procHacker.js("Player::forceAllowEating", bo
 Player.prototype.getSpeed = procHacker.js("Player::getSpeed", float32_t, {this:Player});
 Player.prototype.hasOpenContainer = procHacker.js("Player::hasOpenContainer", bool_t, {this:Player});
 Player.prototype.isHungry = procHacker.js("Player::isHungry", bool_t, {this:Player});
+Player.prototype.isHurt = procHacker.js("Player::isHurt", bool_t, {this:Player});
+Player.prototype.isSpawned = procHacker.js("Player::isSpawned", bool_t, {this:Player});
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});

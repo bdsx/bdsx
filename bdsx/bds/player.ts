@@ -403,6 +403,12 @@ export class Player extends Mob {
     isHungry(): boolean {
         abstract();
     }
+    isHurt(): boolean {
+        abstract();
+    }
+    isSpawned(): boolean {
+        abstract();
+    }
 }
 
 namespace RawTextObject {
