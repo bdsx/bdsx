@@ -512,6 +512,8 @@ export const undecoratedSymbols = [
     'Block::onLightningHit',
     'Block::onFallOn',
     'CommandSelectorBase::getName',
+    'CommandOutputSender::_toJson',
+    'Command::run',
 ] as const;
 
 // decorated symbols

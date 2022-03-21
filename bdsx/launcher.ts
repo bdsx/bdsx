@@ -3,8 +3,8 @@ import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
-import { CommandContext, MCRESULT } from "./bds/command";
-import { ServerCommandOrigin } from "./bds/commandorigin";
+import { Command, CommandContext, CommandOutput, CommandOutputType, MCRESULT, MinecraftCommands } from "./bds/command";
+import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
 import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
 import * as nimodule from './bds/networkidentifier';
@@ -64,6 +64,8 @@ const cmdOutputLiner = new Liner;
 
 const commandQueue = new MultiThreadQueue(CxxString[NativeType.size]);
 const commandQueueBuffer = new CxxStringWrapper(true);
+const commandOutputData = new Map<string, IExecuteCommandCallback["data"]>();
+const commandOutputMuted = new Set<string>();
 
 function patchForStdio():void {
     // hook bedrock log
@@ -93,6 +95,30 @@ function patchForStdio():void {
     }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
+    const runCommand = procHacker.hooking('Command::run', void_t, null, Command, CommandOrigin, CommandOutput)(
+        (command, origin, output) => {
+            if (commandOutputData.has(origin.uuid)) {
+                output.constructAs(CommandOutputType.DataSet);
+                runCommand(command, origin, output);
+            } else runCommand(command, origin, output);
+        },
+    );
+    procHacker.hookingRawWithCallOriginal('MinecraftCommands::handleOutput',
+        makefunc.np((commands, origin, output)=>{
+            try {
+                const uuid = origin.uuid;
+                const json = commands.sender._toJson(output);
+                commandOutputData.set(uuid, json.value());
+                json.destruct();
+                if (commandOutputMuted.has(uuid)) {
+                    output.constructAs(CommandOutputType.None);
+                    commandOutputMuted.delete(uuid);
+                }
+            } catch (err) {
+                events.errorFire(err);
+            }
+        }, void_t, {name: 'hook of MinecraftCommands::handleOutput'}, MinecraftCommands, CommandOrigin, CommandOutput),
+        [Register.rcx, Register.rdx, Register.r8], []);
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
         // void(*callback)(const char* log, size_t size)
         const line = cmdOutputLiner.write(ptr.getString(bytes));
@@ -401,15 +427,30 @@ export namespace bedrockServer {
      * it does the same thing with executeCommandOnConsole
      * but call the internal function directly
      */
-    export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null):MCRESULT {
+    export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null, callback?:(data:IExecuteCommandCallback["data"]) => void):MCRESULT {
         const minecraft = bd_server.serverInstance.minecraft;
         const origin = ServerCommandOrigin.allocateWith('Server',
             minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
             permissionLevel,
             dimension);
         const ctx = CommandContext.constructSharedPtr(command, origin);
-        const res = minecraft.getCommands().executeCommand(ctx, mute);
+        const uuid = origin.uuid;
+        commandOutputData.set(uuid, null as any);
+        if (mute) commandOutputMuted.add(uuid);
+        const res = minecraft.getCommands().executeCommand(ctx, false); // Do not mute it, otherwise there will be no statusMessage
         // ctx, origin: no need to destruct, it's destructed by internal functions.
+        if (callback) {
+            const json = commandOutputData.get(uuid)!;
+            commandOutputData.delete(uuid);
+            if (json) {
+                if (json.statusCode == null) json.statusCode = res.getFullCode(); // No status code if syntax error
+                try {
+                    callback(json);
+                } catch (err) {
+                    events.errorFire(err);
+                }
+            }
+        }
         return res;
     }
 
