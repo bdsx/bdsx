@@ -40,7 +40,6 @@ export const undecoratedSymbols = [
     'ServerNetworkHandler::_onPlayerLeft',
     "ServerNetworkHandler::`vftable'",
     'ServerPlayer::changeDimension',
-    'ServerPlayer::knockback',
     'ServerPlayer::openInventory',
     'ServerPlayer::sendInventory',
     'ServerPlayer::sendNetworkPacket',
