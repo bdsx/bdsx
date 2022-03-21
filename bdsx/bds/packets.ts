@@ -752,7 +752,7 @@ export class GuiDataPickItemPacket extends Packet {
     // unknown
 }
 
-@nativeClass(null)
+@nativeClass()
 export class AdventureSettingsPacket extends Packet {
     @nativeField(uint32_t)
     flag1: uint32_t;
