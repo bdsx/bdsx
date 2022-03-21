@@ -593,6 +593,8 @@ export const undecoratedSymbols = [
     'CommandSelectorBase::getName',
     'Player::isHurt',
     'Player::isSpawned',
+    'CommandOutputSender::_toJson',
+    'Command::run',
 ] as const;
 
 // decorated symbols
