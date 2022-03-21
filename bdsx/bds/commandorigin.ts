@@ -164,14 +164,14 @@ const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 
 @nativeClass(0x48)
 export class ServerCommandOrigin extends CommandOrigin {
-    static constructWith(requestId:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
+    static constructWith(name:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
         const ptr = new ServerCommandOrigin(true);
-        ServerCommandOrigin$ServerCommandOrigin(ptr, requestId, level, permissionLevel, dimension);
+        ServerCommandOrigin$ServerCommandOrigin(ptr, name, level, permissionLevel, dimension);
         return ptr;
     }
-    static allocateWith(requestId:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
+    static allocateWith(name:string, level:ServerLevel, permissionLevel:number, dimension:Dimension|null):ServerCommandOrigin {
         const ptr = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
-        ServerCommandOrigin$ServerCommandOrigin(ptr, requestId, level, permissionLevel, dimension);
+        ServerCommandOrigin$ServerCommandOrigin(ptr, name, level, permissionLevel, dimension);
         return ptr;
     }
 }
