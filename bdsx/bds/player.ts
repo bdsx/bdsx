@@ -400,18 +400,37 @@ export class Player extends Mob {
     hasOpenContainer(): boolean {
         abstract();
     }
+    /**
+     * Returns whether the player is hungry.
+     */
     isHungry(): boolean {
         abstract();
     }
+    /**
+     * Returns whether the player is hurt.
+     */
     isHurt(): boolean {
         abstract();
     }
+    /**
+     * Returns whether the player has spawned in the Level. Different from `isAlive`.
+     * if true, it's a valid entity.
+     */
     isSpawned(): boolean {
         abstract();
     }
+    /**
+     * Returns whether the player is loading in login screen.
+     * if true, it's not a valid entity.
+     */
     isLoading(): boolean {
         abstract();
     }
+    /**
+     * Returns whether the player is initialized.
+     * if true, it's a valid entity.
+     * it checks {@link isSpawned}, and {@link isLoading} etc. internally.
+     */
     isPlayerInitialized(): boolean {
         abstract();
     }
