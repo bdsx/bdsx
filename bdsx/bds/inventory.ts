@@ -147,6 +147,9 @@ export class Item extends NativeClass {
     getSerializedName():CxxString {
         abstract();
     }
+    getCooldownType(): HashedString {
+        abstract();
+    }
 }
 
 /**
@@ -155,10 +158,7 @@ export class Item extends NativeClass {
 export class ArmorItem extends Item {
 }
 
-export class ComponentItem extends NativeClass {
-    getCooldownType(): HashedString {
-        abstract();
-    }
+export class ComponentItem extends Item {
     getComponent(identifier:string):ItemComponent{
         const hashedStr = HashedString.construct();
         hashedStr.set(identifier);

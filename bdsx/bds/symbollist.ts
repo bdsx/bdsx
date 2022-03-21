@@ -504,7 +504,6 @@ export const undecoratedSymbols = [
     'Level::getPlayerByXuid',
     'Actor::isMoving',
     'Abilities::isFlying',
-    'Player::getItemCooldownLeft',
     'ComponentItem::getCooldownType',
     "CooldownItemComponent::`vftable'",
     'CooldownItemComponent::getIdentifier',
@@ -677,4 +676,5 @@ export const decoratedSymbols = [
     '?sameItemAndAux@ItemStackBase@@QEBA_NAEBV1@@Z',
     '?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z',
     '??0HashedString@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
+    '?getItemCooldownLeft@Player@@UEBAHAEBVHashedString@@@Z',
 ] as const;
