@@ -1008,8 +1008,8 @@ export namespace CommandRegistry {
 
     @nativeClass(null)
     export class ParseToken extends NativeClass {
-        @nativeField(MantleClass.ref(), 0x18)
-        text:MantleClass;
+        @nativeField(StaticPointer, 0x18)
+        text:StaticPointer;
         @nativeField(uint32_t)
         length:uint32_t;
         @nativeField(CommandRegistry.Symbol)
