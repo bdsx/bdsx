@@ -1430,7 +1430,7 @@ ItemComponent.prototype.isWearable = function () {
     return this instanceof WearableItemComponent;
 };
 
-ItemComponent.prototype.buildNetworkTag = makefunc.js([0x28], CompoundTag.ref(), { this: ItemComponent, structureReturn: true });
+ItemComponent.prototype.buildNetworkTag = makefunc.js([0x28], CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
 ItemComponent.prototype.initializeFromNetwork = makefunc.js([0x30], void_t, {this:ItemComponent}, CompoundTag);
 
 CooldownItemComponent.getIdentifier = procHacker.js("CooldownItemComponent::getIdentifier", HashedString, null);
