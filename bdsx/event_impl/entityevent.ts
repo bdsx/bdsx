@@ -5,7 +5,7 @@ import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySou
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
-import { AddEntity, CompletedUsingItemPacket, ScriptCustomEventPacket } from "../bds/packets";
+import { CompletedUsingItemPacket } from "../bds/packets";
 import { Player, ServerPlayer } from "../bds/player";
 import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
