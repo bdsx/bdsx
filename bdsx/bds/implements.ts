@@ -479,10 +479,10 @@ Player.prototype.isSleeping = procHacker.js("Player::isSleeping", bool_t, {this:
 Player.prototype.isJumping = procHacker.js("Player::isJumping", bool_t, {this:Player});
 const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("AdventureSettingsPacket::AdventureSettingsPacket", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
 Player.prototype.syncAbilities = function() {
-    const pk = AdventureSettingsPacket.allocate();
+    const pk = new AdventureSettingsPacket(true);
     AdventureSettingsPacket$AdventureSettingsPacket(pk, serverInstance.minecraft.getLevel().getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
     this.sendPacket(pk);
-    pk.dispose();
+    pk.destruct();
 };
 
 Player.prototype.clearRespawnPosition = procHacker.js('Player::clearRespawnPosition', void_t, {this:Player});
