@@ -7,6 +7,7 @@ import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
+import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
@@ -115,6 +116,13 @@ export class Player extends Mob {
      * @param item - Item to start the cooldown on
      */
     startCooldown(item: Item): void {
+        abstract();
+    }
+
+    /**
+     * Returns a tick. If you want seconds, divide by 20
+     */
+    getItemCooldownLeft(cooldownType:HashedString): number {
         abstract();
     }
     /**
