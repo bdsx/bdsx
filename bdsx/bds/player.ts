@@ -409,6 +409,12 @@ export class Player extends Mob {
     isSpawned(): boolean {
         abstract();
     }
+    isLoading(): boolean {
+        abstract();
+    }
+    isPlayerInitialized(): boolean {
+        abstract();
+    }
 }
 
 namespace RawTextObject {

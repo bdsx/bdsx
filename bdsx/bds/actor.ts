@@ -1028,6 +1028,9 @@ export class Mob extends Actor {
     sendInventory(shouldSelectSlot:boolean = false): void {
         this._sendInventory(shouldSelectSlot);
     }
+    setSpeed(speed: number): void {
+        abstract();
+    }
 }
 
 export class ItemActor extends Actor {

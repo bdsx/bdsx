@@ -377,9 +377,9 @@ Actor.prototype.hasTotemEquipped = procHacker.js("Actor::hasTotemEquipped", bool
 
 Mob.prototype.knockback = makefunc.js([0x898], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("Mob::getSpeed", float32_t, {this:Mob});
+Mob.prototype.setSpeed = makefunc.js([0x8d0], void_t, {this:Mob}, float32_t);
 Mob.prototype.isSprinting = procHacker.js("Mob::isSprinting", bool_t, {this:Mob});
 Mob.prototype.sendArmorSlot = procHacker.js("Mob::sendArmorSlot", void_t, {this:Mob}, uint32_t);
-(Mob.prototype as any)._sendInventory = procHacker.js("Mob::sendInventory", void_t, {this:Mob}, bool_t);
 Mob.prototype.setSprinting = procHacker.js("Mob::setSprinting", void_t, {this:Mob}, bool_t);
 Mob.prototype.kill = procHacker.js("Mob::kill", void_t, {this:Mob});
 (Mob.prototype as any)._sendInventory = makefunc.js([0xa40], void_t, {this:Mob}, bool_t);
@@ -542,6 +542,8 @@ Player.prototype.hasOpenContainer = procHacker.js("Player::hasOpenContainer", bo
 Player.prototype.isHungry = procHacker.js("Player::isHungry", bool_t, {this:Player});
 Player.prototype.isHurt = procHacker.js("Player::isHurt", bool_t, {this:Player});
 Player.prototype.isSpawned = procHacker.js("Player::isSpawned", bool_t, {this:Player});
+Player.prototype.isLoading = makefunc.js([0xc80], bool_t, {this:Player});
+Player.prototype.isPlayerInitialized  = makefunc.js([0xc88], bool_t, {this:Player});
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});
