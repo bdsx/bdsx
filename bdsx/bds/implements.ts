@@ -618,8 +618,8 @@ Packet.prototype.destruct = makefunc.js([0x0], void_t, {this:Packet});
 Packet.prototype.getId = makefunc.js([0x8], int32_t, {this:Packet});
 Packet.prototype.getName = makefunc.js([0x10], CxxString, {this:Packet, structureReturn: true});
 Packet.prototype.write = makefunc.js([0x18], void_t, {this:Packet}, BinaryStream);
-Packet.prototype.read = makefunc.js([0x20], int32_t, {this:Packet}, BinaryStream);
-Packet.prototype.readExtended = makefunc.js([0x28], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
+Packet.prototype.readExtended = makefunc.js([0x20], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
+Packet.prototype.read = makefunc.js([0x30], int32_t, {this:Packet}, BinaryStream);
 
 ServerNetworkHandler.prototype._getServerPlayer = procHacker.js("ServerNetworkHandler::_getServerPlayer", ServerPlayer, {this:ServerNetworkHandler}, NetworkIdentifier, int32_t);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("ServerNetworkHandler::disconnectClient", void_t, {this: ServerNetworkHandler}, NetworkIdentifier, int32_t, CxxString, bool_t);
