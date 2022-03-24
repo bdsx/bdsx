@@ -594,6 +594,8 @@ export const undecoratedSymbols = [
     'Player::isSpawned',
     'CommandOutputSender::_toJson',
     'Command::run',
+    'ServerPlayer::getInputMode',
+    'ServerPlayer::setInputMode',
 ] as const;
 
 // decorated symbols

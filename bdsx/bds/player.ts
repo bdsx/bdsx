@@ -866,6 +866,13 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
+
+    getInputMode(): InputMode {
+        abstract();
+    }
+    setInputMode(mode: InputMode): void {
+        abstract();
+    }
 }
 
 @nativeClass(0x2f0)
@@ -877,6 +884,13 @@ export class PlayerListEntry extends AbstractClass {
     static create(player: Player): PlayerListEntry {
         return PlayerListEntry.constructWith(player);
     }
+}
+
+export enum InputMode {
+    Mouse = 1,
+    Touch = 2,
+    GamePad = 3,
+    MotionController = 4,
 }
 
 /**
