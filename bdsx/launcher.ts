@@ -3,7 +3,7 @@ import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
-import { Command, CommandContext, CommandOutput, CommandOutputType, MCRESULT, MinecraftCommands } from "./bds/command";
+import { CommandContext, CommandOutput, CommandOutputType, MCRESULT, MinecraftCommands } from "./bds/command";
 import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
 import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
@@ -64,7 +64,7 @@ const cmdOutputLiner = new Liner;
 
 const commandQueue = new MultiThreadQueue(CxxString[NativeType.size]);
 const commandQueueBuffer = new CxxStringWrapper(true);
-const commandOutputData = new Map<string, IExecuteCommandCallback["data"]>();
+const commandOutputData = new Map<string, IExecuteCommandCallback["data"] | null>();
 const commandOutputMuted = new Set<string>();
 
 function patchForStdio():void {
@@ -95,27 +95,22 @@ function patchForStdio():void {
     }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
-    const runCommand = procHacker.hooking('Command::run', void_t, null, Command, CommandOrigin, CommandOutput)(
-        (command, origin, output) => {
+    procHacker.hookingRawWithCallOriginal('Command::run',
+        makefunc.np((commands, origin, output)=>{
             if (commandOutputData.has(origin.uuid)) {
                 output.constructAs(CommandOutputType.DataSet);
-                runCommand(command, origin, output);
-            } else runCommand(command, origin, output);
-        },
-    );
+            }
+        }, void_t, {name: 'hook of Command::run'}, MinecraftCommands, CommandOrigin, CommandOutput),
+        [Register.rcx, Register.rdx, Register.r8], []);
     procHacker.hookingRawWithCallOriginal('MinecraftCommands::handleOutput',
         makefunc.np((commands, origin, output)=>{
-            try {
-                const uuid = origin.uuid;
-                const json = commands.sender._toJson(output);
-                commandOutputData.set(uuid, json.value());
-                json.destruct();
-                if (commandOutputMuted.has(uuid)) {
-                    output.constructAs(CommandOutputType.None);
-                    commandOutputMuted.delete(uuid);
-                }
-            } catch (err) {
-                events.errorFire(err);
+            const uuid = origin.uuid;
+            const json = commands.sender._toJson(output);
+            commandOutputData.set(uuid, json.value());
+            json.destruct();
+            if (commandOutputMuted.has(uuid)) { // Mute it if it should, but only after json data is gotten
+                output.constructAs(CommandOutputType.None);
+                commandOutputMuted.delete(uuid);
             }
         }, void_t, {name: 'hook of MinecraftCommands::handleOutput'}, MinecraftCommands, CommandOrigin, CommandOutput),
         [Register.rcx, Register.rdx, Register.r8], []);
@@ -435,7 +430,7 @@ export namespace bedrockServer {
             dimension);
         const ctx = CommandContext.constructSharedPtr(command, origin);
         const uuid = origin.uuid;
-        commandOutputData.set(uuid, null as any);
+        commandOutputData.set(uuid, null);
         if (mute) commandOutputMuted.add(uuid); // Mute it after statusMessage is gotten
         const res = minecraft.getCommands().executeCommand(ctx, false); // Do not mute it, otherwise there will be no statusMessage
         // ctx, origin: no need to destruct, it's destructed by internal functions.
