@@ -496,6 +496,8 @@ export const undecoratedSymbols = [
     'CommandOutput::addMessage',
     'CommandOutput::empty',
     'CommandOutput::getSuccessCount',
+    'CommandSoftEnumRegistry::updateSoftEnum',
+    'CommandRegistry::addSoftEnum',
     'MobEffectInstance::getAmplifier',
     'MobEffect::getId',
     'Actor::removeAllEffects',
