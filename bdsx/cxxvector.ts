@@ -503,7 +503,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
 
                     protected _get(ptr:NativePointer, index:number):NativeClass{
                         const item = this.cache[index];
-                        if (item != null) return item;
+                        if (item != null && ptr.equals(item)) return item;
                         const type = this.componentType;
                         return this.cache[index] = ptr.as(type);
                     }
