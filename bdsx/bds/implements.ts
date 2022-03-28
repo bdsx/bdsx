@@ -459,6 +459,9 @@ Player.abstract({
 const PlayerListPacket$emplace = procHacker.js("PlayerListPacket::emplace", void_t, null, PlayerListPacket, PlayerListEntry);
 Player.prototype.setName = function(name:string):void {
     (this as any)._setName(name);
+    this.updatePlayerList();
+};
+Player.prototype.updatePlayerList = function() {
     const entry = PlayerListEntry.constructWith(this);
     const pk = PlayerListPacket.allocate();
     PlayerListPacket$emplace(pk, entry);
@@ -516,6 +519,7 @@ Player.prototype.getCertificate = function() {
     const base = this.ctxbase;
     if (!base.isValid()) throw Error(`is not valid`);
     const registry = base._enttRegistry();
+    console.log(Registry_getEntityIdentifierComponent(registry, base.entityId));
     return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
 };
 Player.prototype.getDestroySpeed = procHacker.js('Player::getDestroySpeed', float32_t, {this:Player}, Block.ref());
@@ -582,7 +586,7 @@ NetworkHandler.abstract({
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
 NetworkHandler.prototype.getConnectionFromId = procHacker.js(`NetworkHandler::_getConnectionFromId`, NetworkHandler.Connection, {this:NetworkHandler});
 
-// void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char u)
+// void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char senderSubClientId)
 NetworkHandler.prototype.send = procHacker.js('NetworkHandler::send', void_t, {this:NetworkHandler}, NetworkIdentifier, Packet, int32_t);
 
 // void NetworkHandler::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
@@ -601,8 +605,8 @@ const Packet$dtor = makefunc.js([0, 0], void_t, {this:Packet}, int32_t);
 Packet.prototype[NativeType.dtor] = function() {
     Packet$dtor.call(this, 1);
 };
-Packet.prototype.sendTo = function(target:NetworkIdentifier, unknownarg:number=0):void {
-    networkHandler.send(target, this, unknownarg);
+Packet.prototype.sendTo = function(target:NetworkIdentifier, senderSubClientId:number=0):void {
+    networkHandler.send(target, this, senderSubClientId);
 };
 Packet.prototype.destruct = makefunc.js([0x0], void_t, {this:Packet});
 Packet.prototype.getId = makefunc.js([0x8], int32_t, {this:Packet});

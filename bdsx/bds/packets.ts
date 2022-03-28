@@ -10,8 +10,9 @@ import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
-import type { GameType } from "./player";
+import { GameType, PlayerListEntry } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
+import { SerializedSkin } from "./skin";
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
@@ -804,7 +805,10 @@ export class SetPlayerGameTypePacket extends Packet {
 
 @nativeClass(null)
 export class PlayerListPacket extends Packet {
-    // unknown
+    @nativeField(CxxVector.make(PlayerListEntry))
+    readonly entries:CxxVector<PlayerListEntry>;
+    @nativeField(uint8_t)
+    action:uint8_t;
 }
 
 @nativeClass(null)
@@ -1119,7 +1123,14 @@ export class PurchaseReceiptPacket extends Packet {
 
 @nativeClass(null)
 export class PlayerSkinPacket extends Packet {
-    // unknown
+    @nativeField(mce.UUID)
+    uuid:mce.UUID;
+    @nativeField(SerializedSkin)
+    readonly skin:SerializedSkin;
+    @nativeField(CxxString)
+    localizedNewSkinName:CxxString;
+    @nativeField(CxxString)
+    localizedOldSkinName:CxxString;
 }
 
 @nativeClass(null)

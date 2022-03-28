@@ -507,6 +507,8 @@ export const undecoratedSymbols = [
     'Actor::isMoving',
     'Abilities::isFlying',
     'BlockTypeRegistry::mBlockLookupMap',
+    'SerializedSkin::~SerializedSkin',
+    'CommandSelectorBase::getName',
 ] as const;
 
 // decorated symbols
@@ -591,4 +593,7 @@ export const decoratedSymbols = [
     '?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z',
     '?sameItemAndAux@ItemStackBase@@QEBA_NAEBV1@@Z',
     '?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z',
+    '??0SerializedSkin@@QEAA@XZ',
+    '??0SerializedSkin@@QEAA@AEBV0@@Z',
+    '??0SerializedSkin@@QEAA@$$QEAV0@@Z',
 ] as const;

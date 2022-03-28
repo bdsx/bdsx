@@ -1,5 +1,7 @@
 import { abstract, BuildPlatform } from "../common";
-import { AbstractClass, nativeClass } from "../nativeclass";
+import { mce } from "../mce";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
+import { CxxString, int32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
 import { ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -12,7 +14,7 @@ import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
 import { BossEventPacket, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
-import type { SerializedSkin } from "./skin";
+import { SerializedSkin } from "./skin";
 
 export class Player extends Mob {
     abilities: Abilities;
@@ -60,6 +62,13 @@ export class Player extends Mob {
      * @param name - New name
      */
     setName(name: string): void {
+        abstract();
+    }
+
+    /**
+     * Updates the player list to all players
+     */
+    updatePlayerList(): void {
         abstract();
     }
 
@@ -831,6 +840,21 @@ export class ServerPlayer extends Player {
 
 @nativeClass(0x2f0)
 export class PlayerListEntry extends AbstractClass {
+    @nativeField(ActorUniqueID)
+    id: ActorUniqueID;
+    @nativeField(mce.UUID)
+    uuid: mce.UUID;
+    @nativeField(CxxString)
+    name: CxxString;
+    @nativeField(CxxString)
+    xuid: CxxString;
+    @nativeField(CxxString)
+    platformOnlineId: CxxString;
+    @nativeField(int32_t)
+    buildPlatform: BuildPlatform;
+    @nativeField(SerializedSkin, 0x80)
+    readonly skin: SerializedSkin;
+
     static constructWith(player: Player): PlayerListEntry {
         abstract();
     }

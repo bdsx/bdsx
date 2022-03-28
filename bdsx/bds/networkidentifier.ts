@@ -82,7 +82,7 @@ export class ServerNetworkHandler extends AbstractClass {
     /**
      * it's the same with `client.getActor()`
      */
-    _getServerPlayer(client:NetworkIdentifier, number: number):ServerPlayer|null {
+    _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null {
         abstract();
     }
 }
