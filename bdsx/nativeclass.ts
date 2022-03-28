@@ -55,8 +55,8 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
                 ctx.code = `superproto[NativeType.${fnname}].call(this);\n`+ctx.code;
             }
             if (superfn !== manualfn) {
-                builder.import(manualfn, 'manual_'+fnname);
-                ctx.code += `manual_${fnname}.call(this);\n`;
+                const funcname = builder.import(manualfn);
+                ctx.code += `${funcname}.call(this);\n`;
             }
             let prefix = '\nfunction(){\n';
             if (ctx.ptrUsed) prefix += 'const ptr=this.add();\n';
