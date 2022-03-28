@@ -156,6 +156,9 @@ export declare class PrivatePointer extends VoidPointer {
      */
     protected setBin(v:string, offset?:number): void;
 
+    protected setInt32To64WithZero(value: number, offset?: number): void;
+    protected setFloat32To64WithZero(value: number, offset?: number): void;
+
     protected interlockedIncrement16(offset?:number):number;
     protected interlockedIncrement32(offset?:number):number;
     protected interlockedIncrement64(offset?:number):number;

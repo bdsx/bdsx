@@ -9,6 +9,7 @@ import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
+import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
@@ -124,6 +125,13 @@ export class Player extends Mob {
      * @param item - Item to start the cooldown on
      */
     startCooldown(item: Item): void {
+        abstract();
+    }
+
+    /**
+     * Returns a tick. If you want seconds, divide by 20
+     */
+    getItemCooldownLeft(cooldownType:HashedString): number {
         abstract();
     }
     /**
@@ -409,7 +417,38 @@ export class Player extends Mob {
     hasOpenContainer(): boolean {
         abstract();
     }
+    /**
+     * Returns whether the player is hungry.
+     */
     isHungry(): boolean {
+        abstract();
+    }
+    /**
+     * Returns whether the player is hurt.
+     */
+    isHurt(): boolean {
+        abstract();
+    }
+    /**
+     * Returns whether the player has spawned in the Level. Different from `isAlive`.
+     * if true, it's a valid entity.
+     */
+    isSpawned(): boolean {
+        abstract();
+    }
+    /**
+     * Returns whether the player is loading in login screen.
+     * if true, it's not a valid entity.
+     */
+    isLoading(): boolean {
+        abstract();
+    }
+    /**
+     * Returns whether the player is initialized.
+     * if true, it's a valid entity.
+     * it checks {@link isSpawned}, and {@link isLoading} etc. internally.
+     */
+    isPlayerInitialized(): boolean {
         abstract();
     }
 }
@@ -836,6 +875,13 @@ export class ServerPlayer extends Player {
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
+
+    getInputMode(): InputMode {
+        abstract();
+    }
+    setInputMode(mode: InputMode): void {
+        abstract();
+    }
 }
 
 @nativeClass(0x2f0)
@@ -862,6 +908,13 @@ export class PlayerListEntry extends AbstractClass {
     static create(player: Player): PlayerListEntry {
         return PlayerListEntry.constructWith(player);
     }
+}
+
+export enum InputMode {
+    Mouse = 1,
+    Touch = 2,
+    GamePad = 3,
+    MotionController = 4,
 }
 
 /**

@@ -8,6 +8,8 @@ import { Block, BlockLegacy } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandName } from "./commandname";
 import type { ItemEnchants } from "./enchants";
+import { HashedString } from "./hashedstring";
+import type { ItemComponent } from "./item_component";
 import type { BlockPalette } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
@@ -145,6 +147,9 @@ export class Item extends NativeClass {
     getSerializedName():CxxString {
         abstract();
     }
+    getCooldownType(): HashedString {
+        abstract();
+    }
 }
 
 /**
@@ -153,7 +158,25 @@ export class Item extends NativeClass {
 export class ArmorItem extends Item {
 }
 
-export class ComponentItem extends NativeClass {
+export class ComponentItem extends Item {
+    getComponent(identifier:string):ItemComponent{
+        const hashedStr = HashedString.construct();
+        hashedStr.set(identifier);
+
+        const component = this._getComponent(hashedStr);
+        hashedStr.destruct();
+
+        return component;
+    }
+    protected _getComponent(identifier:HashedString): ItemComponent{
+        abstract();
+    }
+    buildNetworkTag():CompoundTag {
+        abstract();
+    }
+    initializeFromNetwork(tag:CompoundTag): void {
+        abstract();
+    }
 }
 
 @nativeClass(0x88)
@@ -346,7 +369,11 @@ export class ItemStackBase extends NativeClass {
     getMaxDamage():number {
         abstract();
     }
-    getComponentItem():ComponentItem {
+
+    /**
+     * Only custom items return ComponentItem
+     */
+    getComponentItem():ComponentItem | null {
         abstract();
     }
     getDamageValue():number {

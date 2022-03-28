@@ -88,10 +88,32 @@ export class Tester {
         if (!cond) this.error(message, 3);
     }
 
-    equals<T>(actual:T, expected:T, message:string='', toString:(v:T)=>string=v=>v+''):void {
+    equals<T>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
         if (actual !== expected) {
-            if (message !== '') message = ', ' + message;
+            if (message == null) message = '';
+            else message = ', ' + message;
             this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}${message}`, 3);
+        }
+    }
+
+    arrayEquals<T extends any[]>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
+        if (message == null) message = '';
+        else message = ', ' + message;
+
+        let n = actual.length;
+        const expectedLen = expected.length;
+        if (n !== expectedLen) {
+            this.error(`Expected: length=${expectedLen}, Actual: length=${n}${message}`, 3);
+            if (expectedLen < n) {
+                n = expectedLen;
+            }
+        }
+        for (let i=0;i<n;i++) {
+            const a = actual[i];
+            const e = expected[i];
+            if (a !== e) {
+                this.error(`Expected: [${i}]=${toString(e)}, Actual: [${i}]=${toString(a)}${message}`, 3);
+            }
         }
     }
 

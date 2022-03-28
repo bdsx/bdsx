@@ -15,7 +15,7 @@ import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, int32_t, int64_as_float_t, void_t } from "../nativetype";
 import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import { remapAndPrintError } from "../source-map-support";
 
 @nativeClass(null)
@@ -33,8 +33,8 @@ ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnly
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
     // stack memories of NetworkHandler::_sortAndPacketizeEvents
-    @nativeField(SharedPtr.make(Packet), 0xb8)
-    packet:SharedPtr<Packet>; // accessed in NetworkHandler::_sortAndPacketizeEvents before calling MinecraftPackets::createPacket
+    @nativeField(CxxSharedPtr.make(Packet), 0xb8)
+    packet:CxxSharedPtr<Packet>; // accessed in NetworkHandler::_sortAndPacketizeEvents before calling MinecraftPackets::createPacket
     @nativeField(ReadOnlyBinaryStream, 0x120)
     stream:ReadOnlyBinaryStream; // accessed in NetworkHandler::_sortAndPacketizeEvents at getting the packet id
 }

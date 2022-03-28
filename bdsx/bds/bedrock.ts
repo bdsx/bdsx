@@ -1,6 +1,6 @@
 import { nativeClass, NativeClass, NativeClassType } from "../nativeclass";
 import { Wrapper } from "../pointer";
-import { SharedPtr } from "../sharedpointer";
+import { CxxSharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 
@@ -9,7 +9,7 @@ export namespace Bedrock {
 
     @nativeClass()
     export class NonOwnerPointer<T extends NativeClass> extends NativeClass {
-        sharedptr:SharedPtr<Wrapper<T>>;
+        sharedptr:CxxSharedPtr<Wrapper<T>>;
 
         get():T|null {
             const p = this.sharedptr.p;
@@ -26,7 +26,7 @@ export namespace Bedrock {
                 class Class extends NonOwnerPointer<T> {
                 }
                 Class.define({
-                    sharedptr: SharedPtr.make(Wrapper.make(clazz.ref())),
+                    sharedptr: CxxSharedPtr.make(Wrapper.make(clazz.ref())),
                 });
                 Object.defineProperty(Class, 'name', {value: templateName('NonOwnerPointer', v.name)});
                 return Class;

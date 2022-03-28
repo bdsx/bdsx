@@ -1,8 +1,8 @@
 
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { AbstractClass } from "../nativeclass";
-import { float32_t } from "../nativetype";
+import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
+import { float32_t, uint32_t } from "../nativetype";
 
 // public: static class Attribute const
 export enum AttributeId {
@@ -37,4 +37,11 @@ export class BaseAttributeMap extends AbstractClass {
     getMutableInstance(type:AttributeId):AttributeInstance|null {
         abstract();
     }
+}
+@nativeClass()
+export class AttributeInstanceHandle extends AbstractClass {
+	@nativeField(uint32_t)
+	attributeId:AttributeId;
+	@nativeField(BaseAttributeMap.ref(), 0x08)
+	attributeMap:BaseAttributeMap;
 }
