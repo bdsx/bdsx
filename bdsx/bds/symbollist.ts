@@ -594,7 +594,6 @@ export const undecoratedSymbols = [
     'Block::onProjectileHit',
     'Block::onLightningHit',
     'Block::onFallOn',
-    'CommandSelectorBase::getName',
     'Player::isHurt',
     'Player::isSpawned',
     'CommandOutputSender::_toJson',
