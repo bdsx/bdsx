@@ -6,20 +6,21 @@ import { abstract } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxPair } from "../cxxpair";
-import { CxxVector } from "../cxxvector";
+import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
-import { AbstractClass, KeysFilter, MantleClass, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, NativeType, Type, uint32_t, uint64_as_float_t, uint8_t, void_t } from "../nativetype";
+import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
+import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, NativeType, Type, uint32_t, uint64_as_float_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { SharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
 import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
-import { Actor } from "./actor";
-import { Block as BlockClass } from "./block";
+import { Actor, ActorDefinitionIdentifier } from "./actor";
+import { Block } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
+import { CommandSymbols } from "./cmdsymbolloader";
 import { CommandOrigin } from "./commandorigin";
-import { MobEffect as MobEffectClass } from "./effects";
+import { MobEffect } from "./effects";
 import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
@@ -591,7 +592,7 @@ export class CommandParameterData extends NativeClass {
     @nativeField(typeid_t)
     tid:typeid_t<CommandRegistry>;
     @nativeField(VoidPointer)
-    parser:VoidPointer; // bool (CommandRegistry::*)(void *, CommandRegistry::ParseToken const &, CommandOrigin const &, int, std::string &,std::vector<std::string> &) const;
+    parser:VoidPointer|null; // bool (CommandRegistry::*)(void *, CommandRegistry::ParseToken const &, CommandOrigin const &, int, std::string &,std::vector<std::string> &) const;
     @nativeField(CxxString)
     name:CxxString;
 
@@ -631,29 +632,182 @@ export class CommandVFTable extends NativeClass {
     execute:VoidPointer|null;
 }
 
-export class CommandEnum<V extends string|number|symbol> extends CommandParameterNativeType<string> {
-    public readonly mapper = new Map<string, V>();
+@nativeClass()
+class EnumResult extends NativeClass {
+    @nativeField(int32_t, {ghost: true})
+    intValue:int32_t;
+    @nativeField(bin64_t, {ghost: true})
+    bin64Value:bin64_t;
+    @nativeField(int64_as_float_t, {ghost: true})
+    int64Value:int64_as_float_t;
+    @nativeField(CxxString)
+    stringValue:CxxString;
+    @nativeField(CxxString)
+    token:CxxString;
+}
 
-    private results = new Array<V>();
+function passNativeTypeCtorParams<T>(type:Type<T>):[
+    number, number,
+    (v:unknown)=>boolean,
+    ((v:unknown)=>boolean)|undefined,
+    (ptr:StaticPointer, offset?:number)=>T,
+    (ptr:StaticPointer, v:T, offset?:number)=>void,
+    (stackptr:StaticPointer, offset?:number)=>T|null,
+    (stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number)=>void,
+    (ptr:StaticPointer)=>void,
+    (ptr:StaticPointer)=>void,
+    (to:StaticPointer, from:StaticPointer)=>void,
+    (to:StaticPointer, from:StaticPointer)=>void,
+] {
+    if (NativeClass.isNativeClassType(type)) {
+        return [
+            type[NativeType.size],
+            type[NativeType.align],
+            v=>type.isTypeOf(v),
+            v=>type.isTypeOfWeak(v),
+            (ptr, offset)=>type[NativeType.getter](ptr, offset),
+            (ptr, param, offset)=>type[NativeType.setter](ptr, param, offset),
+            (stackptr, offset)=>type[makefunc.getFromParam](stackptr, offset),
+            (stackptr, param, offset)=>type[makefunc.setToParam](stackptr, param, offset),
+            ptr=>type[NativeType.ctor](ptr),
+            ptr=>type[NativeType.dtor](ptr),
+            (to, from)=>type[NativeType.ctor_copy](to, from),
+            (to, from)=>type[NativeType.ctor_move](to, from),
+        ];
+    } else {
+        return [
+            type[NativeType.size],
+            type[NativeType.align],
+            type.isTypeOf,
+            type.isTypeOfWeak,
+            type[NativeType.getter],
+            type[NativeType.setter],
+            type[makefunc.getFromParam],
+            type[makefunc.setToParam],
+            type[NativeType.ctor],
+            type[NativeType.dtor],
+            type[NativeType.ctor_copy],
+            type[NativeType.ctor_move],
+        ];
+    }
+}
 
-    constructor(symbol:string, name?:string) {
-        super(symbol, name || symbol,
-            CxxString[NativeType.size],
-            CxxString[NativeType.align],
-            CxxString.isTypeOf,
-            CxxString.isTypeOfWeak,
-            CxxString[NativeType.getter],
-            CxxString[NativeType.setter],
-            CxxString[makefunc.getFromParam],
-            CxxString[makefunc.setToParam],
-            CxxString[NativeType.ctor],
-            CxxString[NativeType.dtor],
-            CxxString[NativeType.ctor_copy],
-            CxxString[NativeType.ctor_move]);
+/**
+ * The command parameter type with the type converter
+ */
+export abstract class CommandMappedValue<BaesType, NewType=BaesType> extends CommandParameterNativeType<BaesType> {
+    constructor(type:Type<BaesType>, symbol:string = type.symbol || type.name, name:string = type.name) {
+        super(symbol, name, ...passNativeTypeCtorParams(type));
     }
 
+    abstract mapValue(value:BaesType):NewType;
+}
+
+abstract class CommandEnumBase<BaseType, NewType> extends CommandMappedValue<BaseType, NewType> {
+    getParser(): VoidPointer {
+        return new VoidPointer;
+    }
+}
+
+export abstract class CommandEnum<V> extends CommandEnumBase<EnumResult, V> {
+    constructor(symbol:string, name?:string) {
+        super(EnumResult, symbol, name || symbol);
+    }
+}
+
+/**
+ * built-in enum wrapper
+ * one instance per one enum
+ */
+export class CommandRawEnum extends CommandEnum<string|number> {
+    private static readonly all = new Map<string, CommandRawEnum>();
+
+    private readonly registry = serverInstance.minecraft.getCommands().getRegistry();
+    private enumIndex = -1;
+    private idRegistered = false;
+    private parserType:ParserType = ParserType.Int;
+
+    public isBuiltInEnum = false;
+
+    private constructor(public readonly name:string) {
+        super(name, name);
+        if (CommandRawEnum.all.has(name)) throw Error(`the enum parser already exists (name=${name})`);
+        this._update();
+        this.isBuiltInEnum = this.enumIndex !== -1;
+    }
+
+    private _update():boolean {
+        if (this.enumIndex !== -1) return true; // already hooked
+        const enumIdex = this.registry.enumLookup.get(this.name);
+        if (enumIdex === null) return false;
+        this.enumIndex = enumIdex;
+
+        const enumobj = this.registry.enums.get(this.enumIndex)!;
+        this.parserType = getParserType(enumobj.parser);
+
+        // hook the enum parser, provides extra information.
+        const original = makefunc.js(enumobj.parser, bool_t, null, CommandRegistry, EnumResult, StaticPointer, CommandOrigin, int32_t, CxxString, CxxVector.make(CxxString));
+        enumobj.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
+            const ret = original(registry, storage, tokenPtr, origin, version, error, errorParams);
+
+            const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
+            storage.token = token.getText();
+            return ret;
+        }, bool_t, null, CommandRegistry, EnumResult, StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
+        return true;
+    }
+
+    addValues(values:string[]):void {
+        const id = this.registry.addEnumValues(this.name, values);
+        if (!this.idRegistered) {
+            this.idRegistered = true;
+            type_id.register(CommandRegistry, this, id);
+        }
+        if (!this._update()) {
+            throw Error(`enum parser is not generated (name=${this.name})`);
+        }
+    }
+
+    getValues():string[] {
+        const values = new Array<string>();
+        if (this.enumIndex === -1) return values;
+        const enumobj = this.registry.enums.get(this.enumIndex)!;
+        for (const {first: valueIndex} of enumobj.values) {
+            values.push(this.registry.enumValues.get(valueIndex));
+        }
+        return values;
+    }
+
+    getValueCount():number {
+        if (this.enumIndex === -1) return 0;
+        const enumobj = this.registry.enums.get(this.enumIndex)!;
+        return enumobj.values.size();
+    }
+
+    mapValue(value:EnumResult):string|number {
+        switch (this.parserType) {
+        case ParserType.Unknown: return value.token.toLowerCase();
+        case ParserType.Int: return value.intValue;
+        case ParserType.String: return value.stringValue;
+        }
+    }
+
+    static getInstance(name:string):CommandRawEnum {
+        let parser = CommandRawEnum.all.get(name);
+        if (parser != null) return parser;
+        parser = new CommandRawEnum(name);
+        CommandRawEnum.all.set(name, parser);
+        return parser;
+    }
+}
+
+class CommandMappedEnum<V extends string|number|symbol> extends CommandEnum<V> {
+    public readonly mapper = new Map<string, V>();
+    private raw:CommandRawEnum;
+
     protected _init():void {
-        for (const value of this.mapper.keys()) {
+        const keys = [...this.mapper.keys()];
+        for (const value of keys) {
             if (value === "") throw Error(`${value}: enum value cannot be empty`); // It will be ignored by CommandRegistry::addEnumValues if it is empty
 
             /*
@@ -675,52 +829,20 @@ export class CommandEnum<V extends string|number|symbol> extends CommandParamete
             if (invalidCharacters !== '') throw Error(`${value}: enum value contains invalid characters (${invalidCharacters})`);
         }
 
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
-        const exists = registry.hasEnum(this.name);
-        const enumId = registry.addEnumValues(this.name, [...this.mapper.keys()]);
-        const cmdenum = registry.getEnum(this.name)!;
-
-        const isCxxStringParser = cmdenum.isCxxStringParser();
-        const isIntParser = cmdenum.isIntParser();
-
-        if (!exists) cmdenum.parser = enumParser;
-        // Provide additional parsing on top of the original parser
-        const original = makefunc.js(cmdenum.parser, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
-        cmdenum.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
-            const ret = original(registry, storage, tokenPtr, origin, version, error, errorParams);
-            const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
-            const text = token.getText().toLocaleLowerCase();
-            const mapped = this.mapper.get(text);
-            if (mapped != null) {
-                this.results.push(mapped);
-            } else { // Not on the map, it is defined before
-                let result: V;
-                if (isIntParser) {
-                    result = storage.getInt32() as V;
-                } else if (isCxxStringParser) {
-                    result = storage.getCxxString() as V;
-                } else {
-                    // in this case, the value is parsed to some NativeClass, follow the type of the custom enum
-                    if (this instanceof CommandStringEnum) {
-                        result = text as V;
-                    } else {
-                        const values = registry.getEnumValues(this.name)!;
-                        result = values.indexOf(text) as V;
-                    }
-                }
-                this.results.push(result);
-            }
-            return ret;
-        }, bool_t, null, CommandRegistry, MantleClass.ref(), StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
-        type_id.register(CommandRegistry, this, enumId);
+        this.raw = CommandRawEnum.getInstance(this.name);
+        this.raw.addValues(keys);
+        if (this.raw.isBuiltInEnum) {
+            console.error(colors.yellow(`Warning, built-in enum is extended(name = ${this.name})`));
+        }
     }
 
-    getResult():V | null {
-        return this.results.shift() ?? null;
+    mapValue(value:EnumResult):V {
+        // it can return the undefined value if it overlaps the raw enum.
+        return this.mapper.get(value.token.toLocaleLowerCase())!;
     }
 }
 
-export class CommandStringEnum<T extends string[]> extends CommandEnum<T[number]> {
+export class CommandStringEnum<T extends string[]> extends CommandMappedEnum<T[number]> {
     public readonly values:T;
 
     constructor(name:string, ...values:T) {
@@ -738,7 +860,7 @@ export class CommandStringEnum<T extends string[]> extends CommandEnum<T[number]
     }
 }
 
-export class CommandIndexEnum<T extends number|string> extends CommandEnum<T> {
+export class CommandIndexEnum<T extends number|string> extends CommandMappedEnum<T> {
     public readonly enum:Record<string, T>;
     constructor(name:string, enumType:Record<string, T>) {
         super(name);
@@ -755,29 +877,29 @@ export class CommandIndexEnum<T extends number|string> extends CommandEnum<T> {
     }
 }
 
-export class CommandSoftEnum extends CommandParameterNativeType<string> {
-    constructor(symbol:string, values:string[]) {
-        super(symbol, symbol,
-            CxxString[NativeType.size],
-            CxxString[NativeType.align],
-            CxxString.isTypeOf,
-            CxxString.isTypeOfWeak,
-            CxxString[NativeType.getter],
-            CxxString[NativeType.setter],
-            CxxString[makefunc.getFromParam],
-            CxxString[makefunc.setToParam],
-            CxxString[NativeType.ctor],
-            CxxString[NativeType.dtor],
-            CxxString[NativeType.ctor_copy],
-            CxxString[NativeType.ctor_move]);
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
-        registry.addSoftEnum(this.name, values);
+export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
+    private static readonly all = new Map<string, CommandSoftEnum>();
+
+    private readonly registry = serverInstance.minecraft.getCommands().getRegistry();
+    private enumIndex = -1;
+
+    private constructor(name:string) {
+        super(CxxString, CxxString.symbol, name);
+        if (CommandSoftEnum.all.has(name)) throw Error(`the enum parser already exists (name=${name})`);
+        this.enumIndex = this.registry.softEnumLookup.get(this.name) ?? -1;
         // No type id should be registered, it is the type of string
     }
 
     protected updateValues(mode: SoftEnumUpdateType, values:string[]):void {
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
-        registry.updateSoftEnum(mode, this.name, values);
+        this.registry.updateSoftEnum(mode, this.name, values);
+    }
+
+    getParser(): VoidPointer {
+        return CommandRegistry.getParser(CxxString);
+    }
+
+    mapValue(value:string):string {
+        return value;
     }
 
     addValues(...values:string[]):void;
@@ -785,7 +907,11 @@ export class CommandSoftEnum extends CommandParameterNativeType<string> {
     addValues(...values:(string|string[])[]):void {
         const first = values[0];
         if (Array.isArray(first)) {
-            this.updateValues(SoftEnumUpdateType.Add, first);
+            values = first;
+        }
+        if (this.enumIndex === -1) {
+            this.registry.addSoftEnum(this.name, values as string[]);
+            this.enumIndex = this.registry.softEnumLookup.get(this.name) ?? -1;
         } else {
             this.updateValues(SoftEnumUpdateType.Add, values as string[]);
         }
@@ -807,15 +933,56 @@ export class CommandSoftEnum extends CommandParameterNativeType<string> {
     setValues(...values:(string|string[])[]):void {
         const first = values[0];
         if (Array.isArray(first)) {
-            this.updateValues(SoftEnumUpdateType.Replace, first);
+            values = first;
+        }
+        if (this.enumIndex !== -1) {
+            this.registry.addSoftEnum(this.name, values as string[]);
+            this.enumIndex = this.registry.softEnumLookup.get(this.name) ?? -1;
         } else {
             this.updateValues(SoftEnumUpdateType.Replace, values as string[]);
         }
+    }
+
+    getValues():string[] {
+        const values = new Array<string>();
+        if (this.enumIndex === -1) return values;
+        const enumobj = this.registry.softEnums.get(this.enumIndex)!;
+        return enumobj.list.toArray();
+    }
+
+    getValueCount():number {
+        if (this.enumIndex === -1) return 0;
+        const enumobj = this.registry.softEnums.get(this.enumIndex)!;
+        return enumobj.list.size();
+    }
+
+    static getInstance(name:string):CommandSoftEnum {
+        let parser = CommandSoftEnum.all.get(name);
+        if (parser != null) return parser;
+        parser = new CommandSoftEnum(name);
+        CommandSoftEnum.all.set(name, parser);
+        return parser;
     }
 }
 
 const parsers = new Map<Type<any>, VoidPointer>();
 let enumParser: VoidPointer;
+
+enum ParserType {
+    Unknown,
+    Int,
+    String,
+}
+
+function getParserType(parser:VoidPointer):ParserType {
+    if (parser.equals(CommandRegistry.getParser(CxxString))) {
+        return ParserType.String;
+    } else if (parser.equals(enumParser)) {
+        return ParserType.Int;
+    } else {
+        return ParserType.Unknown;
+    }
+}
 
 export class CommandRegistry extends HasTypeId {
     enumValues:CxxVector<CxxString>;
@@ -885,14 +1052,24 @@ export class CommandRegistry extends HasTypeId {
     }
 
     static getParser<T>(type:Type<T>):VoidPointer {
+        if (type instanceof CommandEnumBase) {
+            return type.getParser();
+        }
         const parser = parsers.get(type);
         if (parser != null) return parser;
         throw Error(`${type.name} parser not found`);
     }
 
     static hasParser<T>(type:Type<T>):boolean {
-        if (type instanceof CommandEnum || type instanceof CommandSoftEnum) return true;
+        if (type instanceof CommandEnumBase) return true;
         return parsers.has(type);
+    }
+
+    static loadParser(symbols:CommandSymbols):void {
+        for (const [type, addr] of symbols.iterateParsers()) {
+            parsers.set(type, addr);
+        }
+        enumParser = symbols.enumParser;
     }
 
     static setParser(type:Type<any>, parserFnPointer:VoidPointer):void {
@@ -909,16 +1086,12 @@ export class CommandRegistry extends HasTypeId {
 
     getEnum(name:string):CommandRegistry.Enum|null {
         const enumIndex = this.enumLookup.get(name);
-        if (enumIndex == null) return null;
+        if (enumIndex === null) return null;
         return this.enums.get(enumIndex);
     }
 
     addEnumValues(name:string, values:string[]):number {
-        const _values = CxxVector.make(CxxString).construct();
-        _values.setFromArray(values);
-        const ret = CommandRegistry$addEnumValues.call(this, name, _values);
-        _values.destruct();
-        return ret;
+        abstract();
     }
 
     getEnumValues(name:string):string[]|null {
@@ -942,25 +1115,17 @@ export class CommandRegistry extends HasTypeId {
     }
 
     addSoftEnum(name:string, values:string[]):number {
-        const _values = CxxVector.make(CxxString).construct();
-        _values.setFromArray(values);
-        const ret = CommandRegistry$addSoftEnum.call(this, name, _values);
-        _values.destruct();
-        return ret;
+        abstract();
     }
 
     getSoftEnumValues(name:string):string[]|null {
-        const values = new Array<string>();
         const _enum = this.getSoftEnum(name);
         if (!_enum) return null;
         return _enum.list.toArray();
     }
 
     updateSoftEnum(type:SoftEnumUpdateType, name:string, values:string[]):void {
-        const _values = CxxVector.make(CxxString).construct();
-        _values.setFromArray(values);
-        CommandSoftEnumRegistry$updateSoftEnum(this, type, name, _values);
-        _values.destruct();
+        CommandSoftEnumRegistry$updateSoftEnum(this, type, name, values);
     }
 }
 
@@ -1028,16 +1193,8 @@ export namespace CommandRegistry {
         tid:typeid_t<CommandRegistry>;
         @nativeField(VoidPointer)
         parser:VoidPointer;
-        @nativeField(CxxVector.make(CxxPair.make(uint64_as_float_t, uint64_as_float_t)))
-        values:CxxVector<CxxPair<uint64_as_float_t, uint64_as_float_t>>;
-
-        isCxxStringParser():boolean {
-            return this.parser.equals(CommandRegistry.getParser(CxxString));
-        }
-
-        isIntParser():boolean {
-            return this.parser.equals(enumParser);
-        }
+        @nativeField(CxxVector.make(CxxPair.make(uint64_as_float_t, bin64_t)))
+        values:CxxVector<CxxPair<uint64_as_float_t, bin64_t>>;
     }
 
     @nativeClass()
@@ -1135,33 +1292,28 @@ export class Command extends NativeClass {
         const param = CommandParameterData.construct();
         param.tid.id = type_id(CommandRegistry, paramType).id;
         if (paramType instanceof CommandEnum) {
-            const registry = serverInstance.minecraft.getCommands().getRegistry();
-            const cmdenum = registry.getEnum(paramType.name)!;
             if (enumNameOrPostfix != null) throw Error(`CommandEnum does not support postfix`);
-            enumNameOrPostfix = cmdenum.name;
-            // the parser is inside the enum, defining it in param.parser does nothing
+            enumNameOrPostfix = paramType.name;
         } else if (paramType instanceof CommandSoftEnum) {
             // a soft enum is a string with autocompletions, for example, objectives in /scoreboard
             if (enumNameOrPostfix != null) throw Error(`CommandSoftEnum does not support postfix`);
             enumNameOrPostfix = paramType.name;
-            param.parser = CommandRegistry.getParser(CxxString);
         } else {
             if (enumNameOrPostfix) {
-                const typename = paramType.name;
-                if (paramType.name === "int32_t") {
+                if (paramType === int32_t) {
                     type = CommandParameterDataType.POSTFIX;
                 } else {
-                    console.error(colors.yellow(`${typename} does not support postfix`));
+                    console.error(colors.yellow(`${paramType.name} does not support postfix`));
                     enumNameOrPostfix = null;
                 }
             }
-            param.parser = CommandRegistry.getParser(paramType);
         }
+        param.parser = CommandRegistry.getParser(paramType);
         param.name = name;
         param.type = type;
-        param.desc = enumNameOrPostfix != null ? AllocatedPointer.fromString(enumNameOrPostfix) : null;
+        param.enumNameOrPostfix = enumNameOrPostfix != null ? AllocatedPointer.fromString(enumNameOrPostfix) : null;
 
-        param.unk56 = -1;
+        param.enumOrPostfixSymbol = -1;
         param.offset = offset;
         param.flag_offset = flag_offset;
         param.optional = optional;
@@ -1175,11 +1327,25 @@ export class Command extends NativeClass {
 }
 Command.isWildcard = procHacker.js("?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z", bool_t, null, CommandSelectorBase);
 
+const BlockClass = Block;
+const MobEffectClass = MobEffect;
+const ActorDefinitionIdentifierClass = ActorDefinitionIdentifier;
+
+function constptr<T extends NativeClass>(cls:new()=>T):CommandParameterNativeType<T> {
+    const nativecls = cls as NativeClassType<T>;
+    const constptr = Object.create(nativecls.ref());
+    constptr.name = nativecls.name + '*';
+    constptr.symbol = (nativecls.symbol || nativecls.name) + ' const * __ptr64';
+    return constptr!;
+}
+
 export namespace Command {
     export const VFTable = CommandVFTable;
     export type VFTable = CommandVFTable;
-    export const Block = BlockClass.ref().extends(null, 'Block const * __ptr64', 'Block*') as CommandParameterNativeType<BlockClass>;
-    export const MobEffect = MobEffectClass.ref().extends(null, 'MobEffect const * __ptr64', 'MobEffect*') as CommandParameterNativeType<MobEffectClass>;
+
+    export const Block = constptr(BlockClass);
+    export const MobEffect = constptr(MobEffectClass);
+    export const ActorDefinitionIdentifier = constptr(ActorDefinitionIdentifierClass);
 }
 /** @deprecated use Command.Block */
 export const CommandBlock = Command.Block;
@@ -1213,29 +1379,17 @@ CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegis
 CommandRegistry.prototype.registerCommand = procHacker.js('CommandRegistry::registerCommand', void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
 CommandRegistry.prototype.registerAlias = procHacker.js('CommandRegistry::registerAlias', void_t, {this:CommandRegistry}, CxxString, CxxString);
 CommandRegistry.prototype.findCommand = procHacker.js('CommandRegistry::findCommand', CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
-const CommandRegistry$addEnumValues = procHacker.js('?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z', int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
-const CommandRegistry$addSoftEnum = procHacker.js('CommandRegistry::addSoftEnum', int32_t, {this:CommandRegistry}, CxxString, CxxVector.make(CxxString));
+CommandRegistry.prototype.addEnumValues = procHacker.js('?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z', int32_t, {this:CommandRegistry}, CxxString, CxxVectorToArray.make(CxxString));
+CommandRegistry.prototype.addSoftEnum = procHacker.js('CommandRegistry::addSoftEnum', int32_t, {this:CommandRegistry}, CxxString, CxxVectorToArray.make(CxxString));
 (CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js('CommandRegistry::serializeAvailableCommands', AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 
 // CommandSoftEnumRegistry is a class with only one field, which is a pointer to CommandRegistry.
 // I can only find one member function so I am not sure if a dedicated class is needed.
-const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js('CommandSoftEnumRegistry::updateSoftEnum', void_t, null, CommandRegistry.ref().ref(), uint8_t, CxxString, CxxVector.make(CxxString));
+const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js('CommandSoftEnumRegistry::updateSoftEnum', void_t, null, CommandRegistry.ref().ref(), uint8_t, CxxString, CxxVectorToArray.make(CxxString));
 
-'CommandRegistry::parse<AutomaticID<Dimension,int> >';
-'CommandRegistry::parse<Block const * __ptr64>';
-'CommandRegistry::parse<CommandFilePath>';
+// list for not implemented
+'CommandRegistry::parse<AutomaticID<Dimension,int> >'; // CommandRegistry::parse<DimensionId>
 'CommandRegistry::parse<CommandIntegerRange>'; // Not supported yet(?) there is no type id for it
-'CommandRegistry::parse<CommandItem>';
-'CommandRegistry::parse<CommandMessage>';
-'CommandRegistry::parse<CommandPosition>';
-'CommandRegistry::parse<CommandPositionFloat>';
-'CommandRegistry::parse<CommandRawText>';
-'CommandRegistry::parse<CommandSelector<Actor> >';
-'CommandRegistry::parse<CommandSelector<Player> >';
-'CommandRegistry::parse<CommandWildcardInt>';
-'CommandRegistry::parse<Json::Value>';
-'CommandRegistry::parse<MobEffect const * __ptr64>';
-'CommandRegistry::parse<std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > >';
 'CommandRegistry::parse<std::unique_ptr<Command,struct std::default_delete<Command> > >';
 'CommandRegistry::parse<AgentCommand::Mode>';
 'CommandRegistry::parse<AgentCommands::CollectCommand::CollectionSpecification>';
@@ -1251,4 +1405,3 @@ const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js('CommandSoftEnumReg
 'CommandRegistry::parse<Mirror>';
 'CommandRegistry::parse<ObjectiveSortOrder>';
 'CommandRegistry::parse<Rotation>';
-'CommandRegistry::parse<ActorDefinitionIdentifier const * __ptr64>';

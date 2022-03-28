@@ -23,6 +23,7 @@ import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
 import { command } from "bdsx/command";
+import { CommandParameterType } from "bdsx/commandparam";
 import { AttributeName, CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
@@ -443,6 +444,7 @@ Tester.test({
     },
 
     async command() {
+        // command hook test, error test, parameter type test
         let passed = false;
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
@@ -476,32 +478,98 @@ Tester.test({
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
         });
-        command.register('testcommand', 'bdsx command test').overload((param, origin, output)=>{
-            output.success('passed');
-        }, {});
 
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output === 'passed') {
-                    events.commandOutput.remove(outputcb);
-                    resolve();
-                    return CANCEL;
+        // command register test, parameter test
+        const checkCommandRegister = (testname:string, testcases:[CommandParameterType<any>, string, any][], throughConsole?:boolean):Promise<void>=>{
+            const paramsobj:Record<string, CommandParameterType<any>> = {};
+            const n = testcases.length;
+            for (let i=0;i<n;i++) {
+                paramsobj['arg'+i] = testcases[i][0];
+            }
+
+            const cmdname = 'testcommand_'+testname;
+            const cmdline = [cmdname, ...testcases.map(v=>v[1])].join(' ');
+
+            command.register(cmdname, 'command for test').overload((param, origin, output)=>{
+                for (let i=0;i<n;i++) {
+                    const [type, name, expected] = testcases[i];
+                    const actual = param['arg'+i];
+                    if (expected !== actual) {
+                        output.error(`failed`);
+                        this.equals(actual, expected, `type=${type.name}, value=${name} mismatched`);
+                        return;
+                    }
                 }
-            };
-            events.commandOutput.on(outputcb);
-            bedrockServer.executeCommandOnConsole('testcommand');
-        });
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output === 'passed') {
-                    events.commandOutput.remove(outputcb);
-                    resolve();
-                    return CANCEL;
+                output.success('passed');
+            }, paramsobj);
+
+            return new Promise<void>((resolve, reject) => {
+                const outputcb = (output:string) => {
+                    if (output === 'passed') {
+                        events.commandOutput.remove(outputcb);
+                        resolve();
+                        return CANCEL;
+                    }
+                    if (output === 'failed') {
+                        events.commandOutput.remove(outputcb);
+                        reject(Error(`${cmdname} failed`));
+                        return CANCEL;
+                    }
+                };
+                events.commandOutput.on(outputcb);
+
+                if (throughConsole) {
+                    bedrockServer.executeCommandOnConsole(cmdline);
+                } else {
+                    if (!bedrockServer.executeCommand(cmdline, false).isSuccess()) {
+                        this.error(`${cmdname} failed`, 5);
+                    }
                 }
-            };
-            events.commandOutput.on(outputcb);
-            this.assert(bedrockServer.executeCommand('testcommand', false).isSuccess(), 'testcommand failed');
-        });
+            });
+        };
+
+        await checkCommandRegister('cmdtest', [], true);
+        await checkCommandRegister('cmdtest2', []);
+
+        const enumtype = command.enum('EnumType', 'enum1', 'Enum2', 'ENUM3');
+        command.enum('EnumType', 'enum4'); // duplicate check
+
+        const ts_enum = command.enum('DimensionId', DimensionId);
+
+        await checkCommandRegister('mappercheck', [[enumtype, 'enum1', 'enum1']]);
+        await checkCommandRegister('mappers', [
+            // Tests for enums with strings and the string mapper
+            [enumtype, 'ENUM1', 'enum1'],
+            [enumtype, 'enum3', 'ENUM3'],
+            [enumtype, 'enum4', undefined],
+            [command.enum('EnumType2', ['test']), 'test', 'test'],
+            // Tests for enums with numeric values
+            [ts_enum, 'overworld', 0],
+            [ts_enum, 'Nether', 1],
+            [ts_enum, 'THEEND', 2],
+        ]);
+
+        const gameModeEnum = command.rawEnum('GameMode');
+        this.arrayEquals(gameModeEnum.getValues(), [ 'default', 'creative', 'survival', 'adventure', 'd', 'c', 's', 'a' ]);
+
+        await checkCommandRegister('raw', [
+            [command.rawEnum('GameMode'), 'default', 5], // Test for built-in enums with numeric values
+            [command.rawEnum('IntGameRule'), 'maxcommandchainlength', 'maxcommandchainlength'], // Test for built-in enums with strings
+            [command.rawEnum('EntityType'), 'minecraft:zombie', 'minecraft:zombie'], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to string)
+            [command.rawEnum('Enchant'), 'fire_protection', 'fire_protection'],
+        ]);
+
+        // await checkCommandRegister('extends', [
+        //     [command.enum('EntityType', {a: 0}), 'a', 0], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to number) and the new value 'a' as 0
+        //     [command.enum('EntityType', 'custom'), 'custom', 'custom'], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to string) and the new value 'custom'
+        //     [command.enum('Difficulty', 'aaa'), 'aaa', 'aaa'], // Test for built-in enums and the new value 'aaa'
+        // ]);
+
+        await checkCommandRegister('soft', [
+            [command.softEnum('Soft1', 'softenum'), 'anything', 'anything'], // Test for soft enums
+            [command.softEnum('Soft2', 'first', 'Second!!', 'THI R D'), '"thi r d"', 'thi r d'], // Test for soft enums
+            [command.softEnum('Tool', 'Override', 'another'), 'Override', 'Override'], // Test for built-in soft enums with new values
+        ]);
     },
 
     async checkPacketNames() {
