@@ -1,3 +1,4 @@
+import { abstract, BuildPlatform } from "../common";
 import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
@@ -11,7 +12,7 @@ import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
-import { GameType, PlayerListEntry } from "./player";
+import type { GameType, Player } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
@@ -824,6 +825,32 @@ export class ChangeDimensionPacket extends Packet {
 export class SetPlayerGameTypePacket extends Packet {
     @nativeField(int32_t)
     playerGameType:GameType;
+}
+
+@nativeClass(0x2f0)
+export class PlayerListEntry extends AbstractClass {
+    @nativeField(ActorUniqueID)
+    id: ActorUniqueID;
+    @nativeField(mce.UUID)
+    uuid: mce.UUID;
+    @nativeField(CxxString)
+    name: CxxString;
+    @nativeField(CxxString)
+    xuid: CxxString;
+    @nativeField(CxxString)
+    platformOnlineId: CxxString;
+    @nativeField(int32_t)
+    buildPlatform: BuildPlatform;
+    @nativeField(SerializedSkin, 0x80)
+    readonly skin: SerializedSkin;
+
+    static constructWith(player: Player): PlayerListEntry {
+        abstract();
+    }
+    /** @deprecated */
+    static create(player: Player): PlayerListEntry {
+        return PlayerListEntry.constructWith(player);
+    }
 }
 
 @nativeClass(null)

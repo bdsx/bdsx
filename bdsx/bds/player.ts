@@ -1,7 +1,4 @@
 import { abstract, BuildPlatform } from "../common";
-import { mce } from "../mce";
-import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
-import { CxxString, int32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
 import { ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -13,7 +10,7 @@ import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
+import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
@@ -884,31 +881,10 @@ export class ServerPlayer extends Player {
     }
 }
 
-@nativeClass(0x2f0)
-export class PlayerListEntry extends AbstractClass {
-    @nativeField(ActorUniqueID)
-    id: ActorUniqueID;
-    @nativeField(mce.UUID)
-    uuid: mce.UUID;
-    @nativeField(CxxString)
-    name: CxxString;
-    @nativeField(CxxString)
-    xuid: CxxString;
-    @nativeField(CxxString)
-    platformOnlineId: CxxString;
-    @nativeField(int32_t)
-    buildPlatform: BuildPlatform;
-    @nativeField(SerializedSkin, 0x80)
-    readonly skin: SerializedSkin;
-
-    static constructWith(player: Player): PlayerListEntry {
-        abstract();
-    }
-    /** @deprecated */
-    static create(player: Player): PlayerListEntry {
-        return PlayerListEntry.constructWith(player);
-    }
-}
+/** @deprecated Import from `bdsx/bds/packets` instead */
+export const PlayerListEntry = _PlayerListEntry;
+/** @deprecated Import from `bdsx/bds/packets` instead */
+export type PlayerListEntry = _PlayerListEntry;
 
 export enum InputMode {
     Mouse = 1,
