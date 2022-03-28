@@ -240,7 +240,12 @@ export function numberWithFillZero(n:number, width:number, radix?:number):string
 
 export function filterToIdentifierableString(name:string):string {
     name = name.replace(/[^a-zA-Z_$0-9]/g, '');
-    return /^\d/.test(name) ? '_'+name : name;
+    try {
+        eval(`((${name})=>{})`)(); // Rjlintkh suggestion
+    } catch {
+        return '_'+name;
+    }
+    return name;
 }
 
 export function printOnProgress(message:string):void {
