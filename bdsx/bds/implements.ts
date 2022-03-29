@@ -525,7 +525,6 @@ Player.prototype.getCertificate = function() {
     const base = this.ctxbase;
     if (!base.isValid()) throw Error(`is not valid`);
     const registry = base._enttRegistry();
-    console.log(Registry_getEntityIdentifierComponent(registry, base.entityId));
     return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
 };
 Player.prototype.getDestroySpeed = procHacker.js('Player::getDestroySpeed', float32_t, {this:Player}, Block.ref());
