@@ -905,7 +905,7 @@ BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolea
 BlockSource.prototype.getBlockEntity = procHacker.js("?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z", BlockActor, {this:BlockSource}, BlockPos);
 BlockSource.prototype.removeBlockEntity = procHacker.js("BlockSource::removeBlockEntity", void_t, {this:BlockSource}, BlockPos);
 BlockSource.prototype.getDimension = procHacker.js('BlockSource::getDimension', Dimension, {this:BlockSource});
-BlockSource.prototype.getDimensionId = procHacker.js('BlockSource::getDimensionId', int32_t, {this:BlockSource});
+BlockSource.prototype.getDimensionId = procHacker.js('BlockSource::getDimensionId', int32_t, {this:BlockSource, structureReturn:true});
 
 const BlockActor$vftable = proc2["??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@"];
 BlockActor.setResolver((ptr) => {
