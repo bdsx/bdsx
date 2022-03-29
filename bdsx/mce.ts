@@ -1,9 +1,10 @@
 import { procHacker } from "./bds/proc";
 import { bin } from "./bin";
 import { capi } from "./capi";
+import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "./nativeclass";
-import { bin128_t, bin64_t, float32_t, uint16_t, uint32_t, uint64_as_float_t, uint8_t } from "./nativetype";
+import { bin128_t, bin64_t, float32_t, NativeType, uint16_t, uint32_t, uint64_as_float_t, uint8_t, void_t } from "./nativetype";
 import { Wrapper } from "./pointer";
 
 export namespace mce {
@@ -60,21 +61,46 @@ export namespace mce {
         @nativeField(uint64_as_float_t)
         size:uint64_as_float_t;
 
+        [NativeType.ctor]():void {
+            abstract();
+        }
+        [NativeType.dtor]():void {
+            abstract();
+        }
+
         toArray():number[] {
             const bytes = [];
-            for (let i = 0; i < this.size; i++) {
-                bytes.push(this.bytes.getUint8(i));
+            const size = this.size;
+            const ptr = this.getPointer(8); // get as NativePointer
+            for (let i = 0; i < size; i++) {
+                bytes.push(ptr.readUint8());
             }
             return bytes;
         }
 
-        setFromArray(bytes:number[]):void {
+        setFromArray(bytes:number[]|Uint8Array):void {
+            this.destruct(); // it uses the deleter to deleting bytes
+            this.construct(); // it initializes with the default deleter
+
+            const size = bytes.length;
+            this.size = size;
+            const ptr = capi.malloc(size);
+            this.bytes = ptr; // the pointer will be copied because it's the primitive type in the C level
+            for (const n of bytes) {
+                ptr.writeUint8(n);
+            }
+        }
+
+        toBuffer():Uint8Array {
+            return this.bytes.getBuffer(this.size);
+        }
+
+        setFromBuffer(bytes:Uint8Array):void {
             capi.free(this.bytes);
             this.size = bytes.length;
-            this.bytes = capi.malloc(this.size);
-            for (let i = 0; i < this.size; i++) {
-                this.bytes.setUint8(bytes[i], i);
-            }
+            const ptr = capi.malloc(bytes.length);
+            this.bytes = ptr;
+            ptr.setBuffer(bytes);
         }
     }
 
@@ -105,4 +131,6 @@ export namespace mce {
     }
 }
 
+mce.Blob.prototype[NativeType.ctor] = procHacker.js('??0Blob@mce@@QEAA@XZ', void_t, {this:mce.Blob});
+mce.Blob.prototype[NativeType.dtor] = procHacker.js('mce::Blob::~Blob', void_t, {this:mce.Blob});
 const generateUUID = procHacker.js("Crypto::Random::generateUUID", mce.UUIDWrapper, {structureReturn: true});

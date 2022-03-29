@@ -346,7 +346,6 @@ export const undecoratedSymbols = [
     'Dimension::getBlockSourceFromMainChunkSource',
     'SplashPotionEffectSubcomponent::doOnHitEffect',
     'Scoreboard::getScoreboardIdentityRefs',
-    'ScoreboardIdentityRef::modifyScoreInObjective',
     'Scoreboard::getTrackedIds',
     'ItemStackBase::getRawNameId',
     'ItemStackBase::_setItem',
@@ -462,7 +461,6 @@ export const undecoratedSymbols = [
     'Actor::isInWater',
     'Actor::getArmorContainer',
     'Block::hasBlockEntity',
-    'BlockActor::getPosition',
     'BlockPos::relative',
     'BlockSource::removeBlockEntity',
     'BlockLegacy::getBlockItemId',
@@ -481,7 +479,6 @@ export const undecoratedSymbols = [
     'Mob::kill',
     'OnFireSystem::setOnFire',
     'OnFireSystem::setOnFireNoEffects',
-    'Player::getXuid',
     'Item::getSerializedName',
     'ServerPlayer::resendAllChunks',
     'ScoreboardId::isValid',
@@ -600,6 +597,7 @@ export const undecoratedSymbols = [
     'Command::run',
     'ServerPlayer::getInputMode',
     'ServerPlayer::setInputMode',
+    'mce::Blob::~Blob',
 ] as const;
 
 // decorated symbols
@@ -689,4 +687,5 @@ export const decoratedSymbols = [
     '??0SerializedSkin@@QEAA@$$QEAV0@@Z',
     '??0HashedString@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?getItemCooldownLeft@Player@@UEBAHAEBVHashedString@@@Z',
+    '??0Blob@mce@@QEAA@XZ',
 ] as const;

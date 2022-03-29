@@ -96,7 +96,7 @@ export class Tester {
         }
     }
 
-    arrayEquals<T extends any[]>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
+    arrayEquals<T extends ArrayLike<any>>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
         if (message == null) message = '';
         else message = ', ' + message;
 

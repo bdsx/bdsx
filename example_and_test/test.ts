@@ -34,6 +34,7 @@ import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
+import { mce } from "bdsx/mce";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
@@ -942,6 +943,15 @@ Tester.test({
         this.equals(Block.create('minecraft:air')?.getName(), 'minecraft:air');
         this.equals(Block.create('minecraft:element_111')?.getName(), 'minecraft:element_111');
         this.equals(Block.create('minecraft:_no_block_'), null, 'minecraft:_no_block_ is not null');
+    },
+
+    blob() {
+        const blob = mce.Blob.construct();
+        blob.setFromArray([1,2,3,4]);
+        this.arrayEquals(blob.toArray(), [1,2,3,4]);
+        blob.setFromBuffer(new Uint8Array([1,2,3,4,5,6]));
+        this.arrayEquals<ArrayLike<number>>(blob.toBuffer(), [1,2,3,4,5,6]);
+        blob.destruct();
     },
 }, true);
 
