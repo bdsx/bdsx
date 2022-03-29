@@ -1,5 +1,4 @@
 import { abstract, BuildPlatform } from "../common";
-import { AbstractClass, nativeClass } from "../nativeclass";
 import type { Abilities } from "./abilities";
 import { ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -11,9 +10,9 @@ import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
+import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
-import type { SerializedSkin } from "./skin";
+import { SerializedSkin } from "./skin";
 
 export class Player extends Mob {
     abilities: Abilities;
@@ -61,6 +60,13 @@ export class Player extends Mob {
      * @param name - New name
      */
     setName(name: string): void {
+        abstract();
+    }
+
+    /**
+     * Updates the player list to all players
+     */
+    updatePlayerList(): void {
         abstract();
     }
 
@@ -875,16 +881,10 @@ export class ServerPlayer extends Player {
     }
 }
 
-@nativeClass(0x2f0)
-export class PlayerListEntry extends AbstractClass {
-    static constructWith(player: Player): PlayerListEntry {
-        abstract();
-    }
-    /** @deprecated */
-    static create(player: Player): PlayerListEntry {
-        return PlayerListEntry.constructWith(player);
-    }
-}
+/** @deprecated Import from `bdsx/bds/packets` instead */
+export const PlayerListEntry = _PlayerListEntry;
+/** @deprecated Import from `bdsx/bds/packets` instead */
+export type PlayerListEntry = _PlayerListEntry;
 
 export enum InputMode {
     Mouse = 1,

@@ -1,3 +1,4 @@
+import { abstract, BuildPlatform } from "../common";
 import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
@@ -11,8 +12,9 @@ import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
-import type { GameType } from "./player";
+import type { GameType, Player } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
+import { SerializedSkin } from "./skin";
 
 @nativeClass(null)
 export class LoginPacket extends Packet {
@@ -825,9 +827,38 @@ export class SetPlayerGameTypePacket extends Packet {
     playerGameType:GameType;
 }
 
+@nativeClass(0x2f0)
+export class PlayerListEntry extends AbstractClass {
+    @nativeField(ActorUniqueID)
+    id: ActorUniqueID;
+    @nativeField(mce.UUID)
+    uuid: mce.UUID;
+    @nativeField(CxxString)
+    name: CxxString;
+    @nativeField(CxxString)
+    xuid: CxxString;
+    @nativeField(CxxString)
+    platformOnlineId: CxxString;
+    @nativeField(int32_t)
+    buildPlatform: BuildPlatform;
+    @nativeField(SerializedSkin, 0x80)
+    readonly skin: SerializedSkin;
+
+    static constructWith(player: Player): PlayerListEntry {
+        abstract();
+    }
+    /** @deprecated */
+    static create(player: Player): PlayerListEntry {
+        return PlayerListEntry.constructWith(player);
+    }
+}
+
 @nativeClass(null)
 export class PlayerListPacket extends Packet {
-    // unknown
+    @nativeField(CxxVector.make(PlayerListEntry))
+    readonly entries:CxxVector<PlayerListEntry>;
+    @nativeField(uint8_t)
+    action:uint8_t;
 }
 
 @nativeClass(null)
@@ -1142,7 +1173,14 @@ export class PurchaseReceiptPacket extends Packet {
 
 @nativeClass(null)
 export class PlayerSkinPacket extends Packet {
-    // unknown
+    @nativeField(mce.UUID)
+    uuid:mce.UUID;
+    @nativeField(SerializedSkin)
+    readonly skin:SerializedSkin;
+    @nativeField(CxxString)
+    localizedNewSkinName:CxxString;
+    @nativeField(CxxString)
+    localizedOldSkinName:CxxString;
 }
 
 @nativeClass(null)
