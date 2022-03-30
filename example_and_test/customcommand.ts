@@ -144,10 +144,11 @@ command.register('kkk', 'multiple overloads example')
 });
 
 // soft enum example
+const softEnumExample = command.softEnum('softEnumExample', 'hello', 'world');
 command.register('lll', 'soft enum example')
     // Adds a value to the soft enum.
     .overload((param, origin, output)=>{
-    CommandSoftEnum.getInstance('softEnumExample').addValues(param.value);
+    softEnumExample.addValues(param.value);
     output.success(`soft enum example : Added value ${param.value}`);
 }, {
     action: command.enum('action.add', 'add'),
@@ -155,7 +156,7 @@ command.register('lll', 'soft enum example')
 })
     // Removes a value from the soft enum.
     .overload((param, origin, output)=>{
-        CommandSoftEnum.getInstance('softEnumExample').removeValues(param.value);
+        softEnumExample.removeValues(param.value);
         output.success(`soft enum example : Removed value ${param.value}`);
     }, {
         action: command.enum('action.remove', 'remove'),
@@ -163,10 +164,10 @@ command.register('lll', 'soft enum example')
 })
     // Lists all the soft enum values.
     .overload((param, origin, output)=>{
-        output.success(`soft enum example : Values: ${CommandSoftEnum.getInstance('softEnumExample').getValues().join(', ')}`);
+        output.success(`soft enum example : Values: ${softEnumExample.getValues().join(', ')}`);
     }, {
         action: command.enum('action.list', 'list'),
-        list: command.softEnum('softEnumExample', 'hello', 'world'),
+        list: softEnumExample,
 });
 
 // disable examples

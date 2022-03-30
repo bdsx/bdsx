@@ -78,7 +78,7 @@ export namespace mce {
             return bytes;
         }
 
-        setFromArray(bytes:number[]|Uint8Array):void {
+        setFromArray(bytes:number[]):void {
             this.destruct(); // it uses the deleter to deleting bytes
             this.construct(); // it initializes with the default deleter
 

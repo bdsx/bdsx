@@ -219,8 +219,10 @@ function softEnum(name:string, ...values:string[]):CommandSoftEnum;
 function softEnum(name:string, values:string[]):CommandSoftEnum;
 function softEnum(name:string, ...values:(string|string[])[]):CommandSoftEnum {
     const softenum = CommandSoftEnum.getInstance(name);
-    const first = values[0];
-    softenum.addValues(Array.isArray(first) ? first : values as string[]);
+    if (values.length !== 0) {
+        const first = values[0];
+        softenum.addValues(Array.isArray(first) ? first : values as string[]);
+    }
     return softenum;
 }
 
