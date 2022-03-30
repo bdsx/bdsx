@@ -1,7 +1,27 @@
-import { dllraw } from "./dllraw";
+import * as path from 'path';
+import { fsutil } from "./fsutil";
+
+let isBdsx = false;
+try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('./core');
+    isBdsx = true;
+} catch (err) {
+}
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+const isWine = isBdsx ? require('./dllraw').dllraw.ntdll.wine_get_version !== null : false;
 
 export namespace Config {
-    export const WINE = dllraw.ntdll.wine_get_version !== null;
+    /**
+     * true if it runs on BDSX
+     */
+    export const BDSX = isBdsx;
+
+    /**
+     * true if it runs on Wine
+     */
+    export const WINE = isWine;
 
     /**
      * handle stdin with the hooking method.
@@ -17,5 +37,7 @@ export namespace Config {
      * the original encoder crashes sometimes on Linux+Wine.
      */
     export const REPLACE_UNICODE_ENCODER = WINE;
+
+    export const BDS_PATH = path.join(fsutil.projectPath, 'bedrock_server');
 }
 

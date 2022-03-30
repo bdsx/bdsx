@@ -243,8 +243,10 @@ function _launch(asyncResolve:()=>void):void {
     // and bdsx will hijack the game thread and run it on the node thread.
     const [threadHandle] = capi.createThread(asmcode.wrapped_main, null);
 
-    import('./bds/implements');
-    import('./event_impl');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('./bds/implements');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('./event_impl');
 
     loadingIsFired = true;
     events.serverLoading.fire();
