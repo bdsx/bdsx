@@ -14,12 +14,12 @@ const isWine = isBdsx ? require('./dllraw').dllraw.ntdll.wine_get_version !== nu
 
 export namespace Config {
     /**
-     * true if it runs on BDSX
+     * true if running BDSX normally (with BDS and bdsx-core)
      */
     export const BDSX = isBdsx;
 
     /**
-     * true if it runs on Wine
+     * true if running on Linux+Wine
      */
     export const WINE = isWine;
 
