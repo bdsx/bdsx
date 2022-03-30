@@ -27,6 +27,7 @@ function checkJsCache(modulepath) {
     }
 }
 
+// delete pre-generated JS
 checkJsCache('./installer/installer');
 checkJsCache('./installer/installerapi');
 checkJsCache('./fsutil');

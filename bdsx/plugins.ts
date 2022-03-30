@@ -267,7 +267,8 @@ export async function loadAllPlugins():Promise<void> {
             for (const pkg of PackageJson.all.values()) {
                 try {
                     console.log(colors.green(`[BDSX-Plugins] Loading ${pkg.name} (${++index}/${pluginCount})`));
-                    import(pkg.name);
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
+                    require(pkg.name);
                     loadedPlugins.push(pkg.name);
                     loadedPackages.push({name:pkg.name, loaded:(pkg as any).loaded, jsonpath:(pkg as any).jsonpath, json:(pkg as any).json});
                 } catch (err) {

@@ -62,7 +62,7 @@ export class Packet extends AbstractMantleClass {
     /**
      * same with target.send
      */
-    sendTo(target:NetworkIdentifier, unknownarg?:number):void {
+    sendTo(target:NetworkIdentifier, senderSubClientId?:number):void {
         abstract();
     }
     dispose():void {

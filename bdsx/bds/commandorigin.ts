@@ -51,6 +51,9 @@ export class CommandOrigin extends AbstractClass {
     isServerCommandOrigin():boolean {
         return this.vftable.equals(ServerCommandOrigin_vftable);
     }
+    /**
+     * @deprecated bedrock scripting API will be removed.
+     */
     isScriptCommandOrigin():boolean {
         return this.vftable.equals(ScriptCommandOrigin_vftable);
     }

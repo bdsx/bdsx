@@ -55,8 +55,8 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
                 ctx.code = `superproto[NativeType.${fnname}].call(this);\n`+ctx.code;
             }
             if (superfn !== manualfn) {
-                builder.import(manualfn, 'manual_'+fnname);
-                ctx.code += `manual_${fnname}.call(this);\n`;
+                const funcname = builder.import(manualfn);
+                ctx.code += `${funcname}.call(this);\n`;
             }
             let prefix = '\nfunction(){\n';
             if (ctx.ptrUsed) prefix += 'const ptr=this.add();\n';
@@ -281,6 +281,10 @@ class StructureDefinition {
 
 const structures = new WeakMap<{new():any}, StructureDefinition>();
 
+function ptrAs<T extends NativeClass>(ptr:StaticPointer, type:NativeClassType<T>):T {
+    return ptr instanceof type ? ptr : ptr.as(type);
+}
+
 export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static readonly [NativeType.align]:number = 1;
@@ -316,16 +320,16 @@ export class NativeClass extends StructurePointer {
     static [resolver]?(ptr:StaticPointer|null):any;
 
     static [NativeType.ctor](ptr:StaticPointer):void {
-        ptr.as(this)[NativeType.ctor]();
+        ptrAs(ptr, this)[NativeType.ctor]();
     }
     static [NativeType.dtor](ptr:StaticPointer):void {
-        ptr.as(this)[NativeType.dtor]();
+        ptrAs(ptr, this)[NativeType.dtor]();
     }
     static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void {
-        to.as(this)[NativeType.ctor_copy](from.as(this));
+        ptrAs(to, this)[NativeType.ctor_copy](ptrAs(from, this));
     }
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
-        to.as(this)[NativeType.ctor_move](from.as(this));
+        ptrAs(to, this)[NativeType.ctor_move](ptrAs(from, this));
     }
     static [NativeType.setter](ptr:VoidPointer, value:NativeClass, offset?:number):void {
         const nptr = ptr.addAs(this, offset, (offset || 0) >> 31);
@@ -791,6 +795,9 @@ export declare class MantleClass extends NativeClass {
      */
     setBin(v:string, offset?:number): void;
 
+    setInt32To64WithZero(value: number, offset?: number): void;
+    setFloat32To64WithZero(value: number, offset?: number): void;
+
     interlockedIncrement16(offset?:number):number;
     interlockedIncrement32(offset?:number):number;
     interlockedIncrement64(offset?:number):number;
@@ -809,7 +816,7 @@ exports.MantleClass = NativeClass;
 
 function makeReference<T extends NativeClass>(type:{new():T, symbol?:string}):NativeType<T> {
     const clazz = type as NativeClassType<T>;
-    return new NativeType<T>((type.symbol || type.name)+'*', type.name+'*', 8, 8,
+    return new NativeType<T>((type.symbol || type.name)+' * __ptr64', type.name+'*', 8, 8,
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
         (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),

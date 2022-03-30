@@ -1,55 +1,132 @@
+import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
-import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, int8_t } from "../nativetype";
+import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { bool_t, CxxString, CxxStringWith8Bytes, float32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { JsonValue } from "./connreq";
+import { procHacker } from "./proc";
+import { SemVersion } from "./server";
 
-/** Mojang you serious? */
 export enum TrustedSkinFlag {
     Unset,
     False,
     True,
 }
 
-@nativeClass(null)
-export class SerializedSkin extends AbstractClass {
+export enum PersonaAnimatedTextureType {
+    None,
+    Face,
+    Body32x32,
+    Body128x128,
+}
+
+export enum PersonaPieceType {
+    Unknown,
+    Skeleton,
+    Body,
+    Skin,
+    Bottom,
+    Feet,
+    Dress,
+    Top,
+    HighPants,
+    Hands,
+    Outerwear,
+    Back,
+    FacialHair,
+    Mouth,
+    Eyes,
+    Hair,
+    FaceAccessory,
+    Head,
+    Legs,
+    LeftLeg,
+    RightLeg,
+    Arms,
+    LeftArm,
+    RightArm,
+    Capes,
+    ClassicSkin,
+}
+
+@nativeClass(0x38)
+export class AnimatedImageData extends NativeClass {
+    @nativeField(uint32_t)
+    type:PersonaAnimatedTextureType;
+    @nativeField(mce.Image)
+    image:mce.Image;
+    @nativeField(float32_t)
+    frames:float32_t;
+}
+
+@nativeClass()
+export class SerializedPersonaPieceHandle extends NativeClass {
     @nativeField(CxxString)
+    pieceId:CxxString;
+    @nativeField(uint32_t)
+    pieceType:uint32_t;
+    @nativeField(mce.UUID, 0x28)
+    packId:mce.UUID;
+    @nativeField(bool_t)
+    isDefaultPiece:bool_t;
+    @nativeField(CxxString, 0x40)
+    productId:CxxString;
+}
+
+@nativeClass()
+export class SerializedSkin extends NativeClass {
+    /** @deprecated Use {@link id} instead */
+    @nativeField(CxxString, {ghost:true})
     skinId:CxxString;
+    @nativeField(CxxString)
+    id:CxxString;
     @nativeField(CxxString)
     playFabId:CxxString;
     @nativeField(CxxString)
-    resourcePatch:CxxString;
+    fullId:CxxString;
     @nativeField(CxxString)
-    geometryName:CxxString;
+    resourcePatch:CxxString;
     @nativeField(CxxString)
     defaultGeometryName:CxxString;
     @nativeField(mce.Image)
     skinImage:mce.Image;
-    @nativeField(mce.Image, 0xC8)
+    @nativeField(mce.Image)
     capeImage:mce.Image;
-    // @nativeField(CxxVector.make(AnimatedImageData), 0xF0)
-    // animatedImages:CxxVector<AnimatedImageData>;
-    @nativeField(JsonValue, 0x108)
-    geometryData:JsonValue;
+    @nativeField(CxxVector.make(AnimatedImageData))
+    skinAnimatedImages:CxxVector<AnimatedImageData>;
     @nativeField(JsonValue)
-    geometryDataMutable:JsonValue|null;
+    geometryData:JsonValue;
+    @nativeField(SemVersion)
+    geometryDataEngineVersion:SemVersion;
+    @nativeField(JsonValue)
+    geometryDataMutable:JsonValue;
     @nativeField(CxxString)
     animationData:CxxString;
     @nativeField(CxxString)
     capeId:CxxString;
+    @nativeField(CxxVector.make(SerializedPersonaPieceHandle))
+    personaPieces:CxxVector<SerializedPersonaPieceHandle>;
+    @nativeField(CxxStringWith8Bytes)
+    armSize:CxxStringWith8Bytes;
+    // @nativeField(CxxUnorderedMap.make(uint32_t,TintMapColor))
+    // pieceTintColors:CxxUnorderedMap<PersonaPieceType,TintMapColor>;
+    @nativeField(mce.Color, {offset:0x38, relative:true})
+    skinColor:mce.Color;
+    @nativeField(uint8_t)
+    isTrustedSkin:TrustedSkinFlag;
     @nativeField(bool_t)
     isPremium:bool_t;
     @nativeField(bool_t)
     isPersona:bool_t;
-    @nativeField(bool_t)
+    /** @deprecated Use {@link isPersonaCapeOnClassicSkin} instead */
+    @nativeField(bool_t, {ghost:true})
     isCapeOnClassicSkin:bool_t;
-    // @nativeField(CxxVector.make(SerializedPersonaPieceHandle), 0x171)
-    // personaPieces:CxxVector<SerializedPersonaPieceHandle>;
-    @nativeField(CxxString, 0x188)
-    armSize:CxxString;
-    // @nativeField(CxxUnorderedMap.make(persona.PieceType,TintMapColor), 0x1A8)
-    // pieceTintColors:CxxUnorderedMap<persona::PieceType,TintMapColor>;
-    // @nativeField(mce.Color, 0x1E8)
-    // skinColor:mce.Color;
-    @nativeField(int8_t, 0x1F8)
-    isTrustedSkin:TrustedSkinFlag;
+    @nativeField(bool_t)
+    isPersonaCapeOnClassicSkin:bool_t;
+    @nativeField(bool_t)
+    isPrimaryUser:bool_t;
 }
+
+SerializedSkin.prototype[NativeType.ctor] = procHacker.js("??0SerializedSkin@@QEAA@XZ", void_t, {this:SerializedSkin});
+SerializedSkin.prototype[NativeType.dtor] = procHacker.js("SerializedSkin::~SerializedSkin", void_t, {this:SerializedSkin});
+SerializedSkin.prototype[NativeType.ctor_copy] = procHacker.js("??0SerializedSkin@@QEAA@AEBV0@@Z", void_t, {this:SerializedSkin}, SerializedSkin);
+SerializedSkin.prototype[NativeType.ctor_move] = procHacker.js("??0SerializedSkin@@QEAA@$$QEAV0@@Z", void_t, {this:SerializedSkin}, SerializedSkin);

@@ -1,7 +1,8 @@
 import { remapAndPrintError } from "../source-map-support";
 
 try {
-    import('./symbolwriter');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('./symbolwriter');
 } catch (err) {
     remapAndPrintError(err);
 }

@@ -6,7 +6,6 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
 import { Singleton } from './singleton';
 import { templateName } from './templatename';
-import { filterToIdentifierableString } from './util';
 
 namespace NativeTypeFn {
     export const align = Symbol('align');
@@ -61,30 +60,27 @@ export class NativeDescriptorBuilder {
     public readonly params:unknown[] = [];
 
     public readonly imports = new Map<unknown, string>();
-    private readonly names = new Set<string>();
 
     public readonly ctor = new NativeDescriptorBuilder.UseContextCtor;
     public readonly dtor = new NativeDescriptorBuilder.UseContextDtor;
     public readonly ctor_copy = new NativeDescriptorBuilder.UseContextCtorCopy;
     public readonly ctor_move = new NativeDescriptorBuilder.UseContextCtorCopy;
 
+    private nameCounter = 0;
+
+    /**
+     * @deprecated dummy
+     */
     importType(type:Type<any>):string {
-        return this.import(type, type.name);
+        return this.import(type);
     }
 
-    import(type:unknown, name:string):string {
+    import(type:unknown):string {
         const oname = this.imports.get(type);
         if (oname != null) return oname;
-        name = filterToIdentifierableString(name);
-        if (this.names.has(name)) {
-            const oname = name;
-            let idx = 1;
-            do {
-                name = oname+(++idx);
-            } while (this.names.has(name));
-        }
+
+        const name = '_'+(this.nameCounter++).toString(36);
         this.imports.set(type, name);
-        this.names.add(name);
         return name;
     }
 }
@@ -315,8 +311,8 @@ export class CommandParameterNativeType<T> extends NativeType<T> {
 
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
-        `${type.name}*`,
         `${type.symbol} * __ptr64`,
+        `${type.name}*`,
         8, 8,
         type.isTypeOf,
         type.isTypeOfWeak,

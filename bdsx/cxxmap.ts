@@ -515,6 +515,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
         return !bound._Isnil && !this.key_comp(key, bound._Myval.first);
     }
 
+    /**
+     * @return it returns null if not found. it does not return undefined
+     */
     get(key:K):V|null {
         const {bound} = this._search(key);
         if (bound._Isnil || this.key_comp(key, bound._Myval.first)) return null;

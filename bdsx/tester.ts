@@ -11,10 +11,21 @@ let testIsDone = false;
 
 const total:number[] = [0,0,0,0];
 
+function logError(message:string):void {
+    console.error(colors.red(`[test] ${message}`));
+}
+function logMessage(message:string):void {
+    console.log(colors.brightGreen(`[test] ${message}`));
+}
+
 export class Tester {
-    private subject = '';
     private state = Tester.State.Pending;
     private pending = 0;
+    private errors:string[] = [];
+    private firstFlush = false;
+
+    constructor(private readonly subject = '') {
+    }
 
     public static errored = false;
     public static isPassed():boolean {
@@ -22,16 +33,19 @@ export class Tester {
     }
 
     private _done(state:Tester.State):void {
+        this._flush();
+
         if (state <= this.state) return;
         if (this.pending !== 0 && state === Tester.State.Passed) {
-            this._logPending();
+            this.log(`Pending ${this.pending} tasks`);
             return;
         }
+
         total[this.state]--;
         total[state]++;
         if (this.state === Tester.State.Pending) done++;
         if (state === Tester.State.Failed) {
-            Tester._log(`FAILED (${total[Tester.State.Passed]}/${testcount})`, true);
+            logError(`FAILED (${total[Tester.State.Passed]}/${testcount})`);
             Tester.errored = true;
         }
         this.state = state;
@@ -40,21 +54,23 @@ export class Tester {
             const error = total[Tester.State.Failed] !== 0;
             const message = `TEST ${error ? 'FAILED' : 'PASSED'} (${total[Tester.State.Passed]}/${testcount - total[Tester.State.Skipped]})`;
 
-            Tester._log(message, error);
+            (error ? logError : logMessage)(message);
             testIsDone = true;
             if (error) {
-                Tester._log('Unit tests can fail If other user scripts are running.', true);
+                logError('Unit tests can fail If other user scripts are running.');
             }
         }
     }
 
-    private _logPending():void {
-        if (this.pending === 0) this.log(`Pending done`);
-        else this.log(`Pending ${this.pending} tasks`);
-    }
-    private static _log(message:string, error?:boolean):void {
-        if (error) console.error(colors.red(`[test] ${message}`));
-        else console.log(colors.brightGreen(`[test] ${message}`));
+    private _flush():void {
+        if (!this.firstFlush) {
+            this.firstFlush = true;
+            logMessage(`(${testnum++}/${testcount}) ${this.subject}`);
+        }
+        for (const err of this.errors) {
+            this.log(err, true);
+        }
+        this.errors.length = 0;
     }
 
     log(message:string, error?:boolean):void {
@@ -64,8 +80,8 @@ export class Tester {
     }
 
     private _error(message:string, errorpos:string):void {
-        this.log(`failed. ${message}`, true);
-        console.error(colors.red(errorpos));
+        this.errors.push(`failed. ${message}`);
+        this.errors.push(colors.red(errorpos));
         this._done(Tester.State.Failed);
     }
 
@@ -88,10 +104,32 @@ export class Tester {
         if (!cond) this.error(message, 3);
     }
 
-    equals<T>(actual:T, expected:T, message:string='', toString:(v:T)=>string=v=>v+''):void {
+    equals<T>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
         if (actual !== expected) {
-            if (message !== '') message = ', ' + message;
+            if (message == null) message = '';
+            else message = ', ' + message;
             this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}${message}`, 3);
+        }
+    }
+
+    arrayEquals<T extends ArrayLike<any>>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
+        if (message == null) message = '';
+        else message = ', ' + message;
+
+        let n = actual.length;
+        const expectedLen = expected.length;
+        if (n !== expectedLen) {
+            this.error(`Expected: length=${expectedLen}, Actual: length=${n}${message}`, 3);
+            if (expectedLen < n) {
+                n = expectedLen;
+            }
+        }
+        for (let i=0;i<n;i++) {
+            const a = actual[i];
+            const e = expected[i];
+            if (a !== e) {
+                this.error(`Expected: [${i}]=${toString(e)}, Actual: [${i}]=${toString(a)}${message}`, 3);
+            }
         }
     }
 
@@ -111,10 +149,10 @@ export class Tester {
             if (count !== 0) {
                 if ((--count) === 0) {
                     this.pending--;
-                    this._logPending();
                     if (this.pending === 0) {
-                        this._done(Tester.State.Passed);
+                        this.log(`Pending done`);
                     }
+                    this._done(Tester.State.Passed);
                 }
             }
         };
@@ -128,22 +166,53 @@ export class Tester {
             await serverInstance.nextTick();
         }
 
-        Tester._log(`node version: ${process.versions.node}`);
-        Tester._log(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
+        logMessage(`node version: ${process.versions.node}`);
+        if (process.jsEngine != null) {
+            logMessage(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
+        }
 
         const testlist = Object.entries(tests);
         testcount += testlist.length;
 
         for (const [subject, test] of testlist) {
-            const tester = new Tester;
+            const tester = new Tester(subject);
             try {
-                Tester._log(`(${testnum++}/${testcount}) ${subject}`);
-                tester.subject = subject;
                 await test.call(tester);
                 tester._done(Tester.State.Passed);
             } catch (err) {
                 tester.processError(err);
             }
+        }
+    }
+
+    static async concurrency(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
+        await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
+
+        logMessage(`node version: ${process.versions.node}`);
+        if (process.jsEngine != null) {
+            logMessage(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
+        }
+
+        const allTests = tests.map(test=>{
+            const list = Object.entries(test);
+            testcount += list.length;
+            return list;
+        });
+
+        for (const testlist of allTests) {
+            const proms:Promise<void>[] = [];
+            for (const [subject, test] of testlist) {
+                const tester = new Tester(subject);
+                proms.push((async()=>{
+                    try {
+                        await test.call(tester);
+                        tester._done(Tester.State.Passed);
+                    } catch (err) {
+                        tester.processError(err);
+                    }
+                })());
+            }
+            await Promise.all(proms);
         }
     }
 }

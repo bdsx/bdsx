@@ -2,7 +2,7 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
-import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, PlayerCommandSelector } from "bdsx/bds/command";
+import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, CommandSoftEnum, PlayerCommandSelector } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { ServerPlayer } from "bdsx/bds/player";
 import { command } from "bdsx/command";
@@ -141,6 +141,33 @@ command.register('kkk', 'multiple overloads example')
 } ,{
         option: command.enum("option.remove", "remove"),
         id: int32_t,
+});
+
+// soft enum example
+const softEnumExample = command.softEnum('softEnumExample', 'hello', 'world');
+command.register('lll', 'soft enum example')
+    // Adds a value to the soft enum.
+    .overload((param, origin, output)=>{
+    softEnumExample.addValues(param.value);
+    output.success(`soft enum example : Added value ${param.value}`);
+}, {
+    action: command.enum('action.add', 'add'),
+    value: CxxString,
+})
+    // Removes a value from the soft enum.
+    .overload((param, origin, output)=>{
+        softEnumExample.removeValues(param.value);
+        output.success(`soft enum example : Removed value ${param.value}`);
+    }, {
+        action: command.enum('action.remove', 'remove'),
+        value: CxxString,
+})
+    // Lists all the soft enum values.
+    .overload((param, origin, output)=>{
+        output.success(`soft enum example : Values: ${softEnumExample.getValues().join(', ')}`);
+    }, {
+        action: command.enum('action.list', 'list'),
+        list: softEnumExample,
 });
 
 // disable examples

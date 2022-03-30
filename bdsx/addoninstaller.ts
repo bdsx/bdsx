@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as ProgressBar from 'progress';
 import * as stripJsonComments from 'strip-json-comments';
 import * as unzipper from 'unzipper';
+import { Config } from './config';
 import { fsutil } from './fsutil';
 import { serverProperties } from './serverproperties';
 
@@ -520,12 +521,12 @@ class ServerPackManager extends PackManager<ServerPack> {
     public readonly installedResources = new PackDirectory(
         Provider.Server,
         PackDirectoryType.ResourcePacks,
-        bdsPath+path.sep+'resource_packs',
+        Config.BDS_PATH+path.sep+'resource_packs',
         'bedrock_server/resource_packs');
     public readonly installedBehaviors = new PackDirectory(
         Provider.Server,
         PackDirectoryType.BehaviorPacks,
-        bdsPath+path.sep+'behavior_packs',
+        Config.BDS_PATH+path.sep+'behavior_packs',
         'bedrock_server/behavior_packs');
 
     constructor(jsonPath:string) {
@@ -690,7 +691,6 @@ async function isLink(filepath:string):Promise<boolean> {
 }
 
 const projectPath = fsutil.projectPath;
-const bdsPath = projectPath+path.sep+'bedrock_server';
 const addonsPath = projectPath+path.sep+'addons';
 const manifestNames = new Set<string>(['manifest.json', 'pack_manifest.json']);
 
@@ -698,12 +698,12 @@ const dirmaker = new fsutil.DirectoryMaker;
 dirmaker.dirhas.add(projectPath);
 
 export async function installMinecraftAddons():Promise<void>{
-    await dirmaker.make(bdsPath);
+    await dirmaker.make(Config.BDS_PATH);
 
     const worldName = serverProperties['level-name'] || 'Bedrock level';
-    const worldPath = bdsPath+path.sep+'worlds'+path.sep+worldName;
+    const worldPath = Config.BDS_PATH+path.sep+'worlds'+path.sep+worldName;
 
-    const serverPacks = new ServerPackManager(bdsPath+path.sep+'valid_known_packs.json');
+    const serverPacks = new ServerPackManager(Config.BDS_PATH+path.sep+'valid_known_packs.json');
     const worldResources = new WorldPackManager(PackDirectoryType.ResourcePacks, worldPath, worldName);
     const worldBehaviors = new WorldPackManager(PackDirectoryType.BehaviorPacks, worldPath, worldName);
     const bdsxPacks = new BdsxPackDirectory(worldPath, worldName);

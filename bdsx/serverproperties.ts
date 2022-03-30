@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { fsutil } from "./fsutil";
+import { Config } from './config';
 
 /**
  * not using
@@ -38,8 +38,7 @@ type StringProperties = {[key in keyof ServerProperties]?:string};
 export const serverProperties:StringProperties = {};
 
 try {
-    const bdsPath = fsutil.projectPath+path.sep+'bedrock_server';
-    const propertyFile = bdsPath+path.sep+'server.properties';
+    const propertyFile = Config.BDS_PATH+path.sep+'server.properties';
     const properties = fs.readFileSync(propertyFile, 'utf8');
     const matcher = /^\s*([^=#]+)\s*=\s*(.*)\s*$/mg;
     for (;;) {

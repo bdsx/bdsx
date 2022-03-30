@@ -1,10 +1,9 @@
-import { NativePointer, pdb } from "../core";
-import { UNDNAME_NAME_ONLY } from "../dbghelp";
+import { NativePointer } from "../core";
 import { makefunc } from "../makefunc";
 import { AbstractClass, NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
 import { Wrapper } from "../pointer";
-import { templateName } from "../templatename";
+import { CommandSymbols } from "./cmdsymbolloader";
 
 @nativeClass()
 export class typeid_t<T> extends NativeClass{
@@ -48,23 +47,24 @@ export function type_id<T, BASE extends HasTypeId>(base:typeof HasTypeId&{new():
 }
 
 export namespace type_id {
-    export function pdbimport(base:typeof HasTypeId, types:Type<any>[]):void {
-        const baseSymbol = base.symbol || base.name;
-        const symbols = types.map(v=>templateName('type_id', baseSymbol, v.symbol || v.name));
-        const counter = templateName('typeid_t', baseSymbol)+'::count';
-        symbols.push(counter);
+    /**
+     * @deprecated dummy
+     */
+    export function pdbimport(base:Type<any>, types:Type<any>[]):void {
+        // dummy
+    }
+    export function load(symbols:CommandSymbols):void {
+        for (const [basetype, addr] of symbols.iterateCounters()) {
+            const base = basetype as typeof HasTypeId;
+            const map = base[typeidmap];
+            base[counterWrapper] = addr.as(IdCounter);
 
-        const addrs = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
-
-        symbols.pop();
-
-        base[counterWrapper] = addrs[counter].as(IdCounter);
-
-        const map = base[typeidmap];
-        for (let i=0;i<symbols.length;i++) {
-            const addr = addrs[symbols[i]];
-            if (addr == null) continue;
-            map.set(types[i], addr);
+            for (const [type, addr] of symbols.iterateTypeIdFns(basetype)) {
+                map.set(type, addr);
+            }
+            for (const [type, addr] of symbols.iterateTypeIdPtrs(basetype)) {
+                map.set(type, addr.as(typeid_t));
+            }
         }
     }
     export function clone(base:typeof HasTypeId, oriType:Type<any>, newType:Type<any>):void {
@@ -78,7 +78,6 @@ export namespace type_id {
             map.set(oriType, typeid);
         }
         map.set(newType, typeid);
-
     }
     export function register(base:typeof HasTypeId, type:Type<any>, id:number):void {
         const map = base[typeidmap];

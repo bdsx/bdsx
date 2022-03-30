@@ -156,6 +156,9 @@ export declare class PrivatePointer extends VoidPointer {
      */
     protected setBin(v:string, offset?:number): void;
 
+    protected setInt32To64WithZero(value: number, offset?: number): void;
+    protected setFloat32To64WithZero(value: number, offset?: number): void;
+
     protected interlockedIncrement16(offset?:number):number;
     protected interlockedIncrement32(offset?:number):number;
     protected interlockedIncrement64(offset?:number):number;
@@ -847,6 +850,10 @@ export declare namespace cxxException {
     export const cxxthrowString:VoidPointer;
 }
 
-const core = module.exports = (process as any)._linkedBinding('bdsx_core');
-core.ipfilter.entries = core.ipfilter.entires;
-module.exports.PrivatePointer = module.exports.StaticPointer;
+try {
+    const core = module.exports = (process as any)._linkedBinding('bdsx_core');
+    core.ipfilter.entries = core.ipfilter.entires;
+    module.exports.PrivatePointer = module.exports.StaticPointer;
+} catch (err) {
+    throw Error(`BDSX is unusable with the standard node.js`);
+}

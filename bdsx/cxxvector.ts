@@ -264,6 +264,9 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         this._copy(begptr, component, idx);
     }
 
+    /**
+     * @return null if not found, it does not return undefined
+     */
     get(idx:number):T {
         const beginptr = this.getPointer(0);
         const endptr = this.getPointer(8);
@@ -503,7 +506,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
 
                     protected _get(ptr:NativePointer, index:number):NativeClass{
                         const item = this.cache[index];
-                        if (item != null) return item;
+                        if (item != null && ptr.equals(item)) return item;
                         const type = this.componentType;
                         return this.cache[index] = ptr.as(type);
                     }
