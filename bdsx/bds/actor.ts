@@ -453,7 +453,16 @@ export class Actor extends AbstractClass {
     static tryGetFromEntity(entity:EntityContext):Actor|null {
         abstract();
     }
-
+    /**
+     * Adds an item to the player's inventory
+     * @remarks Player inventory will not be updated. Use ServerPlayer.sendInventory() to update it.
+     *
+     * @param itemStack - Item to add
+     * @returns {boolean} Whether the item has been added successfully (Full inventory can be a cause of failure)
+     */
+    addItem(itemStack: ItemStack): boolean {
+        abstract();
+    }
     sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);

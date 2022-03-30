@@ -11,7 +11,6 @@ export const undecoratedSymbols = [
     'Level::fetchEntity',
     'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
-    'Player::add',
     'Player::addLevels',
     'Player::attack',
     'Player::drop',

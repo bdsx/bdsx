@@ -219,6 +219,7 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
         return CommandUtils.spawnEntityAt(region, pos, type, ptr, summoner);
     }
 };
+Actor.prototype.addItem = makefunc.js([0x730], bool_t, {this:Actor}, ItemStack);
 (Actor.prototype as any)._getArmorValue = procHacker.js("Mob::getArmorValue", int32_t, {this:Actor});
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
@@ -476,7 +477,6 @@ Player.prototype.updatePlayerList = function() {
     entry.destruct();
     pk.dispose();
 };
-Player.prototype.addItem = procHacker.js("Player::add", bool_t, {this:Player}, ItemStack);
 Player.prototype.changeDimension = procHacker.js("ServerPlayer::changeDimension", void_t, {this:Player}, int32_t, bool_t);
 Player.prototype.teleportTo = procHacker.js("Player::teleportTo", void_t, {this:Player}, Vec3, bool_t, int32_t, int32_t, bin64_t);
 Player.prototype.getGameType = procHacker.js("Player::getPlayerGameType", int32_t, {this:Player});
