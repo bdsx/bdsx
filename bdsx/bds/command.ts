@@ -927,6 +927,7 @@ CommandOutput.prototype.empty = procHacker.js('CommandOutput::empty', bool_t, {t
 (CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 (CommandOutput.prototype as any)._error = procHacker.js('?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
 (CommandOutput.prototype as any)._addMessage = procHacker.js('CommandOutput::addMessage', void_t, {this:CommandOutput}, CxxString, CxxVector.make(CommandOutputParameter));
+CommandOutput.prototype[NativeType.dtor] = procHacker.js('CommandOutput::~CommandOutput', void_t, {this:CommandOutput});
 
 CommandOutputSender.prototype._toJson = procHacker.js('CommandOutputSender::_toJson', JsonValue, {this:CommandOutputSender, structureReturn:true}, CommandOutput);
 

@@ -98,6 +98,7 @@ function patchForStdio():void {
     procHacker.hookingRawWithCallOriginal('Command::run',
         makefunc.np((commands, origin, output)=>{
             if (commandOutputData.has(origin.uuid)) {
+                output.destruct();
                 output.constructAs(CommandOutputType.DataSet);
             }
         }, void_t, {name: 'hook of Command::run'}, MinecraftCommands, CommandOrigin, CommandOutput),
@@ -109,6 +110,7 @@ function patchForStdio():void {
             commandOutputData.set(uuid, json.value());
             json.destruct();
             if (commandOutputMuted.has(uuid)) { // Mute it if it should, but only after json data is gotten
+                output.destruct();
                 output.constructAs(CommandOutputType.None);
                 commandOutputMuted.delete(uuid);
             }
@@ -434,9 +436,8 @@ export namespace bedrockServer {
         if (mute) commandOutputMuted.add(uuid); // Mute it after statusMessage is gotten
         const res = minecraft.getCommands().executeCommand(ctx, false); // Do not mute it, otherwise there will be no statusMessage
         // ctx, origin: no need to destruct, it's destructed by internal functions.
-        if (callback) {
+        if (callback) { // Faster than the ScriptingEngine as it does not wait for the next tick
             const json = commandOutputData.get(uuid)!;
-            commandOutputData.delete(uuid);
             if (json) {
                 if (json.statusCode == null) json.statusCode = res.getFullCode(); // No status code if syntax error
                 try {
@@ -446,6 +447,7 @@ export namespace bedrockServer {
                 }
             }
         }
+        commandOutputData.delete(uuid);
         return res;
     }
 
