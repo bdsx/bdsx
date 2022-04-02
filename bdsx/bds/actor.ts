@@ -454,8 +454,8 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
-     * Adds an item to the player's inventory
-     * @remarks Player inventory will not be updated. Use ServerPlayer.sendInventory() to update it.
+     * Adds an item to the entity's inventory
+     * @remarks Entity(Mob) inventory will not be updated. Use Mob.sendInventory() to update it.
      *
      * @param itemStack - Item to add
      * @returns {boolean} Whether the item has been added successfully (Full inventory can be a cause of failure)
