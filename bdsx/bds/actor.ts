@@ -1000,6 +1000,9 @@ export class Actor extends AbstractClass {
         hashStr.destruct();
         return hasFamily;
     }
+    distanceTo(dest: Vec3): number {
+        abstract();
+    }
 }
 
 export class Mob extends Actor {

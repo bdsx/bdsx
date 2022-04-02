@@ -687,4 +687,5 @@ export const decoratedSymbols = [
     '??0HashedString@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '?getItemCooldownLeft@Player@@UEBAHAEBVHashedString@@@Z',
     '??0Blob@mce@@QEAA@XZ',
+    '?distanceTo@Actor@@QEBAMAEBVVec3@@@Z',
 ] as const;
