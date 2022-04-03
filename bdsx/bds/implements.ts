@@ -39,7 +39,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, PlayerListEntry, PlayerListPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, proc2, procHacker } from "./proc";
@@ -140,7 +140,16 @@ Level.prototype.setDefaultSpawn = procHacker.js('Level::setDefaultSpawn', void_t
 Level.prototype.getDefaultSpawn = procHacker.js('Level::getDefaultSpawn', BlockPos, {this:Level});
 Level.prototype.explode = procHacker.js('?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z', void_t, {this:Level}, BlockSource, VoidPointer, Vec3, float32_t, bool_t, bool_t, float32_t, bool_t);
 Level.prototype.getDifficulty = procHacker.js("Level::getDifficulty", int32_t, {this:Level});
-Level.prototype.setDifficulty = procHacker.js("Level::setDifficulty", void_t, {this:Level}, int32_t);
+const Level$setDifficulty = procHacker.js("Level::setDifficulty", void_t, {this:Level}, int32_t);
+Level.prototype.setDifficulty = function (difficulty) {
+    Level$setDifficulty.call(this, difficulty);
+    const pkt = SetDifficultyPacket.allocate();
+    pkt.difficulty = difficulty;
+    for (const player of this.getPlayers()) {
+        player.sendNetworkPacket(pkt);
+    }
+    pkt.dispose();
+};
 
 Level.abstract({
     vftable: VoidPointer,
