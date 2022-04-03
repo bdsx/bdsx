@@ -597,6 +597,8 @@ export const undecoratedSymbols = [
     'ServerPlayer::getInputMode',
     'ServerPlayer::setInputMode',
     'mce::Blob::~Blob',
+    'Level::getDifficulty',
+    'Level::setDifficulty',
 ] as const;
 
 // decorated symbols

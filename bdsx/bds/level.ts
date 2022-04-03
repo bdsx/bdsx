@@ -220,6 +220,12 @@ export class Level extends NativeClass {
     getPlayerByXuid(xuid:string): Player | null {
         abstract();
     }
+    getDifficulty(): Difficulty {
+        abstract();
+    }
+    setDifficulty(difficulty:Difficulty): void {
+        abstract();
+    }
 }
 
 export class ServerLevel extends Level {

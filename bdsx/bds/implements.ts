@@ -138,6 +138,8 @@ Level.prototype.updateWeather = procHacker.js("Level::updateWeather", void_t, {t
 Level.prototype.setDefaultSpawn = procHacker.js('Level::setDefaultSpawn', void_t, {this:Level}, BlockPos);
 Level.prototype.getDefaultSpawn = procHacker.js('Level::getDefaultSpawn', BlockPos, {this:Level});
 Level.prototype.explode = procHacker.js('?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z', void_t, {this:Level}, BlockSource, VoidPointer, Vec3, float32_t, bool_t, bool_t, float32_t, bool_t);
+Level.prototype.getDifficulty = procHacker.js("Level::getDifficulty", int32_t, {this:Level});
+Level.prototype.setDifficulty = procHacker.js("Level::setDifficulty", void_t, {this:Level}, int32_t);
 
 Level.abstract({
     vftable: VoidPointer,
