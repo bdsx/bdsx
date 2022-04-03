@@ -68,7 +68,7 @@ export class Level extends NativeClass {
     /**
      * Gets an entity with the given unique id
      */
-    fetchEntity(runtimeId:ActorUniqueID, getRemoved:boolean):Actor | null {
+    fetchEntity(actorUniqueId:ActorUniqueID, getRemoved:boolean):Actor | null {
         abstract();
     }
     /**
