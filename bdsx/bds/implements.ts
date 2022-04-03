@@ -86,10 +86,11 @@ Level.prototype.hasCommandsEnabled = procHacker.js("Level::hasCommandsEnabled", 
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.getPlayerByXuid = procHacker.js("Level::getPlayerByXuid", Player, {this:Level}, CxxString);
-const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
+
+const unique_ptr$GameRulesChangedPacket = Wrapper.make(GameRulesChangedPacket.ref());
+const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", unique_ptr$GameRulesChangedPacket, {this:GameRules}, unique_ptr$GameRulesChangedPacket);
 Level.prototype.syncGameRules = function() {
-    const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
-    wrapper.value = GameRulesChangedPacket.allocate();
+    const wrapper = new unique_ptr$GameRulesChangedPacket(true);
     GameRules$createAllGameRulesPacket.call(this.getGameRules(), wrapper);
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(wrapper.value);
