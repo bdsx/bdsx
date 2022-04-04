@@ -405,7 +405,7 @@ Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, E
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier$CxxString = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, null, ActorDefinitionIdentifier, CxxString);
 ActorDefinitionIdentifier.constructWith = function(type:string|number):ActorDefinitionIdentifier {
-    const identifier = ActorDefinitionIdentifier.construct();
+    const identifier = new ActorDefinitionIdentifier(true);
     if (typeof type === "number") {
         ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType(identifier, type);
     } else {
@@ -416,7 +416,7 @@ ActorDefinitionIdentifier.constructWith = function(type:string|number):ActorDefi
 
 const ActorDamageSource$ActorDamageSource = procHacker.js("ActorDamageSource::ActorDamageSource", void_t, null, ActorDamageSource, int32_t);
 ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamageSource {
-    const source = ActorDamageSource.construct();
+    const source = new ActorDamageSource(true);
     ActorDamageSource$ActorDamageSource(source, cause);
     return source;
 };
@@ -1029,7 +1029,7 @@ GameRules.prototype.hasRule = function(id:GameRuleId):bool_t {
 
 const GameRules$$nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", Wrapper.make(int32_t), null, GameRules, Wrapper.make(int32_t), CxxString); // Will return -1 if not found, so int32 instead of uint32
 GameRules.nameToGameRuleIndex = function(name:string):int32_t {
-    const wrapper = Wrapper.make(int32_t).construct();
+    const wrapper = new (Wrapper.make(int32_t))(true);
     const retval = GameRules$$nameToGameRuleIndex(serverInstance.minecraft.getLevel().getGameRules(), wrapper, name).value;
     wrapper.destruct();
     return retval;
