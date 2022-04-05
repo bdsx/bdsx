@@ -392,6 +392,11 @@ Actor.prototype.consumeTotem = makefunc.js([0x528], bool_t, {this:Actor});
 Actor.prototype.hasTotemEquipped = procHacker.js("Actor::hasTotemEquipped", bool_t, {this:Actor});
 (Actor.prototype as any).hasFamily_ = procHacker.js("Actor::hasFamily", bool_t, {this:Actor}, HashedString);
 Actor.prototype.distanceTo = procHacker.js("?distanceTo@Actor@@QEBAMAEBVVec3@@@Z", float32_t, {this:Actor}, Vec3);
+Actor.prototype.getLastHurtByMob = procHacker.js("Actor::getLastHurtByMob", Mob, {this:Actor});
+Actor.prototype.getLastHurtCause = procHacker.js("Actor::getLastHurtCause", int32_t, {this:Actor});
+Actor.prototype.getLastHurtDamage = procHacker.js("Actor::getLastHurtDamage", int32_t, {this:Actor});
+Actor.prototype.getLastHurtMob = procHacker.js("Actor::getLastHurtMob", Mob, {this:Actor});
+Actor.prototype.wasLastHitByPlayer = procHacker.js("Actor::wasLastHitByPlayer", bool_t, {this:Actor});
 
 Mob.prototype.knockback = makefunc.js([0x898], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("Mob::getSpeed", float32_t, {this:Mob});

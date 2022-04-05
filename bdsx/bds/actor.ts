@@ -1003,6 +1003,21 @@ export class Actor extends AbstractClass {
     distanceTo(dest: Vec3): number {
         abstract();
     }
+    getLastHurtByMob(): Mob | null {
+        abstract();
+    }
+    getLastHurtCause(): ActorDamageCause {
+        abstract();
+    }
+    getLastHurtDamage(): number {
+        abstract();
+    }
+    getLastHurtMob(): Mob | null {
+        abstract();
+    }
+    wasLastHitByPlayer(): boolean {
+        abstract();
+    }
 }
 
 export class Mob extends Actor {

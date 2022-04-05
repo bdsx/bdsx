@@ -599,6 +599,11 @@ export const undecoratedSymbols = [
     'mce::Blob::~Blob',
     'Level::getDifficulty',
     'Level::setDifficulty',
+    'Actor::wasLastHitByPlayer' ,
+    'Actor::getLastHurtMob',
+    'Actor::getLastHurtByMob',
+    'Actor::getLastHurtDamage',
+    'Actor::getLastHurtCause',
 ] as const;
 
 // decorated symbols
