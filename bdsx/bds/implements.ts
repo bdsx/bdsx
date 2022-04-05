@@ -54,6 +54,9 @@ import { StructureManager, StructureSettings, StructureTemplate, StructureTempla
 
 // avoiding circular dependency
 
+// Wrappers
+const WrappedInt32 = Wrapper.make(int32_t);
+
 // utils
 namespace CommandUtils {
     export const createItemStack = procHacker.js("CommandUtils::createItemStack", ItemStack, {structureReturn:true}, CxxString, int32_t, int32_t);
@@ -1010,26 +1013,26 @@ Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this
 Ability.prototype.setBool = procHacker.js("Ability::setBool", void_t, {this:Ability}, bool_t);
 
 // gamerules.ts
-const GameRules$getRule = procHacker.js("GameRules::getRule", GameRule.ref(), {this:GameRules}, Wrapper.make(int32_t));
+const GameRules$getRule = procHacker.js("GameRules::getRule", GameRule.ref(), {this:GameRules}, WrappedInt32);
 GameRules.prototype.getRule = function(id:GameRuleId):GameRule {
-    const wrapper = Wrapper.make(int32_t).construct();
+    const wrapper = WrappedInt32.construct();
     wrapper.value = id;
     const retval = GameRules$getRule.call(this, wrapper);
     wrapper.destruct();
     return retval;
 };
-const GameRules$hasRule = procHacker.js("GameRules::hasRule", bool_t, {this:GameRules}, Wrapper.make(int32_t));
+const GameRules$hasRule = procHacker.js("GameRules::hasRule", bool_t, {this:GameRules}, WrappedInt32);
 GameRules.prototype.hasRule = function(id:GameRuleId):bool_t {
-    const wrapper = Wrapper.make(int32_t).construct();
+    const wrapper = WrappedInt32.construct();
     wrapper.value = id;
     const retval = GameRules$hasRule.call(this, wrapper);
     wrapper.destruct();
     return retval;
 };
 
-const GameRules$$nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", Wrapper.make(int32_t), null, GameRules, Wrapper.make(int32_t), CxxString); // Will return -1 if not found, so int32 instead of uint32
+const GameRules$$nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", WrappedInt32, null, GameRules, WrappedInt32, CxxString); // Will return -1 if not found, so int32 instead of uint32
 GameRules.nameToGameRuleIndex = function(name:string):int32_t {
-    const wrapper = new (Wrapper.make(int32_t))(true);
+    const wrapper = new (WrappedInt32)(true);
     const retval = GameRules$$nameToGameRuleIndex(serverInstance.minecraft.getLevel().getGameRules(), wrapper, name).value;
     wrapper.destruct();
     return retval;
