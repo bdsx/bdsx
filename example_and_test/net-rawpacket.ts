@@ -8,7 +8,7 @@ import { RawPacket } from "bdsx/rawpacket";
 import { setRecentSendedPacketForTest } from "./test";
 
 events.packetRaw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
-    console.log(`Packet Id: ${ptr.readVarInt()&0x3ff}`);
+    console.log(`Packet Id: ${ptr.readVarUint()&0x3ff}`);
 
     const runtimeId = ptr.readVarBin();
     const x = ptr.readFloat32();
