@@ -9,7 +9,7 @@ import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { NativeClass, nativeClass, NativeClassType, nativeField } from "../nativeclass";
+import { NativeClass, nativeClass, NativeClassType, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, GslSpanToArray, GslStringSpan, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { CxxSharedPtr } from "../sharedpointer";
@@ -293,7 +293,7 @@ Actor.prototype.runCommand = function(command:string, mute:boolean = true, permi
         permissionLevel,
         this.getDimension());
     const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos);
-    serverOrigin.destruct();
+    serverOrigin.destruct(); // serverOrigin will be cloned.
 
     const ctx = CommandContext.constructSharedPtr(command, origin);
     const res = serverInstance.minecraft.getCommands().executeCommand(ctx, mute);
@@ -612,10 +612,7 @@ RakNet.RakPeer.prototype.GetLastPing = procHacker.js("?GetLastPing@RakPeer@RakNe
 RakNet.RakPeer.prototype.GetLowestPing = procHacker.js("?GetLowestPing@RakPeer@RakNet@@UEBAHUAddressOrGUID@2@@Z", int32_t, {this:RakNet.RakPeer}, RakNet.AddressOrGUID);
 
 // packet.ts
-const Packet$dtor = makefunc.js([0, 0], void_t, {this:Packet}, int32_t);
-Packet.prototype[NativeType.dtor] = function() {
-    Packet$dtor.call(this, 1);
-};
+Packet.prototype[NativeType.dtor] = vectorDeletingDestructor;
 Packet.prototype.sendTo = function(target:NetworkIdentifier, senderSubClientId:number=0):void {
     networkHandler.send(target, this, senderSubClientId);
 };
@@ -997,29 +994,19 @@ Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this
 Ability.prototype.setBool = procHacker.js("Ability::setBool", void_t, {this:Ability}, bool_t);
 
 // gamerules.ts
-const GameRules$getRule = procHacker.js("GameRules::getRule", GameRule.ref(), {this:GameRules}, Wrapper.make(int32_t));
+const Int32Wrapper = Wrapper.make(int32_t);
+const GameRules$getRule = procHacker.js("GameRules::getRule", GameRule.ref(), {this:GameRules}, Int32Wrapper);
 GameRules.prototype.getRule = function(id:GameRuleId):GameRule {
-    const wrapper = Wrapper.make(int32_t).construct();
-    wrapper.value = id;
-    const retval = GameRules$getRule.call(this, wrapper);
-    wrapper.destruct();
-    return retval;
+    return GameRules$getRule.call(this, Int32Wrapper.create(id));
 };
-const GameRules$hasRule = procHacker.js("GameRules::hasRule", bool_t, {this:GameRules}, Wrapper.make(int32_t));
+const GameRules$hasRule = procHacker.js("GameRules::hasRule", bool_t, {this:GameRules}, Int32Wrapper);
 GameRules.prototype.hasRule = function(id:GameRuleId):bool_t {
-    const wrapper = Wrapper.make(int32_t).construct();
-    wrapper.value = id;
-    const retval = GameRules$hasRule.call(this, wrapper);
-    wrapper.destruct();
-    return retval;
+    return GameRules$hasRule.call(this, Int32Wrapper.create(id));
 };
 
-const GameRules$$nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", Wrapper.make(int32_t), null, GameRules, Wrapper.make(int32_t), CxxString); // Will return -1 if not found, so int32 instead of uint32
+const GameRules$$nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", Int32Wrapper, {this:GameRules, structureReturn: true}, GameRules, CxxString); // Will return -1 if not found, so int32 instead of uint32
 GameRules.nameToGameRuleIndex = function(name:string):int32_t {
-    const wrapper = Wrapper.make(int32_t).construct();
-    const retval = GameRules$$nameToGameRuleIndex(serverInstance.minecraft.getLevel().getGameRules(), wrapper, name).value;
-    wrapper.destruct();
-    return retval;
+    return GameRules$$nameToGameRuleIndex.call(serverInstance.minecraft.getLevel().getGameRules(), name).value;
 };
 
 GameRule.abstract({

@@ -4,7 +4,7 @@ import { CircularDetector } from "./circulardetector";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
-import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
+import { int32_t, NativeDescriptorBuilder, NativeType, Type, void_t } from "./nativetype";
 import { Singleton } from "./singleton";
 import { remapAndPrintError } from "./source-map-support";
 import { isBaseOf } from "./util";
@@ -860,3 +860,15 @@ abstractproto[NativeType.ctor] = abstractClassError;
 abstractproto[NativeType.dtor] = abstractClassError;
 abstractproto[NativeType.ctor_copy] = abstractClassError;
 abstractproto[NativeType.ctor_move] = callCtorCopyForAbstractClass;
+
+const vectorDeletingDestructorImpl = makefunc.js([0, 0], void_t, {this:NativeClass}, int32_t);
+
+export function vectorDeletingDestructor(this:NativeClass):void {
+    vectorDeletingDestructorImpl.call(this, 0);
+}
+
+export namespace vectorDeletingDestructor {
+    export function deleteIt(this:NativeClass):void {
+        vectorDeletingDestructorImpl.call(this, 1);
+    }
+}

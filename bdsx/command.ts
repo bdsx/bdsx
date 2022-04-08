@@ -5,6 +5,7 @@ import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
 import { serverInstance } from './bds/server';
 import { CommandParameterType } from './commandparam';
+import { emptyFunc } from './common';
 import { decay } from './decay';
 import { events } from './event';
 import { bedrockServer } from './launcher';
@@ -53,6 +54,7 @@ export class CustomCommand extends Command {
         // empty
     }
 }
+CustomCommand.prototype[NativeType.dtor] = emptyFunc; // remove the inherited destructor
 
 interface CommandFieldOptions {
     optional?:boolean;

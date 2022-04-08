@@ -24,6 +24,7 @@ import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
 import { command } from "bdsx/command";
 import { CommandParameterType } from "bdsx/commandparam";
+import { CommandResultType } from "bdsx/commandresult";
 import { AttributeName, CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
@@ -90,8 +91,12 @@ function checkCommandRegister(tester:Tester, testname:string, testcases:[Command
         if (throughConsole) {
             bedrockServer.executeCommandOnConsole(cmdline);
         } else {
-            if (!bedrockServer.executeCommand(cmdline, false).isSuccess()) {
+            const res = bedrockServer.executeCommand(cmdline, CommandResultType.OutputAndData);
+            if (!res.isSuccess()) {
                 tester.error(`${cmdname} failed`, 5);
+            } else {
+                tester.equals(res.data.statusMessage, 'passed', `${cmdname}, unexpected statusMessage`);
+                tester.equals(res.data.statusCode, res.getFullCode(), `${cmdname}, unexpected statusCode`);
             }
         }
     });

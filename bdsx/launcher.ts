@@ -3,17 +3,19 @@ import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
-import { CommandContext, CommandOutput, CommandOutputType, MCRESULT, MinecraftCommands } from "./bds/command";
-import { CommandOrigin, ServerCommandOrigin } from "./bds/commandorigin";
+import { Command, CommandContext, CommandOutput, CommandOutputParameter, CommandOutputType, CommandPermissionLevel, CommandRegistry, CommandVersion, MCRESULT } from "./bds/command";
+import { ServerCommandOrigin } from "./bds/commandorigin";
 import { Dimension } from "./bds/dimension";
 import { ServerLevel } from "./bds/level";
 import * as nimodule from './bds/networkidentifier';
 import { proc, procHacker } from "./bds/proc";
 import * as bd_server from './bds/server';
 import { capi } from "./capi";
+import { CommandResult, CommandResultType } from './commandresult';
 import { CANCEL, Encoding } from "./common";
 import { Config } from "./config";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
+import { CxxVector } from './cxxvector';
 import { decay } from "./decay";
 import { dll } from "./dll";
 import { events } from "./event";
@@ -64,8 +66,6 @@ const cmdOutputLiner = new Liner;
 
 const commandQueue = new MultiThreadQueue(CxxString[NativeType.size]);
 const commandQueueBuffer = new CxxStringWrapper(true);
-const commandOutputData = new Map<string, IExecuteCommandCallback["data"] | null>();
-const commandOutputMuted = new Set<string>();
 
 function patchForStdio():void {
     // hook bedrock log
@@ -95,27 +95,6 @@ function patchForStdio():void {
     }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
-    procHacker.hookingRawWithCallOriginal('Command::run',
-        makefunc.np((commands, origin, output)=>{
-            if (commandOutputData.has(origin.uuid)) {
-                output.destruct();
-                output.constructAs(CommandOutputType.DataSet);
-            }
-        }, void_t, {name: 'hook of Command::run'}, MinecraftCommands, CommandOrigin, CommandOutput),
-        [Register.rcx, Register.rdx, Register.r8], []);
-    procHacker.hookingRawWithCallOriginal('MinecraftCommands::handleOutput',
-        makefunc.np((commands, origin, output)=>{
-            const uuid = origin.uuid;
-            const json = commands.sender._toJson(output);
-            commandOutputData.set(uuid, json.value());
-            json.destruct();
-            if (commandOutputMuted.has(uuid)) { // Mute it if it should, but only after json data is gotten
-                output.destruct();
-                output.constructAs(CommandOutputType.None);
-                commandOutputMuted.delete(uuid);
-            }
-        }, void_t, {name: 'hook of MinecraftCommands::handleOutput'}, MinecraftCommands, CommandOrigin, CommandOutput),
-        [Register.rcx, Register.rdx, Register.r8], []);
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
         // void(*callback)(const char* log, size_t size)
         const line = cmdOutputLiner.write(ptr.getString(bytes));
@@ -359,6 +338,8 @@ function sessionIdGrabber(text: string): void {
 }
 events.serverLog.on(sessionIdGrabber);
 
+const CommandOutputParameterVector = CxxVector.make(CommandOutputParameter);
+
 export namespace bedrockServer {
     export let sessionId: string;
 
@@ -422,35 +403,90 @@ export namespace bedrockServer {
         commandQueue.enqueue(commandQueueBuffer); // assumes the string is moved, and does not have the buffer anymore.
     }
 
+    export function executeCommand(command:`testfor ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestFor>;
+
+    export function executeCommand(command:`testforblock ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlock>;
+
+    export function executeCommand(command:`testforblocks ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlocks>;
+
+    export function executeCommand(command:'list', mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.List>;
+
     /**
      * it does the same thing with executeCommandOnConsole
      * but call the internal function directly
+     * @param mute suppress outputs if true, returns data if null
      */
-    export function executeCommand(command:string, mute:boolean=true, permissionLevel:number=4, dimension:Dimension|null = null, callback?:(data:IExecuteCommandCallback["data"]) => void):MCRESULT {
+    export function executeCommand(command:string, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.Any>;
+
+    export function executeCommand(command:string, mute:CommandResultType = null, permissionLevel:CommandPermissionLevel|null=null, dimension:Dimension|null = null):CommandResult<CommandResult.Any> {
         const minecraft = bd_server.serverInstance.minecraft;
-        const origin = ServerCommandOrigin.allocateWith('Server',
-            minecraft.getLevel() as ServerLevel, // I'm not sure it's always ServerLevel
-            permissionLevel,
+        const origin = ServerCommandOrigin.constructWith('Server',
+            minecraft.getLevel() as ServerLevel, // assume it's always ServerLevel
+            permissionLevel ?? CommandPermissionLevel.Admin,
             dimension);
-        const ctx = CommandContext.constructSharedPtr(command, origin);
-        const uuid = origin.uuid;
-        commandOutputData.set(uuid, null);
-        if (mute) commandOutputMuted.add(uuid); // Mute it after statusMessage is gotten
-        const res = minecraft.getCommands().executeCommand(ctx, false); // Do not mute it, otherwise there will be no statusMessage
-        // ctx, origin: no need to destruct, it's destructed by internal functions.
-        if (callback) { // Faster than the ScriptingEngine as it does not wait for the next tick
-            const json = commandOutputData.get(uuid)!;
-            if (json) {
-                if (json.statusCode == null) json.statusCode = res.getFullCode(); // No status code if syntax error
-                try {
-                    callback(json);
-                } catch (err) {
-                    events.errorFire(err);
-                }
-            }
+
+        // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
+        const ctx = CommandContext.constructWith(command, origin);
+        const resv = events.command.fire(command, origin.getName(), ctx);
+        if (typeof resv === 'number') {
+            const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
+            res.result = resv;
+            return res;
         }
-        commandOutputData.delete(uuid);
-        return res;
+
+        // modified MinecraftCommands::executeCommand
+        const commands = minecraft.getCommands();
+        const registry = commands.getRegistry();
+
+        if (mute === true || mute == null) mute = CommandResultType.Mute;
+        else if (mute === false) mute = CommandResultType.Output;
+
+        const outputType = mute === CommandResultType.Mute ? CommandOutputType.None :
+            mute === CommandResultType.Output ? CommandOutputType.AllOutput : CommandOutputType.DataSet;
+        const output = CommandOutput.constructWith(outputType);
+        const cmdparser = CommandRegistry.Parser.constructWith(registry, CommandVersion.CurrentVersion);
+        try {
+            let cmd:Command|null;
+            const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
+            if (cmdparser.parseCommand(command) && (cmd = cmdparser.createCommand(origin)) !== null) {
+                cmd.run(origin, output);
+                cmd.destruct();
+
+                const successCount = output.getSuccessCount();
+                if (successCount > 0) {
+                    res.result = 1; // MCRESULT_Success
+                } else {
+                    res.result = 0x200; // MCRESULT_ExecutionFail
+                }
+            } else {
+                const outputParams = CommandOutputParameterVector.construct();
+                const errorParams:string[] = cmdparser.getErrorParams();
+                if (errorParams.length !== 0) {
+                    outputParams.reserve(errorParams.length);
+                    for (const err of errorParams) {
+                        outputParams.prepare().constructWith(err);
+                    }
+                }
+                const message = cmdparser.getErrorMessage();
+                output.error(message, outputParams); // outputParams is destructed by output.error
+                res.result = 0; //MCRESULT_FailedToParseCommand;
+            }
+
+            output.set_int('statusCode', res.getFullCode());
+            if ((mute & CommandResultType.Output) !== 0 && !output.empty()) {
+                commands.handleOutput(origin, output);
+            }
+            if ((mute & CommandResultType.Data) !== 0) {
+                const json = commands.sender._toJson(output);
+                res.data = json.value();
+                json.destruct();
+            }
+            return res;
+        } finally {
+            ctx.destruct();
+            output.destruct();
+            cmdparser.destruct();
+        }
     }
 
     let stdInHandler:DefaultStdInHandler|null = null;

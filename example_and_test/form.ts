@@ -60,7 +60,7 @@ command.register('form', 'form example').overload(async(param, origin, output)=>
         });
         if (res === null) return; // x pressed
 
-        // alternative way
+        // alternative way, the wrapper API of Form.sendTo
         const altform = new CustomForm;
         altform.setTitle('Alt Form');
         for (let i=0;i<res.length;i++) {
