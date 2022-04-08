@@ -1,6 +1,6 @@
 import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint16_t, uint8_t } from "../nativetype";
 import { procHacker } from "./proc";
 
@@ -20,7 +20,7 @@ export namespace Facing {
 }
 
 @nativeClass()
-export class BlockPos extends NativeClass {
+export class BlockPos extends NativeStruct {
     @nativeField(int32_t)
     x:int32_t;
     @nativeField(int32_t)
@@ -62,7 +62,7 @@ export class BlockPos extends NativeClass {
 BlockPos.prototype.relative = procHacker.js("BlockPos::relative", BlockPos, {this:BlockPos, structureReturn:true}, uint8_t, int32_t);
 
 @nativeClass()
-export class ChunkPos extends NativeClass {
+export class ChunkPos extends NativeStruct {
     @nativeField(int32_t)
     x:int32_t;
     @nativeField(int32_t)
@@ -93,7 +93,7 @@ export class ChunkPos extends NativeClass {
 }
 
 @nativeClass()
-export class ChunkBlockPos extends NativeClass {
+export class ChunkBlockPos extends NativeStruct {
     @nativeField(uint8_t)
     x:uint8_t;
     @nativeField(uint16_t)
@@ -129,7 +129,7 @@ export class ChunkBlockPos extends NativeClass {
 }
 
 @nativeClass()
-export class Vec2 extends NativeClass {
+export class Vec2 extends NativeStruct {
     @nativeField(float32_t)
     x:float32_t;
     @nativeField(float32_t)
@@ -153,7 +153,7 @@ export class Vec2 extends NativeClass {
 }
 
 @nativeClass()
-export class Vec3 extends NativeClass {
+export class Vec3 extends NativeStruct {
     @nativeField(float32_t)
     x:float32_t;
     @nativeField(float32_t)
@@ -181,7 +181,7 @@ export class Vec3 extends NativeClass {
 }
 
 @nativeClass()
-export class RelativeFloat extends NativeClass {
+export class RelativeFloat extends NativeStruct {
     static readonly [CommandParameterType.symbol]:true;
     static readonly [NativeType.registerDirect] = true;
     @nativeField(float32_t)

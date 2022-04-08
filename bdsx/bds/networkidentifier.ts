@@ -6,7 +6,7 @@ import { dll } from "../dll";
 import { events } from "../event";
 import { Hashable, HashSet } from "../hashset";
 import { makefunc } from "../makefunc";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { remapAndPrintError } from "../source-map-support";
@@ -94,11 +94,11 @@ export namespace ServerNetworkHandler {
 const identifiers = new HashSet<NetworkIdentifier>();
 
 @nativeClass()
-export class NetworkIdentifier extends NativeClass implements Hashable {
+export class NetworkIdentifier extends NativeStruct implements Hashable {
     @nativeField(bin64_t)
     unknown:bin64_t;
     @nativeField(RakNet.AddressOrGUID)
-    public address:RakNet.AddressOrGUID;
+    address:RakNet.AddressOrGUID;
 
     constructor(allocate?:boolean) {
         super(allocate);

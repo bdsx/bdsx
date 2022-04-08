@@ -1,12 +1,12 @@
 import { NativePointer } from "../core";
 import { makefunc } from "../makefunc";
-import { AbstractClass, NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { CommandSymbols } from "./cmdsymbolloader";
 
 @nativeClass()
-export class typeid_t<T> extends NativeClass{
+export class typeid_t<T> extends NativeStruct {
     @nativeField(uint16_t)
     id:uint16_t;
 }

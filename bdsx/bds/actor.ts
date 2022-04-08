@@ -2,7 +2,7 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
@@ -382,7 +382,7 @@ export enum ActorLinkType {
 }
 
 @nativeClass()
-export class ActorLink extends NativeClass {
+export class ActorLink extends NativeStruct {
     @nativeField(uint8_t)
     type:ActorLinkType;
     @nativeField(ActorUniqueID, 0x08)

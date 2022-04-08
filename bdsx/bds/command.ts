@@ -8,7 +8,7 @@ import { CxxMap } from "../cxxmap";
 import { CxxPair } from "../cxxpair";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
-import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField, vectorDeletingDestructor } from "../nativeclass";
+import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField, NativeStruct, vectorDeletingDestructor } from "../nativeclass";
 import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, NativeType, Type, uint32_t, uint64_as_float_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { CxxSharedPtr } from "../sharedpointer";
@@ -22,7 +22,6 @@ import { CommandSymbols } from "./cmdsymbolloader";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
 import { MobEffect } from "./effects";
-import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
 import { Player } from "./player";
@@ -91,7 +90,7 @@ export enum SoftEnumUpdateType {
 }
 
 @nativeClass()
-export class MCRESULT extends NativeClass {
+export class MCRESULT extends NativeStruct {
     @nativeField(uint32_t)
     result:uint32_t;
 
@@ -219,7 +218,7 @@ export class CommandFilePath extends NativeClass {
 }
 
 @nativeClass()
-class CommandIntegerRange extends NativeClass { // Not exporting yet, not supported
+class CommandIntegerRange extends NativeStruct { // Not exporting yet, not supported
     static readonly [CommandParameterType.symbol]:true;
 
     @nativeField(int32_t)
@@ -231,7 +230,7 @@ class CommandIntegerRange extends NativeClass { // Not exporting yet, not suppor
 }
 
 @nativeClass()
-export class CommandItem extends NativeClass {
+export class CommandItem extends NativeStruct {
     static readonly [CommandParameterType.symbol]:true;
 
     @nativeField(int32_t)
@@ -272,7 +271,7 @@ CommandMessage.abstract({
 CommandMessage.prototype.getMessage = procHacker.js('CommandMessage::getMessage', CxxString, {this:CommandMessage, structureReturn:true}, CommandOrigin);
 
 @nativeClass()
-export class CommandPosition extends NativeClass {
+export class CommandPosition extends NativeStruct {
     static readonly [CommandParameterType.symbol]:true;
     @nativeField(float32_t)
     x:float32_t;
@@ -343,7 +342,7 @@ export class CommandRawText extends NativeClass {
 }
 
 @nativeClass()
-export class CommandWildcardInt extends NativeClass {
+export class CommandWildcardInt extends NativeStruct {
     static readonly [CommandParameterType.symbol]:true;
 
     @nativeField(bool_t)
@@ -741,7 +740,7 @@ export class CommandParameterData extends NativeClass {
 }
 
 @nativeClass()
-export class CommandVFTable extends NativeClass {
+export class CommandVFTable extends NativeStruct {
     @nativeField(VoidPointer)
     destructor:VoidPointer;
     @nativeField(VoidPointer)
@@ -1091,9 +1090,9 @@ enum ParserType {
 }
 
 function getParserType(parser:VoidPointer):ParserType {
-    if (parser.equals(CommandRegistry.getParser(CxxString))) {
+    if (parser.equalsptr(CommandRegistry.getParser(CxxString))) {
         return ParserType.String;
-    } else if (parser.equals(enumParser)) {
+    } else if (parser.equalsptr(enumParser)) {
         return ParserType.Int;
     } else {
         return ParserType.Unknown;
@@ -1251,7 +1250,7 @@ export class CommandRegistry extends HasTypeId {
 
 export namespace CommandRegistry {
     @nativeClass()
-    export class Symbol extends NativeClass {
+    export class Symbol extends NativeStruct {
         @nativeField(int32_t)
         value:int32_t;
     }

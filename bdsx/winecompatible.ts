@@ -8,13 +8,13 @@ import { dll } from "./dll";
 import { dllraw } from './dllraw';
 import { fsutil } from './fsutil';
 import { makefunc } from './makefunc';
-import { nativeClass, NativeClass, nativeField } from "./nativeclass";
+import { nativeClass, NativeClass, nativeField, NativeStruct } from "./nativeclass";
 import { bool_t, int32_t, NativeType, uint16_t } from './nativetype';
 import { Wrapper } from './pointer';
 
 function initWineExec():(commandLine:string, cwd?:string)=>void {
     @nativeClass()
-    class STARTUPINFO extends NativeClass {
+    class STARTUPINFO extends NativeStruct {
         @nativeField(int32_t)
         cb:int32_t;
         @nativeField(VoidPointer)
@@ -59,7 +59,7 @@ function initWineExec():(commandLine:string, cwd?:string)=>void {
     }
 
     @nativeClass()
-    class PROCESS_INFORMATION extends NativeClass{
+    class PROCESS_INFORMATION extends NativeStruct {
         @nativeField(VoidPointer)
         hProcess:VoidPointer;
         @nativeField(VoidPointer)

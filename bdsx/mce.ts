@@ -3,7 +3,7 @@ import { bin } from "./bin";
 import { capi } from "./capi";
 import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "./nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "./nativeclass";
 import { bin128_t, bin64_t, float32_t, NativeType, uint16_t, uint32_t, uint64_as_float_t, uint8_t, void_t } from "./nativetype";
 import { Wrapper } from "./pointer";
 
@@ -39,7 +39,7 @@ export namespace mce {
     export const UUIDWrapper = Wrapper.make(mce.UUID);
 
     @nativeClass()
-    export class Color extends NativeClass {
+    export class Color extends NativeStruct {
         @nativeField(float32_t)
         r:float32_t;
         @nativeField(float32_t)

@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, int16_t, int32_t, NativeType, uint32_t, uint8_t } from "../nativetype";
 import { ActorRuntimeID } from "./actor";
 import { Block, BlockLegacy } from "./block";
@@ -619,7 +619,7 @@ export enum InventorySourceFlags {
 }
 
 @nativeClass()
-export class InventorySource extends NativeClass {
+export class InventorySource extends NativeStruct {
     @nativeField(int32_t)
     type:InventorySourceType;
     @nativeField(int32_t)

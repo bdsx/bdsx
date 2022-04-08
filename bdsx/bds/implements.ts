@@ -199,9 +199,9 @@ Actor.setResolver(ptr => {
     let actor = actorMaps.get(binptr);
     if (actor != null) return actor;
     const vftable = ptr.getPointer();
-    if (vftable.equals(ServerPlayer$vftable)) {
+    if (vftable.equalsptr(ServerPlayer$vftable)) {
         actor = ptr.as(ServerPlayer);
-    } else if (vftable.equals(ItemActor$vftable)) {
+    } else if (vftable.equalsptr(ItemActor$vftable)) {
         actor = ptr.as(ItemActor);
     } else if (Actor$hasType.call(ptr, ActorType.Mob)) {
         actor = ptr.as(Mob);
@@ -599,7 +599,7 @@ PlayerListEntry.prototype[NativeType.dtor] = procHacker.js('PlayerListEntry::~Pl
 NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
     return serverInstance.minecraft.getServerNetworkHandler()._getServerPlayer(this, 0);
 };
-NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
+NetworkIdentifier.prototype.equalsptr = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
 
 const NetworkIdentifier_getHash = procHacker.js('NetworkIdentifier::getHash', bin64_t, null, NetworkIdentifier);
 NetworkIdentifier.prototype.hash = function() {
@@ -929,7 +929,7 @@ const ChestBlockActor$vftable = proc2["??_7ChestBlockActor@@6BRandomizableBlockA
 BlockActor.setResolver((ptr) => {
     if (ptr === null) return null;
     const vftable = ptr.getPointer();
-    if (vftable.equals(ChestBlockActor$vftable)) {
+    if (vftable.equalsptr(ChestBlockActor$vftable)) {
         return ptr.as(ChestBlockActor);
     }
     return ptr.as(BlockActor);
@@ -1128,7 +1128,7 @@ Tag.setResolver(ptr=>{
 
 Tag.prototype.toString = makefunc.js([0x20], CxxString, {this:Tag, structureReturn: true});
 Tag.prototype.getId = makefunc.js([0x28], uint8_t, {this:Tag});
-Tag.prototype.equals = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
+Tag.prototype.equalsptr = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
 
 const EndTag$vftable = proc["EndTag::`vftable'"];
 const ByteTag$vftable = proc["ByteTag::`vftable'"];
@@ -1317,67 +1317,67 @@ const WearableItemComponent$vftable = proc["WearableItemComponent::`vftable'"];
 ItemComponent.setResolver((ptr) => {
     if (ptr === null) return null;
     const vftable = ptr.getPointer();
-    if (vftable.equals(CooldownItemComponent$vftable)) {
+    if (vftable.equalsptr(CooldownItemComponent$vftable)) {
         return ptr.as(CooldownItemComponent);
     }
-    if (vftable.equals(ArmorItemComponent$vftable)) {
+    if (vftable.equalsptr(ArmorItemComponent$vftable)) {
         return ptr.as(ArmorItemComponent);
     }
-    if (vftable.equals(DurabilityItemComponent$vftable)) {
+    if (vftable.equalsptr(DurabilityItemComponent$vftable)) {
         return ptr.as(DurabilityItemComponent);
     }
-    if (vftable.equals(DiggerItemComponent$vftable)) {
+    if (vftable.equalsptr(DiggerItemComponent$vftable)) {
         return ptr.as(DiggerItemComponent);
     }
-    if (vftable.equals(DisplayNameItemComponent$vftable)) {
+    if (vftable.equalsptr(DisplayNameItemComponent$vftable)) {
         return ptr.as(DisplayNameItemComponent);
     }
-    if (vftable.equals(DyePowderItemComponent$vftable)) {
+    if (vftable.equalsptr(DyePowderItemComponent$vftable)) {
         return ptr.as(DyePowderItemComponent);
     }
-    if (vftable.equals(EntityPlacerItemComponent$vftable)) {
+    if (vftable.equalsptr(EntityPlacerItemComponent$vftable)) {
         return ptr.as(EntityPlacerItemComponent);
     }
-    if (vftable.equals(FoodItemComponent$vftable)) {
+    if (vftable.equalsptr(FoodItemComponent$vftable)) {
         return ptr.as(FoodItemComponent);
     }
-    if (vftable.equals(FuelItemComponent$vftable)) {
+    if (vftable.equalsptr(FuelItemComponent$vftable)) {
         return ptr.as(FuelItemComponent);
     }
-    if (vftable.equals(IconItemComponent$vftable)) {
+    if (vftable.equalsptr(IconItemComponent$vftable)) {
         return ptr.as(IconItemComponent);
     }
-    if (vftable.equals(KnockbackResistanceItemComponent$vftable)) {
+    if (vftable.equalsptr(KnockbackResistanceItemComponent$vftable)) {
         return ptr.as(KnockbackResistanceItemComponent);
     }
-    if (vftable.equals(OnUseItemComponent$vftable)) {
+    if (vftable.equalsptr(OnUseItemComponent$vftable)) {
         return ptr.as(OnUseItemComponent);
     }
-    if (vftable.equals(PlanterItemComponent$vftable)) {
+    if (vftable.equalsptr(PlanterItemComponent$vftable)) {
         return ptr.as(PlanterItemComponent);
     }
-    if (vftable.equals(ProjectileItemComponent$vftable)) {
+    if (vftable.equalsptr(ProjectileItemComponent$vftable)) {
         return ptr.as(ProjectileItemComponent);
     }
-    if (vftable.equals(RecordItemComponent$vftable)) {
+    if (vftable.equalsptr(RecordItemComponent$vftable)) {
         return ptr.as(RecordItemComponent);
     }
-    if (vftable.equals(RenderOffsetsItemComponent$vftable)) {
+    if (vftable.equalsptr(RenderOffsetsItemComponent$vftable)) {
         return ptr.as(RenderOffsetsItemComponent);
     }
-    if (vftable.equals(RepairableItemComponent$vftable)) {
+    if (vftable.equalsptr(RepairableItemComponent$vftable)) {
         return ptr.as(RepairableItemComponent);
     }
-    if (vftable.equals(ShooterItemComponent$vftable)) {
+    if (vftable.equalsptr(ShooterItemComponent$vftable)) {
         return ptr.as(ShooterItemComponent);
     }
-    if (vftable.equals(ThrowableItemComponent$vftable)) {
+    if (vftable.equalsptr(ThrowableItemComponent$vftable)) {
         return ptr.as(ThrowableItemComponent);
     }
-    if (vftable.equals(WeaponItemComponent$vftable)) {
+    if (vftable.equalsptr(WeaponItemComponent$vftable)) {
         return ptr.as(WeaponItemComponent);
     }
-    if (vftable.equals(WearableItemComponent$vftable)) {
+    if (vftable.equalsptr(WearableItemComponent$vftable)) {
         return ptr.as(WearableItemComponent);
     }
     return ptr.as(ItemComponent);

@@ -1,5 +1,5 @@
 import { abstract } from "../common";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bool_t, float32_t, int32_t } from "../nativetype";
 
 export enum GameRuleId {
@@ -129,7 +129,7 @@ export namespace GameRule {
     }
 
     @nativeClass()
-    export class Value extends NativeClass {
+    export class Value extends NativeStruct {
         @nativeField(bool_t, {ghost:true})
         boolVal:bool_t;
         @nativeField(int32_t, {ghost:true})

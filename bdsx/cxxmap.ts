@@ -31,7 +31,7 @@ abstract class CxxTreeNode<T extends NativeClass> extends NativeClass {
         let _Ptr:CxxTreeNode<T> = this;
         if (_Ptr._Right._Isnil) { // climb looking for right subtree
             let _Pnode:CxxTreeNode<T>;
-            while (!(_Pnode = _Ptr._Parent)._Isnil && _Ptr.equals(_Pnode._Right)) {
+            while (!(_Pnode = _Ptr._Parent)._Isnil && _Ptr.equalsptr(_Pnode._Right)) {
                 _Ptr = _Pnode; // ==> parent while right subtree
             }
 
@@ -48,7 +48,7 @@ abstract class CxxTreeNode<T extends NativeClass> extends NativeClass {
             _Ptr = _Ptr._Right; // end() ==> rightmost
         } else if (_Ptr._Left._Isnil) { // climb looking for left subtree
             let _Pnode:CxxTreeNode<T>;
-            while (!(_Pnode = _Ptr._Parent)._Isnil && _Ptr.equals(_Pnode._Left)) {
+            while (!(_Pnode = _Ptr._Parent)._Isnil && _Ptr.equalsptr(_Pnode._Left)) {
                 _Ptr = _Pnode; // ==> parent while left subtree
             }
 
@@ -182,9 +182,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
         _Pnode._Parent = _Wherenode._Parent;
 
         const _Myhead = this._Myhead;
-        if (_Wherenode.equals(_Myhead._Parent)) {
+        if (_Wherenode.equalsptr(_Myhead._Parent)) {
             _Myhead._Parent = _Pnode;
-        } else if (_Wherenode.equals(_Wherenode._Parent._Left)) {
+        } else if (_Wherenode.equalsptr(_Wherenode._Parent._Left)) {
             _Wherenode._Parent._Left = _Pnode;
         } else {
             _Wherenode._Parent._Right = _Pnode;
@@ -205,9 +205,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
         _Pnode._Parent = _Wherenode._Parent;
 
         const _Myhead = this._Myhead;
-        if (_Wherenode.equals(_Myhead._Parent)) {
+        if (_Wherenode.equalsptr(_Myhead._Parent)) {
             _Myhead._Parent = _Pnode;
-        } else if (_Wherenode.equals(_Wherenode._Parent._Right)) {
+        } else if (_Wherenode.equalsptr(_Wherenode._Parent._Right)) {
             _Wherenode._Parent._Right = _Pnode;
         } else {
             _Wherenode._Parent._Left = _Pnode;
@@ -233,7 +233,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
         _Newnode._Left = _Head;
         _Newnode._Right = _Head;
         _Newnode._Parent = parent;
-        if (parent.equals(_Head)) { // first node in tree, just set head values
+        if (parent.equalsptr(_Head)) { // first node in tree, just set head values
             _Newnode._Color = _Redbl._Black; // the root is black
             _Head._Left     = _Newnode;
             _Head._Parent   = _Newnode;
@@ -244,18 +244,18 @@ export abstract class CxxMap<K, V> extends NativeClass {
 
         if (isRight) { // add to right of parent
             parent._Right = _Newnode;
-            if (parent.equals(_Head._Right)) { // remember rightmost node
+            if (parent.equalsptr(_Head._Right)) { // remember rightmost node
                 _Head._Right = _Newnode;
             }
         } else { // add to left of parent
             parent._Left = _Newnode;
-            if (parent.equals(_Head._Left)) { // remember leftmost node
+            if (parent.equalsptr(_Head._Left)) { // remember leftmost node
                 _Head._Left = _Newnode;
             }
         }
 
         for (let _Pnode = _Newnode; _Pnode._Parent._Color === _Redbl._Red;) {
-            if (_Pnode._Parent.equals(_Pnode._Parent._Parent._Left)) { // fixup red-red in left subtree
+            if (_Pnode._Parent.equalsptr(_Pnode._Parent._Parent._Left)) { // fixup red-red in left subtree
                 const _Parent_sibling = _Pnode._Parent._Parent._Right;
                 if (_Parent_sibling._Color === _Redbl._Red) { // parent's sibling has two red children, blacken both
                     _Pnode._Parent._Color          = _Redbl._Black;
@@ -263,7 +263,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
                     _Pnode._Parent._Parent._Color = _Redbl._Red;
                     _Pnode                           = _Pnode._Parent._Parent;
                 } else { // parent's sibling has red and black children
-                    if (_Pnode.equals(_Pnode._Parent._Right)) { // rotate right child to left
+                    if (_Pnode.equalsptr(_Pnode._Parent._Right)) { // rotate right child to left
                         _Pnode = _Pnode._Parent;
                         this._Lrotate(_Pnode);
                     }
@@ -280,7 +280,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
                     _Pnode._Parent._Parent._Color = _Redbl._Red;
                     _Pnode                           = _Pnode._Parent._Parent;
                 } else { // parent's sibling has red and black children
-                    if (_Pnode.equals(_Pnode._Parent._Left)) { // rotate left child to right
+                    if (_Pnode.equalsptr(_Pnode._Parent._Left)) { // rotate left child to right
                         _Pnode = _Pnode._Parent;
                         this._Rrotate(_Pnode);
                     }
@@ -313,26 +313,26 @@ export abstract class CxxMap<K, V> extends NativeClass {
             _Fixnode = _Pnode._Right; // _Fixnode is only subtree
         }
 
-        if (_Pnode.equals(_Erasednode)) { // at most one subtree, relink it
+        if (_Pnode.equalsptr(_Erasednode)) { // at most one subtree, relink it
             _Fixnodeparent = _Erasednode._Parent;
             if (!_Fixnode._Isnil) {
                 _Fixnode._Parent = _Fixnodeparent; // link up
             }
 
-            if (_Myhead._Parent.equals(_Erasednode)) {
+            if (_Myhead._Parent.equalsptr(_Erasednode)) {
                 _Myhead._Parent = _Fixnode; // link down from root
-            } else if (_Fixnodeparent._Left.equals(_Erasednode)) {
+            } else if (_Fixnodeparent._Left.equalsptr(_Erasednode)) {
                 _Fixnodeparent._Left = _Fixnode; // link down to left
             } else {
                 _Fixnodeparent._Right = _Fixnode; // link down to right
             }
 
-            if (_Myhead._Left.equals(_Erasednode)) {
+            if (_Myhead._Left.equalsptr(_Erasednode)) {
                 _Myhead._Left = _Fixnode._Isnil ? _Fixnodeparent // smallest is parent of erased node
                     : _Min(_Fixnode); // smallest in relinked subtree
             }
 
-            if (_Myhead._Right.equals(_Erasednode)) {
+            if (_Myhead._Right.equalsptr(_Erasednode)) {
                 _Myhead._Right = _Fixnode._Isnil ? _Fixnodeparent // largest is parent of erased node
                     : _Max(_Fixnode); // largest in relinked subtree
             }
@@ -340,7 +340,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
             _Erasednode._Left._Parent = _Pnode; // link left up
             _Pnode._Left               = _Erasednode._Left; // link successor down
 
-            if (_Pnode.equals(_Erasednode._Right)) {
+            if (_Pnode.equalsptr(_Erasednode._Right)) {
                 _Fixnodeparent = _Pnode; // successor is next to erased
             } else { // successor further down, link in place of erased
                 _Fixnodeparent = _Pnode._Parent; // parent is successor's
@@ -353,9 +353,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
                 _Erasednode._Right._Parent = _Pnode; // right up
             }
 
-            if (_Myhead._Parent.equals(_Erasednode)) {
+            if (_Myhead._Parent.equalsptr(_Erasednode)) {
                 _Myhead._Parent = _Pnode; // link down from root
-            } else if (_Erasednode._Parent._Left.equals(_Erasednode)) {
+            } else if (_Erasednode._Parent._Left.equalsptr(_Erasednode)) {
                 _Erasednode._Parent._Left = _Pnode; // link down to left
             } else {
                 _Erasednode._Parent._Right = _Pnode; // link down to right
@@ -368,8 +368,8 @@ export abstract class CxxMap<K, V> extends NativeClass {
         }
 
         if (_Erasednode._Color === _Redbl._Black) { // erasing black link, must recolor/rebalance tree
-            for (; !_Fixnode.equals(_Myhead._Parent) && _Fixnode._Color === _Redbl._Black; _Fixnodeparent = _Fixnode._Parent) {
-                if (_Fixnode.equals(_Fixnodeparent._Left)) { // fixup left subtree
+            for (; !_Fixnode.equalsptr(_Myhead._Parent) && _Fixnode._Color === _Redbl._Black; _Fixnodeparent = _Fixnode._Parent) {
+                if (_Fixnode.equalsptr(_Fixnodeparent._Left)) { // fixup left subtree
                     _Pnode = _Fixnodeparent._Right;
                     if (_Pnode._Color === _Redbl._Red) { // rotate red up from right subtree
                         _Pnode._Color         = _Redbl._Black;
@@ -484,14 +484,14 @@ export abstract class CxxMap<K, V> extends NativeClass {
 
     private _deleteAll(_First:CxxTreeNode<CxxPair<K, V>>, _Last:CxxTreeNode<CxxPair<K, V>>):void{
         const head = this._Myhead;
-        if (_First.equals(head._Left) && _Last._Isnil) {
+        if (_First.equalsptr(head._Left) && _Last._Isnil) {
             // erase all
             this.clear();
             return;
         }
 
         // partial erase, one at a time
-        while (!_First.equals(_Last)) {
+        while (!_First.equalsptr(_Last)) {
             const next = _First.next();
             this._delete(_First);
             _First = next;
@@ -545,7 +545,7 @@ export abstract class CxxMap<K, V> extends NativeClass {
 
     delete(key:K):boolean {
         const [min, max] = this._Eqrange(key);
-        if (min.equals(max)) return false;
+        if (min.equalsptr(max)) return false;
         this._deleteAll(min, max);
         return true;
     }

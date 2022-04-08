@@ -140,18 +140,18 @@ Tester.concurrency({
 }, {
     async globals() {
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
-        this.assert(serverInstance.vftable.equals(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
+        this.assert(serverInstance.vftable.equalsptr(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
-        this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
+        this.assert(networkHandler.vftable.equalsptr(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
-        this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(serverInstance.minecraft.vftable.equalsptr(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
+        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equalsptr(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
 
-        this.assert(networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
+        this.assert(networkHandler.instance.vftable.equalsptr(proc2["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
-        this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
+        this.assert(networkHandler.instance.peer.vftable.equalsptr(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
         const shandle = serverInstance.minecraft.getServerNetworkHandler();
@@ -521,14 +521,14 @@ Tester.concurrency({
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                this.assert(ctx.origin.vftable.equals(proc["ServerCommandOrigin::`vftable'"]), 'invalid origin');
-                this.assert(ctx.origin.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
+                this.assert(ctx.origin.vftable.equalsptr(proc["ServerCommandOrigin::`vftable'"]), 'invalid origin');
+                this.assert(ctx.origin.getDimension().vftable.equalsptr(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const level = ctx.origin.getLevel();
-                this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
+                this.assert(level.vftable.equalsptr(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
                 const players = level.getPlayers();
                 const size = players.length;
                 this.equals(size, 0, 'origin.getLevel().players.size is not zero');
@@ -747,7 +747,7 @@ Tester.concurrency({
                 }
 
                 if (actor !== null) {
-                    this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
+                    this.assert(actor.getDimension().vftable.equalsptr(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
                     if (actor instanceof Player) {
@@ -940,7 +940,7 @@ Tester.concurrency({
             const region = ev.player.getRegion();
             const actor = Actor.summonAt(region, pos, ActorType.Item, -1);
             this.assert(actor instanceof ItemActor, 'ItemActor summoning');
-            this.assert((actor as ItemActor).itemStack.vftable.equals(proc["ItemStack::`vftable'"]), 'ItemActor.itemStack is not ItemStack');
+            this.assert((actor as ItemActor).itemStack.vftable.equalsptr(proc["ItemStack::`vftable'"]), 'ItemActor.itemStack is not ItemStack');
             actor.despawn();
         }));
     },

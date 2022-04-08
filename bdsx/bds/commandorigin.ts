@@ -53,13 +53,13 @@ export class CommandOrigin extends AbstractClass {
     }
 
     isServerCommandOrigin():boolean {
-        return this.vftable.equals(ServerCommandOrigin_vftable);
+        return this.vftable.equalsptr(ServerCommandOrigin_vftable);
     }
     /**
      * @deprecated bedrock scripting API will be removed.
      */
     isScriptCommandOrigin():boolean {
-        return this.vftable.equals(ScriptCommandOrigin_vftable);
+        return this.vftable.equalsptr(ScriptCommandOrigin_vftable);
     }
 
     getRequestId():CxxString {

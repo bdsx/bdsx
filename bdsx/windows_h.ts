@@ -1,6 +1,6 @@
 import { bin } from "./bin";
 import { VoidPointer } from "./core";
-import { NativeArray, nativeClass, NativeClass, nativeField } from "./nativeclass";
+import { NativeArray, nativeClass, NativeClass, nativeField, NativeStruct } from "./nativeclass";
 import { bin64_t, int32_t, uint16_t, uint32_t, uint8_t } from "./nativetype";
 
 const UBYTE = uint8_t;
@@ -99,14 +99,14 @@ export function IMAGE_ORDINAL64(Ordinal:string):string { return (bin.bitand(Ordi
 export function IMAGE_SNAP_BY_ORDINAL64(Ordinal:string):boolean { return (bin.bitand(Ordinal, IMAGE_ORDINAL_FLAG64) !== bin64_t.zero); }
 
 @nativeClass()
-export class IMAGE_DATA_DIRECTORY extends NativeClass {
+export class IMAGE_DATA_DIRECTORY extends NativeStruct {
     @nativeField(DWORD)
     VirtualAddress:DWORD;
     @nativeField(DWORD)
     Size:DWORD;
 }
 @nativeClass()
-export class IMAGE_DOS_HEADER extends NativeClass {
+export class IMAGE_DOS_HEADER extends NativeStruct {
     @nativeField(WORD)
     e_magic: WORD;                     // Magic number
     @nativeField(WORD)
@@ -151,7 +151,7 @@ export class IMAGE_DOS_HEADER extends NativeClass {
     e_lfanew: LONG;                    // File address of new exe header
 }
 @nativeClass()
-export class IMAGE_FILE_HEADER extends NativeClass {
+export class IMAGE_FILE_HEADER extends NativeStruct {
     @nativeField(WORD)
     Machine: WORD;
     @nativeField(WORD)
@@ -168,7 +168,7 @@ export class IMAGE_FILE_HEADER extends NativeClass {
     Characteristics: WORD;
 }
 @nativeClass()
-export class IMAGE_OPTIONAL_HEADER64 extends NativeClass {
+export class IMAGE_OPTIONAL_HEADER64 extends NativeStruct {
     @nativeField(WORD)
     Magic: WORD;
     @nativeField(BYTE)
@@ -231,7 +231,7 @@ export class IMAGE_OPTIONAL_HEADER64 extends NativeClass {
     DataDirectory: NativeArray<IMAGE_DATA_DIRECTORY>;
 }
 @nativeClass()
-export class IMAGE_NT_HEADERS64 extends NativeClass {
+export class IMAGE_NT_HEADERS64 extends NativeStruct {
     @nativeField(DWORD)
     Signature: DWORD;
     @nativeField(IMAGE_FILE_HEADER)
@@ -240,7 +240,7 @@ export class IMAGE_NT_HEADERS64 extends NativeClass {
     OptionalHeader: IMAGE_OPTIONAL_HEADER64;
 }
 @nativeClass()
-export class IMAGE_DEBUG_DIRECTORY extends NativeClass {
+export class IMAGE_DEBUG_DIRECTORY extends NativeStruct {
     @nativeField(DWORD)
     Characteristics: DWORD;
     @nativeField(DWORD)
@@ -259,7 +259,7 @@ export class IMAGE_DEBUG_DIRECTORY extends NativeClass {
     PointerToRawData: DWORD;
 }
 @nativeClass()
-export class IMAGE_IMPORT_DESCRIPTOR extends NativeClass {
+export class IMAGE_IMPORT_DESCRIPTOR extends NativeStruct {
     @nativeField(WORD)
     Characteristics:DWORD;                  // 0 for terminating null import descriptor
     @nativeField(WORD)
@@ -293,7 +293,7 @@ IMAGE_THUNK_DATA64_union.defineAsUnion({
 });
 
 @nativeClass()
-export class IMAGE_THUNK_DATA64 extends NativeClass {
+export class IMAGE_THUNK_DATA64 extends NativeStruct {
     @nativeField(IMAGE_THUNK_DATA64_union)
     u1:IMAGE_THUNK_DATA64_union;
 }
@@ -309,7 +309,7 @@ IMAGE_SECTION_HEADER_Misc.defineAsUnion({
 
 const IMAGE_SIZEOF_SHORT_NAME = 8;
 @nativeClass()
-export class IMAGE_SECTION_HEADER extends NativeClass {
+export class IMAGE_SECTION_HEADER extends NativeStruct {
     @nativeField(NativeArray.make(BYTE, IMAGE_SIZEOF_SHORT_NAME))
     Name: NativeArray<BYTE>;
     @nativeField(IMAGE_SECTION_HEADER_Misc)
@@ -335,7 +335,7 @@ export class IMAGE_SECTION_HEADER extends NativeClass {
 const EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
 
 @nativeClass()
-export class EXCEPTION_RECORD extends NativeClass {
+export class EXCEPTION_RECORD extends NativeStruct {
     @nativeField(DWORD)
     ExceptionCode:DWORD;
     @nativeField(DWORD)
@@ -472,7 +472,7 @@ export class EXCEPTION_RECORD extends NativeClass {
 // } CONTEXT, *PCONTEXT;
 
 @nativeClass()
-export class EXCEPTION_POINTERS extends NativeClass {
+export class EXCEPTION_POINTERS extends NativeStruct {
     @nativeField(EXCEPTION_RECORD.ref())
     ExceptionRecord:EXCEPTION_RECORD;
     @nativeField(VoidPointer)
@@ -480,7 +480,7 @@ export class EXCEPTION_POINTERS extends NativeClass {
 }
 
 @nativeClass()
-export class FILETIME extends NativeClass {
+export class FILETIME extends NativeStruct {
     @nativeField(DWORD)
     dwLowDateTime: DWORD;
     @nativeField(DWORD)

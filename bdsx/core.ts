@@ -18,7 +18,15 @@ export declare const VoidPointer:VoidPointerConstructor;
  * the root of all pointer-based classes
  */
 export interface VoidPointer {
+    /**
+     * possible to deep comparison
+     */
     equals(ptr: VoidPointer|null): boolean;
+
+    /**
+     * address comparison
+     */
+    equalsptr(ptr: VoidPointer|null): boolean;
 
     /**
      * make cloned pointer with offset
@@ -854,6 +862,7 @@ try {
     const core = module.exports = (process as any)._linkedBinding('bdsx_core');
     core.ipfilter.entries = core.ipfilter.entires;
     module.exports.PrivatePointer = module.exports.StaticPointer;
+    module.exports.VoidPointer.prototype.equalsptr = module.exports.VoidPointer.prototype.equals;
 } catch (err) {
     throw Error(`BDSX is unusable with the standard node.js`);
 }

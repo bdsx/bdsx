@@ -170,21 +170,23 @@ class StructureDefinition {
         Object.freeze(this.fields);
 
         const clazzproto = clazz.prototype;
-        const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
-        if (ctor !== null && clazzproto[NativeType.ctor] !== abstractClassError) {
-            clazzproto[NativeType.ctor] = ctor;
-        }
-        if (dtor !== null && clazzproto[NativeType.dtor] !== abstractClassError) {
-            clazzproto[NativeType.dtor] = dtor;
-        }
-        if (ctor_copy !== null && clazzproto[NativeType.ctor_copy] !== abstractClassError) {
-            clazzproto[NativeType.ctor_copy] = ctor_copy;
-        }
-        if (clazzproto[NativeType.ctor_copy] !== callCtorCopyForAbstractClass) {
-            if (ctor_move !== null) {
-                clazzproto[NativeType.ctor_move] = ctor_move;
-            } else {
-                clazzproto[NativeType.ctor_move] = callCtorCopy;
+        if (!(clazzproto instanceof NativeStruct)) {
+            const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
+            if (ctor !== null && clazzproto[NativeType.ctor] !== abstractClassError) {
+                clazzproto[NativeType.ctor] = ctor;
+            }
+            if (dtor !== null && clazzproto[NativeType.dtor] !== abstractClassError) {
+                clazzproto[NativeType.dtor] = dtor;
+            }
+            if (ctor_copy !== null && clazzproto[NativeType.ctor_copy] !== abstractClassError) {
+                clazzproto[NativeType.ctor_copy] = ctor_copy;
+            }
+            if (clazzproto[NativeType.ctor_copy] !== callCtorCopyForAbstractClass) {
+                if (ctor_move !== null) {
+                    clazzproto[NativeType.ctor_move] = ctor_move;
+                } else {
+                    clazzproto[NativeType.ctor_move] = callCtorCopy;
+                }
             }
         }
 
@@ -313,7 +315,7 @@ export class NativeClass extends StructurePointer {
         // empty
     }
     [NativeType.setter](from:this|null):void {
-        if (this.equals(from)) return; // self setting
+        if (this.equalsptr(from)) return; // self setting
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](from!);
     }
@@ -331,20 +333,20 @@ export class NativeClass extends StructurePointer {
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
         ptrAs(to, this)[NativeType.ctor_move](ptrAs(from, this));
     }
-    static [NativeType.setter](ptr:VoidPointer, value:NativeClass, offset?:number):void {
-        const nptr = ptr.addAs(this, offset, (offset || 0) >> 31);
+    static [NativeType.setter](ptr:StaticPointer, value:NativeClass, offset?:number):void {
+        const nptr = ptr.addAs(this, offset);
         (nptr as any)[NativeType.setter](value as any);
     }
-    static [NativeType.getter](ptr:VoidPointer, offset?:number):NativeClass {
-        return ptr.addAs(this, offset, (offset || 0) >> 31);
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):NativeClass {
+        return ptr.addAs(this, offset);
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
         const {offset, noInitialize} = info;
         const type = this;
         builder.desc[key] = {
             configurable: true,
-            get(this:VoidPointer) {
-                const value = type[NativeType.getter](this, offset);
+            get(this:NativeClass) {
+                const value = type[NativeType.getter](this as any, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
             },
@@ -533,6 +535,66 @@ export class NativeClass extends StructurePointer {
     }
 }
 
+/**
+ * the class that does not need a constructor or destructor
+ */
+export class NativeStruct extends NativeClass {
+    /**
+     * @deprecated no need to use
+     */
+    [NativeType.ctor]():void {
+        // empty
+    }
+    /**
+     * @deprecated no need to use
+     */
+    [NativeType.dtor]():void {
+        // empty
+    }
+    [NativeType.ctor_copy](from:this):void {
+        this.copyFrom(from, this[NativeType.size]);
+    }
+    [NativeType.ctor_move](from:this):void {
+        this.copyFrom(from, this[NativeType.size]);
+    }
+    [NativeType.setter](from:this|null):void {
+        this.copyFrom(from!, this[NativeType.size]);
+    }
+
+    /**
+     * @deprecated no need to use
+     */
+    construct():void;
+    construct(copyFrom:this|null):void;
+    /**
+     * call the constructor.
+     * alias of \[NativeType.ctor]() and \[Native.ctor_copy]();
+     */
+    construct(copyFrom?:this|null):void {
+        if (copyFrom == null) return;
+        this[NativeType.ctor_copy](copyFrom);
+    }
+
+    /**
+     * @deprecated no need to use
+     */
+    destruct():void {
+        // empty
+    }
+    static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void {
+        to.copyFrom(from, this[NativeType.size]);
+    }
+    static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
+        to.copyFrom(from, this[NativeType.size]);
+    }
+    static [NativeType.setter](ptr:StaticPointer, value:NativeClass, offset?:number):void {
+        ptr.copyFrom(value, this[NativeType.size], offset);
+    }
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):NativeClass {
+        return ptr.addAs(this, offset);
+    }
+}
+
 function resolverGetter(this:NativeClassType<any>, ptr:StaticPointer, offset?:number):any {
     return this[resolver]!(ptr.add(offset))!;
 }
@@ -633,7 +695,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
         builder.desc[key] = {
             configurable: true,
             get(this:VoidPointer) {
-                const value = this.addAs(type, offset, offset >> 31);
+                const value = this.addAs(type, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
             },
