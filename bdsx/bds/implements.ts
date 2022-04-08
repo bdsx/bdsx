@@ -599,7 +599,7 @@ PlayerListEntry.prototype[NativeType.dtor] = procHacker.js('PlayerListEntry::~Pl
 NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
     return serverInstance.minecraft.getServerNetworkHandler()._getServerPlayer(this, 0);
 };
-NetworkIdentifier.prototype.equalsptr = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
+NetworkIdentifier.prototype.equals = procHacker.js("NetworkIdentifier::operator==", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
 
 const NetworkIdentifier_getHash = procHacker.js('NetworkIdentifier::getHash', bin64_t, null, NetworkIdentifier);
 NetworkIdentifier.prototype.hash = function() {
