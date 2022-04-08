@@ -3,19 +3,19 @@ import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
-import { Command, CommandContext, CommandOutput, CommandOutputParameter, CommandOutputType, CommandPermissionLevel, CommandRegistry, CommandVersion, MCRESULT } from "./bds/command";
-import { ServerCommandOrigin } from "./bds/commandorigin";
+import type { CommandOutputSender, CommandPermissionLevel, CommandRegistry, MinecraftCommands } from "./bds/command";
 import { Dimension } from "./bds/dimension";
+import { GameRules } from './bds/gamerules';
 import { ServerLevel } from "./bds/level";
 import * as nimodule from './bds/networkidentifier';
 import { proc, procHacker } from "./bds/proc";
+import { RakNet } from './bds/raknet';
 import * as bd_server from './bds/server';
 import { capi } from "./capi";
-import { CommandResult, CommandResultType } from './commandresult';
+import type { CommandResult, CommandResultType } from './commandresult';
 import { CANCEL, Encoding } from "./common";
 import { Config } from "./config";
 import { bedrock_server_exe, cgate, ipfilter, jshook, MultiThreadQueue, StaticPointer, uv_async, VoidPointer } from "./core";
-import { CxxVector } from './cxxvector';
 import { decay } from "./decay";
 import { dll } from "./dll";
 import { events } from "./event";
@@ -177,8 +177,17 @@ function _launch(asyncResolve:()=>void):void {
     }, void_t);
     asmcode.gameThreadFinish = makefunc.np(()=>{
         closed = true;
-        decay(bd_server.serverInstance);
-        decay(nimodule.networkHandler);
+        decay(bedrockServer.serverInstance);
+        decay(bedrockServer.networkHandler);
+        decay(bedrockServer.minecraft);
+        decay(bedrockServer.dedicatedServer);
+        decay(bedrockServer.level);
+        decay(bedrockServer.serverNetworkHandler);
+        decay(bedrockServer.minecraftCommands);
+        decay(bedrockServer.commandRegistry);
+        decay(bedrockServer.gameRules);
+        decay(bedrockServer.rakPeer);
+        decay(bedrockServer.commandOutputSender);
     }, void_t);
     asmcode.gameThreadInner = proc['<lambda_5d63f534eeadf9e385a3ddce5663beb8>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
@@ -293,12 +302,35 @@ function _launch(asyncResolve:()=>void):void {
                 _tickCallback();
                 cgate.nodeLoopOnce();
 
-                Object.defineProperty(bd_server, 'serverInstance', {
-                    value:asmcode.serverInstance.as(bd_server.ServerInstance),
+                const serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
+                const networkHandler = serverInstance.networkHandler;
+                const minecraft = serverInstance.minecraft;
+                const dedicatedServer = serverInstance.server;
+                const level = minecraft.getLevel().as(ServerLevel);
+                const serverNetworkHandler = minecraft.getServerNetworkHandler();
+                const minecraftCommands = minecraft.getCommands();
+                const commandRegistry = minecraftCommands.getRegistry();
+                const gameRules = level.getGameRules();
+                const rakPeer = networkHandler.instance.peer;
+                const commandOutputSender = minecraftCommands.sender;
+
+                Object.defineProperties(bedrockServer, {
+                    serverInstance: {value: serverInstance},
+                    networkHandler: {value: networkHandler},
+                    minecraft: {value: minecraft},
+                    dedicatedServer: {value: dedicatedServer},
+                    level: {value: level},
+                    serverNetworkHandler: {value: serverNetworkHandler},
+                    minecraftCommands: {value: minecraftCommands},
+                    commandRegistry: {value: commandRegistry},
+                    gameRules: {value: gameRules},
+                    rakPeer: {value: rakPeer},
+                    commandOutputSender: {value: commandOutputSender},
                 });
-                Object.defineProperty(nimodule, 'networkHandler', {
-                    value:bd_server.serverInstance.networkHandler,
-                });
+
+                Object.defineProperty(bd_server, 'serverInstance', { value:serverInstance });
+                Object.defineProperty(nimodule, 'networkHandler', { value:networkHandler });
+
                 openIsFired = true;
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it
@@ -338,10 +370,35 @@ function sessionIdGrabber(text: string): void {
 }
 events.serverLog.on(sessionIdGrabber);
 
-const CommandOutputParameterVector = CxxVector.make(CommandOutputParameter);
-
 export namespace bedrockServer {
     export let sessionId: string;
+
+    const abstractobject = createAbstractObject('bedrock_server is not launched yet');
+    // eslint-disable-next-line prefer-const
+    export let serverInstance:bd_server.ServerInstance = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let networkHandler:nimodule.NetworkHandler = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let minecraft:bd_server.Minecraft = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let level:ServerLevel = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let serverNetworkHandler:nimodule.ServerNetworkHandler = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let dedicatedServer:bd_server.DedicatedServer = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let minecraftCommands:MinecraftCommands = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let commandRegistry:CommandRegistry = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let gameRules:GameRules = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let rakPeer:RakNet.RakPeer = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let commandOutputSender:CommandOutputSender = abstractobject;
+
+    Object.defineProperty(bd_server, 'serverInstance', {value: abstractobject, writable: true});
+    Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});
 
     export function withLoading():Promise<void> {
         return new Promise(resolve=>{
@@ -375,8 +432,7 @@ export namespace bedrockServer {
      * It will stop next tick
      */
     export function stop():void {
-        const server = bd_server.serverInstance.server;
-        stopfunc(server.add(8));
+        stopfunc(bedrockServer.dedicatedServer.add(8));
     }
 
     export function forceKill(exitCode:number):never {
@@ -403,91 +459,20 @@ export namespace bedrockServer {
         commandQueue.enqueue(commandQueueBuffer); // assumes the string is moved, and does not have the buffer anymore.
     }
 
-    export function executeCommand(command:`testfor ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestFor>;
+    export declare function executeCommand(command:`testfor ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestFor>;
 
-    export function executeCommand(command:`testforblock ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlock>;
+    export declare function executeCommand(command:`testforblock ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlock>;
 
-    export function executeCommand(command:`testforblocks ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlocks>;
+    export declare function executeCommand(command:`testforblocks ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlocks>;
 
-    export function executeCommand(command:'list', mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.List>;
+    export declare function executeCommand(command:'list', mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.List>;
 
     /**
      * it does the same thing with executeCommandOnConsole
      * but call the internal function directly
      * @param mute suppress outputs if true, returns data if null
      */
-    export function executeCommand(command:string, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.Any>;
-
-    export function executeCommand(command:string, mute:CommandResultType = null, permissionLevel:CommandPermissionLevel|null=null, dimension:Dimension|null = null):CommandResult<CommandResult.Any> {
-        const minecraft = bd_server.serverInstance.minecraft;
-        const origin = ServerCommandOrigin.constructWith('Server',
-            minecraft.getLevel() as ServerLevel, // assume it's always ServerLevel
-            permissionLevel ?? CommandPermissionLevel.Admin,
-            dimension);
-
-        // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
-        const ctx = CommandContext.constructWith(command, origin);
-        const resv = events.command.fire(command, origin.getName(), ctx);
-        if (typeof resv === 'number') {
-            const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
-            res.result = resv;
-            return res;
-        }
-
-        // modified MinecraftCommands::executeCommand
-        const commands = minecraft.getCommands();
-        const registry = commands.getRegistry();
-
-        if (mute === true || mute == null) mute = CommandResultType.Mute;
-        else if (mute === false) mute = CommandResultType.Output;
-
-        const outputType = mute === CommandResultType.Mute ? CommandOutputType.None :
-            mute === CommandResultType.Output ? CommandOutputType.AllOutput : CommandOutputType.DataSet;
-        const output = CommandOutput.constructWith(outputType);
-        const cmdparser = CommandRegistry.Parser.constructWith(registry, CommandVersion.CurrentVersion);
-        try {
-            let cmd:Command|null;
-            const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
-            if (cmdparser.parseCommand(command) && (cmd = cmdparser.createCommand(origin)) !== null) {
-                cmd.run(origin, output);
-                cmd.destruct();
-
-                const successCount = output.getSuccessCount();
-                if (successCount > 0) {
-                    res.result = 1; // MCRESULT_Success
-                } else {
-                    res.result = 0x200; // MCRESULT_ExecutionFail
-                }
-            } else {
-                const outputParams = CommandOutputParameterVector.construct();
-                const errorParams:string[] = cmdparser.getErrorParams();
-                if (errorParams.length !== 0) {
-                    outputParams.reserve(errorParams.length);
-                    for (const err of errorParams) {
-                        outputParams.prepare().constructWith(err);
-                    }
-                }
-                const message = cmdparser.getErrorMessage();
-                output.error(message, outputParams); // outputParams is destructed by output.error
-                res.result = 0; //MCRESULT_FailedToParseCommand;
-            }
-
-            output.set_int('statusCode', res.getFullCode());
-            if ((mute & CommandResultType.Output) !== 0 && !output.empty()) {
-                commands.handleOutput(origin, output);
-            }
-            if ((mute & CommandResultType.Data) !== 0) {
-                const json = commands.sender._toJson(output);
-                res.data = json.value();
-                json.destruct();
-            }
-            return res;
-        } finally {
-            ctx.destruct();
-            output.destruct();
-            cmdparser.destruct();
-        }
-    }
+    export declare function executeCommand(command:string, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel|null, dimension?:Dimension|null):CommandResult<CommandResult.Any>;
 
     let stdInHandler:DefaultStdInHandler|null = null;
 

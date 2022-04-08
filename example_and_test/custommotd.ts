@@ -1,6 +1,6 @@
 
-import { serverInstance } from "bdsx/bds/server";
 import { events } from "bdsx/event";
+import { bedrockServer } from "bdsx/launcher";
 
 const name = 'BDSX-Example-Server';
 
@@ -11,7 +11,7 @@ const interval = setInterval(()=>{
     rainbowOffset = (rainbowOffset + 1) & rainbow.length;
 
     const coloredName = name.replace(/./g, v=>rainbow[(i++)%rainbow.length]+v);
-    serverInstance.setMotd(coloredName);
+    bedrockServer.serverInstance.setMotd(coloredName);
 }, 5000);
 
 // without this code, bdsx does not end even after BDS closed

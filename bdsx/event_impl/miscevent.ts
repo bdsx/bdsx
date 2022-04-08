@@ -1,6 +1,5 @@
 import { procHacker } from "../bds/proc";
 import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, ScoreboardIdentityRef } from "../bds/scoreboard";
-import { serverInstance } from "../bds/server";
 import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { decay } from "../decay";
@@ -45,7 +44,7 @@ function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServer
     data.levelname = event.levelname;
     return _onQueryRegenerate(rakNetServerLocator, data);
 }
-bedrockServer.afterOpen().then(() => serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement());
+bedrockServer.afterOpen().then(() => bedrockServer.serverNetworkHandler.updateServerAnnouncement());
 
 export class ScoreResetEvent {
     constructor(

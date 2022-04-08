@@ -1,6 +1,6 @@
 
 import * as colors from 'colors';
-import { serverInstance } from "./bds/server";
+import { bedrockServer } from './launcher';
 import { remapError, remapStackLine } from "./source-map-support";
 import { getLineAt } from "./util";
 
@@ -163,7 +163,7 @@ export class Tester {
 
         // pass one tick, wait until result of the list command example
         if (waitOneTick) {
-            await serverInstance.nextTick();
+            await bedrockServer.serverInstance.nextTick();
         }
 
         logMessage(`node version: ${process.versions.node}`);

@@ -121,9 +121,7 @@ export class NetworkIdentifier extends NativeStruct implements Hashable {
     }
 
     getAddress():string {
-        const idx = this.address.GetSystemIndex();
-        const rakpeer = networkHandler.instance.peer;
-        return rakpeer.GetSystemAddressFromIndex(idx).toString();
+        abstract();
     }
 
     toString():string {
@@ -146,6 +144,7 @@ NetworkIdentifier.setResolver(ptr=>{
     identifiers.add(ni);
     return ni;
 });
+/** @deprecated use bedrockServer.networkHandler */
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{

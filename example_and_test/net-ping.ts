@@ -1,7 +1,7 @@
-import { serverInstance } from 'bdsx/bds/server';
 import { command } from 'bdsx/command';
+import { bedrockServer } from 'bdsx/launcher';
 
-const peer = serverInstance.networkHandler.instance.peer;
+const peer = bedrockServer.rakPeer;
 
 command.register("ping", "example for getting ping").overload((params, origin, output) => {
     if (origin.isServerCommandOrigin()) {

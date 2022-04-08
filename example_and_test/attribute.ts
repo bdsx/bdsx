@@ -1,11 +1,11 @@
 import { AttributeId } from "bdsx/bds/attribute";
-import { serverInstance } from "bdsx/bds/server";
 import { events } from "bdsx/event";
+import { bedrockServer } from "bdsx/launcher";
 
 // Change attributes
 let healthCounter = 5;
 const interval = setInterval(()=>{
-    for (const player of serverInstance.getPlayers()) {
+    for (const player of bedrockServer.serverInstance.getPlayers()) {
         player.setAttribute(AttributeId.Health, healthCounter);
     }
 

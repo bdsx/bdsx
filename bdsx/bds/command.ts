@@ -7,6 +7,7 @@ import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxPair } from "../cxxpair";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
+import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField, NativeStruct, vectorDeletingDestructor } from "../nativeclass";
 import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, NativeType, Type, uint32_t, uint64_as_float_t, uint8_t, void_t } from "../nativetype";
@@ -671,6 +672,9 @@ export class CommandOutputSender extends NativeClass {
 export class MinecraftCommands extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
+    /**
+     * @deprecated use bedrockServer.commandOutputSender
+     */
     @nativeField(CommandOutputSender.ref())
     sender:CommandOutputSender;
     handleOutput(origin:CommandOrigin, output:CommandOutput):void {
@@ -682,6 +686,9 @@ export class MinecraftCommands extends NativeClass {
     executeCommand(ctx:CxxSharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
         abstract();
     }
+    /**
+     * @deprecated use bedrockServer.commandRegistry
+     */
     getRegistry():CommandRegistry {
         abstract();
     }
@@ -837,7 +844,6 @@ export abstract class CommandEnum<V> extends CommandEnumBase<EnumResult, V> {
 export class CommandRawEnum extends CommandEnum<string|number> {
     private static readonly all = new Map<string, CommandRawEnum>();
 
-    private readonly registry = serverInstance.minecraft.getCommands().getRegistry();
     private enumIndex = -1;
     private idRegistered = false;
     private parserType:ParserType = ParserType.Int;
@@ -853,11 +859,12 @@ export class CommandRawEnum extends CommandEnum<string|number> {
 
     private _update():boolean {
         if (this.enumIndex !== -1) return true; // already hooked
-        const enumIdex = this.registry.enumLookup.get(this.name);
+        const registry = bedrockServer.commandRegistry;
+        const enumIdex = registry.enumLookup.get(this.name);
         if (enumIdex === null) return false;
         this.enumIndex = enumIdex;
 
-        const enumobj = this.registry.enums.get(this.enumIndex)!;
+        const enumobj = registry.enums.get(this.enumIndex)!;
         this.parserType = getParserType(enumobj.parser);
 
         // hook the enum parser, provides extra information.
@@ -873,7 +880,8 @@ export class CommandRawEnum extends CommandEnum<string|number> {
     }
 
     addValues(values:string[]):void {
-        const id = this.registry.addEnumValues(this.name, values);
+        const registry = bedrockServer.commandRegistry;
+        const id = registry.addEnumValues(this.name, values);
         if (!this.idRegistered) {
             this.idRegistered = true;
             type_id.register(CommandRegistry, this, id);
@@ -886,16 +894,18 @@ export class CommandRawEnum extends CommandEnum<string|number> {
     getValues():string[] {
         const values = new Array<string>();
         if (this.enumIndex === -1) return values;
-        const enumobj = this.registry.enums.get(this.enumIndex)!;
+        const registry = bedrockServer.commandRegistry;
+        const enumobj = registry.enums.get(this.enumIndex)!;
         for (const {first: valueIndex} of enumobj.values) {
-            values.push(this.registry.enumValues.get(valueIndex));
+            values.push(registry.enumValues.get(valueIndex));
         }
         return values;
     }
 
     getValueCount():number {
         if (this.enumIndex === -1) return 0;
-        const enumobj = this.registry.enums.get(this.enumIndex)!;
+        const registry = bedrockServer.commandRegistry;
+        const enumobj = registry.enums.get(this.enumIndex)!;
         return enumobj.values.size();
     }
 
@@ -995,18 +1005,17 @@ export class CommandIndexEnum<T extends number|string> extends CommandMappedEnum
 export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
     private static readonly all = new Map<string, CommandSoftEnum>();
 
-    private readonly registry = serverInstance.minecraft.getCommands().getRegistry();
     private enumIndex = -1;
 
     private constructor(name:string) {
         super(CxxString, CxxString.symbol, name);
         if (CommandSoftEnum.all.has(name)) throw Error(`the enum parser already exists (name=${name})`);
-        this.enumIndex = this.registry.softEnumLookup.get(this.name) ?? -1;
+        this.enumIndex = bedrockServer.commandRegistry.softEnumLookup.get(this.name) ?? -1;
         // No type id should be registered, it is the type of string
     }
 
     protected updateValues(mode: SoftEnumUpdateType, values:string[]):void {
-        this.registry.updateSoftEnum(mode, this.name, values);
+        bedrockServer.commandRegistry.updateSoftEnum(mode, this.name, values);
     }
 
     getParser(): VoidPointer {
@@ -1025,8 +1034,9 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
             values = first;
         }
         if (this.enumIndex === -1) {
-            this.registry.addSoftEnum(this.name, values as string[]);
-            this.enumIndex = this.registry.softEnumLookup.get(this.name) ?? -1;
+            const registry = bedrockServer.commandRegistry;
+            registry.addSoftEnum(this.name, values as string[]);
+            this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
         } else {
             this.updateValues(SoftEnumUpdateType.Add, values as string[]);
         }
@@ -1051,8 +1061,9 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
             values = first;
         }
         if (this.enumIndex !== -1) {
-            this.registry.addSoftEnum(this.name, values as string[]);
-            this.enumIndex = this.registry.softEnumLookup.get(this.name) ?? -1;
+            const registry = bedrockServer.commandRegistry;
+            registry.addSoftEnum(this.name, values as string[]);
+            this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
         } else {
             this.updateValues(SoftEnumUpdateType.Replace, values as string[]);
         }
@@ -1061,13 +1072,13 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
     getValues():string[] {
         const values = new Array<string>();
         if (this.enumIndex === -1) return values;
-        const enumobj = this.registry.softEnums.get(this.enumIndex)!;
+        const enumobj = bedrockServer.commandRegistry.softEnums.get(this.enumIndex)!;
         return enumobj.list.toArray();
     }
 
     getValueCount():number {
         if (this.enumIndex === -1) return 0;
-        const enumobj = this.registry.softEnums.get(this.enumIndex)!;
+        const enumobj = bedrockServer.commandRegistry.softEnums.get(this.enumIndex)!;
         return enumobj.list.size();
     }
 

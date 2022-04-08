@@ -1,5 +1,6 @@
-import { networkHandler, NetworkIdentifier } from "./bds/networkidentifier";
+import { NetworkIdentifier } from "./bds/networkidentifier";
 import { createPacketRaw, Packet, PacketSharedPtr } from "./bds/packet";
+import { bedrockServer } from "./launcher";
 import { CxxStringWrapper } from "./pointer";
 import { AbstractWriter } from "./writer/abstractstream";
 
@@ -68,6 +69,6 @@ export class RawPacket extends AbstractWriter {
 
     sendTo(target:NetworkIdentifier):void {
         if (this.packet === null) throw Error('packetId is not defined. Please set it on constructor');
-        networkHandler.sendInternal(target, this.packet, this.data);
+        bedrockServer.networkHandler.sendInternal(target, this.packet, this.data);
     }
 }

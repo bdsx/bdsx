@@ -11,14 +11,12 @@ import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack } from "bdsx/bds/inventory";
-import { ServerLevel } from "bdsx/bds/level";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
-import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
+import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
-import { serverInstance } from "bdsx/bds/server";
 import { proc, proc2 } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
@@ -139,14 +137,16 @@ Tester.concurrency({
     },
 }, {
     async globals() {
+        const serverInstance = bedrockServer.serverInstance;
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
         this.assert(serverInstance.vftable.equalsptr(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
+        const networkHandler = bedrockServer.networkHandler;
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
         this.assert(networkHandler.vftable.equalsptr(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
-        this.assert(serverInstance.minecraft.vftable.equalsptr(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equalsptr(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(bedrockServer.minecraft.vftable.equalsptr(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
+        this.assert(bedrockServer.commandOutputSender.vftable.equalsptr(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
 
         this.assert(networkHandler.instance.vftable.equalsptr(proc2["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
@@ -154,7 +154,7 @@ Tester.concurrency({
         this.assert(networkHandler.instance.peer.vftable.equalsptr(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
-        const shandle = serverInstance.minecraft.getServerNetworkHandler();
+        const shandle = bedrockServer.serverNetworkHandler;
         shandle.setMotd('TestMotd');
         this.equals(shandle.motd, 'TestMotd', 'unexpected motd');
 
@@ -734,15 +734,14 @@ Tester.concurrency({
 
     actor() {
         events.entityCreated.on(this.wrap(ev => {
-            const level = serverInstance.minecraft.getLevel().as(ServerLevel);
+            const level = bedrockServer.level;
 
             try {
                 const actor = ev.entity;
                 const identifier = actor.getIdentifier();
                 this.assert(identifier.startsWith('minecraft:'), 'Invalid identifier');
                 if (identifier === 'minecraft:player') {
-                    this.equals(level.players.size(),  serverInstance.getActivePlayerCount(), 'Unexpected player size');
-                    this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
+                    this.equals(level.getPlayers().length,  bedrockServer.serverInstance.getActivePlayerCount(), 'Unexpected player size');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
@@ -858,9 +857,9 @@ Tester.concurrency({
     testPlayerCount() {
         events.queryRegenerate.once(this.wrap(v=>{
             this.equals(v.currentPlayers, 0, 'player count mismatch');
-            this.equals(v.maxPlayers, serverInstance.getMaxPlayers(), 'max player mismatch');
+            this.equals(v.maxPlayers, bedrockServer.serverInstance.getMaxPlayers(), 'max player mismatch');
         }));
-        serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement();
+        bedrockServer.serverNetworkHandler.updateServerAnnouncement();
 
         events.packetAfter(MinecraftPacketIds.Login).once(this.wrap((packet, ni)=>{
             setTimeout(this.wrap(()=>{
@@ -875,7 +874,7 @@ Tester.concurrency({
         const item = ItemStack.constructWith('minecraft:acacia_boat');
         item.destruct();
 
-        const level = serverInstance.minecraft.getLevel();
+        const level = bedrockServer.level;
         const pos = level.getDefaultSpawn();
         level.setDefaultSpawn(pos);
     },

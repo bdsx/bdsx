@@ -1,7 +1,6 @@
 import { DimensionId } from "bdsx/bds/actor";
 import { Block, BlockSource } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
-import { serverInstance } from "bdsx/bds/server";
 import { command } from "bdsx/command";
 import { bedrockServer } from "bdsx/launcher";
 
@@ -47,7 +46,7 @@ command.register('furnace', 'generate named furnace').overload((params, origin, 
  * find the BlockSource that can access the specific block position
  */
 function getBlockSource(dimensionId:DimensionId, blockpos:BlockPos):BlockSource|null {
-    for (const player of serverInstance.getPlayers()) {
+    for (const player of bedrockServer.serverInstance.getPlayers()) {
         if (player.getDimensionId() !== dimensionId) continue; // different dimension
         const region = player.getRegion();
         const chunk = region.getChunkAt(blockpos);

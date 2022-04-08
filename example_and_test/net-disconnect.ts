@@ -2,9 +2,9 @@
 // Network Hooking: disconnected
 import { PlayerCommandSelector } from "bdsx/bds/command";
 import { ServerPlayer } from "bdsx/bds/player";
-import { serverInstance } from "bdsx/bds/server";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
+import { bedrockServer } from "bdsx/launcher";
 import { connectionList } from "./net-login";
 
 events.networkDisconnected.on(networkIdentifier => {
@@ -16,7 +16,7 @@ events.networkDisconnected.on(networkIdentifier => {
 command.register("disconnect", "disconnect player").overload((p, o, op) => {
     for (const player of p.target.newResults(o, ServerPlayer)) {
         // disconnect player from server
-        serverInstance.disconnectClient(player.getNetworkIdentifier());
+        bedrockServer.serverInstance.disconnectClient(player.getNetworkIdentifier());
     }
 }, {
     target:PlayerCommandSelector

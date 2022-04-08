@@ -1,4 +1,3 @@
-import { createAbstractObject } from "../abstractobject";
 import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
@@ -33,18 +32,9 @@ export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListe
  * unknown instance
  */
 export class Minecraft$Something {
-    /** @deprecated Use `minecraft.getNetworkHandler()` instead */
-    get network():NetworkHandler {
-        return serverInstance.minecraft.getNetworkHandler();
-    }
-    /** @deprecated Use `minecraft.getLevel()` instead */
-    get level():ServerLevel {
-        return serverInstance.minecraft.getLevel() as ServerLevel;
-    }
-    /** @deprecated Use `minecraft.getServerNetworkHandler()` instead */
-    get shandler():ServerNetworkHandler {
-        return serverInstance.minecraft.getServerNetworkHandler();
-    }
+    network:NetworkHandler;
+    level:ServerLevel;
+    shandler:ServerNetworkHandler;
 }
 
 export class VanillaGameModuleServer extends AbstractClass {
@@ -65,7 +55,7 @@ export class Minecraft extends AbstractClass {
     }
     /** @deprecated */
     get something():Minecraft$Something {
-        return new Minecraft$Something();
+        return new Minecraft$Something;
     }
     /** @deprecated Use `Minecraft::getNetworkHandler` instead */
     get network():NetworkHandler {
@@ -76,15 +66,27 @@ export class Minecraft extends AbstractClass {
 
     server:DedicatedServer;
 
+    /**
+     * @deprecated use bedrockServer.level
+     */
     getLevel():Level {
         abstract();
     }
+    /**
+     * @deprecated use bedrockServer.networkHandler
+     */
     getNetworkHandler():NetworkHandler {
         abstract();
     }
+    /**
+     * @deprecated use bedrockServer.serverNetworkHandler
+     */
     getServerNetworkHandler():ServerNetworkHandler {
         abstract();
     }
+    /**
+     * @deprecated use bedrockServer.minecraftCommands
+     */
     getCommands():MinecraftCommands {
         abstract();
     }
@@ -125,8 +127,11 @@ export class MinecraftServerScriptEngine extends ScriptFramework {
 
 export class ServerInstance extends AbstractClass {
     vftable:VoidPointer;
+    /** @deprecated use bedrockServer.dedicatedServer */
     server:DedicatedServer;
+    /** @deprecated use bedrockServer.minecraft */
     minecraft:Minecraft;
+    /** @deprecated use bedrockServer.networkHandler */
     networkHandler:NetworkHandler;
 
     protected _disconnectAllClients(message:CxxString):void {
@@ -220,5 +225,5 @@ export class ServerInstance extends AbstractClass {
     }
 }
 
-// eslint-disable-next-line prefer-const
-export let serverInstance:ServerInstance = createAbstractObject('bedrock_server is not launched yet');
+/** @deprecated use bedrockServer.serverInstance */
+export let serverInstance:ServerInstance;

@@ -230,7 +230,7 @@ function softEnum(name:string, ...values:(string|string[])[]):CommandSoftEnum {
 
 export const command ={
     find(name:string):CustomCommandFactoryWithSignature {
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const registry = bedrockServer.commandRegistry;
         const cmd = registry.findCommand(name);
         if (cmd === null) throw Error(`${name}: command not found`);
         return new CustomCommandFactoryWithSignature(registry, name, cmd);
@@ -240,7 +240,7 @@ export const command ={
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
         flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NotCheat,
         flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag._Unknown):CustomCommandFactory {
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const registry = bedrockServer.commandRegistry;
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);
         registry.registerCommand(name, description, perm, flags1, flags2);

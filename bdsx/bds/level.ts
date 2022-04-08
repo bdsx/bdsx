@@ -109,6 +109,7 @@ export class Level extends NativeClass {
     }
     /**
      * Returns the GameRules instance
+     * @deprecated use bedrockServer.gameRules
      */
     getGameRules():GameRules {
         abstract();
