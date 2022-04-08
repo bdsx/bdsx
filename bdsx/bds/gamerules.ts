@@ -45,6 +45,9 @@ export class GameRules extends NativeClass {
     setRule(id:GameRuleId, value:boolean|number, type?:GameRule.Type):void {
         this.getRule(id).setValue(value, type);
     }
+    nameToGameRuleIndex(name:string):number {
+        abstract();
+    }
 
     static nameToGameRuleIndex(name:string):number {
         abstract();

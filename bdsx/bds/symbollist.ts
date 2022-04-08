@@ -11,7 +11,6 @@ export const undecoratedSymbols = [
     'Level::fetchEntity',
     'Level::getActivePlayerCount',
     'Crypto::Random::generateUUID',
-    'Player::add',
     'Player::addLevels',
     'Player::attack',
     'Player::drop',
@@ -612,6 +611,13 @@ export const undecoratedSymbols = [
     'CommandOutput::set<float>',
     'CommandOutput::set<BlockPos>',
     'CommandOutput::set<Vec3>',
+    'Level::getDifficulty',
+    'Level::setDifficulty',
+    'Actor::wasLastHitByPlayer' ,
+    'Actor::getLastHurtMob',
+    'Actor::getLastHurtByMob',
+    'Actor::getLastHurtDamage',
+    'Actor::getLastHurtCause',
 ] as const;
 
 // decorated symbols
@@ -704,4 +710,5 @@ export const decoratedSymbols = [
     '??0Blob@mce@@QEAA@XZ',
     '??$set@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@CommandOutput@@QEAAXPEBDV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '??0Parser@CommandRegistry@@QEAA@AEBV1@H@Z',
+    '?distanceTo@Actor@@QEBAMAEBVVec3@@@Z',
 ] as const;

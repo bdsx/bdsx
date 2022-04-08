@@ -39,7 +39,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { networkHandler, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, PlayerListEntry, PlayerListPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, proc2, procHacker } from "./proc";
@@ -53,6 +53,9 @@ import { BinaryStream } from "./stream";
 import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
 
 // avoiding circular dependency
+
+// Wrappers
+const WrappedInt32 = Wrapper.make(int32_t);
 
 // utils
 namespace CommandUtils {
@@ -86,10 +89,11 @@ Level.prototype.hasCommandsEnabled = procHacker.js("Level::hasCommandsEnabled", 
 Level.prototype.setCommandsEnabled = procHacker.js("ServerLevel::setCommandsEnabled", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.setShouldSendSleepMessage = procHacker.js("ServerLevel::setShouldSendSleepMessage", void_t, {this:ServerLevel}, bool_t);
 Level.prototype.getPlayerByXuid = procHacker.js("Level::getPlayerByXuid", Player, {this:Level}, CxxString);
-const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", Wrapper.make(GameRulesChangedPacket.ref()), {this:GameRules}, Wrapper.make(GameRulesChangedPacket.ref()));
+
+const unique_ptr$GameRulesChangedPacket = Wrapper.make(GameRulesChangedPacket.ref());
+const GameRules$createAllGameRulesPacket = procHacker.js("GameRules::createAllGameRulesPacket", unique_ptr$GameRulesChangedPacket, {this:GameRules}, unique_ptr$GameRulesChangedPacket);
 Level.prototype.syncGameRules = function() {
-    const wrapper = Wrapper.make(GameRulesChangedPacket.ref()).construct();
-    wrapper.value = GameRulesChangedPacket.allocate();
+    const wrapper = new unique_ptr$GameRulesChangedPacket(true);
     GameRules$createAllGameRulesPacket.call(this.getGameRules(), wrapper);
     for (const player of serverInstance.getPlayers()) {
         player.sendNetworkPacket(wrapper.value);
@@ -138,6 +142,17 @@ Level.prototype.updateWeather = procHacker.js("Level::updateWeather", void_t, {t
 Level.prototype.setDefaultSpawn = procHacker.js('Level::setDefaultSpawn', void_t, {this:Level}, BlockPos);
 Level.prototype.getDefaultSpawn = procHacker.js('Level::getDefaultSpawn', BlockPos, {this:Level});
 Level.prototype.explode = procHacker.js('?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z', void_t, {this:Level}, BlockSource, VoidPointer, Vec3, float32_t, bool_t, bool_t, float32_t, bool_t);
+Level.prototype.getDifficulty = procHacker.js("Level::getDifficulty", int32_t, {this:Level});
+const Level$setDifficulty = procHacker.js("Level::setDifficulty", void_t, {this:Level}, int32_t);
+Level.prototype.setDifficulty = function (difficulty) {
+    Level$setDifficulty.call(this, difficulty);
+    const pkt = SetDifficultyPacket.allocate();
+    pkt.difficulty = difficulty;
+    for (const player of this.getPlayers()) {
+        player.sendNetworkPacket(pkt);
+    }
+    pkt.dispose();
+};
 
 Level.abstract({
     vftable: VoidPointer,
@@ -219,6 +234,7 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
         return CommandUtils.spawnEntityAt(region, pos, type, ptr, summoner);
     }
 };
+Actor.prototype.addItem = makefunc.js([0x730], bool_t, {this:Actor}, ItemStack);
 (Actor.prototype as any)._getArmorValue = procHacker.js("Mob::getArmorValue", int32_t, {this:Actor});
 Actor.prototype.getAttributes = procHacker.js('Actor::getAttributes', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
 Actor.prototype.getName = procHacker.js("Actor::getNameTag", CxxString, {this:Actor});
@@ -375,6 +391,12 @@ Actor.prototype.getEquippedTotem = makefunc.js([0x520], ItemStack, {this:Actor})
 Actor.prototype.consumeTotem = makefunc.js([0x528], bool_t, {this:Actor});
 Actor.prototype.hasTotemEquipped = procHacker.js("Actor::hasTotemEquipped", bool_t, {this:Actor});
 (Actor.prototype as any).hasFamily_ = procHacker.js("Actor::hasFamily", bool_t, {this:Actor}, HashedString);
+Actor.prototype.distanceTo = procHacker.js("?distanceTo@Actor@@QEBAMAEBVVec3@@@Z", float32_t, {this:Actor}, Vec3);
+Actor.prototype.getLastHurtByMob = procHacker.js("Actor::getLastHurtByMob", Mob, {this:Actor});
+Actor.prototype.getLastHurtCause = procHacker.js("Actor::getLastHurtCause", int32_t, {this:Actor});
+Actor.prototype.getLastHurtDamage = procHacker.js("Actor::getLastHurtDamage", int32_t, {this:Actor});
+Actor.prototype.getLastHurtMob = procHacker.js("Actor::getLastHurtMob", Mob, {this:Actor});
+Actor.prototype.wasLastHitByPlayer = procHacker.js("Actor::wasLastHitByPlayer", bool_t, {this:Actor});
 
 Mob.prototype.knockback = makefunc.js([0x898], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("Mob::getSpeed", float32_t, {this:Mob});
@@ -391,7 +413,7 @@ Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, E
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier$CxxString = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, null, ActorDefinitionIdentifier, CxxString);
 ActorDefinitionIdentifier.constructWith = function(type:string|number):ActorDefinitionIdentifier {
-    const identifier = ActorDefinitionIdentifier.construct();
+    const identifier = new ActorDefinitionIdentifier(true);
     if (typeof type === "number") {
         ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType(identifier, type);
     } else {
@@ -402,7 +424,7 @@ ActorDefinitionIdentifier.constructWith = function(type:string|number):ActorDefi
 
 const ActorDamageSource$ActorDamageSource = procHacker.js("ActorDamageSource::ActorDamageSource", void_t, null, ActorDamageSource, int32_t);
 ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamageSource {
-    const source = ActorDamageSource.construct();
+    const source = new ActorDamageSource(true);
     ActorDamageSource$ActorDamageSource(source, cause);
     return source;
 };
@@ -476,7 +498,6 @@ Player.prototype.updatePlayerList = function() {
     entry.destruct();
     pk.dispose();
 };
-Player.prototype.addItem = procHacker.js("Player::add", bool_t, {this:Player}, ItemStack);
 Player.prototype.changeDimension = procHacker.js("ServerPlayer::changeDimension", void_t, {this:Player}, int32_t, bool_t);
 Player.prototype.teleportTo = procHacker.js("Player::teleportTo", void_t, {this:Player}, Vec3, bool_t, int32_t, int32_t, bin64_t);
 Player.prototype.getGameType = procHacker.js("Player::getPlayerGameType", int32_t, {this:Player});
@@ -994,19 +1015,19 @@ Ability.prototype.getFloat = procHacker.js("Ability::getFloat", float32_t, {this
 Ability.prototype.setBool = procHacker.js("Ability::setBool", void_t, {this:Ability}, bool_t);
 
 // gamerules.ts
-const Int32Wrapper = Wrapper.make(int32_t);
-const GameRules$getRule = procHacker.js("GameRules::getRule", GameRule.ref(), {this:GameRules}, Int32Wrapper);
+const GameRules$getRule = procHacker.js("GameRules::getRule", GameRule.ref(), {this:GameRules}, WrappedInt32);
 GameRules.prototype.getRule = function(id:GameRuleId):GameRule {
-    return GameRules$getRule.call(this, Int32Wrapper.create(id));
+    return GameRules$getRule.call(this, WrappedInt32.create(id));
 };
-const GameRules$hasRule = procHacker.js("GameRules::hasRule", bool_t, {this:GameRules}, Int32Wrapper);
+const GameRules$hasRule = procHacker.js("GameRules::hasRule", bool_t, {this:GameRules}, WrappedInt32);
 GameRules.prototype.hasRule = function(id:GameRuleId):bool_t {
-    return GameRules$hasRule.call(this, Int32Wrapper.create(id));
+    return GameRules$hasRule.call(this, WrappedInt32.create(id));
 };
 
-const GameRules$$nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", Int32Wrapper, {this:GameRules, structureReturn: true}, GameRules, CxxString); // Will return -1 if not found, so int32 instead of uint32
+GameRules.prototype.nameToGameRuleIndex = procHacker.js("GameRules::nameToGameRuleIndex", int32_t, {this:GameRules, structureReturn: true}, CxxString); // Will return -1 if not found, so int32 instead of uint32
+
 GameRules.nameToGameRuleIndex = function(name:string):int32_t {
-    return GameRules$$nameToGameRuleIndex.call(serverInstance.minecraft.getLevel().getGameRules(), name).value;
+    return serverInstance.minecraft.getLevel().getGameRules().nameToGameRuleIndex(name);
 };
 
 GameRule.abstract({

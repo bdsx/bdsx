@@ -32,17 +32,6 @@ export class Player extends Mob {
     }
 
     /**
-     * Adds an item to the player's inventory
-     * @remarks Player inventory will not be updated. Use ServerPlayer.sendInventory() to update it.
-     *
-     * @param itemStack - Item to add
-     * @returns {boolean} Whether the item has been added successfully (Full inventory can be a cause of failure)
-     */
-    addItem(itemStack: ItemStack): boolean {
-        abstract();
-    }
-
-    /**
      * Teleports the player to another dimension
      *
      * @param dimensionId - The dimension ID

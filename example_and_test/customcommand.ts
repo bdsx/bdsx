@@ -2,7 +2,7 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
-import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, CommandSoftEnum, PlayerCommandSelector } from "bdsx/bds/command";
+import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, PlayerCommandSelector } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { ServerPlayer } from "bdsx/bds/player";
 import { command } from "bdsx/command";

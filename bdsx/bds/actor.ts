@@ -453,7 +453,16 @@ export class Actor extends AbstractClass {
     static tryGetFromEntity(entity:EntityContext):Actor|null {
         abstract();
     }
-
+    /**
+     * Adds an item to the entity's inventory
+     * @remarks Entity(Mob) inventory will not be updated. Use Mob.sendInventory() to update it.
+     *
+     * @param itemStack - Item to add
+     * @returns {boolean} Whether the item has been added successfully (Full inventory can be a cause of failure)
+     */
+    addItem(itemStack: ItemStack): boolean {
+        abstract();
+    }
     sendPacket(packet:Packet):void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
@@ -982,6 +991,10 @@ export class Actor extends AbstractClass {
     protected hasFamily_(familyType: HashedString): boolean {
         abstract();
     }
+    /**
+     * Returns whether the entity has the family type.
+     * Ref: https://minecraft.fandom.com/wiki/Family
+     */
     hasFamily(familyType: HashedString | string): boolean {
         if (familyType instanceof HashedString) {
             return this.hasFamily_(familyType);
@@ -990,6 +1003,42 @@ export class Actor extends AbstractClass {
         const hasFamily = this.hasFamily_(hashStr);
         hashStr.destruct();
         return hasFamily;
+    }
+    /**
+     * Returns the distance from the entity(returns of {@link getPosition}) to {@link dest}
+     */
+    distanceTo(dest: Vec3): number {
+        abstract();
+    }
+    /**
+     * Returns the mob that hurt the entity(`this`)
+     */
+    getLastHurtByMob(): Mob | null {
+        abstract();
+    }
+    /**
+     * Returns the last actor damage cause for the entity.
+     */
+    getLastHurtCause(): ActorDamageCause {
+        abstract();
+    }
+    /**
+     * Returns the last damage amount for the entity.
+     */
+    getLastHurtDamage(): number {
+        abstract();
+    }
+    /**
+     * Returns a mob that was hurt by the entity(`this`)
+     */
+    getLastHurtMob(): Mob | null {
+        abstract();
+    }
+    /**
+     * Returns whether the entity was last hit by a player.
+     */
+    wasLastHitByPlayer(): boolean {
+        abstract();
     }
 }
 
