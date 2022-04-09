@@ -618,6 +618,8 @@ export const undecoratedSymbols = [
     'Actor::getLastHurtByMob',
     'Actor::getLastHurtDamage',
     'Actor::getLastHurtCause',
+    'ItemStackRequestPacket::getRequestBatch',
+    'ItemStackRequestActionTransferBase::getSrc',
 ] as const;
 
 // decorated symbols

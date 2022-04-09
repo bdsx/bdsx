@@ -42,7 +42,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer } from "./player";
 import { proc, proc2, procHacker } from "./proc";
@@ -597,6 +597,9 @@ PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
     return PlayerListEntry$PlayerListEntry(entry, player);
 };
 PlayerListEntry.prototype[NativeType.dtor] = procHacker.js('PlayerListEntry::~PlayerListEntry', void_t, {this:PlayerListEntry});
+
+ItemStackRequestPacket.prototype.getRequestBatch = procHacker.js('ItemStackRequestPacket::getRequestBatch', ItemStackRequestBatch, {this:ItemStackRequestPacket});
+ItemStackRequestActionTransferBase.prototype.getSrc = procHacker.js('ItemStackRequestActionTransferBase::getSrc', ItemStackRequestSlotInfo, {this:ItemStackRequestActionTransferBase});
 
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {

@@ -619,6 +619,8 @@ Tester.concurrency({
             ['EduUriResource', 'EduUriResourcePacket'],
             ['CreatePhoto', 'CreatePhotoPacket'],
             ['UpdateSubChunkBlocks', 'UpdateSubChunkBlocksPacket'],
+            ['ItemStackRequest', 'ItemStackRequestPacket'],
+            ['ItemStackResponse', 'ItemStackResponsePacket'],
         ]);
 
         for (const id in PacketIdToType) {
