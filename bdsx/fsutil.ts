@@ -186,6 +186,19 @@ export namespace fsutil {
             });
         });
     }
+    export function readdirWithFileTypesSync(path:string):fs.Dirent[] {
+        const data = fs.readdirSync(path, {withFileTypes: true});
+        if (data.length !== 0 && typeof data[0] === 'string') {
+            const stats:fs.Dirent[] = [];
+            for (const d of data) {
+                const stat = fs.statSync(d as any);
+                stats.push(new DirentFromStat(d as any, stat));
+            }
+            return stats;
+        } else {
+            return data;
+        }
+    }
     export function mkdir(path:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs.mkdir(path, (err)=>{
@@ -240,6 +253,50 @@ export namespace fsutil {
                 else resolve();
             });
         });
+    }
+    export async function unlinkRecursive(filepath:string):Promise<void> {
+        async function unlinkDir(filepath:string):Promise<void> {
+            const files = await readdirWithFileTypes(filepath);
+            for (const stat of files) {
+                const childpath = filepath+path.sep+stat.name;
+                if (stat.isDirectory()) {
+                    await unlinkDir(childpath);
+                } else {
+                    await unlink(childpath);
+                }
+            }
+        }
+        async function unlinkAny(stat:{isDirectory():boolean, isFile():boolean}, childpath:string):Promise<void> {
+            if (stat.isDirectory()) {
+                await unlinkDir(childpath);
+            } else if (stat.isFile()) {
+                await unlink(childpath);
+            }
+        }
+        const st = await stat(filepath);
+        await unlinkAny(st, filepath);
+    }
+    export function unlinkRecursiveSync(filepath:string):void {
+        function unlinkDir(filepath:string):void {
+            const files = readdirWithFileTypesSync(filepath);
+            for (const stat of files) {
+                const childpath = filepath+path.sep+stat.name;
+                if (stat.isDirectory()) {
+                    unlinkDir(childpath);
+                } else {
+                    unlink(childpath);
+                }
+            }
+        }
+        function unlinkAny(stat:{isDirectory():boolean, isFile():boolean}, childpath:string):void {
+            if (stat.isDirectory()) {
+                unlinkDir(childpath);
+            } else if (stat.isFile()) {
+                unlink(childpath);
+            }
+        }
+        const st = fs.statSync(filepath);
+        unlinkAny(st, filepath);
     }
     export function copyFile(from:string, to:string):Promise<void> {
         if (fs.copyFile != null) {
