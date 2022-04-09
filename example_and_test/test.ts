@@ -40,13 +40,10 @@ import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
+import { getRecentSentPacketId } from "./net-rawpacket";
 
 let sendidcheck = 0;
 let chatCancelCounter = 0;
-
-export function setRecentSendedPacketForTest(packetId: number): void {
-    sendidcheck = packetId;
-}
 
 function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>, string, any][], throughConsole?:boolean):Promise<void> {
     const paramsobj:Record<string, CommandParameterType<any>> = {};
@@ -473,6 +470,7 @@ Tester.concurrency({
         cls.vector3.push(vec);
         clsvector.push(cls);
         clsvector.push(cls);
+        cls.destruct();
 
         const cloned = CxxVector.make(VectorClass).construct(clsvector);
         this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
@@ -482,6 +480,7 @@ Tester.concurrency({
         this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
+        clsvector.destruct();
     },
 
     map() {
@@ -617,6 +616,8 @@ Tester.concurrency({
             ['EduUriResource', 'EduUriResourcePacket'],
             ['CreatePhoto', 'CreatePhotoPacket'],
             ['UpdateSubChunkBlocks', 'UpdateSubChunkBlocksPacket'],
+            ['ItemStackRequest', 'ItemStackRequestPacket'],
+            ['ItemStackResponse', 'ItemStackResponsePacket'],
         ]);
 
         for (const id in PacketIdToType) {
@@ -685,6 +686,10 @@ Tester.concurrency({
                 sendpacket++;
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
+                const recentSent = getRecentSentPacketId();
+                if (recentSent !== null) {
+                    sendidcheck = recentSent;
+                }
                 if (Date.now() < ignoreEndingPacketsAfter) {
                     this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni, id='+packetId);
                 }
@@ -873,10 +878,6 @@ Tester.concurrency({
     etc() {
         const item = ItemStack.constructWith('minecraft:acacia_boat');
         item.destruct();
-
-        const level = bedrockServer.level;
-        const pos = level.getDefaultSpawn();
-        level.setDefaultSpawn(pos);
     },
 
     nbt() {

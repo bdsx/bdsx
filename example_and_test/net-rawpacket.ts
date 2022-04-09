@@ -5,7 +5,13 @@ import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { bin } from "bdsx/bin";
 import { events } from "bdsx/event";
 import { RawPacket } from "bdsx/rawpacket";
-import { setRecentSendedPacketForTest } from "./test";
+
+export let recentSentPacketId:MinecraftPacketIds|null = null;
+export function getRecentSentPacketId():MinecraftPacketIds|null {
+    const out = recentSentPacketId;
+    recentSentPacketId = null;
+    return out;
+}
 
 events.packetRaw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
     console.log(`Packet Id: ${ptr.readVarUint()&0x3ff}`);
@@ -22,7 +28,7 @@ events.packetRaw(MinecraftPacketIds.MovePlayer).on((ptr, size, ni)=>{
     console.log(`move: ${bin.toString(runtimeId, 16)} ${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)} ${pitch.toFixed(1)} ${yaw.toFixed(1)} ${headYaw.toFixed(1)} ${mode} ${onGround}`);
 
     // part of testing
-    setRecentSendedPacketForTest(MinecraftPacketIds.Text);
+    recentSentPacketId = MinecraftPacketIds.Text;
 
     // https://github.com/pmmp/PocketMine-MP/blob/stable/src/pocketmine/network/mcpe/protocol/TextPacket.php
     const packet = new RawPacket(MinecraftPacketIds.Text);

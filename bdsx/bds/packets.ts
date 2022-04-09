@@ -1,15 +1,16 @@
 import { abstract, BuildPlatform } from "../common";
+import { VoidPointer } from "../core";
 import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
-import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import { ActorDefinitionIdentifier, ActorLink, ActorRuntimeID, ActorUniqueID } from "./actor";
 import { AttributeInstanceHandle } from "./attribute";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
 import { ConnectionRequest } from "./connreq";
 import { HashedString } from "./hashedstring";
-import { ComplexInventoryTransaction, ContainerId, ContainerType, NetworkItemStackDescriptor } from "./inventory";
+import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStackNetIdVariant, NetworkItemStackDescriptor } from "./inventory";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
 import type { GameType, Player } from "./player";
@@ -847,7 +848,7 @@ export class PlayerListEntry extends AbstractClass {
     static constructWith(player: Player): PlayerListEntry {
         abstract();
     }
-    /** @deprecated */
+    /** @deprecated Use {@link constructWith()} instead  */
     static create(player: Player): PlayerListEntry {
         return PlayerListEntry.constructWith(player);
     }
@@ -1621,14 +1622,109 @@ export class PlayerEnchantOptionsPacket extends Packet {
 }
 
 @nativeClass(null)
-export class ItemStackRequest extends Packet {
-    // unknown
+export class ItemStackRequestSlotInfo extends NativeStruct {
+    @nativeField(uint8_t)
+    openContainerNetId:uint8_t;
+    @nativeField(uint8_t)
+    slot:uint8_t;
+    @nativeField(ItemStackNetIdVariant)
+    readonly netIdVariant:ItemStackNetIdVariant;
+}
+
+export enum ItemStackRequestActionType {
+    Take,
+    Place,
+    Swap,
+    Drop,
+    Destroy,
+    Consume,
+    Create,
+    PlaceInItemContainer,
+    TakeFromItemContainer,
+    ScreenLabTableCombine,
+    ScreenBeaconPayment,
+    ScreenHUDMineBlock,
+    CraftRecipe,
+    CraftRecipeAuto,
+    CraftCreative,
+    CraftRecipeOptional,
+    CraftRepairAndDisenchant,
+    CraftLoom,
+    /** @deprecated Deprecated in BDS */
+    CraftNonImplemented_DEPRECATEDASKTYLAING,
+    /** @deprecated Deprecated in BDS */
+    CraftResults_DEPRECATEDASKTYLAING,
 }
 
 @nativeClass(null)
-export class ItemStackResponse extends Packet {
+export class ItemStackRequestAction extends AbstractClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+    @nativeField(uint8_t)
+    type:ItemStackRequestActionType;
+}
+
+ItemStackRequestAction.setResolver(ptr=>{
+    if (ptr === null) return null;
+    const action = ptr.as(ItemStackRequestAction);
+    switch (action.type) {
+    case ItemStackRequestActionType.Take:
+    case ItemStackRequestActionType.Place:
+    case ItemStackRequestActionType.Swap:
+    case ItemStackRequestActionType.Destroy:
+    case ItemStackRequestActionType.Consume:
+    case ItemStackRequestActionType.PlaceInItemContainer:
+    case ItemStackRequestActionType.TakeFromItemContainer:
+        return ptr.as(ItemStackRequestActionTransferBase);
+    default:
+        return action;
+    }
+});
+
+@nativeClass(null)
+export class ItemStackRequestActionTransferBase extends ItemStackRequestAction {
+    getSrc():ItemStackRequestSlotInfo {
+        abstract();
+    }
+}
+
+@nativeClass(null)
+export class ItemStackRequestData extends AbstractClass {
+    @nativeField(int32_t)
+    clientRequestId:int32_t;
+    @nativeField(CxxVector.make(CxxString))
+    stringsToFilter:CxxVector<CxxString>;
+    @nativeField(CxxVector.make(ItemStackRequestAction.ref()))
+    actions:CxxVector<ItemStackRequestAction>;
+}
+
+@nativeClass()
+export class ItemStackRequestBatch extends AbstractClass {
+    @nativeField(CxxVector.make(ItemStackRequestData.ref()))
+    data:CxxVector<ItemStackRequestData>;
+}
+
+@nativeClass(null)
+export class ItemStackRequestPacket extends Packet {
+    getRequestBatch():ItemStackRequestBatch {
+        abstract();
+    }
+}
+
+/** @deprecated use ItemStackRequestPacket, follow the real class name */
+export const ItemStackRequest = ItemStackRequestPacket;
+/** @deprecated use ItemStackRequestPacket, follow the real class name */
+export type ItemStackRequest = ItemStackRequestPacket;
+
+@nativeClass(null)
+export class ItemStackResponsePacket extends Packet {
     // unknown
 }
+
+/** @deprecated use ItemStackResponsePacket, follow the real class name */
+export const ItemStackResponse = ItemStackResponsePacket;
+/** @deprecated use ItemStackResponsePacket, follow the real class name */
+export type ItemStackResponse = ItemStackResponsePacket;
 
 @nativeClass(null)
 export class PlayerArmorDamagePacket extends Packet {
@@ -2010,8 +2106,8 @@ export const PacketIdToType = {
     0x90: PlayerAuthInputPacket,
     0x91: CreativeContentPacket,
     0x92: PlayerEnchantOptionsPacket,
-    0x93: ItemStackRequest,
-    0x94: ItemStackResponse,
+    0x93: ItemStackRequestPacket,
+    0x94: ItemStackResponsePacket,
     0x95: PlayerArmorDamagePacket,
     0x96: CodeBuilderPacket,
     0x97: UpdatePlayerGameTypePacket,
