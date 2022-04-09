@@ -27,7 +27,6 @@ import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
 import { Player } from "./player";
 import { procHacker } from "./proc";
-import { serverInstance } from "./server";
 import { proc } from "./symbols";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 

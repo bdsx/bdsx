@@ -3,7 +3,6 @@ import * as colors from 'colors';
 import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandMappedValue, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRawEnum, CommandRegistry, CommandSoftEnum, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
-import { serverInstance } from './bds/server';
 import { CommandParameterType } from './commandparam';
 import { emptyFunc } from './common';
 import { decay } from './decay';
