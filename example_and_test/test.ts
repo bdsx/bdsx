@@ -473,6 +473,7 @@ Tester.concurrency({
         cls.vector3.push(vec);
         clsvector.push(cls);
         clsvector.push(cls);
+        cls.destruct();
 
         const cloned = CxxVector.make(VectorClass).construct(clsvector);
         this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
@@ -482,6 +483,7 @@ Tester.concurrency({
         this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
+        clsvector.destruct();
     },
 
     map() {
