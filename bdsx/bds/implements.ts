@@ -1144,7 +1144,7 @@ Tag.setResolver(ptr=>{
 
 Tag.prototype.toString = makefunc.js([0x20], CxxString, {this:Tag, structureReturn: true});
 Tag.prototype.getId = makefunc.js([0x28], uint8_t, {this:Tag});
-Tag.prototype.equalsptr = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
+Tag.prototype.equals = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
 
 const EndTag$vftable = proc["EndTag::`vftable'"];
 const ByteTag$vftable = proc["ByteTag::`vftable'"];

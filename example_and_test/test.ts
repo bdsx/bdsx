@@ -208,6 +208,7 @@ Tester.concurrency({
     },
 
     bin() {
+        this.equals(bin.parse('0'), '', 'bin.parse("0")');
         this.equals(bin.make64(1, 0), bin64_t.one, 'bin.make64(1, 0)', bin.toString);
         this.equals(bin.make64(0, 0), bin64_t.zero, 'bin.make64(0, 0)', bin.toString);
         this.equals(bin.make64(-1, -1), bin64_t.minus_one, 'bin.make64(-1, -1)', bin.toString);
@@ -908,6 +909,8 @@ Tester.concurrency({
             const map = CompoundTag.allocate();
             const list = ListTag.allocate();
             list.push(str);
+
+            this.assert(list.equals(list), 'list.equals');
 
             for (let j=0;j<10;j++) {
                 map.set('barray', barray);

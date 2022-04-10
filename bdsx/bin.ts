@@ -188,6 +188,7 @@ export namespace bin {
                     idx++;
                     continue;
                 case 0x30: // zero start
+                    if (v.length === 1) return ''; // just '0'
                     idx++;
                     switch (v.charCodeAt(idx)) {
                     case 0x30: case 0x31: case 0x32: case 0x33: case 0x34:
