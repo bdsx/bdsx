@@ -2,6 +2,7 @@ import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
+import { events } from "../event";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -1041,7 +1042,6 @@ export class Actor extends AbstractClass {
         abstract();
     }
 }
-
 export class Mob extends Actor {
     /**
      * Applies knockback to the mob
@@ -1079,6 +1079,22 @@ export class Mob extends Actor {
     }
     setSpeed(speed: number): void {
         abstract();
+    }
+    protected hurtEffects_(sourceOrCause: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean {
+        abstract();
+    }
+    /**
+     * Shows hurt effects to the mob. Actually not hurt.
+     * Useful when change the health of the mob without triggering {@link events.entityHurt} event.
+     */
+    hurtEffects(damageCause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean;
+    hurtEffects(damageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean;
+    hurtEffects(sourceOrCause: ActorDamageCause | ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean {
+        const isSource = sourceOrCause instanceof ActorDamageSource;
+        const source = isSource ? sourceOrCause : ActorDamageSource.constructWith(sourceOrCause);
+        const retval = this.hurtEffects_(source, damage, knock, ignite);
+        if (!isSource) source.destruct();
+        return retval;
     }
 }
 
