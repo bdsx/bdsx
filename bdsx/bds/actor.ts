@@ -216,7 +216,11 @@ export class ActorDamageSource extends NativeClass{
     @nativeField(int32_t, 0x08)
     cause: int32_t;
 
+    /** @deprecated Use {@link create} instead. */
     static constructWith(cause: ActorDamageCause): ActorDamageSource {
+        return this.create(cause);
+    }
+    static create(cause: ActorDamageCause): ActorDamageSource {
         abstract();
     }
 
@@ -852,9 +856,8 @@ export class Actor extends AbstractClass {
     hurt(cause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean;
     hurt(sourceOrCause: ActorDamageSource|ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
         const isSource = sourceOrCause instanceof ActorDamageSource;
-        const source = isSource ? sourceOrCause : ActorDamageSource.constructWith(sourceOrCause);
+        const source = isSource ? sourceOrCause : ActorDamageSource.create(sourceOrCause);
         const retval = this.hurt_(source, damage, knock, ignite);
-        if(!isSource) source.destruct();
         return retval;
     }
     /**
@@ -1091,9 +1094,8 @@ export class Mob extends Actor {
     hurtEffects(damageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean;
     hurtEffects(sourceOrCause: ActorDamageCause | ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean {
         const isSource = sourceOrCause instanceof ActorDamageSource;
-        const source = isSource ? sourceOrCause : ActorDamageSource.constructWith(sourceOrCause);
+        const source = isSource ? sourceOrCause : ActorDamageSource.create(sourceOrCause);
         const retval = this.hurtEffects_(source, damage, knock, ignite);
-        if (!isSource) source.destruct();
         return retval;
     }
 }

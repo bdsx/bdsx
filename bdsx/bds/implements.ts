@@ -427,7 +427,7 @@ ActorDefinitionIdentifier.constructWith = function(type:string|number):ActorDefi
 };
 
 const ActorDamageSource$ActorDamageSource = procHacker.js("ActorDamageSource::ActorDamageSource", void_t, null, ActorDamageSource, int32_t);
-ActorDamageSource.constructWith = function (cause: ActorDamageCause): ActorDamageSource {
+ActorDamageSource.create = function (cause: ActorDamageCause): ActorDamageSource {
     const source = new ActorDamageSource(true);
     ActorDamageSource$ActorDamageSource(source, cause);
     return source;
