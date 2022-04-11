@@ -347,6 +347,8 @@ export const undecoratedSymbols = [
     'BlockLegacy::getCommandNames',
     'BlockLegacy::getRenderBlock',
     'BlockLegacy::getBlockEntityType',
+    'BlockLegacy::getDefaultState',
+    'BlockLegacy::tryGetStateFromLegacyData',
     'FarmBlock::transformOnFall',
     'ButtonBlock::use',
     'Dimension::getBlockSourceFromMainChunkSource',

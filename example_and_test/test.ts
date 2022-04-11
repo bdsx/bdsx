@@ -960,6 +960,8 @@ Tester.concurrency({
         this.equals(Block.create('minecraft:air')?.getName(), 'minecraft:air');
         this.equals(Block.create('minecraft:element_111')?.getName(), 'minecraft:element_111');
         this.equals(Block.create('minecraft:_no_block_'), null, 'minecraft:_no_block_ is not null');
+        this.assert(Block.create('dirt')!.equalsptr(Block.create('dirt')), 'dirt is not dirt');
+        this.assert(!Block.create('planks', 0)!.equalsptr(Block.create('planks', 1)), 'planks#0 is planks#1');
     },
 
     blob() {

@@ -897,25 +897,29 @@ BlockLegacy.prototype.getBlockItemId = procHacker.js("BlockLegacy::getBlockItemI
 BlockLegacy.prototype.getStateFromLegacyData = procHacker.js("BlockLegacy::getStateFromLegacyData", Block.ref(), {this:BlockLegacy}, uint16_t);
 
 BlockLegacy.prototype.getRenderBlock = procHacker.js("BlockLegacy::getRenderBlock", Block, {this:BlockLegacy});
+BlockLegacy.prototype.getDefaultState = procHacker.js("BlockLegacy::getDefaultState", Block, {this:BlockLegacy});
+BlockLegacy.prototype.tryGetStateFromLegacyData = procHacker.js("BlockLegacy::tryGetStateFromLegacyData", Block, {this:BlockLegacy}, uint16_t);
 BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Player, BlockPos, uint8_t);
 
 (Block.prototype as any)._getName = procHacker.js("Block::getName", HashedString, {this:Block});
 Block.create = function(blockName:string, data:number = 0):Block|null {
+    data |= 0;
+    if (data < 0 || data > 0x7fff) data = 0;
     const legacyptr = BlockTypeRegistry.lookupByName(blockName, false);
     const legacy = legacyptr.value();
-    legacyptr.dispose(); // it cannot delete `legacy` because it's WeakPtr
+    legacyptr.dispose(); // it does not delete `legacy` because it's WeakPtr
     if (legacy !== null) {
-        return legacy.getRenderBlock();
+        if (legacy.getBlockItemId() < 0x100) {
+            if (data === 0x7fff) {
+                return legacy.getDefaultState();
+            } else {
+                return legacy.tryGetStateFromLegacyData(data);
+            }
+        } else {
+            return legacy.tryGetStateFromLegacyData(data);
+        }
     }
-
-    // Old method
-    // the fallback of failing of the new method
-    // it may be meaningless
-    const itemStack = ItemStack.constructWith(blockName, 1, data);
-    const block = itemStack.block;
-    const isBlock = itemStack.isBlock();
-    itemStack.destruct();
-    return isBlock ? block : null;
+    return null;
 };
 Block.prototype.getDescriptionId = procHacker.js("Block::getDescriptionId", CxxString, {this:Block, structureReturn:true});
 Block.prototype.getRuntimeId = procHacker.js('Block::getRuntimeId', int32_t.ref(), {this:Block});
@@ -927,6 +931,7 @@ Block.prototype.use = procHacker.js("Block::use", bool_t, {this:Block}, Player, 
 BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {
+    if (block == null) throw Error('Block is null');
     const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0);
     const pk = UpdateBlockPacket.allocate();
     UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block.getRuntimeId(), 3);

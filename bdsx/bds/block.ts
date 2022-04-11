@@ -78,6 +78,12 @@ export class BlockLegacy extends NativeClass {
     use(subject: Player, blockPos: BlockPos, face: number): bool_t {
         abstract();
     }
+    getDefaultState():Block {
+        abstract();
+    }
+    tryGetStateFromLegacyData(data:uint16_t):Block {
+        abstract();
+    }
 }
 
 @nativeClass(null)
