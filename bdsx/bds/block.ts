@@ -114,7 +114,6 @@ export class Block extends NativeClass {
     static create(blockName:BlockId, data?: number):Block|null;
 
     /**
-     * minecraft: prefix recommended. that is a little more optimized
      * @return Block instance. No need to destruct
      */
     static create(blockName:string, data?: number):Block|null;
