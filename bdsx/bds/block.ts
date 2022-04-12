@@ -96,11 +96,11 @@ export class Block extends NativeClass {
     blockLegacy:BlockLegacy;
 
     /**
-     * @deprecated
+     * @deprecated no need to destruct. use `Block.create`
      */
     static constructWith(blockName:BlockId, data?: number):Block|null;
     /**
-     * @deprecated
+     * @deprecated no need to destruct. use `Block.create`
      */
     static constructWith(blockName:string, data?: number):Block|null;
     static constructWith(blockName:BlockId|string, data:number = 0):Block|null {
@@ -109,12 +109,12 @@ export class Block extends NativeClass {
 
     /**
      * @param blockName Formats like 'minecraft:wool'
-     * @return Block instance. No need to destruct
+     * @return Block instance
      */
     static create(blockName:BlockId, data?: number):Block|null;
 
     /**
-     * @return Block instance. No need to destruct
+     * @return Block instance
      */
     static create(blockName:string, data?: number):Block|null;
     static create(blockName:string, data:number = 0):Block|null {
