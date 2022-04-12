@@ -972,7 +972,7 @@ Tester.concurrency({
         }
         this.equals(
             NBT.stringify(NBT.parse('{"true":true,"false":false,"longArray":[L;1l,2l,3l,4l]}')),
-            '{"true":1b,"false":0b,"longArray":[1l,2l,3l,4l]}',
+            '{true:1b,false:0b,longArray:[1l,2l,3l,4l]}',
             'SNBT parse only feature');
     },
 

@@ -252,7 +252,7 @@ export class Int64Tag extends Tag {
         return bin.toString(this.data);
     }
     set dataAsString(data:string) {
-        this.data = bin.parse(data, 4);
+        this.data = bin.parse(data, 0, 4);
     }
 
     value():NBT.Int64 {
@@ -941,6 +941,7 @@ export namespace NBT {
     /** Converts a Stringified Named Binary Tag (SNBT) string into a Named Binary Tag (NBT) tag. */
     export function parse(text: string):NBT {
         let p = 0;
+        let lastNumberIsDecimal = false;
         function unexpectedToken():never {
             if (p === text.length) {
                 throw SyntaxError('Unexpected end of SNBT input');
@@ -972,6 +973,17 @@ export namespace NBT {
             const value = JSON.parse(text.substring(p, i)); // stripSlashes
             p = i;
             return value;
+        }
+        function readNameContinue():string {
+            const prev = p;
+            nonVariableCharacter.lastIndex = p + 1;
+            const res = nonVariableCharacter.exec(text);
+            if (res !== null) {
+                p = res.index;
+            } else {
+                p = text.length;
+            }
+            return text.substring(prev, p);
         }
         function checkToken(keyCode:number):void {
             skipSpace();
@@ -1009,8 +1021,10 @@ export namespace NBT {
                         p++;
                     } else if (chr === 0x2e) { // .
                         p++;
+                        lastNumberIsDecimal = true;
                         break;
                     } else {
+                        lastNumberIsDecimal = false;
                         break _notNumber;
                     }
                 }
@@ -1064,6 +1078,20 @@ export namespace NBT {
                 }
             }
         }
+        function readKeyContinue():string {
+            const chr = text.charCodeAt(p);
+            let key:string;
+            if (chr === 0x22) { // "
+                key = readStringContinue();
+            } else if (chr >= 0x80 || (0x41 <= chr && chr <= 0x5a) || (0x61 <= chr && chr < 0x7a) || chr === 0x24 || chr === 0x5f) {
+                // variable format
+                key = readNameContinue();
+            } else {
+                unexpectedToken();
+            }
+            passToken(0x3a); // :
+            return key;
+        }
         function readValue():NBT {
             skipSpace();
             const chr = text.charCodeAt(p);
@@ -1099,17 +1127,11 @@ export namespace NBT {
                 const obj:NBT.Compound = {};
                 p++;
                 skipSpace();
-                switch (text.charCodeAt(p)) {
-                case 0x7d: // }
+                if (text.charCodeAt(p) === 0x7d) {
                     p++;
                     return obj;
-                case 0x22: // "
-                    break;
-                default:
-                    unexpectedToken();
                 }
-                const key = readStringContinue();
-                passToken(0x3a); // :
+                const key = readKeyContinue();
                 obj[key] = readValue();
 
                 for (;;) {
@@ -1120,9 +1142,8 @@ export namespace NBT {
                         return obj;
                     case 0x2c: { // ,
                         p++;
-                        checkToken(0x22); // "
-                        const key = readStringContinue();
-                        passToken(0x3a); // :
+                        skipSpace();
+                        const key = readKeyContinue();
                         obj[key] = readValue();
                         break;
                     }
@@ -1149,22 +1170,23 @@ export namespace NBT {
                 const num = readNumberString();
                 switch (text.charCodeAt(p)) {
                 case 0x42: case 0x62: // B b
-                    p++; // byte
-                    return new NBT.Byte(+num); // byte
+                    p++;
+                    return new NBT.Byte(+num);
                 case 0x53: case 0x73: // S s
-                    p++; // short
-                    return new NBT.Short(+num); // short
+                    p++;
+                    return new NBT.Short(+num);
                 case 0x4c: case 0x6c: // L l
                     p++;
                     return new NBT.Int64(bin.parse(num, 10, 4));
                 case 0x46: case 0x66: // F f
                     p++;
-                    return new NBT.Float(+num); // float
+                    return new NBT.Float(+num);
                 case 0x44: case 0x64: // D d
                     p++;
-                    return new NBT.Double(+num); // float
+                    return new NBT.Double(+num);
                 default:
-                    return new NBT.Int(+num); // int
+                    if (lastNumberIsDecimal) return new NBT.Double(+num);
+                    return new NBT.Int(+num);
                 }
             }
             }
@@ -1191,6 +1213,8 @@ export namespace NBT {
 }
 
 const nonSpaceExp = /[^ \n\r\t]/g;
+const nonVariableCharacter = /[^a-zA-Z0-9_$\u0080-\uffff]/g;
+const validVariableCharacter = /^[a-zA-Z$_$\u0080-\uffff][a-zA-Z0-9_$\u0080-\uffff]*$/;
 
 function getBackslashCount(data:string, i:number):number {
     let backslashCount = -1;
@@ -1241,9 +1265,14 @@ class NBTWriter {
         for (const [k, _v] of map) {
             if (first) first = false;
             else this.data += ',';
-            this.data += '"';
-            this.data += addSlashes(k);
-            this.data += '":';
+            if (validVariableCharacter.test(k)) {
+                this.data += k;
+                this.data += ':';
+            } else {
+                this.data += '"';
+                this.data += addSlashes(k);
+                this.data += '":';
+            }
             this.any(_v);
         }
         this.data += '}';
@@ -1357,9 +1386,14 @@ class IndentedNBTWriter extends NBTWriter {
             if (first) first = false;
             else this.data += ',';
             this.data += this.indentLine;
-            this.data += '"';
-            this.data += addSlashes(k);
-            this.data += '": ';
+            if (validVariableCharacter.test(k)) {
+                this.data += k;
+                this.data += ': ';
+            } else {
+                this.data += '"';
+                this.data += addSlashes(k);
+                this.data += '": ';
+            }
             this.any(_v);
         }
         this.indentLine = parentLine;
