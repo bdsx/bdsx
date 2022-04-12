@@ -100,10 +100,6 @@ export class NetworkIdentifier extends NativeStruct implements Hashable {
     @nativeField(RakNet.AddressOrGUID)
     address:RakNet.AddressOrGUID;
 
-    constructor(allocate?:boolean) {
-        super(allocate);
-    }
-
     assignTo(target:VoidPointer):void {
         dll.vcruntime140.memcpy(target, this, NetworkHandler[NativeClass.contentSize]);
     }
