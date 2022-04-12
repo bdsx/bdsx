@@ -299,7 +299,12 @@ export declare class StructurePointer extends PrivatePointer {
     static readonly nativeCtor:unique symbol;
     static readonly nativeDtor:unique symbol;
     static [StructurePointer.contentSize]:number;
-    constructor(allocateItSelf?:boolean);
+    /** @deprecated it makes the null instance. use JS null instead */
+    constructor();
+    /**
+     * @param allocateItSelf null pointer if it's false. space is allocated if it's true
+     */
+    constructor(allocateItSelf:boolean);
 }
 
 /**
