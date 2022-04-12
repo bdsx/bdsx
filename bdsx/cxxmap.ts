@@ -111,6 +111,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
     size():number {
         return this.getUint64AsFloat(8);
     }
+    empty():boolean {
+        return this.size() === 0;
+    }
 
     abstract readonly key_comp:CxxLess<K>;
     abstract readonly componentType:CxxPairType<K, V>;

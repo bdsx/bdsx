@@ -1,5 +1,6 @@
 import { Block } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
+import { Form } from "bdsx/bds/form";
 import { NBT } from "bdsx/bds/nbt";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
@@ -17,7 +18,7 @@ command.register('sign', 'generate signed block').overload((params, origin, outp
         region.setBlock(blockpos, block);
         const blockActor = region.getBlockEntity(blockpos)!;
 
-        blockActor.load({
+        const nbt = {
             Text: 'be happy',
             Examples: { // it's not NBTs of the sign, it does not affect the sign.
                 ByteTag: NBT.byte(0),
@@ -41,6 +42,16 @@ command.register('sign', 'generate signed block').overload((params, origin, outp
                 IntArrayTag: NBT.intArray([1,2,3]),
                 IntArrayTag2: new Int32Array([1,2,3]),
             }
+        };
+        blockActor.load(nbt);
+
+        Form.sendTo(actor.getNetworkIdentifier(), {
+            type: 'form',
+            title: 'NBT',
+            buttons: [
+                { text: 'OK' }
+            ],
+            content: NBT.stringify(blockActor.save(), 4) // stringified NBT
         });
     }
 }, {});

@@ -11,7 +11,7 @@ import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack } from "bdsx/bds/inventory";
-import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
+import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
@@ -935,6 +935,45 @@ Tester.concurrency({
             this.equals(Object.keys(mapvalue).length, map.size(), 'Compound key count check');
             map.dispose();
         }
+
+        const nbtSample = {
+            int:123,
+            true:true,
+            false:false,
+            byte:NBT.byte(1),
+            short:NBT.short(2),
+            int2:NBT.int(3),
+            int64:NBT.int64(4),
+            string:'string',
+            list:[1,2,3,4,'1','2','3','4', [], {}],
+            emptyList:[],
+            byteArray:NBT.byteArray([1,2,3]),
+            emptyByteArray:NBT.byteArray([]),
+            intArray:NBT.intArray([1]),
+            emptyIntArray:NBT.intArray([]),
+            compound: {
+                compound: {'a':'a','b':'b','c':'c'},
+                0:0,
+                1:1,
+                2:2,
+            },
+            emptyCompound: {},
+            '\\':'backslash test\\',
+            '\\\\':'backslash test\\\\',
+            '\\\\\\':'backslash test\\\\\\',
+            '\\\"\\\\\\':'backslash test\\\\\\\"\\',
+        };
+
+        const snbt = NBT.stringify(nbtSample, 4);
+        const oldone = NBT.allocate(nbtSample);
+        const newone = NBT.allocate(NBT.parse(snbt));
+        if (!oldone.equals(newone)) {
+            this.error('SNBT converting mismatch');
+        }
+        this.equals(
+            NBT.stringify(NBT.parse('{"true":true,"false":false,"longArray":[L;1l,2l,3l,4l]}')),
+            '{"true":1b,"false":0b,"longArray":[1l,2l,3l,4l]}',
+            'SNBT parse only feature');
     },
 
     itemActor() {

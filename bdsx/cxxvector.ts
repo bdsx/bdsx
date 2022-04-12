@@ -479,6 +479,10 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         this._resize(newSizeBytes, oldCapBytes, begin, oldSizeBytes);
     }
 
+    empty():boolean {
+        return this.getBin64(0) === this.getBin64(8);
+    }
+
     size():number {
         const beginptr = this.getPointer(0);
         const endptr = this.getPointer(8);

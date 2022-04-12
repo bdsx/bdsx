@@ -1,6 +1,6 @@
-import { DimensionId } from "bdsx/bds/actor";
-import { Block, BlockSource } from "bdsx/bds/block";
+import { Block } from "bdsx/bds/block";
 import { BlockPos } from "bdsx/bds/blockpos";
+import { CommandAreaFactory } from "bdsx/bds/commandarea";
 import { command } from "bdsx/command";
 import { bedrockServer } from "bdsx/launcher";
 
@@ -15,7 +15,7 @@ command.register('furnace', 'generate named furnace').overload((params, origin, 
         const block = Block.create('minecraft:furnace')!;
         region.setBlock(blockpos, block);
 
-        const dimensionId = actor.getDimensionId();
+        const dimension = actor.getDimension();
 
         // change the block name per 1 sec
         let numberForCheckingUpdate = 1;
@@ -24,35 +24,22 @@ command.register('furnace', 'generate named furnace').overload((params, origin, 
                 clearInterval(interval);
                 return;
             }
-            const region = getBlockSource(dimensionId, blockpos);
-            if (region === null) {
-                // cannot access the furnace
+            const area = CommandAreaFactory.create(dimension).findArea(blockpos, blockpos, false);
+            if (area === null) {
+                // cannot access the furnace area
                 return;
             }
+            const region = area.blockSource;
             const blockActor = region.getBlockEntity(blockpos);
             if (blockActor === null) {
                 // no block actor, it seems it's destroyed
                 clearInterval(interval);
-                return;
+            } else {
+                blockActor.setCustomName('customname '+numberForCheckingUpdate); // set the custom name
+                numberForCheckingUpdate++;
+                region.getDimension()._sendBlockEntityUpdatePacket(blockpos); // send update packets, clients are not updated without this
             }
-            blockActor.setCustomName('customname '+numberForCheckingUpdate); // set the custom name
-            numberForCheckingUpdate++;
-            region.getDimension()._sendBlockEntityUpdatePacket(blockpos); // send update packets, clients are not updated without this
+            area.dispose();
         }, 1000);
     }
 }, {});
-
-/**
- * find the BlockSource that can access the specific block position
- */
-function getBlockSource(dimensionId:DimensionId, blockpos:BlockPos):BlockSource|null {
-    for (const player of bedrockServer.serverInstance.getPlayers()) {
-        if (player.getDimensionId() !== dimensionId) continue; // different dimension
-        const region = player.getRegion();
-        const chunk = region.getChunkAt(blockpos);
-        if (chunk === null) continue; // chunk is not accessible
-        if (!chunk.isFullyLoaded()) return null; // chunk is not loaded
-        return region;
-    }
-    return null;
-}

@@ -605,6 +605,8 @@ export const undecoratedSymbols = [
     'CommandOutputSender::sendToAdmins',
     'Command::run',
     'CommandOutput::~CommandOutput',
+    'CommandArea::~CommandArea',
+    'CommandAreaFactory::findArea',
     'ServerPlayer::getInputMode',
     'ServerPlayer::setInputMode',
     'mce::Blob::~Blob',

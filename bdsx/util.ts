@@ -260,6 +260,18 @@ export function getEnumKeys<T extends Record<string, number|string>>(enumType:T)
     return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
 }
 
+const REPLACE_MAP:Record<string, string> = {
+    '\0':'\\0',
+    '\r':'\\r',
+    '\n':'\\n',
+    '"':'\\"',
+    "'":"\\'",
+    "\\":"\\\\",
+};
+export function addSlashes(str:string):string {
+    return str.replace(/[\r\n"'\\]/g, chr=>REPLACE_MAP[chr]);
+}
+
 export const ESCAPE = "§";
 
 export const TextFormat = {
