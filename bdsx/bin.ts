@@ -220,7 +220,7 @@ export namespace bin {
                 }
             }
         }
-        if (radix < 2 || radix > 36) throw Error(`toString() radix argument must be between 2 and 36`);
+        if (radix < 2 || radix > 36) throw Error(`parse() radix argument must be between 2 and 36`);
 
         const values:number[] = [0];
         function mulRadix():void {

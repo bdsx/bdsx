@@ -252,7 +252,7 @@ export class Int64Tag extends Tag {
         return bin.toString(this.data);
     }
     set dataAsString(data:string) {
-        this.data = bin.parse(data, 0, 4);
+        this.data = bin.parse(data, 10, 4);
     }
 
     value():NBT.Int64 {
@@ -1121,7 +1121,6 @@ export namespace NBT {
                 default:
                     return readArrayContinue(readValue);
                 }
-                break;
             }
             case 0x7b: { // {
                 const obj:NBT.Compound = {};
@@ -1151,7 +1150,6 @@ export namespace NBT {
                         unexpectedToken();
                     }
                 }
-                break;
             }
             case 0x74: // t
                 p++;
