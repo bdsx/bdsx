@@ -1121,6 +1121,7 @@ export namespace NBT {
                 default:
                     return readArrayContinue(readValue);
                 }
+                break;
             }
             case 0x7b: { // {
                 const obj:NBT.Compound = {};
@@ -1150,6 +1151,7 @@ export namespace NBT {
                         unexpectedToken();
                     }
                 }
+                break;
             }
             case 0x74: // t
                 p++;
