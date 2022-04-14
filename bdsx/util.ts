@@ -260,7 +260,8 @@ export function getEnumKeys<T extends Record<string, number|string>>(enumType:T)
     return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
 }
 
-const REPLACE_MAP:Record<string, string> = {
+const ADDSLASHES_REPLACE_MAP:Record<string, string> = {
+    __proto__:null as any,
     '\0':'\\0',
     '\r':'\\r',
     '\n':'\\n',
@@ -268,8 +269,33 @@ const REPLACE_MAP:Record<string, string> = {
     "'":"\\'",
     "\\":"\\\\",
 };
+const STRIPSLASHES_REPLACE_MAP:Record<string, string> = {
+    __proto__:null as any,
+    '\\':'\\',
+    'n':'\n',
+    'r':'\r',
+    'b':'\b',
+    'v':'\v',
+    'f':'\f',
+    't':'\t',
+    '"':'"',
+    "'":"'",
+    '0':'\0',
+};
 export function addSlashes(str:string):string {
-    return str.replace(/[\r\n"'\\]/g, chr=>REPLACE_MAP[chr]);
+    return str.replace(/[\r\n"'\\]/g, chr=>ADDSLASHES_REPLACE_MAP[chr]);
+}
+
+export function stripSlashes(str:string):string {
+    return str.replace(/(?:\\([\\nrbvft"'0])|\\u([0-9]{4})|\\x([0-9]{2}))/g, (matched, escape, xcode, ucode)=>{
+        if (xcode != null) {
+            return String.fromCharCode(parseInt(xcode, 16));
+        } else if (ucode != null) {
+            return String.fromCharCode(parseInt(ucode, 16));
+        } else {
+            return STRIPSLASHES_REPLACE_MAP[escape];
+        }
+    });
 }
 
 export const ESCAPE = "§";

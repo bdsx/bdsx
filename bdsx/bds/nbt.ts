@@ -8,7 +8,7 @@ import { CxxVector } from "../cxxvector";
 import { AbstractClass, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
-import { addSlashes, hexn } from "../util";
+import { addSlashes, hexn, stripSlashes } from "../util";
 
 interface NBTStringifyable {
     stringify(indent?:number|string):string;
@@ -958,10 +958,11 @@ export namespace NBT {
                 p = text.length;
             }
         }
-        function readStringContinue():string {
-            let i = p+1;
+        function readStringContinue(endchr:string):string {
+            let i = p;
+            let next:number;
             for (;;) {
-                const next = text.indexOf('"', i);
+                next = text.indexOf(endchr, i);
                 if (next === -1) throw SyntaxError('Unexpected end of SNBT input');
                 i = next+1;
                 const backslash = getBackslashCount(text, next);
@@ -970,7 +971,7 @@ export namespace NBT {
                     break;
                 }
             }
-            const value = JSON.parse(text.substring(p, i)); // stripSlashes
+            const value = stripSlashes(text.substring(p, next));
             p = i;
             return value;
         }
@@ -1082,7 +1083,11 @@ export namespace NBT {
             const chr = text.charCodeAt(p);
             let key:string;
             if (chr === 0x22) { // "
-                key = readStringContinue();
+                p++;
+                key = readStringContinue('"');
+            } else if (chr === 0x27) { // '
+                p++;
+                key = readStringContinue("'");
             } else if (chr >= 0x80 || (0x41 <= chr && chr <= 0x5a) || (0x61 <= chr && chr < 0x7a) || chr === 0x24 || chr === 0x5f) {
                 // variable format
                 key = readNameContinue();
@@ -1097,7 +1102,11 @@ export namespace NBT {
             const chr = text.charCodeAt(p);
             switch (chr) {
             case 0x22: // "
-                return readStringContinue();
+                p++;
+                return readStringContinue('"');
+            case 0x27: // '
+                p++;
+                return readStringContinue("'");
             case 0x5b: { // [
                 p++;
                 skipSpace();

@@ -39,7 +39,7 @@ import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uin
 import { CxxStringWrapper } from "bdsx/pointer";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
-import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
+import { arrayEquals, getEnumKeys, hex, stripSlashes } from "bdsx/util";
 import { getRecentSentPacketId } from "./net-rawpacket";
 
 let sendidcheck = 0;
@@ -970,9 +970,10 @@ Tester.concurrency({
         if (!oldone.equals(newone)) {
             this.error('SNBT converting mismatch');
         }
+        this.equals(stripSlashes('\\\\\\"\\n\\r\\b\\v\\f\\t\\\'\\u0031\\x31'), '\\"\n\r\b\v\f\t\'11', 'stripSlashes');
         this.equals(
-            NBT.stringify(NBT.parse('{"true":true,"false":false,"longArray":[L;1l,2l,3l,4l]}')),
-            '{true:1b,false:0b,longArray:[1l,2l,3l,4l]}',
+            NBT.stringify(NBT.parse('{"true":true,false:false,\'string\':\'string\',"longArray":[L;1l,2l,3l,4l]}')),
+            '{true:1b,false:0b,string:"string",longArray:[1l,2l,3l,4l]}',
             'SNBT parse only feature');
     },
 
