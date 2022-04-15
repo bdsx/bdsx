@@ -1044,7 +1044,20 @@ export class Actor extends AbstractClass {
     wasLastHitByPlayer(): boolean {
         abstract();
     }
+    /**
+     * Fetches other entities nearby from the entity.
+     */
+    fetchNearbyActorsSorted(maxDistance: Vec3, filter: ActorType): DistanceSortedActor[] {
+        abstract();
+    }
 }
+
+@nativeClass(0x10)
+export class DistanceSortedActor extends NativeStruct {
+    @nativeField(Actor.ref())
+    entity: Actor;
+}
+
 export class Mob extends Actor {
     /**
      * Applies knockback to the mob

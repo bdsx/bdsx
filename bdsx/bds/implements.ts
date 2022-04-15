@@ -18,7 +18,7 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity } from "./actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
@@ -400,6 +400,7 @@ Actor.prototype.getLastHurtCause = procHacker.js("Actor::getLastHurtCause", int3
 Actor.prototype.getLastHurtDamage = procHacker.js("Actor::getLastHurtDamage", int32_t, {this:Actor});
 Actor.prototype.getLastHurtMob = procHacker.js("Actor::getLastHurtMob", Mob, {this:Actor});
 Actor.prototype.wasLastHitByPlayer = procHacker.js("Actor::wasLastHitByPlayer", bool_t, {this:Actor});
+Actor.prototype.fetchNearbyActorsSorted = procHacker.js("Actor::fetchNearbyActorsSorted", CxxVectorToArray.make(DistanceSortedActor), {this:Actor, structureReturn:true}, Vec3, int32_t);
 
 Mob.prototype.knockback = makefunc.js([0x898], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("Mob::getSpeed", float32_t, {this:Mob});
