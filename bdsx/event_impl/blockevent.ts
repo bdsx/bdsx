@@ -134,6 +134,8 @@ function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Pla
 const _onBlockDestructionStart = procHacker.hooking("BlockEventCoordinator::sendBlockDestructionStarted", void_t, null, StaticPointer, Player, BlockPos)(onBlockDestructionStart);
 
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, facing:number, actor:Actor, ignoreEntities:boolean):boolean {
+    const ret = _onBlockPlace(blockSource, block, blockPos, facing, actor, ignoreEntities);
+    if (!ret) return false;
     const event = new BlockPlaceEvent(actor as ServerPlayer, block, blockSource, blockPos);
     const canceled = events.blockPlace.fire(event) === CANCEL;
     decay(blockSource);
@@ -142,7 +144,7 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
     if (canceled) {
         return false;
     } else {
-        return _onBlockPlace(event.blockSource, event.block, event.blockPos, facing, event.player, ignoreEntities);
+        return ret;
     }
 }
 const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
