@@ -167,6 +167,17 @@ export class Vec3 extends NativeStruct {
         this.z = pos.z;
     }
 
+    distance(pos:Vec3|{x:number, y:number, z:number}):number {
+        return Math.sqrt(this.distanceSq(pos));
+    }
+
+    distanceSq(pos:Vec3|{x:number, y:number, z:number}):number {
+        const xdist = (this.x - pos.x);
+        const ydist = (this.y - pos.y);
+        const zdist = (this.z - pos.z);
+        return xdist*xdist + ydist*ydist + zdist*zdist;
+    }
+
     static create(x:number, y:number, z:number):Vec3 {
         const v = new Vec3(true);
         v.x = x;

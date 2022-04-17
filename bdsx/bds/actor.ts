@@ -1066,8 +1066,11 @@ export class Actor extends AbstractClass {
 export class DistanceSortedActor extends NativeStruct {
     @nativeField(Actor.ref())
     entity: Actor;
+    /** @deprecated use distanceSq */
+    @nativeField(float32_t, {ghost: true})
+    distance: float32_t;
     @nativeField(float32_t)
-    distance: number;
+    distanceSq: float32_t;
 }
 
 export class Mob extends Actor {
