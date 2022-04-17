@@ -1045,7 +1045,7 @@ export class Actor extends AbstractClass {
     wasLastHitByPlayer(): boolean {
         abstract();
     }
-    fetchNearbyActorsSorted_(maxDistance: Vec3, filter: ActorType): CxxVector<DistanceSortedActor> {
+    protected fetchNearbyActorsSorted_(maxDistance: Vec3, filter: ActorType): CxxVector<DistanceSortedActor> {
         abstract();
     }
     /**
