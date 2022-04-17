@@ -1045,7 +1045,7 @@ export class Actor extends AbstractClass {
     wasLastHitByPlayer(): boolean {
         abstract();
     }
-    protected fetchNearbyActorsSorted_(maxDistance: Vec3, filter: ActorType): CxxVector<DistanceSortedActor> {
+    fetchNearbyActorsSorted_(maxDistance: Vec3, filter: ActorType): CxxVector<DistanceSortedActor> {
         abstract();
     }
     /**
@@ -1053,7 +1053,11 @@ export class Actor extends AbstractClass {
      */
     fetchNearbyActorsSorted(maxDistance: Vec3, filter: ActorType): DistanceSortedActor[] {
         const vector = this.fetchNearbyActorsSorted_(maxDistance, filter);
-        const arr = vector.toArray();
+        const length = vector.size();
+        const arr = new Array(length);
+        for (let i = 0; i < length; i++) {
+            arr[i] = DistanceSortedActor.construct(vector.get(i));
+        }
         vector.destruct();
         return arr;
     }
