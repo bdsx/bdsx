@@ -3,7 +3,6 @@ import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { events } from "../event";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -1063,10 +1062,12 @@ export class Actor extends AbstractClass {
     }
 }
 
-@nativeClass(0x10)
+@nativeClass()
 export class DistanceSortedActor extends NativeStruct {
     @nativeField(Actor.ref())
     entity: Actor;
+    @nativeField(float32_t)
+    distance: number;
 }
 
 export class Mob extends Actor {
