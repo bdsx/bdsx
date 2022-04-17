@@ -624,6 +624,7 @@ export const undecoratedSymbols = [
     'Actor::getLastHurtCause',
     'ItemStackRequestPacket::getRequestBatch',
     'ItemStackRequestActionTransferBase::getSrc',
+    'Actor::fetchNearbyActorsSorted',
 ] as const;
 
 // decorated symbols
