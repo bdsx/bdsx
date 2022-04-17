@@ -1052,7 +1052,10 @@ export class Actor extends AbstractClass {
      * Fetches other entities nearby from the entity.
      */
     fetchNearbyActorsSorted(maxDistance: Vec3, filter: ActorType): DistanceSortedActor[] {
-        return this.fetchNearbyActorsSorted_(maxDistance, filter).toArray();
+        const vector = this.fetchNearbyActorsSorted_(maxDistance, filter);
+        const arr = vector.toArray();
+        vector.destruct();
+        return arr;
     }
 }
 
