@@ -575,6 +575,7 @@ export class Actor extends AbstractClass {
     }
     /**
      * Makes the entity dead
+     * @param damageSource ex) ActorDamageSource.create(ActorDamageCause.Lava)
      */
     die(damageSource: ActorDamageSource): void {
         abstract();

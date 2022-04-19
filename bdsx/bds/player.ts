@@ -1,6 +1,6 @@
 import { abstract, BuildPlatform } from "../common";
 import type { Abilities } from "./abilities";
-import { ActorUniqueID, DimensionId, Mob } from "./actor";
+import { ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
@@ -867,6 +867,10 @@ export class ServerPlayer extends Player {
     }
     setInputMode(mode: InputMode): void {
         abstract();
+    }
+    die(damageSource: ActorDamageSource): void {
+        this.setAttribute(AttributeId.Health, 0);
+        return super.die(damageSource);
     }
 }
 
