@@ -1064,9 +1064,6 @@ export class Mob extends Actor {
     setSprinting(shouldSprint:boolean):void {
         abstract();
     }
-    kill():void {
-        abstract();
-    }
 
     protected _sendInventory(shouldSelectSlot: boolean): void {
         abstract();

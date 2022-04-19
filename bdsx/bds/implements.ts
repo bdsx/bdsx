@@ -407,7 +407,6 @@ Mob.prototype.setSpeed = makefunc.js([0x8d0], void_t, {this:Mob}, float32_t);
 Mob.prototype.isSprinting = procHacker.js("Mob::isSprinting", bool_t, {this:Mob});
 Mob.prototype.sendArmorSlot = procHacker.js("Mob::sendArmorSlot", void_t, {this:Mob}, uint32_t);
 Mob.prototype.setSprinting = procHacker.js("Mob::setSprinting", void_t, {this:Mob}, bool_t);
-Mob.prototype.kill = procHacker.js("Mob::kill", void_t, {this:Mob});
 (Mob.prototype as any)._sendInventory = makefunc.js([0xa40], void_t, {this:Mob}, bool_t);
 (Mob.prototype as any).hurtEffects_ = makefunc.js([0x8e0], bool_t, {this:Mob}, ActorDamageSource, int32_t, bool_t, bool_t);
 
