@@ -574,6 +574,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Makes the entity dead
+     */
+    die(damageSource: ActorDamageSource): void {
+        abstract();
+    }
+    /**
      * Returns the entity's attribute map
      */
     getAttributes():BaseAttributeMap {
