@@ -193,8 +193,6 @@ events.command.on((cmd, origin, ctx)=>{
     case '/whoami':
         if (ctx.origin.isServerCommandOrigin()) {
             console.log('You are the server console');
-        } else if (ctx.origin.isScriptCommandOrigin()) {
-            console.log('You are the script engine');
         } else {
             console.log('You are '+origin);
 		}

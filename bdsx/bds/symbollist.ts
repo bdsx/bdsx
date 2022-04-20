@@ -1,7 +1,11 @@
-export const undecoratedSymbols = [
+
+export const undecoratedPrivateSymbols = [
     'std::thread::_Invoke<std::tuple<<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913> >,0>',
     '<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913>::operator()',
-    'ServerInstance::startServerThread',
+];
+
+export const undecoratedSymbols = [
+    'ServerInstanceEventCoordinator::sendServerThreadStarted',
     'ConsoleInputReader::getLine',
     'Level::createDimension',
     'Level::fetchEntity',
@@ -614,6 +618,27 @@ export const undecoratedSymbols = [
     'ItemStackRequestPacket::getRequestBatch',
     'ItemStackRequestActionTransferBase::getSrc',
     'Actor::fetchNearbyActorsSorted',
+    'Actor::getCarriedItem',
+    'Player::getCarriedItem',
+    'Actor::setOffhandSlot',
+    'Player::setOffhandSlot',
+    'ServerPlayer::setOffhandSlot',
+    'Actor::add',
+    'Player::add',
+    'Actor::isAlive',
+    'Mob::isAlive',
+    'Actor::getEquippedTotem',
+    'Player::getEquippedTotem',
+    'Actor::consumeTotem',
+    'Player::consumeTotem',
+    'Mob::setSpeed',
+    'Player::setSpeed',
+    'Mob::sendInventory',
+    'Player::sendInventory',
+    'ServerPlayer::sendInventory',
+    'Player::setPermissions',
+    'ServerPlayer::setPermissions',
+    'ServerInstanceEventCoordinator::sendEvent',
 ] as const;
 
 // decorated symbols
@@ -705,4 +730,5 @@ export const decoratedSymbols = [
     '??$set@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@CommandOutput@@QEAAXPEBDV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z',
     '??0Parser@CommandRegistry@@QEAA@AEBV1@H@Z',
     '?distanceTo@Actor@@QEBAMAEBVVec3@@@Z',
+    '?getSuccessCount@CommandOutput@@QEBAHXZ',
 ] as const;

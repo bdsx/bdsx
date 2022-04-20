@@ -5,7 +5,7 @@ import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
-import { proc, proc2 } from "./proc";
+import { proc } from "./proc";
 
 export enum JsonValueType {
     Null = 0,
@@ -224,10 +224,10 @@ export class JsonValue extends NativeClass {
     }
 }
 
-const jsonValueCtorWithType = makefunc.js(proc2['??0Value@Json@@QEAA@W4ValueType@1@@Z'], JsonValue, null, JsonValue, int32_t);
-const jsonValueCtorWithString = makefunc.js(proc2['??0Value@Json@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z'], JsonValue, null, JsonValue, CxxString);
-const jsonValueGetByInt = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, int32_t);
-const jsonValueGetByString = makefunc.js(proc2['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, makefunc.Utf8);
+const jsonValueCtorWithType = makefunc.js(proc['??0Value@Json@@QEAA@W4ValueType@1@@Z'], JsonValue, null, JsonValue, int32_t);
+const jsonValueCtorWithString = makefunc.js(proc['??0Value@Json@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z'], JsonValue, null, JsonValue, CxxString);
+const jsonValueGetByInt = makefunc.js(proc['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, int32_t);
+const jsonValueGetByString = makefunc.js(proc['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, makefunc.Utf8);
 const jsonValueGetMemberNames = makefunc.js(proc['Json::Value::getMemberNames'], CxxVector.make(CxxString), {this: JsonValue, structureReturn: true});
 const jsonValueResolveReference = makefunc.js(proc['Json::Value::resolveReference'], JsonValue, null, JsonValue, makefunc.Utf8, bool_t);
 JsonValue.prototype.isMember = makefunc.js(proc['Json::Value::isMember'], bool_t, {this: JsonValue}, makefunc.Utf8);

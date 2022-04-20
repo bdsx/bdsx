@@ -181,7 +181,7 @@ function onPacketSendInternal(handler:NetworkHandler, ni:NetworkIdentifier, pack
 bedrockServer.withLoading().then(()=>{
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x1f0,
+    procHacker.patching('hook-packet-raw', 'NetworkHandler::_sortAndPacketizeEvents', 0x1f3,
         asmcode.packetRawHook, Register.rax, true, [
             0x8B, 0xD6,                               // mov edx,esi
             0x48, 0x8D, 0x8D, 0xB8, 0x00, 0x00, 0x00, // lea rcx,qword ptr ss:[rbp+B8]
@@ -191,7 +191,7 @@ bedrockServer.withLoading().then(()=>{
 
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, ExtendedStreamReadResult, {name: 'onPacketBefore'}, ExtendedStreamReadResult, OnPacketRBP, int32_t);
-    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2f2,
+    procHacker.patching('hook-packet-before', 'NetworkHandler::_sortAndPacketizeEvents', 0x2f5,
         asmcode.packetBeforeHook, // original code depended
         Register.rax,
         true, [
@@ -218,7 +218,7 @@ bedrockServer.withLoading().then(()=>{
 
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, OnPacketRBP);
-    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x46f,
+    procHacker.patching('hook-packet-after', 'NetworkHandler::_sortAndPacketizeEvents', 0x472,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x48, 0x8B, 0x01, // mov rax,qword ptr ds:[rcx]

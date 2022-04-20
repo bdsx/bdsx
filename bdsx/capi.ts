@@ -1,6 +1,6 @@
 import { asmcode } from "./asm/asmcode";
 import { Config } from "./config";
-import { chakraUtil, NativePointer, VoidPointer } from "./core";
+import { AllocatedPointer, chakraUtil, NativePointer, StaticPointer, VoidPointer } from "./core";
 import { dll, ThreadHandle } from "./dll";
 import { makefunc } from "./makefunc";
 import { void_t } from "./nativetype";
@@ -47,5 +47,11 @@ export namespace capi {
     export function permanent<T>(v:T):T {
         chakraUtil.JsAddRef(v);
         return v;
+    }
+
+    export function permaUtf8(str:string):StaticPointer {
+        const ptr = AllocatedPointer.fromString(str);
+        chakraUtil.JsAddRef(ptr);
+        return ptr;
     }
 }

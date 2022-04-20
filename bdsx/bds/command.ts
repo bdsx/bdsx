@@ -3,7 +3,7 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
-import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
+import { AllocatedPointer, chakraUtil, StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxPair } from "../cxxpair";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
@@ -532,11 +532,11 @@ function paramsToVector(params?:CxxVector<CommandOutputParameter>|CommandOutputP
 export class CommandOutput extends NativeClass {
     @nativeField(int32_t)
     type:CommandOutputType;
-    @nativeField(int32_t, 0x28)
-    successCount:int32_t;
+    // @nativeField(int32_t, 0x28)
+    // successCount:int32_t;
 
     getSuccessCount():number {
-        return this.successCount;
+        abstract();
     }
     getType():CommandOutputType {
         abstract();
@@ -713,38 +713,38 @@ export enum CommandParameterOption {
 @nativeClass()
 export class CommandParameterData extends NativeClass {
     @nativeField(typeid_t)
-    tid:typeid_t<CommandRegistry>;
+    tid:typeid_t<CommandRegistry>; // 0x00
     @nativeField(VoidPointer)
-    parser:VoidPointer|null; // bool (CommandRegistry::*)(void *, CommandRegistry::ParseToken const &, CommandOrigin const &, int, std::string &,std::vector<std::string> &) const;
+    parser:VoidPointer|null; // 0x08, bool (CommandRegistry::*)(void *, CommandRegistry::ParseToken const &, CommandOrigin const &, int, std::string &,std::vector<std::string> &) const;
     @nativeField(CxxString)
-    name:CxxString;
+    name:CxxString; // 0x10
 
     /** @deprecated Use {@link enumNameOrPostfix} instead */
     @nativeField(VoidPointer, {ghost:true})
-    desc:VoidPointer|null;
+    desc:VoidPointer|null; // 0x30
     @nativeField(VoidPointer)
-    enumNameOrPostfix:VoidPointer|null; // char*
+    enumNameOrPostfix:VoidPointer|null; // 0x30, char*
 
     /** @deprecated Use {@link enumOrPostfixSymbol} instead */
     @nativeField(int32_t, {ghost:true})
-    unk56:int32_t;
+    unk56:int32_t; // 0x38
     @nativeField(int32_t)
-    enumOrPostfixSymbol:int32_t;
+    enumOrPostfixSymbol:int32_t; // 0x38
 
     @nativeField(int32_t)
-    type:CommandParameterDataType;
+    type:CommandParameterDataType; // 0x3c
     @nativeField(int32_t)
-    offset:int32_t;
+    offset:int32_t; // 0x40
     @nativeField(int32_t)
-    flag_offset:int32_t;
+    flag_offset:int32_t; // 0x44
     @nativeField(bool_t)
-    optional:bool_t;
+    optional:bool_t; // 0x48
 
     /** @deprecated Use {@link options} instead */
     @nativeField(bool_t, {ghost:true})
     pad73:bool_t;
     @nativeField(uint8_t)
-    options:CommandParameterOption;
+    options:CommandParameterOption; // 0x49
 }
 
 @nativeClass()
@@ -755,6 +755,7 @@ export class CommandVFTable extends NativeStruct {
     execute:VoidPointer|null;
 }
 
+const enumResults = new Set<string>();
 @nativeClass()
 class EnumResult extends NativeClass {
     @nativeField(int32_t, {ghost: true})
@@ -767,6 +768,13 @@ class EnumResult extends NativeClass {
     stringValue:CxxString;
     @nativeField(CxxString)
     token:CxxString;
+
+    [NativeType.ctor]():void {
+        enumResults.add(this.getAddressBin());
+    }
+    [NativeType.dtor]():void {
+        enumResults.delete(this.getAddressBin());
+    }
 }
 
 function passNativeTypeCtorParams<T>(type:Type<T>):[
@@ -818,21 +826,29 @@ function passNativeTypeCtorParams<T>(type:Type<T>):[
 /**
  * The command parameter type with the type converter
  */
-export abstract class CommandMappedValue<BaesType, NewType=BaesType> extends CommandParameterNativeType<BaesType> {
-    constructor(type:Type<BaesType>, symbol:string = type.symbol || type.name, name:string = type.name) {
+export abstract class CommandMappedValue<BaseType, NewType=BaseType> extends CommandParameterNativeType<BaseType> {
+    constructor(type:Type<BaseType>, symbol:string = type.symbol || type.name, name:string = type.name) {
         super(symbol, name, ...passNativeTypeCtorParams(type));
     }
 
-    abstract mapValue(value:BaesType):NewType;
+    abstract mapValue(value:BaseType):NewType;
 }
 
 abstract class CommandEnumBase<BaseType, NewType> extends CommandMappedValue<BaseType, NewType> {
+    readonly nameUtf8:StaticPointer;
+
+    constructor(type:Type<BaseType>, symbol?:string, name?:string) {
+        super(type, symbol, name);
+        this.nameUtf8 = capi.permaUtf8(this.name);
+    }
+
     getParser(): VoidPointer {
         return new VoidPointer;
     }
 }
 
 export abstract class CommandEnum<V> extends CommandEnumBase<EnumResult, V> {
+
     constructor(symbol:string, name?:string) {
         super(EnumResult, symbol, name || symbol);
     }
@@ -873,8 +889,10 @@ export class CommandRawEnum extends CommandEnum<string|number> {
         enumobj.parser = makefunc.np((registry, storage, tokenPtr, origin, version, error, errorParams) => {
             const ret = original(registry, storage, tokenPtr, origin, version, error, errorParams);
 
-            const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
-            storage.token = token.getText();
+            if (enumResults.delete(storage.getAddressBin())) {
+                const token = tokenPtr.getPointerAs(CommandRegistry.ParseToken);
+                storage.token = token.getText();
+            }
             return ret;
         }, bool_t, null, CommandRegistry, EnumResult, StaticPointer, CommandOrigin.ref(), int32_t, CxxString, CxxVector.make(CxxString));
         return true;
@@ -1146,14 +1164,13 @@ export class CommandRegistry extends HasTypeId {
 
         const sig = this.findCommand(name);
         if (sig === null) throw Error(`${name}: command not found`);
-        const overload = CommandRegistry.Overload.construct();
+        const overload = sig.overloads.prepare();
+        overload.construct();
         overload.commandVersion = bin.make64(1, 0x7fffffff);
         overload.allocator = allocator;
         overload.parameters.setFromArray(params);
         overload.commandVersionOffset = -1;
-        sig.overloads.push(overload);
-        this.registerOverloadInternal(sig, sig.overloads.back()!);
-        overload.destruct();
+        this.registerOverloadInternal(sig, overload);
 
         for (const param of params) {
             param.destruct();
@@ -1387,12 +1404,11 @@ export class Command extends NativeClass {
     /** @deprecated */
     @nativeField(int16_t, {ghost:true})
     u4:int16_t; // 0x1c
-    @nativeField(int16_t)
-    permissionLevel:int16_t; // 0x1c
+    @nativeField(uint8_t)
+    permissionLevel:uint8_t; // 0x1c
 
-    // IDA also shows this field but it seems everything has been working well without it, so I'm not sure if it's needed
-    // @nativeField(uint8_t)
-    // flags:uint8_t; // 0x1e
+    @nativeField(int16_t)
+    flags:int16_t; // 0x1e
 
     [NativeType.ctor]():void {
         this.vftable = null as any;
@@ -1400,7 +1416,7 @@ export class Command extends NativeClass {
         this.registry = null;
         this.commandSymbol = -1;
         this.permissionLevel = 5;
-        // this.flags = 0;
+        this.flags = 0;
     }
     [NativeType.dtor]():void {
         abstract();
@@ -1453,27 +1469,27 @@ export class Command extends NativeClass {
         options:CommandParameterOption = CommandParameterOption.None):CommandParameterData {
         const param = CommandParameterData.construct();
         param.tid.id = type_id(CommandRegistry, paramType).id;
+        param.enumNameOrPostfix = null;
         if (paramType instanceof CommandEnum) {
             if (enumNameOrPostfix != null) throw Error(`CommandEnum does not support postfix`);
-            enumNameOrPostfix = paramType.name;
+            param.enumNameOrPostfix = paramType.nameUtf8;
         } else if (paramType instanceof CommandSoftEnum) {
             // a soft enum is a string with autocompletions, for example, objectives in /scoreboard
             if (enumNameOrPostfix != null) throw Error(`CommandSoftEnum does not support postfix`);
-            enumNameOrPostfix = paramType.name;
+            param.enumNameOrPostfix = paramType.nameUtf8;
         } else {
             if (enumNameOrPostfix) {
                 if (paramType === int32_t) {
                     type = CommandParameterDataType.POSTFIX;
+                    param.enumNameOrPostfix = capi.permaUtf8(enumNameOrPostfix);
                 } else {
                     console.error(colors.yellow(`${paramType.name} does not support postfix`));
-                    enumNameOrPostfix = null;
                 }
             }
         }
         param.parser = CommandRegistry.getParser(paramType);
         param.name = name;
         param.type = type;
-        param.enumNameOrPostfix = enumNameOrPostfix != null ? AllocatedPointer.fromString(enumNameOrPostfix) : null;
 
         param.enumOrPostfixSymbol = -1;
         param.offset = offset;
@@ -1514,7 +1530,7 @@ export const CommandBlock = Command.Block;
 /** @deprecated use Command.MobEffect */
 export const CommandMobEffect = Command.MobEffect;
 
-// CommandOutput.prototype.getSuccessCount = procHacker.js('?getSuccessCount@CommandOutput@@QEBAHXZ', int32_t, {this:CommandOutput});
+CommandOutput.prototype.getSuccessCount = procHacker.js('?getSuccessCount@CommandOutput@@QEBAHXZ', int32_t, {this:CommandOutput});
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructWith = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
 CommandOutput.prototype.empty = procHacker.js('CommandOutput::empty', bool_t, {this:CommandOutput});
@@ -1542,7 +1558,7 @@ MinecraftCommands.getOutputType = procHacker.js('MinecraftCommands::getOutputTyp
 CommandRegistry.abstract({
     enumValues: [CxxVector.make(CxxString), 192],
     enums: [CxxVector.make(CommandRegistry.Enum), 216], // accessed in CommandRegistry::addEnumValuesToExisting
-    enumLookup: [CxxMap.make(CxxString, uint32_t), 288],
+    enumLookup: [CxxMap.make(CxxString, uint32_t), 288], // 0x120
     enumValueLookup: [CxxMap.make(CxxString, uint64_as_float_t), 304], // accessed in CommandRegistry::findEnumValue
     commandSymbols: [CxxVector.make(CommandRegistry.Symbol), 320], // accessed in CommandRegistry::findEnumValue
     signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344], // accessed in CommandRegistry::findCommand

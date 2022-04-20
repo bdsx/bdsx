@@ -288,11 +288,11 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
     }
     return _onEntityHurt(event.entity, event.damageSource, event.damage, knock, ignite);
 }
-const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, int32_t, bool_t, bool_t)(onEntityHurt);
+const _onEntityHurt = procHacker.hooking('Actor::hurt', bool_t, null, Actor, ActorDamageSource, float32_t, bool_t, bool_t)(onEntityHurt);
 
 function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, attributeBuffInfo:VoidPointer):boolean {
     const actor = Actor[makefunc.getFromParam](attributeDelegate, 0x20);
-    const event = new EntityHeathChangeEvent(actor!, oldHealth, newHealth);
+    const event = new EntityHeathChangeEvent(actor, oldHealth, newHealth);
     events.entityHealthChange.fire(event);
     attributeDelegate.setPointer(event.entity, 0x20);
     return _onEntityHealthChange(attributeDelegate, oldHealth, newHealth, attributeBuffInfo);
@@ -358,14 +358,6 @@ function onEntityCreated(actorEventCoordinator:VoidPointer, entity:Actor):void {
 }
 const _onEntityCreated = procHacker.hooking('ActorEventCoordinator::sendActorCreated', void_t, null, VoidPointer, Actor)(onEntityCreated);
 
-// function onEntityDeath(Script:ScriptCustomEventPacket, entity:Actor, actorDamageSource:ActorDamageSource, ActorType:number):boolean {
-//     const event = new EntityDeathEvent(entity, actorDamageSource, ActorType);
-//     console.log(`${entity} ${actorDamageSource} ${ActorType}`)
-//     events.entityCreated.fire(event);
-//     return _onEntityDeath(Script, event.entity, event.damageSource, event.ActorType);
-// }
-// const _onEntityDeath = procHacker.hooking('ScriptServerActorEventListener::onActorDeath', bool_t, null, ScriptCustomEventPacket, Actor, ActorDamageSource, int32_t)(onEntityDeath);
-
 function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCause>):boolean {
     const event = new PlayerAttackEvent(player, victim);
     const canceled = events.playerAttack.fire(event) === CANCEL;
@@ -377,15 +369,16 @@ function onPlayerAttack(player:Player, victim:Actor, cause:Wrapper<ActorDamageCa
 const _onPlayerAttack = procHacker.hooking("Player::attack", bool_t, null, Player, Actor, Wrapper.make(int32_t))(onPlayerAttack);
 
 events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
-    if (pk.transaction.type === ComplexInventoryTransaction.Type.NormalTransaction) {
-        const transaction = pk.transaction.data;
+    const transaction = pk.transaction;
+    if (transaction === null) return; // nullable
+    if (transaction.type === ComplexInventoryTransaction.Type.NormalTransaction) {
         const src = InventorySource.create(ContainerId.Inventory, InventorySourceType.ContainerInventory);
-        const actions = transaction.getActions(src);
+        const actions = transaction.data.getActions(src);
         if (actions.length === 1) {
             const player = ni.getActor()!;
-            const itemStack = player.getInventory().getItem(actions[0].slot, ContainerId.Inventory);
-            src.destruct();
-            const event = new PlayerDropItemEvent(player, itemStack, false, actions[0].slot);
+            const slot = actions[0].slot;
+            const itemStack = player.getInventory().getItem(slot, ContainerId.Inventory);
+            const event = new PlayerDropItemEvent(player, itemStack, false, slot);
             const canceled = events.playerDropItem.fire(event) === CANCEL;
             decay(itemStack);
             if (canceled) {

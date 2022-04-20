@@ -48,25 +48,13 @@ export abstract class Wrapper<T> extends NativeClass {
     static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
         const {offset} = info;
         const type = this;
-        let obj:VoidPointer|null = null;
 
-        function init(ptr:StaticPointer):void {
-            obj = ptr.getPointerAs(type, offset);
-            Object.defineProperty(ptr, key, {
-                get(){
-                    return obj;
-                },
-                set(v:Wrapper<any>){
-                    obj = v;
-                    ptr.setPointer(v, offset);
-                },
-            });
-        }
         builder.desc[key] = {
             configurable: true,
             get(this:StaticPointer) {
-                init(this);
-                return obj;
+                const value = this.getPointerAs(type, offset);
+                Object.defineProperty(this, key, { value });
+                return value;
             },
         };
     }

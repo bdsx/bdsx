@@ -1,5 +1,5 @@
 
-import { proc, proc2 } from './bds/symbols';
+import { proc } from './bds/symbols';
 import { CommandParameterType } from './commandparam';
 import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
@@ -116,6 +116,7 @@ export namespace NativeDescriptorBuilder {
         bitmask:[number,number]|null;
         ghost:boolean;
         noInitialize:boolean;
+        const:boolean;
     }
 }
 
@@ -253,20 +254,42 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     }
 
     static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
-        const {offset, bitmask, noInitialize} = info;
+        const {offset, bitmask, noInitialize, const: constValue} = info;
 
         const type = this;
         if (bitmask !== null) {
             if (!(type instanceof NativeType)) throw Error(`${this.name} does not support the bit mask`);
-            builder.desc[key] = {
-                get(this: StaticPointer) { return type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset); },
-                set(this: StaticPointer, value:any) { return type[NativeTypeFn.bitSetter](this, value, bitmask[0], bitmask[1], offset); },
-            };
+            if (constValue) {
+                builder.desc[key] = {
+                    configurable: true,
+                    get(this: StaticPointer) {
+                        const value = type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset);
+                        Object.defineProperty(this, key, {value});
+                        return value;
+                    },
+                };
+            } else {
+                builder.desc[key] = {
+                    get(this: StaticPointer) { return type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset); },
+                    set(this: StaticPointer, value:any) { return type[NativeTypeFn.bitSetter](this, value, bitmask[0], bitmask[1], offset); },
+                };
+            }
         } else {
-            builder.desc[key] = {
-                get(this: StaticPointer) { return type[NativeType.getter](this, offset); },
-                set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); },
-            };
+            if (constValue) {
+                builder.desc[key] = {
+                    configurable: true,
+                    get(this: StaticPointer) {
+                        const value = type[NativeType.getter](this, offset);
+                        Object.defineProperty(this, key, {value});
+                        return value;
+                    },
+                };
+            } else {
+                builder.desc[key] = {
+                    get(this: StaticPointer) { return type[NativeType.getter](this, offset); },
+                    set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); },
+                };
+            }
         }
 
         if (noInitialize) return;
@@ -518,7 +541,7 @@ export const float64_t = new NativeType<number>(
 export type float64_t = number;
 float64_t[makefunc.useXmmRegister] = true;
 
-const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
+const string_ctor = makefunc.js(proc['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
 const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], void_t, null, VoidPointer);
 
 const strbufCache:AllocatedPointer[] = [];

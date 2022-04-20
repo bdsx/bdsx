@@ -1,7 +1,7 @@
 import * as util from 'util';
 import { asmcode } from "./asm/asmcode";
 import { asm, Register, X64Assembler } from "./assembler";
-import { proc2 } from "./bds/symbols";
+import { proc } from './bds/symbols';
 import "./codealloc";
 import { abstract, Bufferable, emptyFunc, Encoding } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
@@ -28,7 +28,7 @@ function initFunctionMap():void {
     asmcode.uv_async_alloc = uv_async.alloc;
     asmcode.uv_async_post = uv_async.post;
     asmcode.uv_async_call = uv_async.call;
-    asmcode.vsnprintf = proc2.vsnprintf;
+    asmcode.vsnprintf = proc.vsnprintf;
 
     asmcode.js_null = chakraUtil.asJsValueRef(null);
     asmcode.js_undefined = chakraUtil.asJsValueRef(undefined);

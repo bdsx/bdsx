@@ -402,7 +402,7 @@ export class ItemStackBase extends NativeClass {
     }
 }
 
-@nativeClass(0x90)
+@nativeClass(0xa0)
 export class ItemStack extends ItemStackBase {
     static readonly EMPTY_ITEM: ItemStack = proc["ItemStack::EMPTY_ITEM"].as(ItemStack);
     /**

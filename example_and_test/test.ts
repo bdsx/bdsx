@@ -17,10 +17,10 @@ import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
 import { procHacker } from "bdsx/bds/proc";
-import { proc, proc2 } from "bdsx/bds/symbols";
+import { proc } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
-import { command } from "bdsx/command";
+import { command, CommandFieldOptions } from "bdsx/command";
 import { CommandParameterType } from "bdsx/commandparam";
 import { CommandResultType } from "bdsx/commandresult";
 import { AttributeName, CANCEL } from "bdsx/common";
@@ -45,22 +45,29 @@ import { getRecentSentPacketId } from "./net-rawpacket";
 let sendidcheck = 0;
 let chatCancelCounter = 0;
 
-function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>, string, any][], throughConsole?:boolean):Promise<void> {
-    const paramsobj:Record<string, CommandParameterType<any>> = {};
+function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean], string|null, any][], throughConsole?:boolean):Promise<void> {
+    const paramsobj:Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]> = {};
     const n = testcases.length;
     for (let i=0;i<n;i++) {
         paramsobj['arg'+i] = testcases[i][0];
     }
 
     const cmdname = 'testcommand_'+testname;
-    const cmdline = [cmdname, ...testcases.map(v=>v[1])].join(' ');
+    let cmdline = cmdname;
+    for (const testcase of testcases) {
+        const strparam = testcase[1];
+        if (strparam === null) continue;
+        cmdline += ' ';
+        cmdline += strparam;
+    }
 
     command.register(cmdname, 'command for test').overload((param, origin, output)=>{
         for (let i=0;i<n;i++) {
-            const [type, name, expected] = testcases[i];
+            const [opts, name, expected] = testcases[i];
             const actual = param['arg'+i];
             if (expected !== actual) {
                 output.error(`failed`);
+                const type = opts instanceof Array ? opts[0] : opts;
                 tester.equals(actual, expected, `type=${type.name}, value=${name} mismatched`);
                 return;
             }
@@ -117,7 +124,7 @@ tooHeavy.add(0xaf); // SubChunkRequestPacket
 Tester.concurrency({
     async nexttick() {
         let timer:NodeJS.Timer;
-        for (let i=0;i<10;i++) {
+        for (let i=0;i<2;i++) {
             await Promise.race([
                 new Promise<boolean>(resolve => process.nextTick(() => {
                     clearTimeout(timer);
@@ -136,19 +143,19 @@ Tester.concurrency({
     async globals() {
         const serverInstance = bedrockServer.serverInstance;
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
-        this.assert(serverInstance.vftable.equalsptr(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
+        this.assert(serverInstance.vftable.equalsptr(proc['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
         const networkHandler = bedrockServer.networkHandler;
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
-        this.assert(networkHandler.vftable.equalsptr(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
+        this.assert(networkHandler.vftable.equalsptr(proc['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
         this.assert(bedrockServer.minecraft.vftable.equalsptr(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
         this.assert(bedrockServer.commandOutputSender.vftable.equalsptr(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
 
-        this.assert(networkHandler.instance.vftable.equalsptr(proc2["??_7RakNetInstance@@6BConnector@@@"]),
+        this.assert(networkHandler.instance.vftable.equalsptr(proc["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
-        this.assert(networkHandler.instance.peer.vftable.equalsptr(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
+        this.assert(networkHandler.instance.peer.vftable.equalsptr(proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
         const shandle = bedrockServer.serverNetworkHandler;
@@ -157,6 +164,13 @@ Tester.concurrency({
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
+        [...bedrockServer.commandRegistry.enumValues];
+        [...bedrockServer.commandRegistry.enums].map(v=>v.name);
+        [...bedrockServer.commandRegistry.enumLookup.keys()];
+        [...bedrockServer.commandRegistry.enumValueLookup.keys()];
+        [...bedrockServer.commandRegistry.commandSymbols].map(v=>v.value);
+        [...bedrockServer.commandRegistry.softEnums].map(v=>v.name);
+        [...bedrockServer.commandRegistry.softEnumLookup.keys()];
     }
 }, {
     disasm() {
@@ -414,7 +428,7 @@ Tester.concurrency({
 
         a.destruct();
 
-        for (let i=0;i<10;i++) {
+        for (let i=0;i<2;i++) {
             const vec = CxxVector.make(CxxString).construct();
             vec.push("1111111122222222");
             this.equals(vec.toArray().join(','), '1111111122222222', 'vector push 1');
@@ -522,13 +536,13 @@ Tester.concurrency({
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
                 this.assert(ctx.origin.vftable.equalsptr(proc["ServerCommandOrigin::`vftable'"]), 'invalid origin');
-                this.assert(ctx.origin.getDimension().vftable.equalsptr(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
+                this.assert(ctx.origin.getDimension().vftable.equalsptr(proc['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const level = ctx.origin.getLevel();
-                this.assert(level.vftable.equalsptr(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
+                this.assert(level.vftable.equalsptr(proc['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
                 const players = level.getPlayers();
                 const size = players.length;
                 this.equals(size, 0, 'origin.getLevel().players.size is not zero');
@@ -556,6 +570,13 @@ Tester.concurrency({
         // command register test, parameter test
         await checkCommandRegister(this, 'cmdtest', [], true);
         await checkCommandRegister(this, 'cmdtest2', []);
+        await checkCommandRegister(this, 'cmdtest3', [
+            [CxxString, 'a', 'a'],
+        ]);
+        await checkCommandRegister(this, 'cmdtest4', [
+            [CxxString, 'a', 'a'],
+            [[CxxString, true], null, undefined],
+        ]);
     },
 
     async commandenum() {
@@ -582,12 +603,14 @@ Tester.concurrency({
         const gameModeEnum = command.rawEnum('GameMode');
         this.arrayEquals(gameModeEnum.getValues(), [ 'default', 'creative', 'survival', 'adventure', 'd', 'c', 's', 'a' ]);
 
-        await checkCommandRegister(this, 'raw', [
-            [command.rawEnum('GameMode'), 'default', 5], // Test for built-in enums with numeric values
-            [command.rawEnum('IntGameRule'), 'maxcommandchainlength', 'maxcommandchainlength'], // Test for built-in enums with strings
-            [command.rawEnum('EntityType'), 'minecraft:zombie', 'minecraft:zombie'], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to string)
-            [command.rawEnum('Enchant'), 'fire_protection', 'fire_protection'],
-        ]);
+        for (let i=0;i<2;i++) {
+            await checkCommandRegister(this, 'raw'+i, [
+                [command.rawEnum('GameMode'), 'default', 5], // Test for built-in enums with numeric values
+                [command.rawEnum('IntGameRule'), 'maxcommandchainlength', 'maxcommandchainlength'], // Test for built-in enums with strings
+                [command.rawEnum('EntityType'), 'minecraft:zombie', 'minecraft:zombie'], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to string)
+                [command.rawEnum('Enchant'), 'fire_protection', 'fire_protection'],
+            ]);
+        }
 
         // await checkCommandRegister('extends', [
         //     [command.enum('EntityType', {a: 0}), 'a', 0], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to number) and the new value 'a' as 0
@@ -752,14 +775,16 @@ Tester.concurrency({
                 }
 
                 if (actor !== null) {
-                    this.assert(actor.getDimension().vftable.equalsptr(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
+                    this.assert(actor.getDimension().vftable.equalsptr(proc['??_7OverworldDimension@@6BLevelListener@@@']),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
                     if (actor instanceof Player) {
                         const cmdlevel = actor.abilities.getCommandPermissionLevel();
                         this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');
+                        this.equals(actor.getCommandPermissionLevel(), cmdlevel, 'Invalid command permission level');
                         const playerlevel = actor.abilities.getPlayerPermissionLevel();
                         this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
+                        this.equals(actor.getPermissionLevel(), playerlevel, 'Invalid player permission level');
 
                         this.equals(actor.getCertificate().getXuid(), connectedXuid, 'xuid mismatch');
 

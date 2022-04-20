@@ -185,6 +185,33 @@ export class Tester {
         }
     }
 
+    static async consecutive(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
+        await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
+
+        logMessage(`node version: ${process.versions.node}`);
+        if (process.jsEngine != null) {
+            logMessage(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
+        }
+
+        const allTests = tests.map(test=>{
+            const list = Object.entries(test);
+            testcount += list.length;
+            return list;
+        });
+
+        for (const tests of allTests) {
+            for (const [subject, test] of tests) {
+                const tester = new Tester(subject);
+                try {
+                    await test.call(tester);
+                    tester._done(Tester.State.Passed);
+                } catch (err) {
+                    tester.processError(err);
+                }
+            }
+        }
+    }
+
     static async concurrency(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
         await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
 

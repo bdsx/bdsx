@@ -711,7 +711,7 @@ export class Actor extends AbstractClass {
     /**
      * Gets the entity component of bedrock scripting api
      *
-     * @deprecated bedrock scripting API will be removed.
+     * @deprecated bedrock scripting API is removed.
      */
     getEntity():IEntity {
         let entity:IEntity = (this as any).entity;
@@ -960,7 +960,7 @@ export class Actor extends AbstractClass {
     }
     /**
      * Gets the entity from entity component of bedrock scripting api
-     * @deprecated bedrock scripting API will be removed.
+     * @deprecated bedrock scripting API is removed.
      */
     static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
         const u = entity.__unique_id__;

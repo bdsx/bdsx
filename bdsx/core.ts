@@ -836,9 +836,6 @@ export declare namespace ipfilter {
 type ErrorListener = (err:Error)=>void;
 
 export declare namespace jshook {
-    export function init():void;
-    /** @deprecated */
-    export function init(onError:ErrorListener):void;
     export function setOnError(onError:ErrorListener):ErrorListener;
     export function getOnError():ErrorListener;
     export function fireError(err:Error):void;

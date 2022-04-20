@@ -3,6 +3,7 @@ import * as colors from 'colors';
 import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandMappedValue, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRawEnum, CommandRegistry, CommandSoftEnum, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
 import { procHacker } from './bds/proc';
+import { capi } from './capi';
 import { CommandParameterType } from './commandparam';
 import { emptyFunc } from './common';
 import { decay } from './decay';
@@ -55,7 +56,7 @@ export class CustomCommand extends Command {
 }
 CustomCommand.prototype[NativeType.dtor] = emptyFunc; // remove the inherited destructor
 
-interface CommandFieldOptions {
+export interface CommandFieldOptions {
     optional?:boolean;
     /** @deprecated Use {@link postfix} instead */
     description?:string;
@@ -255,8 +256,11 @@ export const command ={
     },
 };
 
-const customCommandDtor = makefunc.np(function(){
+const customCommandDtor = makefunc.np(function(delIt){
     this[NativeType.dtor]();
+    if (delIt & 1) {
+        capi.free(this);
+    }
 }, void_t, {this:CustomCommand, name:'CustomCommand::destructor', crossThread: true}, int32_t);
 
 bedrockServer.withLoading().then(()=>{

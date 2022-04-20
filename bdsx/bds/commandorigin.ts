@@ -56,7 +56,7 @@ export class CommandOrigin extends AbstractClass {
         return this.vftable.equalsptr(ServerCommandOrigin_vftable);
     }
     /**
-     * @deprecated bedrock scripting API will be removed.
+     * @deprecated bedrock scripting API is removed.
      */
     isScriptCommandOrigin():boolean {
         return false; // this.vftable.equalsptr(ScriptCommandOrigin_vftable);
@@ -157,17 +157,12 @@ export class VirtualCommandOrigin extends CommandOrigin {
     }
 }
 
+/**
+ * @deprecated bedrock scripting API is removed.
+ */
 @nativeClass(null)
 export class ScriptCommandOrigin extends PlayerCommandOrigin {
-    // struct VFTable
-    // {
-    //     void (*destructor)(ScriptCommandOrigin*);
-    //     Level* (*getLevel)(ScriptCommandOrigin*);
-    // };
-    // VFTable* vftable;
 }
-
-// const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 
 @nativeClass(0x48)
 export class ServerCommandOrigin extends CommandOrigin {

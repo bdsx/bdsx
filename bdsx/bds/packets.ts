@@ -481,9 +481,9 @@ export class UpdateAttributesPacket extends Packet {
 @nativeClass(null)
 export class InventoryTransactionPacket extends Packet {
     @nativeField(uint32_t)
-    legacyRequestId: uint32_t;
+    legacyRequestId: uint32_t; // 0x30
     @nativeField(ComplexInventoryTransaction.ref(), 0x50)
-    transaction: ComplexInventoryTransaction;
+    transaction: ComplexInventoryTransaction|null;
 }
 
 @nativeClass(null)

@@ -34,7 +34,7 @@ export interface NativeClassType<T extends NativeClass> extends Type<T> {
     [fieldmap]:Record<keyof any, NativeFieldInfo>;
     [isSealed]:boolean;
     [isNativeClass]:true;
-    [resolver]?(ptr:StaticPointer|null):any;
+    [resolver]?(ptr:StaticPointer|null, type:NativeClassType<T>):any;
     construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T;
     allocate<T>(this:new()=>T, copyFrom?:T|null):T;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
@@ -209,6 +209,7 @@ class StructureDefinition {
         let relative:number|undefined;
         let ghost = false;
         let noInitialize = false;
+        let constValue = false;
         if (fieldOffset != null) {
             if (typeof fieldOffset === 'number') {
                 offset = fieldOffset;
@@ -221,6 +222,7 @@ class StructureDefinition {
                 }
                 bitField = opts.bitMask;
                 ghost = opts.ghost || false;
+                constValue = opts.const || false;
                 if (ghost) noInitialize = true;
                 else noInitialize = opts.noInitialize || false;
             }
@@ -240,7 +242,7 @@ class StructureDefinition {
             if (bitField != null) {
                 throw Error(`${type.name} does not support the bit mask`);
             }
-            this.fields[key] = {type, offset, ghost, noInitialize, bitmask:null};
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask:null, const:constValue};
             if (!ghost) this.eof = null;
         } else {
             let bitmask:[number, number]|null = null;
@@ -273,7 +275,7 @@ class StructureDefinition {
                 }
                 nextOffset = offset + sizeofType;
             }
-            this.fields[key] = {type, offset, ghost, noInitialize, bitmask};
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask, const:constValue};
             if (!ghost && this.eof !== null && nextOffset > this.eof) {
                 this.eof = nextOffset;
             }
@@ -319,7 +321,7 @@ export class NativeClass extends StructurePointer {
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](from!);
     }
-    static [resolver]?(ptr:StaticPointer|null):any;
+    static [resolver]?(this:NativeClassType<NativeClass>, ptr:StaticPointer|null):any;
 
     static [NativeType.ctor](ptr:StaticPointer):void {
         ptrAs(ptr, this)[NativeType.ctor]();
@@ -495,11 +497,12 @@ export class NativeClass extends StructurePointer {
         if (ptr == null) return null;
         return ptr.as(this);
     }
-    static setResolver<T extends NativeClass>(this:NativeClassType<T>, fn:(ptr:StaticPointer|null)=>T|null):void {
-        this[makefunc.getter] = resolverGetter;
-        this[makefunc.getFromParam] = resolverGetFromParam;
-        this[resolver] = fn;
-        this.from = fn;
+    static setResolver<T extends NativeClass>(this:new()=>T, fn:(this:NativeClassType<T>, ptr:StaticPointer|null)=>T|null):void {
+        const cls = this as NativeClassType<T>;
+        cls[makefunc.getter] = resolverGetter;
+        cls[makefunc.getFromParam] = resolverGetFromParam;
+        cls[resolver] = fn;
+        cls.from = fn;
     }
 
     protected _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
@@ -596,10 +599,10 @@ export class NativeStruct extends NativeClass {
 }
 
 function resolverGetter(this:NativeClassType<any>, ptr:StaticPointer, offset?:number):any {
-    return this[resolver]!(ptr.add(offset))!;
+    return this[resolver]!(ptr.add(offset), this)!;
 }
 function resolverGetFromParam(this:NativeClassType<any>, stackptr:StaticPointer, offset?:number):any {
-    return this[resolver]!(stackptr.getNullablePointer(offset));
+    return this[resolver]!(stackptr.getNullablePointer(offset), this);
 }
 
 function genCallCtorCopy():(this:NativeClass, other:NativeClass)=>void {
@@ -646,6 +649,10 @@ export interface NativeFieldOptions {
      * But it has space unlike ghost
      */
     noInitialize?:boolean;
+    /**
+     * read once at the first access and reuse it.
+     */
+    const?:boolean;
 }
 
 export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|number|null, bitMask?:number|null) {
@@ -746,7 +753,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
 
         let off = 0;
         for (let i = 0; i < count; i++) {
-            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false, noInitialize:false});
+            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false, noInitialize:false,const:false});
             off += itemSize;
         }
         class NativeArrayImpl extends NativeArray<T> {
