@@ -316,7 +316,7 @@ function _launch(asyncResolve:()=>void):void {
                 events.errorFire(err);
             }
         }, void_t, {name: 'hook of ScriptEngine::startScriptLoading'}, VoidPointer),
-        [Register.rcx], []);
+        [Register.rcx, Register.rdx], []);
 
     procHacker.hookingRawWithCallOriginal('Minecraft::startLeaveGame',
         makefunc.np((mc, b)=>{
