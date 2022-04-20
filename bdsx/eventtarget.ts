@@ -2,31 +2,11 @@
 import { CANCEL } from './common';
 import { remapAndPrintError } from './source-map-support';
 
-/** @deprecated unusing */
-export interface CapsuledEvent<T extends (...args: any[]) => any> {
-    /**
-     * return true if there are no connected listeners
-     */
-    isEmpty(): boolean;
-    /**
-     * add listener
-     */
-    on(listener: T): void;
-    onFirst(listener: T): void;
-    onLast(listener: T): void;
-    /**
-     * add listener before needle
-     */
-    onBefore(listener: T, needle: T): void;
-    /**
-     * add listener after needle
-     */
-    onAfter(listener: T, needle: T): void;
-    remove(listener: T): boolean;
-}
+type ReturnPromise<T extends (...args: any[]) => (number|CANCEL|void|Promise<void>)> =
+    T extends (...args: infer ARGS) => infer RET ? (...args:ARGS)=>(RET|Promise<void>) : never;
 
-export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<void>)> implements CapsuledEvent<T> {
-    private readonly listeners: T[] = [];
+export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<void>)> {
+    private readonly listeners: ReturnPromise<T>[] = [];
 
     isEmpty(): boolean {
         return this.listeners.length === 0;
@@ -35,40 +15,40 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
     /**
      * cancel event if it returns non-undefined value
      */
-    on(listener: T): void {
+    on(listener: ReturnPromise<T>): void {
         this.listeners.push(listener);
     }
 
     once(listener: T): void {
         const that = this;
         function callback(...args:any[]):any{
-            that.remove(callback as T);
+            that.remove(callback as ReturnPromise<T>);
             return listener(...args);
         }
-        this.listeners.push(callback as T);
+        this.listeners.push(callback as ReturnPromise<T>);
     }
 
-    onFirst(listener: T): void {
+    onFirst(listener: ReturnPromise<T>): void {
         this.listeners.unshift(listener);
     }
 
-    onLast(listener: T): void {
+    onLast(listener: ReturnPromise<T>): void {
         this.listeners.push(listener);
     }
 
-    onBefore(listener: T, needle: T): void {
+    onBefore(listener: ReturnPromise<T>, needle: ReturnPromise<T>): void {
         const idx = this.listeners.indexOf(needle);
         if (idx === -1) throw Error('needle not found');
         this.listeners.splice(idx, 0, listener);
     }
 
-    onAfter(listener: T, needle: T): void {
+    onAfter(listener: ReturnPromise<T>, needle: ReturnPromise<T>): void {
         const idx = this.listeners.indexOf(needle);
         if (idx === -1) throw Error('needle not found');
         this.listeners.splice(idx + 1, 0, listener);
     }
 
-    remove(listener: T): boolean {
+    remove(listener: ReturnPromise<T>): boolean {
         const idx = this.listeners.indexOf(listener);
         if (idx === -1) return false;
         this.listeners.splice(idx, 1);
@@ -78,7 +58,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
     /**
      * return value if it canceled
      */
-    private _fireWithoutErrorHandling(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
+    private _fireWithoutErrorHandling(...v: Parameters<T>): ReturnType<T> | undefined {
         for (const listener of this.listeners.slice()) {
             try {
                 const ret = listener(...v);
@@ -101,7 +81,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
     /**
      * return value if it canceled
      */
-    fire(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
+    fire(...v: Parameters<T>): ReturnType<T> | undefined {
         for (const listener of this.listeners.slice()) {
             try {
                 const ret = listener(...v);
@@ -129,7 +109,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
         }
     }
 
-    allListeners(): IterableIterator<T> {
+    allListeners(): IterableIterator<ReturnPromise<T>> {
         return this.listeners.values();
     }
 
@@ -142,7 +122,6 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
 
     public static errorHandler = new Event<(error:any)=>void|CANCEL>();
 }
-
 export class EventEx<T extends (...args: any[]) => any> extends Event<T> {
     protected onStarted(): void {
         // empty
@@ -151,11 +130,11 @@ export class EventEx<T extends (...args: any[]) => any> extends Event<T> {
         // empty
     }
 
-    on(listener: T): void {
+    on(listener: ReturnPromise<T>): void {
         if (this.isEmpty()) this.onStarted();
         super.on(listener);
     }
-    remove(listener: T): boolean {
+    remove(listener: ReturnPromise<T>): boolean {
         if (!super.remove(listener)) return false;
         if (this.isEmpty()) this.onCleared();
         return true;
