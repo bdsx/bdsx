@@ -532,9 +532,11 @@ function paramsToVector(params?:CxxVector<CommandOutputParameter>|CommandOutputP
 export class CommandOutput extends NativeClass {
     @nativeField(int32_t)
     type:CommandOutputType;
+    @nativeField(int32_t, 0x28)
+    successCount:int32_t;
 
     getSuccessCount():number {
-        abstract();
+        return this.successCount;
     }
     getType():CommandOutputType {
         abstract();
@@ -1512,7 +1514,7 @@ export const CommandBlock = Command.Block;
 /** @deprecated use Command.MobEffect */
 export const CommandMobEffect = Command.MobEffect;
 
-CommandOutput.prototype.getSuccessCount = procHacker.js('CommandOutput::getSuccessCount', int32_t, {this:CommandOutput});
+// CommandOutput.prototype.getSuccessCount = procHacker.js('?getSuccessCount@CommandOutput@@QEBAHXZ', int32_t, {this:CommandOutput});
 CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructWith = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
 CommandOutput.prototype.empty = procHacker.js('CommandOutput::empty', bool_t, {this:CommandOutput});

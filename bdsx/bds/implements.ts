@@ -247,7 +247,7 @@ Actor.prototype.addTag = procHacker.js("Actor::addTag", bool_t, {this:Actor}, Cx
 Actor.prototype.hasTag = procHacker.js("Actor::hasTag", bool_t, {this:Actor}, CxxString);
 Actor.prototype.despawn = procHacker.js("Actor::despawn", void_t, {this:Actor});
 Actor.prototype.removeTag = procHacker.js("Actor::removeTag", bool_t, {this:Actor}, CxxString);
-Actor.prototype.getPosition = procHacker.js("Actor::getPos", Vec3, {this:Actor});
+Actor.prototype.getPosition = procHacker.js("Actor::getPosition", Vec3, {this:Actor});
 Actor.prototype.getFeetPos = function ():Vec3 {
     return CommandUtils.getFeetPos(this);
 };
@@ -360,7 +360,7 @@ Actor.prototype.load = function(tag:CompoundTag|NBT.Compound):void {
 
 (Actor.prototype as any).hurt_ = procHacker.js("Actor::hurt", bool_t, {this:Actor}, ActorDamageSource, int32_t, bool_t, bool_t);
 
-Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAA_NW4ActorFlags@@_N@Z", bool_t, {this:Actor}, int32_t, bool_t);
+Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAAXW4ActorFlags@@_N@Z", void_t, {this:Actor}, int32_t, bool_t);
 Actor.prototype.getStatusFlag = procHacker.js("?getStatusFlag@Actor@@QEBA_NW4ActorFlags@@@Z", bool_t, {this:Actor}, int32_t);
 
 Actor.prototype.getLevel = procHacker.js("Actor::getLevel", Level, {this:Actor});
@@ -868,7 +868,7 @@ PlayerInventory.prototype.getFirstEmptySlot = procHacker.js("PlayerInventory::ge
 PlayerInventory.prototype.getHotbarSize = procHacker.js("PlayerInventory::getHotbarSize", int32_t, {this:PlayerInventory});
 PlayerInventory.prototype.getItem = procHacker.js("PlayerInventory::getItem", ItemStack, {this:PlayerInventory}, int32_t, int32_t);
 PlayerInventory.prototype.getSelectedItem = procHacker.js("PlayerInventory::getSelectedItem", ItemStack, {this:PlayerInventory});
-PlayerInventory.prototype.getSlots = procHacker.js("PlayerInventory::getSlots", CxxVector.make(ItemStack.ref()), {this:PlayerInventory, structureReturn:true});
+// PlayerInventory.prototype.getSlots = procHacker.js("PlayerInventory::getSlots", CxxVector.make(ItemStack.ref()), {this:PlayerInventory, structureReturn:true});
 PlayerInventory.prototype.selectSlot = procHacker.js("PlayerInventory::selectSlot", void_t, {this:PlayerInventory}, int32_t, int32_t);
 PlayerInventory.prototype.setItem = procHacker.js("PlayerInventory::setItem", void_t, {this:PlayerInventory}, int32_t, ItemStack, int32_t, bool_t);
 PlayerInventory.prototype.setSelectedItem = procHacker.js("PlayerInventory::setSelectedItem", void_t, {this:PlayerInventory}, ItemStack);
@@ -928,7 +928,7 @@ Block.prototype.getBlockEntityType = procHacker.js('Block::getBlockEntityType', 
 Block.prototype.hasBlockEntity = procHacker.js('Block::hasBlockEntity', bool_t, {this:Block});
 Block.prototype.use = procHacker.js("Block::use", bool_t, {this:Block}, Player, BlockPos, uint8_t);
 
-(BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@H@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t);
+(BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@HPEAVActor@@@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t, Actor);
 BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
 const UpdateBlockPacket$UpdateBlockPacket = procHacker.js("??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z", void_t, null, UpdateBlockPacket, BlockPos, uint32_t, uint32_t, uint8_t);
 BlockSource.prototype.setBlock = function(blockPos:BlockPos, block:Block):boolean {

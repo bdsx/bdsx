@@ -864,9 +864,8 @@ export class Actor extends AbstractClass {
      * Changes a specific status flag of the entity
      * @remarks Most of the time it will be reset by ticking
      *
-     * @returns {boolean} Whether the flag has been changed successfully
      */
-    setStatusFlag(flag:ActorFlags, value:boolean):boolean {
+    setStatusFlag(flag:ActorFlags, value:boolean):void {
         abstract();
     }
     /**

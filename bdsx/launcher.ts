@@ -189,7 +189,7 @@ function _launch(asyncResolve:()=>void):void {
         decay(bedrockServer.rakPeer);
         decay(bedrockServer.commandOutputSender);
     }, void_t);
-    asmcode.gameThreadInner = proc['<lambda_5d63f534eeadf9e385a3ddce5663beb8>::operator()'];
+    asmcode.gameThreadInner = proc['<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
 
     // hook game thread
@@ -197,7 +197,7 @@ function _launch(asyncResolve:()=>void):void {
 
     procHacker.patching(
         'hook-game-thread',
-        'std::thread::_Invoke<std::tuple<<lambda_5d63f534eeadf9e385a3ddce5663beb8> >,0>', // caller of ServerInstance::_update
+        'std::thread::_Invoke<std::tuple<<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913> >,0>', // caller of ServerInstance::_update
         6,
         asmcode.gameThreadHook, // original depended
         Register.rax,
@@ -213,26 +213,26 @@ function _launch(asyncResolve:()=>void):void {
     procHacker.hookingRawWithCallOriginal('ServerInstance::ServerInstance', asmcode.ServerInstance_ctor_hook, [Register.rcx, Register.rdx, Register.r8], []);
 
     // it removes errors when run commands on shutdown.
-    procHacker.nopping('skip-command-list-destruction', 'ScriptEngine::~ScriptEngine', 0x7d, [
-        0x48, 0x8D, 0x4B, 0x78,      // lea rcx,qword ptr ds:[rbx+78]
-        0xE8, 0x6A, 0xF5, 0xFF, 0xFF, // call <bedrock_server.public: __cdecl std::deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >::~deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >(void) __ptr64>
-    ], [5, 9]);
+    // procHacker.nopping('skip-command-list-destruction', 'ScriptEngine::~ScriptEngine', 0x7d, [
+    //     0x48, 0x8D, 0x4B, 0x78,      // lea rcx,qword ptr ds:[rbx+78]
+    //     0xE8, 0x6A, 0xF5, 0xFF, 0xFF, // call <bedrock_server.public: __cdecl std::deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >::~deque<struct ScriptCommand,class std::allocator<struct ScriptCommand> >(void) __ptr64>
+    // ], [5, 9]);
 
     // enable script
-    procHacker.nopping('force-enable-script', 'MinecraftServerScriptEngine::onServerThreadStarted', 0x3E, [
-        0xE8, 0xFF, 0xFF, 0xFF, 0xFF,       // call <bedrock_server.public: static bool __cdecl ScriptEngine::isScriptingEnabled(void)>
-        0x84, 0xC0,                         // test al,al
-        0x0F, 0x84, 0xFF, 0xFF, 0xFF, 0xFF, // je bedrock_server.7FF7345226F3
-        0x48, 0x8B, 0x16,                   // mov rdx,qword ptr ds:[rsi]
-        0x48, 0x8B, 0xCE,                   // mov rcx,rsi
-        0xFF, 0x92, 0x88, 0x04, 0x00, 0x00, // call qword ptr ds:[rdx+488]
-        0x48, 0x8B, 0xC8,                   // mov rcx,rax
-        0xE8, 0xff, 0xff, 0xff, 0xff,       // call <bedrock_server.public: class Experiments & __ptr64 __cdecl LevelData::getExperiments(void) __ptr64>
-        0x48, 0x8B, 0xC8,                   // mov rcx,rax
-        0xE8, 0xFF, 0xFF, 0xFF, 0xFF,       // call <bedrock_server.public: bool __cdecl Experiments::Scripting(void)const __ptr64>
-        0x84, 0xC0,                         // test al,al
-        0x0F, 0x84, 0xff, 0x01, 0x00, 0x00, // je bedrock_server.7FF658BDDB5F
-    ], [1, 5, 9, 13, 16, 20, 29, 33, 37, 41]);
+    // procHacker.nopping('force-enable-script', 'MinecraftServerScriptEngine::onServerThreadStarted', 0x3E, [
+    //     0xE8, 0xFF, 0xFF, 0xFF, 0xFF,       // call <bedrock_server.public: static bool __cdecl ScriptEngine::isScriptingEnabled(void)>
+    //     0x84, 0xC0,                         // test al,al
+    //     0x0F, 0x84, 0xFF, 0xFF, 0xFF, 0xFF, // je bedrock_server.7FF7345226F3
+    //     0x48, 0x8B, 0x16,                   // mov rdx,qword ptr ds:[rsi]
+    //     0x48, 0x8B, 0xCE,                   // mov rcx,rsi
+    //     0xFF, 0x92, 0x88, 0x04, 0x00, 0x00, // call qword ptr ds:[rdx+488]
+    //     0x48, 0x8B, 0xC8,                   // mov rcx,rax
+    //     0xE8, 0xff, 0xff, 0xff, 0xff,       // call <bedrock_server.public: class Experiments & __ptr64 __cdecl LevelData::getExperiments(void) __ptr64>
+    //     0x48, 0x8B, 0xC8,                   // mov rcx,rax
+    //     0xE8, 0xFF, 0xFF, 0xFF, 0xFF,       // call <bedrock_server.public: bool __cdecl Experiments::Scripting(void)const __ptr64>
+    //     0x84, 0xC0,                         // test al,al
+    //     0x0F, 0x84, 0xff, 0x01, 0x00, 0x00, // je bedrock_server.7FF658BDDB5F
+    // ], [1, 5, 9, 13, 16, 20, 29, 33, 37, 41]);
 
     patchForStdio();
 
@@ -264,7 +264,7 @@ function _launch(asyncResolve:()=>void):void {
     events.serverLoading.clear();
 
     // skip to create the console of BDS
-    procHacker.write('ScriptApi::ScriptFramework::registerConsole', 0, asm().mov_r_c(Register.rax, 1).ret());
+    // procHacker.write('ScriptApi::ScriptFramework::registerConsole', 0, asm().mov_r_c(Register.rax, 1).ret());
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
@@ -274,7 +274,7 @@ function _launch(asyncResolve:()=>void):void {
     }, void_t, {name: 'events.serverUpdate.fire'});
 
     procHacker.patching('update-hook',
-        '<lambda_5d63f534eeadf9e385a3ddce5663beb8>::operator()', // caller of ServerInstance::_update
+        '<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913>::operator()', // caller of ServerInstance::_update
         0x7f3, asmcode.updateWithSleep, Register.rcx, true, [
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server._Query_perf_frequency>
             0x48, 0x8B, 0xD8,  // mov rbx,rax
@@ -296,8 +296,8 @@ function _launch(asyncResolve:()=>void):void {
         ], [1, 5, 9, 13, 63, 67]);
 
     // hook on script starting
-    procHacker.hookingRawWithCallOriginal('ScriptEngine::startScriptLoading',
-        makefunc.np((scriptEngine:VoidPointer)=>{
+    procHacker.hookingRawWithCallOriginal('ServerInstance::startServerThread',
+        makefunc.np(()=>{
             try {
                 _tickCallback();
                 cgate.nodeLoopOnce();
@@ -336,7 +336,7 @@ function _launch(asyncResolve:()=>void):void {
                 events.serverOpen.clear(); // it will never fire, clear it
                 asyncResolve();
 
-                procHacker.js('ScriptEngine::_processSystemInitialize', void_t, null, VoidPointer)(scriptEngine);
+                // procHacker.js('ScriptEngine::_processSystemInitialize', void_t, null, VoidPointer)(scriptEngine);
                 _tickCallback();
                 cgate.nodeLoopOnce();
             } catch (err) {
@@ -349,14 +349,14 @@ function _launch(asyncResolve:()=>void):void {
         makefunc.np((mc, b)=>{
             events.serverLeave.fire();
         }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
-    procHacker.hookingRawWithCallOriginal('ScriptEngine::shutdown',
+    procHacker.hookingRawWithCallOriginal('DedicatedServer::stop',
         makefunc.np(()=>{
             events.serverStop.fire();
             _tickCallback();
         }, void_t, {name: 'hook of ScriptEngine::shutdown'}), [Register.rcx], []);
 
     // keep ScriptEngine variables. idk why it needs.
-    procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
+    // procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
 }
 
 const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointer);

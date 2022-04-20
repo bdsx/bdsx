@@ -59,7 +59,7 @@ export class CommandOrigin extends AbstractClass {
      * @deprecated bedrock scripting API will be removed.
      */
     isScriptCommandOrigin():boolean {
-        return this.vftable.equalsptr(ScriptCommandOrigin_vftable);
+        return false; // this.vftable.equalsptr(ScriptCommandOrigin_vftable);
     }
 
     getRequestId():CxxString {
@@ -167,7 +167,7 @@ export class ScriptCommandOrigin extends PlayerCommandOrigin {
     // VFTable* vftable;
 }
 
-const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
+// const ScriptCommandOrigin_vftable = proc["ScriptCommandOrigin::`vftable'"];
 
 @nativeClass(0x48)
 export class ServerCommandOrigin extends CommandOrigin {

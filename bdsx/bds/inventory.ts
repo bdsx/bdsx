@@ -556,7 +556,7 @@ export enum PlayerUISlot {
 
 @nativeClass(null)
 export class PlayerInventory extends AbstractClass {
-    @nativeField(Inventory.ref(), 0xB0) // accessed in PlayerInventory::getSlots when calling Container::getSlots
+    @nativeField(Inventory.ref(), 0xC0) // accessed in PlayerInventory::addItem
     container:Inventory;
 
     addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
@@ -586,8 +586,11 @@ export class PlayerInventory extends AbstractClass {
     getSlotWithItem(itemStack:ItemStack, checkAux:boolean, checkData:boolean):number {
         abstract();
     }
+    /**
+     * @deprecated Use container.getSlots();
+     */
     getSlots():CxxVector<ItemStack> {
-        abstract();
+        return this.container.getSlots();
     }
     selectSlot(slot:number, containerId:ContainerId):void {
         abstract();

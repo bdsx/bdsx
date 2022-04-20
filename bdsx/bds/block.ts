@@ -3,7 +3,7 @@ import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
-import type { DimensionId } from "./actor";
+import type { Actor, DimensionId } from "./actor";
 import type { ChunkPos } from "./blockpos";
 import { BlockPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
@@ -167,7 +167,7 @@ export class BlockSource extends NativeClass {
     @nativeField(bool_t)
     publicSource:bool_t;
 
-    protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number):boolean {
+    protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number, actor:Actor|null):boolean {
         abstract();
     }
     getBlock(blockPos:BlockPos):Block {
@@ -181,7 +181,7 @@ export class BlockSource extends NativeClass {
      * @returns true if the block was placed, false if it was not
      */
     setBlock(blockPos:BlockPos, block:Block, updateFlags = BlockUpdateFlags.ALL):boolean {
-        return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags);
+        return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags, null);
     }
     getChunk(pos:ChunkPos):LevelChunk|null {
         abstract();
