@@ -278,7 +278,8 @@ Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Act
 
 const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", bool_t, {this:Actor}, int32_t);
 
-Actor.prototype.kill = makefunc.js([0x7d0], void_t, {this:Actor});
+Actor.prototype.kill = makefunc.js([0x7b0], void_t, {this:Actor});
+Actor.prototype.die = makefunc.js([0x7b8], void_t, {this:Actor}, ActorDamageSource);
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
 Actor.prototype.isMoving = procHacker.js("Actor::isMoving", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
