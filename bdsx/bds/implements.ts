@@ -581,8 +581,8 @@ Player.prototype.hasOpenContainer = procHacker.js("Player::hasOpenContainer", bo
 Player.prototype.isHungry = procHacker.js("Player::isHungry", bool_t, {this:Player});
 Player.prototype.isHurt = procHacker.js("Player::isHurt", bool_t, {this:Player});
 Player.prototype.isSpawned = procHacker.js("Player::isSpawned", bool_t, {this:Player});
-Player.prototype.isLoading = makefunc.js([0xc80], bool_t, {this:Player});
-Player.prototype.isPlayerInitialized  = makefunc.js([0xc88], bool_t, {this:Player});
+Player.prototype.isLoading = makefunc.js([0xca0], bool_t, {this:Player});
+Player.prototype.isPlayerInitialized  = makefunc.js([0xca8], bool_t, {this:Player});
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});
