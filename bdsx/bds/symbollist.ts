@@ -478,6 +478,7 @@ export const undecoratedSymbols = [
     'Mob::sendArmorSlot',
     'Mob::sendInventory',
     'Mob::setSprinting',
+    'Mob::kill',
     'OnFireSystem::setOnFire',
     'OnFireSystem::setOnFireNoEffects',
     'Item::getSerializedName',
