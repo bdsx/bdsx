@@ -278,7 +278,8 @@ Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Act
 
 const Actor$hasType = Actor.prototype.hasType = procHacker.js("Actor::hasType", bool_t, {this:Actor}, int32_t);
 
-Actor.prototype.kill = makefunc.js([0x7d0], void_t, {this:Actor});
+Actor.prototype.kill = makefunc.js([0x7b0], void_t, {this:Actor});
+Actor.prototype.die = makefunc.js([0x7b8], void_t, {this:Actor}, ActorDamageSource);
 Actor.prototype.isSneaking = procHacker.js("Actor::isSneaking", bool_t, {this:Actor}, void_t);
 Actor.prototype.isMoving = procHacker.js("Actor::isMoving", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("Actor::setSneaking", void_t, {this:Actor}, bool_t);
@@ -435,7 +436,7 @@ ActorDamageSource.create = function (cause: ActorDamageCause): ActorDamageSource
     return source;
 };
 
-ActorDamageSource.prototype.getDamagingEntityUniqueID = makefunc.js([0x40], ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
+ActorDamageSource.prototype.getDamagingEntityUniqueID = makefunc.js([0x80], ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 ActorDamageSource.prototype.setCause = procHacker.js("ActorDamageSource::setCause", void_t, {this:ActorDamageSource}, int32_t);
 
 ItemActor.abstract({
@@ -581,8 +582,8 @@ Player.prototype.hasOpenContainer = procHacker.js("Player::hasOpenContainer", bo
 Player.prototype.isHungry = procHacker.js("Player::isHungry", bool_t, {this:Player});
 Player.prototype.isHurt = procHacker.js("Player::isHurt", bool_t, {this:Player});
 Player.prototype.isSpawned = procHacker.js("Player::isSpawned", bool_t, {this:Player});
-Player.prototype.isLoading = makefunc.js([0xc80], bool_t, {this:Player});
-Player.prototype.isPlayerInitialized  = makefunc.js([0xc88], bool_t, {this:Player});
+Player.prototype.isLoading = makefunc.js([0xca0], bool_t, {this:Player});
+Player.prototype.isPlayerInitialized  = makefunc.js([0xca8], bool_t, {this:Player});
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("ServerPlayer::_nextContainerCounter", int8_t, {this: ServerPlayer});
