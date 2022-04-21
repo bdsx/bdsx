@@ -896,6 +896,7 @@ export enum GameType {
     SurvivalSpectator,
     CreativeSpectator,
     Default,
+    Spectator,
 }
 
 /**
