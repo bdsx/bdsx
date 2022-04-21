@@ -258,8 +258,12 @@ export class Certificate extends NativeClass {
         return mce.UUID.toString(this.getIdentity());
     }
 }
+
+@nativeClass(null)
 export class ConnectionRequest extends NativeClass {
+    @nativeField(Certificate.ref(), 0x08)
     cert:Certificate;
+    @nativeField(Certificate.ref(), 0x10)
     something:Certificate;
 
     getJson():JsonValue|null {

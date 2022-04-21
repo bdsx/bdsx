@@ -639,6 +639,7 @@ export const undecoratedSymbols = [
     'Player::setPermissions',
     'ServerPlayer::setPermissions',
     'ServerInstanceEventCoordinator::sendEvent',
+    'ServerNetworkHandler::fetchConnectionRequest',
 ] as const;
 
 // decorated symbols
