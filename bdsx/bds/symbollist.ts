@@ -2,7 +2,7 @@
 export const undecoratedPrivateSymbols = [
     'std::thread::_Invoke<std::tuple<<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913> >,0>',
     '<lambda_5fb5cb6c28312d2ba094a9a2ee0e4913>::operator()',
-];
+] as const;
 
 export const undecoratedSymbols = [
     'ServerInstanceEventCoordinator::sendServerThreadStarted',
@@ -639,6 +639,7 @@ export const undecoratedSymbols = [
     'Player::setPermissions',
     'ServerPlayer::setPermissions',
     'ServerInstanceEventCoordinator::sendEvent',
+    'ServerNetworkHandler::fetchConnectionRequest',
 ] as const;
 
 // decorated symbols

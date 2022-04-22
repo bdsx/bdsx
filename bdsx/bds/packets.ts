@@ -209,8 +209,8 @@ export class SetTimePacket extends Packet {
 
 @nativeClass(null)
 export class LevelSettings extends MantleClass {
-    @nativeField(int32_t)
-    seed:int32_t;
+    @nativeField(int64_as_float_t)
+    seed:int64_as_float_t;
 }
 
 @nativeClass(null)
@@ -482,7 +482,7 @@ export class UpdateAttributesPacket extends Packet {
 export class InventoryTransactionPacket extends Packet {
     @nativeField(uint32_t)
     legacyRequestId: uint32_t; // 0x30
-    @nativeField(ComplexInventoryTransaction.ref(), 0x50)
+    @nativeField(ComplexInventoryTransaction.ref(), 0x58)
     transaction: ComplexInventoryTransaction|null;
 }
 

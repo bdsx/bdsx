@@ -211,7 +211,7 @@ CommandOrigin.prototype.getEntity = makefunc.js([0x40], Actor, {this: CommandOri
 CommandOrigin.prototype.getOriginType = makefunc.js([0xb8], uint8_t, {this: CommandOrigin});
 
 // void handleCommandOutputCallback(Json::Value &&);
-const handleCommandOutputCallback = makefunc.js([0xc0], void_t, {this: CommandOrigin}, JsonValue);
+const handleCommandOutputCallback = makefunc.js([0xd0], void_t, {this: CommandOrigin}, JsonValue);
 
 // struct CompoundTag CommandOrigin::serialize(void)
 const serializeCommandOrigin = makefunc.js([0xe8], CompoundTag, {this:CommandOrigin}, CompoundTag);

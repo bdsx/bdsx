@@ -574,6 +574,13 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Makes the entity dead
+     * @param damageSource ex) ActorDamageSource.create(ActorDamageCause.Lava)
+     */
+    die(damageSource: ActorDamageSource): void {
+        abstract();
+    }
+    /**
      * Returns the entity's attribute map
      */
     getAttributes():BaseAttributeMap {
@@ -1089,9 +1096,6 @@ export class Mob extends Actor {
         abstract();
     }
     setSprinting(shouldSprint:boolean):void {
-        abstract();
-    }
-    kill():void {
         abstract();
     }
 

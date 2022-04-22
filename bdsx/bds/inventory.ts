@@ -647,7 +647,7 @@ export class ItemStackNetIdVariant extends AbstractClass {
 }
 
 @nativeClass(0x98)
-export class NetworkItemStackDescriptor extends NativeClass {
+export class NetworkItemStackDescriptor extends AbstractClass {
     @nativeField(ItemDescriptor)
     readonly descriptor:ItemDescriptor;
     @nativeField(ItemStackNetIdVariant, 0x58) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
@@ -675,13 +675,13 @@ export class InventoryAction extends AbstractClass {
     @nativeField(uint32_t)
     slot:uint32_t;
     @nativeField(NetworkItemStackDescriptor)
-    fromDesc:NetworkItemStackDescriptor;
+    fromDesc:NetworkItemStackDescriptor; // 0x10
     @nativeField(NetworkItemStackDescriptor)
-    toDesc:NetworkItemStackDescriptor;
+    toDesc:NetworkItemStackDescriptor; // 0xa8
     @nativeField(ItemStack)
-    from:ItemStack;
+    from:ItemStack; // 0x140
     @nativeField(ItemStack)
-    to:ItemStack;
+    to:ItemStack; // 0x1e0
 }
 
 @nativeClass(0x18)
@@ -729,7 +729,7 @@ export class ComplexInventoryTransaction extends AbstractClass {
     vftable:VoidPointer;
     @nativeField(uint8_t)
     type:ComplexInventoryTransaction.Type;
-    @nativeField(InventoryTransaction, 0x10)
+    @nativeField(InventoryTransaction)
     data:InventoryTransaction;
 
     isItemUseTransaction():this is ItemUseInventoryTransaction {
