@@ -10,6 +10,7 @@ import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } fr
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { remapAndPrintError } from "../source-map-support";
+import { ConnectionRequest } from "./connreq";
 import type { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
 import { procHacker } from "./proc";
@@ -83,6 +84,9 @@ export class ServerNetworkHandler extends AbstractClass {
      * it's the same with `client.getActor()`
      */
     _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null {
+        abstract();
+    }
+    fetchConnectionRequest(target: NetworkIdentifier): ConnectionRequest {
         abstract();
     }
 }

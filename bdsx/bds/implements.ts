@@ -674,6 +674,7 @@ ServerNetworkHandler.prototype._getServerPlayer = procHacker.js("ServerNetworkHa
 ServerNetworkHandler.prototype.allowIncomingConnections = procHacker.js("ServerNetworkHandler::allowIncomingConnections", void_t, {this:ServerNetworkHandler}, CxxString, bool_t);
 ServerNetworkHandler.prototype.updateServerAnnouncement = procHacker.js("ServerNetworkHandler::updateServerAnnouncement", void_t, {this:ServerNetworkHandler});
 ServerNetworkHandler.prototype.setMaxNumPlayers = procHacker.js("ServerNetworkHandler::setMaxNumPlayers", void_t, {this:ServerNetworkHandler}, int32_t);
+ServerNetworkHandler.prototype.fetchConnectionRequest = procHacker.js("ServerNetworkHandler::fetchConnectionRequest", ConnectionRequest, {this:ServerNetworkHandler}, NetworkIdentifier);
 
 // connreq.ts
 Certificate.prototype.getXuid = function():string {
@@ -691,10 +692,6 @@ namespace ExtendedCertificate {
     export const getIdentityName = procHacker.js("ExtendedCertificate::getIdentityName", CxxString, {structureReturn: true}, Certificate);
     export const getIdentity = procHacker.js("ExtendedCertificate::getIdentity", mce.UUIDWrapper, {structureReturn: true}, Certificate);
 }
-ConnectionRequest.abstract({
-    cert:[Certificate.ref(), 0x08],
-    something:[Certificate.ref(), 0x10],
-});
 
 // attribute.ts
 AttributeInstance.abstract({
