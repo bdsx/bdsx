@@ -395,7 +395,6 @@ export const undecoratedSymbols = [
     'Spawner::spawnMob',
     'BlockPalette::getBlockLegacy',
     'ServerPlayer::setArmor',
-    'ProjectileComponent::shoot',
     'EntityContextBase::isValid',
     'EntityContextBase::_enttRegistry',
     'Player::clearRespawnPosition',
@@ -732,4 +731,5 @@ export const decoratedSymbols = [
     '??0Parser@CommandRegistry@@QEAA@AEBV1@H@Z',
     '?distanceTo@Actor@@QEBAMAEBVVec3@@@Z',
     '?getSuccessCount@CommandOutput@@QEBAHXZ',
+    '?shoot@ProjectileComponent@@QEAAXAEAVActor@@0@Z',
 ] as const;

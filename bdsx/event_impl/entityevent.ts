@@ -481,7 +481,7 @@ function onProjectileShoot(projectileComponent: ProjectileComponent, projectile:
     decay(projectileComponent);
     return _onProjectileShoot(projectileComponent, event.projectile, event.shooter);
 }
-const _onProjectileShoot = procHacker.hooking("ProjectileComponent::shoot", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
+const _onProjectileShoot = procHacker.hooking("?shoot@ProjectileComponent@@QEAAXAEAVActor@@0@Z", void_t, null, ProjectileComponent, Actor, Actor)(onProjectileShoot);
 
 function onPlayerSleepInBed(player: Player, pos: BlockPos): number {
     const event = new PlayerSleepInBedEvent(player, pos);
