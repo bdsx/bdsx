@@ -1690,9 +1690,9 @@ export class ItemStackRequestActionTransferBase extends ItemStackRequestAction {
 
 @nativeClass(null)
 export class ItemStackRequestData extends AbstractClass {
-    @nativeField(int32_t)
+    @nativeField(int32_t, 0x08)
     clientRequestId:int32_t;
-    @nativeField(CxxVector.make(CxxString))
+    @nativeField(CxxVector.make(CxxString), 0x10)
     stringsToFilter:CxxVector<CxxString>;
     @nativeField(CxxVector.make(ItemStackRequestAction.ref()))
     actions:CxxVector<ItemStackRequestAction>;

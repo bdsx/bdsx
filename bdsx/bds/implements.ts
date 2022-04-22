@@ -358,7 +358,7 @@ Actor.prototype.load = function(tag:CompoundTag|NBT.Compound):void {
     }
 };
 
-(Actor.prototype as any).hurt_ = procHacker.js("Actor::hurt", bool_t, {this:Actor}, ActorDamageSource, int32_t, bool_t, bool_t);
+(Actor.prototype as any).hurt_ = procHacker.js("Actor::hurt", bool_t, {this:Actor}, ActorDamageSource, float32_t, bool_t, bool_t);
 
 Actor.prototype.setStatusFlag = procHacker.js("?setStatusFlag@Actor@@QEAAXW4ActorFlags@@_N@Z", void_t, {this:Actor}, int32_t, bool_t);
 Actor.prototype.getStatusFlag = procHacker.js("?getStatusFlag@Actor@@QEBA_NW4ActorFlags@@@Z", bool_t, {this:Actor}, int32_t);

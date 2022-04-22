@@ -444,7 +444,7 @@ namespace RawTextObject {
         text: string;
     }
     export interface Translate {
-        translte: string;
+        translate: string;
         with?: string[];
     }
     export interface Score {
