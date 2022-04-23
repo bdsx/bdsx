@@ -7,7 +7,7 @@ import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } fr
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
-import type { Vec2, Vec3 } from "./blockpos";
+import { Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel, MCRESULT } from "./command";
 import type { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
@@ -806,7 +806,7 @@ export class Actor extends AbstractClass {
     /**
      * Teleports the entity to a specified position
      */
-    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld):void {
+    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3=new Vec3(true)):void {
         abstract();
     }
     /**
