@@ -781,7 +781,7 @@ export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     face:int32_t;
     @nativeField(int32_t)
     slot:int32_t;
-    @nativeField(NetworkItemStackDescriptor, {offset: 0x04, relative: true})
+    @nativeField(NetworkItemStackDescriptor)
     readonly descriptor:NetworkItemStackDescriptor;
     @nativeField(Vec3)
     readonly fromPos:Vec3;
