@@ -2,7 +2,6 @@
 import * as colors from 'colors';
 import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandMappedValue, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRawEnum, CommandRegistry, CommandSoftEnum, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
-import { procHacker } from './bds/proc';
 import { capi } from './capi';
 import { CommandParameterType } from './commandparam';
 import { emptyFunc } from './common';
@@ -12,6 +11,7 @@ import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
 import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
+import { procHacker } from './prochacker';
 import { CxxSharedPtr } from './sharedpointer';
 
 let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
@@ -264,6 +264,6 @@ const customCommandDtor = makefunc.np(function(delIt){
 }, void_t, {this:CustomCommand, name:'CustomCommand::destructor', crossThread: true}, int32_t);
 
 bedrockServer.withLoading().then(()=>{
-    executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
+    executeCommandOriginal = procHacker.hooking('?executeCommand@MinecraftCommands@@QEBA?AUMCRESULT@@V?$shared_ptr@VCommandContext@@@std@@_N@Z', MCRESULT, null,
         MinecraftCommands, MCRESULT, CxxSharedPtr.make(CommandContext), bool_t)(executeCommand);
 });

@@ -298,6 +298,19 @@ export function stripSlashes(str:string):string {
     });
 }
 
+export function hashString(v:string):number {
+    const n = v.length;
+    let out = 0;
+    let shift = 0;
+    for (let i=0;i<n;i++) {
+        const chr = (v.charCodeAt(i) + i) | 0;
+        out = (out + ((chr << shift) | (chr >>> (32-shift)))) | 0;
+        shift = (shift + 7) & 0x1f;
+    }
+    out = (out + n) | 0;
+    return out >>> 0;
+}
+
 export const ESCAPE = "§";
 
 export const TextFormat = {

@@ -4,9 +4,10 @@ import * as path from 'path';
 import { pdb } from '../core';
 import { SYMOPT_PUBLICS_ONLY, UNDNAME_COMPLETE, UNDNAME_NAME_ONLY } from '../dbghelp';
 import { dll } from '../dll';
+import { pdblegacy } from '../pdblegacy';
 
 const cachepath = path.join(__dirname, 'pdbcachedata.bin');
-const VERSION = 0;
+const VERSION = 1;
 
 function makePdbCache():number {
     if (fs.existsSync(cachepath)) {
@@ -17,10 +18,10 @@ function makePdbCache():number {
         fs.closeSync(fd);
     }
     let no = 0;
-    const filtered:[number, number, number, string][] = [];
+    const filtered:[number, string][] = [];
     const fd = fs.openSync(cachepath, 'w');
     const old = pdb.setOptions(SYMOPT_PUBLICS_ONLY);
-    pdb.getAllEx(symbols=>{
+    pdblegacy.getAllEx(symbols=>{
         for (const info of symbols) {
             let item = info.name;
             no++;
@@ -79,7 +80,7 @@ function makePdbCache():number {
             }
             const undeco = pdb.undecorate(item, UNDNAME_NAME_ONLY);
             const address = info.address.subptr(dll.current);
-            filtered.push([address, info.tag, info.flags, undeco]);
+            filtered.push([address, undeco]);
         }
     });
     pdb.setOptions(old);
@@ -91,11 +92,9 @@ function makePdbCache():number {
     intv[0] = VERSION;
     intv[1] = filtered.length;
     fs.writeSync(fd, intv.subarray(0, 2));
-    for (const [address, tag, flags, name] of filtered) {
+    for (const [address, name] of filtered) {
         intv[0] = address;
-        intv[1] = tag;
-        intv[2] = flags;
-        fs.writeSync(fd, intv);
+        fs.writeSync(fd, intv, 0, 4);
         fs.writeSync(fd, name);
         fs.writeSync(fd, NULL);
     }

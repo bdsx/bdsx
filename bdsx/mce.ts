@@ -1,4 +1,3 @@
-import { procHacker } from "./bds/proc";
 import { bin } from "./bin";
 import { capi } from "./capi";
 import { abstract } from "./common";
@@ -6,6 +5,7 @@ import { StaticPointer, VoidPointer } from "./core";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "./nativeclass";
 import { bin128_t, bin64_t, float32_t, NativeType, uint16_t, uint32_t, uint64_as_float_t, uint8_t, void_t } from "./nativetype";
 import { Wrapper } from "./pointer";
+import { procHacker } from "./prochacker";
 
 export namespace mce {
     export const UUID = bin128_t.extends({
@@ -132,5 +132,5 @@ export namespace mce {
 }
 
 mce.Blob.prototype[NativeType.ctor] = procHacker.js('??0Blob@mce@@QEAA@XZ', void_t, {this:mce.Blob});
-mce.Blob.prototype[NativeType.dtor] = procHacker.js('mce::Blob::~Blob', void_t, {this:mce.Blob});
-const generateUUID = procHacker.js("Crypto::Random::generateUUID", mce.UUIDWrapper, {structureReturn: true});
+mce.Blob.prototype[NativeType.dtor] = procHacker.js('??1Blob@mce@@QEAA@XZ', void_t, {this:mce.Blob});
+const generateUUID = procHacker.js("?generateUUID@Random@Crypto@@YA?AVUUID@mce@@XZ", mce.UUIDWrapper, {structureReturn: true});

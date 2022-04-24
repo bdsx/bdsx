@@ -2,7 +2,7 @@ import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
 import { nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint16_t, uint8_t } from "../nativetype";
-import { procHacker } from "./proc";
+import { procHacker } from "../prochacker";
 
 export enum Facing {
     Down,
@@ -16,7 +16,7 @@ export enum Facing {
 }
 
 export namespace Facing {
-    export const convertYRotationToFacingDirection: (yRotation: number) => number = procHacker.js("Facing::convertYRotationToFacingDirection", uint8_t, null, float32_t);
+    export const convertYRotationToFacingDirection: (yRotation: number) => number = procHacker.js("?convertYRotationToFacingDirection@Facing@@SAEM@Z", uint8_t, null, float32_t);
 }
 
 @nativeClass()
@@ -59,7 +59,7 @@ export class BlockPos extends NativeStruct {
     }
 }
 
-BlockPos.prototype.relative = procHacker.js("BlockPos::relative", BlockPos, {this:BlockPos, structureReturn:true}, uint8_t, int32_t);
+BlockPos.prototype.relative = procHacker.js("?relative@BlockPos@@QEBA?AV1@EH@Z", BlockPos, {this:BlockPos, structureReturn:true}, uint8_t, int32_t);
 
 @nativeClass()
 export class ChunkPos extends NativeStruct {

@@ -16,7 +16,6 @@ import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
-import { procHacker } from "bdsx/bds/proc";
 import { proc } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
@@ -37,6 +36,7 @@ import { mce } from "bdsx/mce";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
+import { procHacker } from "bdsx/prochacker";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
 import { arrayEquals, getEnumKeys, hex, stripSlashes } from "bdsx/util";
@@ -149,8 +149,8 @@ Tester.concurrency({
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
         this.assert(networkHandler.vftable.equalsptr(proc['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
-        this.assert(bedrockServer.minecraft.vftable.equalsptr(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(bedrockServer.commandOutputSender.vftable.equalsptr(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(bedrockServer.minecraft.vftable.equalsptr(proc['??_7Minecraft@@6B@']), 'minecraft is not Minecraft');
+        this.assert(bedrockServer.commandOutputSender.vftable.equalsptr(proc['??_7CommandOutputSender@@6B@']), 'sender is not CommandOutputSender');
 
         this.assert(networkHandler.instance.vftable.equalsptr(proc["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
@@ -535,7 +535,7 @@ Tester.concurrency({
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                this.assert(ctx.origin.vftable.equalsptr(proc["ServerCommandOrigin::`vftable'"]), 'invalid origin');
+                this.assert(ctx.origin.vftable.equalsptr(proc['??_7ServerCommandOrigin@@6B@']), 'invalid origin');
                 this.assert(ctx.origin.getDimension().vftable.equalsptr(proc['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
@@ -874,7 +874,7 @@ Tester.concurrency({
             @nativeField(HashedString)
             readonly name:HashedString;
         }
-        const getByName = procHacker.js('Attribute::getByName', Attribute, null, HashedString);
+        const getByName = procHacker.js('?getByName@Attribute@@SAAEAV1@AEBVHashedString@@@Z', Attribute, null, HashedString);
         for (const key of getEnumKeys(AttributeId)) {
             const name = AttributeName[key];
             const hashname = HashedString.construct();
@@ -1008,7 +1008,7 @@ Tester.concurrency({
             const region = ev.player.getRegion();
             const actor = Actor.summonAt(region, pos, ActorType.Item, -1);
             this.assert(actor instanceof ItemActor, 'ItemActor summoning');
-            this.assert((actor as ItemActor).itemStack.vftable.equalsptr(proc["ItemStack::`vftable'"]), 'ItemActor.itemStack is not ItemStack');
+            this.assert((actor as ItemActor).itemStack.vftable.equalsptr(proc['??_7ItemStack@@6B@']), 'ItemActor.itemStack is not ItemStack');
             actor.despawn();
         }));
     },

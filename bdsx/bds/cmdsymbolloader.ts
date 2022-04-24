@@ -1,7 +1,6 @@
-import { NativePointer, pdb, VoidPointer } from "../core";
-import { SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
+import { NativePointer } from "../core";
 import { Type } from "../nativetype";
-import { templateName } from "../templatename";
+import { proc } from "./symbols";
 
 interface TypeIdSymbols {
     fnTypes:Type<any>[];
@@ -11,16 +10,12 @@ interface TypeIdSymbols {
 }
 
 export class CommandSymbols {
-    public enumParser:VoidPointer;
-
     private readonly counterSymbols:string[] = [];
 
     private readonly parserSymbols:string[] = [];
     private readonly parserTypes:Type<any>[] = [];
     private readonly counterBases:Type<any>[] = [];
     private readonly typeForIds = new Map<Type<any>, TypeIdSymbols>();
-
-    private symbols:Record<string, NativePointer>;
 
     private _getTypeIdSymbols(base:Type<any>):TypeIdSymbols {
         let symbols = this.typeForIds.get(base);
@@ -36,52 +31,35 @@ export class CommandSymbols {
     }
 
     addCounterSymbol(base:Type<any>):void {
-        const baseSymbol = base.symbol || base.name;
         this.counterBases.push(base);
-        this.counterSymbols.push(templateName('typeid_t', baseSymbol)+'::count');
+        this.counterSymbols.push(`?count@?$typeid_t@${base.symbol}@@2GA`);
     }
 
     addTypeIdFnSymbols(base:Type<any>, typesWithFunction:Type<any>[]):void {
-        const baseSymbol = base.symbol || base.name;
         const symbols = this._getTypeIdSymbols(base);
 
         for (const v of typesWithFunction) {
             symbols.fnTypes.push(v);
-            symbols.fnSymbols.push(templateName('type_id', baseSymbol, v.symbol || v.name));
+            symbols.fnSymbols.push(`??$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ`);
         }
     }
 
     addTypeIdPtrSymbols(base:Type<any>, typesWithValuePtr:Type<any>[]):void {
-        const baseSymbol = base.symbol || base.name;
         const symbols = this._getTypeIdSymbols(base);
 
         for (const v of typesWithValuePtr) {
             symbols.ptrTypes.push(v);
-            symbols.ptrSymbols.push(`\`type_id<${baseSymbol},${v.symbol || v.name}>'::\`2'::id`);
+            symbols.ptrSymbols.push(`?id@?1???$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ@4V1@A`);
         }
     }
 
     addParserSymbols(types:Type<any>[]):void {
         this.parserTypes.push(...types);
         for (const type of types) {
-            this.parserSymbols.push(templateName('CommandRegistry::parse', type.symbol || type.name));
+            this.parserSymbols.push(
+                `??$parse@${type.symbol}@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z`,
+            );
         }
-    }
-
-    load():void {
-        const enumParserSymbol = `CommandRegistry::parseEnum<int,CommandRegistry::DefaultIdConverter<int> >`;
-
-        pdb.setOptions(SYMOPT_PUBLICS_ONLY);
-        const symbols = this.parserSymbols.concat(this.counterSymbols, [enumParserSymbol]);
-        for (const idsymbols of this.typeForIds.values()) {
-            symbols.push(...idsymbols.fnSymbols);
-            symbols.push(...idsymbols.ptrSymbols);
-        }
-        this.symbols = pdb.getList(pdb.coreCachePath, {}, symbols, false, UNDNAME_NAME_ONLY);
-        pdb.setOptions(0);
-        pdb.close();
-
-        this.enumParser = this.symbols[enumParserSymbol];
     }
 
     *iterateTypeIdFns(base:Type<any>):IterableIterator<[Type<any>, NativePointer]> {
@@ -89,8 +67,9 @@ export class CommandSymbols {
         if (symbols == null) return;
 
         for (let i=0;i<symbols.fnSymbols.length;i++) {
-            const addr = this.symbols[symbols.fnSymbols[i]];
-            if (addr == null) continue;
+            const symbol = symbols.fnSymbols[i];
+            const addr = proc[symbol];
+            if (addr == null) throw Error(`${symbol} not found`);
             yield [symbols.fnTypes[i], addr];
         }
     }
@@ -99,22 +78,25 @@ export class CommandSymbols {
         if (symbols == null) return;
 
         for (let i=0;i<symbols.ptrSymbols.length;i++) {
-            const addr = this.symbols[symbols.ptrSymbols[i]];
-            if (addr == null) continue;
+            const symbol = symbols.ptrSymbols[i];
+            const addr = proc[symbol];
+            if (addr == null) throw Error(`${symbol} not found`);
             yield [symbols.ptrTypes[i], addr];
         }
     }
     *iterateCounters():IterableIterator<[Type<any>, NativePointer]> {
         for (let i=0;i<this.counterBases.length;i++) {
-            const addr = this.symbols[this.counterSymbols[i]];
-            if (addr == null) continue;
+            const symbol = this.counterSymbols[i];
+            const addr = proc[symbol];
+            if (addr == null) throw Error(`${symbol} not found`);
             yield [this.counterBases[i], addr];
         }
     }
     *iterateParsers():IterableIterator<[Type<any>, NativePointer]> {
         for (let i=0;i<this.parserTypes.length;i++) {
-            const addr = this.symbols[this.parserSymbols[i]];
-            if (addr == null) continue;
+            const symbol = this.parserSymbols[i];
+            const addr = proc[symbol];
+            if (addr == null) throw Error(`${symbol} not found`);
             yield [this.parserTypes[i], addr];
         }
     }

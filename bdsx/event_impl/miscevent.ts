@@ -1,4 +1,3 @@
-import { procHacker } from "../bds/proc";
 import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, ScoreboardIdentityRef } from "../bds/scoreboard";
 import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
@@ -7,6 +6,7 @@ import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, int32_t, uint8_t, void_t } from "../nativetype";
+import { procHacker } from "../prochacker";
 
 export class QueryRegenerateEvent {
     constructor(
@@ -36,7 +36,7 @@ class AnnounceServerData extends NativeClass {
 // CxxStringWrapper, CxxStringWrapper, VoidPointer, int32_t, int32_t, bool_t
 //  motd: CxxStringWrapper, levelname: CxxStringWrapper, gameType: VoidPointer, currentPlayers: number, maxPlayers: number, isJoinableThroughServerScreen: boolean
 
-const _onQueryRegenerate = procHacker.hooking("RakNetServerLocator::_announceServer", void_t, null, VoidPointer, AnnounceServerData)(onQueryRegenerate);
+const _onQueryRegenerate = procHacker.hooking("?_announceServer@RakNetServerLocator@@AEAAXAEBUAnnounceServerData@1@@Z", void_t, null, VoidPointer, AnnounceServerData)(onQueryRegenerate);
 function onQueryRegenerate(rakNetServerLocator: VoidPointer, data:AnnounceServerData):void {
     const event = new QueryRegenerateEvent(data.motd, data.levelname, data.currentPlayers, data.maxPlayers, data.isJoinableThroughServerScreen);
     events.queryRegenerate.fire(event);
@@ -54,7 +54,7 @@ export class ScoreResetEvent {
     }
 }
 
-const _onScoreReset = procHacker.hooking("ScoreboardIdentityRef::removeFromObjective", bool_t, null, ScoreboardIdentityRef, Scoreboard, Objective)(onScoreReset);
+const _onScoreReset = procHacker.hooking("?removeFromObjective@ScoreboardIdentityRef@@QEAA_NAEAVScoreboard@@AEAVObjective@@@Z", bool_t, null, ScoreboardIdentityRef, Scoreboard, Objective)(onScoreReset);
 function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard, objective: Objective): boolean {
     const event = new ScoreResetEvent(identityRef, objective);
     const canceled = events.scoreReset.fire(event) === CANCEL;
@@ -97,7 +97,7 @@ export class ScoreRemoveEvent extends ScoreSetEvent {
     }
 }
 
-const _onScoreModify = procHacker.hooking("ScoreboardIdentityRef::modifyScoreInObjective", bool_t, null, ScoreboardIdentityRef, StaticPointer, Objective, int32_t, uint8_t)(onScoreModify);
+const _onScoreModify = procHacker.hooking("?modifyScoreInObjective@ScoreboardIdentityRef@@QEAA_NAEAHAEAVObjective@@HW4PlayerScoreSetFunction@@@Z", bool_t, null, ScoreboardIdentityRef, StaticPointer, Objective, int32_t, uint8_t)(onScoreModify);
 function onScoreModify(identityRef: ScoreboardIdentityRef, result: StaticPointer, objective: Objective, score: int32_t, mode: PlayerScoreSetFunction): bool_t {
     let event: ScoreSetEvent;
     let canceled: boolean;
@@ -132,7 +132,7 @@ export class ObjectiveCreateEvent {
     }
 }
 
-const _onObjectiveCreate = procHacker.hooking("Scoreboard::addObjective", Objective, null, Scoreboard, CxxString, CxxString, ObjectiveCriteria)(onObjectiveCreate);
+const _onObjectiveCreate = procHacker.hooking("?addObjective@Scoreboard@@QEAAPEAVObjective@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@0AEBVObjectiveCriteria@@@Z", Objective, null, Scoreboard, CxxString, CxxString, ObjectiveCriteria)(onObjectiveCreate);
 function onObjectiveCreate(scoreboard: Scoreboard, name: CxxString, displayName: CxxString, criteria: ObjectiveCriteria): Objective|null {
     const event = new ObjectiveCreateEvent(name, displayName, criteria);
     const canceled = events.objectiveCreate.fire(event) === CANCEL;

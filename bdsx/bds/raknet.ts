@@ -3,7 +3,7 @@ import { VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
-import { procHacker } from "./proc";
+import { procHacker } from "../prochacker";
 
 const portDelineator = '|'.charCodeAt(0);
 

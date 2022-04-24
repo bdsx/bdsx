@@ -8,9 +8,9 @@ import { Dimension } from "./bds/dimension";
 import { GameRules } from './bds/gamerules';
 import { ServerLevel } from "./bds/level";
 import * as nimodule from './bds/networkidentifier';
-import { proc, procHacker } from "./bds/proc";
 import { RakNet } from './bds/raknet';
 import * as bd_server from './bds/server';
+import { proc } from './bds/symbols';
 import { capi } from "./capi";
 import type { CommandResult, CommandResultType } from './commandresult';
 import { CANCEL, Encoding } from "./common";
@@ -23,6 +23,7 @@ import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { CxxStringWrapper } from "./pointer";
+import { procHacker } from './prochacker';
 import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { _tickCallback } from "./util";
@@ -93,7 +94,7 @@ function patchForStdio():void {
         line = color(line);
         console.log(line);
     }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
-    procHacker.write('BedrockLogOut', 0, asm().jmp64(asmcode.logHook, Register.rax));
+    procHacker.write('?BedrockLogOut@@YAXIPEBDZZ', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
     asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
         // void(*callback)(const char* log, size_t size)
@@ -103,7 +104,7 @@ function patchForStdio():void {
             console.log(line);
         }
     }, void_t, {onError: asmcode.jsend_returnZero, name:`CommandOutputSenderHookCallback`}, int64_as_float_t, StaticPointer);
-    procHacker.patching('hook-command-output', 'CommandOutputSender::send', 0x1B0, asmcode.CommandOutputSenderHook, Register.rax, true, [
+    procHacker.patching('hook-command-output', '?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', 0x1B0, asmcode.CommandOutputSenderHook, Register.rax, true, [
         0xE8, 0xFF, 0xFF, 0xFF, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64,char const * __ptr64 const,uns>
         0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,   // lea rdx,qword ptr ds:[<class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::flush<char,struct std::char_traits<char> >(class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64)>]
         0x48, 0x8B, 0xC8,                           // mov rcx,rax
@@ -113,16 +114,16 @@ function patchForStdio():void {
     // hook stdin
     asmcode.commandQueue = commandQueue;
     asmcode.MultiThreadQueueTryDequeue = MultiThreadQueue.tryDequeue;
-    procHacker.patching('hook-stdin-command', 'ConsoleInputReader::getLine', 0, asmcode.ConsoleInputReader_getLine_hook, Register.rax, false, [
+    procHacker.patching('hook-stdin-command', '?getLine@ConsoleInputReader@@QEAA_NAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', 0, asmcode.ConsoleInputReader_getLine_hook, Register.rax, false, [
         0xE9, 0xFF, 0xFF, 0xFF, 0xFF,  // jmp SPSCQueue::tryDequeue
         0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, // int3 ...
     ], [1, 5]);
 
     // remove original stdin thread
     const justReturn = asm().ret().buffer();
-    procHacker.write('ConsoleInputReader::ConsoleInputReader', 0, justReturn);
-    procHacker.write('ConsoleInputReader::~ConsoleInputReader', 0, justReturn);
-    procHacker.write('ConsoleInputReader::unblockReading', 0, justReturn);
+    procHacker.write('??0ConsoleInputReader@@QEAA@XZ', 0, justReturn);
+    procHacker.write('??1ConsoleInputReader@@QEAA@XZ', 0, justReturn);
+    procHacker.write('?unblockReading@ConsoleInputReader@@QEAAXXZ', 0, justReturn);
 }
 
 function _launch(asyncResolve:()=>void):void {
@@ -209,7 +210,7 @@ function _launch(asyncResolve:()=>void):void {
     );
 
     // get server instance
-    procHacker.hookingRawWithCallOriginal('ServerInstance::ServerInstance', asmcode.ServerInstance_ctor_hook, [Register.rcx, Register.rdx, Register.r8], []);
+    procHacker.hookingRawWithCallOriginal('??0ServerInstance@@QEAA@AEAVIMinecraftApp@@AEBV?$not_null@V?$NonOwnerPointer@VServerInstanceEventCoordinator@@@Bedrock@@@gsl@@@Z', asmcode.ServerInstance_ctor_hook, [Register.rcx, Register.rdx, Register.r8], []);
 
     patchForStdio();
 
@@ -270,7 +271,7 @@ function _launch(asyncResolve:()=>void):void {
         ], [1, 5, 9, 13, 63, 67]);
 
     // hook on script starting
-    procHacker.hookingRawWithCallOriginal('ServerInstanceEventCoordinator::sendServerThreadStarted',
+    procHacker.hookingRawWithCallOriginal('?sendServerThreadStarted@ServerInstanceEventCoordinator@@QEAAXAEAVServerInstance@@@Z',
         makefunc.np(()=>{
             try {
                 _tickCallback();
@@ -318,11 +319,11 @@ function _launch(asyncResolve:()=>void):void {
         }, void_t, {name: 'hook of ScriptEngine::startScriptLoading'}, VoidPointer),
         [Register.rcx, Register.rdx], []);
 
-    procHacker.hookingRawWithCallOriginal('Minecraft::startLeaveGame',
+    procHacker.hookingRawWithCallOriginal('?startLeaveGame@Minecraft@@QEAAX_N@Z',
         makefunc.np((mc, b)=>{
             events.serverLeave.fire();
         }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
-    procHacker.hookingRawWithCallOriginal('ServerInstanceEventCoordinator::sendEvent',
+    procHacker.hookingRawWithCallOriginal('?sendEvent@ServerInstanceEventCoordinator@@QEAAXAEBV?$EventRef@U?$ServerInstanceGameplayEvent@X@@@@@Z',
         makefunc.np(()=>{
             events.serverStop.fire();
             _tickCallback();
@@ -332,7 +333,7 @@ function _launch(asyncResolve:()=>void):void {
     // procHacker.write('MinecraftServerScriptEngine::onServerUpdateEnd', 0, asm().ret());
 }
 
-const stopfunc = procHacker.js('DedicatedServer::stop', void_t, null, VoidPointer);
+const stopfunc = procHacker.js('?stop@DedicatedServer@@UEAA_NXZ', void_t, null, VoidPointer);
 
 function sessionIdGrabber(text: string): void {
     const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d:\d{3} INFO\] Session ID (.*)$/);

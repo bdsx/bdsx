@@ -1,8 +1,8 @@
+import { mangle } from "../mangle";
 import { nativeClass, NativeClass, NativeClassType } from "../nativeclass";
 import { Wrapper } from "../pointer";
 import { CxxSharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
-import { templateName } from "../templatename";
 
 export namespace Bedrock {
     export type NonOwnerPointerType<T extends NativeClass> = NativeClassType<NonOwnerPointer<T>>;
@@ -28,7 +28,10 @@ export namespace Bedrock {
                 Class.define({
                     sharedptr: CxxSharedPtr.make(Wrapper.make(clazz.ref())),
                 });
-                Object.defineProperty(Class, 'name', {value: templateName('NonOwnerPointer', v.name)});
+                Object.defineProperties(Class, {
+                    name: { value: `NonOwnerPointer<${clazz.name}>` },
+                    symbol: { value: mangle.templateClass('NonOwnerPointer', clazz) },
+                });
                 return Class;
             });
         }

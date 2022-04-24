@@ -523,10 +523,6 @@ export declare class MultiThreadQueue extends VoidPointer {
  * native debug information handlers
  */
 export declare namespace pdb {
-    export const coreCachePath:string;
-
-    export function close():void;
-
     export function getOptions():number;
 
     /**
@@ -540,51 +536,6 @@ export declare namespace pdb {
      * undecorate the decorated symbol
      */
     export function undecorate(decorated:string, flags:number):string;
-
-    /**
-     * get symbols from cache.
-     * if symbols don't exist in cache. it reads pdb.
-     * @returns 'out' the first parameter.
-     */
-    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean, undecorateFlags?:number):{[key in KEYS[number]]: NativePointer} & OLD;
-
-    /**
-     * get all symbols
-     */
-    export function search(callback: (name: string, address: NativePointer) => boolean): void;
-
-    /**
-     * find symbols with a wildcard
-     */
-    export function search(filter: string|null, callback: (name: string, address: NativePointer) => boolean): void;
-
-    /**
-     * find symbols with a name array
-     */
-    export function search<KEYS extends string[]>(names: KEYS, callback: (name: KEYS[number], address: NativePointer, index: number)=>boolean): void;
-
-    /**
-     * get all symbols
-     */
-    export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer>;
-
-    export interface SymbolInfo {
-        typeIndex:number;
-        index:number;
-        size:number;
-        flags:number;
-        value:NativePointer;
-        address:NativePointer;
-        register:number;
-        scope:number;
-        tag:number;
-        name:string;
-    }
-    /**
-     * get all symbols.
-     * @param read calbacked per 100ms, stop the looping if it returns false
-     */
-    export function getAllEx(read?:(data:SymbolInfo[])=>boolean|void):void;
 
 }
 
@@ -827,10 +778,6 @@ export declare namespace ipfilter {
      * if time is 0, it's permanent.
      */
     export function entries():[string, number][];
-    /**
-     * @deprecated Typo!
-     */
-    export function entires():[string, number][];
 }
 
 type ErrorListener = (err:Error)=>void;
@@ -862,8 +809,9 @@ export declare namespace cxxException {
 
 try {
     const core = module.exports = (process as any)._linkedBinding('bdsx_core');
-    core.ipfilter.entries = core.ipfilter.entires;
-    module.exports.PrivatePointer = module.exports.StaticPointer;
+    core.ipfilter.entires = core.ipfilter.entries;
+    core.PrivatePointer = core.StaticPointer;
+    core.pdb.setOptions(0);
 } catch (err) {
     throw Error(`BDSX is unusable with the standard node.js`);
 }

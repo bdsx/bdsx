@@ -4,6 +4,7 @@ import { CircularDetector } from "./circulardetector";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
+import { mangle } from './mangle';
 import { int32_t, NativeDescriptorBuilder, NativeType, Type, void_t } from "./nativetype";
 import { Singleton } from "./singleton";
 import { remapAndPrintError } from "./source-map-support";
@@ -30,6 +31,7 @@ function accessor(key:string|number):string {
 export interface NativeClassType<T extends NativeClass> extends Type<T> {
     new(alloc?:boolean):T;
     prototype:T;
+
     [StructurePointer.contentSize]:number|null;
     [fieldmap]:Record<keyof any, NativeFieldInfo>;
     [isSealed]:boolean;
@@ -140,21 +142,34 @@ class StructureDefinition {
         this.eof = supercls[NativeType.size];
         this.align = supercls[NativeType.align];
     }
-    define<T extends NativeClass>(clazz:NativeClassType<T>, size?:number|null):void {
-        if (size == null) {
-            if (size === null) {
+    static defaultDefine<T extends NativeClass>(clazz:NativeClassType<T>, opts:NativeClassOptions):void {
+        mangle.update(clazz, opts);
+
+        const superclass = (clazz as any).__proto__;
+        clazz[StructurePointer.contentSize] =
+        clazz.prototype[NativeType.size] =
+        clazz[NativeType.size] = opts.size === undefined ? superclass[NativeType.size] : opts.size!;
+        clazz[NativeType.align] = opts.align == null ? superclass[NativeType.align] : opts.align;
+
+        sealClass(clazz);
+    }
+    define<T extends NativeClass>(clazz:NativeClassType<T>, opts:NativeClassOptions):void {
+        if (opts.size == null) {
+            if (opts.size === null) {
                 this.eof = null;
             } else {
-                size = this.eof !== null ? (((this.eof + this.align - 1) / this.align)|0)*this.align : null;
+                opts.size = this.eof !== null ? (((this.eof + this.align - 1) / this.align)|0)*this.align : null;
             }
         } else {
             if (this.eof !== null) {
-                if (this.eof > size) throw Error(`field offsets are bigger than the class size. fields_end=${this.eof}, size=${size}`);
+                if (this.eof > opts.size) throw Error(`field offsets are bigger than the class size. fields_end=${this.eof}, size=${opts.size}`);
             }
-            this.eof = size;
+            this.eof = opts.size;
         }
+        if (opts.align != null) this.align = opts.align;
+        else opts.align = this.align;
 
-        sealClass(clazz);
+        StructureDefinition.defaultDefine(clazz, opts);
 
         clazz[fieldmap] = this.fields;
 
@@ -189,11 +204,6 @@ class StructureDefinition {
                 }
             }
         }
-
-        clazz[StructurePointer.contentSize] =
-        clazzproto[NativeType.size] =
-        clazz[NativeType.size] = size!;
-        clazz[NativeType.align] = this.align;
         Object.defineProperties(clazzproto, propmap.desc);
     }
 
@@ -296,7 +306,7 @@ export class NativeClass extends StructurePointer {
     static readonly [fieldmap]:Record<keyof any, NativeFieldInfo>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
-    static readonly symbol?:string;
+    static readonly symbol:string;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -431,7 +441,6 @@ export class NativeClass extends StructurePointer {
 
     static define<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, defineSize?:number|null, defineAlign:number|null = null, abstract:boolean=false):void {
         const clazz = this as NativeClassType<T>;
-
         if (clazz.hasOwnProperty(isSealed)) {
             throw Error('Cannot define the structure of the already used');
         }
@@ -453,7 +462,7 @@ export class NativeClass extends StructurePointer {
             if (defineSize === undefined) defineSize = null;
         }
         if (defineAlign !== null) def.align = defineAlign;
-        def.define(clazz, defineSize);
+        def.define(clazz, {size: defineSize});
     }
 
     static defineAsUnion<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, abstract:boolean = false):void {
@@ -655,6 +664,11 @@ export interface NativeFieldOptions {
     const?:boolean;
 }
 
+export interface NativeClassOptions extends mangle.UpdateOptions {
+    size?:number|null;
+    align?:number|null;
+}
+
 export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|number|null, bitMask?:number|null) {
     return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
@@ -664,19 +678,19 @@ export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|num
     };
 }
 
-export function nativeClass(size?:number|null, align:number|null = null) {
+export function nativeClass(size?:number|NativeClassOptions|null, align:number|null = null) {
     return <T extends NativeClass>(clazz:NativeClassType<T>):void=>{
         const def = structures.get(clazz);
+
+        if (typeof size === 'number' || size == null) {
+            size = {size, align};
+        } else if (align != null) {
+            size.align = align;
+        }
         if (def == null) {
-            sealClass(clazz);
-            const superclass = (clazz as any).__proto__;
-            clazz[StructurePointer.contentSize] =
-            clazz.prototype[NativeType.size] =
-            clazz[NativeType.size] = size === undefined ? superclass[NativeType.size] : size!;
-            clazz[NativeType.align] = align == null ? superclass[NativeType.align] : align;
+            StructureDefinition.defaultDefine(clazz, size);
         } else {
             structures.delete(clazz);
-            if (align !== null) def.align = align;
             def.define(clazz, size);
         }
     };
@@ -883,9 +897,9 @@ export declare class MantleClass extends NativeClass {
 }
 exports.MantleClass = NativeClass;
 
-function makeReference<T extends NativeClass>(type:{new():T, symbol?:string}):NativeType<T> {
+function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     const clazz = type as NativeClassType<T>;
-    return new NativeType<T>((type.symbol || type.name)+' * __ptr64', type.name+'*', 8, 8,
+    return new NativeType<T>(mangle.pointer(clazz.symbol), type.name+'*', 8, 8,
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
         (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),

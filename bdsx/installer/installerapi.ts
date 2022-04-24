@@ -1,10 +1,12 @@
 
+import * as colors from 'colors';
 import { https } from 'follow-redirects';
 import * as fs_ori from 'fs';
 import * as path from 'path';
 import * as ProgressBar from 'progress';
 import * as readline from 'readline';
 import * as unzipper from 'unzipper';
+import * as child_process from 'child_process';
 import { fsutil } from '../fsutil';
 import { printOnProgress } from '../util';
 import * as BDS_VERSION from '../version-bds.json';
@@ -15,6 +17,7 @@ const sep = path.sep;
 
 const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_VERSION}.zip`;
 const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
+const PDBCACHE_LINK = `https://github.com/bdsx/pdbcache/releases/download/${BDS_VERSION}/pdbcache.zip`;
 
 export async function installBDS(bdsPath:string, agreeOption:boolean = false):Promise<boolean> {
     if (BDSX_YES === 'skip') {
@@ -67,6 +70,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
     interface InstallInfo {
         bdsVersion?:string|null;
         bdsxCoreVersion?:string|null;
+        pdbcacheVersion?:string|null;
         files?:string[];
     }
 
@@ -123,14 +127,15 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
     class InstallItem {
         constructor(public readonly opts:{
             name:string,
-            key:keyof InstallInfo,
-            version:string,
+            key?:keyof InstallInfo,
+            version?:string,
             targetPath:string,
             url:string,
             keyFile?:string,
             confirm?:()=>Promise<void>|void,
             preinstall?:()=>Promise<void>|void,
             postinstall?:(writedFiles:string[])=>Promise<void>|void,
+            fallback?:(statusCode:number)=>Promise<boolean|void>|boolean|void,
             skipExists?:boolean,
             oldFiles?:string[],
         }) {
@@ -156,7 +161,15 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                 https.get(url, (response)=>{
                     bar.total = +response.headers['content-length']!;
                     if (response.statusCode !== 200) {
-                        reject(new MessageError(`${this.opts.name}: ${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
+                        (async()=>{
+                            if (this.opts.fallback != null) {
+                                const res = await this.opts.fallback(response.statusCode!);
+                                if (res === false) {
+                                    resolve();
+                                }
+                            }
+                            reject(new MessageError(`${this.opts.name}: ${response.statusCode} ${response.statusMessage}, Failed to download ${url}`));
+                        })().catch(reject);
                         return;
                     }
                     response.on('data', (data:Buffer)=>{
@@ -217,7 +230,9 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
             const preinstall = this.opts.preinstall;
             if (preinstall) await preinstall();
             const writedFiles = await this._downloadAndUnzip();
-            installInfo[this.opts.key] = this.opts.version as any;
+            if (this.opts.key != null) {
+                installInfo[this.opts.key] = this.opts.version as any;
+            }
 
             const postinstall = this.opts.postinstall;
             if (postinstall) await postinstall(writedFiles);
@@ -227,7 +242,12 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
             await fsutil.mkdir(this.opts.targetPath);
             const name = this.opts.name;
             const key = this.opts.key;
-            if (installInfo[key] == null) {
+            if (key == null || this.opts.version == null) {
+                await this._install();
+                return;
+            }
+            const version = installInfo[key];
+            if (version === undefined) {
                 const keyFile = this.opts.keyFile;
                 if (keyFile && await fsutil.exists(path.join(this.opts.targetPath, keyFile))) {
                     if (await yesno(`${name}: Would you like to use what already installed?`)) {
@@ -240,12 +260,12 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                 if (confirm) await confirm();
                 await this._install();
                 console.log(`${name}: Installed successfully`);
-            } else if (installInfo[key] === null || installInfo[key] === 'manual') {
+            } else if (version === null || version === 'manual') {
                 console.log(`${name}: manual`);
-            } else if (installInfo[key] === this.opts.version) {
+            } else if (version === this.opts.version) {
                 console.log(`${name}: ${this.opts.version}`);
             } else {
-                console.log(`${name}: Old (${installInfo[key]})`);
+                console.log(`${name}: Old (${version})`);
                 console.log(`${name}: New (${this.opts.version})`);
                 await this._install();
                 console.log(`${name}: Updated`);
@@ -254,9 +274,29 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
 
     }
 
+    const pdbcache = new InstallItem({
+        name: 'pdbcache',
+        version: BDS_VERSION,
+        url: PDBCACHE_LINK,
+        targetPath: bdsPath,
+        key: 'pdbcacheVersion',
+        keyFile: 'pdbcache.bin',
+        fallback(statusCode) {
+            if (statusCode !== 404) return;
+            console.error(colors.yellow(`pdbcache-${BDS_VERSION} does not exists on the server`));
+            console.error(colors.yellow('Generate through pdbcachegen.exe'));
+            const pdbcachegen = path.join(bdsPath, 'pdbcachegen.exe');
+            const pdbcachebin = path.join(bdsPath, 'pdbcache.bin');
+            const bedrockserver = path.join(bdsPath, 'bedrock_server.exe');
+            const res = child_process.spawnSync(pdbcachegen, [bedrockserver, pdbcachebin], {stdio:'inherit'});
+            if (res.status !== 0) throw new MessageError(`Failed to generate pdbbcache`);
+            return false;
+        },
+    });
+
     const bds = new InstallItem({
         name: 'BDS',
-        version:BDS_VERSION,
+        version: BDS_VERSION,
         url: BDS_LINK,
         targetPath: bdsPath,
         key: 'bdsVersion',
@@ -294,6 +334,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         await readInstallInfo();
         await bds.install();
         await bdsxCore.install();
+        await pdbcache.install();
         await saveInstallInfo();
         return true;
     } catch (err) {

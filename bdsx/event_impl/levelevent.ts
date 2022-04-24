@@ -1,12 +1,15 @@
+import { Register } from "../assembler";
 import { Actor } from "../bds/actor";
 import { BlockSource } from "../bds/block";
 import { Vec3 } from "../bds/blockpos";
 import { Level } from "../bds/level";
-import { procHacker } from "../bds/proc";
 import { CANCEL } from "../common";
 import { decay } from "../decay";
 import { events } from "../event";
+import { bedrockServer } from "../launcher";
+import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
+import { procHacker } from "../prochacker";
 
 export class LevelExplodeEvent {
     constructor(
@@ -70,15 +73,13 @@ function onLevelSave(level:Level):void {
         return _onLevelSave(event.level);
     }
 }
-const _onLevelSave = procHacker.hooking("Level::save", void_t, null, Level)(onLevelSave);
+const _onLevelSave = procHacker.hooking("?save@Level@@UEAAXXZ", void_t, null, Level)(onLevelSave);
 
-function onLevelTick(level:Level):void {
-    const event = new LevelTickEvent(level);
+function onLevelTick():void {
+    const event = new LevelTickEvent(bedrockServer.level);
     events.levelTick.fire(event);
-    decay(level);
-    _onLevelTick(event.level);
 }
-const _onLevelTick = procHacker.hooking("Level::tick", void_t, null, Level)(onLevelTick);
+procHacker.hookingRawWithCallOriginal("?tick@Level@@UEAAXXZ", makefunc.np(onLevelTick, void_t), [Register.rcx], []);
 
 function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t, lightningLevel:float32_t, lightningTime:int32_t):void {
     const event = new LevelWeatherChangeEvent(level, rainLevel, rainTime, lightningLevel, lightningTime);
@@ -88,4 +89,4 @@ function onLevelWeatherChange(level:Level, rainLevel:float32_t, rainTime:int32_t
         return _onLevelWeatherChange(event.level, event.rainLevel, event.rainTime, event.lightningLevel, event.lightningTime);
     }
 }
-const _onLevelWeatherChange = procHacker.hooking("Level::updateWeather", void_t, null, Level, float32_t, int32_t, float32_t, int32_t)(onLevelWeatherChange);
+const _onLevelWeatherChange = procHacker.hooking("?updateWeather@Level@@UEAAXMHMH@Z", void_t, null, Level, float32_t, int32_t, float32_t, int32_t)(onLevelWeatherChange);

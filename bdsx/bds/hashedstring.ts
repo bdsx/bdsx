@@ -1,7 +1,7 @@
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { CxxString, NativeType, void_t } from "../nativetype";
-import { procHacker } from "./proc";
+import { procHacker } from "../prochacker";
 
 @nativeClass()
 export class HashedString extends NativeClass {

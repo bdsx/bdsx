@@ -1,17 +1,25 @@
-import { pdb } from "../core";
-import { SYMOPT_NO_PUBLICS, SYMOPT_PUBLICS_ONLY, UNDNAME_NAME_ONLY } from "../dbghelp";
-import { decoratedSymbols, undecoratedPrivateSymbols, undecoratedSymbols } from "./symbollist";
+import { NativePointer } from "../core";
+import { dllraw } from "../dllraw";
+import { pdbcache } from '../pdbcache';
 
-pdb.setOptions(SYMOPT_NO_PUBLICS);
-const v1 = pdb.getList(pdb.coreCachePath, {}, undecoratedPrivateSymbols,
-    false, UNDNAME_NAME_ONLY);
-pdb.setOptions(SYMOPT_PUBLICS_ONLY);
-const v2 = pdb.getList(pdb.coreCachePath, v1, undecoratedSymbols,
-    false, UNDNAME_NAME_ONLY);
-const v3 = pdb.getList(pdb.coreCachePath, v2, decoratedSymbols);
-pdb.setOptions(0);
-pdb.close();
+export const proc:Record<string, NativePointer> = {};
 
-export const proc = v3;
+(proc as any).__proto__ = new Proxy({}, {
+    get(target:Record<string|symbol, any>, key):NativePointer {
+        if (typeof key !== 'string') {
+            return target[key];
+        } else {
+            const rva = pdbcache.search(key);
+            if (rva === -1) throw Error(`Symbol not found: ${key}`);
+            return proc[key] = dllraw.current.add(rva);
+        }
+    },
+    has(target, p):boolean {
+        if (typeof p !== 'string') {
+            return p in target;
+        }
+        return pdbcache.search(p) !== -1;
+    },
+});
 /** @deprecated use proc */
-export const proc2 = v3;
+export const proc2 = proc;

@@ -2,10 +2,10 @@ import { capi } from "./capi";
 import { abstract } from "./common";
 import { StaticPointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
+import { mangle } from "./mangle";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { NativeType, Type, uint32_t, void_t } from "./nativetype";
 import { Singleton } from "./singleton";
-import { templateName } from "./templatename";
 
 @nativeClass()
 class CxxPtrBase<T> extends NativeClass {
@@ -133,7 +133,7 @@ export abstract class CxxSharedPtr<T extends NativeClass> extends NativeClass {
         const clazz = cls as NativeClassType<T>;
         return Singleton.newInstance(CxxSharedPtr, cls, ()=>{
             const Base = CxxPtrBase.make(clazz);
-            class TypedSharedPtr extends CxxSharedPtr<NativeClass> {
+            class Clazz extends CxxSharedPtr<NativeClass> {
                 create(vftable:VoidPointer):void {
                     const size = Base[NativeType.size];
                     if (size === null) throw Error(`cannot allocate the non sized class`);
@@ -143,13 +143,16 @@ export abstract class CxxSharedPtr<T extends NativeClass> extends NativeClass {
                     this.p = this.ref.addAs(clazz, sizeOfSharedPtrBase);
                 }
             }
-            Object.defineProperty(TypedSharedPtr, 'name', {value:templateName('std::shared_ptr', clazz.name)});
-            TypedSharedPtr.define({
+            Clazz.define({
                 p:clazz.ref(),
                 ref:Base.ref(),
             });
+            Object.defineProperties(Clazz, {
+                name: { value: `CxxSharedPtr<${clazz.name}>` },
+                symbol: { value: mangle.templateClass(['std', 'shared_ptr'], clazz) },
+            });
 
-            return TypedSharedPtr as any;
+            return Clazz as any;
         });
     }
 }
@@ -223,7 +226,7 @@ export abstract class CxxWeakPtr<T extends NativeClass> extends NativeClass {
         const clazz = cls as NativeClassType<T>;
         return Singleton.newInstance(CxxWeakPtr, cls, ()=>{
             const Base = CxxPtrBase.make(clazz);
-            class TypedSharedPtr extends CxxWeakPtr<NativeClass> {
+            class Clazz extends CxxWeakPtr<NativeClass> {
                 create(vftable:VoidPointer):void {
                     const size = Base[NativeType.size];
                     if (size === null) throw Error(`cannot allocate the non sized class`);
@@ -233,13 +236,16 @@ export abstract class CxxWeakPtr<T extends NativeClass> extends NativeClass {
                     this.p = this.ref.addAs(clazz, sizeOfSharedPtrBase);
                 }
             }
-            Object.defineProperty(TypedSharedPtr, 'name', {value:templateName('std::weak_ptr', clazz.name)});
-            TypedSharedPtr.define({
+            Object.defineProperties(Clazz, {
+                name: { value: `CxxWeakPtr<${clazz.name}>` },
+                symbol: { value: mangle.templateClass(['std', 'weak_ptr'], clazz) },
+            });
+            Clazz.define({
                 p:clazz.ref(),
                 ref:Base.ref(),
             });
 
-            return TypedSharedPtr as any;
+            return Clazz as any;
         });
     }
 }

@@ -3,13 +3,13 @@ import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor } from "..
 import { BlockPos } from "../bds/blockpos";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
-import { procHacker } from "../bds/proc";
 import { VanillaServerGameplayEventListener } from "../bds/server";
 import { CANCEL } from "../common";
 import { NativePointer, StaticPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
+import { procHacker } from "../prochacker";
 
 export class BlockDestroyEvent {
     constructor(
@@ -123,7 +123,7 @@ function onBlockDestroy(blockSource:BlockSource, actor:Actor, blockPos:BlockPos,
         return _onBlockDestroy(event.blockSource, event.player, event.blockPos, event.itemStack, event.generateParticle);
     }
 }
-const _onBlockDestroy = procHacker.hooking("BlockSource::checkBlockDestroyPermissions", bool_t, null, BlockSource, Actor, BlockPos, ItemStack, bool_t)(onBlockDestroy);
+const _onBlockDestroy = procHacker.hooking("?checkBlockDestroyPermissions@BlockSource@@QEAA_NAEAVActor@@AEBVBlockPos@@AEBVItemStackBase@@_N@Z", bool_t, null, BlockSource, Actor, BlockPos, ItemStack, bool_t)(onBlockDestroy);
 
 function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Player, blockPos:BlockPos):void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
@@ -131,7 +131,7 @@ function onBlockDestructionStart(blockEventCoordinator:StaticPointer, player:Pla
     decay(blockPos);
     return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
 }
-const _onBlockDestructionStart = procHacker.hooking("BlockEventCoordinator::sendBlockDestructionStarted", void_t, null, StaticPointer, Player, BlockPos)(onBlockDestructionStart);
+const _onBlockDestructionStart = procHacker.hooking("?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@@Z", void_t, null, StaticPointer, Player, BlockPos)(onBlockDestructionStart);
 
 function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, facing:number, actor:Actor, ignoreEntities:boolean):boolean {
     const ret = _onBlockPlace(blockSource, block, blockPos, facing, actor, ignoreEntities);
@@ -147,7 +147,7 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
         return ret;
     }
 }
-const _onBlockPlace = procHacker.hooking("BlockSource::mayPlace", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
+const _onBlockPlace = procHacker.hooking("?mayPlace@BlockSource@@QEAA_NAEBVBlock@@AEBVBlockPos@@EPEAVActor@@_N@Z", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
 function onPistonMove(pistonBlockActor:NativePointer, blockSource:BlockSource):void_t {
     const event = new PistonMoveEvent(BlockPos.create(pistonBlockActor.getInt32(0x2C), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)), blockSource, pistonBlockActor.getInt8(0xE0));
@@ -168,7 +168,7 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
         return _onFarmlandDecay(event.block, event.blockSource, event.blockPos, event.culprit, fallDistance);
     }
 }
-const _onFarmlandDecay = procHacker.hooking("FarmBlock::transformOnFall", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
+const _onFarmlandDecay = procHacker.hooking("?transformOnFall@FarmBlock@@UEBAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@M@Z", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
 
 function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
     const event = new CampfireTryLightFire(blockPos, blockSource);
@@ -201,7 +201,7 @@ function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: Block
     return _onButtonPress(buttonBlock, player, blockPos, playerOrientation);
 }
 
-const _onButtonPress = procHacker.hooking("ButtonBlock::use", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
+const _onButtonPress = procHacker.hooking("?use@ButtonBlock@@UEBA_NAEAVPlayer@@AEBVBlockPos@@E@Z", bool_t, null, ButtonBlock, Player, BlockPos, uint8_t)(onButtonPress);
 
 function onChestOpen(chestBlock: ChestBlock, player: Player, blockPos: BlockPos, face: number): boolean {
     const event = new ChestOpenEvent(chestBlock, player, blockPos, face);
@@ -212,7 +212,7 @@ function onChestOpen(chestBlock: ChestBlock, player: Player, blockPos: BlockPos,
     return _onChestOpen(chestBlock, player, blockPos, face);
 }
 
-const _onChestOpen = procHacker.hooking("ChestBlock::use", bool_t, null, ChestBlock, Player, BlockPos, uint8_t)(onChestOpen);
+const _onChestOpen = procHacker.hooking("?use@ChestBlock@@UEBA_NAEAVPlayer@@AEBVBlockPos@@E@Z", bool_t, null, ChestBlock, Player, BlockPos, uint8_t)(onChestOpen);
 
 function onChestPair(chest: ChestBlockActor, chest2: ChestBlockActor, lead: bool_t): void {
     const event = new ChestPairEvent(chest, chest2, lead);
@@ -223,13 +223,13 @@ function onChestPair(chest: ChestBlockActor, chest2: ChestBlockActor, lead: bool
     return _onChestPair(chest, chest2, lead);
 }
 
-const _onChestPair = procHacker.hooking("ChestBlockActor::pairWith", void_t, null, ChestBlockActor, ChestBlockActor, bool_t)(onChestPair);
+const _onChestPair = procHacker.hooking("?pairWith@ChestBlockActor@@QEAAXPEAV1@_N@Z", void_t, null, ChestBlockActor, ChestBlockActor, bool_t)(onChestPair);
 
 export class BlockInteractedWithEvent {
     constructor(public player: Player, public blockPos: BlockPos) {}
 }
 const _onBlockInteractedWith = procHacker.hooking(
-    "VanillaServerGameplayEventListener::onBlockInteractedWith",
+    "?onBlockInteractedWith@VanillaServerGameplayEventListener@@UEAA?AW4EventResult@@AEAVPlayer@@AEBVBlockPos@@@Z",
     int32_t,
     null,
     VanillaServerGameplayEventListener,
@@ -253,7 +253,7 @@ function onProjectileHit(block: Block, region: BlockSource, blockPos: BlockPos, 
     decay(blockPos);
     return _onProjectileHit(block, region, blockPos, projectile);
 }
-const _onProjectileHit = procHacker.hooking("Block::onProjectileHit", void_t, null, Block, BlockSource, BlockPos, Actor)(onProjectileHit);
+const _onProjectileHit = procHacker.hooking("?onProjectileHit@Block@@QEBAXAEAVBlockSource@@AEBVBlockPos@@AEBVActor@@@Z", void_t, null, Block, BlockSource, BlockPos, Actor)(onProjectileHit);
 
 export class LightningHitBlockEvent {
     constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos) {}
@@ -266,7 +266,7 @@ function onLightningHit(block: Block, region: BlockSource, blockPos: BlockPos): 
     decay(blockPos);
     return _onLightningHit(block, region, blockPos);
 }
-const _onLightningHit = procHacker.hooking("Block::onLightningHit", void_t, null, Block, BlockSource, BlockPos)(onLightningHit);
+const _onLightningHit = procHacker.hooking("?onLightningHit@Block@@QEBAXAEAVBlockSource@@AEBVBlockPos@@@Z", void_t, null, Block, BlockSource, BlockPos)(onLightningHit);
 
 export class FallOnBlockEvent {
     constructor(public block: Block, public region: BlockSource, public blockPos: BlockPos, public entity: Actor, public height: number) {}
@@ -279,4 +279,4 @@ function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity:
     decay(blockPos);
     return _onFallOn(block, region, blockPos, entity, height);
 }
-const _onFallOn = procHacker.hooking("Block::onFallOn", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFallOn);
+const _onFallOn = procHacker.hooking("?onFallOn@Block@@QEBAXAEAVBlockSource@@AEBVBlockPos@@AEAVActor@@M@Z", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFallOn);

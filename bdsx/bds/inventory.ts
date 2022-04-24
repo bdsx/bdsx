@@ -404,7 +404,7 @@ export class ItemStackBase extends NativeClass {
 
 @nativeClass(0xa0)
 export class ItemStack extends ItemStackBase {
-    static readonly EMPTY_ITEM: ItemStack = proc["ItemStack::EMPTY_ITEM"].as(ItemStack);
+    static readonly EMPTY_ITEM: ItemStack = proc["?EMPTY_ITEM@ItemStack@@2V1@B"].as(ItemStack);
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */

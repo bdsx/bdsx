@@ -503,4 +503,4 @@ hacktool.hook = function hook(from, to, originalCodeSize, tempRegister) {
 
     hacktool.jump(from, to, Register.rax, originalCodeSize);
     return original;
-}
+};

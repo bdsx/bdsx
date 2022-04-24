@@ -2,8 +2,8 @@ import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, float32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
+import { procHacker } from "../prochacker";
 import { JsonValue } from "./connreq";
-import { procHacker } from "./proc";
 import { SemVersion } from "./server";
 
 export enum TrustedSkinFlag {
@@ -127,6 +127,6 @@ export class SerializedSkin extends NativeClass {
 }
 
 SerializedSkin.prototype[NativeType.ctor] = procHacker.js("??0SerializedSkin@@QEAA@XZ", void_t, {this:SerializedSkin});
-SerializedSkin.prototype[NativeType.dtor] = procHacker.js("SerializedSkin::~SerializedSkin", void_t, {this:SerializedSkin});
+SerializedSkin.prototype[NativeType.dtor] = procHacker.js("??1SerializedSkin@@QEAA@XZ", void_t, {this:SerializedSkin});
 SerializedSkin.prototype[NativeType.ctor_copy] = procHacker.js("??0SerializedSkin@@QEAA@AEBV0@@Z", void_t, {this:SerializedSkin}, SerializedSkin);
 SerializedSkin.prototype[NativeType.ctor_move] = procHacker.js("??0SerializedSkin@@QEAA@$$QEAV0@@Z", void_t, {this:SerializedSkin}, SerializedSkin);

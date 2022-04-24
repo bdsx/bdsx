@@ -167,7 +167,7 @@ export namespace makefunc {
     export const registerDirect = Symbol('makefunc.registerDirect');
 
     export interface Paramable {
-        symbol?:string;
+        symbol:string;
         name:string;
         [getter](ptr:StaticPointer, offset?:number):any;
         [setter](ptr:StaticPointer, value:any, offset?:number):void;

@@ -3,6 +3,7 @@ import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { mangle } from "../mangle";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -186,7 +187,7 @@ export enum ActorType {
     VillagerV2 = 0x1000373,
 }
 
-@nativeClass(0xb0)
+@nativeClass({size:0xb0, structSymbol: true})
 export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
     namespace:CxxString;
@@ -1067,6 +1068,7 @@ export class Actor extends AbstractClass {
         return arr;
     }
 }
+mangle.update(Actor);
 
 @nativeClass()
 export class DistanceSortedActor extends NativeStruct {
