@@ -156,6 +156,7 @@ Level.prototype.setDifficulty = function (difficulty) {
     }
     pkt.dispose();
 };
+Level.prototype.getNewUniqueID = procHacker.js("?getNewUniqueID@Level@@UEAA?AUActorUniqueID@@XZ", ActorUniqueID, {this:Level, structureReturn:true});
 
 Level.abstract({
     vftable: VoidPointer,
