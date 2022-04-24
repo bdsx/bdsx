@@ -837,7 +837,7 @@ Tester.concurrency({
             }
         }, 5));
 
-        events.playerJoin.on((ev) => {
+        events.playerJoin.on(this.wrap((ev) => {
             const player = ev.player;
             try {
                 const region = player.getRegion();
@@ -858,7 +858,7 @@ Tester.concurrency({
             } catch (err) {
                 this.processError(err);
             }
-        });
+        }));
     },
 
     chat() {
