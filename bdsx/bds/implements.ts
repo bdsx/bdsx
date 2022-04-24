@@ -418,12 +418,12 @@ OwnerStorageEntity.prototype._getStackRef = procHacker.js('OwnerStorageEntity::_
 Actor.tryGetFromEntity = procHacker.js('Actor::tryGetFromEntity', Actor, null, EntityContext);
 
 const WeakEntityRef$tryUnwrap_Player = procHacker.js("??$tryUnwrap@VPlayer@@_N@WeakEntityRef@@QEBAPEAVPlayer@@_N@Z", Player, null, WeakEntityRef, bool_t);
-WeakEntityRef.prototype.tryUnwrapAsPlayer = function (getRemoved = false) {
+WeakEntityRef.prototype.tryUnwrapPlayer = function (getRemoved = false) {
     return WeakEntityRef$tryUnwrap_Player(this, getRemoved);
 };
 
 const WeakEntityRef$tryUnwrap_Actor = procHacker.js("??$tryUnwrap@VActor@@_N@WeakEntityRef@@QEBAPEAVActor@@_N@Z", Actor, null, WeakEntityRef, bool_t);
-WeakEntityRef.prototype.tryUnwrapAsActor = function (getRemoved = false) {
+WeakEntityRef.prototype.tryUnwrapActor = function (getRemoved = false) {
     return WeakEntityRef$tryUnwrap_Actor(this, getRemoved);
 };
 

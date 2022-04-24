@@ -419,10 +419,10 @@ export class EntityRefTraits extends AbstractClass {
 
 @nativeClass(0x18)
 export class WeakEntityRef extends AbstractClass {
-    tryUnwrapAsPlayer(getRemoved: boolean = false): Player | null {
+    tryUnwrapPlayer(getRemoved: boolean = false): Player | null {
         abstract();
     }
-    tryUnwrapAsActor(getRemoved: boolean = false): Actor | null {
+    tryUnwrapActor(getRemoved: boolean = false): Actor | null {
         abstract();
     }
 }

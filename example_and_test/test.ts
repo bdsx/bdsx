@@ -845,7 +845,7 @@ Tester.concurrency({
                 if (levelChunk) {
                     const entityRefs = levelChunk.getChunkEntities();
                     for (const entityRef of entityRefs) {
-                        const entityFromRef = entityRef.tryUnwrapAsActor();
+                        const entityFromRef = entityRef.tryUnwrapActor();
                         if (entityFromRef) {
                             const actorId = entityFromRef.getUniqueIdBin();
                             const entityFromChunk = levelChunk.getEntity(actorId);
