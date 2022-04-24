@@ -732,4 +732,7 @@ export const decoratedSymbols = [
     '?distanceTo@Actor@@QEBAMAEBVVec3@@@Z',
     '?getSuccessCount@CommandOutput@@QEBAHXZ',
     '?shoot@ProjectileComponent@@QEAAXAEAVActor@@0@Z',
+    '?getChunkEntities@LevelChunk@@QEAAAEAV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ',
+    '??$tryUnwrap@VPlayer@@_N@WeakEntityRef@@QEBAPEAVPlayer@@_N@Z',
+    '??$tryUnwrap@VActor@@_N@WeakEntityRef@@QEBAPEAVActor@@_N@Z',
 ] as const;

@@ -17,7 +17,7 @@ import type { Level } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
-import type { ServerPlayer } from "./player";
+import type { Player, ServerPlayer } from "./player";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -415,6 +415,16 @@ export class OwnerStorageEntity extends AbstractClass {
 export class EntityRefTraits extends AbstractClass {
     @nativeField(OwnerStorageEntity)
     context:OwnerStorageEntity;
+}
+
+@nativeClass(0x18)
+export class WeakEntityRef extends AbstractClass {
+    tryUnwrapAsPlayer(getRemoved: boolean = false): Player | null {
+        abstract();
+    }
+    tryUnwrapAsActor(getRemoved: boolean = false): Actor | null {
+        abstract();
+    }
 }
 
 @nativeClass(null)
