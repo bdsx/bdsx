@@ -736,4 +736,5 @@ export const decoratedSymbols = [
     '??$tryUnwrap@VPlayer@@_N@WeakEntityRef@@QEBAPEAVPlayer@@_N@Z',
     '??$tryUnwrap@VActor@@_N@WeakEntityRef@@QEBAPEAVActor@@_N@Z',
     '?getEntity@LevelChunk@@QEBAPEAVActor@@AEBUActorUniqueID@@@Z',
+    '?attack@Block@@QEBA_NPEAVPlayer@@AEBVBlockPos@@@Z',
 ] as const;
