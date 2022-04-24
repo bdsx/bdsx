@@ -1321,7 +1321,7 @@ LevelChunk.prototype.getMin = procHacker.js("LevelChunk::getMin", BlockPos, {thi
 LevelChunk.prototype.getMax = procHacker.js("LevelChunk::getMax", BlockPos, {this:LevelChunk});
 LevelChunk.prototype.isFullyLoaded = procHacker.js("LevelChunk::isFullyLoaded", bool_t, {this:LevelChunk});
 LevelChunk.prototype.toWorldPos = procHacker.js("LevelChunk::toWorldPos", BlockPos, {this:LevelChunk, structureReturn:true}, ChunkPos);
-
+LevelChunk.prototype.getEntity = procHacker.js("?getEntity@LevelChunk@@QEBAPEAVActor@@AEBUActorUniqueID@@@Z", Actor, {this:LevelChunk}, ActorUniqueID.ref());
 // std::vector<WeakEntityRef>& LevelChunk::getEntities();
 LevelChunk.prototype.getChunkEntities = procHacker.js("?getChunkEntities@LevelChunk@@QEAAAEAV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ", CxxVectorToArray.make(WeakEntityRef), {this:LevelChunk});
 

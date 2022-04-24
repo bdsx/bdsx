@@ -735,4 +735,5 @@ export const decoratedSymbols = [
     '?getChunkEntities@LevelChunk@@QEAAAEAV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ',
     '??$tryUnwrap@VPlayer@@_N@WeakEntityRef@@QEBAPEAVPlayer@@_N@Z',
     '??$tryUnwrap@VActor@@_N@WeakEntityRef@@QEBAPEAVActor@@_N@Z',
+    '?getEntity@LevelChunk@@QEBAPEAVActor@@AEBUActorUniqueID@@@Z',
 ] as const;
