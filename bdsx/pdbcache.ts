@@ -1,10 +1,21 @@
 
+import * as colors from 'colors';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from './config';
 import { hashString } from './util';
 
-const fd = fs.openSync(path.join(Config.BDS_PATH, 'pdbcache.bin'), 'r');
+function openCacheFile():number {
+    try {
+        return fs.openSync(path.join(Config.BDS_PATH, 'pdbcache.bin'), 'r');
+    } catch(err) {
+        console.error(colors.red(`[BDSX] pdbcache.bin not found`));
+        console.log("[BDSX] Please run 'npm i' or " + (process.platform === "win32" ? 'update.bat' : 'update.sh') + " to install it");
+        process.exit(0);
+    }
+}
+
+const fd = openCacheFile();
 
 const HASHMAP_CAP_OFFSET = 4 + 16 + 4; // version + md5 + main rva
 const TABLE_OFFSET = HASHMAP_CAP_OFFSET + 4; // version + md5 + main rva + hashmap capacity
