@@ -807,7 +807,7 @@ export class Actor extends AbstractClass {
     /**
      * Teleports the entity to a specified position
      */
-    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3=new Vec3(true)):void {
+    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3|null=null):void {
         abstract();
     }
     /**

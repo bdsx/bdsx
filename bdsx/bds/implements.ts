@@ -270,7 +270,7 @@ Actor.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@Actor@@UEAAXAEBV
 
 const TeleportCommand$computeTarget = procHacker.js("?computeTarget@TeleportCommand@@SA?AVTeleportTarget@@AEAVActor@@VVec3@@PEAV4@V?$AutomaticID@VDimension@@H@@AEBV?$optional@VTeleportRotationData@@@std@@H@Z", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("?applyTarget@TeleportCommand@@SAXAEAVActor@@VTeleportTarget@@@Z", void_t, null, Actor, StaticPointer);
-Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3=new Vec3(true)) {
+Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3|null=null) {
     const target = new AllocatedPointer(0x80);
     TeleportCommand$computeTarget(target, this, pos, facePosition, dimensionId);
     TeleportCommand$applyTarget(this, target);
