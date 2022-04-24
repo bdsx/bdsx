@@ -269,10 +269,10 @@ Actor.prototype.setOffhandSlot = procHacker.js('Actor::setOffhandSlot', void_t, 
 
 const TeleportCommand$computeTarget = procHacker.js("TeleportCommand::computeTarget", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
 const TeleportCommand$applyTarget = procHacker.js("TeleportCommand::applyTarget", void_t, null, Actor, StaticPointer);
-Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld) {
-    const alloc = new AllocatedPointer(0x80);
-    TeleportCommand$computeTarget(alloc, this, pos, new Vec3(true), dimensionId);
-    TeleportCommand$applyTarget(this, alloc);
+Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3=new Vec3(true)) {
+    const target = new AllocatedPointer(0x80);
+    TeleportCommand$computeTarget(target, this, pos, facePosition, dimensionId);
+    TeleportCommand$applyTarget(this, target);
 };
 Actor.prototype.getArmor = procHacker.js('Actor::getArmor', ItemStack, {this:Actor}, int32_t);
 

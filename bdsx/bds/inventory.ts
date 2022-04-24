@@ -650,9 +650,10 @@ export class ItemStackNetIdVariant extends AbstractClass {
 export class NetworkItemStackDescriptor extends AbstractClass {
     @nativeField(ItemDescriptor)
     readonly descriptor:ItemDescriptor;
-    @nativeField(ItemStackNetIdVariant, 0x54) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
+    @nativeField(ItemStackNetIdVariant, 0x58) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
     readonly id:ItemStackNetIdVariant;
-    @nativeField(CxxString, 0x60)
+    /** @deprecated There seems to be no string inside NetworkItemStackDescriptor anymore */
+    @nativeField(CxxString, 0x64)
     _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
