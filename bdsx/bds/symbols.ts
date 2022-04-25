@@ -2,6 +2,9 @@ import { NativePointer } from "../core";
 import { dllraw } from "../dllraw";
 import { pdbcache } from '../pdbcache';
 
+/**
+ * @remark Backward compatibility cannot be guaranteed. The symbol name can be changed by BDS updating.
+ */
 export const proc:Record<string, NativePointer> = {};
 
 (proc as any).__proto__ = new Proxy({}, {

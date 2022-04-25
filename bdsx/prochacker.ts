@@ -388,4 +388,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     }
 }
 
+/**
+ * @remark Backward compatibility cannot be guaranteed. The symbol name can be changed by BDS updating.
+ */
 export const procHacker = new ProcHacker(proc);
