@@ -19,7 +19,7 @@ import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity } from "./actor";
+import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
@@ -157,6 +157,7 @@ Level.prototype.setDifficulty = function (difficulty) {
     }
     pkt.dispose();
 };
+Level.prototype.getNewUniqueID = procHacker.js("?getNewUniqueID@Level@@UEAA?AUActorUniqueID@@XZ", ActorUniqueID, {this:Level, structureReturn:true});
 
 Level.abstract({
     vftable: VoidPointer,
@@ -417,6 +418,16 @@ Mob.prototype.isAlive = procHacker.js('?isAlive@Mob@@UEBA_NXZ', bool_t, {this:Mo
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('?_getStackRef@OwnerStorageEntity@@IEBAAEAVEntityContext@@XZ', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('?tryGetFromEntity@Actor@@SAPEAV1@AEAVEntityContext@@_N@Z', Actor, null, EntityContext);
+
+const WeakEntityRef$tryUnwrap_Player = procHacker.js("??$tryUnwrap@VPlayer@@_N@WeakEntityRef@@QEBAPEAVPlayer@@_N@Z", Player, null, WeakEntityRef, bool_t);
+WeakEntityRef.prototype.tryUnwrapPlayer = function (getRemoved = false) {
+    return WeakEntityRef$tryUnwrap_Player(this, getRemoved);
+};
+
+const WeakEntityRef$tryUnwrap_Actor = procHacker.js("??$tryUnwrap@VActor@@_N@WeakEntityRef@@QEBAPEAVActor@@_N@Z", Actor, null, WeakEntityRef, bool_t);
+WeakEntityRef.prototype.tryUnwrapActor = function (getRemoved = false) {
+    return WeakEntityRef$tryUnwrap_Actor(this, getRemoved);
+};
 
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier$ActorType = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@W4ActorType@@@Z", void_t, null, ActorDefinitionIdentifier, int32_t);
 const ActorDefinitionIdentifier$ActorDefinitionIdentifier$CxxString = procHacker.js("??0ActorDefinitionIdentifier@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, null, ActorDefinitionIdentifier, CxxString);
@@ -1339,6 +1350,9 @@ LevelChunk.prototype.getMax = procHacker.js("?getMax@LevelChunk@@QEBAAEBVBlockPo
 LevelChunk.prototype.isFullyLoaded = procHacker.js("?isFullyLoaded@LevelChunk@@QEBA_NXZ", bool_t, {this:LevelChunk});
 LevelChunk.prototype.toWorldPos = procHacker.js("?toWorldPos@LevelChunk@@QEBA?AVBlockPos@@AEBVChunkBlockPos@@@Z", BlockPos, {this:LevelChunk, structureReturn:true}, ChunkPos);
 ChunkSource.prototype.getLevel = procHacker.js("?getLevel@ChunkSource@@QEBAAEAVLevel@@XZ", Level, {this:ChunkSource});
+LevelChunk.prototype.getEntity = procHacker.js("?getEntity@LevelChunk@@QEBAPEAVActor@@AEBUActorUniqueID@@@Z", Actor, {this:LevelChunk}, ActorUniqueID.ref());
+// std::vector<WeakEntityRef>& LevelChunk::getEntities();
+LevelChunk.prototype.getChunkEntities = procHacker.js("?getChunkEntities@LevelChunk@@QEAAAEAV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ", CxxVectorToArray.make(WeakEntityRef), {this:LevelChunk});
 
 // origin.ts
 VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {

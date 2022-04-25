@@ -227,6 +227,9 @@ export class Level extends NativeClass {
     setDifficulty(difficulty:Difficulty): void {
         abstract();
     }
+    getNewUniqueID(): ActorUniqueID {
+        abstract();
+    }
 }
 
 export class ServerLevel extends Level {

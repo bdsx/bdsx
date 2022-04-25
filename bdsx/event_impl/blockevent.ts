@@ -280,3 +280,14 @@ function onFallOn(block: Block, region: BlockSource, blockPos: BlockPos, entity:
     return _onFallOn(block, region, blockPos, entity, height);
 }
 const _onFallOn = procHacker.hooking("?onFallOn@Block@@QEBAXAEAVBlockSource@@AEBVBlockPos@@AEAVActor@@M@Z", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFallOn);
+
+export class BlockAttackEvent {
+    constructor(public block:Block, public player: Player | null, public blockPos: BlockPos) {}
+}
+function onBlockAttacked(block: Block, player: Player|null, blockPos: BlockPos): bool_t {
+    const event = new BlockAttackEvent(block, player, blockPos);
+    const canceled = events.attackBlock.fire(event) === CANCEL;
+    if (canceled) return false;
+    return Block$attack(block, player, blockPos);
+}
+const Block$attack = procHacker.hooking("?attack@Block@@QEBA_NPEAVPlayer@@AEBVBlockPos@@@Z", bool_t, null, Block, Player, BlockPos)(onBlockAttacked);

@@ -813,7 +813,7 @@ Tester.concurrency({
 
                         // test for hasFamily
                         this.assert(actor.hasFamily("player") === true, "the actor must be a Player");
-                        this.assert(actor.hasFamily("undead") === false,"the actor must be not a Undead Mob");
+                        this.assert(actor.hasFamily("undead") === false, "the actor must be not a Undead Mob");
                     }
 
                     if (identifier === 'minecraft:player') {
@@ -836,6 +836,29 @@ Tester.concurrency({
                 this.processError(err);
             }
         }, 5));
+
+        events.playerJoin.on(this.wrap((ev) => {
+            const player = ev.player;
+            try {
+                const region = player.getRegion();
+                const levelChunk = region.getChunkAt(BlockPos.create(player.getPosition()));
+                if (levelChunk) {
+                    const entityRefs = levelChunk.getChunkEntities();
+                    for (const entityRef of entityRefs) {
+                        const entityFromRef = entityRef.tryUnwrapActor();
+                        if (entityFromRef) {
+                            const actorId = entityFromRef.getUniqueIdBin();
+                            const entityFromChunk = levelChunk.getEntity(actorId);
+                            this.assert(entityFromRef === entityFromChunk, "fetched entity is wrong");
+                        } else {
+                            this.error("failed to get entity from WeakEntityRef");
+                        }
+                    }
+                }
+            } catch (err) {
+                this.processError(err);
+            }
+        }));
     },
 
     chat() {
