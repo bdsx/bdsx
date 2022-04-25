@@ -1,9 +1,9 @@
 import { capi } from "../capi";
 import { makefunc } from "../makefunc";
+import { mangle } from "../mangle";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { int32_t, NativeType, void_t } from "../nativetype";
 import { Singleton } from "../singleton";
-import { templateName } from "../templatename";
 
 const destructor = makefunc.js([0], void_t, {this:NativeClass}, int32_t);
 
@@ -92,12 +92,15 @@ export class SharedPtr<T extends NativeClass> extends NativeClass {
         return Singleton.newInstance(SharedPtr, cls, ()=>{
             const Base = PtrBase.make(clazz);
             @nativeClass()
-            class TypedSharedPtr extends SharedPtr<NativeClass> {
+            class Clazz extends SharedPtr<NativeClass> {
                 @nativeField(Base.ref())
                 ref:PtrBase<T>|null;
             }
-            Object.defineProperty(TypedSharedPtr, 'name', {value:templateName('SharedPtr', clazz.name)});
-            return TypedSharedPtr as any;
+            Object.defineProperties(Clazz, {
+                name: { value: `SharedPtr<${clazz.name}>` },
+                symbol: { value: mangle.templateClass('SharedPtr', clazz) },
+            });
+            return Clazz as any;
         });
     }
 }
@@ -134,12 +137,15 @@ export class WeakPtr<T extends NativeClass> extends NativeClass {
         return Singleton.newInstance(WeakPtr, cls, ()=>{
             const Base = PtrBase.make(clazz);
             @nativeClass()
-            class TypedSharedPtr extends WeakPtr<NativeClass> {
+            class Clazz extends WeakPtr<NativeClass> {
                 @nativeField(Base.ref())
                 ref:PtrBase<T>|null;
             }
-            Object.defineProperty(TypedSharedPtr, 'name', {value:templateName('WeakPtr', clazz.name)});
-            return TypedSharedPtr as any;
+            Object.defineProperties(Clazz, {
+                name: { value: `WeakPtr<${clazz.name}>` },
+                symbol: { value: mangle.templateClass('WeakPtr', clazz) },
+            });
+            return Clazz as any;
         });
     }
 }

@@ -2,10 +2,10 @@ import { capi } from "../capi";
 import { abstract } from "../common";
 import { AbstractClass, AbstractMantleClass, nativeClass, nativeField } from "../nativeclass";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
+import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
-import { procHacker } from "./proc";
 import { BinaryStream } from "./stream";
 
 // export interface PacketType<T> extends StructureType<T>
@@ -107,4 +107,4 @@ export class Packet extends AbstractMantleClass {
 export const PacketSharedPtr = CxxSharedPtr.make(Packet);
 export type PacketSharedPtr = CxxSharedPtr<Packet>;
 
-export const createPacketRaw = procHacker.js("MinecraftPackets::createPacket", PacketSharedPtr, null, PacketSharedPtr, int32_t);
+export const createPacketRaw = procHacker.js("?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z", PacketSharedPtr, null, PacketSharedPtr, int32_t);

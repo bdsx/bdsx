@@ -157,47 +157,43 @@ export class ServerInstance extends AbstractClass {
      * Disconnects a specific client with the given message
      */
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
-        return this.minecraft.getServerNetworkHandler().disconnectClient(client, message, skipMessage);
+        abstract();
     }
     /**
      * Returns the server's message-of-the-day
      */
     getMotd():string {
-        return this.minecraft.getServerNetworkHandler().motd;
+        abstract();
     }
     /**
      * Changes the server's message-of-the-day
      */
     setMotd(motd:string):void {
-        return this.minecraft.getServerNetworkHandler().setMotd(motd);
+        abstract();
     }
     /**
      * Returns the server's maxiumum player capacity
      */
     getMaxPlayers():number {
-        return this.minecraft.getServerNetworkHandler().maxPlayers;
+        abstract();
     }
     /**
      * Changes the server's maxiumum player capacity
      */
     setMaxPlayers(count:number):void {
-        this.minecraft.getServerNetworkHandler().setMaxNumPlayers(count);
+        abstract();
     }
     /**
      * Returns an array of all online players
      */
     getPlayers():ServerPlayer[] {
-        return this.minecraft.getLevel().getPlayers();
+        abstract();
     }
     /**
      * Resends all clients the updated command list
      */
     updateCommandList(): void {
-        const pk = this.minecraft.getCommands().getRegistry().serializeAvailableCommands();
-        for (const player of this.getPlayers()) {
-            player.sendNetworkPacket(pk);
-        }
-        pk.dispose();
+        abstract();
     }
     /**
      * Returns the server's current network protocol version

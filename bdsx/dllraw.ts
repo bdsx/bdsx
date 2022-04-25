@@ -21,4 +21,6 @@ export namespace dllraw {
         const ptr = cgate.GetProcAddress(module, 'wine_get_version');
         export const wine_get_version = ptr.isNull() ? null : ptr;
     }
+
+    export const current = cgate.GetModuleHandleW(null);
 }

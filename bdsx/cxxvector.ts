@@ -2,11 +2,11 @@ import * as util from 'util';
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
+import { mangle } from './mangle';
 import { msAlloc } from "./msalloc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
-import { templateName } from "./templatename";
 
 export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
     new(address?:VoidPointer|boolean):CxxVector<T>;
@@ -582,9 +582,12 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         this._get(ptr, index)[NativeType.ctor_move](from!);
                     }
                 }
-                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(type)});
                 VectorImpl.prototype.componentType = type;
                 VectorImpl.abstract({}, VECTOR_SIZE, 8);
+                Object.defineProperties(VectorImpl, {
+                    name: { value:`CxxVector<${type.name}>` },
+                    symbol: {value: getVectorSymbol(type) },
+                });
                 return VectorImpl as any;
             } else {
                 class VectorImpl extends CxxVector<T> {
@@ -629,7 +632,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         type[NativeType.setter](ptr, from);
                     }
                 }
-                Object.defineProperty(VectorImpl, 'name', {value:getVectorName(type)});
+                Object.defineProperty(VectorImpl, 'name', {value:getVectorSymbol(type)});
                 VectorImpl.prototype.componentType = type;
                 VectorImpl.abstract({}, VECTOR_SIZE, 8);
                 return VectorImpl;
@@ -642,15 +645,15 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     }
 }
 
-function getVectorName(type:Type<any>):string {
-    return templateName('std::vector', type.symbol || type.name, templateName('std::allocator', type.symbol || type.name));
+function getVectorSymbol(type:Type<any>):string {
+    return mangle.templateClass(['std', 'vector'], type, mangle.templateClass(['std', 'allocator'], type));
 }
 
 export class CxxVectorToArray<T> extends NativeType<T[]> {
     public readonly type:CxxVectorType<T>;
 
     private constructor(public readonly compType:Type<T>) {
-        super(getVectorName(compType), `CxxVectorToArray<${compType.name}>`, VECTOR_SIZE, 8,
+        super(getVectorSymbol(compType), `CxxVectorToArray<${compType.name}>`, VECTOR_SIZE, 8,
             v=>v instanceof Array,
             undefined,
             (ptr, offset)=>ptr.addAs(this.type, offset).toArray(),

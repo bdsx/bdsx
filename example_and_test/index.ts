@@ -10,6 +10,7 @@ import './custommotd';
 import './event-playerdropitem';
 import './executecommand';
 import './form';
+import './hidemapmarker';
 import './inventory';
 import './ipban';
 import './lowlevel-apihooking';

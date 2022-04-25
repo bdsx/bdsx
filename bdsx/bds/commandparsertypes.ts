@@ -40,7 +40,6 @@ symbols.addParserSymbols(typesWithTypeIdPtr);
 symbols.addCounterSymbol(CommandRegistry);
 symbols.addTypeIdFnSymbols(CommandRegistry, types);
 symbols.addTypeIdPtrSymbols(CommandRegistry, typesWithTypeIdPtr);
-symbols.load();
 type_id.load(symbols);
 CommandRegistry.loadParser(symbols);
 type_id.clone(CommandRegistry, ActorWildcardCommandSelector, PlayerWildcardCommandSelector);

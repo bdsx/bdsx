@@ -6,10 +6,10 @@ import * as util from 'util';
 import { capi } from "./capi";
 import { CxxLess } from "./cxxfunctional";
 import { CxxPair, CxxPairType } from "./cxxpair";
+import { mangle } from './mangle';
 import { NativeClass, nativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { int8_t, NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
-import { templateName } from "./templatename";
 
 enum _Redbl { // colors for link to parent
     _Red,
@@ -615,8 +615,9 @@ export abstract class CxxMap<K, V> extends NativeClass {
             CxxMapImpl.prototype.componentType = comptype;
             CxxMapImpl.prototype.nodeType = nodetype;
             CxxMapImpl.prototype.key_comp = key_comp;
-            Object.defineProperty(CxxMapImpl, 'name', {
-                value:getMapName(comptype),
+            Object.defineProperties(CxxMapImpl, {
+                name: { value: `CxxMap<${k.name}, ${v.name}>` },
+                symbol: { value: getMapSymbol(comptype) },
             });
             return CxxMapImpl;
         });
@@ -632,8 +633,8 @@ export abstract class CxxMap<K, V> extends NativeClass {
     }
 }
 
-function getMapName(pair:CxxPairType<any, any>):string {
+function getMapSymbol(pair:CxxPairType<any, any>):string {
     const key = pair.firstType;
     const value = pair.secondType;
-    return templateName('std::map', key.name, value.name, templateName('std::less', key.name), templateName('std::allocator', pair.name));
+    return mangle.templateClass(['std', 'map'], key.symbol, value.symbol, mangle.templateClass(['std', 'less'], key.symbol), mangle.templateClass(['std', 'allocator'], pair.symbol));
 }

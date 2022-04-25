@@ -9,11 +9,11 @@ import { makefunc } from "../makefunc";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
+import { procHacker } from "../prochacker";
 import { remapAndPrintError } from "../source-map-support";
 import { ConnectionRequest } from "./connreq";
 import type { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
-import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 

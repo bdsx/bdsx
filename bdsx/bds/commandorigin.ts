@@ -6,13 +6,13 @@ import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import { CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
+import { procHacker } from "../prochacker";
 import { Actor } from "./actor";
 import type { CommandPermissionLevel, CommandPositionFloat } from "./command";
 import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { CompoundTag } from "./nbt";
-import { procHacker } from "./proc";
 import { proc } from "./symbols";
 
 export enum CommandOriginType {
@@ -148,7 +148,7 @@ export class ActorCommandOrigin extends CommandOrigin {
     }
 }
 
-const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("ActorCommandOrigin::ActorCommandOrigin", void_t, null, ActorCommandOrigin, Actor);
+const ActorCommandOrigin$ActorCommandOrigin = procHacker.js("??0ActorCommandOrigin@@QEAA@AEAVActor@@@Z", void_t, null, ActorCommandOrigin, Actor);
 
 @nativeClass(0x50)
 export class VirtualCommandOrigin extends CommandOrigin {
@@ -178,9 +178,9 @@ export class ServerCommandOrigin extends CommandOrigin {
     }
 }
 
-const ServerCommandOrigin$ServerCommandOrigin = procHacker.js('ServerCommandOrigin::ServerCommandOrigin', void_t, null, ServerCommandOrigin,
+const ServerCommandOrigin$ServerCommandOrigin = procHacker.js('??0ServerCommandOrigin@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVServerLevel@@W4CommandPermissionLevel@@V?$AutomaticID@VDimension@@H@@@Z', void_t, null, ServerCommandOrigin,
     CxxString, ServerLevel, int32_t, Dimension);
-const ServerCommandOrigin_vftable = proc["ServerCommandOrigin::`vftable'"];
+const ServerCommandOrigin_vftable = proc["??_7ServerCommandOrigin@@6B@"];
 
 CommandOrigin.prototype[NativeType.dtor] = vectorDeletingDestructor;
 

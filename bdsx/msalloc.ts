@@ -1,7 +1,7 @@
-import { procHacker } from "./bds/proc";
 import { capi } from "./capi";
 import { NativePointer, StaticPointer } from "./core";
 import { uint64_as_float_t } from "./nativetype";
+import { procHacker } from "./prochacker";
 
 const _Big_allocation_threshold = 4096;
 const _Big_allocation_alignment = 32;

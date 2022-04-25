@@ -5,7 +5,7 @@ import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
-import { proc } from "./proc";
+import { proc } from "./symbols";
 
 export enum JsonValueType {
     Null = 0,
@@ -18,10 +18,9 @@ export enum JsonValueType {
     Object = 7,
 }
 
-@nativeClass(0x10)
+@nativeClass({size: 0x10, symbol: 'VValue@Json@@'})
 export class JsonValue extends NativeClass {
     static readonly [CommandParameterType.symbol]:true;
-    static readonly symbol = 'Json::Value';
 
     @nativeField(uint8_t, 8)
     type:JsonValueType;
@@ -58,15 +57,15 @@ export class JsonValue extends NativeClass {
             if (value === null) {
                 this.type = JsonValueType.Null;
             } else {
-                jsonValueCtorWithType(this, JsonValueType.Object);
+                Json$Value$CtorWithType(this, JsonValueType.Object);
                 for (const [key, kv] of Object.entries(value)) {
-                    const child = jsonValueResolveReference(this, key, false);
+                    const child = Json$Value$ResolveReference(this, key, false);
                     child.setValue(kv);
                 }
             }
             break;
         case 'string':
-            jsonValueCtorWithString(this, value);
+            Json$Value$CtorWithString(this, value);
             break;
         default:
             throw TypeError(`unexpected json type: ${typeof value}`);
@@ -82,24 +81,24 @@ export class JsonValue extends NativeClass {
     }
 
     getByInt(key:number):JsonValue {
-        return jsonValueGetByInt(this, key);
+        return Json$Value$GetByInt(this, key);
     }
     getByString(key:string):JsonValue {
-        return jsonValueGetByString(this, key);
+        return Json$Value$GetByString(this, key);
     }
 
     get(key:string|number):JsonValue {
         if (typeof key === 'number') {
             if ((key|0) === key) {
-                return jsonValueGetByInt(this, key);
+                return Json$Value$GetByInt(this, key);
             }
             key = key+'';
         }
-        return jsonValueGetByString(this, key);
+        return Json$Value$GetByString(this, key);
     }
 
     getMemberNames():string[] {
-        const members:CxxVector<CxxString> = jsonValueGetMemberNames.call(this);
+        const members:CxxVector<CxxString> = Json$Value$GetMemberNames.call(this);
         const array = members.toArray();
         members.destruct();
         return array;
@@ -224,15 +223,15 @@ export class JsonValue extends NativeClass {
     }
 }
 
-const jsonValueCtorWithType = makefunc.js(proc['??0Value@Json@@QEAA@W4ValueType@1@@Z'], JsonValue, null, JsonValue, int32_t);
-const jsonValueCtorWithString = makefunc.js(proc['??0Value@Json@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z'], JsonValue, null, JsonValue, CxxString);
-const jsonValueGetByInt = makefunc.js(proc['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, int32_t);
-const jsonValueGetByString = makefunc.js(proc['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, makefunc.Utf8);
-const jsonValueGetMemberNames = makefunc.js(proc['Json::Value::getMemberNames'], CxxVector.make(CxxString), {this: JsonValue, structureReturn: true});
-const jsonValueResolveReference = makefunc.js(proc['Json::Value::resolveReference'], JsonValue, null, JsonValue, makefunc.Utf8, bool_t);
-JsonValue.prototype.isMember = makefunc.js(proc['Json::Value::isMember'], bool_t, {this: JsonValue}, makefunc.Utf8);
-JsonValue.prototype.size = makefunc.js(proc['Json::Value::size'], int32_t, {this:JsonValue});
-JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['Json::Value::~Value'], void_t, {this:JsonValue});
+const Json$Value$CtorWithType = makefunc.js(proc['??0Value@Json@@QEAA@W4ValueType@1@@Z'], JsonValue, null, JsonValue, int32_t);
+const Json$Value$CtorWithString = makefunc.js(proc['??0Value@Json@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z'], JsonValue, null, JsonValue, CxxString);
+const Json$Value$GetByInt = makefunc.js(proc['??AValue@Json@@QEAAAEAV01@H@Z'], JsonValue, null, JsonValue, int32_t);
+const Json$Value$GetByString = makefunc.js(proc['??AValue@Json@@QEAAAEAV01@PEBD@Z'], JsonValue, null, JsonValue, makefunc.Utf8);
+const Json$Value$GetMemberNames = makefunc.js(proc['?getMemberNames@Value@Json@@QEBA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ'], CxxVector.make(CxxString), {this: JsonValue, structureReturn: true});
+const Json$Value$ResolveReference = makefunc.js(proc['?resolveReference@Value@Json@@AEAAAEAV12@PEBD_N@Z'], JsonValue, null, JsonValue, makefunc.Utf8, bool_t);
+JsonValue.prototype.isMember = makefunc.js(proc['?isMember@Value@Json@@QEBA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z'], bool_t, {this: JsonValue}, CxxString);
+JsonValue.prototype.size = makefunc.js(proc['?size@Value@Json@@QEBAIXZ'], int32_t, {this:JsonValue});
+JsonValue.prototype[NativeType.dtor] = makefunc.js(proc['??1Value@Json@@QEAA@XZ'], void_t, {this:JsonValue});
 
 @nativeClass(null)
 export class Certificate extends NativeClass {

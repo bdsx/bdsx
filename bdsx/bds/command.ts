@@ -3,18 +3,19 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { CommandParameterType } from "../commandparam";
 import { abstract } from "../common";
-import { AllocatedPointer, chakraUtil, StaticPointer, VoidPointer } from "../core";
+import { StaticPointer, VoidPointer } from "../core";
 import { CxxMap } from "../cxxmap";
 import { CxxPair } from "../cxxpair";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
+import { mangle } from "../mangle";
 import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField, NativeStruct, vectorDeletingDestructor } from "../nativeclass";
 import { bin64_t, bool_t, CommandParameterNativeType, CxxString, float32_t, int16_t, int32_t, int64_as_float_t, NativeType, Type, uint32_t, uint64_as_float_t, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
+import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
-import { templateName } from "../templatename";
 import { getEnumKeys } from "../util";
 import { Actor, ActorDefinitionIdentifier } from "./actor";
 import { Block } from "./block";
@@ -26,7 +27,6 @@ import { MobEffect } from "./effects";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
 import { Player } from "./player";
-import { procHacker } from "./proc";
 import { proc } from "./symbols";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
 
@@ -101,8 +101,8 @@ export class MCRESULT extends NativeStruct {
         abstract();
     }
 }
-MCRESULT.prototype.getFullCode = procHacker.js("MCRESULT::getFullCode", int32_t, {this:MCRESULT});
-MCRESULT.prototype.isSuccess = procHacker.js("MCRESULT::isSuccess", bool_t, {this:MCRESULT});
+MCRESULT.prototype.getFullCode = procHacker.js("?getFullCode@MCRESULT@@QEBAHXZ", int32_t, {this:MCRESULT});
+MCRESULT.prototype.isSuccess = procHacker.js("?isSuccess@MCRESULT@@QEBA_NXZ", bool_t, {this:MCRESULT});
 
 export enum CommandSelectionOrder {
     Sorted,
@@ -153,10 +153,10 @@ export class CommandSelectorBase extends AbstractClass {
 }
 
 /** @param args_1 forcePlayer */
-const CommandSelectorBaseCtor = procHacker.js('CommandSelectorBase::CommandSelectorBase', void_t, null, CommandSelectorBase, bool_t);
-CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('CommandSelectorBase::~CommandSelectorBase', void_t, {this:CommandSelectorBase});
-(CommandSelectorBase.prototype as any)._newResults = procHacker.js('CommandSelectorBase::newResults', CxxSharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
-CommandSelectorBase.prototype.getName = procHacker.js('CommandSelectorBase::getName', CxxString, {this:CommandSelectorBase, structureReturn: true});
+const CommandSelectorBaseCtor = procHacker.js('??0CommandSelectorBase@@IEAA@_N@Z', void_t, null, CommandSelectorBase, bool_t);
+CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js('??1CommandSelectorBase@@QEAA@XZ', void_t, {this:CommandSelectorBase});
+(CommandSelectorBase.prototype as any)._newResults = procHacker.js('?newResults@CommandSelectorBase@@IEBA?AV?$shared_ptr@V?$vector@PEAVActor@@V?$allocator@PEAVActor@@@std@@@std@@@std@@AEBVCommandOrigin@@@Z', CxxSharedPtr.make(CxxVector.make(Actor.ref())), {this:CommandSelectorBase, structureReturn: true}, CommandOrigin);
+CommandSelectorBase.prototype.getName = procHacker.js('?getName@CommandSelectorBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:CommandSelectorBase, structureReturn: true});
 
 @nativeClass()
 export class WildcardCommandSelector<T> extends CommandSelectorBase {
@@ -164,8 +164,11 @@ export class WildcardCommandSelector<T> extends CommandSelectorBase {
         return Singleton.newInstance(WildcardCommandSelector, type, ()=>{
             class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {
             }
-            Object.defineProperty(WildcardCommandSelectorImpl, 'name', {value: templateName('WildcardCommandSelector', type.name)});
             WildcardCommandSelectorImpl.define({});
+            Object.defineProperties(WildcardCommandSelectorImpl, {
+                name: { value: `WildcardCommandSelector<${type.name}>` },
+                symbol: { value: mangle.templateClass('WildcardCommandSelector', type) },
+            });
 
             return WildcardCommandSelectorImpl;
         });
@@ -178,6 +181,7 @@ export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor) 
 ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
+
 export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector {
     [NativeType.ctor]():void {
         CommandSelectorBaseCtor(this, true);
@@ -190,8 +194,11 @@ export class CommandSelector<T> extends CommandSelectorBase {
         return Singleton.newInstance(CommandSelector, type, ()=>{
             class CommandSelectorImpl extends CommandSelector<T> {
             }
-            Object.defineProperty(CommandSelectorImpl, 'name', {value: templateName('CommandSelector', type.name)});
             CommandSelectorImpl.define({});
+            Object.defineProperties(CommandSelectorImpl, {
+                name: { value: `CommandSelector<${type.name}>` },
+                symbol: { value: mangle.templateClass('CommandSelector', type) },
+            });
 
             return CommandSelectorImpl;
         });
@@ -243,7 +250,7 @@ export class CommandItem extends NativeStruct {
     }
 }
 
-CommandItem.prototype.createInstance = procHacker.js('CommandItem::createInstance', ItemStack, {this:CommandItem, structureReturn:true}, int32_t);
+CommandItem.prototype.createInstance = procHacker.js('?createInstance@CommandItem@@QEBA?AV?$optional@VItemInstance@@@std@@HHPEAVCommandOutput@@_N@Z', ItemStack, {this:CommandItem, structureReturn:true}, int32_t);
 
 export class CommandMessage extends NativeClass {
     static readonly [CommandParameterType.symbol]:true;
@@ -268,7 +275,7 @@ export namespace CommandMessage {
 CommandMessage.abstract({
     data: CxxVector.make(CommandMessage.MessageComponent),
 }, 0x18);
-CommandMessage.prototype.getMessage = procHacker.js('CommandMessage::getMessage', CxxString, {this:CommandMessage, structureReturn:true}, CommandOrigin);
+CommandMessage.prototype.getMessage = procHacker.js('?getMessage@CommandMessage@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVCommandOrigin@@@Z', CxxString, {this:CommandMessage, structureReturn:true}, CommandOrigin);
 
 @nativeClass()
 export class CommandPosition extends NativeStruct {
@@ -418,12 +425,12 @@ export class CommandContext extends NativeClass {
 }
 
 export namespace CommandVersion {
-    export const CurrentVersion = proc['CommandVersion::CurrentVersion'].getInt32();
+    export const CurrentVersion = proc['?CurrentVersion@CommandVersion@@2HB'].getInt32();
 }
 
 const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
-const commandContextRefCounter$Vftable = proc["std::_Ref_count_obj2<CommandContext>::`vftable'"];
-const CommandContext$CommandContext = procHacker.js('CommandContext::CommandContext', void_t, null,
+const commandContextRefCounter$Vftable = proc["??_7?$_Ref_count_obj2@VCommandContext@@@std@@6B@"];
+const CommandContext$CommandContext = procHacker.js('??0CommandContext@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VCommandOrigin@@U?$default_delete@VCommandOrigin@@@std@@@2@H@Z', void_t, null,
     CommandContext, CxxString, CommandOriginWrapper, int32_t);
 const CommandContextSharedPtr = CxxSharedPtr.make(CommandContext);
 
@@ -827,7 +834,7 @@ function passNativeTypeCtorParams<T>(type:Type<T>):[
  * The command parameter type with the type converter
  */
 export abstract class CommandMappedValue<BaseType, NewType=BaseType> extends CommandParameterNativeType<BaseType> {
-    constructor(type:Type<BaseType>, symbol:string = type.symbol || type.name, name:string = type.name) {
+    constructor(type:Type<BaseType>, symbol:string = type.symbol, name:string = type.name) {
         super(symbol, name, ...passNativeTypeCtorParams(type));
     }
 
@@ -1111,7 +1118,8 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
 }
 
 const parsers = new Map<Type<any>, VoidPointer>();
-let enumParser: VoidPointer;
+const stringParser = proc['??$parse@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z'];
+let enumParser:VoidPointer = proc['??$parseEnum@HU?$DefaultIdConverter@H@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z'];
 
 enum ParserType {
     Unknown,
@@ -1120,7 +1128,7 @@ enum ParserType {
 }
 
 function getParserType(parser:VoidPointer):ParserType {
-    if (parser.equalsptr(CommandRegistry.getParser(CxxString))) {
+    if (parser.equalsptr(stringParser)) {
         return ParserType.String;
     } else if (parser.equalsptr(enumParser)) {
         return ParserType.Int;
@@ -1217,13 +1225,15 @@ export class CommandRegistry extends HasTypeId {
         for (const [type, addr] of symbols.iterateParsers()) {
             parsers.set(type, addr);
         }
-        enumParser = symbols.enumParser;
     }
 
     static setParser(type:Type<any>, parserFnPointer:VoidPointer):void {
         parsers.set(type, parserFnPointer);
     }
 
+    /**
+     * @deprecated no need to use
+     */
     static setEnumParser(parserFnPointer:VoidPointer):void {
         enumParser = parserFnPointer;
     }
@@ -1513,7 +1523,7 @@ function constptr<T extends NativeClass>(cls:new()=>T):CommandParameterNativeTyp
     const nativecls = cls as NativeClassType<T>;
     const constptr = Object.create(nativecls.ref());
     constptr.name = nativecls.name + '*';
-    constptr.symbol = (nativecls.symbol || nativecls.name) + ' const * __ptr64';
+    constptr.symbol = mangle.constPointer(nativecls.symbol);
     return constptr!;
 }
 
@@ -1531,29 +1541,29 @@ export const CommandBlock = Command.Block;
 export const CommandMobEffect = Command.MobEffect;
 
 CommandOutput.prototype.getSuccessCount = procHacker.js('?getSuccessCount@CommandOutput@@QEBAHXZ', int32_t, {this:CommandOutput});
-CommandOutput.prototype.getType = procHacker.js('CommandOutput::getType', int32_t, {this:CommandOutput});
+CommandOutput.prototype.getType = procHacker.js('?getType@CommandOutput@@QEBA?AW4CommandOutputType@@XZ', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructWith = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
-CommandOutput.prototype.empty = procHacker.js('CommandOutput::empty', bool_t, {this:CommandOutput});
+CommandOutput.prototype.empty = procHacker.js('?empty@CommandOutput@@QEBA_NXZ', bool_t, {this:CommandOutput});
 CommandOutput.prototype.set_string = procHacker.js('??$set@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@CommandOutput@@QEAAXPEBDV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', void_t, {this:CommandOutput}, makefunc.Utf8, CxxString);
-CommandOutput.prototype.set_int = procHacker.js('CommandOutput::set<int>', void_t, {this:CommandOutput}, makefunc.Utf8, int32_t);
-CommandOutput.prototype.set_bool = procHacker.js('CommandOutput::set<bool>', void_t, {this:CommandOutput}, makefunc.Utf8, bool_t);
-CommandOutput.prototype.set_float = procHacker.js('CommandOutput::set<float>', void_t, {this:CommandOutput}, makefunc.Utf8, float32_t);
-CommandOutput.prototype.set_BlockPos = procHacker.js('CommandOutput::set<BlockPos>', void_t, {this:CommandOutput}, makefunc.Utf8, BlockPos);
-CommandOutput.prototype.set_Vec3 = procHacker.js('CommandOutput::set<Vec3>', void_t, {this:CommandOutput}, makefunc.Utf8, Vec3);
+CommandOutput.prototype.set_int = procHacker.js('??$set@H@CommandOutput@@QEAAXPEBDH@Z', void_t, {this:CommandOutput}, makefunc.Utf8, int32_t);
+CommandOutput.prototype.set_bool = procHacker.js('??$set@_N@CommandOutput@@QEAAXPEBD_N@Z', void_t, {this:CommandOutput}, makefunc.Utf8, bool_t);
+CommandOutput.prototype.set_float = procHacker.js('??$set@M@CommandOutput@@QEAAXPEBDM@Z', void_t, {this:CommandOutput}, makefunc.Utf8, float32_t);
+CommandOutput.prototype.set_BlockPos = procHacker.js('??$set@VBlockPos@@@CommandOutput@@QEAAXPEBDVBlockPos@@@Z', void_t, {this:CommandOutput}, makefunc.Utf8, BlockPos);
+CommandOutput.prototype.set_Vec3 = procHacker.js('??$set@VVec3@@@CommandOutput@@QEAAXPEBDVVec3@@@Z', void_t, {this:CommandOutput}, makefunc.Utf8, Vec3);
 
 (CommandOutput.prototype as any)._successNoMessage = procHacker.js('?success@CommandOutput@@QEAAXXZ', void_t, {this:CommandOutput});
 (CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CommandOutputParameterVector);
 (CommandOutput.prototype as any)._error = procHacker.js('?error@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CommandOutputParameterVector);
-(CommandOutput.prototype as any)._addMessage = procHacker.js('CommandOutput::addMessage', void_t, {this:CommandOutput}, CxxString, CommandOutputParameterVector);
-CommandOutput.prototype[NativeType.dtor] = procHacker.js('CommandOutput::~CommandOutput', void_t, {this:CommandOutput});
+(CommandOutput.prototype as any)._addMessage = procHacker.js('?addMessage@CommandOutput@@AEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@W4CommandOutputMessageType@@@Z', void_t, {this:CommandOutput}, CxxString, CommandOutputParameterVector);
+CommandOutput.prototype[NativeType.dtor] = procHacker.js('??1CommandOutput@@QEAA@XZ', void_t, {this:CommandOutput});
 
-CommandOutputSender.prototype._toJson = procHacker.js('CommandOutputSender::_toJson', JsonValue, {this:CommandOutputSender, structureReturn:true}, CommandOutput);
-CommandOutputSender.prototype.sendToAdmins = procHacker.js('CommandOutputSender::sendToAdmins', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput, int32_t);
+CommandOutputSender.prototype._toJson = procHacker.js('?_toJson@CommandOutputSender@@IEBA?AVValue@Json@@AEBVCommandOutput@@@Z', JsonValue, {this:CommandOutputSender, structureReturn:true}, CommandOutput);
+CommandOutputSender.prototype.sendToAdmins = procHacker.js('?sendToAdmins@CommandOutputSender@@QEAAXAEBVCommandOrigin@@AEBVCommandOutput@@W4CommandPermissionLevel@@@Z', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput, int32_t);
 
-MinecraftCommands.prototype.handleOutput = procHacker.js('MinecraftCommands::handleOutput', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
+MinecraftCommands.prototype.handleOutput = procHacker.js('?handleOutput@MinecraftCommands@@QEBAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', void_t, {this:MinecraftCommands}, CommandOrigin, CommandOutput);
 // MinecraftCommands.prototype.executeCommand is defined at bdsx/command.ts
-MinecraftCommands.prototype.getRegistry = procHacker.js('MinecraftCommands::getRegistry', CommandRegistry, {this:MinecraftCommands});
-MinecraftCommands.getOutputType = procHacker.js('MinecraftCommands::getOutputType', int32_t, null, CommandOrigin);
+MinecraftCommands.prototype.getRegistry = procHacker.js('?getRegistry@MinecraftCommands@@QEAAAEAVCommandRegistry@@XZ', CommandRegistry, {this:MinecraftCommands});
+MinecraftCommands.getOutputType = procHacker.js('?getOutputType@MinecraftCommands@@SA?AW4CommandOutputType@@AEBVCommandOrigin@@@Z', int32_t, null, CommandOrigin);
 
 CommandRegistry.abstract({
     enumValues: [CxxVector.make(CxxString), 192],
@@ -1565,28 +1575,28 @@ CommandRegistry.abstract({
     softEnums: [CxxVector.make(CommandRegistry.SoftEnum), 488],
     softEnumLookup: [CxxMap.make(CxxString, uint32_t), 512],
 });
-CommandRegistry.prototype.registerOverloadInternal = procHacker.js('CommandRegistry::registerOverloadInternal', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
-CommandRegistry.prototype.registerCommand = procHacker.js('CommandRegistry::registerCommand', void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
-CommandRegistry.prototype.registerAlias = procHacker.js('CommandRegistry::registerAlias', void_t, {this:CommandRegistry}, CxxString, CxxString);
-CommandRegistry.prototype.getCommandName = procHacker.js('CommandRegistry::getCommandName', CxxString, {structureReturn: true, this:CommandRegistry}, CxxString);
-CommandRegistry.prototype.findCommand = procHacker.js('CommandRegistry::findCommand', CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
+CommandRegistry.prototype.registerOverloadInternal = procHacker.js('?registerOverloadInternal@CommandRegistry@@AEAAXAEAUSignature@1@AEAUOverload@1@@Z', void_t, {this:CommandRegistry}, CommandRegistry.Signature, CommandRegistry.Overload);
+CommandRegistry.prototype.registerCommand = procHacker.js('?registerCommand@CommandRegistry@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBDW4CommandPermissionLevel@@UCommandFlag@@3@Z', void_t, {this:CommandRegistry}, CxxString, makefunc.Utf8, int32_t, int32_t, int32_t);
+CommandRegistry.prototype.registerAlias = procHacker.js('?registerAlias@CommandRegistry@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@0@Z', void_t, {this:CommandRegistry}, CxxString, CxxString);
+CommandRegistry.prototype.getCommandName = procHacker.js('?getCommandName@CommandRegistry@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV23@@Z', CxxString, {structureReturn: true, this:CommandRegistry}, CxxString);
+CommandRegistry.prototype.findCommand = procHacker.js('?findCommand@CommandRegistry@@AEAAPEAUSignature@1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', CommandRegistry.Signature, {this:CommandRegistry}, CxxString);
 CommandRegistry.prototype.addEnumValues = procHacker.js('?addEnumValues@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z', int32_t, {this:CommandRegistry}, CxxString, CxxVectorToArray.make(CxxString));
-CommandRegistry.prototype.addSoftEnum = procHacker.js('CommandRegistry::addSoftEnum', int32_t, {this:CommandRegistry}, CxxString, CxxVectorToArray.make(CxxString));
-(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js('CommandRegistry::serializeAvailableCommands', AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
+CommandRegistry.prototype.addSoftEnum = procHacker.js('?addSoftEnum@CommandRegistry@@QEAAHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z', int32_t, {this:CommandRegistry}, CxxString, CxxVectorToArray.make(CxxString));
+(CommandRegistry.prototype as any)._serializeAvailableCommands = procHacker.js('?serializeAvailableCommands@CommandRegistry@@QEBA?AVAvailableCommandsPacket@@XZ', AvailableCommandsPacket, {this:CommandRegistry}, AvailableCommandsPacket);
 Command.prototype[NativeType.dtor] = vectorDeletingDestructor;
 
 CommandRegistry.Parser.prototype.constructWith = procHacker.js('??0Parser@CommandRegistry@@QEAA@AEBV1@H@Z', void_t, {this:CommandRegistry.Parser}, CommandRegistry, int32_t);
-CommandRegistry.Parser.prototype[NativeType.dtor] = procHacker.js('CommandRegistry::Parser::~Parser', void_t, {this:CommandRegistry.Parser});
-CommandRegistry.Parser.prototype.parseCommand = procHacker.js('CommandRegistry::Parser::parseCommand', bool_t, {this:CommandRegistry.Parser}, CxxString);
-CommandRegistry.Parser.prototype.createCommand = procHacker.js('CommandRegistry::Parser::createCommand', Command.ref(), {this:CommandRegistry.Parser, structureReturn: true}, CommandOrigin);
-CommandRegistry.Parser.prototype.getErrorMessage = procHacker.js('CommandRegistry::Parser::getErrorMessage', CxxString, {this:CommandRegistry.Parser});
-CommandRegistry.Parser.prototype.getErrorParams = procHacker.js('CommandRegistry::Parser::getErrorParams', CxxVectorToArray.make(CxxString), {this:CommandRegistry.Parser, structureReturn: true});
+CommandRegistry.Parser.prototype[NativeType.dtor] = procHacker.js('??1Parser@CommandRegistry@@QEAA@XZ', void_t, {this:CommandRegistry.Parser});
+CommandRegistry.Parser.prototype.parseCommand = procHacker.js('?parseCommand@Parser@CommandRegistry@@QEAA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', bool_t, {this:CommandRegistry.Parser}, CxxString);
+CommandRegistry.Parser.prototype.createCommand = procHacker.js('?createCommand@Parser@CommandRegistry@@QEAA?AV?$unique_ptr@VCommand@@U?$default_delete@VCommand@@@std@@@std@@AEBVCommandOrigin@@@Z', Command.ref(), {this:CommandRegistry.Parser, structureReturn: true}, CommandOrigin);
+CommandRegistry.Parser.prototype.getErrorMessage = procHacker.js('?getErrorMessage@Parser@CommandRegistry@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:CommandRegistry.Parser});
+CommandRegistry.Parser.prototype.getErrorParams = procHacker.js('?getErrorParams@Parser@CommandRegistry@@QEBA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ', CxxVectorToArray.make(CxxString), {this:CommandRegistry.Parser, structureReturn: true});
 
-Command.prototype.run = procHacker.js('Command::run', void_t, {this:Command}, CommandOrigin, CommandOutput);
+Command.prototype.run = procHacker.js('?run@Command@@QEBAXAEBVCommandOrigin@@AEAVCommandOutput@@@Z', void_t, {this:Command}, CommandOrigin, CommandOutput);
 
 // CommandSoftEnumRegistry is a class with only one field, which is a pointer to CommandRegistry.
 // I can only find one member function so I am not sure if a dedicated class is needed.
-const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js('CommandSoftEnumRegistry::updateSoftEnum', void_t, null, CommandRegistry.ref().ref(), uint8_t, CxxString, CxxVectorToArray.make(CxxString));
+const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js('?updateSoftEnum@CommandSoftEnumRegistry@@QEAAXW4SoftEnumUpdateType@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z', void_t, null, CommandRegistry.ref().ref(), uint8_t, CxxString, CxxVectorToArray.make(CxxString));
 
 // list for not implemented
 'CommandRegistry::parse<AutomaticID<Dimension,int> >'; // CommandRegistry::parse<DimensionId>
