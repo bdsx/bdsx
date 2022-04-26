@@ -379,6 +379,28 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     }
 
     /**
+     * make the native function as a JS function.
+     * it uses a vftable
+     *
+     * wrapper codes are not deleted permanently.
+     * do not use it dynamically.
+     *
+     * @param returnType *_t or *Pointer
+     * @param params *_t or *Pointer
+     */
+    jsv<OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+        this:ProcHacker<typeof proc>,
+        vftable: keyof T,
+        key: keyof T,
+        returnType:RETURN,
+        opts?: OPTS,
+        ...params: PARAMS):
+        FunctionFromTypes_js<[number, number?], OPTS, PARAMS, RETURN> {
+        const map = this.map.vftable[vftable+'\\'+key];
+        return makefunc.js(map, returnType, opts, ...params);
+    }
+
+    /**
      * get symbols from cache.
      * if symbols don't exist in cache. it reads pdb.
      * @deprecated no need to load. use global procHacker

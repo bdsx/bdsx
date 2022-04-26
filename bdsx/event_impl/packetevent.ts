@@ -29,7 +29,7 @@ class ReadOnlyBinaryStream extends AbstractClass {
     }
 }
 
-ReadOnlyBinaryStream.prototype.read = makefunc.js([0x8], bool_t, {this: ReadOnlyBinaryStream}, VoidPointer, int64_as_float_t);
+ReadOnlyBinaryStream.prototype.read = procHacker.jsv('??_7ReadOnlyBinaryStream@@6B@', '?read@ReadOnlyBinaryStream@@EEAA_NPEAX_K@Z', bool_t, {this: ReadOnlyBinaryStream}, VoidPointer, int64_as_float_t);
 
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {

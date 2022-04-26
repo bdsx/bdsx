@@ -2,7 +2,7 @@
 import * as colors from 'colors';
 import { bedrockServer } from './launcher';
 import { remapError, remapStackLine } from "./source-map-support";
-import { getLineAt } from "./util";
+import { getLineAt, timeout } from "./util";
 
 let testnum = 1;
 let testcount = 0;
@@ -159,7 +159,7 @@ export class Tester {
     }
 
     static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>, waitOneTick?:boolean):Promise<void> {
-        await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
+        await timeout(100); // run after examples
 
         // pass one tick, wait until result of the list command example
         if (waitOneTick) {
@@ -186,7 +186,7 @@ export class Tester {
     }
 
     static async consecutive(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
-        await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
+        await timeout(100); // run after examples
 
         logMessage(`node version: ${process.versions.node}`);
         if (process.jsEngine != null) {
@@ -213,7 +213,7 @@ export class Tester {
     }
 
     static async concurrency(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
-        await new Promise(resolve=>setTimeout(resolve, 100)); // run after examples
+        await timeout(100); // run after examples
 
         logMessage(`node version: ${process.versions.node}`);
         if (process.jsEngine != null) {

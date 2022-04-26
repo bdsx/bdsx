@@ -258,14 +258,14 @@ Actor.prototype.getScoreTag = procHacker.js("?getScoreTag@Actor@@UEBAAEBV?$basic
 Actor.prototype.setScoreTag = procHacker.js("?setScoreTag@Actor@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this:Actor}, CxxString);
 Actor.prototype.getRegion = procHacker.js("?getRegionConst@Actor@@QEBAAEBVBlockSource@@XZ", BlockSource, {this:Actor});
 Actor.prototype.getUniqueIdPointer = procHacker.js("?getUniqueID@Actor@@QEBAAEBUActorUniqueID@@XZ", StaticPointer, {this:Actor});
-Actor.prototype.getEntityTypeId = makefunc.js([0x548], int32_t, {this:Actor}); // ActorType getEntityTypeId()
+Actor.prototype.getEntityTypeId = procHacker.jsv('??_7Actor@@6B@', '?getEntityTypeId@Actor@@UEBA?AW4ActorType@@XZ', int32_t, {this:Actor}); // ActorType getEntityTypeId()
 Actor.prototype.getRuntimeID = procHacker.js("?getRuntimeID@Actor@@QEBA?AVActorRuntimeID@@XZ", ActorRuntimeID, {this:Actor, structureReturn: true});
 Actor.prototype.getDimension = procHacker.js("?getDimension@Actor@@QEBAAEAVDimension@@XZ", Dimension, {this:Actor});
 Actor.prototype.getDimensionId = procHacker.js("?getDimensionId@Actor@@UEBA?AV?$AutomaticID@VDimension@@H@@XZ", int32_t, {this:Actor, structureReturn: true});
 Actor.prototype.getActorIdentifier = procHacker.js("?getActorIdentifier@Actor@@QEBAAEBUActorDefinitionIdentifier@@XZ", ActorDefinitionIdentifier, {this:Actor});
 Actor.prototype.getCommandPermissionLevel = procHacker.js("?getCommandPermissionLevel@Actor@@UEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:Actor});
 Actor.prototype.getCarriedItem = procHacker.js('?getCarriedItem@Actor@@UEBAAEBVItemStack@@XZ', ItemStack, {this:Actor});
-Actor.prototype.setCarriedItem = makefunc.js([0x508], void_t, {this:Actor}, ItemStack); // Actor::setCarriedItem Agent::setCarriedItem Player::setCarriedItem
+Actor.prototype.setCarriedItem = procHacker.jsv('??_7Actor@@6B@', '?setCarriedItem@Actor@@UEAAXAEBVItemStack@@@Z', void_t, {this:Actor}, ItemStack); // Actor::setCarriedItem Agent::setCarriedItem Player::setCarriedItem
 Actor.prototype.getOffhandSlot = procHacker.js("?getOffhandSlot@Actor@@QEBAAEBVItemStack@@XZ", ItemStack, {this:Actor});
 Actor.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@Actor@@UEAAXAEBVItemStack@@@Z', void_t, {this:Actor}, ItemStack);
 
@@ -280,14 +280,14 @@ Actor.prototype.getArmor = procHacker.js('?getArmor@Actor@@UEBAAEBVItemStack@@W4
 
 const Actor$hasType = Actor.prototype.hasType = procHacker.js("?hasType@Actor@@QEBA_NW4ActorType@@@Z", bool_t, {this:Actor}, int32_t);
 
-Actor.prototype.kill = makefunc.js([0x7b0], void_t, {this:Actor});
-Actor.prototype.die = makefunc.js([0x7b8], void_t, {this:Actor}, ActorDamageSource);
+Actor.prototype.kill = procHacker.jsv('??_7Actor@@6B@', '?kill@Actor@@UEAAXXZ', void_t, {this:Actor});
+Actor.prototype.die = procHacker.jsv('??_7Actor@@6B@', '?die@Actor@@UEAAXAEBVActorDamageSource@@@Z', void_t, {this:Actor}, ActorDamageSource);
 Actor.prototype.isSneaking = procHacker.js("?isSneaking@Actor@@QEBA_NXZ", bool_t, {this:Actor}, void_t);
 Actor.prototype.isMoving = procHacker.js("?isMoving@Actor@@QEBA_NXZ", bool_t, {this:Actor}, void_t);
 Actor.prototype.setSneaking = procHacker.js("?setSneaking@Actor@@UEAAX_N@Z", void_t, {this:Actor}, bool_t);
 Actor.prototype.getHealth = procHacker.js("?getHealth@Actor@@QEBAHXZ", int32_t, {this:Actor});
 Actor.prototype.getMaxHealth = procHacker.js("?getMaxHealth@Actor@@QEBAHXZ", int32_t, {this:Actor});
-Actor.prototype.startRiding = makefunc.js([0x1a8], bool_t, {this:Actor}, Actor);
+Actor.prototype.startRiding = procHacker.jsv('??_7Actor@@6B@', '?startRiding@Actor@@UEAA_NAEAV1@@Z', bool_t, {this:Actor}, Actor);
 
 const Actor$save = procHacker.js("?save@Actor@@UEAA_NAEAVCompoundTag@@@Z", bool_t, {this:Actor}, CompoundTag);
 Actor.prototype.save = function(tag?:CompoundTag):any {
@@ -339,7 +339,7 @@ class DefaultDataLoaderHelper extends NativeClass {
         return v;
     }
 }
-const Actor$readAdditionalSaveData = makefunc.js([0x848], void_t, {this:Actor}, CompoundTag, DefaultDataLoaderHelper);
+const Actor$readAdditionalSaveData = procHacker.jsv('??_7Actor@@6B@', '?readAdditionalSaveData@Actor@@MEAAXAEBVCompoundTag@@AEAVDataLoadHelper@@@Z', void_t, {this:Actor}, CompoundTag, DefaultDataLoaderHelper);
 Actor.prototype.readAdditionalSaveData = function(tag:CompoundTag|NBT.Compound):void {
     if (tag instanceof Tag) {
         Actor$readAdditionalSaveData.call(this, tag, DefaultDataLoaderHelper.create());
@@ -405,7 +405,7 @@ Actor.prototype.getLastHurtMob = procHacker.js("?getLastHurtMob@Actor@@UEAAPEAVM
 Actor.prototype.wasLastHitByPlayer = procHacker.js("?wasLastHitByPlayer@Actor@@QEAA_NXZ", bool_t, {this:Actor});
 (Actor.prototype as any).fetchNearbyActorsSorted_ = procHacker.js("?fetchNearbyActorsSorted@Actor@@QEAA?AV?$vector@UDistanceSortedActor@@V?$allocator@UDistanceSortedActor@@@std@@@std@@AEBVVec3@@W4ActorType@@@Z", CxxVector.make(DistanceSortedActor), {this:Actor, structureReturn:true}, Vec3, int32_t);
 
-Mob.prototype.knockback = makefunc.js([0x8b8], void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
+Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("?getSpeed@Mob@@UEBAMXZ", float32_t, {this:Mob});
 Mob.prototype.setSpeed = procHacker.js('?setSpeed@Mob@@UEAAXM@Z', void_t, {this:Mob}, float32_t);
 Mob.prototype.isSprinting = procHacker.js("?isSprinting@Mob@@QEBA_NXZ", bool_t, {this:Mob});
@@ -414,7 +414,7 @@ Mob.prototype.setSprinting = procHacker.js("?setSprinting@Mob@@UEAAX_N@Z", void_
 Mob.prototype.kill = procHacker.js("?kill@Mob@@UEAAXXZ", void_t, {this:Mob});
 Mob.prototype.isAlive = procHacker.js('?isAlive@Mob@@UEBA_NXZ', bool_t, {this:Mob});
 (Mob.prototype as any)._sendInventory = procHacker.js('?sendInventory@Mob@@UEAAX_N@Z', void_t, {this:Mob}, bool_t);
-(Mob.prototype as any).hurtEffects_ = makefunc.js([0x900], bool_t, {this:Mob}, ActorDamageSource, int32_t, bool_t, bool_t);
+(Mob.prototype as any).hurtEffects_ = procHacker.jsv('??_7Mob@@6B@', '?hurtEffects@Mob@@UEAAXAEBVActorDamageSource@@M_N1@Z', bool_t, {this:Mob}, ActorDamageSource, int32_t, bool_t, bool_t);
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('?_getStackRef@OwnerStorageEntity@@IEBAAEAVEntityContext@@XZ', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('?tryGetFromEntity@Actor@@SAPEAV1@AEAVEntityContext@@_N@Z', Actor, null, EntityContext);
@@ -448,7 +448,7 @@ ActorDamageSource.create = function (cause: ActorDamageCause): ActorDamageSource
     return source;
 };
 
-ActorDamageSource.prototype.getDamagingEntityUniqueID = makefunc.js([0x80], ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
+ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.jsv('??_7ActorDamageSource@@6B@', '?getDamagingEntityUniqueID@ActorDamageSource@@UEBA?AUActorUniqueID@@XZ', ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 ActorDamageSource.prototype.setCause = procHacker.js("?setCause@ActorDamageSource@@QEAAXW4ActorDamageCause@@@Z", void_t, {this:ActorDamageSource}, int32_t);
 
 ItemActor.abstract({
@@ -594,8 +594,8 @@ Player.prototype.hasOpenContainer = procHacker.js("?hasOpenContainer@Player@@QEB
 Player.prototype.isHungry = procHacker.js("?isHungry@Player@@QEBA_NXZ", bool_t, {this:Player});
 Player.prototype.isHurt = procHacker.js("?isHurt@Player@@QEAA_NXZ", bool_t, {this:Player});
 Player.prototype.isSpawned = procHacker.js("?isSpawned@Player@@QEBA_NXZ", bool_t, {this:Player});
-Player.prototype.isLoading = makefunc.js([0xca0], bool_t, {this:Player});
-Player.prototype.isPlayerInitialized  = makefunc.js([0xca8], bool_t, {this:Player});
+Player.prototype.isLoading = procHacker.jsv('?isLoading@ServerPlayer@@UEBA_NXZ', '?isLoading@ServerPlayer@@UEBA_NXZ', bool_t, {this:Player});
+Player.prototype.isPlayerInitialized  = procHacker.jsv('??_7ServerPlayer@@6B@', '?isPlayerInitialized@ServerPlayer@@UEBA_NXZ', bool_t, {this:Player});
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("?_nextContainerCounter@ServerPlayer@@AEAA?AW4ContainerID@@XZ", int8_t, {this: ServerPlayer});
@@ -674,12 +674,11 @@ Packet.prototype[NativeType.dtor] = vectorDeletingDestructor;
 Packet.prototype.sendTo = function(target:NetworkIdentifier, senderSubClientId:number=0):void {
     bedrockServer.networkHandler.send(target, this, senderSubClientId);
 };
-Packet.prototype.destruct = makefunc.js([0x0], void_t, {this:Packet});
-Packet.prototype.getId = makefunc.js([0x8], int32_t, {this:Packet});
-Packet.prototype.getName = makefunc.js([0x10], CxxString, {this:Packet, structureReturn: true});
-Packet.prototype.write = makefunc.js([0x18], void_t, {this:Packet}, BinaryStream);
-Packet.prototype.readExtended = makefunc.js([0x20], ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
-Packet.prototype.read = makefunc.js([0x30], int32_t, {this:Packet}, BinaryStream);
+Packet.prototype.getId = procHacker.jsv('??_7LoginPacket@@6B@', '?getId@LoginPacket@@UEBA?AW4MinecraftPacketIds@@XZ', int32_t, {this:Packet});
+Packet.prototype.getName = procHacker.jsv('??_7LoginPacket@@6B@', '?getName@LoginPacket@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:Packet, structureReturn: true});
+Packet.prototype.write = procHacker.jsv('??_7LoginPacket@@6B@', '?write@LoginPacket@@UEBAXAEAVBinaryStream@@@Z', void_t, {this:Packet}, BinaryStream);
+Packet.prototype.readExtended = procHacker.jsv('??_7PlayerListPacket@@6B@', '?readExtended@PlayerListPacket@@UEAA?AUExtendedStreamReadResult@@AEAVReadOnlyBinaryStream@@@Z', ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
+Packet.prototype.read = procHacker.jsv('??_7LoginPacket@@6B@', '?_read@LoginPacket@@EEAA?AW4StreamReadResult@@AEAVReadOnlyBinaryStream@@@Z', int32_t, {this:Packet}, BinaryStream);
 
 ServerNetworkHandler.prototype._getServerPlayer = procHacker.js("?_getServerPlayer@ServerNetworkHandler@@AEAAPEAVServerPlayer@@AEBVNetworkIdentifier@@E@Z", ServerPlayer, {this:ServerNetworkHandler}, NetworkIdentifier, int32_t);
 (ServerNetworkHandler.prototype as any)._disconnectClient = procHacker.js("?disconnectClient@ServerNetworkHandler@@QEAAXAEBVNetworkIdentifier@@EAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z", void_t, {this: ServerNetworkHandler}, NetworkIdentifier, int32_t, CxxString, bool_t);
@@ -794,17 +793,14 @@ Item.prototype.getCommandNames = procHacker.js("?getCommandNames@Item@@QEBA?AV?$
 Item.prototype.getCommandNames2 = procHacker.js("?getCommandNames@Item@@QEBA?AV?$vector@UCommandName@@V?$allocator@UCommandName@@@std@@@std@@XZ", CxxVector.make(CommandName), {this:Item, structureReturn: true});
 Item.prototype.getCreativeCategory = procHacker.js("?getCreativeCategory@Item@@QEBA?AW4CreativeItemCategory@@XZ", int32_t, {this:Item});
 
-const ItemStackVectorDeletingDestructor = makefunc.js([0], void_t, {this:ItemStack}, int32_t);
-ItemStack.prototype[NativeType.dtor] = function(){
-    ItemStackVectorDeletingDestructor.call(this, 0);
-};
+ItemStack.prototype[NativeType.dtor] = vectorDeletingDestructor;
 
-Item.prototype.isArmor = makefunc.js([0x40], bool_t, {this:Item});
-Item.prototype.getArmorValue = makefunc.js([0x1d0], int32_t, {this:Item});
-Item.prototype.getCooldownType = makefunc.js([0x320], HashedString, {this:Item});
+Item.prototype.isArmor = procHacker.jsv('??_7ArmorItem@@6B@', '?isArmor@ArmorItem@@UEBA_NXZ', bool_t, {this:Item});
+Item.prototype.getArmorValue = procHacker.jsv('??_7ArmorItem@@6B@', '?getArmorValue@ArmorItem@@UEBAHXZ', int32_t, {this:Item});
+Item.prototype.getCooldownType = procHacker.jsv('??_7Item@@6B@', '?getCooldownType@Item@@UEBAAEBVHashedString@@XZ', HashedString, {this:Item});
 
-ItemStackBase.prototype.toString = makefunc.js([0x28], CxxString, {this:ItemStackBase,structureReturn:true});
-ItemStackBase.prototype.toDebugString = makefunc.js([0x30], CxxString, {this:ItemStackBase,structureReturn:true});
+ItemStackBase.prototype.toString = procHacker.jsv('??_7ItemStackBase@@6B@', '?toString@ItemStackBase@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:ItemStackBase,structureReturn:true});
+ItemStackBase.prototype.toDebugString = procHacker.jsv('??_7ItemStackBase@@6B@', '?toDebugString@ItemStackBase@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:ItemStackBase,structureReturn:true});
 
 ItemStackBase.prototype.remove = procHacker.js("?remove@ItemStackBase@@QEAAXH@Z", void_t, {this:ItemStackBase}, int32_t);
 ItemStackBase.prototype.setAuxValue = procHacker.js('?setAuxValue@ItemStackBase@@QEAAXF@Z', void_t, {this:ItemStackBase}, int16_t);
@@ -889,14 +885,14 @@ ItemStack.fromTag = function(tag) {
     }
 };
 
-ComponentItem.prototype.buildNetworkTag = makefunc.js([0x120], CompoundTag.ref(), {this:ComponentItem, structureReturn:true});
-ComponentItem.prototype.initializeFromNetwork = makefunc.js([0x128], void_t, {this:ComponentItem}, CompoundTag);
+ComponentItem.prototype.buildNetworkTag = procHacker.jsv('??_7ComponentItem@@6B@', '?buildNetworkTag@ComponentItem@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ', CompoundTag.ref(), {this:ComponentItem, structureReturn:true});
+ComponentItem.prototype.initializeFromNetwork = procHacker.jsv('??_7ComponentItem@@6B@', '?initializeFromNetwork@ComponentItem@@UEAAXAEBVCompoundTag@@@Z', void_t, {this:ComponentItem}, CompoundTag);
 (ComponentItem.prototype as any)._getComponent = procHacker.js("?getComponent@ComponentItem@@UEBAPEAVItemComponent@@AEBVHashedString@@@Z", ItemComponent, {this:ComponentItem}, HashedString);
 
 Container.prototype.addItem = procHacker.js("?addItem@Container@@UEAA_NAEAVItemStack@@@Z", void_t, {this:Container}, ItemStack);
 Container.prototype.addItemToFirstEmptySlot = procHacker.js("?addItemToFirstEmptySlot@Container@@UEAA_NAEBVItemStack@@@Z", bool_t, {this:Container}, ItemStack);
 Container.prototype.getSlots = procHacker.js("?getSlots@Container@@UEBA?BV?$vector@PEBVItemStack@@V?$allocator@PEBVItemStack@@@std@@@std@@XZ", CxxVector.make(ItemStack.ref()), {this:Container, structureReturn:true});
-Container.prototype.getItem = makefunc.js([0x28], ItemStack, {this:Container}, uint8_t);
+Container.prototype.getItem = procHacker.jsv('??_7SimpleContainer@@6B@', '?getItem@SimpleContainer@@UEBAAEBVItemStack@@H@Z', ItemStack, {this:Container}, uint8_t);
 Container.prototype.getItemCount = procHacker.js("?getItemCount@Container@@UEBAHAEBVItemStack@@@Z", int32_t, {this:Container}, ItemStack);
 Container.prototype.getContainerType = procHacker.js("?getContainerType@Container@@QEBA?AW4ContainerType@@XZ", uint8_t, {this:Container});
 Container.prototype.hasRoomForItem = procHacker.js("?hasRoomForItem@Container@@UEAA_NAEBVItemStack@@@Z", bool_t, {this:Container}, ItemStack);
@@ -946,7 +942,7 @@ BlockLegacy.prototype.getStateFromLegacyData = procHacker.js("?getStateFromLegac
 BlockLegacy.prototype.getRenderBlock = procHacker.js("?getRenderBlock@BlockLegacy@@UEBAAEBVBlock@@XZ", Block, {this:BlockLegacy});
 BlockLegacy.prototype.getDefaultState = procHacker.js("?getDefaultState@BlockLegacy@@QEBAAEBVBlock@@XZ", Block, {this:BlockLegacy});
 BlockLegacy.prototype.tryGetStateFromLegacyData = procHacker.js("?tryGetStateFromLegacyData@BlockLegacy@@QEBAPEBVBlock@@G@Z", Block, {this:BlockLegacy}, uint16_t);
-BlockLegacy.prototype.use = makefunc.js([0x5c0], bool_t, {this:BlockLegacy}, Player, BlockPos, uint8_t);
+BlockLegacy.prototype.use = procHacker.jsv('??_7JukeboxBlock@@6B@', '?use@JukeboxBlock@@UEBA_NAEAVPlayer@@AEBVBlockPos@@E@Z', bool_t, {this:BlockLegacy}, Player, BlockPos, uint8_t);
 
 (Block.prototype as any)._getName = procHacker.js("?getName@Block@@QEBAAEBVHashedString@@XZ", HashedString, {this:Block});
 Block.create = function(blockName:string, data:number = 0):Block|null {
@@ -1006,8 +1002,8 @@ BlockActor.setResolver((ptr) => {
     return ptr.as(BlockActor);
 });
 
-const BlockActor$load = makefunc.js([0x8], void_t, {this:BlockActor}, Level, CompoundTag, DefaultDataLoaderHelper);
-const BlockActor$save = makefunc.js([0x10], bool_t, {this:BlockActor}, CompoundTag);
+const BlockActor$load = procHacker.jsv('??_7BlockActor@@6B@', '?load@BlockActor@@UEAAXAEAVLevel@@AEBVCompoundTag@@AEAVDataLoadHelper@@@Z', void_t, {this:BlockActor}, Level, CompoundTag, DefaultDataLoaderHelper);
+const BlockActor$save = procHacker.jsv('??_7BlockActor@@6B@', '?save@BlockActor@@UEBA_NAEAVCompoundTag@@@Z', bool_t, {this:BlockActor}, CompoundTag);
 
 BlockActor.prototype.isChestBlockActor = function () {
     return this instanceof ChestBlockActor;
@@ -1034,7 +1030,7 @@ BlockActor.prototype.load = function(tag) {
 };
 BlockActor.prototype.setChanged = procHacker.js("?setChanged@BlockActor@@QEAAXXZ", void_t, {this:BlockActor});
 BlockActor.prototype.setCustomName = procHacker.js("?setCustomName@BlockActor@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this:BlockActor}, CxxString);
-BlockActor.prototype.getContainer = makefunc.js([0x380], Container, { this: BlockActor });
+BlockActor.prototype.getContainer = procHacker.jsv('??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@', '?getContainer@ChestBlockActor@@UEBAPEBVContainer@@XZ', Container, { this: BlockActor });
 BlockActor.prototype.getType = procHacker.js("?getType@BlockActor@@QEBAAEBW4BlockActorType@@XZ", int32_t.ref(), {this:BlockActor});
 BlockActor.prototype.getPosition = procHacker.js("?getPosition@BlockActor@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:BlockActor});
 BlockActor.prototype.getServerUpdatePacket = procHacker.js('?getServerUpdatePacket@BlockActor@@QEAA?AV?$unique_ptr@VBlockActorDataPacket@@U?$default_delete@VBlockActorDataPacket@@@std@@@std@@AEAVBlockSource@@@Z', BlockActorDataPacket.ref(), {this:BlockActor, structureReturn: true}, BlockSource);
@@ -1197,9 +1193,9 @@ Tag.setResolver(ptr=>{
     return ptr.as(type);
 });
 
-Tag.prototype.toString = makefunc.js([0x20], CxxString, {this:Tag, structureReturn: true});
-Tag.prototype.getId = makefunc.js([0x28], uint8_t, {this:Tag});
-Tag.prototype.equals = makefunc.js([0x30], bool_t, {this:Tag}, Tag);
+Tag.prototype.toString = procHacker.jsv('??_7CompoundTag@@6B@', '?toString@CompoundTag@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:Tag, structureReturn: true});
+Tag.prototype.getId = procHacker.jsv('??_7CompoundTag@@6B@', '?getId@CompoundTag@@UEBA?AW4Type@Tag@@XZ', uint8_t, {this:Tag});
+Tag.prototype.equals = procHacker.jsv('??_7CompoundTag@@6B@', '?equals@CompoundTag@@UEBA_NAEBVTag@@@Z', bool_t, {this:Tag}, Tag);
 
 const EndTag$vftable = proc["??_7EndTag@@6B@"];
 const ByteTag$vftable = proc["??_7ByteTag@@6B@"];
@@ -1337,9 +1333,9 @@ StructureTemplate.prototype.getSize = procHacker.js("?getSize@StructureTemplate@
 StructureManager.prototype[NativeType.ctor] = procHacker.js("??0StructureManager@@QEAA@XZ", StructureManager, {this:StructureManager});
 StructureManager.prototype.getOrCreate = procHacker.js("?getOrCreate@StructureManager@@QEAAAEAVStructureTemplate@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StructureTemplate, {this:StructureManager}, CxxString);
 // components.ts
-OnHitSubcomponent.prototype.readfromJSON = makefunc.js([0x08], void_t, {this:OnHitSubcomponent}, JsonValue);
-OnHitSubcomponent.prototype.writetoJSON = makefunc.js([0x10], void_t, {this:OnHitSubcomponent}, JsonValue);
-(OnHitSubcomponent.prototype as any)._getName = makefunc.js([0x20], StaticPointer, {this:OnHitSubcomponent});
+OnHitSubcomponent.prototype.readfromJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?readfromJSON@FreezeOnHitSubcomponent@@UEAAXAEAVValue@Json@@AEBVSemVersion@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
+OnHitSubcomponent.prototype.writetoJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?writetoJSON@FreezeOnHitSubcomponent@@UEBAXAEAVValue@Json@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
+(OnHitSubcomponent.prototype as any)._getName = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?getName@FreezeOnHitSubcomponent@@UEAAPEBDXZ', StaticPointer, {this:OnHitSubcomponent});
 
 // chunk.ts
 LevelChunk.prototype.getBiome = procHacker.js("?getBiome@LevelChunk@@QEBAAEAVBiome@@AEBVChunkBlockPos@@@Z", Biome, {this:LevelChunk});
@@ -1460,8 +1456,8 @@ ItemComponent.prototype.isWearable = function () {
     return this instanceof WearableItemComponent;
 };
 
-ItemComponent.prototype.buildNetworkTag = makefunc.js([0x28], CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
-ItemComponent.prototype.initializeFromNetwork = makefunc.js([0x30], void_t, {this:ItemComponent}, CompoundTag);
+ItemComponent.prototype.buildNetworkTag = procHacker.jsv('??_7WeaponItemComponent@@6B@', '?buildNetworkTag@WeaponItemComponent@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ', CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
+ItemComponent.prototype.initializeFromNetwork = procHacker.jsv('??_7WeaponItemComponent@@6B@','?initializeFromNetwork@WeaponItemComponent@@UEAAXAEBVCompoundTag@@@Z', void_t, {this:ItemComponent}, CompoundTag);
 
 CooldownItemComponent.getIdentifier = procHacker.js("?getIdentifier@CooldownItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 ArmorItemComponent.getIdentifier = procHacker.js("?getIdentifier@ArmorItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);

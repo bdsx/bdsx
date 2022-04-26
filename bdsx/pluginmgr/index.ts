@@ -2,6 +2,7 @@
 import * as blessed from 'blessed';
 import * as child_process from 'child_process';
 import { fsutil } from '../fsutil';
+import { timeout } from '../util';
 
 const SELECTABLE_ITEM_STYLE = {
     fg: 'magenta',
@@ -374,6 +375,6 @@ function selectVersion(name:string, latestVersion:string, installedVersion:strin
             child_process.execSync(`npm i ${plugin.name}@${version}`, {stdio:'inherit'});
         }
 
-        await new Promise(resolve=>setTimeout(resolve, 2000));
+        await timeout(2000);
     }
 })().catch(err=>console.error(err.stack));

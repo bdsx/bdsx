@@ -5,9 +5,11 @@ import * as path from 'path';
 import { Config } from './config';
 import { hashString } from './util';
 
+const cachePath = path.join(Config.BDS_PATH, 'pdbcache.bin');
+
 function openCacheFile():number {
     try {
-        return fs.openSync(path.join(Config.BDS_PATH, 'pdbcache.bin'), 'r');
+        return fs.openSync(cachePath, 'r');
     } catch(err) {
         console.error(colors.red(`[BDSX] pdbcache.bin not found`));
         console.log("[BDSX] Please run 'npm i' or " + (process.platform === "win32" ? 'update.bat' : 'update.sh') + " to install it");
@@ -78,34 +80,32 @@ export namespace pdbcache {
         let offset = namesOffset;
         let buffer = Buffer.allocUnsafe(8192);
 
-        let remained = 0;
+        let filled = 0;
         for (;;) {
-            const readSize = fs.readSync(fd, buffer, remained, buffer.length - remained, offset);
-            remained += readSize;
+            const readSize = fs.readSync(fd, buffer, filled, buffer.length - filled, offset);
+            if (readSize === 0) break;
+            filled += readSize;
             offset += readSize;
-
-            if (readSize === 0) {
-                return;
-            }
 
             let index = 0;
             for (;;) {
                 const nullterm = buffer.indexOf(0, index);
-                if (nullterm !== -1 && nullterm < remained) {
+                if (nullterm !== -1 && nullterm < filled) {
                     const key = buffer.subarray(index, nullterm).toString('utf8');
                     yield key;
                     index = nullterm+1;
                 } else {
-                    if (index*2 < buffer.length) {
+                    const remainedData = filled - index;
+                    if (remainedData*2 > buffer.length) {
                         // need to expand
                         const nbuffer = Buffer.allocUnsafe(buffer.length*2);
-                        buffer.copy(nbuffer, 0, index, remained);
+                        buffer.copy(nbuffer, 0, index, filled);
                         buffer = nbuffer;
                     } else {
                         // need to truncate
-                        buffer.copy(buffer, 0, index, remained);
+                        buffer.copy(buffer, 0, index, filled);
                     }
-                    remained -= index;
+                    filled -= index;
                     break;
                 }
             }

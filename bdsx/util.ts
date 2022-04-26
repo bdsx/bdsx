@@ -311,6 +311,12 @@ export function hashString(v:string):number {
     return out >>> 0;
 }
 
+export function timeout(timeout:number):Promise<void> {
+    return new Promise(resolve=>{
+        setTimeout(resolve, timeout);
+    });
+}
+
 export const ESCAPE = "§";
 
 export const TextFormat = {

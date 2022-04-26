@@ -135,6 +135,14 @@ export namespace fsutil {
             });
         });
     }
+    export function appendFile(path:string, content:string|Uint8Array):Promise<void> {
+        return new Promise((resolve, reject)=>{
+            fs.appendFile(path, content, (err)=>{
+                if (err !== null) reject(err);
+                else resolve();
+            });
+        });
+    }
     /**
      * uses system EOL and add a last line
      */

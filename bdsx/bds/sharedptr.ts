@@ -1,11 +1,8 @@
 import { capi } from "../capi";
-import { makefunc } from "../makefunc";
 import { mangle } from "../mangle";
-import { nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
-import { int32_t, NativeType, void_t } from "../nativetype";
+import { nativeClass, NativeClass, NativeClassType, nativeField, vectorDeletingDestructor } from "../nativeclass";
+import { int32_t, NativeType } from "../nativetype";
 import { Singleton } from "../singleton";
-
-const destructor = makefunc.js([0], void_t, {this:NativeClass}, int32_t);
 
 class PtrBase<T extends NativeClass> extends NativeClass {
     p:T|null;
@@ -28,7 +25,7 @@ class PtrBase<T extends NativeClass> extends NativeClass {
         if (this.interlockedDecrement32(0x8) === 0) {
             if (p !== null) {
                 this.p = null;
-                destructor.call(p, 1);
+                vectorDeletingDestructor.deleteIt.call(p);
             }
             this.releaseWeak();
         }

@@ -6,6 +6,7 @@ import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import { CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
+import { pdbcache } from "../pdbcache";
 import { procHacker } from "../prochacker";
 import { Actor } from "./actor";
 import type { CommandPermissionLevel, CommandPositionFloat } from "./command";
@@ -185,36 +186,56 @@ const ServerCommandOrigin_vftable = proc["??_7ServerCommandOrigin@@6B@"];
 CommandOrigin.prototype[NativeType.dtor] = vectorDeletingDestructor;
 
 // std::string& CommandOrigin::getRequestId();
-CommandOrigin.prototype.getRequestId = makefunc.js([0x08], CxxString, {this: CommandOrigin});
+CommandOrigin.prototype.getRequestId = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getRequestId@ServerCommandOrigin@@UEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ',
+    CxxString, {this: CommandOrigin});
 
 // std::string CommandOrigin::getName();
-CommandOrigin.prototype.getName = makefunc.js([0x10], CxxString, {this: CommandOrigin, structureReturn: true});
+CommandOrigin.prototype.getName = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getName@ServerCommandOrigin@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ',
+    CxxString, {this: CommandOrigin, structureReturn: true});
 
 // BlockPos CommandOrigin::getBlockPosition();
-CommandOrigin.prototype.getBlockPosition = makefunc.js([0x18], BlockPos, {this: CommandOrigin, structureReturn: true});
+CommandOrigin.prototype.getBlockPosition = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getBlockPosition@ServerCommandOrigin@@UEBA?AVBlockPos@@XZ',
+    BlockPos, {this: CommandOrigin, structureReturn: true});
 
 // Vec3 CommandOrigin::getWorldPosition();
-CommandOrigin.prototype.getWorldPosition = makefunc.js([0x20], Vec3, {this: CommandOrigin, structureReturn: true});
+CommandOrigin.prototype.getWorldPosition = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getWorldPosition@ServerCommandOrigin@@UEBA?AVVec3@@XZ',
+    Vec3, {this: CommandOrigin, structureReturn: true});
 
 // std::optional<Vec2> CommandOrigin::getRotation();
 
 // Level* CommandOrigin::getLevel();
-CommandOrigin.prototype.getLevel = makefunc.js([0x30], Level, {this: CommandOrigin});
+CommandOrigin.prototype.getLevel = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getLevel@ServerCommandOrigin@@UEBAPEAVLevel@@XZ',
+    Level, {this: CommandOrigin});
 
 // Dimension* (*CommandOrigin::getDimension)();
-CommandOrigin.prototype.getDimension = makefunc.js([0x38], Dimension, {this: CommandOrigin});
+CommandOrigin.prototype.getDimension = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getDimension@ServerCommandOrigin@@UEBAPEAVDimension@@XZ',
+    Dimension, {this: CommandOrigin});
 
 // Actor* CommandOrigin::getEntity();
-CommandOrigin.prototype.getEntity = makefunc.js([0x40], Actor, {this: CommandOrigin});
+CommandOrigin.prototype.getEntity = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getEntity@ServerCommandOrigin@@UEBAPEAVActor@@XZ',
+    Actor, {this: CommandOrigin});
 
 // enum CommandOriginType CommandOrigin::getOriginType();
-CommandOrigin.prototype.getOriginType = makefunc.js([0xb8], uint8_t, {this: CommandOrigin});
+CommandOrigin.prototype.getOriginType = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?getOriginType@ServerCommandOrigin@@UEBA?AW4CommandOriginType@@XZ',
+    uint8_t, {this: CommandOrigin});
 
-// void handleCommandOutputCallback(Json::Value &&);
-const handleCommandOutputCallback = makefunc.js([0xd0], void_t, {this: CommandOrigin}, JsonValue);
+// void CommandOrigin::handleCommandOutputCallback(Json::Value &&);
+const handleCommandOutputCallback = procHacker.jsv(
+    '??_7ScriptingCommandOrigin@@6B@', '?handleCommandOutputCallback@ScriptingCommandOrigin@@UEBAX$$QEAVValue@Json@@@Z',
+    void_t, {this: CommandOrigin}, JsonValue);
 
 // struct CompoundTag CommandOrigin::serialize(void)
-const serializeCommandOrigin = makefunc.js([0xe8], CompoundTag, {this:CommandOrigin}, CompoundTag);
+const serializeCommandOrigin = procHacker.jsv(
+    '??_7ServerCommandOrigin@@6B@', '?serialize@ServerCommandOrigin@@UEBA?AVCompoundTag@@XZ',
+    CompoundTag, {this:CommandOrigin}, CompoundTag);
 CommandOrigin.prototype.save = function(tag?:CompoundTag):any {
     if (tag != null) {
         return serializeCommandOrigin.call(this, tag);
