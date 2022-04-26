@@ -84,6 +84,10 @@ export namespace pdbcache {
             remained += readSize;
             offset += readSize;
 
+            if (readSize === 0) {
+                return;
+            }
+
             let index = 0;
             for (;;) {
                 const nullterm = buffer.indexOf(0, index);
