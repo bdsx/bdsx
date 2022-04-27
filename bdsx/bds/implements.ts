@@ -19,7 +19,7 @@ import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, Ability } from "./abilities";
-import { Actor, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
+import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
@@ -447,9 +447,19 @@ ActorDamageSource.create = function (cause: ActorDamageCause): ActorDamageSource
     ActorDamageSource$ActorDamageSource(source, cause);
     return source;
 };
-
 ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.jsv('??_7ActorDamageSource@@6B@', '?getDamagingEntityUniqueID@ActorDamageSource@@UEBA?AUActorUniqueID@@XZ', ActorUniqueID, {this:ActorDamageSource, structureReturn:true});
 ActorDamageSource.prototype.setCause = procHacker.js("?setCause@ActorDamageSource@@QEAAXW4ActorDamageCause@@@Z", void_t, {this:ActorDamageSource}, int32_t);
+
+ActorDamageByActorSource.prototype[NativeType.dtor] = procHacker.js("??1ActorDamageByActorSource@@UEAA@XZ", void_t, {this:ActorDamageByActorSource});
+const ActorDamageByActorSource$ActorDamageByActorSource = procHacker.js("??0ActorDamageByActorSource@@QEAA@AEAVActor@@W4ActorDamageCause@@@Z", ActorDamageByActorSource, null, ActorDamageByActorSource, Actor, int32_t);
+ActorDamageByActorSource.constructWith = function (damagingEntity: Actor|ActorDamageCause, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
+    if (damagingEntity instanceof Actor) {
+        const source = new ActorDamageByActorSource(true);
+        ActorDamageByActorSource$ActorDamageByActorSource(source, damagingEntity, cause);
+        return source;
+    }
+    throw new Error("damagingEntity is required for ActorDamageByActorSource");
+};
 
 ItemActor.abstract({
     itemStack: [ItemStack, 0x728], // accessed in ItemActor::isFireImmune

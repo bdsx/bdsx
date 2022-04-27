@@ -218,8 +218,12 @@ export class ActorDamageSource extends NativeClass{
     cause: int32_t;
 
     /** @deprecated Use {@link create} instead. */
-    static constructWith(cause: ActorDamageCause): ActorDamageSource {
-        return this.create(cause);
+    static constructWith(damagingEntity:Actor, cause: ActorDamageCause): ActorDamageSource;
+    static constructWith(cause: ActorDamageCause): ActorDamageSource;
+    static constructWith(damagingEntity_cause:Actor|ActorDamageCause, cause?: ActorDamageCause): ActorDamageSource {
+        if (damagingEntity_cause instanceof Actor) {
+            throw new Error("Can't set damging entity for ActorDamageSource");
+        } else return this.create(cause!);
     }
     static create(cause: ActorDamageCause): ActorDamageSource {
         abstract();
@@ -239,6 +243,13 @@ export class ActorDamageSource extends NativeClass{
     }
 
     getDamagingEntityUniqueID():ActorUniqueID {
+        abstract();
+    }
+}
+
+@nativeClass(0x50)
+export class ActorDamageByActorSource extends ActorDamageSource {
+    static constructWith(damagingEntity:Actor|ActorDamageCause, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
         abstract();
     }
 }
