@@ -218,8 +218,8 @@ export class ActorDamageSource extends NativeClass{
     cause: int32_t;
 
     /** @deprecated Use {@link create} instead. */
-    static constructWith(damagingEntity:Actor, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(cause: ActorDamageCause): ActorDamageSource;
+    static constructWith(damagingEntity:Actor, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(damagingEntity_cause:Actor|ActorDamageCause, cause?: ActorDamageCause): ActorDamageSource {
         if (damagingEntity_cause instanceof Actor) {
             throw new Error("Can't set damging entity for ActorDamageSource");
