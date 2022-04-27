@@ -452,13 +452,10 @@ ActorDamageSource.prototype.setCause = procHacker.js("?setCause@ActorDamageSourc
 
 ActorDamageByActorSource.prototype[NativeType.dtor] = procHacker.js("??1ActorDamageByActorSource@@UEAA@XZ", void_t, {this:ActorDamageByActorSource});
 const ActorDamageByActorSource$ActorDamageByActorSource = procHacker.js("??0ActorDamageByActorSource@@QEAA@AEAVActor@@W4ActorDamageCause@@@Z", ActorDamageByActorSource, null, ActorDamageByActorSource, Actor, int32_t);
-ActorDamageByActorSource.constructWith = function (damagingEntity, cause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
-    if (damagingEntity instanceof Actor) {
-        const source = new ActorDamageByActorSource(true);
-        ActorDamageByActorSource$ActorDamageByActorSource(source, damagingEntity, cause);
-        return source;
-    }
-    throw new Error("damagingEntity is required for ActorDamageByActorSource");
+ActorDamageByActorSource.constructWith = function (damagingEntity, cause:ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
+    const source = new ActorDamageByActorSource(true);
+    ActorDamageByActorSource$ActorDamageByActorSource(source, damagingEntity as Actor, cause);
+    return source;
 };
 
 ItemActor.abstract({
