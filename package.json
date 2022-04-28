@@ -16,7 +16,7 @@
     "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr",
     "shellprepare": "ts-node ./bdsx/shellprepare",
     "checksymbols": "ts-node ./bdsx/checkgate ./checksymbols",
-    "pdbcachegen": "bedrock_server\\pdbcachegen.exe \"./bedrock_server/pdbcache.bin\""
+    "pdbcachegen": "bedrock_server\\pdbcachegen.exe \"./bedrock_server/bedrock_server.exe\" \"./bedrock_server/pdbcache.bin\""
   },
   "dependencies": {
     "bdsx": "file:bdsx",
