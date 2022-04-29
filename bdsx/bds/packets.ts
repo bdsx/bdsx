@@ -4,7 +4,7 @@ import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint64_as_float_t, uint8_t } from "../nativetype";
 import { ActorDefinitionIdentifier, ActorLink, ActorRuntimeID, ActorUniqueID } from "./actor";
 import { AttributeInstanceHandle } from "./attribute";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
@@ -209,8 +209,8 @@ export class SetTimePacket extends Packet {
 
 @nativeClass(null)
 export class LevelSettings extends MantleClass {
-    @nativeField(int64_as_float_t)
-    seed:int64_as_float_t;
+    @nativeField(uint64_as_float_t)
+    seed:uint64_as_float_t;
 }
 
 @nativeClass(null)
@@ -639,7 +639,14 @@ export class SetHealthPacket extends Packet {
 
 @nativeClass(null)
 export class SetSpawnPositionPacket extends Packet {
-    // unknown
+    @nativeField(BlockPos)
+    pos:BlockPos;
+    @nativeField(int32_t)
+    spawnType:int32_t;
+    @nativeField(int32_t)
+    dimension:int32_t;
+    @nativeField(BlockPos)
+    causingBlockPos:BlockPos;
 }
 
 @nativeClass(null)
@@ -664,7 +671,12 @@ export namespace AnimatePacket {
 
 @nativeClass(null)
 export class RespawnPacket extends Packet {
-    // unknown
+    @nativeField(Vec3)
+    position:Vec3;
+    @nativeField(uint8_t)
+    state:uint8_t;
+    @nativeField(ActorRuntimeID)
+    actorId:ActorRuntimeID|null;
 }
 
 @nativeClass(null)
