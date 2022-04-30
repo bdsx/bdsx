@@ -672,11 +672,11 @@ export namespace AnimatePacket {
 @nativeClass(null)
 export class RespawnPacket extends Packet {
     @nativeField(Vec3)
-    position:Vec3;
+    pos:Vec3;
     @nativeField(uint8_t)
     state:uint8_t;
     @nativeField(ActorRuntimeID)
-    actorId:ActorRuntimeID|null;
+    runtimeId:ActorRuntimeID|null;
 }
 
 @nativeClass(null)
