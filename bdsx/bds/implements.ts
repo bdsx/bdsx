@@ -49,7 +49,7 @@ import { Player, ServerPlayer } from "./player";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
-import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, ServerInstance, VanillaGameModuleServer, VanillaServerGameplayEventListener } from "./server";
+import { DedicatedServer, Minecraft, Minecraft$Something, ScriptFramework, SemVersion, ServerInstance, VanillaGameModuleServer, VanillaServerGameplayEventListener } from "./server";
 import { WeakPtr } from "./sharedptr";
 import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
@@ -773,12 +773,20 @@ ServerInstance.prototype.setMaxPlayers = function(count:number):void {
 ServerInstance.prototype.getPlayers = function():ServerPlayer[] {
     return bedrockServer.level.getPlayers();
 };
-ServerInstance.prototype.updateCommandList = function(): void {
+ServerInstance.prototype.updateCommandList = function():void {
     const pk = bedrockServer.commandRegistry.serializeAvailableCommands();
     for (const player of this.getPlayers()) {
         player.sendNetworkPacket(pk);
     }
     pk.dispose();
+};
+const networkProtocolVersion = proc["?NetworkProtocolVersion@SharedConstants@@3HB"].getInt32();
+ServerInstance.prototype.getNetworkProtocolVersion = function():number {
+    return networkProtocolVersion;
+};
+const currentGameSemVersion = proc["?CurrentGameSemVersion@SharedConstants@@3VSemVersion@@B"].as(SemVersion);
+ServerInstance.prototype.getGameVersion = function():SemVersion {
+    return currentGameSemVersion;
 };
 
 Minecraft$Something.prototype.network = bedrockServer.networkHandler;

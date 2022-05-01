@@ -2,6 +2,7 @@ import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { events } from "../event";
+import { bedrockServer } from "../launcher";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { CxxSharedPtr } from "../sharedpointer";
@@ -11,7 +12,6 @@ import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import type { ServerPlayer } from "./player";
-import { proc } from "./symbols";
 
 export class MinecraftEventing extends AbstractClass {}
 export class ResourcePackManager extends AbstractClass {}
@@ -139,13 +139,13 @@ export class ServerInstance extends AbstractClass {
     }
 
     createDimension(id:DimensionId):Dimension {
-        return this.minecraft.getLevel().createDimension(id);
+        return bedrockServer.level.createDimension(id);
     }
     /**
      * Returns the number of current online players
      */
     getActivePlayerCount():number {
-        return this.minecraft.getLevel().getActivePlayerCount();
+        return bedrockServer.level.getActivePlayerCount();
     }
     /**
      * Disconnects all clients with the given message
@@ -199,13 +199,13 @@ export class ServerInstance extends AbstractClass {
      * Returns the server's current network protocol version
      */
     getNetworkProtocolVersion():number {
-        return proc["SharedConstants::NetworkProtocolVersion"].getInt32();
+        abstract();
     }
     /**
      * Returns the server's current game version
      */
     getGameVersion():SemVersion {
-        return proc["SharedConstants::CurrentGameSemVersion"].as(SemVersion);
+        abstract();
     }
     /**
      * Creates a promise that resolves on the next tick
