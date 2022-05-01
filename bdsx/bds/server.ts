@@ -2,7 +2,6 @@ import { LoopbackPacketSender } from "../bds/loopbacksender";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { events } from "../event";
-import { bedrockServer } from "../launcher";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { CxxSharedPtr } from "../sharedpointer";
@@ -139,13 +138,13 @@ export class ServerInstance extends AbstractClass {
     }
 
     createDimension(id:DimensionId):Dimension {
-        return bedrockServer.level.createDimension(id);
+        abstract();
     }
     /**
      * Returns the number of current online players
      */
     getActivePlayerCount():number {
-        return bedrockServer.level.getActivePlayerCount();
+        abstract();
     }
     /**
      * Disconnects all clients with the given message

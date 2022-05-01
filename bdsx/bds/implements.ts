@@ -755,6 +755,12 @@ ServerInstance.abstract({
 });
 (ServerInstance.prototype as any)._disconnectAllClients = procHacker.js("?disconnectAllClientsWithMessage@ServerInstance@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this:ServerInstance}, CxxString);
 
+ServerInstance.prototype.createDimension = function(id:DimensionId):Dimension {
+    return bedrockServer.level.createDimension(id);
+};
+ServerInstance.prototype.getActivePlayerCount = function():number {
+    return bedrockServer.level.getActivePlayerCount();
+};
 ServerInstance.prototype.disconnectClient = function(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
     return bedrockServer.serverNetworkHandler.disconnectClient(client, message, skipMessage);
 };
