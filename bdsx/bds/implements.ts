@@ -640,7 +640,7 @@ NetworkIdentifier.prototype.getActor = function():ServerPlayer|null {
 };
 NetworkIdentifier.prototype.getAddress = function():string {
     const idx = this.address.GetSystemIndex();
-    const rakpeer = bedrockServer.networkHandler.instance.peer;
+    const rakpeer = bedrockServer.rakPeer;
     return rakpeer.GetSystemAddressFromIndex(idx).toString();
 };
 NetworkIdentifier.prototype.equals = procHacker.js("??8NetworkIdentifier@@QEBA_NAEBV0@@Z", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
