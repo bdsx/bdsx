@@ -639,7 +639,14 @@ export class SetHealthPacket extends Packet {
 
 @nativeClass(null)
 export class SetSpawnPositionPacket extends Packet {
-    // unknown
+    @nativeField(BlockPos)
+    pos:BlockPos;
+    @nativeField(int32_t)
+    spawnType:int32_t;
+    @nativeField(int32_t)
+    dimension:int32_t;
+    @nativeField(BlockPos)
+    causingBlockPos:BlockPos;
 }
 
 @nativeClass(null)
@@ -664,7 +671,12 @@ export namespace AnimatePacket {
 
 @nativeClass(null)
 export class RespawnPacket extends Packet {
-    // unknown
+    @nativeField(Vec3)
+    pos:Vec3;
+    @nativeField(uint8_t)
+    state:uint8_t;
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID|null;
 }
 
 @nativeClass(null)
