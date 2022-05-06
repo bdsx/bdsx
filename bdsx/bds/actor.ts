@@ -1,5 +1,6 @@
 import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
+import type { CommandResult, CommandResultType } from "../commandresult";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
@@ -1003,7 +1004,7 @@ export class Actor extends AbstractClass {
             obj.type = this.getEntityTypeId();
         });
     }
-    runCommand(command:string, mute:boolean = true, permissionLevel?:CommandPermissionLevel): MCRESULT{
+    runCommand(command:string, mute:CommandResultType = true, permissionLevel?:CommandPermissionLevel): CommandResult<CommandResult.Any> {
         abstract();
     }
     isMoving(): boolean {

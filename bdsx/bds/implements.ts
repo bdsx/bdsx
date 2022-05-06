@@ -305,7 +305,7 @@ Actor.prototype.save = function(tag?:CompoundTag):any {
 Actor.prototype.getTags = procHacker.js('?getTags@Actor@@QEBA?BV?$span@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$0?0@gsl@@XZ', GslSpanToArray.make(CxxString), {this:Actor, structureReturn: true});
 
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js("??0VirtualCommandOrigin@@QEAA@AEBVCommandOrigin@@AEAVActor@@AEBVCommandPositionFloat@@H@Z", void_t, null, VirtualCommandOrigin, CommandOrigin, Actor, CommandPositionFloat, int32_t);
-Actor.prototype.runCommand = function(command:string, mute:boolean = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator):MCRESULT {
+Actor.prototype.runCommand = function(command:string, mute:CommandResultType = true, permissionLevel:CommandPermissionLevel = CommandPermissionLevel.Operator): CommandResult<CommandResult.Any> {
     const actorPos = CommandUtils.getFeetPos(this);
     const cmdPos = CommandPositionFloat.create(actorPos.x, false, actorPos.y, false, actorPos.z, false, false);
 
@@ -316,11 +316,9 @@ Actor.prototype.runCommand = function(command:string, mute:boolean = true, permi
         this.getDimension());
     const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos);
     serverOrigin.destruct(); // serverOrigin will be cloned.
-
     const ctx = CommandContext.constructSharedPtr(command, origin);
-    const res = bedrockServer.minecraftCommands.executeCommand(ctx, mute);
-    // ctx, origin: no need to destruct, it's destructed by internal functions.
-    return res;
+
+    return executeCommandWithOutput(origin, ctx.p!, mute);
 };
 
 @nativeClass()
@@ -1518,7 +1516,6 @@ ThrowableItemComponent.prototype.getLaunchPower = procHacker.js("?_getLaunchPowe
 // launcher.ts
 const CommandOutputParameterVector = CxxVector.make(CommandOutputParameter);
 bedrockServer.executeCommand = function(command:string, mute:CommandResultType = null, permissionLevel:CommandPermissionLevel|null=null, dimension:Dimension|null = null):CommandResult<any> {
-    const minecraft = bedrockServer.minecraft;
     const origin = ServerCommandOrigin.constructWith('Server',
         bedrockServer.level, // assume it's always ServerLevel
         permissionLevel ?? CommandPermissionLevel.Admin,
@@ -1526,6 +1523,12 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
 
     // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
     const ctx = CommandContext.constructWith(command, origin);
+
+    return executeCommandWithOutput(origin, ctx, mute);
+};
+
+function executeCommandWithOutput(origin:CommandOrigin, ctx:CommandContext, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
+    const command = ctx.command;
     const resv = events.command.fire(command, origin.getName(), ctx);
     if (typeof resv === 'number') {
         const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
@@ -1586,4 +1589,4 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
         output.destruct();
         cmdparser.destruct();
     }
-};
+}
