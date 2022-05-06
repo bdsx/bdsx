@@ -403,6 +403,7 @@ Actor.prototype.getLastHurtCause = procHacker.js("?getLastHurtCause@Actor@@QEBA?
 Actor.prototype.getLastHurtDamage = procHacker.js("?getLastHurtDamage@Actor@@QEBAMXZ", int32_t, {this:Actor});
 Actor.prototype.getLastHurtMob = procHacker.js("?getLastHurtMob@Actor@@UEAAPEAVMob@@XZ", Mob, {this:Actor});
 Actor.prototype.wasLastHitByPlayer = procHacker.js("?wasLastHitByPlayer@Actor@@QEAA_NXZ", bool_t, {this:Actor});
+Actor.prototype.getSpeedInMeterPerSecond = procHacker.js("?getSpeedInMetersPerSecond@Actor@@QEBAMXZ", float32_t, {this:Actor});
 (Actor.prototype as any).fetchNearbyActorsSorted_ = procHacker.js("?fetchNearbyActorsSorted@Actor@@QEAA?AV?$vector@UDistanceSortedActor@@V?$allocator@UDistanceSortedActor@@@std@@@std@@AEBVVec3@@W4ActorType@@@Z", CxxVector.make(DistanceSortedActor), {this:Actor, structureReturn:true}, Vec3, int32_t);
 
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
