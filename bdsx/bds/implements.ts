@@ -1521,7 +1521,6 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
         permissionLevel ?? CommandPermissionLevel.Admin,
         dimension);
 
-    // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
     const ctx = CommandContext.constructWith(command, origin);
 
     return executeCommandWithOutput(origin, ctx, mute);
@@ -1529,6 +1528,8 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
 
 function executeCommandWithOutput(origin:CommandOrigin, ctx:CommandContext, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
     const command = ctx.command;
+
+    // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
     const resv = events.command.fire(command, origin.getName(), ctx);
     if (typeof resv === 'number') {
         const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
