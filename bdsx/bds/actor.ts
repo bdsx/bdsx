@@ -1070,6 +1070,13 @@ export class Actor extends AbstractClass {
     wasLastHitByPlayer(): boolean {
         abstract();
     }
+    /**
+     * Returns the speed of the entity
+     * If the entity is a Player and server-authoritative-movement(in `server.properties`) is `client-auth`, the result is always 0m/s.
+     */
+    getSpeedInMetersPerSecond(): number {
+        abstract();
+    }
     protected fetchNearbyActorsSorted_(maxDistance: Vec3, filter: ActorType): CxxVector<DistanceSortedActor> {
         abstract();
     }
