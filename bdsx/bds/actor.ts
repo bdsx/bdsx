@@ -10,7 +10,7 @@ import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import { Vec2, Vec3 } from "./blockpos";
-import type { CommandPermissionLevel, MCRESULT } from "./command";
+import type { CommandPermissionLevel } from "./command";
 import type { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
