@@ -1074,7 +1074,7 @@ export class Actor extends AbstractClass {
      * Returns the speed of the entity
      * If the entity is a Player and server-authoritative-movement(in `server.properties`) is `client-auth`, the result is always 0m/s.
      */
-    getSpeedInMeterPerSecond(): number {
+    getSpeedInMetersPerSecond(): number {
         abstract();
     }
     protected fetchNearbyActorsSorted_(maxDistance: Vec3, filter: ActorType): CxxVector<DistanceSortedActor> {
