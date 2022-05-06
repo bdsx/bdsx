@@ -317,7 +317,10 @@ Actor.prototype.runCommand = function(command:string, mute:CommandResultType = t
     const origin = VirtualCommandOrigin.constructWith(serverOrigin, this, cmdPos);
     serverOrigin.destruct(); // serverOrigin will be cloned.
     const ctx = CommandContext.constructWith(command, origin);
-    return executeCommandWithOutput(ctx, mute);
+    const result = executeCommandWithOutput(ctx, mute);
+    ctx.destruct();
+    origin.destruct();
+    return result;
 };
 
 @nativeClass()
@@ -1526,7 +1529,10 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
         dimension);
 
     const ctx = CommandContext.constructWith(command, origin);
-    return executeCommandWithOutput(ctx, mute);
+    const result = executeCommandWithOutput(ctx, mute);
+    ctx.destruct();
+    origin.destruct();
+    return result;
 };
 
 function executeCommandWithOutput(ctx:CommandContext, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
@@ -1590,7 +1596,6 @@ function executeCommandWithOutput(ctx:CommandContext, mute:CommandResultType = n
         }
         return res;
     } finally {
-        ctx.destruct();
         output.destruct();
         cmdparser.destruct();
     }
