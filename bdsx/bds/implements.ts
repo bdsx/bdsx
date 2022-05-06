@@ -317,6 +317,7 @@ Actor.prototype.runCommand = function(command:string, mute:CommandResultType = t
     const origin = VirtualCommandOrigin.constructWith(serverOrigin, this, cmdPos);
     serverOrigin.destruct(); // serverOrigin will be cloned.
     const ctx = CommandContext.constructWith(command, origin);
+
     const result = executeCommandWithOutput(ctx, mute);
     ctx.destruct();
     origin.destruct();
@@ -1528,8 +1529,8 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
         bedrockServer.level, // assume it's always ServerLevel
         permissionLevel ?? CommandPermissionLevel.Admin,
         dimension);
-
     const ctx = CommandContext.constructWith(command, origin);
+
     const result = executeCommandWithOutput(ctx, mute);
     ctx.destruct();
     origin.destruct();
