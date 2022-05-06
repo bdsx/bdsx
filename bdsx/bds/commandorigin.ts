@@ -156,6 +156,9 @@ export class VirtualCommandOrigin extends CommandOrigin {
     static allocateWith(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
         abstract();
     }
+    static constructWith(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
+        abstract();
+    }
 }
 
 /**

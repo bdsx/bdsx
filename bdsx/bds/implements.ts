@@ -314,11 +314,10 @@ Actor.prototype.runCommand = function(command:string, mute:CommandResultType = t
         this.getLevel() as ServerLevel,
         permissionLevel,
         this.getDimension());
-    const origin = VirtualCommandOrigin.allocateWith(serverOrigin, this, cmdPos);
+    const origin = VirtualCommandOrigin.constructWith(serverOrigin, this, cmdPos);
     serverOrigin.destruct(); // serverOrigin will be cloned.
-    const ctx = CommandContext.constructSharedPtr(command, origin);
-
-    return executeCommandWithOutput(origin, ctx.p!, mute);
+    const ctx = CommandContext.constructWith(command, origin);
+    return executeCommandWithOutput(ctx, mute);
 };
 
 @nativeClass()
@@ -1375,6 +1374,11 @@ VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, 
     VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, 0x11); // 0x11: From running `execute` command manually
     return out;
 };
+VirtualCommandOrigin.constructWith = function(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
+    const out = new VirtualCommandOrigin(true);
+    VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, 0x11); // 0x11: From running `execute` command manually
+    return out;
+};
 
 // biome.ts
 Biome.prototype.getBiomeType = procHacker.js("?getBiomeType@Biome@@QEBA?AW4VanillaBiomeTypes@@XZ", uint32_t, {this:Biome});
@@ -1522,11 +1526,11 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
         dimension);
 
     const ctx = CommandContext.constructWith(command, origin);
-
-    return executeCommandWithOutput(origin, ctx, mute);
+    return executeCommandWithOutput(ctx, mute);
 };
 
-function executeCommandWithOutput(origin:CommandOrigin, ctx:CommandContext, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
+function executeCommandWithOutput(ctx:CommandContext, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
+    const origin = ctx.origin;
     const command = ctx.command;
 
     // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
