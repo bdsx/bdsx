@@ -1376,12 +1376,12 @@ LevelChunk.prototype.getChunkEntities = procHacker.js("?getChunkEntities@LevelCh
 // origin.ts
 VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
     const out = capi.malloc(VirtualCommandOrigin[NativeType.size]).as(VirtualCommandOrigin);
-    VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, 0x11); // 0x11: From running `execute` command manually
+    VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, CommandVersion.CurrentVersion);
     return out;
 };
 VirtualCommandOrigin.constructWith = function(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
     const out = new VirtualCommandOrigin(true);
-    VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, 0x11); // 0x11: From running `execute` command manually
+    VirtualCommandOrigin$VirtualCommandOrigin(out, origin, actor, cmdPos, CommandVersion.CurrentVersion);
     return out;
 };
 
