@@ -103,9 +103,11 @@ export class NetworkIdentifier extends NativeStruct implements Hashable {
     unknown:bin64_t;
     @nativeField(RakNet.AddressOrGUID)
     address:RakNet.AddressOrGUID;
+    @nativeField(int32_t, {ghost:true, offset:0x98})
+    type:int32_t;
 
     assignTo(target:VoidPointer):void {
-        dll.vcruntime140.memcpy(target, this, NetworkHandler[NativeClass.contentSize]);
+        dll.vcruntime140.memcpy(target, this, networkIdentifierSize);
     }
 
     equals(other:NetworkIdentifier):boolean {
@@ -135,6 +137,7 @@ export class NetworkIdentifier extends NativeStruct implements Hashable {
         return identifiers.values();
     }
 }
+const networkIdentifierSize = NetworkIdentifier[NativeClass.contentSize];
 NetworkIdentifier.setResolver(ptr=>{
     if (ptr === null) return null;
     let ni = identifiers.get(ptr.as(NetworkIdentifier));

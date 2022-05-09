@@ -111,14 +111,13 @@ export namespace asmcode {
     export function setEnabledPacket(n:number, idx:number):void;
     export const addressof_enabledPacket:NativePointer;
     export const packetRawHook:NativePointer;
-    export let onPacketBefore:VoidPointer;
-    export const addressof_onPacketBefore:NativePointer;
-    export const packetBeforeHook:NativePointer;
     export let PacketViolationHandlerHandleViolationAfter:VoidPointer;
     export const addressof_PacketViolationHandlerHandleViolationAfter:NativePointer;
     export const packetBeforeCancelHandling:NativePointer;
     export let onPacketAfter:VoidPointer;
     export const addressof_onPacketAfter:NativePointer;
+    export let handlePacket:VoidPointer;
+    export const addressof_handlePacket:NativePointer;
     export const packetAfterHook:NativePointer;
     export let sendOriginal:VoidPointer;
     export const addressof_sendOriginal:NativePointer;
@@ -127,6 +126,8 @@ export namespace asmcode {
     export const packetSendHook:NativePointer;
     export let packetSendAllCancelPoint:VoidPointer;
     export const addressof_packetSendAllCancelPoint:NativePointer;
+    export let packetSendAllJumpPoint:VoidPointer;
+    export const addressof_packetSendAllJumpPoint:NativePointer;
     export const packetSendAllHook:NativePointer;
     export let onPacketSendInternal:VoidPointer;
     export const addressof_onPacketSendInternal:NativePointer;
@@ -145,4 +146,11 @@ export namespace asmcode {
     export let Core_String_toWide_string_span:VoidPointer;
     export const addressof_Core_String_toWide_string_span:NativePointer;
     export const Core_String_toWide_charptr:NativePointer;
+    export let terminate:VoidPointer;
+    export const addressof_terminate:NativePointer;
+    export let ExitThread:VoidPointer;
+    export const addressof_ExitThread:NativePointer;
+    export let bdsMainThreadId:number;
+    export const addressof_bdsMainThreadId:NativePointer;
+    export const terminateHook:NativePointer;
 }

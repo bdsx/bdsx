@@ -316,10 +316,8 @@ Actor.prototype.runCommand = function(command:string, mute:CommandResultType = t
         this.getDimension());
     const origin = VirtualCommandOrigin.constructWith(serverOrigin, this, cmdPos);
     serverOrigin.destruct(); // serverOrigin will be cloned.
-    const ctx = CommandContext.constructWith(command, origin);
 
-    const result = executeCommandWithOutput(ctx, mute);
-    ctx.destruct();
+    const result = executeCommandWithOutput(command, origin, mute);
     origin.destruct();
     return result;
 };
@@ -603,7 +601,7 @@ Player.prototype.hasOpenContainer = procHacker.js("?hasOpenContainer@Player@@QEB
 Player.prototype.isHungry = procHacker.js("?isHungry@Player@@QEBA_NXZ", bool_t, {this:Player});
 Player.prototype.isHurt = procHacker.js("?isHurt@Player@@QEAA_NXZ", bool_t, {this:Player});
 Player.prototype.isSpawned = procHacker.js("?isSpawned@Player@@QEBA_NXZ", bool_t, {this:Player});
-Player.prototype.isLoading = procHacker.jsv('?isLoading@ServerPlayer@@UEBA_NXZ', '?isLoading@ServerPlayer@@UEBA_NXZ', bool_t, {this:Player});
+Player.prototype.isLoading = procHacker.jsv('??_7ServerPlayer@@6B@', '?isLoading@ServerPlayer@@UEBA_NXZ', bool_t, {this:Player});
 Player.prototype.isPlayerInitialized  = procHacker.jsv('??_7ServerPlayer@@6B@', '?isPlayerInitialized@ServerPlayer@@UEBA_NXZ', bool_t, {this:Player});
 
 ServerPlayer.abstract({});
@@ -645,7 +643,11 @@ NetworkIdentifier.prototype.getAddress = function():string {
     const rakpeer = bedrockServer.rakPeer;
     return rakpeer.GetSystemAddressFromIndex(idx).toString();
 };
-NetworkIdentifier.prototype.equals = procHacker.js("??8NetworkIdentifier@@QEBA_NAEBV0@@Z", bool_t, {this:NetworkIdentifier}, NetworkIdentifier);
+const NetworkIdentifier$equalsTypeData = procHacker.js("?equalsTypeData@NetworkIdentifier@@AEBA_NAEBV1@@Z", bool_t, null, NetworkIdentifier, NetworkIdentifier);
+NetworkIdentifier.prototype.equals = function(other):boolean {
+    if (other.type !== other.type) return false;
+    return NetworkIdentifier$equalsTypeData(this, other);
+};
 
 const NetworkIdentifier_getHash = procHacker.js('?getHash@NetworkIdentifier@@QEBA_KXZ', bin64_t, null, NetworkIdentifier);
 NetworkIdentifier.prototype.hash = function() {
@@ -706,6 +708,8 @@ Certificate.prototype.getIdentityName = function():string {
 Certificate.prototype.getIdentity = function():mce.UUID {
     return ExtendedCertificate.getIdentity(this).value;
 };
+
+ConnectionRequest.prototype.getCertificate = procHacker.js('?getCertificate@ConnectionRequest@@QEBAPEBVCertificate@@XZ', Certificate, {this:ConnectionRequest});
 
 namespace ExtendedCertificate {
     export const getXuid = procHacker.js("?getXuid@ExtendedCertificate@@SA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBVCertificate@@@Z", CxxString, {structureReturn: true}, Certificate);
@@ -1529,20 +1533,17 @@ bedrockServer.executeCommand = function(command:string, mute:CommandResultType =
         bedrockServer.level, // assume it's always ServerLevel
         permissionLevel ?? CommandPermissionLevel.Admin,
         dimension);
-    const ctx = CommandContext.constructWith(command, origin);
-
-    const result = executeCommandWithOutput(ctx, mute);
-    ctx.destruct();
+    const result = executeCommandWithOutput(command, origin, mute);
     origin.destruct();
     return result;
 };
 
-function executeCommandWithOutput(ctx:CommandContext, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
-    const origin = ctx.origin;
-    const command = ctx.command;
-
+function executeCommandWithOutput(command:string, origin:CommandOrigin, mute:CommandResultType = null):CommandResult<CommandResult.Any> {
     // fire `events.command` manually. because it does not pass MinecraftCommands::executeCommand
+    const ctx = CommandContext.constructWith(command, origin);
     const resv = events.command.fire(command, origin.getName(), ctx);
+    ctx.destruct();
+    decay(ctx);
     if (typeof resv === 'number') {
         const res = new MCRESULT(true) as CommandResult<CommandResult.Any>;
         res.result = resv;

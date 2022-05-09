@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from '../config';
-import { bedrock_server_exe, NativePointer } from "../core";
+import { bedrock_server_exe, NativePointer, VoidPointer } from "../core";
 import { dllraw } from "../dllraw";
 import { fsutil } from '../fsutil';
 import { pdbcache } from '../pdbcache';
@@ -48,18 +48,25 @@ function getVftableOffset(key:string):[number]|null {
     const vftableSearch = proc[from].add();
     const targetptr = proc[target];
     let offset = 0;
-    for (;;) {
+    while (offset < 4096) {
+        let ptr:VoidPointer;
         try {
-            const ptr = vftableSearch.readPointer();
-            if (ptr.equalsptr(targetptr)) break;
-            offset += 8;
+            ptr = vftableSearch.readPointer();
         } catch (err) {
             // access violation expected
-            return null;
+            break;
         }
+        const rva = ptr.subptr(dllraw.current);
+        if (rva < 0x1000) break; // too low
+        if (rva >= 0x1000000000) break; // too big
+
+        if (ptr.equalsptr(targetptr)) {
+            PdbCacheL2.addVftableOffset(key, offset);
+            return proc.vftable[key] = [offset];
+        }
+        offset += 8;
     }
-    PdbCacheL2.addVftableOffset(key, offset);
-    return proc.vftable[key] = [offset];
+    return null;
 }
 (proc.vftable as any).__proto__ = new Proxy({}, {
     get(target:Record<string|symbol, any>, key):[number, number?] {

@@ -535,10 +535,18 @@ function paramsToVector(params?:CxxVector<CommandOutputParameter>|CommandOutputP
     return CommandOutputParameterVector.construct();
 }
 
+@nativeClass()
+class CommandPropertyBag extends AbstractClass {
+    @nativeField(JsonValue, 0x8)
+    json:JsonValue;
+}
+
 @nativeClass(0x30)
 export class CommandOutput extends NativeClass {
     @nativeField(int32_t)
     type:CommandOutputType;
+    @nativeField(CommandPropertyBag.ref())
+    propertyBag:CommandPropertyBag;
     // @nativeField(int32_t, 0x28)
     // successCount:int32_t;
 
@@ -1549,7 +1557,14 @@ CommandOutput.prototype.set_int = procHacker.js('??$set@H@CommandOutput@@QEAAXPE
 CommandOutput.prototype.set_bool = procHacker.js('??$set@_N@CommandOutput@@QEAAXPEBD_N@Z', void_t, {this:CommandOutput}, makefunc.Utf8, bool_t);
 CommandOutput.prototype.set_float = procHacker.js('??$set@M@CommandOutput@@QEAAXPEBDM@Z', void_t, {this:CommandOutput}, makefunc.Utf8, float32_t);
 CommandOutput.prototype.set_BlockPos = procHacker.js('??$set@VBlockPos@@@CommandOutput@@QEAAXPEBDVBlockPos@@@Z', void_t, {this:CommandOutput}, makefunc.Utf8, BlockPos);
-CommandOutput.prototype.set_Vec3 = procHacker.js('??$set@VVec3@@@CommandOutput@@QEAAXPEBDVVec3@@@Z', void_t, {this:CommandOutput}, makefunc.Utf8, Vec3);
+CommandOutput.prototype.set_Vec3 = function(k, v) {
+    if (this.type !== CommandOutputType.DataSet) return;
+    this.propertyBag.json.get(k).setValue({
+        x: v.x,
+        y: v.y,
+        z: v.z,
+    });
+};
 
 (CommandOutput.prototype as any)._successNoMessage = procHacker.js('?success@CommandOutput@@QEAAXXZ', void_t, {this:CommandOutput});
 (CommandOutput.prototype as any)._success = procHacker.js('?success@CommandOutput@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@@Z', void_t, {this:CommandOutput}, CxxString, CommandOutputParameterVector);

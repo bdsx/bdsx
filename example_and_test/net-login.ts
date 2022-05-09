@@ -11,7 +11,8 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
     const ip = networkIdentifier.getAddress();
     const connreq = ptr.connreq;
     if (connreq === null) return; // wrong client
-    const cert = connreq.cert;
+    const cert = connreq.getCertificate();
+    if (cert === null) return; // wrong client ?
     const xuid = cert.getXuid();
     const username = cert.getId();
 

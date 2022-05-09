@@ -735,7 +735,7 @@ Tester.concurrency({
             const connreq = ptr.connreq;
             this.assert(connreq !== null, 'no ConnectionRequest, client version mismatched?');
             if (connreq !== null) {
-                const cert = connreq.cert;
+                const cert = connreq.getCertificate();
                 let uuid = cert.json.value()["extraData"]["identity"];
                 this.equals(uuid, cert.getIdentityString(), 'getIdentityString() !== extraData.identity');
             }
@@ -1070,8 +1070,9 @@ events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
 events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
-    if (ptr.connreq === null) return;
-    const cert = ptr.connreq.cert;
+    const connreq = ptr.connreq;
+    if (connreq === null) return;
+    const cert = connreq.getCertificate();
     connectedId = cert.getId();
     connectedXuid = cert.getXuid();
 });

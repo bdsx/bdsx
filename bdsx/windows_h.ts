@@ -903,3 +903,13 @@ export const SUBLANG_YORUBA_NIGERIA =                      0x01;    // Yoruba (N
 export const SUBLANG_ZULU_SOUTH_AFRICA =                   0x01;    // isiZulu / Zulu (South Africa) 0x0435 zu-ZA
 
 export const ERROR_MOD_NOT_FOUND = 126;
+
+@nativeClass()
+export class MODULEINFO extends NativeStruct {
+    @nativeField(VoidPointer)
+    lpBaseOfDll:VoidPointer;
+    @nativeField(uint32_t)
+    SizeOfImage:uint32_t;
+    @nativeField(VoidPointer)
+    EntryPoint:VoidPointer;
+}

@@ -357,7 +357,6 @@ _failed:
     mov [rax+asyncSize+10h], rdx
     mov rdx, [rcx+8]
     mov [rax+asyncSize+18h], rdx
-
 endp
 
 ; [[noreturn]] runtime_error(EXCEPTION_POINTERS* err)
@@ -409,8 +408,10 @@ endp
 export def CommandOutputSenderHookCallback:qword
 export proc CommandOutputSenderHook
     stack 28h
+    mov [rsp+30h], rcx
     mov rcx, r8
     call CommandOutputSenderHookCallback
+    mov rcx, [rsp+30h]
 endp
 
 export def commandQueue:qword
@@ -497,41 +498,18 @@ export def createPacketRaw:qword
 export def enabledPacket:byte[256]
 
 export proc packetRawHook
-    unwind
     mov edx, esi ; packetId
     lea rax, enabledPacket
     mov al, byte ptr[rax+rdx]
+    unwind
     test al, al
     jz _skipEvent
     mov rcx, rbp ; rbp
     mov r8, r14 ; Connection
     jmp onPacketRaw
 _skipEvent:
-    lea rcx, [rbp+0xb8]
+    lea rcx, [rbp+0x88]
     jmp createPacketRaw
-endp
-
-export def onPacketBefore:qword
-export proc packetBeforeHook
-    stack 28h
-
-    ; original codes
-    mov rax,qword ptr[rcx]
-    lea r8,qword ptr[rbp+120h]
-    lea rdx,qword ptr[rbp-20h]
-    call qword ptr[rax+20h]
-
-    lea rcx, enabledPacket
-    mov cl, byte ptr[rcx+rsi]
-    unwind
-    test cl, cl
-    jz _skipEvent
-    mov rcx, rax ; read result
-    mov rdx, rbp ; rbp
-    mov r8d, esi ; packetId
-    jmp onPacketBefore
-_skipEvent:
-    ret
 endp
 
 export def PacketViolationHandlerHandleViolationAfter:qword
@@ -555,25 +533,24 @@ violation:
 endp
 
 export def onPacketAfter:qword
+export def handlePacket:qword
 export proc packetAfterHook
     stack 28h
 
     ; orignal codes
-    mov rax,[rcx]
-    lea r9,[rbp+b8h] ; packet
-    mov r8,rsi
-    mov rdx,r14
-    call [rax+8]
+    mov rcx, [rbp+88h] ; packet
+    call handlePacket
 
-    mov rax,[rbp+b8h] ; packet
-    mov rax, [rax] ; packet.vftable
-    call [rax+8] ; packet.getId()
+    mov rcx, [rbp+88h] ; packet
+    mov rax, [rcx] ; packet.vftable
+    call [rax+8h] ; packet.getId()
     lea r10, enabledPacket
     mov al, byte ptr[r10+rax]
     unwind
     test al, al
     jz _skipEvent
-    mov rcx, rbp ; rbp
+    mov rcx, [rbp+88h] ; packet
+    mov rdx, r14 ; NetworkIdentifier
     jmp onPacketAfter
 _skipEvent:
     ret
@@ -612,10 +589,13 @@ _skipSend:
 endp
 
 export def packetSendAllCancelPoint:qword
+export def packetSendAllJumpPoint:qword
 export proc packetSendAllHook
     stack 28h
+    ; r14 - packet
+    ; rbx - NetworkIdentifier
 
-    mov rax, [r15] ; packet.vftable
+    mov rax, [r14] ; packet.vftable
     call [rax+8] ; packet.getId(), just constant return
 
     lea r10, enabledPacket
@@ -623,24 +603,26 @@ export proc packetSendAllHook
     test al, al
     jz _pass
 
-    mov r8,r15 ; packet
+    mov r8,r14 ; packet
     mov rdx,rbx ; NetworkIdentifier
-    mov rcx,r14 ; NetworkHandler
     call onPacketSend
-    xor eax, eax
 
     test eax, eax
     jz _pass
-    mov rax, packetSendAllCancelPoint
-    mov [rsp+28h], rax
+    unwind
+    pop rcx
+    jmp packetSendAllCancelPoint
 _pass:
     unwind
 
     ; original codes
-    mov rax, [r15]
-    lea rdx, [r14+250h]
-    mov rcx, r15
-    jmp qword ptr[rax+18h]
+    test rbp,rbp
+    jne _nojmp
+    pop rcx
+    jmp packetSendAllJumpPoint
+_nojmp:
+    movzx eax,byte ptr[rbp+A0h]
+    ret
 endp
 
 export def onPacketSendInternal:qword
@@ -732,4 +714,22 @@ _strlen:
 
     lea rdx, [rsp+10h]
     call Core_String_toWide_string_span
+endp
+
+export def terminate:qword
+export def ExitThread:qword
+export def bdsMainThreadId:dword
+
+export proc terminateHook
+    stack 28h
+    call GetCurrentThreadId
+    cmp eax, bdsMainThreadId
+    jne _originalTerminate
+    mov rcx, finishCallback
+    call uv_async_call
+    xor ecx, ecx
+    call ExitThread
+_originalTerminate:
+    unwind
+    jmp terminate
 endp

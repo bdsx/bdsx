@@ -1,3 +1,4 @@
+import * as colors from 'colors';
 import { NativePointer } from "../core";
 import { Type } from "../nativetype";
 import { proc } from "./symbols";
@@ -68,9 +69,12 @@ export class CommandSymbols {
 
         for (let i=0;i<symbols.fnSymbols.length;i++) {
             const symbol = symbols.fnSymbols[i];
-            const addr = proc[symbol];
-            if (addr == null) throw Error(`${symbol} not found`);
-            yield [symbols.fnTypes[i], addr];
+            try {
+                const addr = proc[symbol];
+                yield [symbols.fnTypes[i], addr];
+            } catch (err) {
+                console.error(colors.red(`${symbol} not found (type_id<${base.name}, ${symbols.fnTypes[i].name}>())`));
+            }
         }
     }
     *iterateTypeIdPtrs(base:Type<any>):IterableIterator<[Type<any>, NativePointer]> {

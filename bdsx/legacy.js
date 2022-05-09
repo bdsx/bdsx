@@ -109,7 +109,7 @@ function readLoginPacket(packet) {
     const loginpacket = new LoginPacket(packet);
     const conn = loginpacket.connreq;
     if (conn !== null) {
-        const cert = conn.cert;
+        const cert = conn.getCertificate();
         if (cert !== null) {
             return [cert.getXuid(), cert.getId()];
         }

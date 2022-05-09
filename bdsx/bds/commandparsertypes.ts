@@ -11,7 +11,6 @@ import { type_id } from "./typeid";
 const types = [
     int32_t,
     float32_t,
-    bool_t,
     CxxString,
     ActorWildcardCommandSelector,
     ActorCommandSelector,
@@ -19,7 +18,6 @@ const types = [
     RelativeFloat,
     CommandFilePath,
     // CommandIntegerRange,
-    CommandItem,
     CommandMessage,
     CommandPosition,
     CommandPositionFloat,
@@ -27,10 +25,12 @@ const types = [
     CommandWildcardInt,
     // CommandOperator,
     JsonValue,
-    Command.Block,
     Command.MobEffect,
 ];
 const typesWithTypeIdPtr = [
+    bool_t,
+    CommandItem,
+    Command.Block,
     Command.ActorDefinitionIdentifier,
 ];
 
