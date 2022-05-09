@@ -13,11 +13,7 @@ import { disable } from 'colors';
 if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 'on')) disable();
 
 // check
-import 'bdsx/common';
-import 'bdsx/checkcore';
-import 'bdsx/checkmodules';
-import 'bdsx/asm/checkasm';
-// import 'bdsx/permissions';
+import 'bdsx/check';
 
 // install bdsx error handler
 import { installErrorHandler } from "bdsx/errorhandler";
