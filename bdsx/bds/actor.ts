@@ -1094,6 +1094,41 @@ export class Actor extends AbstractClass {
         vector.destruct();
         return arr;
     }
+
+    /**
+     * Returns whether the player is in creative mode
+     */
+    isCreative(): boolean {
+        abstract();
+    }
+
+    /**
+     * Returns whether the player is in adventure mode
+     */
+    isAdventure(): boolean {
+        abstract();
+    }
+
+    /**
+     * Returns whether the player is in survival mode
+     */
+    isSurvival(): boolean {
+        abstract();
+    }
+
+    /**
+     * Returns whether the player is in spectator mode
+     */
+    isSpectator(): boolean {
+        abstract();
+    }
+
+    /**
+     * Removes the entity
+     */
+    remove(): void {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
