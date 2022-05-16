@@ -1,4 +1,4 @@
-import { Actor, ActorDamageCause, ActorDamageSource, ItemActor } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, ItemActor } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
@@ -230,6 +230,15 @@ export class PlayerSleepInBedEvent {
 
 export class EntityConsumeTotemEvent {
     constructor(public entity: Actor, public totem: ItemStack) { }
+}
+
+export class PlayerDimensionChangeEvent {
+    constructor(
+        public player: ServerPlayer,
+        public dimension: DimensionId,
+        public useNetherPortal: boolean,
+    ) {
+    }
 }
 
 function onPlayerJump(player: Player):void {
@@ -501,3 +510,14 @@ function onConsumeTotem(entity: Actor): boolean {
     return _onConsumeTotem(entity);
 }
 const _onConsumeTotem = procHacker.hooking("?consumeTotem@Actor@@UEAA_NXZ", bool_t, null, Actor)(onConsumeTotem);
+
+function onPlayerDimensionChange(player: ServerPlayer, dimension: DimensionId, useNetherPortal: boolean): void {
+    const event = new PlayerDimensionChangeEvent(player, dimension, useNetherPortal);
+    const canceled = events.playerDimensionChange.fire(event) === CANCEL;
+    if(canceled) {
+        return;
+    }
+    return _onPlayerDimensionChange(player, event.dimension, event.useNetherPortal);
+}
+
+const _onPlayerDimensionChange = procHacker.hooking("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@_N@Z", void_t, null, ServerPlayer, int32_t, bool_t)(onPlayerDimensionChange);
