@@ -45,10 +45,10 @@ export class ItemComponent extends NativeClass {
     isIcon(): this is IconItemComponent {
         abstract();
     }
-    isKnockbackResistance(): this is PlanterItemComponent {
+    isKnockbackResistance(): this is KnockbackResistanceItemComponent {
         abstract();
     }
-    isOnUse(): this is ProjectileItemComponent {
+    isOnUse(): this is OnUseItemComponent {
         abstract();
     }
     isPlanter(): this is PlanterItemComponent {
