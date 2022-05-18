@@ -80,20 +80,6 @@ export class EntityCreatedEvent {
     }
 }
 
-// interface IEntityDeathEvent {
-//     entity: Actor;
-//     damageSource: ActorDamageSource;
-//     ActorType: number;
-// }
-// export class EntityDeathEvent {
-//     constructor(
-//         public entity: Actor,
-//         public damageSource: ActorDamageSource,
-//         public ActorType: number
-//     ) {
-//     }
-// }
-
 export class PlayerAttackEvent {
     constructor(
         public player: Player,
