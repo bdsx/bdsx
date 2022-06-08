@@ -232,14 +232,15 @@ bedrockServer.withLoading().then(()=>{
     const sendToMultiple = proc[sendToMultipleSymbol];
     asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x17a);
     asmcode.packetSendAllJumpPoint = sendToMultiple.add(0x55);
-    procHacker.patching('hook-packet-send-all', sendToMultipleSymbol, 0x3f,
+    procHacker.patching('hook-packet-send-all', sendToMultipleSymbol, 0x40,
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
-            0x90,                                            // nop
+            // 0x90,                                          // nop
+            // loop begin point
             0x4D, 0x85, 0xF6,                                // test r14,r14
             0x74, 0x10,                                      // je bedrock_server.7FF7436D8315
             0x41, 0x0F, 0xB6, 0x86, 0xA0, 0x00, 0x00, 0x00,  // movzx eax,byte ptr ds:[r14+A0]
-        ], []);
+        ]);
 
     asmcode.onPacketSendInternal = makefunc.np(onPacketSendInternal, int32_t, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
     asmcode.sendInternalOriginal = procHacker.hookingRaw('?_sendInternal@NetworkHandler@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', asmcode.packetSendInternalHook);
