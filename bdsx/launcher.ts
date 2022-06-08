@@ -94,27 +94,34 @@ function patchForStdio():void {
     }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
     procHacker.write('?BedrockLogOut@@YAXIPEBDZZ', 0, asm().jmp64(asmcode.logHook, Register.rax));
 
-    asmcode.CommandOutputSenderHookCallback = makefunc.np((bytes, ptr)=>{
-        // void(*callback)(const char* log, size_t size)
-        const line = ptr.getString(bytes);
-        if (events.commandOutput.fire(line) !== CANCEL) {
-            console.log(line);
+    asmcode.CommandOutputSenderHookCallback = makefunc.np(line=>{
+        // void(*callback)(std::string* line)
+        const lines = line.split('\n');
+        if (lines[lines.length-1].length === 0) lines.pop();
+
+        for (const line of lines) {
+            if (events.commandOutput.fire(line) !== CANCEL) {
+                console.log(line);
+            }
         }
-    }, void_t, {onError: asmcode.jsend_returnZero, name:`CommandOutputSenderHookCallback`}, int64_as_float_t, StaticPointer);
-    procHacker.patching('hook-command-output', '?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', 0x121, asmcode.CommandOutputSenderHook, Register.rax, true, [
-        0xE8, 0xFF, 0xFF, 0xFF, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic
-        0x48, 0x8B, 0xC8,                           // mov rcx,rax
-        0x48, 0x8D, 0x15, 0xFF, 0xFF, 0xFF, 0xFF,   // lea rdx,qword ptr ds:[7FF6C137128C] // "\n"
-        0xE8, 0x2B, 0xD6, 0x43, 0xFF,               // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::operator<<<struct std::char_traits<char> >(class std::basic_ostream<char,struct std:
-    ], [1, 5, 11, 15]);
+    }, void_t, {onError: asmcode.jsend_returnZero, name:`CommandOutputSenderHookCallback`}, CxxString);
+    procHacker.patching('hook-command-output', '?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', 0x58, asmcode.CommandOutputSenderHook, Register.rdx, true, [
+        0x4C, 0x8B, 0x40, 0x10,       // mov r8,qword ptr ds:[rax+10]
+        0x48, 0x83, 0x78, 0x18, 0x10, // cmp qword ptr ds:[rax+18],10
+        0x72, 0x03,                   // jb bedrock_server.7FF7440A79A6
+        0x48, 0x8B, 0x00,             // mov rax,qword ptr ds:[rax]
+        0x48, 0x8B, 0xD0,             // mov rdx,rax
+        0x48, 0x8B, 0xCB,             // mov rcx,rbx
+        0xE8, null, null, null, null, // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic
+    ]);
 
     // hook stdin
     asmcode.commandQueue = commandQueue;
     asmcode.MultiThreadQueueTryDequeue = MultiThreadQueue.tryDequeue;
     procHacker.patching('hook-stdin-command', '?getLine@ConsoleInputReader@@QEAA_NAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', 0, asmcode.ConsoleInputReader_getLine_hook, Register.rax, false, [
-        0xE9, 0xFF, 0xFF, 0xFF, 0xFF,  // jmp SPSCQueue::tryDequeue
+        0xE9, null, null, null, null,  // jmp SPSCQueue::tryDequeue
         0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, // int3 ...
-    ], [1, 5]);
+    ]);
 
     // remove original stdin thread
     const justReturn = asm().ret().buffer();
@@ -248,25 +255,14 @@ function _launch(asyncResolve:()=>void):void {
 
     procHacker.patching('update-hook',
         '<lambda_6bba4b5f970ab4858c43a404f193fd38>::operator()', // caller of ServerInstance::_update
-        0x76d, asmcode.updateWithSleep, Register.rcx, true, [
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server._Query_perf_frequency>
-            0x48, 0x8B, 0xD8,  // mov rbx,rax
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server._Query_perf_counter>
-            0x48, 0x99,  // cqo
-            0x48, 0xF7, 0xFB,  // idiv rbx
-            0x48, 0x69, 0xC8, 0x00, 0xCA, 0x9A, 0x3B,  // imul rcx,rax,3B9ACA00
-            0x48, 0x69, 0xC2, 0x00, 0xCA, 0x9A, 0x3B,  // imul rax,rdx,3B9ACA00
-            0x48, 0x99,  // cqo
-            0x48, 0xF7, 0xFB,  // idiv rbx
-            0x48, 0x03, 0xC1,  // add rax,rcx
-            0x48, 0x8B, 0x4c, 0x24, 0x20,  // mov rax,qword ptr ss:[rsp+20]
-            0x48, 0x2B, 0xC8,  // sub rcx,rax
-            0x48, 0x81, 0xF9, 0x88, 0x13, 0x00, 0x00,  // cmp rax,1388
-            0x7C, 0x0B,  // jl bedrock_server.7FF733FDEE76
-            0x48, 0x8D, 0x4C, 0x24, 0x20,  // lea rcx,qword ptr ss:[rsp+20]
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF,  // call <bedrock_server.void __cdecl std::this_thread::sleep_until<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct std::ratio<1,1000000000> > >(class std::chrono::time_point<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct s>
-            0x90,  // nop
-        ], [1, 5, 9, 13, 63, 67]);
+        0x819, asmcode.updateWithSleep, Register.rax, true, [
+            0x48, 0x2B, 0xC8,                         // sub rcx,rax
+            0x48, 0x81, 0xF9, 0x88, 0x13, 0x00, 0x00, // cmp rcx,1388
+            0x7C, 0x0B,                               // jl bedrock_server.7FF743BA7B50
+            0x48, 0x8D, 0x4C, 0x24, 0x20,             // lea rcx,qword ptr ss:[rsp+20]
+            0xE8, null, null, null, null,             // call <bedrock_server.void __cdecl std::this_thread::sleep_until<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct std::ratio<1,1000000000> > >(class std::chrono::ti
+            0x90,                                     // nop
+        ]);
 
     // hook on script starting
     procHacker.hookingRawWithCallOriginal('?sendServerThreadStarted@ServerInstanceEventCoordinator@@QEAAXAEAVServerInstance@@@Z',

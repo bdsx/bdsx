@@ -67,6 +67,7 @@ export class CampfireTryLightFire {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
+        public actor: Actor,
     ) {
     }
 }
@@ -75,6 +76,7 @@ export class CampfireTryDouseFire {
     constructor(
         public blockPos: BlockPos,
         public blockSource: BlockSource,
+        public actor: Actor,
     ) {
     }
 }
@@ -170,27 +172,27 @@ function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: Block
 }
 const _onFarmlandDecay = procHacker.hooking("?transformOnFall@FarmBlock@@UEBAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@M@Z", void_t, null, Block, BlockSource, BlockPos, Actor, float32_t)(onFarmlandDecay);
 
-function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
-    const event = new CampfireTryLightFire(blockPos, blockSource);
+function onCampfireTryLightFire(blockSource:BlockSource, blockPos:BlockPos, actor:Actor):bool_t {
+    const event = new CampfireTryLightFire(blockPos, blockSource, actor);
     const canceled = events.campfireLight.fire(event) === CANCEL;
     decay(blockSource);
     decay(blockPos);
     if (canceled) return false;
-    else return _CampfireTryLightFire(event.blockSource, event.blockPos);
+    else return _CampfireTryLightFire(event.blockSource, event.blockPos, event.actor);
 }
 
-const _CampfireTryLightFire = procHacker.hooking("?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryLightFire);
+const _CampfireTryLightFire = procHacker.hooking("?tryLightFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@@Z", bool_t, null, BlockSource, BlockPos, Actor)(onCampfireTryLightFire);
 
-function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos):bool_t {
-    const event = new CampfireTryDouseFire(blockPos, blockSource);
+function onCampfireTryDouseFire(blockSource:BlockSource, blockPos:BlockPos, actor:Actor):bool_t {
+    const event = new CampfireTryDouseFire(blockPos, blockSource, actor);
     const canceled = events.campfireDouse.fire(event) === CANCEL;
     decay(blockSource);
     decay(blockPos);
     if (canceled) return false;
-    else return _CampfireTryDouseFire(event.blockSource, event.blockPos);
+    else return _CampfireTryDouseFire(event.blockSource, event.blockPos, event.actor);
 }
 
-const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@_N@Z", bool_t, null, BlockSource, BlockPos)(onCampfireTryDouseFire);
+const _CampfireTryDouseFire = procHacker.hooking("?tryDouseFire@CampfireBlock@@SA_NAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@_N@Z", bool_t, null, BlockSource, BlockPos, Actor)(onCampfireTryDouseFire);
 
 function onButtonPress(buttonBlock: ButtonBlock, player: Player, blockPos: BlockPos, playerOrientation: number): boolean {
     const event = new ButtonPressEvent(buttonBlock, player, blockPos, playerOrientation);

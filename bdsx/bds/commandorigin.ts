@@ -102,10 +102,12 @@ export class CommandOrigin extends AbstractClass {
     /**
      * return the command result
      */
-    handleCommandOutputCallback(value:unknown & IExecuteCommandCallback['data']):void {
+    handleCommandOutputCallback(value:unknown & IExecuteCommandCallback['data'], statusCode?:number, statusMessage?:string):void {
+        if (statusCode == null) statusCode = value.statusCode;
+        if (statusMessage == null) statusMessage = value.statusMessage;
         const v = capi.malloc(JsonValue[NativeType.size]).as(JsonValue);
         v.constructWith(value);
-        handleCommandOutputCallback.call(this, v);
+        handleCommandOutputCallback.call(this, statusCode, statusMessage, v);
         v.destruct();
         capi.free(v);
     }
@@ -230,10 +232,10 @@ CommandOrigin.prototype.getOriginType = procHacker.jsv(
     '??_7ServerCommandOrigin@@6B@', '?getOriginType@ServerCommandOrigin@@UEBA?AW4CommandOriginType@@XZ',
     uint8_t, {this: CommandOrigin});
 
-// void CommandOrigin::handleCommandOutputCallback(Json::Value &&);
+// void CommandOrigin::handleCommandOutputCallback(int, std::string &&, Json::Value &&) const
 const handleCommandOutputCallback = procHacker.jsv(
-    '??_7ScriptingCommandOrigin@@6B@', '?handleCommandOutputCallback@ScriptingCommandOrigin@@UEBAX$$QEAVValue@Json@@@Z',
-    void_t, {this: CommandOrigin}, JsonValue);
+    '??_7ScriptCommandOrigin@@6B@', '?handleCommandOutputCallback@ScriptCommandOrigin@@UEBAXH$$QEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAVValue@Json@@@Z',
+    void_t, {this: CommandOrigin}, int32_t, CxxString, JsonValue);
 
 // struct CompoundTag CommandOrigin::serialize(void)
 const serializeCommandOrigin = procHacker.jsv(
