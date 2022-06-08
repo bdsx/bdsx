@@ -2012,7 +2012,10 @@ export class RequestPermissionsPacket extends Packet {
 
 @nativeClass(0x70)
 export class ToastRequestPacket extends Packet {
-    // unknown
+    @nativeField(CxxString)
+    text1: CxxString;
+    @nativeField(CxxString)
+    text2: CxxString;
 }
 
 export const PacketIdToType = {
