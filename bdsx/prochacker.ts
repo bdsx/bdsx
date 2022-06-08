@@ -183,13 +183,13 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param originalCode old codes
      * @param ignoreArea pairs of offset, ignores partial bytes.
      */
-    check(subject:string, key:keyof T, offset:number, ptr:StaticPointer, originalCode:number[], ignoreArea:number[]):boolean {
+    check(subject:string, key:keyof T, offset:number, ptr:StaticPointer, originalCode:(number|null)[], ignoreArea?:number[]):boolean {
         const buffer = ptr.getBuffer(originalCode.length);
         const diff = memdiff(buffer, originalCode);
         if (!memdiff_contains(ignoreArea, diff)) {
             console.error(colors.red(`${subject}: ${key} +0x${offset.toString(16)}: code does not match`));
             console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
-            console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
+            if (diff.length !== 0) console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
             console.error(colors.red(`${subject}: skip`));
             return false;
         } else {
@@ -333,7 +333,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    patching(subject:string, key:keyof T, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:number[], ignoreArea:number[]):void {
+    patching(subject:string, key:keyof T, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:(number|null)[], ignoreArea?:number[]):void {
         const ptr = this._get(subject, key, offset);
         if (ptr === null) return;
         if (!ptr) {

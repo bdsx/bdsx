@@ -111,6 +111,11 @@ export namespace asmcode {
     export function setEnabledPacket(n:number, idx:number):void;
     export const addressof_enabledPacket:NativePointer;
     export const packetRawHook:NativePointer;
+    export let packetBeforeOriginal:VoidPointer;
+    export const addressof_packetBeforeOriginal:NativePointer;
+    export let onPacketBefore:VoidPointer;
+    export const addressof_onPacketBefore:NativePointer;
+    export const packetBeforeHook:NativePointer;
     export let PacketViolationHandlerHandleViolationAfter:VoidPointer;
     export const addressof_PacketViolationHandlerHandleViolationAfter:NativePointer;
     export const packetBeforeCancelHandling:NativePointer;

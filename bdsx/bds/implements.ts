@@ -185,7 +185,7 @@ const ServerPlayer$vftable = proc["??_7ServerPlayer@@6B@"];
 const ItemActor$vftable = proc["??_7ItemActor@@6B@"];
 Actor.abstract({
     vftable: VoidPointer,
-    ctxbase: EntityContextBase,
+    ctxbase: EntityContextBase, // accessed in ServerNetworkHandler::_displayGameMessage before calling EntityContextBase::_enttRegistry
 });
 
 Actor.prototype.isMob = function() {
@@ -289,7 +289,7 @@ Actor.prototype.getHealth = procHacker.js("?getHealth@Actor@@QEBAHXZ", int32_t, 
 Actor.prototype.getMaxHealth = procHacker.js("?getMaxHealth@Actor@@QEBAHXZ", int32_t, {this:Actor});
 Actor.prototype.startRiding = procHacker.jsv('??_7Actor@@6B@', '?startRiding@Actor@@UEAA_NAEAV1@@Z', bool_t, {this:Actor}, Actor);
 
-const Actor$save = procHacker.js("?save@Actor@@UEAA_NAEAVCompoundTag@@@Z", bool_t, {this:Actor}, CompoundTag);
+const Actor$save = procHacker.js("?save@Actor@@UEBA_NAEAVCompoundTag@@@Z", bool_t, {this:Actor}, CompoundTag);
 Actor.prototype.save = function(tag?:CompoundTag):any {
     if (tag != null) {
         return Actor$save.call(this, tag);
@@ -464,7 +464,7 @@ ActorDamageByActorSource.constructWith = function (damagingEntity, cause:ActorDa
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x728], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x6e8], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
@@ -509,9 +509,9 @@ procHacker.hookingRawWithCallOriginal('??1Actor@@UEAA@XZ', asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    abilities:[Abilities, 0x8e0], // accessed in AbilityCommand::execute when calling Abilities::setAbility
-    playerUIContainer:[PlayerUIContainer, 0x1118], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId:[CxxString, 0x2088], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
+    abilities:[Abilities, 0x9d0], // accessed in AbilityCommand::execute when calling Abilities::setAbility
+    playerUIContainer:[PlayerUIContainer, 0x1280], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId:[CxxString, 0x2218], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js("?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this: Player}, CxxString);
 const PlayerListPacket$emplace = procHacker.js("?emplace@PlayerListPacket@@QEAAX$$QEAVPlayerListEntry@@@Z", void_t, null, PlayerListPacket, PlayerListEntry);
@@ -539,7 +539,7 @@ Player.prototype.getSkin = procHacker.js("?getSkin@Player@@QEAAAEAVSerializedSki
 Player.prototype.startCooldown = procHacker.js("?startCooldown@Player@@UEAAXPEBVItem@@_N@Z", void_t, {this:Player}, Item);
 Player.prototype.getItemCooldownLeft = procHacker.js("?getItemCooldownLeft@Player@@UEBAHAEBVHashedString@@@Z", int32_t, {this:Player}, HashedString);
 Player.prototype.setGameType = procHacker.js("?setPlayerGameType@ServerPlayer@@UEAAXW4GameType@@@Z", void_t, {this:Player}, int32_t);
-Player.prototype.setPermissions = procHacker.js('?setPermissions@Player@@UEAAXW4CommandPermissionLevel@@@Z', void_t, {this:Player}, int32_t);
+Player.prototype.setPermissions = procHacker.js('?setPermissions@Player@@QEAAXW4CommandPermissionLevel@@@Z', void_t, {this:Player}, int32_t);
 Player.prototype.setSize = procHacker.js("?setSize@Player@@UEAAXMM@Z", void_t, {this:Player}, float32_t, float32_t);
 Player.prototype.setSleeping = procHacker.js("?setSleeping@Player@@UEAAX_N@Z", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool_t, {this:Player});
@@ -570,8 +570,8 @@ Player.prototype.setSpeed = procHacker.js('?setSpeed@Player@@UEAAXM@Z', void_t, 
 class EntityIdentifierComponent extends NativeClass {
     @nativeField(NetworkIdentifier)
     networkIdentifier:NetworkIdentifier;
-    @nativeField(Certificate.ref(), 0xb8) // accessed in ServerNetworkHandler::_displayGameMessage
-    certifiate:Certificate;
+    @nativeField(Certificate.ref(), 0xd8) // accessed in ServerNetworkHandler::_displayGameMessage before calling ExtendedCertificate::getXuid
+    certifiate:Certificate; // it's ExtendedCertificate actually
 }
 
 EntityContextBase.prototype.isValid = procHacker.js('?isValid@EntityContextBase@@QEBA_NXZ', bool_t, {this:EntityContextBase});
@@ -626,7 +626,6 @@ ServerPlayer.prototype.setArmor = procHacker.js("?setArmor@ServerPlayer@@UEAAXW4
 ServerPlayer.prototype.getInputMode = procHacker.js("?getInputMode@ServerPlayer@@UEBA?AW4InputMode@@XZ", int32_t, {this:ServerPlayer});
 ServerPlayer.prototype.setInputMode = procHacker.js("?setInputMode@ServerPlayer@@QEAAXAEBW4InputMode@@@Z", void_t, {this:ServerPlayer}, int32_t.ref());
 ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPlayer@@UEAAXAEBVItemStack@@@Z', void_t, {this:ServerPlayer}, ItemStack);
-ServerPlayer.prototype.setPermissions = procHacker.js('?setPermissions@ServerPlayer@@UEAAXW4CommandPermissionLevel@@@Z', void_t, {this:ServerPlayer}, int32_t);
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js('?sendInventory@ServerPlayer@@UEAAX_N@Z', void_t, {this:ServerPlayer}, bool_t);
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
@@ -1082,7 +1081,7 @@ ChestBlockActor.prototype.openBy = procHacker.js("?openBy@ChestBlockActor@@QEAAX
 ChestBlockActor.prototype.getPairedChestPosition = procHacker.js("?getPairedChestPosition@ChestBlockActor@@QEAAAEBVBlockPos@@XZ", BlockPos, {this:ChestBlockActor});
 
 BlockSource.prototype.getChunk = procHacker.js("?getChunk@BlockSource@@QEBAPEAVLevelChunk@@AEBVChunkPos@@@Z", LevelChunk, {this:BlockSource}, ChunkPos);
-BlockSource.prototype.getChunkAt = procHacker.js("?getChunkAt@BlockSource@@QEBAPEAVLevelChunk@@AEBVBlockPos@@@Z", LevelChunk, {this:BlockSource}, BlockPos);
+BlockSource.prototype.getChunkAt = procHacker.js("?getChunkAt@BlockSource@@UEBAPEAVLevelChunk@@AEBVBlockPos@@@Z", LevelChunk, {this:BlockSource}, BlockPos);
 BlockSource.prototype.getChunkSource = procHacker.js("?getChunkSource@BlockSource@@UEAAAEAVChunkSource@@XZ", ChunkSource, {this:BlockSource});
 
 // abilties.ts
@@ -1406,7 +1405,7 @@ const itemComponents = new Map<bin64_t, new()=>ItemComponent>([
     [proc["??_7DisplayNameItemComponent@@6B@"].getAddressBin(), DisplayNameItemComponent], // DisplayNameItemComponent$vftable
     [proc["??_7DyePowderItemComponent@@6B@"].getAddressBin(), DyePowderItemComponent], // DyePowderItemComponent$vftable
     [proc["??_7EntityPlacerItemComponent@@6B@"].getAddressBin(), EntityPlacerItemComponent], // EntityPlacerItemComponent$vftable
-    [proc["??_7FoodItemComponent@@6BItemComponent@@@"].getAddressBin(), FoodItemComponent], // FoodItemComponent$vftable
+    [proc["??_7FoodItemComponent@@6B?$NetworkedItemComponent@VFoodItemComponent@@@@@"].getAddressBin(), FoodItemComponent], // FoodItemComponent$vftable
     [proc["??_7FuelItemComponent@@6B@"].getAddressBin(), FuelItemComponent], // FuelItemComponent$vftable
     [proc["??_7IconItemComponent@@6B@"].getAddressBin(), IconItemComponent], // IconItemComponent$vftable
     [proc["??_7KnockbackResistanceItemComponent@@6B@"].getAddressBin(), KnockbackResistanceItemComponent], // KnockbackResistanceItemComponent$vftable
@@ -1493,8 +1492,8 @@ ItemComponent.prototype.isWearable = function () {
     return this instanceof WearableItemComponent;
 };
 
-ItemComponent.prototype.buildNetworkTag = procHacker.jsv('??_7WeaponItemComponent@@6B@', '?buildNetworkTag@WeaponItemComponent@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ', CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
-ItemComponent.prototype.initializeFromNetwork = procHacker.jsv('??_7WeaponItemComponent@@6B@','?initializeFromNetwork@WeaponItemComponent@@UEAAXAEBVCompoundTag@@@Z', void_t, {this:ItemComponent}, CompoundTag);
+ItemComponent.prototype.buildNetworkTag = procHacker.jsv('??_7ItemComponent@@6B@', '?buildNetworkTag@ComponentItem@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ', CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
+ItemComponent.prototype.initializeFromNetwork = procHacker.jsv('??_7ChargeableItemComponent@@6B@','?initializeFromNetwork@ChargeableItemComponent@@UEAA_NAEBVCompoundTag@@@Z', void_t, {this:ItemComponent}, CompoundTag);
 
 CooldownItemComponent.getIdentifier = procHacker.js("?getIdentifier@CooldownItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 ArmorItemComponent.getIdentifier = procHacker.js("?getIdentifier@ArmorItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);

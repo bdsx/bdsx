@@ -45,6 +45,8 @@ import { getRecentSentPacketId } from "./net-rawpacket";
 let sendidcheck = 0;
 let chatCancelCounter = 0;
 
+const OverworldDimension$vftable = proc['??_7OverworldDimension@@6BIDimension@@@'];
+
 function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean], string|null, any][], throughConsole?:boolean):Promise<void> {
     const paramsobj:Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]> = {};
     const n = testcases.length;
@@ -536,7 +538,7 @@ Tester.concurrency({
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
                 this.assert(ctx.origin.vftable.equalsptr(proc['??_7ServerCommandOrigin@@6B@']), 'invalid origin');
-                this.assert(ctx.origin.getDimension().vftable.equalsptr(proc['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
+                this.assert(ctx.origin.getDimension().vftable.equalsptr(OverworldDimension$vftable), 'invalid dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
@@ -775,7 +777,7 @@ Tester.concurrency({
                 }
 
                 if (actor !== null) {
-                    this.assert(actor.getDimension().vftable.equalsptr(proc['??_7OverworldDimension@@6BLevelListener@@@']),
+                    this.assert(actor.getDimension().vftable.equalsptr(OverworldDimension$vftable),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
                     if (actor instanceof Player) {

@@ -1,7 +1,7 @@
 
 import * as util from 'util';
 
-export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
+export function memdiff(dst:(number|null)[]|Uint8Array, src:(number|null)[]|Uint8Array):number[] {
     const size = src.length;
     if (dst.length !== size) throw Error(`size unmatched(dst[${dst.length}] != src[${src.length}])`);
 
@@ -9,7 +9,9 @@ export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number
     let needEnd = false;
 
     for (let i = 0; i !== size; i++) {
-        if (src[i] === dst[i]) {
+        const srcv = src[i];
+        const dstv = dst[i];
+        if (srcv === dstv || srcv === null || dstv === null) {
             if (!needEnd) continue;
             diff.push(i);
             needEnd = false;
@@ -22,9 +24,12 @@ export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number
     if (needEnd) diff.push(size);
     return diff;
 }
-export function memdiff_contains(larger:number[], smaller:number[]):boolean {
-    let small_i = 0;
+export function memdiff_contains(larger:number[]|undefined|null, smaller:number[]):boolean {
     const smaller_size = smaller.length;
+    if (larger == null) {
+        return smaller_size === 0;
+    }
+    let small_i = 0;
     const larger_size = larger.length;
     if (larger_size === 0) {
         return smaller_size === 0;
@@ -70,7 +75,7 @@ export function hexn(value:number, hexcount:number):string {
     }
     return String.fromCharCode(...out);
 }
-export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
+export function hex(values:(number|null)[]|Uint8Array, nextLinePer?:number):string {
     const size = values.length;
     if (size === 0) return '';
     if (nextLinePer == null) nextLinePer = size;
@@ -80,13 +85,17 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
         if (i !== 0 && (i % nextLinePer) === 0) out.push(10);
 
         const v = values[i++];
-        const n1 = (v >> 4);
-        if (n1 < 10) out.push(n1+0x30);
-        else out.push(n1+(0x41-10));
-        const n2 = (v & 0x0f);
-        if (n2 < 10) out.push(n2+0x30);
-        else out.push(n2+(0x41-10));
-        out.push(0x20);
+        if (v === null) {
+            out.push(0x3f); // '?'
+        } else {
+            const n1 = (v >> 4);
+            if (n1 < 10) out.push(n1+0x30);
+            else out.push(n1+(0x41-10));
+            const n2 = (v & 0x0f);
+            if (n2 < 10) out.push(n2+0x30);
+            else out.push(n2+(0x41-10));
+        }
+        out.push(0x20); // ' '
     }
     out.pop();
 
