@@ -10,7 +10,7 @@ import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
+import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, ToastRequestPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
@@ -648,6 +648,14 @@ export class ServerPlayer extends Player {
         pk.message = message;
         pk.params.push(...params);
         pk.needsTranslation = true;
+        this.sendNetworkPacket(pk);
+        pk.dispose();
+    }
+
+    sendToastRequest(text1: string, text2: string = ""): void {
+        const pk = ToastRequestPacket.allocate();
+        pk.text1 = text1;
+        pk.text2 = text2;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
