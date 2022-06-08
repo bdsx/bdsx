@@ -2010,7 +2010,7 @@ export class RequestPermissionsPacket extends Packet {
     // unknown
 }
 
-@nativeClass(null)
+@nativeClass(0x70)
 export class ToastRequestPacket extends Packet {
     // unknown
 }
