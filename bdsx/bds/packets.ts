@@ -894,9 +894,13 @@ export class SpawnExperienceOrbPacket extends Packet {
 }
 
 @nativeClass(null)
-export class MapItemDataPacket extends Packet {
+export class ClientboundMapItemData extends Packet {
     // unknown
 }
+/** @deprecated Use ClientboundMapItemData instead, to match to official class name*/
+export const MapItemDataPacket = ClientboundMapItemData;
+/** @deprecated Use ClientboundMapItemData instead, to match to official class name*/
+export type MapItemDataPacket = ClientboundMapItemData;
 
 @nativeClass(null)
 export class MapInfoRequestPacket extends Packet {
@@ -1971,6 +1975,46 @@ export class CodeBuilderSourcePacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
+export class TickingAreasLoadStatusPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class DimensionDataPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class AgentActionEventPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class ChangeMobPropertyPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class LessonProgressPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class RequestAbilityPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class RequestPermissionsPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class ToastRequestPacket extends Packet {
+    // unknown
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2038,7 +2082,7 @@ export const PacketIdToType = {
     0x40: SimpleEventPacket,
     0x41: TelemetryEventPacket,
     0x42: SpawnExperienceOrbPacket,
-    0x43: MapItemDataPacket,
+    0x43: ClientboundMapItemData,
     0x44: MapInfoRequestPacket,
     0x45: RequestChunkRadiusPacket,
     0x46: ChunkRadiusUpdatedPacket,
@@ -2148,6 +2192,14 @@ export const PacketIdToType = {
     0xb0: PlayerStartItemCooldownPacket,
     0xb1: ScriptMessagePacket,
     0xb2: CodeBuilderSourcePacket,
+    0xb3: TickingAreasLoadStatusPacket,
+    0xb4: DimensionDataPacket,
+    0xb5: AgentActionEventPacket,
+    0xb6: ChangeMobPropertyPacket,
+    0xb7: LessonProgressPacket,
+    0xb8: RequestAbilityPacket,
+    0xb9: RequestPermissionsPacket,
+    0xba: ToastRequestPacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
