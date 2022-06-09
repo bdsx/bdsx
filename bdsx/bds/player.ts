@@ -874,6 +874,10 @@ export class ServerPlayer extends Player {
     }
 }
 
+export class SimulatedPlayer extends ServerPlayer{
+    
+}
+
 /** @deprecated Import from `bdsx/bds/packets` instead */
 export const PlayerListEntry = _PlayerListEntry;
 /** @deprecated Import from `bdsx/bds/packets` instead */
