@@ -654,8 +654,8 @@ export class ServerPlayer extends Player {
 
     sendToastRequest(text1: string, text2: string = ""): void {
         const pk = ToastRequestPacket.allocate();
-        pk.text1 = text1;
-        pk.text2 = text2;
+        pk.title = text1;
+        pk.body = text2;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
