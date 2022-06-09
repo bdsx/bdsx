@@ -197,5 +197,6 @@ export enum MinecraftPacketIds {//int32_t
 	PlayerStartItemCooldown = 0xb0,
 	ScriptMessage = 0xb1,
 	CodeBuilderSource = 0xb2,
+	ToastRequest = 0xba,
 }
 (MinecraftPacketIds as any).__proto__ = null;

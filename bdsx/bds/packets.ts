@@ -1971,6 +1971,14 @@ export class CodeBuilderSourcePacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
+export class ToastRequestPacket extends Packet {
+    @nativeField(CxxString)
+    title:CxxString;
+    @nativeField(CxxString)
+    body:CxxString;
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2148,6 +2156,7 @@ export const PacketIdToType = {
     0xb0: PlayerStartItemCooldownPacket,
     0xb1: ScriptMessagePacket,
     0xb2: CodeBuilderSourcePacket,
+    0xba: ToastRequestPacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 
