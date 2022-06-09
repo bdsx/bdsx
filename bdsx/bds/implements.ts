@@ -45,7 +45,7 @@ import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./netwo
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
-import { Player, ServerPlayer } from "./player";
+import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
@@ -183,6 +183,7 @@ Spawner.prototype.spawnMob = function(region:BlockSource, id:ActorDefinitionIden
 const actorMaps = new Map<string, Actor>();
 const ServerPlayer$vftable = proc["??_7ServerPlayer@@6B@"];
 const ItemActor$vftable = proc["??_7ItemActor@@6B@"];
+const SimulatedPlayer$vftable = proc["??_7SimulatedPlayer@@6B@"];
 Actor.abstract({
     vftable: VoidPointer,
     ctxbase: EntityContextBase, // accessed in ServerNetworkHandler::_displayGameMessage before calling EntityContextBase::_enttRegistry
@@ -191,8 +192,11 @@ Actor.abstract({
 Actor.prototype.isMob = function() {
     return this instanceof Mob;
 };
-Actor.prototype.isPlayer = function() {
-    return this instanceof ServerPlayer;
+Actor.prototype.isPlayer = function(includeSimulatedPlayer: boolean = false) {
+    return (includeSimulatedPlayer && this instanceof SimulatedPlayer) || this instanceof ServerPlayer;
+};
+Actor.prototype.isSimulatedPlayer = function() {
+    return this instanceof SimulatedPlayer;
 };
 Actor.prototype.isItem = function() {
     return this instanceof ItemActor;
@@ -204,7 +208,9 @@ Actor.setResolver(ptr => {
     let actor = actorMaps.get(binptr);
     if (actor != null) return actor;
     const vftable = ptr.getPointer();
-    if (vftable.equalsptr(ServerPlayer$vftable)) {
+    if (vftable.equalsptr(SimulatedPlayer$vftable)) {
+        actor = ptr.as(SimulatedPlayer);
+    } else if (vftable.equalsptr(ServerPlayer$vftable)) {
         actor = ptr.as(ServerPlayer);
     } else if (vftable.equalsptr(ItemActor$vftable)) {
         actor = ptr.as(ItemActor);
@@ -627,6 +633,8 @@ ServerPlayer.prototype.getInputMode = procHacker.js("?getInputMode@ServerPlayer@
 ServerPlayer.prototype.setInputMode = procHacker.js("?setInputMode@ServerPlayer@@QEAAXAEBW4InputMode@@@Z", void_t, {this:ServerPlayer}, int32_t.ref());
 ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPlayer@@UEAAXAEBVItemStack@@@Z', void_t, {this:ServerPlayer}, ItemStack);
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js('?sendInventory@ServerPlayer@@UEAAX_N@Z', void_t, {this:ServerPlayer}, bool_t);
+
+SimulatedPlayer.abstract({});
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
 PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {

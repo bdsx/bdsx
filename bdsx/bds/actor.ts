@@ -19,7 +19,7 @@ import type { Level } from "./level";
 import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
-import type { Player, ServerPlayer } from "./player";
+import type { Player, ServerPlayer, SimulatedPlayer } from "./player";
 
 export const ActorUniqueID = bin64_t.extends();
 export type ActorUniqueID = bin64_t;
@@ -573,7 +573,13 @@ export class Actor extends AbstractClass {
     /**
      * @alias instanceof ServerPlayer
      */
-    isPlayer():this is ServerPlayer {
+    isPlayer(includeSimulatedPlayer: boolean = false):this is ServerPlayer {
+        abstract();
+    }
+    /**
+     * @alias instanceof SimulatedPlayer
+     */
+    isSimulatedPlayer():this is SimulatedPlayer {
         abstract();
     }
     /**
