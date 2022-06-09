@@ -652,10 +652,10 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
-    sendToastRequest(text1: string, text2: string = ""): void {
+    sendToastRequest(title: string, body: string = ""): void {
         const pk = ToastRequestPacket.allocate();
-        pk.title = text1;
-        pk.body = text2;
+        pk.title = title;
+        pk.body = body;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
