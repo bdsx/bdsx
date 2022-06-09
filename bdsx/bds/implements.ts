@@ -192,8 +192,8 @@ Actor.abstract({
 Actor.prototype.isMob = function() {
     return this instanceof Mob;
 };
-Actor.prototype.isPlayer = function() {
-    return this instanceof ServerPlayer;
+Actor.prototype.isPlayer = function(includeSimulatedPlayer: boolean = false) {
+    return (includeSimulatedPlayer && this instanceof SimulatedPlayer) || this instanceof ServerPlayer;
 };
 Actor.prototype.isSimulatedPlayer = function() {
     return this instanceof SimulatedPlayer;

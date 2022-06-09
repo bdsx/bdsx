@@ -573,7 +573,7 @@ export class Actor extends AbstractClass {
     /**
      * @alias instanceof ServerPlayer
      */
-    isPlayer():this is ServerPlayer {
+    isPlayer(includeSimulatedPlayer: boolean = false):this is ServerPlayer {
         abstract();
     }
     /**
