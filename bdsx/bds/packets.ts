@@ -2195,6 +2195,13 @@ export const PacketIdToType = {
     0xb0: PlayerStartItemCooldownPacket,
     0xb1: ScriptMessagePacket,
     0xb2: CodeBuilderSourcePacket,
+    0xb3: TickingAreasLoadStatusPacket,
+    0xb4: DimensionDataPacket,
+    0xb5: AgentActionEventPacket,
+    0xb6: ChangeMobPropertyPacket,
+    0xb7: LessonProgressPacket,
+    0xb8: RequestAbilityPacket,
+    0xb9: RequestPermissionsPacket,
     0xba: ToastRequestPacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};

@@ -206,6 +206,6 @@ export enum MinecraftPacketIds {//int32_t
 	LessonProgress = 0xb7,
 	RequestAbility = 0xb8,
 	RequestPermissions =0xb9,
-	ToastRequest = 0xbA,
+	ToastRequest = 0xba,
 }
 (MinecraftPacketIds as any).__proto__ = null;
