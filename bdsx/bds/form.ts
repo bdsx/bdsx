@@ -20,7 +20,7 @@ class SentForm {
         public readonly resolve: (data:FormResponse<any>)=>void,
         public readonly reject: (err:Error)=>void) {
 
-        // allocate id without dupication
+        // allocate id without duplication
         for (;;) {
             const id = formIdCounter++;
             if (formIdCounter >= MAXIMUM_FORM_ID) formIdCounter = MINIMUM_FORM_ID;

@@ -6,13 +6,14 @@ import { dll } from "../dll";
 import { events } from "../event";
 import { Hashable, HashSet } from "../hashset";
 import { makefunc } from "../makefunc";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
+import { procHacker } from "../prochacker";
 import { remapAndPrintError } from "../source-map-support";
+import { ConnectionRequest } from "./connreq";
 import type { Packet } from "./packet";
 import type { ServerPlayer } from "./player";
-import { procHacker } from "./proc";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
@@ -82,7 +83,10 @@ export class ServerNetworkHandler extends AbstractClass {
     /**
      * it's the same with `client.getActor()`
      */
-    _getServerPlayer(client:NetworkIdentifier, number: number):ServerPlayer|null {
+    _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null {
+        abstract();
+    }
+    fetchConnectionRequest(target: NetworkIdentifier): ConnectionRequest {
         abstract();
     }
 }
@@ -94,18 +98,16 @@ export namespace ServerNetworkHandler {
 const identifiers = new HashSet<NetworkIdentifier>();
 
 @nativeClass()
-export class NetworkIdentifier extends NativeClass implements Hashable {
+export class NetworkIdentifier extends NativeStruct implements Hashable {
     @nativeField(bin64_t)
     unknown:bin64_t;
     @nativeField(RakNet.AddressOrGUID)
-    public address:RakNet.AddressOrGUID;
-
-    constructor(allocate?:boolean) {
-        super(allocate);
-    }
+    address:RakNet.AddressOrGUID;
+    @nativeField(int32_t, {ghost:true, offset:0x98})
+    type:int32_t;
 
     assignTo(target:VoidPointer):void {
-        dll.vcruntime140.memcpy(target, this, NetworkHandler[NativeClass.contentSize]);
+        dll.vcruntime140.memcpy(target, this, networkIdentifierSize);
     }
 
     equals(other:NetworkIdentifier):boolean {
@@ -121,9 +123,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
     }
 
     getAddress():string {
-        const idx = this.address.GetSystemIndex();
-        const rakpeer = networkHandler.instance.peer;
-        return rakpeer.GetSystemAddressFromIndex(idx).toString();
+        abstract();
     }
 
     toString():string {
@@ -137,6 +137,7 @@ export class NetworkIdentifier extends NativeClass implements Hashable {
         return identifiers.values();
     }
 }
+const networkIdentifierSize = NetworkIdentifier[NativeClass.contentSize];
 NetworkIdentifier.setResolver(ptr=>{
     if (ptr === null) return null;
     let ni = identifiers.get(ptr.as(NetworkIdentifier));
@@ -146,6 +147,7 @@ NetworkIdentifier.setResolver(ptr=>{
     identifiers.add(ni);
     return ni;
 });
+/** @deprecated use bedrockServer.networkHandler */
 export let networkHandler:NetworkHandler;
 
 procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{

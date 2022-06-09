@@ -7,6 +7,9 @@ import { RakNet } from "./raknet";
 export class RakNetInstance extends AbstractClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
+    /**
+     * @deprecated use bedrockServer.rakPeer
+     */
     @nativeField(RakNet.RakPeer.ref(), 0x230)
     peer:RakNet.RakPeer;
 

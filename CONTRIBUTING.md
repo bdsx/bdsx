@@ -23,6 +23,7 @@ So, Except in cases where it is impossible to create the namespace, please don't
 
 ### 6. Avoid multiple accessing of the native field
 If the native field is the object type. it will allocate a new object per accessing.  
+and it's accessed with the wrapper. So it has an overhead even it's a primitive field.
 Please assign it to the local variable and reuse it.
 
 ### 7. Avoid changing the format of old code whenever possible

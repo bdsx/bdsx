@@ -19,6 +19,10 @@ export class Scoreboard extends AbstractClass {
         abstract();
     }
 
+    createScoreboardId(name: string): ScoreboardId {
+        abstract();
+    }
+
     /**
      *  @param name Currently accepts only 'dummy'
      */
@@ -86,7 +90,7 @@ export class Scoreboard extends AbstractClass {
         abstract();
     }
 
-    clearDisplayObjective(displaySlot:string):Objective|null {
+    clearDisplayObjective(displaySlotName:"sidebar"|"belowName"|"list"):Objective|null {
         abstract();
     }
 
@@ -223,6 +227,10 @@ export class ScoreboardId extends NativeClass {
     idAsNumber:int64_as_float_t;
     @nativeField(IdentityDefinition.ref())
     identityDef:IdentityDefinition;
+
+    isValid():boolean {
+        abstract();
+    }
 }
 
 @nativeClass()

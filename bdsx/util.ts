@@ -1,7 +1,7 @@
 
 import * as util from 'util';
 
-export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number[] {
+export function memdiff(dst:(number|null)[]|Uint8Array, src:(number|null)[]|Uint8Array):number[] {
     const size = src.length;
     if (dst.length !== size) throw Error(`size unmatched(dst[${dst.length}] != src[${src.length}])`);
 
@@ -9,7 +9,9 @@ export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number
     let needEnd = false;
 
     for (let i = 0; i !== size; i++) {
-        if (src[i] === dst[i]) {
+        const srcv = src[i];
+        const dstv = dst[i];
+        if (srcv === dstv || srcv === null || dstv === null) {
             if (!needEnd) continue;
             diff.push(i);
             needEnd = false;
@@ -22,9 +24,12 @@ export function memdiff(dst:number[]|Uint8Array, src:number[]|Uint8Array):number
     if (needEnd) diff.push(size);
     return diff;
 }
-export function memdiff_contains(larger:number[], smaller:number[]):boolean {
-    let small_i = 0;
+export function memdiff_contains(larger:number[]|undefined|null, smaller:number[]):boolean {
     const smaller_size = smaller.length;
+    if (larger == null) {
+        return smaller_size === 0;
+    }
+    let small_i = 0;
     const larger_size = larger.length;
     if (larger_size === 0) {
         return smaller_size === 0;
@@ -70,7 +75,7 @@ export function hexn(value:number, hexcount:number):string {
     }
     return String.fromCharCode(...out);
 }
-export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
+export function hex(values:(number|null)[]|Uint8Array, nextLinePer?:number):string {
     const size = values.length;
     if (size === 0) return '';
     if (nextLinePer == null) nextLinePer = size;
@@ -80,13 +85,17 @@ export function hex(values:number[]|Uint8Array, nextLinePer?:number):string {
         if (i !== 0 && (i % nextLinePer) === 0) out.push(10);
 
         const v = values[i++];
-        const n1 = (v >> 4);
-        if (n1 < 10) out.push(n1+0x30);
-        else out.push(n1+(0x41-10));
-        const n2 = (v & 0x0f);
-        if (n2 < 10) out.push(n2+0x30);
-        else out.push(n2+(0x41-10));
-        out.push(0x20);
+        if (v === null) {
+            out.push(0x3f); // '?'
+        } else {
+            const n1 = (v >> 4);
+            if (n1 < 10) out.push(n1+0x30);
+            else out.push(n1+(0x41-10));
+            const n2 = (v & 0x0f);
+            if (n2 < 10) out.push(n2+0x30);
+            else out.push(n2+(0x41-10));
+        }
+        out.push(0x20); // ' '
     }
     out.pop();
 
@@ -240,7 +249,12 @@ export function numberWithFillZero(n:number, width:number, radix?:number):string
 
 export function filterToIdentifierableString(name:string):string {
     name = name.replace(/[^a-zA-Z_$0-9]/g, '');
-    return /^\d/.test(name) ? '_'+name : name;
+    try {
+        eval(`((${name})=>{})`)(); // Rjlintkh suggestion
+    } catch {
+        return '_'+name;
+    }
+    return name;
 }
 
 export function printOnProgress(message:string):void {
@@ -253,6 +267,63 @@ export function printOnProgress(message:string):void {
 export function getEnumKeys<T extends Record<string, number|string>>(enumType:T):(keyof T)[] {
     const NUMBERIC = /^[1-9]\d*$/;
     return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
+}
+
+const ADDSLASHES_REPLACE_MAP:Record<string, string> = {
+    __proto__:null as any,
+    '\0':'\\0',
+    '\r':'\\r',
+    '\n':'\\n',
+    '"':'\\"',
+    "'":"\\'",
+    "\\":"\\\\",
+};
+const STRIPSLASHES_REPLACE_MAP:Record<string, string> = {
+    __proto__:null as any,
+    '\\':'\\',
+    'n':'\n',
+    'r':'\r',
+    'b':'\b',
+    'v':'\v',
+    'f':'\f',
+    't':'\t',
+    '"':'"',
+    "'":"'",
+    '0':'\0',
+};
+export function addSlashes(str:string):string {
+    return str.replace(/[\r\n"'\\]/g, chr=>ADDSLASHES_REPLACE_MAP[chr]);
+}
+
+export function stripSlashes(str:string):string {
+    return str.replace(/(?:\\([\\nrbvft"'0])|\\u([0-9]{4})|\\x([0-9]{2}))/g, (matched, escape, xcode, ucode)=>{
+        if (xcode != null) {
+            return String.fromCharCode(parseInt(xcode, 16));
+        } else if (ucode != null) {
+            return String.fromCharCode(parseInt(ucode, 16));
+        } else {
+            return STRIPSLASHES_REPLACE_MAP[escape];
+        }
+    });
+}
+
+export function hashString(v:string):number {
+    const n = v.length;
+    let out = 0;
+    let shift = 0;
+    for (let i=0;i<n;i++) {
+        const chr = (v.charCodeAt(i) + i) | 0;
+        out = (out + ((chr << shift) | (chr >>> (32-shift)))) | 0;
+        shift = (shift + 7) & 0x1f;
+    }
+    out = (out + n) | 0;
+    return out >>> 0;
+}
+
+export function timeout(timeout:number):Promise<void> {
+    return new Promise(resolve=>{
+        setTimeout(resolve, timeout);
+    });
 }
 
 export const ESCAPE = "§";
@@ -281,6 +352,4 @@ export const TextFormat = {
     UNDERLINE: ESCAPE + "n",
     ITALIC: ESCAPE + "o",
     THIN: ESCAPE + "¶",
-};
-
-Object.freeze(TextFormat);
+} as const;

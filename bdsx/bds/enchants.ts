@@ -1,6 +1,6 @@
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
-import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { NativeClass, nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { int32_t, uint32_t } from "../nativetype";
 import { ItemStack } from "./inventory";
 
@@ -92,7 +92,7 @@ export enum EnchantmentNames {
 export type Enchantments = EnchantmentNames | Enchant.Type;
 
 @nativeClass()
-export class EnchantmentInstance extends NativeClass {
+export class EnchantmentInstance extends NativeStruct {
     @nativeField(int32_t)
     type:Enchantments;
     @nativeField(int32_t)

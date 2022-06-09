@@ -3,7 +3,7 @@ import { events } from "bdsx/event";
 
 events.playerJoin.on(ev=>{
     const inv = ev.player.getInventory();
-    const slots = inv.getSlots();
+    const slots = inv.container.getSlots();
     const size = slots.size();
     console.log(`[Inventory] Begin`);
     for (let i=0;i<size;i++) {

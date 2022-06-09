@@ -3,7 +3,7 @@ import { command } from "bdsx/command";
 
 command.register('form', 'form example').overload(async(param, origin, output)=>{
     const actor = origin.getEntity();
-    if (actor === null) {
+    if (!actor?.isPlayer()) {
         console.log("it's the command for players");
         return;
     }
@@ -60,7 +60,7 @@ command.register('form', 'form example').overload(async(param, origin, output)=>
         });
         if (res === null) return; // x pressed
 
-        // alternative way
+        // alternative way, the wrapper API of Form.sendTo
         const altform = new CustomForm;
         altform.setTitle('Alt Form');
         for (let i=0;i<res.length;i++) {

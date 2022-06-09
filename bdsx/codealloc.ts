@@ -1,5 +1,6 @@
 import { asm, X64Assembler } from "./assembler";
-import { cgate, chakraUtil, runtimeError, StaticPointer, VoidPointer } from "./core";
+import { Encoding } from "./common";
+import { AllocatedPointer, cgate, chakraUtil, NativePointer, runtimeError, StaticPointer, VoidPointer } from "./core";
 
 declare module "./assembler" {
     interface X64Assembler {
@@ -8,6 +9,7 @@ declare module "./assembler" {
     }
     namespace asm {
         function const_str(str:string, encoding?:BufferEncoding):Buffer;
+        function const_str(str:string, encoding:Encoding):NativePointer;
         function getFunctionNameFromEntryAddress(address:VoidPointer):string|null;
         function getFunctionName(address:VoidPointer):string|null;
         function setFunctionNames(base:VoidPointer, labels:Record<string, number>):void;
@@ -15,10 +17,15 @@ declare module "./assembler" {
 }
 const nativeFunctionNames = new Map<string, string>();
 
-asm.const_str = function(str:string, encoding:BufferEncoding='utf-8'):Buffer {
-    const buf = Buffer.from(str+'\0', encoding);
-    chakraUtil.JsAddRef(buf);
-    return buf;
+asm.const_str = function(str:string, encoding:BufferEncoding|Encoding='utf-8'):any {
+    let ptr:StaticPointer|Buffer;
+    if (typeof encoding === 'number') {
+        ptr = AllocatedPointer.fromString(str, encoding);
+    } else {
+        ptr = Buffer.from(str+'\0', encoding);
+    }
+    chakraUtil.JsAddRef(ptr);
+    return ptr;
 };
 asm.getFunctionNameFromEntryAddress = function(address:VoidPointer):string|null {
     return nativeFunctionNames.get(address.getAddressBin()) || null;

@@ -13,6 +13,24 @@ export class TextParser {
         public context:string) {
     }
 
+    readLine():string|null {
+        const idx = this.context.indexOf('\n', this.i);
+        if (idx === -1) {
+            if (this.i === this.context.length) return null;
+            const out = this.context.substr(this.i);
+            this.i = this.context.length;
+            return out;
+        } else {
+            let end = idx;
+            if (this.context.charCodeAt(idx-1) === 0x0d) { // \r
+                end--;
+            }
+            const out = this.context.substring(this.i, end);
+            this.i = idx+1;
+            return out;
+        }
+    }
+
     getFrom(from:number):string {
         return this.context.substring(from, this.i);
     }

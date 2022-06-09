@@ -5,6 +5,7 @@ import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { msAlloc } from "./msalloc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
+import { Singleton } from './singleton';
 
 export interface WrapperType<T> extends NativeClassType<Wrapper<T>> {
     new(ptr?:boolean):Wrapper<T>;
@@ -21,19 +22,21 @@ export abstract class Wrapper<T> extends NativeClass {
         return out;
     }
     static make<T>(type:(new()=>T)|NativeType<T>):WrapperType<T>{
-        class TypedWrapper extends Wrapper<T>{
-            value:any;
-            type:Type<T>;
-            static constructWith<T2>(this:new(b?:boolean)=>Wrapper<T2>, v:T2):Wrapper<T2> {
-                const wrapper = TypedWrapper.construct();
-                wrapper.value = v;
-                return wrapper as any;
+        return Singleton.newInstance(Wrapper, type, ()=>{
+            class TypedWrapper extends Wrapper<T>{
+                value:any;
+                type:Type<T>;
+                static constructWith<T2>(this:new(b?:boolean)=>Wrapper<T2>, v:T2):Wrapper<T2> {
+                    const wrapper = TypedWrapper.construct();
+                    wrapper.value = v;
+                    return wrapper as any;
+                }
             }
-        }
-        Object.defineProperty(TypedWrapper, 'name', {value: type.name});
-        TypedWrapper.prototype.type = type as any;
-        TypedWrapper.define({value:type as any});
-        return TypedWrapper;
+            Object.defineProperty(TypedWrapper, 'name', {value: type.name});
+            TypedWrapper.prototype.type = type as any;
+            TypedWrapper.define({value:type as any});
+            return TypedWrapper;
+        });
     }
 
     static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void{
@@ -45,25 +48,13 @@ export abstract class Wrapper<T> extends NativeClass {
     static [NativeType.descriptor](this:{new():Wrapper<any>},builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
         const {offset} = info;
         const type = this;
-        let obj:VoidPointer|null = null;
 
-        function init(ptr:StaticPointer):void {
-            obj = ptr.getPointerAs(type, offset);
-            Object.defineProperty(ptr, key, {
-                get(){
-                    return obj;
-                },
-                set(v:Wrapper<any>){
-                    obj = v;
-                    ptr.setPointer(v, offset);
-                },
-            });
-        }
         builder.desc[key] = {
             configurable: true,
             get(this:StaticPointer) {
-                init(this);
-                return obj;
+                const value = this.getPointerAs(type, offset);
+                Object.defineProperty(this, key, { value });
+                return value;
             },
         };
     }

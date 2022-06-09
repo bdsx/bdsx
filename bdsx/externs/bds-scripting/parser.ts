@@ -1,4 +1,7 @@
-
+/**
+ * This script is the parser for bedrock scripting API documents.
+ * but Bedrock scripting API is removed.
+ */
 import * as path from 'path';
 import { FileWriter } from '../../writer/filewriter';
 import * as docfixJson from './docfix.json';

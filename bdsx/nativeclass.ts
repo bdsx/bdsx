@@ -4,7 +4,8 @@ import { CircularDetector } from "./circulardetector";
 import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
-import { NativeDescriptorBuilder, NativeType, Type } from "./nativetype";
+import { mangle } from './mangle';
+import { int32_t, NativeDescriptorBuilder, NativeType, Type, void_t } from "./nativetype";
 import { Singleton } from "./singleton";
 import { remapAndPrintError } from "./source-map-support";
 import { isBaseOf } from "./util";
@@ -30,11 +31,12 @@ function accessor(key:string|number):string {
 export interface NativeClassType<T extends NativeClass> extends Type<T> {
     new(alloc?:boolean):T;
     prototype:T;
+
     [StructurePointer.contentSize]:number|null;
     [fieldmap]:Record<keyof any, NativeFieldInfo>;
     [isSealed]:boolean;
     [isNativeClass]:true;
-    [resolver]?(ptr:StaticPointer|null):any;
+    [resolver]?(ptr:StaticPointer|null, type:NativeClassType<T>):any;
     construct<T extends NativeClass>(this:{new(v?:boolean):T}, copyFrom?:T|null):T;
     allocate<T>(this:new()=>T, copyFrom?:T|null):T;
     define(fields:StructureFields<T>, defineSize?:number|null, defineAlign?:number|null, abstract?:boolean):void;
@@ -55,8 +57,8 @@ function generateFunction(builder:NativeDescriptorBuilder, clazz:Type<any>, supe
                 ctx.code = `superproto[NativeType.${fnname}].call(this);\n`+ctx.code;
             }
             if (superfn !== manualfn) {
-                builder.import(manualfn, 'manual_'+fnname);
-                ctx.code += `manual_${fnname}.call(this);\n`;
+                const funcname = builder.import(manualfn);
+                ctx.code += `${funcname}.call(this);\n`;
             }
             let prefix = '\nfunction(){\n';
             if (ctx.ptrUsed) prefix += 'const ptr=this.add();\n';
@@ -140,21 +142,34 @@ class StructureDefinition {
         this.eof = supercls[NativeType.size];
         this.align = supercls[NativeType.align];
     }
-    define<T extends NativeClass>(clazz:NativeClassType<T>, size?:number|null):void {
-        if (size == null) {
-            if (size === null) {
+    static defaultDefine<T extends NativeClass>(clazz:NativeClassType<T>, opts:NativeClassOptions):void {
+        mangle.update(clazz, opts);
+
+        const superclass = (clazz as any).__proto__;
+        clazz[StructurePointer.contentSize] =
+        clazz.prototype[NativeType.size] =
+        clazz[NativeType.size] = opts.size === undefined ? superclass[NativeType.size] : opts.size!;
+        clazz[NativeType.align] = opts.align == null ? superclass[NativeType.align] : opts.align;
+
+        sealClass(clazz);
+    }
+    define<T extends NativeClass>(clazz:NativeClassType<T>, opts:NativeClassOptions):void {
+        if (opts.size == null) {
+            if (opts.size === null) {
                 this.eof = null;
             } else {
-                size = this.eof !== null ? (((this.eof + this.align - 1) / this.align)|0)*this.align : null;
+                opts.size = this.eof !== null ? (((this.eof + this.align - 1) / this.align)|0)*this.align : null;
             }
         } else {
             if (this.eof !== null) {
-                if (this.eof > size) throw Error(`field offsets are bigger than the class size. fields_end=${this.eof}, size=${size}`);
+                if (this.eof > opts.size) throw Error(`field offsets are bigger than the class size. fields_end=${this.eof}, size=${opts.size}`);
             }
-            this.eof = size;
+            this.eof = opts.size;
         }
+        if (opts.align != null) this.align = opts.align;
+        else opts.align = this.align;
 
-        sealClass(clazz);
+        StructureDefinition.defaultDefine(clazz, opts);
 
         clazz[fieldmap] = this.fields;
 
@@ -170,28 +185,25 @@ class StructureDefinition {
         Object.freeze(this.fields);
 
         const clazzproto = clazz.prototype;
-        const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
-        if (ctor !== null && clazzproto[NativeType.ctor] !== abstractClassError) {
-            clazzproto[NativeType.ctor] = ctor;
-        }
-        if (dtor !== null && clazzproto[NativeType.dtor] !== abstractClassError) {
-            clazzproto[NativeType.dtor] = dtor;
-        }
-        if (ctor_copy !== null && clazzproto[NativeType.ctor_copy] !== abstractClassError) {
-            clazzproto[NativeType.ctor_copy] = ctor_copy;
-        }
-        if (clazzproto[NativeType.ctor_copy] !== callCtorCopyForAbstractClass) {
-            if (ctor_move !== null) {
-                clazzproto[NativeType.ctor_move] = ctor_move;
-            } else {
-                clazzproto[NativeType.ctor_move] = callCtorCopy;
+        if (!(clazzproto instanceof NativeStruct)) {
+            const [ctor, dtor, ctor_copy, ctor_move] = generateFunction(propmap, clazz, superproto);
+            if (ctor !== null && clazzproto[NativeType.ctor] !== abstractClassError) {
+                clazzproto[NativeType.ctor] = ctor;
+            }
+            if (dtor !== null && clazzproto[NativeType.dtor] !== abstractClassError) {
+                clazzproto[NativeType.dtor] = dtor;
+            }
+            if (ctor_copy !== null && clazzproto[NativeType.ctor_copy] !== abstractClassError) {
+                clazzproto[NativeType.ctor_copy] = ctor_copy;
+            }
+            if (clazzproto[NativeType.ctor_copy] !== callCtorCopyForAbstractClass) {
+                if (ctor_move !== null) {
+                    clazzproto[NativeType.ctor_move] = ctor_move;
+                } else {
+                    clazzproto[NativeType.ctor_move] = callCtorCopy;
+                }
             }
         }
-
-        clazz[StructurePointer.contentSize] =
-        clazzproto[NativeType.size] =
-        clazz[NativeType.size] = size!;
-        clazz[NativeType.align] = this.align;
         Object.defineProperties(clazzproto, propmap.desc);
     }
 
@@ -207,6 +219,7 @@ class StructureDefinition {
         let relative:number|undefined;
         let ghost = false;
         let noInitialize = false;
+        let constValue = false;
         if (fieldOffset != null) {
             if (typeof fieldOffset === 'number') {
                 offset = fieldOffset;
@@ -219,6 +232,7 @@ class StructureDefinition {
                 }
                 bitField = opts.bitMask;
                 ghost = opts.ghost || false;
+                constValue = opts.const || false;
                 if (ghost) noInitialize = true;
                 else noInitialize = opts.noInitialize || false;
             }
@@ -238,7 +252,7 @@ class StructureDefinition {
             if (bitField != null) {
                 throw Error(`${type.name} does not support the bit mask`);
             }
-            this.fields[key] = {type, offset, ghost, noInitialize, bitmask:null};
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask:null, const:constValue};
             if (!ghost) this.eof = null;
         } else {
             let bitmask:[number, number]|null = null;
@@ -271,7 +285,7 @@ class StructureDefinition {
                 }
                 nextOffset = offset + sizeofType;
             }
-            this.fields[key] = {type, offset, ghost, noInitialize, bitmask};
+            this.fields[key] = {type, offset, ghost, noInitialize, bitmask, const:constValue};
             if (!ghost && this.eof !== null && nextOffset > this.eof) {
                 this.eof = nextOffset;
             }
@@ -281,6 +295,10 @@ class StructureDefinition {
 
 const structures = new WeakMap<{new():any}, StructureDefinition>();
 
+function ptrAs<T extends NativeClass>(ptr:StaticPointer, type:NativeClassType<T>):T {
+    return ptr instanceof type ? ptr : ptr.as(type);
+}
+
 export class NativeClass extends StructurePointer {
     static readonly [NativeType.size]:number = 0;
     static readonly [NativeType.align]:number = 1;
@@ -288,7 +306,7 @@ export class NativeClass extends StructurePointer {
     static readonly [fieldmap]:Record<keyof any, NativeFieldInfo>;
     static readonly [isNativeClass] = true;
     static readonly [isSealed] = true;
-    static readonly symbol?:string;
+    static readonly symbol:string;
 
     static isNativeClassType(type:Record<string, any>):type is typeof NativeClass {
         return isNativeClass in type;
@@ -309,38 +327,38 @@ export class NativeClass extends StructurePointer {
         // empty
     }
     [NativeType.setter](from:this|null):void {
-        if (this.equals(from)) return; // self setting
+        if (this.equalsptr(from)) return; // self setting
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](from!);
     }
-    static [resolver]?(ptr:StaticPointer|null):any;
+    static [resolver]?(this:NativeClassType<NativeClass>, ptr:StaticPointer|null):any;
 
     static [NativeType.ctor](ptr:StaticPointer):void {
-        ptr.as(this)[NativeType.ctor]();
+        ptrAs(ptr, this)[NativeType.ctor]();
     }
     static [NativeType.dtor](ptr:StaticPointer):void {
-        ptr.as(this)[NativeType.dtor]();
+        ptrAs(ptr, this)[NativeType.dtor]();
     }
     static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void {
-        to.as(this)[NativeType.ctor_copy](from.as(this));
+        ptrAs(to, this)[NativeType.ctor_copy](ptrAs(from, this));
     }
     static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
-        to.as(this)[NativeType.ctor_move](from.as(this));
+        ptrAs(to, this)[NativeType.ctor_move](ptrAs(from, this));
     }
-    static [NativeType.setter](ptr:VoidPointer, value:NativeClass, offset?:number):void {
-        const nptr = ptr.addAs(this, offset, (offset || 0) >> 31);
+    static [NativeType.setter](ptr:StaticPointer, value:NativeClass, offset?:number):void {
+        const nptr = ptr.addAs(this, offset);
         (nptr as any)[NativeType.setter](value as any);
     }
-    static [NativeType.getter](ptr:VoidPointer, offset?:number):NativeClass {
-        return ptr.addAs(this, offset, (offset || 0) >> 31);
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):NativeClass {
+        return ptr.addAs(this, offset);
     }
     static [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void {
         const {offset, noInitialize} = info;
         const type = this;
         builder.desc[key] = {
             configurable: true,
-            get(this:VoidPointer) {
-                const value = type[NativeType.getter](this, offset);
+            get(this:NativeClass) {
+                const value = type[NativeType.getter](this as any, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
             },
@@ -361,8 +379,8 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
-     * call the constructor
-     * alias of [NativeType.ctor]() and [Native.ctor_copy]();
+     * call the constructor.
+     * alias of \[NativeType.ctor]() and \[Native.ctor_copy]();
      */
     construct(copyFrom?:this|null):void {
         if (copyFrom == null) {
@@ -373,8 +391,8 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
-     * call the destructor
-     * alias of [NativeType.dtor]();
+     * call the destructor.
+     * alias of \[NativeType.dtor]();
      */
     destruct():void {
         this[NativeType.dtor]();
@@ -423,7 +441,6 @@ export class NativeClass extends StructurePointer {
 
     static define<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, defineSize?:number|null, defineAlign:number|null = null, abstract:boolean=false):void {
         const clazz = this as NativeClassType<T>;
-
         if (clazz.hasOwnProperty(isSealed)) {
             throw Error('Cannot define the structure of the already used');
         }
@@ -445,7 +462,7 @@ export class NativeClass extends StructurePointer {
             if (defineSize === undefined) defineSize = null;
         }
         if (defineAlign !== null) def.align = defineAlign;
-        def.define(clazz, defineSize);
+        def.define(clazz, {size: defineSize});
     }
 
     static defineAsUnion<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, abstract:boolean = false):void {
@@ -489,11 +506,12 @@ export class NativeClass extends StructurePointer {
         if (ptr == null) return null;
         return ptr.as(this);
     }
-    static setResolver<T extends NativeClass>(this:NativeClassType<T>, fn:(ptr:StaticPointer|null)=>T|null):void {
-        this[makefunc.getter] = resolverGetter;
-        this[makefunc.getFromParam] = resolverGetFromParam;
-        this[resolver] = fn;
-        this.from = fn;
+    static setResolver<T extends NativeClass>(this:new()=>T, fn:(this:NativeClassType<T>, ptr:StaticPointer|null)=>T|null):void {
+        const cls = this as NativeClassType<T>;
+        cls[makefunc.getter] = resolverGetter;
+        cls[makefunc.getFromParam] = resolverGetFromParam;
+        cls[resolver] = fn;
+        cls.from = fn;
     }
 
     protected _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
@@ -529,11 +547,71 @@ export class NativeClass extends StructurePointer {
     }
 }
 
+/**
+ * the class that does not need a constructor or destructor
+ */
+export class NativeStruct extends NativeClass {
+    /**
+     * @deprecated no need to use
+     */
+    [NativeType.ctor]():void {
+        // empty
+    }
+    /**
+     * @deprecated no need to use
+     */
+    [NativeType.dtor]():void {
+        // empty
+    }
+    [NativeType.ctor_copy](from:this):void {
+        this.copyFrom(from, this[NativeType.size]);
+    }
+    [NativeType.ctor_move](from:this):void {
+        this.copyFrom(from, this[NativeType.size]);
+    }
+    [NativeType.setter](from:this|null):void {
+        this.copyFrom(from!, this[NativeType.size]);
+    }
+
+    /**
+     * @deprecated no need to use
+     */
+    construct():void;
+    construct(copyFrom:this|null):void;
+    /**
+     * call the constructor.
+     * alias of \[NativeType.ctor]() and \[Native.ctor_copy]();
+     */
+    construct(copyFrom?:this|null):void {
+        if (copyFrom == null) return;
+        this[NativeType.ctor_copy](copyFrom);
+    }
+
+    /**
+     * @deprecated no need to use
+     */
+    destruct():void {
+        // empty
+    }
+    static [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void {
+        to.copyFrom(from, this[NativeType.size]);
+    }
+    static [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void {
+        to.copyFrom(from, this[NativeType.size]);
+    }
+    static [NativeType.setter](ptr:StaticPointer, value:NativeClass, offset?:number):void {
+        ptr.copyFrom(value, this[NativeType.size], offset);
+    }
+    static [NativeType.getter](ptr:StaticPointer, offset?:number):NativeClass {
+        return ptr.addAs(this, offset);
+    }
+}
+
 function resolverGetter(this:NativeClassType<any>, ptr:StaticPointer, offset?:number):any {
-    return this[resolver]!(ptr.add(offset))!;
+    return this[resolver]!(ptr.add(offset), this)!;
 }
 function resolverGetFromParam(this:NativeClassType<any>, stackptr:StaticPointer, offset?:number):any {
-    return this[resolver]!(stackptr.getNullablePointer(offset));
+    return this[resolver]!(stackptr.getNullablePointer(offset), this);
 }
 
 function genCallCtorCopy():(this:NativeClass, other:NativeClass)=>void {
@@ -580,6 +658,15 @@ export interface NativeFieldOptions {
      * But it has space unlike ghost
      */
     noInitialize?:boolean;
+    /**
+     * read once at the first access and reuse it.
+     */
+    const?:boolean;
+}
+
+export interface NativeClassOptions extends mangle.UpdateOptions {
+    size?:number|null;
+    align?:number|null;
 }
 
 export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|number|null, bitMask?:number|null) {
@@ -591,19 +678,19 @@ export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|num
     };
 }
 
-export function nativeClass(size?:number|null, align:number|null = null) {
+export function nativeClass(size?:number|NativeClassOptions|null, align:number|null = null) {
     return <T extends NativeClass>(clazz:NativeClassType<T>):void=>{
         const def = structures.get(clazz);
+
+        if (typeof size === 'number' || size == null) {
+            size = {size, align};
+        } else if (align != null) {
+            size.align = align;
+        }
         if (def == null) {
-            sealClass(clazz);
-            const superclass = (clazz as any).__proto__;
-            clazz[StructurePointer.contentSize] =
-            clazz.prototype[NativeType.size] =
-            clazz[NativeType.size] = size === undefined ? superclass[NativeType.size] : size!;
-            clazz[NativeType.align] = align == null ? superclass[NativeType.align] : align;
+            StructureDefinition.defaultDefine(clazz, size);
         } else {
             structures.delete(clazz);
-            if (align !== null) def.align = align;
             def.define(clazz, size);
         }
     };
@@ -629,7 +716,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
         builder.desc[key] = {
             configurable: true,
             get(this:VoidPointer) {
-                const value = this.addAs(type, offset, offset >> 31);
+                const value = this.addAs(type, offset);
                 Object.defineProperty(this, key, {value});
                 return value;
             },
@@ -680,7 +767,7 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
 
         let off = 0;
         for (let i = 0; i < count; i++) {
-            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false, noInitialize:false});
+            itemType[NativeType.descriptor](propmap, i, {offset: off, bitmask:null, ghost:false, noInitialize:false,const:false});
             off += itemSize;
         }
         class NativeArrayImpl extends NativeArray<T> {
@@ -791,6 +878,9 @@ export declare class MantleClass extends NativeClass {
      */
     setBin(v:string, offset?:number): void;
 
+    setInt32To64WithZero(value: number, offset?: number): void;
+    setFloat32To64WithZero(value: number, offset?: number): void;
+
     interlockedIncrement16(offset?:number):number;
     interlockedIncrement32(offset?:number):number;
     interlockedIncrement64(offset?:number):number;
@@ -807,9 +897,9 @@ export declare class MantleClass extends NativeClass {
 }
 exports.MantleClass = NativeClass;
 
-function makeReference<T extends NativeClass>(type:{new():T, symbol?:string}):NativeType<T> {
+function makeReference<T extends NativeClass>(type:{new():T}):NativeType<T> {
     const clazz = type as NativeClassType<T>;
-    return new NativeType<T>((type.symbol || type.name)+'*', type.name+'*', 8, 8,
+    return new NativeType<T>(mangle.pointer(clazz.symbol), type.name+'*', 8, 8,
         clazz.isTypeOf,
         clazz.isTypeOfWeak,
         (stackptr, offset)=>clazz[makefunc.getFromParam](stackptr, offset),
@@ -853,3 +943,15 @@ abstractproto[NativeType.ctor] = abstractClassError;
 abstractproto[NativeType.dtor] = abstractClassError;
 abstractproto[NativeType.ctor_copy] = abstractClassError;
 abstractproto[NativeType.ctor_move] = callCtorCopyForAbstractClass;
+
+const vectorDeletingDestructorImpl = makefunc.js([0, 0], void_t, {this:NativeClass}, int32_t);
+
+export function vectorDeletingDestructor(this:NativeClass):void {
+    vectorDeletingDestructorImpl.call(this, 0);
+}
+
+export namespace vectorDeletingDestructor {
+    export function deleteIt(this:NativeClass):void {
+        vectorDeletingDestructorImpl.call(this, 1);
+    }
+}

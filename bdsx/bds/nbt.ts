@@ -8,7 +8,12 @@ import { CxxVector } from "../cxxvector";
 import { AbstractClass, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
-import { hexn } from "../util";
+import { addSlashes, hexn, stripSlashes } from "../util";
+
+interface NBTStringifyable {
+    stringify(indent?:number|string):string;
+    writeTo(writer:NBTWriter):void;
+}
 
 @nativeClass()
 export class TagMemoryChunk extends NativeClass {
@@ -68,7 +73,7 @@ export class TagMemoryChunk extends NativeClass {
 }
 
 @nativeClass()
-export class Tag extends NativeClass {
+export class Tag extends NativeClass implements NBTStringifyable {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
 
@@ -78,7 +83,7 @@ export class Tag extends NativeClass {
     getId():Tag.Type {
         abstract();
     }
-    equals(tag:this):boolean {
+    equals(tag:Tag):boolean {
         abstract();
     }
 
@@ -94,6 +99,15 @@ export class Tag extends NativeClass {
         const TagType = this.constructor as NativeClassType<Tag>;
         return TagType.allocate(this) as this;
     }
+    stringify(indent?:number|string):string {
+        const writer = indent != null ? new IndentedNBTWriter(indent) : new NBTWriter;
+        this.writeTo(writer);
+        return writer.data;
+    }
+    writeTo(writer:NBTWriter):void {
+        // empty
+    }
+
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
         return `${this.constructor.name} ${util.inspect((this as any).data, options)}`;
     }
@@ -138,6 +152,13 @@ export class ByteTag extends Tag {
         this.construct();
         this.data = data;
     }
+    stringify(indent?:number|string):string {
+        return this.data+'b';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += this.data;
+        writer.data += 'b';
+    }
     static constructWith(data:uint8_t):ByteTag {
         const tag = new ByteTag(true);
         tag.constructWith(data);
@@ -164,6 +185,13 @@ export class ShortTag extends Tag {
     constructWith(data:int16_t):void {
         this.construct();
         this.data = data;
+    }
+    stringify(indent?:number|string):string {
+        return this.data+'s';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += this.data;
+        writer.data += 's';
     }
     static constructWith(data:int16_t):ShortTag {
         const tag = new ShortTag(true);
@@ -192,6 +220,12 @@ export class IntTag extends Tag {
         this.construct();
         this.data = data;
     }
+    stringify(indent?:number|string):string {
+        return this.data+'';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += this.data;
+    }
     static constructWith(data:int32_t):IntTag {
         const tag = new IntTag(true);
         tag.constructWith(data);
@@ -218,7 +252,7 @@ export class Int64Tag extends Tag {
         return bin.toString(this.data);
     }
     set dataAsString(data:string) {
-        this.data = bin.parse(data, 4);
+        this.data = bin.parse(data, 10, 4);
     }
 
     value():NBT.Int64 {
@@ -231,6 +265,13 @@ export class Int64Tag extends Tag {
     constructWithString(data:string):void {
         this.construct();
         this.dataAsString = data;
+    }
+    stringify(indent?:number|string):string {
+        return bin.toString(this.data)+'l';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += bin.toString(this.data);
+        writer.data += 'l';
     }
 
     static constructWith(data:bin64_t):Int64Tag {
@@ -271,6 +312,13 @@ export class FloatTag extends Tag {
         this.construct();
         this.data = data;
     }
+    stringify(indent?:number|string):string {
+        return this.data+'f';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += this.data;
+        writer.data += 'f';
+    }
     static constructWith(data:float32_t):FloatTag {
         const tag = new FloatTag(true);
         tag.constructWith(data);
@@ -294,6 +342,13 @@ export class DoubleTag extends Tag {
     constructWith(data:float64_t):void {
         this.construct();
         this.data = data;
+    }
+    stringify(indent?:number|string):string {
+        return this.data+'d';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += this.data;
+        writer.data += 'd';
     }
     static constructWith(data:float64_t):DoubleTag {
         const tag = new DoubleTag(true);
@@ -334,6 +389,9 @@ export class ByteArrayTag extends Tag {
     toUint8Array():Uint8Array {
         return this.data.getAs(Uint8Array);
     }
+    writeTo(writer:NBTWriter):void {
+        writer.byteArray(this.toUint8Array());
+    }
 
     static constructWith(data:Uint8Array):ByteArrayTag {
         const tag = new ByteArrayTag(true);
@@ -362,6 +420,14 @@ export class StringTag extends Tag {
     constructWith(data:CxxString):void {
         this.construct();
         this.data = data;
+    }
+    stringify(indent?:number|string):string {
+        return '"'+addSlashes(this.data)+'"';
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.data += '"';
+        writer.data += addSlashes(this.data);
+        writer.data += '"';
     }
 
     static constructWith(data:string):StringTag {
@@ -435,6 +501,9 @@ export class ListTag<T extends Tag = Tag> extends Tag {
         for (const e of data) {
             this.push(e);
         }
+    }
+    writeTo(writer:NBTWriter):void {
+        writer.list(this.data);
     }
 
     static constructWith<T extends Tag = Tag>(data?:T[]):ListTag<T> {
@@ -515,6 +584,9 @@ export class CompoundTag extends Tag {
     clear():void {
         abstract();
     }
+    writeTo(writer:NBTWriter):void {
+        writer.compound(this.data.entries());
+    }
 
     static allocateWith(data:Record<string, Tag>):CompoundTag {
         const tag = CompoundTag.allocate();
@@ -580,6 +652,10 @@ export class IntArrayTag extends Tag {
         return this.data.getAs(Int32Array);
     }
 
+    writeTo(writer:NBTWriter):void {
+        writer.intArray(this.toInt32Array());
+    }
+
     static allocateWith(data:Int32Array|number[]):IntArrayTag {
         const tag = IntArrayTag.allocate();
         tag.set(data);
@@ -603,8 +679,16 @@ export namespace NBT {
         [key:string]:NBT;
     }
 
-    export abstract class Primitive {
+    export abstract class Primitive implements NBTStringifyable {
         abstract allocate():Tag;
+        stringify(indent?:number|string):string {
+            const writer = indent != null ? new IndentedNBTWriter(indent) : new NBTWriter;
+            this.writeTo(writer);
+            return writer.data;
+        }
+        writeTo(writer:NBTWriter):void {
+            // empty
+        }
     }
 
     export abstract class Numeric extends Primitive {
@@ -645,6 +729,13 @@ export namespace NBT {
         allocate():ByteTag {
             return ByteTag.allocateWith(this._value);
         }
+        stringify(indent?:number|string):string {
+            return this._value+'b';
+        }
+        writeTo(writer:NBTWriter):void {
+            writer.data += this._value;
+            writer.data += 'b';
+        }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             return options.stylize('NBT.byte(', 'special')+options.stylize(this._value, 'number')+options.stylize(')', 'special');
         }
@@ -662,6 +753,13 @@ export namespace NBT {
         allocate():ShortTag {
             return ShortTag.allocateWith(this._value);
         }
+        stringify(indent?:number|string):string {
+            return this._value+'s';
+        }
+        writeTo(writer:NBTWriter):void {
+            writer.data += this._value;
+            writer.data += 's';
+        }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             return options.stylize('NBT.short(', 'special')+options.stylize(this._value, 'number')+options.stylize(')', 'special');
         }
@@ -678,6 +776,12 @@ export namespace NBT {
         }
         allocate():IntTag {
             return IntTag.allocateWith(this._value);
+        }
+        stringify(indent?:number|string):string {
+            return this._value+'';
+        }
+        writeTo(writer:NBTWriter):void {
+            writer.data += this._value;
         }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             return options.stylize('NBT.int(', 'special')+options.stylize(this._value, 'number')+options.stylize(')', 'special');
@@ -699,6 +803,13 @@ export namespace NBT {
         }
         allocate():Int64Tag {
             return Int64Tag.allocateWith(this._value);
+        }
+        stringify(indent?:number|string):string {
+            return bin.toString(this._value)+'l';
+        }
+        writeTo(writer:NBTWriter):void {
+            writer.data += bin.toString(this._value);
+            writer.data += 'l';
         }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             let param:string;
@@ -725,6 +836,13 @@ export namespace NBT {
         allocate():FloatTag {
             return FloatTag.allocateWith(this._value);
         }
+        stringify(indent?:number|string):string {
+            return this._value+'f';
+        }
+        writeTo(writer:NBTWriter):void {
+            writer.data += this._value;
+            writer.data += 'f';
+        }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             return options.stylize('NBT.float(', 'special')+options.stylize(this._value, 'number')+options.stylize(')', 'special');
         }
@@ -738,6 +856,10 @@ export namespace NBT {
         }
         allocate():DoubleTag {
             return DoubleTag.allocateWith(this._value);
+        }
+        writeTo(writer:NBTWriter):void {
+            writer.data += this._value;
+            writer.data += 'd';
         }
         [util.inspect.custom](depth:number, options:Record<string, any>):string {
             return options.stylize('NBT.double(', 'special')+options.stylize(this._value, 'number')+options.stylize(')', 'special');
@@ -814,5 +936,477 @@ export namespace NBT {
         }
         default: throw TypeError(`invalid type of NBT. ${typeof nbt}`);
         }
+    }
+
+    /** Converts a Stringified Named Binary Tag (SNBT) string into a Named Binary Tag (NBT) tag. */
+    export function parse(text: string):NBT {
+        let p = 0;
+        let lastNumberIsDecimal = false;
+        function unexpectedToken():never {
+            if (p === text.length) {
+                throw SyntaxError('Unexpected end of SNBT input');
+            } else {
+                throw SyntaxError(`Unexpected token ${text.charAt(p)} in SNBT at position ${p}`);
+            }
+        }
+        function skipSpace():void {
+            nonSpaceExp.lastIndex = p;
+            const res = nonSpaceExp.exec(text);
+            if (res !== null) {
+                p = res.index;
+            } else {
+                p = text.length;
+            }
+        }
+        function readStringContinue(endchr:string):string {
+            let i = p;
+            let next:number;
+            for (;;) {
+                next = text.indexOf(endchr, i);
+                if (next === -1) throw SyntaxError('Unexpected end of SNBT input');
+                i = next+1;
+                const backslash = getBackslashCount(text, next);
+                if ((backslash & 1) === 0) {
+                    // even
+                    break;
+                }
+            }
+            const value = stripSlashes(text.substring(p, next));
+            p = i;
+            return value;
+        }
+        function readNameContinue():string {
+            const prev = p;
+            nonVariableCharacter.lastIndex = p + 1;
+            const res = nonVariableCharacter.exec(text);
+            if (res !== null) {
+                p = res.index;
+            } else {
+                p = text.length;
+            }
+            return text.substring(prev, p);
+        }
+        function checkToken(keyCode:number):void {
+            skipSpace();
+            if (text.charCodeAt(p) !== keyCode) {
+                unexpectedToken();
+            }
+        }
+        function passToken(keyCode:number):void {
+            checkToken(keyCode);
+            p++;
+        }
+        function passChar(keyCode:number):void {
+            if (text.charCodeAt(p) !== keyCode) {
+                unexpectedToken();
+            }
+            p++;
+        }
+        function readNumberString():string {
+            skipSpace();
+            const prev = p;
+            let chr = text.charCodeAt(p);
+            if (chr === 0x2d) {
+                p++;
+                chr = text.charCodeAt(p);
+            }
+            if (chr < 0x30 || chr > 0x39) {
+                unexpectedToken();
+            }
+            p++;
+
+            _notNumber:{
+                for (;;) {
+                    const chr = text.charCodeAt(p);
+                    if (0x30 <= chr && chr <= 0x39) {
+                        p++;
+                    } else if (chr === 0x2e) { // .
+                        p++;
+                        lastNumberIsDecimal = true;
+                        break;
+                    } else {
+                        lastNumberIsDecimal = false;
+                        break _notNumber;
+                    }
+                }
+
+                for (;;) {
+                    const chr = text.charCodeAt(p);
+                    if (0x30 <= chr && chr <= 0x39) {
+                        p++;
+                    } else {
+                        break _notNumber;
+                    }
+                }
+            }
+
+            return text.substring(prev, p);
+        }
+        function readNumberStringSuffix(suffix1:number, suffix2:number):string {
+            const num = readNumberString();
+            switch (text.charCodeAt(p)) {
+            case suffix1: case suffix2:
+                p++;
+                return num;
+            default:
+                unexpectedToken();
+            }
+        }
+        function readArrayContinue<T>(reader:()=>T):T[] {
+            skipSpace();
+            const chr = text.charCodeAt(p);
+            if (chr === 0x5d) { // ]
+                p++;
+                return [];
+            }
+
+            const array:T[] = [];
+            array.push(reader());
+            for (;;) {
+                skipSpace();
+                const chr = text.charCodeAt(p);
+                switch (chr) {
+                case 0x5d: // ]
+                    p++;
+                    return array;
+                case 0x2c: { // ,
+                    p++;
+                    array.push(reader());
+                    break;
+                }
+                default:
+                    unexpectedToken();
+                }
+            }
+        }
+        function readKeyContinue():string {
+            const chr = text.charCodeAt(p);
+            let key:string;
+            if (chr === 0x22) { // "
+                p++;
+                key = readStringContinue('"');
+            } else if (chr === 0x27) { // '
+                p++;
+                key = readStringContinue("'");
+            } else if (chr >= 0x80 || (0x41 <= chr && chr <= 0x5a) || (0x61 <= chr && chr < 0x7a) || chr === 0x24 || chr === 0x5f) {
+                // variable format
+                key = readNameContinue();
+            } else {
+                unexpectedToken();
+            }
+            passToken(0x3a); // :
+            return key;
+        }
+        function readValue():NBT {
+            skipSpace();
+            const chr = text.charCodeAt(p);
+            switch (chr) {
+            case 0x22: // "
+                p++;
+                return readStringContinue('"');
+            case 0x27: // '
+                p++;
+                return readStringContinue("'");
+            case 0x5b: { // [
+                p++;
+                skipSpace();
+                const firstchr = text.charCodeAt(p);
+                switch (firstchr) {
+                case 0x5d: // ]
+                    p++;
+                    return [];
+                case 0x42: // B
+                    p++;
+                    passToken(0x3b);
+                    return new Uint8Array(readArrayContinue(()=>+readNumberStringSuffix(0x42, 0x62) & 0xff));
+                case 0x49: // I
+                    p++;
+                    passToken(0x3b);
+                    return new Int32Array(readArrayContinue(()=>+readNumberString() | 0));
+                case 0x4c: // L, long array, not available, convert to List
+                    p++;
+                    passToken(0x3b);
+                    return readArrayContinue<NBT>(()=>new NBT.Int64(bin.parse(readNumberStringSuffix(0x4c, 0x6c), 10, 4)));
+                default:
+                    return readArrayContinue(readValue);
+                }
+                break;
+            }
+            case 0x7b: { // {
+                const obj:NBT.Compound = {};
+                p++;
+                skipSpace();
+                if (text.charCodeAt(p) === 0x7d) {
+                    p++;
+                    return obj;
+                }
+                const key = readKeyContinue();
+                obj[key] = readValue();
+
+                for (;;) {
+                    skipSpace();
+                    switch (text.charCodeAt(p)) {
+                    case 0x7d: // }
+                        p++;
+                        return obj;
+                    case 0x2c: { // ,
+                        p++;
+                        skipSpace();
+                        const key = readKeyContinue();
+                        obj[key] = readValue();
+                        break;
+                    }
+                    default:
+                        unexpectedToken();
+                    }
+                }
+                break;
+            }
+            case 0x74: // t
+                p++;
+                passChar(0x72); // r
+                passChar(0x75); // u
+                passChar(0x65); // e
+                return new NBT.Byte(1);
+            case 0x66: // f
+                p++;
+                passChar(0x61); // a
+                passChar(0x6c); // l
+                passChar(0x73); // s
+                passChar(0x65); // e
+                return new NBT.Byte(0);
+            default: {
+                const num = readNumberString();
+                switch (text.charCodeAt(p)) {
+                case 0x42: case 0x62: // B b
+                    p++;
+                    return new NBT.Byte(+num);
+                case 0x53: case 0x73: // S s
+                    p++;
+                    return new NBT.Short(+num);
+                case 0x4c: case 0x6c: // L l
+                    p++;
+                    return new NBT.Int64(bin.parse(num, 10, 4));
+                case 0x46: case 0x66: // F f
+                    p++;
+                    return new NBT.Float(+num);
+                case 0x44: case 0x64: // D d
+                    p++;
+                    return new NBT.Double(+num);
+                default:
+                    if (lastNumberIsDecimal) return new NBT.Double(+num);
+                    return new NBT.Int(+num);
+                }
+            }
+            }
+        }
+
+        const value = readValue();
+        skipSpace();
+        if (text.length !== p) {
+            unexpectedToken();
+        }
+        return value;
+    }
+
+    /** Converts a Named Binary Tag (NBT) tag to a Stringified Named Binary Tag (SNBT) string. */
+    export function stringify(tag: Tag|NBT, indent?: number):string {
+        if (tag instanceof Tag) {
+            return tag.stringify(indent);
+        } else {
+            const writer = indent != null ? new IndentedNBTWriter(indent) : new NBTWriter;
+            writer.any(tag);
+            return writer.data;
+        }
+    }
+}
+
+const nonSpaceExp = /[^ \n\r\t]/g;
+const nonVariableCharacter = /[^a-zA-Z0-9_$\u0080-\uffff]/g;
+const validVariableCharacter = /^[a-zA-Z$_$\u0080-\uffff][a-zA-Z0-9_$\u0080-\uffff]*$/;
+
+function getBackslashCount(data:string, i:number):number {
+    let backslashCount = -1;
+    do {
+        i--;
+        backslashCount++;
+    } while (data.charCodeAt(i) === 0x5c); // \\
+    return backslashCount;
+}
+
+class NBTWriter {
+    public data = '';
+
+    byteArray(array:Uint8Array):void {
+        if (array.length !== 0) {
+            this.data += '[B;';
+            this.data += array.join('b,');
+            this.data += 'b]';
+        } else {
+            this.data += '[B;]';
+        }
+    }
+
+    intArray(array:Int32Array):void {
+        if (array.length !== 0) {
+            this.data += '[I;';
+            this.data += array.join(',');
+            this.data += ']';
+        } else {
+            this.data += '[I;]';
+        }
+    }
+
+    list(array:Iterable<NBT|Tag>):void {
+        this.data += '[';
+        let first = true;
+        for (const e of array) {
+            if (first) first = false;
+            else this.data += ',';
+            this.any(e);
+        }
+        this.data += ']';
+    }
+
+    compound(map:Iterable<[string, NBT|Tag|CompoundTagVariant]>):void {
+        this.data += '{';
+        let first = true;
+        for (const [k, _v] of map) {
+            if (first) first = false;
+            else this.data += ',';
+            if (validVariableCharacter.test(k)) {
+                this.data += k;
+                this.data += ':';
+            } else {
+                this.data += '"';
+                this.data += addSlashes(k);
+                this.data += '":';
+            }
+            this.any(_v);
+        }
+        this.data += '}';
+    }
+
+    any(nbt:NBT|Tag|CompoundTagVariant):void {
+        switch (typeof nbt) {
+        case 'number':
+            this.data += nbt;
+            break;
+        case 'string':
+            this.data += '"';
+            this.data += addSlashes(nbt);
+            this.data += '"';
+            break;
+        case 'boolean':
+            this.data += +nbt;
+            this.data += 'b';
+            break;
+        case 'object': {
+            if (nbt === null) {
+                break;
+            }
+            if (nbt instanceof Int32Array) {
+                this.intArray(nbt);
+            } else if (nbt instanceof Uint8Array) {
+                this.byteArray(nbt);
+            } else if (nbt instanceof Array) {
+                this.list(nbt);
+            } else if (nbt instanceof NBT.Primitive) {
+                nbt.writeTo(this);
+            } else if (nbt instanceof Tag) {
+                nbt.writeTo(this);
+            } else if (nbt instanceof CompoundTagVariant) {
+                nbt.get().writeTo(this);
+            } else {
+                this.compound(Object.entries(nbt));
+            }
+            break;
+        }
+        default: throw TypeError(`invalid type of NBT. ${typeof nbt}`);
+        }
+    }
+}
+
+class IndentedNBTWriter extends NBTWriter {
+    public data = '';
+
+    private indentLine:string;
+    private readonly indentOne:string;
+
+    constructor(indent:number|string) {
+        super();
+        if (typeof indent === 'string') {
+            this.indentOne = indent;
+        } else {
+            this.indentOne = ' '.repeat(indent);
+        }
+        this.indentLine = '\n';
+    }
+
+    byteArray(array:Uint8Array):void {
+        if (array.length !== 0) {
+            this.data += '[B;';
+            const indentLine = this.indentLine + this.indentOne;
+            this.data += indentLine;
+            this.data += array.join('b,'+indentLine);
+            this.data += 'b';
+            this.data += this.indentLine;
+            this.data += ']';
+        } else {
+            this.data += '[B;]';
+        }
+    }
+
+    intArray(array:Int32Array):void {
+        if (array.length !== 0) {
+            this.data += '[I;';
+            const indentLine = this.indentLine + this.indentOne;
+            this.data += indentLine;
+            this.data += array.join(','+indentLine);
+            this.data += this.indentLine;
+            this.data += ']';
+        } else {
+            this.data += '[I;]';
+        }
+    }
+
+    list(array:Iterable<NBT|Tag>):void {
+        this.data += '[';
+        const parentLine = this.indentLine;
+        this.indentLine += this.indentOne;
+        let first = true;
+        for (const e of array) {
+            if (first) first = false;
+            else this.data += ',';
+            this.data += this.indentLine;
+            this.any(e);
+        }
+        this.indentLine = parentLine;
+        if (!first) this.data += parentLine;
+        this.data += ']';
+    }
+
+    compound(map:Iterable<[string, NBT|Tag]>):void {
+        this.data += '{';
+        const parentLine = this.indentLine;
+        this.indentLine += this.indentOne;
+        let first = true;
+        for (const [k, _v] of map) {
+            if (first) first = false;
+            else this.data += ',';
+            this.data += this.indentLine;
+            if (validVariableCharacter.test(k)) {
+                this.data += k;
+                this.data += ': ';
+            } else {
+                this.data += '"';
+                this.data += addSlashes(k);
+                this.data += '": ';
+            }
+            this.any(_v);
+        }
+        this.indentLine = parentLine;
+        if (!first) this.data += parentLine;
+        this.data += '}';
     }
 }

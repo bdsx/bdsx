@@ -1,10 +1,10 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { fsutil } from '../fsutil';
+import { Config } from '../config';
 
 export const shellPrepareData = {
-    path:path.join(fsutil.projectPath, 'bedrock_server/bdsx_shell_data.ini'),
+    path:path.join(Config.BDS_PATH, 'bdsx_shell_data.ini'),
     load():Record<string, string> {
         const data:Record<string, string> = Object.create(null);
         try {

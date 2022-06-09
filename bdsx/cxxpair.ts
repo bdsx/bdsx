@@ -1,10 +1,10 @@
 import { abstract } from "./common";
 import { VoidPointer } from "./core";
 import { combineObjectKey } from "./keycombine";
+import { mangle } from "./mangle";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { Type } from "./nativetype";
 import { Singleton } from "./singleton";
-import { templateName } from "./templatename";
 import { isBaseOf } from "./util";
 
 export interface CxxPairType<A, B> extends NativeClassType<CxxPair<A, B>> {
@@ -64,15 +64,18 @@ export abstract class CxxPair<T1, T2> extends NativeClass {
             }
             CxxPairImpl.prototype.setFirst = isBaseOf(firstType, NativeClass) ? setFirstWithClass : setFirstWithPrimitive;
             CxxPairImpl.prototype.setSecond = isBaseOf(secondType, NativeClass) ? setSecondWithClass : setSecondWithPrimitive;
-            Object.defineProperty(CxxPairImpl, 'name', {value:getPairName(firstType, secondType)});
             CxxPairImpl.prototype.firstType = firstType;
             CxxPairImpl.prototype.secondType = secondType;
             CxxPairImpl.define({ first: firstType, second: secondType } as any);
+            Object.defineProperties(CxxPairImpl, {
+                name: { value: `CxxPair<${firstType.name}, ${secondType.name}>` },
+                symbol: { value: getPairSymbol(firstType, secondType) },
+            });
             return CxxPairImpl;
         });
     }
 }
 
-function getPairName(type1:Type<any>, type2:Type<any>):string {
-    return templateName('std::pair', type1.name, type2.name);
+function getPairSymbol(type1:Type<any>, type2:Type<any>):string {
+    return mangle.templateClass(['std', 'pair'], type1.symbol, type2.symbol);
 }

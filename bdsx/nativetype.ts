@@ -1,12 +1,11 @@
 
-import { proc, proc2 } from './bds/symbols';
+import { proc } from './bds/symbols';
 import { CommandParameterType } from './commandparam';
 import { abstract, emptyFunc } from './common';
 import { AllocatedPointer, StaticPointer, VoidPointer } from './core';
 import { makefunc } from './makefunc';
+import { mangle } from './mangle';
 import { Singleton } from './singleton';
-import { templateName } from './templatename';
-import { filterToIdentifierableString } from './util';
 
 namespace NativeTypeFn {
     export const align = Symbol('align');
@@ -25,7 +24,7 @@ export interface Type<T> extends makefunc.Paramable {
     prototype:T;
 
     name:string;
-    symbol?:string;
+    symbol:string;
 
     isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
 
@@ -61,30 +60,27 @@ export class NativeDescriptorBuilder {
     public readonly params:unknown[] = [];
 
     public readonly imports = new Map<unknown, string>();
-    private readonly names = new Set<string>();
 
     public readonly ctor = new NativeDescriptorBuilder.UseContextCtor;
     public readonly dtor = new NativeDescriptorBuilder.UseContextDtor;
     public readonly ctor_copy = new NativeDescriptorBuilder.UseContextCtorCopy;
     public readonly ctor_move = new NativeDescriptorBuilder.UseContextCtorCopy;
 
+    private nameCounter = 0;
+
+    /**
+     * @deprecated dummy
+     */
     importType(type:Type<any>):string {
-        return this.import(type, type.name);
+        return this.import(type);
     }
 
-    import(type:unknown, name:string):string {
+    import(type:unknown):string {
         const oname = this.imports.get(type);
         if (oname != null) return oname;
-        name = filterToIdentifierableString(name);
-        if (this.names.has(name)) {
-            const oname = name;
-            let idx = 1;
-            do {
-                name = oname+(++idx);
-            } while (this.names.has(name));
-        }
+
+        const name = '_'+(this.nameCounter++).toString(36);
         this.imports.set(type, name);
-        this.names.add(name);
         return name;
     }
 }
@@ -120,6 +116,7 @@ export namespace NativeDescriptorBuilder {
         bitmask:[number,number]|null;
         ghost:boolean;
         noInitialize:boolean;
+        const:boolean;
     }
 }
 
@@ -257,20 +254,42 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     }
 
     static defaultDescriptor(this:Type<any>, builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void {
-        const {offset, bitmask, noInitialize} = info;
+        const {offset, bitmask, noInitialize, const: constValue} = info;
 
         const type = this;
         if (bitmask !== null) {
             if (!(type instanceof NativeType)) throw Error(`${this.name} does not support the bit mask`);
-            builder.desc[key] = {
-                get(this: StaticPointer) { return type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset); },
-                set(this: StaticPointer, value:any) { return type[NativeTypeFn.bitSetter](this, value, bitmask[0], bitmask[1], offset); },
-            };
+            if (constValue) {
+                builder.desc[key] = {
+                    configurable: true,
+                    get(this: StaticPointer) {
+                        const value = type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset);
+                        Object.defineProperty(this, key, {value});
+                        return value;
+                    },
+                };
+            } else {
+                builder.desc[key] = {
+                    get(this: StaticPointer) { return type[NativeTypeFn.bitGetter](this, bitmask[0], bitmask[1], offset); },
+                    set(this: StaticPointer, value:any) { return type[NativeTypeFn.bitSetter](this, value, bitmask[0], bitmask[1], offset); },
+                };
+            }
         } else {
-            builder.desc[key] = {
-                get(this: StaticPointer) { return type[NativeType.getter](this, offset); },
-                set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); },
-            };
+            if (constValue) {
+                builder.desc[key] = {
+                    configurable: true,
+                    get(this: StaticPointer) {
+                        const value = type[NativeType.getter](this, offset);
+                        Object.defineProperty(this, key, {value});
+                        return value;
+                    },
+                };
+            } else {
+                builder.desc[key] = {
+                    get(this: StaticPointer) { return type[NativeType.getter](this, offset); },
+                    set(this: StaticPointer, value:any) { return type[NativeType.setter](this, value, offset); },
+                };
+            }
         }
 
         if (noInitialize) return;
@@ -315,8 +334,8 @@ export class CommandParameterNativeType<T> extends NativeType<T> {
 
 function makeReference<T>(type:NativeType<T>):NativeType<T> {
     return new NativeType<T>(
-        `${type.name}*`,
         `${type.symbol} * __ptr64`,
+        `${type.name}*`,
         8, 8,
         type.isTypeOf,
         type.isTypeOfWeak,
@@ -329,6 +348,7 @@ function makeReference<T>(type:NativeType<T>):NativeType<T> {
 
 declare module './core' {
     interface VoidPointerConstructor {
+        symbol:string;
         [NativeType.align]:number;
         [NativeType.ctor](ptr:StaticPointer):void;
         [NativeType.dtor](ptr:StaticPointer):void;
@@ -338,6 +358,7 @@ declare module './core' {
     }
 }
 
+VoidPointer.symbol = 'PEAX';
 VoidPointer[NativeType.align] = 8;
 VoidPointer[NativeType.ctor] = emptyFunc;
 VoidPointer[NativeType.dtor] = emptyFunc;
@@ -358,7 +379,7 @@ function int32To64(ptr:StaticPointer, v:unknown, offset?:number):void {
 }
 
 export const void_t = new NativeType<void>(
-    'void', 'void_t',
+    'X', 'void_t',
     0, 1,
     v=>v === undefined,
     undefined,
@@ -369,7 +390,7 @@ export const void_t = new NativeType<void>(
     emptyFunc);
 export type void_t = void;
 export const bool_t = new CommandParameterNativeType<boolean>(
-    'bool', 'bool_t',
+    '_N', 'bool_t',
     1, 1,
     v=>typeof v === 'boolean',
     undefined,
@@ -387,7 +408,7 @@ bool_t[NativeTypeFn.bitSetter] = (ptr, value, shift, mask, offset)=>{
     ptr.setUint8(nvalue, offset);
 };
 export const uint8_t = new NativeType<number>(
-    'unsigned char', 'uint8_t',
+    'E', 'uint8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xff,
     isNumber,
@@ -399,7 +420,7 @@ export type uint8_t = number;
 uint8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint16_t = new NativeType<number>(
-    'unsigned short', 'uint16_t',
+    'G', 'uint16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xffff,
     isNumber,
@@ -411,7 +432,7 @@ export type uint16_t = number;
 uint16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint32_t = new NativeType<number>(
-    'unsigned int', 'uint32_t',
+    'I', 'uint32_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -423,7 +444,7 @@ export type uint32_t = number;
 uint32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const ulong_t = new NativeType<number>(
-    'unsigned long', 'ulong_t',
+    'K', 'ulong_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -435,7 +456,7 @@ export type ulong_t = number;
 ulong_t[NativeTypeFn.bitGetter] = numericBitGetter;
 ulong_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint64_as_float_t = new NativeType<number>(
-    'unsigned __int64', 'uint64_as_float_t',
+    '_K', 'uint64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && 0 <= v && v < 0x10000000000000000,
     isNumber,
@@ -443,7 +464,7 @@ export const uint64_as_float_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
-    'char', 'int8_t',
+    'D', 'int8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && -0x80 <= v && v <= 0x7f,
     isNumber,
@@ -455,7 +476,7 @@ export type int8_t = number;
 int8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int16_t = new NativeType<number>(
-    'short', 'int16_t',
+    'F', 'int16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && -0x8000 <= v && v <= 0x7fff,
     isNumber,
@@ -467,7 +488,7 @@ export type int16_t = number;
 int16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int32_t = new CommandParameterNativeType<number>(
-    'int', 'int32_t',
+    'H', 'int32_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -479,7 +500,7 @@ export type int32_t = number;
 int32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const long_t = new NativeType<number>(
-    'long', 'long_t',
+    'J', 'long_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -491,7 +512,7 @@ export type long_t = number;
 long_t[NativeTypeFn.bitGetter] = numericBitGetter;
 long_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int64_as_float_t = new NativeType<number>(
-    '__int64', 'int64_as_float_t',
+    '_J', 'int64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && -0x8000000000000000 <= v && v < 0x8000000000000000,
     isNumber,
@@ -502,7 +523,7 @@ export const int64_as_float_t = new NativeType<number>(
 export type int64_as_float_t = number;
 
 export const float32_t = new CommandParameterNativeType<number>(
-    'float', 'float32_t',
+    'M', 'float32_t',
     4, 4,
     isNumber,
     isNumber,
@@ -513,7 +534,7 @@ export const float32_t = new CommandParameterNativeType<number>(
 export type float32_t = number;
 float32_t[makefunc.useXmmRegister] = true;
 export const float64_t = new NativeType<number>(
-    'double', 'float64_t',
+    'N', 'float64_t',
     8, 8,
     isNumber,
     isNumber,
@@ -522,13 +543,13 @@ export const float64_t = new NativeType<number>(
 export type float64_t = number;
 float64_t[makefunc.useXmmRegister] = true;
 
-const string_ctor = makefunc.js(proc2['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
-const string_dtor = makefunc.js(proc['std::basic_string<char,std::char_traits<char>,std::allocator<char> >::_Tidy_deallocate'], void_t, null, VoidPointer);
+const string_ctor = makefunc.js(proc['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
+const string_dtor = makefunc.js(proc['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], void_t, null, VoidPointer);
 
 const strbufCache:AllocatedPointer[] = [];
 
 export const CxxString = new CommandParameterNativeType<string>(
-    'std::basic_string<char,std::char_traits<char>,std::allocator<char> >', 'CxxString',
+    'V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@', 'CxxString',
     0x20, 8,
     v=>typeof v === 'string',
     undefined,
@@ -626,13 +647,13 @@ export const CxxStringWith8Bytes = CxxString.extends();
 CxxStringWith8Bytes[NativeType.size] = 0x28;
 export type CxxStringWith8Bytes = string;
 
-function getSpanName(type:Type<any>):string {
-    return templateName('gsl::span', type.symbol || type.name, '-1');
+function getSpanSymbol(type:Type<any>):string {
+    return mangle.templateClass(['gsl', 'span'], type, '-1');
 }
 
 export class GslSpanToArray<T> extends NativeType<T[]> {
     private constructor(public readonly compType:Type<T>) {
-        super(getSpanName(compType), `GslSpanToArray<${compType.name}>`, 0x10, 8,
+        super(getSpanSymbol(compType), `GslSpanToArray<${compType.name}>`, 0x10, 8,
             v=>v instanceof Array,
             undefined,
             (ptr, offset)=>{

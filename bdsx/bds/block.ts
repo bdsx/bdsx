@@ -3,12 +3,17 @@ import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
-import type { BlockPos, ChunkPos } from "./blockpos";
+import type { Actor, DimensionId } from "./actor";
+import type { ChunkPos } from "./blockpos";
+import { BlockPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
+import type { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
 import type { Container } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
+import type { BlockActorDataPacket } from "./packets";
+import type { Player, ServerPlayer } from "./player";
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -64,6 +69,21 @@ export class BlockLegacy extends NativeClass {
     getBlockEntityType(): BlockActorType {
         abstract();
     }
+    getBlockItemId():number {
+        abstract();
+    }
+    getStateFromLegacyData(data:number):Block {
+        abstract();
+    }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
+        abstract();
+    }
+    getDefaultState():Block {
+        abstract();
+    }
+    tryGetStateFromLegacyData(data:uint16_t):Block {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -76,22 +96,29 @@ export class Block extends NativeClass {
     blockLegacy:BlockLegacy;
 
     /**
-     * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
+     * @deprecated no need to destruct. use `Block.create`
      */
     static constructWith(blockName:BlockId, data?: number):Block|null;
+    /**
+     * @deprecated no need to destruct. use `Block.create`
+     */
     static constructWith(blockName:string, data?: number):Block|null;
     static constructWith(blockName:BlockId|string, data:number = 0):Block|null {
-        abstract();
+        return this.create(blockName, data);
     }
 
+    /**
+     * @param blockName Formats like 'minecraft:wool'
+     * @return Block instance
+     */
     static create(blockName:BlockId, data?: number):Block|null;
-    static create(blockName:string, data?: number):Block|null;
 
     /**
-     * @param blockName Formats like 'minecraft:wool' and 'wool' are both accepted
+     * @return Block instance
      */
+    static create(blockName:string, data?: number):Block|null;
     static create(blockName:string, data:number = 0):Block|null {
-        return this.constructWith(blockName, data);
+        abstract();
     }
     protected _getName():HashedString {
         abstract();
@@ -106,6 +133,12 @@ export class Block extends NativeClass {
         abstract();
     }
     getBlockEntityType(): BlockActorType {
+        abstract();
+    }
+    hasBlockEntity():boolean {
+        abstract();
+    }
+    use(subject: Player, blockPos: BlockPos, face: number): bool_t {
         abstract();
     }
 }
@@ -134,7 +167,7 @@ export class BlockSource extends NativeClass {
     @nativeField(bool_t)
     publicSource:bool_t;
 
-    protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number):boolean {
+    protected _setBlock(x:number, y:number, z:number, block:Block, updateFlags:number, actor:Actor|null):boolean {
         abstract();
     }
     getBlock(blockPos:BlockPos):Block {
@@ -148,7 +181,7 @@ export class BlockSource extends NativeClass {
      * @returns true if the block was placed, false if it was not
      */
     setBlock(blockPos:BlockPos, block:Block, updateFlags = BlockUpdateFlags.ALL):boolean {
-        return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags);
+        return this._setBlock(blockPos.x, blockPos.y, blockPos.z, block, updateFlags, null);
     }
     getChunk(pos:ChunkPos):LevelChunk|null {
         abstract();
@@ -162,6 +195,15 @@ export class BlockSource extends NativeClass {
     getBlockEntity(blockPos:BlockPos):BlockActor|null {
         abstract();
     }
+    getDimension():Dimension {
+        abstract();
+    }
+    getDimensionId():DimensionId {
+        abstract();
+    }
+    removeBlockEntity(blockPos:BlockPos):void {
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -169,6 +211,9 @@ export class BlockActor extends NativeClass {
     @nativeField(VoidPointer)
     vftable:VoidPointer;
 
+    isChestBlockActor(): this is ChestBlockActor {
+        abstract();
+    }
     /**
      * @param tag this function stores nbt values to this parameter
      */
@@ -199,10 +244,42 @@ export class BlockActor extends NativeClass {
     setChanged(): void{
         abstract();
     }
+    /**
+     * Sets a custom name to the block. (e.g : chest, furnace...)
+     *
+     * @param name - Name to set
+     *
+     * @remarks This will not update the block client-side. use `BlockActor.updateClientSide()` to do so.
+     */
+    setCustomName(name: string):void{
+        abstract();
+    }
     getContainer(): Container | null{
         abstract();
     }
     getType(): BlockActorType {
+        abstract();
+    }
+    getPosition(): BlockPos {
+        abstract();
+    }
+
+    /**
+     * make a packet for updating the client-side.
+     * it has a risk about memoryleaks but following the original function name.
+     *
+     * @return allocated BlockActorDataPacket. it needs to be disposed of.
+     */
+    getServerUpdatePacket(blockSource:BlockSource):BlockActorDataPacket {
+        abstract();
+    }
+
+    /**
+     * Updates the block actor client-side.
+     *
+     * @param player - The player to update the block for.
+     */
+    updateClientSide(player: ServerPlayer): void {
         abstract();
     }
 }
@@ -257,4 +334,37 @@ export enum BlockActorType {
 @nativeClass(null)
 export class ButtonBlock extends BlockLegacy {
     // unknown
+}
+
+@nativeClass(null)
+export class ChestBlock extends BlockLegacy {
+
+}
+
+@nativeClass(null)
+export class ChestBlockActor extends BlockActor {
+    /**
+     * Returns whether the chest is a double chest
+     */
+    isLargeChest(): boolean {
+        abstract();
+    }
+    /**
+     * Makes a player open the chest
+     *
+     * @param player - Player that will open the chest
+     *
+     * @remarks The chest must be in range of the player !
+     */
+    openBy(player: Player): void {
+        abstract();
+    }
+    /**
+     * Returns the position of the other chest forming the double chest.
+     *
+     * @remarks If the chest is not a double chest, BlockPos ZERO (0,0,0) is returned.
+     */
+    getPairedChestPosition(): BlockPos {
+        abstract();
+    }
 }

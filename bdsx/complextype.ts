@@ -1,5 +1,6 @@
 import { VoidPointer, VoidPointerConstructor } from "./core";
 import { FunctionFromTypes_js_without_pointer, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
+import { mangle } from "./mangle";
 import { NativeClass } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 
@@ -103,7 +104,7 @@ export class NativeFunctionType<T extends (...args:any[])=>any> extends NativeTy
             return makefunc.js(ptr, returnType, opts, ...params);
         }
         return new NativeFunctionType<Func>(
-            `${returnType.symbol || returnType.name} (__cdecl*)(${params.map(param=>param.symbol || param.name).join(',')})`,
+            `${mangle.funcptr(returnType, params)})`,
             `${returnType.name}(${params.map(param=>param.name).join(',')})`,
             8, 8,
             v=>v instanceof Function,

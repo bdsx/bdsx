@@ -4,10 +4,13 @@ console.log("[example/index] Hello, World!");
 
 import './actor-effects';
 import './attribute';
+import './blockcustomname';
 import './customcommand';
 import './custommotd';
 import './event-playerdropitem';
+import './executecommand';
 import './form';
+import './hidemapmarker';
 import './inventory';
 import './ipban';
 import './lowlevel-apihooking';

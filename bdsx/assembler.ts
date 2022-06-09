@@ -1106,7 +1106,6 @@ export class X64Assembler {
     }
 
     private _ffoper(ffoper:FFOperation, r:Register, multiply:AsmMultiplyConstant, offset:number, size:OperationSize, oper:MovOper):this {
-        if (r >= Register.r8) this.put(0x41);
         this._rex(r, null, null, size);
         this.put(0xff);
         this._target(ffoper << 3, r, null, null, r, multiply, offset, oper);
@@ -1771,7 +1770,7 @@ export class X64Assembler {
         if (destsize == null || srcsize == null) throw Error(`Need operand size`);
         if (srcsize >= OperationSize.dword) throw Error(`Unexpected source operand size, ${OperationSize[destsize]}`);
         if (destsize <= srcsize) throw Error(`Unexpected operand size, ${OperationSize[srcsize]} to ${OperationSize[destsize]}`);
-        this._rex(r1, r2, null, destsize);
+        this._rex(r1, r2, r3, destsize);
         this.put(0x0f);
         let opcode = 0xb6;
         if (srcsize === OperationSize.word) opcode |= 1;
@@ -1783,6 +1782,9 @@ export class X64Assembler {
     }
     movzx_r_rp(dest:Register, src:Register, multiply:AsmMultiplyConstant, offset:number, destsize:OperationSize, srcsize:OperationSize):this {
         return this._movzx(src, dest, null, multiply, offset, destsize, srcsize, MovOper.Read);
+    }
+    movzx_r_rrp(dest:Register, src1:Register, src2:Register, multiply:AsmMultiplyConstant, offset:number, destsize:OperationSize, srcsize:OperationSize):this {
+        return this._movzx(src1, dest, src2, multiply, offset, destsize, srcsize, MovOper.Read);
     }
 
     private _movsf(r1:Register|FloatRegister, r2:Register|FloatRegister, r3:Register|null, multiply:AsmMultiplyConstant, offset:number, fsize:FloatOperSize, oper:MovOper, foper:FloatOper, size:OperationSize):this {

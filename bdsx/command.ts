@@ -1,20 +1,21 @@
 
 import * as colors from 'colors';
-import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandOutput, CommandParameterData, CommandParameterDataType, CommandPermissionLevel, CommandRegistry, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
+import { Command, CommandCheatFlag, CommandContext, CommandEnum, CommandIndexEnum, CommandMappedValue, CommandOutput, CommandParameterData, CommandParameterDataType, CommandParameterOption, CommandPermissionLevel, CommandRawEnum, CommandRegistry, CommandSoftEnum, CommandStringEnum, CommandUsageFlag, CommandVisibilityFlag, MCRESULT, MinecraftCommands } from './bds/command';
 import { CommandOrigin } from './bds/commandorigin';
-import { procHacker } from './bds/proc';
-import { serverInstance } from './bds/server';
+import { capi } from './capi';
 import { CommandParameterType } from './commandparam';
+import { emptyFunc } from './common';
 import { decay } from './decay';
 import { events } from './event';
 import { bedrockServer } from './launcher';
 import { makefunc } from './makefunc';
 import { nativeClass, nativeField } from './nativeclass';
 import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
-import { SharedPtr } from './sharedpointer';
+import { procHacker } from './prochacker';
+import { CxxSharedPtr } from './sharedpointer';
 
-let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
-function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:SharedPtr<CommandContext>, b:bool_t):MCRESULT {
+let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
+function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t):MCRESULT {
     try {
         const ctx = ctxptr.p!;
         const name = ctx.origin.getName();
@@ -53,21 +54,24 @@ export class CustomCommand extends Command {
         // empty
     }
 }
+CustomCommand.prototype[NativeType.dtor] = emptyFunc; // remove the inherited destructor
 
-interface CommandFieldOptions {
+export interface CommandFieldOptions {
     optional?:boolean;
+    /** @deprecated Use {@link postfix} instead */
     description?:string;
+    postfix?:string;
     name?:string;
+    options?:CommandParameterOption;
 }
 type GetTypeFromParam<T> =
-    T extends CommandEnum<infer KEYS> ? KEYS :
-    T extends CommandParameterType<infer F> ? F :
+    T extends CommandMappedValue<any, infer V> ? V :
+    T extends CommandParameterType<infer V> ? V :
     never;
 
-type OptionalCheck<T, OPTS extends boolean|CommandFieldOptions> =
-    (OPTS extends true ? true : OPTS extends {optional:true} ? true : false) extends true ?
-    GetTypeFromParam<T>|undefined :
-    GetTypeFromParam<T>;
+type IfOptional<OPTS extends boolean|CommandFieldOptions, TRUE, FALSE> = (OPTS extends true ? TRUE : OPTS extends {optional:true} ? TRUE : FALSE);
+
+type OptionalCheck<T, OPTS extends boolean|CommandFieldOptions> = IfOptional<OPTS, GetTypeFromParam<T>|undefined, GetTypeFromParam<T>>;
 
 export class CustomCommandFactory {
 
@@ -87,8 +91,9 @@ export class CustomCommandFactory {
         interface ParamInfo {
             key:keyof CustomCommandImpl;
             optkey:keyof CustomCommandImpl|null;
-            description?:string;
+            postfix?:string;
             name:string;
+            options:CommandParameterOption;
         }
         const paramInfos:ParamInfo[] = [];
         class CustomCommandImpl extends CustomCommand {
@@ -101,9 +106,8 @@ export class CustomCommandFactory {
                     for (const {key, optkey} of paramInfos) {
                         if (optkey == null || this[optkey]) {
                             const type = fields[key.toString()];
-                            if (type instanceof CommandEnum) {
-                                // match the case
-                                nobj[key] = type.mapper.get((this[key] as any as string).toLowerCase());
+                            if (type instanceof CommandMappedValue) {
+                                nobj[key] = type.mapValue(this[key] as any);
                             } else {
                                 nobj[key] = this[key];
                             }
@@ -124,6 +128,7 @@ export class CustomCommandFactory {
                 key: key as keyof CustomCommandImpl,
                 name: key,
                 optkey: null,
+                options: CommandParameterOption.None,
             };
 
             if (type instanceof Array) {
@@ -132,7 +137,8 @@ export class CustomCommandFactory {
                     optional = opts;
                 } else {
                     optional = !!opts.optional;
-                    info.description = opts.description;
+                    info.postfix = opts.postfix ?? opts.description;
+                    if (opts.options != null) info.options = opts.options;
                     if (opts.name != null) info.name = opts.name;
                 }
                 type = type[0];
@@ -153,13 +159,13 @@ export class CustomCommandFactory {
         CustomCommandImpl.define(fields);
 
         const params:CommandParameterData[] = [];
-        for (const {key, optkey, description, name} of paramInfos) {
+        for (const {key, optkey, postfix, name, options} of paramInfos) {
             const type = fields[key as string];
-            const dataType = type instanceof CommandEnum ?
-                CommandParameterDataType.ENUM :
-                CommandParameterDataType.NORMAL;
-            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, description, dataType, name));
-            else params.push(CustomCommandImpl.mandatory(key, null, description, dataType, name));
+            const dataType = type instanceof CommandEnum ? CommandParameterDataType.ENUM :
+                type instanceof CommandSoftEnum ? CommandParameterDataType.SOFT_ENUM :
+                    CommandParameterDataType.NORMAL;
+            if (optkey != null) params.push(CustomCommandImpl.optional(key, optkey as any, postfix, dataType, name, options));
+            else params.push(CustomCommandImpl.mandatory(key, null, postfix, dataType, name, options));
         }
 
         const customCommandExecute = makefunc.np(function(this:CustomCommandImpl, origin:CommandOrigin, output:CommandOutput){
@@ -189,26 +195,42 @@ export class CustomCommandFactoryWithSignature extends CustomCommandFactory {
 
 const commandEnumStored = Symbol('commandEnum');
 function _enum<VALUES extends Record<string, string|number>>(name:string, values:VALUES):CommandEnum<VALUES[keyof VALUES]>;
+function _enum<STR extends string, VALUES extends STR[]>(name:string, values:VALUES):CommandEnum<VALUES[number]>;
 function _enum<VALUES extends string[]>(name:string, ...values:VALUES):CommandEnum<VALUES[number]>;
-function _enum(name:string, ...values:(string|Record<string, number|string>)[]):CommandEnum<any> {
+function _enum(name:string, ...values:(string|Record<string, number|string>|string[])[]):CommandEnum<any> {
     const first = values[0];
     if (typeof first === 'object') {
-        const cmdenum:CommandIndexEnum<any>|undefined = (first as any)[commandEnumStored];
-        if (cmdenum != null) {
-            if (cmdenum.name !== name) {
-                console.error(colors.yellow(`the enum name is different but it would not be applied. (${cmdenum.name} => ${name})`));
+        if (first instanceof Array) {
+            return new CommandStringEnum(name, ...first);
+        } else {
+            const cmdenum:CommandIndexEnum<any>|undefined = (first as any)[commandEnumStored];
+            if (cmdenum != null) {
+                if (cmdenum.name !== name) {
+                    console.error(colors.yellow(`the enum name is different but it would not be applied. (${cmdenum.name} => ${name})`));
+                }
+                return cmdenum;
             }
-            return cmdenum;
+            return (first as any)[commandEnumStored] = new CommandIndexEnum(name, first); // store and reuse
         }
-        return (first as any)[commandEnumStored] = new CommandIndexEnum(name, first); // store and reuse
     } else {
         return new CommandStringEnum(name, ...(values as string[]));
     }
 }
 
+function softEnum(name:string, ...values:string[]):CommandSoftEnum;
+function softEnum(name:string, values:string[]):CommandSoftEnum;
+function softEnum(name:string, ...values:(string|string[])[]):CommandSoftEnum {
+    const softenum = CommandSoftEnum.getInstance(name);
+    if (values.length !== 0) {
+        const first = values[0];
+        softenum.addValues(Array.isArray(first) ? first : values as string[]);
+    }
+    return softenum;
+}
+
 export const command ={
     find(name:string):CustomCommandFactoryWithSignature {
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const registry = bedrockServer.commandRegistry;
         const cmd = registry.findCommand(name);
         if (cmd === null) throw Error(`${name}: command not found`);
         return new CustomCommandFactoryWithSignature(registry, name, cmd);
@@ -218,20 +240,30 @@ export const command ={
         perm:CommandPermissionLevel = CommandPermissionLevel.Normal,
         flags1:CommandCheatFlag|CommandVisibilityFlag = CommandCheatFlag.NotCheat,
         flags2:CommandUsageFlag|CommandVisibilityFlag = CommandUsageFlag._Unknown):CustomCommandFactory {
-        const registry = serverInstance.minecraft.getCommands().getRegistry();
+        const registry = bedrockServer.commandRegistry;
         const cmd = registry.findCommand(name);
         if (cmd !== null) throw Error(`${name}: command already registered`);
         registry.registerCommand(name, description, perm, flags1, flags2);
         return new CustomCommandFactory(registry, name);
     },
+    softEnum,
     enum:_enum,
+    /**
+     * built-in enum system
+     */
+    rawEnum(name:string):CommandRawEnum {
+        return CommandRawEnum.getInstance(name);
+    },
 };
 
-const customCommandDtor = makefunc.np(function(){
+const customCommandDtor = makefunc.np(function(delIt){
     this[NativeType.dtor]();
+    if (delIt & 1) {
+        capi.free(this);
+    }
 }, void_t, {this:CustomCommand, name:'CustomCommand::destructor', crossThread: true}, int32_t);
 
 bedrockServer.withLoading().then(()=>{
-    executeCommandOriginal = procHacker.hooking('MinecraftCommands::executeCommand', MCRESULT, null,
-        MinecraftCommands, MCRESULT, SharedPtr.make(CommandContext), bool_t)(executeCommand);
+    executeCommandOriginal = procHacker.hooking('?executeCommand@MinecraftCommands@@QEBA?AUMCRESULT@@V?$shared_ptr@VCommandContext@@@std@@_N@Z', MCRESULT, null,
+        MinecraftCommands, MCRESULT, CxxSharedPtr.make(CommandContext), bool_t)(executeCommand);
 });

@@ -5,23 +5,23 @@
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
 import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
+import { Block } from "bdsx/bds/block";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack } from "bdsx/bds/inventory";
-import { ServerLevel } from "bdsx/bds/level";
-import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
-import { networkHandler, NetworkIdentifier } from "bdsx/bds/networkidentifier";
+import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
+import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission } from "bdsx/bds/player";
-import { procHacker } from "bdsx/bds/proc";
-import { serverInstance } from "bdsx/bds/server";
-import { proc, proc2 } from "bdsx/bds/symbols";
+import { proc } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
-import { command } from "bdsx/command";
+import { command, CommandFieldOptions } from "bdsx/command";
+import { CommandParameterType } from "bdsx/commandparam";
+import { CommandResultType } from "bdsx/commandresult";
 import { AttributeName, CANCEL } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
@@ -32,19 +32,79 @@ import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
+import { mce } from "bdsx/mce";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
+import { procHacker } from "bdsx/prochacker";
 import { PseudoRandom } from "bdsx/pseudorandom";
 import { Tester } from "bdsx/tester";
-import { arrayEquals, getEnumKeys, hex } from "bdsx/util";
+import { arrayEquals, getEnumKeys, hex, stripSlashes } from "bdsx/util";
+import { getRecentSentPacketId } from "./net-rawpacket";
 
 let sendidcheck = 0;
 let chatCancelCounter = 0;
 
-export function setRecentSendedPacketForTest(packetId: number): void {
-    sendidcheck = packetId;
-}
+const OverworldDimension$vftable = proc['??_7OverworldDimension@@6BIDimension@@@'];
+
+function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean], string|null, any][], throughConsole?:boolean):Promise<void> {
+    const paramsobj:Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]> = {};
+    const n = testcases.length;
+    for (let i=0;i<n;i++) {
+        paramsobj['arg'+i] = testcases[i][0];
+    }
+
+    const cmdname = 'testcommand_'+testname;
+    let cmdline = cmdname;
+    for (const testcase of testcases) {
+        const strparam = testcase[1];
+        if (strparam === null) continue;
+        cmdline += ' ';
+        cmdline += strparam;
+    }
+
+    command.register(cmdname, 'command for test').overload((param, origin, output)=>{
+        for (let i=0;i<n;i++) {
+            const [opts, name, expected] = testcases[i];
+            const actual = param['arg'+i];
+            if (expected !== actual) {
+                output.error(`failed`);
+                const type = opts instanceof Array ? opts[0] : opts;
+                tester.equals(actual, expected, `type=${type.name}, value=${name} mismatched`);
+                return;
+            }
+        }
+        output.success('passed');
+    }, paramsobj);
+
+    return new Promise<void>((resolve, reject) => {
+        const outputcb = (output:string) => {
+            if (output === 'passed') {
+                events.commandOutput.remove(outputcb);
+                resolve();
+                return CANCEL;
+            }
+            if (output === 'failed') {
+                events.commandOutput.remove(outputcb);
+                reject(Error(`${cmdname} failed`));
+                return CANCEL;
+            }
+        };
+        events.commandOutput.on(outputcb);
+
+        if (throughConsole) {
+            bedrockServer.executeCommandOnConsole(cmdline);
+        } else {
+            const res = bedrockServer.executeCommand(cmdline, CommandResultType.OutputAndData);
+            if (!res.isSuccess()) {
+                tester.error(`${cmdname} failed`, 5);
+            } else {
+                tester.equals(res.data.statusMessage, 'passed', `${cmdname}, unexpected statusMessage`);
+                tester.equals(res.data.statusCode, res.getFullCode(), `${cmdname}, unexpected statusCode`);
+            }
+        }
+    });
+};
 
 @nativeClass()
 class VectorClass extends NativeClass {
@@ -60,34 +120,61 @@ class VectorClass extends NativeClass {
  * too many packets to hook. skip them.
  */
 const tooHeavy = new Set<number>();
-tooHeavy.add(0xae);
-tooHeavy.add(0xaf);
+tooHeavy.add(0xae); // SubChunkPacket
+tooHeavy.add(0xaf); // SubChunkRequestPacket
 
-Tester.test({
+Tester.concurrency({
+    async nexttick() {
+        let timer:NodeJS.Timer;
+        for (let i=0;i<2;i++) {
+            await Promise.race([
+                new Promise<boolean>(resolve => process.nextTick(() => {
+                    clearTimeout(timer);
+                    resolve(true);
+                })),
+                new Promise<boolean>(resolve => {
+                    timer = setTimeout(() => {
+                        this.fail();
+                        resolve(false);
+                    }, 1000);
+                })
+            ]);
+        }
+    },
+}, {
     async globals() {
+        const serverInstance = bedrockServer.serverInstance;
         this.assert(!!serverInstance && serverInstance.isNotNull(), 'serverInstance not found');
-        this.assert(serverInstance.vftable.equals(proc2['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
+        this.assert(serverInstance.vftable.equalsptr(proc['??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@']),
             'serverInstance is not ServerInstance');
+        const networkHandler = bedrockServer.networkHandler;
         this.assert(!!networkHandler && networkHandler.isNotNull(), 'networkHandler not found');
-        this.assert(networkHandler.vftable.equals(proc2['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
+        this.assert(networkHandler.vftable.equalsptr(proc['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@']),
             'networkHandler is not NetworkHandler');
-        this.assert(serverInstance.minecraft.vftable.equals(proc["Minecraft::`vftable'"]), 'minecraft is not Minecraft');
-        this.assert(serverInstance.minecraft.getCommands().sender.vftable.equals(proc["CommandOutputSender::`vftable'"]), 'sender is not CommandOutputSender');
+        this.assert(bedrockServer.minecraft.vftable.equalsptr(proc['??_7Minecraft@@6B@']), 'minecraft is not Minecraft');
+        this.assert(bedrockServer.commandOutputSender.vftable.equalsptr(proc['??_7CommandOutputSender@@6B@']), 'sender is not CommandOutputSender');
 
-        this.assert(networkHandler.instance.vftable.equals(proc2["??_7RakNetInstance@@6BConnector@@@"]),
+        this.assert(networkHandler.instance.vftable.equalsptr(proc["??_7RakNetInstance@@6BConnector@@@"]),
             'networkHandler.instance is not RaknetInstance');
 
-        this.assert(networkHandler.instance.peer.vftable.equals(proc2["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
+        this.assert(networkHandler.instance.peer.vftable.equalsptr(proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"]),
             'networkHandler.instance.peer is not RakNet::RakPeer');
 
-        const shandle = serverInstance.minecraft.getServerNetworkHandler();
+        const shandle = bedrockServer.serverNetworkHandler;
         shandle.setMotd('TestMotd');
         this.equals(shandle.motd, 'TestMotd', 'unexpected motd');
 
         serverInstance.setMaxPlayers(10);
         this.equals(shandle.maxPlayers, 10, 'unexpected maxPlayers');
-    },
-
+        [...bedrockServer.commandRegistry.enumValues];
+        [...bedrockServer.commandRegistry.enums].map(v=>v.name);
+        [...bedrockServer.commandRegistry.enumLookup.keys()];
+        [...bedrockServer.commandRegistry.enumValueLookup.keys()];
+        [...bedrockServer.commandRegistry.commandSymbols].map(v=>v.value);
+        [...bedrockServer.commandRegistry.softEnums].map(v=>v.name);
+        [...bedrockServer.commandRegistry.softEnumLookup.keys()];
+    }
+}, {
     disasm() {
         const assert = (hexcode: string, asmcode: string, nonsamehex:boolean = false) => {
             const opers = disasm.check(hexcode, true);
@@ -137,6 +224,7 @@ Tester.test({
     },
 
     bin() {
+        this.equals(bin.parse('0'), '', 'bin.parse("0")');
         this.equals(bin.make64(1, 0), bin64_t.one, 'bin.make64(1, 0)', bin.toString);
         this.equals(bin.make64(0, 0), bin64_t.zero, 'bin.make64(0, 0)', bin.toString);
         this.equals(bin.make64(-1, -1), bin64_t.minus_one, 'bin.make64(-1, -1)', bin.toString);
@@ -342,7 +430,7 @@ Tester.test({
 
         a.destruct();
 
-        for (let i=0;i<10;i++) {
+        for (let i=0;i<2;i++) {
             const vec = CxxVector.make(CxxString).construct();
             vec.push("1111111122222222");
             this.equals(vec.toArray().join(','), '1111111122222222', 'vector push 1');
@@ -399,6 +487,7 @@ Tester.test({
         cls.vector3.push(vec);
         clsvector.push(cls);
         clsvector.push(cls);
+        cls.destruct();
 
         const cloned = CxxVector.make(VectorClass).construct(clsvector);
         this.equals(cloned.get(0)!.vector.toArray().join(','), 'test1,test2', 'class, string vector');
@@ -408,6 +497,7 @@ Tester.test({
         this.equals(cloned.get(0)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'class, string vector');
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
+        clsvector.destruct();
     },
 
     map() {
@@ -442,18 +532,19 @@ Tester.test({
     },
 
     async command() {
+        // command hook test, error test, parameter type test
         let passed = false;
         const cb = (cmd:string, origin:string, ctx:CommandContext) => {
             if (cmd === '/__dummy_command') {
                 passed = origin === 'Server';
-                this.assert(ctx.origin.vftable.equals(proc["ServerCommandOrigin::`vftable'"]), 'invalid origin');
-                this.assert(ctx.origin.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']), 'invalid dimension');
+                this.assert(ctx.origin.vftable.equalsptr(proc['??_7ServerCommandOrigin@@6B@']), 'invalid origin');
+                this.assert(ctx.origin.getDimension().vftable.equalsptr(OverworldDimension$vftable), 'invalid dimension');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
                 const actor = ctx.origin.getEntity();
                 this.assert(actor === null, `origin.getEntity() is not null. result = ${actor}`);
                 const level = ctx.origin.getLevel();
-                this.assert(level.vftable.equals(proc2['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
+                this.assert(level.vftable.equalsptr(proc['??_7ServerLevel@@6BILevel@@@']), 'origin.getLevel() is not ServerLevel');
                 const players = level.getPlayers();
                 const size = players.length;
                 this.equals(size, 0, 'origin.getLevel().players.size is not zero');
@@ -475,36 +566,72 @@ Tester.test({
             events.commandOutput.on(outputcb);
             bedrockServer.executeCommandOnConsole('__dummy_command');
         });
-        command.register('testcommand', 'bdsx command test').overload((param, origin, output)=>{
-            output.success('passed');
-        }, {});
+    },
 
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output === 'passed') {
-                    events.commandOutput.remove(outputcb);
-                    resolve();
-                    return CANCEL;
-                }
-            };
-            events.commandOutput.on(outputcb);
-            bedrockServer.executeCommandOnConsole('testcommand');
-        });
-        await new Promise<void>((resolve) => {
-            const outputcb = (output:string) => {
-                if (output === 'passed') {
-                    events.commandOutput.remove(outputcb);
-                    resolve();
-                    return CANCEL;
-                }
-            };
-            events.commandOutput.on(outputcb);
-            this.assert(bedrockServer.executeCommand('testcommand', false).isSuccess(), 'testcommand failed');
-        });
+    async commandregister() {
+        // command register test, parameter test
+        await checkCommandRegister(this, 'cmdtest', [], true);
+        await checkCommandRegister(this, 'cmdtest2', []);
+        await checkCommandRegister(this, 'cmdtest3', [
+            [CxxString, 'a', 'a'],
+        ]);
+        await checkCommandRegister(this, 'cmdtest4', [
+            [CxxString, 'a', 'a'],
+            [[CxxString, true], null, undefined],
+        ]);
+    },
+
+    async commandenum() {
+        const enumtype = command.enum('EnumType', 'enum1', 'Enum2', 'ENUM3');
+        command.enum('EnumType', 'enum4'); // duplicate check
+
+        const ts_enum = command.enum('DimensionId', DimensionId);
+
+        await checkCommandRegister(this, 'mappercheck', [[enumtype, 'enum1', 'enum1']]);
+        await checkCommandRegister(this, 'mappers', [
+            // Tests for enums with strings and the string mapper
+            [enumtype, 'ENUM1', 'enum1'],
+            [enumtype, 'enum3', 'ENUM3'],
+            [enumtype, 'enum4', undefined],
+            [command.enum('EnumType2', ['test']), 'test', 'test'],
+            // Tests for enums with numeric values
+            [ts_enum, 'overworld', 0],
+            [ts_enum, 'Nether', 1],
+            [ts_enum, 'THEEND', 2],
+        ]);
+    },
+
+    async commandrawenum() {
+        const gameModeEnum = command.rawEnum('GameMode');
+        this.arrayEquals(gameModeEnum.getValues(), [ 'default', 'creative', 'survival', 'adventure', 'd', 'c', 's', 'a' ]);
+
+        for (let i=0;i<2;i++) {
+            await checkCommandRegister(this, 'raw'+i, [
+                [command.rawEnum('GameMode'), 'default', 5], // Test for built-in enums with numeric values
+                [command.rawEnum('IntGameRule'), 'maxcommandchainlength', 'maxcommandchainlength'], // Test for built-in enums with strings
+                [command.rawEnum('EntityType'), 'minecraft:zombie', 'minecraft:zombie'], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to string)
+                [command.rawEnum('Enchant'), 'fire_protection', 'fire_protection'],
+            ]);
+        }
+
+        // await checkCommandRegister('extends', [
+        //     [command.enum('EntityType', {a: 0}), 'a', 0], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to number) and the new value 'a' as 0
+        //     [command.enum('EntityType', 'custom'), 'custom', 'custom'], // Test for built-in enums with custom type (ActorDefinitionIdentifier for this case, but maps to string) and the new value 'custom'
+        //     [command.enum('Difficulty', 'aaa'), 'aaa', 'aaa'], // Test for built-in enums and the new value 'aaa'
+        // ]);
+    },
+
+    async commandsoftenum() {
+        await checkCommandRegister(this, 'soft', [
+            [command.softEnum('Soft1', 'softenum'), 'anything', 'anything'], // Test for soft enums
+            [command.softEnum('Soft2', 'first', 'Second!!', 'THI R D'), '"thi r d"', 'thi r d'], // Test for soft enums
+            [command.softEnum('Tool', 'Override', 'another'), 'Override', 'Override'], // Test for built-in soft enums with new values
+        ]);
     },
 
     async checkPacketNames() {
-        const wrongNames = new Map<string, string>([
+        const wrongNames = new Map<string, string | string[]>([
+            ['', ['UpdateTradePacket', 'UpdateEquipPacket']],
             ['ShowModalFormPacket', 'ModalFormRequestPacket'],
             ['SpawnParticleEffect', 'SpawnParticleEffectPacket'],
             ['ResourcePacksStackPacket', 'ResourcePackStackPacket'],
@@ -515,6 +642,8 @@ Tester.test({
             ['EduUriResource', 'EduUriResourcePacket'],
             ['CreatePhoto', 'CreatePhotoPacket'],
             ['UpdateSubChunkBlocks', 'UpdateSubChunkBlocksPacket'],
+            ['ItemStackRequest', 'ItemStackRequestPacket'],
+            ['ItemStackResponse', 'ItemStackResponsePacket'],
         ]);
 
         for (const id in PacketIdToType) {
@@ -524,9 +653,13 @@ Tester.test({
 
                 let getNameResult = packet.getName();
                 const realname = wrongNames.get(getNameResult);
-                if (realname != null) getNameResult = realname;
-
                 let name = Packet.name;
+
+                if (Array.isArray(realname)) {
+                    getNameResult = realname.find((v) => v === name) ?? getNameResult;
+                } else if (realname != null) {
+                    getNameResult = realname;
+                }
 
                 this.equals(getNameResult, name);
                 this.equals(packet.getId(), Packet.ID);
@@ -579,6 +712,10 @@ Tester.test({
                 sendpacket++;
             }, 0));
             events.packetSendRaw(i).on(this.wrap((ptr, size, ni, packetId) => {
+                const recentSent = getRecentSentPacketId();
+                if (recentSent !== null) {
+                    sendidcheck = recentSent;
+                }
                 if (Date.now() < ignoreEndingPacketsAfter) {
                     this.assert(ni.getAddress() !== 'UNASSIGNED_SYSTEM_ADDRESS', 'packetSendRaw, Invalid ni, id='+packetId);
                 }
@@ -600,7 +737,7 @@ Tester.test({
             const connreq = ptr.connreq;
             this.assert(connreq !== null, 'no ConnectionRequest, client version mismatched?');
             if (connreq !== null) {
-                const cert = connreq.cert;
+                const cert = connreq.getCertificate();
                 let uuid = cert.json.value()["extraData"]["identity"];
                 this.equals(uuid, cert.getIdentityString(), 'getIdentityString() !== extraData.identity');
             }
@@ -628,27 +765,28 @@ Tester.test({
 
     actor() {
         events.entityCreated.on(this.wrap(ev => {
-            const level = serverInstance.minecraft.getLevel().as(ServerLevel);
+            const level = bedrockServer.level;
 
             try {
                 const actor = ev.entity;
                 const identifier = actor.getIdentifier();
                 this.assert(identifier.startsWith('minecraft:'), 'Invalid identifier');
                 if (identifier === 'minecraft:player') {
-                    this.equals(level.players.size(),  serverInstance.getActivePlayerCount(), 'Unexpected player size');
-                    this.assert(level.players.capacity() > 0, 'Unexpected player capacity');
+                    this.equals(level.getPlayers().length,  bedrockServer.serverInstance.getActivePlayerCount(), 'Unexpected player size');
                     this.assert(actor !== null, 'Actor.fromEntity of player is null');
                 }
 
                 if (actor !== null) {
-                    this.assert(actor.getDimension().vftable.equals(proc2['??_7OverworldDimension@@6BLevelListener@@@']),
+                    this.assert(actor.getDimension().vftable.equalsptr(OverworldDimension$vftable),
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
                     if (actor instanceof Player) {
                         const cmdlevel = actor.abilities.getCommandPermissionLevel();
                         this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');
+                        this.equals(actor.getCommandPermissionLevel(), cmdlevel, 'Invalid command permission level');
                         const playerlevel = actor.abilities.getPlayerPermissionLevel();
                         this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
+                        this.equals(actor.getPermissionLevel(), playerlevel, 'Invalid player permission level');
 
                         this.equals(actor.getCertificate().getXuid(), connectedXuid, 'xuid mismatch');
 
@@ -667,9 +805,17 @@ Tester.test({
 
                         actor.setRespawnPosition(pos, dim);
 
-                        const item = ItemStack.constructWith('minecraft:bread');
+                        const item = ItemStack.constructWith('minecraft:cobblestone');
+                        const cloned = item.clone();
                         actor.addItem(item);
                         item.destruct();
+
+                        actor.addItem(cloned);
+                        cloned.destruct();
+
+                        // test for hasFamily
+                        this.assert(actor.hasFamily("player") === true, "the actor must be a Player");
+                        this.assert(actor.hasFamily("undead") === false, "the actor must be not a Undead Mob");
                     }
 
                     if (identifier === 'minecraft:player') {
@@ -692,6 +838,29 @@ Tester.test({
                 this.processError(err);
             }
         }, 5));
+
+        events.playerJoin.on(this.wrap((ev) => {
+            const player = ev.player;
+            try {
+                const region = player.getRegion();
+                const levelChunk = region.getChunkAt(BlockPos.create(player.getPosition()));
+                if (levelChunk) {
+                    const entityRefs = levelChunk.getChunkEntities();
+                    for (const entityRef of entityRefs) {
+                        const entityFromRef = entityRef.tryUnwrapActor();
+                        if (entityFromRef) {
+                            const actorId = entityFromRef.getUniqueIdBin();
+                            const entityFromChunk = levelChunk.getEntity(actorId);
+                            this.assert(entityFromRef === entityFromChunk, "fetched entity is wrong");
+                        } else {
+                            this.error("failed to get entity from WeakEntityRef");
+                        }
+                    }
+                }
+            } catch (err) {
+                this.processError(err);
+            }
+        }));
     },
 
     chat() {
@@ -730,7 +899,7 @@ Tester.test({
             @nativeField(HashedString)
             readonly name:HashedString;
         }
-        const getByName = procHacker.js('Attribute::getByName', Attribute, null, HashedString);
+        const getByName = procHacker.js('?getByName@Attribute@@SAAEAV1@AEBVHashedString@@@Z', Attribute, null, HashedString);
         for (const key of getEnumKeys(AttributeId)) {
             const name = AttributeName[key];
             const hashname = HashedString.construct();
@@ -744,9 +913,9 @@ Tester.test({
     testPlayerCount() {
         events.queryRegenerate.once(this.wrap(v=>{
             this.equals(v.currentPlayers, 0, 'player count mismatch');
-            this.equals(v.maxPlayers, serverInstance.getMaxPlayers(), 'max player mismatch');
+            this.equals(v.maxPlayers, bedrockServer.serverInstance.getMaxPlayers(), 'max player mismatch');
         }));
-        serverInstance.minecraft.getServerNetworkHandler().updateServerAnnouncement();
+        bedrockServer.serverNetworkHandler.updateServerAnnouncement();
 
         events.packetAfter(MinecraftPacketIds.Login).once(this.wrap((packet, ni)=>{
             setTimeout(this.wrap(()=>{
@@ -760,10 +929,6 @@ Tester.test({
     etc() {
         const item = ItemStack.constructWith('minecraft:acacia_boat');
         item.destruct();
-
-        const level = serverInstance.minecraft.getLevel();
-        const pos = level.getDefaultSpawn();
-        level.setDefaultSpawn(pos);
     },
 
     nbt() {
@@ -795,6 +960,8 @@ Tester.test({
             const list = ListTag.allocate();
             list.push(str);
 
+            this.assert(list.equals(list), 'list.equals');
+
             for (let j=0;j<10;j++) {
                 map.set('barray', barray);
                 map.set('iarray', iarray);
@@ -818,23 +985,46 @@ Tester.test({
             this.equals(Object.keys(mapvalue).length, map.size(), 'Compound key count check');
             map.dispose();
         }
-    },
-    async nexttick() {
-        let timer:NodeJS.Timer;
-        for (let i=0;i<10;i++) {
-            await Promise.race([
-                new Promise<boolean>(resolve => process.nextTick(() => {
-                    clearTimeout(timer);
-                    resolve(true);
-                })),
-                new Promise<boolean>(resolve => {
-                    timer = setTimeout(() => {
-                        this.fail();
-                        resolve(false);
-                    }, 1000);
-                })
-            ]);
+
+        const nbtSample = {
+            int:123,
+            true:true,
+            false:false,
+            byte:NBT.byte(1),
+            short:NBT.short(2),
+            int2:NBT.int(3),
+            int64:NBT.int64(4),
+            string:'string',
+            list:[1,2,3,4,'1','2','3','4', [], {}],
+            emptyList:[],
+            byteArray:NBT.byteArray([1,2,3]),
+            emptyByteArray:NBT.byteArray([]),
+            intArray:NBT.intArray([1]),
+            emptyIntArray:NBT.intArray([]),
+            compound: {
+                compound: {'a':'a','b':'b','c':'c'},
+                0:0,
+                1:1,
+                2:2,
+            },
+            emptyCompound: {},
+            '\\':'backslash test\\',
+            '\\\\':'backslash test\\\\',
+            '\\\\\\':'backslash test\\\\\\',
+            '\\\"\\\\\\':'backslash test\\\\\\\"\\',
+        };
+
+        const snbt = NBT.stringify(nbtSample, 4);
+        const oldone = NBT.allocate(nbtSample);
+        const newone = NBT.allocate(NBT.parse(snbt));
+        if (!oldone.equals(newone)) {
+            this.error('SNBT converting mismatch');
         }
+        this.equals(stripSlashes('\\\\\\"\\n\\r\\b\\v\\f\\t\\\'\\u0031\\x31'), '\\"\n\r\b\v\f\t\'11', 'stripSlashes');
+        this.equals(
+            NBT.stringify(NBT.parse('{"true":true,false:false,\'string\':\'string\',"longArray":[L;1l,2l,3l,4l]}')),
+            '{true:1b,false:0b,string:"string",longArray:[1l,2l,3l,4l]}',
+            'SNBT parse only feature');
     },
 
     itemActor() {
@@ -843,17 +1033,36 @@ Tester.test({
             const region = ev.player.getRegion();
             const actor = Actor.summonAt(region, pos, ActorType.Item, -1);
             this.assert(actor instanceof ItemActor, 'ItemActor summoning');
-            this.assert((actor as ItemActor).itemStack.vftable.equals(proc["ItemStack::`vftable'"]), 'ItemActor.itemStack is not ItemStack');
+            this.assert((actor as ItemActor).itemStack.vftable.equalsptr(proc['??_7ItemStack@@6B@']), 'ItemActor.itemStack is not ItemStack');
             actor.despawn();
         }));
     },
 
     actorRunCommand() {
         events.playerJoin.once(this.wrap((ev)=>{
-            this.assert(ev.player.runCommand('testcommand').isSuccess(), 'Actor.runCommand failed');
+            this.assert(ev.player.runCommand('testcommand_cmdtest').isSuccess(), 'Actor.runCommand failed');
         }));
     },
-}, true);
+
+    block() {
+        this.equals(Block.create('dirt')?.getName(), 'minecraft:dirt');
+        this.equals(Block.create('minecraft:dirt')?.getName(), 'minecraft:dirt');
+        this.equals(Block.create('minecraft:air')?.getName(), 'minecraft:air');
+        this.equals(Block.create('minecraft:element_111')?.getName(), 'minecraft:element_111');
+        this.equals(Block.create('minecraft:_no_block_'), null, 'minecraft:_no_block_ is not null');
+        this.assert(Block.create('dirt')!.equalsptr(Block.create('dirt')), 'dirt is not dirt');
+        this.assert(!Block.create('planks', 0)!.equalsptr(Block.create('planks', 1)), 'planks#0 is planks#1');
+    },
+
+    blob() {
+        const blob = mce.Blob.construct();
+        blob.setFromArray([1,2,3,4]);
+        this.arrayEquals(blob.toArray(), [1,2,3,4]);
+        blob.setFromBuffer(new Uint8Array([1,2,3,4,5,6]));
+        this.arrayEquals<ArrayLike<number>>(blob.toBuffer(), [1,2,3,4,5,6]);
+        blob.destruct();
+    },
+});
 
 let connectedNi: NetworkIdentifier;
 let connectedId: string;
@@ -863,8 +1072,9 @@ events.packetRaw(MinecraftPacketIds.Login).on((ptr, size, ni) => {
     connectedNi = ni;
 });
 events.packetAfter(MinecraftPacketIds.Login).on(ptr => {
-    if (ptr.connreq === null) return;
-    const cert = ptr.connreq.cert;
+    const connreq = ptr.connreq;
+    if (connreq === null) return;
+    const cert = connreq.getCertificate();
     connectedId = cert.getId();
     connectedXuid = cert.getXuid();
 });

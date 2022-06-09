@@ -9,19 +9,6 @@
 # I may have to make my own compiler
 # It's also my own assembler compiler
 
-const JsUndefined 0
-const JsNull 1
-const JsNumber 2
-const JsString 3
-const JsBoolean 4
-const JsObject 5
-const JsFunction 6
-const JsError 7
-const JsArray 8
-const JsSymbol 9
-const JsArrayBuffer 10
-const JsTypedArray 11
-const JsDataView 12
 const EXCEPTION_BREAKPOINT:dword 80000003h
 const EXCEPTION_NONCONTINUABLE_EXCEPTION:dword 0xC0000025
 
@@ -370,7 +357,6 @@ _failed:
     mov [rax+asyncSize+10h], rdx
     mov rdx, [rcx+8]
     mov [rax+asyncSize+18h], rdx
-
 endp
 
 ; [[noreturn]] runtime_error(EXCEPTION_POINTERS* err)
@@ -422,8 +408,9 @@ endp
 export def CommandOutputSenderHookCallback:qword
 export proc CommandOutputSenderHook
     stack 28h
-    mov rcx, r8
+    mov rcx, rax
     call CommandOutputSenderHookCallback
+    mov rax, rbx
 endp
 
 export def commandQueue:qword
@@ -485,8 +472,7 @@ export def updateEvTargetFire:qword
 
 export proc updateWithSleep
     stack 28h
-    mov rcx, [rsp+50h] ; rsp+20h + 30h(this function stack)
-    call cgateNodeLoop
+    call cgateNodeLoop ; void cgateNodeLoop(uint64_t time) ; time = count of high_resolution_clock::time_point::time_since_epoch()
     unwind
     jmp updateEvTargetFire
 endp
@@ -510,38 +496,37 @@ export def createPacketRaw:qword
 export def enabledPacket:byte[256]
 
 export proc packetRawHook
-    unwind
-    mov edx, esi ; packetId
+    ; r15 - packetId
     lea rax, enabledPacket
-    mov al, byte ptr[rax+rdx]
+    mov al, byte ptr[rax+r15]
+    unwind
     test al, al
     jz _skipEvent
     mov rcx, rbp ; rbp
-    mov r8, r14 ; Connection
+    mov edx, r15d ; packetId
+    mov r8, r13 ; Connection
     jmp onPacketRaw
-_skipEvent:
-    lea rcx, [rbp+0xb8]
+ _skipEvent:
+    mov edx, r15d
+    lea rcx, [rbp+0x90] ; packet
     jmp createPacketRaw
 endp
 
+export def packetBeforeOriginal:qword
 export def onPacketBefore:qword
 export proc packetBeforeHook
+    ; r15 - packetId
     stack 28h
-
-    ; original codes
-    mov rax,qword ptr[rcx]
-    lea r8,qword ptr[rbp+120h]
-    lea rdx,qword ptr[rbp-20h]
-    call qword ptr[rax+20h]
-
-    lea rcx, enabledPacket
-    mov cl, byte ptr[rcx+rsi]
+    call packetBeforeOriginal
     unwind
-    test cl, cl
+    test eax, eax
     jz _skipEvent
-    mov rcx, rax ; read result
-    mov rdx, rbp ; rbp
-    mov r8d, esi ; packetId
+    lea rcx, enabledPacket
+    movzx ecx, byte ptr[rcx+r15]
+    test ecx, ecx
+    jz _skipEvent
+    mov rcx, rbp ; rbp
+    mov rdx, r15 ; packetId
     jmp onPacketBefore
 _skipEvent:
     ret
@@ -568,25 +553,22 @@ violation:
 endp
 
 export def onPacketAfter:qword
+export def handlePacket:qword
 export proc packetAfterHook
+    ; r15 - packetId
     stack 28h
 
     ; orignal codes
-    mov rax,[rcx]
-    lea r9,[rbp+b8h] ; packet
-    mov r8,rsi
-    mov rdx,r14
-    call [rax+8]
+    mov rcx, [rbp+90h] ; packet
+    call handlePacket
 
-    mov rax,[rbp+b8h] ; packet
-    mov rax, [rax] ; packet.vftable
-    call [rax+8] ; packet.getId()
     lea r10, enabledPacket
-    mov al, byte ptr[r10+rax]
+    mov al, byte ptr[r10+r15]
     unwind
     test al, al
     jz _skipEvent
-    mov rcx, rbp ; rbp
+    mov rcx, [rbp+90h] ; packet
+    mov rdx, r13 ; NetworkIdentifier
     jmp onPacketAfter
 _skipEvent:
     ret
@@ -625,8 +607,11 @@ _skipSend:
 endp
 
 export def packetSendAllCancelPoint:qword
+export def packetSendAllJumpPoint:qword
 export proc packetSendAllHook
     stack 28h
+    ; r15 - packet
+    ; rbx - NetworkIdentifier
 
     mov rax, [r15] ; packet.vftable
     call [rax+8] ; packet.getId(), just constant return
@@ -636,24 +621,26 @@ export proc packetSendAllHook
     test al, al
     jz _pass
 
-    mov r8,r15 ; packet
-    mov rdx,rbx ; NetworkIdentifier
-    mov rcx,r14 ; NetworkHandler
+    mov r8, r15 ; packet
+    mov rdx, rbx ; NetworkIdentifier
     call onPacketSend
-    xor eax, eax
 
     test eax, eax
     jz _pass
-    mov rax, packetSendAllCancelPoint
-    mov [rsp+28h], rax
+    unwind
+    pop rcx
+    jmp packetSendAllCancelPoint
 _pass:
     unwind
 
     ; original codes
-    mov rax, [r15]
-    lea rdx, [r14+250h]
-    mov rcx, r15
-    jmp qword ptr[rax+18h]
+    test r14,r14
+    jne _nojmp
+    pop rcx
+    jmp packetSendAllJumpPoint
+_nojmp:
+    movzx eax,byte ptr[r14+A0h]
+    ret
 endp
 
 export def onPacketSendInternal:qword
@@ -745,4 +732,22 @@ _strlen:
 
     lea rdx, [rsp+10h]
     call Core_String_toWide_string_span
+endp
+
+export def terminate:qword
+export def ExitThread:qword
+export def bdsMainThreadId:dword
+
+export proc terminateHook
+    stack 28h
+    call GetCurrentThreadId
+    cmp eax, bdsMainThreadId
+    jne _originalTerminate
+    mov rcx, finishCallback
+    call uv_async_call
+    xor ecx, ecx
+    call ExitThread
+_originalTerminate:
+    unwind
+    jmp terminate
 endp

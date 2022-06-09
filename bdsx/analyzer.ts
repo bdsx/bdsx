@@ -1,5 +1,7 @@
+import { proc } from "./bds/symbols";
 import { bin } from "./bin";
-import { NativePointer, pdb, VoidPointer } from "./core";
+import { NativePointer, VoidPointer } from "./core";
+import { pdbcache } from "./pdbcache";
 
 let analyzeMap:Map<string, string>|undefined;
 let symbols:Record<string, NativePointer>|null = null;
@@ -9,8 +11,10 @@ export namespace analyzer {
         if (analyzeMap) return;
         analyzeMap = new Map<string, string>();
         if (symbols === null) {
-            symbols = pdb.getAll();
-            (symbols as any).__proto__ = null;
+            symbols = {__proto__:null as any};
+            for (const key of pdbcache.readKeys()) {
+                symbols[key] = proc[key];
+            }
         }
 
         for (const [name, value] of Object.entries(symbols)) {

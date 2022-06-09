@@ -1,9 +1,9 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { makefunc } from "../makefunc";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
-import { procHacker } from "./proc";
+import { procHacker } from "../prochacker";
 
 const portDelineator = '|'.charCodeAt(0);
 
@@ -30,7 +30,7 @@ export namespace RakNet {
     }
 
     @nativeClass()
-    export class RakNetGUID extends NativeClass {
+    export class RakNetGUID extends NativeStruct {
         @nativeField(bin64_t)
         g:bin64_t;
         @nativeField(uint16_t)
@@ -85,5 +85,5 @@ export namespace RakNet {
     }
 
     SystemAddress.prototype.ToString = procHacker.js("?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z", void_t, {this: RakNet.SystemAddress}, bool_t, makefunc.Buffer, int32_t);
-    RakPeer.prototype.GetSystemAddressFromIndex = makefunc.js([0xf0], RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, int32_t);
+    RakPeer.prototype.GetSystemAddressFromIndex = procHacker.jsv('??_7RakPeer@RakNet@@6BRakPeerInterface@1@@', '?GetSystemAddressFromIndex@RakPeer@RakNet@@UEAA?AUSystemAddress@2@I@Z', RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, int32_t);
 }

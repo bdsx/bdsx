@@ -68,7 +68,7 @@ export class Level extends NativeClass {
     /**
      * Gets an entity with the given unique id
      */
-    fetchEntity(runtimeId:ActorUniqueID, getRemoved:boolean):Actor | null {
+    fetchEntity(actorUniqueId:ActorUniqueID, getRemoved:boolean):Actor | null {
         abstract();
     }
     /**
@@ -109,6 +109,7 @@ export class Level extends NativeClass {
     }
     /**
      * Returns the GameRules instance
+     * @deprecated use bedrockServer.gameRules
      */
     getGameRules():GameRules {
         abstract();
@@ -211,6 +212,22 @@ export class Level extends NativeClass {
     }
 
     getDefaultSpawn():BlockPos {
+        abstract();
+    }
+
+    explode(region: BlockSource, source: Actor | null, pos: Vec3, explosionRadius: number, fire: boolean, breaksBlocks: boolean, maxResistance: number, allowUnderwater: boolean): void {
+        abstract();
+    }
+    getPlayerByXuid(xuid:string): Player | null {
+        abstract();
+    }
+    getDifficulty(): Difficulty {
+        abstract();
+    }
+    setDifficulty(difficulty:Difficulty): void {
+        abstract();
+    }
+    getNewUniqueID(): ActorUniqueID {
         abstract();
     }
 }

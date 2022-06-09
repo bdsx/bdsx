@@ -1,5 +1,5 @@
 import { abstract } from "../common";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bool_t, float32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
@@ -45,6 +45,10 @@ export class Abilities extends AbstractClass {
             this.getAbility(abilityIndex).setFloat(value);
             break;
         }
+    }
+
+    isFlying(): boolean {
+        abstract();
     }
 
     static getAbilityName(abilityIndex:AbilitiesIndex):string {
@@ -150,7 +154,7 @@ export namespace Ability {
     }
 
     @nativeClass()
-    export class Value extends NativeClass {
+    export class Value extends NativeStruct {
         @nativeField(bool_t, {ghost:true})
         boolVal:bool_t;
         @nativeField(float32_t)

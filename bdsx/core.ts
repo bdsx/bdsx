@@ -18,7 +18,15 @@ export declare const VoidPointer:VoidPointerConstructor;
  * the root of all pointer-based classes
  */
 export interface VoidPointer {
+    /**
+     * possible to deep comparison
+     */
     equals(ptr: VoidPointer|null): boolean;
+
+    /**
+     * address comparison
+     */
+    equalsptr(ptr: VoidPointer|null): boolean;
 
     /**
      * make cloned pointer with offset
@@ -155,6 +163,9 @@ export declare class PrivatePointer extends VoidPointer {
      * @param words 2bytes per word
      */
     protected setBin(v:string, offset?:number): void;
+
+    protected setInt32To64WithZero(value: number, offset?: number): void;
+    protected setFloat32To64WithZero(value: number, offset?: number): void;
 
     protected interlockedIncrement16(offset?:number):number;
     protected interlockedIncrement32(offset?:number):number;
@@ -299,7 +310,12 @@ export declare class StructurePointer extends PrivatePointer {
     static readonly nativeCtor:unique symbol;
     static readonly nativeDtor:unique symbol;
     static [StructurePointer.contentSize]:number;
-    constructor(allocateItSelf?:boolean);
+    /** @deprecated it makes the null pointer. Please use ClassName.create instead */
+    constructor();
+    /**
+     * @param allocateItSelf null pointer if it's false. space is allocated if it's true
+     */
+    constructor(allocateItSelf:boolean);
 }
 
 /**
@@ -507,10 +523,6 @@ export declare class MultiThreadQueue extends VoidPointer {
  * native debug information handlers
  */
 export declare namespace pdb {
-    export const coreCachePath:string;
-
-    export function close():void;
-
     export function getOptions():number;
 
     /**
@@ -524,51 +536,6 @@ export declare namespace pdb {
      * undecorate the decorated symbol
      */
     export function undecorate(decorated:string, flags:number):string;
-
-    /**
-     * get symbols from cache.
-     * if symbols don't exist in cache. it reads pdb.
-     * @returns 'out' the first parameter.
-     */
-    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean, undecorateFlags?:number):{[key in KEYS[number]]: NativePointer} & OLD;
-
-    /**
-     * get all symbols
-     */
-    export function search(callback: (name: string, address: NativePointer) => boolean): void;
-
-    /**
-     * find symbols with a wildcard
-     */
-    export function search(filter: string|null, callback: (name: string, address: NativePointer) => boolean): void;
-
-    /**
-     * find symbols with a name array
-     */
-    export function search<KEYS extends string[]>(names: KEYS, callback: (name: KEYS[number], address: NativePointer, index: number)=>boolean): void;
-
-    /**
-     * get all symbols
-     */
-    export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer>;
-
-    export interface SymbolInfo {
-        typeIndex:number;
-        index:number;
-        size:number;
-        flags:number;
-        value:NativePointer;
-        address:NativePointer;
-        register:number;
-        scope:number;
-        tag:number;
-        name:string;
-    }
-    /**
-     * get all symbols.
-     * @param read calbacked per 100ms, stop the looping if it returns false
-     */
-    export function getAllEx(read?:(data:SymbolInfo[])=>boolean|void):void;
 
 }
 
@@ -811,18 +778,11 @@ export declare namespace ipfilter {
      * if time is 0, it's permanent.
      */
     export function entries():[string, number][];
-    /**
-     * @deprecated Typo!
-     */
-    export function entires():[string, number][];
 }
 
 type ErrorListener = (err:Error)=>void;
 
 export declare namespace jshook {
-    export function init():void;
-    /** @deprecated */
-    export function init(onError:ErrorListener):void;
     export function setOnError(onError:ErrorListener):ErrorListener;
     export function getOnError():ErrorListener;
     export function fireError(err:Error):void;
@@ -847,6 +807,11 @@ export declare namespace cxxException {
     export const cxxthrowString:VoidPointer;
 }
 
-const core = module.exports = (process as any)._linkedBinding('bdsx_core');
-core.ipfilter.entries = core.ipfilter.entires;
-module.exports.PrivatePointer = module.exports.StaticPointer;
+try {
+    const core = module.exports = (process as any)._linkedBinding('bdsx_core');
+    core.ipfilter.entires = core.ipfilter.entries;
+    core.PrivatePointer = core.StaticPointer;
+    core.pdb.setOptions(0);
+} catch (err) {
+    throw Error(`BDSX is unusable with the standard node.js`);
+}

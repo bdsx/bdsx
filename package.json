@@ -15,7 +15,8 @@
     "newplugin": "ts-node ./bdsx/checkgate ./pluginmgr/new",
     "plugin-manager": "ts-node ./bdsx/checkgate ./pluginmgr",
     "shellprepare": "ts-node ./bdsx/shellprepare",
-    "checksymbols": "ts-node ./bdsx/checkgate ./checksymbols"
+    "checksymbols": "ts-node ./bdsx/checkgate ./checksymbols",
+    "pdbcachegen": "bedrock_server\\pdbcachegen.exe \"./bedrock_server/bedrock_server.exe\" \"./bedrock_server/pdbcache.bin\""
   },
   "dependencies": {
     "bdsx": "file:bdsx",
@@ -43,6 +44,7 @@
     "@typescript-eslint/parser": "^4.33.0",
     "eslint": "^7.32.0",
     "eslint-plugin-github": "~4.2.0",
-    "eslint-plugin-import": "^2.25.2"
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-unicorn": "^40.1.0"
   }
 }
