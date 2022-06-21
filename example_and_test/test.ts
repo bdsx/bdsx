@@ -644,6 +644,7 @@ Tester.concurrency({
             ['UpdateSubChunkBlocks', 'UpdateSubChunkBlocksPacket'],
             ['ItemStackRequest', 'ItemStackRequestPacket'],
             ['ItemStackResponse', 'ItemStackResponsePacket'],
+            ['MapItemDataPacket', 'ClientboundMapItemData']
         ]);
 
         for (const id in PacketIdToType) {

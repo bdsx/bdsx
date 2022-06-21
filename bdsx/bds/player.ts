@@ -10,7 +10,7 @@ import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, TransferPacket } from "./packets";
+import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, ToastRequestPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
@@ -652,6 +652,14 @@ export class ServerPlayer extends Player {
         pk.dispose();
     }
 
+    sendToastRequest(title: string, body: string = ""): void {
+        const pk = ToastRequestPacket.allocate();
+        pk.title = title;
+        pk.body = body;
+        this.sendNetworkPacket(pk);
+        pk.dispose();
+    }
+
     /**
      * Displays a bossbar to the player
      * @remarks Bossbar percentage doesn't seem to function.
@@ -875,7 +883,7 @@ export class ServerPlayer extends Player {
 }
 
 export class SimulatedPlayer extends ServerPlayer{
-    
+
 }
 
 /** @deprecated Import from `bdsx/bds/packets` instead */
