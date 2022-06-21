@@ -3,14 +3,14 @@ import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t } from "../nativetype";
-import type { Actor, DimensionId } from "./actor";
+import type { Actor, DimensionId, ItemActor } from "./actor";
 import type { ChunkPos } from "./blockpos";
 import { BlockPos } from "./blockpos";
 import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
 import type { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
-import type { Container } from "./inventory";
+import type { Container, ItemStack } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
 import type { BlockActorDataPacket } from "./packets";
 import type { Player, ServerPlayer } from "./player";
@@ -84,6 +84,9 @@ export class BlockLegacy extends NativeClass {
     tryGetStateFromLegacyData(data:uint16_t):Block {
         abstract();
     }
+    getSilkTouchedItemInstance(block: Block): ItemStack{
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -139,6 +142,27 @@ export class Block extends NativeClass {
         abstract();
     }
     use(subject: Player, blockPos: BlockPos, face: number): bool_t {
+        abstract();
+    }
+    getVariant(): number{
+        abstract();
+    }
+    getSerializationId(): CompoundTag{
+        abstract();
+    }
+    getSilkTouchItemInstance(): ItemStack{
+        abstract();
+    }
+    isUnbreakable(): boolean{
+        abstract();
+    }
+    buildDescriptionId(): string{
+        abstract();
+    }
+    isCropBlock(): boolean{
+        abstract();
+    }
+    popResource(blockSource: BlockSource, blockPos: BlockPos, itemStack: ItemStack): ItemActor{
         abstract();
     }
 }
@@ -280,6 +304,9 @@ export class BlockActor extends NativeClass {
      * @param player - The player to update the block for.
      */
     updateClientSide(player: ServerPlayer): void {
+        abstract();
+    }
+    getCustomName(): string{
         abstract();
     }
 }

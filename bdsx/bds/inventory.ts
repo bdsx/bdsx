@@ -400,6 +400,9 @@ export class ItemStackBase extends NativeClass {
     saveEnchantsToUserData(itemEnchants:ItemEnchants):void {
         abstract();
     }
+    getCategoryName(): string{
+        abstract();
+    }
 }
 
 @nativeClass(0xa0)
@@ -441,6 +444,9 @@ export class ItemStack extends ItemStackBase {
         const itemStack = ItemStack.constructWith("minecraft:air");
         this.clone(itemStack);
         return itemStack;
+    }
+    getDestroySpeed(block: Block): number{
+        abstract();
     }
 }
 
