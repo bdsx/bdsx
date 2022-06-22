@@ -15,7 +15,7 @@ import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64T
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
-import { Player, PlayerPermission } from "bdsx/bds/player";
+import { Player, PlayerPermission, ServerPlayer, SimulatedPlayer } from "bdsx/bds/player";
 import { proc } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
@@ -789,7 +789,9 @@ Tester.concurrency({
                         this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
                         this.equals(actor.getPermissionLevel(), playerlevel, 'Invalid player permission level');
 
-                        this.equals(actor.getCertificate().getXuid(), connectedXuid, 'xuid mismatch');
+                        if (!(actor instanceof SimulatedPlayer)) {
+                            this.equals(actor.getCertificate().getXuid(), connectedXuid, 'xuid mismatch');
+                        }
 
                         const pos = actor.getSpawnPosition();
                         const dim = actor.getSpawnDimension();
@@ -820,13 +822,17 @@ Tester.concurrency({
                     }
 
                     if (identifier === 'minecraft:player') {
-                        this.assert(level.getPlayers()[0] === actor, 'the joined player is not a first player');
+                        const players = level.getPlayers();
+                        const last = players[players.length-1];
+                        this.assert(last === actor, 'the joined player is not a last player');
                         const name = actor.getName();
-                        this.equals(name, connectedId, 'id does not match');
+                        if (!(actor instanceof SimulatedPlayer)) {
+                            this.equals(name, connectedId, 'id does not match');
+                            this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
+                            this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
+                        }
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
-                        this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
-                        this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
                         this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
 
                         actor.setName('test');

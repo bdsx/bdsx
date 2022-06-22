@@ -30,6 +30,9 @@ Please assign it to the local variable and reuse it.
 I wish to keep the previous contributor's intentions.  
 If you think it's more useful, please discuss it on the GitHub or Discord server.
 
+### 8. Don't make functions that take global variables as parameters.
+It just makes unnecessary steps for using the function.
+
 ## Information about native level
 
 ### 1. Allocation methods

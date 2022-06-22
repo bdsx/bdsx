@@ -2,7 +2,7 @@
 /**
  * referred from: https://github.com/NiclasOlofsson/MiNET/blob/master/src/MiNET/MiNET/Net/MCPE%20Protocol%20Documentation.md
  */
-export enum MinecraftPacketIds {//int32_t
+export enum MinecraftPacketIds {// int32_t
 	Login = 0x01,
 	PlayStatus = 0x02,
 	ServerToClientHandshake = 0x03,

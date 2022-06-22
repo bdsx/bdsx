@@ -207,7 +207,7 @@ export class ActorDefinitionIdentifier extends NativeClass {
     static constructWith(type:string|ActorType):ActorDefinitionIdentifier {
         abstract();
     }
-    /**@deprecated use {@link constructWith()} instead*/
+    /** @deprecated use {@link constructWith()} instead*/
     static create(type:string|ActorType):ActorDefinitionIdentifier {
         return ActorDefinitionIdentifier.constructWith(type as any);
     }
@@ -446,7 +446,7 @@ export class EntityContextBase extends AbstractClass {
     isValid():boolean {
         abstract();
     }
-    /**@deprecated use {@link isValid()} instead */
+    /** @deprecated use {@link isValid()} instead */
     isVaild(): boolean {
         return this.isValid();
     }

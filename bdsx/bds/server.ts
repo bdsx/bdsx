@@ -91,6 +91,9 @@ export class Minecraft extends AbstractClass {
         abstract();
     }
 
+    /**
+     * @deprecated it's a kind of global variable. it will generate a JS instance per access.
+     */
     getNonOwnerPointerServerNetworkHandler(): Bedrock.NonOwnerPointer<ServerNetworkHandler>{
         abstract();
     }

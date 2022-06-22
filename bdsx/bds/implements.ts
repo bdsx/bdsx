@@ -643,7 +643,14 @@ ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPla
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js('?sendInventory@ServerPlayer@@UEAAX_N@Z', void_t, {this:ServerPlayer}, bool_t);
 
 SimulatedPlayer.abstract({});
-SimulatedPlayer.create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, Bedrock.NonOwnerPointer<ServerNetworkHandler>);
+const SimulatedPlayer$create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, Bedrock.NonOwnerPointer<ServerNetworkHandler>);
+
+SimulatedPlayer.create = function(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId) {
+    if (!(blockPos instanceof BlockPos)) blockPos = BlockPos.create(blockPos);
+    const snHandler = bedrockServer.nonOwnerPointerServerNetworkHandler;
+    snHandler.sharedptr.addRef(); // constructing.
+    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, snHandler); // it destructs snHandler
+};
 SimulatedPlayer.prototype.simulateDisconnect = procHacker.js('?simulateDisconnect@SimulatedPlayer@@QEAAXXZ', void_t, {this: SimulatedPlayer});
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
@@ -766,10 +773,7 @@ Minecraft.prototype.getLevel = procHacker.js("?getLevel@Minecraft@@QEBAPEAVLevel
 Minecraft.prototype.getNetworkHandler = procHacker.js("?getNetworkHandler@Minecraft@@QEAAAEAVNetworkHandler@@XZ", NetworkHandler, {this:Minecraft});
 Minecraft.prototype.getNonOwnerPointerServerNetworkHandler = procHacker.js("?getServerNetworkHandler@Minecraft@@QEAA?AV?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@XZ", Bedrock.NonOwnerPointer.make(ServerNetworkHandler), {this:Minecraft, structureReturn: true});
 Minecraft.prototype.getServerNetworkHandler = function() {
-    const ptr = this.getNonOwnerPointerServerNetworkHandler();
-    const out = ptr.get();
-    ptr.dispose(); // the output will be alive if it has the reference anyway.
-    return out!;
+    return bedrockServer.serverNetworkHandler;
 };
 Minecraft.prototype.getCommands = procHacker.js("?getCommands@Minecraft@@QEAAAEAVMinecraftCommands@@XZ", MinecraftCommands, {this:Minecraft});
 ScriptFramework.abstract({
@@ -1428,7 +1432,7 @@ VirtualCommandOrigin.constructWith = function(origin:CommandOrigin, actor:Actor,
 // biome.ts
 Biome.prototype.getBiomeType = procHacker.js("?getBiomeType@Biome@@QEBA?AW4VanillaBiomeTypes@@XZ", uint32_t, {this:Biome});
 
-//item_component.ts
+// item_component.ts
 const itemComponents = new Map<bin64_t, new()=>ItemComponent>([
     [proc["??_7CooldownItemComponent@@6B@"].getAddressBin(), CooldownItemComponent], // CooldownItemComponent$vftable
     [proc["??_7ArmorItemComponent@@6B@"].getAddressBin(), ArmorItemComponent], // ArmorItemComponent$vftable
@@ -1621,7 +1625,7 @@ function executeCommandWithOutput(command:string, origin:CommandOrigin, mute:Com
             }
             const message = cmdparser.getErrorMessage();
             output.error(message, outputParams); // outputParams is destructed by output.error
-            res.result = 0; //MCRESULT_FailedToParseCommand;
+            res.result = 0; // MCRESULT_FailedToParseCommand;
         }
 
         output.set_int('statusCode', res.getFullCode());

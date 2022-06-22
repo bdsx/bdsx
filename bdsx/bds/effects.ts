@@ -56,7 +56,7 @@ export class MobEffect extends NativeClass {
     icon: int32_t;
     @nativeField(float32_t)
     durationModifier: float32_t;
-    @nativeField(bool_t) //0x48
+    @nativeField(bool_t) // 0x48
     disabled: bool_t;
     @nativeField(CxxString, 0x50)
     resourceName: CxxString;
