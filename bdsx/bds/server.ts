@@ -6,6 +6,7 @@ import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { bool_t, CxxString, uint16_t } from "../nativetype";
 import { CxxSharedPtr } from "../sharedpointer";
 import type { DimensionId } from "./actor";
+import { Bedrock } from "./bedrock";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
@@ -87,6 +88,10 @@ export class Minecraft extends AbstractClass {
      * @deprecated use bedrockServer.minecraftCommands
      */
     getCommands():MinecraftCommands {
+        abstract();
+    }
+
+    getNonOwnerPointerServerNetworkHandler(): Bedrock.NonOwnerPointer<ServerNetworkHandler>{
         abstract();
     }
 }

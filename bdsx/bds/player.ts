@@ -2,13 +2,14 @@ import { abstract, BuildPlatform } from "../common";
 import type { Abilities } from "./abilities";
 import { ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
+import { Bedrock } from "./bedrock";
 import { Block } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
 import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
-import type { NetworkIdentifier } from "./networkidentifier";
+import type { NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import type { Packet } from "./packet";
 import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, ToastRequestPacket, TransferPacket } from "./packets";
 import { DisplaySlot } from "./scoreboard";
@@ -435,6 +436,45 @@ export class Player extends Mob {
      * it checks {@link isSpawned}, and {@link isLoading} etc. internally.
      */
     isPlayerInitialized(): boolean {
+        abstract();
+    }
+
+    /**
+     * Get block destroy progress
+     * @param block
+     */
+    getDestroyProgress(block: Block): number{
+        abstract();
+    }
+
+    /**
+     * Respawn player
+     */
+    respawn(): void{
+        abstract();
+    }
+
+    /**
+     * Returns whether the player is simulated
+     */
+    isSimulated(): boolean{
+        abstract();
+    }
+
+    /**
+     * Set player's respawn ready
+     * @param vec3
+     */
+    setRespawnReady(vec3: Vec3): void{
+        abstract();
+    }
+
+    /**
+     * Set player's spawn block respawn position
+     * @param blockPos
+     * @param dimensionId
+     */
+    setSpawnBlockRespawnPosition(blockPos: BlockPos, dimensionId: DimensionId): void{
         abstract();
     }
 }
@@ -883,7 +923,23 @@ export class ServerPlayer extends Player {
 }
 
 export class SimulatedPlayer extends ServerPlayer{
+    /**
+     * Create SimulatedPlayer
+     * @param name
+     * @param blockPos
+     * @param dimensionId
+     * @param nonOwnerPointerServerNetworkHandler Minecraft.getNonOwnerPointerServerNetworkHandler()
+     */
+    create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
+        abstract();
+    }
 
+    /**
+     * Simulate disconnect
+     */
+    simulateDisconnect(): void{
+        abstract();
+    }
 }
 
 /** @deprecated Import from `bdsx/bds/packets` instead */
