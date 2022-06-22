@@ -228,7 +228,7 @@ export class BlockSource extends NativeClass {
     removeBlockEntity(blockPos:BlockPos):void {
         abstract();
     }
-    getBrightness(): number{
+    getBrightness(blockPos: BlockPos): number{
         abstract();
     }
 }
