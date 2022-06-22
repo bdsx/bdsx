@@ -930,7 +930,7 @@ export class SimulatedPlayer extends ServerPlayer{
      * @param dimensionId
      * @param nonOwnerPointerServerNetworkHandler Minecraft.getNonOwnerPointerServerNetworkHandler()
      */
-    create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
+    static create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
         abstract();
     }
 

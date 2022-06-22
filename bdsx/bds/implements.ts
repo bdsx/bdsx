@@ -643,7 +643,7 @@ ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPla
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js('?sendInventory@ServerPlayer@@UEAAX_N@Z', void_t, {this:ServerPlayer}, bool_t);
 
 SimulatedPlayer.abstract({});
-SimulatedPlayer.prototype.create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, Bedrock.NonOwnerPointer<ServerNetworkHandler>);
+SimulatedPlayer.create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, Bedrock.NonOwnerPointer<ServerNetworkHandler>);
 SimulatedPlayer.prototype.simulateDisconnect = procHacker.js('?simulateDisconnect@SimulatedPlayer@@QEAAXXZ', void_t, {this: SimulatedPlayer});
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
