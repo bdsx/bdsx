@@ -457,7 +457,7 @@ export class Player extends Mob {
     /**
      * Returns whether the player is simulated
      */
-    isSimulated(): boolean{
+    isSimulated(): this is SimulatedPlayer{
         abstract();
     }
 
