@@ -1,4 +1,5 @@
 import { abstract, BuildPlatform } from "../common";
+import { mce } from "../mce";
 import type { Abilities } from "./abilities";
 import { ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -393,6 +394,12 @@ export class Player extends Mob {
      * Returns the player's XUID
      */
     getXuid(): string {
+        abstract();
+    }
+    /**
+     * Returns the player's UUID
+     */
+    getUuid(): mce.UUID {
         abstract();
     }
     forceAllowEating(): boolean {
