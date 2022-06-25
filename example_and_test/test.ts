@@ -830,13 +830,12 @@ Tester.concurrency({
                             this.equals(name, connectedId, 'id does not match');
                             this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                             this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
+                            actor.setName('test');
+                            this.equals(actor.getName(), 'test', 'name is not set');
                         }
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');
                         this.assert(Actor.fromEntity(actor.getEntity()) === actor, 'actor.getEntity is not entity');
-
-                        actor.setName('test');
-                        this.equals(actor.getName(), 'test', 'name is not set');
                     } else {
                         this.assert(!actor.isPlayer(), `an entity that is not a player is a player (identifier:${identifier})`);
                     }

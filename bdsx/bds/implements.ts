@@ -645,11 +645,13 @@ ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPla
 SimulatedPlayer.abstract({});
 const SimulatedPlayer$create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, Bedrock.NonOwnerPointer<ServerNetworkHandler>);
 
+const ServerNetworkHandlerNonOwnerPointer = Bedrock.NonOwnerPointer.make(ServerNetworkHandler);
+const shHandler = ServerNetworkHandlerNonOwnerPointer.construct();
+
 SimulatedPlayer.create = function(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId) {
     if (!(blockPos instanceof BlockPos)) blockPos = BlockPos.create(blockPos);
-    const snHandler = bedrockServer.nonOwnerPointerServerNetworkHandler;
-    snHandler.sharedptr.addRef(); // constructing.
-    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, snHandler); // it destructs snHandler
+    shHandler.assign(bedrockServer.nonOwnerPointerServerNetworkHandler);
+    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, shHandler); // it destructs snHandler
 };
 SimulatedPlayer.prototype.simulateDisconnect = procHacker.js('?simulateDisconnect@SimulatedPlayer@@QEAAXXZ', void_t, {this: SimulatedPlayer});
 
