@@ -1,7 +1,7 @@
 import { abstract, BuildPlatform } from "../common";
 import { mce } from "../mce";
 import type { Abilities } from "./abilities";
-import { ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
+import { Actor, ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Block } from "./block";
@@ -956,6 +956,61 @@ export class SimulatedPlayer extends ServerPlayer{
      * Simulate disconnect
      */
     simulateDisconnect(): void{
+        abstract();
+    }
+    lookAtBlock(targetBlock:BlockPos):void{
+        abstract();
+    }
+    lookAtEntity(target:Actor):void{
+        abstract();
+    }
+    lookAtLocation(targetPos:Vec3):void{
+        abstract();
+    }
+    jump():void{
+        abstract();
+    }
+    setBodyRotation(rotation:number):void{
+        abstract();
+    }
+    setItem(item:ItemStack,bool:boolean,int:number):boolean{
+        abstract();
+    }
+    destroyBlock(pos:BlockPos,uint8_t:number):boolean{
+        abstract();
+    }
+    stopDestroyingBlock():void{
+        abstract();
+    }
+    localMove(pos:Vec3,num:number):void{
+        abstract();
+    }
+    moveToLocation(pos:Vec3,num:number):void{
+        abstract();
+    }
+    stopMoving():void{
+        abstract();
+    }
+    /**It attacks regardless of reach*/
+    attack(target:Actor):boolean{
+        abstract();
+    }
+    interactWithActor(target:Actor):boolean{
+        abstract();
+    }
+    interactWithBlock(blockPos:BlockPos,uint8_t:number):boolean{
+        abstract();
+    }
+    useItem(item:ItemStack):boolean{
+        abstract();
+    }
+    useItemOnBlock(item:ItemStack,pos:BlockPos,uint8_t:number,vec:Vec3):boolean{
+        abstract();
+    }
+    useItemInSlot(slot:number):boolean{
+        abstract();
+    }
+    useItemInSlotOnBlock(slot:number,pos:BlockPos,uint8_t:null,vec:Vec3):boolean{
         abstract();
     }
 }
