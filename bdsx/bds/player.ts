@@ -976,15 +976,21 @@ export class SimulatedPlayer extends ServerPlayer{
     setItem(item:ItemStack,bool:boolean,int:number):boolean{
         abstract();
     }
-    destroyBlock(pos:BlockPos,uint8_t:number):boolean{
+    destroyBlock(pos:BlockPos,facing:number = 0):boolean{
         abstract();
     }
     stopDestroyingBlock():void{
         abstract();
     }
+    /** We do not know what num's role is.
+     * Guess it's just Speed...
+    */
     localMove(pos:Vec3,num:number):void{
         abstract();
     }
+    /** We do not know what num's role is.
+     * Guess it's just Speed...
+    */
     moveToLocation(pos:Vec3,num:number):void{
         abstract();
     }
@@ -998,19 +1004,20 @@ export class SimulatedPlayer extends ServerPlayer{
     interactWithActor(target:Actor):boolean{
         abstract();
     }
-    interactWithBlock(blockPos:BlockPos,uint8_t:number):boolean{
+    interactWithBlock(blockPos:BlockPos,facing:number=0):boolean{
         abstract();
     }
     useItem(item:ItemStack):boolean{
         abstract();
     }
-    useItemOnBlock(item:ItemStack,pos:BlockPos,uint8_t:number,vec:Vec3):boolean{
+
+    useItemOnBlock(item:ItemStack,pos:BlockPos,facing:number=0,posOfBlock:Vec3):boolean{
         abstract();
     }
     useItemInSlot(slot:number):boolean{
         abstract();
     }
-    useItemInSlotOnBlock(slot:number,pos:BlockPos,uint8_t:null,vec:Vec3):boolean{
+    useItemInSlotOnBlock(slot:number,pos:BlockPos,facing:number=0,posOfBlock:Vec3):boolean{
         abstract();
     }
 }
