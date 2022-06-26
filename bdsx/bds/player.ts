@@ -997,7 +997,7 @@ export class SimulatedPlayer extends ServerPlayer{
     stopMoving():void{
         abstract();
     }
-    /**It attacks regardless of reach*/
+    /** It attacks regardless of reach */
     attack(target:Actor):boolean{
         abstract();
     }
