@@ -958,66 +958,66 @@ export class SimulatedPlayer extends ServerPlayer{
     simulateDisconnect(): void{
         abstract();
     }
-    lookAtBlock(targetBlock:BlockPos):void{
+    simulateLookAtBlock(targetBlock:BlockPos):void{
         abstract();
     }
-    lookAtEntity(target:Actor):void{
+    simulateLookAtEntity(target:Actor):void{
         abstract();
     }
-    lookAtLocation(targetPos:Vec3):void{
+    simulateLookAtLocation(targetPos:Vec3):void{
         abstract();
     }
-    jump():void{
+    simulateJump():void{
         abstract();
     }
-    setBodyRotation(rotation:number):void{
+    simulateSetBodyRotation(rotation:number):void{
         abstract();
     }
-    setItem(item:ItemStack,bool:boolean,int:number):boolean{
+    simulateSetItem(item:ItemStack,bool:boolean,int:number):boolean{
         abstract();
     }
-    destroyBlock(pos:BlockPos,facing:number = 0):boolean{
+    simulateDestroyBlock(pos:BlockPos,facing:number = 0):boolean{
         abstract();
     }
-    stopDestroyingBlock():void{
-        abstract();
-    }
-    /** We do not know what num's role is.
-     * Guess it's just Speed...
-    */
-    localMove(pos:Vec3,num:number):void{
+    simulateStopDestroyingBlock():void{
         abstract();
     }
     /** We do not know what num's role is.
      * Guess it's just Speed...
     */
-    moveToLocation(pos:Vec3,num:number):void{
+    simulateLocalMove(pos:Vec3,num:number):void{
         abstract();
     }
-    stopMoving():void{
+    /** We do not know what num's role is.
+     * Guess it's just Speed...
+    */
+    simulateMoveToLocation(pos:Vec3,num:number):void{
+        abstract();
+    }
+    simulateStopMoving():void{
         abstract();
     }
     /** It attacks regardless of reach */
-    attack(target:Actor):boolean{
+    simulateAttack(target:Actor):boolean{
         abstract();
     }
-    interactWithActor(target:Actor):boolean{
+    simulateInteractWithActor(target:Actor):boolean{
         abstract();
     }
-    interactWithBlock(blockPos:BlockPos,facing:number=0):boolean{
+    simulateInteractWithBlock(blockPos:BlockPos,facing:number=0):boolean{
         abstract();
     }
-    useItem(item:ItemStack):boolean{
+    simulateUseItem(item:ItemStack):boolean{
         abstract();
     }
 
-    useItemOnBlock(item:ItemStack,pos:BlockPos,facing:number=0,posOfBlock:Vec3):boolean{
+    simulateUseItemOnBlock(item:ItemStack,pos:BlockPos,facing:number=0,posOfBlock:Vec3):boolean{
         abstract();
     }
-    useItemInSlot(slot:number):boolean{
+    simulateUseItemInSlot(slot:number):boolean{
         abstract();
     }
-    useItemInSlotOnBlock(slot:number,pos:BlockPos,facing:number=0,posOfBlock:Vec3):boolean{
+    simulateUseItemInSlotOnBlock(slot:number,pos:BlockPos,facing:number=0,posOfBlock:Vec3):boolean{
         abstract();
     }
 }
