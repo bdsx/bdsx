@@ -958,6 +958,9 @@ export class SimulatedPlayer extends ServerPlayer{
     simulateDisconnect(): void{
         abstract();
     }
+    simulateLookAt(target: Actor): void;
+    simulateLookAt(target: Vec3): void;
+    simulateLookAt(target: BlockPos): void;
     simulateLookAt(target:BlockPos|Actor|Vec3):void{
         abstract();
     }
