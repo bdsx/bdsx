@@ -5,7 +5,7 @@ import { Actor, ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./act
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Block } from "./block";
-import type { BlockPos, Vec3 } from "./blockpos";
+import { BlockPos, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
 import { HashedString } from "./hashedstring";
