@@ -686,15 +686,15 @@ SimulatedPlayer.prototype.simulateNavigateTo = function(goal:Actor|Vec3, speed:n
 };
 SimulatedPlayer.prototype.simulateInteractWithActor = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEAVActor@@@Z",bool_t,{this:SimulatedPlayer},Actor);
 const SimulatedPlayer$simulateInteractWithBlock = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,uint8_t);
-SimulatedPlayer.prototype.simulateInteractWithBlock = function(blockPos:BlockPos,facing:number=0){
-    return SimulatedPlayer$simulateInteractWithBlock(this,blockPos, facing);
+SimulatedPlayer.prototype.simulateInteractWithBlock = function(blockPos:BlockPos,direction:number=1){
+    return SimulatedPlayer$simulateInteractWithBlock(this,blockPos, direction);
 };
 SimulatedPlayer.prototype.simulateJump = procHacker.js("?simulateJump@SimulatedPlayer@@QEAA_NXZ",void_t,{this:SimulatedPlayer});
 SimulatedPlayer.prototype.simulateSetBodyRotation = procHacker.js("?simulateSetBodyRotation@SimulatedPlayer@@QEAAXM@Z",void_t,{this:SimulatedPlayer},float32_t);
 SimulatedPlayer.prototype.simulateSetItem = procHacker.js("?simulateSetItem@SimulatedPlayer@@QEAA_NAEAVItemStack@@_NH@Z",bool_t,{this:SimulatedPlayer},ItemStack,bool_t,int32_t);
 const SimulatedPlayer$simulateDestroyBlock = procHacker.js("?simulateDestroyBlock@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,int32_t);
-SimulatedPlayer.prototype.simulateDestroyBlock = function(pos:BlockPos,facing:number = 0){
-    return SimulatedPlayer$simulateDestroyBlock(this,pos, facing);
+SimulatedPlayer.prototype.simulateDestroyBlock = function(pos:BlockPos,direction:number=1){
+    return SimulatedPlayer$simulateDestroyBlock(this,pos, direction);
 };
 SimulatedPlayer.prototype.simulateStopDestroyingBlock = procHacker.js("?simulateStopDestroyingBlock@SimulatedPlayer@@QEAAXXZ",void_t,{this:SimulatedPlayer});
 SimulatedPlayer.prototype.simulateLocalMove = procHacker.js("?simulateLocalMove@SimulatedPlayer@@QEAAXAEBVVec3@@M@Z",void_t,{this:SimulatedPlayer},Vec3,float32_t);
@@ -703,12 +703,12 @@ SimulatedPlayer.prototype.simulateStopMoving = procHacker.js("?simulateStopMovin
 SimulatedPlayer.prototype.simulateUseItem = procHacker.js("?simulateUseItem@SimulatedPlayer@@QEAA_NAEAVItemStack@@@Z",bool_t,{this:SimulatedPlayer},ItemStack);
 SimulatedPlayer.prototype.simulateUseItemInSlot = procHacker.js("?simulateUseItemInSlot@SimulatedPlayer@@QEAA_NH@Z",bool_t,{this:SimulatedPlayer},int32_t);
 const SimulatedPlayer$simulateUseItemOnBlock = procHacker.js("?simulateUseItemOnBlock@SimulatedPlayer@@QEAA_NAEAVItemStack@@AEBVBlockPos@@W4ScriptFacing@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,ItemStack,BlockPos,int32_t,Vec3);
-SimulatedPlayer.prototype.simulateUseItemOnBlock = function(item:ItemStack,pos:BlockPos,facing:number=0,vec:Vec3){
-    return SimulatedPlayer$simulateUseItemOnBlock(this,item,pos,facing,vec);
+SimulatedPlayer.prototype.simulateUseItemOnBlock = function(item:ItemStack,pos:BlockPos,direction:number=1,vec:Vec3){
+    return SimulatedPlayer$simulateUseItemOnBlock(this,item,pos,direction,vec);
 };
 const SimulatedPlayer$simulateUseItemInSlotOnBlock = procHacker.js("?simulateUseItemInSlotOnBlock@SimulatedPlayer@@QEAA_NHAEBVBlockPos@@W4ScriptFacing@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,int32_t,BlockPos,int32_t,Vec3);
-SimulatedPlayer.prototype.simulateUseItemInSlotOnBlock = function(slot:number,pos:BlockPos,facing:number=0,vec:Vec3){
-    return SimulatedPlayer$simulateUseItemInSlotOnBlock(this, slot, pos, facing, vec);
+SimulatedPlayer.prototype.simulateUseItemInSlotOnBlock = function(slot:number,pos:BlockPos,direction:number=1,vec:Vec3){
+    return SimulatedPlayer$simulateUseItemInSlotOnBlock(this, slot, pos, direction, vec);
 };
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
