@@ -61,6 +61,9 @@ import { proc } from "./symbols";
 // Wrappers
 const WrappedInt32 = Wrapper.make(int32_t);
 
+// std::vector
+const CxxVector$Vec3 = CxxVector.make(Vec3);
+
 // utils
 namespace CommandUtils {
     export const createItemStack = procHacker.js("?createItemStack@CommandUtils@@YA?AVItemStack@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@HH@Z", ItemStack, {structureReturn:true}, CxxString, int32_t, int32_t);
@@ -684,6 +687,18 @@ SimulatedPlayer.prototype.simulateNavigateTo = function(goal:Actor|Vec3, speed:n
         SimulatedPlayer$simulateNavigateToEntity(this,goal,speed);
     }
 };
+
+const SimulatedPlayer$simulateNavigateToLocations = procHacker.js("?simulateNavigateToLocations@SimulatedPlayer@@QEAAX$$QEAV?$vector@VVec3@@V?$allocator@VVec3@@@std@@@std@@M@Z", void_t, null, SimulatedPlayer, CxxVector$Vec3, float32_t);
+SimulatedPlayer.prototype.simulateNavigateToLocations = function (_locations, speed) {
+    const locations = CxxVector$Vec3.construct();
+    locations.reserve(_locations.length);
+    for (const location of _locations) {
+        locations.push(location);
+    }
+    SimulatedPlayer$simulateNavigateToLocations(this, locations, speed);
+    locations.destruct();
+};
+
 SimulatedPlayer.prototype.simulateInteractWithActor = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEAVActor@@@Z",bool_t,{this:SimulatedPlayer},Actor);
 const SimulatedPlayer$simulateInteractWithBlock = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,uint8_t);
 SimulatedPlayer.prototype.simulateInteractWithBlock = function(blockPos:BlockPos,direction:number=1){

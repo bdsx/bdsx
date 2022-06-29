@@ -1,5 +1,6 @@
 import { abstract, BuildPlatform } from "../common";
 import { mce } from "../mce";
+import { float32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
 import { Actor, ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
@@ -987,6 +988,9 @@ export class SimulatedPlayer extends ServerPlayer{
     }
     /** move to target with navigation */
     simulateNavigateTo(goal:Actor|Vec3, speed:number):void{
+        abstract();
+    }
+    simulateNavigateToLocations(locations: Vec3[], speed: float32_t): void {
         abstract();
     }
     simulateStopMoving():void{
