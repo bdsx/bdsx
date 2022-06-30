@@ -725,7 +725,7 @@ const SimulatedPlayer$simulateUseItemInSlotOnBlock = procHacker.js("?simulateUse
 SimulatedPlayer.prototype.simulateUseItemInSlotOnBlock = function(slot:number,pos:BlockPos,vec:Vec3,direction:number=1){
     return SimulatedPlayer$simulateUseItemInSlotOnBlock(this, slot, pos, direction, vec);
 };
-6
+
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
 PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
     const entry = new PlayerListEntry(true);
