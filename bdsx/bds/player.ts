@@ -485,8 +485,14 @@ export class Player extends Mob {
         abstract();
     }
 
-    setSelecetdSlot(slot: number): ItemStack {
+    setSelectedSlot(slot: number): ItemStack {
         abstract();
+    }
+    /**
+     * @deprecated typo. Please use setSelectedSlot instead.
+     * */
+    setSelecetdSlot(slot: number): ItemStack {
+        return this.setSelectedSlot(slot);
     }
 }
 
