@@ -986,10 +986,11 @@ export class SimulatedPlayer extends ServerPlayer{
     simulateMoveToLocation(pos:Vec3,speed:number):void{
         abstract();
     }
-    /** move to target with navigation */
-    simulateNavigateTo(goal:Actor|Vec3, speed:number):void{
+    /* move to target with navigation
+    TODO: Implement `ScriptNavigationResult`
+    /* simulateNavigateTo(goal:Actor|Vec3, speed:number):void{
         abstract();
-    }
+    } */
     simulateNavigateToLocations(locations: Vec3[], speed: float32_t): void {
         abstract();
     }

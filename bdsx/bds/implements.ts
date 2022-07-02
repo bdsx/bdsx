@@ -678,6 +678,9 @@ SimulatedPlayer.prototype.simulateLookAt = function(target:BlockPos|Actor|Vec3){
         SimulatedPlayer$simulateLookAtLocation(this,target);
     }
 };
+
+/*
+TODO: Implement `ScriptNavigationResult`
 const SimulatedPlayer$simulateNavigateToEntity = procHacker.js("?simulateNavigateToEntity@SimulatedPlayer@@QEAA?AUScriptNavigationResult@@AEAVActor@@M@Z",void_t,null,SimulatedPlayer,Actor,float32_t);
 const SimulatedPlayer$simulateNavigateToLocation = procHacker.js("?simulateNavigateToLocation@SimulatedPlayer@@QEAA?AUScriptNavigationResult@@AEBVVec3@@M@Z",void_t,null,SimulatedPlayer,Vec3,float32_t);
 SimulatedPlayer.prototype.simulateNavigateTo = function(goal:Actor|Vec3, speed:number){
@@ -686,7 +689,7 @@ SimulatedPlayer.prototype.simulateNavigateTo = function(goal:Actor|Vec3, speed:n
     }else{
         SimulatedPlayer$simulateNavigateToEntity(this,goal,speed);
     }
-};
+}; */
 
 const SimulatedPlayer$simulateNavigateToLocations = procHacker.js("?simulateNavigateToLocations@SimulatedPlayer@@QEAAX$$QEAV?$vector@VVec3@@V?$allocator@VVec3@@@std@@@std@@M@Z", void_t, null, SimulatedPlayer, CxxVector$Vec3, float32_t);
 SimulatedPlayer.prototype.simulateNavigateToLocations = function (_locations, speed) {
