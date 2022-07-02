@@ -484,6 +484,10 @@ export class Player extends Mob {
     setSpawnBlockRespawnPosition(blockPos: BlockPos, dimensionId: DimensionId): void{
         abstract();
     }
+
+    setSelecetdSlot(slot: number): ItemStack {
+        abstract();
+    }
 }
 
 namespace RawTextObject {
