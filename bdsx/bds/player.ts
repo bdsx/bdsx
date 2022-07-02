@@ -1002,13 +1002,13 @@ export class SimulatedPlayer extends ServerPlayer{
     simulateUseItem(item:ItemStack):boolean{
         abstract();
     }
-    simulateUseItemOnBlock(item:ItemStack,pos:BlockPos,facingLocation:Vec3,direction:number=1):boolean{
+    simulateUseItemOnBlock(item:ItemStack,pos:BlockPos,clickPos:Vec3,direction:number=1):boolean{
         abstract();
     }
     simulateUseItemInSlot(slot:number):boolean{
         abstract();
     }
-    simulateUseItemInSlotOnBlock(slot:number,pos:BlockPos,facingLocation:Vec3,direction:number=1):boolean{
+    simulateUseItemInSlotOnBlock(slot:number,pos:BlockPos,clickPos:Vec3,direction:number=1):boolean{
         abstract();
     }
 }
