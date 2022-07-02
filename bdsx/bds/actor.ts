@@ -1197,9 +1197,9 @@ export class Mob extends Actor {
      * Updates the mob's inventory
      * @remarks used in PlayerHotbarPacket if the mob is a player
      *
-     * @param shouldSelectSlot - Defines whether the player should select the currently selected slot (?)
+     * @param shouldSelectSlot - Defines whether the sync selected slot also.
      */
-    sendInventory(shouldSelectSlot:boolean = false): void {
+    sendInventory(shouldSelectSlot:boolean = true): void {
         this._sendInventory(shouldSelectSlot);
     }
     setSpeed(speed: number): void {
