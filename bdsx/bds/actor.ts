@@ -1199,7 +1199,7 @@ export class Mob extends Actor {
      *
      * @param shouldSelectSlot - Defines whether the sync selected slot also.
      */
-    sendInventory(shouldSelectSlot:boolean = true): void {
+    sendInventory(shouldSelectSlot:boolean = false): void {
         this._sendInventory(shouldSelectSlot);
     }
     setSpeed(speed: number): void {
