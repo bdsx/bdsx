@@ -327,11 +327,11 @@ function onSculkShriek(region: BlockSource, blockPos: BlockPos, entity: Actor|nu
 }
 const sculk$shriek = procHacker.hooking("?_shriek@SculkShriekerBlock@@CAXAEAVBlockSource@@VBlockPos@@PEAVActor@@@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkShriek);
 
-export class sculkSensorActivateEvent {
+export class SculkSensorActivateEvent {
     constructor(public region:BlockSource,public pos:BlockPos,public entity:Actor|null){}
 }
 function onSculkSensorActivate(region:BlockSource,pos:BlockPos,entity:Actor|null):void{
-    const event = new sculkSensorActivateEvent(region,pos,entity);
+    const event = new SculkSensorActivateEvent(region,pos,entity);
     const canceled = events.sculkSensorActivate.fire(event) === CANCEL;
     if(canceled) return;
     return sculkSensor$Activate(region,pos,entity);
