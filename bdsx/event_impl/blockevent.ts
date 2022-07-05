@@ -319,34 +319,21 @@ const Block$attack = procHacker.hooking("?attack@Block@@QEBA_NPEAVPlayer@@AEBVBl
 export class SculkShriekEvent {
     constructor(public region:BlockSource,public blockPos: BlockPos,public entity:Actor|null){}
 }
-function onSculkShriek(region: BlockSource, blockPos: BlockPos, entity: Actor|null){
+function onSculkShriek(region: BlockSource, blockPos: BlockPos, entity: Actor|null):void{
     const event = new SculkShriekEvent(region, blockPos, entity);
     const canceled = events.sculkShriek.fire(event) === CANCEL;
     if(canceled) return;
     return sculk$shriek(region, blockPos, entity);
 }
-const sculk$shriek = procHacker.hooking("?_shriek@SculkShriekerBlock@@CAXAEAVBlockSource@@VBlockPos@@PEAVActor@@@Z",
-    void_t,
-    null,
-    BlockSource,
-    BlockPos,
-    Actor
-)(onSculkShriek);
+const sculk$shriek = procHacker.hooking("?_shriek@SculkShriekerBlock@@CAXAEAVBlockSource@@VBlockPos@@PEAVActor@@@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkShriek);
 
-export class sculkSensorActiveEvent {
+export class sculkSensorActivateEvent {
     constructor(public region:BlockSource,public pos:BlockPos,public entity:Actor|null){}
 }
-function onSculkSensorActive(region:BlockSource,pos:BlockPos,entity:Actor|null){
-    const event = new sculkSensorActiveEvent(region,pos,entity);
-    const canceled = events.sculkSensorActive.fire(event) === CANCEL;
+function onSculkSensorActivate(region:BlockSource,pos:BlockPos,entity:Actor|null):void{
+    const event = new sculkSensorActivateEvent(region,pos,entity);
+    const canceled = events.sculkSensorActivate.fire(event) === CANCEL;
     if(canceled) return;
-    return sculkSensor$Active(region,pos,entity);
+    return sculkSensor$Activate(region,pos,entity);
 }
-const sculkSensor$Active = procHacker.hooking(
-    "?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEBVActor@@H@Z",
-    void_t,
-    null,
-    BlockSource,
-    BlockPos,
-    Actor
-)(onSculkSensorActive);
+const sculkSensor$Activate = procHacker.hooking("?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEBVActor@@H@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkSensorActivate);
