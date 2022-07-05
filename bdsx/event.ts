@@ -5,7 +5,7 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event, EventEx } from "./eventtarget";
-import type { BlockAttackEvent, BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FallOnBlockEvent, FarmlandDecayEvent, LightningHitBlockEvent, PistonMoveEvent, ProjectileHitBlockEvent } from "./event_impl/blockevent";
+import type { BlockAttackEvent, BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FallOnBlockEvent, FarmlandDecayEvent, LightningHitBlockEvent, PistonMoveEvent, ProjectileHitBlockEvent, SculkSensorActivateEvent, SculkShriekEvent } from "./event_impl/blockevent";
 import type { EntityConsumeTotemEvent, EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDimensionChangeEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerJumpEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerSleepInBedEvent, PlayerUseItemEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
@@ -91,7 +91,10 @@ export namespace events {
     export const fallOnBlock = new Event<(event: FallOnBlockEvent) => void>();
     /** Cancellable but only when the player is not in creative mode */
     export const attackBlock = new Event<(event: BlockAttackEvent) => void | CANCEL>();
-
+    /** Cancellable */
+    export const sculkShriek = new Event<(event:SculkShriekEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const sculkSensorActivate = new Event<(event:SculkSensorActivateEvent) => void| CANCEL>();
     ////////////////////////////////////////////////////////
     // Entity events
 
@@ -334,5 +337,4 @@ export namespace events {
       * network identifier disconnected
       */
     export const networkDisconnected = new Event<(ni:NetworkIdentifier)=>void>();
-
 }

@@ -315,3 +315,25 @@ function onBlockAttacked(block: Block, player: Player|null, blockPos: BlockPos):
     return Block$attack(block, player, blockPos);
 }
 const Block$attack = procHacker.hooking("?attack@Block@@QEBA_NPEAVPlayer@@AEBVBlockPos@@@Z", bool_t, null, Block, Player, BlockPos)(onBlockAttacked);
+
+export class SculkShriekEvent {
+    constructor(public region:BlockSource,public blockPos: BlockPos,public entity:Actor|null){}
+}
+function onSculkShriek(region: BlockSource, blockPos: BlockPos, entity: Actor|null):void{
+    const event = new SculkShriekEvent(region, blockPos, entity);
+    const canceled = events.sculkShriek.fire(event) === CANCEL;
+    if(canceled) return;
+    return sculk$shriek(region, blockPos, entity);
+}
+const sculk$shriek = procHacker.hooking("?_shriek@SculkShriekerBlock@@CAXAEAVBlockSource@@VBlockPos@@PEAVActor@@@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkShriek);
+
+export class SculkSensorActivateEvent {
+    constructor(public region:BlockSource,public pos:BlockPos,public entity:Actor|null){}
+}
+function onSculkSensorActivate(region:BlockSource,pos:BlockPos,entity:Actor|null):void{
+    const event = new SculkSensorActivateEvent(region,pos,entity);
+    const canceled = events.sculkSensorActivate.fire(event) === CANCEL;
+    if(canceled) return;
+    return sculkSensor$Activate(region,pos,entity);
+}
+const sculkSensor$Activate = procHacker.hooking("?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEBVActor@@H@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkSensorActivate);
