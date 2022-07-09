@@ -227,7 +227,7 @@ export class PlayerDimensionChangeEvent {
     }
 }
 
-export class ProjectileHitEntityEvent {
+export class ProjectileHit {
     constructor(public projectile: Actor, public victim: Actor | null, public result: HitResult) {}
 }
 
@@ -512,7 +512,7 @@ function onPlayerDimensionChange(player: ServerPlayer, dimension: DimensionId, u
 
 const _onPlayerDimensionChange = procHacker.hooking("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@_N@Z", void_t, null, ServerPlayer, int32_t, bool_t)(onPlayerDimensionChange);
 
-const onProjectileHitEntity = procHacker.hooking(
+const onProjectileHit = procHacker.hooking(
     "?onHit@ProjectileComponent@@QEAAXAEAVActor@@AEBVHitResult@@@Z",
     void_t,
     null,
@@ -520,9 +520,9 @@ const onProjectileHitEntity = procHacker.hooking(
     Actor,
     HitResult,
 )((projectileComponent, projectile, result) => {
-    const event = new ProjectileHitEntityEvent(projectile, result.getEntity(), result);
-    events.projectileHitEntity.fire(event);
+    const event = new ProjectileHit(projectile, result.getEntity(), result);
+    events.projectileHit.fire(event);
     decay(projectileComponent);
     decay(result);
-    return onProjectileHitEntity(projectileComponent, projectile, result);
+    return onProjectileHit(projectileComponent, projectile, result);
 });
