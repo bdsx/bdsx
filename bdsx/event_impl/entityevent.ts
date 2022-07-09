@@ -227,7 +227,7 @@ export class PlayerDimensionChangeEvent {
     }
 }
 
-export class ProjectileHit {
+export class ProjectileHitEvent {
     constructor(public projectile: Actor, public victim: Actor | null, public result: HitResult) {}
 }
 
@@ -520,7 +520,7 @@ const onProjectileHit = procHacker.hooking(
     Actor,
     HitResult,
 )((projectileComponent, projectile, result) => {
-    const event = new ProjectileHit(projectile, result.getEntity(), result);
+    const event = new ProjectileHitEvent(projectile, result.getEntity(), result);
     events.projectileHit.fire(event);
     decay(projectileComponent);
     decay(result);
