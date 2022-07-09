@@ -15,7 +15,7 @@ import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64T
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
-import { Player, PlayerPermission, ServerPlayer, SimulatedPlayer } from "bdsx/bds/player";
+import { Player, PlayerPermission, SimulatedPlayer } from "bdsx/bds/player";
 import { proc } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
 import { capi } from "bdsx/capi";
