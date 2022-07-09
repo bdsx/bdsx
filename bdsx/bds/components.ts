@@ -1,7 +1,8 @@
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
 import { int32_t, void_t } from "../nativetype";
+import { Actor } from "./actor";
 import { JsonValue } from "./connreq";
 
 @nativeClass(null)
@@ -59,4 +60,11 @@ export class OnHitSubcomponent extends NativeClass {
 export class SplashPotionEffectSubcomponent extends OnHitSubcomponent {
     @nativeField(int32_t)
     potionEffect: int32_t;
+}
+
+@nativeClass(null)
+export class HitResult extends AbstractClass {
+    getEntity(): Actor | null {
+        abstract();
+    }
 }

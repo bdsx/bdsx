@@ -29,7 +29,7 @@ import { Command, CommandContext, CommandOutput, CommandOutputParameter, Command
 import { CommandName } from "./commandname";
 import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import './commandparsertypes';
-import { OnHitSubcomponent } from "./components";
+import { HitResult, OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectInstance } from "./effects";
@@ -1480,6 +1480,8 @@ StructureManager.prototype.getOrCreate = procHacker.js("?getOrCreate@StructureMa
 OnHitSubcomponent.prototype.readfromJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?readfromJSON@FreezeOnHitSubcomponent@@UEAAXAEAVValue@Json@@AEBVSemVersion@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
 OnHitSubcomponent.prototype.writetoJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?writetoJSON@FreezeOnHitSubcomponent@@UEBAXAEAVValue@Json@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
 (OnHitSubcomponent.prototype as any)._getName = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?getName@FreezeOnHitSubcomponent@@UEAAPEBDXZ', StaticPointer, {this:OnHitSubcomponent});
+
+HitResult.prototype.getEntity = procHacker.js("?getEntity@HitResult@@QEBAPEAVActor@@XZ", Actor, {this:HitResult});
 
 // chunk.ts
 LevelChunk.prototype.getBiome = procHacker.js("?getBiome@LevelChunk@@QEBAAEAVBiome@@AEBVChunkBlockPos@@@Z", Biome, {this:LevelChunk});
