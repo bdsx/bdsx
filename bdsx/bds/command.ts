@@ -1492,7 +1492,7 @@ export class Command extends NativeClass {
             if (enumNameOrPostfix != null) throw Error(`CommandEnum does not support postfix`);
             param.enumNameOrPostfix = paramType.nameUtf8;
         } else if (paramType instanceof CommandSoftEnum) {
-            // a soft enum is a string with autocompletions, for example, objectives in /scoreboard
+            // a soft enum is a string with auto completions, for example, objectives in /scoreboard
             if (enumNameOrPostfix != null) throw Error(`CommandSoftEnum does not support postfix`);
             param.enumNameOrPostfix = paramType.nameUtf8;
         } else {

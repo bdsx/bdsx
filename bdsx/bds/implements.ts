@@ -584,8 +584,10 @@ class UserEntityIdentifierComponent extends NativeClass {
     networkIdentifier:NetworkIdentifier;
     @nativeField(mce.UUID, 0xa8) // accessed in PlayerListEntry::PlayerListEntry after calling entt::basic_registry<EntityId>::try_get<UserEntityIdentifierComponent>
     uuid:mce.UUID;
+    @nativeField(Certificate.ref(), {ghost:true, offset:0xd8})
+    certifiate:Certificate;
     @nativeField(Certificate.ref(), 0xd8) // accessed in ServerNetworkHandler::_displayGameMessage before calling ExtendedCertificate::getXuid
-    certifiate:Certificate; // it's ExtendedCertificate actually
+    certificate:Certificate; // it's ExtendedCertificate actually
 }
 
 EntityContextBase.prototype.isValid = procHacker.js('?isValid@EntityContextBase@@QEBA_NXZ', bool_t, {this:EntityContextBase});
@@ -598,7 +600,7 @@ Player.prototype.getCertificate = function() {
     const base = this.ctxbase;
     if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
     const registry = base._enttRegistry();
-    return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
+    return Registry_getEntityIdentifierComponent(registry, base.entityId).certificate;
 };
 Player.prototype.getDestroySpeed = procHacker.js('?getDestroySpeed@Player@@QEBAMAEBVBlock@@@Z', float32_t, {this:Player}, Block.ref());
 Player.prototype.canDestroy = procHacker.js('?canDestroy@Player@@QEBA_NAEBVBlock@@@Z', bool_t, {this:Player}, Block.ref());

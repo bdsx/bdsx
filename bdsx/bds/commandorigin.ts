@@ -2,11 +2,9 @@ import { BlockPos, Vec3 } from "../bds/blockpos";
 import { capi } from "../capi";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import { CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
-import { pdbcache } from "../pdbcache";
 import { procHacker } from "../prochacker";
 import { Actor } from "./actor";
 import type { CommandPermissionLevel, CommandPositionFloat } from "./command";
@@ -86,7 +84,7 @@ export class CommandOrigin extends AbstractClass {
     }
 
     /**
-     * Returns the dimension of the recieved command
+     * Returns the dimension of the received command
      */
     getDimension(): Dimension {
         abstract();
