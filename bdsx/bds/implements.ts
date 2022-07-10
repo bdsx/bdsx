@@ -584,8 +584,6 @@ class UserEntityIdentifierComponent extends NativeClass {
     networkIdentifier:NetworkIdentifier;
     @nativeField(mce.UUID, 0xa8) // accessed in PlayerListEntry::PlayerListEntry after calling entt::basic_registry<EntityId>::try_get<UserEntityIdentifierComponent>
     uuid:mce.UUID;
-    @nativeField(Certificate.ref(), {ghost:true, offset:0xd8})
-    certifiate:Certificate;
     @nativeField(Certificate.ref(), 0xd8) // accessed in ServerNetworkHandler::_displayGameMessage before calling ExtendedCertificate::getXuid
     certificate:Certificate; // it's ExtendedCertificate actually
 }
