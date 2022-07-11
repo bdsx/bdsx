@@ -398,3 +398,42 @@ export class ChestBlockActor extends BlockActor {
         abstract();
     }
 }
+
+@nativeClass(null)
+export class BlockUtils extends NativeClass{
+    static isDownwardFlowingLiquid(block: Block): boolean{
+        abstract();
+    }
+
+    static isBeehiveBlock(block: BlockLegacy): boolean{
+        abstract();
+    }
+
+    static isWaterSource(block: Block): boolean{
+        abstract();
+    }
+
+    static isFullFlowingLiquid(block: Block): boolean{
+        abstract();
+    }
+
+    static allowsNetherVegetation(block: BlockLegacy): boolean{
+        abstract();
+    }
+
+    static isThinFenceOrWallBlock(block: Block): boolean{
+        abstract();
+    }
+
+    static isLiquidSource(block: Block): boolean{
+        abstract();
+    }
+
+    static getLiquidBlockHeight(block: Block, blockPos: BlockPos): number{
+        abstract();
+    }
+
+    static canGrowTreeWithBeehive(block: Block): boolean{
+        abstract();
+    }
+}
