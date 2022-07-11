@@ -16,6 +16,10 @@ export namespace Bedrock {
             return p && p.value;
         }
 
+        assign(value:NonOwnerPointer<T>):void {
+            this.sharedptr.assign(value.sharedptr);
+        }
+
         dispose():void {
             return this.sharedptr.dispose();
         }

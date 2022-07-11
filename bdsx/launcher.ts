@@ -3,6 +3,7 @@ import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
+import { Bedrock } from './bds/bedrock';
 import type { CommandOutputSender, CommandPermissionLevel, CommandRegistry, MinecraftCommands } from "./bds/command";
 import { Dimension } from "./bds/dimension";
 import { GameRules } from './bds/gamerules';
@@ -192,6 +193,8 @@ function _launch(asyncResolve:()=>void):void {
         decay(bedrockServer.gameRules);
         decay(bedrockServer.rakPeer);
         decay(bedrockServer.commandOutputSender);
+        bedrockServer.nonOwnerPointerServerNetworkHandler.dispose();
+        decay(bedrockServer.nonOwnerPointerServerNetworkHandler);
     }, void_t);
     asmcode.gameThreadInner = proc['<lambda_6bba4b5f970ab4858c43a404f193fd38>::operator()'];
     asmcode.free = dll.ucrtbase.free.pointer;
@@ -221,7 +224,7 @@ function _launch(asyncResolve:()=>void):void {
     // seh wrapped main
     bedrock_server_exe.args.as(NativePointer).setPointer(null, 8); // remove options
     asmcode.bedrock_server_exe_args = bedrock_server_exe.args;
-    asmcode.bedrock_server_exe_argc = 1; //bedrock_server_exe.argc;
+    asmcode.bedrock_server_exe_argc = 1; // bedrock_server_exe.argc;
     asmcode.bedrock_server_exe_main = bedrock_server_exe.main;
     asmcode.finishCallback = makefunc.np(finishCallback, void_t);
 
@@ -276,12 +279,13 @@ function _launch(asyncResolve:()=>void):void {
                 const minecraft = serverInstance.minecraft;
                 const dedicatedServer = serverInstance.server;
                 const level = minecraft.getLevel().as(ServerLevel);
-                const serverNetworkHandler = minecraft.getServerNetworkHandler();
+                const nonOwnerPointerServerNetworkHandler = minecraft.getNonOwnerPointerServerNetworkHandler();
                 const minecraftCommands = minecraft.getCommands();
                 const commandRegistry = minecraftCommands.getRegistry();
                 const gameRules = level.getGameRules();
                 const rakPeer = networkHandler.instance.peer;
                 const commandOutputSender = minecraftCommands.sender;
+                const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get();
 
                 Object.defineProperties(bedrockServer, {
                     serverInstance: {value: serverInstance},
@@ -290,6 +294,7 @@ function _launch(asyncResolve:()=>void):void {
                     dedicatedServer: {value: dedicatedServer},
                     level: {value: level},
                     serverNetworkHandler: {value: serverNetworkHandler},
+                    nonOwnerPointerServerNetworkHandler: {value: nonOwnerPointerServerNetworkHandler},
                     minecraftCommands: {value: minecraftCommands},
                     commandRegistry: {value: commandRegistry},
                     gameRules: {value: gameRules},
@@ -368,6 +373,8 @@ export namespace bedrockServer {
     export let rakPeer:RakNet.RakPeer = abstractobject;
     // eslint-disable-next-line prefer-const
     export let commandOutputSender:CommandOutputSender = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let nonOwnerPointerServerNetworkHandler:Bedrock.NonOwnerPointer<nimodule.ServerNetworkHandler> = abstractobject;
 
     Object.defineProperty(bd_server, 'serverInstance', {value: abstractobject, writable: true});
     Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});

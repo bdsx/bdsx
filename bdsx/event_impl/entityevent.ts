@@ -1,6 +1,6 @@
 import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, ItemActor } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
-import { ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
+import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
@@ -225,6 +225,10 @@ export class PlayerDimensionChangeEvent {
         public useNetherPortal: boolean,
     ) {
     }
+}
+
+export class ProjectileHitEvent {
+    constructor(public projectile: Actor, public victim: Actor | null, public result: HitResult) {}
 }
 
 function onPlayerJump(player: Player):void {
@@ -507,3 +511,18 @@ function onPlayerDimensionChange(player: ServerPlayer, dimension: DimensionId, u
 }
 
 const _onPlayerDimensionChange = procHacker.hooking("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@_N@Z", void_t, null, ServerPlayer, int32_t, bool_t)(onPlayerDimensionChange);
+
+const onProjectileHit = procHacker.hooking(
+    "?onHit@ProjectileComponent@@QEAAXAEAVActor@@AEBVHitResult@@@Z",
+    void_t,
+    null,
+    ProjectileComponent,
+    Actor,
+    HitResult,
+)((projectileComponent, projectile, result) => {
+    const event = new ProjectileHitEvent(projectile, result.getEntity(), result);
+    events.projectileHit.fire(event);
+    decay(projectileComponent);
+    decay(result);
+    return onProjectileHit(projectileComponent, projectile, result);
+});

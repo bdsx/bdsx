@@ -30,6 +30,7 @@ import './net-scorepacket';
 import './net-sendhook';
 import './net-transferserver';
 import './setblock';
+import './simulatedplayer';
 import './test';
 import './vulnerabilities';
 // import './permissions';

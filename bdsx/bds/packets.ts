@@ -1922,12 +1922,12 @@ export namespace NpcDialoguePacket {
 //     // unknown
 // }
 
-/**@deprecated not available */
+/** @deprecated not available */
 export class BlockPalette extends Packet {
     // unknown
 }
 
-/**@deprecated not available */
+/** @deprecated not available */
 export class VideoStreamConnect_DEPRECATED extends Packet {
     // unknown
 }

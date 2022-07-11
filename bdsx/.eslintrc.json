@@ -73,6 +73,7 @@
           "group": ["bdsx/*"],
           "message": "Please use the relative path in bdsx libraries."
         }]
-      }]
+      }],
+      "spaced-comment": ["error", "always", { "exceptions": ["/"], "markers": ["/"] }]
     }
 }

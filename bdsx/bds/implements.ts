@@ -29,7 +29,7 @@ import { Command, CommandContext, CommandOutput, CommandOutputParameter, Command
 import { CommandName } from "./commandname";
 import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import './commandparsertypes';
-import { OnHitSubcomponent } from "./components";
+import { HitResult, OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectInstance } from "./effects";
@@ -60,6 +60,9 @@ import { proc } from "./symbols";
 
 // Wrappers
 const WrappedInt32 = Wrapper.make(int32_t);
+
+// std::vector
+const CxxVector$Vec3 = CxxVector.make(Vec3);
 
 // utils
 namespace CommandUtils {
@@ -576,9 +579,11 @@ Player.prototype.setSpeed = procHacker.js('?setSpeed@Player@@UEAAXM@Z', void_t, 
 (Player.prototype as any)._sendInventory = procHacker.js('?sendInventory@Player@@UEAAX_N@Z', void_t, {this:Player}, bool_t);
 
 @nativeClass(null)
-class EntityIdentifierComponent extends NativeClass {
+class UserEntityIdentifierComponent extends NativeClass {
     @nativeField(NetworkIdentifier)
     networkIdentifier:NetworkIdentifier;
+    @nativeField(mce.UUID, 0xa8) // accessed in PlayerListEntry::PlayerListEntry after calling entt::basic_registry<EntityId>::try_get<UserEntityIdentifierComponent>
+    uuid:mce.UUID;
     @nativeField(Certificate.ref(), 0xd8) // accessed in ServerNetworkHandler::_displayGameMessage before calling ExtendedCertificate::getXuid
     certifiate:Certificate; // it's ExtendedCertificate actually
 }
@@ -586,12 +591,12 @@ class EntityIdentifierComponent extends NativeClass {
 EntityContextBase.prototype.isValid = procHacker.js('?isValid@EntityContextBase@@QEBA_NXZ', bool_t, {this:EntityContextBase});
 EntityContextBase.prototype._enttRegistry = procHacker.js('?_enttRegistry@EntityContextBase@@IEAAAEAV?$basic_registry@VEntityId@@@entt@@XZ', VoidPointer, {this:EntityContextBase});
 
-const Registry_getEntityIdentifierComponent = procHacker.js('??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z', EntityIdentifierComponent, null, VoidPointer, int32_t.ref());
+const Registry_getEntityIdentifierComponent = procHacker.js('??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@@entt@@QEBA?A_PVEntityId@@@Z', UserEntityIdentifierComponent, null, VoidPointer, int32_t.ref());
 
 Player.prototype.getCertificate = function() {
     // part of ServerNetworkHandler::_displayGameMessage
     const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`is not valid`);
+    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
     const registry = base._enttRegistry();
     return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
 };
@@ -609,6 +614,12 @@ Player.prototype.getPlayerUIItem = procHacker.js("?getPlayerUIItem@Player@@QEAAA
 Player.prototype.setPlayerUIItem = procHacker.js("?setPlayerUIItem@Player@@QEAAXW4PlayerUISlot@@AEBVItemStack@@@Z", void_t, {this:Player}, int32_t, ItemStack.ref());
 Player.prototype.getPlatform = procHacker.js("?getPlatform@Player@@QEBA?AW4BuildPlatform@@XZ", int32_t, {this:Player});
 Player.prototype.getXuid = procHacker.js("?getXuid@Player@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ", CxxString, {this:Player, structureReturn:true});
+Player.prototype.getUuid = function() {
+    const base = this.ctxbase;
+    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
+    const registry = base._enttRegistry();
+    return Registry_getEntityIdentifierComponent(registry, base.entityId).uuid;
+};
 Player.prototype.forceAllowEating = procHacker.js("?forceAllowEating@Player@@QEBA_NXZ", bool_t, {this:Player});
 Player.prototype.getSpeed = procHacker.js("?getSpeed@Player@@UEBAMXZ", float32_t, {this:Player});
 Player.prototype.hasOpenContainer = procHacker.js("?hasOpenContainer@Player@@QEBA_NXZ", bool_t, {this:Player});
@@ -622,6 +633,7 @@ Player.prototype.respawn = procHacker.js("?respawn@Player@@UEAAXXZ", void_t, {th
 Player.prototype.isSimulated = procHacker.js("?isSimulated@Player@@UEBA_NXZ", bool_t, {this: Player});
 Player.prototype.setRespawnReady = procHacker.js('?setRespawnReady@Player@@QEAAXAEBVVec3@@@Z', void_t, {this: Player}, Vec3);
 Player.prototype.setSpawnBlockRespawnPosition = procHacker.js("?setSpawnBlockRespawnPosition@Player@@QEAAXAEBVBlockPos@@V?$AutomaticID@VDimension@@H@@@Z", void_t, {this: Player}, BlockPos, int32_t);
+Player.prototype.setSelectedSlot = procHacker.js("?setSelectedSlot@Player@@QEAAAEBVItemStack@@H@Z", ItemStack, {this:Player}, int32_t);
 
 ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("?_nextContainerCounter@ServerPlayer@@AEAA?AW4ContainerID@@XZ", int8_t, {this: ServerPlayer});
@@ -631,7 +643,7 @@ ServerPlayer.prototype.sendNetworkPacket = procHacker.js("?sendNetworkPacket@Ser
 ServerPlayer.prototype.getNetworkIdentifier = function () {
     // part of ServerPlayer::sendNetworkPacket
     const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`is not valid`);
+    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
     const registry = base._enttRegistry();
     const res = Registry_getEntityIdentifierComponent(registry, base.entityId);
     return res.networkIdentifier;
@@ -642,9 +654,81 @@ ServerPlayer.prototype.setInputMode = procHacker.js("?setInputMode@ServerPlayer@
 ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPlayer@@UEAAXAEBVItemStack@@@Z', void_t, {this:ServerPlayer}, ItemStack);
 (ServerPlayer.prototype as any)._sendInventory = procHacker.js('?sendInventory@ServerPlayer@@UEAAX_N@Z', void_t, {this:ServerPlayer}, bool_t);
 
+const ServerNetworkHandlerNonOwnerPointer = Bedrock.NonOwnerPointer.make(ServerNetworkHandler);
 SimulatedPlayer.abstract({});
-SimulatedPlayer.create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, Bedrock.NonOwnerPointer<ServerNetworkHandler>);
+const SimulatedPlayer$create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, ServerNetworkHandlerNonOwnerPointer);
+
+const shHandler = ServerNetworkHandlerNonOwnerPointer.construct();
+
+SimulatedPlayer.create = function(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId) {
+    if (!(blockPos instanceof BlockPos)) blockPos = BlockPos.create(blockPos);
+    shHandler.assign(bedrockServer.nonOwnerPointerServerNetworkHandler);
+    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, shHandler); // it destructs snHandler
+};
 SimulatedPlayer.prototype.simulateDisconnect = procHacker.js('?simulateDisconnect@SimulatedPlayer@@QEAAXXZ', void_t, {this: SimulatedPlayer});
+SimulatedPlayer.prototype.simulateAttack = procHacker.js("?simulateAttack@SimulatedPlayer@@QEAA_NPEAVActor@@@Z",bool_t,{this:SimulatedPlayer},Actor);
+const SimulatedPlayer$simulateLookAtEntity = procHacker.js("?simulateLookAt@SimulatedPlayer@@QEAAXAEAVActor@@@Z",void_t,null,SimulatedPlayer,Actor);
+const SimulatedPlayer$simulateLookAtBlock = procHacker.js("?simulateLookAt@SimulatedPlayer@@QEAAXAEBVBlockPos@@@Z",void_t,null,SimulatedPlayer,BlockPos);
+const SimulatedPlayer$simulateLookAtLocation = procHacker.js("?simulateLookAt@SimulatedPlayer@@QEAAXAEBVVec3@@@Z",void_t,null,SimulatedPlayer,Vec3);
+SimulatedPlayer.prototype.simulateLookAt = function(target:BlockPos|Actor|Vec3){
+    if(target instanceof Actor){
+        SimulatedPlayer$simulateLookAtEntity(this,target);
+    }else if(target instanceof BlockPos){
+        SimulatedPlayer$simulateLookAtBlock(this,target);
+    }else{
+        SimulatedPlayer$simulateLookAtLocation(this,target);
+    }
+};
+
+/*
+TODO: Implement `ScriptNavigationResult`
+const SimulatedPlayer$simulateNavigateToEntity = procHacker.js("?simulateNavigateToEntity@SimulatedPlayer@@QEAA?AUScriptNavigationResult@@AEAVActor@@M@Z",void_t,null,SimulatedPlayer,Actor,float32_t);
+const SimulatedPlayer$simulateNavigateToLocation = procHacker.js("?simulateNavigateToLocation@SimulatedPlayer@@QEAA?AUScriptNavigationResult@@AEBVVec3@@M@Z",void_t,null,SimulatedPlayer,Vec3,float32_t);
+SimulatedPlayer.prototype.simulateNavigateTo = function(goal:Actor|Vec3, speed:number){
+    if(goal instanceof Vec3){
+        SimulatedPlayer$simulateNavigateToLocation(this,goal,speed);
+    }else{
+        SimulatedPlayer$simulateNavigateToEntity(this,goal,speed);
+    }
+}; */
+
+const SimulatedPlayer$simulateNavigateToLocations = procHacker.js("?simulateNavigateToLocations@SimulatedPlayer@@QEAAX$$QEAV?$vector@VVec3@@V?$allocator@VVec3@@@std@@@std@@M@Z", void_t, null, SimulatedPlayer, CxxVector$Vec3, float32_t);
+SimulatedPlayer.prototype.simulateNavigateToLocations = function (_locations, speed) {
+    const locations = CxxVector$Vec3.construct();
+    locations.reserve(_locations.length);
+    for (const location of _locations) {
+        locations.push(location);
+    }
+    SimulatedPlayer$simulateNavigateToLocations(this, locations, speed);
+    locations.destruct();
+};
+
+SimulatedPlayer.prototype.simulateInteractWithActor = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEAVActor@@@Z",bool_t,{this:SimulatedPlayer},Actor);
+const SimulatedPlayer$simulateInteractWithBlock = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,uint8_t);
+SimulatedPlayer.prototype.simulateInteractWithBlock = function(blockPos:BlockPos,direction:number=1){
+    return SimulatedPlayer$simulateInteractWithBlock(this,blockPos, direction);
+};
+SimulatedPlayer.prototype.simulateJump = procHacker.js("?simulateJump@SimulatedPlayer@@QEAA_NXZ",void_t,{this:SimulatedPlayer});
+SimulatedPlayer.prototype.simulateSetBodyRotation = procHacker.js("?simulateSetBodyRotation@SimulatedPlayer@@QEAAXM@Z",void_t,{this:SimulatedPlayer},float32_t);
+SimulatedPlayer.prototype.simulateSetItem = procHacker.js("?simulateSetItem@SimulatedPlayer@@QEAA_NAEAVItemStack@@_NH@Z",bool_t,{this:SimulatedPlayer},ItemStack,bool_t,int32_t);
+const SimulatedPlayer$simulateDestroyBlock = procHacker.js("?simulateDestroyBlock@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,int32_t);
+SimulatedPlayer.prototype.simulateDestroyBlock = function(pos:BlockPos,direction:number=1){
+    return SimulatedPlayer$simulateDestroyBlock(this,pos, direction);
+};
+SimulatedPlayer.prototype.simulateStopDestroyingBlock = procHacker.js("?simulateStopDestroyingBlock@SimulatedPlayer@@QEAAXXZ",void_t,{this:SimulatedPlayer});
+SimulatedPlayer.prototype.simulateLocalMove = procHacker.js("?simulateLocalMove@SimulatedPlayer@@QEAAXAEBVVec3@@M@Z",void_t,{this:SimulatedPlayer},Vec3,float32_t);
+SimulatedPlayer.prototype.simulateMoveToLocation = procHacker.js("?simulateMoveToLocation@SimulatedPlayer@@QEAAXAEBVVec3@@M@Z",void_t,{this:SimulatedPlayer},Vec3,float32_t);
+SimulatedPlayer.prototype.simulateStopMoving = procHacker.js("?simulateStopMoving@SimulatedPlayer@@QEAAXXZ",void_t,{this:SimulatedPlayer});
+SimulatedPlayer.prototype.simulateUseItem = procHacker.js("?simulateUseItem@SimulatedPlayer@@QEAA_NAEAVItemStack@@@Z",bool_t,{this:SimulatedPlayer},ItemStack);
+SimulatedPlayer.prototype.simulateUseItemInSlot = procHacker.js("?simulateUseItemInSlot@SimulatedPlayer@@QEAA_NH@Z",bool_t,{this:SimulatedPlayer},int32_t);
+const SimulatedPlayer$simulateUseItemOnBlock = procHacker.js("?simulateUseItemOnBlock@SimulatedPlayer@@QEAA_NAEAVItemStack@@AEBVBlockPos@@W4ScriptFacing@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,ItemStack,BlockPos,int32_t,Vec3);
+SimulatedPlayer.prototype.simulateUseItemOnBlock = function(item:ItemStack,pos:BlockPos,direction:number=1,clickPos:Vec3){
+    return SimulatedPlayer$simulateUseItemOnBlock(this,item,pos,direction,clickPos);
+};
+const SimulatedPlayer$simulateUseItemInSlotOnBlock = procHacker.js("?simulateUseItemInSlotOnBlock@SimulatedPlayer@@QEAA_NHAEBVBlockPos@@W4ScriptFacing@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,int32_t,BlockPos,int32_t,Vec3);
+SimulatedPlayer.prototype.simulateUseItemInSlotOnBlock = function(slot:number,pos:BlockPos,direction:number=1,clickPos:Vec3){
+    return SimulatedPlayer$simulateUseItemInSlotOnBlock(this, slot, pos, direction, clickPos);
+};
 
 const PlayerListEntry$PlayerListEntry = procHacker.js("??0PlayerListEntry@@QEAA@AEBVPlayer@@@Z", PlayerListEntry, null, PlayerListEntry, Player);
 PlayerListEntry.constructWith = function(player:Player):PlayerListEntry {
@@ -766,10 +850,7 @@ Minecraft.prototype.getLevel = procHacker.js("?getLevel@Minecraft@@QEBAPEAVLevel
 Minecraft.prototype.getNetworkHandler = procHacker.js("?getNetworkHandler@Minecraft@@QEAAAEAVNetworkHandler@@XZ", NetworkHandler, {this:Minecraft});
 Minecraft.prototype.getNonOwnerPointerServerNetworkHandler = procHacker.js("?getServerNetworkHandler@Minecraft@@QEAA?AV?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@XZ", Bedrock.NonOwnerPointer.make(ServerNetworkHandler), {this:Minecraft, structureReturn: true});
 Minecraft.prototype.getServerNetworkHandler = function() {
-    const ptr = this.getNonOwnerPointerServerNetworkHandler();
-    const out = ptr.get();
-    ptr.dispose(); // the output will be alive if it has the reference anyway.
-    return out!;
+    return bedrockServer.serverNetworkHandler;
 };
 Minecraft.prototype.getCommands = procHacker.js("?getCommands@Minecraft@@QEAAAEAVMinecraftCommands@@XZ", MinecraftCommands, {this:Minecraft});
 ScriptFramework.abstract({
@@ -1400,6 +1481,8 @@ OnHitSubcomponent.prototype.readfromJSON = procHacker.jsv('??_7FreezeOnHitSubcom
 OnHitSubcomponent.prototype.writetoJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?writetoJSON@FreezeOnHitSubcomponent@@UEBAXAEAVValue@Json@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
 (OnHitSubcomponent.prototype as any)._getName = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?getName@FreezeOnHitSubcomponent@@UEAAPEBDXZ', StaticPointer, {this:OnHitSubcomponent});
 
+HitResult.prototype.getEntity = procHacker.js("?getEntity@HitResult@@QEBAPEAVActor@@XZ", Actor, {this:HitResult});
+
 // chunk.ts
 LevelChunk.prototype.getBiome = procHacker.js("?getBiome@LevelChunk@@QEBAAEAVBiome@@AEBVChunkBlockPos@@@Z", Biome, {this:LevelChunk});
 LevelChunk.prototype.getLevel = procHacker.js("?getLevel@LevelChunk@@QEBAAEAVLevel@@XZ", Level, {this:LevelChunk});
@@ -1428,7 +1511,7 @@ VirtualCommandOrigin.constructWith = function(origin:CommandOrigin, actor:Actor,
 // biome.ts
 Biome.prototype.getBiomeType = procHacker.js("?getBiomeType@Biome@@QEBA?AW4VanillaBiomeTypes@@XZ", uint32_t, {this:Biome});
 
-//item_component.ts
+// item_component.ts
 const itemComponents = new Map<bin64_t, new()=>ItemComponent>([
     [proc["??_7CooldownItemComponent@@6B@"].getAddressBin(), CooldownItemComponent], // CooldownItemComponent$vftable
     [proc["??_7ArmorItemComponent@@6B@"].getAddressBin(), ArmorItemComponent], // ArmorItemComponent$vftable
@@ -1621,7 +1704,7 @@ function executeCommandWithOutput(command:string, origin:CommandOrigin, mute:Com
             }
             const message = cmdparser.getErrorMessage();
             output.error(message, outputParams); // outputParams is destructed by output.error
-            res.result = 0; //MCRESULT_FailedToParseCommand;
+            res.result = 0; // MCRESULT_FailedToParseCommand;
         }
 
         output.set_int('statusCode', res.getFullCode());

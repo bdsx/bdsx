@@ -39,6 +39,8 @@ export class BlockPos extends NativeStruct {
     }
 
     static create(pos: Vec3): BlockPos;
+    static create(pos: BlockPos): BlockPos;
+    static create(pos: {x:number, y:number, z:number}): BlockPos;
     static create(x:number, y:number, z:number):BlockPos;
     static create(a:number|{x:number, y:number, z:number}, b?:number, c?:number):BlockPos {
         const v = new BlockPos(true);

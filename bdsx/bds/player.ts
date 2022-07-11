@@ -1,10 +1,12 @@
 import { abstract, BuildPlatform } from "../common";
+import { mce } from "../mce";
+import { float32_t } from "../nativetype";
 import type { Abilities } from "./abilities";
-import { ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
+import { Actor, ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Block } from "./block";
-import type { BlockPos, Vec3 } from "./blockpos";
+import { BlockPos, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
 import { HashedString } from "./hashedstring";
@@ -395,6 +397,12 @@ export class Player extends Mob {
     getXuid(): string {
         abstract();
     }
+    /**
+     * Returns the player's UUID
+     */
+    getUuid(): mce.UUID {
+        abstract();
+    }
     forceAllowEating(): boolean {
         abstract();
     }
@@ -476,6 +484,16 @@ export class Player extends Mob {
      */
     setSpawnBlockRespawnPosition(blockPos: BlockPos, dimensionId: DimensionId): void{
         abstract();
+    }
+
+    setSelectedSlot(slot: number): ItemStack {
+        abstract();
+    }
+    /**
+     * @deprecated typo. Please use setSelectedSlot instead.
+     * */
+    setSelecetdSlot(slot: number): ItemStack {
+        return this.setSelectedSlot(slot);
     }
 }
 
@@ -928,9 +946,20 @@ export class SimulatedPlayer extends ServerPlayer{
      * @param name
      * @param blockPos
      * @param dimensionId
-     * @param nonOwnerPointerServerNetworkHandler Minecraft.getNonOwnerPointerServerNetworkHandler()
      */
-    static create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
+    static create(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId): SimulatedPlayer;
+
+    /**
+     * Create SimulatedPlayer
+     * @param name
+     * @param blockPos
+     * @param dimensionId
+     * @param nonOwnerPointerServerNetworkHandler Minecraft.getNonOwnerPointerServerNetworkHandler()
+     * @deprecated no need to pass serverNetworkHandler
+     */
+    static create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer;
+
+    static create(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler?: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
         abstract();
     }
 
@@ -938,6 +967,66 @@ export class SimulatedPlayer extends ServerPlayer{
      * Simulate disconnect
      */
     simulateDisconnect(): void{
+        abstract();
+    }
+    simulateLookAt(target: Actor): void;
+    simulateLookAt(target: Vec3): void;
+    simulateLookAt(target: BlockPos): void;
+    simulateLookAt(target:BlockPos|Actor|Vec3):void{
+        abstract();
+    }
+    simulateJump():void{
+        abstract();
+    }
+    simulateSetBodyRotation(rotation:number):void{
+        abstract();
+    }
+    simulateSetItem(item:ItemStack,selectSlot:boolean,slot:number):boolean{
+        abstract();
+    }
+    simulateDestroyBlock(pos:BlockPos,direction:number=1):boolean{
+        abstract();
+    }
+    simulateStopDestroyingBlock():void{
+        abstract();
+    }
+    simulateLocalMove(pos:Vec3,speed:number):void{
+        abstract();
+    }
+    simulateMoveToLocation(pos:Vec3,speed:number):void{
+        abstract();
+    }
+    /* move to target with navigation
+    TODO: Implement `ScriptNavigationResult`
+    /* simulateNavigateTo(goal:Actor|Vec3, speed:number):void{
+        abstract();
+    } */
+    simulateNavigateToLocations(locations: Vec3[], speed: float32_t): void {
+        abstract();
+    }
+    simulateStopMoving():void{
+        abstract();
+    }
+    /** It attacks regardless of reach */
+    simulateAttack(target:Actor):boolean{
+        abstract();
+    }
+    simulateInteractWithActor(target:Actor):boolean{
+        abstract();
+    }
+    simulateInteractWithBlock(blockPos:BlockPos,direction:number=1):boolean{
+        abstract();
+    }
+    simulateUseItem(item:ItemStack):boolean{
+        abstract();
+    }
+    simulateUseItemOnBlock(item:ItemStack,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)):boolean{
+        abstract();
+    }
+    simulateUseItemInSlot(slot:number):boolean{
+        abstract();
+    }
+    simulateUseItemInSlotOnBlock(slot:number,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)):boolean{
         abstract();
     }
 }
