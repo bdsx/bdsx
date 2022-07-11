@@ -300,7 +300,11 @@ export enum ActorFlags {
     InLove,
     Saddled,
     Powered,
+    /**
+     * @deprecated typo.
+     */
     Ignit0ed,
+    Ignited,
     Baby,
     Converting,
     Critical,
