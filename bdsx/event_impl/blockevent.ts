@@ -319,21 +319,26 @@ const Block$attack = procHacker.hooking("?attack@Block@@QEBA_NPEAVPlayer@@AEBVBl
 export class SculkShriekEvent {
     constructor(public region:BlockSource,public blockPos: BlockPos,public entity:Actor|null){}
 }
-function onSculkShriek(region: BlockSource, blockPos: BlockPos, entity: Actor|null):void{
+function onSculkShriek(sculkShriekerBlockActorInternal:StaticPointer, region: BlockSource, blockPos: BlockPos, entity: Actor|null):void{
     const event = new SculkShriekEvent(region, blockPos, entity);
     const canceled = events.sculkShriek.fire(event) === CANCEL;
+    decay(sculkShriekerBlockActorInternal);
+    decay(region);
+    decay(blockPos);
     if(canceled) return;
-    return sculk$shriek(region, blockPos, entity);
+    return SculkShriekerBlock$_shriek(sculkShriekerBlockActorInternal, region, blockPos, entity);
 }
-const sculk$shriek = procHacker.hooking("?_shriek@SculkShriekerBlock@@CAXAEAVBlockSource@@VBlockPos@@PEAVActor@@@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkShriek);
+const SculkShriekerBlock$_shriek = procHacker.hooking("?_shriek@SculkShriekerBlockActorInternal@@YAXAEAVBlockSource@@VBlockPos@@AEAVPlayer@@@Z",void_t,null,StaticPointer,BlockSource,BlockPos,Actor)(onSculkShriek);
 
 export class SculkSensorActivateEvent {
     constructor(public region:BlockSource,public pos:BlockPos,public entity:Actor|null){}
 }
-function onSculkSensorActivate(region:BlockSource,pos:BlockPos,entity:Actor|null):void{
+function onSculkSensorActivate(region:BlockSource,pos:BlockPos,entity:Actor|null,unknown:int32_t):void{
     const event = new SculkSensorActivateEvent(region,pos,entity);
     const canceled = events.sculkSensorActivate.fire(event) === CANCEL;
+    decay(region);
+    decay(pos);
     if(canceled) return;
-    return sculkSensor$Activate(region,pos,entity);
+    return sculkSensor$Activate(region,pos,entity,unknown);
 }
-const sculkSensor$Activate = procHacker.hooking("?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEBVActor@@H@Z",void_t,null,BlockSource,BlockPos,Actor)(onSculkSensorActivate);
+const sculkSensor$Activate = procHacker.hooking("?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@H@Z",void_t,null,BlockSource,BlockPos,Actor,int32_t)(onSculkSensorActivate);

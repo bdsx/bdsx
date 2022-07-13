@@ -187,7 +187,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         const buffer = ptr.getBuffer(originalCode.length);
         const diff = memdiff(buffer, originalCode);
         if (!memdiff_contains(ignoreArea, diff)) {
-            console.error(colors.red(`${subject}: ${key} +0x${offset.toString(16)}: code does not match`));
+            console.error(colors.red(`${subject}: ${key} + 0x${offset.toString(16)}: code does not match`));
             console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
             if (diff.length !== 0) console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
             console.error(colors.red(`${subject}: skip`));
