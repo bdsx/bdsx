@@ -18,7 +18,7 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
-import { Abilities, Ability } from "./abilities";
+import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
@@ -187,10 +187,17 @@ const actorMaps = new Map<string, Actor>();
 const ServerPlayer$vftable = proc["??_7ServerPlayer@@6B@"];
 const ItemActor$vftable = proc["??_7ItemActor@@6B@"];
 const SimulatedPlayer$vftable = proc["??_7SimulatedPlayer@@6B@"];
+const Actor$teleportTo = procHacker.jsv('??_7Actor@@6B@', '?teleportTo@Actor@@UEAAXAEBVVec3@@_NHH1@Z', void_t, {this:Actor}, Vec3, bool_t, int32_t, int32_t, bool_t);
 Actor.abstract({
     vftable: VoidPointer,
     ctxbase: EntityContextBase, // accessed in ServerNetworkHandler::_displayGameMessage before calling EntityContextBase::_enttRegistry
 });
+
+Actor.prototype.changeDimension = procHacker.jsv('??_7Actor@@6B@', '?changeDimension@Actor@@UEAAXV?$AutomaticID@VDimension@@H@@@Z', void_t, {this:Actor}, int32_t);
+Actor.prototype.teleportTo = function(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, unknown?: ActorUniqueID|bool_t) {
+    if (typeof unknown === 'string') unknown = false;
+    Actor$teleportTo.call(this, position, shouldStopRiding, cause, sourceEntityType, unknown);
+};
 
 Actor.prototype.isMob = function() {
     return this instanceof Mob;
@@ -279,11 +286,12 @@ Actor.prototype.getOffhandSlot = procHacker.js("?getOffhandSlot@Actor@@QEBAAEBVI
 Actor.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@Actor@@UEAAXAEBVItemStack@@@Z', void_t, {this:Actor}, ItemStack);
 
 const TeleportCommand$computeTarget = procHacker.js("?computeTarget@TeleportCommand@@SA?AVTeleportTarget@@AEAVActor@@VVec3@@PEAV4@V?$AutomaticID@VDimension@@H@@AEBV?$optional@VTeleportRotationData@@@std@@H@Z", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
-const TeleportCommand$applyTarget = procHacker.js("?applyTarget@TeleportCommand@@SAXAEAVActor@@VTeleportTarget@@@Z", void_t, null, Actor, StaticPointer);
+const TeleportCommand$applyTarget = procHacker.js("?applyTarget@TeleportCommand@@SAXAEAVActor@@VTeleportTarget@@_N@Z", void_t, null, Actor, StaticPointer, bool_t);
 Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3|null=null) {
     const target = new AllocatedPointer(0x80);
-    TeleportCommand$computeTarget(target, this, pos, facePosition, dimensionId);
-    TeleportCommand$applyTarget(this, target);
+    const unknownParam = false;
+    TeleportCommand$computeTarget(target, this, pos, facePosition, dimensionId); // it allocates `target`
+    TeleportCommand$applyTarget(this, target, unknownParam); // it deletes `target`
 };
 Actor.prototype.getArmor = procHacker.js('?getArmor@Actor@@UEBAAEBVItemStack@@W4ArmorSlot@@@Z', ItemStack, {this:Actor}, int32_t);
 
@@ -380,7 +388,7 @@ Actor.prototype.isAlive = procHacker.js('?isAlive@Actor@@UEBA_NXZ', bool_t, {thi
 Actor.prototype.isInvisible = procHacker.js("?isInvisible@Actor@@UEBA_NXZ", bool_t, {this:Actor});
 (Actor.prototype as any)._isRiding = procHacker.js("?isRiding@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 (Actor.prototype as any)._isRidingOn = procHacker.js("?isRiding@Actor@@QEBA_NPEAV1@@Z", bool_t, {this:Actor}, Actor);
-(Actor.prototype as any)._isPassenger = procHacker.js("?isPassenger@Actor@@QEBA_NAEBUActorUniqueID@@@Z", bool_t, {this:Actor}, ActorUniqueID.ref());
+(Actor.prototype as any)._isPassenger = procHacker.js("?isPassenger@Actor@@QEBA_NAEBV1@@Z", bool_t, {this:Actor}, Actor);
 Actor.prototype.setVelocity = procHacker.js("?setVelocity@Actor@@QEAAXAEBVVec3@@@Z", void_t, {this:Actor}, Vec3);
 Actor.prototype.isInWater = procHacker.js("?isInWater@Actor@@UEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.getArmorContainer = procHacker.js("?getArmorContainer@Actor@@QEAAAEAVSimpleContainer@@XZ", SimpleContainer, {this:Actor});
@@ -419,7 +427,6 @@ Actor.prototype.isSurvival = procHacker.jsv("??_7Player@@6B@", "?isSurvival@Play
 Actor.prototype.isSpectator = procHacker.jsv("??_7Player@@6B@", "?isSpectator@Player@@UEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.remove = procHacker.jsv("??_7Actor@@6B@", "?remove@Actor@@UEAAXXZ", void_t, {this:Actor});
 Actor.prototype.isAngry = procHacker.js('?isAngry@Actor@@QEBA_NXZ', bool_t, {this: Actor});
-Actor.prototype.findAttackTarget = procHacker.js('?findAttackTarget@Actor@@UEAAPEAV1@XZ', Actor, {this: Actor});
 Actor.prototype.getBlockTarget = procHacker.js('?getBlockTarget@Actor@@QEBA?AVBlockPos@@XZ', BlockPos, {this: Actor});
 
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
@@ -521,7 +528,7 @@ procHacker.hookingRawWithCallOriginal('??1Actor@@UEAA@XZ', asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    abilities:[Abilities, 0x9d0], // accessed in AbilityCommand::execute when calling Abilities::setAbility
+    abilities:[LayeredAbilities, 0x9cc], // accessed in eAbilityCommand::execut when calling Abilities::setAbility
     playerUIContainer:[PlayerUIContainer, 0x1280], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
     deviceId:[CxxString, 0x2218], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
@@ -541,8 +548,7 @@ Player.prototype.updatePlayerList = function() {
     entry.destruct();
     pk.dispose();
 };
-Player.prototype.changeDimension = procHacker.js("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@_N@Z", void_t, {this:Player}, int32_t, bool_t);
-Player.prototype.teleportTo = procHacker.js("?teleportTo@Player@@UEAAXAEBVVec3@@_NHH@Z", void_t, {this:Player}, Vec3, bool_t, int32_t, int32_t, bin64_t);
+
 Player.prototype.getGameType = procHacker.js("?getPlayerGameType@Player@@QEBA?AW4GameType@@XZ", int32_t, {this:Player});
 Player.prototype.getInventory = procHacker.js("?getSupplies@Player@@QEAAAEAVPlayerInventory@@XZ", PlayerInventory, {this:Player});
 Player.prototype.getCommandPermissionLevel = procHacker.js('?getCommandPermissionLevel@Player@@UEBA?AW4CommandPermissionLevel@@XZ', int32_t, {this:Actor});
@@ -556,10 +562,11 @@ Player.prototype.setSize = procHacker.js("?setSize@Player@@UEAAXMM@Z", void_t, {
 Player.prototype.setSleeping = procHacker.js("?setSleeping@Player@@UEAAX_N@Z", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, {this:Player});
-const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVAbilities@@UActorUniqueID@@_N@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, Abilities, ActorUniqueID, bool_t);
+
+const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVLayeredAbilities@@UActorUniqueID@@@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, LayeredAbilities, ActorUniqueID);
 Player.prototype.syncAbilities = function() {
     const pk = new AdventureSettingsPacket(true);
-    AdventureSettingsPacket$AdventureSettingsPacket(pk, bedrockServer.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin(), false);
+    AdventureSettingsPacket$AdventureSettingsPacket(pk, bedrockServer.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin());
     this.sendPacket(pk);
     pk.destruct();
 };
@@ -656,14 +663,16 @@ ServerPlayer.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@ServerPla
 
 const ServerNetworkHandlerNonOwnerPointer = Bedrock.NonOwnerPointer.make(ServerNetworkHandler);
 SimulatedPlayer.abstract({});
-const SimulatedPlayer$create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@@Z', SimulatedPlayer, null, CxxString, BlockPos, int32_t, ServerNetworkHandlerNonOwnerPointer);
+const SimulatedPlayer$create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVBlockPos@@V?$AutomaticID@VDimension@@H@@V?$not_null@V?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@@gsl@@0@Z',
+    SimulatedPlayer, null, CxxString, BlockPos, int32_t, ServerNetworkHandlerNonOwnerPointer, CxxString);
 
 const shHandler = ServerNetworkHandlerNonOwnerPointer.construct();
 
 SimulatedPlayer.create = function(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId) {
     if (!(blockPos instanceof BlockPos)) blockPos = BlockPos.create(blockPos);
     shHandler.assign(bedrockServer.nonOwnerPointerServerNetworkHandler);
-    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, shHandler); // it destructs snHandler
+    const unknown = '';
+    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, shHandler, unknown); // it destructs snHandler
 };
 SimulatedPlayer.prototype.simulateDisconnect = procHacker.js('?simulateDisconnect@SimulatedPlayer@@QEAAXXZ', void_t, {this: SimulatedPlayer});
 SimulatedPlayer.prototype.simulateAttack = procHacker.js("?simulateAttack@SimulatedPlayer@@QEAA_NPEAVActor@@@Z",bool_t,{this:SimulatedPlayer},Actor);
@@ -704,14 +713,14 @@ SimulatedPlayer.prototype.simulateNavigateToLocations = function (_locations, sp
 };
 
 SimulatedPlayer.prototype.simulateInteractWithActor = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEAVActor@@@Z",bool_t,{this:SimulatedPlayer},Actor);
-const SimulatedPlayer$simulateInteractWithBlock = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,uint8_t);
+const SimulatedPlayer$simulateInteractWithBlock = procHacker.js("?simulateInteract@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@ScriptModuleMinecraft@@@Z",bool_t,null,SimulatedPlayer,BlockPos,uint8_t);
 SimulatedPlayer.prototype.simulateInteractWithBlock = function(blockPos:BlockPos,direction:number=1){
     return SimulatedPlayer$simulateInteractWithBlock(this,blockPos, direction);
 };
 SimulatedPlayer.prototype.simulateJump = procHacker.js("?simulateJump@SimulatedPlayer@@QEAA_NXZ",void_t,{this:SimulatedPlayer});
 SimulatedPlayer.prototype.simulateSetBodyRotation = procHacker.js("?simulateSetBodyRotation@SimulatedPlayer@@QEAAXM@Z",void_t,{this:SimulatedPlayer},float32_t);
 SimulatedPlayer.prototype.simulateSetItem = procHacker.js("?simulateSetItem@SimulatedPlayer@@QEAA_NAEAVItemStack@@_NH@Z",bool_t,{this:SimulatedPlayer},ItemStack,bool_t,int32_t);
-const SimulatedPlayer$simulateDestroyBlock = procHacker.js("?simulateDestroyBlock@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@@@Z",bool_t,null,SimulatedPlayer,BlockPos,int32_t);
+const SimulatedPlayer$simulateDestroyBlock = procHacker.js("?simulateDestroyBlock@SimulatedPlayer@@QEAA_NAEBVBlockPos@@W4ScriptFacing@ScriptModuleMinecraft@@@Z",bool_t,null,SimulatedPlayer,BlockPos,int32_t);
 SimulatedPlayer.prototype.simulateDestroyBlock = function(pos:BlockPos,direction:number=1){
     return SimulatedPlayer$simulateDestroyBlock(this,pos, direction);
 };
@@ -721,12 +730,12 @@ SimulatedPlayer.prototype.simulateMoveToLocation = procHacker.js("?simulateMoveT
 SimulatedPlayer.prototype.simulateStopMoving = procHacker.js("?simulateStopMoving@SimulatedPlayer@@QEAAXXZ",void_t,{this:SimulatedPlayer});
 SimulatedPlayer.prototype.simulateUseItem = procHacker.js("?simulateUseItem@SimulatedPlayer@@QEAA_NAEAVItemStack@@@Z",bool_t,{this:SimulatedPlayer},ItemStack);
 SimulatedPlayer.prototype.simulateUseItemInSlot = procHacker.js("?simulateUseItemInSlot@SimulatedPlayer@@QEAA_NH@Z",bool_t,{this:SimulatedPlayer},int32_t);
-const SimulatedPlayer$simulateUseItemOnBlock = procHacker.js("?simulateUseItemOnBlock@SimulatedPlayer@@QEAA_NAEAVItemStack@@AEBVBlockPos@@W4ScriptFacing@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,ItemStack,BlockPos,int32_t,Vec3);
-SimulatedPlayer.prototype.simulateUseItemOnBlock = function(item:ItemStack,pos:BlockPos,direction:number=1,clickPos:Vec3){
+const SimulatedPlayer$simulateUseItemOnBlock = procHacker.js("?simulateUseItemOnBlock@SimulatedPlayer@@QEAA_NAEAVItemStack@@AEBVBlockPos@@W4ScriptFacing@ScriptModuleMinecraft@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,ItemStack,BlockPos,int32_t,Vec3);
+SimulatedPlayer.prototype.simulateUseItemOnBlock = function(item:ItemStack,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)){
     return SimulatedPlayer$simulateUseItemOnBlock(this,item,pos,direction,clickPos);
 };
-const SimulatedPlayer$simulateUseItemInSlotOnBlock = procHacker.js("?simulateUseItemInSlotOnBlock@SimulatedPlayer@@QEAA_NHAEBVBlockPos@@W4ScriptFacing@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,int32_t,BlockPos,int32_t,Vec3);
-SimulatedPlayer.prototype.simulateUseItemInSlotOnBlock = function(slot:number,pos:BlockPos,direction:number=1,clickPos:Vec3){
+const SimulatedPlayer$simulateUseItemInSlotOnBlock = procHacker.js("?simulateUseItemInSlotOnBlock@SimulatedPlayer@@QEAA_NHAEBVBlockPos@@W4ScriptFacing@ScriptModuleMinecraft@@AEBVVec3@@@Z",bool_t,null,SimulatedPlayer,int32_t,BlockPos,int32_t,Vec3);
+SimulatedPlayer.prototype.simulateUseItemInSlotOnBlock = function(slot:number,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)){
     return SimulatedPlayer$simulateUseItemInSlotOnBlock(this, slot, pos, direction, clickPos);
 };
 
@@ -1208,13 +1217,61 @@ BlockUtils.getLiquidBlockHeight = procHacker.js("?getLiquidBlockHeight@BlockUtil
 BlockUtils.canGrowTreeWithBeehive = procHacker.js("?canGrowTreeWithBeehive@BlockUtils@@SA_NAEBVBlock@@@Z", bool_t, null, Block);
 
 // abilties.ts
-Abilities.prototype.getCommandPermissionLevel = procHacker.js("?getCommandPermissions@Abilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:Abilities});
-Abilities.prototype.getPlayerPermissionLevel = procHacker.js("?getPlayerPermissions@Abilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:Abilities});
-Abilities.prototype.setCommandPermissionLevel = procHacker.js("?setCommandPermissions@Abilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
-Abilities.prototype.setPlayerPermissionLevel = procHacker.js("?setPlayerPermissions@Abilities@@QEAAXW4PlayerPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
-Abilities.prototype.getAbility = procHacker.js("?getAbility@Abilities@@QEAAAEAVAbility@@W4AbilitiesIndex@@@Z", Ability, {this:Abilities}, uint8_t);
-(Abilities.prototype as any)._setAbility = procHacker.js("?setAbility@Abilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:Abilities}, uint8_t, bool_t);
-Abilities.prototype.isFlying = procHacker.js("?isFlying@Abilities@@QEBA_NXZ", bool_t, {this:Abilities});
+Abilities.prototype.getAbility = procHacker.js("?getAbility@Abilities@@QEAAAEAVAbility@@W4AbilitiesIndex@@@Z", Ability, {this:Abilities}, uint16_t);
+const Abilities$setAbilityFloat = procHacker.js("?setAbility@Abilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, {this:Abilities}, uint16_t, float32_t);
+const Abilities$setAbilityBool = procHacker.js("?setAbility@Abilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:Abilities}, uint16_t, bool_t);
+Abilities.prototype.setAbility = function(abilityIndex:AbilitiesIndex, value:boolean|number) {
+    switch (typeof value) {
+    case "boolean":
+        Abilities$setAbilityBool.call(abilityIndex, value);
+        break;
+    case "number":
+        Abilities$setAbilityFloat.call(this, abilityIndex, value);
+        break;
+    }
+};
+Abilities.prototype.getBool = procHacker.js('?getBool@Abilities@@QEBA_NW4AbilitiesIndex@@@Z', bool_t, {this:Abilities}, uint16_t);
+Abilities.prototype.getFloat = procHacker.js('?getFloat@Abilities@@QEBAMW4AbilitiesIndex@@@Z', float32_t, {this:Abilities}, uint16_t);
+Abilities.prototype.isFlying = function() {
+    return this.getBool(AbilitiesIndex.Flying);
+};
+
+LayeredAbilities.prototype.getCommandPermissions = procHacker.js("?getCommandPermissions@LayeredAbilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:Abilities});
+LayeredAbilities.prototype.getPlayerPermissions = procHacker.js("?getPlayerPermissions@LayeredAbilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:Abilities});
+LayeredAbilities.prototype.setCommandPermissions = procHacker.js("?setCommandPermissions@LayeredAbilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
+LayeredAbilities.prototype.setPlayerPermissions = procHacker.js("?setPlayerPermissions@LayeredAbilities@@QEAAXW4PlayerPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
+
+LayeredAbilities.prototype.getCommandPermissionLevel = LayeredAbilities.prototype.getCommandPermissions;
+LayeredAbilities.prototype.getPlayerPermissionLevel = LayeredAbilities.prototype.getPlayerPermissions;
+LayeredAbilities.prototype.setCommandPermissionLevel = LayeredAbilities.prototype.setCommandPermissions;
+LayeredAbilities.prototype.setPlayerPermissionLevel = LayeredAbilities.prototype.setPlayerPermissions;
+
+const LayeredAbilities$getAbility = procHacker.js("?getAbility@Abilities@@QEAAAEAVAbility@@W4AbilitiesIndex@@@Z", Ability, {this:Abilities}, uint16_t, uint16_t);
+LayeredAbilities.prototype.getAbility = function(abilityLayer:AbilitiesLayer|AbilitiesIndex, abilityIndex?:AbilitiesIndex) {
+    if (abilityIndex == null) {
+        return LayeredAbilities$getAbility.call(this, 0, abilityIndex);
+    } else {
+        return LayeredAbilities$getAbility.call(this, abilityLayer, abilityIndex);
+    }
+};
+const LayeredAbilities$setAbilityFloat = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, {this:Abilities}, uint16_t, float32_t);
+const LayeredAbilities$setAbilityBool = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:Abilities}, uint16_t, bool_t);
+LayeredAbilities.prototype.setAbility = function(abilityIndex:AbilitiesIndex, value:boolean|number) {
+    switch (typeof value) {
+    case "boolean":
+        LayeredAbilities$setAbilityBool.call(this, abilityIndex, value);
+        break;
+    case "number":
+        LayeredAbilities$setAbilityFloat.call(this, abilityIndex, value);
+        break;
+    }
+};
+
+LayeredAbilities.prototype.getBool = procHacker.js('?getBool@LayeredAbilities@@QEBA_NW4AbilitiesIndex@@@Z', bool_t, {this:LayeredAbilities}, uint16_t);
+LayeredAbilities.prototype.getFloat = procHacker.js('?getFloat@LayeredAbilities@@QEBAMW4AbilitiesIndex@@@Z', float32_t, {this:LayeredAbilities}, uint16_t);
+LayeredAbilities.prototype.isFlying = function() {
+    return this.getBool(AbilitiesIndex.Flying);
+};
 
 const Abilities$getAbilityName = procHacker.js("?getAbilityName@Abilities@@SAPEBDW4AbilitiesIndex@@@Z", StaticPointer, null, uint16_t);
 Abilities.getAbilityName = function(abilityIndex:uint16_t):string {

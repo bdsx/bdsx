@@ -6,55 +6,114 @@ import type { PlayerPermission } from "./player";
 
 @nativeClass(0x140)
 export class Abilities extends AbstractClass {
+    getAbility(abilityIndex:AbilitiesIndex):Ability {
+        abstract();
+    }
+    setAbility(abilityIndex:AbilitiesIndex, value:boolean|number):void {
+        abstract();
+    }
+    isFlying(): boolean {
+        abstract();
+    }
+
+    getFloat(abilityIndex:AbilitiesIndex): number {
+        abstract();
+    }
+    getBool(abilityIndex:AbilitiesIndex): boolean {
+        abstract();
+    }
+    static getAbilityName(abilityIndex:AbilitiesIndex):string {
+        abstract();
+    }
+    static nameToAbilityIndex(name:string):AbilitiesIndex {
+        abstract();
+    }
+}
+
+export enum AbilitiesLayer {
+    // TODO: fill
+}
+
+@nativeClass(null)
+export class LayeredAbilities extends AbstractClass {
+    getLayer(layer:AbilitiesLayer):Abilities {
+        abstract();
+    }
     protected _setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
         abstract();
     }
     /**
      * Returns the command permission level of the ability owner
      */
+    getCommandPermissions():CommandPermissionLevel {
+        abstract();
+    }
+    /**
+     * Returns the player permission level of the ability owner
+     */
+    getPlayerPermissions():PlayerPermission {
+        abstract();
+    }
+    /**
+     * Changes the command permission level of the ability owner
+     */
+    setCommandPermissions(commandPermissionLevel:CommandPermissionLevel):void {
+        abstract();
+    }
+    /**
+     * Changes the player permission level of the ability owner
+     */
+    setPlayerPermissions(playerPermissionLevel:PlayerPermission):void {
+        abstract();
+    }
+    /**
+     * Returns the command permission level of the ability owner
+     * @deprecated use getCommandPermissions, use the native function name
+     */
     getCommandPermissionLevel():CommandPermissionLevel {
         abstract();
     }
     /**
      * Returns the player permission level of the ability owner
+     * @deprecated use getPlayerPermissions, use the native function name
      */
     getPlayerPermissionLevel():PlayerPermission {
         abstract();
     }
     /**
      * Changes the command permission level of the ability owner
+     * @deprecated use setCommandPermissions, use the native function name
      */
     setCommandPermissionLevel(commandPermissionLevel:CommandPermissionLevel):void {
         abstract();
     }
     /**
      * Changes the player permission level of the ability owner
+     * @deprecated use setPlayerPermissions, use the native function name
      */
     setPlayerPermissionLevel(playerPermissionLevel:PlayerPermission):void {
         abstract();
     }
-    getAbility(abilityIndex:AbilitiesIndex):Ability {
+    /**
+     * @deprecated needs two parameters
+     */
+    getAbility(abilityIndex:AbilitiesIndex):Ability;
+    getAbility(abilityLayer:AbilitiesLayer, abilityIndex:AbilitiesIndex):Ability;
+    getAbility(abilityLayer:AbilitiesLayer|AbilitiesIndex, abilityIndex?:AbilitiesIndex):Ability {
         abstract();
     }
+
     setAbility(abilityIndex:AbilitiesIndex, value:boolean|number):void {
-        switch (typeof value) {
-        case "boolean":
-            this._setAbility(abilityIndex, value);
-            break;
-        case "number":
-            this.getAbility(abilityIndex).setFloat(value);
-            break;
-        }
+        abstract();
     }
 
     isFlying(): boolean {
         abstract();
     }
-
-    static getAbilityName(abilityIndex:AbilitiesIndex):string {
+    getFloat(abilityIndex:AbilitiesIndex): number {
         abstract();
     }
-    static nameToAbilityIndex(name:string):AbilitiesIndex {
+    getBool(abilityIndex:AbilitiesIndex): boolean {
         abstract();
     }
 }

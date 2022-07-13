@@ -1,7 +1,7 @@
 import { abstract, BuildPlatform } from "../common";
 import { mce } from "../mce";
 import { float32_t } from "../nativetype";
-import type { Abilities } from "./abilities";
+import type { Abilities, LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Bedrock } from "./bedrock";
@@ -18,8 +18,9 @@ import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
 export class Player extends Mob {
-    abilities: Abilities;
+    abilities: LayeredAbilities;
     playerUIContainer: PlayerUIContainer;
+
     /** @deprecated Use `this.getSpawnDimension()` instead */
     get respawnDimension(): DimensionId {
         return this.getSpawnDimension();
@@ -31,18 +32,6 @@ export class Player extends Mob {
     deviceId: string;
 
     protected _setName(name: string): void {
-        abstract();
-    }
-
-    /**
-     * Teleports the player to another dimension
-     *
-     * @param dimensionId - The dimension ID
-     * @param respawn - Indicates whether the dimension change is based on a respawn (player died in dimension)
-     *
-     * @see DimensionId
-     */
-    changeDimension(dimensionId: DimensionId, respawn: boolean): void {
         abstract();
     }
 
@@ -59,22 +48,6 @@ export class Player extends Mob {
      * Updates the player list to all players
      */
     updatePlayerList(): void {
-        abstract();
-    }
-
-    /**
-     * Teleports the player to a specified position
-     * @remarks This function is used when entities teleport players (e.g: ender pearls). Use Actor.teleport() if you want to teleport the player.
-     *
-     * @param position - Position to teleport the player to
-     * @param shouldStopRiding - Defines whether the player should stop riding an entity when teleported
-     * @param cause - Cause of teleportation
-     * @param sourceEntityType - Entity type that caused the teleportation
-     * @param sourceActorId - ActorUniqueID of the source entity
-     *
-     * @privateRemarks causes of teleportation are currently unknown.
-     */
-    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, sourceActorId: ActorUniqueID): void {
         abstract();
     }
 

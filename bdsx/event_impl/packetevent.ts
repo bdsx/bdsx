@@ -186,7 +186,7 @@ bedrockServer.withLoading().then(()=>{
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x219,
+    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x220,
         asmcode.packetRawHook, Register.rax, true, [
             0x41, 0x8B, 0xD7,                          // mov edx,r15d
             0x48, 0x8D, 0x8D, 0x90, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+90]
@@ -220,7 +220,7 @@ bedrockServer.withLoading().then(()=>{
         asm.call64(original, Register.rax);
     });
     asmcode.handlePacket = proc[packetHandleSymbol];
-    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x58f,
+    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x5dc,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x48, 0x8B, 0x8D, 0x90, 0x00, 0x00, 0x00, // mov rcx,qword ptr ss:[rbp+90]
@@ -230,12 +230,11 @@ bedrockServer.withLoading().then(()=>{
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, void_t, NetworkIdentifier, Packet);
     asmcode.sendOriginal = procHacker.hookingRaw('?send@NetworkHandler@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@E@Z', asmcode.packetSendHook);
     const sendToMultiple = proc[sendToMultipleSymbol];
-    asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x17a);
-    asmcode.packetSendAllJumpPoint = sendToMultiple.add(0x55);
-    procHacker.patching('hook-packet-send-all', sendToMultipleSymbol, 0x40,
+    asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x147);
+    asmcode.packetSendAllJumpPoint = sendToMultiple.add(0x4c);
+    procHacker.patching('hook-packet-send-all', sendToMultipleSymbol, 0x37,
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
-            // 0x90,                                          // nop
             // loop begin point
             0x4D, 0x85, 0xF6,                                // test r14,r14
             0x74, 0x10,                                      // je bedrock_server.7FF7436D8315

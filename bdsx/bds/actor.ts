@@ -1,3 +1,4 @@
+import * as colors from 'colors';
 import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import type { CommandResult, CommandResultType } from "../commandresult";
@@ -479,6 +480,63 @@ export class Actor extends AbstractClass {
     static tryGetFromEntity(entity:EntityContext):Actor|null {
         abstract();
     }
+
+    /**
+     * Teleports the actor to another dimension
+     * @deprecated respawn parameter deleted
+     *
+     * @param dimensionId - The dimension ID
+     * @param respawn - Indicates whether the dimension change is based on a respawn (player died in dimension)
+     *
+     * @see DimensionId
+     */
+    changeDimension(dimensionId: DimensionId, respawn: boolean): void;
+
+    /**
+     * Teleports the actor to another dimension
+     *
+     * @param dimensionId - The dimension ID
+     *
+     * @see DimensionId
+     */
+    changeDimension(dimensionId: DimensionId): void;
+
+    changeDimension(dimensionId: DimensionId, respawn?: boolean): void {
+        abstract();
+    }
+
+    /**
+     * Teleports the player to a specified position
+     * @deprecated sourceActorId deleted
+     *
+     * @remarks This function is used when entities teleport players (e.g: ender pearls). Use Actor.teleport() if you want to teleport the player.
+     *
+     * @param position - Position to teleport the player to
+     * @param shouldStopRiding - Defines whether the player should stop riding an entity when teleported
+     * @param cause - Cause of teleportation
+     * @param sourceEntityType - Entity type that caused the teleportation
+     * @param sourceActorId - ActorUniqueID of the source entity
+     *
+     * @privateRemarks causes of teleportation are currently unknown.
+     */
+    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, sourceActorId: ActorUniqueID): void;
+    /**
+     * Teleports the player to a specified position
+     * @remarks This function is used when entities teleport players (e.g: ender pearls). Use Actor.teleport() if you want to teleport the player.
+     *
+     * @param position - Position to teleport the player to
+     * @param shouldStopRiding - Defines whether the player should stop riding an entity when teleported
+     * @param cause - Cause of teleportation
+     * @param sourceEntityType - Entity type that caused the teleportation
+     * @param unknown
+     *
+     * @privateRemarks causes of teleportation are currently unknown.
+     */
+    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, unknown?: boolean): void;
+    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, sourceActorId?: ActorUniqueID|boolean): void {
+        abstract();
+    }
+
     /**
      * Adds an item to the entity's inventory
      * @remarks Entity(Mob) inventory will not be updated. Use Mob.sendInventory() to update it.
@@ -949,16 +1007,21 @@ export class Actor extends AbstractClass {
         if (entity) return this._isRidingOn(entity);
         return this._isRiding();
     }
-    protected _isPassenger(ride:ActorUniqueID): boolean {
+    protected _isPassenger(ride:Actor): boolean {
         abstract();
     }
     isPassenger(ride: ActorUniqueID): boolean;
     isPassenger(ride: Actor): boolean;
     isPassenger(ride: ActorUniqueID | Actor): boolean {
         if (ride instanceof Actor) {
-            return this._isPassenger(ride.getUniqueIdBin());
+            return this._isPassenger(ride);
+        } else {
+            const actor = Actor.fromUniqueIdBin(ride);
+            if (actor === null) {
+                throw Error('actor not found');
+            }
+            return this._isPassenger(actor);
         }
-        return this._isPassenger(ride);
     }
 
     /**
@@ -1145,9 +1208,11 @@ export class Actor extends AbstractClass {
 
     /**
      * Find actor's attack target
+     * @deprecated code not found
      */
-    findAttackTarget(): Actor{
-        abstract();
+    findAttackTarget(): Actor|null{
+        console.error(colors.red('Actor.findAttackTarget is not available. deleted from BDS'));
+        return null;
     }
 
     /**

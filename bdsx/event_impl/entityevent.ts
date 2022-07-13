@@ -222,6 +222,7 @@ export class PlayerDimensionChangeEvent {
     constructor(
         public player: ServerPlayer,
         public dimension: DimensionId,
+        /** @deprecated deleted parameter */
         public useNetherPortal: boolean,
     ) {
     }
@@ -501,16 +502,16 @@ function onConsumeTotem(entity: Actor): boolean {
 }
 const _onConsumeTotem = procHacker.hooking("?consumeTotem@Actor@@UEAA_NXZ", bool_t, null, Actor)(onConsumeTotem);
 
-function onPlayerDimensionChange(player: ServerPlayer, dimension: DimensionId, useNetherPortal: boolean): void {
-    const event = new PlayerDimensionChangeEvent(player, dimension, useNetherPortal);
+function onPlayerDimensionChange(player: ServerPlayer, dimension: DimensionId): void {
+    const event = new PlayerDimensionChangeEvent(player, dimension, false);
     const canceled = events.playerDimensionChange.fire(event) === CANCEL;
     if(canceled) {
         return;
     }
-    return _onPlayerDimensionChange(player, event.dimension, event.useNetherPortal);
+    return _onPlayerDimensionChange(player, event.dimension);
 }
 
-const _onPlayerDimensionChange = procHacker.hooking("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@_N@Z", void_t, null, ServerPlayer, int32_t, bool_t)(onPlayerDimensionChange);
+const _onPlayerDimensionChange = procHacker.hooking("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@@Z", void_t, null, ServerPlayer, int32_t)(onPlayerDimensionChange);
 
 const onProjectileHit = procHacker.hooking(
     "?onHit@ProjectileComponent@@QEAAXAEAVActor@@AEBVHitResult@@@Z",
