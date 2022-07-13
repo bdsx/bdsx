@@ -94,9 +94,6 @@ export class LayeredAbilities extends AbstractClass {
     setPlayerPermissionLevel(playerPermissionLevel:PlayerPermission):void {
         abstract();
     }
-    /**
-     * @deprecated needs two parameters
-     */
     getAbility(abilityIndex:AbilitiesIndex):Ability;
     getAbility(abilityLayer:AbilitiesLayer, abilityIndex:AbilitiesIndex):Ability;
     getAbility(abilityLayer:AbilitiesLayer|AbilitiesIndex, abilityIndex?:AbilitiesIndex):Ability {

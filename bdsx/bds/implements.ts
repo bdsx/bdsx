@@ -1236,26 +1236,28 @@ Abilities.prototype.isFlying = function() {
     return this.getBool(AbilitiesIndex.Flying);
 };
 
-LayeredAbilities.prototype.getCommandPermissions = procHacker.js("?getCommandPermissions@LayeredAbilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:Abilities});
-LayeredAbilities.prototype.getPlayerPermissions = procHacker.js("?getPlayerPermissions@LayeredAbilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:Abilities});
-LayeredAbilities.prototype.setCommandPermissions = procHacker.js("?setCommandPermissions@LayeredAbilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
-LayeredAbilities.prototype.setPlayerPermissions = procHacker.js("?setPlayerPermissions@LayeredAbilities@@QEAAXW4PlayerPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
+LayeredAbilities.prototype.getLayer = procHacker.js('?getLayer@LayeredAbilities@@QEBAAEBVAbilities@@W4AbilitiesLayer@@@Z', Abilities, {this:LayeredAbilities}, uint16_t);
+LayeredAbilities.prototype.getCommandPermissions = procHacker.js("?getCommandPermissions@LayeredAbilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:LayeredAbilities});
+LayeredAbilities.prototype.getPlayerPermissions = procHacker.js("?getPlayerPermissions@LayeredAbilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:LayeredAbilities});
+LayeredAbilities.prototype.setCommandPermissions = procHacker.js("?setCommandPermissions@LayeredAbilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:LayeredAbilities}, int32_t);
+LayeredAbilities.prototype.setPlayerPermissions = procHacker.js("?setPlayerPermissions@LayeredAbilities@@QEAAXW4PlayerPermissionLevel@@@Z", void_t, {this:LayeredAbilities}, int32_t);
 
 LayeredAbilities.prototype.getCommandPermissionLevel = LayeredAbilities.prototype.getCommandPermissions;
 LayeredAbilities.prototype.getPlayerPermissionLevel = LayeredAbilities.prototype.getPlayerPermissions;
 LayeredAbilities.prototype.setCommandPermissionLevel = LayeredAbilities.prototype.setCommandPermissions;
 LayeredAbilities.prototype.setPlayerPermissionLevel = LayeredAbilities.prototype.setPlayerPermissions;
 
-const LayeredAbilities$getAbility = procHacker.js("?getAbility@Abilities@@QEAAAEAVAbility@@W4AbilitiesIndex@@@Z", Ability, {this:Abilities}, uint16_t, uint16_t);
+const LayeredAbilities$getAbility = procHacker.js('?getAbility@LayeredAbilities@@QEAAAEAVAbility@@W4AbilitiesLayer@@W4AbilitiesIndex@@@Z', Ability, {this:LayeredAbilities}, uint16_t, uint16_t);
+const LayeredAbilities$getAbilityOnlyIndex = procHacker.js('?getAbility@LayeredAbilities@@QEBAAEBVAbility@@W4AbilitiesIndex@@@Z', Ability, {this:LayeredAbilities}, uint16_t);
 LayeredAbilities.prototype.getAbility = function(abilityLayer:AbilitiesLayer|AbilitiesIndex, abilityIndex?:AbilitiesIndex) {
     if (abilityIndex == null) {
-        return LayeredAbilities$getAbility.call(this, 0, abilityIndex);
+        return LayeredAbilities$getAbilityOnlyIndex.call(this, abilityLayer);
     } else {
         return LayeredAbilities$getAbility.call(this, abilityLayer, abilityIndex);
     }
 };
-const LayeredAbilities$setAbilityFloat = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, {this:Abilities}, uint16_t, float32_t);
-const LayeredAbilities$setAbilityBool = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:Abilities}, uint16_t, bool_t);
+const LayeredAbilities$setAbilityFloat = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, {this:LayeredAbilities}, uint16_t, float32_t);
+const LayeredAbilities$setAbilityBool = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:LayeredAbilities}, uint16_t, bool_t);
 LayeredAbilities.prototype.setAbility = function(abilityIndex:AbilitiesIndex, value:boolean|number) {
     switch (typeof value) {
     case "boolean":

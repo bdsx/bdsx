@@ -3,6 +3,7 @@
  */
 
 import { asm, FloatRegister, OperationSize, Register } from "bdsx/assembler";
+import { AbilitiesIndex } from "bdsx/bds/abilities";
 import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
 import { Block } from "bdsx/bds/block";
@@ -819,6 +820,30 @@ Tester.concurrency({
                         // test for hasFamily
                         this.assert(actor.hasFamily("player") === true, "the actor must be a Player");
                         this.assert(actor.hasFamily("undead") === false, "the actor must be not a Undead Mob");
+                        const abilities = actor.abilities;
+                        const ROUND_UP_AXIS = 0x10000;
+                        const checkAbility = (index:AbilitiesIndex, expected:boolean|number):void=>{
+                            const abil = abilities.getAbility(index);
+                            let actual = abil.getValue();
+                            if (typeof actual === 'number') actual = Math.round(actual*ROUND_UP_AXIS)/ROUND_UP_AXIS;
+                            if (typeof expected === 'number') expected = Math.round(expected*ROUND_UP_AXIS)/ROUND_UP_AXIS;
+                            this.equals(actual, expected, `non expected ${AbilitiesIndex[index]} value`);
+                        };
+                        checkAbility(AbilitiesIndex.Build, true);
+                        checkAbility(AbilitiesIndex.Mine, true);
+                        checkAbility(AbilitiesIndex.DoorsAndSwitches, true);
+                        checkAbility(AbilitiesIndex.OpenContainers, true);
+                        checkAbility(AbilitiesIndex.AttackMobs, true);
+                        checkAbility(AbilitiesIndex.Invulnerable, false);
+                        checkAbility(AbilitiesIndex.Flying, false);
+                        checkAbility(AbilitiesIndex.MayFly, false);
+                        checkAbility(AbilitiesIndex.Instabuild, false);
+                        checkAbility(AbilitiesIndex.Lightning, false);
+                        checkAbility(AbilitiesIndex.FlySpeed, 0.05);
+                        checkAbility(AbilitiesIndex.WalkSpeed, 0.1);
+                        checkAbility(AbilitiesIndex.Muted, false);
+                        checkAbility(AbilitiesIndex.WorldBuilder, false);
+                        checkAbility(AbilitiesIndex.NoClip, false);
                     }
 
                     if (identifier === 'minecraft:player') {
