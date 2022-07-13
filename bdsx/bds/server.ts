@@ -179,13 +179,13 @@ export class ServerInstance extends AbstractClass {
         abstract();
     }
     /**
-     * Returns the server's maxiumum player capacity
+     * Returns the server's maximum player capacity
      */
     getMaxPlayers():number {
         abstract();
     }
     /**
-     * Changes the server's maxiumum player capacity
+     * Changes the server's maximum player capacity
      */
     setMaxPlayers(count:number):void {
         abstract();

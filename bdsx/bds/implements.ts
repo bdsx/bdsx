@@ -528,9 +528,9 @@ procHacker.hookingRawWithCallOriginal('??1Actor@@UEAA@XZ', asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    abilities:[LayeredAbilities, 0x9cc], // accessed in eAbilityCommand::execut when calling Abilities::setAbility
+    abilities:[LayeredAbilities, 0x9cc], // accessed in AbilityCommand::execute when calling Abilities::setAbility
     playerUIContainer:[PlayerUIContainer, 0x1280], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId:[CxxString, 0x2218], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
+    deviceId:[CxxString, 0x23B0], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js("?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this: Player}, CxxString);
 const PlayerListPacket$emplace = procHacker.js("?emplace@PlayerListPacket@@QEAAX$$QEAVPlayerListEntry@@@Z", void_t, null, PlayerListPacket, PlayerListEntry);
@@ -592,7 +592,7 @@ class UserEntityIdentifierComponent extends NativeClass {
     @nativeField(mce.UUID, 0xa8) // accessed in PlayerListEntry::PlayerListEntry after calling entt::basic_registry<EntityId>::try_get<UserEntityIdentifierComponent>
     uuid:mce.UUID;
     @nativeField(Certificate.ref(), 0xd8) // accessed in ServerNetworkHandler::_displayGameMessage before calling ExtendedCertificate::getXuid
-    certifiate:Certificate; // it's ExtendedCertificate actually
+    certificate:Certificate; // it's ExtendedCertificate actually
 }
 
 EntityContextBase.prototype.isValid = procHacker.js('?isValid@EntityContextBase@@QEBA_NXZ', bool_t, {this:EntityContextBase});
@@ -605,7 +605,7 @@ Player.prototype.getCertificate = function() {
     const base = this.ctxbase;
     if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
     const registry = base._enttRegistry();
-    return Registry_getEntityIdentifierComponent(registry, base.entityId).certifiate;
+    return Registry_getEntityIdentifierComponent(registry, base.entityId).certificate;
 };
 Player.prototype.getDestroySpeed = procHacker.js('?getDestroySpeed@Player@@QEBAMAEBVBlock@@@Z', float32_t, {this:Player}, Block.ref());
 Player.prototype.canDestroy = procHacker.js('?canDestroy@Player@@QEBA_NAEBVBlock@@@Z', bool_t, {this:Player}, Block.ref());
@@ -1236,26 +1236,28 @@ Abilities.prototype.isFlying = function() {
     return this.getBool(AbilitiesIndex.Flying);
 };
 
-LayeredAbilities.prototype.getCommandPermissions = procHacker.js("?getCommandPermissions@LayeredAbilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:Abilities});
-LayeredAbilities.prototype.getPlayerPermissions = procHacker.js("?getPlayerPermissions@LayeredAbilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:Abilities});
-LayeredAbilities.prototype.setCommandPermissions = procHacker.js("?setCommandPermissions@LayeredAbilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
-LayeredAbilities.prototype.setPlayerPermissions = procHacker.js("?setPlayerPermissions@LayeredAbilities@@QEAAXW4PlayerPermissionLevel@@@Z", void_t, {this:Abilities}, int32_t);
+LayeredAbilities.prototype.getLayer = procHacker.js('?getLayer@LayeredAbilities@@QEBAAEBVAbilities@@W4AbilitiesLayer@@@Z', Abilities, {this:LayeredAbilities}, uint16_t);
+LayeredAbilities.prototype.getCommandPermissions = procHacker.js("?getCommandPermissions@LayeredAbilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:LayeredAbilities});
+LayeredAbilities.prototype.getPlayerPermissions = procHacker.js("?getPlayerPermissions@LayeredAbilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:LayeredAbilities});
+LayeredAbilities.prototype.setCommandPermissions = procHacker.js("?setCommandPermissions@LayeredAbilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:LayeredAbilities}, int32_t);
+LayeredAbilities.prototype.setPlayerPermissions = procHacker.js("?setPlayerPermissions@LayeredAbilities@@QEAAXW4PlayerPermissionLevel@@@Z", void_t, {this:LayeredAbilities}, int32_t);
 
 LayeredAbilities.prototype.getCommandPermissionLevel = LayeredAbilities.prototype.getCommandPermissions;
 LayeredAbilities.prototype.getPlayerPermissionLevel = LayeredAbilities.prototype.getPlayerPermissions;
 LayeredAbilities.prototype.setCommandPermissionLevel = LayeredAbilities.prototype.setCommandPermissions;
 LayeredAbilities.prototype.setPlayerPermissionLevel = LayeredAbilities.prototype.setPlayerPermissions;
 
-const LayeredAbilities$getAbility = procHacker.js("?getAbility@Abilities@@QEAAAEAVAbility@@W4AbilitiesIndex@@@Z", Ability, {this:Abilities}, uint16_t, uint16_t);
+const LayeredAbilities$getAbility = procHacker.js('?getAbility@LayeredAbilities@@QEAAAEAVAbility@@W4AbilitiesLayer@@W4AbilitiesIndex@@@Z', Ability, {this:LayeredAbilities}, uint16_t, uint16_t);
+const LayeredAbilities$getAbilityOnlyIndex = procHacker.js('?getAbility@LayeredAbilities@@QEBAAEBVAbility@@W4AbilitiesIndex@@@Z', Ability, {this:LayeredAbilities}, uint16_t);
 LayeredAbilities.prototype.getAbility = function(abilityLayer:AbilitiesLayer|AbilitiesIndex, abilityIndex?:AbilitiesIndex) {
     if (abilityIndex == null) {
-        return LayeredAbilities$getAbility.call(this, 0, abilityIndex);
+        return LayeredAbilities$getAbilityOnlyIndex.call(this, abilityLayer);
     } else {
         return LayeredAbilities$getAbility.call(this, abilityLayer, abilityIndex);
     }
 };
-const LayeredAbilities$setAbilityFloat = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, {this:Abilities}, uint16_t, float32_t);
-const LayeredAbilities$setAbilityBool = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:Abilities}, uint16_t, bool_t);
+const LayeredAbilities$setAbilityFloat = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, {this:LayeredAbilities}, uint16_t, float32_t);
+const LayeredAbilities$setAbilityBool = procHacker.js("?setAbility@LayeredAbilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, {this:LayeredAbilities}, uint16_t, bool_t);
 LayeredAbilities.prototype.setAbility = function(abilityIndex:AbilitiesIndex, value:boolean|number) {
     switch (typeof value) {
     case "boolean":

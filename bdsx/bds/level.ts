@@ -58,7 +58,7 @@ export class Level extends NativeClass {
         abstract();
     }
     /**
-     * Destroyes a block at the given position
+     * Destroys a block at the given position
      *
      * @returns {boolean} Whether the block was destroyed successfully
      */

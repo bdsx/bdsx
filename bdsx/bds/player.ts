@@ -212,7 +212,7 @@ export class Player extends Mob {
     }
 
     /**
-     * Returns the multiplier for the player block destroy time, with every factor accounnted, except for if the tool is correct, the faster the higher
+     * Returns the multiplier for the player block destroy time, with every factor accounted, except for if the tool is correct, the faster the higher
      */
     getDestroySpeed(block: Block): number {
         abstract();

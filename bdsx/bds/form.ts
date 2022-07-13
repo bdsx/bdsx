@@ -386,7 +386,7 @@ export class CustomForm extends Form<FormDataCustom> {
 events.packetAfter(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     const sent = formMaps.get(pk.id);
     if (sent == null) return;
-    if (sent.networkIdentifier !== ni) return; // other user is responsing
+    if (sent.networkIdentifier !== ni) return; // other user is responding
     formMaps.delete(pk.id);
 
     try {
