@@ -129,7 +129,7 @@ interface IWeatherComponent {
      */
     lightning_time:number;
     /**
-     * A value between 0 and 1 that determains how heavy the rainfall is
+     * A value between 0 and 1 that determines how heavy the rainfall is
      */
     rain_level:number;
     /**
@@ -1074,7 +1074,7 @@ interface IBlockDestructionStartedEventData {
      */
     block_position:VectorXYZ;
     /**
-     * The player that started destoying the block
+     * The player that started destroying the block
      */
     player:IEntity;
 }
@@ -1090,7 +1090,7 @@ interface IBlockDestructionStoppedEventData {
      */
     destruction_progress:number;
     /**
-     * The player that stopped destoying the block
+     * The player that stopped destroying the block
      */
     player:IEntity;
 }

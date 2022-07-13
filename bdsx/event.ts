@@ -104,7 +104,7 @@ export namespace events {
     export const entityHealthChange = new Event<(event: EntityHeathChangeEvent) => void>();
     /**
      * Not cancellable.
-     * it can be occured multiple times even it already died.
+     * it can be occurred multiple times even it already died.
      */
     export const entityDie = new Event<(event: EntityDieEvent) => void>();
     /** Not cancellable */
@@ -215,7 +215,7 @@ export namespace events {
     /**
      * before system.shutdown, Minecraft is alive yet
      * LoopbackPacketSender is destroyed
-     * some commands are failed on this event. use `events.serverLeave` intead.
+     * some commands are failed on this event. use `events.serverLeave` instead.
      */
     export const serverStop = new Event<()=>void>();
 
