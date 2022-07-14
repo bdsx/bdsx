@@ -140,7 +140,10 @@ Level.prototype.getEntities = function() {
     return out;
 };
 
-Level.prototype.getRuntimeEntity = procHacker.js("?getRuntimeEntity@Level@@UEBAPEAVActor@@VActorRuntimeID@@_N@Z", Actor, {this:Level}, ActorRuntimeID, bool_t);
+const Level$getRuntimeEntity = procHacker.js("?getRuntimeEntity@Level@@UEBAPEAVActor@@VActorRuntimeID@@_N@Z", Actor, null, Level, ActorRuntimeID, bool_t);
+Level.prototype.getRuntimeEntity = function (id, getRemoved = false) {
+    return Level$getRuntimeEntity(this, id, getRemoved);
+};
 Level.prototype.getRuntimePlayer = procHacker.js("?getRuntimePlayer@Level@@UEBAPEAVPlayer@@VActorRuntimeID@@@Z", Player, {this:Level}, ActorRuntimeID);
 Level.prototype.getTime = procHacker.js("?getTime@Level@@UEBAHXZ", int64_as_float_t, {this:Level});
 Level.prototype.getCurrentTick = procHacker.js("?getCurrentTick@Level@@UEBAAEBUTick@@XZ", int64_as_float_t.ref(), {this:Level});// You can run the server for 1.4202551784875594e+22 years till it exceeds the max safe integer
@@ -453,6 +456,8 @@ Actor.prototype.isSpectator = procHacker.jsv("??_7Player@@6B@", "?isSpectator@Pl
 Actor.prototype.remove = procHacker.jsv("??_7Actor@@6B@", "?remove@Actor@@UEAAXXZ", void_t, {this:Actor});
 Actor.prototype.isAngry = procHacker.js('?isAngry@Actor@@QEBA_NXZ', bool_t, {this: Actor});
 Actor.prototype.getBlockTarget = procHacker.js('?getBlockTarget@Actor@@QEBA?AVBlockPos@@XZ', BlockPos, {this: Actor});
+Actor.prototype.isAttackableGamemode = procHacker.jsv("??_7Actor@@6B@", "?isAttackableGamemode@Actor@@UEBA_NXZ", bool_t, {this:Actor});
+Actor.prototype.isInvulnerableTo = procHacker.jsv("??_7Actor@@6B@", "?isInvulnerableTo@Actor@@UEBA_NAEBVActorDamageSource@@@Z", bool_t, {this:Actor}, ActorDamageSource);
 
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("?getSpeed@Mob@@UEBAMXZ", float32_t, {this:Mob});
