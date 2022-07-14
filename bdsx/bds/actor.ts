@@ -1225,6 +1225,10 @@ export class Actor extends AbstractClass {
     getBlockTarget(): BlockPos{
         abstract();
     }
+
+    isAttackableGamemode(): boolean {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
