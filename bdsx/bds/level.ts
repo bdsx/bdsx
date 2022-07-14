@@ -48,7 +48,7 @@ export class Level extends NativeClass {
     getEntities():Actor[] {
         abstract();
     }
-    getRuntimeEntity(runtimeId: ActorRuntimeID, getRemoved: boolean): Actor | null {
+    getRuntimeEntity(runtimeId: ActorRuntimeID, getRemoved: boolean = false): Actor | null {
         abstract();
     }
     getRuntimePlayer(runtimeId: ActorRuntimeID): Player | null {

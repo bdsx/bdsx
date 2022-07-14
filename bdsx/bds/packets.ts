@@ -622,7 +622,10 @@ export class SetActorDataPacket extends Packet {
 
 @nativeClass(null)
 export class SetActorMotionPacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    runtimeId:ActorRuntimeID;
+    @nativeField(Vec3)
+    motion:Vec3;
 }
 
 @nativeClass(null)
