@@ -1,11 +1,12 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { int32_t, void_t } from "../nativetype";
+import { bool_t, float32_t, int16_t, int32_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
-import type { DimensionId } from "./actor";
+import type { DimensionId, Actor, ActorUniqueID } from "./actor";
+import type { Player } from './player';
 import { BlockSource } from "./block";
-import { BlockPos } from "./blockpos";
+import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
 import { ChunkSource } from "./chunk";
 
 @nativeClass(null)
@@ -27,6 +28,59 @@ export class Dimension extends NativeClass {
         abstract();
     }
     _sendBlockEntityUpdatePacket(pos:BlockPos):void {
+        abstract();
+    }
+    fetchNearestAttackablePlayer(actor: Actor, distance: number): Player;
+    fetchNearestAttackablePlayer(actor: Actor, distance: number, blockPos: BlockPos): Player;
+    fetchNearestAttackablePlayer(actor: Actor, distance: number, blockPos?: BlockPos): Player{
+        abstract();
+    }
+    getSunAngle(): number{
+        abstract();
+    }
+    getTimeOfDay(): number{
+        abstract();
+    }
+    isDay(): boolean{
+        abstract();
+    }
+    distanceToNearestPlayerSqr2D(pos: Vec3): number{
+        abstract();
+    }
+    transferEntityToUnloadedChunk(actor: Actor): void{
+        abstract();
+    }
+    getSpawnPos(): BlockPos{
+        abstract();
+    }
+    fetchNearestPlayerToActor(actor: Actor, distance: number): Player{
+        abstract();
+    }
+    fetchNearestPlayerToPosition(x: number, y: number, z: number, distance: number, findAnyNearPlayer: boolean): Player{
+        abstract();
+    }
+    getMoonBrightness(): number{
+        abstract();
+    }
+    getHeight(): number{
+        abstract();
+    }
+    getMinHeight(): number{
+        abstract();
+    }
+    tryGetClosestPublicRegion(chunkPos: ChunkPos): BlockSource{
+        abstract();
+    }
+    unregisterEntity(actorUniqueId: ActorUniqueID): void{
+        abstract();
+    }
+    removeActorByID(actorUniqueId: ActorUniqueID): void{
+        abstract();
+    }
+    getDefaultBiome(): number{
+        abstract();
+    }
+    getMoonPhase(): number{
         abstract();
     }
 }

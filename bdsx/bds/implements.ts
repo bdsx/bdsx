@@ -182,6 +182,31 @@ Spawner.prototype.spawnMob = function(region:BlockSource, id:ActorDefinitionIden
     return Spawner$spawnMob(this, region, id, null, pos, naturalSpawn, surface, fromSpawner);
 };
 
+// dimension.ts
+const fetchNearestAttackablePlayer$nonBlockPos = procHacker.js('?fetchNearestAttackablePlayer@Dimension@@QEAAPEAVPlayer@@AEAVActor@@M@Z', Player, {this: Dimension}, Actor, float32_t);
+const fetchNearestAttackablePlayer$withBlockPos = procHacker.js('?fetchNearestAttackablePlayer@Dimension@@QEAAPEAVPlayer@@VBlockPos@@MPEAVActor@@@Z', Player, {this: Dimension}, BlockPos, float32_t, Actor);
+Dimension.prototype.fetchNearestAttackablePlayer = function(actor: Actor, distance: number, blockPos?: BlockPos): Player{
+    if(blockPos){
+        return fetchNearestAttackablePlayer$withBlockPos.call(this, blockPos, distance, actor);
+    }
+    return fetchNearestAttackablePlayer$nonBlockPos.call(this, actor, distance);
+};
+Dimension.prototype.getSunAngle = procHacker.js('?getSunAngle@Dimension@@QEBAMM@Z', float32_t, {this: Dimension});
+Dimension.prototype.getTimeOfDay = procHacker.js('?getTimeOfDay@Dimension@@QEBAMM@Z', float32_t, {this: Dimension});
+Dimension.prototype.isDay = procHacker.js('?isDay@Dimension@@UEBA_NXZ', bool_t, {this: Dimension});
+Dimension.prototype.distanceToNearestPlayerSqr2D = procHacker.js('?distanceToNearestPlayerSqr2D@Dimension@@QEAAMVVec3@@@Z', float32_t, {this: Dimension}, Vec3);
+Dimension.prototype.transferEntityToUnloadedChunk = procHacker.js('?transferEntityToUnloadedChunk@Dimension@@QEAAXAEAVActor@@@Z', void_t, {this: Dimension}, Actor);
+Dimension.prototype.getSpawnPos = procHacker.js('?getSpawnPos@Dimension@@UEBA?AVBlockPos@@XZ', BlockPos, {this: Dimension});
+Dimension.prototype.fetchNearestPlayerToActor = procHacker.js('?fetchNearestPlayer@Dimension@@QEAAPEAVPlayer@@AEAVActor@@M@Z', Player, {this: Dimension}, Actor, float32_t);
+Dimension.prototype.fetchNearestPlayerToPosition = procHacker.js('?getSpawnPos@Dimension@@UEBA?AVBlockPos@@XZ', Player, {this: Dimension}, float32_t, float32_t, float32_t, float32_t, bool_t);
+Dimension.prototype.getMoonBrightness = procHacker.js('?getMoonBrightness@Dimension@@QEBAMXZ', float32_t, {this: Dimension});
+Dimension.prototype.getHeight = procHacker.js('?getHeight@Dimension@@QEBAFXZ', int16_t, {this: Dimension});
+Dimension.prototype.tryGetClosestPublicRegion = procHacker.js('?tryGetClosestPublicRegion@Dimension@@QEBAPEAVBlockSource@@AEBVChunkPos@@@Z', BlockSource, {this: Dimension}, ChunkPos);
+Dimension.prototype.removeActorByID = procHacker.js('?removeActorByID@Dimension@@QEAAXAEBUActorUniqueID@@@Z', void_t, {this: Dimension}, ActorUniqueID);
+Dimension.prototype.getMinHeight = procHacker.js('?getMinHeight@Dimension@@QEBAFXZ', int16_t, {this:Dimension});
+Dimension.prototype.getDefaultBiome = procHacker.js('?getDefaultBiome@Dimension@@UEBAHXZ', int32_t, {this: Dimension});
+Dimension.prototype.getMoonPhase = procHacker.js('?getMoonPhase@Dimension@@QEBAHXZ', int32_t, {this: Dimension});
+
 // actor.ts
 const actorMaps = new Map<string, Actor>();
 const ServerPlayer$vftable = proc["??_7ServerPlayer@@6B@"];
