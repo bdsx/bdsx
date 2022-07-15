@@ -196,18 +196,18 @@ Dimension.prototype.fetchNearestAttackablePlayer = function(actor: Actor, distan
 };
 Dimension.prototype.getSunAngle = procHacker.js('?getSunAngle@Dimension@@QEBAMM@Z', float32_t, {this: Dimension});
 Dimension.prototype.getTimeOfDay = procHacker.js('?getTimeOfDay@Dimension@@QEBAMM@Z', float32_t, {this: Dimension});
-Dimension.prototype.isDay = procHacker.js('?isDay@Dimension@@UEBA_NXZ', bool_t, {this: Dimension});
+Dimension.prototype.isDay = procHacker.jsv('??_7OverworldDimension@@6BIDimension@@@', '?isDay@Dimension@@UEBA_NXZ', bool_t, {this: Dimension});
 Dimension.prototype.distanceToNearestPlayerSqr2D = procHacker.js('?distanceToNearestPlayerSqr2D@Dimension@@QEAAMVVec3@@@Z', float32_t, {this: Dimension}, Vec3);
 Dimension.prototype.transferEntityToUnloadedChunk = procHacker.js('?transferEntityToUnloadedChunk@Dimension@@QEAAXAEAVActor@@@Z', void_t, {this: Dimension}, Actor);
-Dimension.prototype.getSpawnPos = procHacker.js('?getSpawnPos@Dimension@@UEBA?AVBlockPos@@XZ', BlockPos, {this: Dimension});
+Dimension.prototype.getSpawnPos = procHacker.jsv('??_7OverworldDimension@@6BIDimension@@@', '?getSpawnPos@Dimension@@UEBA?AVBlockPos@@XZ', BlockPos, {this: Dimension, structureReturn: true});
 Dimension.prototype.fetchNearestPlayerToActor = procHacker.js('?fetchNearestPlayer@Dimension@@QEAAPEAVPlayer@@AEAVActor@@M@Z', Player, {this: Dimension}, Actor, float32_t);
-Dimension.prototype.fetchNearestPlayerToPosition = procHacker.js('?getSpawnPos@Dimension@@UEBA?AVBlockPos@@XZ', Player, {this: Dimension}, float32_t, float32_t, float32_t, float32_t, bool_t);
+Dimension.prototype.fetchNearestPlayerToPosition = procHacker.js('?fetchNearestPlayer@Dimension@@QEAAPEAVPlayer@@MMMM_N@Z', Player, {this: Dimension}, float32_t, float32_t, float32_t, float32_t, bool_t);
 Dimension.prototype.getMoonBrightness = procHacker.js('?getMoonBrightness@Dimension@@QEBAMXZ', float32_t, {this: Dimension});
 Dimension.prototype.getHeight = procHacker.js('?getHeight@Dimension@@QEBAFXZ', int16_t, {this: Dimension});
 Dimension.prototype.tryGetClosestPublicRegion = procHacker.js('?tryGetClosestPublicRegion@Dimension@@QEBAPEAVBlockSource@@AEBVChunkPos@@@Z', BlockSource, {this: Dimension}, ChunkPos);
 Dimension.prototype.removeActorByID = procHacker.js('?removeActorByID@Dimension@@QEAAXAEBUActorUniqueID@@@Z', void_t, {this: Dimension}, ActorUniqueID);
 Dimension.prototype.getMinHeight = procHacker.js('?getMinHeight@Dimension@@QEBAFXZ', int16_t, {this:Dimension});
-Dimension.prototype.getDefaultBiome = procHacker.js('?getDefaultBiome@Dimension@@UEBAHXZ', int32_t, {this: Dimension});
+Dimension.prototype.getDefaultBiome = procHacker.jsv('??_7NetherDimension@@6BIDimension@@@', '?getDefaultBiome@NetherDimension@@UEBAHXZ', int32_t, {this: Dimension});
 Dimension.prototype.getMoonPhase = procHacker.js('?getMoonPhase@Dimension@@QEBAHXZ', int32_t, {this: Dimension});
 
 // actor.ts
