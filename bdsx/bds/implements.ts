@@ -207,8 +207,7 @@ Dimension.prototype.getHeight = procHacker.js('?getHeight@Dimension@@QEBAFXZ', i
 Dimension.prototype.tryGetClosestPublicRegion = procHacker.js('?tryGetClosestPublicRegion@Dimension@@QEBAPEAVBlockSource@@AEBVChunkPos@@@Z', BlockSource, {this: Dimension}, ChunkPos);
 Dimension.prototype.removeActorByID = procHacker.js('?removeActorByID@Dimension@@QEAAXAEBUActorUniqueID@@@Z', void_t, {this: Dimension}, ActorUniqueID);
 Dimension.prototype.getMinHeight = procHacker.js('?getMinHeight@Dimension@@QEBAFXZ', int16_t, {this:Dimension});
-// it's a virtual function, but returns always 0
-Dimension.prototype.getDefaultBiome = procHacker.js('?getDefaultBiome@Dimension@@UEBAHXZ', int32_t, {this: Dimension});
+Dimension.prototype.getDefaultBiome = procHacker.jsv('??_7NetherDimension@@6BIDimension@@@', '?getDefaultBiome@NetherDimension@@UEBAHXZ', int32_t, {this: Dimension});
 Dimension.prototype.getMoonPhase = procHacker.js('?getMoonPhase@Dimension@@QEBAHXZ', int32_t, {this: Dimension});
 
 // actor.ts
