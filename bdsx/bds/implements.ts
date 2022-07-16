@@ -1153,6 +1153,14 @@ Block.prototype.isUnbreakable = procHacker.js('?isUnbreakable@Block@@QEBA_NXZ', 
 Block.prototype.buildDescriptionId = procHacker.js('?buildDescriptionId@Block@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this: Block, structureReturn: true});
 Block.prototype.isCropBlock = procHacker.js('?isCropBlock@Block@@QEBA_NXZ', bool_t, {this: Block});
 Block.prototype.popResource = procHacker.js('?popResource@Block@@QEBAPEAVItemActor@@AEAVBlockSource@@AEBVBlockPos@@AEBVItemInstance@@@Z', ItemActor, {this: Block}, BlockSource, BlockPos, ItemStack);
+Block.prototype.canHurtAndBreakItem = procHacker.js('?canHurtAndBreakItem@Block@@QEBA_NXZ', bool_t, {this: Block});
+Block.prototype.getThickness = procHacker.js('?getThickness@Block@@QEBAMXZ', float32_t, {this: Block});
+Block.prototype.hasComparatorSignal = procHacker.js('?hasComparatorSignal@Block@@QEBA_NXZ', bool_t, {this: Block});
+Block.prototype.getTranslucency = procHacker.js('?getTranslucency@Block@@QEBAMXZ', float32_t, {this: Block});
+Block.prototype.getExplosionResistance = procHacker.js('?getExplosionResistance@Block@@QEBAMPEAVActor@@@Z', int16_t, {this: Block}, Actor);
+Block.prototype.getComparatorSignal = procHacker.js('?getComparatorSignal@Block@@QEBAHAEAVBlockSource@@AEBVBlockPos@@E@Z', int16_t, {this: Block}, BlockSource, BlockPos, uint8_t);
+Block.prototype.getDirectSignal = procHacker.js('?getDirectSignal@Block@@QEBAHAEAVBlockSource@@AEBVBlockPos@@H@Z', int16_t, {this: Block}, BlockSource, BlockPos, uint8_t);
+Block.prototype.isSignalSource = procHacker.js('?isSignalSource@Block@@QEBA_NXZ', bool_t, {this: Block});
 
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@HPEAVActor@@@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t, Actor);
 BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
