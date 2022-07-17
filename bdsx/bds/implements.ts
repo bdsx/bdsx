@@ -459,7 +459,10 @@ Actor.prototype.getBlockTarget = procHacker.js('?getBlockTarget@Actor@@QEBA?AVBl
 Actor.prototype.isAttackableGamemode = procHacker.jsv("??_7Actor@@6B@", "?isAttackableGamemode@Actor@@UEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isInvulnerableTo = procHacker.jsv("??_7Actor@@6B@", "?isInvulnerableTo@Actor@@UEBA_NAEBVActorDamageSource@@@Z", bool_t, {this:Actor}, ActorDamageSource);
 
-Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
+const Mob$knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
+Mob.prototype.knockback = function (source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+    return Mob$knockback.call(this, source, damage, xd, zd, power, height, heightCap);
+};
 Mob.prototype.getSpeed = procHacker.js("?getSpeed@Mob@@UEBAMXZ", float32_t, {this:Mob});
 Mob.prototype.setSpeed = procHacker.js('?setSpeed@Mob@@UEAAXM@Z', void_t, {this:Mob}, float32_t);
 Mob.prototype.isSprinting = procHacker.js("?isSprinting@Mob@@QEBA_NXZ", bool_t, {this:Mob});
