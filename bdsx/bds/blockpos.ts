@@ -114,9 +114,9 @@ export class BlockPos extends NativeStruct {
     static create(a: number | { x: number, y: number, z: number }, b: number = 0, c: number = 0): BlockPos {
         if (typeof a === "number") {
             const v = new BlockPos(true);
-            v.x = a > 0 ? Math.ceil(a) : Math.floor(a);
-            v.y = b > 0 ? Math.ceil(b) : Math.floor(b);
-            v.z = c > 0 ? Math.ceil(c) : Math.floor(c);
+            v.x = Math.floor(a);
+            v.y = Math.floor(b);
+            v.z = Math.floor(c);
             return v;
         } else {
             return BlockPos.create(a.x, a.y, a.z);
