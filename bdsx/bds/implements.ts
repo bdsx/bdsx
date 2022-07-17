@@ -1019,7 +1019,10 @@ ItemStackBase.prototype.constructItemEnchantsFromUserData = procHacker.js("?cons
 ItemStackBase.prototype.saveEnchantsToUserData = procHacker.js("?saveEnchantsToUserData@ItemStackBase@@QEAAXAEBVItemEnchants@@@Z", void_t, {this:ItemStackBase}, ItemEnchants);
 ItemStackBase.prototype.getCategoryName = procHacker.js('?getCategoryName@ItemStackBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this: ItemStackBase, structureReturn: true});
 ItemStackBase.prototype.canDestroySpecial = procHacker.js('?canDestroySpecial@ItemStackBase@@QEBA_NAEBVBlock@@@Z', bool_t, {this: ItemStackBase}, Block);
-ItemStackBase.prototype.hurtAndBreak = procHacker.js('?hurtAndBreak@ItemStackBase@@QEAA_NHPEAVActor@@@Z', bool_t, {this: ItemStackBase}, int32_t, Actor);
+const ItemStackBase$hurtAndBreak = procHacker.js('?hurtAndBreak@ItemStackBase@@QEAA_NHPEAVActor@@@Z', bool_t, {this: ItemStackBase}, int32_t, Actor);
+ItemStackBase.prototype.hurtAndBreak = function (count: number, actor: Actor|null = null): boolean{
+    return ItemStackBase$hurtAndBreak.call(this, count, actor);
+};
 
 const ItemStackBase$load = procHacker.js("?load@ItemStackBase@@QEAAXAEBVCompoundTag@@@Z", void_t, {this:ItemStackBase}, CompoundTag);
 ItemStackBase.prototype.load = function(tag) {
@@ -1153,6 +1156,17 @@ Block.prototype.isUnbreakable = procHacker.js('?isUnbreakable@Block@@QEBA_NXZ', 
 Block.prototype.buildDescriptionId = procHacker.js('?buildDescriptionId@Block@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this: Block, structureReturn: true});
 Block.prototype.isCropBlock = procHacker.js('?isCropBlock@Block@@QEBA_NXZ', bool_t, {this: Block});
 Block.prototype.popResource = procHacker.js('?popResource@Block@@QEBAPEAVItemActor@@AEAVBlockSource@@AEBVBlockPos@@AEBVItemInstance@@@Z', ItemActor, {this: Block}, BlockSource, BlockPos, ItemStack);
+Block.prototype.canHurtAndBreakItem = procHacker.js('?canHurtAndBreakItem@Block@@QEBA_NXZ', bool_t, {this: Block});
+Block.prototype.getThickness = procHacker.js('?getThickness@Block@@QEBAMXZ', float32_t, {this: Block});
+Block.prototype.hasComparatorSignal = procHacker.js('?hasComparatorSignal@Block@@QEBA_NXZ', bool_t, {this: Block});
+Block.prototype.getTranslucency = procHacker.js('?getTranslucency@Block@@QEBAMXZ', float32_t, {this: Block});
+const Block$getExplosionResistance = procHacker.js('?getExplosionResistance@Block@@QEBAMPEAVActor@@@Z', float32_t, {this: Block}, Actor);
+Block.prototype.getExplosionResistance = function (actor: Actor|null = null): number{
+    return Block$getExplosionResistance.call(this, actor);
+};
+Block.prototype.getComparatorSignal = procHacker.js('?getComparatorSignal@Block@@QEBAHAEAVBlockSource@@AEBVBlockPos@@E@Z', int32_t, {this: Block}, BlockSource, BlockPos, uint8_t);
+Block.prototype.getDirectSignal = procHacker.js('?getDirectSignal@Block@@QEBAHAEAVBlockSource@@AEBVBlockPos@@H@Z', int32_t, {this: Block}, BlockSource, BlockPos, int32_t);
+Block.prototype.isSignalSource = procHacker.js('?isSignalSource@Block@@QEBA_NXZ', bool_t, {this: Block});
 
 (BlockSource.prototype as any)._setBlock = procHacker.js("?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@HPEAVActor@@@Z", bool_t, {this:BlockSource}, int32_t, int32_t, int32_t, Block, int32_t, Actor);
 BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:BlockSource}, BlockPos);
