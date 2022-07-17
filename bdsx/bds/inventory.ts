@@ -413,8 +413,10 @@ export class ItemStackBase extends NativeClass {
     }
     /**
      * Hurts the item's durability.
+     * Breaks the item if its durability reaches 0 or less.
      * @param count delta damage
      * @param owner owner of the item, if not null, server will send inventory.
+     * @returns returns whether hurt successfully or not
      */
     hurtAndBreak(count: number, owner: Actor|null = null): boolean{
         abstract();
