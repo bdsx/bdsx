@@ -1,7 +1,7 @@
 import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, ItemActor } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
-import { ComplexInventoryTransaction, ContainerId, InventorySource, InventorySourceType, ItemStack } from "../bds/inventory";
+import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, InventorySourceType, ItemStack, ItemStackBase } from "../bds/inventory";
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
@@ -230,6 +230,10 @@ export class PlayerDimensionChangeEvent {
 
 export class ProjectileHitEvent {
     constructor(public projectile: Actor, public victim: Actor | null, public result: HitResult) {}
+}
+
+export class EntityCarriedItemChangedEvent {
+    constructor(public entity: Actor, public oldItemStack: ItemStackBase, public newItemStack: ItemStackBase, public handSlot: HandSlot) {}
 }
 
 function onPlayerJump(player: Player):void {
@@ -526,4 +530,21 @@ const onProjectileHit = procHacker.hooking(
     decay(projectileComponent);
     decay(result);
     return onProjectileHit(projectileComponent, event.projectile, event.result);
+});
+
+const sendActorCarriedItemChanged = procHacker.hooking(
+    "?sendActorCarriedItemChanged@ActorEventCoordinator@@QEAAXAEAVActor@@AEBVItemInstance@@1W4HandSlot@@@Z",
+    void_t,
+    null,
+    VoidPointer, // this, ActorEventCoordinator
+    Actor,
+    ItemStackBase, // Actually ItemInstance which extends ItemStackBase without additional fields
+    ItemStackBase,
+    int32_t,
+)((self, entity, oldItemStack, newItemStack, handSlot) => {
+    const event = new EntityCarriedItemChangedEvent(entity, oldItemStack, newItemStack, handSlot);
+    events.entityCarriedItemChanged.fire(event);
+    decay(oldItemStack);
+    decay(newItemStack);
+    return sendActorCarriedItemChanged(self, entity, oldItemStack, newItemStack, handSlot);
 });

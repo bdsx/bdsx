@@ -97,6 +97,11 @@ export enum CreativeItemCategory {
     Uncategorized,
 }
 
+export enum HandSlot {
+    Mainhand = 0,
+    Offhand = 1,
+}
+
 export class Item extends NativeClass {
     /**
      * Returns whether the item is allowed to be used in the offhand slot
