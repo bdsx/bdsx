@@ -49,7 +49,7 @@ export class BlockPos extends NativeStruct {
         if(typeof a === 'number'){
             return BlockPos.create(this.x + (a | 0), this.y + (b | 0), this.z + (c | 0));
         }else{
-            return BlockPos.create(this.x + (a.x | 0), this.y + (a.y | 0), this.z + (a.z | 0));
+            return this.inc(a.x, a.y, a.z);
         }
     }
 
@@ -111,18 +111,16 @@ export class BlockPos extends NativeStruct {
     static create(pos: BlockPos): BlockPos;
     static create(pos: {x:number, y:number, z:number}): BlockPos;
     static create(x:number, y:number, z:number):BlockPos;
-    static create(a:number|{x:number, y:number, z:number}, b?:number, c?:number):BlockPos {
-        const v = new BlockPos(true);
+    static create(a:number|{x:number, y:number, z:number}, b:number=0, c:number=0):BlockPos {
         if(typeof a === "number") {
-            v.x = a;
-            v.y = b!;
-            v.z = c!;
+            const v = new BlockPos(true);
+            v.x = Math.floor(a);
+            v.y = Math.floor(b);
+            v.z = Math.floor(c);
+            return v;
         } else {
-            v.x = a.x;
-            v.y = a.y;
-            v.z = a.z;
+            return BlockPos.create(a.x, a.y, a.z);
         }
-        return v;
     }
 
     toJSON():VectorXYZ {
@@ -276,7 +274,7 @@ export class Vec3 extends NativeStruct {
         if(typeof a === 'number'){
             return Vec3.create(this.x + a, this.y + b, this.z + c);
         }else{
-            return Vec3.create(this.x + a.x, this.y + a.y, this.z + a.z);
+            return this.inc(a.x, a.y, a.z);
         }
     }
 
