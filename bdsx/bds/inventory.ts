@@ -411,7 +411,12 @@ export class ItemStackBase extends NativeClass {
     canDestroySpecial(block: Block): boolean{
         abstract();
     }
-    hurtAndBreak(count: number, actor: Actor|null = null): boolean{
+    /**
+     * Hurts the item's durability.
+     * @param count delta damage
+     * @param owner owner of the item, if not null, server will send inventory.
+     */
+    hurtAndBreak(count: number, owner: Actor|null = null): boolean{
         abstract();
     }
 }
