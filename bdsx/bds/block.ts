@@ -183,7 +183,7 @@ export class Block extends NativeClass {
     getComparatorSignal(blockSource: BlockSource, blockPos: BlockPos, facing: uint8_t): number{
         abstract();
     }
-    getDirectSignal(blockSource: BlockSource, blockPos: BlockPos, facing: uint8_t): number{
+    getDirectSignal(blockSource: BlockSource, blockPos: BlockPos, facing: int32_t): number{
         abstract();
     }
     isSignalSource(): boolean{
