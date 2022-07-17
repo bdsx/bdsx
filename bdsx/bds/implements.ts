@@ -1019,7 +1019,7 @@ ItemStackBase.prototype.constructItemEnchantsFromUserData = procHacker.js("?cons
 ItemStackBase.prototype.saveEnchantsToUserData = procHacker.js("?saveEnchantsToUserData@ItemStackBase@@QEAAXAEBVItemEnchants@@@Z", void_t, {this:ItemStackBase}, ItemEnchants);
 ItemStackBase.prototype.getCategoryName = procHacker.js('?getCategoryName@ItemStackBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this: ItemStackBase, structureReturn: true});
 ItemStackBase.prototype.canDestroySpecial = procHacker.js('?canDestroySpecial@ItemStackBase@@QEBA_NAEBVBlock@@@Z', bool_t, {this: ItemStackBase}, Block);
-ItemStackBase.prototype.hurtAndBreak = procHacker.js('?hurtAndBreak@ItemStackBase@@QEAA_NHPEAVActor@@@Z', bool_t, {this: ItemStackBase}, int8_t, Actor);
+ItemStackBase.prototype.hurtAndBreak = procHacker.js('?hurtAndBreak@ItemStackBase@@QEAA_NHPEAVActor@@@Z', bool_t, {this: ItemStackBase}, int32_t, Actor);
 
 const ItemStackBase$load = procHacker.js("?load@ItemStackBase@@QEAAXAEBVCompoundTag@@@Z", void_t, {this:ItemStackBase}, CompoundTag);
 ItemStackBase.prototype.load = function(tag) {
