@@ -406,7 +406,7 @@ export class ItemStackBase extends NativeClass {
     canDestroySpecial(block: Block): boolean{
         abstract();
     }
-    hurtAndBreak(count: number, actor: Actor): boolean{
+    hurtAndBreak(count: number, actor: Actor|null = null): boolean{
         abstract();
     }
 }
