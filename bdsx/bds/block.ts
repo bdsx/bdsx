@@ -87,6 +87,9 @@ export class BlockLegacy extends NativeClass {
     getSilkTouchedItemInstance(block: Block): ItemStack{
         abstract();
     }
+    getDestroySpeed(): number{
+        abstract();
+    }
 }
 
 @nativeClass(null)
@@ -187,6 +190,9 @@ export class Block extends NativeClass {
         abstract();
     }
     isSignalSource(): boolean{
+        abstract();
+    }
+    getDestroySpeed(): number{
         abstract();
     }
 }
