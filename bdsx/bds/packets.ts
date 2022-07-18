@@ -2021,6 +2021,26 @@ export class ToastRequestPacket extends Packet {
     body: CxxString;
 }
 
+@nativeClass(null)
+export class UpdateAbilitiesPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class UpdateAdventureSettingsPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class DeathInfoPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+export class EditorNetworkPacket extends Packet {
+    // unknown
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2206,6 +2226,10 @@ export const PacketIdToType = {
     0xb8: RequestAbilityPacket,
     0xb9: RequestPermissionsPacket,
     0xba: ToastRequestPacket,
+    0xbb: UpdateAbilitiesPacket,
+    0xbc: UpdateAdventureSettingsPacket,
+    0xbd: DeathInfoPacket,
+    0xbe: EditorNetworkPacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 

@@ -205,7 +205,11 @@ export enum MinecraftPacketIds {// int32_t
 	ChangeMobProperty = 0xb6,
 	LessonProgress = 0xb7,
 	RequestAbility = 0xb8,
-	RequestPermissions =0xb9,
+	RequestPermissions = 0xb9,
 	ToastRequest = 0xba,
+	UpdateAbilities = 0xbb,
+	UpdateAdventureSettings = 0xbc,
+	DeathInfo = 0xbd,
+	EditorNetwork = 0xbe,
 }
 (MinecraftPacketIds as any).__proto__ = null;
