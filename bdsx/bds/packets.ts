@@ -2035,6 +2035,10 @@ export class UpdateAdventureSettingsPacket extends Packet {
 
 @nativeClass()
 export class DeathInfoPacket extends Packet {
+    /**
+     * First: text
+     * Second: params for translating
+     */
     @nativeField(CxxPair.make(CxxString, CxxVector$string))
     info: CxxPair<CxxString, CxxVector<CxxString>>;
 }
