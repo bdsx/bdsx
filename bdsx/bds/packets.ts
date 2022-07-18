@@ -17,6 +17,8 @@ import type { GameType, Player } from "./player";
 import { DisplaySlot, ObjectiveSortOrder, ScoreboardId } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
+const CxxVector$string = CxxVector.make(CxxString);
+
 @nativeClass(null)
 export class LoginPacket extends Packet {
     @nativeField(int32_t)
@@ -170,7 +172,7 @@ export class TextPacket extends Packet {
     name:CxxString;
     @nativeField(CxxString)
     message:CxxString;
-    @nativeField(CxxVector.make(CxxString))
+    @nativeField(CxxVector$string)
     params:CxxVector<CxxString>;
     @nativeField(bool_t, 0x90)
     needsTranslation:bool_t;
@@ -1045,9 +1047,9 @@ class AvailableCommandsEnumData extends AbstractClass{
 
 @nativeClass(null)
 export class AvailableCommandsPacket extends Packet {
-    @nativeField(CxxVector.make(CxxString))
+    @nativeField(CxxVector$string)
     readonly enumValues:CxxVector<CxxString>;
-    @nativeField(CxxVector.make(CxxString))
+    @nativeField(CxxVector$string)
     readonly postfixes:CxxVector<CxxString>;
     @nativeField(CxxVector.make(AvailableCommandsEnumData))
     readonly enums:CxxVector<AvailableCommandsEnumData>;
@@ -1711,7 +1713,7 @@ export class ItemStackRequestActionTransferBase extends ItemStackRequestAction {
 export class ItemStackRequestData extends AbstractClass {
     @nativeField(int32_t, 0x08)
     clientRequestId:int32_t;
-    @nativeField(CxxVector.make(CxxString), 0x10)
+    @nativeField(CxxVector$string, 0x10)
     stringsToFilter:CxxVector<CxxString>;
     @nativeField(CxxVector.make(ItemStackRequestAction.ref()))
     actions:CxxVector<ItemStackRequestAction>;
@@ -2031,9 +2033,10 @@ export class UpdateAdventureSettingsPacket extends Packet {
     // unknown
 }
 
-@nativeClass(null)
+@nativeClass()
 export class DeathInfoPacket extends Packet {
-    // unknown
+    @nativeField(CxxPair.make(CxxString, CxxVector$string))
+    info: CxxPair<CxxString, CxxVector<CxxString>>;
 }
 
 @nativeClass(null)

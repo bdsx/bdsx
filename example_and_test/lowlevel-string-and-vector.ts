@@ -4,7 +4,7 @@ import { CxxStringWrapper } from "bdsx/pointer";
 
 // string allocation
 const cxxstring = new CxxStringWrapper(true); // it will allocate memory if it takes 'true'. it points NULL without 'true'
-cxxstring.construct(); // call the consturctor, std::string::string()
+cxxstring.construct(); // call the constructor, std::string::string()
 cxxstring.value = 'string'; // set value
 cxxstring.resize(2);
 console.assert(cxxstring.value == 'st');
