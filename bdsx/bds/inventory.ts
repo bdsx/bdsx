@@ -228,6 +228,9 @@ export class ItemStackBase extends NativeClass {
     getAuxValue():number{
         abstract();
     }
+    isValidAuxValue(aux: int32_t): boolean {
+        abstract();
+    }
     getMaxStackSize(): number{
         abstract();
     }
