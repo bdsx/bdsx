@@ -236,9 +236,9 @@ export class EntityCarriedItemChangedEvent {
     constructor(public entity: Actor, public oldItemStack: ItemStackBase, public newItemStack: ItemStackBase, public handSlot: HandSlot) {}
 }
 
-export class PlayerKnockbackEvent {
+export class EntityKnockbackEvent {
     constructor(
-        public target: ServerPlayer,
+        public target: Actor,
         public source: Actor | null,
         public damage: number,
         public xd: number,
@@ -562,12 +562,12 @@ const sendActorCarriedItemChanged = procHacker.hooking(
     return sendActorCarriedItemChanged(self, entity, oldItemStack, newItemStack, handSlot);
 });
 
-function onPlayerKnockback(target: ServerPlayer, source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
-    const event = new PlayerKnockbackEvent(target, source, damage, xd, zd, power, height, heightCap);
-    const canceled = events.playerKnockback.fire(event) === CANCEL;
+function onEntityKnockback(target: Actor, source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+    const event = new EntityKnockbackEvent(target, source, damage, xd, zd, power, height, heightCap);
+    const canceled = events.entityKnockback.fire(event) === CANCEL;
     if(canceled) {
         return;
     }
-    return _onPlayerKnockback(target, source, damage, event.xd, event.zd, event.power, event.height, event.heightCap);
+    return _onEntityKnockback(target, source, damage, event.xd, event.zd, event.power, event.height, event.heightCap);
 }
-const _onPlayerKnockback = procHacker.hooking("?knockback@ServerPlayer@@UEAAXPEAVActor@@HMMMMM@Z", void_t, null, ServerPlayer, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t)(onPlayerKnockback);
+const _onEntityKnockback = procHacker.hooking("?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z", void_t, null, Actor, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t)(onEntityKnockback);
