@@ -215,6 +215,13 @@ export class ItemStackBase extends NativeClass {
     protected _setCustomLore(name:CxxVector<string>):void {
         abstract();
     }
+    /**
+     * just `ItemStackBase::add` in BDS.
+     * but it conflicts to {@link VoidPointer.prototype.add}
+     */
+    addAmount(amount: number): void {
+        abstract();
+    }
     remove(amount: number): void{
         abstract();
     }
