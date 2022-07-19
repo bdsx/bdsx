@@ -1239,6 +1239,14 @@ export class Actor extends AbstractClass {
     canSee(target: Actor | Vec3): boolean {
         abstract();
     }
+
+    isValidTarget(source: Actor|null = null): boolean {
+        abstract();
+    }
+
+    canAttack(target: Actor | null, unknown = false): boolean {
+        abstract();
+    }
 }
 mangle.update(Actor);
 

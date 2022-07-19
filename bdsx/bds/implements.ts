@@ -467,6 +467,14 @@ Actor.prototype.canSee = function (target) {
         return Actor$canSeePos(this, target);
     }
 };
+const Actor$isValidTarget = procHacker.jsv("??_7ServerPlayer@@6B@", "?isValidTarget@ServerPlayer@@UEBA_NPEAVActor@@@Z", bool_t, {this:Actor}, Actor);
+Actor.prototype.isValidTarget = function (source = null) {
+    return Actor$isValidTarget.call(this, source);
+};
+const Actor$canAttack = procHacker.jsv("??_7Actor@@6B@", "?canAttack@Actor@@UEBA_NPEAV1@_N@Z", bool_t, {this:Actor}, Actor, bool_t);
+Actor.prototype.canAttack = function (target, unknown = false) {
+    return Actor$canAttack.call(this, target, unknown);
+};
 
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("?getSpeed@Mob@@UEBAMXZ", float32_t, {this:Mob});
