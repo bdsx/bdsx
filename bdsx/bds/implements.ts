@@ -458,6 +458,15 @@ Actor.prototype.isAngry = procHacker.js('?isAngry@Actor@@QEBA_NXZ', bool_t, {thi
 Actor.prototype.getBlockTarget = procHacker.js('?getBlockTarget@Actor@@QEBA?AVBlockPos@@XZ', BlockPos, {this: Actor});
 Actor.prototype.isAttackableGamemode = procHacker.jsv("??_7Actor@@6B@", "?isAttackableGamemode@Actor@@UEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isInvulnerableTo = procHacker.jsv("??_7Actor@@6B@", "?isInvulnerableTo@Actor@@UEBA_NAEBVActorDamageSource@@@Z", bool_t, {this:Actor}, ActorDamageSource);
+const Actor$canSeeEntity = procHacker.js("?canSee@Actor@@UEBA_NAEBV1@@Z", bool_t, null, Actor, Actor);
+const Actor$canSeePos = procHacker.js("?canSee@Actor@@UEBA_NAEBVVec3@@@Z", bool_t, null, Actor, Vec3);
+Actor.prototype.canSee = function (target) {
+    if (target instanceof Actor) {
+        return Actor$canSeeEntity(this, target);
+    }else {
+        return Actor$canSeePos(this, target);
+    }
+};
 
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
 Mob.prototype.getSpeed = procHacker.js("?getSpeed@Mob@@UEBAMXZ", float32_t, {this:Mob});

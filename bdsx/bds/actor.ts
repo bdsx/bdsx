@@ -1233,6 +1233,12 @@ export class Actor extends AbstractClass {
     isInvulnerableTo(damageSource: ActorDamageSource): boolean {
         abstract();
     }
+
+    canSee(target: Actor): boolean;
+    canSee(target: Vec3): boolean;
+    canSee(target: Actor | Vec3): boolean {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
