@@ -7,6 +7,7 @@ import './attribute';
 import './blockcustomname';
 import './customcommand';
 import './custommotd';
+import './event-knockback';
 import './event-playerdropitem';
 import './executecommand';
 import './form';
