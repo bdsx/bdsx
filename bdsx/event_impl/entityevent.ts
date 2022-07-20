@@ -1,4 +1,4 @@
-import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, ItemActor } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, ItemActor, Mob } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, InventorySourceType, ItemStack, ItemStackBase } from "../bds/inventory";
@@ -38,7 +38,7 @@ export class EntityHeathChangeEvent {
 
 export class EntityDieEvent {
     constructor(
-        public entity: Actor,
+        public entity: Mob,
         public damageSource: ActorDamageSource,
     ) {
     }
@@ -236,6 +236,20 @@ export class EntityCarriedItemChangedEvent {
     constructor(public entity: Actor, public oldItemStack: ItemStackBase, public newItemStack: ItemStackBase, public handSlot: HandSlot) {}
 }
 
+export class EntityKnockbackEvent {
+    constructor(
+        public target: Mob,
+        public source: Actor | null,
+        public damage: number,
+        public xd: number,
+        public zd: number,
+        public power: number,
+        public height: number,
+        public heightCap: number,
+    ) {
+    }
+}
+
 function onPlayerJump(player: Player):void {
     const event = new PlayerJumpEvent(player);
     events.playerJump.fire(event);
@@ -303,13 +317,13 @@ function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth:number
 }
 const _onEntityHealthChange = procHacker.hooking('?change@HealthAttributeDelegate@@UEAAMMMAEBVAttributeBuff@@@Z', bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHealthChange);
 
-function onEntityDie(entity:Actor, damageSource:ActorDamageSource):boolean {
+function onEntityDie(entity:Mob, damageSource:ActorDamageSource):boolean {
     const event = new EntityDieEvent(entity, damageSource);
     events.entityDie.fire(event);
     decay(damageSource);
     return _onEntityDie(event.entity, event.damageSource);
 }
-const _onEntityDie = procHacker.hooking('?die@Mob@@UEAAXAEBVActorDamageSource@@@Z', bool_t, null, Actor, ActorDamageSource)(onEntityDie);
+const _onEntityDie = procHacker.hooking('?die@Mob@@UEAAXAEBVActorDamageSource@@@Z', bool_t, null, Mob, ActorDamageSource)(onEntityDie);
 
 function onEntityStartSwimming(entity:Actor):void {
     const event = new EntityStartSwimmingEvent(entity);
@@ -514,7 +528,6 @@ function onPlayerDimensionChange(player: ServerPlayer, dimension: DimensionId): 
     }
     return _onPlayerDimensionChange(player, event.dimension);
 }
-
 const _onPlayerDimensionChange = procHacker.hooking("?changeDimension@ServerPlayer@@UEAAXV?$AutomaticID@VDimension@@H@@@Z", void_t, null, ServerPlayer, int32_t)(onPlayerDimensionChange);
 
 const onProjectileHit = procHacker.hooking(
@@ -548,3 +561,13 @@ const sendActorCarriedItemChanged = procHacker.hooking(
     decay(newItemStack);
     return sendActorCarriedItemChanged(self, entity, oldItemStack, newItemStack, handSlot);
 });
+
+function onEntityKnockback(target: Mob, source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
+    const event = new EntityKnockbackEvent(target, source, damage, xd, zd, power, height, heightCap);
+    const canceled = events.entityKnockback.fire(event) === CANCEL;
+    if(canceled) {
+        return;
+    }
+    return _onEntityKnockback(target, source, damage, event.xd, event.zd, event.power, event.height, event.heightCap);
+}
+const _onEntityKnockback = procHacker.hooking("?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z", void_t, null, Mob, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t)(onEntityKnockback);
