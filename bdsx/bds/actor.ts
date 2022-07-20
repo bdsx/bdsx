@@ -305,7 +305,7 @@ export enum ActorFlags {
      * @deprecated typo.
      */
     Ignit0ed,
-    Ignited,
+    Ignited = 0xa,
     Baby,
     Converting,
     Critical,
