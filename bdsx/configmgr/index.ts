@@ -21,9 +21,8 @@ export class ConfigMgr<T extends Options> {
     (
         type: {new(...args : any[]): T ;},
         modName: string,
-        fileName: string = 'config.json'
-    )
-    {
+        fileName: string = 'config.json',
+    ) {
         this.modName = modName;
         this.configPath = join(this.rootConfigPath, this.modName);
         fileName = !fileName.endsWith('.json') ? fileName + '.json' : fileName;
@@ -34,10 +33,10 @@ export class ConfigMgr<T extends Options> {
         this.load<T>(type);
     }
 
-    private logger = (message: string) => console.log('[BDSX-ConfigMgr: ' + this.modName + '] ' + message);
+    private logger = (message: string): void => console.log('[BDSX-ConfigMgr: ' + this.modName + '] ' + message);
 
     /** Create the directory if it doesn't exist. */
-    private existsOrMkdir(path: string) {
+    private existsOrMkdir(path: string): void {
         if (!existsSync(path)) mkdirSync(path);
     }
 
@@ -63,15 +62,15 @@ export class ConfigMgr<T extends Options> {
     }
 
     /** Reloads configuration from disk. Could probably be implemented later to watch for file changes instead. */
-    public reload() {
-        let updated: string[] = [];
+    public reload(): Record<string, any> {
+        const updated: string[] = [];
         const newOptions = JSON.parse(readFileSync(this.fileName, 'utf8'));
         for (const prop in this.options) {
             if (newOptions.hasOwnProperty(prop)) {
                 const key = Object.keys(this.options).indexOf(prop);
                 const oldVal = Object.values(this.options)[key];
                 const newVal = Object.values(newOptions)[key];
-                if (oldVal != newVal) {
+                if (oldVal !== newVal) {
                     this.logger('Configuration option ' + prop + ' on disk (' + newVal + ') is different to running value (' + oldVal +'). Updating running value.');
                     updated.push(prop);
                     (this.options as any)[prop] = newVal;
@@ -80,8 +79,8 @@ export class ConfigMgr<T extends Options> {
         }
         return {
             modified: updated instanceof Array && updated.length > 0,
-            updated: updated
-        }
+            updated: updated,
+        };
     }
 
     /** Saves configuration to disk. */
@@ -95,9 +94,7 @@ export class ConfigMgr<T extends Options> {
         clearTimeout(SAVE_RETRY_TIMEOUT);
         try {
             writeFileSync(this.fileName, JSON.stringify(this.options, null, ' '));
-        }
-        catch {}
-        finally {
+        } catch {} finally {
             this.lock = false;
         }
     }
