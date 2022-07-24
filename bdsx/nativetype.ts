@@ -168,7 +168,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
          */
         isTypeOf:(v:unknown)=>boolean,
         /**
-         * isTypeOf but allo downcasting
+         * isTypeOf but allow downcasting
          */
         isTypeOfWeak:((v:unknown)=>boolean)|undefined,
         /**

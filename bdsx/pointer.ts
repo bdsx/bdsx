@@ -1,7 +1,7 @@
 import * as util from 'util';
 import { CircularDetector } from "./circulardetector";
 import { abstract, Encoding, TypeFromEncoding } from "./common";
-import { NativePointer, StaticPointer, VoidPointer } from "./core";
+import { NativePointer, StaticPointer } from "./core";
 import { msAlloc } from "./msalloc";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "./nativeclass";
 import { CxxString, int64_as_float_t, NativeDescriptorBuilder, NativeType, Type } from "./nativetype";

@@ -134,7 +134,7 @@ export declare class PrivatePointer extends VoidPointer {
     /**
      * set string with null character
      * @param encoding default = Encoding.Utf8
-     * @return writed bytes without null character
+     * @return written bytes without null character
      * if encoding is Encoding.Buffer it will call setBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
@@ -244,7 +244,7 @@ export declare class StaticPointer extends PrivatePointer {
     /**
      * set string with null character
      * @param encoding default = Encoding.Utf8
-     * @return writed bytes without null character
+     * @return written bytes without null character
      * if encoding is Encoding.Buffer it will call setBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
@@ -632,13 +632,13 @@ export declare namespace cgate {
     export const bdsxCoreVersion:string;
 
     /**
-     * the native function in kernal32.dll
+     * the native function in kernel32.dll
      * HMODULE GetModuleHandleW(LPCWSTR lpModuleName)
      */
     export const GetModuleHandleWPtr: VoidPointer;
 
     /**
-     * the native function in kernal32.dll
+     * the native function in kernel32.dll
      * FARPROC GetProcAddress(HMODULE hModule, LPCSTR lpProcName)
      */
     export const GetProcAddressPtr: VoidPointer;
@@ -729,7 +729,7 @@ export declare namespace ipfilter {
     export function remove(ip:string):boolean;
 
     /**
-     * remove all registed filters
+     * remove all registered filters
      */
     export function clear():void;
 

@@ -3,7 +3,7 @@ import * as colors from 'colors';
 import { str2set } from './util';
 
 const SPACE_REG = /^([\s\uFEFF\xA0]*)(.*[^\s\uFEFF\xA0])[\s\uFEFF\xA0]*$/;
-const DEFAULT_SEPERATOR = str2set('!@#%^&*()+-=`~[]{};\':",./<>?');
+const DEFAULT_SEPARATOR = str2set('!@#%^&*()+-=`~[]{};\':",./<>?');
 
 const SPACES = str2set(' \t\r\n\uFEFF\xa0');
 
@@ -70,7 +70,7 @@ export class LanguageParser extends TextParser {
 
     constructor(
         context:string,
-        public readonly seperators:Set<number> = DEFAULT_SEPERATOR) {
+        public readonly seperators:Set<number> = DEFAULT_SEPARATOR) {
         super(context);
         for (const chr of SPACES) {
             this.seperators.add(chr);

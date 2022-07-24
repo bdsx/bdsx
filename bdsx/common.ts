@@ -4,7 +4,7 @@ import * as colors from 'colors';
 if ((global as any).bdsx != null) {
     console.error(colors.red('[BDSX] multiple imported'));
     console.error(colors.red('First Import: '+(global as any).bdsx));
-    console.error(colors.red('Dupplicated: '+__dirname));
+    console.error(colors.red('Duplicated: '+__dirname));
 }
 (global as any).bdsx = __dirname;
 

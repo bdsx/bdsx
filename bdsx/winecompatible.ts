@@ -98,7 +98,7 @@ function initWineExec():(commandLine:string, cwd?:string)=>void {
     );
 
     /**
-     * call kernal32.dll!CreateProcess
+     * call kernel32.dll!CreateProcess
      * @param cwd default is the project root.
      */
     function createSync(exePath:string, parameters:string, cwd:string = fsutil.projectPath):number {

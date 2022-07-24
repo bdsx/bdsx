@@ -738,7 +738,7 @@ function parseDeco(
                 if (base !== null) {
                     returnType = deco.apply(base);
                     if (fnOrThisType.returnType !== null) {
-                        throw Error(`returnType dupplicated (${fnOrThisType})`);
+                        throw Error(`returnType duplicated (${fnOrThisType})`);
                     }
                 } else {
                     if (fnOrThisType.returnType !== null) {
