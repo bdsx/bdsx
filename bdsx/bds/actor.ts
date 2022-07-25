@@ -635,7 +635,12 @@ export class Actor extends AbstractClass {
     /**
      * @alias instanceof ServerPlayer
      */
-    isPlayer(includeSimulatedPlayer: boolean = false):this is ServerPlayer {
+    isPlayer(): this is ServerPlayer;
+    /**
+     * @deprecated use {@link Player.isSimulated} instead.
+     */
+    isPlayer(includeSimulatedPlayer: boolean): this is SimulatedPlayer;
+    isPlayer(includeSimulatedPlayer: boolean = false): this is ServerPlayer {
         abstract();
     }
     /**

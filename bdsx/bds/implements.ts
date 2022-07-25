@@ -683,8 +683,10 @@ Player.prototype.isLoading = procHacker.jsv('??_7ServerPlayer@@6B@', '?isLoading
 Player.prototype.isPlayerInitialized  = procHacker.jsv('??_7ServerPlayer@@6B@', '?isPlayerInitialized@ServerPlayer@@UEBA_NXZ', bool_t, {this:Player});
 Player.prototype.getDestroyProgress = procHacker.js('?getDestroyProgress@Player@@QEBAMAEBVBlock@@@Z', float32_t, {this: Player}, Block);
 Player.prototype.respawn = procHacker.js("?respawn@Player@@UEAAXXZ", void_t, {this: Player});
-Player.prototype.isSimulated = procHacker.js("?isSimulated@Player@@UEBA_NXZ", bool_t, {this: Player});
-Player.prototype.setRespawnReady = procHacker.js('?setRespawnReady@Player@@QEAAXAEBVVec3@@@Z', void_t, {this: Player}, Vec3);
+Player.prototype.isSimulated = function () {
+    return this instanceof SimulatedPlayer;
+};
+Player.prototype.setRespawnReady = procHacker.js('?setRespawnReady@Player@@QEAAXAEBVVec3@@@Z', void_t, { this: Player }, Vec3);
 Player.prototype.setSpawnBlockRespawnPosition = procHacker.js("?setSpawnBlockRespawnPosition@Player@@QEAAXAEBVBlockPos@@V?$AutomaticID@VDimension@@H@@@Z", void_t, {this: Player}, BlockPos, int32_t);
 Player.prototype.setSelectedSlot = procHacker.js("?setSelectedSlot@Player@@QEAAAEBVItemStack@@H@Z", ItemStack, {this:Player}, int32_t);
 
