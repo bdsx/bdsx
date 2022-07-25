@@ -281,6 +281,9 @@ export namespace makefunc {
         let offset = 0;
         function param(varname:string, type:Paramable):void {
             args.push(varname);
+            nativeParam(varname, type);
+        }
+        function nativeParam(varname:string, type:Paramable):void {
             gen.import(`${varname}_t`, type);
             if (offset >= 0x20) { // args memory space
                 if (type[registerDirect]) {
@@ -300,19 +303,18 @@ export namespace makefunc {
             offset += 8;
         }
 
+        const args:string[] = [];
         if (options.structureReturn) {
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
-                param(`retVar`, returnTypeResolved);
+                nativeParam(`retVar`, returnTypeResolved);
             } else {
-                param(`retVar`, StaticPointer);
+                nativeParam(`retVar`, StaticPointer);
             }
         }
 
-        const args:string[] = [];
-        if (options.this != null) {
+        let needThis:boolean;
+        if ((needThis = (options.this != null))) {
             param(`thisVar`, options.this);
-        } else {
-            args.push('null');
         }
         for (let i=0;i<paramsTypeResolved.length;i++) {
             const type = paramsTypeResolved[i];
@@ -324,8 +326,9 @@ export namespace makefunc {
         gen.import('returnTypeResolved', returnTypeResolved);
         gen.import('setToParam', setToParam);
         gen.import('ctor_move', ctor_move);
+        if (needThis) gen.writeln(`const res=jsfunction.call(${args.join(',')});`);
+        else gen.writeln(`const res=jsfunction(${args.join(',')});`);
         if (options.structureReturn) {
-            gen.writeln(`const res=jsfunction.call(${args.join(',')});`);
             gen.writeln('returnTypeResolved[ctor_move](retVar, res);');
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
                 gen.writeln('returnTypeResolved[setToParam](result, retVar);');
@@ -333,7 +336,6 @@ export namespace makefunc {
                 gen.writeln('result.setPointer(retVar);');
             }
         } else {
-            gen.writeln(`const res=jsfunction.call(${args.join(',')});`);
             gen.writeln('returnTypeResolved[setToParam](result, res);');
         }
         gen.writeln('for (let i=temporalDtors.length-1; i>=dtorIdx; i--) {');

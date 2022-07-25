@@ -626,6 +626,9 @@ export const bin64_t = new NativeType<string>(
 });
 export type bin64_t = string;
 
+function bin128CannotBeUsedAsTheParameterType():never {
+    throw Error('bin128_t cannot be used as the parameter type');
+}
 export const bin128_t = new NativeType<string>(
     'unsigned __int128', 'bin128_t',
     16, 8,
@@ -633,8 +636,8 @@ export const bin128_t = new NativeType<string>(
     undefined,
     (ptr, offset)=>ptr.getBin(8, offset),
     (ptr, v, offset)=>ptr.setBin(v, offset),
-    ()=>{ throw Error('bin128_t does not support the function type'); },
-    ()=>{ throw Error('bin128_t does not support the function type'); },
+    bin128CannotBeUsedAsTheParameterType,
+    bin128CannotBeUsedAsTheParameterType,
 ).extends({
     one:'\u0001\0\0\0',
     zero:'\0\0\0\0',
