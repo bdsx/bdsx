@@ -233,8 +233,9 @@ Actor.prototype.teleportTo = function(position: Vec3, shouldStopRiding: boolean,
 Actor.prototype.isMob = function() {
     return this instanceof Mob;
 };
+// `includeSimulatedPlayer` is for deprecated overload
 Actor.prototype.isPlayer = function(includeSimulatedPlayer: boolean = false) {
-    return (includeSimulatedPlayer && this instanceof SimulatedPlayer) || this instanceof ServerPlayer;
+    return this instanceof ServerPlayer;
 };
 Actor.prototype.isSimulatedPlayer = function() {
     return this instanceof SimulatedPlayer;
@@ -690,7 +691,7 @@ Player.prototype.respawn = procHacker.js("?respawn@Player@@UEAAXXZ", void_t, {th
 Player.prototype.isSimulated = function () {
     return this instanceof SimulatedPlayer;
 };
-Player.prototype.setRespawnReady = procHacker.js('?setRespawnReady@Player@@QEAAXAEBVVec3@@@Z', void_t, { this: Player }, Vec3);
+Player.prototype.setRespawnReady = procHacker.js('?setRespawnReady@Player@@QEAAXAEBVVec3@@@Z', void_t, {this: Player}, Vec3);
 Player.prototype.setSpawnBlockRespawnPosition = procHacker.js("?setSpawnBlockRespawnPosition@Player@@QEAAXAEBVBlockPos@@V?$AutomaticID@VDimension@@H@@@Z", void_t, {this: Player}, BlockPos, int32_t);
 Player.prototype.setSelectedSlot = procHacker.js("?setSelectedSlot@Player@@QEAAAEBVItemStack@@H@Z", ItemStack, {this:Player}, int32_t);
 

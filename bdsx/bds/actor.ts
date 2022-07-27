@@ -642,7 +642,7 @@ export class Actor extends AbstractClass {
      */
     isPlayer(): this is ServerPlayer;
     /**
-     * @deprecated use Player.prototype.isSimulated instead.
+     * @deprecated use Player.prototype.isSimulated instead. A SimulatedPlayer is a ServerPlayer anyway.
      */
     isPlayer(includeSimulatedPlayer: boolean): this is SimulatedPlayer;
     isPlayer(includeSimulatedPlayer: boolean = false): this is ServerPlayer {
