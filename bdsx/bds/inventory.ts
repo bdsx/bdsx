@@ -317,7 +317,9 @@ export class ItemStackBase extends NativeClass {
         this._setCustomLore(cxxvector);
         cxxvector.destruct();
     }
-
+    getCustomLore(): string[] {
+        abstract();
+    }
     /**
      * @remarks The value is applied only to Damageable items
      */

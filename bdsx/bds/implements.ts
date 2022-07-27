@@ -63,6 +63,9 @@ const WrappedInt32 = Wrapper.make(int32_t);
 
 // std::vector
 const CxxVector$Vec3 = CxxVector.make(Vec3);
+const CxxVectorToArray$string = CxxVectorToArray.make(CxxString);
+const CxxVector$ScoreboardIdentityRef = CxxVector.make(ScoreboardIdentityRef);
+const CxxVector$ScoreboardId = CxxVector.make(ScoreboardId);
 
 // utils
 namespace CommandUtils {
@@ -1034,6 +1037,7 @@ ItemStackBase.prototype.allocateAndSave = procHacker.js("?save@ItemStackBase@@QE
 
 (ItemStackBase.prototype as any)._getItem = procHacker.js("?getItem@ItemStackBase@@QEBAPEBVItem@@XZ", Item, {this:ItemStackBase});
 (ItemStackBase.prototype as any)._setCustomLore = procHacker.js("?setCustomLore@ItemStackBase@@QEAAXAEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@@Z", void_t, {this:ItemStackBase}, CxxVector.make(CxxStringWrapper));
+ItemStackBase.prototype.getCustomLore = procHacker.js("?getCustomLore@ItemStackBase@@QEBA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ", CxxVectorToArray$string, {this:ItemStackBase,structureReturn:true});
 
 ItemStackBase.prototype.constructItemEnchantsFromUserData = procHacker.js("?constructItemEnchantsFromUserData@ItemStackBase@@QEBA?AVItemEnchants@@XZ", ItemEnchants, {this:ItemStackBase, structureReturn:true});
 ItemStackBase.prototype.saveEnchantsToUserData = procHacker.js("?saveEnchantsToUserData@ItemStackBase@@QEAAXAEBVItemEnchants@@@Z", void_t, {this:ItemStackBase}, ItemEnchants);
@@ -1393,14 +1397,14 @@ Scoreboard.prototype.createScoreboardId = procHacker.js("?createScoreboardId@Ser
 Scoreboard.prototype.getCriteria = procHacker.js("?getCriteria@Scoreboard@@QEBAPEAVObjectiveCriteria@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", ObjectiveCriteria, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getDisplayObjective = procHacker.js("?getDisplayObjective@Scoreboard@@QEBAPEBVDisplayObjective@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", DisplayObjective, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getObjective = procHacker.js("?getObjective@Scoreboard@@QEBAPEAVObjective@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", Objective, {this:Scoreboard}, CxxString);
-Scoreboard.prototype.getObjectiveNames = procHacker.js("?getObjectiveNames@Scoreboard@@QEBA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ", CxxVectorToArray.make(CxxString), {this:Scoreboard, structureReturn: true});
+Scoreboard.prototype.getObjectiveNames = procHacker.js("?getObjectiveNames@Scoreboard@@QEBA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ", CxxVectorToArray$string, {this:Scoreboard, structureReturn: true});
 Scoreboard.prototype.getObjectives = procHacker.js("?getObjectives@Scoreboard@@QEBA?AV?$vector@PEBVObjective@@V?$allocator@PEBVObjective@@@std@@@std@@XZ", CxxVectorToArray.make(Objective.ref()), {this:Scoreboard, structureReturn: true});
 Scoreboard.prototype.getActorScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVActor@@@Z", ScoreboardId, {this:Scoreboard}, Actor);
 Scoreboard.prototype.getFakePlayerScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", ScoreboardId, {this:Scoreboard}, CxxString);
 Scoreboard.prototype.getPlayerScoreboardId = procHacker.js("?getScoreboardId@Scoreboard@@QEBAAEBUScoreboardId@@AEBVPlayer@@@Z", ScoreboardId, {this:Scoreboard}, Player);
 Scoreboard.prototype.getScoreboardIdentityRef = procHacker.js("?getScoreboardIdentityRef@Scoreboard@@QEAAPEAVScoreboardIdentityRef@@AEBUScoreboardId@@@Z", ScoreboardIdentityRef.ref(), {this:Scoreboard}, ScoreboardId);
-(Scoreboard.prototype as any)._getScoreboardIdentityRefs = procHacker.js("?getScoreboardIdentityRefs@Scoreboard@@QEBA?AV?$vector@VScoreboardIdentityRef@@V?$allocator@VScoreboardIdentityRef@@@std@@@std@@XZ", CxxVector.make(ScoreboardIdentityRef), {this:Scoreboard}, CxxVector.make(ScoreboardIdentityRef));
-(Scoreboard.prototype as any)._getTrackedIds = procHacker.js("?getTrackedIds@Scoreboard@@QEBA?AV?$vector@UScoreboardId@@V?$allocator@UScoreboardId@@@std@@@std@@XZ", CxxVector.make(ScoreboardId), {this:Scoreboard}, CxxVector.make(ScoreboardId));
+(Scoreboard.prototype as any)._getScoreboardIdentityRefs = procHacker.js("?getScoreboardIdentityRefs@Scoreboard@@QEBA?AV?$vector@VScoreboardIdentityRef@@V?$allocator@VScoreboardIdentityRef@@@std@@@std@@XZ", CxxVector$ScoreboardIdentityRef, {this:Scoreboard}, CxxVector$ScoreboardIdentityRef);
+(Scoreboard.prototype as any)._getTrackedIds = procHacker.js("?getTrackedIds@Scoreboard@@QEBA?AV?$vector@UScoreboardId@@V?$allocator@UScoreboardId@@@std@@@std@@XZ", CxxVector$ScoreboardId, {this:Scoreboard}, CxxVector$ScoreboardId);
 Scoreboard.prototype.removeObjective = procHacker.js("?removeObjective@Scoreboard@@QEAA_NPEAVObjective@@@Z", bool_t, {this:Scoreboard}, Objective);
 Scoreboard.prototype.resetPlayerScore = procHacker.js("?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z", void_t, {this:Scoreboard}, ScoreboardId, Objective);
 Scoreboard.prototype.sync = procHacker.js("?onScoreChanged@ServerScoreboard@@UEAAXAEBUScoreboardId@@AEBVObjective@@@Z", void_t, {this:Scoreboard}, ScoreboardId, Objective);
