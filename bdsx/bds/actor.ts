@@ -559,6 +559,10 @@ export class Actor extends AbstractClass {
     protected _getArmorValue():number{
         abstract();
     }
+    /**
+     * Actually it's Mob::getArmorValue in BDS.
+     * @returns the entity's armor value (as an integer)
+     */
     getArmorValue(): number{
         if(!this.isMob()) return 0;
         return this._getArmorValue();
