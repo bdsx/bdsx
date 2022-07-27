@@ -5,6 +5,7 @@ import type { CommandResult, CommandResultType } from "../commandresult";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { events } from '../event';
 import { mangle } from "../mangle";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
@@ -559,7 +560,7 @@ export class Actor extends AbstractClass {
         abstract();
     }
     getArmorValue(): number{
-        if(this.isItem()) return 0;
+        if(!this.isMob()) return 0;
         return this._getArmorValue();
     }
     /**
