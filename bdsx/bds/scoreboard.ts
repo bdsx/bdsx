@@ -69,7 +69,7 @@ export class Scoreboard extends AbstractClass {
     }
 
     getScoreboardIdentityRefs():ScoreboardIdentityRef[] {
-        const arr =  this._getScoreboardIdentityRefs(CxxVector.make(ScoreboardIdentityRef).construct());
+        const arr =  this._getScoreboardIdentityRefs(CxxVector$ScoreboardIdentityRef.construct());
         const retval = arr.toArray();
         arr.destruct();
         return retval;
@@ -80,7 +80,7 @@ export class Scoreboard extends AbstractClass {
     }
 
     getTrackedIds():ScoreboardId[] {
-        const arr =  this._getTrackedIds(CxxVector.make(ScoreboardId).construct());
+        const arr =  this._getTrackedIds(CxxVector$ScoreboardId.construct());
         const retval = arr.toArray();
         arr.destruct();
         return retval;
@@ -232,6 +232,7 @@ export class ScoreboardId extends NativeClass {
         abstract();
     }
 }
+const CxxVector$ScoreboardId = CxxVector.make(ScoreboardId);
 
 @nativeClass()
 export class ScoreInfo extends NativeClass {
@@ -261,6 +262,7 @@ export class ScoreboardIdentityRef extends NativeClass {
         return retval;
     }
 }
+const CxxVector$ScoreboardIdentityRef = CxxVector.make(ScoreboardIdentityRef);
 
 export enum DisplaySlot {
     BelowName = "belowname",
