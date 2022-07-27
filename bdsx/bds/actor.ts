@@ -1317,6 +1317,9 @@ export class Mob extends Actor {
         const retval = this.hurtEffects_(source, damage, knock, ignite);
         return retval;
     }
+    getArmorCoverPercentage(): float32_t {
+        abstract();
+    }
 }
 
 export class ItemActor extends Actor {

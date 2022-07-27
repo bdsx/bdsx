@@ -488,6 +488,7 @@ Mob.prototype.setSprinting = procHacker.js("?setSprinting@Mob@@UEAAX_N@Z", void_
 Mob.prototype.isAlive = procHacker.js('?isAlive@Mob@@UEBA_NXZ', bool_t, {this:Mob});
 (Mob.prototype as any)._sendInventory = procHacker.js('?sendInventory@Mob@@UEAAX_N@Z', void_t, {this:Mob}, bool_t);
 (Mob.prototype as any).hurtEffects_ = procHacker.jsv('??_7Mob@@6B@', '?hurtEffects@Mob@@UEAAXAEBVActorDamageSource@@M_N1@Z', bool_t, {this:Mob}, ActorDamageSource, int32_t, bool_t, bool_t);
+Mob.prototype.getArmorCoverPercentage = procHacker.js("?getArmorCoverPercentage@Mob@@UEBAMXZ", float32_t, {this:Mob});
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('?_getStackRef@OwnerStorageEntity@@IEBAAEAVEntityContext@@XZ', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('?tryGetFromEntity@Actor@@SAPEAV1@AEAVEntityContext@@_N@Z', Actor, null, EntityContext);
