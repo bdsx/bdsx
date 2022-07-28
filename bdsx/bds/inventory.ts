@@ -651,7 +651,7 @@ export class PlayerInventory extends AbstractClass {
      * @param maxCount max number of items to remove
      * @returns number of items not removed
      */
-    removeResource(item: ItemStack, requireExactAux: boolean = true, requireExactData: boolean = true, maxCount: int32_t = 0xFFFFFFFF): int32_t {
+    removeResource(item: ItemStack, requireExactAux: boolean = true, requireExactData: boolean = false, maxCount?: int32_t): int32_t {
         abstract();
     }
 }
@@ -771,6 +771,11 @@ export class InventoryTransaction extends AbstractClass {
     protected _getActions(source:InventorySource):CxxVector<InventoryAction> {
         abstract();
     }
+}
+
+@nativeClass(null)
+export class InventoryTransactionManager extends AbstractClass {
+    // unknown
 }
 
 @nativeClass()

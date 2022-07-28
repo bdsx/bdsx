@@ -1,8 +1,8 @@
 import { abstract, BuildPlatform } from "../common";
 import { mce } from "../mce";
 import { float32_t } from "../nativetype";
-import type { Abilities, LayeredAbilities } from "./abilities";
-import { Actor, ActorDamageSource, ActorUniqueID, DimensionId, Mob } from "./actor";
+import type { LayeredAbilities } from "./abilities";
+import { Actor, ActorDamageSource, DimensionId, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Block } from "./block";
