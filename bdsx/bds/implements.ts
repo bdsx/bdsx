@@ -490,6 +490,7 @@ Mob.prototype.isAlive = procHacker.js('?isAlive@Mob@@UEBA_NXZ', bool_t, {this:Mo
 (Mob.prototype as any)._sendInventory = procHacker.js('?sendInventory@Mob@@UEAAX_N@Z', void_t, {this:Mob}, bool_t);
 (Mob.prototype as any).hurtEffects_ = procHacker.jsv('??_7Mob@@6B@', '?hurtEffects@Mob@@UEAAXAEBVActorDamageSource@@M_N1@Z', bool_t, {this:Mob}, ActorDamageSource, int32_t, bool_t, bool_t);
 Mob.prototype.getArmorCoverPercentage = procHacker.js("?getArmorCoverPercentage@Mob@@UEBAMXZ", float32_t, {this:Mob});
+Mob.prototype.getToughnessValue = procHacker.js("?getToughnessValue@Mob@@UEBAHXZ", int32_t, {this:Mob});
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('?_getStackRef@OwnerStorageEntity@@IEBAAEAVEntityContext@@XZ', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('?tryGetFromEntity@Actor@@SAPEAV1@AEAVEntityContext@@_N@Z', Actor, null, EntityContext);
@@ -989,6 +990,7 @@ ItemStack.prototype[NativeType.dtor] = vectorDeletingDestructor;
 
 Item.prototype.isArmor = procHacker.jsv('??_7ArmorItem@@6B@', '?isArmor@ArmorItem@@UEBA_NXZ', bool_t, {this:Item});
 Item.prototype.getArmorValue = procHacker.jsv('??_7ArmorItem@@6B@', '?getArmorValue@ArmorItem@@UEBAHXZ', int32_t, {this:Item});
+Item.prototype.getToughnessValue = procHacker.jsv("??_7ArmorItem@@6B@", "?getToughnessValue@ArmorItem@@UEBAHXZ", int32_t, {this:Item});
 Item.prototype.getCooldownType = procHacker.jsv('??_7Item@@6B@', '?getCooldownType@Item@@UEBAAEBVHashedString@@XZ', HashedString, {this:Item});
 
 ItemStackBase.prototype.toString = procHacker.jsv('??_7ItemStackBase@@6B@', '?toString@ItemStackBase@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this:ItemStackBase,structureReturn:true});

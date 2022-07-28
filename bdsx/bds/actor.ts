@@ -1324,6 +1324,9 @@ export class Mob extends Actor {
     getArmorCoverPercentage(): float32_t {
         abstract();
     }
+    getToughnessValue(): int32_t {
+        abstract();
+    }
 }
 
 export class ItemActor extends Actor {

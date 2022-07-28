@@ -132,6 +132,9 @@ export class Item extends NativeClass {
     getArmorValue():number{
         abstract();
     }
+    getToughnessValue(): int32_t {
+        abstract();
+    }
     isDamageable():boolean {
         abstract();
     }
