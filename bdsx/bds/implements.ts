@@ -1119,6 +1119,10 @@ PlayerInventory.prototype.selectSlot = procHacker.js("?selectSlot@PlayerInventor
 PlayerInventory.prototype.setItem = procHacker.js("?setItem@PlayerInventory@@QEAAXHAEBVItemStack@@W4ContainerID@@_N@Z", void_t, {this:PlayerInventory}, int32_t, ItemStack, int32_t, bool_t);
 PlayerInventory.prototype.setSelectedItem = procHacker.js("?setSelectedItem@PlayerInventory@@QEAAXAEBVItemStack@@@Z", void_t, {this:PlayerInventory}, ItemStack);
 PlayerInventory.prototype.swapSlots = procHacker.js("?swapSlots@PlayerInventory@@QEAAXHH@Z", void_t, {this:PlayerInventory}, int32_t, int32_t);
+const PlayerInventory$removeResource = procHacker.js("?removeResource@PlayerInventory@@QEAAHAEBVItemStack@@_N1H@Z", int32_t, null, PlayerInventory, ItemStack, bool_t, bool_t, int32_t);
+PlayerInventory.prototype.removeResource = function (item: ItemStack, requireExactAux: boolean = true, requireExactData: boolean = true, maxCount: int32_t = 0xFFFFFFFF) {
+    return PlayerInventory$removeResource(this, item, requireExactAux, requireExactData, maxCount);
+};
 
 ItemDescriptor.prototype[NativeType.ctor] = procHacker.js('??0ItemDescriptor@@QEAA@XZ', void_t, {this:ItemDescriptor});
 ItemDescriptor.prototype[NativeType.dtor] = procHacker.js('??1ItemDescriptor@@QEAA@XZ', void_t, {this:ItemDescriptor});
