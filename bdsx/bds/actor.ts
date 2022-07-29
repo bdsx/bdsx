@@ -1282,16 +1282,16 @@ export class Mob extends Actor {
     knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
     }
-    getSpeed(): number {
+    getSpeed():number {
         abstract();
     }
-    isSprinting(): boolean {
+    isSprinting():boolean {
         abstract();
     }
-    sendArmorSlot(slot: ArmorSlot): void {
+    sendArmorSlot(slot:ArmorSlot):void {
         abstract();
     }
-    setSprinting(shouldSprint: boolean): void {
+    setSprinting(shouldSprint:boolean):void {
         abstract();
     }
 
@@ -1304,7 +1304,7 @@ export class Mob extends Actor {
      *
      * @param shouldSelectSlot - Defines whether the sync selected slot also.
      */
-    sendInventory(shouldSelectSlot: boolean = false): void {
+    sendInventory(shouldSelectSlot:boolean = false): void {
         this._sendInventory(shouldSelectSlot);
     }
     setSpeed(speed: number): void {

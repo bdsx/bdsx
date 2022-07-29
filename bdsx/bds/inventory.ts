@@ -773,11 +773,6 @@ export class InventoryTransaction extends AbstractClass {
     }
 }
 
-@nativeClass(null)
-export class InventoryTransactionManager extends AbstractClass {
-    // unknown
-}
-
 @nativeClass()
 export class ComplexInventoryTransaction extends AbstractClass {
     @nativeField(VoidPointer)
