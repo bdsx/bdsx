@@ -17,3 +17,9 @@ installErrorHandler();
 // legacy
 import './legacy';
 
+import { fsutil } from "./fsutil";
+import { StorageDriver, storageManager } from "./storage";
+import { FileStorageDriver } from "./storage/filedriver";
+if (storageManager.driver === StorageDriver.nullDriver) {
+    storageManager.driver = new FileStorageDriver(fsutil.projectPath+'\\storage\\filestorage');
+}

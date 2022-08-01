@@ -876,6 +876,7 @@ Tester.concurrency({
                             this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
                             actor.setName('test');
                             this.equals(actor.getName(), 'test', 'name is not set');
+                            actor.setName(name);
                         }
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');
                         this.assert(actor.isPlayer(), 'player is not the player');

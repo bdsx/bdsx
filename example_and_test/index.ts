@@ -32,6 +32,7 @@ import './net-sendhook';
 import './net-transferserver';
 import './setblock';
 import './simulatedplayer';
+import './storage';
 import './test';
 import './vulnerabilities';
 // import './permissions';
