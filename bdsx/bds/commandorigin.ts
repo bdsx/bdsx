@@ -6,7 +6,7 @@ import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import { CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
-import { Actor } from "./actor";
+import { Actor, DimensionId } from "./actor";
 import type { CommandPermissionLevel, CommandPositionFloat } from "./command";
 import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
@@ -172,18 +172,18 @@ export class ScriptCommandOrigin extends PlayerCommandOrigin {
 export class ServerCommandOrigin extends CommandOrigin {
     static constructWith(requestId:string, level:ServerLevel, permissionLevel:CommandPermissionLevel, dimension:Dimension|null):ServerCommandOrigin {
         const ptr = new ServerCommandOrigin(true);
-        ServerCommandOrigin$ServerCommandOrigin(ptr, requestId, level, permissionLevel, dimension);
+        ServerCommandOrigin$ServerCommandOrigin(ptr, requestId, level, permissionLevel, dimension?.getDimensionId() ?? DimensionId.Overworld);
         return ptr;
     }
     static allocateWith(requestId:string, level:ServerLevel, permissionLevel:CommandPermissionLevel, dimension:Dimension|null):ServerCommandOrigin {
         const ptr = capi.malloc(ServerCommandOrigin[NativeType.size]).as(ServerCommandOrigin);
-        ServerCommandOrigin$ServerCommandOrigin(ptr, requestId, level, permissionLevel, dimension);
+        ServerCommandOrigin$ServerCommandOrigin(ptr, requestId, level, permissionLevel, dimension?.getDimensionId() ?? DimensionId.Overworld);
         return ptr;
     }
 }
 
 const ServerCommandOrigin$ServerCommandOrigin = procHacker.js('??0ServerCommandOrigin@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVServerLevel@@W4CommandPermissionLevel@@V?$AutomaticID@VDimension@@H@@@Z', void_t, null, ServerCommandOrigin,
-    CxxString, ServerLevel, int32_t, Dimension);
+    CxxString, ServerLevel, int32_t, int32_t);
 const ServerCommandOrigin_vftable = proc["??_7ServerCommandOrigin@@6B@"];
 
 CommandOrigin.prototype[NativeType.dtor] = vectorDeletingDestructor;

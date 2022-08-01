@@ -1055,6 +1055,10 @@ export class Actor extends AbstractClass {
         abstract();
     }
 
+    getHandContainer(): SimpleContainer {
+        abstract();
+    }
+
     setOnFire(seconds:number):void {
         abstract();
     }
@@ -1322,6 +1326,9 @@ export class Mob extends Actor {
         return retval;
     }
     getArmorCoverPercentage(): float32_t {
+        abstract();
+    }
+    getToughnessValue(): int32_t {
         abstract();
     }
 }
