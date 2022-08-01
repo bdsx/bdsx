@@ -913,3 +913,283 @@ export class MODULEINFO extends NativeStruct {
     @nativeField(VoidPointer)
     EntryPoint:VoidPointer;
 }
+
+const UINT = uint32_t;
+type UINT = number;
+const int = int32_t;
+type int = number;
+export const ATOM = int32_t;
+export type ATOM = number;
+const HINSTANCE = VoidPointer;
+type HINSTANCE = VoidPointer;
+const HICON = VoidPointer;
+type HICON = VoidPointer;
+const HCURSOR = VoidPointer;
+type HCURSOR = VoidPointer;
+const HBRUSH = VoidPointer;
+type HBRUSH = VoidPointer;
+const LPCWSTR = VoidPointer;
+type LPCWSTR = VoidPointer;
+const WNDPROC = VoidPointer;
+type WNDPROC = VoidPointer;
+export const CW_USEDEFAULT = 0x80000000|0;
+
+/*
+ * Class styles
+ */
+export const CS_VREDRAW =          0x0001;
+export const CS_HREDRAW =          0x0002;
+export const CS_DBLCLKS =          0x0008;
+export const CS_OWNDC =            0x0020;
+export const CS_CLASSDC =          0x0040;
+export const CS_PARENTDC =         0x0080;
+export const CS_NOCLOSE =          0x0200;
+export const CS_SAVEBITS =         0x0800;
+export const CS_BYTEALIGNCLIENT =  0x1000;
+export const CS_BYTEALIGNWINDOW =  0x2000;
+export const CS_GLOBALCLASS =      0x4000;
+
+export const CS_IME =              0x00010000;
+export const CS_DROPSHADOW =       0x00020000;
+
+/*
+ * Window Styles
+ */
+export const WS_OVERLAPPED =       0x00000000;
+export const WS_POPUP =            0x80000000;
+export const WS_CHILD =            0x40000000;
+export const WS_MINIMIZE =         0x20000000;
+export const WS_VISIBLE =          0x10000000;
+export const WS_DISABLED =         0x08000000;
+export const WS_CLIPSIBLINGS =     0x04000000;
+export const WS_CLIPCHILDREN =     0x02000000;
+export const WS_MAXIMIZE =         0x01000000;
+export const WS_CAPTION =          0x00C00000;     /* WS_BORDER | WS_DLGFRAME  */
+export const WS_BORDER =           0x00800000;
+export const WS_DLGFRAME =         0x00400000;
+export const WS_VSCROLL =          0x00200000;
+export const WS_HSCROLL =          0x00100000;
+export const WS_SYSMENU =          0x00080000;
+export const WS_THICKFRAME =       0x00040000;
+export const WS_GROUP =            0x00020000;
+export const WS_TABSTOP =          0x00010000;
+
+export const WS_MINIMIZEBOX =      0x00020000;
+export const WS_MAXIMIZEBOX =      0x00010000;
+
+export const WS_TILED =            WS_OVERLAPPED;
+export const WS_ICONIC =           WS_MINIMIZE;
+export const WS_SIZEBOX =          WS_THICKFRAME;
+
+/*
+ * Common Window Styles
+ */
+export const WS_OVERLAPPEDWINDOW = (WS_OVERLAPPED     |
+                             WS_CAPTION        |
+                             WS_SYSMENU        |
+                             WS_THICKFRAME     |
+                             WS_MINIMIZEBOX    |
+                             WS_MAXIMIZEBOX);
+export const WS_TILEDWINDOW =      WS_OVERLAPPEDWINDOW;
+
+export const WS_POPUPWINDOW =      (WS_POPUP          |
+                             WS_BORDER         |
+                             WS_SYSMENU);
+
+export const WS_CHILDWINDOW =      (WS_CHILD);
+
+export function MAKEINTRESOURCE(v:number):VoidPointer {
+    return VoidPointer.fromAddress(v, 0);
+}
+
+/*
+ * Button Control Styles
+ */
+export const BS_PUSHBUTTON =       0x00000000;
+export const BS_DEFPUSHBUTTON =    0x00000001;
+export const BS_CHECKBOX =         0x00000002;
+export const BS_AUTOCHECKBOX =     0x00000003;
+export const BS_RADIOBUTTON =      0x00000004;
+export const BS_3STATE =           0x00000005;
+export const BS_AUTO3STATE =       0x00000006;
+export const BS_GROUPBOX =         0x00000007;
+export const BS_USERBUTTON =       0x00000008;
+export const BS_AUTORADIOBUTTON =  0x00000009;
+export const BS_PUSHBOX =          0x0000000A;
+export const BS_OWNERDRAW =        0x0000000B;
+export const BS_TYPEMASK =         0x0000000F;
+export const BS_LEFTTEXT =         0x00000020;
+export const BS_TEXT =             0x00000000;
+export const BS_ICON =             0x00000040;
+export const BS_BITMAP =           0x00000080;
+export const BS_LEFT =             0x00000100;
+export const BS_RIGHT =            0x00000200;
+export const BS_CENTER =           0x00000300;
+export const BS_TOP =              0x00000400;
+export const BS_BOTTOM =           0x00000800;
+export const BS_VCENTER =          0x00000C00;
+export const BS_PUSHLIKE =         0x00001000;
+export const BS_MULTILINE =        0x00002000;
+export const BS_NOTIFY =           0x00004000;
+export const BS_FLAT =             0x00008000;
+export const BS_RIGHTBUTTON =      BS_LEFTTEXT;
+
+/*
+ * Standard Cursor IDs
+ */
+export const IDC_ARROW =           MAKEINTRESOURCE(32512);
+export const IDC_IBEAM =           MAKEINTRESOURCE(32513);
+export const IDC_WAIT =            MAKEINTRESOURCE(32514);
+export const IDC_CROSS =           MAKEINTRESOURCE(32515);
+export const IDC_UPARROW =         MAKEINTRESOURCE(32516);
+export const IDC_SIZE =            MAKEINTRESOURCE(32640);  /* OBSOLETE: use IDC_SIZEALL */
+export const IDC_ICON =            MAKEINTRESOURCE(32641);  /* OBSOLETE: use IDC_ARROW */
+export const IDC_SIZENWSE =        MAKEINTRESOURCE(32642);
+export const IDC_SIZENESW =        MAKEINTRESOURCE(32643);
+export const IDC_SIZEWE =          MAKEINTRESOURCE(32644);
+export const IDC_SIZENS =          MAKEINTRESOURCE(32645);
+export const IDC_SIZEALL =         MAKEINTRESOURCE(32646);
+export const IDC_NO =              MAKEINTRESOURCE(32648); /* not in win3.1 */
+export const IDC_HAND =            MAKEINTRESOURCE(32649);
+export const IDC_APPSTARTING =     MAKEINTRESOURCE(32650); /* not in win3.1 */
+export const IDC_HELP =            MAKEINTRESOURCE(32651);
+
+/*
+ * Color Types
+ */
+export const CTLCOLOR_MSGBOX =         0;
+export const CTLCOLOR_EDIT =           1;
+export const CTLCOLOR_LISTBOX =        2;
+export const CTLCOLOR_BTN =            3;
+export const CTLCOLOR_DLG =            4;
+export const CTLCOLOR_SCROLLBAR =      5;
+export const CTLCOLOR_STATIC =         6;
+export const CTLCOLOR_MAX =            7;
+
+export const COLOR_SCROLLBAR =         0;
+export const COLOR_BACKGROUND =        1;
+export const COLOR_ACTIVECAPTION =     2;
+export const COLOR_INACTIVECAPTION =   3;
+export const COLOR_MENU =              4;
+export const COLOR_WINDOW =            5;
+export const COLOR_WINDOWFRAME =       6;
+export const COLOR_MENUTEXT =          7;
+export const COLOR_WINDOWTEXT =        8;
+export const COLOR_CAPTIONTEXT =       9;
+export const COLOR_ACTIVEBORDER =      10;
+export const COLOR_INACTIVEBORDER =    11;
+export const COLOR_APPWORKSPACE =      12;
+export const COLOR_HIGHLIGHT =         13;
+export const COLOR_HIGHLIGHTTEXT =     14;
+export const COLOR_BTNFACE =           15;
+export const COLOR_BTNSHADOW =         16;
+export const COLOR_GRAYTEXT =          17;
+export const COLOR_BTNTEXT =           18;
+export const COLOR_INACTIVECAPTIONTEXT = 19;
+export const COLOR_BTNHIGHLIGHT =      20;
+
+export const COLOR_3DDKSHADOW =        21;
+export const COLOR_3DLIGHT =           22;
+export const COLOR_INFOTEXT =          23;
+export const COLOR_INFOBK =            24;
+
+export const COLOR_HOTLIGHT =          26;
+export const COLOR_GRADIENTACTIVECAPTION = 27;
+export const COLOR_GRADIENTINACTIVECAPTION = 28;
+export const COLOR_MENUHILIGHT =       29;
+export const COLOR_MENUBAR =           30;
+
+export const COLOR_DESKTOP =           COLOR_BACKGROUND;
+export const COLOR_3DFACE =            COLOR_BTNFACE;
+export const COLOR_3DSHADOW =          COLOR_BTNSHADOW;
+export const COLOR_3DHIGHLIGHT =       COLOR_BTNHIGHLIGHT;
+export const COLOR_3DHILIGHT =         COLOR_BTNHIGHLIGHT;
+export const COLOR_BTNHILIGHT =        COLOR_BTNHIGHLIGHT;
+
+@nativeClass()
+export class WNDCLASSEXW extends NativeStruct {
+    @nativeField(UINT)
+    cbSize:UINT;
+    @nativeField(UINT)
+    style:UINT;
+    @nativeField(WNDPROC)
+    lpfnWndProc:WNDPROC;
+    @nativeField(int)
+    cbClsExtra:int;
+    @nativeField(int)
+    cbWndExtra:int;
+    @nativeField(HINSTANCE)
+    hInstance:HINSTANCE;
+    @nativeField(HICON)
+    hIcon:HICON|null;
+    @nativeField(HCURSOR)
+    hCursor:HCURSOR;
+    @nativeField(HBRUSH)
+    hbrBackground:HBRUSH|null;
+    @nativeField(LPCWSTR)
+    lpszMenuName:LPCWSTR|null;
+    @nativeField(LPCWSTR)
+    lpszClassName:LPCWSTR;
+    @nativeField(HICON)
+    hIconSm:HICON|null;
+}
+
+export class HWND extends VoidPointer {
+}
+
+@nativeClass()
+export class POINT extends NativeStruct {
+    @nativeField(int32_t)
+    x:int32_t;
+    @nativeField(int32_t)
+    y:int32_t;
+}
+
+@nativeClass()
+export class MSG extends NativeStruct {
+    @nativeField(HWND)
+    hwnd:HWND;
+    @nativeField(UINT)
+    message:UINT;
+    @nativeField(VoidPointer)
+    wParam:VoidPointer;
+    @nativeField(VoidPointer)
+    lParam:VoidPointer;
+    @nativeField(DWORD)
+    time:DWORD;
+    @nativeField(POINT)
+    pt:POINT;
+}
+
+const LPVOID = VoidPointer;
+type LPVOID = VoidPointer;
+const HMENU = VoidPointer;
+type HMENU = VoidPointer;
+
+@nativeClass()
+export class CREATESTRUCT extends NativeStruct {
+    @nativeField(LPVOID)
+    lpCreateParams:LPVOID;
+    @nativeField(HINSTANCE)
+    hInstance:HINSTANCE;
+    @nativeField(HMENU)
+    hMenu:HMENU;
+    @nativeField(HWND)
+    hwndParent:HWND;
+    @nativeField(int)
+    cy:int;
+    @nativeField(int)
+    cx:int;
+    @nativeField(int)
+    y:int;
+    @nativeField(int)
+    x:int;
+    @nativeField(LONG)
+    style:LONG;
+    @nativeField(LPCWSTR)
+    lpszName:LPCWSTR;
+    @nativeField(LPCWSTR)
+    lpszClass:LPCWSTR;
+    @nativeField(DWORD)
+    dwExStyle:DWORD;
+}
