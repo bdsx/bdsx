@@ -556,16 +556,12 @@ export class Actor extends AbstractClass {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
-    protected _getArmorValue():number{
-        abstract();
-    }
     /**
      * Actually it's Mob::getArmorValue in BDS.
      * @returns the entity's armor value (as an integer)
      */
     getArmorValue(): number{
-        if(!this.isMob()) return 0;
-        return this._getArmorValue();
+        return 0;
     }
     /**
      * Returns the Dimension instance of the entity currently in
@@ -1276,6 +1272,12 @@ export class DistanceSortedActor extends NativeStruct {
 }
 
 export class Mob extends Actor {
+    /**
+     * @returns the entity's armor value (as an integer)
+     */
+    getArmorValue(): number{
+        abstract();
+    }
     /**
      * Applies knockback to the mob
      */
