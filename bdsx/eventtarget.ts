@@ -81,6 +81,14 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
     /**
      * return value if it canceled
      */
+    promiseFire(...v: Parameters<T>): Promise<ReturnType<T> extends Promise<infer RES> ? RES[] : ReturnType<T>[]> {
+        const res = this.listeners.slice().map(listener=>listener(...v));
+        return Promise.all(res) as any;
+    }
+
+    /**
+     * return value if it canceled
+     */
     fire(...v: Parameters<T>): ReturnType<T> | undefined {
         for (const listener of this.listeners.slice()) {
             try {

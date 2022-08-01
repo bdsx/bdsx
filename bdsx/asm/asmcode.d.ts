@@ -65,6 +65,7 @@ export namespace asmcode {
     export const addressof_serverInstance:NativePointer;
     export const ServerInstance_ctor_hook:NativePointer;
     export const debugBreak:NativePointer;
+    export const returnRcx:NativePointer;
     export let CommandOutputSenderHookCallback:VoidPointer;
     export const addressof_CommandOutputSenderHookCallback:NativePointer;
     export const CommandOutputSenderHook:NativePointer;

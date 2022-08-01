@@ -4,30 +4,10 @@
 // So there is no 'server' variable yet
 // launcher.ts will import ./index.ts after launching BDS.
 
-// install source map
-import { install as installSourceMapSupport, remapAndPrintError } from "bdsx/source-map-support";
-installSourceMapSupport();
-
-import { disable } from 'colors';
-
-if(process.env.COLOR && !(process.env.COLOR === 'true' || process.env.COLOR === 'on')) disable();
-
-// check
-import 'bdsx/check';
-
-// install bdsx error handler
-import { installErrorHandler } from "bdsx/errorhandler";
-installErrorHandler();
-
-// imports
-require('bdsx/legacy');
-
-import { installMinecraftAddons } from 'bdsx/addoninstaller';
-import { bedrockServer } from "bdsx/launcher";
-import { loadAllPlugins } from "bdsx/plugins";
-
+import 'bdsx/init';
 import { events } from "bdsx/event";
-import { _tickCallback } from "bdsx/util";
+import { bedrockServer } from "bdsx/launcher";
+import { remapAndPrintError } from 'bdsx/source-map-support';
 
 console.log(
 "  _____      _____ \n".green +
@@ -48,20 +28,9 @@ console.log(
         }, 3000).unref();
     });
 
-    await Promise.all([
-        loadAllPlugins(),
-        installMinecraftAddons()
-    ]);
-
     // launch BDS
     console.log('[BDSX] bedrockServer is launching...');
     await bedrockServer.launch();
-
-    /**
-     * send stdin to bedrockServer.executeCommandOnConsole
-     * without this, you need to control stdin manually
-     */
-    bedrockServer.DefaultStdInHandler.install();
 
     // run index
     require('./index');

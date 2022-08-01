@@ -1,7 +1,9 @@
 import { events } from "bdsx/event";
+import { Tester } from "bdsx/tester";
 
 
 events.playerJoin.on(ev=>{
+    if (Tester.errored) return; // skip if tester failed
     const inv = ev.player.getInventory();
     const slots = inv.container.getSlots();
     const size = slots.size();

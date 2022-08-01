@@ -36,6 +36,25 @@ class DirentFromStat extends (fs.Dirent || class{}) {
     }
 }
 
+function mkdirRaw(path:string):Promise<void> {
+    return new Promise((resolve, reject)=>{
+        fs.mkdir(path, (err)=>{
+            if (err !== null) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+async function mkdirRecursiveWithDirSet(dirpath:string, dirhas:Set<string>):Promise<void> {
+    if (dirhas.has(dirpath)) return;
+    const parent = path.dirname(dirpath);
+    if (parent === dirpath) return;
+    await mkdirRecursiveWithDirSet(parent, dirhas);
+    await fsutil.mkdir(dirpath);
+}
+
 export namespace fsutil {
     let dirname = path.dirname(__dirname);
     const dirparsed = path.parse(dirname);
@@ -207,6 +226,14 @@ export namespace fsutil {
             return data;
         }
     }
+    export function opendir(path:string):Promise<fs.Dir> {
+        return new Promise((resolve, reject)=>{
+            fs.opendir(path, (err, dir)=>{
+                if (err !== null) reject(err);
+                else resolve(dir);
+            });
+        });
+    }
     export function mkdir(path:string):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs.mkdir(path, (err)=>{
@@ -218,9 +245,34 @@ export namespace fsutil {
         });
     }
     export async function mkdirRecursive(dirpath:string, dirhas?:Set<string>):Promise<void> {
-        if (dirhas != null && dirhas.has(dirpath)) return;
-        await mkdirRecursive(path.dirname(dirpath), dirhas);
-        await mkdir(dirpath);
+        if (dirhas == null) {
+            await mkdirRecursiveFromBack(dirpath);
+            return;
+        }
+        await mkdirRecursiveWithDirSet(dirpath, dirhas);
+    }
+    export async function mkdirRecursiveFromBack(dir:string):Promise<boolean> {
+        try {
+            await mkdirRaw(dir);
+            return false;
+        } catch (err) {
+            if (err.code === 'EEXIST') {
+                return true;
+            } else if (['EACCES', 'EPERM', 'EISDIR'].indexOf(err.code) !== -1) {
+                throw err;
+            }
+        }
+        await mkdirRecursiveFromBack(path.dirname(dir));
+        try {
+            await mkdirRaw(dir);
+        } catch (err) {
+            if (err.code === 'EEXIST') {
+                return true;
+            } else {
+                throw err;
+            }
+        }
+        return false;
     }
     export function rmdir(path:string):Promise<void> {
         return new Promise((resolve, reject)=>{
@@ -345,9 +397,9 @@ export namespace fsutil {
             await unlink(filepath);
         }
     }
-    export function unlinkQuiet(path:string):Promise<void> {
+    export function unlinkQuiet(path:string):Promise<boolean> {
         return new Promise(resolve=>{
-            fs.unlink(path, ()=>resolve());
+            fs.unlink(path, err=>resolve(err !== null));
         });
     }
     export function symlink(target:string, path:string, type?:fs.symlink.Type):Promise<void> {
@@ -383,6 +435,12 @@ export namespace fsutil {
 
             return Buffer.from(buf.buffer, buf.byteOffset, idx).toString();
         }
+    }
+    export function rename(oldPath:string, newPath:string):Promise<void> {
+        return new Promise<void>((resolve, reject)=>fs.rename(oldPath, newPath, err=>{
+            if (err !== null) reject(err);
+            else resolve();
+        }));
     }
 
     export class DirectoryMaker {

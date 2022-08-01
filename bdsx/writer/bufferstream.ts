@@ -1,7 +1,7 @@
 import { AbstractReader, AbstractWriter } from "./abstractstream";
 
 export class BufferWriter extends AbstractWriter {
-    constructor (public array:Uint8Array, public size:number) {
+    constructor (public array:Uint8Array=new Uint8Array(64), public size:number=0) {
         super();
     }
 
@@ -48,14 +48,25 @@ export class BufferReader extends AbstractReader {
         return this.array[this.p++];
     }
     read(values:Uint8Array, offset:number, length:number):number {
-        const reading = Math.min(length, this.array.length - this.p);
-        if (reading > 0) values.set(this.array.subarray(this.p, this.p+length), offset);
-        return reading;
+        const p = this.p;
+        const reading = Math.min(length, this.array.length - p);
+        if (reading > 0) {
+            this.p += length;
+            values.set(this.array.subarray(p, this.p), offset);
+            return reading;
+        } else {
+            return 0;
+        }
+    }
+    getBuffer(length:number):Buffer {
+        const p = this.array.byteOffset + this.p;
+        this.p += length;
+        return Buffer.from(this.array.buffer, p, length);
     }
 
-    remaining():Uint8Array {
-        const p = this.p;
+    remaining():Buffer {
+        const p = this.array.byteOffset + this.p;
         this.p = this.array.length;
-        return this.array.subarray(p);
+        return Buffer.from(this.array.buffer, p);
     }
 }

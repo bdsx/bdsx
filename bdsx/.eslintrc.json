@@ -74,6 +74,7 @@
           "message": "Please use the relative path in bdsx libraries."
         }]
       }],
-      "spaced-comment": ["error", "always", { "exceptions": ["/"], "markers": ["/"] }]
+      "spaced-comment": ["error", "always", { "exceptions": ["/"], "markers": ["/"] }],
+      "no-control-regex": "off"
     }
 }

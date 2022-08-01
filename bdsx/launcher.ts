@@ -1,6 +1,7 @@
 import * as colors from 'colors';
 import * as readline from 'readline';
 import { createAbstractObject } from "./abstractobject";
+import { installMinecraftAddons } from './addoninstaller';
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
 import { Bedrock } from './bds/bedrock';
@@ -22,6 +23,7 @@ import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
+import { loadAllPlugins } from './plugins';
 import { CxxStringWrapper } from "./pointer";
 import { procHacker } from './prochacker';
 import { remapError } from "./source-map-support";
@@ -246,7 +248,7 @@ function _launch(asyncResolve:()=>void):void {
     require('./event_impl');
 
     loadingIsFired = true;
-    events.serverLoading.fire();
+    events.serverLoading.promiseFire();
     events.serverLoading.clear();
 
     // hook on update
@@ -334,6 +336,12 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.terminate = dll.ucrtbase.module.getProcAddress('terminate');
     asmcode.ExitThread = dll.kernel32.module.getProcAddress('ExitThread');
     procHacker.hookingRawWithoutOriginal('?terminate@details@gsl@@YAXXZ', asmcode.terminateHook);
+
+    /**
+     * send stdin to bedrockServer.executeCommandOnConsole
+     * without this, you need to control stdin manually
+     */
+    bedrockServer.DefaultStdInHandler.install();
 }
 
 const stopfunc = procHacker.js('?stop@DedicatedServer@@UEAA_NXZ', void_t, null, VoidPointer);
@@ -418,15 +426,18 @@ export namespace bedrockServer {
         bedrock_server_exe.forceKill(exitCode);
     }
 
-    export function launch():Promise<void> {
-        return new Promise((resolve, reject)=>{
-            if (launched) {
-                reject(remapError(Error('Cannot launch BDS again')));
-                return;
-            }
-            launched = true;
-            _launch(resolve);
-        });
+    export async function launch():Promise<void> {
+        if (launched) {
+            throw remapError(Error('Cannot launch BDS again'));
+        }
+        launched = true;
+
+        await Promise.all([
+            loadAllPlugins(),
+            installMinecraftAddons(),
+        ]);
+
+        await new Promise<void>(_launch);
     }
 
     /**

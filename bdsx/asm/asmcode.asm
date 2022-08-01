@@ -405,6 +405,11 @@ export proc debugBreak
     int3
 endp
 
+export proc returnRcx
+    mov rax, rcx
+endp
+
+; BDS hooks
 export def CommandOutputSenderHookCallback:qword
 export proc CommandOutputSenderHook
     stack 28h

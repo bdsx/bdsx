@@ -11,12 +11,8 @@ if ((global as any).bdsx != null) {
 import type {} from './externs';
 import './polyfill';
 
-export interface CANCEL {
-    __CANCEL_OBJECT__?:void;
-    toString():'CANCEL';
-}
-
-export const CANCEL:CANCEL = {toString(){ return 'CANCEL'; }};
+export const CANCEL = Symbol('CANCEL');
+export type CANCEL = typeof CANCEL;
 
 export enum AttributeName {
 	ZombieSpawnReinforcementsChange="minecraft:zombie.spawn.reinforcements",

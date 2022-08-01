@@ -17,6 +17,27 @@ function logError(message:string):void {
 function logMessage(message:string):void {
     console.log(colors.brightGreen(`[test] ${message}`));
 }
+function deepEquals(a:unknown, b:unknown):boolean {
+    if (typeof a === 'object') {
+        if (typeof b !== 'object') return false;
+        if ((a instanceof Array) && (b instanceof Array)) {
+            if (a.length !== b.length) return false;
+            for (let i=0;i<a.length;i++) {
+                if (!deepEquals(a[i], b[i])) return false;
+            }
+            return true;
+        } else {
+            if (a === null) {
+                if (b === null) return true;
+                return false;
+            } else if (b === null) {
+                return false;
+            }
+            return deepEquals(Object.entries(a), Object.entries(b));
+        }
+    }
+    return a === b;
+}
 
 export class Tester {
     private state = Tester.State.Pending;
@@ -106,6 +127,14 @@ export class Tester {
 
     equals<T>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
         if (actual !== expected) {
+            if (message == null) message = '';
+            else message = ', ' + message;
+            this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}${message}`, 3);
+        }
+    }
+
+    deepEquals<T>(actual:T, expected:T, message?:string, toString:(v:T)=>string=v=>v+''):void {
+        if (!deepEquals(actual, expected)) {
             if (message == null) message = '';
             else message = ', ' + message;
             this.error(`Expected: ${toString(expected)}, Actual: ${toString(actual)}${message}`, 3);
