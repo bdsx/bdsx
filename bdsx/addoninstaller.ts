@@ -77,7 +77,7 @@ class PackInfo {
         case 'resources':
             this.directoryType = PackDirectoryType.ResourcePacks;
             break;
-        case 'javascript':
+        case 'script':
             this.directoryType = PackDirectoryType.BehaviorPacks;
             break;
         }
