@@ -430,14 +430,13 @@ export namespace bedrockServer {
         if (launched) {
             throw remapError(Error('Cannot launch BDS again'));
         }
-        launched = true;
-
         await Promise.all([
             loadAllPlugins(),
             installMinecraftAddons(),
         ]);
 
         await new Promise<void>(_launch);
+        launched = true;
     }
 
     /**
