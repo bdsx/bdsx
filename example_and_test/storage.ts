@@ -23,7 +23,7 @@ events.playerJoin.on(async(ev)=>{
     const playerName = ev.player.getName();
     const storage = await storageManager.get(ev.player); // don't recommend the synchronized method.
     // the synchronized method pauses the entire server until the end of the load.
-    if (!storage.isLoaded) return;
+    if (!storage.isLoaded) return; // if the player left before loading it's possible to occur.
 
     if (storage.data == null) {
         // initialize

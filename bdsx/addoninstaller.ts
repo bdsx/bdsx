@@ -77,6 +77,7 @@ class PackInfo {
         case 'resources':
             this.directoryType = PackDirectoryType.ResourcePacks;
             break;
+        case 'javascript':
         case 'script':
             this.directoryType = PackDirectoryType.BehaviorPacks;
             break;
@@ -87,7 +88,7 @@ class PackInfo {
         return this.type === 'resources';
     }
     isBehaviorPack():boolean {
-        return this.type === 'data' || this.type === 'javascript';
+        return this.type === 'data' || this.type === 'javascript' || this.type === 'script';
     }
 
     static async createFrom(packPath:string, hostManagePath:string, managedName:string):Promise<PackInfo|null> {
