@@ -1,4 +1,7 @@
+import * as path from 'path';
+import { fsutil } from "../fsutil";
 import { timeout } from "../util";
+import Module = require('module');
 
 interface StorageClassBase {
     [Storage.classId]:string;
@@ -455,5 +458,25 @@ export class StorageManager {
         }
     }
 }
+
+declare global {
+    namespace NodeJS {
+        interface Module {
+            [Storage.id]():string;
+        }
+    }
+    interface NodeModule {
+        [Storage.id]():string;
+    }
+}
+
+Module.prototype[Storage.id] = function() {
+    let rpath = path.relative(fsutil.projectPath, module.filename).replace(/\\/g, '/');
+    if (rpath.endsWith('.js')) rpath = rpath.substr(0, rpath.length-3);
+    if (rpath.endsWith('/index')) rpath = rpath.substr(0, rpath.length-6);
+    return rpath;
+};
+
+(Module as any)[Storage.classId] = 'module';
 
 export const storageManager = new StorageManager;

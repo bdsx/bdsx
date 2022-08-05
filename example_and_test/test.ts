@@ -337,6 +337,7 @@ Tester.concurrency({
         test(undefined);
         test([1,'2']);
         test({a:1, b:'2'});
+        test(new Date);
         test([1,['2',3],{a:4,b:5}, true, false, null, undefined]);
     },
 

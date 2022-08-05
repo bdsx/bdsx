@@ -18,8 +18,8 @@ enum ExCode {
     False = 3 << 4,
     Float32 = 4 << 4,
     Float64 = 5 << 4,
+    Date = 6 << 4,
 
-    Reserved1,
     Reserved2,
 }
 
@@ -85,6 +85,16 @@ class Serializer {
             this.writeValue(value);
         }
     }
+    writeDate(date:Date):void {
+        let v = date.getTime();
+        if (v < 0) {
+            v = v*-2-1;
+        } else {
+            v *= 2;
+        }
+        this.writer.put(Opcode.Extra | ExCode.Date);
+        this.writer.writeVarUint(v);
+    }
     writeValue(value:unknown):void {
         switch (typeof value) {
         case 'number': this.writeNumber(value); break;
@@ -92,6 +102,8 @@ class Serializer {
         case 'object':
             if (value instanceof Array) {
                 this.writeArray(value);
+            } else if (value instanceof Date) {
+                this.writeDate(value);
             } else {
                 if (value === null) {
                     this.writer.writeUint8(Opcode.Extra | ExCode.Null);
@@ -154,6 +166,15 @@ class Deserializer {
         return out;
     }
 
+    readDate():Date {
+        const n = this.reader.readVarUint();
+        if (n % 2 === 1) {
+            return new Date(n * -0.5 - 0.5);
+        } else {
+            return new Date(n / 2);
+        }
+    }
+
     readValue():any {
         const head = this.reader.readUint8();
         const opcode = head & 0xf;
@@ -182,6 +203,8 @@ class Deserializer {
                 return this.reader.readFloat32();
             case ExCode.Float64:
                 return this.reader.readFloat64();
+            case ExCode.Date:
+                return this.readDate();
             }
         }
     }

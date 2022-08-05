@@ -81,6 +81,8 @@ class PackInfo {
         case 'script':
             this.directoryType = PackDirectoryType.BehaviorPacks;
             break;
+        default:
+            throw Error(`unknown addon pack type '${this.type}'`);
         }
     }
 

@@ -174,8 +174,8 @@ export abstract class AbstractReader {
         let shift = 1;
         for (;;) {
             const n = this.get();
-            if (!(n&0x80)) return out | (n * shift);
-            out += (n & 0x7f) * shift;
+            if (!(n&0x80)) return n * shift + out;
+            out = (n & 0x7f) * shift + out;
             shift *= 0x80;
         }
     }
