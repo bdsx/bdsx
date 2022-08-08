@@ -1,0 +1,8 @@
+{
+    "name": "bdsx",
+    "version": "2.0.0",
+    "description": "the JS/TS library of bdsx",
+    "private": true,
+    "author": "karikera <karikera3@hotmail.com> (https://rua.kr/)",
+    "license": "MIT"
+}

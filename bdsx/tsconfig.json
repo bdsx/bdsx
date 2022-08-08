@@ -1,0 +1,22 @@
+{
+  "exclude": [
+    "node_modules",
+    "bedrock_server",
+    "addons",
+    "bdsx/pdbparser/globals"
+  ],
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": [ "es2017" ],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "alwaysStrict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "resolveJsonModule": true,
+    "inlineSourceMap": true,
+    "importHelpers": true,
+    "experimentalDecorators": true
+  }
+}

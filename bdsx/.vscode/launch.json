@@ -1,0 +1,99 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "cwd": "${workspaceFolder}/bedrock_server",
+            "type": "legacy-node",
+            "request": "launch",
+            "name": "Launch BDSX",
+            "args": ["${workspaceFolder}"],
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Installer",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/installer/installer.js", "./bedrock_server", "-y"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Document Parser",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/externs/bds-scripting/parser.js"],
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "type": "legacy-node",
+            "request": "launch",
+            "name": "Launch Assembly Compiler",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/asm/compile.js"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "type": "legacy-node",
+            "request": "launch",
+            "name": "Launch Assembly Tests",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/asm/test/asmtest.js"],
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Plugin Manager",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/pluginmgr/index.js"],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "runtimeExecutable": "${workspaceFolder}/bedrock_server/bedrock_server.exe",
+            "cwd": "${workspaceFolder}/bedrock_server",
+            "type": "legacy-node",
+            "request": "launch",
+            "name": "Launch PDB Parser",
+            "args": ["${workspaceFolder}/bdsx/pdbparser"],
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "console": "integratedTerminal",
+			"preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Shell Prelaunch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "args": ["${workspaceFolder}/bdsx/shellprepare.js"],
+			"preLaunchTask": "${defaultBuildTask}"
+        }
+    ]
+}
