@@ -847,17 +847,17 @@ Tester.concurrency({
                             let actual = abil.getValue();
                             if (typeof actual === 'number') actual = Math.round(actual*ROUND_UP_AXIS)/ROUND_UP_AXIS;
                             if (typeof expected === 'number') expected = Math.round(expected*ROUND_UP_AXIS)/ROUND_UP_AXIS;
-                            this.equals(actual, expected, `non expected ${AbilitiesIndex[index]} value`);
+                            this.equals(actual, expected, `unexpected ${AbilitiesIndex[index]} value`);
                         };
                         checkAbility(AbilitiesIndex.Build, true);
                         checkAbility(AbilitiesIndex.Mine, true);
                         checkAbility(AbilitiesIndex.DoorsAndSwitches, true);
                         checkAbility(AbilitiesIndex.OpenContainers, true);
                         checkAbility(AbilitiesIndex.AttackMobs, true);
-                        checkAbility(AbilitiesIndex.Invulnerable, false);
+                        // checkAbility(AbilitiesIndex.Invulnerable, false); // skip for creative
                         checkAbility(AbilitiesIndex.Flying, false);
-                        checkAbility(AbilitiesIndex.MayFly, false);
-                        checkAbility(AbilitiesIndex.Instabuild, false);
+                        // checkAbility(AbilitiesIndex.MayFly, false); // skip for creative
+                        // checkAbility(AbilitiesIndex.Instabuild, false); // skip for creative
                         checkAbility(AbilitiesIndex.Lightning, false);
                         checkAbility(AbilitiesIndex.FlySpeed, 0.05);
                         checkAbility(AbilitiesIndex.WalkSpeed, 0.1);

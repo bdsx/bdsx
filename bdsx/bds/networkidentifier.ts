@@ -17,9 +17,16 @@ import type { ServerPlayer } from "./player";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
+enum SubClientId {
+    // TODO: fill
+}
+
 export class NetworkHandler extends AbstractClass {
     vftable:VoidPointer;
     instance:RakNetInstance;
+
+    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void;
+    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:SubClientId):void;
 
     send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void {
         abstract();
@@ -53,11 +60,8 @@ export class ServerNetworkHandler extends AbstractClass {
     @nativeField(int32_t, 0x2f0) // accessed in ServerNetworkHandler:setMaxNumPlayers
     readonly maxPlayers: int32_t;
 
-    protected _disconnectClient(client:NetworkIdentifier, unknown:number, message:CxxString, skipMessage:boolean):void {
-        abstract();
-    }
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
-        this._disconnectClient(client, 0, message, skipMessage);
+        abstract();
     }
     /**
      * @alias allowIncomingConnections
@@ -83,6 +87,9 @@ export class ServerNetworkHandler extends AbstractClass {
     /**
      * it's the same with `client.getActor()`
      */
+    _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null;
+    _getServerPlayer(client:NetworkIdentifier, clientSubId:SubClientId):ServerPlayer|null;
+
     _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null {
         abstract();
     }

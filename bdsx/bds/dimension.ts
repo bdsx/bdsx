@@ -1,13 +1,13 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, float32_t, int16_t, int32_t, void_t } from "../nativetype";
+import { int32_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
-import type { DimensionId, Actor, ActorUniqueID } from "./actor";
-import type { Player } from './player';
+import type { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { BlockSource } from "./block";
 import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
-import { ChunkSource } from "./chunk";
+import { ChunkSource, LevelChunk } from "./chunk";
+import type { Player } from './player';
 
 @nativeClass(null)
 export class Dimension extends NativeClass {
@@ -47,16 +47,16 @@ export class Dimension extends NativeClass {
     distanceToNearestPlayerSqr2D(pos: Vec3): number{
         abstract();
     }
-    transferEntityToUnloadedChunk(actor: Actor): void{
+    transferEntityToUnloadedChunk(actor: Actor, levelChunk?:LevelChunk): void{
         abstract();
     }
     getSpawnPos(): BlockPos{
         abstract();
     }
-    fetchNearestPlayerToActor(actor: Actor, distance: number): Player{
+    fetchNearestPlayerToActor(actor: Actor, distance: number): Player|null{
         abstract();
     }
-    fetchNearestPlayerToPosition(x: number, y: number, z: number, distance: number, findAnyNearPlayer: boolean): Player{
+    fetchNearestPlayerToPosition(x: number, y: number, z: number, distance: number, findAnyNearPlayer: boolean): Player|null{
         abstract();
     }
     getMoonBrightness(): number{

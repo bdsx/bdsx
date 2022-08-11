@@ -87,6 +87,7 @@ export function hex(values:(number|null)[]|Uint8Array, nextLinePer?:number):stri
         const v = values[i++];
         if (v === null) {
             out.push(0x3f); // '?'
+            out.push(0x3f); // '?'
         } else {
             const n1 = (v >> 4);
             if (n1 < 10) out.push(n1+0x30);

@@ -75,7 +75,7 @@ function remapType(type:ParamType):makefunc.Paramable {
 
 type InstanceTypeOnly<T> = T extends {prototype:infer V} ? V : never;
 
-type TypeFrom_js2np<T extends ParamType> = InstanceTypeOnly<T>|null;
+type TypeFrom_js2np<T extends ParamType> = InstanceTypeOnly<T>|null|undefined;
 type TypeFrom_np2js<T extends ParamType> = InstanceTypeOnly<T>;
 
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
@@ -625,7 +625,7 @@ VoidPointer.isTypeOf = function<T>(this:{new():T}, v:unknown):v is T {
     return v === null || v instanceof this;
 };
 VoidPointer.isTypeOfWeak = function(v:unknown):boolean{
-    return v === null || v instanceof VoidPointer;
+    return v == null || v instanceof VoidPointer;
 };
 
 X64Assembler.prototype.make = function<OPTS extends MakeFuncOptionsWithName<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(

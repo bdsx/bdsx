@@ -34,11 +34,11 @@ ReadOnlyBinaryStream.prototype.read = procHacker.jsv('??_7ReadOnlyBinaryStream@@
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
     // stack memories of NetworkHandler::_sortAndPacketizeEvents
-    @nativeField(CxxSharedPtr.make(Packet), 0x90)
+    @nativeField(CxxSharedPtr.make(Packet), 0x80)
     packet:CxxSharedPtr<Packet>; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ReadOnlyBinaryStream, 0x110)
+    @nativeField(ReadOnlyBinaryStream, 0x100)
     stream:ReadOnlyBinaryStream; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ExtendedStreamReadResult, 0xa8)
+    @nativeField(ExtendedStreamReadResult, 0x98)
     result:ExtendedStreamReadResult;  // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
 }
 
@@ -186,17 +186,18 @@ bedrockServer.withLoading().then(()=>{
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x220,
-        asmcode.packetRawHook, Register.rax, true, [
+    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x219,
+        asmcode.packetRawHook, // original code depended
+        Register.rax, true, [
             0x41, 0x8B, 0xD7,                          // mov edx,r15d
-            0x48, 0x8D, 0x8D, 0x90, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+90]
-            0xE8, 0x58, 0xC1, 0x29, 0x00,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
+            0x48, 0x8D, 0x8D, 0x80, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+80]
+            0xE8, null, null, null, null,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
             0x90,                                      // nop
-        ], [10, 14]);
+        ]);
 
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, bool_t, {name: 'onPacketBefore'}, OnPacketRBP, int32_t, ExtendedStreamReadResult);
-    asmcode.packetBeforeOriginal = procHacker.hookingRaw('?readNoHeader@Packet@@QEAA_NAEAVReadOnlyBinaryStream@@AEBEAEAUExtendedStreamReadResult@@@Z', asmcode.packetBeforeHook);
+    asmcode.packetBeforeOriginal = procHacker.hookingRaw('?readNoHeader@Packet@@QEAA_NAEAVReadOnlyBinaryStream@@AEBW4SubClientId@@AEAUExtendedStreamReadResult@@@Z', asmcode.packetBeforeHook);
 
     // skip packet when result code is 0x7f
     const packetViolationOriginalCode = [
@@ -220,15 +221,15 @@ bedrockServer.withLoading().then(()=>{
         asm.call64(original, Register.rax);
     });
     asmcode.handlePacket = proc[packetHandleSymbol];
-    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x5dc,
+    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x580,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
-            0x48, 0x8B, 0x8D, 0x90, 0x00, 0x00, 0x00, // mov rcx,qword ptr ss:[rbp+90]
+            0x48, 0x8B, 0x8D, 0x80, 0x00, 0x00, 0x00, // mov rcx,qword ptr ss:[rbp+80]
             0xE8, null, null, null, null,             // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet> & __ptr64) __ptr64>
         ]);
 
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, void_t, NetworkIdentifier, Packet);
-    asmcode.sendOriginal = procHacker.hookingRaw('?send@NetworkHandler@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@E@Z', asmcode.packetSendHook);
+    asmcode.sendOriginal = procHacker.hookingRaw('?send@NetworkHandler@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z', asmcode.packetSendHook);
     const sendToMultiple = proc[sendToMultipleSymbol];
     asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x147);
     asmcode.packetSendAllJumpPoint = sendToMultiple.add(0x4c);

@@ -115,7 +115,10 @@ export namespace events {
     export const entityStartRiding = new Event<(event: EntityStartRidingEvent) => void | CANCEL>();
     /** Cancellable but the client is still exiting though it will automatically ride again after rejoin */
     export const entityStopRiding = new Event<(event: EntityStopRidingEvent) => void | CANCEL>();
-    /** Not cancellable */
+    /**
+     * Not cancellable
+     * **NOT IMPLEMENTED**
+     */
     export const entityCarriedItemChanged = new Event<(event: EntityCarriedItemChangedEvent) => void>();
     /** Cancellable */
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();

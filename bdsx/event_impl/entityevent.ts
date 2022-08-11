@@ -545,22 +545,23 @@ const onProjectileHit = procHacker.hooking(
     return onProjectileHit(projectileComponent, event.projectile, event.result);
 });
 
-const sendActorCarriedItemChanged = procHacker.hooking(
-    "?sendActorCarriedItemChanged@ActorEventCoordinator@@QEAAXAEAVActor@@AEBVItemInstance@@1W4HandSlot@@@Z",
-    void_t,
-    null,
-    VoidPointer, // this, ActorEventCoordinator
-    Actor,
-    ItemStackBase, // Actually ItemInstance which extends ItemStackBase without additional fields
-    ItemStackBase,
-    int32_t,
-)((self, entity, oldItemStack, newItemStack, handSlot) => {
-    const event = new EntityCarriedItemChangedEvent(entity, oldItemStack, newItemStack, handSlot);
-    events.entityCarriedItemChanged.fire(event);
-    decay(oldItemStack);
-    decay(newItemStack);
-    return sendActorCarriedItemChanged(self, entity, oldItemStack, newItemStack, handSlot);
-});
+// TODO: implement
+// const sendActorCarriedItemChanged = procHacker.hooking(
+//     "?sendActorCarriedItemChanged@ActorEventCoordinator@@QEAAXAEAVActor@@AEBVItemInstance@@1W4HandSlot@@@Z",
+//     void_t,
+//     null,
+//     VoidPointer, // this, ActorEventCoordinator
+//     Actor,
+//     ItemStackBase, // Actually ItemInstance which extends ItemStackBase without additional fields
+//     ItemStackBase,
+//     int32_t,
+// )((self, entity, oldItemStack, newItemStack, handSlot) => {
+//     const event = new EntityCarriedItemChangedEvent(entity, oldItemStack, newItemStack, handSlot);
+//     events.entityCarriedItemChanged.fire(event);
+//     decay(oldItemStack);
+//     decay(newItemStack);
+//     return sendActorCarriedItemChanged(self, entity, oldItemStack, newItemStack, handSlot);
+// });
 
 function onEntityKnockback(target: Mob, source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
     const event = new EntityKnockbackEvent(target, source, damage, xd, zd, power, height, heightCap);

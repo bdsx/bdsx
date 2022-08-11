@@ -451,6 +451,11 @@ export class MobEffectPacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
+class AttributeModifier extends AbstractClass {
+
+}
+
 @nativeClass()
 export class AttributeData extends NativeClass {
     @nativeField(float32_t)
@@ -463,12 +468,22 @@ export class AttributeData extends NativeClass {
     default:number;
     @nativeField(HashedString)
     readonly name:HashedString;
+    // TODO: clarify dummy
+    @nativeField(AttributeModifier.ref())
+    _dummy1:AttributeModifier|null;
+    @nativeField(AttributeModifier.ref())
+    _dummy2:AttributeModifier|null;
+    @nativeField(AttributeModifier.ref())
+    _dummy3:AttributeModifier|null;
 
     [NativeType.ctor]():void {
         this.min = 0;
         this.max = 0;
         this.current = 0;
         this.default = 0;
+        this._dummy1 = null;
+        this._dummy2 = null;
+        this._dummy3 = null;
     }
 }
 
