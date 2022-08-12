@@ -38,7 +38,7 @@ export class ExtendedStreamReadResult extends AbstractClass {
 
 const sharedptr_of_packet = Symbol('sharedptr');
 
-@nativeClass(0x30)
+@nativeClass(0x30, 0x8)
 export class Packet extends AbstractMantleClass {
     static ID:number;
     [sharedptr_of_packet]?:CxxSharedPtr<any>|null;

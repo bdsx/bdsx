@@ -15,7 +15,7 @@ import { ItemStack } from "bdsx/bds/inventory";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
-import { AttributeData, PacketIdToType } from "bdsx/bds/packets";
+import { AttributeData, ModalFormResponsePacket, PacketIdToType } from "bdsx/bds/packets";
 import { Player, PlayerPermission, SimulatedPlayer } from "bdsx/bds/player";
 import { proc } from "bdsx/bds/symbols";
 import { bin } from "bdsx/bin";
@@ -701,6 +701,16 @@ Tester.concurrency({
             const Packet = PacketIdToType[+id as keyof PacketIdToType];
             this.assert(!!Packet, `MinecraftPacketIds.${MinecraftPacketIds[id]}: class not found`);
         }
+    },
+
+    packetFields() {
+        const packet = ModalFormResponsePacket.allocate();
+        this.equals(packet.id, 0);
+        this.equals(packet.response.value(), undefined);
+        packet.id = 10;
+        packet.response.initValue();
+        packet.response.value()!.setValue('test');
+        packet.dispose();
     },
 
     packetEvents() {

@@ -17,8 +17,7 @@ class SentForm {
 
     constructor(
         public readonly networkIdentifier:NetworkIdentifier,
-        public readonly resolve: (data:FormResponse<any>)=>void,
-        public readonly reject: (err:Error)=>void) {
+        public readonly resolve: (data:FormResponse<any>)=>void) {
 
         // allocate id without duplication
         for (;;) {
@@ -213,8 +212,8 @@ export class Form<DATA extends FormData> {
     }
 
     static sendTo<T extends FormData['type']>(target:NetworkIdentifier, data:FormData&{type:T}, opts?:Form.Options):Promise<FormResponse<T>> {
-        return new Promise((resolve:(res:FormResponse<T>)=>void, reject)=>{
-            const submitted = new SentForm(target, resolve, reject);
+        return new Promise((resolve:(res:FormResponse<T>)=>void)=>{
+            const submitted = new SentForm(target, resolve);
             const pk = ModalFormRequestPacket.allocate();
             pk.id = submitted.id;
             if (opts != null) opts.id = pk.id;
@@ -388,11 +387,6 @@ events.packetAfter(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     if (sent == null) return;
     if (sent.networkIdentifier !== ni) return; // other user is responding
     formMaps.delete(pk.id);
-
-    try {
-        const response = JSON.parse(pk.response);
-        sent.resolve(response);
-    } catch (err) {
-        sent.reject(err);
-    }
+    const result = pk.response.value();
+    sent.resolve(result == null ? null : result.value());
 });

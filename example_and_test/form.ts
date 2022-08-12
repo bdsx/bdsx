@@ -4,7 +4,7 @@ import { command } from "bdsx/command";
 command.register('form', 'form example').overload(async(param, origin, output)=>{
     const actor = origin.getEntity();
     if (!actor?.isPlayer()) {
-        console.log("it's the command for players");
+        output.error("it's the command for players");
         return;
     }
     const ni = actor.getNetworkIdentifier();
@@ -68,4 +68,30 @@ command.register('form', 'form example').overload(async(param, origin, output)=>
         }
         altform.sendTo(ni);
     }
+}, {});
+
+command.register('form2', 'form example').overload(async(param, origin, output)=>{
+    const actor = origin.getEntity();
+    if (!actor?.isPlayer()) {
+        output.error("it's the command for players");
+        return;
+    }
+    const ni = actor.getNetworkIdentifier();
+    const idx = await Form.sendTo(ni, {
+        type:'form',
+        title:'title',
+        content:'content',
+        buttons: [
+            {text: 'button1'},
+            {text: 'button2'},
+            {text: 'button3'},
+            {text: 'button4'},
+        ],
+    });
+    await Form.sendTo(ni, {
+        type:'form',
+        title:'',
+        content: `button${idx} selected`,
+        buttons: [],
+    });
 }, {});

@@ -10,7 +10,7 @@ import { Singleton } from "./singleton";
 
 export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
     new(address?:VoidPointer|boolean):CxxVector<T>;
-    componentType:Type<any>;
+    componentType:Type<T>;
 }
 
 const VECTOR_SIZE = 0x18;

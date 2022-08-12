@@ -18,7 +18,7 @@ export enum JsonValueType {
     Object = 7,
 }
 
-@nativeClass({size: 0x10, symbol: 'VValue@Json@@'})
+@nativeClass({size: 0x10, align: 0x8, symbol: 'VValue@Json@@'})
 export class JsonValue extends NativeClass {
     static readonly [CommandParameterType.symbol]:true;
 

@@ -149,7 +149,9 @@ class StructureDefinition {
         clazz[StructurePointer.contentSize] =
         clazz.prototype[NativeType.size] =
         clazz[NativeType.size] = opts.size === undefined ? superclass[NativeType.size] : opts.size!;
-        clazz[NativeType.align] = opts.align == null ? superclass[NativeType.align] : opts.align;
+        let align = opts.align == null ? superclass[NativeType.align] : opts.align;
+        if (opts.minimalAlign != null && opts.minimalAlign > align) align = opts.minimalAlign;
+        clazz[NativeType.align] = align;
 
         sealClass(clazz);
     }
@@ -667,10 +669,11 @@ export interface NativeFieldOptions {
 export interface NativeClassOptions extends mangle.UpdateOptions {
     size?:number|null;
     align?:number|null;
+    minimalAlign?:number|null;
 }
 
 export function nativeField<T>(type:Type<T>, fieldOffset?:NativeFieldOptions|number|null, bitMask?:number|null) {
-    return <K extends string>(obj:NativeClass&Record<K, T|null>, key:K):void=>{
+    return <K extends string>(obj:Record<K, T|null>, key:K):void=>{
         const clazz = obj.constructor as NativeClassType<any>;
         let def = structures.get(clazz);
         if (def == null) structures.set(clazz, def = new StructureDefinition((clazz as any).__proto__));
