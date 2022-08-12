@@ -13,6 +13,7 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import { BlockPos, Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
+import { CxxOptional } from './cxxoptional';
 import type { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
@@ -1255,6 +1256,14 @@ export class Actor extends AbstractClass {
     }
 
     canAttack(target: Actor | null, unknown = false): boolean {
+        abstract();
+    }
+
+    getLastDeathPos(): CxxOptional<BlockPos> {
+        abstract();
+    }
+
+    getLastDeathDimension(): CxxOptional<DimensionId> {
         abstract();
     }
 }
