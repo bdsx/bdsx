@@ -813,10 +813,10 @@ Tester.concurrency({
                         'getDimension() is not OverworldDimension');
                     this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
                     if (actor instanceof Player) {
-                        const cmdlevel = actor.abilities.getCommandPermissionLevel();
+                        const cmdlevel = actor.abilities.getCommandPermissions();
                         this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');
                         this.equals(actor.getCommandPermissionLevel(), cmdlevel, 'Invalid command permission level');
-                        const playerlevel = actor.abilities.getPlayerPermissionLevel();
+                        const playerlevel = actor.abilities.getPlayerPermissions();
                         this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, 'invalid actor.abilities');
                         this.equals(actor.getPermissionLevel(), playerlevel, 'Invalid player permission level');
 
@@ -904,6 +904,9 @@ Tester.concurrency({
         events.playerJoin.on(this.wrap((ev) => {
             const player = ev.player;
             try {
+                const netId = player.getNetworkIdentifier();
+                this.equals(player.deviceId, bedrockServer.serverNetworkHandler.fetchConnectionRequest(netId).getDeviceId(), "player.deviceId is broken");
+
                 const region = player.getRegion();
                 const levelChunk = region.getChunkAt(BlockPos.create(player.getPosition()));
                 if (levelChunk) {
