@@ -15,6 +15,10 @@ export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
 
 const VECTOR_SIZE = 0x18;
 
+function getVectorSymbol(type:Type<any>):string {
+    return mangle.templateClass(['std', 'vector'], type, mangle.templateClass(['std', 'allocator'], type));
+}
+
 function getSize(bytes:number, compsize:number):number {
     if (bytes % compsize !== 0) {
         throw Error(`invalid vector size (bytes=0x${bytes.toString(16)}, compsize=0x${compsize.toString(16)})`);
@@ -645,10 +649,6 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     }
 }
 
-function getVectorSymbol(type:Type<any>):string {
-    return mangle.templateClass(['std', 'vector'], type, mangle.templateClass(['std', 'allocator'], type));
-}
-
 export class CxxVectorToArray<T> extends NativeType<T[]> {
     public readonly type:CxxVectorType<T>;
 
@@ -659,13 +659,7 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
             (ptr, offset)=>ptr.addAs(this.type, offset).toArray(),
             (ptr, v, offset)=>ptr.addAs(this.type, offset).setFromArray(v),
             (stackptr, offset)=>stackptr.getPointerAs(this.type, offset).toArray(),
-            (stackptr, param, offset)=>{
-                const buf = new this.type(true);
-                buf.construct();
-                buf.setFromArray(param);
-                makefunc.temporalDtors.push(()=>buf.destruct());
-                stackptr.setPointer(buf, offset);
-            },
+            undefined,
             ptr=>ptr.fill(0, VECTOR_SIZE),
             ptr=>{
                 const beg = ptr.getPointer(0);
@@ -679,6 +673,7 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
             },
         );
         this.type = CxxVector.make(this.compType);
+        this[makefunc.paramHasSpace] = true;
     }
 
     static make<T>(compType:Type<T>):CxxVectorToArray<T> {
