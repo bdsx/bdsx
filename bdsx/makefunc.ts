@@ -154,18 +154,16 @@ function invalidParameterError(paramName:string, expected:string, actual:unknown
 
 export namespace makefunc {
     export const temporalKeeper:any[] = [];
+    export const temporalDtors:(()=>void)[] = [];
 
     export const getter = Symbol('getter');
     export const setter = Symbol('setter');
     export const setToParam = Symbol('makefunc.writeToParam');
     export const getFromParam = Symbol('makefunc.readFromParam');
     export const useXmmRegister = Symbol('makefunc.returnWithXmm0');
-    export const paramHasSpace = Symbol('makefunc.paramHasSpace');
     export const dtor = Symbol('makefunc.dtor');
-    export const ctor = Symbol('makefunc.ctor');
     export const ctor_move = Symbol('makefunc.ctor_move');
     export const size = Symbol('makefunc.size');
-    export const align = Symbol('makefunc.align');
     export const registerDirect = Symbol('makefunc.registerDirect');
 
     export interface Paramable {
@@ -176,12 +174,9 @@ export namespace makefunc {
         [getFromParam](stackptr:StaticPointer, offset?:number):any;
         [setToParam](stackptr:StaticPointer, param:any, offset?:number):void;
         [useXmmRegister]:boolean;
-        [paramHasSpace]:boolean;
-        [ctor](ptr:StaticPointer):void;
         [ctor_move](to:StaticPointer, from:StaticPointer):void;
         [dtor](ptr:StaticPointer):void;
         [size]:number;
-        [align]:number;
         [registerDirect]?:boolean;
         isTypeOf(v:unknown):boolean;
         /**
@@ -202,16 +197,17 @@ export namespace makefunc {
             public readonly name:string,
             _getFromParam:(stackptr:StaticPointer, offset?:number)=>T|null,
             _setToParam:(stackptr:StaticPointer, param:T extends VoidPointer ? (T|null) : T, offset?:number)=>void,
+            _ctor_move:(to:StaticPointer, from:StaticPointer)=>void,
             isTypeOf:(v:unknown)=>boolean,
             isTypeOfWeak:(v:unknown)=>boolean = isTypeOf) {
             this[getFromParam] = _getFromParam;
             this[setToParam] = _setToParam;
+            this[ctor_move] = _ctor_move;
             this.isTypeOf = isTypeOf as any;
             this.isTypeOfWeak = isTypeOfWeak as any;
         }
     }
     ParamableT.prototype[useXmmRegister] = false;
-    ParamableT.prototype[paramHasSpace] = false;
 
     /**
      * allocate temporal memory for using in NativeType
@@ -270,12 +266,15 @@ export namespace makefunc {
         const options:MakeFuncOptions<any> = opts! || {};
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
+        const result = returnTypeResolved[makefunc.useXmmRegister] ? asmcode.addressof_xmm0Value : asmcode.addressof_raxValue;
 
         const gen = new FunctionGen;
         if (options.jsDebugBreak) gen.writeln('debugger;');
 
         gen.import('temporalKeeper', temporalKeeper);
+        gen.import('temporalDtors', temporalDtors);
         gen.writeln('const keepIdx=temporalKeeper.length;');
+        gen.writeln('const dtorIdx=temporalDtors.length;');
 
         gen.import('getter', getter);
         gen.import('getFromParam', getFromParam);
@@ -288,9 +287,9 @@ export namespace makefunc {
             gen.import(`${varname}_t`, type);
             if (offset >= 0x20) { // args memory space
                 if (type[registerDirect]) {
-                    gen.writeln(`const ${varname}=${varname}_t[getter](stackptr, ${offset+0x68});`);
+                    gen.writeln(`const ${varname}=${varname}_t[getter](stackptr, ${offset+0x58});`);
                 } else {
-                    gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset+0x68});`);
+                    gen.writeln(`const ${varname}=${varname}_t[getFromParam](stackptr, ${offset+0x58});`);
                 }
             } else { // args register space
                 if (type[registerDirect]) {
@@ -323,31 +322,26 @@ export namespace makefunc {
         }
 
         gen.import('jsfunction', jsfunction);
+        gen.import('result', result);
         gen.import('returnTypeResolved', returnTypeResolved);
         gen.import('setToParam', setToParam);
+        gen.import('ctor_move', ctor_move);
         if (needThis) gen.writeln(`const res=jsfunction.call(${args.join(',')});`);
         else gen.writeln(`const res=jsfunction(${args.join(',')});`);
-
-        const resultOffset = returnTypeResolved[makefunc.useXmmRegister] ? 0x50 : 0x48;
         if (options.structureReturn) {
+            gen.writeln('returnTypeResolved[ctor_move](retVar, res);');
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
-                if (returnTypeResolved[paramHasSpace]) throw Error(`cannot native return with ${returnType.name}`);
-                gen.import('ctor_move', ctor_move);
-                gen.writeln('returnTypeResolved[ctor_move](retVar, res);');
-                gen.writeln(`returnTypeResolved[setToParam](stackptr, retVar, ${resultOffset});`); // set address
+                gen.writeln('returnTypeResolved[setToParam](result, retVar);');
             } else {
-                if (returnTypeResolved[ctor] !== emptyFunc) {
-                    gen.import('ctor', ctor);
-                    gen.writeln('returnTypeResolved[ctor](retVar);');
-                }
-                gen.import('setter', setter);
-                gen.writeln('returnTypeResolved[setter](retVar, res);');
-                gen.writeln(`stackptr.setPointer(retVar, ${resultOffset});`);
+                gen.writeln('result.setPointer(retVar);');
             }
         } else {
-            if (returnTypeResolved[paramHasSpace]) throw Error(`cannot native return with ${returnType.name}`);
-            gen.writeln(`returnTypeResolved[setToParam](stackptr, res, ${resultOffset});`);
+            gen.writeln('returnTypeResolved[setToParam](result, res);');
         }
+        gen.writeln('for (let i=temporalDtors.length-1; i>=dtorIdx; i--) {');
+        gen.writeln('    temporalDtors[i]();');
+        gen.writeln('}');
+        gen.writeln('temporalDtors.length = dtorIdx;');
         gen.writeln('temporalKeeper.length = keepIdx;');
 
         if (jsfunction.name) {
@@ -378,23 +372,9 @@ export namespace makefunc {
         if (options.this != null) countOnCpp++;
         const paramsSize = countOnCpp * 8;
 
-        let stackSize = paramsSize;
-        if (stackSize < 0x20) stackSize = 0x20; // minimum stack for calling
-
-        // param spaces
-        const spaceOffsets:number[] = [];
-        for (const param of params) {
-            if (param[paramHasSpace]) {
-                spaceOffsets.push(stackSize);
-                if (param[makefunc.align] == null || param[makefunc.size] == null) throw Error('Invalid parameter size');
-                stackSize += param[makefunc.size]; // param has space
-                const align = param[makefunc.align]-1;
-                stackSize = ((stackSize + align) & ~align);
-            }
-        }
-
+        let stackSize = Math.max(paramsSize, 0x20); // minimum stack for stable
         // 16 bytes align
-        stackSize -= 0x28; // share space
+        stackSize += 0x8;
         stackSize = ((stackSize + 0xf) & ~0xf);
 
         const ncall = options.nativeDebugBreak ? breakBeforeCallNativeFunction : callNativeFunction;
@@ -415,7 +395,7 @@ export namespace makefunc {
 
         const returnTypeIsClass = isBaseOf(returnTypeResolved, StructurePointer);
 
-        const paramPairs:[string, Paramable, number?][] = [];
+        const paramPairs:[string, Paramable][] = [];
         if (options.this != null) {
             paramPairs.push(['this', options.this]);
         }
@@ -432,52 +412,35 @@ export namespace makefunc {
         gen.import('setter', setter);
 
         gen.import('temporalKeeper', temporalKeeper);
+        gen.import('temporalDtors', temporalDtors);
 
-        let j=0;
         for (let i=0;i<paramsTypeResolved.length;i++) {
             const varname = `arg${i}`;
             const type = paramsTypeResolved[i];
-            if (type[paramHasSpace]) paramPairs.push([varname, type, spaceOffsets[j++]]);
-            else paramPairs.push([varname, type]);
+            paramPairs.push([varname, type]);
             gen.writeln(`if (!${varname}_t.isTypeOfWeak(${varname})) invalidParameterError("${varname}", "${type.name}", ${varname});`);
         }
 
         gen.writeln('const keepIdx=temporalKeeper.length;');
-        gen.import('dtor', makefunc.dtor);
-        gen.import('ctor', makefunc.ctor);
+        gen.writeln('const dtorIdx=temporalDtors.length;');
 
         function writeNcall():void {
-            gen.writeln(`return ncall(${stackSize},func,stackptr=>{`);
-            if (spaceOffsets.length !== 0) {
-                gen.writeln('  let space;');
-            }
+            gen.writeln('ncall(stackSize, stackptr=>{');
             let offset = 0;
-            for (const [varname, type, spaceOffset] of paramPairs) {
+            for (const [varname, type] of paramPairs) {
                 gen.import(`${varname}_t`, type);
-                if (spaceOffset != null) {
-                    gen.writeln(`  space=stackptr.add(${spaceOffset});`);
-                    if (type[ctor] !== emptyFunc) {
-                        gen.writeln(`  ${varname}_t[ctor](space);`);
-                    }
-                    if (type[registerDirect]) {
-                        gen.writeln(`  ${varname}_t[setter](space, ${varname});`);
-                    } else {
-                        gen.writeln(`  ${varname}_t[setToParam](space, ${varname});`);
-                    }
-                    gen.writeln(`  stackptr.setPointer(space, ${offset});`);
+                if (type[registerDirect]) {
+                    gen.writeln(`    ${varname}_t[setter](stackptr, ${varname}, ${offset});`);
                 } else {
-                    if (type[registerDirect]) {
-                        gen.writeln(`  ${varname}_t[setter](stackptr, ${varname}, ${offset});`);
-                    } else {
-                        gen.writeln(`  ${varname}_t[setToParam](stackptr, ${varname}, ${offset});`);
-                    }
+                    gen.writeln(`    ${varname}_t[setToParam](stackptr, ${varname}, ${offset});`);
                 }
                 offset += 8;
             }
-            gen.writeln('},stackptr=>{');
+            gen.writeln('}, func);');
         }
 
         let returnVar = 'out';
+        gen.import('stackSize', stackSize);
         gen.import('ncall', ncall);
         if (options.structureReturn) {
             gen.import('returnTypeResolved', returnTypeResolved);
@@ -490,52 +453,43 @@ export namespace makefunc {
                 gen.import('AllocatedPointer', AllocatedPointer);
                 gen.import('returnTypeDtor', returnTypeResolved[dtor]);
                 gen.import('sizeSymbol', size);
-                gen.writeln('const retVar=new AllocatedPointer(returnTypeResolved[sizeSymbol]);');
+                gen.writeln('const retVar = new AllocatedPointer(returnTypeResolved[sizeSymbol]);');
                 writeNcall();
                 const getterFunc = returnTypeResolved[getter];
                 if (getterFunc !== emptyFunc) {
-                    gen.writeln('  const out=returnTypeResolved[getter](retVar);');
+                    gen.writeln('const out=returnTypeResolved[getter](retVar);');
                 } else {
                     returnVar = '';
                 }
-                gen.writeln('  returnTypeDtor(retVar);');
+                gen.writeln('returnTypeDtor(retVar);');
             }
         } else {
-            const rbpOffset = stackSize + 0x28;
-            const raxOffset = rbpOffset + 0x18;
-            const xmm0Offset = rbpOffset + 0x20;
-            const resultOffset = returnTypeResolved[makefunc.useXmmRegister] ? xmm0Offset : raxOffset;
-
+            const result = returnTypeResolved[makefunc.useXmmRegister] ? asmcode.addressof_xmm0Value : asmcode.addressof_raxValue;
+            gen.import('result', result);
             gen.import('returnTypeResolved', returnTypeResolved);
             gen.import('getFromParam', getFromParam);
             writeNcall();
 
             if (returnTypeIsClass && returnTypeResolved[registerDirect]) {
                 gen.import('sizeSymbol', size);
-                gen.writeln('  const out=new returnTypeResolved(true);');
-                gen.writeln(`  stackptr.copyTo(out, returnTypeResolved[sizeSymbol], ${resultOffset});`);
+                gen.writeln('const out=new returnTypeResolved(true);');
+                gen.writeln(`out.copyFrom(result, returnTypeResolved[sizeSymbol]);`);
             } else {
                 const getterFunc = returnTypeResolved[getFromParam];
                 if (getterFunc !== emptyFunc) {
-                    gen.writeln(`  const out=returnTypeResolved[getFromParam](stackptr, ${resultOffset});`);
+                    gen.writeln('const out=returnTypeResolved[getFromParam](result);');
                 } else {
                     returnVar = '';
                 }
             }
         }
 
-        // destruct stack
-        let irev = paramPairs.length;
-        while ((irev--) !== 0) {
-            const [varname, type, spaceOffset] = paramPairs[irev];
-            if (spaceOffset != null) {
-                gen.writeln(`  ${varname}_t[dtor](stackptr.add(${spaceOffset}));`);
-            }
-        }
-        gen.writeln('  temporalKeeper.length = keepIdx;');
-
-        if (returnVar !== '') gen.writeln(`  return ${returnVar};`);
-        gen.writeln('});');
+        gen.writeln('for (let i = temporalDtors.length-1; i>= dtorIdx; i--) {');
+        gen.writeln('    temporalDtors[i]();');
+        gen.writeln('}');
+        gen.writeln('temporalDtors.length = dtorIdx;');
+        gen.writeln('temporalKeeper.length = keepIdx;');
+        if (returnVar !== '') gen.writeln(`return ${returnVar};`);
 
         const args:string[] = [];
         for (let i=0;i<paramsTypeResolved.length;i++) {
@@ -551,6 +505,7 @@ export namespace makefunc {
         'Ansi',
         (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Ansi),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Ansi), offset),
+        abstract,
         v=>v === null || typeof v === 'string',
     );
 
@@ -558,6 +513,7 @@ export namespace makefunc {
         'Utf8',
         (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf8),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param), offset),
+        abstract,
         v=>v === null || typeof v === 'string',
     );
 
@@ -565,6 +521,7 @@ export namespace makefunc {
         'Utf16',
         (stackptr, offset)=>stackptr.getPointer(offset).getString(undefined, 0, Encoding.Utf16),
         (stackptr, param, offset)=>stackptr.setPointer(param === null ? null : tempString(param, Encoding.Utf16), offset),
+        abstract,
         v=>v === null || typeof v === 'string',
     );
 
@@ -577,6 +534,7 @@ export namespace makefunc {
             }
             stackptr.setPointer(param, offset);
         },
+        abstract,
         v=>{
             if (v === null) return true;
             if (v instanceof VoidPointer) return true;
@@ -596,6 +554,7 @@ export namespace makefunc {
         'JsValueRef',
         (stackptr, offset)=>stackptr.getJsValueRef(offset),
         (stackptr, param, offset)=>stackptr.setJsValueRef(param, offset),
+        abstract,
         ()=>true,
     );
 }

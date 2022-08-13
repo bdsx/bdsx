@@ -10,7 +10,6 @@ import { Block } from "bdsx/bds/block";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
-import { CxxOptionalToUndefUnion } from "bdsx/bds/cxxoptional";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
@@ -399,12 +398,6 @@ Tester.concurrency({
         const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer, {name: 'test, nullreturn'});
         this.equals(nullreturn(), null, 'nullreturn does not return null');
 
-        const returning = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, {name: 'test, returning'}, int32_t);
-        this.equals(returning(1), 1, 'makefunc.js, returning failed');
-        const returningNative = makefunc.np(returning, int32_t, {name: 'test, overTheFiveNative'}, int32_t);
-        const returningRewrap = makefunc.js(returningNative, int32_t, {name: 'test, overTheFiveRewrap'}, int32_t);
-        this.equals(returningRewrap(1), 1, 'makefunc.np, returning failed');
-
         const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, {name: 'test, overTheFour'}, int32_t, int32_t, int32_t, int32_t, int32_t);
         this.equals(overTheFour(0, 0, 0, 0, 1234), 1234, 'makefunc.js, overTheFour failed');
         const overTheFiveNative = makefunc.np(overTheFour, int32_t, {name: 'test, overTheFiveNative'}, int32_t, int32_t, int32_t, int32_t, int32_t);
@@ -526,16 +519,6 @@ Tester.concurrency({
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
         clsvector.destruct();
-    },
-
-    optional() {
-        const optionalInt = CxxOptionalToUndefUnion.make(int32_t);
-        const optionalJs = asm().mov_r_rp(Register.rax, Register.rdx, 1, 0).mov_rp_r(Register.rcx, 1, 0, Register.rax).mov_r_r(Register.rax, Register.rcx).make(optionalInt, {structureReturn: true}, optionalInt);
-        const optionalNp = makefunc.js(makefunc.np(v=>v, optionalInt, {structureReturn:true}, optionalInt), optionalInt, {structureReturn:true}, optionalInt);
-        this.equals(optionalJs(32), 32, 'optionalJs fail');
-        this.equals(optionalJs(undefined), undefined, 'optionalJs fail');
-        this.equals(optionalNp(32), 32, 'optionalNp fail');
-        this.equals(optionalNp(undefined), undefined, 'optionalNp fail');
     },
 
     map() {
@@ -892,7 +875,7 @@ Tester.concurrency({
                             let actual = abil.getValue();
                             if (typeof actual === 'number') actual = Math.round(actual*ROUND_UP_AXIS)/ROUND_UP_AXIS;
                             if (typeof expected === 'number') expected = Math.round(expected*ROUND_UP_AXIS)/ROUND_UP_AXIS;
-                            this.equals(actual, expected, `unexpected ${AbilitiesIndex[index]} value`, {stackOffset: 1});
+                            this.equals(actual, expected, `unexpected ${AbilitiesIndex[index]} value`);
                         };
                         checkAbility(AbilitiesIndex.Build, true);
                         checkAbility(AbilitiesIndex.Mine, true);
@@ -900,7 +883,7 @@ Tester.concurrency({
                         checkAbility(AbilitiesIndex.OpenContainers, true);
                         checkAbility(AbilitiesIndex.AttackMobs, true);
                         // checkAbility(AbilitiesIndex.Invulnerable, false); // skip for creative
-                        // checkAbility(AbilitiesIndex.Flying, false); // skip for creative
+                        checkAbility(AbilitiesIndex.Flying, false);
                         // checkAbility(AbilitiesIndex.MayFly, false); // skip for creative
                         // checkAbility(AbilitiesIndex.Instabuild, false); // skip for creative
                         checkAbility(AbilitiesIndex.Lightning, false);

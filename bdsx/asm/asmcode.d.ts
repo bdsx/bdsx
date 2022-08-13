@@ -37,6 +37,10 @@ export namespace asmcode {
     export let uv_async_post:VoidPointer;
     export const addressof_uv_async_post:NativePointer;
     export const pointer_np2js:NativePointer;
+    export let raxValue:VoidPointer;
+    export const addressof_raxValue:NativePointer;
+    export let xmm0Value:VoidPointer;
+    export const addressof_xmm0Value:NativePointer;
     export const breakBeforeCallNativeFunction:NativePointer;
     export const callNativeFunction:NativePointer;
     export const callJsFunction:NativePointer;

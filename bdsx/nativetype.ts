@@ -8,6 +8,8 @@ import { mangle } from './mangle';
 import { Singleton } from './singleton';
 
 namespace NativeTypeFn {
+    export const align = Symbol('align');
+    export const ctor = Symbol('ctor');
     export const ctor_copy = Symbol('ctor_copy');
     export const isNativeClass = Symbol('isNativeClass');
     export const descriptor = Symbol('descriptor');
@@ -28,13 +30,16 @@ export interface Type<T> extends makefunc.Paramable {
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
-    [makefunc.ctor]:(ptr:StaticPointer)=>void,
+    [NativeTypeFn.ctor]:(ptr:StaticPointer)=>void,
     [makefunc.dtor]:(ptr:StaticPointer)=>void,
     [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void,
     [makefunc.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
     [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void;
 
-    [makefunc.align]:number;
+    /**
+     * nullable actually
+     */
+    [NativeTypeFn.align]:number;
     [NativeTypeFn.isNativeClass]?:true;
 }
 
@@ -127,21 +132,22 @@ function numericBitSetter(this:NativeType<number>, ptr:StaticPointer, value:numb
 export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly getter:typeof makefunc.getter = makefunc.getter;
     public static readonly setter:typeof makefunc.setter = makefunc.setter;
-    public static readonly ctor:typeof makefunc.ctor = makefunc.ctor;
+    public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
     public static readonly dtor:typeof makefunc.dtor = makefunc.dtor;
     public static readonly registerDirect:typeof makefunc.registerDirect = makefunc.registerDirect;
     public static readonly ctor_copy:typeof NativeTypeFn.ctor_copy = NativeTypeFn.ctor_copy;
     public static readonly ctor_move:typeof makefunc.ctor_move = makefunc.ctor_move;
     public static readonly size:typeof makefunc.size = makefunc.size;
-    public static readonly align:typeof makefunc.align = makefunc.align;
+    public static readonly align:typeof NativeTypeFn.align = NativeTypeFn.align;
     public static readonly descriptor:typeof NativeTypeFn.descriptor = NativeTypeFn.descriptor;
 
     public [makefunc.getter]:(this:NativeType<T>, ptr:StaticPointer, offset?:number)=>T;
     public [makefunc.setter]:(this:NativeType<T>, ptr:StaticPointer, v:T, offset?:number)=>void;
-    public [makefunc.ctor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
+    public [NativeTypeFn.ctor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
     public [makefunc.dtor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
     public [makefunc.ctor_move]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
     public [NativeTypeFn.ctor_copy]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
+    public [NativeTypeFn.align]:number;
     public [NativeTypeFn.bitGetter]:(this:NativeType<T>, ptr:StaticPointer, shift:number, mask:number, offset?:number)=>T = abstract;
     public [NativeTypeFn.bitSetter]:(this:NativeType<T>, ptr:StaticPointer, value:T, shift:number, mask:number, offset?:number)=>void = abstract;
 
@@ -198,7 +204,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
          * it uses the copy constructor by default
          */
         ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy) {
-        super(name, getFromParam, setToParam, isTypeOf, isTypeOfWeak);
+        super(name, getFromParam, setToParam, ctor_move, isTypeOf, isTypeOfWeak);
         this[NativeType.size] = size;
         this[NativeType.align] = align;
         this[NativeType.getter] = get;
@@ -540,6 +546,8 @@ float64_t[makefunc.useXmmRegister] = true;
 const string_ctor = makefunc.js(proc['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
 const string_dtor = makefunc.js(proc['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], void_t, null, VoidPointer);
 
+const strbufCache:AllocatedPointer[] = [];
+
 export const CxxString = new CommandParameterNativeType<string>(
     'V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@', 'CxxString',
     0x20, 8,
@@ -547,8 +555,22 @@ export const CxxString = new CommandParameterNativeType<string>(
     undefined,
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
-    (stackptr, offset)=>stackptr.getPointer(offset).getCxxString(),
-    undefined,
+    (stackptr, offset)=>{
+        const ptr = stackptr.getPointer(offset);
+        return ptr.getCxxString();
+    },
+    (stackptr, param, offset)=>{
+        const buf = strbufCache.pop() || new AllocatedPointer(0x20);
+        string_ctor(buf);
+        buf.setCxxString(param);
+        makefunc.temporalDtors.push(()=>{
+            string_dtor(buf);
+            if (strbufCache.length < 8) {
+                strbufCache.push(buf);
+            }
+        });
+        stackptr.setPointer(buf, offset);
+    },
     string_ctor,
     string_dtor,
     (to, from)=>{
@@ -558,7 +580,6 @@ export const CxxString = new CommandParameterNativeType<string>(
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
-CxxString[makefunc.paramHasSpace] = true;
 export type CxxString = string;
 
 function impossible():never {
