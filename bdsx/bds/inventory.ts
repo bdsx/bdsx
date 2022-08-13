@@ -197,15 +197,20 @@ export class ItemStackBase extends NativeClass {
     userData: CompoundTag;
     @nativeField(Block.ref())
     block:Block;
+
+    //////////////////
+    // uint32_t
     @nativeField(int16_t)
     aux:int16_t;
     @nativeField(uint8_t)
     amount:uint8_t;
     @nativeField(bool_t)
     valid:bool_t;
-    @nativeField(bin64_t, {offset:0x04, relative:true})
+    //////////////////
+
+    @nativeField(bin64_t)
     pickupTime:bin64_t;
-    @nativeField(bool_t)
+    @nativeField(bool_t) // uint16_t
     showPickup:bool_t;
     @nativeField(CxxVector.make(BlockLegacy.ref()), 0x38)
     canPlaceOn:CxxVector<BlockLegacy>;
@@ -449,7 +454,7 @@ export class ItemStack extends ItemStackBase {
     static constructWith(itemName:ItemId|string, amount:number = 1, data:number = 0):ItemStack {
         abstract();
     }
-    /** @deprecated */
+    /** @deprecated use constructWith */
     static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
         return ItemStack.constructWith(itemName, amount, data);
     }
@@ -689,21 +694,32 @@ export class InventorySource extends NativeStruct {
     }
 }
 
-@nativeClass(0x48)
+@nativeClass(0x8)
 export class ItemDescriptor extends AbstractClass {
 }
 
 export class ItemStackNetIdVariant extends AbstractClass {
 }
 
-@nativeClass(0x98)
+@nativeClass(0x58)
 export class NetworkItemStackDescriptor extends AbstractClass {
+
+    ////////////////////////////
+    // ItemDescriptorCount, parent expected
     @nativeField(ItemDescriptor)
     readonly descriptor:ItemDescriptor;
-    @nativeField(ItemStackNetIdVariant, 0x58) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
+    // uint16_t, 0x8
+    ////////////////////////////
+
+    // uint8_t, 0x10
+
+    @nativeField(ItemStackNetIdVariant, 0x18) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
     readonly id:ItemStackNetIdVariant;
     /** @deprecated There seems to be no string inside NetworkItemStackDescriptor anymore */
-    @nativeField(CxxString, 0x64)
+
+    // uint32_t, 0x30
+
+    @nativeField(CxxString, 0x38)
     _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
@@ -724,13 +740,13 @@ export class InventoryAction extends AbstractClass {
     source:InventorySource;
     @nativeField(uint32_t)
     slot:uint32_t;
-    @nativeField(NetworkItemStackDescriptor)
-    fromDesc:NetworkItemStackDescriptor; // 0x10
-    @nativeField(NetworkItemStackDescriptor, 0x68)
+    @nativeField(NetworkItemStackDescriptor) // 0x10
+    fromDesc:NetworkItemStackDescriptor;
+    @nativeField(NetworkItemStackDescriptor) // 0x68
     toDesc:NetworkItemStackDescriptor;
-    @nativeField(ItemStack, 0xc0)
+    @nativeField(ItemStack) // 0xc0
     from:ItemStack;
-    @nativeField(ItemStack, 0x160)
+    @nativeField(ItemStack) // 0x160
     to:ItemStack;
 }
 

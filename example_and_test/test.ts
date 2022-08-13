@@ -11,7 +11,7 @@ import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { ItemStack } from "bdsx/bds/inventory";
+import { ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
@@ -703,14 +703,32 @@ Tester.concurrency({
         }
     },
 
-    packetFields() {
-        const packet = ModalFormResponsePacket.allocate();
-        this.equals(packet.id, 0);
-        this.equals(packet.response.value(), undefined);
-        packet.id = 10;
-        packet.response.initValue();
-        packet.response.value()!.setValue('test');
-        packet.dispose();
+    classFields() {
+        {
+            const packet = ModalFormResponsePacket.allocate();
+            this.equals(packet.id, 0);
+            this.equals(packet.response.value(), undefined);
+            packet.id = 10;
+            packet.response.initValue();
+            packet.response.value()!.setValue('test');
+            packet.dispose();
+        }
+
+        {
+            const itemStack = ItemStack.constructWith('minecraft:dirt', 12, 1);
+            this.assert(itemStack.block.equalsptr(Block.create('minecraft:dirt', 1)), 'itemStack.block');
+            this.equals(itemStack.valid, true, 'itemStack.vaild');
+            this.equals(itemStack.showPickup, true, 'itemStack.showPickup');
+            this.equals(itemStack.canPlaceOn.size(), 0, 'itemStack.canPlaceOn');
+            this.equals(itemStack.canDestroy.size(), 0, 'itemStack.canDestroy');
+            this.equals(itemStack.amount, 12, 'itemStack.amount');
+
+            const itemDesc = NetworkItemStackDescriptor.constructWith(itemStack);
+            this.equals(itemDesc._unknown, '\0\0\0\0\0\0\0\0\0\0', 'itemDesc._unknown');
+            itemDesc._unknown = 'over 15 bytes string';
+            itemDesc.destruct();
+            itemStack.destruct();
+        }
     },
 
     packetEvents() {
