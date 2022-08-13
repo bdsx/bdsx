@@ -779,7 +779,7 @@ export class ComplexInventoryTransaction extends AbstractClass {
     vftable:VoidPointer;
     @nativeField(uint8_t)
     type:ComplexInventoryTransaction.Type;
-    @nativeField(InventoryTransaction, 0x10)
+    @nativeField(InventoryTransaction)
     data:InventoryTransaction;
 
     isItemUseTransaction():this is ItemUseInventoryTransaction {
