@@ -726,12 +726,12 @@ export class InventoryAction extends AbstractClass {
     slot:uint32_t;
     @nativeField(NetworkItemStackDescriptor)
     fromDesc:NetworkItemStackDescriptor; // 0x10
-    @nativeField(NetworkItemStackDescriptor)
-    toDesc:NetworkItemStackDescriptor; // 0xa8
-    @nativeField(ItemStack)
-    from:ItemStack; // 0x140
-    @nativeField(ItemStack)
-    to:ItemStack; // 0x1e0
+    @nativeField(NetworkItemStackDescriptor, 0x68)
+    toDesc:NetworkItemStackDescriptor;
+    @nativeField(ItemStack, 0xc0)
+    from:ItemStack;
+    @nativeField(ItemStack, 0x160)
+    to:ItemStack;
 }
 
 @nativeClass(0x18)
@@ -779,7 +779,7 @@ export class ComplexInventoryTransaction extends AbstractClass {
     vftable:VoidPointer;
     @nativeField(uint8_t)
     type:ComplexInventoryTransaction.Type;
-    @nativeField(InventoryTransaction)
+    @nativeField(InventoryTransaction, 0x10)
     data:InventoryTransaction;
 
     isItemUseTransaction():this is ItemUseInventoryTransaction {
