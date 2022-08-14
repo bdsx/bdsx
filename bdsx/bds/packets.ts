@@ -510,10 +510,10 @@ export class MobEquipmentPacket extends Packet {
     runtimeId:ActorRuntimeID;
     @nativeField(NetworkItemStackDescriptor)
     readonly item:NetworkItemStackDescriptor;
-    @nativeField(uint8_t)
-    slot:uint8_t;
-    @nativeField(uint8_t)
-    selectedSlot:uint8_t;
+    @nativeField(int32_t)
+    slot:int32_t;
+    @nativeField(int32_t)
+    selectedSlot:int32_t;
     @nativeField(uint8_t)
     containerId:ContainerId;
 }
