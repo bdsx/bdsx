@@ -121,7 +121,7 @@ class Serializer {
 }
 
 class Deserializer {
-    constructor(private readonly reader:BufferReader) {
+    constructor(private readonly reader:BufferReader, public readonly errors:Error[] = []) {
     }
 
     readUint(head:number):number {
@@ -176,36 +176,40 @@ class Deserializer {
     }
 
     readValue():any {
-        const head = this.reader.readUint8();
-        const opcode = head & 0xf;
-        switch (opcode) {
-        case Opcode.PositiveInteger:
-            return this.readUint(head);
-        case Opcode.NegativeInteger:
-            return -this.readUint(head)-1;
-        case Opcode.String:
-            return this.readString(head);
-        case Opcode.Object:
-            return this.readObject(head);
-        case Opcode.Array:
-            return this.readArray(head);
-        case Opcode.Extra:
-            switch (head & 0xf0) {
-            case ExCode.Null:
-                return null;
-            case ExCode.Undefined:
-                return undefined;
-            case ExCode.True:
-                return true;
-            case ExCode.False:
-                return false;
-            case ExCode.Float32:
-                return this.reader.readFloat32();
-            case ExCode.Float64:
-                return this.reader.readFloat64();
-            case ExCode.Date:
-                return this.readDate();
+        try {
+            const head = this.reader.readUint8();
+            const opcode = head & 0xf;
+            switch (opcode) {
+            case Opcode.PositiveInteger:
+                return this.readUint(head);
+            case Opcode.NegativeInteger:
+                return -this.readUint(head)-1;
+            case Opcode.String:
+                return this.readString(head);
+            case Opcode.Object:
+                return this.readObject(head);
+            case Opcode.Array:
+                return this.readArray(head);
+            case Opcode.Extra:
+                switch (head & 0xf0) {
+                case ExCode.Null:
+                    return null;
+                case ExCode.Undefined:
+                    return undefined;
+                case ExCode.True:
+                    return true;
+                case ExCode.False:
+                    return false;
+                case ExCode.Float32:
+                    return this.reader.readFloat32();
+                case ExCode.Float64:
+                    return this.reader.readFloat64();
+                case ExCode.Date:
+                    return this.readDate();
+                }
             }
+        } catch (err) {
+            this.errors.push(err);
         }
     }
 }
@@ -218,8 +222,8 @@ export namespace jsdata {
         return s.buffer();
     }
 
-    export function deserialize(buffer:Uint8Array|BufferReader):any {
-        const ds = new Deserializer(buffer instanceof BufferReader ? buffer : new BufferReader(buffer));
+    export function deserialize(buffer:Uint8Array|BufferReader, errors?:Error[]):any {
+        const ds = new Deserializer(buffer instanceof BufferReader ? buffer : new BufferReader(buffer), errors);
         return ds.readValue();
     }
 
