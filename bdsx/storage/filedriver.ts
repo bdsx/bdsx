@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { StorageData, StorageDriver } from ".";
 import { fsutil } from "../fsutil";
+import { remapAndPrintError } from '../source-map-support';
 import { hexn } from "../util";
 import { BufferReader, BufferWriter } from '../writer/bufferstream';
 import { jsdata } from "./jsdata";
@@ -115,8 +116,12 @@ export class FileStorageDriver extends StorageDriver {
         const version = reader.readVarUint();
         switch (version) {
         case FILE_DB_VERSION_0: {
-            const data = jsdata.deserialize(reader);
-            const aliasId = jsdata.deserialize(reader);
+            const errors:Error[] = [];
+            const data = jsdata.deserialize(reader, errors);
+            const aliasId = jsdata.deserialize(reader, errors);
+            for (const error of errors ) {
+                remapAndPrintError(error);
+            }
             return { mainId: id, aliasId, data };
         }
         default:
