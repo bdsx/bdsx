@@ -59,9 +59,6 @@ export proc pointer_np2js
     xor eax, eax
 endp
 
-export def raxValue:qword
-export def xmm0Value:qword
-
 export proc breakBeforeCallNativeFunction
     int3
     jmp callNativeFunction
@@ -70,46 +67,48 @@ endp
 
 ;JsValueRef(JsValueRef callee, bool isConstructCall, JsValueRef *arguments, unsigned short argumentCount, void *callbackState)
 export proc callNativeFunction
-    ; prologue
-    keep rbp
-    keep rbx
-    stack 28h
+    ; rbp+18h ~ rbp+38h - temp space
+    ; rbp+10h - rip
+    keep rbp ; rbp+8h - rbp
+    keep rbx ; rbp+0h - rbx
     setframe rbp, 0h
+
+    sub rsp, 28h
     mov rbx, r8 ; rbx = arguments
     xor eax, eax
 
     ; arguments[1] to int, stacksize
-    lea rdx, [rbp+40h] ; result
+    lea rdx, [rbp+28h] ; result
     mov [rdx], rax
     mov rcx, [rbx+8h] ; number = arguments[1]
     call JsNumberToInt
-    sub rsp, [rbp+40h] ; stacksize
+    sub rsp, [rbp+28h] ; stacksize
 
     ; make stack pointer
-    lea r8, [rbp+50h] ; result = &args[1]
+    lea r8, [rbp+38h] ; result = &args[1]
     mov rdx, rsp
     mov rcx, NativePointer
     call pointer_np2js
     test eax, eax
-    jnz _eof
+    jnz _fail
 
-    ; call second arg
-    mov rcx, [rbx+10h] ; function = arguments[2]
-    lea r9, [rbp+40h] ; returning value
+    ; call arguments[3]
+    mov rcx, [rbx+18h] ; function = arguments[3]
+    lea r9, [rbp+28h] ; returning value
 
     mov r8, js_undefined
-    lea rdx, [rbp+48h] ; args
-    mov [rbp+48h], r8 ; args[0] = js_undefined
+    lea rdx, [rbp+30h] ; args
+    mov [rbp+30h], r8 ; args[0] = js_undefined
     mov r8, 2 ; argumentCount = 2
 
     sub rsp, 0x20
     ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
     call JsCallFunction
     test eax, eax
-    jnz _eof
+    jnz _fail
 
-    ; arguments[3] to pointer, function
-    mov rcx, [rbx+18h] ; arguments[3]
+    ; arguments[2] to pointer, function
+    mov rcx, [rbx+10h] ; arguments[2]
     call pointer_js2class
 
     add rsp, 0x20
@@ -124,20 +123,33 @@ export proc callNativeFunction
     movsd xmm2, qword ptr[rsp+10h]
     movsd xmm3, qword ptr[rsp+18h]
     call [rax+10h]
-    mov raxValue, rax
-    movsd xmm0Value, xmm0
+    mov [rbp+18h], rax
+    movsd [rbp+20h], xmm0
 
-_eof:
+    ; call arguments[4]
+    mov rcx, [rbx+20h] ; function = arguments[4]
+    lea r9, [rbp+28h] ; returning value
+    lea rdx, [rbp+30h] ; args
+    mov r8, 2 ; argumentCount = 2
+
+    sub rsp, 0x20
+    ;JsErrorCode JsCallFunction(JsValueRef function, JsValueRef *args, unsigned short argumentCount, JsValueRef *result)
+    call JsCallFunction
+    test rax, rax
+    jnz _fail
+    mov rax, [rbp+28h]
     unwind
+    ret
+_fail:
     mov rax, js_undefined
+    unwind
     ret
 endp
 
 ; r10 = jsfunc, r11 = onError
 export proc callJsFunction
-    stack 98h
-    mov [rsp+90h], r11 ; onError
-    ; 78h is unused
+    stack a8h
+    mov [rsp+a0h], r11 ; onError
 
     mov [rsp+48h], rcx
     mov [rsp+50h], rdx
@@ -169,8 +181,8 @@ export proc callJsFunction
     call JsCallFunction
     test eax, eax
     jnz _error
-    mov rax, raxValue
-    movsd xmm0, xmm0Value
+    mov rax, [rsp+90h]
+    movsd xmm0, [rsp+98h]
 
     unwind
     ret
@@ -184,7 +196,7 @@ _error:
     movsd xmm2, [rsp+78h]
     movsd xmm3, [rsp+80h]
     unwind
-    jmp [rsp-8h] ; onError, -98h + 90h
+    jmp [rsp-8h] ; onError, -a8h + a0h
 endp
 
 export def jshook_fireError:qword
@@ -217,12 +229,7 @@ proc crosscall_on_gamethread
     call JsCallFunction
     test eax, eax
     jnz _error
-    mov rax, raxValue
-    movsd xmm0, xmm0Value
-
     mov rcx, [rbx+20h] ; event
-    mov [rbx+28h], rax
-    movsd [rbx+30h], xmm0
     call SetEvent
     unwind
     ret
@@ -234,7 +241,7 @@ endp
 
 export proc jsend_crossthread
     const JsErrorNoCurrentContext 0x10003
-    stack 98h
+    stack a8h
 
     cmp eax, JsErrorNoCurrentContext
     jne _crash
@@ -264,8 +271,8 @@ export proc jsend_crossthread
     mov rcx, [rsp+20h]
     call CloseHandle
 
-    mov rax, [rsp+28h]
-    movsd xmm0, [rsp+30h]
+    mov rax, [rsp+90h]
+    movsd xmm0, [rsp+98h]
     unwind
     ret
 _crash:
