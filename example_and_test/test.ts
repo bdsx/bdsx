@@ -330,6 +330,8 @@ Tester.concurrency({
         }
         test(1);
         test(-1);
+        test(1234567890123);
+        test(-1234567890123);
         test('2');
         test('very very long text');
         test(true);

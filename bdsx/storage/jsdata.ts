@@ -134,9 +134,9 @@ class Deserializer {
         for (;;) {
             const v = this.reader.readUint8();
             if ((v & 0x80) === 0) {
-                return (v & 0x7f) * mul + value;
+                return v * mul + value;
             } else {
-                value += v * mul;
+                value += (v & 0x7f) * mul;
             }
             mul *= 0x80;
         }
