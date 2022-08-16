@@ -373,7 +373,7 @@ function int32To64(ptr:StaticPointer, v:unknown, offset?:number):void {
 }
 
 export const void_t = new NativeType<void>(
-    'X', 'void_t',
+    mangle.void, 'void_t',
     0, 1,
     v=>v === undefined,
     undefined,
@@ -384,7 +384,7 @@ export const void_t = new NativeType<void>(
     emptyFunc);
 export type void_t = void;
 export const bool_t = new CommandParameterNativeType<boolean>(
-    '_N', 'bool_t',
+    mangle.bool, 'bool_t',
     1, 1,
     v=>typeof v === 'boolean',
     undefined,
@@ -402,7 +402,7 @@ bool_t[NativeTypeFn.bitSetter] = (ptr, value, shift, mask, offset)=>{
     ptr.setUint8(nvalue, offset);
 };
 export const uint8_t = new NativeType<number>(
-    'E', 'uint8_t',
+    mangle.unsignedChar, 'uint8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xff,
     isNumber,
@@ -414,7 +414,7 @@ export type uint8_t = number;
 uint8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint16_t = new NativeType<number>(
-    'G', 'uint16_t',
+    mangle.unsignedShort, 'uint16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xffff,
     isNumber,
@@ -426,7 +426,7 @@ export type uint16_t = number;
 uint16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint32_t = new NativeType<number>(
-    'I', 'uint32_t',
+    mangle.unsignedInt, 'uint32_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -438,7 +438,7 @@ export type uint32_t = number;
 uint32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const ulong_t = new NativeType<number>(
-    'K', 'ulong_t',
+    mangle.unsignedLong, 'ulong_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -450,7 +450,7 @@ export type ulong_t = number;
 ulong_t[NativeTypeFn.bitGetter] = numericBitGetter;
 ulong_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint64_as_float_t = new NativeType<number>(
-    '_K', 'uint64_as_float_t',
+    mangle.unsignedLongLong, 'uint64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && 0 <= v && v < 0x10000000000000000,
     isNumber,
@@ -458,7 +458,7 @@ export const uint64_as_float_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
-    'D', 'int8_t',
+    mangle.char, 'int8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && -0x80 <= v && v <= 0x7f,
     isNumber,
@@ -470,7 +470,7 @@ export type int8_t = number;
 int8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int16_t = new NativeType<number>(
-    'F', 'int16_t',
+    mangle.short, 'int16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && -0x8000 <= v && v <= 0x7fff,
     isNumber,
@@ -482,7 +482,7 @@ export type int16_t = number;
 int16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int32_t = new CommandParameterNativeType<number>(
-    'H', 'int32_t',
+    mangle.int, 'int32_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -494,7 +494,7 @@ export type int32_t = number;
 int32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const long_t = new NativeType<number>(
-    'J', 'long_t',
+    mangle.long, 'long_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -506,7 +506,7 @@ export type long_t = number;
 long_t[NativeTypeFn.bitGetter] = numericBitGetter;
 long_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int64_as_float_t = new NativeType<number>(
-    '_J', 'int64_as_float_t',
+    mangle.longlong, 'int64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && -0x8000000000000000 <= v && v < 0x8000000000000000,
     isNumber,
@@ -517,7 +517,7 @@ export const int64_as_float_t = new NativeType<number>(
 export type int64_as_float_t = number;
 
 export const float32_t = new CommandParameterNativeType<number>(
-    'M', 'float32_t',
+    mangle.float, 'float32_t',
     4, 4,
     isNumber,
     isNumber,
@@ -528,7 +528,7 @@ export const float32_t = new CommandParameterNativeType<number>(
 export type float32_t = number;
 float32_t[makefunc.useXmmRegister] = true;
 export const float64_t = new NativeType<number>(
-    'N', 'float64_t',
+    mangle.double, 'float64_t',
     8, 8,
     isNumber,
     isNumber,
@@ -566,7 +566,8 @@ function impossible():never {
 }
 
 export const GslStringSpan = new NativeType<string>(
-    'gsl::basic_string_span<char const,-1>', 'GslStringSpan',
+    mangle.templateClass(['gsl', 'basic_string_span'], mangle.constChar, -1),
+    'GslStringSpan',
     0x10, 8,
     v=>typeof v === 'string',
     undefined,
