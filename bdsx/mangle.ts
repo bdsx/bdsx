@@ -6,41 +6,45 @@ function attach(code:string, name:makefunc.Paramable|string):string {
     return code+(typeof name === 'string' ? name : name.symbol);
 }
 
-export namespace mangle {
-    export interface UpdateOptions {
-        /**
-         * the symbol is defined as a struct
-         */
-        structSymbol?:boolean;
+export const mangle = {
+    char: 'D',
+    unsignedChar: 'E',
+    short: 'F',
+    unsignedShort: 'G',
+    int: 'H',
+    unsignedInt: 'I',
+    long: 'J',
+    unsignedLong: 'K',
+    double: 'N',
+    float: 'M',
+    longlong: '_J',
+    unsignedLongLong: '_K',
+    bool: '_N',
+    void: 'X',
+    constChar: '$$CBD',
 
-        /**
-         * set symbol name manually
-         */
-        symbol?:string;
-    }
-
-    export function update(target:makefunc.Paramable, opts?:UpdateOptions):void {
+    update(target:makefunc.Paramable, opts?:mangle.UpdateOptions):void {
         if (opts != null) {
             target.symbol = opts.symbol != null ? opts.symbol :
-                opts.structSymbol ? struct(target.name) : clazz(target.name);
+                opts.structSymbol ? mangle.struct(target.name) : mangle.clazz(target.name);
         } else {
-            target.symbol = clazz(target.name);
+            target.symbol = mangle.clazz(target.name);
         }
-    }
+    },
 
-    export function pointer(name:makefunc.Paramable|string):string {
+    pointer(name:makefunc.Paramable|string):string {
         return attach('PEA', name);
-    }
-    export function constPointer(name:makefunc.Paramable|string):string {
+    },
+    constPointer(name:makefunc.Paramable|string):string {
         return attach('PEB', name);
-    }
-    export function ref(name:makefunc.Paramable|string):string {
+    },
+    ref(name:makefunc.Paramable|string):string {
         return attach('AEA', name);
-    }
-    export function constRef(name:makefunc.Paramable|string):string {
+    },
+    constRef(name:makefunc.Paramable|string):string {
         return attach('AEB', name);
-    }
-    export function ns(names:string[]|string):string {
+    },
+    ns(names:string[]|string):string {
         if (typeof names === 'string') return names + '@@';
         let out = '';
         let nameidx = names.length;
@@ -57,14 +61,14 @@ export namespace mangle {
         }
         out += '@';
         return out;
-    }
-    export function clazz(...name:string[]):string {
-        return 'V'+ns(name);
-    }
-    export function struct(...name:string[]):string {
-        return 'U'+ns(name);
-    }
-    export function number(n:number):string {
+    },
+    clazz(...name:string[]):string {
+        return 'V'+mangle.ns(name);
+    },
+    struct(...name:string[]):string {
+        return 'U'+mangle.ns(name);
+    },
+    number(n:number):string {
         if (n !== 0 && n <= 10 && n >= -10) {
             if (n > 0) {
                 return `$0`+n;
@@ -84,8 +88,8 @@ export namespace mangle {
             out.push(0x40);
             return String.fromCharCode(...out);
         }
-    }
-    export function parameters(params:(makefunc.Paramable|string)[]):string {
+    },
+    parameters(params:(makefunc.Paramable|string)[]):string {
         if (params.length === 0) {
             return 'X';
         } else {
@@ -96,47 +100,65 @@ export namespace mangle {
             out += '@';
             return out;
         }
-    }
-    export function funcptr(returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
+    },
+    funcptr(returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
         if (typeof returnType !== 'string') returnType = returnType.symbol;
         let out = 'P6A';
         out += returnType;
-        out += parameters(params);
+        out += mangle.parameters(params);
         out += 'Z';
         return out;
-    }
-    export function func(code:string, name:string[]|string, returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
+    },
+    func(code:string, name:string[]|string, returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
         if (typeof returnType !== 'string') returnType = returnType.symbol;
         let out = '?';
-        out += ns(name);
+        out += mangle.ns(name);
         out += code;
         out += returnType;
-        out += parameters(params);
+        out += mangle.parameters(params);
         out += 'Z';
         return out;
-    }
-    export function globalFunc(name:string[]|string, returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
-        return func('YA', name, returnType, params);
-    }
-    export function privateConstFunc(name:string[]|string, returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
-        return func('AEBA', name, returnType, params);
-    }
-    export function template(name:string, params:(makefunc.Paramable|string)[]):string {
+    },
+    globalFunc(name:string[]|string, returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
+        return mangle.func('YA', name, returnType, params);
+    },
+    privateConstFunc(name:string[]|string, returnType:makefunc.Paramable|string, params:(makefunc.Paramable|string)[]):string {
+        return mangle.func('AEBA', name, returnType, params);
+    },
+    template(name:string, params:(makefunc.Paramable|string|number)[]):string {
         let out = '?$';
         out += name;
         out += '@';
         for (const param of params) {
-            out += typeof param === 'string' ? param : param.symbol;
+            switch (typeof param) {
+            case 'string': out += param; break;
+            case 'number': out += mangle.number(param); break;
+            default: out += param.symbol; break;
+            }
         }
         out += '@';
         return out;
-    }
-    export function templateClass(name:string[]|string, ...params:(makefunc.Paramable|string)[]):string {
+    },
+    templateClass(name:string[]|string, ...params:(makefunc.Paramable|string|number)[]):string {
         if (typeof name === 'string') {
-            return 'V'+template(name, params)+'@';
+            return 'V'+mangle.template(name, params)+'@';
         } else {
             const last = name.pop()!;
-            return 'V'+template(last, params)+ns(name);
+            return 'V'+mangle.template(last, params)+mangle.ns(name);
         }
+    },
+};
+
+export namespace mangle {
+    export interface UpdateOptions {
+        /**
+         * the symbol is defined as a struct
+         */
+        structSymbol?:boolean;
+
+        /**
+         * set symbol name manually
+         */
+        symbol?:string;
     }
 }

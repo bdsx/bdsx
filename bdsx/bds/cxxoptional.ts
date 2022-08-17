@@ -1,16 +1,24 @@
 import { VoidPointer } from "../core";
+import { makefunc } from "../makefunc";
+import { mangle } from "../mangle";
 import { nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
 import { bool_t, NativeType, Type } from "../nativetype";
 import { Singleton } from "../singleton";
+
+type NullPtrable<T> = (T extends VoidPointer ? null : never)|T;
 
 export interface CxxOptionalType<T> extends NativeClassType<CxxOptional<T>> {
     new(address?:VoidPointer|boolean):CxxOptional<T>;
     componentType:Type<T>;
 }
 
+function getOptionalSymbol(type:Type<any>):string {
+    return mangle.templateClass(['std', 'optional'], type);
+}
+
 export abstract class CxxOptional<T> extends NativeClass {
     abstract value():T|undefined;
-    abstract setValue(value:T):void;
+    abstract setValue(value:NullPtrable<T>|undefined):void;
     abstract initValue():void;
     abstract hasValue():boolean;
     abstract reset():void;
@@ -47,9 +55,13 @@ export abstract class CxxOptional<T> extends NativeClass {
                 value():T|undefined {
                     return this._hasValue ? this._value : undefined;
                 }
-                setValue(value:T):void {
-                    this.initValue();
-                    type[NativeType.setter](this as any, value);
+                setValue(value:NullPtrable<T>|undefined):void {
+                    if (value === undefined) {
+                        this.reset();
+                    } else {
+                        this.initValue();
+                        this._value = value!;
+                    }
                 }
                 initValue():void {
                     if (!this._hasValue) {
@@ -67,8 +79,52 @@ export abstract class CxxOptional<T> extends NativeClass {
                     }
                 }
             }
+            Object.defineProperties(OptionalImpl, {
+                name: { value:`CxxOptional<${type.name}>` },
+                symbol: {value: getOptionalSymbol(type) },
+            });
             return OptionalImpl;
         });
     }
 }
 
+export class CxxOptionalToUndefUnion<T> extends NativeType<T|undefined> {
+    public readonly type:CxxOptionalType<T>;
+
+    private constructor(public readonly compType:Type<T>) {
+        const optionalType = CxxOptional.make(compType);
+        const hasValueOffset = optionalType.offsetOf('_hasValue' as any);
+
+        super(getOptionalSymbol(compType), `CxxOptionalToJsValue<${compType.name}>`,
+            optionalType[NativeType.size], optionalType[NativeType.align],
+            v=>v === undefined || compType.isTypeOf(v),
+            undefined,
+            (ptr, offset)=>ptr.addAs(this.type, offset).value(),
+            (ptr, v, offset)=>ptr.addAs(this.type, offset).setValue(v),
+            (stackptr, offset)=>stackptr.getPointerAs(this.type, offset).value(),
+            undefined,
+            ptr=>ptr.setBoolean(false, hasValueOffset),
+            ptr=>{
+                if (ptr.getBoolean(hasValueOffset)) {
+                    compType[NativeType.dtor](ptr);
+                }
+            },
+            (to, from)=>to.as(this.type)[NativeType.ctor_copy](from.as(this.type)),
+            (to, from)=>{
+                const hasValue = from.getBoolean(hasValueOffset);
+                to.setBoolean(hasValue, hasValueOffset);
+                if (hasValue) {
+                    from.setBoolean(false, hasValueOffset);
+                    compType[NativeType.ctor_move](to, from);
+                    compType[NativeType.dtor](from);
+                }
+            },
+        );
+        this.type = optionalType;
+        this[makefunc.paramHasSpace] = true;
+    }
+
+    static make<T>(compType:Type<T>):CxxOptionalToUndefUnion<T> {
+        return Singleton.newInstance<CxxOptionalToUndefUnion<T>>(CxxOptionalToUndefUnion, compType, ()=>new CxxOptionalToUndefUnion<T>(compType));
+    }
+}

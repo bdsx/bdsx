@@ -10,6 +10,7 @@ import { Block } from "bdsx/bds/block";
 import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
+import { CxxOptionalToUndefUnion } from "bdsx/bds/cxxoptional";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
@@ -35,7 +36,7 @@ import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, uint16_t } from "bdsx/nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, int8_t, uint16_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { procHacker } from "bdsx/prochacker";
 import { PseudoRandom } from "bdsx/pseudorandom";
@@ -329,6 +330,8 @@ Tester.concurrency({
         }
         test(1);
         test(-1);
+        test(1234567890123);
+        test(-1234567890123);
         test('2');
         test('very very long text');
         test(true);
@@ -380,9 +383,15 @@ Tester.concurrency({
         const doubleToFloat = asm().cvtsd2ss_f_f(FloatRegister.xmm0, FloatRegister.xmm0).make(float32_t, {name: 'test, doubleToFloat'}, float64_t);
         this.equals(doubleToFloat(123), 123, 'double to float');
         const getbool = asm().mov_r_c(Register.rax, 0x100).make(bool_t, {name: 'test, return 100'});
+        const sum = makefunc.js(makefunc.np((a,b,c,d)=>a+b+c+d, int32_t, null, int8_t, int16_t, int32_t, int64_as_float_t), int32_t, null, int8_t, int16_t, int32_t, int64_as_float_t);
+        this.equals(sum(1,2,3,4), 10, '4 parameters');
         this.equals(getbool(), false, 'bool return');
         const bool2int = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, {name: 'test, return param'}, bool_t);
         this.equals(bool2int(true), 1, 'bool to int');
+        this.equals(bool2int(false), 0, 'bool to int');
+        const int2bool = asm().mov_r_r(Register.rax, Register.rcx).make(bool_t, {name: 'test, return param'}, int32_t);
+        this.equals(int2bool(1), true, 'int to bool');
+        this.equals(int2bool(0), false, 'int to bool');
         const int2short_as_int = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int32_t, {name: 'test, int2short_as_int'}, int32_t);
         this.equals(int2short_as_int(-1), 0xffff, 'int to short old');
         const int2short = asm().movzx_r_r(Register.rax, Register.rcx, OperationSize.dword, OperationSize.word).make(int16_t, {name: 'test, int2short'}, int32_t);
@@ -397,6 +406,12 @@ Tester.concurrency({
         this.equals(string2string('test string over 15 bytes'), 'test string over 15 bytes', 'string to string');
         const nullreturn = asm().xor_r_r(Register.rax, Register.rax).make(NativePointer, {name: 'test, nullreturn'});
         this.equals(nullreturn(), null, 'nullreturn does not return null');
+
+        const returning = asm().mov_r_r(Register.rax, Register.rcx).make(int32_t, {name: 'test, returning'}, int32_t);
+        this.equals(returning(1), 1, 'makefunc.js, returning failed');
+        const returningNative = makefunc.np(returning, int32_t, {name: 'test, overTheFiveNative'}, int32_t);
+        const returningRewrap = makefunc.js(returningNative, int32_t, {name: 'test, overTheFiveRewrap'}, int32_t);
+        this.equals(returningRewrap(1), 1, 'makefunc.np, returning failed');
 
         const overTheFour = asm().mov_r_rp(Register.rax, Register.rsp, 1, 0x28).make(int32_t, {name: 'test, overTheFour'}, int32_t, int32_t, int32_t, int32_t, int32_t);
         this.equals(overTheFour(0, 0, 0, 0, 1234), 1234, 'makefunc.js, overTheFour failed');
@@ -519,6 +534,16 @@ Tester.concurrency({
         this.equals(cloned.get(1)!.vector3.toArray().map(v=>v.toArray().join(',')).join(','), 't1,t2,,,,t1,t2,,,', 'cloned class, string vector');
         cloned.destruct();
         clsvector.destruct();
+    },
+
+    optional() {
+        const optionalInt = CxxOptionalToUndefUnion.make(int32_t);
+        const optionalJs = asm().mov_r_rp(Register.rax, Register.rdx, 1, 0).mov_rp_r(Register.rcx, 1, 0, Register.rax).mov_r_r(Register.rax, Register.rcx).make(optionalInt, {structureReturn: true}, optionalInt);
+        const optionalNp = makefunc.js(makefunc.np(v=>v, optionalInt, {structureReturn:true}, optionalInt), optionalInt, {structureReturn:true}, optionalInt);
+        this.equals(optionalJs(32), 32, 'optionalJs fail');
+        this.equals(optionalJs(undefined), undefined, 'optionalJs fail');
+        this.equals(optionalNp(32), 32, 'optionalNp fail');
+        this.equals(optionalNp(undefined), undefined, 'optionalNp fail');
     },
 
     map() {
@@ -875,7 +900,7 @@ Tester.concurrency({
                             let actual = abil.getValue();
                             if (typeof actual === 'number') actual = Math.round(actual*ROUND_UP_AXIS)/ROUND_UP_AXIS;
                             if (typeof expected === 'number') expected = Math.round(expected*ROUND_UP_AXIS)/ROUND_UP_AXIS;
-                            this.equals(actual, expected, `unexpected ${AbilitiesIndex[index]} value`);
+                            this.equals(actual, expected, `unexpected ${AbilitiesIndex[index]} value`, {stackOffset: 1});
                         };
                         checkAbility(AbilitiesIndex.Build, true);
                         checkAbility(AbilitiesIndex.Mine, true);
@@ -883,7 +908,7 @@ Tester.concurrency({
                         checkAbility(AbilitiesIndex.OpenContainers, true);
                         checkAbility(AbilitiesIndex.AttackMobs, true);
                         // checkAbility(AbilitiesIndex.Invulnerable, false); // skip for creative
-                        checkAbility(AbilitiesIndex.Flying, false);
+                        // checkAbility(AbilitiesIndex.Flying, false); // skip for creative
                         // checkAbility(AbilitiesIndex.MayFly, false); // skip for creative
                         // checkAbility(AbilitiesIndex.Instabuild, false); // skip for creative
                         checkAbility(AbilitiesIndex.Lightning, false);

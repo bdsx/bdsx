@@ -8,8 +8,6 @@ import { mangle } from './mangle';
 import { Singleton } from './singleton';
 
 namespace NativeTypeFn {
-    export const align = Symbol('align');
-    export const ctor = Symbol('ctor');
     export const ctor_copy = Symbol('ctor_copy');
     export const isNativeClass = Symbol('isNativeClass');
     export const descriptor = Symbol('descriptor');
@@ -30,16 +28,13 @@ export interface Type<T> extends makefunc.Paramable {
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
-    [NativeTypeFn.ctor]:(ptr:StaticPointer)=>void,
+    [makefunc.ctor]:(ptr:StaticPointer)=>void,
     [makefunc.dtor]:(ptr:StaticPointer)=>void,
     [NativeTypeFn.ctor_copy]:(to:StaticPointer, from:StaticPointer)=>void,
     [makefunc.ctor_move]:(to:StaticPointer, from:StaticPointer)=>void,
     [NativeTypeFn.descriptor](builder:NativeDescriptorBuilder, key:string|number, info:NativeDescriptorBuilder.Info):void;
 
-    /**
-     * nullable actually
-     */
-    [NativeTypeFn.align]:number;
+    [makefunc.align]:number;
     [NativeTypeFn.isNativeClass]?:true;
 }
 
@@ -132,22 +127,21 @@ function numericBitSetter(this:NativeType<number>, ptr:StaticPointer, value:numb
 export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
     public static readonly getter:typeof makefunc.getter = makefunc.getter;
     public static readonly setter:typeof makefunc.setter = makefunc.setter;
-    public static readonly ctor:typeof NativeTypeFn.ctor = NativeTypeFn.ctor;
+    public static readonly ctor:typeof makefunc.ctor = makefunc.ctor;
     public static readonly dtor:typeof makefunc.dtor = makefunc.dtor;
     public static readonly registerDirect:typeof makefunc.registerDirect = makefunc.registerDirect;
     public static readonly ctor_copy:typeof NativeTypeFn.ctor_copy = NativeTypeFn.ctor_copy;
     public static readonly ctor_move:typeof makefunc.ctor_move = makefunc.ctor_move;
     public static readonly size:typeof makefunc.size = makefunc.size;
-    public static readonly align:typeof NativeTypeFn.align = NativeTypeFn.align;
+    public static readonly align:typeof makefunc.align = makefunc.align;
     public static readonly descriptor:typeof NativeTypeFn.descriptor = NativeTypeFn.descriptor;
 
     public [makefunc.getter]:(this:NativeType<T>, ptr:StaticPointer, offset?:number)=>T;
     public [makefunc.setter]:(this:NativeType<T>, ptr:StaticPointer, v:T, offset?:number)=>void;
-    public [NativeTypeFn.ctor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
+    public [makefunc.ctor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
     public [makefunc.dtor]:(this:NativeType<T>, ptr:StaticPointer)=>void;
     public [makefunc.ctor_move]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
     public [NativeTypeFn.ctor_copy]:(this:NativeType<T>, to:StaticPointer, from:StaticPointer)=>void;
-    public [NativeTypeFn.align]:number;
     public [NativeTypeFn.bitGetter]:(this:NativeType<T>, ptr:StaticPointer, shift:number, mask:number, offset?:number)=>T = abstract;
     public [NativeTypeFn.bitSetter]:(this:NativeType<T>, ptr:StaticPointer, value:T, shift:number, mask:number, offset?:number)=>void = abstract;
 
@@ -204,7 +198,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
          * it uses the copy constructor by default
          */
         ctor_move:(to:StaticPointer, from:StaticPointer)=>void = ctor_copy) {
-        super(name, getFromParam, setToParam, ctor_move, isTypeOf, isTypeOfWeak);
+        super(name, getFromParam, setToParam, isTypeOf, isTypeOfWeak);
         this[NativeType.size] = size;
         this[NativeType.align] = align;
         this[NativeType.getter] = get;
@@ -379,7 +373,7 @@ function int32To64(ptr:StaticPointer, v:unknown, offset?:number):void {
 }
 
 export const void_t = new NativeType<void>(
-    'X', 'void_t',
+    mangle.void, 'void_t',
     0, 1,
     v=>v === undefined,
     undefined,
@@ -390,7 +384,7 @@ export const void_t = new NativeType<void>(
     emptyFunc);
 export type void_t = void;
 export const bool_t = new CommandParameterNativeType<boolean>(
-    '_N', 'bool_t',
+    mangle.bool, 'bool_t',
     1, 1,
     v=>typeof v === 'boolean',
     undefined,
@@ -408,7 +402,7 @@ bool_t[NativeTypeFn.bitSetter] = (ptr, value, shift, mask, offset)=>{
     ptr.setUint8(nvalue, offset);
 };
 export const uint8_t = new NativeType<number>(
-    'E', 'uint8_t',
+    mangle.unsignedChar, 'uint8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xff,
     isNumber,
@@ -420,7 +414,7 @@ export type uint8_t = number;
 uint8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint16_t = new NativeType<number>(
-    'G', 'uint16_t',
+    mangle.unsignedShort, 'uint16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && 0 <= v && v <= 0xffff,
     isNumber,
@@ -432,7 +426,7 @@ export type uint16_t = number;
 uint16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint32_t = new NativeType<number>(
-    'I', 'uint32_t',
+    mangle.unsignedInt, 'uint32_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -444,7 +438,7 @@ export type uint32_t = number;
 uint32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 uint32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const ulong_t = new NativeType<number>(
-    'K', 'ulong_t',
+    mangle.unsignedLong, 'ulong_t',
     4, 4,
     v=>typeof v === 'number' && (v>>>0) === v,
     isNumber,
@@ -456,7 +450,7 @@ export type ulong_t = number;
 ulong_t[NativeTypeFn.bitGetter] = numericBitGetter;
 ulong_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const uint64_as_float_t = new NativeType<number>(
-    '_K', 'uint64_as_float_t',
+    mangle.unsignedLongLong, 'uint64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && 0 <= v && v < 0x10000000000000000,
     isNumber,
@@ -464,7 +458,7 @@ export const uint64_as_float_t = new NativeType<number>(
     (ptr, v, offset)=>ptr.setUint64WithFloat(v, offset));
 export type uint64_as_float_t = number;
 export const int8_t = new NativeType<number>(
-    'D', 'int8_t',
+    mangle.char, 'int8_t',
     1, 1,
     v=>typeof v === 'number' && (v|0) === v && -0x80 <= v && v <= 0x7f,
     isNumber,
@@ -476,7 +470,7 @@ export type int8_t = number;
 int8_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int8_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int16_t = new NativeType<number>(
-    'F', 'int16_t',
+    mangle.short, 'int16_t',
     2, 2,
     v=>typeof v === 'number' && (v|0) === v && -0x8000 <= v && v <= 0x7fff,
     isNumber,
@@ -488,7 +482,7 @@ export type int16_t = number;
 int16_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int16_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int32_t = new CommandParameterNativeType<number>(
-    'H', 'int32_t',
+    mangle.int, 'int32_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -500,7 +494,7 @@ export type int32_t = number;
 int32_t[NativeTypeFn.bitGetter] = numericBitGetter;
 int32_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const long_t = new NativeType<number>(
-    'J', 'long_t',
+    mangle.long, 'long_t',
     4, 4,
     v=>typeof v === 'number' && (v|0) === v,
     isNumber,
@@ -512,7 +506,7 @@ export type long_t = number;
 long_t[NativeTypeFn.bitGetter] = numericBitGetter;
 long_t[NativeTypeFn.bitSetter] = numericBitSetter;
 export const int64_as_float_t = new NativeType<number>(
-    '_J', 'int64_as_float_t',
+    mangle.longlong, 'int64_as_float_t',
     8, 8,
     v=>typeof v === 'number' && Math.round(v) === v && -0x8000000000000000 <= v && v < 0x8000000000000000,
     isNumber,
@@ -523,7 +517,7 @@ export const int64_as_float_t = new NativeType<number>(
 export type int64_as_float_t = number;
 
 export const float32_t = new CommandParameterNativeType<number>(
-    'M', 'float32_t',
+    mangle.float, 'float32_t',
     4, 4,
     isNumber,
     isNumber,
@@ -534,7 +528,7 @@ export const float32_t = new CommandParameterNativeType<number>(
 export type float32_t = number;
 float32_t[makefunc.useXmmRegister] = true;
 export const float64_t = new NativeType<number>(
-    'N', 'float64_t',
+    mangle.double, 'float64_t',
     8, 8,
     isNumber,
     isNumber,
@@ -546,8 +540,6 @@ float64_t[makefunc.useXmmRegister] = true;
 const string_ctor = makefunc.js(proc['??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ'], void_t, null, VoidPointer);
 const string_dtor = makefunc.js(proc['?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ'], void_t, null, VoidPointer);
 
-const strbufCache:AllocatedPointer[] = [];
-
 export const CxxString = new CommandParameterNativeType<string>(
     'V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@', 'CxxString',
     0x20, 8,
@@ -555,22 +547,8 @@ export const CxxString = new CommandParameterNativeType<string>(
     undefined,
     (ptr, offset)=>ptr.getCxxString(offset),
     (ptr, v, offset)=>ptr.setCxxString(v, offset),
-    (stackptr, offset)=>{
-        const ptr = stackptr.getPointer(offset);
-        return ptr.getCxxString();
-    },
-    (stackptr, param, offset)=>{
-        const buf = strbufCache.pop() || new AllocatedPointer(0x20);
-        string_ctor(buf);
-        buf.setCxxString(param);
-        makefunc.temporalDtors.push(()=>{
-            string_dtor(buf);
-            if (strbufCache.length < 8) {
-                strbufCache.push(buf);
-            }
-        });
-        stackptr.setPointer(buf, offset);
-    },
+    (stackptr, offset)=>stackptr.getPointer(offset).getCxxString(),
+    undefined,
     string_ctor,
     string_dtor,
     (to, from)=>{
@@ -580,6 +558,7 @@ export const CxxString = new CommandParameterNativeType<string>(
         to.copyFrom(from, 0x20);
         string_ctor(from);
     });
+CxxString[makefunc.paramHasSpace] = true;
 export type CxxString = string;
 
 function impossible():never {
@@ -587,7 +566,8 @@ function impossible():never {
 }
 
 export const GslStringSpan = new NativeType<string>(
-    'gsl::basic_string_span<char const,-1>', 'GslStringSpan',
+    mangle.templateClass(['gsl', 'basic_string_span'], mangle.constChar, -1),
+    'GslStringSpan',
     0x10, 8,
     v=>typeof v === 'string',
     undefined,

@@ -308,14 +308,14 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
 }
 const _onEntityHurt = procHacker.hooking('?hurt@Actor@@QEAA_NAEBVActorDamageSource@@M_N1@Z', bool_t, null, Actor, ActorDamageSource, float32_t, bool_t, bool_t)(onEntityHurt);
 
-function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, attributeBuffInfo:VoidPointer):boolean {
+function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth:number, newHealth:number, attributeBuffInfo:VoidPointer):float32_t {
     const actor = Actor[makefunc.getFromParam](attributeDelegate, 0x20);
     const event = new EntityHeathChangeEvent(actor, oldHealth, newHealth);
     events.entityHealthChange.fire(event);
     attributeDelegate.setPointer(event.entity, 0x20);
     return _onEntityHealthChange(attributeDelegate, event.oldHealth, event.newHealth, attributeBuffInfo);
 }
-const _onEntityHealthChange = procHacker.hooking('?change@HealthAttributeDelegate@@UEAAMMMAEBVAttributeBuff@@@Z', bool_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHealthChange);
+const _onEntityHealthChange = procHacker.hooking('?change@HealthAttributeDelegate@@UEAAMMMAEBVAttributeBuff@@@Z', float32_t, null, NativePointer, float32_t, float32_t, VoidPointer)(onEntityHealthChange);
 
 function onEntityDie(entity:Mob, damageSource:ActorDamageSource):boolean {
     const event = new EntityDieEvent(entity, damageSource);
