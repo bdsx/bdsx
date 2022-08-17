@@ -28,7 +28,7 @@ import { CxxStringWrapper } from "./pointer";
 import { procHacker } from './prochacker';
 import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
-import { _tickCallback } from "./util";
+import { DeferPromise, _tickCallback } from "./util";
 
 declare module 'colors' {
 
@@ -61,8 +61,8 @@ class Liner {
 
 let launched = false;
 let closed = false;
-let loadingIsFired = false;
-let openIsFired = false;
+const loadingIsFired = DeferPromise.make<void>();
+const openIsFired = DeferPromise.make<void>();
 
 const bedrockLogLiner = new Liner;
 
@@ -247,7 +247,7 @@ function _launch(asyncResolve:()=>void):void {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('./event_impl');
 
-    loadingIsFired = true;
+    loadingIsFired.resolve();
     events.serverLoading.promiseFire();
     events.serverLoading.clear();
 
@@ -307,7 +307,7 @@ function _launch(asyncResolve:()=>void):void {
                 Object.defineProperty(bd_server, 'serverInstance', { value:serverInstance });
                 Object.defineProperty(nimodule, 'networkHandler', { value:networkHandler });
 
-                openIsFired = true;
+                openIsFired.resolve();
                 events.serverOpen.fire();
                 events.serverOpen.clear(); // it will never fire, clear it
                 asyncResolve();
@@ -388,22 +388,10 @@ export namespace bedrockServer {
     Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});
 
     export function withLoading():Promise<void> {
-        return new Promise(resolve=>{
-            if (loadingIsFired) {
-                resolve();
-            } else {
-                events.serverLoading.on(resolve);
-            }
-        });
+        return loadingIsFired;
     }
     export function afterOpen():Promise<void> {
-        return new Promise(resolve=>{
-            if (openIsFired) {
-                resolve();
-            } else {
-                events.serverOpen.on(resolve);
-            }
-        });
+        return openIsFired;
     }
 
     export function isLaunched():boolean {
