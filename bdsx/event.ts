@@ -4,7 +4,7 @@ import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
-import { Event, EventEx } from "./eventtarget";
+import { Event } from "./eventtarget";
 import type { BlockAttackEvent, BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FallOnBlockEvent, FarmlandDecayEvent, LightningHitBlockEvent, PistonMoveEvent, ProjectileHitBlockEvent, SculkSensorActivateEvent, SculkShriekEvent } from "./event_impl/blockevent";
 import type { EntityCarriedItemChangedEvent, EntityConsumeTotemEvent, EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntityKnockbackEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDimensionChangeEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerJumpEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerSleepInBedEvent, PlayerUseItemEvent, ProjectileHitEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
@@ -15,21 +15,12 @@ import { remapStack } from "./source-map-support";
 const PACKET_ID_COUNT = 0x100;
 const PACKET_EVENT_COUNT = 0x500;
 
-asmcode.addressof_enabledPacket.fill(0, 256);
+const enabledPacket = asmcode.addressof_enabledPacket;
+enabledPacket.fill(0, 256);
 
-class PacketEvent extends EventEx<(...args:any[])=>(CANCEL|void)> {
+class PacketEvent extends Event<(...args:any[])=>(CANCEL|void)> {
     constructor(public readonly id:number) {
         super();
-    }
-
-    onStarted():void {
-        const v = asmcode.getEnabledPacket(this.id);
-        asmcode.setEnabledPacket(v+1, this.id);
-    }
-
-    onCleared():void {
-        const v = asmcode.getEnabledPacket(this.id);
-        asmcode.setEnabledPacket(v-1, this.id);
     }
 }
 
@@ -37,10 +28,17 @@ function getNetEventTarget(type:events.PacketEventType, packetId:MinecraftPacket
     if ((packetId>>>0) >= PACKET_ID_COUNT) {
         throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
     }
-    const id = type*PACKET_ID_COUNT + packetId;
-    let target = packetAllTargets[id];
+    const idx = type*PACKET_ID_COUNT + packetId;
+    let target = packetAllTargets[idx];
     if (target !== null) return target;
-    packetAllTargets[id] = target = new PacketEvent(packetId);
+    packetAllTargets[idx] = target = new PacketEvent(packetId);
+    target.setInstaller(()=>{
+        const packetId = target!.id;
+        enabledPacket.setUint8(enabledPacket.getUint8(packetId)+1, packetId);
+    }, ()=>{
+        const packetId = target!.id;
+        enabledPacket.setUint8(enabledPacket.getUint8(packetId)-1, packetId);
+    });
     return target;
 }
 const packetAllTargets = new Array<PacketEvent|null>(PACKET_EVENT_COUNT);
