@@ -22,6 +22,7 @@ export const mangle = {
     bool: '_N',
     void: 'X',
     constChar: '$$CBD',
+    constCharPointer: 'PEBD',
 
     update(target:makefunc.Paramable, opts?:mangle.UpdateOptions):void {
         if (opts != null) {
