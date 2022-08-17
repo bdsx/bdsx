@@ -1,12 +1,52 @@
 
-import { CANCEL } from './common';
+import { AnyFunction, CANCEL } from './common';
 import { remapAndPrintError } from './source-map-support';
 
-type ReturnPromise<T extends (...args: any[]) => (number|CANCEL|void|Promise<void>)> =
+type ReturnPromise<T extends (...args: any[]) => Event.ReturnType> =
     T extends (...args: infer ARGS) => infer RET ? (...args:ARGS)=>(RET|Promise<void>) : never;
+type ComponentType<T extends any[]> = T extends (infer V)[] ? V : any;
+type FirstParameter<T extends AnyFunction> = T extends (...args:infer P)=>any ? any[] extends P ? ComponentType<P>|undefined : 0 extends P['length'] ? void : P[0] : void;
 
-export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<void>)> {
+export class Event<T extends (...args: any[]) => Event.ReturnType> {
     private readonly listeners: ReturnPromise<T>[] = [];
+    private installer:(()=>void)|null = null;
+    private uninstaller:(()=>void)|null = null;
+
+    /**
+     * call the installer when first listener registered.
+     */
+    setInstaller(installer:()=>void, uninstaller:(()=>void)|null = null):void {
+        if (this.listeners.length !== 0) {
+            if (this.uninstaller !== null) {
+                this.uninstaller();
+            }
+            installer();
+
+            if (uninstaller === null) {
+                this.installer = null;
+            } else {
+                this.installer = installer;
+            }
+        } else {
+            this.installer = installer;
+        }
+        this.uninstaller = uninstaller;
+    }
+
+    /**
+     * pipe two events
+     * it uses setInstaller
+     */
+    pipe<T2 extends (...args: any[]) => Event.ReturnType>(
+        target:Event<T2>,
+        piper:(this:this, ...args:Parameters<T2>)=>ReturnType<T2>,
+    ):void {
+        const pipe = ((...args)=>piper.call(this, ...args)) as ReturnPromise<T2>;
+        this.setInstaller(
+            ()=>target.on(pipe),
+            ()=>target.remove(pipe),
+        );
+    }
 
     isEmpty(): boolean {
         return this.listeners.length === 0;
@@ -16,6 +56,12 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
      * cancel event if it returns non-undefined value
      */
     on(listener: ReturnPromise<T>): void {
+        if (this.listeners.length === 0 && this.installer !== null) {
+            this.installer();
+            if (this.uninstaller === null) {
+                this.installer = null;
+            }
+        }
         this.listeners.push(listener);
     }
 
@@ -26,6 +72,10 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
             return listener(...args);
         }
         this.listeners.push(callback as ReturnPromise<T>);
+    }
+
+    promise():Promise<FirstParameter<T>> {
+        return new Promise(resolve=>this.once(resolve as T));
     }
 
     onFirst(listener: ReturnPromise<T>): void {
@@ -52,6 +102,9 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
         const idx = this.listeners.indexOf(listener);
         if (idx === -1) return false;
         this.listeners.splice(idx, 1);
+        if (this.listeners.length === 0 && this.uninstaller != null) {
+            this.uninstaller();
+        }
         return true;
     }
 
@@ -106,7 +159,7 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
      * return value if it canceled
      */
     fireReverse(...v: T extends (...args: infer ARGS) => any ? ARGS : never): (T extends (...args: any[]) => infer RET ? RET : never) | undefined {
-        for (const listener of this.listeners.slice()) {
+        for (const listener of this.listeners.slice().reverse()) {
             try {
                 const ret = listener(...v);
                 if (ret === CANCEL) return CANCEL as any;
@@ -130,7 +183,14 @@ export class Event<T extends (...args: any[]) => (number|CANCEL|void|Promise<voi
 
     public static errorHandler = new Event<(error:any)=>void|CANCEL>();
 }
-export class EventEx<T extends (...args: any[]) => any> extends Event<T> {
+export namespace Event {
+    export type ReturnType = number|CANCEL|void|Promise<void>;
+}
+
+/**
+ * @deprecated use Event.setInstaller
+ */
+export class EventEx<T extends (...args: any[]) => Event.ReturnType> extends Event<T> {
     protected onStarted(): void {
         // empty
     }
