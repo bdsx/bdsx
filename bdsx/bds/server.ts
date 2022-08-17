@@ -48,7 +48,7 @@ export const VanilaGameModuleServer = VanillaGameModuleServer;
 export class Minecraft extends AbstractClass {
     vftable:VoidPointer;
     offset_20:VoidPointer;
-    vanillaGameModuleServer:CxxSharedPtr<VanillaGameModuleServer>; // VanilaGameModuleServer
+    vanillaGameModuleServer:CxxSharedPtr<VanillaGameModuleServer>; // VanillaGameModuleServer
     /** @deprecated Use `Minecraft::getCommands` instead */
     get commands():MinecraftCommands {
         return this.getCommands();
