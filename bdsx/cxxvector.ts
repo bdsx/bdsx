@@ -649,10 +649,10 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
     }
 }
 
-export class CxxVectorToArray<T> extends NativeType<T[]> {
+class CxxVectorToArrayImpl<T> extends NativeType<T[]> {
     public readonly type:CxxVectorType<T>;
 
-    private constructor(public readonly compType:Type<T>) {
+    constructor(public readonly compType:Type<T>) {
         super(getVectorSymbol(compType), `CxxVectorToArray<${compType.name}>`, VECTOR_SIZE, 8,
             v=>v instanceof Array,
             undefined,
@@ -675,8 +675,12 @@ export class CxxVectorToArray<T> extends NativeType<T[]> {
         this.type = CxxVector.make(this.compType);
         this[makefunc.paramHasSpace] = true;
     }
-
-    static make<T>(compType:Type<T>):CxxVectorToArray<T> {
-        return Singleton.newInstance<CxxVectorToArray<T>>(CxxVectorToArray, compType, ()=>new CxxVectorToArray<T>(compType));
+}
+export namespace CxxVectorToArray {
+    export const name = 'CxxVectorToArray';
+    export function make<T>(compType:Type<T>):NativeType<T[]> {
+        return Singleton.newInstance<NativeType<T[]>>(CxxVectorToArrayImpl, compType, ()=>new CxxVectorToArrayImpl<T>(compType));
     }
 }
+
+export type CxxVectorToArray<T> = T[];
