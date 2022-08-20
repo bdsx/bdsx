@@ -361,7 +361,11 @@ export enum ActorFlags {
     TransitionSitting,
     Eating,
     LayingDown,
+    /**
+     * @deprecated Typo!
+     */
     Snezing,
+    Sneezing = 0x40,
     Trusting,
     Rolling,
     Scared,
