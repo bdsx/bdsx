@@ -219,7 +219,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
 
         private async _install():Promise<void> {
             const oldFiles = this.opts.oldFiles;
-            if (oldFiles) {
+            if (oldFiles != null) {
                 for (const oldfile of oldFiles) {
                     try {
                         await fsutil.del(path.join(this.opts.targetPath, oldfile));
@@ -227,6 +227,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                     }
                 }
             }
+            await fsutil.mkdir(this.opts.targetPath);
             const preinstall = this.opts.preinstall;
             if (preinstall) await preinstall();
             const writedFiles = await this._downloadAndUnzip();
@@ -238,37 +239,49 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
             if (postinstall) await postinstall(writedFiles);
         }
 
+        private async _confirmAndInstall():Promise<void> {
+            const confirm = this.opts.confirm;
+            if (confirm != null) await confirm();
+            await this._install();
+            console.log(`${this.opts.name}: Installed successfully`);
+        }
+
         async install():Promise<void> {
-            await fsutil.mkdir(this.opts.targetPath);
             const name = this.opts.name;
             const key = this.opts.key;
             if (key == null || this.opts.version == null) {
                 await this._install();
                 return;
             }
+            const keyFile = this.opts.keyFile;
+            const keyExists = keyFile != null && await fsutil.exists(path.join(this.opts.targetPath, keyFile));
+            const keyNotFound = keyFile != null && !keyExists;
             const version = installInfo[key];
             if (version === undefined) {
-                const keyFile = this.opts.keyFile;
-                if (keyFile && await fsutil.exists(path.join(this.opts.targetPath, keyFile))) {
+                if (keyExists) {
                     if (await yesno(`${name}: Would you like to use what already installed?`)) {
                         installInfo[key] = 'manual' as any;
                         console.log(`${name}: manual`);
                         return;
                     }
                 }
-                const confirm = this.opts.confirm;
-                if (confirm) await confirm();
-                await this._install();
-                console.log(`${name}: Installed successfully`);
-            } else if (version === null || version === 'manual') {
-                console.log(`${name}: manual`);
-            } else if (version === this.opts.version) {
-                console.log(`${name}: ${this.opts.version}`);
+                this._confirmAndInstall();
             } else {
-                console.log(`${name}: Old (${version})`);
-                console.log(`${name}: New (${this.opts.version})`);
-                await this._install();
-                console.log(`${name}: Updated`);
+                if (keyNotFound) {
+                    console.log(colors.yellow(`${name}: ${keyFile} not found`));
+                    this._confirmAndInstall();
+                } else {
+                    if (version === null || version === 'manual') {
+                        console.log(`${name}: manual`);
+                    } else if (version === this.opts.version) {
+                        console.log(`${name}: ${this.opts.version}`);
+                    } else {
+                        console.log(`${name}: Old (${version})`);
+                        console.log(`${name}: New (${this.opts.version})`);
+                        await this._install();
+                        console.log(`${name}: Updated`);
+                    }
+                }
             }
         }
 
@@ -326,7 +339,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
         url: BDSX_CORE_LINK,
         targetPath: bdsPath,
         key: 'bdsxCoreVersion',
-        keyFile: 'Chakra.dll',
+        keyFile: 'VCRUNTIME140_1.dll',
         oldFiles: ['mods', 'Chakra.pdb'],
     });
 
