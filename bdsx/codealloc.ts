@@ -104,8 +104,8 @@ X64Assembler.prototype.allocs = function():Record<string, StaticPointer> {
         out[name] = mem.add(offset);
     }
     const defs = this.defs();
-    for (const [name, offset] of Object.entries(defs)) {
-        out[name] = mem.add(offset + buffersize);
+    for (const [name, def] of Object.entries(defs)) {
+        out[name] = mem.add(def.offset + buffersize);
     }
 
     const table = labels['#runtime_function_table'];

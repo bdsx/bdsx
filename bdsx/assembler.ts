@@ -435,7 +435,7 @@ class Defination extends AddressIdentifier {
         chunk:AsmChunk|null,
         offset:number,
         public arraySize:number|null,
-        public size:OperationSize|undefined) {
+        public size:OperationSize|null) {
         super(name, chunk, offset);
     }
 }
@@ -720,12 +720,12 @@ export class X64Assembler {
         return labels;
     }
 
-    defs():Record<string, number> {
+    defs():Record<string, asm.Def> {
         if (!this.normalized) throw Error(`asm is not built, need to call build()`);
-        const labels:Record<string, number> = Object.create(null);
+        const labels:Record<string, asm.Def> = Object.create(null);
         for (const [name, label] of this.ids) {
             if (label instanceof Defination) {
-                labels[name] = label.offset;
+                labels[name] = label;
             }
         }
         return labels;
@@ -2475,8 +2475,8 @@ export class X64Assembler {
         let paramIdx = -1;
         const sizes:(OperationSize|null)[] = [null, null];
         let extendingCommand = false;
-        function setSize(nsize:OperationSize|undefined):void {
-            if (nsize == null) return;
+        function setSize(nsize:OperationSize|null):void {
+            if (nsize === null) return;
 
             let idx = 0;
             if (extendingCommand) {
@@ -3048,7 +3048,7 @@ export class X64Assembler {
         }
         for (const [name, offset] of defs) {
             if (out.ids.has(name)) throw Error(`${name} is already defined`);
-            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, null, undefined);
+            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, null, null);
             out.ids.set(name, def);
         }
         return out;
@@ -3504,6 +3504,12 @@ export namespace asm {
     export function getRegisterName(register:Register, size:OperationSize|null|undefined):string {
         if (size == null) size = OperationSize.qword;
         return regnamemap[register | (size << 4)] || `invalid_R${register}_S${size}`;
+    }
+
+    export interface Def {
+        readonly offset:number;
+        readonly arraySize:number|null,
+        readonly size:OperationSize|null;
     }
 }
 
