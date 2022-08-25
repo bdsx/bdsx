@@ -433,6 +433,9 @@ Tester.concurrency({
         const rfloat_to_bin = asm().mov_r_r(Register.rax, Register.rcx).make(bin64_t, {name: 'test, rfloat_to_bin'}, RelativeFloat);
         const value = RelativeFloat.create(123, true);
         this.equals(rfloat_to_bin(value), value.bin_value, 'rfloat_to_bin');
+
+        const strStructureReturn = makefunc.js(makefunc.np(str=>str, CxxString, {structureReturn: true}, CxxString), CxxString, {structureReturn: true}, CxxString);
+        this.equals(strStructureReturn('test'), 'test', 'CxxString structureReturn failed');
     },
 
     vectorcopy() {
