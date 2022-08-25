@@ -9,15 +9,36 @@ import * as unzipper from 'unzipper';
 import * as child_process from 'child_process';
 import { fsutil } from '../fsutil';
 import { printOnProgress } from '../util';
-import * as BDS_VERSION from '../version-bds.json';
-import * as BDSX_CORE_VERSION from '../version-bdsx.json';
+import * as BDS_VERSION_DEFAULT from '../version-bds.json';
+import * as BDSX_CORE_VERSION_DEFAULT from '../version-bdsx.json';
 
 const BDSX_YES = process.env.BDSX_YES;
 const sep = path.sep;
 
-const BDS_LINK = `https://minecraft.azureedge.net/bin-win/bedrock-server-${BDS_VERSION}.zip`;
-const BDSX_CORE_LINK = `https://github.com/bdsx/bdsx-core/releases/download/${BDSX_CORE_VERSION}/bdsx-core-${BDSX_CORE_VERSION}.zip`;
-const PDBCACHE_LINK = `https://github.com/bdsx/pdbcache/releases/download/${BDS_VERSION}/pdbcache.zip`;
+const BDS_LINK_DEFAULT = 'https://minecraft.azureedge.net/bin-win/bedrock-server-%BDS_VERSION%.zip';
+const BDSX_CORE_LINK_DEFAULT = 'https://github.com/bdsx/bdsx-core/releases/download/%BDSX_CORE_VERSION%/bdsx-core-%BDSX_CORE_VERSION%.zip';
+const PDBCACHE_LINK_DEFAULT = 'https://github.com/bdsx/pdbcache/releases/download/%BDS_VERSION%/pdbcache.zip';
+
+const BDS_VERSION = process.env.BDSX_BDS_VERSION || BDS_VERSION_DEFAULT;
+const BDSX_CORE_VERSION = process.env.BDSX_CORE_VERSION || BDSX_CORE_VERSION_DEFAULT;
+const BDS_LINK = replaceVariable(process.env.BDSX_BDS_LINK || BDS_LINK_DEFAULT);
+const BDSX_CORE_LINK = replaceVariable(process.env.BDSX_CORE_LINK || BDSX_CORE_LINK_DEFAULT);
+const PDBCACHE_LINK = replaceVariable(process.env.BDSX_PDBCACHE_LINK || PDBCACHE_LINK_DEFAULT);
+
+function replaceVariable(str: string): string {
+    return str.replace(/%(.*?)%/g, (match, name: string) => {
+        switch (name.toUpperCase()) {
+        case '':
+            return '%';
+        case 'BDS_VERSION':
+            return BDS_VERSION;
+        case 'BDSX_CORE_VERSION':
+            return BDSX_CORE_VERSION;
+        default:
+            return match;
+        }
+    });
+}
 
 export async function installBDS(bdsPath:string, agreeOption:boolean = false):Promise<boolean> {
     if (BDSX_YES === 'skip') {
