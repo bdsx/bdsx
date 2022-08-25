@@ -3,7 +3,7 @@ import { asmcode } from "./asm/asmcode";
 import { asm, Register, X64Assembler } from "./assembler";
 import { proc } from './bds/symbols';
 import "./codealloc";
-import { abstract, Bufferable, emptyFunc, Encoding } from "./common";
+import { Bufferable, emptyFunc, Encoding } from "./common";
 import { AllocatedPointer, cgate, chakraUtil, jshook, NativePointer, runtimeError, StaticPointer, StructurePointer, uv_async, VoidPointer } from "./core";
 import { dllraw } from "./dllraw";
 import { FunctionGen } from "./functiongen";
@@ -188,11 +188,11 @@ export namespace makefunc {
     /**
      * constructor
      */
-    export const dtor = Symbol('makefunc.dtor');
+    export const ctor = Symbol('makefunc.ctor');
     /**
      * destructor
      */
-    export const ctor = Symbol('makefunc.ctor');
+    export const dtor = Symbol('makefunc.dtor');
     /**
      * move constructor
      */
