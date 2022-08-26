@@ -134,7 +134,7 @@ export type FunctionFromTypes_np<
     (this:GetThisFromOpts<OPTS>, ...args: TypesFromParamIds_np2js<PARAMS>) => TypeFrom_js2np<RETURN>;
 
 export type FunctionFromTypes_js<
-    PTR extends VoidPointer|[number, number?],
+    PTR extends VoidPointer|readonly [number, number?],
     OPTS extends MakeFuncOptions<any>|null,
     PARAMS extends ParamType[],
     RETURN extends ParamType> =
@@ -407,7 +407,7 @@ export namespace makefunc {
      * @param returnType *_t or *Pointer
      * @param params *_t or *Pointer
      */
-    export function js<PTR extends VoidPointer|[number, number?], OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+    export function js<PTR extends VoidPointer|readonly [number, number?], OPTS extends MakeFuncOptions<any>|null, RETURN extends ParamType, PARAMS extends ParamType[]>(
         functionPointer: PTR,
         returnType:RETURN,
         opts?: OPTS,

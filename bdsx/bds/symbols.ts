@@ -9,13 +9,13 @@ import { TextParser } from '../textparser';
 import { timeout } from '../util';
 
 namespace procNamespace {
-    export const vftable:Record<string, [number, number?]> = {};
+    export const vftable:{readonly [key:string]:[number, number?]} = {};
 }
 
 /**
  * @remark Backward compatibility cannot be guaranteed. The symbol name can be changed by BDS updating.
  */
-export const proc:Record<string, NativePointer>&typeof procNamespace = procNamespace as any;
+export const proc = procNamespace as {readonly [key:string]:NativePointer} & typeof procNamespace;
 
 (proc as any).__proto__ = new Proxy({}, {
     get(target:Record<string|symbol, any>, key):NativePointer {
@@ -25,7 +25,9 @@ export const proc:Record<string, NativePointer>&typeof procNamespace = procNames
             const rva = pdbcache.search(key);
             if (rva === -1) throw Error(`Symbol not found: ${key}`);
             PdbCacheL2.addRva(key, rva);
-            return proc[key] = dllraw.current.add(rva);
+            const value = dllraw.current.add(rva);
+            Object.defineProperty(proc, key, {value});
+            return value;
         }
     },
     has(target, key):boolean {
@@ -35,7 +37,8 @@ export const proc:Record<string, NativePointer>&typeof procNamespace = procNames
         const rva = pdbcache.search(key);
         if (rva !== -1) {
             PdbCacheL2.addRva(key, rva);
-            proc[key] = dllraw.current.add(rva);
+            const value = dllraw.current.add(rva);
+            Object.defineProperty(proc, key, {value});
             return true;
         } else {
             return false;
@@ -43,7 +46,7 @@ export const proc:Record<string, NativePointer>&typeof procNamespace = procNames
     },
 });
 
-function getVftableOffset(key:string):[number]|null {
+function getVftableOffset(key:string):readonly [number]|null {
     const [from, target] = key.split('\\', 2);
     const vftableSearch = proc[from].add();
     const targetptr = proc[target];
@@ -62,14 +65,17 @@ function getVftableOffset(key:string):[number]|null {
 
         if (ptr.equalsptr(targetptr)) {
             PdbCacheL2.addVftableOffset(key, offset);
-            return proc.vftable[key] = [offset];
+            const value:readonly [number] = [offset];
+            Object.freeze(value);
+            Object.defineProperty(proc.vftable, key, {value});
+            return value;
         }
         offset += 8;
     }
     return null;
 }
 (proc.vftable as any).__proto__ = new Proxy({}, {
-    get(target:Record<string|symbol, any>, key):[number, number?] {
+    get(target:Record<string|symbol, any>, key):readonly [number, number?] {
         if (typeof key !== 'string') {
             return target[key];
         } else {
@@ -119,6 +125,9 @@ class PdbCacheL2 {
             return;
         }
 
+        const procProperties:PropertyDescriptorMap = {};
+        const vftableProperties:PropertyDescriptorMap = {};
+
         for (;;) {
             const line = reader.readLine();
             if (line == null) break;
@@ -128,16 +137,21 @@ class PdbCacheL2 {
             case 'v': { // vftable offset
                 const key = values[1];
                 const offset = parseInt(values[2], 16);
-                proc.vftable[key] = [offset];
+                const value = [offset];
+                Object.freeze(value);
+                vftableProperties[key] = {value};
                 break;
             }
             default: { // rva
                 const rva = parseInt(values[1], 16);
-                proc[first] = dllraw.current.add(rva);
+                const value = dllraw.current.add(rva);
+                procProperties[first] = {value};
                 break;
             }
             }
         }
+        Object.defineProperties(proc.vftable, vftableProperties);
+        Object.defineProperties(proc, procProperties);
     }
 
     static addRva(symbol:string, rva:number):void {
