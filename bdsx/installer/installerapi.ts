@@ -286,11 +286,11 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                         return;
                     }
                 }
-                this._confirmAndInstall();
+                await this._confirmAndInstall();
             } else {
                 if (keyNotFound) {
                     console.log(colors.yellow(`${name}: ${keyFile} not found`));
-                    this._confirmAndInstall();
+                    await this._confirmAndInstall();
                 } else {
                     if (version === null || version === 'manual') {
                         console.log(`${name}: manual`);
