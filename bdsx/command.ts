@@ -82,9 +82,10 @@ export class CustomCommandFactory {
     overload<PARAMS extends Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]>>(
         callback:(params:{
             [key in keyof PARAMS]:
-                PARAMS[key] extends [infer T, infer OPTS] ? OptionalCheck<T, OPTS> :
-                PARAMS[key] extends CommandParameterType<any> ? GetTypeFromParam<PARAMS[key]> :
-                never
+                PARAMS[key] extends [infer T, infer OPTS] ?
+                (OPTS extends CommandFieldOptions|boolean ? OptionalCheck<T, OPTS> : never) :
+                (PARAMS[key] extends CommandParameterType<any> ? GetTypeFromParam<PARAMS[key]> :
+                never)
             }, origin:CommandOrigin, output:CommandOutput)=>void,
         parameters:PARAMS):this {
 
