@@ -50,7 +50,9 @@ let chatCancelCounter = 0;
 
 const OverworldDimension$vftable = proc['??_7OverworldDimension@@6BIDimension@@@'];
 
-function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean], string|null, any][], throughConsole?:boolean):Promise<void> {
+type PromiseFunc = ()=>Promise<PromiseFunc>;
+
+function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean], string|null, any][], opts:{throughConsole?:boolean,noRun?:boolean}={}):Promise<PromiseFunc> {
     const paramsobj:Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]> = {};
     const n = testcases.length;
     for (let i=0;i<n;i++) {
@@ -80,34 +82,39 @@ function checkCommandRegister(tester:Tester, testname:string, testcases:[Command
         output.success('passed');
     }, paramsobj);
 
-    return new Promise<void>((resolve, reject) => {
-        const outputcb = (output:string) => {
-            if (output === 'passed') {
-                events.commandOutput.remove(outputcb);
-                resolve();
-                return CANCEL;
-            }
-            if (output === 'failed') {
-                events.commandOutput.remove(outputcb);
-                reject(Error(`${cmdname} failed`));
-                return CANCEL;
-            }
-        };
-        events.commandOutput.on(outputcb);
 
-        if (throughConsole) {
-            bedrockServer.executeCommandOnConsole(cmdline);
-        } else {
-            const res = bedrockServer.executeCommand(cmdline, CommandResultType.OutputAndData);
-            if (!res.isSuccess()) {
-                tester.error(`${cmdname} failed`, 5);
+    function run():Promise<PromiseFunc> {
+        return new Promise<PromiseFunc>((resolve, reject) => {
+            const outputcb = (output:string) => {
+                if (output === 'passed') {
+                    events.commandOutput.remove(outputcb);
+                    resolve(run);
+                    return CANCEL;
+                }
+                if (output === 'failed') {
+                    events.commandOutput.remove(outputcb);
+                    reject(Error(`${cmdname} failed`));
+                    return CANCEL;
+                }
+            };
+            events.commandOutput.on(outputcb);
+
+            if (opts.throughConsole) {
+                bedrockServer.executeCommandOnConsole(cmdline);
             } else {
-                tester.equals(res.data.statusMessage, 'passed', `${cmdname}, unexpected statusMessage`);
-                tester.equals(res.data.statusCode, res.getFullCode(), `${cmdname}, unexpected statusCode`);
+                const res = bedrockServer.executeCommand(cmdline, CommandResultType.OutputAndData);
+                if (!res.isSuccess()) {
+                    tester.error(`${cmdname} failed`, 5);
+                } else {
+                    tester.equals(res.data.statusMessage, 'passed', `${cmdname}, unexpected statusMessage`);
+                    tester.equals(res.data.statusCode, res.getFullCode(), `${cmdname}, unexpected statusCode`);
+                }
             }
-        }
-    });
-};
+        });
+    }
+    if (opts.noRun) return Promise.resolve(run);
+    return run();
+}
 
 @nativeClass()
 class VectorClass extends NativeClass {
@@ -619,7 +626,7 @@ Tester.concurrency({
 
     async commandregister() {
         // command register test, parameter test
-        await checkCommandRegister(this, 'cmdtest', [], true);
+        await checkCommandRegister(this, 'cmdtest', [], {throughConsole:true});
         await checkCommandRegister(this, 'cmdtest2', []);
         await checkCommandRegister(this, 'cmdtest3', [
             [CxxString, 'a', 'a'],
@@ -628,6 +635,16 @@ Tester.concurrency({
             [CxxString, 'a', 'a'],
             [[CxxString, true], null, undefined],
         ]);
+
+        const tests:PromiseFunc[] = [];
+        for (let i=0;i<100;i++) {
+            tests.push(await checkCommandRegister(this, 'repeat'+i, [
+                [CxxString, 'a', 'a'],
+            ], {noRun: true}));
+        }
+        for (const test of tests) {
+            await test();
+        }
     },
 
     async commandenum() {
