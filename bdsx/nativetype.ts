@@ -25,6 +25,7 @@ export interface Type<T> extends makefunc.Paramable {
     symbol:string;
 
     isTypeOf<V>(this:{prototype:V}, v:unknown):v is V;
+    ref():NativeType<any>;
 
     [makefunc.getter](ptr:StaticPointer, offset?:number):any;
     [makefunc.setter](ptr:StaticPointer, value:any, offset?:number):void;
@@ -326,7 +327,7 @@ export class CommandParameterNativeType<T> extends NativeType<T> {
     readonly [CommandParameterType.symbol]:true;
 }
 
-function makeReference<T>(type:NativeType<T>):NativeType<T> {
+function makeReference<T>(type:Type<T>):NativeType<T> {
     return new NativeType<T>(
         `${type.symbol} * __ptr64`,
         `${type.name}*`,
@@ -349,6 +350,7 @@ declare module './core' {
         [NativeType.ctor_copy](to:StaticPointer, from:StaticPointer):void;
         [NativeType.ctor_move](to:StaticPointer, from:StaticPointer):void;
         [NativeType.descriptor](builder:NativeDescriptorBuilder, key:string, info:NativeDescriptorBuilder.Info):void;
+        ref():NativeType<any>;
     }
 }
 
@@ -363,6 +365,9 @@ VoidPointer[NativeType.ctor_move] = function(to:StaticPointer, from:StaticPointe
     this[NativeType.ctor_copy](to, from);
 };
 VoidPointer[NativeType.descriptor] = NativeType.defaultDescriptor;
+VoidPointer.ref = function(this:Type<VoidPointer>) {
+    return Singleton.newInstance(NativeType, this, ()=>makeReference(this));
+};
 
 function isNumber(v:unknown):v is number {
     return typeof v === 'number';

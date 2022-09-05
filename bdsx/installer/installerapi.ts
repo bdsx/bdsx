@@ -120,7 +120,8 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                 }
             } catch (err) {
                 if (err.code !== 'ENOENT') {
-                    console.error(`Failed to remove ${file}, ${err.message}`);
+                    console.error(`Failed to remove ${file}`);
+                    throw err;
                 }
             }
         }
