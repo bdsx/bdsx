@@ -119,7 +119,7 @@ export async function installBDS(bdsPath:string, agreeOption:boolean = false):Pr
                     await fsutil.unlink(path.join(dest, file));
                 }
             } catch (err) {
-                if (err.code !== 'ENOENT') {
+                if (err.code !== 'ENOENT' && err.code !== 'ENOTEMPTY') {
                     console.error(`Failed to remove ${file}`);
                     throw err;
                 }
