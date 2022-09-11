@@ -1,6 +1,9 @@
 
 import * as colors from 'colors';
 
+/**
+ * @deprecated unusing
+ */
 export function checkAndReport(name:string, oversion:string, nversion:string):void {
     if (oversion === nversion) return;
     console.error(colors.red(`[BDSX] ${name} outdated`));
