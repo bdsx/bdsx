@@ -13,7 +13,7 @@
     "rules": {
         "no-restricted-imports": ["error", {
           "patterns": [{
-            "group": ["**/bdsx/*", "!/bdsx/*"],
+            "group": ["**/*/bdsx"],
             "message": "Please use the absolute path for bdsx libraries."
           }]
         }]
