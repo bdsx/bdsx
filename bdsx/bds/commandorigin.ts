@@ -1,5 +1,6 @@
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { capi } from "../capi";
+import { CommandResult } from "../commandresult";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { mce } from "../mce";
@@ -100,7 +101,7 @@ export class CommandOrigin extends AbstractClass {
     /**
      * return the command result
      */
-    handleCommandOutputCallback(value:unknown & IExecuteCommandCallback['data'], statusCode?:number, statusMessage?:string):void {
+    handleCommandOutputCallback(value:unknown & CommandResult.Any, statusCode?:number, statusMessage?:string):void {
         if (statusCode == null) statusCode = value.statusCode;
         if (statusMessage == null) statusMessage = value.statusMessage;
         const v = capi.malloc(JsonValue[NativeType.size]).as(JsonValue);

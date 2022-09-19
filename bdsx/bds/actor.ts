@@ -820,8 +820,8 @@ export class Actor extends AbstractClass {
      *
      * @deprecated bedrock scripting API is removed.
      */
-    getEntity():IEntity {
-        let entity:IEntity = (this as any).entity;
+    getEntity():any {
+        let entity:any = (this as any).entity;
         if (entity) return entity;
         entity = {
             __unique_id__:{
@@ -1078,8 +1078,8 @@ export class Actor extends AbstractClass {
      * Gets the entity from entity component of bedrock scripting api
      * @deprecated bedrock scripting API is removed.
      */
-    static fromEntity(entity:IEntity, getRemovedActor:boolean = true):Actor|null {
-        const u = entity.__unique_id__;
+    static fromEntity(entity:unknown, getRemovedActor:boolean = true):Actor|null {
+        const u = (entity as any).__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);
     }
     static all():IterableIterator<Actor> {

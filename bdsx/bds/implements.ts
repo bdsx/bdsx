@@ -4,7 +4,7 @@ import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { CommandResult, CommandResultType } from "../commandresult";
-import { AttributeName } from "../common";
+import { AttributeName, VectorXYZ } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
@@ -746,7 +746,7 @@ const SimulatedPlayer$create = procHacker.js('?create@SimulatedPlayer@@SAPEAV1@A
 
 const shHandler = ServerNetworkHandlerNonOwnerPointer.construct();
 
-SimulatedPlayer.create = function(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId) {
+SimulatedPlayer.create = function(name: string, blockPos: VectorXYZ, dimensionId: DimensionId) {
     if (!(blockPos instanceof BlockPos)) blockPos = BlockPos.create(blockPos);
     shHandler.assign(bedrockServer.nonOwnerPointerServerNetworkHandler);
     const unknown = '';
