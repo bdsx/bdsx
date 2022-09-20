@@ -1,4 +1,5 @@
-import { MCRESULT } from "./bds/command";
+import type { MCRESULT } from "./bds/command";
+import { VectorXYZ } from "./common";
 
 export interface CommandResult<DATA extends CommandResult.Any> extends MCRESULT {
     data:DATA;

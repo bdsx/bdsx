@@ -73,6 +73,22 @@ export type Bufferable = TypedArrayBuffer | ArrayBuffer | DataView;
 
 export type AnyFunction = (this:any, ...args:any[])=>any;
 
+export interface VectorXYZ {
+	x: number;
+	y: number;
+	z: number;
+}
+
+export interface VectorXY {
+	x: number;
+	y: number;
+}
+
+export interface VectorXZ {
+	x: number;
+	z: number;
+}
+
 export function emptyFunc():void{
 	// empty
 }

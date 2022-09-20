@@ -1,4 +1,4 @@
-import { abstract, BuildPlatform } from "../common";
+import { abstract, BuildPlatform, VectorXYZ } from "../common";
 import { mce } from "../mce";
 import { float32_t } from "../nativetype";
 import { HasStorage, Storage } from "../storage";
@@ -894,7 +894,7 @@ export class ServerPlayer extends Player implements HasStorage {
      * @param volume - Volume of the sound (defaults to 1)
      * @param pitch - Pitch of the sound (defaults to 1)
      */
-    playSound(soundName: string, pos: {x:number,y:number,z:number} = this.getPosition(), volume: number = 1.0, pitch: number = 1.0): void {
+    playSound(soundName: string, pos: VectorXYZ = this.getPosition(), volume: number = 1.0, pitch: number = 1.0): void {
         const pk = PlaySoundPacket.allocate();
         pk.soundName = soundName;
         pk.pos.x = pos.x * 8;
@@ -925,7 +925,7 @@ export class SimulatedPlayer extends ServerPlayer{
      * @param blockPos
      * @param dimensionId
      */
-    static create(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId): SimulatedPlayer;
+    static create(name: string, blockPos: BlockPos|Vec3|VectorXYZ, dimensionId: DimensionId): SimulatedPlayer;
 
     /**
      * Create SimulatedPlayer
@@ -937,7 +937,7 @@ export class SimulatedPlayer extends ServerPlayer{
      */
     static create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer;
 
-    static create(name: string, blockPos: BlockPos|Vec3|{x:number, y:number, z:number}, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler?: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
+    static create(name: string, blockPos: BlockPos|Vec3|VectorXYZ, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler?: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
         abstract();
     }
 
