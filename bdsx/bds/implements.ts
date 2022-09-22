@@ -3,7 +3,6 @@ import { Register } from "../assembler";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { capi } from "../capi";
-import { CommandEnum, CommandIndexEnum, CommandRawEnum, CommandSoftEnum, CommandStringEnum } from "../commandenum";
 import { commandParser } from "../commandparser";
 import { CommandResult, CommandResultType } from "../commandresult";
 import { AttributeName, VectorXYZ } from "../common";
@@ -20,7 +19,6 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
-import { bdsxWarningOnce } from "../warning";
 import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -49,7 +47,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAbilitiesPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
@@ -648,13 +646,12 @@ Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool
 Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, {this:Player});
 
 // const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVLayeredAbilities@@UActorUniqueID@@@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, LayeredAbilities, ActorUniqueID);
+const UpdateAbilitiesPacket$UpdateAbilitiesPacket = procHacker.js("??0UpdateAbilitiesPacket@@QEAA@UActorUniqueID@@AEBVLayeredAbilities@@@Z", UpdateAbilitiesPacket, null, UpdateAbilitiesPacket, ActorUniqueID, LayeredAbilities);
 Player.prototype.syncAbilities = function() {
-    bdsxWarningOnce('Player::syncAbilities feature is not implemented');
-    // TODO: implement, AdventureSettingsPacket is removed
-    // const pk = new AdventureSettingsPacket(true);
-    // AdventureSettingsPacket$AdventureSettingsPacket(pk, bedrockServer.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin());
-    // this.sendPacket(pk);
-    // pk.destruct();
+    const pkt = new UpdateAbilitiesPacket(true);
+    UpdateAbilitiesPacket$UpdateAbilitiesPacket(pkt, this.getUniqueIdBin(), this.abilities);
+    this.sendPacket(pkt);
+    pkt.destruct();
 };
 
 Player.prototype.clearRespawnPosition = procHacker.js('?clearRespawnPosition@Player@@QEAAXXZ', void_t, {this:Player});

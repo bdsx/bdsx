@@ -2045,7 +2045,7 @@ export class ToastRequestPacket extends Packet {
     body: CxxString;
 }
 
-@nativeClass(null)
+@nativeClass(0x50)
 export class UpdateAbilitiesPacket extends Packet {
     // unknown
 }
