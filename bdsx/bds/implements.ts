@@ -72,6 +72,7 @@ const CxxVector$Vec3 = CxxVector.make(Vec3);
 const CxxVectorToArray$string = CxxVectorToArray.make(CxxString);
 const CxxVector$ScoreboardIdentityRef = CxxVector.make(ScoreboardIdentityRef);
 const CxxVector$ScoreboardId = CxxVector.make(ScoreboardId);
+const CxxVector$EntityRefTraits = CxxVector.make(EntityRefTraits);
 
 // utils
 namespace CommandUtils {
@@ -139,9 +140,9 @@ Level.prototype.getPlayers = function() {
     }
     return out;
 };
-Level.prototype.getUsers = procHacker.js('?getUsers@Level@@UEAAAEAV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector.make(EntityRefTraits), {this:Level});
+Level.prototype.getUsers = procHacker.js('?getUsers@Level@@UEAAAEAV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector$EntityRefTraits, {this:Level});
 Level.prototype.getActiveUsers = procHacker.js('?getActiveUsers@Level@@UEBAAEBV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ', CxxVector.make(WeakEntityRef), {this:Level});
-(Level.prototype as any)._getEntities = procHacker.js('?getEntities@Level@@UEBAAEBV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector.make(EntityRefTraits), {this:Level});
+(Level.prototype as any)._getEntities = procHacker.js('?getEntities@Level@@UEBAAEBV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector$EntityRefTraits, {this:Level});
 Level.prototype.getEntities = function() {
     const out:Actor[] = [];
     for (const refTraits of (this as any)._getEntities()) {
