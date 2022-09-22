@@ -5,12 +5,13 @@ import { installMinecraftAddons } from './addoninstaller';
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
 import { Bedrock } from './bds/bedrock';
-import type { CommandOutputSender, CommandPermissionLevel, CommandRegistry, MinecraftCommands } from "./bds/command";
+import { CommandOutputSender, CommandPermissionLevel, CommandRegistry, MinecraftCommands } from "./bds/command";
 import { Dimension } from "./bds/dimension";
 import { GameRules } from './bds/gamerules';
-import { ServerLevel } from "./bds/level";
+import { Level, ServerLevel } from "./bds/level";
 import * as nimodule from './bds/networkidentifier';
 import { RakNet } from './bds/raknet';
+import { RakNetInstance } from './bds/raknetinstance';
 import * as bd_server from './bds/server';
 import { proc } from './bds/symbols';
 import type { CommandResult, CommandResultType } from './commandresult';
@@ -29,6 +30,7 @@ import { procHacker } from './prochacker';
 import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { DeferPromise, _tickCallback } from "./util";
+import { bdsxEqualsAssert } from './warning';
 
 declare module 'colors' {
 
@@ -193,12 +195,13 @@ function _launch(asyncResolve:()=>void):void {
         decay(bedrockServer.minecraftCommands);
         decay(bedrockServer.commandRegistry);
         decay(bedrockServer.gameRules);
+        decay(bedrockServer.raknetInstance);
         decay(bedrockServer.rakPeer);
         decay(bedrockServer.commandOutputSender);
         bedrockServer.nonOwnerPointerServerNetworkHandler.dispose();
         decay(bedrockServer.nonOwnerPointerServerNetworkHandler);
     }, void_t);
-    asmcode.gameThreadInner = proc['<lambda_09545ac3fb7d475932bfc25c15253480>::operator()']; // caller of ServerInstance::_update
+    asmcode.gameThreadInner = proc['<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()']; // caller of ServerInstance::_update
     asmcode.free = dll.ucrtbase.free.pointer;
 
     // hook game thread
@@ -206,7 +209,7 @@ function _launch(asyncResolve:()=>void):void {
 
     procHacker.patching(
         'hook-game-thread',
-        'std::thread::_Invoke<std::tuple<<lambda_09545ac3fb7d475932bfc25c15253480> >,0>', // caller of ServerInstance::_update
+        'std::thread::_Invoke<std::tuple<<lambda_9c72527c89bc5df41fe482e4153a365f> >,0>', // caller of ServerInstance::_update
         6,
         asmcode.gameThreadHook, // original depended
         Register.rax,
@@ -259,8 +262,8 @@ function _launch(asyncResolve:()=>void):void {
     }, void_t, {name: 'events.serverUpdate.fire'});
 
     procHacker.patching('update-hook',
-        '<lambda_09545ac3fb7d475932bfc25c15253480>::operator()', // caller of ServerInstance::_update
-        0x871, asmcode.updateWithSleep, Register.rax, true, [
+        '<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()', // caller of ServerInstance::_update
+        0x833, asmcode.updateWithSleep, Register.rax, true, [
             0x48, 0x2B, 0xC8,                         // sub rcx,rax
             0x48, 0x81, 0xF9, 0x88, 0x13, 0x00, 0x00, // cmp rcx,1388
             0x7C, 0x0B,                               // jl bedrock_server.7FF743BA7B50
@@ -276,17 +279,35 @@ function _launch(asyncResolve:()=>void):void {
                 _tickCallback();
                 cgate.nodeLoopOnce();
 
+                const Minecraft$getLevel = procHacker.js("?getLevel@Minecraft@@QEBAPEAVLevel@@XZ", Level, null, bd_server.Minecraft);
+                const Minecraft$getCommands = procHacker.js("?getCommands@Minecraft@@QEAAAEAVMinecraftCommands@@XZ", MinecraftCommands, null, bd_server.Minecraft);
+                const MinecraftCommands$getRegistry = procHacker.js('?getRegistry@MinecraftCommands@@QEAAAEAVCommandRegistry@@XZ', CommandRegistry, null, MinecraftCommands);
+                const Level$getGameRules = procHacker.js("?getGameRules@Level@@UEAAAEAVGameRules@@XZ", GameRules, null, Level);
+                const RakNetInstance$getPeer = procHacker.js('?getPeer@RakNetInstance@@UEAAPEAVRakPeerInterface@RakNet@@XZ', RakNet.RakPeer, null, RakNetInstance);
+
+                // All pointer is found from ServerInstance::startServerThread with debug breaking.
                 const serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
-                const networkHandler = serverInstance.networkHandler;
-                const minecraft = serverInstance.minecraft;
-                const dedicatedServer = serverInstance.server;
-                const level = minecraft.getLevel().as(ServerLevel);
+                const serverInstancePtr = serverInstance as VoidPointer as StaticPointer;
+                const dedicatedServer = serverInstancePtr.getPointerAs(bd_server.DedicatedServer, 0xa0);
+                bdsxEqualsAssert(dedicatedServer.vftable, proc['??_7DedicatedServer@@6BIMinecraftApp@@@'], 'Invalid dedicatedServer instance');
+                const networkHandler = serverInstancePtr.getPointerAs(nimodule.NetworkHandler, 0xb0);
+                bdsxEqualsAssert(networkHandler.vftable, proc['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@'], 'Invalid networkHandler instance');
+                const minecraft = serverInstancePtr.getPointerAs(bd_server.Minecraft, 0xa8);
+                bdsxEqualsAssert(minecraft.vftable, proc['??_7Minecraft@@6B@'], 'Invalid minecraft instance');
+
+                const level = Minecraft$getLevel(minecraft);
                 const nonOwnerPointerServerNetworkHandler = minecraft.getNonOwnerPointerServerNetworkHandler();
-                const minecraftCommands = minecraft.getCommands();
-                const commandRegistry = minecraftCommands.getRegistry();
-                const gameRules = level.getGameRules();
-                const rakPeer = networkHandler.instance.peer;
-                const commandOutputSender = minecraftCommands.sender;
+                const minecraftCommands = Minecraft$getCommands(minecraft);
+                bdsxEqualsAssert(minecraftCommands.vftable, proc['??_7MinecraftCommands@@6B@'], 'Invalid minecraftCommands instance');
+
+                const commandRegistry = MinecraftCommands$getRegistry(minecraftCommands);
+                const gameRules = Level$getGameRules(level);
+
+                const raknetInstance = (networkHandler as any as StaticPointer).getPointer(0x58).getPointerAs(RakNetInstance, 8);
+                bdsxEqualsAssert(raknetInstance.vftable, proc["??_7RakNetInstance@@6BConnector@@@"], 'Invalid raknetInstance');
+                const rakPeer = RakNetInstance$getPeer(raknetInstance);
+                bdsxEqualsAssert(rakPeer.vftable, proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"], 'Invalid rakPeer');
+                const commandOutputSender = (minecraftCommands as any as StaticPointer).getPointerAs(CommandOutputSender, 0x8);
                 const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get();
 
                 Object.defineProperties(bedrockServer, {
@@ -300,6 +321,7 @@ function _launch(asyncResolve:()=>void):void {
                     minecraftCommands: {value: minecraftCommands},
                     commandRegistry: {value: commandRegistry},
                     gameRules: {value: gameRules},
+                    raknetInstance: {value: raknetInstance},
                     rakPeer: {value: rakPeer},
                     commandOutputSender: {value: commandOutputSender},
                 });
@@ -378,11 +400,14 @@ export namespace bedrockServer {
     // eslint-disable-next-line prefer-const
     export let gameRules:GameRules = abstractobject;
     // eslint-disable-next-line prefer-const
+    export let raknetInstance:RakNetInstance = abstractobject;
+    // eslint-disable-next-line prefer-const
     export let rakPeer:RakNet.RakPeer = abstractobject;
     // eslint-disable-next-line prefer-const
     export let commandOutputSender:CommandOutputSender = abstractobject;
     // eslint-disable-next-line prefer-const
     export let nonOwnerPointerServerNetworkHandler:Bedrock.NonOwnerPointer<nimodule.ServerNetworkHandler> = abstractobject;
+    //
 
     Object.defineProperty(bd_server, 'serverInstance', {value: abstractobject, writable: true});
     Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});

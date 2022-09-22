@@ -10,7 +10,6 @@ export class RakNetInstance extends AbstractClass {
     /**
      * @deprecated use bedrockServer.rakPeer
      */
-    @nativeField(RakNet.RakPeer.ref(), 0x230)
     peer:RakNet.RakPeer;
 
     getPort():number {

@@ -520,7 +520,7 @@ export proc packetRawHook
     jmp onPacketRaw
  _skipEvent:
     mov edx, r15d
-    lea rcx, [rbp+0x80] ; packet
+    lea rcx, [rbp+0x78] ; packet
     jmp createPacketRaw
 endp
 
@@ -571,7 +571,8 @@ export proc packetAfterHook
     stack 28h
 
     ; orignal codes
-    mov rcx, [rbp+80h] ; packet
+    mov rdx, r13
+    mov rcx, [rbp+78h] ; packet
     call handlePacket
 
     lea r10, enabledPacket
@@ -579,7 +580,7 @@ export proc packetAfterHook
     unwind
     test al, al
     jz _skipEvent
-    mov rcx, [rbp+80h] ; packet
+    mov rcx, [rbp+78h] ; packet
     mov rdx, r13 ; NetworkIdentifier
     jmp onPacketAfter
 _skipEvent:
@@ -622,10 +623,10 @@ export def packetSendAllCancelPoint:qword
 export def packetSendAllJumpPoint:qword
 export proc packetSendAllHook
     stack 28h
-    ; r15 - packet
+    ; r14 - packet
     ; rbx - NetworkIdentifier
 
-    mov rax, [r15] ; packet.vftable
+    mov rax, [r14] ; packet.vftable
     call [rax+8] ; packet.getId(), just constant return
 
     lea r10, enabledPacket
@@ -633,7 +634,7 @@ export proc packetSendAllHook
     test al, al
     jz _pass
 
-    mov r8, r15 ; packet
+    mov r8, r14 ; packet
     mov rdx, rbx ; NetworkIdentifier
     call onPacketSend
 
@@ -646,12 +647,12 @@ _pass:
     unwind
 
     ; original codes
-    test r14,r14
+    test r15,r15
     jne _nojmp
     pop rcx
     jmp packetSendAllJumpPoint
 _nojmp:
-    movzx eax,byte ptr[r14+A0h]
+    movzx eax,byte ptr[r15+A0h]
     ret
 endp
 

@@ -1,3 +1,4 @@
+import { commandParser } from "../commandparser";
 import { bool_t, CxxString, float32_t, int32_t } from "../nativetype";
 import { RelativeFloat } from "./blockpos";
 import { CommandSymbols } from "./cmdsymbolloader";
@@ -41,6 +42,6 @@ symbols.addCounterSymbol(CommandRegistry);
 symbols.addTypeIdFnSymbols(CommandRegistry, types);
 symbols.addTypeIdPtrSymbols(CommandRegistry, typesWithTypeIdPtr);
 type_id.load(symbols);
-CommandRegistry.loadParser(symbols);
+commandParser.load(symbols);
 type_id.clone(CommandRegistry, ActorWildcardCommandSelector, PlayerWildcardCommandSelector);
-CommandRegistry.setParser(PlayerWildcardCommandSelector, CommandRegistry.getParser(ActorWildcardCommandSelector)!);
+commandParser.set(PlayerWildcardCommandSelector, commandParser.get(ActorWildcardCommandSelector)!);

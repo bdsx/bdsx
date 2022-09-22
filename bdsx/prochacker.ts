@@ -8,8 +8,25 @@ import { dll } from "./dll";
 import { hacktool } from "./hacktool";
 import { FunctionFromTypes_js, FunctionFromTypes_np, makefunc, MakeFuncOptions, ParamType } from "./makefunc";
 import { pdblegacy } from "./pdblegacy";
+import { getCurrentStackLine } from './source-map-support';
 import { MemoryUnlocker } from "./unlocker";
 import { hex, memdiff, memdiff_contains } from "./util";
+
+export interface ProcHackerPatchOptions {
+    stackOffset?:number;
+    /** @deprecated use null in originalCode */
+    ignoreArea?:number[];
+}
+
+function increaseStack(ignoreAreaOrOpts?:number[]|ProcHackerPatchOptions):ProcHackerPatchOptions {
+    if (ignoreAreaOrOpts === undefined) {
+        ignoreAreaOrOpts = {};
+    } else if (ignoreAreaOrOpts instanceof Array) {
+        ignoreAreaOrOpts = { ignoreArea:ignoreAreaOrOpts };
+    }
+    ignoreAreaOrOpts.stackOffset = (ignoreAreaOrOpts.stackOffset! |0)+1;
+    return ignoreAreaOrOpts;
+}
 
 const FREE_REGS:Register[] = [
     Register.rax,
@@ -183,14 +200,18 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param originalCode old codes
      * @param ignoreArea pairs of offset, ignores partial bytes.
      */
-    check(subject:string, key:Extract<keyof T, string>, offset:number, ptr:StaticPointer, originalCode:(number|null)[], ignoreArea?:number[]):boolean {
+    check(subject:string, key:Extract<keyof T, string>, offset:number, ptr:StaticPointer, originalCode:(number|null)[], ignoreAreaOrOpts?:number[]|ProcHackerPatchOptions):boolean {
         const buffer = ptr.getBuffer(originalCode.length);
         const diff = memdiff(buffer, originalCode);
-        if (!memdiff_contains(ignoreArea, diff)) {
+        const opts = increaseStack(ignoreAreaOrOpts);
+        if (!memdiff_contains(opts.ignoreArea, diff)) {
+            const stackLine = getCurrentStackLine(opts.stackOffset);
             console.error(colors.red(`${subject}: ${key} + 0x${offset.toString(16)}: code does not match`));
             console.error(colors.red(`[${hex(buffer)}] != [${hex(originalCode)}]`));
             if (diff.length !== 0) console.error(colors.red(`diff: ${JSON.stringify(diff)}`));
             console.error(colors.red(`${subject}: skip`));
+            console.error(colors.red(stackLine));
+            console.error();
             return false;
         } else {
             return true;
@@ -204,12 +225,12 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    nopping(subject:string, key:Extract<keyof T, string>, offset:number, originalCode:number[], ignoreArea:number[]):void {
+    nopping(subject:string, key:Extract<keyof T, string>, offset:number, originalCode:number[], ignoreAreaOrOpts?:number[]|ProcHackerPatchOptions):void {
         const ptr = this._get(subject, key, offset);
         if (ptr === null) return;
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
-        if (this.check(subject, key, offset, ptr, originalCode, ignoreArea)) {
+        if (this.check(subject, key, offset, ptr, originalCode, increaseStack(ignoreAreaOrOpts))) {
             dll.vcruntime140.memset(ptr, 0x90, size);
         }
         unlock.done();
@@ -333,7 +354,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    patching(subject:string, key:Extract<keyof T, string>, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:(number|null)[], ignoreArea?:number[]):void {
+    patching(subject:string, key:Extract<keyof T, string>, offset:number, newCode:VoidPointer, tempRegister:Register, call:boolean, originalCode:(number|null)[], ignoreAreaOrOpts?:number[]|ProcHackerPatchOptions):void {
         const ptr = this._get(subject, key, offset);
         if (ptr === null) return;
         if (!ptr) {
@@ -342,7 +363,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         }
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
-        if (this.check(subject, key, offset, ptr, originalCode, ignoreArea)) {
+        if (this.check(subject, key, offset, ptr, originalCode, increaseStack(ignoreAreaOrOpts))) {
             hacktool.patch(ptr, newCode, tempRegister, size, call);
         }
         unlock.done();
@@ -357,18 +378,18 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param originalCode bytes comparing before hooking
      * @param ignoreArea pair offsets to ignore of originalCode
      */
-    jumping(subject:string, key:Extract<keyof T, string>, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:number[], ignoreArea:number[]):void {
+    jumping(subject:string, key:Extract<keyof T, string>, offset:number, jumpTo:VoidPointer, tempRegister:Register, originalCode:(number|number)[], ignoreAreaOrOpts?:number[]|ProcHackerPatchOptions):void {
         const ptr = this._get(subject, key, offset);
         if (ptr === null) return;
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
-        if (this.check(subject, key, offset, ptr, originalCode, ignoreArea)) {
+        if (this.check(subject, key, offset, ptr, originalCode, increaseStack(ignoreAreaOrOpts))) {
             hacktool.jump(ptr, jumpTo, tempRegister, size);
         }
         unlock.done();
     }
 
-    write(key:Extract<keyof T, string>, offset:number, asm:X64Assembler|Uint8Array, subject?:string, originalCode?:number[], ignoreArea?:number[]):void {
+    write(key:Extract<keyof T, string>, offset:number, asm:X64Assembler|Uint8Array, subject?:string, originalCode?:number[], ignoreAreaOrOpts?:number[]|ProcHackerPatchOptions):void {
         if (subject == null) subject = key+'';
         const ptr = this._get(subject, key, offset);
         if (ptr === null) return;
@@ -380,7 +401,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
                 unlock.done();
                 return;
             }
-            if (!this.check(subject, key, offset, ptr, originalCode, ignoreArea || [])) {
+            if (!this.check(subject, key, offset, ptr, originalCode, increaseStack(ignoreAreaOrOpts))) {
                 unlock.done();
                 return;
             }
