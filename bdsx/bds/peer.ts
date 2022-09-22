@@ -41,7 +41,14 @@ export class BatchedNetworkPeer extends AbstractClass {
     @nativeField(BinaryStream)
     stream:BinaryStream;
 
-    sendPacket(data:CxxString, reliability:number, n:number, n2:number, compressibility:number):void {
+    /**
+     * @deprecated parameter removed
+     */
+    sendPacket(data:CxxString, reliability:number, n:number, n2:number, compressibility:number):void;
+
+    sendPacket(data:CxxString, reliability:number, n:number, compressibility:number):void;
+
+    sendPacket(data:CxxString, reliability:number, n:number, compressibility:number, oldparam?:number):void {
         abstract();
     }
 }

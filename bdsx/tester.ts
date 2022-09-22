@@ -1,8 +1,8 @@
 
 import * as colors from 'colors';
 import { bedrockServer } from './launcher';
-import { remapError, remapStackLine } from "./source-map-support";
-import { getLineAt, timeout } from "./util";
+import { getCurrentStackLine, remapError } from "./source-map-support";
+import { timeout } from "./util";
 
 let testnum = 1;
 let testcount = 0;
@@ -141,9 +141,8 @@ export class Tester {
     }
 
     error(message:string, opts?:Tester.Options|number):void {
-        const nopts = resolveOpts(opts, 2, 2);
-        const stack = Error().stack!;
-        this._error(message, remapStackLine(getLineAt(stack, nopts.stackOffset)).stackLine);
+        const nopts = resolveOpts(opts, 1, 2);
+        this._error(message, getCurrentStackLine(nopts.stackOffset));
     }
 
     processError(err:Error):void {

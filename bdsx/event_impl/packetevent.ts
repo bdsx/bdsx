@@ -34,12 +34,12 @@ ReadOnlyBinaryStream.prototype.read = procHacker.jsv('??_7ReadOnlyBinaryStream@@
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
     // stack memories of NetworkHandler::_sortAndPacketizeEvents
-    @nativeField(CxxSharedPtr.make(Packet), 0x80)
+    @nativeField(CxxSharedPtr.make(Packet), 0x78)
     packet:CxxSharedPtr<Packet>; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ReadOnlyBinaryStream, 0x100)
-    stream:ReadOnlyBinaryStream; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ExtendedStreamReadResult, 0x98)
+    @nativeField(ExtendedStreamReadResult, 0x90)
     result:ExtendedStreamReadResult;  // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
+    @nativeField(ReadOnlyBinaryStream, 0x110)
+    stream:ReadOnlyBinaryStream; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
 }
 
 asmcode.createPacketRaw = proc['?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z'];
@@ -186,11 +186,11 @@ bedrockServer.withLoading().then(()=>{
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x219,
+    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x278,
         asmcode.packetRawHook, // original code depended
         Register.rax, true, [
             0x41, 0x8B, 0xD7,                          // mov edx,r15d
-            0x48, 0x8D, 0x8D, 0x80, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+80]
+            0x48, 0x8D, 0x4D, 0x78,                    // lea rcx,qword ptr ss:[rbp+78]
             0xE8, null, null, null, null,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
             0x90,                                      // nop
         ]);
@@ -216,32 +216,33 @@ bedrockServer.withLoading().then(()=>{
 
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, Packet, NetworkIdentifier);
-    procHacker.hookingRawWithOriginal(packetHandleSymbol)((asm, original)=>{
-        asm.stack_c(0x28);
-        asm.call64(original, Register.rax);
-    });
     asmcode.handlePacket = proc[packetHandleSymbol];
-    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x580,
+    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x5c7,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
-            0x48, 0x8B, 0x8D, 0x80, 0x00, 0x00, 0x00, // mov rcx,qword ptr ss:[rbp+80]
+            0x49, 0x8B, 0xD5,                         // mov rdx,r13
+            0x48, 0x8B, 0x4D, 0x78,                   // mov rcx,qword ptr ss:[rbp+78]
             0xE8, null, null, null, null,             // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet> & __ptr64) __ptr64>
         ]);
 
+    // hook send
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, void_t, NetworkIdentifier, Packet);
     asmcode.sendOriginal = procHacker.hookingRaw('?send@NetworkHandler@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z', asmcode.packetSendHook);
+
+    // hook send all
     const sendToMultiple = proc[sendToMultipleSymbol];
-    asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x147);
+    asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x13b);
     asmcode.packetSendAllJumpPoint = sendToMultiple.add(0x4c);
     procHacker.patching('hook-packet-send-all', sendToMultipleSymbol, 0x37,
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
             // loop begin point
-            0x4D, 0x85, 0xF6,                                // test r14,r14
-            0x74, 0x10,                                      // je bedrock_server.7FF7436D8315
-            0x41, 0x0F, 0xB6, 0x86, 0xA0, 0x00, 0x00, 0x00,  // movzx eax,byte ptr ds:[r14+A0]
+            0x4D, 0x85, 0xFF,                                // test r15,r15
+            0x74, 0x10,                                      // je bedrock_server.7FF79D03C94C
+            0x41, 0x0F, 0xB6, 0x87, 0xA0, 0x00, 0x00, 0x00,  // movzx eax,byte ptr ds:[r15+A0]
         ]);
 
+    // hook send raw
     asmcode.onPacketSendInternal = makefunc.np(onPacketSendInternal, int32_t, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
     asmcode.sendInternalOriginal = procHacker.hookingRaw('?_sendInternal@NetworkHandler@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', asmcode.packetSendInternalHook);
 });

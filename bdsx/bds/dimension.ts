@@ -7,6 +7,7 @@ import type { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { BlockSource } from "./block";
 import { BlockPos, ChunkPos, Vec3 } from "./blockpos";
 import { ChunkSource, LevelChunk } from "./chunk";
+import { HashedStringToString } from "./hashedstring";
 import type { Player } from './player';
 
 @nativeClass(null)
@@ -77,8 +78,20 @@ export class Dimension extends NativeClass {
     removeActorByID(actorUniqueId: ActorUniqueID): void{
         abstract();
     }
-    getDefaultBiome(): number{
+    getDefaultBiomeString(): HashedStringToString{
         abstract();
+    }
+    /**
+     * @deprecated use getDefaultBiomeString
+     */
+    getDefaultBiome(): number {
+        // polyfill
+        switch (this.getDefaultBiomeString()) {
+        case 'hell': return 8;
+        case 'the_end': return 9;
+        case 'ocean':
+        default: return 0; // unexpected
+        }
     }
     getMoonPhase(): number{
         abstract();

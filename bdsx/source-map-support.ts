@@ -438,3 +438,6 @@ export function partialTrace(message:string, offset:number = 0):void {
     }
 }
 
+export function getCurrentStackLine(stackOffset:number = 0):string {
+    return getCurrentFrameInfo(stackOffset+1).stackLine;
+}

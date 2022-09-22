@@ -100,6 +100,7 @@ export class Minecraft extends AbstractClass {
 }
 
 export class DedicatedServer extends AbstractClass {
+    vftable:VoidPointer;
 }
 
 export class ScriptFramework extends AbstractClass {

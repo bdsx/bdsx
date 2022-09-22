@@ -3,6 +3,8 @@ import { Register } from "../assembler";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { capi } from "../capi";
+import { CommandEnum, CommandIndexEnum, CommandRawEnum, CommandSoftEnum, CommandStringEnum } from "../commandenum";
+import { commandParser } from "../commandparser";
 import { CommandResult, CommandResultType } from "../commandresult";
 import { AttributeName, VectorXYZ } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
@@ -13,11 +15,12 @@ import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, NativeClassType, nativeField, vectorDeletingDestructor } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, GslSpanToArray, GslStringSpan, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, GslSpanToArray, GslStringSpan, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, Type, uint16_t, uint32_t, uint8_t, void_t } from "../nativetype";
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
+import { bdsxWarningOnce } from "../warning";
 import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -25,7 +28,9 @@ import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource, BlockUtils, ChestBlockActor } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
-import { Command, CommandContext, CommandOutput, CommandOutputParameter, CommandOutputType, CommandPermissionLevel, CommandPositionFloat, CommandRegistry, CommandVersion, MCRESULT, MinecraftCommands } from "./command";
+import { CommandSymbols } from "./cmdsymbolloader";
+import * as command from './command';
+import { Command, CommandContext, CommandOutput, CommandOutputParameter, CommandOutputType, CommandPermissionLevel, CommandPositionFloat, CommandRegistry, CommandVersion, MCRESULT } from "./command";
 import { CommandName } from "./commandname";
 import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import './commandparsertypes';
@@ -37,14 +42,14 @@ import { MobEffect, MobEffectInstance } from "./effects";
 import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
-import { HashedString } from "./hashedstring";
+import { HashedString, HashedStringToString } from "./hashedstring";
 import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, ItemStackBase, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer, PlayerUISlot, SimpleContainer } from "./inventory";
 import { ArmorItemComponent, CooldownItemComponent, DiggerItemComponent, DisplayNameItemComponent, DurabilityItemComponent, DyePowderItemComponent, EntityPlacerItemComponent, FoodItemComponent, FuelItemComponent, IconItemComponent, ItemComponent, KnockbackResistanceItemComponent, OnUseItemComponent, PlanterItemComponent, ProjectileItemComponent, RecordItemComponent, RenderOffsetsItemComponent, RepairableItemComponent, ShooterItemComponent, ThrowableItemComponent, WeaponItemComponent, WearableItemComponent } from "./item_component";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AdventureSettingsPacket, AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
@@ -90,7 +95,9 @@ Level.prototype.getAdventureSettings = procHacker.js("?getAdventureSettings@Leve
 Level.prototype.getBlockPalette = procHacker.js("?getBlockPalette@Level@@UEAAAEAVBlockPalette@@XZ", BlockPalette, {this:Level});
 Level.prototype.getDimension = procHacker.js("?getDimension@Level@@UEBAPEAVDimension@@V?$AutomaticID@VDimension@@H@@@Z", Dimension, {this:Level}, int32_t);
 Level.prototype.getLevelData = procHacker.js("?getLevelData@Level@@UEAAAEAVLevelData@@XZ", LevelData.ref(), {this:Level});
-Level.prototype.getGameRules = procHacker.js("?getGameRules@Level@@UEAAAEAVGameRules@@XZ", GameRules, {this:Level});
+Level.prototype.getGameRules = function() {
+    return bedrockServer.gameRules;
+};
 Level.prototype.getScoreboard = procHacker.js("?getScoreboard@Level@@UEAAAEAVScoreboard@@XZ", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("?getSeed@Level@@UEAAIXZ", uint32_t, {this:Level});
 (Level.prototype as any)._getStructureManager = procHacker.js("?getStructureManager@Level@@UEAA?AV?$not_null@V?$NonOwnerPointer@VStructureManager@@@Bedrock@@@gsl@@XZ", StructureManager, {this:Level}, StructureManager);
@@ -231,7 +238,7 @@ Dimension.prototype.getHeight = procHacker.js('?getHeight@Dimension@@QEBAFXZ', i
 Dimension.prototype.tryGetClosestPublicRegion = procHacker.js('?tryGetClosestPublicRegion@Dimension@@QEBAPEAVBlockSource@@AEBVChunkPos@@@Z', BlockSource, {this: Dimension}, ChunkPos);
 Dimension.prototype.removeActorByID = procHacker.js('?removeActorByID@Dimension@@QEAAXAEBUActorUniqueID@@@Z', void_t, {this: Dimension}, ActorUniqueID);
 Dimension.prototype.getMinHeight = procHacker.js('?getMinHeight@Dimension@@QEBAFXZ', int16_t, {this:Dimension});
-Dimension.prototype.getDefaultBiome = procHacker.jsv('??_7NetherDimension@@6BIDimension@@@', '?getDefaultBiome@NetherDimension@@UEBAHXZ', int32_t, {this: Dimension});
+Dimension.prototype.getDefaultBiomeString = procHacker.jsv('??_7NetherDimension@@6BIDimension@@@', '?getDefaultBiome@NetherDimension@@UEBA?AVHashedString@@XZ', HashedStringToString, {this: Dimension, structureReturn: true});
 Dimension.prototype.getMoonPhase = procHacker.js('?getMoonPhase@Dimension@@QEBAHXZ', int32_t, {this: Dimension});
 
 // actor.ts
@@ -559,7 +566,7 @@ ActorDamageByActorSource.constructWith = function (damagingEntity, cause:ActorDa
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x6f0], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x620], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
@@ -604,9 +611,9 @@ procHacker.hookingRawWithCallOriginal('??1Actor@@UEAA@XZ', asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    abilities:[LayeredAbilities, 0x9cc], // accessed in AbilityCommand::execute when calling Abilities::setAbility
-    playerUIContainer:[PlayerUIContainer, 0x1280], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId:[CxxString, 0x2590], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
+    abilities:[LayeredAbilities, 0x8fc], // accessed in AbilityCommand::execute before calling LayeredAbilities::getLayer
+    playerUIContainer:[PlayerUIContainer, 0x1528], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId:[CxxString, 0x24c0], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js("?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this: Player}, CxxString);
 const PlayerListPacket$emplace = procHacker.js("?emplace@PlayerListPacket@@QEAAX$$QEAVPlayerListEntry@@@Z", void_t, null, PlayerListPacket, PlayerListEntry);
@@ -639,12 +646,14 @@ Player.prototype.setSleeping = procHacker.js("?setSleeping@Player@@UEAAX_N@Z", v
 Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, {this:Player});
 
-const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVLayeredAbilities@@UActorUniqueID@@@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, LayeredAbilities, ActorUniqueID);
+// const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVLayeredAbilities@@UActorUniqueID@@@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, LayeredAbilities, ActorUniqueID);
 Player.prototype.syncAbilities = function() {
-    const pk = new AdventureSettingsPacket(true);
-    AdventureSettingsPacket$AdventureSettingsPacket(pk, bedrockServer.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin());
-    this.sendPacket(pk);
-    pk.destruct();
+    bdsxWarningOnce('Player::syncAbilities feature is not implemented');
+    // TODO: implement, AdventureSettingsPacket is removed
+    // const pk = new AdventureSettingsPacket(true);
+    // AdventureSettingsPacket$AdventureSettingsPacket(pk, bedrockServer.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin());
+    // this.sendPacket(pk);
+    // pk.destruct();
 };
 
 Player.prototype.clearRespawnPosition = procHacker.js('?clearRespawnPosition@Player@@QEAAXXZ', void_t, {this:Player});
@@ -853,7 +862,9 @@ NetworkHandler.Connection.abstract({
 });
 NetworkHandler.abstract({
     vftable: VoidPointer,
-    instance: [RakNetInstance.ref(), 0x58],
+});
+Object.defineProperties(NetworkHandler.prototype, {
+    instance: { get(){ return bedrockServer.raknetInstance; }},
 });
 
 // NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
@@ -867,8 +878,14 @@ NetworkHandler.prototype.send = makefunc.js(
 // void NetworkHandler::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
 NetworkHandler.prototype.sendInternal = procHacker.js('?_sendInternal@NetworkHandler@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', void_t, {this:NetworkHandler}, NetworkIdentifier, Packet, CxxStringWrapper);
 
-BatchedNetworkPeer.prototype.sendPacket = procHacker.js('?sendPacket@BatchedNetworkPeer@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4Reliability@NetworkPeer@@HGW4Compressibility@@@Z', void_t, {this:BatchedNetworkPeer}, CxxString, int32_t, int32_t, int32_t, int32_t);
-
+const BatchedNetworkPeer$sendPacket = procHacker.js('?sendPacket@BatchedNetworkPeer@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4Reliability@NetworkPeer@@HW4Compressibility@@@Z', void_t, {this:BatchedNetworkPeer}, CxxString, int32_t, int32_t, int32_t);
+BatchedNetworkPeer.prototype.sendPacket = function(data:CxxString, reliability:number, n:number, compressibility:number, oldparam?:number) {
+    if (oldparam !== undefined) compressibility = oldparam;
+    BatchedNetworkPeer$sendPacket.call(this, data, reliability, n, compressibility);
+};
+Object.defineProperties(RakNetInstance.prototype, {
+    peer: {get() { return bedrockServer.rakPeer; } },
+});
 RakNetInstance.prototype.getPort = procHacker.js("?getPort@RakNetInstance@@UEBAGXZ", uint16_t, {this:RakNetInstance});
 
 RakNet.RakPeer.prototype.GetAveragePing = procHacker.js("?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z", int32_t, {this:RakNet.RakPeer}, RakNet.AddressOrGUID);
@@ -932,27 +949,35 @@ BaseAttributeMap.prototype.getMutableInstance = procHacker.js("?getMutableInstan
 VanillaGameModuleServer.abstract({
     listener:[VanillaServerGameplayEventListener.ref(), 0x8],
 });
-DedicatedServer.abstract({});
+DedicatedServer.abstract({
+    vftable:VoidPointer,
+});
 Minecraft.abstract({
     vftable:VoidPointer,
     vanillaGameModuleServer:[CxxSharedPtr, 0x28], // VanillaGameModuleServer
     server:DedicatedServer.ref(),
 });
-Minecraft.prototype.getLevel = procHacker.js("?getLevel@Minecraft@@QEBAPEAVLevel@@XZ", Level, {this:Minecraft});
+Minecraft.prototype.getLevel = function() {
+    return bedrockServer.level;
+};
 Minecraft.prototype.getNetworkHandler = procHacker.js("?getNetworkHandler@Minecraft@@QEAAAEAVNetworkHandler@@XZ", NetworkHandler, {this:Minecraft});
 Minecraft.prototype.getNonOwnerPointerServerNetworkHandler = procHacker.js("?getServerNetworkHandler@Minecraft@@QEAA?AV?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@XZ", Bedrock.NonOwnerPointer.make(ServerNetworkHandler), {this:Minecraft, structureReturn: true});
 Minecraft.prototype.getServerNetworkHandler = function() {
     return bedrockServer.serverNetworkHandler;
 };
-Minecraft.prototype.getCommands = procHacker.js("?getCommands@Minecraft@@QEAAAEAVMinecraftCommands@@XZ", MinecraftCommands, {this:Minecraft});
+Minecraft.prototype.getCommands = function() {
+    return bedrockServer.minecraftCommands;
+};
 ScriptFramework.abstract({
     vftable:VoidPointer,
 });
 ServerInstance.abstract({
     vftable:VoidPointer,
-    server:[DedicatedServer.ref(), 0x98], // checked the this pointer on ServerInstance::startServerThread with the debug break
-    minecraft:[Minecraft.ref(), 0xa0],
-    networkHandler:[NetworkHandler.ref(), 0xa8],
+});
+Object.defineProperties(ServerInstance.prototype, {
+    server: { get() { return bedrockServer.dedicatedServer; } },
+    minecraft: { get() { return bedrockServer.minecraft; } },
+    networkHandler: { get() { return bedrockServer.networkHandler; } },
 });
 (ServerInstance.prototype as any)._disconnectAllClients = procHacker.js("?disconnectAllClientsWithMessage@ServerInstance@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this:ServerInstance}, CxxString);
 
@@ -1155,9 +1180,9 @@ PlayerInventory.prototype.removeResource = function (item: ItemStack, requireExa
 };
 
 ItemDescriptor.prototype[NativeType.ctor] = procHacker.js('??0ItemDescriptor@@QEAA@XZ', void_t, {this:ItemDescriptor});
-ItemDescriptor.prototype[NativeType.dtor] = procHacker.js('??1ItemDescriptor@@QEAA@XZ', void_t, {this:ItemDescriptor});
+ItemDescriptor.prototype[NativeType.dtor] = procHacker.js('??1ItemDescriptor@@UEAA@XZ', void_t, {this:ItemDescriptor});
 ItemDescriptor.prototype[NativeType.ctor_copy] = procHacker.js('??0ItemDescriptor@@QEAA@AEBV0@@Z', void_t, {this:ItemDescriptor}, ItemDescriptor);
-NetworkItemStackDescriptor.prototype[NativeType.dtor] = procHacker.js('??1NetworkItemStackDescriptor@@QEAA@XZ', void_t, {this:NetworkItemStackDescriptor});
+NetworkItemStackDescriptor.prototype[NativeType.dtor] = procHacker.js('??1NetworkItemStackDescriptor@@UEAA@XZ', void_t, {this:NetworkItemStackDescriptor});
 NetworkItemStackDescriptor.prototype[NativeType.ctor_copy] = procHacker.js('??0NetworkItemStackDescriptor@@QEAA@AEBVItemStackDescriptor@@@Z', void_t, {this:NetworkItemStackDescriptor}, NetworkItemStackDescriptor);
 
 InventoryTransaction.prototype.addItemToContent = procHacker.js("?addItemToContent@InventoryTransaction@@AEAAXAEBVItemStack@@H@Z", void_t, {this:InventoryTransaction}, ItemStack, int32_t);
@@ -1344,7 +1369,7 @@ Abilities.prototype.isFlying = function() {
     return this.getBool(AbilitiesIndex.Flying);
 };
 
-LayeredAbilities.prototype.getLayer = procHacker.js('?getLayer@LayeredAbilities@@QEBAAEBVAbilities@@W4AbilitiesLayer@@@Z', Abilities, {this:LayeredAbilities}, uint16_t);
+LayeredAbilities.prototype.getLayer = procHacker.js('?getLayer@LayeredAbilities@@QEAAAEAVAbilities@@W4AbilitiesLayer@@@Z', Abilities, {this:LayeredAbilities}, uint16_t);
 LayeredAbilities.prototype.getCommandPermissions = procHacker.js("?getCommandPermissions@LayeredAbilities@@QEBA?AW4CommandPermissionLevel@@XZ", int32_t, {this:LayeredAbilities});
 LayeredAbilities.prototype.getPlayerPermissions = procHacker.js("?getPlayerPermissions@LayeredAbilities@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:LayeredAbilities});
 LayeredAbilities.prototype.setCommandPermissions = procHacker.js("?setCommandPermissions@LayeredAbilities@@QEAAXW4CommandPermissionLevel@@@Z", void_t, {this:LayeredAbilities}, int32_t);
@@ -1821,6 +1846,36 @@ ProjectileItemComponent.prototype.shootProjectile = procHacker.js("?shootProject
 RecordItemComponent.prototype.getAlias = procHacker.js("?getAlias@RecordItemComponent@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ", CxxString, {this:RecordItemComponent});
 RepairableItemComponent.prototype.handleItemRepair = procHacker.js("?handleItemRepair@RepairableItemComponent@@QEAAHAEAVItemStackBase@@0@Z", int32_t, {this:RepairableItemComponent}, ItemStackBase, ItemStackBase);
 ThrowableItemComponent.prototype.getLaunchPower = procHacker.js("?_getLaunchPower@ThrowableItemComponent@@AEBAMHHH@Z", float32_t, {this:ThrowableItemComponent}, int32_t, int32_t, int32_t);
+
+// command.ts
+CommandRegistry.getParser = function<T>(type:Type<T>):VoidPointer {
+    return commandParser.get(type);
+};
+
+CommandRegistry.hasParser = function<T>(type:Type<T>):boolean {
+    return commandParser.has(type);
+};
+
+CommandRegistry.loadParser = function(symbols:CommandSymbols):void {
+    return commandParser.load(symbols);
+};
+
+CommandRegistry.setParser = function(type:Type<any>, parserFnPointer:VoidPointer):void {
+    return commandParser.set(type, parserFnPointer);
+};
+
+/**
+ * @deprecated no need to use
+ */
+CommandRegistry.setEnumParser = function(parserFnPointer:VoidPointer):void {
+    return commandParser.setEnumParser(parserFnPointer);
+};
+command.MinecraftCommands.prototype.getRegistry = function() {
+    return bedrockServer.commandRegistry;
+};
+Object.defineProperties(command.MinecraftCommands.prototype, {
+    sender: { get(){ return bedrockServer.commandOutputSender; } },
+});
 
 // launcher.ts
 const CommandOutputParameterVector = CxxVector.make(CommandOutputParameter);

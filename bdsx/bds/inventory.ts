@@ -694,32 +694,33 @@ export class InventorySource extends NativeStruct {
     }
 }
 
-@nativeClass(0x8)
+@nativeClass(0x10)
 export class ItemDescriptor extends AbstractClass {
 }
 
 export class ItemStackNetIdVariant extends AbstractClass {
 }
 
-@nativeClass(0x58)
+@nativeClass(0x60)
 export class NetworkItemStackDescriptor extends AbstractClass {
 
     ////////////////////////////
     // ItemDescriptorCount, parent expected
     @nativeField(ItemDescriptor)
     readonly descriptor:ItemDescriptor;
-    // uint16_t, 0x8
     ////////////////////////////
 
-    // uint8_t, 0x10
+    // uint16_t, 0x10
 
-    @nativeField(ItemStackNetIdVariant, 0x18) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
+    // uint8_t, 0x18
+
+    @nativeField(ItemStackNetIdVariant, 0x20) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
     readonly id:ItemStackNetIdVariant;
     /** @deprecated There seems to be no string inside NetworkItemStackDescriptor anymore */
 
-    // uint32_t, 0x30
+    // uint32_t, 0x38
 
-    @nativeField(CxxString, 0x38)
+    @nativeField(CxxString, 0x40)
     _unknown:CxxString;
 
     static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {

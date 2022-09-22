@@ -788,6 +788,9 @@ export class GuiDataPickItemPacket extends Packet {
     // unknown
 }
 
+/**
+ * @deprecated deleted from BDS
+ */
 @nativeClass()
 export class AdventureSettingsPacket extends Packet {
     @nativeField(uint32_t)

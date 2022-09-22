@@ -23,6 +23,7 @@ enum SubClientId {
 
 export class NetworkHandler extends AbstractClass {
     vftable:VoidPointer;
+    /** @deprecated use bedrockServer.raknetInstance */
     instance:RakNetInstance;
 
     send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void;
