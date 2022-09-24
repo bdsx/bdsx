@@ -47,7 +47,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestAction, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestData, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestAction, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestData, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAbilitiesPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
