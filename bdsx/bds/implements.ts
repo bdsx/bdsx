@@ -3,7 +3,6 @@ import { Register } from "../assembler";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { capi } from "../capi";
-import { CommandEnum, CommandIndexEnum, CommandRawEnum, CommandSoftEnum, CommandStringEnum } from "../commandenum";
 import { commandParser } from "../commandparser";
 import { CommandResult, CommandResultType } from "../commandresult";
 import { AttributeName, VectorXYZ } from "../common";
@@ -20,7 +19,6 @@ import { CxxStringWrapper, Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
-import { bdsxWarningOnce } from "../warning";
 import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
@@ -72,6 +70,7 @@ const CxxVector$Vec3 = CxxVector.make(Vec3);
 const CxxVectorToArray$string = CxxVectorToArray.make(CxxString);
 const CxxVector$ScoreboardIdentityRef = CxxVector.make(ScoreboardIdentityRef);
 const CxxVector$ScoreboardId = CxxVector.make(ScoreboardId);
+const CxxVector$EntityRefTraits = CxxVector.make(EntityRefTraits);
 
 // utils
 namespace CommandUtils {
@@ -139,9 +138,9 @@ Level.prototype.getPlayers = function() {
     }
     return out;
 };
-Level.prototype.getUsers = procHacker.js('?getUsers@Level@@UEAAAEAV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector.make(EntityRefTraits), {this:Level});
+Level.prototype.getUsers = procHacker.js('?getUsers@Level@@UEAAAEAV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector$EntityRefTraits, {this:Level});
 Level.prototype.getActiveUsers = procHacker.js('?getActiveUsers@Level@@UEBAAEBV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ', CxxVector.make(WeakEntityRef), {this:Level});
-(Level.prototype as any)._getEntities = procHacker.js('?getEntities@Level@@UEBAAEBV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector.make(EntityRefTraits), {this:Level});
+(Level.prototype as any)._getEntities = procHacker.js('?getEntities@Level@@UEBAAEBV?$vector@V?$OwnerPtrT@UEntityRefTraits@@@@V?$allocator@V?$OwnerPtrT@UEntityRefTraits@@@@@std@@@std@@XZ', CxxVector$EntityRefTraits, {this:Level});
 Level.prototype.getEntities = function() {
     const out:Actor[] = [];
     for (const refTraits of (this as any)._getEntities()) {
@@ -647,13 +646,12 @@ Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool
 Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, {this:Player});
 
 // const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVLayeredAbilities@@UActorUniqueID@@@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, LayeredAbilities, ActorUniqueID);
+const UpdateAbilitiesPacket$UpdateAbilitiesPacket = procHacker.js("??0UpdateAbilitiesPacket@@QEAA@UActorUniqueID@@AEBVLayeredAbilities@@@Z", UpdateAbilitiesPacket, null, UpdateAbilitiesPacket, ActorUniqueID, LayeredAbilities);
 Player.prototype.syncAbilities = function() {
-    bdsxWarningOnce('Player::syncAbilities feature is not implemented');
-    // TODO: implement, AdventureSettingsPacket is removed
-    // const pk = new AdventureSettingsPacket(true);
-    // AdventureSettingsPacket$AdventureSettingsPacket(pk, bedrockServer.level.getAdventureSettings(), this.abilities, this.getUniqueIdBin());
-    // this.sendPacket(pk);
-    // pk.destruct();
+    const pkt = new UpdateAbilitiesPacket(true);
+    UpdateAbilitiesPacket$UpdateAbilitiesPacket(pkt, this.getUniqueIdBin(), this.abilities);
+    this.sendPacket(pkt);
+    pkt.destruct();
 };
 
 Player.prototype.clearRespawnPosition = procHacker.js('?clearRespawnPosition@Player@@QEAAXXZ', void_t, {this:Player});

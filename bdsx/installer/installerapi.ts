@@ -304,13 +304,13 @@ const pdbcache = new InstallItem({
     keyFile: 'pdbcache.bin',
     fallback(installer, statusCode) {
         if (statusCode !== 404) return;
-        console.error(colors.yellow(`pdbcache-${BDS_VERSION} does not exists on the server`));
+        console.error(colors.yellow(`pdbcache-${BDS_VERSION} does not exist on the server`));
         console.error(colors.yellow('Generate through pdbcachegen.exe'));
         const pdbcachegen = path.join(installer.bdsPath, 'pdbcachegen.exe');
         const pdbcachebin = path.join(installer.bdsPath, 'pdbcache.bin');
         const bedrockserver = path.join(installer.bdsPath, 'bedrock_server.exe');
         const res = child_process.spawnSync(pdbcachegen, [bedrockserver, pdbcachebin], {stdio:'inherit'});
-        if (res.status !== 0) throw new MessageError(`Failed to generate pdbbcache`);
+        if (res.status !== 0) throw new MessageError(`Failed to generate pdbcache`);
         return false;
     },
 });
