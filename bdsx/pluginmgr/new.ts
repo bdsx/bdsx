@@ -100,14 +100,13 @@ events.serverClose.on(()=>{
 {
     const tsconfig = JSON.parse(fs.readFileSync('./tsconfig.json', 'utf-8'));
     delete tsconfig.exclude;
-    tsconfig.declaration = true;
+    tsconfig.compilerOptions.declaration = true;
     fsutil.writeJsonSync(`${targetdir}tsconfig.json`, tsconfig);
 }
 
 // .npmignore
 {
     const npmignore = `
-/.git
 *.ts
 !*.d.ts
 `;
