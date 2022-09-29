@@ -75,7 +75,18 @@ export function hexn(value:number, hexcount:number):string {
     }
     return String.fromCharCode(...out);
 }
-export function hex(values:(number|null)[]|Uint8Array, nextLinePer?:number):string {
+export function hex(values:(number|null)[]|Uint8Array|number, nextLinePer?:number):string {
+    if (typeof values === 'number') {
+        if (nextLinePer !== undefined) {
+            return '0x'+hex(values, nextLinePer);
+        } else {
+            if (values < 0) {
+                return '-0x' + (-values).toString(16);
+            } else {
+                return '0x'+values.toString(16);
+            }
+        }
+    }
     const size = values.length;
     if (size === 0) return '';
     if (nextLinePer == null) nextLinePer = size;

@@ -7,6 +7,7 @@ import { msAlloc } from "./msalloc";
 import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
+import { hex } from './util';
 
 export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
     new(address?:VoidPointer|boolean):CxxVector<T>;
@@ -20,8 +21,8 @@ function getVectorSymbol(type:Type<any>):string {
 }
 
 function getSize(bytes:number, compsize:number):number {
-    if (bytes % compsize !== 0) {
-        throw Error(`invalid vector size (bytes=0x${bytes.toString(16)}, compsize=0x${compsize.toString(16)})`);
+    if (bytes < 0 || bytes % compsize !== 0) {
+        throw Error(`invalid vector size (bytes=${hex(bytes)}, compsize=${hex(compsize)})`);
     }
     return bytes / compsize | 0;
 }
