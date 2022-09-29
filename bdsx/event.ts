@@ -200,11 +200,14 @@ export namespace events {
     /**
      * before launched. after execute the main thread of BDS.
      * BDS will be loaded on the separated thread. this event will be executed concurrently with the BDS loading
+     * Usual scripts are no need to use this event. it's for plugin scripts that are loaded before BDS.
      */
     export const serverLoading = new Event<()=>void>();
 
     /**
      * after BDS launched
+     * Usual scripts are no need to use this event. it's for plugin scripts that are loaded before BDS.
+     * or `bedrockServer.afterOpen().then(callback)` is usable for both situation.
      */
     export const serverOpen = new Event<()=>void>();
 
