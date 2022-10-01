@@ -563,8 +563,6 @@ function inspectNativeFields(this:NativeClass, obj:Record<string, any>):void {
     }
 }
 
-NativeClass.prototype[nativeClassUtil.inspectFields] = inspectNativeFields;
-
 /**
  * the class that does not need a constructor or destructor
  */
@@ -943,6 +941,8 @@ export namespace nativeClassUtil {
     }
     export const inspectFields = Symbol('inspect-fields');
 }
+
+NativeClass.prototype[nativeClassUtil.inspectFields] = inspectNativeFields;
 
 /**
  * this class is not constructible.
