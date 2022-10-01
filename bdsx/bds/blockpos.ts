@@ -3,6 +3,7 @@ import { abstract, VectorXY, VectorXYZ, VectorXZ } from "../common";
 import { nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint16_t, uint8_t } from "../nativetype";
 import { procHacker } from "../prochacker";
+import { proc } from "./symbols";
 
 export enum Facing {
     Down,
@@ -21,6 +22,11 @@ export namespace Facing {
 
 @nativeClass()
 export class BlockPos extends NativeStruct {
+    static readonly MIN = proc["?MIN@BlockPos@@2V1@B"].as(BlockPos);
+    static readonly MAX = proc["?MAX@BlockPos@@2V1@B"].as(BlockPos);
+    static readonly ZERO = proc["?ZERO@BlockPos@@2V1@B"].as(BlockPos);
+    static readonly ONE = proc["?ONE@BlockPos@@2V1@B"].as(BlockPos);
+
     @nativeField(int32_t)
     x:int32_t;
     @nativeField(int32_t)
@@ -225,6 +231,20 @@ export class Vec2 extends NativeStruct {
 
 @nativeClass()
 export class Vec3 extends NativeStruct {
+    static readonly MIN = proc["?MIN@Vec3@@2V1@B"].as(Vec3);
+    static readonly MAX = proc["?MAX@Vec3@@2V1@B"].as(Vec3);
+    static readonly ZERO = proc["?ZERO@Vec3@@2V1@B"].as(Vec3);
+    static readonly HALF = proc["?HALF@Vec3@@2V1@B"].as(Vec3);
+    static readonly ONE = proc["?ONE@Vec3@@2V1@B"].as(Vec3);
+    static readonly TWO = proc["?TWO@Vec3@@2V1@B"].as(Vec3);
+
+    static readonly UNIT_X = proc["?UNIT_X@Vec3@@2V1@B"].as(Vec3);
+    static readonly NEG_UNIT_X = proc["?NEG_UNIT_X@Vec3@@2V1@B"].as(Vec3);
+    static readonly UNIT_Y = proc["?UNIT_Y@Vec3@@2V1@B"].as(Vec3);
+    static readonly NEG_UNIT_Y = proc["?NEG_UNIT_Y@Vec3@@2V1@B"].as(Vec3);
+    static readonly UNIT_Z = proc["?UNIT_Z@Vec3@@2V1@B"].as(Vec3);
+    static readonly NEG_UNIT_Z = proc["?NEG_UNIT_Z@Vec3@@2V1@B"].as(Vec3);
+
     @nativeField(float32_t)
     x:float32_t;
     @nativeField(float32_t)

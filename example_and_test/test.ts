@@ -7,7 +7,7 @@ import { AbilitiesIndex } from "bdsx/bds/abilities";
 import { Actor, ActorType, DimensionId, ItemActor } from "bdsx/bds/actor";
 import { AttributeId } from "bdsx/bds/attribute";
 import { Block } from "bdsx/bds/block";
-import { BlockPos, RelativeFloat } from "bdsx/bds/blockpos";
+import { BlockPos, RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { CxxOptionalToUndefUnion } from "bdsx/bds/cxxoptional";
@@ -52,6 +52,12 @@ let chatCancelCounter = 0;
 const OverworldDimension$vftable = proc['??_7OverworldDimension@@6BIDimension@@@'];
 
 type PromiseFunc = ()=>Promise<PromiseFunc>;
+
+const INT32_MIN = 0x80000000;
+const INT32_MAX= 0x7FFFFFFF;
+
+const FLOAT32_MIN = -3.40282347e38;
+const FLOAT32_MAX = 3.40282347e38;
 
 function checkCommandRegister(tester:Tester, testname:string, testcases:[CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean], string|null, any][], opts:{throughConsole?:boolean,noRun?:boolean}={}):Promise<PromiseFunc> {
     const paramsobj:Record<string, CommandParameterType<any>|[CommandParameterType<any>, CommandFieldOptions|boolean]> = {};
@@ -1179,6 +1185,31 @@ Tester.concurrency({
         this.equals(Block.create('minecraft:_no_block_'), null, 'minecraft:_no_block_ is not null');
         this.assert(Block.create('dirt')!.equalsptr(Block.create('dirt')), 'dirt is not dirt');
         this.assert(!Block.create('planks', 0)!.equalsptr(Block.create('planks', 1)), 'planks#0 is planks#1');
+    },
+
+    blockPos() {
+        this.assert(BlockPos.MIN.equal(BlockPos.create(INT32_MIN, INT32_MIN, INT32_MIN)), "Broken BlockPos.MIN");
+        this.assert(BlockPos.MAX.equal(BlockPos.create(INT32_MAX, INT32_MAX, INT32_MAX)), "Broken BlockPos.MAX");
+
+        this.assert(BlockPos.ZERO.equal(BlockPos.create(0, 0, 0)), "Broken BlockPos.ZERO");
+        this.assert(BlockPos.ONE.equal(BlockPos.create(1, 1, 1)), "Broken BlockPos.ONE");
+
+        this.assert(Vec3.MIN.equal(Vec3.create(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)), "Broken Vec3.MIN");
+        this.assert(Vec3.MAX.equal(Vec3.create(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)), "Broken Vec3.MAX");
+
+        this.assert(Vec3.ZERO.equal(Vec3.create(0, 0, 0)), "Broken Vec3.ZERO");
+        this.assert(Vec3.HALF.equal(Vec3.create(0.5, 0.5, 0.5)), "Broken Vec3.HALF");
+        this.assert(Vec3.ONE.equal(Vec3.create(1, 1, 1)), "Broken Vec3.ONE");
+        this.assert(Vec3.TWO.equal(Vec3.create(2, 2, 2)), "Broken Vec3.TWO");
+
+        this.assert(Vec3.UNIT_X.equal(Vec3.create(1, 0, 0)), "Broken Vec3.UNIT_X");
+        this.assert(Vec3.NEG_UNIT_X.equal(Vec3.create(-1, 0, 0)), "Broken Vec3.NEG_UNIT_X");
+
+        this.assert(Vec3.UNIT_Y.equal(Vec3.create(0, 1, 0)), "Broken Vec3.UNIT_Y");
+        this.assert(Vec3.NEG_UNIT_Y.equal(Vec3.create(0, -1, 0)), "Broken Vec3.NEG_UNIT_Y");
+
+        this.assert(Vec3.UNIT_Z.equal(Vec3.create(0, 0, 1)), "Broken Vec3.UNIT_Z");
+        this.assert(Vec3.NEG_UNIT_Z.equal(Vec3.create(0, 0, -1)), "Broken BlockPos.NEG_UNIT_Z");
     },
 
     blob() {
