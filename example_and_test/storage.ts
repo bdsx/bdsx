@@ -3,7 +3,7 @@ import { storageManager } from "bdsx/storage";
 
 // global storage
 const storage = storageManager.getSync('storage_example');
-if (storage.data == null) { // it's undefined if it does not exist.
+if (storage.data === undefined) { // it's undefined if it does not exist.
     // initialize
     storage.init({
         a: 1,
@@ -21,11 +21,12 @@ console.log(`storage counter = ${storage.data.counter}`);
 // storage from the player
 events.playerJoin.on(async(ev)=>{
     const playerName = ev.player.getName();
-    const storage = await storageManager.get(ev.player); // don't recommend the synchronized method.
+    const storage = await storageManager.get(ev.player); // it's using an asynchronized method.
+    // don't recommend the synchronized method. ex) storageManager.getSync
     // the synchronized method pauses the entire server until the end of the load.
     if (!storage.isLoaded) return; // if the player left before loading it's possible to occur.
 
-    if (storage.data == null) {
+    if (storage.data === undefined) {
         // initialize
         storage.init({
             level: 1,

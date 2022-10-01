@@ -47,7 +47,7 @@ import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, Server
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
 import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
-import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAbilitiesPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
+import { AttributeData, BlockActorDataPacket, GameRulesChangedPacket, ItemStackRequestAction, ItemStackRequestActionTransferBase, ItemStackRequestBatch, ItemStackRequestData, ItemStackRequestPacket, ItemStackRequestSlotInfo, PlayerListEntry, PlayerListPacket, SetDifficultyPacket, SetTimePacket, UpdateAbilitiesPacket, UpdateAttributesPacket, UpdateBlockPacket } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
@@ -901,6 +901,10 @@ Packet.prototype.write = procHacker.jsv('??_7LoginPacket@@6B@', '?write@LoginPac
 Packet.prototype.readExtended = procHacker.jsv('??_7PlayerListPacket@@6B@', '?readExtended@PlayerListPacket@@UEAA?AUExtendedStreamReadResult@@AEAVReadOnlyBinaryStream@@@Z', ExtendedStreamReadResult, {this:Packet}, ExtendedStreamReadResult, BinaryStream);
 Packet.prototype.read = procHacker.jsv('??_7LoginPacket@@6B@', '?_read@LoginPacket@@EEAA?AW4StreamReadResult@@AEAVReadOnlyBinaryStream@@@Z', int32_t, {this:Packet}, BinaryStream);
 
+ItemStackRequestData.prototype.getStringsToFilter = procHacker.js('?getStringsToFilter@ItemStackRequestData@@QEBAAEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ', CxxVector.make(CxxString), {this:ItemStackRequestData});
+ItemStackRequestData.prototype.getActions = procHacker.js('?getActions@ItemStackRequestData@@QEBAAEBV?$vector@V?$unique_ptr@VItemStackRequestAction@@U?$default_delete@VItemStackRequestAction@@@std@@@std@@V?$allocator@V?$unique_ptr@VItemStackRequestAction@@U?$default_delete@VItemStackRequestAction@@@std@@@std@@@2@@std@@XZ', CxxVector.make(ItemStackRequestAction.ref()), {this:ItemStackRequestData});
+
+// networkidentifier.ts
 ServerNetworkHandler.prototype._getServerPlayer = procHacker.js("?_getServerPlayer@ServerNetworkHandler@@AEAAPEAVServerPlayer@@AEBVNetworkIdentifier@@W4SubClientId@@@Z", ServerPlayer, {this:ServerNetworkHandler}, NetworkIdentifier, int32_t);
 const ServerNetworkHandler$disconnectClient = procHacker.js("?disconnectClient@ServerNetworkHandler@@QEAAXAEBVNetworkIdentifier@@W4SubClientId@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z", void_t, null, ServerNetworkHandler, NetworkIdentifier, int32_t, CxxString, bool_t);
 ServerNetworkHandler.prototype.disconnectClient = function(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
