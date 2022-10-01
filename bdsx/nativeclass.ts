@@ -516,38 +516,54 @@ export class NativeClass extends StructurePointer {
         cls.from = fn;
     }
 
+    /**
+     * @deprecated
+     */
     protected _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
-        return CircularDetector.check(this, allocator, obj=>{
-            const fields = (this as any).constructor[fieldmap];
-            for (const field in fields) {
-                let value:unknown;
-                try {
-                    value = (this as any)[field];
-                } catch (err) {
-                    value = 'Error: '+err.message;
-                }
-                obj[field] = value;
-            }
-        });
+        return CircularDetector.check(this, allocator, obj=>this[nativeClassUtil.inspectFields](obj));
     }
 
     toJSON():Record<string, any> {
-        const obj = this._toJsonOnce(()=>({}));
+        const obj:Record<string, any> = CircularDetector.check(this, ()=>({}), obj=>{
+            if (this[nativeClassUtil.inspectFields] !== inspectNativeFields) this[nativeClassUtil.inspectFields](obj);
+            inspectNativeFields.call(this, obj);
+        });
         for (const [key, v] of Object.entries(obj)) {
             if (v != null) obj[key] = v.toJSON != null ? v.toJSON() : v;
         }
         return obj;
     }
 
+    [nativeClassUtil.inspectFields](obj:Record<string, any>):void;
+
     [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
         try {
-            return this._toJsonOnce(()=>new (CircularDetector.makeTemporalClass(this.constructor.name, this, options)));
+            return CircularDetector.check(
+                this,
+                ()=>new (CircularDetector.makeTemporalClass(this.constructor.name, this, options)),
+                obj=>this[nativeClassUtil.inspectFields](obj),
+            );
         } catch (err) {
             remapAndPrintError(err);
             return 'Error: '+err.message;
         }
     }
 }
+
+function inspectNativeFields(this:NativeClass, obj:Record<string, any>):void {
+    const fields = (this as any).constructor[fieldmap];
+    for (const field in fields) {
+        let value:unknown;
+        try {
+            value = (this as any)[field];
+        } catch (err) {
+            value = 'Error: '+err.message;
+        }
+        obj[field] = value;
+    }
+}
+
+NativeClass.prototype[nativeClassUtil.inspectFields] = inspectNativeFields;
 
 /**
  * the class that does not need a constructor or destructor
@@ -925,6 +941,7 @@ export namespace nativeClassUtil {
             console.log(str);
         }
     }
+    export const inspectFields = Symbol('inspect-fields');
 }
 
 /**

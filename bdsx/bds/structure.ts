@@ -1,7 +1,6 @@
-import { CircularDetector } from "../circulardetector";
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
-import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
+import { AbstractClass, nativeClass, nativeClassUtil, nativeField } from "../nativeclass";
 import { CxxString, int32_t } from "../nativetype";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -120,23 +119,21 @@ export class StructureSettings extends AbstractClass {
         abstract();
     }
 
-    _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
-        return CircularDetector.check(this, allocator, obj=>{
-            obj.paletteName = this.getPaletteName();
-            obj.ignoreEntities = this.getIgnoreEntities();
-            obj.reloadActorEquipment = this.getReloadActorEquipment();
-            obj.ignoreBlocks = this.getIgnoreBlocks();
-            obj.ignoreJigsawBlocks = this.getIgnoreJigsawBlocks();
-            obj.structureSize = this.getStructureSize();
-            obj.structureOffset = this.getStructureOffset();
-            obj.pivot = this.getPivot();
-            obj.rotation = this.getRotation();
-            obj.mirror = this.getMirror();
-            obj.animationMode = this.getAnimationMode();
-            obj.animationTicks = this.getAnimationTicks();
-            obj.integrityValue = this.getIntegrityValue();
-            obj.integritySeed = this.getIntegritySeed();
-        });
+    [nativeClassUtil.inspectFields](obj:Record<string, any>):void {
+        obj.paletteName = this.getPaletteName();
+        obj.ignoreEntities = this.getIgnoreEntities();
+        obj.reloadActorEquipment = this.getReloadActorEquipment();
+        obj.ignoreBlocks = this.getIgnoreBlocks();
+        obj.ignoreJigsawBlocks = this.getIgnoreJigsawBlocks();
+        obj.structureSize = this.getStructureSize();
+        obj.structureOffset = this.getStructureOffset();
+        obj.pivot = this.getPivot();
+        obj.rotation = this.getRotation();
+        obj.mirror = this.getMirror();
+        obj.animationMode = this.getAnimationMode();
+        obj.animationTicks = this.getAnimationTicks();
+        obj.integrityValue = this.getIntegrityValue();
+        obj.integritySeed = this.getIntegritySeed();
     }
 }
 

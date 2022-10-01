@@ -20,6 +20,7 @@ export const mangle = {
     longlong: '_J',
     unsignedLongLong: '_K',
     bool: '_N',
+    unsignedInt128: '_M',
     void: 'X',
     constChar: '$$CBD',
     constCharPointer: 'PEBD',

@@ -7,7 +7,7 @@ import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
 import { events } from '../event';
 import { mangle } from "../mangle";
-import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, nativeClassUtil, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
@@ -1085,12 +1085,10 @@ export class Actor extends AbstractClass {
     static all():IterableIterator<Actor> {
         abstract();
     }
-    _toJsonOnce(allocator:()=>Record<string, any>):Record<string, any> {
-        return CircularDetector.check(this, allocator, obj=>{
-            obj.name = this.getName();
-            obj.pos = this.getPosition();
-            obj.type = this.getEntityTypeId();
-        });
+    [nativeClassUtil.inspectFields](obj:Record<string, any>):void {
+        obj.name = this.getName();
+        obj.pos = this.getPosition();
+        obj.type = this.getEntityTypeId();
     }
     runCommand(command:string, mute:CommandResultType = true, permissionLevel?:CommandPermissionLevel): CommandResult<CommandResult.Any> {
         abstract();

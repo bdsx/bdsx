@@ -329,7 +329,7 @@ export class CommandParameterNativeType<T> extends NativeType<T> {
 
 function makeReference<T>(type:Type<T>):NativeType<T> {
     return new NativeType<T>(
-        `${type.symbol} * __ptr64`,
+        mangle.pointer(type.symbol),
         `${type.name}*`,
         8, 8,
         type.isTypeOf,
@@ -615,7 +615,7 @@ function bin128CannotBeUsedAsTheParameterType():never {
     throw Error('bin128_t cannot be used as the parameter type');
 }
 export const bin128_t = new NativeType<string>(
-    'unsigned __int128', 'bin128_t',
+    mangle.unsignedInt128, 'bin128_t',
     16, 8,
     v=>typeof v === 'string' && v.length === 8,
     undefined,
