@@ -87,6 +87,7 @@ export enum EnchantmentNames {
     Piercing = 34,
     QuickCharge = 35,
     SoulSpeed = 36,
+    SwiftSneak = 37,
 }
 
 export type Enchantments = EnchantmentNames | Enchant.Type;
