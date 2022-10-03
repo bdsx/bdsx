@@ -31,6 +31,7 @@ import './net-scorepacket';
 import './net-sendhook';
 import './net-transferserver';
 import './setblock';
+import './settitle';
 import './simulatedplayer';
 import './storage';
 import './test';

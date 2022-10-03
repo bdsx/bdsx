@@ -1168,6 +1168,9 @@ export class StopSoundPacket extends Packet {
     stopAll:bool_t;
 }
 
+/**
+ * @remark use ServerPlayer.sendTitle instead of sending it.
+ */
 @nativeClass(null)
 export class SetTitlePacket extends Packet {
     @nativeField(int32_t)
@@ -1180,6 +1183,10 @@ export class SetTitlePacket extends Packet {
     stayTime:int32_t;
     @nativeField(int32_t)
     fadeOutTime:int32_t;
+    @nativeField(CxxString)
+    xuid:CxxString;
+    @nativeField(CxxString)
+    platformOnlineId:CxxString;
 }
 export namespace SetTitlePacket {
     export enum Types {
