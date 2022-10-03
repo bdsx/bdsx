@@ -688,8 +688,15 @@ export class Actor extends AbstractClass {
     }
     /**
      * Returns the entity's name
+     * @deprecated use getNameTag() instead
      */
     getName():string {
+        return this.getNameTag();
+    }
+    /**
+     * Returns the entity's name
+     */
+    getNameTag():string {
         abstract();
     }
 

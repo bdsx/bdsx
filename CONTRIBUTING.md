@@ -14,7 +14,7 @@ The offset is easily changed after the update.
 Make sure the size of the previous field and remove the offset if it's possible.  
 
 ### 4. Following Minecraft official name
-To make it easy to guess for everyone, use the known official name of Minecraft if it's possible.
+For consistency of function names and to make it easy to guess for everyone, use the known official name of Minecraft if it's possible.
 
 ### 5. Don't use the \$ sign for the identifier name
 `BDSX` uses the \$ sign for indicating the namespace.  

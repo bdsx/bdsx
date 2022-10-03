@@ -316,7 +316,7 @@ Actor.summonAt = function(region: BlockSource, pos: Vec3, type: ActorDefinitionI
 };
 Actor.prototype.addItem = procHacker.js('?add@Actor@@UEAA_NAEAVItemStack@@@Z', bool_t, {this:Actor}, ItemStack);
 Actor.prototype.getAttributes = procHacker.js('?getAttributes@Actor@@QEAA?AV?$not_null@PEAVBaseAttributeMap@@@gsl@@XZ', BaseAttributeMap.ref(), {this:Actor, structureReturn: true});
-Actor.prototype.getName = procHacker.js("?getNameTag@Actor@@UEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ", CxxString, {this:Actor});
+Actor.prototype.getNameTag = procHacker.js("?getNameTag@Actor@@UEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ", CxxString, {this:Actor});
 Actor.prototype.setNameTag = procHacker.js("?setNameTag@Actor@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this:Actor}, CxxString);
 Actor.prototype.setNameTagVisible = procHacker.js("?setNameTagVisible@Actor@@UEAAX_N@Z", void_t, {this:Actor}, bool_t);
 Actor.prototype.addTag = procHacker.js("?addTag@Actor@@QEAA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", bool_t, {this:Actor}, CxxString);
