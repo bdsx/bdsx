@@ -1,6 +1,6 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { BlockPos, ChunkPos, Vec2, Vec3 } from "../bds/blockpos";
+import { BlockPos, ChunkPos, RelativeFloat, Vec2, Vec3 } from "../bds/blockpos";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { commandParser } from "../commandparser";
@@ -34,7 +34,7 @@ import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./comm
 import './commandparsertypes';
 import { HitResult, OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
-import { CxxOptional } from "./cxxoptional";
+import { CxxOptional, CxxOptionalToUndefUnion } from "./cxxoptional";
 import { Dimension } from "./dimension";
 import { MobEffect, MobEffectInstance } from "./effects";
 import { EnchantUtils, ItemEnchants } from "./enchants";
@@ -343,12 +343,22 @@ Actor.prototype.setCarriedItem = procHacker.jsv('??_7Actor@@6B@', '?setCarriedIt
 Actor.prototype.getOffhandSlot = procHacker.js("?getOffhandSlot@Actor@@QEBAAEBVItemStack@@XZ", ItemStack, {this:Actor});
 Actor.prototype.setOffhandSlot = procHacker.js('?setOffhandSlot@Actor@@UEAAXAEBVItemStack@@@Z', void_t, {this:Actor}, ItemStack);
 
-const TeleportCommand$computeTarget = procHacker.js("?computeTarget@TeleportCommand@@SA?AVTeleportTarget@@AEAVActor@@VVec3@@PEAV4@V?$AutomaticID@VDimension@@H@@AEBV?$optional@VTeleportRotationData@@@std@@H@Z", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t);
+@nativeClass()
+class TeleportRotationData extends NativeClass {
+    @nativeField(RelativeFloat)
+    rx:RelativeFloat;
+    @nativeField(RelativeFloat)
+    ry:RelativeFloat;
+    @nativeField(Vec2)
+    pos:Vec2;
+}
+
+const TeleportCommand$computeTarget = procHacker.js("?computeTarget@TeleportCommand@@SA?AVTeleportTarget@@AEAVActor@@VVec3@@PEAV4@V?$AutomaticID@VDimension@@H@@AEBV?$optional@VTeleportRotationData@@@std@@H@Z", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t, CxxOptionalToUndefUnion.make(TeleportRotationData), int32_t);
 const TeleportCommand$applyTarget = procHacker.js("?applyTarget@TeleportCommand@@SAXAEAVActor@@VTeleportTarget@@_N@Z", void_t, null, Actor, StaticPointer, bool_t);
 Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3|null=null) {
     const target = new AllocatedPointer(0x80);
     const unknownParam = false;
-    TeleportCommand$computeTarget(target, this, pos, facePosition, dimensionId); // it allocates `target`
+    TeleportCommand$computeTarget(target, this, pos, facePosition, dimensionId, undefined, 0); // it allocates `target`
     TeleportCommand$applyTarget(this, target, unknownParam); // it deletes `target`
 };
 Actor.prototype.getArmor = procHacker.js('?getArmor@Actor@@UEBAAEBVItemStack@@W4ArmorSlot@@@Z', ItemStack, {this:Actor}, int32_t);
@@ -632,7 +642,7 @@ Player.prototype.updatePlayerList = function() {
 };
 
 Player.prototype.getGameType = procHacker.js("?getPlayerGameType@Player@@QEBA?AW4GameType@@XZ", int32_t, {this:Player});
-Player.prototype.getInventory = procHacker.js("?getSupplies@Player@@QEAAAEAVPlayerInventory@@XZ", PlayerInventory, {this:Player});
+Player.prototype.getInventory = Player.prototype.getSupplies = procHacker.js("?getSupplies@Player@@QEAAAEAVPlayerInventory@@XZ", PlayerInventory, {this:Player});
 Player.prototype.getCommandPermissionLevel = procHacker.js('?getCommandPermissionLevel@Player@@UEBA?AW4CommandPermissionLevel@@XZ', int32_t, {this:Actor});
 Player.prototype.getPermissionLevel = procHacker.js("?getPlayerPermissionLevel@Player@@QEBA?AW4PlayerPermissionLevel@@XZ", int32_t, {this:Player});
 Player.prototype.getSkin = procHacker.js("?getSkin@Player@@QEAAAEAVSerializedSkin@@XZ", SerializedSkin, {this:Player});

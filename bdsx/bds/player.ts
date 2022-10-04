@@ -61,8 +61,16 @@ export class Player extends Mob {
 
     /**
      * Returns the player's inventory proxy
+     * @alias getSupplies
      */
     getInventory(): PlayerInventory {
+        abstract();
+    }
+
+    /**
+     * Returns the player's inventory proxy
+     */
+    getSupplies(): PlayerInventory {
         abstract();
     }
 
