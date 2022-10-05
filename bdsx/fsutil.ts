@@ -154,6 +154,12 @@ export namespace fsutil {
             });
         });
     }
+    export function writeStream(path:string, stream:NodeJS.ReadableStream):Promise<void> {
+        return new Promise((resolve, reject)=>{
+            const out = fs.createWriteStream(path);
+            stream.pipe(out).on('finish', resolve).on('error', reject);
+        });
+    }
     export function appendFile(path:string, content:string|Uint8Array):Promise<void> {
         return new Promise((resolve, reject)=>{
             fs.appendFile(path, content, (err)=>{

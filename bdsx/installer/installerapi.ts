@@ -12,6 +12,9 @@ import { printOnProgress } from '../util';
 import * as BDS_VERSION_DEFAULT from '../version-bds.json';
 import * as BDSX_CORE_VERSION_DEFAULT from '../version-bdsx.json';
 import { InstallInfo } from './installinfo';
+import { GitHubClient } from './publisher';
+import * as JSZip from 'jszip';
+import { key } from '../util/key';
 
 const BDSX_YES = process.env.BDSX_YES;
 const sep = path.sep;
@@ -302,7 +305,7 @@ const pdbcache = new InstallItem({
     targetPath: '.',
     key: 'pdbcacheVersion',
     keyFile: 'pdbcache.bin',
-    fallback(installer, statusCode) {
+    async fallback(installer, statusCode) {
         if (statusCode !== 404) return;
         console.error(colors.yellow(`pdbcache-${BDS_VERSION} does not exist on the server`));
         console.error(colors.yellow('Generate through pdbcachegen.exe'));
@@ -311,6 +314,22 @@ const pdbcache = new InstallItem({
         const bedrockserver = path.join(installer.bdsPath, 'bedrock_server.exe');
         const res = child_process.spawnSync(pdbcachegen, [bedrockserver, pdbcachebin], {stdio:'inherit'});
         if (res.status !== 0) throw new MessageError(`Failed to generate pdbcache`);
+
+        const githubToken = await key.getGithubToken();
+        if (githubToken !== undefined) {
+            // zip file
+            const cachePath = path.join(installer.bdsPath, 'pdbcache.bin');
+            const zipPath = path.join(installer.bdsPath, 'pdbcache.zip');
+            const zip = new JSZip;
+            zip.file('pdbcache.bin', await fsutil.readFile(cachePath, null));
+            await fsutil.writeStream(zipPath, zip.generateNodeStream());
+
+            // create release
+            console.error(colors.yellow('publish pdbcache.bin'));
+            const client = new GitHubClient(githubToken);
+            const release = await client.createRelease('bdsx', 'pdbcache', BDS_VERSION);
+            await release.upload(zipPath);
+        }
         return false;
     },
 });

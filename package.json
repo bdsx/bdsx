@@ -34,6 +34,8 @@
     "unzipper": "^0.10.11"
   },
   "devDependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
     "@types/blessed": "^0.1.19",
     "@types/follow-redirects": "^1.13.1",
     "@types/glob": "^7.2.0",
@@ -45,6 +47,7 @@
     "eslint": "^7.32.0",
     "eslint-plugin-github": "~4.2.0",
     "eslint-plugin-import": "^2.25.2",
-    "eslint-plugin-unicorn": "^40.1.0"
+    "eslint-plugin-unicorn": "^40.1.0",
+    "jszip": "^3.10.1"
   }
 }

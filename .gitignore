@@ -1,6 +1,7 @@
 node_modules
 /bedrock_server/*
 /storage/*
+/.key/*
 !/bedrock_server/vcruntime140_1_.dll
 !/bedrock_server/dbghelp.dll
 /npm-debug.log
