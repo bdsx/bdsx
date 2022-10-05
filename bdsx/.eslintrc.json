@@ -43,6 +43,7 @@
       "github/array-foreach": "error",
       "import/no-cycle": "error",
       "import/no-default-export": "error",
+      "import/namespace": "off",
       "unicorn/filename-case": [
         "error",
         {
