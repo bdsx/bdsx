@@ -58,12 +58,12 @@ command.register('ddd', 'relative float example').overload((param, origin, outpu
 command.register('eee', 'entity example').overload((param, origin, output)=>{
     let out = `entity example> origin=${origin.getName()}`;
     for (const actor of param.actors.newResults(origin)) {
-        out += "\n" + "Entity:" + actor.getName() + ", " + actor.getIdentifier();
+        out += "\n" + "Entity:" + actor.getNameTag() + ", " + actor.getIdentifier();
     }
     output.success(out);
     if (param.players) {
         for (const player of param.players.newResults(origin, ServerPlayer)) {
-            out += "\n" + "Player:" + player.getName() + ", " + player.getIdentifier(); // must be minecraft:player
+            out += "\n" + "Player:" + player.getNameTag() + ", " + player.getIdentifier(); // must be minecraft:player
         }
         output.success(out);
     }

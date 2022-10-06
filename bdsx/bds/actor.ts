@@ -23,8 +23,9 @@ import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { Player, ServerPlayer, SimulatedPlayer } from "./player";
+import { proc } from './symbols';
 
-export const ActorUniqueID = bin64_t.extends();
+export const ActorUniqueID = bin64_t.extends({ INVALID_ID: proc["?INVALID_ID@ActorUniqueID@@2U1@B"].getBin64() });
 export type ActorUniqueID = bin64_t;
 
 export enum DimensionId { // int32_t
@@ -1093,7 +1094,7 @@ export class Actor extends AbstractClass {
         abstract();
     }
     [nativeClassUtil.inspectFields](obj:Record<string, any>):void {
-        obj.name = this.getName();
+        obj.name = this.getNameTag();
         obj.pos = this.getPosition();
         obj.type = this.getEntityTypeId();
     }

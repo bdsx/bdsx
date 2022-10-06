@@ -13,7 +13,7 @@ command.register("ping", "example for getting ping").overload((params, origin, o
         output.error(`[EXAMPLE-PING] the origin is not an Actor`)
         return;
     }
-    const name = actor?.getName();
+    const name = actor?.getNameTag();
     const address = actor.getNetworkIdentifier().address;
     const out =
 `[EXAMPLE-PING] ${name}'s average ping is ${peer.GetAveragePing(address)}

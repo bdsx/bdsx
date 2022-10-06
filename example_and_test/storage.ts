@@ -20,7 +20,7 @@ console.log(`storage counter = ${storage.data.counter}`);
 
 // storage from the player
 events.playerJoin.on(async(ev)=>{
-    const playerName = ev.player.getName();
+    const playerName = ev.player.getNameTag();
     const storage = await storageManager.get(ev.player); // it's using an asynchronized method.
     // don't recommend the synchronized method. ex) storageManager.getSync
     // the synchronized method pauses the entire server until the end of the load.

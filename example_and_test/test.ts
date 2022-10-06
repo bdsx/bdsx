@@ -948,13 +948,13 @@ Tester.concurrency({
                         const players = level.getPlayers();
                         const last = players[players.length-1];
                         this.assert(last === actor, 'the joined player is not a last player');
-                        const name = actor.getName();
+                        const name = actor.getNameTag();
                         if (!(actor instanceof SimulatedPlayer)) {
                             this.equals(name, connectedId, 'id does not match');
                             this.equals(actor.getNetworkIdentifier(), connectedNi, 'the network identifier does not match');
                             this.assert(actor === connectedNi.getActor(), 'ni.getActor() is not actor');
                             actor.setName('test');
-                            this.equals(actor.getName(), 'test', 'name is not set');
+                            this.equals(actor.getNameTag(), 'test', 'name is not set');
                             actor.setName(name);
                         }
                         this.equals(actor.getEntityTypeId(), ActorType.Player, 'player type does not match');

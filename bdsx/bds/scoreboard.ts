@@ -205,7 +205,7 @@ export class IdentityDefinition extends AbstractClass {
         case IdentityDefinition.Type.Player: {
             const actor = Actor.fromUniqueIdBin(this.getPlayerId());
             if (actor) {
-                return actor.getName();
+                return actor.getNameTag();
             } else {
                 // Player Offline
                 return null;

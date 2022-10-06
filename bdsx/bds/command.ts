@@ -484,7 +484,7 @@ export class CommandOutputParameter extends NativeClass {
             break;
         case 'object':
             if (input instanceof Actor) {
-                this.string = input.getName();
+                this.string = input.getNameTag();
                 this.count = 1;
             } else if (input instanceof BlockPos || input instanceof Vec3) {
                 this.string = `${input.x}, ${input.y}, ${input.z}`;
@@ -492,7 +492,7 @@ export class CommandOutputParameter extends NativeClass {
             } else if (Array.isArray(input)) {
                 if (input.length > 0) {
                     if (input[0] instanceof Actor) {
-                        this.string = input.map(e => e.getName()).join(', ');
+                        this.string = input.map(e => e.getNameTag()).join(', ');
                         this.count = input.length;
                     }
                 }

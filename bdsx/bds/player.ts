@@ -504,7 +504,7 @@ interface RawTextObject {
 export class ServerPlayer extends Player implements HasStorage {
     static readonly [Storage.classId] = 'player';
     [Storage.id]():string { return mce.UUID.toString(this.getUuid()); }
-    [Storage.aliasId]():string { return '_'+this.getName(); }
+    [Storage.aliasId]():string { return '_'+this.getNameTag(); }
 
     /** @deprecated Use `this.getNetworkIdentifier()` instead */
     get networkIdentifier(): NetworkIdentifier {
