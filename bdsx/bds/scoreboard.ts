@@ -6,6 +6,7 @@ import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativec
 import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
+import { proc } from "./symbols";
 
 export class Scoreboard extends AbstractClass {
     /**
@@ -144,7 +145,7 @@ export class ObjectiveCriteria extends AbstractClass {
 
 @nativeClass(null)
 export class Objective extends AbstractClass {
-    @nativeField(CxxString, 0x40) // accessed in Objective::serialize, low possibility to be changed through updates
+    @nativeField(CxxString, 0x40) // accessed in Objective::getName()
     name:CxxString;
     @nativeField(CxxString)
     displayName:CxxString;
@@ -156,6 +157,14 @@ export class Objective extends AbstractClass {
     }
 
     getPlayerScore(id:ScoreboardId):ScoreInfo {
+        abstract();
+    }
+
+    getName(): string {
+        abstract();
+    }
+
+    getDisplayName(): string {
         abstract();
     }
 }
@@ -221,6 +230,8 @@ export namespace IdentityDefinition {
 
 @nativeClass()
 export class ScoreboardId extends NativeClass {
+    static readonly INVALID = proc["?INVALID@ScoreboardId@@2U1@A"].as(ScoreboardId);
+
     @nativeField(bin64_t)
     id:bin64_t;
     @nativeField(int64_as_float_t, 0)
@@ -260,6 +271,33 @@ export class ScoreboardIdentityRef extends NativeClass {
         this._modifyScoreInObjective(result, objective, score, action);
         const retval = result.getInt32();
         return retval;
+    }
+
+    getIdentityType(): IdentityDefinition.Type {
+        abstract();
+    }
+
+    /**
+     * Returns INVALID id for players
+     */
+    getEntityId(): ActorUniqueID {
+        abstract();
+    }
+
+    getPlayerId(): ActorUniqueID {
+        abstract();
+    }
+
+    getFakePlayerName(): string {
+        abstract();
+    }
+
+    getScoreboardId(): ScoreboardId {
+        abstract();
+    }
+
+    isPlayerType(): bool_t {
+        abstract();
     }
 }
 const CxxVector$ScoreboardIdentityRef = CxxVector.make(ScoreboardIdentityRef);
