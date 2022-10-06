@@ -152,10 +152,6 @@ export class Player extends Mob {
         abstract();
     }
 
-    /**
-     * Syncs the player's abilities with the client
-     * @deprecated AdventureSettingsPacket removed, not working now
-     */
     syncAbilities(): void {
         abstract();
     }

@@ -657,7 +657,6 @@ Player.prototype.setSleeping = procHacker.js("?setSleeping@Player@@UEAAX_N@Z", v
 Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, {this:Player});
 
-// const AdventureSettingsPacket$AdventureSettingsPacket = procHacker.js("??0AdventureSettingsPacket@@QEAA@AEBUAdventureSettings@@AEBVLayeredAbilities@@UActorUniqueID@@@Z", void_t, null, AdventureSettingsPacket, AdventureSettings, LayeredAbilities, ActorUniqueID);
 const UpdateAbilitiesPacket$UpdateAbilitiesPacket = procHacker.js("??0UpdateAbilitiesPacket@@QEAA@UActorUniqueID@@AEBVLayeredAbilities@@@Z", UpdateAbilitiesPacket, null, UpdateAbilitiesPacket, ActorUniqueID, LayeredAbilities);
 Player.prototype.syncAbilities = function() {
     const pkt = new UpdateAbilitiesPacket(true);
