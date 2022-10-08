@@ -1,15 +1,17 @@
-import { installBDS } from "./installerapi";
+import { gitCheck } from "./gitcheck";
+import { BDSInstaller, installBDS } from "./installerapi";
 
-let agreeOption = false;
+const opts:BDSInstaller.Options = {};
 const argv = process.argv;
-const bdsPath = process.argv[2];
+const bdsPath = argv[2];
 for (let i=3;i<argv.length;i++) {
-    const arg = process.argv[i];
+    const arg = argv[i];
     switch (arg) {
-    case '-y': agreeOption = true; break;
+    case '-y': opts.agree = '-y'; break;
     }
 }
 
-installBDS(bdsPath, agreeOption).then(res=>{
-    if (!res) process.exit(-1);
-});
+(async()=>{
+    await gitCheck();
+    if (!await installBDS(bdsPath, opts)) process.exit(-1);
+})();
