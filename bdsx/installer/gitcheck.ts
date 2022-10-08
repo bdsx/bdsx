@@ -5,6 +5,9 @@ import * as path from 'path';
 import { fsutil } from '../fsutil';
 
 export async function gitCheck():Promise<void> {
+    switch (process.env.BDSX_SKIP_GIT_CHECK?.toLowerCase()) {
+    case 'y': case 'yes': case 'true': return;
+    }
     if (!await fsutil.exists(path.join(fsutil.projectPath, '.git'))) {
         console.error(colors.yellow('[BDSX] .git does not found'));
         console.error(colors.yellow('[BDSX] We recommend using GIT for BDSX project'));
