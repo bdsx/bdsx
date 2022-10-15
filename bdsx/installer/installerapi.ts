@@ -3,20 +3,19 @@ import * as child_process from 'child_process';
 import * as colors from 'colors';
 import { https } from 'follow-redirects';
 import * as fs from 'fs';
+import * as JSZip from 'jszip';
 import * as path from 'path';
 import * as readline from 'readline';
 import * as unzipper from 'unzipper';
 import { fsutil } from '../fsutil';
 import { progressBar } from '../progressbar';
 import { printOnProgress } from '../util';
+import { key } from '../util/key';
 import * as BDS_VERSION_DEFAULT from '../version-bds.json';
 import * as BDSX_CORE_VERSION_DEFAULT from '../version-bdsx.json';
 import { InstallInfo } from './installinfo';
 import { GitHubClient } from './publisher';
-import * as JSZip from 'jszip';
-import { key } from '../util/key';
 
-const BDSX_YES = process.env.BDSX_YES;
 const sep = path.sep;
 
 const BDS_LINK_DEFAULT = 'https://minecraft.azureedge.net/bin-win/bedrock-server-%BDS_VERSION%.zip';
@@ -62,7 +61,28 @@ export class BDSInstaller {
     public readonly info:InstallInfo;
     public target:string;
 
-    constructor(public readonly bdsPath:string, public readonly agreeOption:boolean) {
+    constructor(public readonly bdsPath:string, private readonly opts:BDSInstaller.Options) {
+        const BDSX_YES = process.env.BDSX_YES;
+        if (BDSX_YES !== undefined) {
+            switch (BDSX_YES.toLowerCase()) {
+            case 'y':
+            case 'yes':
+            case 'true':
+                if (opts.agree === undefined) opts.agree = `BDSX_YES=${BDSX_YES}`;
+                break;
+            case 'n':
+            case 'no':
+            case 'false':
+                if (opts.disagree === undefined) opts.disagree = `BDSX_YES=${BDSX_YES}`;
+                break;
+            case 'skip':
+                if (opts.skip === undefined) opts.skip = `BDSX_YES=${BDSX_YES}`;
+                break;
+            }
+            if (typeof opts.agree === 'boolean') opts.agree = opts.agree ? 'agree=true' : undefined;
+            if (typeof opts.disagree === 'boolean') opts.disagree = opts.disagree ? 'disagree=true' : undefined;
+            if (typeof opts.skip === 'boolean') opts.skip = opts.skip ? 'skip=true' : undefined;
+        }
         this.info = new InstallInfo(bdsPath);
     }
 
@@ -71,14 +91,15 @@ export class BDSInstaller {
         const noValues  = [ 'no', 'n' ];
 
         return new Promise<boolean>(resolve=>{
-            if (BDSX_YES === 'false') {
-                return resolve(false);
-            }
-            if (!process.stdin.isTTY || BDSX_YES === 'true') {
+            if (this.opts.agree !== undefined) {
+                console.log(`Agreed by ${this.opts.agree}`);
                 return resolve(true);
             }
-            if (this.agreeOption) {
-                console.log('Agreed by -y');
+            if (this.opts.disagree !== undefined) {
+                console.log(`Disagreed by ${this.opts.disagree}`);
+                return resolve(false);
+            }
+            if (!process.stdin.isTTY) {
                 return resolve(true);
             }
 
@@ -128,6 +149,13 @@ export class BDSInstaller {
     }
 }
 
+export namespace BDSInstaller {
+    export interface Options {
+        agree?:string|boolean;
+        disagree?:string|boolean;
+        skip?:string|boolean;
+    }
+}
 interface InstallItemOptions {
     name:string;
     key?:keyof InstallInfo;
@@ -370,12 +398,13 @@ const bdsxCore = new InstallItem({
     oldFiles: ['mods', 'Chakra.pdb'],
 });
 
-export async function installBDS(bdsPath:string, agreeOption:boolean = false):Promise<boolean> {
-    if (BDSX_YES === 'skip') {
+export async function installBDS(bdsPath:string, opts:BDSInstaller.Options):Promise<boolean> {
+    if (opts.skip !== undefined) {
+        console.log(`Skipped by ${opts.skip}`);
         return true;
     }
 
-    const installer = new BDSInstaller(bdsPath, agreeOption);
+    const installer = new BDSInstaller(bdsPath, opts);
     await installer.info.load();
     try {
         await bds.install(installer);
