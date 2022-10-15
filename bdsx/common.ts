@@ -14,6 +14,9 @@ import './polyfill';
 export const CANCEL = Symbol('CANCEL');
 export type CANCEL = typeof CANCEL;
 
+/**
+ * Discovered by checking locator on a map
+ */
 export namespace Direction {
 	export enum Type {
         South = 0,
