@@ -1,6 +1,6 @@
-import { abstract, BuildPlatform, VectorXYZ } from "../common";
+import { abstract, BuildPlatform, VectorXYZ, Direction } from "../common";
 import { mce } from "../mce";
-import { float32_t, int32_t } from "../nativetype";
+import { float32_t } from "../nativetype";
 import { HasStorage, Storage } from "../storage";
 import type { LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageSource, DimensionId, Mob } from "./actor";
@@ -475,7 +475,7 @@ export class Player extends Mob {
         return this.setSelectedSlot(slot);
     }
 
-    getDirection(): int32_t {
+    getDirection(): Direction.Type {
         abstract();
     }
 }
