@@ -1276,6 +1276,15 @@ export class Actor extends AbstractClass {
     getLastDeathDimension(): CxxOptional<DimensionId> {
         abstract();
     }
+
+    protected _getViewVector(unused: float32_t): Vec3 {
+        abstract();
+    }
+
+    getViewVector(): Vec3 {
+        // it yields the same output as other values
+        return this._getViewVector(0.0);
+    }
 }
 mangle.update(Actor);
 
