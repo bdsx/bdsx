@@ -200,7 +200,7 @@ export class Level extends NativeClass {
     /**
      * Returns a random Player
      */
-    getRandomPlayer(): Player {
+    getRandomPlayer(): Player | null {
         abstract();
     }
     /**
