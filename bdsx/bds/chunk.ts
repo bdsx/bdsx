@@ -1,5 +1,6 @@
 import { abstract } from "../common";
 import { nativeClass, NativeClass } from "../nativeclass";
+import { bool_t } from "../nativetype";
 import { Actor, ActorUniqueID, WeakEntityRef } from "./actor";
 import type { Biome } from "./biome";
 import type { BlockPos, ChunkBlockPos, ChunkPos } from "./blockpos";
@@ -43,4 +44,21 @@ export class ChunkSource extends NativeClass {
     getLevel():Level {
         abstract();
     }
+
+    isChunkKnown(chunkPos: ChunkPos): bool_t {
+        abstract();
+    }
+
+    isChunkSaved(chunkPos: ChunkPos): bool_t {
+        abstract();
+    }
+
+    isWithinWorldLimit(chunkPos: ChunkPos): bool_t {
+        abstract();
+    }
+
+    isShutdownDone(): bool_t {
+        abstract();
+    }
+
 }

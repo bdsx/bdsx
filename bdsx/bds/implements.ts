@@ -1718,10 +1718,15 @@ LevelChunk.prototype.getMin = procHacker.js("?getMin@LevelChunk@@QEBAAEBVBlockPo
 LevelChunk.prototype.getMax = procHacker.js("?getMax@LevelChunk@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:LevelChunk});
 LevelChunk.prototype.isFullyLoaded = procHacker.js("?isFullyLoaded@LevelChunk@@QEBA_NXZ", bool_t, {this:LevelChunk});
 LevelChunk.prototype.toWorldPos = procHacker.js("?toWorldPos@LevelChunk@@QEBA?AVBlockPos@@AEBVChunkBlockPos@@@Z", BlockPos, {this:LevelChunk, structureReturn:true}, ChunkPos);
-ChunkSource.prototype.getLevel = procHacker.js("?getLevel@ChunkSource@@QEBAAEAVLevel@@XZ", Level, {this:ChunkSource});
 LevelChunk.prototype.getEntity = procHacker.js("?getEntity@LevelChunk@@QEBAPEAVActor@@AEBUActorUniqueID@@@Z", Actor, {this:LevelChunk}, ActorUniqueID.ref());
 // std::vector<WeakEntityRef>& LevelChunk::getChunkEntities();
 LevelChunk.prototype.getChunkEntities = procHacker.js("?getChunkEntities@LevelChunk@@QEAAAEAV?$vector@VWeakEntityRef@@V?$allocator@VWeakEntityRef@@@std@@@std@@XZ", CxxVectorToArray.make(WeakEntityRef), {this:LevelChunk});
+
+ChunkSource.prototype.getLevel = procHacker.js("?getLevel@ChunkSource@@QEBAAEAVLevel@@XZ", Level, {this:ChunkSource});
+ChunkSource.prototype.isChunkKnown = procHacker.jsv("??_7ChunkSource@@6B@", "?isChunkKnown@ChunkSource@@UEAA_NAEBVChunkPos@@@Z", bool_t, {this:ChunkSource}, ChunkPos);
+ChunkSource.prototype.isChunkSaved = procHacker.js("?isChunkSaved@ChunkSource@@UEAA_NAEBVChunkPos@@@Z", bool_t, {this:ChunkSource}, ChunkPos);
+ChunkSource.prototype.isWithinWorldLimit = procHacker.jsv("??_7WorldLimitChunkSource@@6B@", "?isWithinWorldLimit@WorldLimitChunkSource@@UEBA_NAEBVChunkPos@@@Z", bool_t, {this:ChunkSource}, ChunkPos);
+ChunkSource.prototype.isShutdownDone = procHacker.js("?isShutdownDone@ChunkSource@@UEAA_NXZ", bool_t, {this:ChunkSource});
 
 // origin.ts
 VirtualCommandOrigin.allocateWith = function(origin:CommandOrigin, actor:Actor, cmdPos:CommandPositionFloat):VirtualCommandOrigin {
