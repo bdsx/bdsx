@@ -94,13 +94,13 @@ class PackInfo {
     }
 
     static async createFrom(packPath:string, hostManagePath:string, managedName:string):Promise<PackInfo|null> {
-        const menifestPath = await findFiles(manifestNames, packPath);
-        if (menifestPath === null) {
-            console.error(colors.red(`[MCAddons] ${hostManagePath}/${managedName}: menifest not found`));
+        const manifestPath = await findFiles(manifestNames, packPath);
+        if (manifestPath === null) {
+            console.error(colors.red(`[MCAddons] ${hostManagePath}/${managedName}: manifest not found`));
             return null;
         }
 
-        const json = await fsutil.readFile(menifestPath);
+        const json = await fsutil.readFile(manifestPath);
         const manifest:AddonManifest = JSON.parse(stripJsonComments(json));
         return new PackInfo(packPath, hostManagePath, managedName, manifest);
     }
@@ -405,7 +405,7 @@ class BdsxPackDirectory {
         const packFiles = await readdirWithStats(addonsPath);
         for (const stat of packFiles) {
             if (!stat.isDirectory && (stat.base.endsWith('.txt') || stat.base.endsWith('.md') || stat.base.endsWith('.html'))) {
-                continue; // Ignore READMEs or similiar things.
+                continue; // Ignore READMEs or similar things.
             }
             this._getManagedPack(stat); // make managed packs from zip or directory or both
         }
