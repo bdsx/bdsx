@@ -478,6 +478,22 @@ export class Player extends Mob {
     getDirection(): Direction.Type {
         abstract();
     }
+
+    isFlying(): boolean {
+        abstract();
+    }
+
+    isHiddenFrom(source: Mob): boolean {
+        abstract();
+    }
+
+    isInRaid(): boolean {
+        abstract();
+    }
+
+    isUsingItem(): boolean {
+        abstract();
+    }
 }
 
 namespace RawTextObject {

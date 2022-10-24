@@ -1285,6 +1285,14 @@ export class Actor extends AbstractClass {
         // it yields the same output as other values
         return this._getViewVector(0.0);
     }
+
+    isImmobile(): boolean {
+        abstract();
+    }
+
+    isSwimming(): boolean {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
@@ -1359,6 +1367,10 @@ export class Mob extends Actor {
         abstract();
     }
     getToughnessValue(): int32_t {
+        abstract();
+    }
+
+    isBlocking(): boolean {
         abstract();
     }
 }
