@@ -13,8 +13,9 @@ export namespace progressBar {
     }
     export function finish():void {
         if (bar === null) return;
-        bar.update(bar.total);
-        bar.terminate();
+        if (!bar.complete) {
+            bar.update(1);
+        }
         bar = null;
     }
     export function terminate():void {
