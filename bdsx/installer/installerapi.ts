@@ -399,12 +399,11 @@ const bdsxCore = new InstallItem({
 });
 
 export async function installBDS(bdsPath:string, opts:BDSInstaller.Options):Promise<boolean> {
+    const installer = new BDSInstaller(bdsPath, opts);
     if (opts.skip !== undefined) {
         console.log(`Skipped by ${opts.skip}`);
         return true;
     }
-
-    const installer = new BDSInstaller(bdsPath, opts);
     await installer.info.load();
     try {
         await bds.install(installer);
