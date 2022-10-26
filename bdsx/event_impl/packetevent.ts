@@ -231,7 +231,7 @@ bedrockServer.withLoading().then(()=>{
 
     // hook send all
     const sendToMultiple = proc[sendToMultipleSymbol];
-    asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x13b);
+    asmcode.packetSendAllCancelPoint = sendToMultiple.add(0x148);
     asmcode.packetSendAllJumpPoint = sendToMultiple.add(0x4c);
     procHacker.patching('hook-packet-send-all', sendToMultipleSymbol, 0x37,
         asmcode.packetSendAllHook, // original code depended
