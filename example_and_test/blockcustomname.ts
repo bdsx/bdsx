@@ -24,7 +24,7 @@ command.register('furnace', 'generate named furnace').overload((params, origin, 
                 clearInterval(interval);
                 return;
             }
-            const area = CommandAreaFactory.create(dimension).findArea(blockpos, blockpos, false);
+            const area = CommandAreaFactory.create(dimension).findArea(blockpos, blockpos, false, false, false);
             if (area === null) {
                 // cannot access the furnace area
                 return;

@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { AbstractClass, nativeClass, nativeClassUtil, nativeField } from "../nativeclass";
-import { CxxString, int32_t } from "../nativetype";
+import { CxxString, int32_t, NativeType } from "../nativetype";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import type { BlockPalette } from "./level";

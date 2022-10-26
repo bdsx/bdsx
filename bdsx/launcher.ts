@@ -110,7 +110,7 @@ function patchForStdio():void {
             }
         }
     }, void_t, {onError: asmcode.jsend_returnZero, name:`CommandOutputSenderHookCallback`}, CxxString);
-    procHacker.patching('hook-command-output', '?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', 0x58, asmcode.CommandOutputSenderHook, Register.rdx, true, [
+    procHacker.patching('hook-command-output', '?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', 0x62, asmcode.CommandOutputSenderHook, Register.rdx, true, [
         0x4C, 0x8B, 0x40, 0x10,       // mov r8,qword ptr ds:[rax+10]
         0x48, 0x83, 0x78, 0x18, 0x10, // cmp qword ptr ds:[rax+18],10
         0x72, 0x03,                   // jb bedrock_server.7FF7440A79A6
@@ -263,7 +263,7 @@ function _launch(asyncResolve:()=>void):void {
 
     procHacker.patching('update-hook',
         '<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()', // caller of ServerInstance::_update
-        0x833, asmcode.updateWithSleep, Register.rax, true, [
+        0x8c6, asmcode.updateWithSleep, Register.rax, true, [
             0x48, 0x2B, 0xC8,                         // sub rcx,rax
             0x48, 0x81, 0xF9, 0x88, 0x13, 0x00, 0x00, // cmp rcx,1388
             0x7C, 0x0B,                               // jl bedrock_server.7FF743BA7B50
@@ -303,7 +303,7 @@ function _launch(asyncResolve:()=>void):void {
                 const commandRegistry = MinecraftCommands$getRegistry(minecraftCommands);
                 const gameRules = Level$getGameRules(level);
 
-                const raknetInstance = (networkHandler as any as StaticPointer).getPointer(0x58).getPointerAs(RakNetInstance, 8);
+                const raknetInstance = (networkHandler as any as StaticPointer).getPointer(0x50).getPointerAs(RakNetInstance, 8);
                 bdsxEqualsAssert(raknetInstance.vftable, proc["??_7RakNetInstance@@6BConnector@@@"], 'Invalid raknetInstance');
                 const rakPeer = RakNetInstance$getPeer(raknetInstance);
                 bdsxEqualsAssert(rakPeer.vftable, proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"], 'Invalid rakPeer');

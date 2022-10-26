@@ -121,17 +121,6 @@ export class Player extends Mob {
     }
 
     /**
-     * Changes the player's size
-     * @remarks This function does not update the player's skin size.
-     *
-     * @param width - New width
-     * @param height - New height
-     */
-    setSize(width: number, height: number): void {
-        abstract();
-    }
-
-    /**
      * Sets the player's sleeping status
      */
     setSleeping(value: boolean): void {

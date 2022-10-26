@@ -46,9 +46,14 @@ export class BatchedNetworkPeer extends AbstractClass {
      */
     sendPacket(data:CxxString, reliability:number, n:number, n2:number, compressibility:number):void;
 
+    /**
+     * @deprecated parameter removed
+     */
     sendPacket(data:CxxString, reliability:number, n:number, compressibility:number):void;
 
-    sendPacket(data:CxxString, reliability:number, n:number, compressibility:number, oldparam?:number):void {
+    sendPacket(data:CxxString, reliability:number, compressibility:number):void;
+
+    sendPacket(data:CxxString, reliability:number, compressibility:number, oldparam?:number, oldparam2?:number):void {
         abstract();
     }
 }

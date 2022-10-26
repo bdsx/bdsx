@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { analyzer } from '../analyzer';
 import { Config } from '../config';
 import { bedrock_server_exe, NativePointer, VoidPointer } from "../core";
 import { dllraw } from "../dllraw";
@@ -50,6 +51,8 @@ function getVftableOffset(key:string):readonly [number]|null {
     const [from, target] = key.split('\\', 2);
     const vftableSearch = proc[from].add();
     const targetptr = proc[target];
+
+    const base = dllraw.current.getAddressBin();
     let offset = 0;
     while (offset < 4096) {
         let ptr:VoidPointer;
@@ -59,9 +62,18 @@ function getVftableOffset(key:string):readonly [number]|null {
             // access violation expected
             break;
         }
-        const rva = ptr.subptr(dllraw.current);
-        if (rva < 0x1000) break; // too low
-        if (rva >= 0x1000000000) break; // too big
+        const diff = ptr.subBin(base);
+        const rva_high = diff.getAddressHigh();
+        const rva = diff.getAddressLow();
+        if (rva_high !== 0) {
+            break; // invalid
+        }
+        if (rva < 0x1000) {
+            break; // too low
+        }
+        if (rva >= 0x1000000000) {
+            break; // too big
+        }
 
         if (ptr.equalsptr(targetptr)) {
             PdbCacheL2.addVftableOffset(key, offset);

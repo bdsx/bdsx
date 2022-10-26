@@ -9,6 +9,7 @@ export namespace key {
         } catch (err) {
             return undefined;
         }
+        data = JSON.parse(data);
         if (data == null) throw Error('token not found');
         const token = data.token;
         if (typeof token !== 'string') throw Error('token not found');

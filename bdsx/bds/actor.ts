@@ -1293,6 +1293,17 @@ export class Actor extends AbstractClass {
     isSwimming(): boolean {
         abstract();
     }
+
+    /**
+     * Changes the actor's size
+     * @remarks This function does not update the actor's skin size.
+     *
+     * @param width - New width
+     * @param height - New height
+     */
+    setSize(width: number, height: number): void {
+        abstract();
+    }
 }
 mangle.update(Actor);
 

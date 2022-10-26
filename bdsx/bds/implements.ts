@@ -5,7 +5,7 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { commandParser } from "../commandparser";
 import { CommandResult, CommandResultType } from "../commandresult";
-import { AttributeName, VectorXYZ } from "../common";
+import { abstract, AttributeName, VectorXYZ } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
@@ -357,7 +357,7 @@ class TeleportRotationData extends NativeClass {
     pos:Vec2;
 }
 
-const TeleportCommand$computeTarget = procHacker.js("?computeTarget@TeleportCommand@@SA?AVTeleportTarget@@AEAVActor@@VVec3@@PEAV4@V?$AutomaticID@VDimension@@H@@AEBV?$optional@VTeleportRotationData@@@std@@H@Z", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t, CxxOptionalToUndefUnion.make(TeleportRotationData), int32_t);
+const TeleportCommand$computeTarget = procHacker.js("?computeTarget@TeleportCommand@@SA?AVTeleportTarget@@AEAVActor@@VVec3@@PEAV4@V?$AutomaticID@VDimension@@H@@AEBV?$optional@VRotationData@RotationCommandUtils@@@std@@H@Z", void_t, null, StaticPointer, Actor, Vec3, Vec3, int32_t, CxxOptionalToUndefUnion.make(TeleportRotationData), int32_t);
 const TeleportCommand$applyTarget = procHacker.js("?applyTarget@TeleportCommand@@SAXAEAVActor@@VTeleportTarget@@_N@Z", void_t, null, Actor, StaticPointer, bool_t);
 Actor.prototype.teleport = function(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3|null=null) {
     const target = new AllocatedPointer(0x80);
@@ -525,6 +525,7 @@ Actor.prototype.getLastDeathDimension = procHacker.jsv("??_7Actor@@6B@", "?getLa
 (Actor.prototype as any)._getViewVector = procHacker.js("?getViewVector@Actor@@QEBA?AVVec3@@M@Z", Vec3, {this:Actor, structureReturn:true}, float32_t);
 Actor.prototype.isImmobile = procHacker.jsv("??_7Actor@@6B@", "?isImmobile@Actor@@UEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isSwimming = procHacker.js("?isSwimming@Actor@@QEBA_NXZ", bool_t, {this:Actor});
+Actor.prototype.setSize = procHacker.js("?setSize@Actor@@UEAAXMM@Z", void_t, {this:Player}, float32_t, float32_t);
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, {this:Actor});
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
@@ -583,7 +584,7 @@ ActorDamageByActorSource.constructWith = function (damagingEntity, cause:ActorDa
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x620], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x5e8], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str=>AttributeName[str]);
@@ -628,9 +629,9 @@ procHacker.hookingRawWithCallOriginal('??1Actor@@UEAA@XZ', asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    abilities:[LayeredAbilities, 0x8fc], // accessed in AbilityCommand::execute before calling LayeredAbilities::getLayer
-    playerUIContainer:[PlayerUIContainer, 0x1528], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId:[CxxString, 0x24c0], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
+    abilities:[LayeredAbilities, 0x894], // accessed in AbilityCommand::execute before calling LayeredAbilities::getLayer
+    playerUIContainer:[PlayerUIContainer, 0x1588], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId:[CxxString, 0x2540], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between Abilities::Abilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js("?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this: Player}, CxxString);
 const PlayerListPacket$emplace = procHacker.js("?emplace@PlayerListPacket@@QEAAX$$QEAVPlayerListEntry@@@Z", void_t, null, PlayerListPacket, PlayerListEntry);
@@ -658,7 +659,6 @@ Player.prototype.startCooldown = procHacker.js("?startCooldown@Player@@UEAAXPEBV
 Player.prototype.getItemCooldownLeft = procHacker.js("?getItemCooldownLeft@Player@@UEBAHAEBVHashedString@@@Z", int32_t, {this:Player}, HashedString);
 Player.prototype.setGameType = procHacker.js("?setPlayerGameType@ServerPlayer@@UEAAXW4GameType@@@Z", void_t, {this:Player}, int32_t);
 Player.prototype.setPermissions = procHacker.js('?setPermissions@Player@@QEAAXW4CommandPermissionLevel@@@Z', void_t, {this:Player}, int32_t);
-Player.prototype.setSize = procHacker.js("?setSize@Player@@UEAAXMM@Z", void_t, {this:Player}, float32_t, float32_t);
 Player.prototype.setSleeping = procHacker.js("?setSleeping@Player@@UEAAX_N@Z", void_t, {this:Player}, bool_t);
 Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool_t, {this:Player});
 Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, {this:Player});
@@ -898,10 +898,14 @@ NetworkHandler.prototype.send = makefunc.js(
 // void NetworkHandler::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
 NetworkHandler.prototype.sendInternal = procHacker.js('?_sendInternal@NetworkHandler@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', void_t, {this:NetworkHandler}, NetworkIdentifier, Packet, CxxStringWrapper);
 
-const BatchedNetworkPeer$sendPacket = procHacker.js('?sendPacket@BatchedNetworkPeer@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4Reliability@NetworkPeer@@HW4Compressibility@@@Z', void_t, {this:BatchedNetworkPeer}, CxxString, int32_t, int32_t, int32_t);
-BatchedNetworkPeer.prototype.sendPacket = function(data:CxxString, reliability:number, n:number, compressibility:number, oldparam?:number) {
-    if (oldparam !== undefined) compressibility = oldparam;
-    BatchedNetworkPeer$sendPacket.call(this, data, reliability, n, compressibility);
+const BatchedNetworkPeer$sendPacket = procHacker.js('?sendPacket@BatchedNetworkPeer@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4Reliability@NetworkPeer@@W4Compressibility@@@Z', void_t, {this:BatchedNetworkPeer}, CxxString, int32_t, int32_t);
+BatchedNetworkPeer.prototype.sendPacket = function(data:CxxString, reliability:number, compressibility:number, oldparam?:number, oldparam2?:number) {
+    if (oldparam2 !== undefined) {
+        compressibility = oldparam2;
+    } else if (oldparam !== undefined) {
+        compressibility = oldparam;
+    }
+    BatchedNetworkPeer$sendPacket.call(this, data, reliability, compressibility);
 };
 Object.defineProperties(RakNetInstance.prototype, {
     peer: {get() { return bedrockServer.rakPeer; } },
@@ -1263,7 +1267,7 @@ Block.prototype.hasBlockEntity = procHacker.js('?hasBlockEntity@Block@@QEBA_NXZ'
 Block.prototype.use = procHacker.js("?use@Block@@QEBA_NAEAVPlayer@@AEBVBlockPos@@E@Z", bool_t, {this:Block}, Player, BlockPos, uint8_t);
 Block.prototype.getVariant = procHacker.js('?getVariant@Block@@QEBAHXZ', int32_t, {this: Block});
 Block.prototype.getSerializationId = procHacker.js('?getSerializationId@Block@@QEBAAEBVCompoundTag@@XZ', CompoundTag.ref(), {this: Block});
-Block.prototype.getSilkTouchItemInstance = procHacker.js('?getSilkTouchItemInstance@Block@@QEBA?AVItemInstance@@XZ', ItemStack, {this: Block, structureReturn: true});
+Block.prototype.getSilkTouchItemInstance = procHacker.jsv('??_7InfestedBlock@@6B@', '?getSilkTouchItemInstance@InfestedBlock@@MEBA?AVItemInstance@@AEBVBlock@@@Z', ItemStack, {this: Block, structureReturn: true});
 Block.prototype.isUnbreakable = procHacker.js('?isUnbreakable@Block@@QEBA_NXZ', bool_t, {this: Block});
 Block.prototype.buildDescriptionId = procHacker.js('?buildDescriptionId@Block@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ', CxxString, {this: Block, structureReturn: true});
 Block.prototype.isCropBlock = procHacker.js('?isCropBlock@Block@@QEBA_NXZ', bool_t, {this: Block});
@@ -1517,7 +1521,7 @@ ScoreboardIdentityRef.prototype.getScoreboardId = procHacker.js("?getScoreboardI
 ScoreboardIdentityRef.prototype.isPlayerType = procHacker.js("?isPlayerType@ScoreboardIdentityRef@@QEBA_NXZ", bool_t, {this:ScoreboardIdentityRef});
 
 // effects.ts
-MobEffect.create = procHacker.js("?getById@MobEffect@@SAPEAV1@H@Z", MobEffect, null, int32_t);
+MobEffect.create = procHacker.js("?getById@MobEffect@@SAPEAV1@I@Z", MobEffect, null, int32_t);
 MobEffect.prototype.getId = procHacker.js("?getId@MobEffect@@QEBAIXZ", uint32_t, {this:MobEffect});
 
 (MobEffectInstance.prototype as any)._create = procHacker.js("??0MobEffectInstance@@QEAA@IHH_N00@Z", void_t, {this:MobEffectInstance}, uint32_t, int32_t, int32_t, bool_t, bool_t, bool_t);
@@ -1708,7 +1712,6 @@ StructureTemplate.prototype.fillFromWorld = procHacker.js("?fillFromWorld@Struct
 StructureTemplate.prototype.placeInWorld = procHacker.js("?placeInWorld@StructureTemplate@@QEBAXAEAVBlockSource@@AEBVBlockPalette@@AEBVBlockPos@@AEBVStructureSettings@@PEAVStructureTelemetryServerData@@_N@Z", void_t, {this:StructureTemplate}, BlockSource, BlockPalette, BlockPos, StructureSettings);
 StructureTemplate.prototype.getBlockAtPos = procHacker.js("?getBlockAtPos@StructureTemplate@@QEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:StructureTemplate}, BlockPos);
 StructureTemplate.prototype.getSize = procHacker.js("?getSize@StructureTemplate@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:StructureTemplate});
-StructureManager.prototype[NativeType.ctor] = procHacker.js("??0StructureManager@@QEAA@XZ", StructureManager, {this:StructureManager});
 StructureManager.prototype.getOrCreate = procHacker.js("?getOrCreate@StructureManager@@QEAAAEAVStructureTemplate@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StructureTemplate, {this:StructureManager}, CxxString);
 // components.ts
 OnHitSubcomponent.prototype.readfromJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?readfromJSON@FreezeOnHitSubcomponent@@UEAAXAEAVValue@Json@@AEBVSemVersion@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
@@ -1846,7 +1849,7 @@ ItemComponent.prototype.isWearable = function () {
     return this instanceof WearableItemComponent;
 };
 
-ItemComponent.prototype.buildNetworkTag = procHacker.jsv('??_7ItemComponent@@6B@', '?buildNetworkTag@ComponentItem@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ', CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
+ItemComponent.prototype.buildNetworkTag = procHacker.jsv('??_7ItemComponent@@6B@', '?buildNetworkTag@ItemComponent@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ', CompoundTag.ref(), {this:ItemComponent, structureReturn:true});
 ItemComponent.prototype.initializeFromNetwork = procHacker.jsv('??_7ChargeableItemComponent@@6B@','?initializeFromNetwork@ChargeableItemComponent@@UEAA_NAEBVCompoundTag@@@Z', void_t, {this:ItemComponent}, CompoundTag);
 
 CooldownItemComponent.getIdentifier = procHacker.js("?getIdentifier@CooldownItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);

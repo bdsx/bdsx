@@ -186,10 +186,10 @@ bedrockServer.withLoading().then(()=>{
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x278,
+    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x294,
         asmcode.packetRawHook, // original code depended
         Register.rax, true, [
-            0x41, 0x8B, 0xD7,                          // mov edx,r15d
+            0x41, 0x8B, 0xD6,                          // mov edx,r14d
             0x48, 0x8D, 0x4D, 0x78,                    // lea rcx,qword ptr ss:[rbp+78]
             0xE8, null, null, null, null,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
             0x90,                                      // nop
@@ -217,7 +217,7 @@ bedrockServer.withLoading().then(()=>{
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, Packet, NetworkIdentifier);
     asmcode.handlePacket = proc[packetHandleSymbol];
-    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x5c7,
+    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x60d,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x49, 0x8B, 0xD5,                         // mov rdx,r13
@@ -237,9 +237,9 @@ bedrockServer.withLoading().then(()=>{
         asmcode.packetSendAllHook, // original code depended
         Register.rax, true, [
             // loop begin point
-            0x4D, 0x85, 0xFF,                                // test r15,r15
+            0x4D, 0x85, 0xF6,                                // test r14,r14
             0x74, 0x10,                                      // je bedrock_server.7FF79D03C94C
-            0x41, 0x0F, 0xB6, 0x87, 0xA0, 0x00, 0x00, 0x00,  // movzx eax,byte ptr ds:[r15+A0]
+            0x41, 0x0F, 0xB6, 0x86, 0xA0, 0x00, 0x00, 0x00,  // movzx eax,byte ptr ds:[r14+A0]
         ]);
 
     // hook send raw

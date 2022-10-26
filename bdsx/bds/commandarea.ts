@@ -36,10 +36,10 @@ export class CommandAreaFactory extends NativeClass {
     /**
      * @return CommandArea need to be disposed
      */
-    findArea(pos1:BlockPos, pos2:BlockPos, b:boolean):CommandArea|null {
+    findArea(pos1:BlockPos, pos2:BlockPos, b:boolean, b2:boolean, b3:boolean):CommandArea|null {
         abstract();
     }
 }
 
 CommandArea.prototype[NativeType.dtor] = procHacker.js('??1CommandArea@@QEAA@XZ', void_t, {this:CommandArea});
-CommandAreaFactory.prototype.findArea = procHacker.js('?findArea@CommandAreaFactory@@QEBA?AV?$unique_ptr@VCommandArea@@U?$default_delete@VCommandArea@@@std@@@std@@AEBVBlockPos@@0_N1@Z', CommandArea.ref(), {structureReturn:true, this:CommandAreaFactory}, BlockPos, BlockPos, bool_t);
+CommandAreaFactory.prototype.findArea = procHacker.js('?findArea@CommandAreaFactory@@QEBA?AV?$unique_ptr@VCommandArea@@U?$default_delete@VCommandArea@@@std@@@std@@AEBVBlockPos@@0_N11@Z', CommandArea.ref(), {structureReturn:true, this:CommandAreaFactory}, BlockPos, BlockPos, bool_t, bool_t, bool_t);
