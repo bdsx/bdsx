@@ -39,7 +39,7 @@ export class GitHubRelease {
                 'content-length': content.length,
                 'content-type': 'application/octet-stream',
             },
-            data: file,
+            data: content as any,
             name: path.basename(file),
             owner: this.owner,
             repo: this.repo,

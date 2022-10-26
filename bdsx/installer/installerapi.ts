@@ -61,7 +61,7 @@ export class BDSInstaller {
     public readonly info:InstallInfo;
     public target:string;
 
-    constructor(public readonly bdsPath:string, private readonly opts:BDSInstaller.Options) {
+    constructor(public readonly bdsPath:string, public readonly opts:BDSInstaller.Options) {
         const BDSX_YES = process.env.BDSX_YES;
         if (BDSX_YES !== undefined) {
             switch (BDSX_YES.toLowerCase()) {
@@ -295,7 +295,6 @@ class InstallItem {
         const keyExists = keyFile != null && await fsutil.exists(path.join(installer.target, keyFile));
         const keyNotFound = keyFile != null && !keyExists;
         const version = installer.info[key];
-
         if (version === undefined) {
             if (keyExists) {
                 if (await installer.yesno(`${name}: Would you like to use what already installed?`)) {
@@ -304,11 +303,11 @@ class InstallItem {
                     return;
                 }
             }
-            this._confirmAndInstall(installer);
+            await this._confirmAndInstall(installer);
         } else {
             if (keyNotFound) {
                 console.log(colors.yellow(`${name}: ${keyFile} not found`));
-                this._confirmAndInstall(installer);
+                await this._confirmAndInstall(installer);
             } else {
                 if (version === null || version === 'manual') {
                     console.log(`${name}: manual`);
@@ -350,7 +349,9 @@ const pdbcache = new InstallItem({
             const zipPath = path.join(installer.bdsPath, 'pdbcache.zip');
             const zip = new JSZip;
             zip.file('pdbcache.bin', await fsutil.readFile(cachePath, null));
-            await fsutil.writeStream(zipPath, zip.generateNodeStream());
+            await fsutil.writeStream(zipPath, zip.generateNodeStream({
+                compression: "DEFLATE",
+            }));
 
             // create release
             console.error(colors.yellow('publish pdbcache.bin'));
