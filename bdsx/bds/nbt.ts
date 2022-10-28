@@ -1088,7 +1088,7 @@ export namespace NBT {
             } else if (chr === 0x27) { // '
                 p++;
                 key = readStringContinue("'");
-            } else if (chr >= 0x80 || (0x41 <= chr && chr <= 0x5a) || (0x61 <= chr && chr < 0x7a) || chr === 0x24 || chr === 0x5f) {
+            } else if (chr >= 0x80 || (0x41 <= chr && chr <= 0x5a) || (0x61 <= chr && chr <= 0x7a) || chr === 0x24 || chr === 0x5f) {
                 // variable format
                 key = readNameContinue();
             } else {
