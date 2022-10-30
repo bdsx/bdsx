@@ -316,7 +316,7 @@ export class ConnectionRequest extends AbstractClass {
         ThirdPartyName:string,
         ThirdPartyNameOnly:boolean,
         UIProfile:number }|null {
-        return this.getJson()?.value();
+        return this.getJson()?.value() ?? null;
     }
 
     getDeviceId():string {
