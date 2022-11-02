@@ -40,15 +40,5 @@ function compare(a:VoidPointer, alen:number, b:VoidPointer, blen:number):number 
     return 0;
 }
 
-function compareString(a:string, b:string):number {
-    const alen = a.length;
-    const blen = b.length;
-    const diff = dll.vcruntime140.memcmp(VoidPointer.fromAddressString(a), VoidPointer.fromAddressString(b), Math.min(alen, blen)*2);
-    if (diff !== 0) return diff;
-    if (alen < blen) return -1;
-    if (alen > blen) return 1;
-    return 0;
-}
-
 CxxLess.define(CxxStringWrapper, (a, b)=>compare(a, a.length, b, b.length) < 0);
-CxxLess.define(CxxString, (a, b)=>compareString(a, b) < 0);
+CxxLess.define(CxxString, (a, b)=>a < b);
