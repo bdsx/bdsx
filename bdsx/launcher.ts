@@ -166,12 +166,17 @@ function _launch(asyncResolve:()=>void):void {
     }
 
     // replace unicode encoder
+    // int Core::StringConversions::toWide(char const *, int, wchar_t *, int)
+    const StringConversions$toWide = '?toWide@StringConversions@Core@@SAHPEBDHPEA_WH@Z';
+    // int Core::StringConversions::toUtf8(wchar_t const *, int, char *, int)
+    const StringConversions$toUtf8 = '?toUtf8@StringConversions@Core@@SAHPEB_WHPEADH@Z';
+    proc[StringConversions$toWide];
+    proc[StringConversions$toUtf8];
     if (Config.REPLACE_UNICODE_ENCODER) {
-        asmcode.Core_String_toWide_string_span = cgate.toWide;
-        procHacker.write('?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PEBD@Z', 0,
-            asm().jmp64(asmcode.Core_String_toWide_charptr, Register.rax));
-        procHacker.write('?toWide@String@Core@@SA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z', 0,
+        procHacker.write(StringConversions$toWide, 0,
             asm().jmp64(cgate.toWide, Register.rax));
+        procHacker.write(StringConversions$toUtf8, 0,
+            asm().jmp64(cgate.toUtf8, Register.rax));
     }
 
     // events

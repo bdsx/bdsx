@@ -666,13 +666,13 @@ export declare namespace cgate {
     export const nodeLoop: VoidPointer;
 
     /**
-     * std::wstring toUtf16(string_span<char>*)
+     * int toWide(char const *, int, wchar_t *, int)
      * converting utf8 to utf16
      */
     export const toWide: VoidPointer;
 
     /**
-     * std::string toUtf8(string_span<charw_t>*)
+     * int toUtf8(wchar_t const *, int, char *, int)
      * converting utf16 to utf8
      */
     export const toUtf8: VoidPointer;

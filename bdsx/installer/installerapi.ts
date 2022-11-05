@@ -147,6 +147,55 @@ export class BDSInstaller {
             }
         }
     }
+
+    async gitPublish(item:InstallItemOptions, files:string|string[], basePath?:string, zipPath?:string):Promise<void> {
+        function resolve(filePath:string):string {
+            if (basePath === undefined) return filePath;
+            if (path.isAbsolute(filePath)) return filePath;
+            else return path.join(basePath, filePath);
+        }
+
+        const githubToken = await key.getGithubToken();
+        if (githubToken === undefined) return;
+        if (item.version === undefined) throw Error(`${item.name} version is not defined`);
+
+        let publishName:string;
+        if (!(files instanceof Array)) {
+            if (zipPath !== undefined) {
+                publishName = zipPath;
+            } else {
+                publishName = files;
+            }
+            files = [files];
+        } else if (zipPath !== undefined) {
+            publishName = zipPath;
+        } else {
+            throw TypeError('Invalid usage');
+        }
+
+        // zip file
+        if (zipPath !== undefined) {
+            publishName = zipPath;
+            const zip = new JSZip;
+            for (const file of files) {
+                zip.file(file, await fsutil.readFile(resolve(file), null));
+            }
+            await fsutil.writeStream(resolve(zipPath), zip.generateNodeStream({
+                compression: "DEFLATE",
+            }));
+        }
+
+        // create release
+        console.error(colors.yellow(`publish ${path.basename(publishName)}`));
+        const client = new GitHubClient(githubToken);
+        const release = await client.createRelease(`${item.name} ${item.version}`, 'bdsx', item.name, item.version);
+        try {
+            await release.upload(resolve(publishName));
+        } catch (err) {
+            await release.delete();
+            throw err;
+        }
+    }
 }
 
 export namespace BDSInstaller {
@@ -322,7 +371,6 @@ class InstallItem {
             }
         }
     }
-
 }
 
 const pdbcache = new InstallItem({
@@ -342,23 +390,7 @@ const pdbcache = new InstallItem({
         const res = child_process.spawnSync(pdbcachegen, [bedrockserver, pdbcachebin], {stdio:'inherit'});
         if (res.status !== 0) throw new MessageError(`Failed to generate pdbcache`);
 
-        const githubToken = await key.getGithubToken();
-        if (githubToken !== undefined) {
-            // zip file
-            const cachePath = path.join(installer.bdsPath, 'pdbcache.bin');
-            const zipPath = path.join(installer.bdsPath, 'pdbcache.zip');
-            const zip = new JSZip;
-            zip.file('pdbcache.bin', await fsutil.readFile(cachePath, null));
-            await fsutil.writeStream(zipPath, zip.generateNodeStream({
-                compression: "DEFLATE",
-            }));
-
-            // create release
-            console.error(colors.yellow('publish pdbcache.bin'));
-            const client = new GitHubClient(githubToken);
-            const release = await client.createRelease('bdsx', 'pdbcache', BDS_VERSION);
-            await release.upload(zipPath);
-        }
+        await installer.gitPublish(this, 'pdbcache.bin', installer.bdsPath, 'pdbcache.zip');
         return false;
     },
 });
@@ -397,6 +429,16 @@ const bdsxCore = new InstallItem({
     key: 'bdsxCoreVersion',
     keyFile: 'VCRUNTIME140_1.dll',
     oldFiles: ['mods', 'Chakra.pdb'],
+    async fallback(installer, statusCode) {
+        if (statusCode !== 404) return;
+        console.error(colors.yellow(`bdsx-core-${BDSX_CORE_VERSION} does not exist on the server`));
+        const corePath = path.join(fsutil.projectPath, `../bdsx-core/release/bdsx-core-${BDSX_CORE_VERSION}.zip`);
+        if (await fsutil.exists(corePath)) {
+            console.error(colors.yellow(`Found it from the local core project: ${corePath}`));
+            await installer.gitPublish(this, corePath);
+        }
+        return false;
+    },
 });
 
 export async function installBDS(bdsPath:string, opts:BDSInstaller.Options):Promise<boolean> {

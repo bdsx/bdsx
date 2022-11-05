@@ -145,9 +145,6 @@ export namespace asmcode {
     export let std_string_ctor:VoidPointer;
     export const addressof_std_string_ctor:NativePointer;
     export const getline:NativePointer;
-    export let Core_String_toWide_string_span:VoidPointer;
-    export const addressof_Core_String_toWide_string_span:NativePointer;
-    export const Core_String_toWide_charptr:NativePointer;
     export let terminate:VoidPointer;
     export const addressof_terminate:NativePointer;
     export let ExitThread:VoidPointer;

@@ -12,8 +12,9 @@ export class GitHubClient {
         this.api = github.getOctokit(githubToken).rest;
     }
 
-    async createRelease(owner:string, repo:string, tag_name:string):Promise<GitHubRelease> {
+    async createRelease(name:string, owner:string, repo:string, tag_name:string):Promise<GitHubRelease> {
         const resp = await this.api.repos.createRelease({
+            name,
             owner,
             repo,
             tag_name,
@@ -41,6 +42,14 @@ export class GitHubRelease {
             },
             data: content as any,
             name: path.basename(file),
+            owner: this.owner,
+            repo: this.repo,
+            release_id: this.release.data.id,
+        });
+    }
+
+    async delete():Promise<void> {
+        await this.api.repos.deleteRelease({
             owner: this.owner,
             repo: this.repo,
             release_id: this.release.data.id,
