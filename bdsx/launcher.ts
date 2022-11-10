@@ -23,6 +23,7 @@ import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
+import { AbstractClass, nativeClass, nativeField } from './nativeclass';
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
 import { loadAllPlugins } from './plugins';
 import { CxxStringWrapper } from "./pointer";
@@ -351,11 +352,13 @@ function _launch(asyncResolve:()=>void):void {
         makefunc.np((mc, b)=>{
             events.serverLeave.fire();
         }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
-    procHacker.hookingRawWithCallOriginal('?sendEvent@ServerInstanceEventCoordinator@@QEAAXAEBV?$EventRef@U?$ServerInstanceGameplayEvent@X@@@@@Z',
-        makefunc.np(()=>{
+    procHacker.hooking('?sendEvent@ServerInstanceEventCoordinator@@QEAAXAEBV?$EventRef@U?$ServerInstanceGameplayEvent@X@@@@@Z',
+        void_t, {name: 'hook of shutdown'}, VoidPointer, EventRef$ServerInstanceGameplayEvent$Void)((_this, ev)=>{
+        if (ev.type === GameplayEvent.Stop) {
             events.serverStop.fire();
             _tickCallback();
-        }, void_t, {name: 'hook of shutdown'}), [Register.rcx, Register.rdx], []);
+        }
+    });
 
     // graceful kill for Network port occupied
     // BDS crashes at terminating on `Network port occupied`. it kills the crashing thread and keeps the node thread.
@@ -555,4 +558,21 @@ export namespace bedrockServer {
             return stdInHandler = new NativeStdInHandler;
         }
     }
+}
+
+/**
+ * temporal name
+ */
+enum GameplayEvent {
+    Stop,
+    Restart,
+}
+
+/**
+ * temporal name
+ */
+@nativeClass()
+class EventRef$ServerInstanceGameplayEvent$Void extends AbstractClass {
+    @nativeField(int32_t)
+    type:GameplayEvent;
 }
