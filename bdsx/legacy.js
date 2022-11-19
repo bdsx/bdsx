@@ -458,11 +458,11 @@ command.CustomCommandFactory.prototype.override = function override(callback, ..
     const fields = Object.create(null);
     for (const [name, type, optkey] of parameters) {
         if (name in fields)
-            throw Error(`${name}: field name dupplicated`);
+            throw Error(`${name}: field name duplicated`);
         fields[name] = type;
         if (optkey != null) {
             if (optkey in fields)
-                throw Error(`${optkey}: field name dupplicated`);
+                throw Error(`${optkey}: field name duplicated`);
             fields[optkey] = bool_t;
         }
     }

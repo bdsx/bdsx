@@ -7,7 +7,7 @@ import { dllraw } from "./dllraw";
 import { fsutil } from './fsutil';
 import { pdbcache } from './pdbcache';
 
-const wildecardRemap:Record<string, string> = {
+const wildcardRemap:Record<string, string> = {
     '*': '.+',
     '[': '\\[',
     '(': '\\(',
@@ -105,7 +105,7 @@ export namespace pdblegacy {
                 if (!callback!(key, proc[key])) break;
             }
         } else if (typeof filter === 'string') {
-            const regexp = new RegExp(filter.replace(/[*[(.+{^$\\]/g, str=>wildecardRemap[str]));
+            const regexp = new RegExp(filter.replace(/[*[(.+{^$\\]/g, str=>wildcardRemap[str]));
             for (const key of pdbcache.readKeys()) {
                 if (regexp.test(key)) {
                     if (!callback!(key, proc[key])) break;

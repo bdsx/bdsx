@@ -162,7 +162,7 @@ export function mapSourcePosition(position: Position): Position {
     let sourceMap = sourceMapCache[position.source];
 
     if (!sourceMap) {
-        // Call the (overrideable) retrieveSourceMap function to get the source map.
+        // Call the (overridable) retrieveSourceMap function to get the source map.
         const urlAndMap = retrieveSourceMap(position.source);
         if (urlAndMap) {
             sourceMap = sourceMapCache[position.source] = {

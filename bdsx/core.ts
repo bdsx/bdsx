@@ -53,7 +53,7 @@ export interface VoidPointer {
     getAddressAsFloat(): number;
     /**
      * with radix, it returns like Number.toString.
-     * or it retruns 0x0000000000000000 format.
+     * or it returns 0x0000000000000000 format.
      */
     toString(radix?:number):string;
 

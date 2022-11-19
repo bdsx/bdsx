@@ -277,8 +277,8 @@ export function printOnProgress(message:string):void {
 }
 
 export function getEnumKeys<T extends Record<string, number|string>>(enumType:T):(keyof T)[] {
-    const NUMBERIC = /^[1-9]\d*$/;
-    return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMBERIC.test(v));
+    const NUMERIC = /^[1-9]\d*$/;
+    return Object.keys(enumType).filter(v => typeof v === 'string' && v !== '0' && !NUMERIC.test(v));
 }
 
 export type DeferPromise<T> = Promise<T>&{resolve:(value?:T|PromiseLike<T>)=>void, reject:(reason?:any)=>void};
