@@ -488,7 +488,11 @@ export class ItemStack extends ItemStackBase {
     }
 }
 
-export class Container extends NativeClass {
+@nativeClass(null)
+export class Container extends AbstractClass {
+    @nativeField(VoidPointer)
+    vftable: VoidPointer;
+
     addItem(item:ItemStack):void {
         abstract();
     }
@@ -600,8 +604,12 @@ export enum PlayerUISlot {
 
 @nativeClass(null)
 export class PlayerInventory extends AbstractClass {
-    @nativeField(Inventory.ref(), 0xC0) // accessed in PlayerInventory::add
-    container:Inventory;
+    get container(): Inventory {
+        return this.getContainer();
+    }
+    getContainer(): Inventory {
+        abstract();
+    }
 
     addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
         abstract();
