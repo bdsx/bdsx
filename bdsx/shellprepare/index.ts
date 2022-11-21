@@ -1,12 +1,39 @@
-import * as ts from "typescript";
-import * as glob from 'glob';
+import * as colors from 'colors';
 import * as fs from 'fs';
+import * as glob from 'glob';
+import * as ts from "typescript";
 import { shellPrepareData } from "./data";
 
 const BDSX_PERMANENT = process.env.BDSX_PERMANENT === 'true';
 const RESTART_TIME_THRESHOLD = 30000;
 
 const data = shellPrepareData.load();
+
+function checkTargetExists(pathes:string[], targets:string[]):string[] {
+    function check(str:string):void {
+        let n = targets.length;
+        for (let i=0;i!==n;i=i+1|0) {
+            if (str.endsWith(targets[i])) {
+                n = n-1|0;
+                targets[i] = targets[n];
+                targets.length = n;
+                break;
+            }
+        }
+    }
+
+    for (const p of pathes) {
+        check(p);
+    }
+    return targets;
+}
+
+function unsupportedNodeJs():never {
+    console.error(colors.red(`Unsupported node.js version`));
+    console.error(colors.red(`current: ${process.version}`));
+    console.error(colors.red(`required: v8.1`));
+    throw Error(`Unsupported node.js version ${process.version}`);
+}
 
 function build():void {
     function getTsConfig():ts.ParsedCommandLine {
@@ -23,29 +50,52 @@ function build():void {
         return ts.parseJsonConfigFileContent(configFileJson.config, ts.sys, curdir);
     }
 
-    const config = getTsConfig();
-    let files:string[];
-    if (config.options.outDir == null && config.options.outFile == null && config.options.out == null) {
-        files = [];
-        for (const ts of config.fileNames) {
-            if (!ts.endsWith('.ts')) continue;
-            const js = ts.substr(0, ts.length-2)+'js';
-            try {
-                const ts_stat = fs.statSync(ts);
-                const js_stat = fs.statSync(js);
-                if (ts_stat.mtimeMs >= js_stat.mtimeMs) {
-                    files.push(ts);
-                }
-            } catch (err) {
-                files.push(ts);
-                continue;
+    try {
+        const config = getTsConfig();
+        if (config.fileNames.length === 0) {
+            console.error(colors.yellow('[WARN] Any TS files were not found'));
+            console.error(colors.yellow('[WARN] The compilation was skipped'));
+        } else {
+            const notFoundList = checkTargetExists(config.fileNames, [
+                `/bdsx/init.ts`,
+            ]);
+            for (const item of notFoundList) {
+                console.error(colors.yellow(`[WARN] ${item} not found`));
             }
         }
-    } else {
-        files = config.fileNames;
-    }
-    if (files.length !== 0) {
-        ts.createProgram(files, config.options).emit();
+
+        let files:string[];
+        if (config.options.outDir == null && config.options.outFile == null && config.options.out == null) {
+            files = [];
+            for (const ts of config.fileNames) {
+                if (!ts.endsWith('.ts')) continue;
+                const js = ts.substr(0, ts.length-2)+'js';
+                const ts_stat = fs.statSync(ts);
+                if (ts_stat.mtimeMs === undefined) {
+                    unsupportedNodeJs();
+                }
+                try {
+                    const js_stat = fs.statSync(js);
+                    if (ts_stat.mtimeMs >= js_stat.mtimeMs) {
+                        files.push(ts);
+                    }
+                } catch (err) {
+                    if (err.code === 'ENOENT') {
+                        files.push(ts);
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+        } else {
+            files = config.fileNames;
+        }
+        if (files.length !== 0) {
+            ts.createProgram(files, config.options).emit();
+        }
+    } catch (err) {
+        console.error(err.stack);
+        exit(-1);
     }
 }
 
