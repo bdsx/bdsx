@@ -567,6 +567,8 @@ export class ActorPickRequestPacket extends Packet {
 export class PlayerActionPacket extends Packet {
     @nativeField(BlockPos)
     readonly pos: BlockPos;
+    @nativeField(BlockPos)
+    readonly resultPos: BlockPos;
     @nativeField(int32_t)
     face: int32_t;
     @nativeField(int32_t)
@@ -620,6 +622,8 @@ export namespace PlayerActionPacket {
         InteractBlock,
         PredictDestroyBlock,
         ContinueDestroyBlock,
+        StartItemUseOn,
+        StopItemUseOn,
     }
 }
 
