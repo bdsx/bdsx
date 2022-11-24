@@ -1,5 +1,5 @@
 import { asmcode } from "../asm/asmcode";
-import { OperationSize, Register } from "../assembler";
+import { Register } from "../assembler";
 import { NetworkHandler, NetworkIdentifier } from "../bds/networkidentifier";
 import { createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "../bds/packet";
 import { MinecraftPacketIds } from "../bds/packetids";
