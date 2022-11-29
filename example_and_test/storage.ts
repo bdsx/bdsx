@@ -45,8 +45,20 @@ events.playerJoin.on(async(ev)=>{
         playerData.lastLoginDate = today;
     }
     console.log(`${playerName}.attendance=${playerData.attendance}`);
+
+    // storing instance
+    const instance = new CustomClass;
+    instance.value = 1;
+    playerData.object = instance;
+    console.assert(playerData.object !== instance); // but it's not referenced object.
+    console.assert((playerData.object instanceof CustomClass) === false); // it's not the class instance even.
+    console.assert(playerData.object.value === 1); // but the property is stored anyway.
 });
 
 events.playerLeft.on(async(ev)=>{
     storageManager.close(ev.player);
 });
+
+class CustomClass {
+    value:number;
+}

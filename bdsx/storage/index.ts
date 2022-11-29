@@ -10,6 +10,8 @@ interface StorageClassBase {
 
 const storages = new Map<string, StorageImpl>();
 const storageStored = Symbol('storage');
+const storageBase = Symbol('storageBase');
+const proxyBase = Symbol('proxyBase');
 
 enum State {
     Loaded,
@@ -17,6 +19,141 @@ enum State {
     Unloaded,
     Deleted,
 }
+
+class StorageArray<T> extends Array<T> {
+    [storageBase]:StorageImpl|null;
+    [proxyBase]:Array<T>;
+
+    constructor(storage:StorageImpl, arrayLength:number) {
+        super(arrayLength);
+        this[storageBase] = storage;
+        this[proxyBase] = this;
+    }
+    set(index:number, value:T):boolean {
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        if (this[index] !== value) {
+            this[index] = storage.convert(value) as T;
+            storage.saveRequest();
+        }
+        return true;
+    }
+    delete(index:number):boolean {
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        const res = delete this[index];
+        if (res) {
+            storage.saveRequest();
+        }
+        return res;
+    }
+    push(...items: T[]): number {
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        const n = items.length;
+        for (let i=0;i!==n;i=i+1|0) {
+            items[i] = storage.convert(items[i]) as T;
+        }
+        const res = super.push(...items);
+        storage.saveRequest();
+        return res;
+    }
+    pop(): T | undefined {
+        if (this.length === 0) return undefined;
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        const res = super.pop();
+        storage.saveRequest();
+        return res;
+    }
+    unshift(...items: T[]): number {
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        const n = items.length;
+        for (let i=0;i!==n;i=i+1|0) {
+            items[i] = storage.convert(items[i]) as T;
+        }
+        const res = super.unshift(...items);
+        storage.saveRequest();
+        return res;
+    }
+    shift(): T | undefined {
+        if (this.length === 0) return undefined;
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        const res = super.shift();
+        storage.saveRequest();
+        return res;
+    }
+
+    reverse():T[] {
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        super.reverse();
+        storage.saveRequest();
+        return this;
+    }
+
+    sort(compareFn?: ((a: T, b: T) => number) | undefined): this {
+        const storage = this[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        super.sort(compareFn);
+        storage.saveRequest();
+        return this;
+    }
+}
+
+const arrayProxyHandler:ProxyHandler<any> = {
+    set(target, p, value) {
+        const storage:StorageImpl|null = target[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        if (typeof p === 'number') {
+            if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
+            return target.set(p, value);
+        } else {
+            target[p] = value;
+            return true;
+        }
+    },
+    deleteProperty(target, p) {
+        const storage:StorageImpl|null = target[storageBase];
+        if (storage === null) throw Error('deleted storage array');
+        if (typeof p === 'number') {
+            if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
+            return target.delete(p);
+        } else {
+            return delete target[p];
+        }
+    },
+};
+const objectProxyHandler:ProxyHandler<any> = {
+    set(target, p, value) {
+        if (typeof p === 'string') {
+            const storage:StorageImpl|null = target[storageBase];
+            if (storage === null) throw Error('deleted storage object');
+            if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
+            if (target[p] !== value) {
+                target[p] = storage.convert(value);
+                storage.saveRequest();
+            }
+        } else {
+            target[p] = value;
+        }
+        return true;
+    },
+    deleteProperty(target, p) {
+        if (typeof p === 'string') {
+            const storage:StorageImpl|null = target[storageBase];
+            if (storage === null) throw Error('deleted storage object');
+            if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
+            const res = delete target[p];
+            if (res) storage.saveRequest();
+            return res;
+        } else {
+            return delete target[p];
+        }
+    },
+};
 
 export abstract class Storage {
     static readonly classId = Symbol('storageClassId');
@@ -41,7 +178,7 @@ class StorageImpl extends Storage {
     private storageData:StorageData|null = null;
     private saving:Promise<void>|null = null;
     private modified = false;
-    private state = State.Unloaded;
+    public state = State.Unloaded;
 
     private loading:Promise<StorageImpl>|null = null;
 
@@ -119,11 +256,11 @@ class StorageImpl extends Storage {
             };
         } else {
             this.storageData = data;
-            data.data = this._convert(data.data);
+            data.data = this.convert(data.data);
             if (this.isStringId) {
                 this._changeKeys(data.mainId!, data.aliasId);
             } else if (data.mainId !== this.mainId || data.aliasId !== this.aliasId) {
-                this._saveRequest();
+                this.saveRequest();
             }
         }
         this.state = State.Loaded;
@@ -148,7 +285,7 @@ class StorageImpl extends Storage {
                 storages.set(newMainKey, this);
             }
             this.mainId = mainId;
-            this._saveRequest();
+            this.saveRequest();
         }
         if (aliasId !== this.aliasId) {
             if (this.aliasId !== null) {
@@ -161,7 +298,7 @@ class StorageImpl extends Storage {
                 storages.set(newAliasKey, this);
             }
             this.aliasId = aliasId;
-            this._saveRequest();
+            this.saveRequest();
         }
     }
 
@@ -178,8 +315,8 @@ class StorageImpl extends Storage {
     init(value:unknown):void {
         const data = this.storageData;
         if (data === null) throw Error(`storage is not loaded`);
-        data.data = this._convert(value);
-        this._saveRequest();
+        data.data = this.convert(value);
+        this.saveRequest();
     }
 
     close():boolean {
@@ -199,7 +336,7 @@ class StorageImpl extends Storage {
         this.storageData = null;
     }
 
-    private _saveRequest():Promise<void> {
+    saveRequest():Promise<void> {
         this.modified = true;
         if (this.saving !== null) return this.saving;
         return this.saving = (async()=>{
@@ -216,7 +353,7 @@ class StorageImpl extends Storage {
         })();
     }
 
-    private _convert(value:unknown):unknown {
+    convert(value:unknown):unknown {
         switch (typeof value) {
         case 'bigint':
             throw Error('Not implemented yet');
@@ -225,13 +362,9 @@ class StorageImpl extends Storage {
         case 'object':
             if (value === null) return null;
             if (value instanceof Array) {
-                return this._makeArrayProxy(value.map(v=>this._convert(v)));
+                return this._makeArrayProxy(value);
             } else {
-                const obj:Record<string, unknown> = {};
-                for (const key in value) {
-                    obj[key] = this._convert((value as any)[key]);
-                }
-                return this._makeObjectProxy(obj);
+                return this._makeObjectProxy(value);
             }
             break;
         default:
@@ -239,55 +372,26 @@ class StorageImpl extends Storage {
         }
     }
 
-    private _makeArrayProxy(base:unknown[]):any[] {
-        const storage = this;
-        return new Proxy<any[]>(base, {
-            set(target:any, p, value) {
-                if (typeof p === 'number') {
-                    if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
-                    target[p] = value;
-                    storage._saveRequest();
-                } else {
-                    target[p] = value;
-                }
-                return true;
-            },
-            deleteProperty(target:any, p) {
-                if (typeof p === 'number') {
-                    if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
-                    const res = delete target[p];
-                    storage._saveRequest();
-                    return res;
-                } else {
-                    return delete target[p];
-                }
-            },
-        });
+    private _makeArrayProxy(array:unknown[]):any[] {
+        const base = new StorageArray(this, array.length);
+        const n = array.length;
+        for (let i=0;i!==n;i=i+1|0) {
+            base.set(i, array[i]);
+        }
+        return new Proxy<any[]>(base, arrayProxyHandler);
     }
-    private _makeObjectProxy(base:Record<string|symbol, any>):any {
-        const storage = this;
-        return new Proxy<any>(base, {
-            set(target:any, p, value) {
-                if (typeof p === 'string') {
-                    if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
-                    target[p] = value;
-                    storage._saveRequest();
-                } else {
-                    target[p] = value;
-                }
-                return true;
-            },
-            deleteProperty(target:any, p) {
-                if (typeof p === 'string') {
-                    if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
-                    const res = delete target[p];
-                    storage._saveRequest();
-                    return res;
-                } else {
-                    return delete target[p];
-                }
-            },
-        });
+    private _makeObjectProxy(obj:Record<string|symbol, any>):any {
+        const realObj = obj[proxyBase];
+        if (realObj !== undefined) obj = realObj;
+
+        const base:Record<string|symbol, unknown> = {};
+        base[storageBase] = this;
+        base[proxyBase] = base;
+        for (const key in obj) {
+            base[key] = this.convert(obj[key]);
+        }
+
+        return new Proxy<any>(base, objectProxyHandler);
     }
 
 }
