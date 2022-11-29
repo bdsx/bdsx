@@ -400,7 +400,7 @@ events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
             const canceled = events.playerDropItem.fire(event) === CANCEL;
             decay(itemStack);
             if (canceled) {
-                ni.getActor()!.sendInventory();
+                player.sendInventory();
                 return CANCEL;
             }
         }

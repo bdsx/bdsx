@@ -260,11 +260,11 @@ class AsmChunk extends BufferWriter {
 
         for (const label of chunk.ids) {
             label.chunk = this;
-            label.offset += this.size;
+            label.offset = label.offset+this.size|0;
         }
         this.ids.push(...chunk.ids);
         for (const jump of chunk.unresolved) {
-            jump.offset += this.size;
+            jump.offset = jump.offset+this.size|0;
         }
         this.unresolved.push(...chunk.unresolved);
         this.write(chunk.buffer());
@@ -284,9 +284,9 @@ class AsmChunk extends BufferWriter {
         for (const unresolved of this.unresolved) {
             const addr = unresolved.address;
             const size = unresolved.bytes;
-            let offset = addr.offset - unresolved.offset - size;
+            let offset = addr.offset - unresolved.offset - size|0;
             if (addr.chunk === MEMORY_INDICATE_CHUNK) {
-                offset += this.size;
+                offset = offset+this.size|0;
             } else  if (addr.chunk === null) {
                 throw new ParsingError(`${addr.name}: Label not found`, unresolved.pos);
             } else if (addr.chunk !== this) {
@@ -296,7 +296,7 @@ class AsmChunk extends BufferWriter {
             const arr = this.array;
             let i = unresolved.offset;
 
-            const to = i + size;
+            const to = i + size|0;
             for (;i!==to;i++) {
                 arr[i] = offset;
                 offset >>= 8;
@@ -2889,6 +2889,13 @@ export class X64Assembler {
 
     toScript(bdsxLibPath:string, exportName?:string):{js:string, dts:string} {
         const buffer = this.buffer();
+        const labels:Label[] = [];
+        for (const addr of this.ids.values()) {
+            if (!(addr instanceof Label)) continue;
+            if (addr === this.headProc) continue;
+            labels.push(addr);
+        }
+        labels.sort((a,b)=>b.offset-a.offset);
         const rftable = this.ids.get('#runtime_function_table');
 
         const dts = new ScriptWriter;
@@ -2905,26 +2912,28 @@ export class X64Assembler {
         const n = buffer.length & ~1;
         js.writeln(`const buffer = cgate.allocExecutableMemory(${buffer.length+this.memoryChunkSize}, ${this.memoryChunkAlign});`);
 
-        js.script += "buffer.setBin('";
+        js.writeln('buffer.setBuffer(new Uint8Array([');
+        let nextLabel = labels.pop();
+        let script = '';
         for (let i=0;i<n;) {
-            const low = buffer[i++];
-            const high = buffer[i++];
-
-            const hex = ((high << 8) | low).toString(16);
-            const count = 4-hex.length;
-            js.script += '\\u';
-            if (count !== 0) js.script += '0'.repeat(count);
-            js.script += hex;
+            while (nextLabel !== undefined) {
+                if (i < nextLabel.offset) break;
+                if (script.length !== 0) {
+                    js.writeln(script);
+                    script = '';
+                }
+                js.writeln('// '+nextLabel.name);
+                nextLabel = labels.pop();
+            }
+            const byte = buffer[i++]|0;
+            const hex = byte.toString(16);
+            script += '0x';
+            if (hex.length === 1) script += '0';
+            script += hex;
+            script += ',';
         }
-        if (buffer.length !== n) {
-            const low = buffer[n];
-            const hex = ((0xcc << 8) | low).toString(16);
-            const count = 4-hex.length;
-            js.script += '\\u';
-            if (count !== 0) js.script += '0'.repeat(count);
-            js.script += hex;
-        }
-        js.writeln("');");
+        js.writeln(script);
+        js.writeln(']));');
         // script.writeln();
         if (exportName != null) {
             dts.writeln(`export namespace ${exportName} {`);

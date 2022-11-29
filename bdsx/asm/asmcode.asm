@@ -510,7 +510,7 @@ export def enabledPacket:byte[256]
 export proc packetRawHook
     ; r14 - packetId
     lea rax, enabledPacket
-    mov al, byte ptr[rax+r15]
+    mov al, byte ptr[rax+r14]
     unwind
     test al, al
     jz _skipEvent
