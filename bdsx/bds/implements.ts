@@ -108,7 +108,7 @@ Level.prototype.getDimension = function(id) {
     if (p !== null) process.nextTick(()=>ref.dispose());
     return p;
 };
-Level.prototype.getDimensionWeakRef = procHacker.js("?getDimension@Level@@UEBA?AV?$WeakRefT@U?$SharePtrRefTraits@VDimension@@@@@@V?$AutomaticID@VDimension@@H@@@Z", DimensionWeakRef, {this:Level}, int32_t);
+Level.prototype.getDimensionWeakRef = procHacker.js("?getDimension@Level@@UEBA?AV?$WeakRefT@U?$SharePtrRefTraits@VDimension@@@@@@V?$AutomaticID@VDimension@@H@@@Z", DimensionWeakRef, {this:Level, structureReturn:true}, int32_t);
 Level.prototype.getLevelData = procHacker.js("?getLevelData@Level@@UEAAAEAVLevelData@@XZ", LevelData.ref(), {this:Level});
 Level.prototype.getGameRules = function() {
     return bedrockServer.gameRules;
