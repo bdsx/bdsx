@@ -12,7 +12,7 @@ export namespace Bedrock {
         sharedptr:CxxSharedPtr<Wrapper<T>>;
 
         /**
-         * @deprecated CAUNTION, it's not working properly
+         * @deprecated CAUTION, it's not working properly
          */
         get():T|null {
             const p = this.sharedptr.p;

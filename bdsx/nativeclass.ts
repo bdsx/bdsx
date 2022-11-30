@@ -401,7 +401,7 @@ export class NativeClass extends StructurePointer {
     }
 
     /**
-     * Combiation of allocating and constructing.
+     * Combination of allocating and constructing.
      *
      * const inst = new Class(true);
      * inst.construct();
