@@ -269,7 +269,7 @@ function _launch(asyncResolve:()=>void):void {
 
     procHacker.patching('update-hook',
         '<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()', // caller of ServerInstance::_update
-        0x8c6, asmcode.updateWithSleep, Register.rax, true, [
+        0x8cc, asmcode.updateWithSleep, Register.rax, true, [
             0x48, 0x2B, 0xC8,                         // sub rcx,rax
             0x48, 0x81, 0xF9, 0x88, 0x13, 0x00, 0x00, // cmp rcx,1388
             0x7C, 0x0B,                               // jl bedrock_server.7FF743BA7B50
@@ -314,7 +314,8 @@ function _launch(asyncResolve:()=>void):void {
                 const rakPeer = RakNetInstance$getPeer(raknetInstance);
                 bdsxEqualsAssert(rakPeer.vftable, proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"], 'Invalid rakPeer');
                 const commandOutputSender = (minecraftCommands as any as StaticPointer).getPointerAs(CommandOutputSender, 0x8);
-                const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get();
+                const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get()!.subAs(nimodule.ServerNetworkHandler, 0x10); // XXX: unknown state. cut corners.
+                bdsxEqualsAssert(serverNetworkHandler.vftable, proc['??_7ServerNetworkHandler@@6BEnableQueueForMainThread@Threading@Bedrock@@@'], 'Invalid serverNetworkHandler');
 
                 Object.defineProperties(bedrockServer, {
                     serverInstance: {value: serverInstance},

@@ -442,6 +442,9 @@ export class EntityRefTraits extends AbstractClass {
 
 @nativeClass(0x18)
 export class WeakEntityRef extends AbstractClass {
+    tryUnwrap<T extends typeof Actor>(clazz:T, getRemoved: boolean = false): InstanceType<T> | null {
+        abstract();
+    }
     tryUnwrapPlayer(getRemoved: boolean = false): Player | null {
         abstract();
     }
@@ -488,7 +491,7 @@ export class Actor extends AbstractClass {
     /**
      * Get the Actor instance of an entity with its EntityContext
      */
-    static tryGetFromEntity(entity:EntityContext):Actor|null {
+    static tryGetFromEntity(entity:EntityContext, getRemoved?:boolean):Actor|null {
         abstract();
     }
 

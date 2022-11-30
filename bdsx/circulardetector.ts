@@ -22,19 +22,23 @@ export class CircularDetector {
         return Class;
     }
 
-    check<T>(instance:VoidPointer, allocator:()=>T, cb:(value:T)=>void):T {
-        let ctorKey = this.map.get(instance.constructor) as string|undefined;
-        if (ctorKey == null) {
-            ctorKey = bin.makeVar(this.keyCounter++);
-            this.map.set(instance.constructor, ctorKey);
+    check<T>(instance:unknown, allocator:()=>T, cb?:(value:T)=>void):T {
+        let key:unknown;
+        if (instance instanceof VoidPointer) {
+            let ctorKey = this.map.get(instance.constructor) as string|undefined;
+            if (ctorKey == null) {
+                ctorKey = bin.makeVar(this.keyCounter++);
+                this.map.set(instance.constructor, ctorKey);
+            }
+            key = instance.getAddressBin()+ctorKey;
+        } else {
+            key = instance;
         }
-
-        const key = instance.getAddressBin();
-        const res = this.map.get(key+ctorKey);
+        const res = this.map.get(key);
         if (res != null) return res as T;
         const value = allocator();
         this.map.set(key, value);
-        cb(value);
+        if (cb !== undefined) cb(value);
         return value;
     }
 
@@ -51,7 +55,7 @@ export class CircularDetector {
         }
         return detector!;
     }
-    static check<T>(instance:VoidPointer, allocator:()=>T, cb:(value:T)=>void):T {
+    static check<T>(instance:unknown, allocator:()=>T, cb?:(value:T)=>void):T {
         const detector = CircularDetector.getInstance();
         const res = detector.check(instance, allocator, cb);
         detector.release();

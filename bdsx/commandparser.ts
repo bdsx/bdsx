@@ -1,13 +1,59 @@
 import { CommandSymbols } from "./bds/cmdsymbolloader";
 import { proc } from "./bds/symbols";
-import { StaticPointer, VoidPointer } from "./core";
+import { NativePointer, StaticPointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
 import { NativeClass } from "./nativeclass";
 import { CommandParameterNativeType, NativeType, Type as DataType, Type } from "./nativetype";
+import * as colors from 'colors';
+
+/**
+ * For findding the default enum parser.
+ * There is no default parser symbol, but many parsers refer to the default parser.
+ */
+function selectMore(...symbols:string[]):NativePointer {
+    interface Item {
+        addr:NativePointer;
+        count:number;
+        symbol:string;
+    }
+    let maximum:Item = {
+        addr: new NativePointer,
+        count: 0,
+        symbol: '',
+    };
+    const map = new Map<string, Item>();
+    for (const symbol of symbols) {
+        const addr = proc[symbol];
+        const addrbin = addr.getAddressBin();
+        let item = map.get(addrbin);
+        if (item === undefined) {
+            map.set(addrbin, item = {count:1, addr, symbol});
+        } else {
+            item.count = item.count+1|0;
+        }
+        if (item.count > maximum.count) {
+            maximum = item;
+        }
+    }
+    for (const item of map.values()) {
+        if (item !== maximum) {
+            console.error(colors.yellow(`[BDSX] selectMore exception: ${item.symbol}`));
+        }
+    }
+    return maximum.addr;
+}
 
 const parsers = new Map<DataType<any>, VoidPointer>();
 const stringParser = proc['??$parse@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z'];
-let enumParser:VoidPointer = proc['??$parseEnum@HU?$DefaultIdConverter@H@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z'];
+let enumParser:VoidPointer = selectMore(
+    '??$parseEnum@W4Mode@ExecuteCommand@@U?$DefaultIdConverter@W4Mode@ExecuteCommand@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+    '??$parseEnum@W4DebuggerAction@ScriptDebugCommand@@U?$DefaultIdConverter@W4DebuggerAction@ScriptDebugCommand@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+    '??$parseEnum@W4ActionType@ResourceUriCommand@@U?$DefaultIdConverter@W4ActionType@ResourceUriCommand@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+    '??$parseEnum@W4StructureActionType@@U?$DefaultIdConverter@W4StructureActionType@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+    '??$parseEnum@W4WatchdogAction@ScriptDebugCommand@@U?$DefaultIdConverter@W4WatchdogAction@ScriptDebugCommand@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+    '??$parseEnum@W4Biomes@LocateCommandUtil@@U?$DefaultIdConverter@W4Biomes@LocateCommandUtil@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+    '??$parseEnum@W4ActorLocation@@U?$DefaultIdConverter@W4ActorLocation@@@CommandRegistry@@@CommandRegistry@@AEBA_NPEAXAEBUParseToken@0@AEBVCommandOrigin@@HAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z',
+);
 
 function passNativeTypeCtorParams<T>(type:Type<T>):[
     number, number,

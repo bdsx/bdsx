@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { analyzer } from '../analyzer';
 import { Config } from '../config';
 import { bedrock_server_exe, NativePointer, VoidPointer } from "../core";
 import { dllraw } from "../dllraw";
 import { fsutil } from '../fsutil';
 import { pdbcache } from '../pdbcache';
+import { destackThrow } from '../source-map-support';
 import { TextParser } from '../textparser';
 import { timeout } from '../util';
 
@@ -24,7 +24,7 @@ export const proc = procNamespace as {readonly [key:string]:NativePointer} & typ
             return target[key];
         } else {
             const rva = pdbcache.search(key);
-            if (rva === -1) throw Error(`Symbol not found: ${key}`);
+            if (rva === -1) destackThrow(Error(`Symbol not found: ${key}`), 1);
             PdbCacheL2.addRva(key, rva);
             const value = dllraw.current.add(rva);
             Object.defineProperty(proc, key, {value});

@@ -3,7 +3,7 @@ import { mce } from "../mce";
 import { float32_t } from "../nativetype";
 import { HasStorage, Storage } from "../storage";
 import type { LayeredAbilities } from "./abilities";
-import { Actor, ActorDamageSource, DimensionId, Mob } from "./actor";
+import { Actor, ActorDamageSource, DimensionId, EntityContext, Mob } from "./actor";
 import { AttributeId, AttributeInstance } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Block } from "./block";
@@ -930,6 +930,10 @@ export class ServerPlayer extends Player implements HasStorage {
         this.setAttribute(AttributeId.Health, 0);
         return super.die(damageSource);
     }
+
+    static tryGetFromEntity(entity:EntityContext, getRemoved?:boolean):ServerPlayer|null {
+        abstract();
+    }
 }
 
 export class SimulatedPlayer extends ServerPlayer{
@@ -1019,6 +1023,10 @@ export class SimulatedPlayer extends ServerPlayer{
         abstract();
     }
     simulateUseItemInSlotOnBlock(slot:number,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)):boolean{
+        abstract();
+    }
+
+    static tryGetFromEntity(entity:EntityContext, getRemoved?:boolean):SimulatedPlayer|null {
         abstract();
     }
 }

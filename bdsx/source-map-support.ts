@@ -210,7 +210,7 @@ export function mapSourcePosition(position: Position): Position {
 }
 
 export function remapError<T extends Error>(err: T): T {
-    err.stack = remapStack(err.stack);
+    err.stack = remapStack(err.stack, (err as any)[destack]);
     return err;
 }
 
@@ -233,12 +233,16 @@ function frameToString(frame:FrameInfo):string {
 /**
  * remap filepath to original filepath
  */
-export function remapStack(stack?: string): string | undefined {
+export function remapStack(stack?: string, destack?:number): string | undefined {
     if (stack === undefined) return undefined;
 
     const state: StackState = { nextPosition: null, curPosition: null };
     const frames = stack.split('\n');
     const nframes:string[] = [];
+
+    if (destack !== undefined) {
+        frames.splice(1, destack);
+    }
 
     let i = frames.length - 1;
     for (; i >= 1; i--) {
@@ -323,9 +327,9 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
 /**
  * remap stack and print
  */
-export function remapAndPrintError(err:{stack?:string}): void {
+export function remapAndPrintError(err:{stack?:string, [destack]?:number}): void {
     if (err && err.stack) {
-        console.error(remapStack(err.stack));
+        console.error(remapStack(err.stack, err[destack]));
     } else {
         console.error(err);
     }
@@ -387,7 +391,7 @@ function shimEmitUncaughtException():void {
         if (type === 'uncaughtException') {
             const err = args[0];
             if (err && err.stack) {
-                err.stack = remapStack(err.stack);
+                remapError(err);
                 const hasListeners = (this.listeners(type).length > 0);
                 if (!hasListeners) {
                     return printErrorAndExit(err);
@@ -395,7 +399,7 @@ function shimEmitUncaughtException():void {
             }
         } else if (type === 'unhandledRejection') {
             const err = args[0];
-            if (err && err.stack) err.stack = remapStack(err.stack);
+            if (err && err.stack) remapError(err);
         }
 
         return origEmit.apply(this, arguments);
@@ -441,3 +445,10 @@ export function partialTrace(message:string, offset:number = 0):void {
 export function getCurrentStackLine(stackOffset:number = 0):string {
     return getCurrentFrameInfo(stackOffset+1).stackLine;
 }
+
+export function destackThrow(err:Error, removeStack:number):never {
+    (err as any)[destack] = removeStack+1;
+    throw err;
+}
+
+const destack = Symbol('destack');

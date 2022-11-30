@@ -14,7 +14,7 @@ export function bdsxWarningOnce(message:string):void {
     console.error(colors.yellow('[BDSX] '+message));
 }
 
-export function bdsxEqualsAssert(expected:unknown, actual:unknown, message:string):void {
+export function bdsxEqualsAssert(actual:unknown, expected:unknown, message:string):void {
     if (expected === actual) return;
     if (expected instanceof VoidPointer && actual instanceof VoidPointer) {
         if (expected.equalsptr(actual)) return;

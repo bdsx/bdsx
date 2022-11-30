@@ -37,15 +37,20 @@ export class NetworkHandler extends AbstractClass {
         abstract();
     }
 
-    getConnectionFromId(ni:NetworkIdentifier):NetworkHandler.Connection|null {
+    getConnectionFromId(ni:NetworkIdentifier):NetworkConnection|null {
         abstract();
     }
 }
 
+export class NetworkConnection extends AbstractClass {
+    networkIdentifier:NetworkIdentifier;
+}
+
 export namespace NetworkHandler {
-    export class Connection extends AbstractClass {
-        networkIdentifier:NetworkIdentifier;
-    }
+    /** @deprecated renamed to NetworkConnection */
+    export const Connection = NetworkConnection;
+    /** @deprecated renamed to NetworkConnection */
+    export type Connection = NetworkConnection;
 }
 
 @nativeClass(null)
@@ -56,9 +61,9 @@ class ServerNetworkHandler$Client extends AbstractClass {
 export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
-    @nativeField(CxxString, 0x278) // accessed in ServerNetworkHandler::allowIncomingConnections
+    @nativeField(CxxString, 0x288) // accessed in ServerNetworkHandler::allowIncomingConnections
     readonly motd:CxxString;
-    @nativeField(int32_t, 0x2f0) // accessed in ServerNetworkHandler::setMaxNumPlayers
+    @nativeField(int32_t, 0x300) // accessed in ServerNetworkHandler::setMaxNumPlayers
     readonly maxPlayers: int32_t;
 
     disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {

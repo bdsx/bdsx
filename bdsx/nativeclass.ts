@@ -441,7 +441,7 @@ export class NativeClass extends StructurePointer {
         clazz.define(fields, defineSize, defineAlign, true);
     }
 
-    static define<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, defineSize?:number|null, defineAlign:number|null = null, abstract:boolean=false):void {
+    static define<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, defineSize?:number|null|NativeClassOptions, defineAlign:number|null = null, abstract:boolean=false):void {
         const clazz = this as NativeClassType<T>;
         if (clazz.hasOwnProperty(isSealed)) {
             throw Error('Cannot define the structure of the already used');
@@ -459,12 +459,22 @@ export class NativeClass extends StructurePointer {
                 def.field(key, type);
             }
         }
+
+        let opts:NativeClassOptions;
+        if (defineSize === undefined) {
+            opts = {};
+        } else if (typeof defineSize === 'number' || defineSize === null) {
+            opts = {size:defineSize};
+        } else {
+            opts = defineSize;
+        }
+
         if (abstract) {
             def.eof = null;
-            if (defineSize === undefined) defineSize = null;
+            if (opts.size === undefined) opts.size = null;
         }
         if (defineAlign !== null) def.align = defineAlign;
-        def.define(clazz, {size: defineSize});
+        def.define(clazz, opts);
     }
 
     static defineAsUnion<T extends NativeClass>(this:new()=>T, fields:StructureFields<T>, abstract:boolean = false):void {

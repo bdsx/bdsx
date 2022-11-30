@@ -100,7 +100,7 @@ export class Dimension extends NativeClass {
 
 Dimension.prototype.getBlockSource = procHacker.js('?getBlockSourceFromMainChunkSource@Dimension@@QEBAAEAVBlockSource@@XZ', BlockSource, {this:Dimension});
 Dimension.prototype.getChunkSource = procHacker.js('?getChunkSource@Dimension@@QEBAAEAVChunkSource@@XZ', ChunkSource, {this:Dimension});
-Dimension.prototype.getDimensionId = procHacker.js('?getDimensionId@Dimension@@QEBA?AV?$AutomaticID@VDimension@@H@@XZ', int32_t, {this:Dimension, structureReturn:true});
+Dimension.prototype.getDimensionId = procHacker.js('?getDimensionId@Dimension@@UEBA?AV?$AutomaticID@VDimension@@H@@XZ', int32_t, {this:Dimension, structureReturn:true});
 
 /**
  * in fact, the first parameter of this function is NetworkBlockPosition.

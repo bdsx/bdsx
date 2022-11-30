@@ -2,7 +2,7 @@ import * as colors from 'colors';
 import { bin } from "./bin";
 import { fsutil } from "./fsutil";
 import { polynominal } from "./polynominal";
-import { remapStack } from "./source-map-support";
+import { remapAndPrintError } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
 import { checkPowOf2, getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
@@ -2773,7 +2773,7 @@ export class X64Assembler {
             try {
                 this.label(command.substr(0, command.length-1).trim());
             } catch (err) {
-                console.log(remapStack(err.stack));
+                remapAndPrintError(err);
                 throw parser.error(err.message);
             }
             return;
@@ -2798,7 +2798,7 @@ export class X64Assembler {
                 this.chunk.unresolved.push(new UnresolvedConstant(this.chunk.size-4, 4, unresolvedConstant, unresolvedPos));
             }
         } catch (err) {
-            console.log(remapStack(err.stack));
+            remapAndPrintError(err);
             throw parser.error(err.message);
         }
     }

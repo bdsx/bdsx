@@ -11,6 +11,9 @@ export namespace Bedrock {
     export class NonOwnerPointer<T extends NativeClass> extends NativeClass {
         sharedptr:CxxSharedPtr<Wrapper<T>>;
 
+        /**
+         * @deprecated CAUNTION, it's not working properly
+         */
         get():T|null {
             const p = this.sharedptr.p;
             return p && p.value;
