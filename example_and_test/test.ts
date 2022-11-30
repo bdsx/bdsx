@@ -669,7 +669,7 @@ Tester.concurrency({
 
     async commandrawenum() {
         const gameModeEnum = command.rawEnum('GameMode');
-        this.arrayEquals(gameModeEnum.getValues(), [ 'default', 'creative', 'survival', 'adventure', 'd', 'c', 's', 'a' ]);
+        this.arrayEquals(gameModeEnum.getValues(), [ 'default', 'creative', 'spectator', 'survival', 'adventure', 'd', 'c', 's', 'a' ]);
 
         for (let i=0;i<2;i++) {
             await checkCommandRegister(this, 'raw'+i, [

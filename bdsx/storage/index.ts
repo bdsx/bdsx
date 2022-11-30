@@ -1,7 +1,9 @@
 import * as path from 'path';
 import { fsutil } from "../fsutil";
 import { timeout } from "../util";
+import * as util from 'util';
 import Module = require('module');
+import { CircularDetector } from '../circulardetector';
 
 interface StorageClassBase {
     [Storage.classId]:string;
@@ -34,6 +36,9 @@ class StorageArray<T> extends Array<T> {
         if (storage === null) throw Error('deleted storage array');
         if (this[index] !== value) {
             this[index] = storage.convert(value) as T;
+            storage.saveRequest();
+        } else if (value === undefined && !(index in this)) {
+            this[index] = value;
             storage.saveRequest();
         }
         return true;
@@ -101,6 +106,10 @@ class StorageArray<T> extends Array<T> {
         storage.saveRequest();
         return this;
     }
+
+    [util.inspect.custom](depth:number, options:Record<string, any>):unknown {
+        return CircularDetector.check(this, ()=>[...this]);
+    }
 }
 
 const arrayProxyHandler:ProxyHandler<any> = {
@@ -134,6 +143,9 @@ const objectProxyHandler:ProxyHandler<any> = {
             if (storage.state !== State.Loaded) throw Error(`storage is not loaded`);
             if (target[p] !== value) {
                 target[p] = storage.convert(value);
+                storage.saveRequest();
+            } else if (value === undefined && !(p in target)) {
+                target[p] = value;
                 storage.saveRequest();
             }
         } else {
@@ -373,8 +385,8 @@ class StorageImpl extends Storage {
     }
 
     private _makeArrayProxy(array:unknown[]):any[] {
-        const base = new StorageArray(this, array.length);
         const n = array.length;
+        const base = new StorageArray(this, n);
         for (let i=0;i!==n;i=i+1|0) {
             base.set(i, array[i]);
         }

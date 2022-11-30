@@ -11,6 +11,7 @@ import type { ItemStack } from "./inventory";
 import type { Player, ServerPlayer } from "./player";
 import type { Scoreboard } from "./scoreboard";
 import { StructureManager } from "./structure";
+import { WeakRefT } from "./weakreft";
 
 export enum Difficulty {
     Peaceful,
@@ -60,6 +61,9 @@ export class Level extends NativeClass {
     createDimension(id:DimensionId):Dimension {
         abstract();
     }
+    getOrCreateDimension(id:DimensionId):WeakRefT<Dimension> {
+        abstract();
+    }
     /**
      * Destroys a block at the given position
      *
@@ -102,6 +106,9 @@ export class Level extends NativeClass {
      * Returns the Dimension instance
      */
     getDimension(dimension:DimensionId):Dimension|null {
+        abstract();
+    }
+    getDimensionWeakRef(dimension:DimensionId):WeakRefT<Dimension> {
         abstract();
     }
     /**

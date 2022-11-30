@@ -415,11 +415,13 @@ export class CommandContext extends NativeClass {
     }
 
     /**
+     * @deprecated
      * @param commandOrigin it's destructed by the destruction of CommandContext. it should be allocated by malloc
      */
     static constructSharedPtr(command:string, commandOrigin:CommandOrigin, version?:number):CxxSharedPtr<CommandContext> {
         const sharedptr = new CommandContextSharedPtr(true);
-        sharedptr.create(commandContextRefCounter$Vftable);
+        const vftable = proc['??_7?$_Ref_count_obj2@_N@std@@6B@']; // _Ref_count_obj2<bool>::vftable
+        sharedptr.create(vftable);
         sharedptr.p!.constructWith(command, commandOrigin, version);
         return sharedptr;
     }
@@ -430,7 +432,6 @@ export namespace CommandVersion {
 }
 
 const CommandOriginWrapper = Wrapper.make(CommandOrigin.ref());
-const commandContextRefCounter$Vftable = proc["??_7?$_Ref_count_obj2@VCommandContext@@@std@@6B@"];
 const CommandContext$CommandContext = procHacker.js('??0CommandContext@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VCommandOrigin@@U?$default_delete@VCommandOrigin@@@std@@@2@H@Z', void_t, null,
     CommandContext, CxxString, CommandOriginWrapper, int32_t);
 const CommandContextSharedPtr = CxxSharedPtr.make(CommandContext);
@@ -698,8 +699,13 @@ export class MinecraftCommands extends NativeClass {
     }
     /**
      * @param ctx it's destructed by this function
+     * @deprecated old method
      */
-    executeCommand(ctx:CxxSharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT {
+    executeCommand(ctx:CxxSharedPtr<CommandContext>, suppressOutput:boolean):MCRESULT;
+
+    executeCommand(ctx:CommandContext, suppressOutput:boolean):MCRESULT;
+
+    executeCommand(ctx:CxxSharedPtr<CommandContext>|CommandContext, suppressOutput:boolean):MCRESULT {
         abstract();
     }
     /**

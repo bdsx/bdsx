@@ -391,7 +391,7 @@ export type void_t = void;
 export const bool_t = new CommandParameterNativeType<boolean>(
     mangle.bool, 'bool_t',
     1, 1,
-    v=>typeof v === 'boolean',
+    v=>typeof v === 'boolean' || v === undefined,
     undefined,
     (ptr, offset)=>ptr.getBoolean(offset),
     (ptr, v, offset)=>ptr.setBoolean(v, offset),

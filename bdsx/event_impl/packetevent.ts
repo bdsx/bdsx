@@ -1,6 +1,6 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { NetworkHandler, NetworkIdentifier } from "../bds/networkidentifier";
+import { NetworkConnection, NetworkHandler, NetworkIdentifier } from "../bds/networkidentifier";
 import { createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "../bds/packet";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { PacketIdToType } from "../bds/packets";
@@ -34,16 +34,16 @@ ReadOnlyBinaryStream.prototype.read = procHacker.jsv('??_7ReadOnlyBinaryStream@@
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
     // stack memories of NetworkHandler::_sortAndPacketizeEvents
-    @nativeField(CxxSharedPtr.make(Packet), 0x78)
+    @nativeField(CxxSharedPtr.make(Packet), -0x10)
     packet:CxxSharedPtr<Packet>; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ExtendedStreamReadResult, 0x90)
+    @nativeField(ExtendedStreamReadResult, 0x08)
     result:ExtendedStreamReadResult;  // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ReadOnlyBinaryStream, 0x110)
+    @nativeField(ReadOnlyBinaryStream, 0x70)
     stream:ReadOnlyBinaryStream; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
 }
 
 asmcode.createPacketRaw = proc['?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z'];
-function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkHandler.Connection):PacketSharedPtr|null {
+function onPacketRaw(rbp:OnPacketRBP, packetId:MinecraftPacketIds, conn:NetworkConnection):PacketSharedPtr|null {
     try {
         const target = events.packetRaw(packetId);
         const ni = conn.networkIdentifier;
@@ -182,15 +182,15 @@ bedrockServer.withLoading().then(()=>{
     const handleViolationSymbol = '?_handleViolation@PacketViolationHandler@@AEAA?AW4PacketViolationResponse@@W4MinecraftPacketIds@@W4StreamReadResult@@AEBVNetworkIdentifier@@PEA_N@Z';
     const packetHandleSymbol = '?handle@Packet@@QEAAXAEBVNetworkIdentifier@@AEAVNetEventCallback@@AEAV?$shared_ptr@VPacket@@@std@@@Z';
     const sendToMultipleSymbol = '?sendToMultiple@NetworkHandler@@QEAAXAEBV?$vector@UNetworkIdentifierWithSubId@@V?$allocator@UNetworkIdentifierWithSubId@@@std@@@std@@AEBVPacket@@@Z';
-    const packetlizeSymbol = '?_sortAndPacketizeEvents@NetworkHandler@@AEAA_NAEAVConnection@1@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z';
+    const packetlizeSymbol = '?_sortAndPacketizeEvents@NetworkHandler@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z';
 
     // hook raw
-    asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkHandler.Connection);
-    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x294,
+    asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkConnection);
+    procHacker.patching('hook-packet-raw', packetlizeSymbol, 0x216,
         asmcode.packetRawHook, // original code depended
         Register.rax, true, [
             0x41, 0x8B, 0xD6,                          // mov edx,r14d
-            0x48, 0x8D, 0x4D, 0x78,                    // lea rcx,qword ptr ss:[rbp+78]
+            0x48, 0x8D, 0x4D, 0xF0,                    // lea rcx,qword ptr ss:[rbp-10]
             0xE8, null, null, null, null,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
             0x90,                                      // nop
         ]);
@@ -217,11 +217,11 @@ bedrockServer.withLoading().then(()=>{
     // hook after
     asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, Packet, NetworkIdentifier);
     asmcode.handlePacket = proc[packetHandleSymbol];
-    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x60d,
+    procHacker.patching('hook-packet-after', packetlizeSymbol, 0x4fe,
         asmcode.packetAfterHook, // original code depended
         Register.rax, true, [
             0x49, 0x8B, 0xD5,                         // mov rdx,r13
-            0x48, 0x8B, 0x4D, 0x78,                   // mov rcx,qword ptr ss:[rbp+78]
+            0x48, 0x8B, 0x4D, 0xF0,                   // mov rcx,qword ptr ss:[rbp-10]
             0xE8, null, null, null, null,             // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet> & __ptr64) __ptr64>
         ]);
 

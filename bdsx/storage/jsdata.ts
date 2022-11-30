@@ -7,8 +7,8 @@ enum Opcode {
     Object,
     Array,
     Extra,
+    Empty,
 
-    Reserved1,
     Reserved2,
 }
 enum ExCode {
@@ -72,9 +72,24 @@ class Serializer {
         this.writer.write(Buffer.from(value, 'utf8'));
     }
     writeArray(list:unknown[]):void {
-        this.writeUint(Opcode.Array, list.length);
-        for (const item of list) {
-            this.writeValue(item);
+        const n = list.length;
+        this.writeUint(Opcode.Array, n);
+        let empty = 0;
+        for (let i=0;i!==n;i=i+1|0) {
+            const v = list[i];
+            if (v === undefined && !(i in list)) {
+                empty = empty+1|0;
+            } else {
+                if (empty !== 0) {
+                    this.writeUint(Opcode.Empty, empty);
+                    empty = 0;
+                }
+                this.writeValue(v);
+            }
+        }
+        if (empty !== 0) {
+            this.writeUint(Opcode.Empty, empty);
+            empty = 0;
         }
     }
     writeObject(obj:Record<string, unknown>):void {
@@ -160,8 +175,14 @@ class Deserializer {
     readArray(head:number):any[] {
         const len = this.readUint(head);
         const out = new Array<any>(len);
-        for (let i=0;i<len;i++) {
-            out[i] = this.readValue();
+        for (let i=0;i<len;) {
+            const v = this.readValue();
+            if (v instanceof jsdata.EmptySpace) {
+                i = i+v.length|0;
+            } else {
+                out[i] = v;
+                i=i+1|0;
+            }
         }
         return out;
     }
@@ -207,10 +228,14 @@ class Deserializer {
                 case ExCode.Date:
                     return this.readDate();
                 }
+                break;
+            case Opcode.Empty:
+                return new jsdata.EmptySpace(this.readUint(head));
             }
         } catch (err) {
             this.errors.push(err);
         }
+        return jsdata.Invalid;
     }
 }
 
@@ -227,4 +252,12 @@ export namespace jsdata {
         return ds.readValue();
     }
 
+    export class EmptySpace {
+        constructor(public readonly length:number) {
+        }
+    }
+
+    export const Invalid = {
+        toString():string { return '[Invalid]'; },
+    };
 }

@@ -16,18 +16,17 @@ import { bool_t, int32_t, NativeType, Type, void_t } from './nativetype';
 import { procHacker } from './prochacker';
 import { CxxSharedPtr } from './sharedpointer';
 
-let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t)=>MCRESULT;
-function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr<CommandContext>, b:bool_t):MCRESULT {
+let executeCommandOriginal:(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CommandContext, b:bool_t)=>MCRESULT;
+function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctx:CommandContext, b:bool_t):MCRESULT {
     try {
-        const ctx = ctxptr.p!;
         const name = ctx.origin.getName();
-        const resv = events.command.fire(ctxptr.p!.command, name, ctx);
+        const resv = events.command.fire(ctx.command, name, ctx);
         switch (typeof resv) {
         case 'number':
             res.result = resv;
             return res;
         default:
-            return executeCommandOriginal(cmd, res, ctxptr, b);
+            return executeCommandOriginal(cmd, res, ctx, b);
         }
     } catch (err) {
         events.errorFire(err);
@@ -38,7 +37,13 @@ function executeCommand(cmd:MinecraftCommands, res:MCRESULT, ctxptr:CxxSharedPtr
 
 MinecraftCommands.prototype.executeCommand = function(ctx, b) {
     const res = new MCRESULT(true);
-    return executeCommand(this, res, ctx, b);
+    if (ctx instanceof CxxSharedPtr) {
+        executeCommand(this, res, ctx.p!, b);
+        ctx.dispose();
+        return res;
+    } else {
+        return executeCommand(this, res, ctx, b);
+    }
 };
 
 @nativeClass()
@@ -267,6 +272,6 @@ const customCommandDtor = makefunc.np(function(delIt){
 }, void_t, {this:CustomCommand, name:'CustomCommand::destructor', crossThread: true}, int32_t);
 
 bedrockServer.withLoading().then(()=>{
-    executeCommandOriginal = procHacker.hooking('?executeCommand@MinecraftCommands@@QEBA?AUMCRESULT@@V?$shared_ptr@VCommandContext@@@std@@_N@Z', MCRESULT, null,
-        MinecraftCommands, MCRESULT, CxxSharedPtr.make(CommandContext), bool_t)(executeCommand);
+    executeCommandOriginal = procHacker.hooking('?executeCommand@MinecraftCommands@@QEBA?AUMCRESULT@@AEAVCommandContext@@_N@Z', MCRESULT, null,
+        MinecraftCommands, MCRESULT, CommandContext, bool_t)(executeCommand);
 });

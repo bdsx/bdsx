@@ -1,3 +1,4 @@
+import { asmcode } from "../asm/asmcode";
 import { commandParser } from "../commandparser";
 import { bool_t, CxxString, float32_t, int32_t } from "../nativetype";
 import { RelativeFloat } from "./blockpos";
@@ -31,7 +32,7 @@ const types = [
 const typesWithTypeIdPtr = [
     bool_t,
     CommandItem,
-    Command.Block,
+    // Command.Block,
     Command.ActorDefinitionIdentifier,
 ];
 
@@ -45,3 +46,4 @@ type_id.load(symbols);
 commandParser.load(symbols);
 type_id.clone(CommandRegistry, ActorWildcardCommandSelector, PlayerWildcardCommandSelector);
 commandParser.set(PlayerWildcardCommandSelector, commandParser.get(ActorWildcardCommandSelector)!);
+commandParser.set(Command.Block, asmcode.returnZero);

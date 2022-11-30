@@ -7,7 +7,7 @@ interface TypeIdSymbols {
     fnTypes:Type<any>[];
     fnSymbols:string[];
     ptrTypes:Type<any>[];
-    ptrSymbols:string[];
+    ptrSymbols:{symbol:string, type:Type<any>}[];
 }
 
 export class CommandSymbols {
@@ -50,7 +50,10 @@ export class CommandSymbols {
 
         for (const v of typesWithValuePtr) {
             symbols.ptrTypes.push(v);
-            symbols.ptrSymbols.push(`?id@?1???$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ@4V1@A`);
+            symbols.ptrSymbols.push({
+                symbol:`?id@?1???$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ@4V1@A`,
+                type:v,
+            });
         }
     }
 
@@ -82,17 +85,19 @@ export class CommandSymbols {
         if (symbols == null) return;
 
         for (let i=0;i<symbols.ptrSymbols.length;i++) {
-            const symbol = symbols.ptrSymbols[i];
-            const addr = proc[symbol];
-            if (addr == null) throw Error(`${symbol} not found`);
-            yield [symbols.ptrTypes[i], addr];
+            const {symbol, type} = symbols.ptrSymbols[i];
+            try {
+                const addr = proc[symbol];
+                yield [symbols.ptrTypes[i], addr];
+            } catch (err) {
+                throw Error(`type_id<${base.name}, ${type.name}> value pointer not found`);
+            }
         }
     }
     *iterateCounters():IterableIterator<[Type<any>, NativePointer]> {
         for (let i=0;i<this.counterBases.length;i++) {
             const symbol = this.counterSymbols[i];
             const addr = proc[symbol];
-            if (addr == null) throw Error(`${symbol} not found`);
             yield [this.counterBases[i], addr];
         }
     }
@@ -100,7 +105,6 @@ export class CommandSymbols {
         for (let i=0;i<this.parserTypes.length;i++) {
             const symbol = this.parserSymbols[i];
             const addr = proc[symbol];
-            if (addr == null) throw Error(`${symbol} not found`);
             yield [this.parserTypes[i], addr];
         }
     }

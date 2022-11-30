@@ -238,11 +238,12 @@ export abstract class CxxWeakPtr<T extends NativeClass> extends NativeClass {
             }
             Object.defineProperties(Clazz, {
                 name: { value: `CxxWeakPtr<${clazz.name}>` },
-                symbol: { value: mangle.templateClass(['std', 'weak_ptr'], clazz) },
             });
             Clazz.define({
                 p:clazz.ref(),
                 ref:Base.ref(),
+            }, {
+                symbol: mangle.templateClass(['std', 'weak_ptr'], clazz),
             });
 
             return Clazz as any;

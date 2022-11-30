@@ -261,7 +261,7 @@ export class ItemStackBase extends NativeClass {
     isNull():boolean {
         abstract();
     }
-    setNull():void {
+    setNull(unknown?:string):void {
         abstract();
     }
     getAmount():number {
