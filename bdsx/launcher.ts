@@ -209,7 +209,7 @@ function _launch(asyncResolve:()=>void):void {
         bedrockServer.nonOwnerPointerServerNetworkHandler.dispose();
         decay(bedrockServer.nonOwnerPointerServerNetworkHandler);
         nonOwnerPointerStructureManager!.dispose();
-        decay(bedrockServer.structureMananger);
+        decay(bedrockServer.structureManager);
     }, void_t);
     asmcode.gameThreadInner = proc['<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()']; // caller of ServerInstance::_update
     asmcode.free = dll.ucrtbase.free.pointer;
