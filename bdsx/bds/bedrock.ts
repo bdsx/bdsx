@@ -10,7 +10,7 @@ export namespace Bedrock {
     @nativeClass()
     export class NonOwnerPointer<T extends NativeClass> extends NativeClass {
         /**
-         * @deprecated CAUNTION, it's not working properly
+         * @deprecated CAUTION, it's not working properly
          */
         sharedptr:CxxSharedPtr<Wrapper<T>>;
 
