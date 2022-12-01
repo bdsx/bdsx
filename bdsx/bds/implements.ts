@@ -1,6 +1,6 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { BlockPos, ChunkPos, RelativeFloat, Vec2, Vec3 } from "../bds/blockpos";
+import { BlockPos, ChunkPos, RelativeFloat, Vec2, Vec3 } from "./blockpos";
 import { bin } from "../bin";
 import { capi } from "../capi";
 import { commandParser } from "../commandparser";
@@ -1759,6 +1759,18 @@ StructureTemplate.prototype.fillFromWorld = procHacker.js("?fillFromWorld@Struct
 StructureTemplate.prototype.placeInWorld = procHacker.js("?placeInWorld@StructureTemplate@@QEBAXAEAVBlockSource@@AEBVBlockPalette@@AEBVBlockPos@@AEBVStructureSettings@@PEAVStructureTelemetryServerData@@_N@Z", void_t, {this:StructureTemplate}, BlockSource, BlockPalette, BlockPos, StructureSettings);
 StructureTemplate.prototype.getBlockAtPos = procHacker.js("?getBlockAtPos@StructureTemplate@@QEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:StructureTemplate}, BlockPos);
 StructureTemplate.prototype.getSize = procHacker.js("?getSize@StructureTemplate@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:StructureTemplate});
+StructureTemplate.prototype.allocateAndSave = procHacker.js("?save@StructureTemplate@@QEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ", CompoundTag.ref(), {this: StructureTemplate, structureReturn: true})
+const StructureTemplate$load = procHacker.js("?load@StructureTemplate@@QEAA_NAEBVCompoundTag@@@Z", bool_t, {this:StructureTemplate}, CompoundTag);
+StructureTemplate.prototype.load = function(tag) {
+    if (tag instanceof Tag) {
+        return StructureTemplate$load.call(this, tag);
+    } else {
+        const allocated = NBT.allocate(tag);
+        const res = StructureTemplate$load.call(this, allocated as CompoundTag);
+        allocated.dispose();
+        return res;
+    }
+};
 StructureManager.prototype.getOrCreate = procHacker.js("?getOrCreate@StructureManager@@QEAAAEAVStructureTemplate@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", StructureTemplate, {this:StructureManager}, CxxString);
 // components.ts
 OnHitSubcomponent.prototype.readfromJSON = procHacker.jsv('??_7FreezeOnHitSubcomponent@@6B@', '?readfromJSON@FreezeOnHitSubcomponent@@UEAAXAEAVValue@Json@@AEBVSemVersion@@@Z', void_t, {this:OnHitSubcomponent}, JsonValue);
