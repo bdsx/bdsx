@@ -123,7 +123,7 @@ class StructureManagerShim extends StructureManager {
 }
 
 Level.prototype.getStructureManager = function() {
-    return bedrockServer.structureMananger.as(StructureManagerShim);
+    return bedrockServer.structureManager.as(StructureManagerShim);
 };
 Level.prototype.getSpawner = procHacker.js("?getSpawner@Level@@UEBAAEAVSpawner@@XZ", Spawner, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("?getTagRegistry@Level@@UEAAAEAV?$TagRegistry@U?$IDType@ULevelTagIDType@@@@U?$IDType@ULevelTagSetIDType@@@@@@XZ", TagRegistry, {this:Level});
