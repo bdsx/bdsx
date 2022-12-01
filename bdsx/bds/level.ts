@@ -3,6 +3,7 @@ import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
 import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor, WeakEntityRef } from "./actor";
+import type { Bedrock } from "./bedrock";
 import type { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
@@ -136,12 +137,12 @@ export class Level extends NativeClass {
     getSeed():number {
         abstract();
     }
-    protected _getStructureManager(structureManager:StructureManager):StructureManager {
-        abstract();
-    }
-    /** Constructs a StructureManager instance, you need to destruct it later */
+    /**
+     * Constructs a StructureManager instance, you need to destruct it later
+     * @deprecated use bedrockServer.structureManager
+     */
     getStructureManager():StructureManager {
-        return this._getStructureManager(StructureManager.construct());
+        abstract();
     }
     /**
      * Returns the Spawner instance

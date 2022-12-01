@@ -13,6 +13,7 @@ import * as nimodule from './bds/networkidentifier';
 import { RakNet } from './bds/raknet';
 import { RakNetInstance } from './bds/raknetinstance';
 import * as bd_server from './bds/server';
+import { StructureManager } from './bds/structure';
 import { proc } from './bds/symbols';
 import type { CommandResult, CommandResultType } from './commandresult';
 import { CANCEL, Encoding } from "./common";
@@ -64,6 +65,7 @@ class Liner {
 
 let launched = false;
 let closed = false;
+let nonOwnerPointerStructureManager:Bedrock.NonOwnerPointer<StructureManager>|null = null;
 const loadingIsFired = DeferPromise.make<void>();
 const openIsFired = DeferPromise.make<void>();
 
@@ -206,6 +208,8 @@ function _launch(asyncResolve:()=>void):void {
         decay(bedrockServer.commandOutputSender);
         bedrockServer.nonOwnerPointerServerNetworkHandler.dispose();
         decay(bedrockServer.nonOwnerPointerServerNetworkHandler);
+        nonOwnerPointerStructureManager!.dispose();
+        decay(bedrockServer.structureMananger);
     }, void_t);
     asmcode.gameThreadInner = proc['<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()']; // caller of ServerInstance::_update
     asmcode.free = dll.ucrtbase.free.pointer;
@@ -316,6 +320,10 @@ function _launch(asyncResolve:()=>void):void {
                 const commandOutputSender = (minecraftCommands as any as StaticPointer).getPointerAs(CommandOutputSender, 0x8);
                 const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get()!.subAs(nimodule.ServerNetworkHandler, 0x10); // XXX: unknown state. cut corners.
                 bdsxEqualsAssert(serverNetworkHandler.vftable, proc['??_7ServerNetworkHandler@@6BEnableQueueForMainThread@Threading@Bedrock@@@'], 'Invalid serverNetworkHandler');
+                const Level$getStructureManager = procHacker.js("?getStructureManager@Level@@UEAA?AV?$not_null@V?$NonOwnerPointer@VStructureManager@@@Bedrock@@@gsl@@XZ", Bedrock.NonOwnerPointer.make(StructureManager), {this:Level, structureReturn:true});
+                nonOwnerPointerStructureManager = Level$getStructureManager.call(level);
+                const structureManager = nonOwnerPointerStructureManager!.get()!;
+                bdsxEqualsAssert(structureManager.vftable, proc['??_7StructureManager@@6B@'], 'level.getStructureManager()');
 
                 Object.defineProperties(bedrockServer, {
                     serverInstance: {value: serverInstance},
@@ -331,6 +339,7 @@ function _launch(asyncResolve:()=>void):void {
                     raknetInstance: {value: raknetInstance},
                     rakPeer: {value: rakPeer},
                     commandOutputSender: {value: commandOutputSender},
+                    structureManager: {value: structureManager},
                 });
 
                 Object.defineProperty(bd_server, 'serverInstance', { value:serverInstance });
@@ -416,7 +425,8 @@ export namespace bedrockServer {
     export let commandOutputSender:CommandOutputSender = abstractobject;
     // eslint-disable-next-line prefer-const
     export let nonOwnerPointerServerNetworkHandler:Bedrock.NonOwnerPointer<nimodule.ServerNetworkHandler> = abstractobject;
-    //
+    // eslint-disable-next-line prefer-const
+    export let structureMananger:StructureManager = abstractobject;
 
     Object.defineProperty(bd_server, 'serverInstance', {value: abstractobject, writable: true});
     Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});

@@ -183,8 +183,11 @@ export class StructureTemplate extends AbstractClass {
     }
 }
 
-@nativeClass(0xC0) // Last few lines of Minecraft::Minecraft
+@nativeClass(null) // Last few lines of Minecraft::Minecraft
 export class StructureManager extends AbstractClass {
+    @nativeField(VoidPointer)
+    vftable:VoidPointer;
+
     getOrCreate(name:string):StructureTemplate {
         abstract();
     }
