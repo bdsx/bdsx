@@ -1759,7 +1759,7 @@ StructureTemplate.prototype.fillFromWorld = procHacker.js("?fillFromWorld@Struct
 StructureTemplate.prototype.placeInWorld = procHacker.js("?placeInWorld@StructureTemplate@@QEBAXAEAVBlockSource@@AEBVBlockPalette@@AEBVBlockPos@@AEBVStructureSettings@@PEAVStructureTelemetryServerData@@_N@Z", void_t, {this:StructureTemplate}, BlockSource, BlockPalette, BlockPos, StructureSettings);
 StructureTemplate.prototype.getBlockAtPos = procHacker.js("?getBlockAtPos@StructureTemplate@@QEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, {this:StructureTemplate}, BlockPos);
 StructureTemplate.prototype.getSize = procHacker.js("?getSize@StructureTemplate@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:StructureTemplate});
-StructureTemplate.prototype.allocateAndSave = procHacker.js("?save@StructureTemplate@@QEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ", CompoundTag.ref(), {this: StructureTemplate, structureReturn: true})
+StructureTemplate.prototype.allocateAndSave = procHacker.js("?save@StructureTemplate@@QEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ", CompoundTag.ref(), {this: StructureTemplate, structureReturn: true});
 const StructureTemplate$load = procHacker.js("?load@StructureTemplate@@QEAA_NAEBVCompoundTag@@@Z", bool_t, {this:StructureTemplate}, CompoundTag);
 StructureTemplate.prototype.load = function(tag) {
     if (tag instanceof Tag) {
