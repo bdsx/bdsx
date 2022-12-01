@@ -11,6 +11,7 @@ import { BlockPos, RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
 import { CommandContext, CommandPermissionLevel } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { CxxOptionalToUndefUnion } from "bdsx/bds/cxxoptional";
+import { Dimension } from "bdsx/bds/dimension";
 import { HashedString } from "bdsx/bds/hashedstring";
 import { ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import { ByteArrayTag, ByteTag, CompoundTag, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag } from "bdsx/bds/nbt";
@@ -49,7 +50,19 @@ import { getRecentSentPacketId } from "./net-rawpacket";
 let sendidcheck = 0;
 let chatCancelCounter = 0;
 
-const OverworldDimension$vftable = proc['??_7OverworldDimension@@6BIDimension@@@'];
+const dimensionVFTables = new Set<string>([
+    proc['??_7OverworldDimension@@6BIDimension@@@'],
+    proc['??_7NetherDimension@@6BIDimension@@@'],
+    proc['??_7TheEndDimension@@6BIDimension@@@'],
+].map(addr=>addr.getAddressBin()));
+function isDimensionClass(dimension:Dimension):boolean {
+    return dimensionVFTables.has(dimension.vftable.getAddressBin());
+}
+const dimensions = new Set<DimensionId>([
+    DimensionId.Overworld,
+    DimensionId.Nether,
+    DimensionId.TheEnd,
+]);
 
 type PromiseFunc = ()=>Promise<PromiseFunc>;
 
@@ -181,6 +194,10 @@ Tester.concurrency({
         [...bedrockServer.commandRegistry.commandSymbols].map(v=>v.value);
         [...bedrockServer.commandRegistry.softEnums].map(v=>v.name);
         [...bedrockServer.commandRegistry.softEnumLookup.keys()];
+        for (const dim of [DimensionId.Overworld, DimensionId.Nether, DimensionId.TheEnd]) {
+            this.equals(bedrockServer.level.createDimension(dim).getDimensionId(), dim);
+            this.equals(bedrockServer.level.getDimension(dim)?.getDimensionId(), dim);
+        }
     }
 }, {
     disasm() {
@@ -593,7 +610,7 @@ Tester.concurrency({
                 passed = origin === 'Server';
                 this.assert(ctx.origin.vftable.equalsptr(proc['??_7ServerCommandOrigin@@6B@']), 'invalid origin');
                 const dimension = ctx.origin.getDimension();
-                this.assert(dimension.vftable.equalsptr(OverworldDimension$vftable), 'invalid dimension');
+                this.assert(isDimensionClass(dimension), 'invalid dimension');
                 this.equals(dimension.getDefaultBiomeString(), 'ocean', 'invalid getDefaultBiomeString');
                 const pos = ctx.origin.getWorldPosition();
                 this.assert(pos.x === 0 && pos.y === 0 && pos.z === 0, 'world pos is not zero');
@@ -877,9 +894,9 @@ Tester.concurrency({
                 }
 
                 if (actor !== null) {
-                    this.assert(actor.getDimension().vftable.equalsptr(OverworldDimension$vftable),
-                        'getDimension() is not OverworldDimension');
-                    this.equals(actor.getDimensionId(), DimensionId.Overworld, 'getDimensionId() is not overworld');
+                    const dim = actor.getDimension();
+                    this.assert(isDimensionClass(dim), 'getDimension() is invalid');
+                    this.equals(actor.getDimensionId(), dim.getDimensionId(), 'getDimensionId() is invalid');
                     if (actor instanceof Player) {
                         const cmdlevel = actor.abilities.getCommandPermissions();
                         this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, 'invalid actor.abilities');

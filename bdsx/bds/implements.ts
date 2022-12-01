@@ -115,7 +115,16 @@ Level.prototype.getGameRules = function() {
 };
 Level.prototype.getScoreboard = procHacker.js("?getScoreboard@Level@@UEAAAEAVScoreboard@@XZ", Scoreboard, {this:Level});
 Level.prototype.getSeed = procHacker.js("?getSeed@Level@@UEAAIXZ", uint32_t, {this:Level});
-(Level.prototype as any)._getStructureManager = procHacker.js("?getStructureManager@Level@@UEAA?AV?$not_null@V?$NonOwnerPointer@VStructureManager@@@Bedrock@@@gsl@@XZ", StructureManager, {this:Level}, StructureManager);
+
+class StructureManagerShim extends StructureManager {
+    [NativeType.dtor]():void {
+        // empty
+    }
+}
+
+Level.prototype.getStructureManager = function() {
+    return bedrockServer.structureMananger.as(StructureManagerShim);
+};
 Level.prototype.getSpawner = procHacker.js("?getSpawner@Level@@UEBAAEAVSpawner@@XZ", Spawner, {this:Level});
 Level.prototype.getTagRegistry = procHacker.js("?getTagRegistry@Level@@UEAAAEAV?$TagRegistry@U?$IDType@ULevelTagIDType@@@@U?$IDType@ULevelTagSetIDType@@@@@@XZ", TagRegistry, {this:Level});
 Level.prototype.hasCommandsEnabled = procHacker.js("?hasCommandsEnabled@Level@@UEBA_NXZ", bool_t, {this:Level});
