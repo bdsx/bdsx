@@ -1235,6 +1235,7 @@ Container.prototype.setCustomName = procHacker.js("?setCustomName@Container@@UEA
 
 Inventory.prototype.dropSlot = procHacker.js("?dropSlot@Inventory@@QEAAXH_N00@Z", void_t, {this:Inventory}, int32_t, bool_t, bool_t, bool_t);
 
+PlayerInventory.prototype.getContainer = procHacker.js("?getContainer@PlayerInventory@@QEAAAEAVContainer@@XZ", Inventory, {this:PlayerInventory});
 PlayerInventory.prototype.getSlotWithItem = procHacker.js('?getSlotWithItem@PlayerInventory@@QEBAHAEBVItemStack@@_N1@Z', int32_t, {this: PlayerInventory}, ItemStack, bool_t, bool_t);
 PlayerInventory.prototype.addItem = procHacker.js("?add@PlayerInventory@@QEAA_NAEAVItemStack@@_N@Z", bool_t, {this:PlayerInventory}, ItemStack, bool_t);
 PlayerInventory.prototype.clearSlot = procHacker.js("?clearSlot@PlayerInventory@@QEAAXHW4ContainerID@@@Z", void_t, {this:PlayerInventory}, int32_t, int32_t);

@@ -7,7 +7,7 @@ import { CommandParameterNativeType, NativeType, Type as DataType, Type } from "
 import * as colors from 'colors';
 
 /**
- * For findding the default enum parser.
+ * For finding the default enum parser.
  * There is no default parser symbol, but many parsers refer to the default parser.
  */
 function selectMore(...symbols:string[]):NativePointer {
