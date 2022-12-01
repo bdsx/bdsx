@@ -426,7 +426,7 @@ export namespace bedrockServer {
     // eslint-disable-next-line prefer-const
     export let nonOwnerPointerServerNetworkHandler:Bedrock.NonOwnerPointer<nimodule.ServerNetworkHandler> = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let structureMananger:StructureManager = abstractobject;
+    export let structureManager:StructureManager = abstractobject;
 
     Object.defineProperty(bd_server, 'serverInstance', {value: abstractobject, writable: true});
     Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});
