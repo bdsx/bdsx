@@ -1016,16 +1016,23 @@ export namespace NBT {
             p++;
 
             _notNumber:{
+                lastNumberIsDecimal = false;
+                let exponential = false;
                 for (;;) {
                     const chr = text.charCodeAt(p);
                     if (0x30 <= chr && chr <= 0x39) {
                         p++;
                     } else if (chr === 0x2e) { // .
-                        p++;
+                        if (lastNumberIsDecimal) break;
+                        if (exponential) break;
                         lastNumberIsDecimal = true;
+                        p++;
                         break;
+                    } else if (chr === 0x45 || chr === 0x65) {  // E e
+                        if (exponential) break;
+                        exponential = true;
+                        p++;
                     } else {
-                        lastNumberIsDecimal = false;
                         break _notNumber;
                     }
                 }
@@ -1193,9 +1200,12 @@ export namespace NBT {
                 case 0x44: case 0x64: // D d
                     p++;
                     return new NBT.Double(+num);
-                default:
-                    if (lastNumberIsDecimal) return new NBT.Double(+num);
-                    return new NBT.Int(+num);
+                default: {
+                    const dblValue = +num;
+                    const intValue = dblValue|0;
+                    if (lastNumberIsDecimal || dblValue !== intValue) return new NBT.Double(dblValue);
+                    return new NBT.Int(intValue);
+                }
                 }
             }
             }
