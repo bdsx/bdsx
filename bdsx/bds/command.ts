@@ -1167,19 +1167,6 @@ function constptr<T extends NativeClass>(cls:new()=>T):CommandParameterNativeTyp
     return constptr!;
 }
 
-export namespace Command {
-    export const VFTable = CommandVFTable;
-    export type VFTable = CommandVFTable;
-
-    export const Block = constptr(BlockClass);
-    export const MobEffect = constptr(MobEffectClass);
-    export const ActorDefinitionIdentifier = constptr(ActorDefinitionIdentifierClass);
-}
-/** @deprecated use Command.Block */
-export const CommandBlock = Command.Block;
-/** @deprecated use Command.MobEffect */
-export const CommandMobEffect = Command.MobEffect;
-
 CommandOutput.prototype.getSuccessCount = procHacker.js('?getSuccessCount@CommandOutput@@QEBAHXZ', int32_t, {this:CommandOutput});
 CommandOutput.prototype.getType = procHacker.js('?getType@CommandOutput@@QEBA?AW4CommandOutputType@@XZ', int32_t, {this:CommandOutput});
 CommandOutput.prototype.constructWith = procHacker.js('??0CommandOutput@@QEAA@W4CommandOutputType@@@Z', void_t, {this:CommandOutput}, int32_t);
@@ -1294,3 +1281,27 @@ export type CommandIndexEnum<T extends number|string> = commandenum.CommandIndex
 export const CommandSoftEnum = commandenumImport.CommandSoftEnum;
 /** @deprecated import it from bdsx/command */
 export type CommandSoftEnum = commandenum.CommandSoftEnum;
+
+class CommandBlockEnum extends CommandEnum<Block> {
+    constructor() {
+        super("Block");
+    }
+    mapValue(value: commandenum.EnumResult): Block {
+        return Block.create(value.token)!;
+    }
+}
+
+export namespace Command {
+    export const VFTable = CommandVFTable;
+    export type VFTable = CommandVFTable;
+
+    export const Block = new CommandBlockEnum();
+    export const MobEffect = constptr(MobEffectClass);
+    export const ActorDefinitionIdentifier = constptr(ActorDefinitionIdentifierClass);
+}
+
+/** @deprecated use Command.Block */
+export const CommandBlock = Command.Block;
+/** @deprecated use Command.MobEffect */
+export const CommandMobEffect = Command.MobEffect;
+

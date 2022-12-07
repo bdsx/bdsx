@@ -14,7 +14,7 @@ import { getEnumKeys } from "./util";
 
 const enumResults = new Set<string>();
 @nativeClass()
-class EnumResult extends NativeClass {
+export class EnumResult extends NativeClass {
     @nativeField(int32_t, {ghost: true})
     intValue:int32_t;
     @nativeField(bin64_t, {ghost: true})
