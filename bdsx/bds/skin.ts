@@ -1,7 +1,7 @@
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, CxxStringWith8Bytes, float32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bool_t, CxxString, CxxStringWith8Bytes, float32_t, int32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import { JsonValue } from "./connreq";
 import { SemVersion } from "./server";
@@ -72,6 +72,14 @@ export class SerializedPersonaPieceHandle extends NativeClass {
     productId:CxxString;
 }
 
+/**
+ * persona::ArmSize::Type
+ */
+enum ArmSizeType {
+    Slim = 0,
+    Wide = 1,
+}
+
 @nativeClass()
 export class SerializedSkin extends NativeClass {
     /** @deprecated Use {@link id} instead */
@@ -104,12 +112,19 @@ export class SerializedSkin extends NativeClass {
     @nativeField(CxxString)
     capeId:CxxString;
     @nativeField(CxxVector.make(SerializedPersonaPieceHandle))
-    personaPieces:CxxVector<SerializedPersonaPieceHandle>;
-    @nativeField(CxxStringWith8Bytes)
-    armSize:CxxStringWith8Bytes;
+    personaPieces: CxxVector<SerializedPersonaPieceHandle>;
+    @nativeField(int32_t)
+    armSizeType: int32_t;
+    /**
+     * analyzed from static persona::ArmSize::getTypeFromString
+     * SerializedSkin::SerializedSkin calls it.
+     */
+    get armSize(): string {
+        return this.armSizeType === ArmSizeType.Slim ? "slim" : "wide";
+    }
     // @nativeField(CxxUnorderedMap.make(uint32_t,TintMapColor))
     // pieceTintColors:CxxUnorderedMap<PersonaPieceType,TintMapColor>;
-    @nativeField(mce.Color, {offset:0x38, relative:true})
+    @nativeField(mce.Color, {offset:0x44, relative:true})
     skinColor:mce.Color;
     @nativeField(uint8_t)
     isTrustedSkin:TrustedSkinFlag;
