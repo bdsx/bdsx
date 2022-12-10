@@ -41,7 +41,7 @@ namespace git {
     }
     export function currentBranch():string|null {
         try {
-            return child_process.execSync('git rev-parse --abbrev-ref @', DEFAULT_OPTS).trim();
+            return child_process.execSync('git rev-parse --abbrev-ref HEAD', DEFAULT_OPTS).trim();
         } catch (err) {
             return null;
         }
@@ -58,7 +58,7 @@ namespace git {
         child_process.execSync(`git remote update ${remote}`, {cwd:projectDir, stdio:'inherit'});
     }
     export function mergeBaseSha1(upstream:string):string {
-        return child_process.execSync(`git merge-base @ ${upstream}`, DEFAULT_OPTS).trim();
+        return child_process.execSync(`git merge-base HEAD ${upstream}`, DEFAULT_OPTS).trim();
     }
     export function remoteSha1(upstream:string):string {
         return child_process.execSync(`git rev-parse ${upstream}`, DEFAULT_OPTS).trim();

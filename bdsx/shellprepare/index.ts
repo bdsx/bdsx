@@ -57,6 +57,10 @@ function checkProjectState():boolean {
     } catch (err) {
         return false;
     }
+    return true;
+}
+
+function checkJsFiles():boolean {
     if (!fs.existsSync('./bdsx/init.js')) return false;
     if (!fs.existsSync('./index.js')) return false;
     return true;
@@ -95,7 +99,7 @@ function build():void {
         if (files.length !== 0) {
             const res = ts.createProgram(files, config.options).emit();
             if (res.diagnostics.length !== 0) {
-                if (getModifiedFiles(files).length !== 0) { // some files are not emitted
+                if (!checkJsFiles() || getModifiedFiles(files).length !== 0) { // some files are not emitted
                     const compilerHost = ts.createCompilerHost(config.options);
                     console.error(ts.formatDiagnosticsWithColorAndContext(res.diagnostics, compilerHost));
                     exit(ExitCode.Invalid);
