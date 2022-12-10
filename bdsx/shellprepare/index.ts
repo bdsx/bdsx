@@ -49,10 +49,16 @@ function getModifiedFiles(files:string[]):string[] {
     return newFiles;
 }
 
+function readLinkAbsolute(linkFile:string):string {
+    const target = fs.readlinkSync(linkFile);
+    if (path.isAbsolute(target)) return path.resolve(target);
+    else return path.resolve(linkFile, '..', target);
+}
+
 function checkProjectState():boolean {
     let bdsxLinkTarget:string;
     try {
-        bdsxLinkTarget = path.resolve(fs.readlinkSync('node_modules/bdsx'));
+        bdsxLinkTarget = readLinkAbsolute('node_modules/bdsx');
         if (bdsxLinkTarget !== path.resolve('bdsx')) return false;
     } catch (err) {
         return false;
