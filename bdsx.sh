@@ -33,7 +33,14 @@ while :; do
 
 # shellprepare
 npm run -s shellprepare
-if [ $? != 1 ]; then break; fi
+exitcode=$?
+if [ $exitcode == 2 ]; then
+  rm -rf ./node_modules
+  ./update.sh
+  continue
+elif [ $exitcode != 1 ]; then
+  break
+fi
 
 # launch
 cd bedrock_server

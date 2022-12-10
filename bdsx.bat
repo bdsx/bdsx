@@ -18,7 +18,13 @@ rem loop begin
 
 rem shellprepare
 call npm run -s shellprepare
-if %errorlevel% neq 1 goto _end
+if %errorlevel% equ 2 (
+    rmdir /s /q .\node_modules
+    call update.bat
+    goto _loop
+) else if %errorlevel% neq 1 (
+    goto _end
+)
 
 rem launch
 cd bedrock_server
