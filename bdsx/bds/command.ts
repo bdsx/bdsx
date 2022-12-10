@@ -1155,7 +1155,6 @@ export class Command extends NativeClass {
 }
 Command.isWildcard = procHacker.js("?isWildcard@Command@@KA_NAEBVCommandSelectorBase@@@Z", bool_t, null, CommandSelectorBase);
 
-const BlockClass = Block;
 const MobEffectClass = MobEffect;
 const ActorDefinitionIdentifierClass = ActorDefinitionIdentifier;
 

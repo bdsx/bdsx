@@ -6,6 +6,7 @@ import { capi } from "./capi";
 import { CommandMappedValue, commandParser } from "./commandparser";
 import { StaticPointer, VoidPointer } from "./core";
 import { CxxVector } from "./cxxvector";
+import { events } from './event';
 import { bedrockServer } from "./launcher";
 import { makefunc } from "./makefunc";
 import { NativeClass, nativeClass, nativeField } from "./nativeclass";
@@ -308,3 +309,8 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
         return parser;
     }
 }
+
+events.serverOpen.on(() => {
+    // To hook parseEnum<class CommandBlockName>; for Command.Block
+    CommandRawEnum.getInstance("Block");
+});
