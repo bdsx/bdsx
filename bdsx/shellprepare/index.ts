@@ -1,6 +1,7 @@
 import * as colors from 'colors';
 import * as fs from 'fs';
 import * as glob from 'glob';
+import * as path from 'path';
 import * as ts from "typescript";
 import { shellPrepareData } from "./data";
 
@@ -8,6 +9,12 @@ const BDSX_PERMANENT = process.env.BDSX_PERMANENT === 'true';
 const RESTART_TIME_THRESHOLD = 30000;
 
 const data = shellPrepareData.load();
+enum ExitCode {
+    Invalid = -1,
+    Quit = 0,
+    RunBDSX = 1,
+    InstallNpm = 2,
+}
 
 function unsupportedNodeJs():never {
     console.error(colors.red(`Unsupported node.js version`));
@@ -42,7 +49,25 @@ function getModifiedFiles(files:string[]):string[] {
     return newFiles;
 }
 
+function checkProjectState():boolean {
+    let bdsxLinkTarget:string;
+    try {
+        bdsxLinkTarget = path.resolve(fs.readlinkSync('node_modules/bdsx'));
+        if (bdsxLinkTarget !== path.resolve('bdsx')) return false;
+    } catch (err) {
+        return false;
+    }
+    if (!fs.existsSync('./bdsx/init.js')) return false;
+    if (!fs.existsSync('./index.js')) return false;
+    return true;
+}
+
 function build():void {
+    if (!checkProjectState()) {
+        console.error(colors.red('[BDSX] Invalid project state'));
+        exit(ExitCode.InstallNpm);
+    }
+
     function getTsConfig():ts.ParsedCommandLine {
         const curdir = process.cwd();
         const configPath = ts.findConfigFile(curdir, ts.sys.fileExists);
@@ -73,7 +98,7 @@ function build():void {
                 if (getModifiedFiles(files).length !== 0) { // some files are not emitted
                     const compilerHost = ts.createCompilerHost(config.options);
                     console.error(ts.formatDiagnosticsWithColorAndContext(res.diagnostics, compilerHost));
-                    exit(-1);
+                    exit(ExitCode.Invalid);
                 } else {
                     // ignore errors if it's emitted anyway.
                 }
@@ -81,12 +106,12 @@ function build():void {
         }
     } catch (err) {
         console.error(err.stack);
-        exit(-1);
+        exit(ExitCode.Invalid);
     }
 }
 
-function exit(exitCode:number):never {
-    if (exitCode === 1) {
+function exit(exitCode:ExitCode):never {
+    if (exitCode === ExitCode.RunBDSX) {
         delete data.exit;
         shellPrepareData.save(data);
     } else {
@@ -98,14 +123,14 @@ function exit(exitCode:number):never {
 function firstLaunch():never {
     build();
     data.startAt = Date.now()+'';
-    exit(1);
+    exit(ExitCode.RunBDSX);
 }
 
 function relaunch(buildTs:boolean):void {
     console.log(`It will restart after 3 seconds.`);
     setTimeout(()=>{
         if (buildTs) build();
-        exit(1);
+        exit(ExitCode.RunBDSX);
     }, 3000);
 }
 
@@ -135,7 +160,7 @@ function repeatedLaunch():void {
         break;
     }
     }
-    exit(0);
+    exit(ExitCode.Quit);
 }
 
 if (data.exit == null) {
