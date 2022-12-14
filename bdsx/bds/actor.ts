@@ -1307,6 +1307,54 @@ export class Actor extends AbstractClass {
     setSize(width: number, height: number): void {
         abstract();
     }
+
+    isInsidePortal(): boolean {
+        abstract();
+    }
+
+    isInWorld(): boolean {
+        abstract();
+    }
+
+    isInWaterOrRain(): boolean {
+        abstract();
+    }
+
+    isInThunderstorm(): boolean {
+        abstract();
+    }
+
+    isInSnow(): boolean {
+        abstract();
+    }
+
+    isInScaffolding(): boolean {
+        abstract();
+    }
+
+    isInRain(): boolean {
+        abstract();
+    }
+
+    isInPrecipitation(): boolean {
+        abstract();
+    }
+
+    isInLove(): boolean {
+        abstract();
+    }
+
+    isInLava(): boolean {
+        abstract();
+    }
+
+    isInContactWithWater(): boolean {
+        abstract();
+    }
+
+    isInClouds(): boolean {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
