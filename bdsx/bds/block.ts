@@ -58,7 +58,7 @@ export class BlockLegacy extends NativeClass {
      * Returns the time needed to destroy the block
      */
     getDestroyTime():number {
-        return this.getFloat32(0x134); // accessed in BlockLegacy::setDestroyTime
+        return this.getDestroySpeed();
     }
     /**
      * Returns the Block instance
