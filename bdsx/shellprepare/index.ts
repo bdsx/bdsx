@@ -1,9 +1,9 @@
 import * as colors from 'colors';
 import * as fs from 'fs';
 import * as glob from 'glob';
-import * as path from 'path';
 import * as ts from "typescript";
 import { shellPrepareData } from "./data";
+import { BdsxExitCode } from './exitcode';
 
 const BDSX_PERMANENT = process.env.BDSX_PERMANENT === 'true';
 const RESTART_TIME_THRESHOLD = 30000;
@@ -16,10 +16,14 @@ enum ExitCode {
     InstallNpm = 2,
 }
 
+function errorlog(message:string):void {
+    console.error(colors.red('[BDSX] '+message));
+}
+
 function unsupportedNodeJs():never {
-    console.error(colors.red(`Unsupported node.js version`));
-    console.error(colors.red(`current: ${process.version}`));
-    console.error(colors.red(`required: v8.1`));
+    errorlog(`Unsupported node.js version`);
+    errorlog(`current: ${process.version}`);
+    errorlog(`required: v8.1`);
     throw Error(`Unsupported node.js version ${process.version}`);
 }
 
@@ -49,18 +53,18 @@ function getModifiedFiles(files:string[]):string[] {
     return newFiles;
 }
 
-function readLinkAbsolute(linkFile:string):string {
-    const target = fs.readlinkSync(linkFile);
-    if (path.isAbsolute(target)) return path.resolve(target);
-    else return path.resolve(linkFile, '..', target);
-}
-
 function checkProjectState():boolean {
-    let bdsxLinkTarget:string;
     try {
-        bdsxLinkTarget = readLinkAbsolute('node_modules/bdsx');
-        if (bdsxLinkTarget !== path.resolve('bdsx')) return false;
+        const actual = fs.realpathSync('node_modules/bdsx');
+        const expected = fs.realpathSync('bdsx');
+        if (actual !== expected) {
+            errorlog('Invalid module link');
+            errorlog(`Expected: ${expected}`);
+            errorlog(`Actual: ${actual}`);
+            return false;
+        }
     } catch (err) {
+        errorlog(err.message);
         return false;
     }
     return true;
@@ -74,7 +78,7 @@ function checkJsFiles():boolean {
 
 function build():void {
     if (!checkProjectState()) {
-        console.error(colors.red('[BDSX] Invalid project state'));
+        errorlog('Invalid project state');
         exit(ExitCode.InstallNpm);
     }
 
@@ -147,7 +151,7 @@ function relaunch(buildTs:boolean):void {
 function repeatedLaunch():void {
     const exitCode = +data.exit;
     switch (exitCode) {
-    case 0:
+    case BdsxExitCode.Quit:
         if (data.relaunch === '1') {
             relaunch(false);
             return;
@@ -156,6 +160,10 @@ function repeatedLaunch():void {
             relaunch(true);
             return;
         }
+        break;
+    case BdsxExitCode.InstallNpm:
+        console.error(`[BDSX] Requesting 'npm i'`);
+        exit(ExitCode.InstallNpm);
         break;
     default: {
         console.log(`Exited with code ${(exitCode < 0  || exitCode > 0x1000000) ? '0x'+(exitCode >>> 0).toString(16) : exitCode}`);

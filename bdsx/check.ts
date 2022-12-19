@@ -36,10 +36,11 @@ function checkInstallInfoAndExit():never {
         // BDSX cannot distinguish between user files and BDS files.
         console.error(`[BDSX] BDSX cannot update the manual installed BDS`);
         console.error(`[BDSX] Please update BDS manually`);
+        process.exit(BdsxExitCode.Quit);
     } else {
         console.error(`[BDSX] Please run 'npm i' or ${(process.platform === "win32" ? 'update.bat' : 'update.sh')} to update`);
+        process.exit(BdsxExitCode.InstallNpm);
     }
-    process.exit(0);
 }
 function checkAndReport(name:string, oversion:string, nversion:string):void {
     if (oversion === nversion) return;
@@ -54,6 +55,7 @@ checkAndReport('BDSX Core', cgate.bdsxCoreVersion, bdsxVersionJson);
 
 // check BDS version
 import { proc } from './bds/symbols';
+import { BdsxExitCode } from './shellprepare/exitcode';
 const versions = [
     proc['?MajorVersion@SharedConstants@@3HB'].getInt32(),
     proc['?MinorVersion@SharedConstants@@3HB'].getInt32(),

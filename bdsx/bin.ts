@@ -519,7 +519,7 @@ export namespace bin {
         let srci=0;
         let v = 0;
         for (let i=0;i<dsti;i++) {
-            values[i++] = 0;
+            values[i] = 0;
         }
         while (dsti<len) {
             v |= a.charCodeAt(srci++) << shift;
