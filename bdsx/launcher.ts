@@ -347,7 +347,7 @@ function _launch(asyncResolve:()=>void):void {
 
                 openIsFired.resolve();
                 events.serverOpen.fire();
-                events.serverOpen.clear(); // it will never fire, clear it
+                events.serverOpen.clear(); // it will never fire again, clear it
                 asyncResolve();
 
                 _tickCallback();
@@ -398,7 +398,7 @@ events.serverLog.on(sessionIdGrabber);
 export namespace bedrockServer {
     export let sessionId: string;
 
-    const abstractobject = createAbstractObject('bedrock_server is not launched yet');
+    const abstractobject = createAbstractObject('BDS is not loaded yet');
     // eslint-disable-next-line prefer-const
     export let serverInstance:bd_server.ServerInstance = abstractobject;
     // eslint-disable-next-line prefer-const
@@ -438,6 +438,10 @@ export namespace bedrockServer {
         return openIsFired;
     }
 
+    /**
+     * @remark It does not check BDS is loaded fully. It only checks the launch is called.
+     * @deprecated Not intuitive & Useless.
+     */
     export function isLaunched():boolean {
         return launched;
     }
