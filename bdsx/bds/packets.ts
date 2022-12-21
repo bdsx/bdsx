@@ -2090,6 +2090,35 @@ export class EditorNetworkPacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
+class FeatureRegistryPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+class ServerStatsPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+class RequestNetworkSettingsPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+class GameTestRequestPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
+class GameTestResultsPacket extends Packet {
+    // unknown
+}
+@nativeClass(null)
+class UpdateClientInputLocksPacket extends Packet {
+    // unknown
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2279,6 +2308,12 @@ export const PacketIdToType = {
     0xbc: UpdateAdventureSettingsPacket,
     0xbd: DeathInfoPacket,
     0xbe: EditorNetworkPacket,
+    0xbf:FeatureRegistryPacket,
+    0xc0:ServerStatsPacket,
+    0xc1:RequestNetworkSettingsPacket,
+    0xc2:GameTestRequestPacket,
+    0xc3:GameTestResultsPacket,
+    0xc4:UpdateClientInputLocksPacket,
 };
 export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
 

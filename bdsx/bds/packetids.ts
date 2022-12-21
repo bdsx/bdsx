@@ -211,5 +211,11 @@ export enum MinecraftPacketIds {// int32_t
 	UpdateAdventureSettings = 0xbc,
 	DeathInfo = 0xbd,
 	EditorNetwork = 0xbe,
+	FeatureRegistry = 0xbf,
+    ServerStats = 0xc0,
+    RequestNetworkSettings = 0xc1,
+    GameTestRequest = 0xc2,
+    GameTestResults = 0xc3,
+    UpdateClientInputLocks = 0xc4,
 }
 (MinecraftPacketIds as any).__proto__ = null;
