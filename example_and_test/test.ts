@@ -727,6 +727,9 @@ Tester.concurrency({
             ['ItemStackResponsePacket', 'ItemStackResponse'],
             ['ClientboundMapItemData', 'MapItemDataPacket'],
             ['AdventureSettingsPacket', null],
+            ['EventPacket', 'TelemetryEventPacket'],
+            ['AutomationClientConnectPacket', 'WSConnectPacket'],
+            ['StructureTemplateDataResponsePacket', 'StructureTemplateDataExportPacket'],
         ]);
 
         for (const id in PacketIdToType) {
