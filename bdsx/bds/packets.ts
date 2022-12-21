@@ -2108,31 +2108,31 @@ export class EditorNetworkPacket extends Packet {
 }
 
 @nativeClass(null)
-class FeatureRegistryPacket extends Packet {
+export class FeatureRegistryPacket extends Packet {
     // unknown
 }
 
 @nativeClass(null)
-class ServerStatsPacket extends Packet {
+export class ServerStatsPacket extends Packet {
     // unknown
 }
 
 @nativeClass(null)
-class RequestNetworkSettingsPacket extends Packet {
+export class RequestNetworkSettingsPacket extends Packet {
     // unknown
 }
 
 @nativeClass(null)
-class GameTestRequestPacket extends Packet {
+export class GameTestRequestPacket extends Packet {
     // unknown
 }
 
 @nativeClass(null)
-class GameTestResultsPacket extends Packet {
+export class GameTestResultsPacket extends Packet {
     // unknown
 }
 @nativeClass(null)
-class UpdateClientInputLocksPacket extends Packet {
+export class UpdateClientInputLocksPacket extends Packet {
     // unknown
 }
 
