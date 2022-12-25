@@ -89,9 +89,9 @@ command.register('form2', 'form example').overload(async(param, origin, output)=
         ],
     });
     await Form.sendTo(ni, {
-        type:'form',
-        title:'',
-        content: `button${idx} selected`,
+        type: 'form',
+        title: '',
+        content: (idx !== null ? `button${idx + 1}` : 'nothing') + ' selected',
         buttons: [],
     });
 }, {});
