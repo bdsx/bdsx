@@ -458,7 +458,7 @@ function onPlayerLevelUp(player:Player, levels:int32_t):void {
 }
 const _onPlayerLevelUp = procHacker.hooking("?addLevels@Player@@UEAAXH@Z", void_t, null, Player, int32_t)(onPlayerLevelUp);
 
-events.packetAfter(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) => {
+events.packetBefore(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) => {
     const actor = ni.getActor();
     if (actor === null) return CANCEL; // possibilities by the hacked client
 });
