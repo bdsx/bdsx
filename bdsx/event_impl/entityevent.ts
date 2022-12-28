@@ -6,7 +6,7 @@ import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket } from "../bds/packets";
-import { Player, ServerPlayer } from "../bds/player";
+import { Player, ServerPlayer, SimulatedPlayer } from "../bds/player";
 import { CANCEL } from "../common";
 import { NativePointer, VoidPointer } from "../core";
 import { decay } from "../decay";
@@ -127,6 +127,7 @@ export class PlayerLevelUpEvent {
 export class PlayerJoinEvent {
     constructor(
         readonly player: ServerPlayer,
+        readonly isSimulated: boolean,
     ) {
     }
 }
@@ -457,11 +458,20 @@ function onPlayerLevelUp(player:Player, levels:int32_t):void {
 }
 const _onPlayerLevelUp = procHacker.hooking("?addLevels@Player@@UEAAXH@Z", void_t, null, Player, int32_t)(onPlayerLevelUp);
 
-events.packetAfter(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) =>{
+events.packetAfter(MinecraftPacketIds.SetLocalPlayerAsInitialized).on((pk, ni) => {
     const actor = ni.getActor();
-    if (actor === null) return; // possibilities by the hacked client
-    const event = new PlayerJoinEvent(actor);
+    if (actor === null) return CANCEL; // possibilities by the hacked client
+});
+
+const setLocalPlayerAsInitialized = procHacker.hooking(
+    "?setLocalPlayerAsInitialized@ServerPlayer@@QEAAXXZ",
+    void_t,
+    null,
+    ServerPlayer,
+)((player) => {
+    const event = new PlayerJoinEvent(player, player instanceof SimulatedPlayer);
     events.playerJoin.fire(event);
+    return setLocalPlayerAsInitialized(player);
 });
 
 function onPlayerPickupItem(player:Player, itemActor:ItemActor, orgCount:number, favoredSlot:number):boolean {
