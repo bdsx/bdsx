@@ -368,8 +368,6 @@ export class Vec3 extends NativeStruct {
         return v;
     }
 
-
-
     toJSON():VectorXYZ {
         return {x:this.x, y:this.y, z:this.z};
     }
