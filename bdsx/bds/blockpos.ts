@@ -217,10 +217,16 @@ export class Vec2 extends NativeStruct {
         this.y = pos.y;
     }
 
-    static create(x:number, y:number):Vec2 {
+    static create(pos:VectorXY): Vec2;
+    static create(x:number|VectorXY, y?:number):Vec2 {
         const v = new Vec2(true);
-        v.x = x;
-        v.y = y;
+        if (typeof x === 'number') {
+            v.x = x;
+            v.y = y!;
+        } else {
+            v.x = x.x;
+            v.y = x.y;
+        }
         return v;
     }
 
