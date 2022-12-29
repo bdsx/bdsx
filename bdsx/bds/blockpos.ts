@@ -371,7 +371,18 @@ export class Vec3 extends NativeStruct {
     toJSON():VectorXYZ {
         return {x:this.x, y:this.y, z:this.z};
     }
+
+    static directionFromRotation(rotation:Vec2):Vec3 {
+        abstract();
+    }
+
+    static rotationFromDirection(direction:Vec3):Vec2 {
+        abstract();
+    }
 }
+
+Vec3.directionFromRotation = procHacker.js('?directionFromRotation@Vec3@@SA?AV1@AEBVVec2@@@Z', Vec3, {structureReturn: true}, Vec2);
+Vec3.rotationFromDirection = procHacker.js('?rotationFromDirection@Vec3@@SA?AVVec2@@AEBV1@@Z', Vec2, {structureReturn: true}, Vec3);
 
 @nativeClass()
 export class RelativeFloat extends NativeStruct {
