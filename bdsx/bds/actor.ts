@@ -5,6 +5,7 @@ import type { CommandResult, CommandResultType } from "../commandresult";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { decay } from '../decay';
 import { events } from '../event';
 import { mangle } from "../mangle";
 import { AbstractClass, nativeClass, NativeClass, nativeClassUtil, nativeField, NativeStruct } from "../nativeclass";
@@ -1354,6 +1355,14 @@ export class Actor extends AbstractClass {
 
     isInClouds(): boolean {
         abstract();
+    }
+
+    /**
+     * There is Actor::isRemoved in BDS
+     * but customized for bdsx instead of hooking it.
+     */
+    isRemoved(): boolean {
+        return decay.isDecayed(this);
     }
 }
 mangle.update(Actor);
