@@ -4,7 +4,6 @@ import { nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, float32_t, int32_t, NativeType, uint16_t, uint8_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import { proc } from "./symbols";
-import {bedrockServer} from '../launcher';
 
 export enum Facing {
     Down,
