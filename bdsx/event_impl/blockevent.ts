@@ -6,7 +6,7 @@ import {
     ChestBlock,
     ChestBlockActor,
     PistonAction,
-    PistonBlockActor
+    PistonBlockActor,
 } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { GameMode } from "../bds/gamemode";
