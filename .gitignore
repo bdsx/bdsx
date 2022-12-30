@@ -17,3 +17,6 @@ node_modules
 !/bdsx/checkgate.js
 !/bdsx/asm/asmcode.js
 /plugin-example/package-lock.json
+.gitignore
+.idea
+index.ts

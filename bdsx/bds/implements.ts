@@ -24,7 +24,7 @@ import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, A
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
-import { Block, BlockActor, BlockLegacy, BlockSource, BlockUtils, ChestBlockActor } from "./block";
+import {Block, BlockActor, BlockLegacy, BlockSource, BlockUtils, ChestBlockActor, PistonBlockActor} from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
 import { CommandSymbols } from "./cmdsymbolloader";
 import * as command from './command';
@@ -1421,6 +1421,9 @@ BlockActor.prototype.getCustomName = procHacker.js('?getCustomName@BlockActor@@U
 ChestBlockActor.prototype.isLargeChest = procHacker.js("?isLargeChest@ChestBlockActor@@QEBA_NXZ", bool_t, {this:ChestBlockActor});
 ChestBlockActor.prototype.openBy = procHacker.js("?openBy@ChestBlockActor@@QEAAXAEAVPlayer@@@Z", void_t, {this:ChestBlockActor}, Player);
 ChestBlockActor.prototype.getPairedChestPosition = procHacker.js("?getPairedChestPosition@ChestBlockActor@@QEAAAEBVBlockPos@@XZ", BlockPos, {this:ChestBlockActor});
+
+PistonBlockActor.prototype.getPosition = procHacker.js("?getPosition@BlockActor@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:PistonBlockActor});
+PistonBlockActor.prototype.getAttachedBlocks = procHacker.js("?getAttachedBlocks@PistonBlockActor@@QEBAAEBV?$vector@VBlockPos@@V?$allocator@VBlockPos@@@std@@@std@@XZ", CxxVector.make(BlockPos), {this: PistonBlockActor});
 
 BlockSource.prototype.getChunk = procHacker.js("?getChunk@BlockSource@@QEBAPEAVLevelChunk@@AEBVChunkPos@@@Z", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("?getChunkAt@BlockSource@@UEBAPEAVLevelChunk@@AEBVBlockPos@@@Z", LevelChunk, {this:BlockSource}, BlockPos);
