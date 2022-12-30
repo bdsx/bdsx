@@ -492,6 +492,12 @@ function onPlayerLeft(networkHandler: ServerNetworkHandler, player: ServerPlayer
 
 const _onPlayerLeft = procHacker.hooking("?_onPlayerLeft@ServerNetworkHandler@@AEAAXPEAVServerPlayer@@_N@Z", void_t, null, ServerNetworkHandler, ServerPlayer, bool_t)(onPlayerLeft);
 
+const _onSimulatedDisconnect = procHacker.hooking("?simulateDisconnect@SimulatedPlayer@@QEAAXXZ", void_t, null, SimulatedPlayer)((simulatedPlayer) => {
+    const event = new PlayerLeftEvent(simulatedPlayer, false/** disconnecting SimulatedPlayer doesn't send any message.*/);
+    events.playerLeft.fire(event);
+    _onSimulatedDisconnect(simulatedPlayer);
+});
+
 function onSplashPotionHit(splashPotionEffectSubcomponent: SplashPotionEffectSubcomponent, entity: Actor, projectileComponent: ProjectileComponent):void {
     const event = new SplashPotionHitEvent(entity, splashPotionEffectSubcomponent.potionEffect);
     const canceled = events.splashPotionHit.fire(event) === CANCEL;
