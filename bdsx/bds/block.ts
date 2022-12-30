@@ -14,7 +14,6 @@ import type { Container, ItemStack } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
 import type { BlockActorDataPacket } from "./packets";
 import type { Player, ServerPlayer } from "./player";
-import {PistonAction} from '../event_impl/blockevent';
 
 @nativeClass(null)
 export class BlockLegacy extends NativeClass {
@@ -428,6 +427,11 @@ export class ChestBlockActor extends BlockActor {
     getPairedChestPosition(): BlockPos {
         abstract();
     }
+}
+
+export enum PistonAction {
+    Extend = 1,
+    Retract = 3,
 }
 
 @nativeClass(0xE0)
