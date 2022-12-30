@@ -442,6 +442,10 @@ export class PistonBlockActor extends NativeClass {
     getAttachedBlocks(): CxxVector<BlockPos> {
         abstract();
     }
+
+    getFacingDir(region: BlockSource): BlockPos {
+        abstract();
+    }
 }
 
 @nativeClass(null)

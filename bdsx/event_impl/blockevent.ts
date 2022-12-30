@@ -52,6 +52,7 @@ export class PistonMoveEvent {
         public blockSource: BlockSource,
         public action: PistonAction,
         public affectedBlocks: CxxVector<BlockPos>,
+        public facingDirection: BlockPos,
     ) {
     }
 }
@@ -176,7 +177,7 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
 const _onBlockPlace = procHacker.hooking("?mayPlace@BlockSource@@QEAA_NAEBVBlock@@AEBVBlockPos@@EPEAVActor@@_N@Z", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
 function onPistonMove(this:PistonBlockActor, blockSource:BlockSource):void_t {
-    const event = new PistonMoveEvent(this.getPosition(), blockSource, this.action, this.getAttachedBlocks());
+    const event = new PistonMoveEvent(this.getPosition(), blockSource, this.action, this.getAttachedBlocks(), this.getFacingDir(blockSource));
     events.pistonMove.fire(event);
     decay(this);
     decay(blockSource);

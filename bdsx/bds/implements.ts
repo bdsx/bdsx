@@ -1424,6 +1424,7 @@ ChestBlockActor.prototype.getPairedChestPosition = procHacker.js("?getPairedChes
 
 PistonBlockActor.prototype.getPosition = procHacker.js("?getPosition@BlockActor@@QEBAAEBVBlockPos@@XZ", BlockPos, {this:PistonBlockActor});
 PistonBlockActor.prototype.getAttachedBlocks = procHacker.js("?getAttachedBlocks@PistonBlockActor@@QEBAAEBV?$vector@VBlockPos@@V?$allocator@VBlockPos@@@std@@@std@@XZ", CxxVector.make(BlockPos), {this: PistonBlockActor});
+PistonBlockActor.prototype.getFacingDir = procHacker.js("?getFacingDir@PistonBlockActor@@QEBAAEBVBlockPos@@AEBVIConstBlockSource@@@Z", BlockPos, {this: PistonBlockActor}, BlockSource);
 
 BlockSource.prototype.getChunk = procHacker.js("?getChunk@BlockSource@@QEBAPEAVLevelChunk@@AEBVChunkPos@@@Z", LevelChunk, {this:BlockSource}, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("?getChunkAt@BlockSource@@UEBAPEAVLevelChunk@@AEBVBlockPos@@@Z", LevelChunk, {this:BlockSource}, BlockPos);
