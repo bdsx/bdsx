@@ -561,6 +561,7 @@ Actor.prototype.isInLove = procHacker.js("?isInLove@Actor@@QEBA_NXZ", bool_t, {t
 Actor.prototype.isInLava = procHacker.js("?isInLava@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isInContactWithWater = procHacker.js("?isInContactWithWater@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isInClouds = procHacker.js("?isInClouds@Actor@@QEBA_NXZ", bool_t, {this:Actor});
+Actor.prototype.isBaby = procHacker.js("?isBaby@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, {this:Actor});
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);

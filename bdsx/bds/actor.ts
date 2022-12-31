@@ -1364,6 +1364,10 @@ export class Actor extends AbstractClass {
     isRemoved(): boolean {
         return decay.isDecayed(this);
     }
+
+    isBaby(): boolean {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
