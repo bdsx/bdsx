@@ -443,7 +443,7 @@ export class PistonBlockActor extends NativeClass {
         abstract();
     }
 
-    getAttachedBlocks(): CxxVector<BlockPos> {
+    getAttachedBlocks(): BlockPos[] {
         abstract();
     }
 

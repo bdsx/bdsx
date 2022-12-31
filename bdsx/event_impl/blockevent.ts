@@ -55,7 +55,7 @@ export class PistonMoveEvent {
         public blockPos: BlockPos,
         public blockSource: BlockSource,
         public action: PistonAction,
-        public affectedBlocks: CxxVector<BlockPos>,
+        public affectedBlocks: BlockPos[],
         public facingDirection: BlockPos,
     ) {
     }
