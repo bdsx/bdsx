@@ -180,7 +180,7 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
 }
 const _onBlockPlace = procHacker.hooking("?mayPlace@BlockSource@@QEAA_NAEBVBlock@@AEBVBlockPos@@EPEAVActor@@_N@Z", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
-/** @deprecate Please use PistonAction in bdsx/bds/block*/
+/** @deprecated Import from `bdsx/bds/block` instead */
 export enum PistonAction {
     Extend = 1,
     Retract = 3,
