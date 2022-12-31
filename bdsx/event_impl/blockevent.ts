@@ -5,7 +5,6 @@ import {
     ButtonBlock,
     ChestBlock,
     ChestBlockActor,
-    PistonAction,
     PistonBlockActor,
 } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
@@ -20,6 +19,7 @@ import { events } from "../event";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import {CxxVector} from '../cxxvector';
+import {deprecate} from 'util';
 
 export class BlockDestroyEvent {
     constructor(
@@ -180,6 +180,11 @@ function onBlockPlace(blockSource:BlockSource, block:Block, blockPos:BlockPos, f
 }
 const _onBlockPlace = procHacker.hooking("?mayPlace@BlockSource@@QEAA_NAEBVBlock@@AEBVBlockPos@@EPEAVActor@@_N@Z", bool_t, null, BlockSource, Block, BlockPos, int32_t, Actor, bool_t)(onBlockPlace);
 
+/** @deprecate Please use PistonAction in bdsx/bds/block*/
+export enum PistonAction {
+    Extend = 1,
+    Retract = 3,
+}
 function onPistonMove(this:PistonBlockActor, blockSource:BlockSource):void_t {
     const event = new PistonMoveEvent(this.getPosition(), blockSource, this.action, this.getAttachedBlocks(), this.getFacingDir(blockSource));
     events.pistonMove.fire(event);
