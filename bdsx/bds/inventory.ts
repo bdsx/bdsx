@@ -529,6 +529,9 @@ export class Container extends AbstractClass {
 }
 
 export class FillingContainer extends Container {
+    /**
+     * It doesn't care item's amount
+     */
     canAdd(itemStack: ItemStack): boolean {
         abstract();
     }
@@ -671,6 +674,9 @@ export class PlayerInventory extends AbstractClass {
         abstract();
     }
 
+    /**
+     * It doesn't care item's amount
+     */
     canAdd(itemStack: ItemStack): boolean {
         abstract();
     }
