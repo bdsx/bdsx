@@ -24,7 +24,7 @@ import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, A
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
-import {Block, BlockActor, BlockLegacy, BlockSource, BlockUtils, ChestBlockActor, PistonBlockActor} from "./block";
+import { Block, BlockActor, BlockLegacy, BlockSource, BlockUtils, ChestBlockActor, PistonBlockActor } from "./block";
 import { ChunkSource, LevelChunk } from "./chunk";
 import { CommandSymbols } from "./cmdsymbolloader";
 import * as command from './command';

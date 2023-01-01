@@ -1,25 +1,16 @@
 import { Actor } from "../bds/actor";
-import {
-    Block,
-    BlockSource,
-    ButtonBlock,
-    ChestBlock,
-    ChestBlockActor,
-    PistonBlockActor,
-} from "../bds/block";
+import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor, PistonBlockActor } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { GameMode } from "../bds/gamemode";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
 import { VanillaServerGameplayEventListener } from "../bds/server";
 import { CANCEL } from "../common";
-import { NativePointer, StaticPointer } from "../core";
+import { StaticPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
-import {CxxVector} from '../cxxvector';
-import {deprecate} from 'util';
 
 export class BlockDestroyEvent {
     constructor(
