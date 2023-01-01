@@ -8,28 +8,28 @@ import { Singleton } from "./singleton";
 import { isBaseOf } from "./util";
 
 export interface CxxPairType<A, B> extends NativeClassType<CxxPair<A, B>> {
-    new(address?:VoidPointer|boolean):CxxPair<A, B>;
-    readonly firstType:Type<any>;
-    readonly secondType:Type<any>;
+    new (address?: VoidPointer | boolean): CxxPair<A, B>;
+    readonly firstType: Type<any>;
+    readonly secondType: Type<any>;
 }
 
-function setFirstWithClass<T1, T2>(this:CxxPair<T1, T2>, v:T1):void {
-    const cls = (this.first as any) as NativeClass;
+function setFirstWithClass<T1, T2>(this: CxxPair<T1, T2>, v: T1): void {
+    const cls = this.first as any as NativeClass;
     cls.destruct();
     cls.construct(v as any);
 }
 
-function setSecondWithClass<T1, T2>(this:CxxPair<T1, T2>, v:T2):void {
-    const cls = (this.second as any) as NativeClass;
+function setSecondWithClass<T1, T2>(this: CxxPair<T1, T2>, v: T2): void {
+    const cls = this.second as any as NativeClass;
     cls.destruct();
     cls.construct(v as any);
 }
 
-function setFirstWithPrimitive<T1, T2>(this:CxxPair<T1, T2>, v:T1):void {
+function setFirstWithPrimitive<T1, T2>(this: CxxPair<T1, T2>, v: T1): void {
     this.first = v;
 }
 
-function setSecondWithPrimitive<T1, T2>(this:CxxPair<T1, T2>, v:T2):void {
+function setSecondWithPrimitive<T1, T2>(this: CxxPair<T1, T2>, v: T2): void {
     this.second = v;
 }
 
@@ -37,28 +37,28 @@ function setSecondWithPrimitive<T1, T2>(this:CxxPair<T1, T2>, v:T2):void {
  * std::pair
  */
 export abstract class CxxPair<T1, T2> extends NativeClass {
-    first:T1;
-    second:T2;
-    readonly firstType:Type<any>;
-    readonly secondType:Type<any>;
-    static readonly firstType:Type<any>;
-    static readonly secondType:Type<any>;
+    first: T1;
+    second: T2;
+    readonly firstType: Type<any>;
+    readonly secondType: Type<any>;
+    static readonly firstType: Type<any>;
+    static readonly secondType: Type<any>;
 
-    abstract setFirst(first:T1):void;
-    abstract setSecond(second:T2):void;
+    abstract setFirst(first: T1): void;
+    abstract setSecond(second: T2): void;
 
-    static make<T1, T2>(firstType:Type<T1>, secondType:Type<T2>):CxxPairType<T1, T2> {
+    static make<T1, T2>(firstType: Type<T1>, secondType: Type<T2>): CxxPairType<T1, T2> {
         const key = combineObjectKey(firstType, secondType);
-        return Singleton.newInstance(CxxPair, key, ()=>{
+        return Singleton.newInstance(CxxPair, key, () => {
             class CxxPairImpl extends CxxPair<T1, T2> {
-                firstType:Type<T1>;
-                secondType:Type<T2>;
-                static readonly firstType:Type<T1> = firstType;
-                static readonly secondType:Type<T2> = secondType;
-                setFirst(first:T1):void {
+                firstType: Type<T1>;
+                secondType: Type<T2>;
+                static readonly firstType: Type<T1> = firstType;
+                static readonly secondType: Type<T2> = secondType;
+                setFirst(first: T1): void {
                     abstract();
                 }
-                setSecond(second:T2):void {
+                setSecond(second: T2): void {
                     abstract();
                 }
             }
@@ -68,7 +68,9 @@ export abstract class CxxPair<T1, T2> extends NativeClass {
             CxxPairImpl.prototype.secondType = secondType;
             CxxPairImpl.define({ first: firstType, second: secondType } as any);
             Object.defineProperties(CxxPairImpl, {
-                name: { value: `CxxPair<${firstType.name}, ${secondType.name}>` },
+                name: {
+                    value: `CxxPair<${firstType.name}, ${secondType.name}>`,
+                },
                 symbol: { value: getPairSymbol(firstType, secondType) },
             });
             return CxxPairImpl;
@@ -76,6 +78,6 @@ export abstract class CxxPair<T1, T2> extends NativeClass {
     }
 }
 
-function getPairSymbol(type1:Type<any>, type2:Type<any>):string {
-    return mangle.templateClass(['std', 'pair'], type1.symbol, type2.symbol);
+function getPairSymbol(type1: Type<any>, type2: Type<any>): string {
+    return mangle.templateClass(["std", "pair"], type1.symbol, type2.symbol);
 }

@@ -2,86 +2,77 @@
  * for changing colors to chalk.
  * not using currently
  */
-import * as chalk from 'chalk';
-import * as colors from 'colors';
+import * as chalk from "chalk";
+import * as colors from "colors";
 
-const colorsKeys = [
-    'strip',
-    'stripColors',
-    'rainbow',
-    'zebra',
-    'america',
-    'trap',
-    'random',
-    'zalgo',
-] as const;
+const colorsKeys = ["strip", "stripColors", "rainbow", "zebra", "america", "trap", "random", "zalgo"] as const;
 const mixedKeys = [
-    'black',
-    'red',
-    'green',
-    'yellow',
-    'blue',
-    'magenta',
-    'cyan',
-    'white',
-    'gray',
-    'grey',
-    'bgBlack',
-    'bgRed',
-    'bgGreen',
-    'bgYellow',
-    'bgBlue',
-    'bgMagenta',
-    'bgCyan',
-    'bgWhite',
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "white",
+    "gray",
+    "grey",
+    "bgBlack",
+    "bgRed",
+    "bgGreen",
+    "bgYellow",
+    "bgBlue",
+    "bgMagenta",
+    "bgCyan",
+    "bgWhite",
 
-    'reset',
-    'bold',
-    'dim',
-    'italic',
-    'underline',
-    'inverse',
-    'hidden',
-    'strikethrough',
+    "reset",
+    "bold",
+    "dim",
+    "italic",
+    "underline",
+    "inverse",
+    "hidden",
+    "strikethrough",
 ] as const;
 
 interface ColorsChalk extends chalk.Chalk {
-    strip:colors.Color;
-    stripColors:colors.Color;
-    rainbow:colors.Color;
-    zebra:colors.Color;
-    america:colors.Color;
-    trap:colors.Color;
-    random:colors.Color;
-    zalgo:colors.Color;
+    strip: colors.Color;
+    stripColors: colors.Color;
+    rainbow: colors.Color;
+    zebra: colors.Color;
+    america: colors.Color;
+    trap: colors.Color;
+    random: colors.Color;
+    zalgo: colors.Color;
 
-    black:ColorsChalk;
-    red:ColorsChalk;
-    green:ColorsChalk;
-    yellow:ColorsChalk;
-    blue:ColorsChalk;
-    magenta:ColorsChalk;
-    cyan:ColorsChalk;
-    white:ColorsChalk;
-    gray:ColorsChalk;
-    grey:ColorsChalk;
-    bgBlack:ColorsChalk;
-    bgRed:ColorsChalk;
-    bgGreen:ColorsChalk;
-    bgYellow:ColorsChalk;
-    bgBlue:ColorsChalk;
-    bgMagenta:ColorsChalk;
-    bgCyan:ColorsChalk;
-    bgWhite:ColorsChalk;
+    black: ColorsChalk;
+    red: ColorsChalk;
+    green: ColorsChalk;
+    yellow: ColorsChalk;
+    blue: ColorsChalk;
+    magenta: ColorsChalk;
+    cyan: ColorsChalk;
+    white: ColorsChalk;
+    gray: ColorsChalk;
+    grey: ColorsChalk;
+    bgBlack: ColorsChalk;
+    bgRed: ColorsChalk;
+    bgGreen: ColorsChalk;
+    bgYellow: ColorsChalk;
+    bgBlue: ColorsChalk;
+    bgMagenta: ColorsChalk;
+    bgCyan: ColorsChalk;
+    bgWhite: ColorsChalk;
 
-    reset:ColorsChalk;
-    bold:ColorsChalk;
-    dim:ColorsChalk;
-    italic:ColorsChalk;
-    underline:ColorsChalk;
-    inverse:ColorsChalk;
-    hidden:ColorsChalk;
-    strikethrough:ColorsChalk;
+    reset: ColorsChalk;
+    bold: ColorsChalk;
+    dim: ColorsChalk;
+    italic: ColorsChalk;
+    underline: ColorsChalk;
+    inverse: ColorsChalk;
+    hidden: ColorsChalk;
+    strikethrough: ColorsChalk;
 
     (text: TemplateStringsArray, ...placeholders: unknown[]): string;
     (...text: unknown[]): string;
@@ -90,7 +81,7 @@ interface ColorsChalk extends chalk.Chalk {
 /**
  * @deprecated it will be removed someday. Please use chalk directly
  */
-function chalkToColors(chalk:chalk.Chalk):ColorsChalk {
+function chalkToColors(chalk: chalk.Chalk): ColorsChalk {
     for (const key of colorsKeys) {
         (chalk as ColorsChalk)[key] = colors[key];
     }

@@ -10,52 +10,53 @@ import { Singleton } from "./singleton";
 @nativeClass()
 class CxxPtrBase<T> extends NativeClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(uint32_t)
-    useRef:uint32_t;
+    useRef: uint32_t;
     @nativeField(uint32_t)
-    weakRef:uint32_t;
-    value:T;
+    weakRef: uint32_t;
+    value: T;
 
-    [NativeType.ctor]():void {
+    [NativeType.ctor](): void {
         this.useRef = 1;
         this.weakRef = 1;
     }
-    addRef():void {
+    addRef(): void {
         this.interlockedIncrement32(0x8); // useRef
     }
-    addRefWeak():void {
+    addRefWeak(): void {
         this.interlockedIncrement32(0xc); // weakRef
     }
-    release():void {
+    release(): void {
         if (this.interlockedDecrement32(0x8) === 0) {
             this._Destroy();
             this.releaseWeak();
         }
     }
-    releaseWeak():void {
+    releaseWeak(): void {
         if (this.interlockedDecrement32(0xc) === 0) {
             this._DeleteThis();
         }
     }
-    _DeleteThis():void {
+    _DeleteThis(): void {
         abstract();
     }
-    _Destroy():void {
+    _Destroy(): void {
         abstract();
     }
 
-    static make<T>(type:Type<T>):NativeClassType<CxxPtrBase<T>> {
-        return Singleton.newInstance(CxxPtrBase, type, ()=>{
-            class SharedPtrBaseImpl extends CxxPtrBase<T> {
-            }
-            SharedPtrBaseImpl.define({value:type} as any);
+    static make<T>(type: Type<T>): NativeClassType<CxxPtrBase<T>> {
+        return Singleton.newInstance(CxxPtrBase, type, () => {
+            class SharedPtrBaseImpl extends CxxPtrBase<T> {}
+            SharedPtrBaseImpl.define({ value: type } as any);
             return SharedPtrBaseImpl as NativeClassType<CxxPtrBase<T>>;
         });
     }
 }
-CxxPtrBase.prototype._Destroy = makefunc.js([0], void_t, {this:CxxPtrBase});
-CxxPtrBase.prototype._DeleteThis = makefunc.js([8], void_t, {this:CxxPtrBase});
+CxxPtrBase.prototype._Destroy = makefunc.js([0], void_t, { this: CxxPtrBase });
+CxxPtrBase.prototype._DeleteThis = makefunc.js([8], void_t, {
+    this: CxxPtrBase,
+});
 const sizeOfSharedPtrBase = CxxPtrBase[NativeType.size];
 
 /** @deprecate Do you need to use it? */
@@ -67,26 +68,26 @@ export type SharedPtrBase<T> = CxxPtrBase<T>;
  * wrapper for std::shared_ptr
  */
 export abstract class CxxSharedPtr<T extends NativeClass> extends NativeClass {
-    static readonly type:NativeClassType<any>;
+    static readonly type: NativeClassType<any>;
 
-    p:T|null;
-    ref:CxxPtrBase<T>|null;
+    p: T | null;
+    ref: CxxPtrBase<T> | null;
 
-    [NativeType.ctor]():void {
+    [NativeType.ctor](): void {
         this.p = null;
         this.ref = null;
     }
-    [NativeType.dtor]():void {
+    [NativeType.dtor](): void {
         const ref = this.ref;
         if (ref !== null) ref.release();
     }
-    [NativeType.ctor_copy](value:CxxSharedPtr<T>):void {
+    [NativeType.ctor_copy](value: CxxSharedPtr<T>): void {
         this.p = value.p;
         const ref = value.ref;
         this.ref = ref;
         if (ref !== null) ref.addRef();
     }
-    [NativeType.ctor_move](value:CxxSharedPtr<T>):void {
+    [NativeType.ctor_move](value: CxxSharedPtr<T>): void {
         this.p = value.p;
         this.ref = value.ref;
         value.p = null;
@@ -95,31 +96,31 @@ export abstract class CxxSharedPtr<T extends NativeClass> extends NativeClass {
     /**
      * @deprecated use [NativeType.ctor_move]()
      */
-    ctor_move(value:CxxSharedPtr<T>):void {
+    ctor_move(value: CxxSharedPtr<T>): void {
         this[NativeType.ctor_move](value);
     }
-    assign(value:CxxSharedPtr<T>):this {
+    assign(value: CxxSharedPtr<T>): this {
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](value);
         return this;
     }
-    assign_move(value:CxxSharedPtr<T>):this {
+    assign_move(value: CxxSharedPtr<T>): this {
         this[NativeType.dtor]();
         this[NativeType.ctor_move](value);
         return this;
     }
-    exists():boolean {
+    exists(): boolean {
         return this.ref !== null;
     }
-    addRef():void {
+    addRef(): void {
         this.ref!.addRef();
     }
-    assignTo(dest:StaticPointer):void {
-        const ctor:new()=>CxxSharedPtr<T> = this.constructor as any;
+    assignTo(dest: StaticPointer): void {
+        const ctor: new () => CxxSharedPtr<T> = this.constructor as any;
         const ptr = dest.as(ctor);
         ptr.assign(this);
     }
-    dispose():void {
+    dispose(): void {
         const ref = this.ref;
         if (ref !== null) {
             ref.release();
@@ -127,14 +128,14 @@ export abstract class CxxSharedPtr<T extends NativeClass> extends NativeClass {
         }
         this.p = null;
     }
-    abstract create(vftable:VoidPointer):void;
+    abstract create(vftable: VoidPointer): void;
 
-    static make<T extends NativeClass>(cls:new()=>T):NativeClassType<CxxSharedPtr<T>> {
+    static make<T extends NativeClass>(cls: new () => T): NativeClassType<CxxSharedPtr<T>> {
         const clazz = cls as NativeClassType<T>;
-        return Singleton.newInstance(CxxSharedPtr, cls, ()=>{
+        return Singleton.newInstance(CxxSharedPtr, cls, () => {
             const Base = CxxPtrBase.make(clazz);
             class Clazz extends CxxSharedPtr<NativeClass> {
-                create(vftable:VoidPointer):void {
+                create(vftable: VoidPointer): void {
                     const size = Base[NativeType.size];
                     if (size === null) throw Error(`cannot allocate the non sized class`);
                     this.ref = capi.malloc(size).as(Base);
@@ -144,12 +145,14 @@ export abstract class CxxSharedPtr<T extends NativeClass> extends NativeClass {
                 }
             }
             Clazz.define({
-                p:clazz.ref(),
-                ref:Base.ref(),
+                p: clazz.ref(),
+                ref: Base.ref(),
             });
             Object.defineProperties(Clazz, {
                 name: { value: `CxxSharedPtr<${clazz.name}>` },
-                symbol: { value: mangle.templateClass(['std', 'shared_ptr'], clazz) },
+                symbol: {
+                    value: mangle.templateClass(["std", "shared_ptr"], clazz),
+                },
             });
 
             return Clazz as any;
@@ -166,53 +169,53 @@ export type SharedPtr<T extends NativeClass> = CxxSharedPtr<T>;
  * wrapper for std::weak_ptr
  */
 export abstract class CxxWeakPtr<T extends NativeClass> extends NativeClass {
-    static readonly type:NativeClassType<any>;
+    static readonly type: NativeClassType<any>;
 
-    p:T|null;
-    ref:CxxPtrBase<T>|null;
+    p: T | null;
+    ref: CxxPtrBase<T> | null;
 
-    [NativeType.ctor]():void {
+    [NativeType.ctor](): void {
         this.p = null;
         this.ref = null;
     }
-    [NativeType.dtor]():void {
+    [NativeType.dtor](): void {
         const ref = this.ref;
         if (ref !== null) ref.releaseWeak();
     }
-    [NativeType.ctor_copy](value:CxxWeakPtr<T>):void {
+    [NativeType.ctor_copy](value: CxxWeakPtr<T>): void {
         this.p = value.p;
         const ref = value.ref;
         this.ref = ref;
         if (ref !== null) ref.addRefWeak();
     }
-    [NativeType.ctor_move](value:CxxWeakPtr<T>):void {
+    [NativeType.ctor_move](value: CxxWeakPtr<T>): void {
         this.p = value.p;
         this.ref = value.ref;
         value.p = null;
         value.ref = null;
     }
-    assign(value:CxxWeakPtr<T>):this {
+    assign(value: CxxWeakPtr<T>): this {
         this[NativeType.dtor]();
         this[NativeType.ctor_copy](value);
         return this;
     }
-    assign_move(value:CxxWeakPtr<T>):this {
+    assign_move(value: CxxWeakPtr<T>): this {
         this[NativeType.dtor]();
         this[NativeType.ctor_move](value);
         return this;
     }
-    exists():boolean {
+    exists(): boolean {
         return this.ref !== null;
     }
-    addRef():void {
+    addRef(): void {
         this.ref!.addRefWeak();
     }
-    assignTo(dest:StaticPointer):void {
-        const ctor:new()=>CxxWeakPtr<T> = this.constructor as any;
+    assignTo(dest: StaticPointer): void {
+        const ctor: new () => CxxWeakPtr<T> = this.constructor as any;
         const ptr = dest.as(ctor);
         ptr.assign(this);
     }
-    dispose():void {
+    dispose(): void {
         const ref = this.ref;
         if (ref !== null) {
             ref.releaseWeak();
@@ -220,14 +223,14 @@ export abstract class CxxWeakPtr<T extends NativeClass> extends NativeClass {
         }
         this.p = null;
     }
-    abstract create(vftable:VoidPointer):void;
+    abstract create(vftable: VoidPointer): void;
 
-    static make<T extends NativeClass>(cls:new()=>T):NativeClassType<CxxWeakPtr<T>> {
+    static make<T extends NativeClass>(cls: new () => T): NativeClassType<CxxWeakPtr<T>> {
         const clazz = cls as NativeClassType<T>;
-        return Singleton.newInstance(CxxWeakPtr, cls, ()=>{
+        return Singleton.newInstance(CxxWeakPtr, cls, () => {
             const Base = CxxPtrBase.make(clazz);
             class Clazz extends CxxWeakPtr<NativeClass> {
-                create(vftable:VoidPointer):void {
+                create(vftable: VoidPointer): void {
                     const size = Base[NativeType.size];
                     if (size === null) throw Error(`cannot allocate the non sized class`);
                     this.ref = capi.malloc(size).as(Base);
@@ -239,12 +242,15 @@ export abstract class CxxWeakPtr<T extends NativeClass> extends NativeClass {
             Object.defineProperties(Clazz, {
                 name: { value: `CxxWeakPtr<${clazz.name}>` },
             });
-            Clazz.define({
-                p:clazz.ref(),
-                ref:Base.ref(),
-            }, {
-                symbol: mangle.templateClass(['std', 'weak_ptr'], clazz),
-            });
+            Clazz.define(
+                {
+                    p: clazz.ref(),
+                    ref: Base.ref(),
+                },
+                {
+                    symbol: mangle.templateClass(["std", "weak_ptr"], clazz),
+                },
+            );
 
             return Clazz as any;
         });

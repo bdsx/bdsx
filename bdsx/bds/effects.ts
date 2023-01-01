@@ -114,7 +114,14 @@ export class MobEffectInstance extends NativeClass {
     /**
      * @param duration How many ticks will the effect last (one tick = 0.05s)
      */
-    static create(id: MobEffectIds, duration: number = 600, amplifier: number = 0, ambient: boolean = false, showParticles: boolean = true, displayAnimation: boolean = false): MobEffectInstance {
+    static create(
+        id: MobEffectIds,
+        duration: number = 600,
+        amplifier: number = 0,
+        ambient: boolean = false,
+        showParticles: boolean = true,
+        displayAnimation: boolean = false,
+    ): MobEffectInstance {
         const effect = new MobEffectInstance(true);
         effect._create(id, duration, amplifier, ambient, showParticles, displayAnimation);
         return effect;
@@ -124,34 +131,34 @@ export class MobEffectInstance extends NativeClass {
         abstract();
     }
 
-    getSplashDuration():number {
+    getSplashDuration(): number {
         return this.duration * 0.75;
     }
-    getLingerDuration():number {
+    getLingerDuration(): number {
         return this.duration * 0.25;
     }
     getAmplifier(): number {
         abstract();
     }
-    protected _getComponentName():HashedString {
+    protected _getComponentName(): HashedString {
         abstract();
     }
-    getComponentName():string {
+    getComponentName(): string {
         return this._getComponentName().str;
     }
-    save():Record<string, any> {
+    save(): Record<string, any> {
         const tag = this.allocateAndSave();
         const out = tag.value();
         tag.dispose();
         return out;
     }
-    allocateAndSave():CompoundTag {
+    allocateAndSave(): CompoundTag {
         abstract();
     }
-    load(tag:CompoundTag): void {
+    load(tag: CompoundTag): void {
         abstract();
     }
-    static load(tag:CompoundTag): void {
+    static load(tag: CompoundTag): void {
         abstract();
     }
 }

@@ -1,71 +1,73 @@
+import * as colors from "colors";
+import * as path from "path";
+import { ConcurrencyQueue } from "./concurrency";
+import { fsutil } from "./fsutil";
+import { remapAndPrintError } from "./source-map-support";
+import { wineCompatible } from "./winecompatible";
 
-import * as colors from 'colors';
-import * as path from 'path';
-import { ConcurrencyQueue } from './concurrency';
-import { fsutil } from './fsutil';
-import { remapAndPrintError } from './source-map-support';
-import { wineCompatible } from './winecompatible';
-
-const PLUGINS_BDSX_PATH = 'file:../bdsx';
+const PLUGINS_BDSX_PATH = "file:../bdsx";
 
 class PromCounter {
-    private resolve:(()=>void)|null = null;
+    private resolve: (() => void) | null = null;
     private counter = 0;
-    private prom:Promise<void> = Promise.resolve();
+    private prom: Promise<void> = Promise.resolve();
 
-    ref():void {
+    ref(): void {
         if (this.counter === 0) {
-            this.prom = new Promise<void>(resolve=>{
+            this.prom = new Promise<void>(resolve => {
                 this.resolve = resolve;
             });
         }
         this.counter++;
     }
 
-    unref():void {
-        this.counter --;
+    unref(): void {
+        this.counter--;
         if (this.counter === 0) {
             this.resolve!();
             this.resolve = null;
         }
     }
 
-    wait():Promise<void> {
+    wait(): Promise<void> {
         return this.prom;
     }
 }
 
-const BDSX_SCOPE = '@bdsx/';
+const BDSX_SCOPE = "@bdsx/";
 
 export const loadedPlugins: string[] = [];
-export const loadedPackages: {name:string, loaded:boolean, jsonpath:string|null, json:any|null}[] = [];
+export const loadedPackages: {
+    name: string;
+    loaded: boolean;
+    jsonpath: string | null;
+    json: any | null;
+}[] = [];
 
-export async function loadAllPlugins():Promise<void> {
-
+export async function loadAllPlugins(): Promise<void> {
     class PackageJson {
-        private loaded:boolean = false;
-        private jsonpath:string|null = null;
-        private json:any|null = null;
+        private loaded: boolean = false;
+        private jsonpath: string | null = null;
+        private json: any | null = null;
 
-        constructor(public readonly name:string) {
-        }
+        constructor(public readonly name: string) {}
 
-        setJsonPath(jsonpath:string):void {
+        setJsonPath(jsonpath: string): void {
             if (this.jsonpath !== null) throw Error(`already`);
             this.jsonpath = jsonpath;
         }
 
-        async getJson():Promise<any> {
+        async getJson(): Promise<any> {
             if (this.json !== null) return this.json;
-            return this.json = JSON.parse(await fsutil.readFile(this.getPath()));
+            return (this.json = JSON.parse(await fsutil.readFile(this.getPath())));
         }
 
-        getPath():string {
+        getPath(): string {
             if (this.jsonpath !== null) return this.jsonpath;
-            return this.jsonpath = require.resolve(`${this.name}/package.json`);
+            return (this.jsonpath = require.resolve(`${this.name}/package.json`));
         }
 
-        async fix():Promise<void> {
+        async fix(): Promise<void> {
             let modified = false;
             try {
                 const json = await this.getJson();
@@ -79,12 +81,12 @@ export async function loadAllPlugins():Promise<void> {
                     devDeps.bdsx = PLUGINS_BDSX_PATH;
                     modified = true;
                 }
-                if (json.scripts && json.scripts.prepare === 'tsc') {
-                    json.scripts.prepare = 'tsc || exit 0';
+                if (json.scripts && json.scripts.prepare === "tsc") {
+                    json.scripts.prepare = "tsc || exit 0";
                     modified = true;
                 }
             } catch (err) {
-                if (err.code === 'ENOENT') return;
+                if (err.code === "ENOENT") return;
                 throw err;
             }
 
@@ -93,14 +95,14 @@ export async function loadAllPlugins():Promise<void> {
             }
         }
 
-        async load(rootPackage:boolean):Promise<boolean> {
+        async load(rootPackage: boolean): Promise<boolean> {
             const packagejson = await this.getJson();
-            if (typeof packagejson !== 'object') {
+            if (typeof packagejson !== "object") {
                 console.error(`[BDSX-Plugins] Invalid ${this.name}/package.json`);
                 return false;
             }
             if (packagejson.dependencies == null) return true;
-            const counter = new PromCounter;
+            const counter = new PromCounter();
             for (const name of Object.keys(packagejson.dependencies)) {
                 if (!name.startsWith(BDSX_SCOPE)) continue;
                 PackageJson.get(name).requestLoad(counter, rootPackage ? packagejson : null);
@@ -108,12 +110,12 @@ export async function loadAllPlugins():Promise<void> {
             await counter.wait();
             return true;
         }
-        async save():Promise<void> {
+        async save(): Promise<void> {
             if (this.json === null) return;
             await fsutil.writeJson(this.getPath(), this.json);
         }
 
-        static get(name:string):PackageJson {
+        static get(name: string): PackageJson {
             let pkg = PackageJson.all.get(name);
             if (pkg != null) return pkg;
             pkg = new PackageJson(name);
@@ -121,12 +123,12 @@ export async function loadAllPlugins():Promise<void> {
             return pkg;
         }
 
-        requestLoad(counter:PromCounter, parentjson:any):void {
+        requestLoad(counter: PromCounter, parentjson: any): void {
             if (this.loaded) return;
             this.loaded = true;
 
             counter.ref();
-            taskQueue.run(async()=>{
+            taskQueue.run(async () => {
                 try {
                     const json = await this.getJson();
                     if (json.bdsxPlugin) {
@@ -142,7 +144,7 @@ export async function loadAllPlugins():Promise<void> {
                             directoryFound = true;
                             await fsutil.stat(`${directoryPath}${path.sep}package.json`);
                         } catch (err) {
-                            if (err.code === 'ENOENT') {
+                            if (err.code === "ENOENT") {
                                 console.error(colors.red(`[BDSX-Plugins] ${this.name}: removed`));
                                 if (directoryFound) {
                                     wineCompatible.removeRecursiveSync(directoryPath);
@@ -172,17 +174,17 @@ export async function loadAllPlugins():Promise<void> {
     let needToNpmInstall = false;
     const projpath = fsutil.projectPath;
     const pluginspath = `${projpath}${path.sep}plugins`;
-    const taskQueue = new ConcurrencyQueue;
+    const taskQueue = new ConcurrencyQueue();
 
     // read package.json
-    const mainpkg = new PackageJson('[entrypoint]');
+    const mainpkg = new PackageJson("[entrypoint]");
     mainpkg.setJsonPath(`${projpath}${path.sep}package.json`);
-    let mainjson:any;
+    let mainjson: any;
     try {
         mainjson = await mainpkg.getJson();
     } catch (err) {
         console.error(colors.red(`[BDSX-Plugins] Failed to load`));
-        if (err.code === 'ENOENT') {
+        if (err.code === "ENOENT") {
             console.error(colors.red(`[BDSX-Plugins] 'package.json' not found. Please set the entry point to the directory containing package.json`));
         } else {
             console.error(colors.red(`[BDSX-Plugins] Failed to read package.json. ${err.message}`));
@@ -192,9 +194,9 @@ export async function loadAllPlugins():Promise<void> {
 
     try {
         // load plugins from the directory
-        const counter = new PromCounter;
+        const counter = new PromCounter();
         const pluginsFiles = await fsutil.readdirWithFileTypes(pluginspath);
-        const pluginsInDirectory:PackageJson[] = [];
+        const pluginsInDirectory: PackageJson[] = [];
 
         // check new plugins
         for (const info of pluginsFiles) {
@@ -206,7 +208,7 @@ export async function loadAllPlugins():Promise<void> {
             try {
                 plugin.getPath();
             } catch (err) {
-                if (err.code === 'MODULE_NOT_FOUND') {
+                if (err.code === "MODULE_NOT_FOUND") {
                     plugin.setJsonPath(`${pluginspath}${path.sep}${pluginname}${path.sep}package.json`);
                     needToNpmInstall = true;
                 } else {
@@ -229,7 +231,7 @@ export async function loadAllPlugins():Promise<void> {
                     continue;
                 }
             } catch (err) {
-                if (err.code === 'ENOENT') {
+                if (err.code === "ENOENT") {
                     console.error(colors.red(`[BDSX-Plugins] 'plugins/${pluginname}/package.json' not found. Plugins need 'package.json'`));
                 } else {
                     console.error(colors.red(`[BDSX-Plugins] Failed to read 'plugins/${pluginname}/package.json'.`));
@@ -240,7 +242,7 @@ export async function loadAllPlugins():Promise<void> {
         }
 
         for (const plugin of pluginsInDirectory) {
-            taskQueue.run(()=>plugin.fix());
+            taskQueue.run(() => plugin.fix());
             plugin.requestLoad(counter, mainjson);
         }
 
@@ -254,14 +256,14 @@ export async function loadAllPlugins():Promise<void> {
             await mainpkg.save();
         }
         if (needToNpmInstall) {
-            wineCompatible.execSync('npm i');
+            wineCompatible.execSync("npm i");
         }
         await taskQueue.onceEnd();
 
         // import
         const pluginCount = PackageJson.all.size;
         if (pluginCount === 0) {
-            console.log('[BDSX-Plugins] No Plugins');
+            console.log("[BDSX-Plugins] No Plugins");
         } else {
             let index = 0;
             for (const pkg of PackageJson.all.values()) {
@@ -270,7 +272,12 @@ export async function loadAllPlugins():Promise<void> {
                     // eslint-disable-next-line @typescript-eslint/no-require-imports
                     require(pkg.name);
                     loadedPlugins.push(pkg.name);
-                    loadedPackages.push({name:pkg.name, loaded:(pkg as any).loaded, jsonpath:(pkg as any).jsonpath, json:(pkg as any).json});
+                    loadedPackages.push({
+                        name: pkg.name,
+                        loaded: (pkg as any).loaded,
+                        jsonpath: (pkg as any).jsonpath,
+                        json: (pkg as any).json,
+                    });
                 } catch (err) {
                     console.error(colors.red(`[BDSX-Plugins] Failed to load ${pkg.name}`));
                     remapAndPrintError(err);

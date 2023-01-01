@@ -5,26 +5,26 @@ import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } fr
 import { bin64_t, bool_t, int32_t, uint16_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 
-const portDelineator = '|'.charCodeAt(0);
+const portDelineator = "|".charCodeAt(0);
 
 export namespace RakNet {
     @nativeClass(0x88)
     export class SystemAddress extends AbstractClass {
         @nativeField(uint16_t, 0x80)
-        debugPort:uint16_t;
+        debugPort: uint16_t;
         @nativeField(uint16_t, 0x82)
-        systemIndex:uint16_t;
+        systemIndex: uint16_t;
 
         // void SystemAddress::ToString(bool writePort, char *dest, char portDelineator) const
-        ToString(writePort:boolean, dest:Uint8Array, portDelineator:number):void {
+        ToString(writePort: boolean, dest: Uint8Array, portDelineator: number): void {
             abstract();
         }
 
-        toString():string {
+        toString(): string {
             const dest = Buffer.alloc(128);
             this.ToString(true, dest, portDelineator);
             const len = dest.indexOf(0);
-            if (len === -1) throw Error('SystemAddress.ToString failed, null character not found');
+            if (len === -1) throw Error("SystemAddress.ToString failed, null character not found");
             return dest.subarray(0, len).toString();
         }
     }
@@ -32,11 +32,11 @@ export namespace RakNet {
     @nativeClass()
     export class RakNetGUID extends NativeStruct {
         @nativeField(bin64_t)
-        g:bin64_t;
+        g: bin64_t;
         @nativeField(uint16_t)
-        systemIndex:uint16_t;
+        systemIndex: uint16_t;
 
-        equals(other:VoidPointer|null):boolean {
+        equals(other: VoidPointer | null): boolean {
             if (other instanceof RakNetGUID) {
                 return this.g === other.g;
             }
@@ -47,18 +47,18 @@ export namespace RakNet {
     @nativeClass()
     export class RakPeer extends AbstractClass {
         @nativeField(VoidPointer)
-        vftable:VoidPointer;
+        vftable: VoidPointer;
 
-        GetSystemAddressFromIndex(idx:number):SystemAddress {
+        GetSystemAddressFromIndex(idx: number): SystemAddress {
             abstract();
         }
-        GetAveragePing(address:RakNet.AddressOrGUID):number {
+        GetAveragePing(address: RakNet.AddressOrGUID): number {
             abstract();
         }
-        GetLastPing(address:RakNet.AddressOrGUID):number {
+        GetLastPing(address: RakNet.AddressOrGUID): number {
             abstract();
         }
-        GetLowestPing(address:RakNet.AddressOrGUID):number {
+        GetLowestPing(address: RakNet.AddressOrGUID): number {
             abstract();
         }
     }
@@ -70,11 +70,11 @@ export namespace RakNet {
     @nativeClass()
     export class AddressOrGUID extends NativeClass {
         @nativeField(RakNetGUID)
-        rakNetGuid:RakNetGUID;
+        rakNetGuid: RakNetGUID;
         @nativeField(SystemAddress)
-        systemAddress:SystemAddress;
+        systemAddress: SystemAddress;
 
-        GetSystemIndex():uint16_t {
+        GetSystemIndex(): uint16_t {
             const rakNetGuid = this.rakNetGuid;
             if (rakNetGuid.g !== UNASSIGNED_RAKNET_GUID.g) {
                 return rakNetGuid.systemIndex;
@@ -84,6 +84,19 @@ export namespace RakNet {
         }
     }
 
-    SystemAddress.prototype.ToString = procHacker.js("?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z", void_t, {this: RakNet.SystemAddress}, bool_t, makefunc.Buffer, int32_t);
-    RakPeer.prototype.GetSystemAddressFromIndex = procHacker.jsv('??_7RakPeer@RakNet@@6BRakPeerInterface@1@@', '?GetSystemAddressFromIndex@RakPeer@RakNet@@UEAA?AUSystemAddress@2@I@Z', RakNet.SystemAddress, {this:RakNet.RakPeer, structureReturn: true}, int32_t);
+    SystemAddress.prototype.ToString = procHacker.js(
+        "?ToString@SystemAddress@RakNet@@QEBAX_NPEADD@Z",
+        void_t,
+        { this: RakNet.SystemAddress },
+        bool_t,
+        makefunc.Buffer,
+        int32_t,
+    );
+    RakPeer.prototype.GetSystemAddressFromIndex = procHacker.jsv(
+        "??_7RakPeer@RakNet@@6BRakPeerInterface@1@@",
+        "?GetSystemAddressFromIndex@RakPeer@RakNet@@UEAA?AUSystemAddress@2@I@Z",
+        RakNet.SystemAddress,
+        { this: RakNet.RakPeer, structureReturn: true },
+        int32_t,
+    );
 }

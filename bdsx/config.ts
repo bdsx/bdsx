@@ -1,16 +1,15 @@
-import * as path from 'path';
+import * as path from "path";
 import { fsutil } from "./fsutil";
 
 let isBdsx = false;
 try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('./core');
+    require("./core");
     isBdsx = true;
-} catch (err) {
-}
+} catch (err) {}
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-const isWine = isBdsx ? require('./dllraw').dllraw.ntdll.wine_get_version !== null : false;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const isWine = isBdsx ? require("./dllraw").dllraw.ntdll.wine_get_version !== null : false;
 
 export namespace Config {
     /**
@@ -38,6 +37,5 @@ export namespace Config {
      */
     export const REPLACE_UNICODE_ENCODER = WINE;
 
-    export const BDS_PATH = path.join(fsutil.projectPath, 'bedrock_server');
+    export const BDS_PATH = path.join(fsutil.projectPath, "bedrock_server");
 }
-

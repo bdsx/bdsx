@@ -1,36 +1,36 @@
 import { bin } from "./bin";
 import { VoidPointer } from "./core";
 
-let detector:CircularDetector|null = null;
+let detector: CircularDetector | null = null;
 let ref = 0;
 
 export class CircularDetector {
     private readonly map = new Map<unknown, unknown>();
     private keyCounter = 0;
 
-    static decreaseDepth(options:Record<string, any>):Record<string, any> {
+    static decreaseDepth(options: Record<string, any>): Record<string, any> {
         return Object.assign({}, options, {
             depth: options.depth === null ? null : (options as any).depth - 1,
         });
     }
-    static makeTemporalClass(name:string, instance:VoidPointer, options:Record<string, any>):new()=>Record<string, any> {
+    static makeTemporalClass(name: string, instance: VoidPointer, options: Record<string, any>): new () => Record<string, any> {
         if (options.seen.length === 0) {
-            name += `<${options.stylize(instance.toString(), 'number')}>`;
+            name += `<${options.stylize(instance.toString(), "number")}>`;
         }
-        class Class{}
-        Object.defineProperty(Class, 'name', {value:name});
+        class Class {}
+        Object.defineProperty(Class, "name", { value: name });
         return Class;
     }
 
-    check<T>(instance:unknown, allocator:()=>T, cb?:(value:T)=>void):T {
-        let key:unknown;
+    check<T>(instance: unknown, allocator: () => T, cb?: (value: T) => void): T {
+        let key: unknown;
         if (instance instanceof VoidPointer) {
-            let ctorKey = this.map.get(instance.constructor) as string|undefined;
+            let ctorKey = this.map.get(instance.constructor) as string | undefined;
             if (ctorKey == null) {
                 ctorKey = bin.makeVar(this.keyCounter++);
                 this.map.set(instance.constructor, ctorKey);
             }
-            key = instance.getAddressBin()+ctorKey;
+            key = instance.getAddressBin() + ctorKey;
         } else {
             key = instance;
         }
@@ -42,20 +42,20 @@ export class CircularDetector {
         return value;
     }
 
-    release():void {
+    release(): void {
         if (--ref === 0) {
-            process.nextTick(()=>{
+            process.nextTick(() => {
                 if (ref === 0) detector = null;
             });
         }
     }
-    static getInstance():CircularDetector {
+    static getInstance(): CircularDetector {
         if (ref++ === 0 && detector === null) {
-            detector = new CircularDetector;
+            detector = new CircularDetector();
         }
         return detector!;
     }
-    static check<T>(instance:unknown, allocator:()=>T, cb?:(value:T)=>void):T {
+    static check<T>(instance: unknown, allocator: () => T, cb?: (value: T) => void): T {
         const detector = CircularDetector.getInstance();
         const res = detector.check(instance, allocator, cb);
         detector.release();

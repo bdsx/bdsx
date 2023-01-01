@@ -1,17 +1,27 @@
 // The permissions system is currently deprecated and not useable. This is an example of the api works for reference.
 
-import { command } from 'bdsx/command';
-import { ActorWildcardCommandSelector, CommandPermissionLevel, CommandRawText } from 'bdsx/bds/command';
-import { Permissions } from 'bdsx/permissions';
-import { Player } from 'bdsx/bds/player';
-import { bedrockServer } from 'bdsx/launcher';
+import { command } from "bdsx/command";
+import { ActorWildcardCommandSelector, CommandPermissionLevel, CommandRawText } from "bdsx/bds/command";
+import { Permissions } from "bdsx/permissions";
+import { Player } from "bdsx/bds/player";
+import { bedrockServer } from "bdsx/launcher";
 
-const commandPerm = Permissions.registerPermission("command", "Minecraft commands", Permissions.registerPermission("minecraft", "Minecraft data", null, false), false);
+const commandPerm = Permissions.registerPermission(
+    "command",
+    "Minecraft commands",
+    Permissions.registerPermission("minecraft", "Minecraft data", null, false),
+    false,
+);
 
 Permissions.registerPermission("me", "Vanilla me command", commandPerm, true);
 Permissions.registerPermission("say", "Vanilla say command", commandPerm, true);
 Permissions.registerPermission("give", "Vanilla give command", commandPerm, false);
-export const bdsxExampleNode = Permissions.registerPermission("example", "BDSX examples", Permissions.registerPermission("bdsx", "BDSX permissions", null, false), false);
+export const bdsxExampleNode = Permissions.registerPermission(
+    "example",
+    "BDSX examples",
+    Permissions.registerPermission("bdsx", "BDSX permissions", null, false),
+    false,
+);
 Permissions.registerPermission("imacow", "Permission to use the commandthatneedspermission command", bdsxExampleNode, false);
 
 // command.register('commandthatneedspermission', 'Say "I\'m a cow"').overload((params, origin, result) => {

@@ -3,7 +3,21 @@ import { commandParser } from "../commandparser";
 import { bool_t, CxxString, float32_t, int32_t } from "../nativetype";
 import { RelativeFloat } from "./blockpos";
 import { CommandSymbols } from "./cmdsymbolloader";
-import { ActorCommandSelector, ActorWildcardCommandSelector, Command, CommandFilePath, CommandItem, CommandMessage, CommandPosition, CommandPositionFloat, CommandRawText, CommandRegistry, CommandWildcardInt, PlayerCommandSelector, PlayerWildcardCommandSelector } from "./command";
+import {
+    ActorCommandSelector,
+    ActorWildcardCommandSelector,
+    Command,
+    CommandFilePath,
+    CommandItem,
+    CommandMessage,
+    CommandPosition,
+    CommandPositionFloat,
+    CommandRawText,
+    CommandRegistry,
+    CommandWildcardInt,
+    PlayerCommandSelector,
+    PlayerWildcardCommandSelector,
+} from "./command";
 import { JsonValue } from "./connreq";
 import { type_id } from "./typeid";
 
@@ -36,7 +50,7 @@ const typesWithTypeIdPtr = [
     Command.ActorDefinitionIdentifier,
 ];
 
-const symbols = new CommandSymbols;
+const symbols = new CommandSymbols();
 symbols.addParserSymbols(types);
 symbols.addParserSymbols(typesWithTypeIdPtr);
 symbols.addCounterSymbol(CommandRegistry);

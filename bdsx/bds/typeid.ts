@@ -8,11 +8,11 @@ import { CommandSymbols } from "./cmdsymbolloader";
 @nativeClass()
 export class typeid_t<T> extends NativeStruct {
     @nativeField(uint16_t)
-    id:uint16_t;
+    id: uint16_t;
 }
 
-const counterWrapper = Symbol('IdCounter');
-const typeidmap = Symbol('typeidmap');
+const counterWrapper = Symbol("IdCounter");
+const typeidmap = Symbol("typeidmap");
 
 const IdCounter = Wrapper.make(uint16_t);
 type IdCounter = Wrapper<uint16_t>;
@@ -21,11 +21,11 @@ type IdCounter = Wrapper<uint16_t>;
  * dummy class for typeid
  */
 export class HasTypeId extends AbstractClass {
-    static [counterWrapper]:IdCounter;
-    static readonly [typeidmap] = new WeakMap<Type<any>, typeid_t<any>|NativePointer>();
+    static [counterWrapper]: IdCounter;
+    static readonly [typeidmap] = new WeakMap<Type<any>, typeid_t<any> | NativePointer>();
 }
 
-export function type_id<T, BASE extends HasTypeId>(base:typeof HasTypeId&{new():BASE}, type:Type<T>):typeid_t<BASE> {
+export function type_id<T, BASE extends HasTypeId>(base: typeof HasTypeId & { new (): BASE }, type: Type<T>): typeid_t<BASE> {
     const map = base[typeidmap];
     const typeid = map.get(type);
     if (typeid instanceof typeid_t) {
@@ -33,9 +33,11 @@ export function type_id<T, BASE extends HasTypeId>(base:typeof HasTypeId&{new():
     }
 
     const counter = base[counterWrapper];
-    if (counter.value === 0) throw Error('Cannot make type_id before launch');
+    if (counter.value === 0) throw Error("Cannot make type_id before launch");
     if (typeid != null) {
-        const newid = makefunc.js(typeid, typeid_t, {structureReturn: true})();
+        const newid = makefunc.js(typeid, typeid_t, {
+            structureReturn: true,
+        })();
         map.set(type, newid);
         return newid;
     } else {
@@ -50,10 +52,10 @@ export namespace type_id {
     /**
      * @deprecated dummy
      */
-    export function pdbimport(base:Type<any>, types:Type<any>[]):void {
+    export function pdbimport(base: Type<any>, types: Type<any>[]): void {
         // dummy
     }
-    export function load(symbols:CommandSymbols):void {
+    export function load(symbols: CommandSymbols): void {
         for (const [basetype, addr] of symbols.iterateCounters()) {
             const base = basetype as typeof HasTypeId;
             const map = base[typeidmap];
@@ -67,19 +69,19 @@ export namespace type_id {
             }
         }
     }
-    export function clone(base:typeof HasTypeId, oriType:Type<any>, newType:Type<any>):void {
+    export function clone(base: typeof HasTypeId, oriType: Type<any>, newType: Type<any>): void {
         const map = base[typeidmap];
         let typeid = map.get(oriType);
         if (typeid == null) {
             throw Error(`type_id ${oriType.name} not found`);
         }
         if (!(typeid instanceof typeid_t)) {
-            typeid = makefunc.js(typeid, typeid_t, {structureReturn: true})();
+            typeid = makefunc.js(typeid, typeid_t, { structureReturn: true })();
             map.set(oriType, typeid);
         }
         map.set(newType, typeid);
     }
-    export function register(base:typeof HasTypeId, type:Type<any>, id:number):void {
+    export function register(base: typeof HasTypeId, type: Type<any>, id: number): void {
         const map = base[typeidmap];
         const newid = new typeid_t<any>(true);
         newid.id = id;

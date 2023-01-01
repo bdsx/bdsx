@@ -2,36 +2,35 @@ import type { MCRESULT } from "./bds/command";
 import { VectorXYZ } from "./common";
 
 export interface CommandResult<DATA extends CommandResult.Any> extends MCRESULT {
-    data:DATA;
+    data: DATA;
 }
 export namespace CommandResult {
-
     export interface Any {
         statusMessage: string;
         statusCode: number;
-        [key:string]:any;
+        [key: string]: any;
     }
     export interface List {
-        currentPlayerCount:number;
-        maxPlayerCount:number;
-        players:string;
+        currentPlayerCount: number;
+        maxPlayerCount: number;
+        players: string;
         statusMessage: string;
         statusCode: number;
     }
     export interface TestFor {
-        victim:string[];
+        victim: string[];
         statusMessage: string;
         statusCode: number;
     }
     export interface TestForBlock {
-        matches: boolean,
-        position: VectorXYZ,
+        matches: boolean;
+        position: VectorXYZ;
         statusMessage: string;
         statusCode: number;
     }
     export interface TestForBlocks {
         compareCount: number;
-        matches: boolean,
+        matches: boolean;
         statusMessage: string;
         statusCode: number;
     }
@@ -42,5 +41,5 @@ enum CommandResultTypeEnum {
     Output = 0x02,
     OutputAndData = 0x03,
 }
-export type CommandResultType = boolean|CommandResultTypeEnum|null;
+export type CommandResultType = boolean | CommandResultTypeEnum | null;
 export const CommandResultType = CommandResultTypeEnum;

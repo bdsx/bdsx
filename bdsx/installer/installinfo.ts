@@ -1,19 +1,19 @@
-import * as fs from 'fs';
+import * as fs from "fs";
 import { sep } from "path";
 import { fsutil } from "../fsutil";
 
 export class InstallInfo {
-    public path:string;
-    bdsVersion?:string|null;
-    bdsxCoreVersion?:string|null;
-    pdbcacheVersion?:string|null;
-    files?:string[];
+    public path: string;
+    bdsVersion?: string | null;
+    bdsxCoreVersion?: string | null;
+    pdbcacheVersion?: string | null;
+    files?: string[];
 
-    constructor(bdsPath:string) {
+    constructor(bdsPath: string) {
         this.path = `${bdsPath}${sep}installinfo.json`;
     }
 
-    toJSON():unknown {
+    toJSON(): unknown {
         return {
             bdsVersion: this.bdsVersion,
             bdsxCoreVersion: this.bdsxCoreVersion,
@@ -22,7 +22,7 @@ export class InstallInfo {
         };
     }
 
-    private _fromJSON(data:any):void {
+    private _fromJSON(data: any): void {
         if (data == null) {
             delete this.bdsVersion;
             delete this.bdsxCoreVersion;
@@ -36,33 +36,33 @@ export class InstallInfo {
         }
     }
 
-    async load():Promise<void> {
+    async load(): Promise<void> {
         try {
             const file = await fsutil.readFile(this.path);
             const installInfo = JSON.parse(file);
             this._fromJSON(installInfo);
         } catch (err) {
             this._fromJSON(null);
-            if (err.code !== 'ENOENT') throw err;
+            if (err.code !== "ENOENT") throw err;
         }
     }
 
-    save():Promise<void> {
+    save(): Promise<void> {
         return fsutil.writeJson(this.path, this.toJSON());
     }
 
-    loadSync():void {
+    loadSync(): void {
         try {
-            const file = fs.readFileSync(this.path, 'utf8');
+            const file = fs.readFileSync(this.path, "utf8");
             const installInfo = JSON.parse(file);
             this._fromJSON(installInfo);
         } catch (err) {
             this._fromJSON(null);
-            if (err.code !== 'ENOENT') throw err;
+            if (err.code !== "ENOENT") throw err;
         }
     }
 
-    saveSync():void {
+    saveSync(): void {
         fsutil.writeJsonSync(this.path, this.toJSON());
     }
 }

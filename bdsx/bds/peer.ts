@@ -9,51 +9,51 @@ import { BinaryStream } from "./stream";
 @nativeClass(null)
 export class RaknetNetworkPeer extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(VoidPointer)
-    u1:VoidPointer; // null
+    u1: VoidPointer; // null
     @nativeField(VoidPointer)
-    u2:VoidPointer; // null
+    u2: VoidPointer; // null
     @nativeField(RakNet.RakPeer.ref())
-    peer:RakNet.RakPeer;
+    peer: RakNet.RakPeer;
     @nativeField(RakNet.AddressOrGUID)
-    addr:RakNet.AddressOrGUID;
+    addr: RakNet.AddressOrGUID;
 }
 
 @nativeClass(null)
 export class EncryptedNetworkPeer extends AbstractClass {
     @nativeField(CxxSharedPtr.make(RaknetNetworkPeer))
-    peer:CxxSharedPtr<RaknetNetworkPeer>;
+    peer: CxxSharedPtr<RaknetNetworkPeer>;
 }
 
 @nativeClass(null)
 export class CompressedNetworkPeer extends AbstractClass {
     @nativeField(EncryptedNetworkPeer.ref(), 0x48)
-    peer:EncryptedNetworkPeer;
+    peer: EncryptedNetworkPeer;
 }
 
 @nativeClass(null)
 export class BatchedNetworkPeer extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(CompressedNetworkPeer.ref())
-    peer:CompressedNetworkPeer;
+    peer: CompressedNetworkPeer;
     @nativeField(BinaryStream)
-    stream:BinaryStream;
+    stream: BinaryStream;
 
     /**
      * @deprecated parameter removed
      */
-    sendPacket(data:CxxString, reliability:number, n:number, n2:number, compressibility:number):void;
+    sendPacket(data: CxxString, reliability: number, n: number, n2: number, compressibility: number): void;
 
     /**
      * @deprecated parameter removed
      */
-    sendPacket(data:CxxString, reliability:number, n:number, compressibility:number):void;
+    sendPacket(data: CxxString, reliability: number, n: number, compressibility: number): void;
 
-    sendPacket(data:CxxString, reliability:number, compressibility:number):void;
+    sendPacket(data: CxxString, reliability: number, compressibility: number): void;
 
-    sendPacket(data:CxxString, reliability:number, compressibility:number, oldparam?:number, oldparam2?:number):void {
+    sendPacket(data: CxxString, reliability: number, compressibility: number, oldparam?: number, oldparam2?: number): void {
         abstract();
     }
 }

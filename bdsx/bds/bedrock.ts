@@ -12,35 +12,36 @@ export namespace Bedrock {
         /**
          * @deprecated CAUTION, it's not working properly
          */
-        sharedptr:CxxSharedPtr<Wrapper<T>>;
+        sharedptr: CxxSharedPtr<Wrapper<T>>;
 
         /**
          * @deprecated CAUTION, it's not working properly
          */
-        get():T|null {
+        get(): T | null {
             const p = this.sharedptr.p;
             return p && p.value;
         }
 
-        assign(value:NonOwnerPointer<T>):void {
+        assign(value: NonOwnerPointer<T>): void {
             this.sharedptr.assign(value.sharedptr);
         }
 
-        dispose():void {
+        dispose(): void {
             return this.sharedptr.dispose();
         }
 
-        static make<T extends NativeClass>(v:new()=>T):NonOwnerPointerType<T> {
+        static make<T extends NativeClass>(v: new () => T): NonOwnerPointerType<T> {
             const clazz = v as NativeClassType<T>;
-            return Singleton.newInstance(NonOwnerPointer, clazz, ()=>{
-                class Class extends NonOwnerPointer<T> {
-                }
+            return Singleton.newInstance(NonOwnerPointer, clazz, () => {
+                class Class extends NonOwnerPointer<T> {}
                 Class.define({
                     sharedptr: CxxSharedPtr.make(Wrapper.make(clazz.ref())),
                 });
                 Object.defineProperties(Class, {
                     name: { value: `NonOwnerPointer<${clazz.name}>` },
-                    symbol: { value: mangle.templateClass('NonOwnerPointer', clazz) },
+                    symbol: {
+                        value: mangle.templateClass("NonOwnerPointer", clazz),
+                    },
                 });
                 return Class;
             });

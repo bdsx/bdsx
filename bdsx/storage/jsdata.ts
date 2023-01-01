@@ -24,14 +24,13 @@ enum ExCode {
 }
 
 class Serializer {
-    constructor(private readonly writer:BufferWriter) {
-    }
+    constructor(private readonly writer: BufferWriter) {}
 
-    buffer():Uint8Array {
+    buffer(): Uint8Array {
         return this.writer.buffer();
     }
 
-    writeUint(opcode:number, n:number):void {
+    writeUint(opcode: number, n: number): void {
         const excode = n % 0x8;
         n = Math.floor(n / 0x8);
         if (n === 0) {
@@ -50,7 +49,7 @@ class Serializer {
             }
         }
     }
-    writeNumber(n:number):void {
+    writeNumber(n: number): void {
         if (Math.round(n) === n && Number.MIN_SAFE_INTEGER <= n && n <= Number.MAX_SAFE_INTEGER) {
             if (n >= 0) {
                 this.writeUint(Opcode.PositiveInteger, n);
@@ -67,18 +66,18 @@ class Serializer {
             }
         }
     }
-    writeString(value:string):void {
+    writeString(value: string): void {
         this.writeUint(Opcode.String, value.length);
-        this.writer.write(Buffer.from(value, 'utf8'));
+        this.writer.write(Buffer.from(value, "utf8"));
     }
-    writeArray(list:unknown[]):void {
+    writeArray(list: unknown[]): void {
         const n = list.length;
         this.writeUint(Opcode.Array, n);
         let empty = 0;
-        for (let i=0;i!==n;i=i+1|0) {
+        for (let i = 0; i !== n; i = (i + 1) | 0) {
             const v = list[i];
             if (v === undefined && !(i in list)) {
-                empty = empty+1|0;
+                empty = (empty + 1) | 0;
             } else {
                 if (empty !== 0) {
                     this.writeUint(Opcode.Empty, empty);
@@ -92,7 +91,7 @@ class Serializer {
             empty = 0;
         }
     }
-    writeObject(obj:Record<string, unknown>):void {
+    writeObject(obj: Record<string, unknown>): void {
         const entries = Object.entries(obj);
         this.writeUint(Opcode.Object, entries.length);
         for (const [key, value] of entries) {
@@ -100,47 +99,54 @@ class Serializer {
             this.writeValue(value);
         }
     }
-    writeDate(date:Date):void {
+    writeDate(date: Date): void {
         let v = date.getTime();
         if (v < 0) {
-            v = v*-2-1;
+            v = v * -2 - 1;
         } else {
             v *= 2;
         }
         this.writer.put(Opcode.Extra | ExCode.Date);
         this.writer.writeVarUint(v);
     }
-    writeValue(value:unknown):void {
+    writeValue(value: unknown): void {
         switch (typeof value) {
-        case 'number': this.writeNumber(value); break;
-        case 'boolean': this.writer.writeUint8(Opcode.Extra | (value ? ExCode.True : ExCode.False)); break;
-        case 'object':
-            if (value instanceof Array) {
-                this.writeArray(value);
-            } else if (value instanceof Date) {
-                this.writeDate(value);
-            } else {
-                if (value === null) {
-                    this.writer.writeUint8(Opcode.Extra | ExCode.Null);
+            case "number":
+                this.writeNumber(value);
+                break;
+            case "boolean":
+                this.writer.writeUint8(Opcode.Extra | (value ? ExCode.True : ExCode.False));
+                break;
+            case "object":
+                if (value instanceof Array) {
+                    this.writeArray(value);
+                } else if (value instanceof Date) {
+                    this.writeDate(value);
                 } else {
-                    this.writeObject(value as any);
+                    if (value === null) {
+                        this.writer.writeUint8(Opcode.Extra | ExCode.Null);
+                    } else {
+                        this.writeObject(value as any);
+                    }
                 }
-            }
-            break;
-        case 'string': this.writeString(value); break;
-        case 'undefined': this.writer.writeUint8(Opcode.Extra | ExCode.Undefined); break;
-        default:
-            throw Error('not supported yet');
+                break;
+            case "string":
+                this.writeString(value);
+                break;
+            case "undefined":
+                this.writer.writeUint8(Opcode.Extra | ExCode.Undefined);
+                break;
+            default:
+                throw Error("not supported yet");
         }
     }
 }
 
 class Deserializer {
-    constructor(private readonly reader:BufferReader, public readonly errors:Error[] = []) {
-    }
+    constructor(private readonly reader: BufferReader, public readonly errors: Error[] = []) {}
 
-    readUint(head:number):number {
-        let value = head >>= 4;
+    readUint(head: number): number {
+        let value = (head >>= 4);
         if ((value & 0x8) === 0) {
             return value;
         }
@@ -157,37 +163,37 @@ class Deserializer {
         }
     }
 
-    readString(head:number):string {
+    readString(head: number): string {
         const len = this.readUint(head);
-        return this.reader.getBuffer(len).toString('utf8');
+        return this.reader.getBuffer(len).toString("utf8");
     }
 
-    readObject(head:number):Record<string, any> {
+    readObject(head: number): Record<string, any> {
         const len = this.readUint(head);
-        const out:Record<string, any> = {};
-        for (let i=0;i<len;i++) {
+        const out: Record<string, any> = {};
+        for (let i = 0; i < len; i++) {
             const key = this.reader.readVarString();
             out[key] = this.readValue();
         }
         return out;
     }
 
-    readArray(head:number):any[] {
+    readArray(head: number): any[] {
         const len = this.readUint(head);
         const out = new Array<any>(len);
-        for (let i=0;i<len;) {
+        for (let i = 0; i < len; ) {
             const v = this.readValue();
             if (v instanceof jsdata.EmptySpace) {
-                i = i+v.length|0;
+                i = (i + v.length) | 0;
             } else {
                 out[i] = v;
-                i=i+1|0;
+                i = (i + 1) | 0;
             }
         }
         return out;
     }
 
-    readDate():Date {
+    readDate(): Date {
         const n = this.reader.readVarUint();
         if (n % 2 === 1) {
             return new Date(n * -0.5 - 0.5);
@@ -196,41 +202,41 @@ class Deserializer {
         }
     }
 
-    readValue():any {
+    readValue(): any {
         try {
             const head = this.reader.readUint8();
             const opcode = head & 0xf;
             switch (opcode) {
-            case Opcode.PositiveInteger:
-                return this.readUint(head);
-            case Opcode.NegativeInteger:
-                return -this.readUint(head)-1;
-            case Opcode.String:
-                return this.readString(head);
-            case Opcode.Object:
-                return this.readObject(head);
-            case Opcode.Array:
-                return this.readArray(head);
-            case Opcode.Extra:
-                switch (head & 0xf0) {
-                case ExCode.Null:
-                    return null;
-                case ExCode.Undefined:
-                    return undefined;
-                case ExCode.True:
-                    return true;
-                case ExCode.False:
-                    return false;
-                case ExCode.Float32:
-                    return this.reader.readFloat32();
-                case ExCode.Float64:
-                    return this.reader.readFloat64();
-                case ExCode.Date:
-                    return this.readDate();
-                }
-                break;
-            case Opcode.Empty:
-                return new jsdata.EmptySpace(this.readUint(head));
+                case Opcode.PositiveInteger:
+                    return this.readUint(head);
+                case Opcode.NegativeInteger:
+                    return -this.readUint(head) - 1;
+                case Opcode.String:
+                    return this.readString(head);
+                case Opcode.Object:
+                    return this.readObject(head);
+                case Opcode.Array:
+                    return this.readArray(head);
+                case Opcode.Extra:
+                    switch (head & 0xf0) {
+                        case ExCode.Null:
+                            return null;
+                        case ExCode.Undefined:
+                            return undefined;
+                        case ExCode.True:
+                            return true;
+                        case ExCode.False:
+                            return false;
+                        case ExCode.Float32:
+                            return this.reader.readFloat32();
+                        case ExCode.Float64:
+                            return this.reader.readFloat64();
+                        case ExCode.Date:
+                            return this.readDate();
+                    }
+                    break;
+                case Opcode.Empty:
+                    return new jsdata.EmptySpace(this.readUint(head));
             }
         } catch (err) {
             this.errors.push(err);
@@ -240,24 +246,24 @@ class Deserializer {
 }
 
 export namespace jsdata {
-
-    export function serialize(data:unknown, writer:BufferWriter = new BufferWriter(new Uint8Array(64), 0)):Uint8Array {
+    export function serialize(data: unknown, writer: BufferWriter = new BufferWriter(new Uint8Array(64), 0)): Uint8Array {
         const s = new Serializer(writer);
         s.writeValue(data);
         return s.buffer();
     }
 
-    export function deserialize(buffer:Uint8Array|BufferReader, errors?:Error[]):any {
+    export function deserialize(buffer: Uint8Array | BufferReader, errors?: Error[]): any {
         const ds = new Deserializer(buffer instanceof BufferReader ? buffer : new BufferReader(buffer), errors);
         return ds.readValue();
     }
 
     export class EmptySpace {
-        constructor(public readonly length:number) {
-        }
+        constructor(public readonly length: number) {}
     }
 
     export const Invalid = {
-        toString():string { return '[Invalid]'; },
+        toString(): string {
+            return "[Invalid]";
+        },
     };
 }

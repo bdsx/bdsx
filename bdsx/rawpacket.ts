@@ -7,10 +7,10 @@ import { AbstractWriter } from "./writer/abstractstream";
 export class RawPacket extends AbstractWriter {
     private readonly data = new CxxStringWrapper(true);
     private readonly sharedptr = new PacketSharedPtr(true);
-    private packet:Packet|null = null;
+    private packet: Packet | null = null;
     private packetId = 0;
 
-    constructor(packetId?:number){
+    constructor(packetId?: number) {
         super();
         this.data.construct();
 
@@ -19,30 +19,30 @@ export class RawPacket extends AbstractWriter {
         }
     }
 
-    getId():number {
+    getId(): number {
         return this.packetId;
     }
 
-    put(v:number):void {
+    put(v: number): void {
         const str = this.data;
         const i = str.length;
-        str.resize(i+1);
+        str.resize(i + 1);
         str.valueptr.setUint8(v, i);
     }
-    putRepeat(v:number, count:number):void {
+    putRepeat(v: number, count: number): void {
         const str = this.data;
         const i = str.length;
         str.resize(i + count);
         str.valueptr.fill(v, count, i);
     }
-    write(n:Uint8Array):void {
+    write(n: Uint8Array): void {
         const str = this.data;
         const i = str.length;
-        str.resize(i+n.length);
+        str.resize(i + n.length);
         str.valueptr.setBuffer(n, i);
     }
 
-    dispose():void {
+    dispose(): void {
         this.data.destruct();
         if (this.packet !== null) {
             this.packet = null;
@@ -50,7 +50,7 @@ export class RawPacket extends AbstractWriter {
         }
     }
 
-    reset(packetId:number, unknownarg:number = 0):void {
+    reset(packetId: number, unknownarg: number = 0): void {
         this.packetId = packetId;
 
         if (this.packet !== null) {
@@ -67,8 +67,8 @@ export class RawPacket extends AbstractWriter {
         this.writeVarUint((packetId & 0x3ff) | (unknown2 << 10) | (unknown << 12));
     }
 
-    sendTo(target:NetworkIdentifier):void {
-        if (this.packet === null) throw Error('packetId is not defined. Please set it on constructor');
+    sendTo(target: NetworkIdentifier): void {
+        if (this.packet === null) throw Error("packetId is not defined. Please set it on constructor");
         bedrockServer.networkHandler.sendInternal(target, this.packet, this.data);
     }
 }

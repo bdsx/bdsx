@@ -5,22 +5,22 @@ import { int32_t, NativeType } from "../nativetype";
 import { Singleton } from "../singleton";
 
 class PtrBase<T extends NativeClass> extends NativeClass {
-    p:T|null;
-    useRef:number;
-    weakRef:number;
+    p: T | null;
+    useRef: number;
+    weakRef: number;
 
-    [NativeType.ctor]():void {
+    [NativeType.ctor](): void {
         this.useRef = 1;
         this.weakRef = 1;
     }
 
-    addRef():void {
+    addRef(): void {
         this.interlockedIncrement32(0x8);
     }
-    addRefWeak():void {
+    addRefWeak(): void {
         this.interlockedIncrement32(0xc);
     }
-    release():void {
+    release(): void {
         const p = this.p;
         if (this.interlockedDecrement32(0x8) === 0) {
             if (p !== null) {
@@ -30,7 +30,7 @@ class PtrBase<T extends NativeClass> extends NativeClass {
             this.releaseWeak();
         }
     }
-    releaseWeak():void {
+    releaseWeak(): void {
         if (this.interlockedDecrement32(0xc) === 0) {
             if (this.p === null) {
                 capi.free(this);
@@ -38,18 +38,18 @@ class PtrBase<T extends NativeClass> extends NativeClass {
         }
     }
 
-    static make<T extends NativeClass>(type:new()=>T):NativeClassType<PtrBase<T>> {
+    static make<T extends NativeClass>(type: new () => T): NativeClassType<PtrBase<T>> {
         const cls = type as NativeClassType<T>;
 
-        return Singleton.newInstance(PtrBase, cls, ()=>{
+        return Singleton.newInstance(PtrBase, cls, () => {
             @nativeClass()
             class SharedPtrBaseImpl extends PtrBase<T> {
                 @nativeField(cls.ref())
-                p:T|null;
+                p: T | null;
                 @nativeField(int32_t)
-                useRef:number;
+                useRef: number;
                 @nativeField(int32_t)
-                weakRef:number;
+                weakRef: number;
             }
             return SharedPtrBaseImpl as NativeClassType<PtrBase<T>>;
         });
@@ -57,45 +57,45 @@ class PtrBase<T extends NativeClass> extends NativeClass {
 }
 
 export class SharedPtr<T extends NativeClass> extends NativeClass {
-    ref:PtrBase<T>|null;
+    ref: PtrBase<T> | null;
 
-    [NativeType.dtor]():void {
+    [NativeType.dtor](): void {
         const p = this.ref;
         if (p === null) return;
         p.release();
     }
 
-    value():T|null {
+    value(): T | null {
         const ref = this.ref;
         if (ref === null) return null;
         return ref.p;
     }
 
-    addRef():void {
+    addRef(): void {
         const p = this.ref;
         if (p === null) return;
         p.addRef();
     }
 
-    dispose():void {
+    dispose(): void {
         const p = this.ref;
         if (p === null) return;
         this.ref = null;
         p.release();
     }
 
-    static make<T extends NativeClass>(cls:new()=>T):NativeClassType<SharedPtr<T>> {
+    static make<T extends NativeClass>(cls: new () => T): NativeClassType<SharedPtr<T>> {
         const clazz = cls as NativeClassType<T>;
-        return Singleton.newInstance(SharedPtr, cls, ()=>{
+        return Singleton.newInstance(SharedPtr, cls, () => {
             const Base = PtrBase.make(clazz);
             @nativeClass()
             class Clazz extends SharedPtr<NativeClass> {
                 @nativeField(Base.ref())
-                ref:PtrBase<T>|null;
+                ref: PtrBase<T> | null;
             }
             Object.defineProperties(Clazz, {
                 name: { value: `SharedPtr<${clazz.name}>` },
-                symbol: { value: mangle.templateClass('SharedPtr', clazz) },
+                symbol: { value: mangle.templateClass("SharedPtr", clazz) },
             });
             return Clazz as any;
         });
@@ -103,44 +103,44 @@ export class SharedPtr<T extends NativeClass> extends NativeClass {
 }
 
 export class WeakPtr<T extends NativeClass> extends NativeClass {
-    ref:PtrBase<T>|null;
+    ref: PtrBase<T> | null;
 
-    [NativeType.dtor]():void {
+    [NativeType.dtor](): void {
         const p = this.ref;
         if (p === null) return;
         p.releaseWeak();
     }
 
-    value():T|null {
+    value(): T | null {
         const ref = this.ref;
         if (ref === null) return null;
         return ref.p;
     }
 
-    addRef():void {
+    addRef(): void {
         const p = this.ref;
         if (p === null) return;
         p.addRefWeak();
     }
-    dispose():void {
+    dispose(): void {
         const p = this.ref;
         if (p === null) return;
         this.ref = null;
         p.releaseWeak();
     }
 
-    static make<T extends NativeClass>(cls:new()=>T):NativeClassType<WeakPtr<T>> {
+    static make<T extends NativeClass>(cls: new () => T): NativeClassType<WeakPtr<T>> {
         const clazz = cls as NativeClassType<T>;
-        return Singleton.newInstance(WeakPtr, cls, ()=>{
+        return Singleton.newInstance(WeakPtr, cls, () => {
             const Base = PtrBase.make(clazz);
             @nativeClass()
             class Clazz extends WeakPtr<NativeClass> {
                 @nativeField(Base.ref())
-                ref:PtrBase<T>|null;
+                ref: PtrBase<T> | null;
             }
             Object.defineProperties(Clazz, {
                 name: { value: `WeakPtr<${clazz.name}>` },
-                symbol: { value: mangle.templateClass('WeakPtr', clazz) },
+                symbol: { value: mangle.templateClass("WeakPtr", clazz) },
             });
             return Clazz as any;
         });

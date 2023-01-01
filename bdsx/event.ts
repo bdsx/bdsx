@@ -5,8 +5,56 @@ import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
 import { Event } from "./eventtarget";
-import type { BlockAttackEvent, BlockDestroyEvent, BlockDestructionStartEvent, BlockInteractedWithEvent, BlockPlaceEvent, ButtonPressEvent, CampfireTryDouseFire, CampfireTryLightFire, ChestOpenEvent, ChestPairEvent, FallOnBlockEvent, FarmlandDecayEvent, LightningHitBlockEvent, PistonMoveEvent, ProjectileHitBlockEvent, SculkSensorActivateEvent, SculkShriekEvent } from "./event_impl/blockevent";
-import type { EntityCarriedItemChangedEvent, EntityConsumeTotemEvent, EntityCreatedEvent, EntityDieEvent, EntityHeathChangeEvent, EntityHurtEvent, EntityKnockbackEvent, EntitySneakEvent, EntityStartRidingEvent, EntityStartSwimmingEvent, EntityStopRidingEvent, ItemUseEvent, ItemUseOnBlockEvent, PlayerAttackEvent, PlayerCritEvent, PlayerDimensionChangeEvent, PlayerDropItemEvent, PlayerInventoryChangeEvent, PlayerJoinEvent, PlayerJumpEvent, PlayerLeftEvent, PlayerLevelUpEvent, PlayerPickupItemEvent, PlayerRespawnEvent, PlayerSleepInBedEvent, PlayerUseItemEvent, ProjectileHitEvent, ProjectileShootEvent, SplashPotionHitEvent } from "./event_impl/entityevent";
+import type {
+    BlockAttackEvent,
+    BlockDestroyEvent,
+    BlockDestructionStartEvent,
+    BlockInteractedWithEvent,
+    BlockPlaceEvent,
+    ButtonPressEvent,
+    CampfireTryDouseFire,
+    CampfireTryLightFire,
+    ChestOpenEvent,
+    ChestPairEvent,
+    FallOnBlockEvent,
+    FarmlandDecayEvent,
+    LightningHitBlockEvent,
+    PistonMoveEvent,
+    ProjectileHitBlockEvent,
+    SculkSensorActivateEvent,
+    SculkShriekEvent,
+} from "./event_impl/blockevent";
+import type {
+    EntityCarriedItemChangedEvent,
+    EntityConsumeTotemEvent,
+    EntityCreatedEvent,
+    EntityDieEvent,
+    EntityHeathChangeEvent,
+    EntityHurtEvent,
+    EntityKnockbackEvent,
+    EntitySneakEvent,
+    EntityStartRidingEvent,
+    EntityStartSwimmingEvent,
+    EntityStopRidingEvent,
+    ItemUseEvent,
+    ItemUseOnBlockEvent,
+    PlayerAttackEvent,
+    PlayerCritEvent,
+    PlayerDimensionChangeEvent,
+    PlayerDropItemEvent,
+    PlayerInventoryChangeEvent,
+    PlayerJoinEvent,
+    PlayerJumpEvent,
+    PlayerLeftEvent,
+    PlayerLevelUpEvent,
+    PlayerPickupItemEvent,
+    PlayerRespawnEvent,
+    PlayerSleepInBedEvent,
+    PlayerUseItemEvent,
+    ProjectileHitEvent,
+    ProjectileShootEvent,
+    SplashPotionHitEvent,
+} from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
@@ -18,36 +66,38 @@ const PACKET_EVENT_COUNT = 0x500;
 const enabledPacket = asmcode.addressof_enabledPacket;
 enabledPacket.fill(0, 256);
 
-class PacketEvent extends Event<(...args:any[])=>(CANCEL|void)> {
-    constructor(public readonly id:number) {
+class PacketEvent extends Event<(...args: any[]) => CANCEL | void> {
+    constructor(public readonly id: number) {
         super();
     }
 }
 
-function getNetEventTarget(type:events.PacketEventType, packetId:MinecraftPacketIds):PacketEvent {
-    if ((packetId>>>0) >= PACKET_ID_COUNT) {
+function getNetEventTarget(type: events.PacketEventType, packetId: MinecraftPacketIds): PacketEvent {
+    if (packetId >>> 0 >= PACKET_ID_COUNT) {
         throw Error(`Out of range: packetId < 0x100 (packetId=${packetId})`);
     }
-    const idx = type*PACKET_ID_COUNT + packetId;
+    const idx = type * PACKET_ID_COUNT + packetId;
     let target = packetAllTargets[idx];
     if (target !== null) return target;
     packetAllTargets[idx] = target = new PacketEvent(packetId);
-    target.setInstaller(()=>{
-        const packetId = target!.id;
-        enabledPacket.setUint8(enabledPacket.getUint8(packetId)+1, packetId);
-    }, ()=>{
-        const packetId = target!.id;
-        enabledPacket.setUint8(enabledPacket.getUint8(packetId)-1, packetId);
-    });
+    target.setInstaller(
+        () => {
+            const packetId = target!.id;
+            enabledPacket.setUint8(enabledPacket.getUint8(packetId) + 1, packetId);
+        },
+        () => {
+            const packetId = target!.id;
+            enabledPacket.setUint8(enabledPacket.getUint8(packetId) - 1, packetId);
+        },
+    );
     return target;
 }
-const packetAllTargets = new Array<PacketEvent|null>(PACKET_EVENT_COUNT);
-for (let i=0;i<PACKET_EVENT_COUNT;i++) {
+const packetAllTargets = new Array<PacketEvent | null>(PACKET_EVENT_COUNT);
+for (let i = 0; i < PACKET_EVENT_COUNT; i++) {
     packetAllTargets[i] = null;
 }
 
 export namespace events {
-
     ////////////////////////////////////////////////////////
     // Block events
 
@@ -90,9 +140,9 @@ export namespace events {
     /** Cancellable but only when the player is not in creative mode */
     export const attackBlock = new Event<(event: BlockAttackEvent) => void | CANCEL>();
     /** Cancellable */
-    export const sculkShriek = new Event<(event:SculkShriekEvent) => void | CANCEL>();
+    export const sculkShriek = new Event<(event: SculkShriekEvent) => void | CANCEL>();
     /** Cancellable */
-    export const sculkSensorActivate = new Event<(event:SculkSensorActivateEvent) => void| CANCEL>();
+    export const sculkSensorActivate = new Event<(event: SculkSensorActivateEvent) => void | CANCEL>();
     ////////////////////////////////////////////////////////
     // Entity events
 
@@ -202,43 +252,43 @@ export namespace events {
      * BDS will be loaded on the separated thread. this event will be executed concurrently with the BDS loading
      * Usual scripts are no need to use this event. it's for plugin scripts that are loaded before BDS.
      */
-    export const serverLoading = new Event<()=>void>();
+    export const serverLoading = new Event<() => void>();
 
     /**
      * after BDS launched
      * Usual scripts are no need to use this event. it's for plugin scripts that are loaded before BDS.
      * or `bedrockServer.afterOpen().then(callback)` is usable for both situation.
      */
-    export const serverOpen = new Event<()=>void>();
+    export const serverOpen = new Event<() => void>();
 
     /**
      * on internal update. but it's not tick.
      * @deprecated useless and incomprehensible
      */
-    export const serverUpdate = new Event<()=>void>();
+    export const serverUpdate = new Event<() => void>();
 
     /**
      * before serverStop, Minecraft is alive yet
      * LoopbackPacketSender is alive yet
      */
-    export const serverLeave = new Event<()=>void>();
+    export const serverLeave = new Event<() => void>();
 
     /**
      * before system.shutdown, Minecraft is alive yet
      * LoopbackPacketSender is destroyed
      * some commands are failed on this event. use `events.serverLeave` instead.
      */
-    export const serverStop = new Event<()=>void>();
+    export const serverStop = new Event<() => void>();
 
     /**
      * after BDS closed
      */
-    export const serverClose = new Event<()=>void>();
+    export const serverClose = new Event<() => void>();
 
     /**
      * server console outputs
      */
-    export const serverLog = new Event<(log:string, color:Color)=>CANCEL|void>();
+    export const serverLog = new Event<(log: string, color: Color) => CANCEL | void>();
 
     ////////////////////////////////////////////////////////
     // Packet events
@@ -251,12 +301,12 @@ export namespace events {
         SendRaw,
     }
 
-    export function packetEvent(type:PacketEventType, packetId:MinecraftPacketIds):Event<(...args:any[])=>(CANCEL|void)>|null {
-        if ((packetId>>>0) >= PACKET_ID_COUNT) {
+    export function packetEvent(type: PacketEventType, packetId: MinecraftPacketIds): Event<(...args: any[]) => CANCEL | void> | null {
+        if (packetId >>> 0 >= PACKET_ID_COUNT) {
             console.error(`Out of range: packetId < 0x100 (type=${PacketEventType[type]}, packetId=${packetId})`);
             return null;
         }
-        const id = type*PACKET_ID_COUNT + packetId;
+        const id = type * PACKET_ID_COUNT + packetId;
         return packetAllTargets[id];
     }
 
@@ -266,7 +316,7 @@ export namespace events {
      * It will bring raw packet buffers before parsing
      * It can be canceled the packet if you return 'CANCEL'
      */
-    export function packetRaw(id:MinecraftPacketIds):Event<nethook.RawListener> {
+    export function packetRaw(id: MinecraftPacketIds): Event<nethook.RawListener> {
         return getNetEventTarget(PacketEventType.Raw, id);
     }
 
@@ -275,7 +325,7 @@ export namespace events {
      * the event that before processing but after parsed from raw.
      * It can be canceled the packet if you return 'CANCEL'
      */
-    export function packetBefore<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
+    export function packetBefore<ID extends MinecraftPacketIds>(id: ID): Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Before, id);
     }
 
@@ -283,7 +333,7 @@ export namespace events {
      * after 'raw' and 'before'
      * the event that after processing. some fields are assigned after the processing
      */
-    export function packetAfter<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
+    export function packetAfter<ID extends MinecraftPacketIds>(id: ID): Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.After, id);
     }
 
@@ -291,7 +341,7 @@ export namespace events {
      * before serializing.
      * it can modify class fields.
      */
-    export function packetSend<ID extends MinecraftPacketIds>(id:ID):Event<nethook.PacketListener<ID>> {
+    export function packetSend<ID extends MinecraftPacketIds>(id: ID): Event<nethook.PacketListener<ID>> {
         return getNetEventTarget(PacketEventType.Send, id);
     }
 
@@ -299,7 +349,7 @@ export namespace events {
      * after serializing. before sending.
      * it can access serialized buffer.
      */
-    export function packetSendRaw(id:number):Event<nethook.SendRawListener> {
+    export function packetSendRaw(id: number): Event<nethook.SendRawListener> {
         return getNetEventTarget(PacketEventType.SendRaw, id);
     }
 
@@ -320,12 +370,12 @@ export namespace events {
     export const objectiveCreate = new Event<(event: ObjectiveCreateEvent) => void | CANCEL>();
 
     /**
-    * global error listeners
-    * if returns 'CANCEL', then default error printing is disabled
-    */
+     * global error listeners
+     * if returns 'CANCEL', then default error printing is disabled
+     */
     export const error = Event.errorHandler;
 
-    export function errorFire(err:unknown):void {
+    export function errorFire(err: unknown): void {
         if (err instanceof Error) {
             remapError(err);
         }
@@ -334,20 +384,20 @@ export namespace events {
         }
     }
 
-     /**
-      * command console outputs
-      */
-    export const commandOutput = new Event<(log:string)=>CANCEL|void>();
+    /**
+     * command console outputs
+     */
+    export const commandOutput = new Event<(log: string) => CANCEL | void>();
 
-     /**
-      * command input
-      * Commands will be canceled if you return a error code.
-      * 0 means success for error codes but others are unknown.
-      */
+    /**
+     * command input
+     * Commands will be canceled if you return a error code.
+     * 0 means success for error codes but others are unknown.
+     */
     export const command = new Event<(command: string, originName: string, ctx: CommandContext) => void | number>();
 
     /**
-      * network identifier disconnected
-      */
-    export const networkDisconnected = new Event<(ni:NetworkIdentifier)=>void>();
+     * network identifier disconnected
+     */
+    export const networkDisconnected = new Event<(ni: NetworkIdentifier) => void>();
 }

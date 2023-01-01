@@ -1,29 +1,29 @@
 import { NativePointer, VoidPointer } from "./core";
 import { pdbcache } from "./pdbcache";
 
-let analyzeMap:Map<string, string>|undefined;
-let symbols:Record<string, NativePointer>|null = null;
+let analyzeMap: Map<string, string> | undefined;
+let symbols: Record<string, NativePointer> | null = null;
 
-function asAscii(addr:VoidPointer):string|undefined {
-    const nums:number[] = [];
+function asAscii(addr: VoidPointer): string | undefined {
+    const nums: number[] = [];
     const bin = addr.getAddressBin();
-    for (let i=0;i<bin.length; i++) {
+    for (let i = 0; i < bin.length; i++) {
         nums.push(bin.charCodeAt(i));
     }
-    if (!nums.every(n=>n<0x7f)) return undefined;
+    if (!nums.every(n => n < 0x7f)) return undefined;
     nums.reverse();
-    const text = String.fromCharCode(...nums.map(n=>n<0x20 ? 0x20 : n));
+    const text = String.fromCharCode(...nums.map(n => (n < 0x20 ? 0x20 : n)));
     return text;
 }
 
 export namespace analyzer {
-    export function loadMap():void{
+    export function loadMap(): void {
         if (analyzeMap) return;
         analyzeMap = new Map<string, string>();
-        const proc:typeof import('./bds/symbols').proc = require('./bds/symbols').proc;
+        const proc: typeof import("./bds/symbols").proc = require("./bds/symbols").proc;
 
         if (symbols === null) {
-            symbols = {__proto__:null as any};
+            symbols = { __proto__: null as any };
             for (const key of pdbcache.readKeys()) {
                 symbols[key] = proc[key];
             }
@@ -35,19 +35,19 @@ export namespace analyzer {
     }
 
     export interface AddressInfo {
-        symbol?:string;
-        address:string;
-        address2?:string;
-        ascii?:string;
+        symbol?: string;
+        address: string;
+        address2?: string;
+        ascii?: string;
     }
 
-    export function getAddressInfo(addr:VoidPointer):AddressInfo {
+    export function getAddressInfo(addr: VoidPointer): AddressInfo {
         loadMap();
         const addrname = analyzeMap!.get(addr.getAddressBin());
         if (addrname !== undefined) {
             return {
-                symbol:addrname,
-                address:addr+'',
+                symbol: addrname,
+                address: addr + "",
             };
         }
         try {
@@ -55,39 +55,39 @@ export namespace analyzer {
             const addr2name = analyzeMap!.get(addr2.getAddressBin());
             if (addr2name !== undefined) {
                 return {
-                    symbol: '& '+addr2name,
-                    address: addr+'',
-                    address2: addr2+'',
+                    symbol: "& " + addr2name,
+                    address: addr + "",
+                    address2: addr2 + "",
                 };
             } else {
                 return {
-                    address: addr+'',
-                    address2: addr2+'',
+                    address: addr + "",
+                    address2: addr2 + "",
                     ascii: asAscii(addr2),
                 };
             }
         } catch (err) {
             return {
-                address: addr+'',
+                address: addr + "",
                 ascii: asAscii(addr),
             };
         }
     }
 
-    export function analyze(ptr:VoidPointer, count:number=32):void {
+    export function analyze(ptr: VoidPointer, count: number = 32): void {
         const nptr = ptr.add();
         loadMap();
         console.log(`[analyze: ${nptr}]`);
         try {
-            for (let i=0;i<count;i++) {
-                let offset = (i*8).toString(16);
-                offset = '0'.repeat(Math.max(3-offset.length, 0)) + offset;
+            for (let i = 0; i < count; i++) {
+                let offset = (i * 8).toString(16);
+                offset = "0".repeat(Math.max(3 - offset.length, 0)) + offset;
 
                 const addr = nptr.readPointer();
                 const info = getAddressInfo(addr);
                 let line = `${offset}: ${info.address}`;
                 if (info.address2 !== undefined) {
-                    line += ': ';
+                    line += ": ";
                     line += info.address2;
                 }
                 if (info.symbol !== undefined) {
@@ -98,7 +98,7 @@ export namespace analyzer {
                 }
             }
         } catch (err) {
-            console.log('[VA]');
+            console.log("[VA]");
         }
     }
 }

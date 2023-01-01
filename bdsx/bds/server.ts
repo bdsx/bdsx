@@ -32,9 +32,9 @@ export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListe
  * unknown instance
  */
 export class Minecraft$Something {
-    network:NetworkHandler;
-    level:ServerLevel;
-    shandler:ServerNetworkHandler;
+    network: NetworkHandler;
+    level: ServerLevel;
+    shandler: ServerNetworkHandler;
 }
 
 export class VanillaGameModuleServer extends AbstractClass {
@@ -46,155 +46,153 @@ export type VanilaGameModuleServer = VanillaGameModuleServer;
 export const VanilaGameModuleServer = VanillaGameModuleServer;
 
 export class Minecraft extends AbstractClass {
-    vftable:VoidPointer;
-    offset_20:VoidPointer;
-    vanillaGameModuleServer:CxxSharedPtr<VanillaGameModuleServer>; // VanillaGameModuleServer
+    vftable: VoidPointer;
+    offset_20: VoidPointer;
+    vanillaGameModuleServer: CxxSharedPtr<VanillaGameModuleServer>; // VanillaGameModuleServer
     /** @deprecated Use `Minecraft::getCommands` instead */
-    get commands():MinecraftCommands {
+    get commands(): MinecraftCommands {
         return this.getCommands();
     }
     /** @deprecated */
-    get something():Minecraft$Something {
-        return new Minecraft$Something;
+    get something(): Minecraft$Something {
+        return new Minecraft$Something();
     }
     /** @deprecated Use `Minecraft::getNetworkHandler` instead */
-    get network():NetworkHandler {
+    get network(): NetworkHandler {
         return this.getNetworkHandler();
     }
     /** @deprecated Unused */
-    LoopbackPacketSender:LoopbackPacketSender;
+    LoopbackPacketSender: LoopbackPacketSender;
 
-    server:DedicatedServer;
+    server: DedicatedServer;
 
     /**
      * @deprecated use bedrockServer.level
      */
-    getLevel():Level {
+    getLevel(): Level {
         abstract();
     }
     /**
      * @deprecated use bedrockServer.networkHandler
      */
-    getNetworkHandler():NetworkHandler {
+    getNetworkHandler(): NetworkHandler {
         abstract();
     }
     /**
      * @deprecated use bedrockServer.serverNetworkHandler
      */
-    getServerNetworkHandler():ServerNetworkHandler {
+    getServerNetworkHandler(): ServerNetworkHandler {
         abstract();
     }
     /**
      * @deprecated use bedrockServer.minecraftCommands
      */
-    getCommands():MinecraftCommands {
+    getCommands(): MinecraftCommands {
         abstract();
     }
 
     /**
      * @deprecated it's a kind of global variable. it will generate a JS instance per access.
      */
-    getNonOwnerPointerServerNetworkHandler(): Bedrock.NonOwnerPointer<ServerNetworkHandler>{
+    getNonOwnerPointerServerNetworkHandler(): Bedrock.NonOwnerPointer<ServerNetworkHandler> {
         abstract();
     }
 }
 
 export class DedicatedServer extends AbstractClass {
-    vftable:VoidPointer;
+    vftable: VoidPointer;
 }
 
 export class ScriptFramework extends AbstractClass {
-    vftable:VoidPointer;
+    vftable: VoidPointer;
 }
 
 @nativeClass(0x70)
 export class SemVersion extends AbstractClass {
     @nativeField(uint16_t)
-    major:uint16_t;
+    major: uint16_t;
     @nativeField(uint16_t)
-    minor:uint16_t;
+    minor: uint16_t;
     @nativeField(uint16_t)
-    patch:uint16_t;
+    patch: uint16_t;
     @nativeField(CxxString, 0x08)
-    preRelease:CxxString;
+    preRelease: CxxString;
     @nativeField(CxxString)
-    buildMeta:CxxString;
+    buildMeta: CxxString;
     @nativeField(CxxString)
-    fullVersionString:CxxString;
+    fullVersionString: CxxString;
     @nativeField(bool_t)
-    validVersion:bool_t;
+    validVersion: bool_t;
     @nativeField(bool_t)
-    anyVersion:bool_t;
+    anyVersion: bool_t;
 }
 
-export class BaseGameVersion extends SemVersion {
-}
+export class BaseGameVersion extends SemVersion {}
 
-export class MinecraftServerScriptEngine extends ScriptFramework {
-}
+export class MinecraftServerScriptEngine extends ScriptFramework {}
 
 export class ServerInstance extends AbstractClass {
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     /** @deprecated use bedrockServer.dedicatedServer */
-    server:DedicatedServer;
+    server: DedicatedServer;
     /** @deprecated use bedrockServer.minecraft */
-    minecraft:Minecraft;
+    minecraft: Minecraft;
     /** @deprecated use bedrockServer.networkHandler */
-    networkHandler:NetworkHandler;
+    networkHandler: NetworkHandler;
 
-    protected _disconnectAllClients(message:CxxString):void {
+    protected _disconnectAllClients(message: CxxString): void {
         abstract();
     }
 
-    createDimension(id:DimensionId):Dimension {
+    createDimension(id: DimensionId): Dimension {
         abstract();
     }
     /**
      * Returns the number of current online players
      */
-    getActivePlayerCount():number {
+    getActivePlayerCount(): number {
         abstract();
     }
     /**
      * Disconnects all clients with the given message
      */
-    disconnectAllClients(message:string="disconnectionScreen.disconnected"):void {
+    disconnectAllClients(message: string = "disconnectionScreen.disconnected"): void {
         this._disconnectAllClients(message);
     }
     /**
      * Disconnects a specific client with the given message
      */
-    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
+    disconnectClient(client: NetworkIdentifier, message: string = "disconnectionScreen.disconnected", skipMessage: boolean = false): void {
         abstract();
     }
     /**
      * Returns the server's message-of-the-day
      */
-    getMotd():string {
+    getMotd(): string {
         abstract();
     }
     /**
      * Changes the server's message-of-the-day
      */
-    setMotd(motd:string):void {
+    setMotd(motd: string): void {
         abstract();
     }
     /**
      * Returns the server's maximum player capacity
      */
-    getMaxPlayers():number {
+    getMaxPlayers(): number {
         abstract();
     }
     /**
      * Changes the server's maximum player capacity
      */
-    setMaxPlayers(count:number):void {
+    setMaxPlayers(count: number): void {
         abstract();
     }
     /**
      * Returns an array of all online players
      */
-    getPlayers():ServerPlayer[] {
+    getPlayers(): ServerPlayer[] {
         abstract();
     }
     /**
@@ -206,20 +204,20 @@ export class ServerInstance extends AbstractClass {
     /**
      * Returns the server's current network protocol version
      */
-    getNetworkProtocolVersion():number {
+    getNetworkProtocolVersion(): number {
         abstract();
     }
     /**
      * Returns the server's current game version
      */
-    getGameVersion():SemVersion {
+    getGameVersion(): SemVersion {
         abstract();
     }
     /**
      * Creates a promise that resolves on the next tick
      */
-    nextTick():Promise<void> {
-        return new Promise(resolve=>{
+    nextTick(): Promise<void> {
+        return new Promise(resolve => {
             const listener = (): void => {
                 resolve();
                 events.levelTick.remove(listener);
@@ -230,4 +228,4 @@ export class ServerInstance extends AbstractClass {
 }
 
 /** @deprecated use bedrockServer.serverInstance */
-export let serverInstance:ServerInstance;
+export let serverInstance: ServerInstance;

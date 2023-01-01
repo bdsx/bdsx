@@ -1,31 +1,31 @@
-import * as colors from 'colors';
-import * as fs from 'fs';
-import * as path from 'path';
-import { proc } from './bds/symbols';
+import * as colors from "colors";
+import * as fs from "fs";
+import * as path from "path";
+import { proc } from "./bds/symbols";
 import { bedrock_server_exe, NativePointer, pdb } from "./core";
 import { dllraw } from "./dllraw";
-import { fsutil } from './fsutil';
-import { pdbcache } from './pdbcache';
+import { fsutil } from "./fsutil";
+import { pdbcache } from "./pdbcache";
 
-const wildcardRemap:Record<string, string> = {
-    '*': '.+',
-    '[': '\\[',
-    '(': '\\(',
-    '.': '\\.',
-    '+': '\\+',
-    '{': '\\{',
-    '^': '\\^',
-    '$': '\\$',
-    '\\': '\\\\',
+const wildcardRemap: Record<string, string> = {
+    "*": ".+",
+    "[": "\\[",
+    "(": "\\(",
+    ".": "\\.",
+    "+": "\\+",
+    "{": "\\{",
+    "^": "\\^",
+    $: "\\$",
+    "\\": "\\\\",
 };
 
 /**
  * @deprecated
  */
 export namespace pdblegacy {
-    export const coreCachePath = path.join(fsutil.projectPath, 'legacy_pdb_cache.ini');
+    export const coreCachePath = path.join(fsutil.projectPath, "legacy_pdb_cache.ini");
 
-    export function close():void {
+    export function close(): void {
         // does nothing
     }
 
@@ -34,18 +34,24 @@ export namespace pdblegacy {
      * if symbols don't exist in cache. it reads pdb.
      * @returns 'out' the first parameter.
      */
-    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(cacheFilePath:string, out:OLD, names:KEYS, quiet?:boolean, undecorateFlags?:number):{[key in KEYS[number]]: NativePointer} & OLD {
+    export function getList<OLD extends Record<string, any>, KEY extends string, KEYS extends readonly [...KEY[]]>(
+        cacheFilePath: string,
+        out: OLD,
+        names: KEYS,
+        quiet?: boolean,
+        undecorateFlags?: number,
+    ): { [key in KEYS[number]]: NativePointer } & OLD {
         const namesMap = new Set<string>(names);
         let lineEnd = false;
         let newContent = false;
         try {
             const regexp = /^[ \t\0]*(.*[^ \t\0])[ \t\0]*=[ \t\0]*(.+)$/gm;
-            const content = fs.readFileSync(cacheFilePath, 'utf8');
-            const firstLine = content.indexOf('\n');
+            const content = fs.readFileSync(cacheFilePath, "utf8");
+            const firstLine = content.indexOf("\n");
             if (content.substr(0, firstLine).trim() === bedrock_server_exe.md5) {
-                lineEnd = content.endsWith('\n');
-                regexp.lastIndex = firstLine+1;
-                let matched:RegExpExecArray|null = null;
+                lineEnd = content.endsWith("\n");
+                regexp.lastIndex = firstLine + 1;
+                let matched: RegExpExecArray | null = null;
                 while ((matched = regexp.exec(content)) !== null) {
                     const symbol = matched[1];
                     namesMap.delete(symbol);
@@ -59,7 +65,7 @@ export namespace pdblegacy {
         }
         if (namesMap.size !== 0) {
             if (!quiet) console.error(colors.yellow(`[pdblegacy] Symbol searching...`));
-            let content = newContent ? bedrock_server_exe.md5 + '\r\n' : lineEnd ? '' : '\r\n';
+            let content = newContent ? bedrock_server_exe.md5 + "\r\n" : lineEnd ? "" : "\r\n";
             if (undecorateFlags == null) {
                 for (const name of namesMap) {
                     const addr = proc[name];
@@ -87,25 +93,28 @@ export namespace pdblegacy {
                 }
             }
             if (newContent) {
-                fs.writeFileSync(cacheFilePath, content, 'utf8');
-            } else if (content !== '') {
-                fs.appendFileSync(cacheFilePath, content, 'utf8');
+                fs.writeFileSync(cacheFilePath, content, "utf8");
+            } else if (content !== "") {
+                fs.appendFileSync(cacheFilePath, content, "utf8");
             }
         }
         return out;
     }
 
     export function search(callback: (name: string, address: NativePointer) => boolean): void;
-    export function search(filter: string|null, callback: (name: string, address: NativePointer) => boolean): void;
-    export function search<KEYS extends string[]>(names: KEYS, callback: (name: KEYS[number], address: NativePointer, index: number)=>boolean): void;
+    export function search(filter: string | null, callback: (name: string, address: NativePointer) => boolean): void;
+    export function search<KEYS extends string[]>(names: KEYS, callback: (name: KEYS[number], address: NativePointer, index: number) => boolean): void;
 
-    export function search(filter: string|null|((name: string, address: NativePointer) => boolean)|string[], callback?: (name: string, address: NativePointer, index?:number) => boolean): void {
+    export function search(
+        filter: string | null | ((name: string, address: NativePointer) => boolean) | string[],
+        callback?: (name: string, address: NativePointer, index?: number) => boolean,
+    ): void {
         if (filter == null) {
             for (const key of pdbcache.readKeys()) {
                 if (!callback!(key, proc[key])) break;
             }
-        } else if (typeof filter === 'string') {
-            const regexp = new RegExp(filter.replace(/[*[(.+{^$\\]/g, str=>wildcardRemap[str]));
+        } else if (typeof filter === "string") {
+            const regexp = new RegExp(filter.replace(/[*[(.+{^$\\]/g, str => wildcardRemap[str]));
             for (const key of pdbcache.readKeys()) {
                 if (regexp.test(key)) {
                     if (!callback!(key, proc[key])) break;
@@ -113,7 +122,7 @@ export namespace pdblegacy {
             }
         } else if (filter instanceof Array) {
             const names = new Map<string, number>();
-            for (let i=0;i<filter.length;i++) {
+            for (let i = 0; i < filter.length; i++) {
                 names.set(filter[i], i);
             }
             for (const key of pdbcache.readKeys()) {
@@ -128,9 +137,9 @@ export namespace pdblegacy {
         }
     }
 
-    export function getAll(onprogress?:(count:number)=>void):Record<string, NativePointer> {
+    export function getAll(onprogress?: (count: number) => void): Record<string, NativePointer> {
         let count = 0;
-        let next = Date.now()+500;
+        let next = Date.now() + 500;
         for (const key of pdbcache.readKeys()) {
             proc[key];
             const now = Date.now();
@@ -146,18 +155,18 @@ export namespace pdblegacy {
     }
 
     export interface SymbolInfo {
-        address:NativePointer;
-        name:string;
+        address: NativePointer;
+        name: string;
     }
 
     /**
      * get all symbols.
      * @param read calbacked per 100ms, stop the looping if it returns false
      */
-    export function getAllEx(read:(data:SymbolInfo[])=>boolean|void):void {
+    export function getAllEx(read: (data: SymbolInfo[]) => boolean | void): void {
         let count = 0;
-        let next = Date.now()+100;
-        const array:SymbolInfo[] = [];
+        let next = Date.now() + 100;
+        const array: SymbolInfo[] = [];
         for (const key of pdbcache.readKeys()) {
             proc[key];
             const now = Date.now();

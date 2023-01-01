@@ -30,44 +30,45 @@ export type StreamReadResult = int32_t;
 @nativeClass(null)
 export class ExtendedStreamReadResult extends AbstractClass {
     @nativeField(StreamReadResult)
-	streamReadResult:StreamReadResult;
+    streamReadResult: StreamReadResult;
     @nativeField(int32_t)
-	dummy:int32_t;
-	// array?
+    dummy: int32_t;
+    // array?
 }
 
-const sharedptr_of_packet = Symbol('sharedptr');
+const sharedptr_of_packet = Symbol("sharedptr");
 
 @nativeClass(0x30, 0x8)
 export class Packet extends AbstractMantleClass {
-    static ID:number;
-    [sharedptr_of_packet]?:CxxSharedPtr<any>|null;
+    static ID: number;
+    [sharedptr_of_packet]?: CxxSharedPtr<any> | null;
 
-    getId():MinecraftPacketIds {
+    getId(): MinecraftPacketIds {
         abstract();
     }
-    getName():CxxString {
+    getName(): CxxString {
         abstract();
     }
-    write(stream:BinaryStream):void {
+    write(stream: BinaryStream): void {
         abstract();
     }
-    read(stream:BinaryStream):PacketReadResult {
+    read(stream: BinaryStream): PacketReadResult {
         abstract();
     }
-    readExtended(read:ExtendedStreamReadResult, stream:BinaryStream):ExtendedStreamReadResult {
+    readExtended(read: ExtendedStreamReadResult, stream: BinaryStream): ExtendedStreamReadResult {
         abstract();
     }
 
     /**
      * same with target.send
      */
-    sendTo(target:NetworkIdentifier, senderSubClientId?:number):void {
+    sendTo(target: NetworkIdentifier, senderSubClientId?: number): void {
         abstract();
     }
-    dispose():void {
+    dispose(): void {
         const sharedptr = this[sharedptr_of_packet];
-        if (sharedptr === undefined) { // it was allocated with malloc
+        if (sharedptr === undefined) {
+            // it was allocated with malloc
             this.destruct();
             capi.free(this);
         } else {
@@ -80,19 +81,19 @@ export class Packet extends AbstractMantleClass {
     /**
      * @deprecated unintuitive, the returning value need to be `dispose()`
      */
-    static create<T extends Packet>(this:{new(alloc?:boolean):T, ID:number, ref():any}):T {
+    static create<T extends Packet>(this: { new (alloc?: boolean): T; ID: number; ref(): any }): T {
         return (this as any).allocate();
     }
 
     /**
      * @return the returning value need to be `dispose()`
      */
-    static allocate<T>(this:new()=>T, copyFrom?:T|null):T {
+    static allocate<T>(this: new () => T, copyFrom?: T | null): T {
         if (copyFrom != null) throw Error(`not implemented, unable to copy the packet class`);
 
-        const packetThis = this as any as {new():(T&Packet), ID:number};
+        const packetThis = this as any as { new (): T & Packet; ID: number };
         const id = (this as any).ID;
-        if (id == null) throw Error('Packet class is abstract, please use named class instead (ex. LoginPacket)');
+        if (id == null) throw Error("Packet class is abstract, please use named class instead (ex. LoginPacket)");
         const SharedPacket = CxxSharedPtr.make(packetThis);
         const sharedptr = new SharedPacket(true);
         createPacketRaw(sharedptr, id);
@@ -107,4 +108,10 @@ export class Packet extends AbstractMantleClass {
 export const PacketSharedPtr = CxxSharedPtr.make(Packet);
 export type PacketSharedPtr = CxxSharedPtr<Packet>;
 
-export const createPacketRaw = procHacker.js("?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z", PacketSharedPtr, null, PacketSharedPtr, int32_t);
+export const createPacketRaw = procHacker.js(
+    "?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z",
+    PacketSharedPtr,
+    null,
+    PacketSharedPtr,
+    int32_t,
+);

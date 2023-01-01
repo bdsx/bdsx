@@ -1,24 +1,24 @@
-import * as colors from 'colors';
+import * as colors from "colors";
 import { NativePointer } from "../core";
 import { Type } from "../nativetype";
 import { proc } from "./symbols";
 
 interface TypeIdSymbols {
-    fnTypes:Type<any>[];
-    fnSymbols:string[];
-    ptrTypes:Type<any>[];
-    ptrSymbols:{symbol:string, type:Type<any>}[];
+    fnTypes: Type<any>[];
+    fnSymbols: string[];
+    ptrTypes: Type<any>[];
+    ptrSymbols: { symbol: string; type: Type<any> }[];
 }
 
 export class CommandSymbols {
-    private readonly counterSymbols:string[] = [];
+    private readonly counterSymbols: string[] = [];
 
-    private readonly parserSymbols:string[] = [];
-    private readonly parserTypes:Type<any>[] = [];
-    private readonly counterBases:Type<any>[] = [];
+    private readonly parserSymbols: string[] = [];
+    private readonly parserTypes: Type<any>[] = [];
+    private readonly counterBases: Type<any>[] = [];
     private readonly typeForIds = new Map<Type<any>, TypeIdSymbols>();
 
-    private _getTypeIdSymbols(base:Type<any>):TypeIdSymbols {
+    private _getTypeIdSymbols(base: Type<any>): TypeIdSymbols {
         let symbols = this.typeForIds.get(base);
         if (symbols != null) return symbols;
         symbols = {
@@ -31,12 +31,12 @@ export class CommandSymbols {
         return symbols;
     }
 
-    addCounterSymbol(base:Type<any>):void {
+    addCounterSymbol(base: Type<any>): void {
         this.counterBases.push(base);
         this.counterSymbols.push(`?count@?$typeid_t@${base.symbol}@@2GA`);
     }
 
-    addTypeIdFnSymbols(base:Type<any>, typesWithFunction:Type<any>[]):void {
+    addTypeIdFnSymbols(base: Type<any>, typesWithFunction: Type<any>[]): void {
         const symbols = this._getTypeIdSymbols(base);
 
         for (const v of typesWithFunction) {
@@ -45,19 +45,19 @@ export class CommandSymbols {
         }
     }
 
-    addTypeIdPtrSymbols(base:Type<any>, typesWithValuePtr:Type<any>[]):void {
+    addTypeIdPtrSymbols(base: Type<any>, typesWithValuePtr: Type<any>[]): void {
         const symbols = this._getTypeIdSymbols(base);
 
         for (const v of typesWithValuePtr) {
             symbols.ptrTypes.push(v);
             symbols.ptrSymbols.push({
-                symbol:`?id@?1???$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ@4V1@A`,
-                type:v,
+                symbol: `?id@?1???$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ@4V1@A`,
+                type: v,
             });
         }
     }
 
-    addParserSymbols(types:Type<any>[]):void {
+    addParserSymbols(types: Type<any>[]): void {
         this.parserTypes.push(...types);
         for (const type of types) {
             this.parserSymbols.push(
@@ -66,11 +66,11 @@ export class CommandSymbols {
         }
     }
 
-    *iterateTypeIdFns(base:Type<any>):IterableIterator<[Type<any>, NativePointer]> {
+    *iterateTypeIdFns(base: Type<any>): IterableIterator<[Type<any>, NativePointer]> {
         const symbols = this.typeForIds.get(base);
         if (symbols == null) return;
 
-        for (let i=0;i<symbols.fnSymbols.length;i++) {
+        for (let i = 0; i < symbols.fnSymbols.length; i++) {
             const symbol = symbols.fnSymbols[i];
             try {
                 const addr = proc[symbol];
@@ -80,12 +80,12 @@ export class CommandSymbols {
             }
         }
     }
-    *iterateTypeIdPtrs(base:Type<any>):IterableIterator<[Type<any>, NativePointer]> {
+    *iterateTypeIdPtrs(base: Type<any>): IterableIterator<[Type<any>, NativePointer]> {
         const symbols = this.typeForIds.get(base);
         if (symbols == null) return;
 
-        for (let i=0;i<symbols.ptrSymbols.length;i++) {
-            const {symbol, type} = symbols.ptrSymbols[i];
+        for (let i = 0; i < symbols.ptrSymbols.length; i++) {
+            const { symbol, type } = symbols.ptrSymbols[i];
             try {
                 const addr = proc[symbol];
                 yield [symbols.ptrTypes[i], addr];
@@ -94,15 +94,15 @@ export class CommandSymbols {
             }
         }
     }
-    *iterateCounters():IterableIterator<[Type<any>, NativePointer]> {
-        for (let i=0;i<this.counterBases.length;i++) {
+    *iterateCounters(): IterableIterator<[Type<any>, NativePointer]> {
+        for (let i = 0; i < this.counterBases.length; i++) {
             const symbol = this.counterSymbols[i];
             const addr = proc[symbol];
             yield [this.counterBases[i], addr];
         }
     }
-    *iterateParsers():IterableIterator<[Type<any>, NativePointer]> {
-        for (let i=0;i<this.parserTypes.length;i++) {
+    *iterateParsers(): IterableIterator<[Type<any>, NativePointer]> {
+        for (let i = 0; i < this.parserTypes.length; i++) {
             const symbol = this.parserSymbols[i];
             const addr = proc[symbol];
             yield [this.parserTypes[i], addr];

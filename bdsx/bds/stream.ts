@@ -1,5 +1,3 @@
 import { AbstractClass } from "../nativeclass";
 
-export class BinaryStream extends AbstractClass {
-
-}
+export class BinaryStream extends AbstractClass {}

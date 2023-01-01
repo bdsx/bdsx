@@ -1,4 +1,3 @@
-
 // Network Hooking: Get login IP and XUID
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
@@ -17,10 +16,10 @@ events.packetAfter(MinecraftPacketIds.Login).on((ptr, networkIdentifier, packetI
     const username = cert.getId();
 
     // sendLog
-    console.log(`Connection: ${username}> IP=${ip}, XUID=${xuid}, PLATFORM=${BuildPlatform[connreq.getDeviceOS()] || 'UNKNOWN'}`);
+    console.log(`Connection: ${username}> IP=${ip}, XUID=${xuid}, PLATFORM=${BuildPlatform[connreq.getDeviceOS()] || "UNKNOWN"}`);
     if (username) connectionList.set(networkIdentifier, username);
 });
 
-events.playerJoin.on(ev=>{
-    ev.player.sendMessage('[message packet from bdsx]');
+events.playerJoin.on(ev => {
+    ev.player.sendMessage("[message packet from bdsx]");
 });

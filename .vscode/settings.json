@@ -5,5 +5,9 @@
     },
     "files.exclude": {
         "**/*.js": { "when": "$(basename).ts"}
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[typescript]": {
+        "editor.formatOnSave": true
     }
 }

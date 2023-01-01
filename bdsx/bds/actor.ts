@@ -1,12 +1,12 @@
-import * as colors from 'colors';
+import * as colors from "colors";
 import { bin } from "../bin";
 import { CircularDetector } from "../circulardetector";
 import type { CommandResult, CommandResultType } from "../commandresult";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { decay } from '../decay';
-import { events } from '../event';
+import { decay } from "../decay";
+import { events } from "../event";
 import { mangle } from "../mangle";
 import { AbstractClass, nativeClass, NativeClass, nativeClassUtil, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint16_t, uint8_t } from "../nativetype";
@@ -14,7 +14,7 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import { BlockPos, Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
-import { CxxOptional } from './cxxoptional';
+import { CxxOptional } from "./cxxoptional";
 import type { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
 import { HashedString } from "./hashedstring";
@@ -24,9 +24,11 @@ import { CompoundTag, NBT } from "./nbt";
 import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { Player, ServerPlayer, SimulatedPlayer } from "./player";
-import { proc } from './symbols';
+import { proc } from "./symbols";
 
-export const ActorUniqueID = bin64_t.extends({ INVALID_ID: proc["?INVALID_ID@ActorUniqueID@@2U1@B"].getBin64() });
+export const ActorUniqueID = bin64_t.extends({
+    INVALID_ID: proc["?INVALID_ID@ActorUniqueID@@2U1@B"].getBin64(),
+});
 export type ActorUniqueID = bin64_t;
 
 export enum DimensionId { // int32_t
@@ -36,8 +38,7 @@ export enum DimensionId { // int32_t
     Undefined = 3,
 }
 
-export class ActorRuntimeID extends VoidPointer {
-}
+export class ActorRuntimeID extends VoidPointer {}
 
 export enum ActorType {
     Item = 0x40,
@@ -48,105 +49,105 @@ export enum ActorType {
     EyeOfEnder,
     EnderCrystal,
     FireworksRocket,
-    FishingHook = 0x4D,
+    FishingHook = 0x4d,
     Chalkboard,
     Painting = 0x53,
     LeashKnot = 0x58,
-    BoatRideable = 0x5A,
-    LightningBolt = 0x5D,
+    BoatRideable = 0x5a,
+    LightningBolt = 0x5d,
     AreaEffectCloud,
-    Balloon = 0x6B,
+    Balloon = 0x6b,
     Shield = 0x75,
     Lectern = 0x77,
-    TypeMask = 0xFF,
+    TypeMask = 0xff,
 
     Mob,
     Npc = 0x133,
     Agent = 0x138,
-    ArmorStand = 0x13D,
+    ArmorStand = 0x13d,
     TripodCamera,
     Player,
-    Bee = 0x17A,
+    Bee = 0x17a,
     Piglin,
-    PiglinBrute = 0x17F,
+    PiglinBrute = 0x17f,
 
     PathfinderMob = 0x300,
     IronGolem = 0x314,
     SnowGolem,
     WanderingTrader = 0x376,
 
-    Monster = 0xB00,
-    Creeper = 0xB21,
-    Slime = 0xB25,
+    Monster = 0xb00,
+    Creeper = 0xb21,
+    Slime = 0xb25,
     EnderMan,
-    Ghast = 0xB29,
-    LavaSlime = 0xB2A,
+    Ghast = 0xb29,
+    LavaSlime = 0xb2a,
     Blaze,
-    Witch = 0xB2D,
-    Guardian = 0xB31,
+    Witch = 0xb2d,
+    Guardian = 0xb31,
     ElderGuardian,
-    Dragon = 0xB35,
+    Dragon = 0xb35,
     Shulker,
-    Vindicator = 0xB39,
-    IllagerBeast = 0xB3B,
-    EvocationIllager = 0xB68,
+    Vindicator = 0xb39,
+    IllagerBeast = 0xb3b,
+    EvocationIllager = 0xb68,
     Vex,
-    Pillager = 0xB72,
-    ElderGuardianGhost = 0xB78,
+    Pillager = 0xb72,
+    ElderGuardianGhost = 0xb78,
 
     Animal = 0x1300,
-    Chicken = 0x130A,
+    Chicken = 0x130a,
     Cow,
     Pig,
     Sheep,
     MushroomCow = 0x1310,
     Rabbit = 0x1312,
-    PolarBear = 0x131C,
+    PolarBear = 0x131c,
     Llama,
-    Turtle = 0x134A,
+    Turtle = 0x134a,
     Panda = 0x1371,
     Fox = 0x1379,
-    Hoglin = 0x137C,
+    Hoglin = 0x137c,
     Strider,
     Goat = 0x1380,
     Axolotl = 0x1382,
 
     WaterAnimal = 0x2300,
     Squid = 0x2311,
-    Dolphin = 0x231F,
-    Pufferfish = 0x236C,
+    Dolphin = 0x231f,
+    Pufferfish = 0x236c,
     Salmon,
-    Tropicalfish = 0x236F,
+    Tropicalfish = 0x236f,
     Fish,
     GlowSquid = 0x2381,
 
     TameableAnimal = 0x5300,
-    Wolf = 0x530E,
+    Wolf = 0x530e,
     Ocelot = 0x5316,
-    Parrot = 0x531E,
-    Cat = 0x534B,
+    Parrot = 0x531e,
+    Cat = 0x534b,
 
     Ambient = 0x8100,
     Bat = 0x8113,
 
-    UndeadMob = 0x10B00,
-    PigZombie = 0x10B24,
-    WitherBoss = 0x10B34,
-    Phantom = 0x10B3A,
-    Zoglin = 0x10B7E,
+    UndeadMob = 0x10b00,
+    PigZombie = 0x10b24,
+    WitherBoss = 0x10b34,
+    Phantom = 0x10b3a,
+    Zoglin = 0x10b7e,
 
-    ZombieMonster= 0x30B00,
-    Zombie = 0x30B20,
-    ZombieVillager = 0x30B2C,
-    Husk = 0x30B2F,
-    Drowned = 0x30B6E,
-    ZombieVillagerV2 = 0x30B74,
+    ZombieMonster = 0x30b00,
+    Zombie = 0x30b20,
+    ZombieVillager = 0x30b2c,
+    Husk = 0x30b2f,
+    Drowned = 0x30b6e,
+    ZombieVillagerV2 = 0x30b74,
 
-    Arthropod = 0x40B00,
-    Spider = 0x40B23,
-    Silverfish = 0x40B27,
+    Arthropod = 0x40b00,
+    Spider = 0x40b23,
+    Silverfish = 0x40b27,
     CaveSpider,
-    Endermite = 0x40B37,
+    Endermite = 0x40b37,
 
     Minecart = 0x80000,
     MinecartRideable = 0x80054,
@@ -156,70 +157,70 @@ export enum ActorType {
     MinecartFurnace,
     MinecartCommandBlock,
 
-    SkeletonMonster = 0x110B00,
-    Skeleton = 0x110B22,
-    Stray = 0x110B2E,
-    WitherSkeleton = 0x110B30,
+    SkeletonMonster = 0x110b00,
+    Skeleton = 0x110b22,
+    Stray = 0x110b2e,
+    WitherSkeleton = 0x110b30,
 
     EquineAnimal = 0x205300,
     Horse = 0x205317,
     Donkey,
     Mule,
-    SkeletonHorse = 0x215B1A,
+    SkeletonHorse = 0x215b1a,
     ZombieHorse,
 
     Projectile = 0x400000,
     ExperiencePotion = 0x400044,
-    ShulkerBullet = 0x40004C,
-    DragonFireball = 0x40004F,
+    ShulkerBullet = 0x40004c,
+    DragonFireball = 0x40004f,
     Snowball = 0x400051,
     ThrownEgg,
     LargeFireball = 0x400055,
     ThrownPotion,
     Enderpearl,
     WitherSkull = 0x400059,
-    WitherSkullDangerous = 0x40005B,
-    SmallFireball = 0x40005E,
+    WitherSkullDangerous = 0x40005b,
+    SmallFireball = 0x40005e,
     LingeringPotion = 0x400065,
     LlamaSpit,
     EvocationFang,
-    IceBomb = 0x40006A,
+    IceBomb = 0x40006a,
 
-    AbstractArrow    = 0x800000,
-    Trident    = 0x0C00049,
+    AbstractArrow = 0x800000,
+    Trident = 0x0c00049,
     Arrow,
     VillagerBase = 0x1000300,
-    Villager = 0x100030F,
+    Villager = 0x100030f,
     VillagerV2 = 0x1000373,
 }
 
-@nativeClass({size:0xb0, structSymbol: true})
+@nativeClass({ size: 0xb0, structSymbol: true })
 export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)
-    namespace:CxxString;
+    namespace: CxxString;
     @nativeField(CxxString)
-    identifier:CxxString;
+    identifier: CxxString;
     @nativeField(CxxString)
-    initEvent:CxxString;
+    initEvent: CxxString;
     @nativeField(CxxString)
-    fullName:CxxString;
+    fullName: CxxString;
     @nativeField(HashedString)
-    readonly canonicalName:HashedString;
+    readonly canonicalName: HashedString;
 
-    static constructWith(fullName:EntityId):ActorDefinitionIdentifier;
-    static constructWith(fullName:string):ActorDefinitionIdentifier;
-    static constructWith(type:ActorType):ActorDefinitionIdentifier;
-    static constructWith(type:string|ActorType):ActorDefinitionIdentifier {
+    static constructWith(fullName: EntityId): ActorDefinitionIdentifier;
+    static constructWith(fullName: string): ActorDefinitionIdentifier;
+    static constructWith(type: ActorType): ActorDefinitionIdentifier;
+    static constructWith(type: string | ActorType): ActorDefinitionIdentifier {
         abstract();
     }
     /** @deprecated use {@link constructWith()} instead*/
-    static create(type:string|ActorType):ActorDefinitionIdentifier {
+    static create(type: string | ActorType): ActorDefinitionIdentifier {
         return ActorDefinitionIdentifier.constructWith(type as any);
     }
 }
 
 @nativeClass(0x10)
-export class ActorDamageSource extends NativeClass{
+export class ActorDamageSource extends NativeClass {
     @nativeField(int32_t, 0x08)
     cause: int32_t;
 
@@ -239,21 +240,21 @@ export class ActorDamageSource extends NativeClass{
         abstract();
     }
 
-    getDamagingEntity():Actor|null {
+    getDamagingEntity(): Actor | null {
         const uniqueId = this.getDamagingEntityUniqueID();
         return Actor.fromUniqueIdBin(uniqueId);
     }
 
-    getDamagingEntityUniqueID():ActorUniqueID {
+    getDamagingEntityUniqueID(): ActorUniqueID {
         abstract();
     }
 }
 
 @nativeClass(0x50)
 export class ActorDamageByActorSource extends ActorDamageSource {
-    static constructWith(this:never, cause: ActorDamageCause): ActorDamageSource;
-    static constructWith(damagingEntity:Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
-    static constructWith(damagingEntity:Actor|ActorDamageCause, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
+    static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
+    static constructWith(damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
+    static constructWith(damagingEntity: Actor | ActorDamageCause, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
         abstract();
     }
 }
@@ -290,8 +291,8 @@ export enum ActorDamageCause {
     Fireworks,
     Lightning,
     Charging,
-    Temperature = 0x1A,
-    All = 0x1F,
+    Temperature = 0x1a,
+    All = 0x1f,
 }
 
 export enum ActorFlags {
@@ -413,24 +414,23 @@ export enum ActorLinkType {
 @nativeClass()
 export class ActorLink extends NativeStruct {
     @nativeField(uint8_t)
-    type:ActorLinkType;
+    type: ActorLinkType;
     @nativeField(ActorUniqueID, 0x08)
-    A:ActorUniqueID;
+    A: ActorUniqueID;
     @nativeField(ActorUniqueID)
-    B:ActorUniqueID;
+    B: ActorUniqueID;
     @nativeField(bool_t)
-    immediate:bool_t;
+    immediate: bool_t;
     @nativeField(bool_t)
-    causedByRider:bool_t;
+    causedByRider: bool_t;
 }
 
 @nativeClass(null)
-export class EntityContext extends AbstractClass {
-}
+export class EntityContext extends AbstractClass {}
 
 @nativeClass(null)
 export class OwnerStorageEntity extends AbstractClass {
-    _getStackRef():EntityContext {
+    _getStackRef(): EntityContext {
         abstract();
     }
 }
@@ -438,12 +438,12 @@ export class OwnerStorageEntity extends AbstractClass {
 @nativeClass(0x18)
 export class EntityRefTraits extends AbstractClass {
     @nativeField(OwnerStorageEntity)
-    context:OwnerStorageEntity;
+    context: OwnerStorageEntity;
 }
 
 @nativeClass(0x18)
 export class WeakEntityRef extends AbstractClass {
-    tryUnwrap<T extends typeof Actor>(clazz:T, getRemoved: boolean = false): InstanceType<T> | null {
+    tryUnwrap<T extends typeof Actor>(clazz: T, getRemoved: boolean = false): InstanceType<T> | null {
         abstract();
     }
     tryUnwrapPlayer(getRemoved: boolean = false): Player | null {
@@ -457,25 +457,25 @@ export class WeakEntityRef extends AbstractClass {
 @nativeClass(null)
 export class EntityContextBase extends AbstractClass {
     @nativeField(int32_t, 0x8)
-    entityId:int32_t;
+    entityId: int32_t;
 
-    isValid():boolean {
+    isValid(): boolean {
         abstract();
     }
     /** @deprecated use {@link isValid()} instead */
     isVaild(): boolean {
         return this.isValid();
     }
-    _enttRegistry():VoidPointer {
+    _enttRegistry(): VoidPointer {
         abstract();
     }
 }
 
 export class Actor extends AbstractClass {
-    vftable:VoidPointer;
-    ctxbase:EntityContextBase;
+    vftable: VoidPointer;
+    ctxbase: EntityContextBase;
     /** @deprecated use {@link getIdentifier()} instead */
-    get identifier():EntityId {
+    get identifier(): EntityId {
         return this.getIdentifier();
     }
 
@@ -483,16 +483,16 @@ export class Actor extends AbstractClass {
      * Summon a new entity
      * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, -1, player)
      * */
-    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier|ActorType, id:ActorUniqueID, summoner?:Actor):Actor;
-    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier|ActorType, id:int64_as_float_t, summoner?:Actor):Actor;
-    static summonAt(region:BlockSource, pos:Vec3, type:ActorDefinitionIdentifier|ActorType, id:ActorUniqueID|int64_as_float_t, summoner?:Actor):Actor {
+    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: ActorUniqueID, summoner?: Actor): Actor;
+    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: int64_as_float_t, summoner?: Actor): Actor;
+    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: ActorUniqueID | int64_as_float_t, summoner?: Actor): Actor {
         abstract();
     }
 
     /**
      * Get the Actor instance of an entity with its EntityContext
      */
-    static tryGetFromEntity(entity:EntityContext, getRemoved?:boolean):Actor|null {
+    static tryGetFromEntity(entity: EntityContext, getRemoved?: boolean): Actor | null {
         abstract();
     }
 
@@ -548,7 +548,7 @@ export class Actor extends AbstractClass {
      * @privateRemarks causes of teleportation are currently unknown.
      */
     teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, unknown?: boolean): void;
-    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, sourceActorId?: ActorUniqueID|boolean): void {
+    teleportTo(position: Vec3, shouldStopRiding: boolean, cause: number, sourceEntityType: number, sourceActorId?: ActorUniqueID | boolean): void {
         abstract();
     }
 
@@ -562,7 +562,7 @@ export class Actor extends AbstractClass {
     addItem(itemStack: ItemStack): boolean {
         abstract();
     }
-    sendPacket(packet:Packet):void {
+    sendPacket(packet: Packet): void {
         if (!this.isPlayer()) throw Error("this is not ServerPlayer");
         this.sendNetworkPacket(packet);
     }
@@ -570,31 +570,31 @@ export class Actor extends AbstractClass {
      * Actually it's Mob::getArmorValue in BDS.
      * @returns the entity's armor value (as an integer)
      */
-    getArmorValue(): number{
+    getArmorValue(): number {
         return 0;
     }
     /**
      * Returns the Dimension instance of the entity currently in
      */
-    getDimension():Dimension {
+    getDimension(): Dimension {
         abstract();
     }
     /**
      * Returns the dimension id of the entity currently in
      */
-    getDimensionId():DimensionId {
+    getDimensionId(): DimensionId {
         abstract();
     }
     /**
      * Returns the entity's identifier
      */
-    getIdentifier():EntityId {
+    getIdentifier(): EntityId {
         return this.getActorIdentifier().canonicalName.str as EntityId;
     }
     /**
      * Returns the ActorDefinitionIdentifier instance of the entity
      */
-    getActorIdentifier():ActorDefinitionIdentifier {
+    getActorIdentifier(): ActorDefinitionIdentifier {
         abstract();
     }
 
@@ -640,7 +640,7 @@ export class Actor extends AbstractClass {
     /**
      * @alias instanceof Mob
      */
-    isMob():this is Mob {
+    isMob(): this is Mob {
         abstract();
     }
     /**
@@ -657,19 +657,19 @@ export class Actor extends AbstractClass {
     /**
      * @alias instanceof SimulatedPlayer
      */
-    isSimulatedPlayer():this is SimulatedPlayer {
+    isSimulatedPlayer(): this is SimulatedPlayer {
         abstract();
     }
     /**
      * @alias instanceof ItemActor
      */
-    isItem():this is ItemActor {
+    isItem(): this is ItemActor {
         abstract();
     }
     isSneaking(): boolean {
         abstract();
     }
-    hasType(type:ActorType): boolean {
+    hasType(type: ActorType): boolean {
         abstract();
     }
     /**
@@ -688,24 +688,24 @@ export class Actor extends AbstractClass {
     /**
      * Returns the entity's attribute map
      */
-    getAttributes():BaseAttributeMap {
+    getAttributes(): BaseAttributeMap {
         abstract();
     }
     /**
      * Returns the entity's name
      * @deprecated use getNameTag() instead
      */
-    getName():string {
+    getName(): string {
         return this.getNameTag();
     }
     /**
      * Returns the entity's name
      */
-    getNameTag():string {
+    getNameTag(): string {
         abstract();
     }
 
-    setHurtTime(time:number):void {
+    setHurtTime(time: number): void {
         abstract();
     }
     /**
@@ -714,13 +714,13 @@ export class Actor extends AbstractClass {
      * Calls Player::setName if it's Player.
      * or it calls Actor::setNameTag.
      */
-    setName(name:string):void {
+    setName(name: string): void {
         this.setNameTag(name);
     }
     /**
      * Changes the entity's nametag
      */
-    setNameTag(name:string):void {
+    setNameTag(name: string): void {
         abstract();
     }
     /**
@@ -732,79 +732,79 @@ export class Actor extends AbstractClass {
     /**
      * Set a text under the entity's name (original is name of objective for scoreboard)
      */
-    setScoreTag(text:string):void{
+    setScoreTag(text: string): void {
         abstract();
     }
     /**
      * Returns a text under the entity's name (original is name of objective for scoreboard)
      */
-    getScoreTag():string{
+    getScoreTag(): string {
         abstract();
     }
     /**
      * Despawn the entity. Don't use for this Player.
      */
-    despawn():void{
+    despawn(): void {
         abstract();
     }
-    getNetworkIdentifier():NetworkIdentifier {
+    getNetworkIdentifier(): NetworkIdentifier {
         throw Error(`this is not player`);
     }
     /**
      * Returns the entity's position
      */
-    getPosition():Vec3 {
+    getPosition(): Vec3 {
         abstract();
     }
     /**
      * Returns the entity's feet position
      */
-    getFeetPos():Vec3 {
+    getFeetPos(): Vec3 {
         abstract();
     }
     /**
      * Returns the entity's rotation
      */
-    getRotation():Vec2 {
+    getRotation(): Vec2 {
         abstract();
     }
     /**
      * Returns the BlockSource instance which the entity is ticking
      */
-    getRegion():BlockSource {
+    getRegion(): BlockSource {
         abstract();
     }
-    getUniqueIdLow():number {
+    getUniqueIdLow(): number {
         return this.getUniqueIdPointer().getInt32(0);
     }
-    getUniqueIdHigh():number {
+    getUniqueIdHigh(): number {
         return this.getUniqueIdPointer().getInt32(4);
     }
-    getUniqueIdBin():bin64_t {
+    getUniqueIdBin(): bin64_t {
         return this.getUniqueIdPointer().getBin64();
     }
     /**
      * Returns address of the entity's unique id
      */
-    getUniqueIdPointer():StaticPointer {
+    getUniqueIdPointer(): StaticPointer {
         abstract();
     }
     /**
      * Returns the entity's type
      */
-    getEntityTypeId():ActorType {
+    getEntityTypeId(): ActorType {
         abstract();
     }
     /**
      * Returns the entity's command permission level
      */
-    getCommandPermissionLevel():CommandPermissionLevel {
+    getCommandPermissionLevel(): CommandPermissionLevel {
         abstract();
     }
     /**
      * Returns the entity's specific attribute
      */
-    getAttribute(id:AttributeId):number {
+    getAttribute(id: AttributeId): number {
         const attr = this.getAttributes().getMutableInstance(id);
         if (attr === null) return 0;
         return attr.currentValue;
@@ -812,7 +812,7 @@ export class Actor extends AbstractClass {
     /**
      * Changes the entity's specific attribute
      */
-    setAttribute(id:AttributeId, value:number):AttributeInstance|null {
+    setAttribute(id: AttributeId, value: number): AttributeInstance | null {
         if (id < 1) return null;
         if (id > 15) return null;
 
@@ -824,7 +824,7 @@ export class Actor extends AbstractClass {
     /**
      * Returns the entity's runtime id
      */
-    getRuntimeID():ActorRuntimeID {
+    getRuntimeID(): ActorRuntimeID {
         abstract();
     }
     /**
@@ -832,19 +832,19 @@ export class Actor extends AbstractClass {
      *
      * @deprecated bedrock scripting API is removed.
      */
-    getEntity():any {
-        let entity:any = (this as any).entity;
+    getEntity(): any {
+        let entity: any = (this as any).entity;
         if (entity) return entity;
         entity = {
-            __unique_id__:{
+            __unique_id__: {
                 "64bit_low": this.getUniqueIdLow(),
                 "64bit_high": this.getUniqueIdHigh(),
             },
-            __identifier__:this.identifier,
-            __type__:(this.getEntityTypeId() & 0xff) === 0x40 ? 'item_entity' : 'entity',
-            id:0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
+            __identifier__: this.identifier,
+            __type__: (this.getEntityTypeId() & 0xff) === 0x40 ? "item_entity" : "entity",
+            id: 0, // bool ScriptApi::WORKAROUNDS::helpRegisterActor(entt::Registry<unsigned int>* registry? ,Actor* actor,unsigned int* id_out);
         };
-        return (this as any).entity = entity;
+        return ((this as any).entity = entity);
     }
     /**
      * Adds an effect to the entity. If a weaker effect of the same type is already applied, it will be replaced. If a weaker or equal-strength effect is already applied but has a shorter duration, it will be replaced.
@@ -855,29 +855,29 @@ export class Actor extends AbstractClass {
     /**
      * Removes the effect with the specified ID from the entity
      */
-    removeEffect(id: MobEffectIds):void {
+    removeEffect(id: MobEffectIds): void {
         abstract();
     }
 
-    protected _hasEffect(mobEffect: MobEffect):boolean {
+    protected _hasEffect(mobEffect: MobEffect): boolean {
         abstract();
     }
     /**
      * Returns whether the specified effect is active on the entity
      */
-    hasEffect(id: MobEffectIds):boolean {
+    hasEffect(id: MobEffectIds): boolean {
         const effect = MobEffect.create(id);
         const retval = this._hasEffect(effect);
         return retval;
     }
 
-    protected _getEffect(mobEffect: MobEffect):MobEffectInstance | null {
+    protected _getEffect(mobEffect: MobEffect): MobEffectInstance | null {
         abstract();
     }
     /**
      * Returns the effect instance active on this entity with the specified ID, or null if the entity does not have the effect.
      */
-    getEffect(id: MobEffectIds):MobEffectInstance | null {
+    getEffect(id: MobEffectIds): MobEffectInstance | null {
         const effect = MobEffect.create(id);
         const retval = this._getEffect(effect);
         return retval;
@@ -890,14 +890,14 @@ export class Actor extends AbstractClass {
      * Related functions: {@link getTags}, {@link removeTag}, {@link hasTag}
      * @returns {boolean} Whether the tag has been added successfully
      */
-    addTag(tag:string):boolean {
+    addTag(tag: string): boolean {
         abstract();
     }
     /**
      * Returns whether the entity has the tag.
      * Related functions: {@link getTags}, {@link addTag}, {@link removeTag}
      */
-    hasTag(tag:string):boolean {
+    hasTag(tag: string): boolean {
         abstract();
     }
     /**
@@ -905,7 +905,7 @@ export class Actor extends AbstractClass {
      * Related functions: {@link getTags}, {@link addTag}, {@link hasTag}
      * @returns {boolean} Whether the tag has been removed successfully
      */
-    removeTag(tag:string):boolean {
+    removeTag(tag: string): boolean {
         abstract();
     }
     /**
@@ -918,62 +918,62 @@ export class Actor extends AbstractClass {
     /**
      * Teleports the entity to a specified position
      */
-    teleport(pos:Vec3, dimensionId:DimensionId=DimensionId.Overworld, facePosition:Vec3|null=null):void {
+    teleport(pos: Vec3, dimensionId: DimensionId = DimensionId.Overworld, facePosition: Vec3 | null = null): void {
         abstract();
     }
     /**
      * Returns the entity's armor
      */
-    getArmor(slot:ArmorSlot):ItemStack {
+    getArmor(slot: ArmorSlot): ItemStack {
         abstract();
     }
     /**
      * Sets the entity's sneaking status
      */
-    setSneaking(value:boolean):void {
+    setSneaking(value: boolean): void {
         abstract();
     }
     /**
      * Returns the entity's health
      */
-    getHealth():number {
+    getHealth(): number {
         abstract();
     }
     /**
      * Returns the entity's maximum health
      */
-    getMaxHealth():number {
+    getMaxHealth(): number {
         abstract();
     }
     /**
      * @param tag this function stores nbt values to this parameter
      */
-    save(tag:CompoundTag):boolean;
+    save(tag: CompoundTag): boolean;
     /**
      * it returns JS converted NBT
      */
-    save():Record<string, any>;
-    save(tag?:CompoundTag):any {
+    save(): Record<string, any>;
+    save(tag?: CompoundTag): any {
         abstract();
     }
-    readAdditionalSaveData(tag:CompoundTag|NBT.Compound):void {
+    readAdditionalSaveData(tag: CompoundTag | NBT.Compound): void {
         abstract();
     }
-    load(tag:CompoundTag|NBT.Compound):void {
+    load(tag: CompoundTag | NBT.Compound): void {
         abstract();
     }
-    allocateAndSave():CompoundTag {
+    allocateAndSave(): CompoundTag {
         const tag = CompoundTag.allocate();
         this.save(tag);
         return tag;
     }
 
-    protected hurt_(source: ActorDamageSource, damage:number, knock: boolean, ignite: boolean): boolean {
+    protected hurt_(source: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean {
         abstract();
     }
     hurt(source: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean;
     hurt(cause: ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean;
-    hurt(sourceOrCause: ActorDamageSource|ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
+    hurt(sourceOrCause: ActorDamageSource | ActorDamageCause, damage: number, knock: boolean, ignite: boolean): boolean {
         const isSource = sourceOrCause instanceof ActorDamageSource;
         const source = isSource ? sourceOrCause : ActorDamageSource.create(sourceOrCause);
         const retval = this.hurt_(source, damage, knock, ignite);
@@ -984,19 +984,19 @@ export class Actor extends AbstractClass {
      * @remarks Most of the time it will be reset by ticking
      *
      */
-    setStatusFlag(flag:ActorFlags, value:boolean):void {
+    setStatusFlag(flag: ActorFlags, value: boolean): void {
         abstract();
     }
     /**
      * Returns a specific status flag of the entity
      */
-    getStatusFlag(flag:ActorFlags):boolean {
+    getStatusFlag(flag: ActorFlags): boolean {
         abstract();
     }
     /**
      * Returns the Level instance of the entity currently in
      */
-    getLevel():Level {
+    getLevel(): Level {
         abstract();
     }
     /**
@@ -1034,7 +1034,7 @@ export class Actor extends AbstractClass {
         if (entity) return this._isRidingOn(entity);
         return this._isRiding();
     }
-    protected _isPassenger(ride:Actor): boolean {
+    protected _isPassenger(ride: Actor): boolean {
         abstract();
     }
     isPassenger(ride: ActorUniqueID): boolean;
@@ -1045,7 +1045,7 @@ export class Actor extends AbstractClass {
         } else {
             const actor = Actor.fromUniqueIdBin(ride);
             if (actor === null) {
-                throw Error('actor not found');
+                throw Error("actor not found");
             }
             return this._isPassenger(actor);
         }
@@ -1072,37 +1072,37 @@ export class Actor extends AbstractClass {
         abstract();
     }
 
-    setOnFire(seconds:number):void {
+    setOnFire(seconds: number): void {
         abstract();
     }
 
-    setOnFireNoEffects(seconds:number):void {
+    setOnFireNoEffects(seconds: number): void {
         abstract();
     }
 
-    static fromUniqueIdBin(bin:bin64_t, getRemovedActor:boolean = true):Actor|null {
+    static fromUniqueIdBin(bin: bin64_t, getRemovedActor: boolean = true): Actor | null {
         abstract();
     }
-    static fromUniqueId(lowbits:number, highbits:number, getRemovedActor:boolean = true):Actor|null {
+    static fromUniqueId(lowbits: number, highbits: number, getRemovedActor: boolean = true): Actor | null {
         return Actor.fromUniqueIdBin(bin.make64(lowbits, highbits), getRemovedActor);
     }
     /**
      * Gets the entity from entity component of bedrock scripting api
      * @deprecated bedrock scripting API is removed.
      */
-    static fromEntity(entity:unknown, getRemovedActor:boolean = true):Actor|null {
+    static fromEntity(entity: unknown, getRemovedActor: boolean = true): Actor | null {
         const u = (entity as any).__unique_id__;
         return Actor.fromUniqueId(u["64bit_low"], u["64bit_high"], getRemovedActor);
     }
-    static all():IterableIterator<Actor> {
+    static all(): IterableIterator<Actor> {
         abstract();
     }
-    [nativeClassUtil.inspectFields](obj:Record<string, any>):void {
+    [nativeClassUtil.inspectFields](obj: Record<string, any>): void {
         obj.name = this.getNameTag();
         obj.pos = this.getPosition();
         obj.type = this.getEntityTypeId();
     }
-    runCommand(command:string, mute:CommandResultType = true, permissionLevel?:CommandPermissionLevel): CommandResult<CommandResult.Any> {
+    runCommand(command: string, mute: CommandResultType = true, permissionLevel?: CommandPermissionLevel): CommandResult<CommandResult.Any> {
         abstract();
     }
     isMoving(): boolean {
@@ -1231,7 +1231,7 @@ export class Actor extends AbstractClass {
     /**
      * Returns whether the actor is angry
      */
-    isAngry(): boolean{
+    isAngry(): boolean {
         abstract();
     }
 
@@ -1239,15 +1239,15 @@ export class Actor extends AbstractClass {
      * Find actor's attack target
      * @deprecated code not found
      */
-    findAttackTarget(): Actor|null{
-        console.error(colors.red('Actor.findAttackTarget is not available. deleted from BDS'));
+    findAttackTarget(): Actor | null {
+        console.error(colors.red("Actor.findAttackTarget is not available. deleted from BDS"));
         return null;
     }
 
     /**
      * Get actor targeting block
      */
-    getBlockTarget(): BlockPos{
+    getBlockTarget(): BlockPos {
         abstract();
     }
 
@@ -1265,7 +1265,7 @@ export class Actor extends AbstractClass {
         abstract();
     }
 
-    isValidTarget(source: Actor|null = null): boolean {
+    isValidTarget(source: Actor | null = null): boolean {
         abstract();
     }
 
@@ -1407,7 +1407,7 @@ export class SynchedActorDataEntityWrapper extends AbstractClass {
     }
 }
 
-export enum ActorDataIDs  /** : unsigned short */ {
+export enum ActorDataIDs /** : unsigned short */ {
     Scale = 0x26, // used as float, in Actor::setSize
     Width = 0x35, // used as float, in Actor::setSize
     Height = 0x36, // used as float, in Actor::setSize
@@ -1418,7 +1418,7 @@ export class DistanceSortedActor extends NativeStruct {
     @nativeField(Actor.ref())
     entity: Actor;
     /** @deprecated use distanceSq */
-    @nativeField(float32_t, {ghost: true})
+    @nativeField(float32_t, { ghost: true })
     distance: float32_t;
     @nativeField(float32_t)
     distanceSq: float32_t;
@@ -1428,7 +1428,7 @@ export class Mob extends Actor {
     /**
      * @returns the entity's armor value (as an integer)
      */
-    getArmorValue(): number{
+    getArmorValue(): number {
         abstract();
     }
     /**
@@ -1437,16 +1437,16 @@ export class Mob extends Actor {
     knockback(source: Actor | null, damage: int32_t, xd: float32_t, zd: float32_t, power: float32_t, height: float32_t, heightCap: float32_t): void {
         abstract();
     }
-    getSpeed():number {
+    getSpeed(): number {
         abstract();
     }
-    isSprinting():boolean {
+    isSprinting(): boolean {
         abstract();
     }
-    sendArmorSlot(slot:ArmorSlot):void {
+    sendArmorSlot(slot: ArmorSlot): void {
         abstract();
     }
-    setSprinting(shouldSprint:boolean):void {
+    setSprinting(shouldSprint: boolean): void {
         abstract();
     }
 
@@ -1459,7 +1459,7 @@ export class Mob extends Actor {
      *
      * @param shouldSelectSlot - Defines whether the sync selected slot also. (Sends `PlayerHotbarPacket`)
      */
-    sendInventory(shouldSelectSlot:boolean = false): void {
+    sendInventory(shouldSelectSlot: boolean = false): void {
         this._sendInventory(shouldSelectSlot);
     }
     setSpeed(speed: number): void {
@@ -1493,5 +1493,5 @@ export class Mob extends Actor {
 }
 
 export class ItemActor extends Actor {
-    itemStack:ItemStack;
+    itemStack: ItemStack;
 }

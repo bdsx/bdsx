@@ -40,7 +40,7 @@ export enum ContainerId {
     FixedInventory,
     /** Used in InventoryContentPacket */
     UI,
-    None = 0xFF,
+    None = 0xff,
 }
 
 export enum ContainerType {
@@ -75,8 +75,8 @@ export enum ContainerType {
     Smoker,
     Stonecutter,
     Cartography,
-    None = 0xF7,
-    Inventory = 0xFF,
+    None = 0xf7,
+    Inventory = 0xff,
 }
 
 export enum ArmorSlot {
@@ -106,10 +106,10 @@ export class Item extends NativeClass {
     /**
      * Returns whether the item is allowed to be used in the offhand slot
      */
-    allowOffhand():boolean {
+    allowOffhand(): boolean {
         abstract();
     }
-    getCommandName():string {
+    getCommandName(): string {
         const names = this.getCommandNames2();
         const name = names.get(0)?.name;
         names.destruct();
@@ -117,31 +117,31 @@ export class Item extends NativeClass {
         return name;
     }
     /** @deprecated Use `this.getCommandNames2()` instead */
-    getCommandNames():CxxVector<CxxStringWith8Bytes> {
+    getCommandNames(): CxxVector<CxxStringWith8Bytes> {
         abstract();
     }
-    getCommandNames2():CxxVector<CommandName> {
+    getCommandNames2(): CxxVector<CommandName> {
         abstract();
     }
     /**
      * Returns the category of the item in creative inventory
      */
-    getCreativeCategory():number {
+    getCreativeCategory(): number {
         abstract();
     }
-    getArmorValue():number{
+    getArmorValue(): number {
         abstract();
     }
     getToughnessValue(): int32_t {
         abstract();
     }
-    isDamageable():boolean {
+    isDamageable(): boolean {
         abstract();
     }
-    isFood():boolean {
+    isFood(): boolean {
         abstract();
     }
-    isArmor():boolean {
+    isArmor(): boolean {
         abstract();
     }
     /**
@@ -149,10 +149,10 @@ export class Item extends NativeClass {
      *
      * @remarks Will not affect client but allows /replaceitem
      */
-    setAllowOffhand(value:boolean):void {
+    setAllowOffhand(value: boolean): void {
         abstract();
     }
-    getSerializedName():CxxString {
+    getSerializedName(): CxxString {
         abstract();
     }
     getCooldownType(): HashedString {
@@ -163,11 +163,10 @@ export class Item extends NativeClass {
 /**
  * @deprecated rough. don't use it yet.
  */
-export class ArmorItem extends Item {
-}
+export class ArmorItem extends Item {}
 
 export class ComponentItem extends Item {
-    getComponent(identifier:string):ItemComponent{
+    getComponent(identifier: string): ItemComponent {
         const hashedStr = HashedString.construct();
         hashedStr.set(identifier);
 
@@ -176,13 +175,13 @@ export class ComponentItem extends Item {
 
         return component;
     }
-    protected _getComponent(identifier:HashedString): ItemComponent{
+    protected _getComponent(identifier: HashedString): ItemComponent {
         abstract();
     }
-    buildNetworkTag():CompoundTag {
+    buildNetworkTag(): CompoundTag {
         abstract();
     }
-    initializeFromNetwork(tag:CompoundTag): void {
+    initializeFromNetwork(tag: CompoundTag): void {
         abstract();
     }
 }
@@ -190,37 +189,37 @@ export class ComponentItem extends Item {
 @nativeClass(0x88)
 export class ItemStackBase extends NativeClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(Item.ref().ref())
-    item:Item;
+    item: Item;
     @nativeField(CompoundTag.ref())
     userData: CompoundTag;
     @nativeField(Block.ref())
-    block:Block;
+    block: Block;
 
     //////////////////
     // uint32_t
     @nativeField(int16_t)
-    aux:int16_t;
+    aux: int16_t;
     @nativeField(uint8_t)
-    amount:uint8_t;
+    amount: uint8_t;
     @nativeField(bool_t)
-    valid:bool_t;
+    valid: bool_t;
     //////////////////
 
     @nativeField(bin64_t)
-    pickupTime:bin64_t;
+    pickupTime: bin64_t;
     @nativeField(bool_t) // uint16_t
-    showPickup:bool_t;
+    showPickup: bool_t;
     @nativeField(CxxVector.make(BlockLegacy.ref()), 0x38)
-    canPlaceOn:CxxVector<BlockLegacy>;
+    canPlaceOn: CxxVector<BlockLegacy>;
     @nativeField(CxxVector.make(BlockLegacy.ref()), 0x58)
     canDestroy: CxxVector<BlockLegacy>;
 
-    protected _getItem():Item {
+    protected _getItem(): Item {
         abstract();
     }
-    protected _setCustomLore(name:CxxVector<string>):void {
+    protected _setCustomLore(name: CxxVector<string>): void {
         abstract();
     }
     /**
@@ -230,56 +229,56 @@ export class ItemStackBase extends NativeClass {
     addAmount(amount: number): void {
         abstract();
     }
-    remove(amount: number): void{
+    remove(amount: number): void {
         abstract();
     }
-    getArmorValue(): number{
+    getArmorValue(): number {
         const item = this.getItem();
         return item !== null ? item.getArmorValue() : 0;
     }
-    setAuxValue(value: number): void{
+    setAuxValue(value: number): void {
         abstract();
     }
-    getAuxValue():number{
+    getAuxValue(): number {
         abstract();
     }
     isValidAuxValue(aux: int32_t): boolean {
         abstract();
     }
-    getMaxStackSize(): number{
+    getMaxStackSize(): number {
         abstract();
     }
-    toString(): string{
+    toString(): string {
         abstract();
     }
-    toDebugString(): string{
+    toDebugString(): string {
         abstract();
     }
-    isBlock():boolean {
+    isBlock(): boolean {
         abstract();
     }
-    isNull():boolean {
+    isNull(): boolean {
         abstract();
     }
-    setNull(unknown?:string):void {
+    setNull(unknown?: string): void {
         abstract();
     }
-    getAmount():number {
+    getAmount(): number {
         return this.amount;
     }
-    setAmount(amount:number):void {
+    setAmount(amount: number): void {
         this.amount = amount;
     }
-    getId():number {
+    getId(): number {
         abstract();
     }
-    getItem():Item|null {
+    getItem(): Item | null {
         if (this.isNull()) {
             return null;
         }
         return this._getItem();
     }
-    getName():string {
+    getName(): string {
         const item = this.getItem();
         if (item != null) {
             const Name = item.getCommandName();
@@ -288,19 +287,19 @@ export class ItemStackBase extends NativeClass {
         }
         return "minecraft:air";
     }
-    getRawNameId():string {
+    getRawNameId(): string {
         abstract();
     }
-    hasCustomName():boolean {
+    hasCustomName(): boolean {
         abstract();
     }
     getCustomName(): string {
         abstract();
     }
-    setCustomName(name:string):void {
+    setCustomName(name: string): void {
         abstract();
     }
-    getUserData():CompoundTag {
+    getUserData(): CompoundTag {
         abstract();
     }
     /**
@@ -308,13 +307,13 @@ export class ItemStackBase extends NativeClass {
      *
      * @see https://minecraft.fandom.com/wiki/Enchanting_mechanics
      */
-    getEnchantValue():number {
+    getEnchantValue(): number {
         abstract();
     }
-    isEnchanted():boolean {
+    isEnchanted(): boolean {
         abstract();
     }
-    setCustomLore(lores:string[]|string):void {
+    setCustomLore(lores: string[] | string): void {
         const CxxVectorString = CxxVector.make(CxxString);
         const cxxvector = CxxVectorString.construct();
         if (typeof lores === "string") {
@@ -331,104 +330,104 @@ export class ItemStackBase extends NativeClass {
     /**
      * @remarks The value is applied only to Damageable items
      */
-    setDamageValue(value:number):void {
+    setDamageValue(value: number): void {
         abstract();
     }
-    setItem(id:number):boolean {
+    setItem(id: number): boolean {
         abstract();
     }
-    startCoolDown(player:ServerPlayer):void {
+    startCoolDown(player: ServerPlayer): void {
         abstract();
     }
-    sameItem(item:ItemStack):boolean {
+    sameItem(item: ItemStack): boolean {
         abstract();
     }
     sameItemAndAux(item: ItemStack): boolean {
         abstract();
     }
-    isStackedByData():boolean {
+    isStackedByData(): boolean {
         abstract();
     }
-    isStackable():boolean {
+    isStackable(): boolean {
         abstract();
     }
-    isPotionItem():boolean {
+    isPotionItem(): boolean {
         abstract();
     }
-    isPattern():boolean {
+    isPattern(): boolean {
         abstract();
     }
-    isMusicDiscItem():boolean {
+    isMusicDiscItem(): boolean {
         abstract();
     }
-    isLiquidClipItem():boolean {
+    isLiquidClipItem(): boolean {
         abstract();
     }
-    isHorseArmorItem():boolean {
+    isHorseArmorItem(): boolean {
         abstract();
     }
-    isGlint():boolean {
+    isGlint(): boolean {
         abstract();
     }
-    isFullStack():boolean {
+    isFullStack(): boolean {
         abstract();
     }
-    isFireResistant():boolean {
+    isFireResistant(): boolean {
         abstract();
     }
-    isExplodable():boolean {
+    isExplodable(): boolean {
         abstract();
     }
-    isDamaged():boolean {
+    isDamaged(): boolean {
         abstract();
     }
-    isDamageableItem():boolean {
+    isDamageableItem(): boolean {
         abstract();
     }
-    isArmorItem():boolean {
+    isArmorItem(): boolean {
         abstract();
     }
-    isWearableItem():boolean {
+    isWearableItem(): boolean {
         abstract();
     }
-    getMaxDamage():number {
+    getMaxDamage(): number {
         abstract();
     }
 
     /**
      * Only custom items return ComponentItem
      */
-    getComponentItem():ComponentItem | null {
+    getComponentItem(): ComponentItem | null {
         abstract();
     }
-    getDamageValue():number {
+    getDamageValue(): number {
         abstract();
     }
-    getAttackDamage():number {
+    getAttackDamage(): number {
         abstract();
     }
-    save():Record<string, any> {
+    save(): Record<string, any> {
         const tag = this.allocateAndSave();
         const out = tag.value();
         tag.dispose();
         return out;
     }
-    load(tag:CompoundTag|NBT.Compound):void {
+    load(tag: CompoundTag | NBT.Compound): void {
         abstract();
     }
-    allocateAndSave():CompoundTag {
+    allocateAndSave(): CompoundTag {
         abstract();
     }
-    constructItemEnchantsFromUserData():ItemEnchants {
+    constructItemEnchantsFromUserData(): ItemEnchants {
         abstract();
     }
-    saveEnchantsToUserData(itemEnchants:ItemEnchants):void {
+    saveEnchantsToUserData(itemEnchants: ItemEnchants): void {
         abstract();
     }
-    getCategoryName(): string{
+    getCategoryName(): string {
         abstract();
     }
-    canDestroySpecial(block: Block): boolean{
+    canDestroySpecial(block: Block): boolean {
         abstract();
     }
     /**
@@ -438,7 +437,7 @@ export class ItemStackBase extends NativeClass {
      * @param owner owner of the item, if not null, server will send inventory.
      * @returns returns whether hurt successfully or not
      */
-    hurtAndBreak(count: number, owner: Actor|null = null): boolean{
+    hurtAndBreak(count: number, owner: Actor | null = null): boolean {
         abstract();
     }
 }
@@ -449,30 +448,30 @@ export class ItemStack extends ItemStackBase {
     /**
      * @param itemName Formats like 'minecraft:apple' and 'apple' are both accepted, even if the name does not exist, it still returns an ItemStack
      */
-    static constructWith(itemName:ItemId, amount?:number, data?:number): ItemStack;
-    static constructWith(itemName:string, amount?:number, data?:number): ItemStack;
-    static constructWith(itemName:ItemId|string, amount:number = 1, data:number = 0):ItemStack {
+    static constructWith(itemName: ItemId, amount?: number, data?: number): ItemStack;
+    static constructWith(itemName: string, amount?: number, data?: number): ItemStack;
+    static constructWith(itemName: ItemId | string, amount: number = 1, data: number = 0): ItemStack {
         abstract();
     }
     /** @deprecated use constructWith */
-    static create(itemName:string, amount:number = 1, data:number = 0):ItemStack {
+    static create(itemName: string, amount: number = 1, data: number = 0): ItemStack {
         return ItemStack.constructWith(itemName, amount, data);
     }
-    static fromDescriptor(descriptor:NetworkItemStackDescriptor, palette:BlockPalette, unknown:boolean):ItemStack {
+    static fromDescriptor(descriptor: NetworkItemStackDescriptor, palette: BlockPalette, unknown: boolean): ItemStack {
         abstract();
     }
-    static fromTag(tag: CompoundTag|NBT.Compound):ItemStack {
+    static fromTag(tag: CompoundTag | NBT.Compound): ItemStack {
         abstract();
     }
 
-    clone():ItemStack;
+    clone(): ItemStack;
 
     /**
      * @deprecated use clone()
      */
-    clone(itemStack: ItemStack):void;
+    clone(itemStack: ItemStack): void;
 
-    clone(itemStack?: ItemStack):ItemStack|void {
+    clone(itemStack?: ItemStack): ItemStack | void {
         abstract();
     }
     /**
@@ -483,7 +482,7 @@ export class ItemStack extends ItemStackBase {
         this.clone(itemStack);
         return itemStack;
     }
-    getDestroySpeed(block: Block): number{
+    getDestroySpeed(block: Block): number {
         abstract();
     }
 }
@@ -493,37 +492,37 @@ export class Container extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
 
-    addItem(item:ItemStack):void {
+    addItem(item: ItemStack): void {
         abstract();
     }
-    addItemToFirstEmptySlot(item:ItemStack):boolean {
+    addItemToFirstEmptySlot(item: ItemStack): boolean {
         abstract();
     }
-    getSlots():CxxVector<ItemStack> {
+    getSlots(): CxxVector<ItemStack> {
         abstract();
     }
-    getItem(slot:number):ItemStack {
+    getItem(slot: number): ItemStack {
         abstract();
     }
-    getItemCount(compare:ItemStack):int32_t {
+    getItemCount(compare: ItemStack): int32_t {
         abstract();
     }
-    getContainerType():ContainerType {
+    getContainerType(): ContainerType {
         abstract();
     }
-    hasRoomForItem(item:ItemStack):boolean {
+    hasRoomForItem(item: ItemStack): boolean {
         abstract();
     }
-    isEmpty():boolean {
+    isEmpty(): boolean {
         abstract();
     }
-    removeAllItems():void {
+    removeAllItems(): void {
         abstract();
     }
-    removeItem(slot:number, count:number):void {
+    removeItem(slot: number, count: number): void {
         abstract();
     }
-    setCustomName(name:string):void {
+    setCustomName(name: string): void {
         abstract();
     }
 }
@@ -536,21 +535,19 @@ export class FillingContainer extends Container {
         abstract();
     }
 }
-export class SimpleContainer extends Container {
-}
+export class SimpleContainer extends Container {}
 
 export class Inventory extends FillingContainer {
     /**
      * Remove the items in the slot
      * @remarks Requires `player.sendInventory()` to update the slot
      * */
-    dropSlot(slot:number, onlyClearContainer:boolean, dropAll:boolean, randomly:boolean):void {
+    dropSlot(slot: number, onlyClearContainer: boolean, dropAll: boolean, randomly: boolean): void {
         abstract();
     }
 }
 
-export class PlayerUIContainer extends SimpleContainer {
-}
+export class PlayerUIContainer extends SimpleContainer {}
 
 export enum PlayerUISlot {
     CursorSelected = 0,
@@ -617,49 +614,49 @@ export class PlayerInventory extends AbstractClass {
         abstract();
     }
 
-    addItem(itemStack:ItemStack, linkEmptySlot:boolean):boolean {
+    addItem(itemStack: ItemStack, linkEmptySlot: boolean): boolean {
         abstract();
     }
-    clearSlot(slot:number, containerId:ContainerId):void {
+    clearSlot(slot: number, containerId: ContainerId): void {
         abstract();
     }
-    getContainerSize(containerId:ContainerId):number {
+    getContainerSize(containerId: ContainerId): number {
         abstract();
     }
-    getFirstEmptySlot():number {
+    getFirstEmptySlot(): number {
         abstract();
     }
-    getHotbarSize():number {
+    getHotbarSize(): number {
         abstract();
     }
-    getItem(slot:number, containerId:ContainerId):ItemStack {
+    getItem(slot: number, containerId: ContainerId): ItemStack {
         abstract();
     }
-    getSelectedItem():ItemStack {
+    getSelectedItem(): ItemStack {
         abstract();
     }
-    getSelectedSlot():number {
+    getSelectedSlot(): number {
         return this.getInt8(0x10); // accessed in PlayerInventory::getSelectedSlot `mov eax, [rcx+10h]`
     }
-    getSlotWithItem(itemStack:ItemStack, checkAux:boolean, checkData:boolean):number {
+    getSlotWithItem(itemStack: ItemStack, checkAux: boolean, checkData: boolean): number {
         abstract();
     }
     /**
      * @deprecated Use container.getSlots();
      */
-    getSlots():CxxVector<ItemStack> {
+    getSlots(): CxxVector<ItemStack> {
         return this.container.getSlots();
     }
-    selectSlot(slot:number, containerId:ContainerId):void {
+    selectSlot(slot: number, containerId: ContainerId): void {
         abstract();
     }
-    setItem(slot:number, itemStack:ItemStack, containerId:ContainerId, linkEmptySlot:boolean):void {
+    setItem(slot: number, itemStack: ItemStack, containerId: ContainerId, linkEmptySlot: boolean): void {
         abstract();
     }
-    setSelectedItem(itemStack:ItemStack):void {
+    setSelectedItem(itemStack: ItemStack): void {
         abstract();
     }
-    swapSlots(primarySlot:number, secondarySlot:number):void {
+    swapSlots(primarySlot: number, secondarySlot: number): void {
         abstract();
     }
     /**
@@ -700,13 +697,13 @@ export enum InventorySourceFlags {
 @nativeClass()
 export class InventorySource extends NativeStruct {
     @nativeField(int32_t)
-    type:InventorySourceType;
+    type: InventorySourceType;
     @nativeField(int32_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
     @nativeField(int32_t)
-    flags:InventorySourceFlags;
+    flags: InventorySourceFlags;
 
-    static create(containerId:ContainerId, type:InventorySourceType = InventorySourceType.ContainerInventory):InventorySource {
+    static create(containerId: ContainerId, type: InventorySourceType = InventorySourceType.ContainerInventory): InventorySource {
         const source = new InventorySource(true);
         source.type = type;
         source.containerId = containerId;
@@ -716,19 +713,16 @@ export class InventorySource extends NativeStruct {
 }
 
 @nativeClass(0x10)
-export class ItemDescriptor extends AbstractClass {
-}
+export class ItemDescriptor extends AbstractClass {}
 
-export class ItemStackNetIdVariant extends AbstractClass {
-}
+export class ItemStackNetIdVariant extends AbstractClass {}
 
 @nativeClass(0x60)
 export class NetworkItemStackDescriptor extends AbstractClass {
-
     ////////////////////////////
     // ItemDescriptorCount, parent expected
     @nativeField(ItemDescriptor)
-    readonly descriptor:ItemDescriptor;
+    readonly descriptor: ItemDescriptor;
     ////////////////////////////
 
     // uint16_t, 0x10
@@ -736,15 +730,15 @@ export class NetworkItemStackDescriptor extends AbstractClass {
     // uint8_t, 0x18
 
     @nativeField(ItemStackNetIdVariant, 0x20) // accessed in NetworkItemStackDescriptor::tryGetServerNetId
-    readonly id:ItemStackNetIdVariant;
+    readonly id: ItemStackNetIdVariant;
     /** @deprecated There seems to be no string inside NetworkItemStackDescriptor anymore */
 
     // uint32_t, 0x38
 
     @nativeField(CxxString, 0x40)
-    _unknown:CxxString;
+    _unknown: CxxString;
 
-    static constructWith(itemStack:ItemStack):NetworkItemStackDescriptor {
+    static constructWith(itemStack: ItemStack): NetworkItemStackDescriptor {
         abstract();
     }
 
@@ -759,34 +753,34 @@ export class NetworkItemStackDescriptor extends AbstractClass {
 @nativeClass()
 export class InventoryAction extends AbstractClass {
     @nativeField(InventorySource)
-    source:InventorySource;
+    source: InventorySource;
     @nativeField(uint32_t)
-    slot:uint32_t;
+    slot: uint32_t;
     @nativeField(NetworkItemStackDescriptor) // 0x10
-    fromDesc:NetworkItemStackDescriptor;
+    fromDesc: NetworkItemStackDescriptor;
     @nativeField(NetworkItemStackDescriptor) // 0x68
-    toDesc:NetworkItemStackDescriptor;
+    toDesc: NetworkItemStackDescriptor;
     @nativeField(ItemStack) // 0xc0
-    from:ItemStack;
+    from: ItemStack;
     @nativeField(ItemStack) // 0x160
-    to:ItemStack;
+    to: ItemStack;
 }
 
 @nativeClass(0x18)
 export class InventoryTransactionItemGroup extends AbstractClass {
     @nativeField(int32_t)
-    itemId:int32_t;
+    itemId: int32_t;
     @nativeField(int32_t)
-    itemAux:int32_t;
+    itemAux: int32_t;
     @nativeField(CompoundTag.ref())
-    tag:CompoundTag;
+    tag: CompoundTag;
     @nativeField(int32_t)
-    count:int32_t;
+    count: int32_t;
     @nativeField(bool_t)
-    overflow:bool_t;
+    overflow: bool_t;
 
     /** When the item is dropped this is air, it should be the item when it is picked up */
-    getItemStack():ItemStack {
+    getItemStack(): ItemStack {
         abstract();
     }
 }
@@ -796,17 +790,17 @@ export class InventoryTransaction extends AbstractClass {
     // @nativeField(CxxUnorderedMap.make(InventorySource, CxxVector.make(InventoryAction)))
     // actions:CxxUnorderedMap<InventorySource, CxxVector<InventoryAction>>;
     @nativeField(CxxVector.make(InventoryTransactionItemGroup), 0x40) // accessed in InventoryTransaction::~InventoryTransaction when calling std::vector<InventoryTransactionItemGroup>::_Tidy
-    content:CxxVector<InventoryTransactionItemGroup>;
+    content: CxxVector<InventoryTransactionItemGroup>;
 
     /** The packet will be cancelled if this is added wrongly */
-    addItemToContent(item:ItemStack, count:number):void {
+    addItemToContent(item: ItemStack, count: number): void {
         abstract();
     }
-    getActions(source:InventorySource):InventoryAction[] {
+    getActions(source: InventorySource): InventoryAction[] {
         return this._getActions(source).toArray();
     }
 
-    protected _getActions(source:InventorySource):CxxVector<InventoryAction> {
+    protected _getActions(source: InventorySource): CxxVector<InventoryAction> {
         abstract();
     }
 }
@@ -814,36 +808,36 @@ export class InventoryTransaction extends AbstractClass {
 @nativeClass()
 export class ComplexInventoryTransaction extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(uint8_t)
-    type:ComplexInventoryTransaction.Type;
+    type: ComplexInventoryTransaction.Type;
     @nativeField(InventoryTransaction)
-    data:InventoryTransaction;
+    data: InventoryTransaction;
 
-    isItemUseTransaction():this is ItemUseInventoryTransaction {
+    isItemUseTransaction(): this is ItemUseInventoryTransaction {
         return this.type === ComplexInventoryTransaction.Type.ItemUseTransaction;
     }
 
-    isItemUseOnEntityTransaction():this is ItemUseOnActorInventoryTransaction {
+    isItemUseOnEntityTransaction(): this is ItemUseOnActorInventoryTransaction {
         return this.type === ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction;
     }
 
-    isItemReleaseTransaction():this is ItemReleaseInventoryTransaction {
+    isItemReleaseTransaction(): this is ItemReleaseInventoryTransaction {
         return this.type === ComplexInventoryTransaction.Type.ItemReleaseTransaction;
     }
 }
-ComplexInventoryTransaction.setResolver(ptr=>{
+ComplexInventoryTransaction.setResolver(ptr => {
     if (ptr === null) return null;
     const transaction = ptr.as(ComplexInventoryTransaction);
     switch (transaction.type) {
-    case ComplexInventoryTransaction.Type.ItemUseTransaction:
-        return ptr.as(ItemUseInventoryTransaction);
-    case ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction:
-        return ptr.as(ItemUseOnActorInventoryTransaction);
-    case ComplexInventoryTransaction.Type.ItemReleaseTransaction:
-        return ptr.as(ItemReleaseInventoryTransaction);
-    default:
-        return transaction;
+        case ComplexInventoryTransaction.Type.ItemUseTransaction:
+            return ptr.as(ItemUseInventoryTransaction);
+        case ComplexInventoryTransaction.Type.ItemUseOnEntityTransaction:
+            return ptr.as(ItemUseOnActorInventoryTransaction);
+        case ComplexInventoryTransaction.Type.ItemReleaseTransaction:
+            return ptr.as(ItemReleaseInventoryTransaction);
+        default:
+            return transaction;
     }
 });
 
@@ -860,25 +854,25 @@ export namespace ComplexInventoryTransaction {
 @nativeClass(null)
 export class ItemUseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(uint32_t)
-    actionType:ItemUseInventoryTransaction.ActionType;
+    actionType: ItemUseInventoryTransaction.ActionType;
     @nativeField(BlockPos)
-    readonly pos:BlockPos;
+    readonly pos: BlockPos;
     @nativeField(uint32_t)
-    targetBlockId:uint32_t;
+    targetBlockId: uint32_t;
     @nativeField(int32_t)
-    face:int32_t;
+    face: int32_t;
     @nativeField(int32_t)
-    slot:int32_t;
+    slot: int32_t;
     @nativeField(NetworkItemStackDescriptor)
-    readonly descriptor:NetworkItemStackDescriptor;
+    readonly descriptor: NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    readonly fromPos:Vec3;
+    readonly fromPos: Vec3;
     /**
      * relative clicked coordinate from the block.
      * range: 0 <= x <= 1
      */
     @nativeField(Vec3)
-    readonly clickPos:Vec3;
+    readonly clickPos: Vec3;
 }
 
 export namespace ItemUseInventoryTransaction {
@@ -892,17 +886,17 @@ export namespace ItemUseInventoryTransaction {
 @nativeClass(null)
 export class ItemUseOnActorInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(ActorRuntimeID)
-    runtimeId:ActorRuntimeID;
+    runtimeId: ActorRuntimeID;
     @nativeField(uint32_t)
-    actionType:ItemUseOnActorInventoryTransaction.ActionType;
+    actionType: ItemUseOnActorInventoryTransaction.ActionType;
     @nativeField(int32_t)
-    slot:int32_t;
+    slot: int32_t;
     @nativeField(NetworkItemStackDescriptor)
-    descriptor:NetworkItemStackDescriptor;
+    descriptor: NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    readonly fromPos:Vec3;
+    readonly fromPos: Vec3;
     @nativeField(Vec3)
-    readonly hitPos:Vec3;
+    readonly hitPos: Vec3;
 }
 
 export namespace ItemUseOnActorInventoryTransaction {
@@ -916,13 +910,13 @@ export namespace ItemUseOnActorInventoryTransaction {
 @nativeClass(null)
 export class ItemReleaseInventoryTransaction extends ComplexInventoryTransaction {
     @nativeField(uint32_t)
-    actionType:ItemReleaseInventoryTransaction.ActionType;
+    actionType: ItemReleaseInventoryTransaction.ActionType;
     @nativeField(int32_t)
-    slot:int32_t;
+    slot: int32_t;
     @nativeField(NetworkItemStackDescriptor)
-    descriptor:NetworkItemStackDescriptor;
+    descriptor: NetworkItemStackDescriptor;
     @nativeField(Vec3)
-    readonly fromPos:Vec3;
+    readonly fromPos: Vec3;
 }
 
 export namespace ItemReleaseInventoryTransaction {

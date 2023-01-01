@@ -1,21 +1,21 @@
-import * as colors from 'colors';
-import * as readline from 'readline';
+import * as colors from "colors";
+import * as readline from "readline";
 import { createAbstractObject } from "./abstractobject";
-import { installMinecraftAddons } from './addoninstaller';
+import { installMinecraftAddons } from "./addoninstaller";
 import { asmcode } from "./asm/asmcode";
 import { asm, Register } from "./assembler";
-import { Bedrock } from './bds/bedrock';
+import { Bedrock } from "./bds/bedrock";
 import { CommandOutputSender, CommandPermissionLevel, CommandRegistry, MinecraftCommands } from "./bds/command";
 import { Dimension } from "./bds/dimension";
-import { GameRules } from './bds/gamerules';
+import { GameRules } from "./bds/gamerules";
 import { Level, ServerLevel } from "./bds/level";
-import * as nimodule from './bds/networkidentifier';
-import { RakNet } from './bds/raknet';
-import { RakNetInstance } from './bds/raknetinstance';
-import * as bd_server from './bds/server';
-import { StructureManager } from './bds/structure';
-import { proc } from './bds/symbols';
-import type { CommandResult, CommandResultType } from './commandresult';
+import * as nimodule from "./bds/networkidentifier";
+import { RakNet } from "./bds/raknet";
+import { RakNetInstance } from "./bds/raknetinstance";
+import * as bd_server from "./bds/server";
+import { StructureManager } from "./bds/structure";
+import { proc } from "./bds/symbols";
+import type { CommandResult, CommandResultType } from "./commandresult";
 import { CANCEL, Encoding } from "./common";
 import { Config } from "./config";
 import { bedrock_server_exe, cgate, ipfilter, MultiThreadQueue, NativePointer, StaticPointer, uv_async, VoidPointer } from "./core";
@@ -24,32 +24,30 @@ import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
-import { AbstractClass, nativeClass, nativeField } from './nativeclass';
+import { AbstractClass, nativeClass, nativeField } from "./nativeclass";
 import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
-import { loadAllPlugins } from './plugins';
+import { loadAllPlugins } from "./plugins";
 import { CxxStringWrapper } from "./pointer";
-import { procHacker } from './prochacker';
+import { procHacker } from "./prochacker";
 import { remapError } from "./source-map-support";
 import { MemoryUnlocker } from "./unlocker";
 import { DeferPromise, _tickCallback } from "./util";
-import { bdsxEqualsAssert } from './warning';
+import { bdsxEqualsAssert } from "./warning";
 
-declare module 'colors' {
-
-    export const brightRed:Color;
-    export const brightGreen:Color;
-    export const brightYellow:Color;
-    export const brightBlue:Color;
-    export const brightMagenta:Color;
-    export const brightCyan:Color;
-    export const brightWhite:Color;
-
+declare module "colors" {
+    export const brightRed: Color;
+    export const brightGreen: Color;
+    export const brightYellow: Color;
+    export const brightBlue: Color;
+    export const brightMagenta: Color;
+    export const brightCyan: Color;
+    export const brightWhite: Color;
 }
 
 class Liner {
-    private remaining = '';
-    write(str:string):string|null {
-        const lastidx = str.lastIndexOf('\n');
+    private remaining = "";
+    write(str: string): string | null {
+        const lastidx = str.lastIndexOf("\n");
         if (lastidx === -1) {
             this.remaining += str;
             return null;
@@ -61,95 +59,128 @@ class Liner {
     }
 }
 
-(global as any).server = createAbstractObject('Bedrock scripting API is removed');
+(global as any).server = createAbstractObject("Bedrock scripting API is removed");
 
 let launched = false;
 let closed = false;
-let nonOwnerPointerStructureManager:Bedrock.NonOwnerPointer<StructureManager>|null = null;
+let nonOwnerPointerStructureManager: Bedrock.NonOwnerPointer<StructureManager> | null = null;
 const loadingIsFired = DeferPromise.make<void>();
 const openIsFired = DeferPromise.make<void>();
 
-const bedrockLogLiner = new Liner;
+const bedrockLogLiner = new Liner();
 
 const commandQueue = new MultiThreadQueue(CxxString[NativeType.size]);
 const commandQueueBuffer = new CxxStringWrapper(true);
 
-function patchForStdio():void {
+function patchForStdio(): void {
     // hook bedrock log
-    asmcode.bedrockLogNp = makefunc.np((severity, msgptr, size)=>{
-        // void(*callback)(int severity, const char* msg, size_t size)
-        let line = bedrockLogLiner.write(msgptr.getString(size, 0, Encoding.Utf8));
-        if (line === null) return;
+    asmcode.bedrockLogNp = makefunc.np(
+        (severity, msgptr, size) => {
+            // void(*callback)(int severity, const char* msg, size_t size)
+            let line = bedrockLogLiner.write(msgptr.getString(size, 0, Encoding.Utf8));
+            if (line === null) return;
 
-        let color:colors.Color;
-        switch (severity) {
-        case 1:
-            color = colors.white;
-            break;
-        case 2:
-            color = colors.brightWhite;
-            break;
-        case 4:
-            color = colors.brightYellow;
-            break;
-        default:
-            color = colors.brightRed;
-            break;
-        }
-        if (events.serverLog.fire(line, color) === CANCEL) return;
-        line = color(line);
-        console.log(line);
-    }, void_t, {onError:asmcode.jsend_returnZero, name:'bedrockLogNp'}, int32_t, StaticPointer, int64_as_float_t);
-    procHacker.write('?BedrockLogOut@@YAXIPEBDZZ', 0, asm().jmp64(asmcode.logHook, Register.rax));
-
-    asmcode.CommandOutputSenderHookCallback = makefunc.np(line=>{
-        // void(*callback)(std::string* line)
-        const lines = line.split('\n');
-        if (lines[lines.length-1].length === 0) lines.pop();
-
-        for (const line of lines) {
-            if (events.commandOutput.fire(line) !== CANCEL) {
-                console.log(line);
+            let color: colors.Color;
+            switch (severity) {
+                case 1:
+                    color = colors.white;
+                    break;
+                case 2:
+                    color = colors.brightWhite;
+                    break;
+                case 4:
+                    color = colors.brightYellow;
+                    break;
+                default:
+                    color = colors.brightRed;
+                    break;
             }
-        }
-    }, void_t, {onError: asmcode.jsend_returnZero, name:`CommandOutputSenderHookCallback`}, CxxString);
-    procHacker.patching('hook-command-output', '?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z', 0x62, asmcode.CommandOutputSenderHook, Register.rdx, true, [
-        0x4C, 0x8B, 0x40, 0x10,       // mov r8,qword ptr ds:[rax+10]
-        0x48, 0x83, 0x78, 0x18, 0x10, // cmp qword ptr ds:[rax+18],10
-        0x72, 0x03,                   // jb bedrock_server.7FF7440A79A6
-        0x48, 0x8B, 0x00,             // mov rax,qword ptr ds:[rax]
-        0x48, 0x8B, 0xD0,             // mov rdx,rax
-        0x48, 0x8B, 0xCB,             // mov rcx,rbx
-        0xE8, null, null, null, null, // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic
-    ]);
+            if (events.serverLog.fire(line, color) === CANCEL) return;
+            line = color(line);
+            console.log(line);
+        },
+        void_t,
+        { onError: asmcode.jsend_returnZero, name: "bedrockLogNp" },
+        int32_t,
+        StaticPointer,
+        int64_as_float_t,
+    );
+    procHacker.write("?BedrockLogOut@@YAXIPEBDZZ", 0, asm().jmp64(asmcode.logHook, Register.rax));
+
+    asmcode.CommandOutputSenderHookCallback = makefunc.np(
+        line => {
+            // void(*callback)(std::string* line)
+            const lines = line.split("\n");
+            if (lines[lines.length - 1].length === 0) lines.pop();
+
+            for (const line of lines) {
+                if (events.commandOutput.fire(line) !== CANCEL) {
+                    console.log(line);
+                }
+            }
+        },
+        void_t,
+        {
+            onError: asmcode.jsend_returnZero,
+            name: `CommandOutputSenderHookCallback`,
+        },
+        CxxString,
+    );
+    procHacker.patching(
+        "hook-command-output",
+        "?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z",
+        0x62,
+        asmcode.CommandOutputSenderHook,
+        Register.rdx,
+        true,
+        // prettier-ignore
+        [
+            0x4C, 0x8B, 0x40, 0x10,       // mov r8,qword ptr ds:[rax+10]
+            0x48, 0x83, 0x78, 0x18, 0x10, // cmp qword ptr ds:[rax+18],10
+            0x72, 0x03,                   // jb bedrock_server.7FF7440A79A6
+            0x48, 0x8B, 0x00,             // mov rax,qword ptr ds:[rax]
+            0x48, 0x8B, 0xD0,             // mov rdx,rax
+            0x48, 0x8B, 0xCB,             // mov rcx,rbx
+            0xE8, null, null, null, null, // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic
+        ],
+    );
 
     // hook stdin
     asmcode.commandQueue = commandQueue;
     asmcode.MultiThreadQueueTryDequeue = MultiThreadQueue.tryDequeue;
-    procHacker.patching('hook-stdin-command', '?getLine@ConsoleInputReader@@QEAA_NAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', 0, asmcode.ConsoleInputReader_getLine_hook, Register.rax, false, [
-        0xE9, null, null, null, null,  // jmp SPSCQueue::tryDequeue
-        0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, // int3 ...
-    ]);
+    procHacker.patching(
+        "hook-stdin-command",
+        "?getLine@ConsoleInputReader@@QEAA_NAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+        0,
+        asmcode.ConsoleInputReader_getLine_hook,
+        Register.rax,
+        false,
+        // prettier-ignore
+        [
+            0xE9, null, null, null, null,  // jmp SPSCQueue::tryDequeue
+            0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, // int3 ...
+        ],
+    );
 
     // remove original stdin thread
     const justReturn = asm().ret().buffer();
-    procHacker.write('??0ConsoleInputReader@@QEAA@XZ', 0, justReturn);
-    procHacker.write('??1ConsoleInputReader@@QEAA@XZ', 0, justReturn);
-    procHacker.write('?unblockReading@ConsoleInputReader@@QEAAXXZ', 0, justReturn);
+    procHacker.write("??0ConsoleInputReader@@QEAA@XZ", 0, justReturn);
+    procHacker.write("??1ConsoleInputReader@@QEAA@XZ", 0, justReturn);
+    procHacker.write("?unblockReading@ConsoleInputReader@@QEAAXXZ", 0, justReturn);
 }
 
-function _launch(asyncResolve:()=>void):void {
+function _launch(asyncResolve: () => void): void {
     // check memory corruption for debug core
     if (cgate.memcheck != null) {
-        const memcheck = setInterval(()=>{
+        const memcheck = setInterval(() => {
             cgate.memcheck!();
         }, 500);
-        events.serverClose.on(()=>{
+        events.serverClose.on(() => {
             clearInterval(memcheck);
         });
     }
 
-    ipfilter.init(ip=>{
+    ipfilter.init(ip => {
         console.error(`[BDSX] traffic exceeded threshold for IP: ${ip}`);
     });
 
@@ -158,7 +189,7 @@ function _launch(asyncResolve:()=>void):void {
     uv_async.open();
 
     // uv async callback, when BDS closed perfectly (end of the main function)
-    function finishCallback():void {
+    function finishCallback(): void {
         closed = true; // for if BDS failed to execute the game thread.
 
         uv_async.close();
@@ -170,16 +201,14 @@ function _launch(asyncResolve:()=>void):void {
 
     // replace unicode encoder
     // int Core::StringConversions::toWide(char const *, int, wchar_t *, int)
-    const StringConversions$toWide = '?toWide@StringConversions@Core@@SAHPEBDHPEA_WH@Z';
+    const StringConversions$toWide = "?toWide@StringConversions@Core@@SAHPEBDHPEA_WH@Z";
     // int Core::StringConversions::toUtf8(wchar_t const *, int, char *, int)
-    const StringConversions$toUtf8 = '?toUtf8@StringConversions@Core@@SAHPEB_WHPEADH@Z';
+    const StringConversions$toUtf8 = "?toUtf8@StringConversions@Core@@SAHPEB_WHPEADH@Z";
     proc[StringConversions$toWide];
     proc[StringConversions$toUtf8];
     if (Config.REPLACE_UNICODE_ENCODER) {
-        procHacker.write(StringConversions$toWide, 0,
-            asm().jmp64(cgate.toWide, Register.rax));
-        procHacker.write(StringConversions$toUtf8, 0,
-            asm().jmp64(cgate.toUtf8, Register.rax));
+        procHacker.write(StringConversions$toWide, 0, asm().jmp64(cgate.toWide, Register.rax));
+        procHacker.write(StringConversions$toUtf8, 0, asm().jmp64(cgate.toUtf8, Register.rax));
     }
 
     // events
@@ -189,10 +218,10 @@ function _launch(asyncResolve:()=>void):void {
     asmcode.WaitForSingleObject = dll.kernel32.WaitForSingleObject.pointer;
 
     // call game thread entry
-    asmcode.gameThreadStart = makefunc.np(()=>{
+    asmcode.gameThreadStart = makefunc.np(() => {
         // empty
     }, void_t);
-    asmcode.gameThreadFinish = makefunc.np(()=>{
+    asmcode.gameThreadFinish = makefunc.np(() => {
         closed = true;
         decay(bedrockServer.serverInstance);
         decay(bedrockServer.networkHandler);
@@ -211,19 +240,21 @@ function _launch(asyncResolve:()=>void):void {
         nonOwnerPointerStructureManager!.dispose();
         decay(bedrockServer.structureManager);
     }, void_t);
-    asmcode.gameThreadInner = proc['<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()']; // caller of ServerInstance::_update
+    asmcode.gameThreadInner = proc["<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()"]; // caller of ServerInstance::_update
     asmcode.free = dll.ucrtbase.free.pointer;
 
     // hook game thread
     asmcode._Cnd_do_broadcast_at_thread_exit = dll.msvcp140._Cnd_do_broadcast_at_thread_exit;
 
     procHacker.patching(
-        'hook-game-thread',
-        'std::thread::_Invoke<std::tuple<<lambda_9c72527c89bc5df41fe482e4153a365f> >,0>', // caller of ServerInstance::_update
+        "hook-game-thread",
+        "std::thread::_Invoke<std::tuple<<lambda_9c72527c89bc5df41fe482e4153a365f> >,0>", // caller of ServerInstance::_update
         6,
         asmcode.gameThreadHook, // original depended
         Register.rax,
-        true, [
+        true,
+        // prettier-ignore
+        [
             0x48, 0x8B, 0xD9, // mov rbx,rcx
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server.<lambda_58543e61c869eb14b8c48d51d3fe120b>::operator()>
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
@@ -232,7 +263,12 @@ function _launch(asyncResolve:()=>void):void {
     );
 
     // get server instance
-    procHacker.hookingRawWithCallOriginal('??0ServerInstance@@QEAA@AEAVIMinecraftApp@@AEBV?$not_null@V?$NonOwnerPointer@VServerInstanceEventCoordinator@@@Bedrock@@@gsl@@@Z', asmcode.ServerInstance_ctor_hook, [Register.rcx, Register.rdx, Register.r8], []);
+    procHacker.hookingRawWithCallOriginal(
+        "??0ServerInstance@@QEAA@AEAVIMinecraftApp@@AEBV?$not_null@V?$NonOwnerPointer@VServerInstanceEventCoordinator@@@Bedrock@@@gsl@@@Z",
+        asmcode.ServerInstance_ctor_hook,
+        [Register.rcx, Register.rdx, Register.r8],
+        [],
+    );
 
     patchForStdio();
 
@@ -256,9 +292,9 @@ function _launch(asyncResolve:()=>void):void {
     const threadHandle = dll.kernel32.CreateThread(null, 0, asmcode.wrapped_main, null, 0, asmcode.addressof_bdsMainThreadId);
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('./bds/implements');
+    require("./bds/implements");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('./event_impl');
+    require("./event_impl");
 
     loadingIsFired.resolve();
     events.serverLoading.promiseFire();
@@ -266,104 +302,167 @@ function _launch(asyncResolve:()=>void):void {
 
     // hook on update
     asmcode.cgateNodeLoop = cgate.nodeLoop;
-    asmcode.updateEvTargetFire = makefunc.np(()=>{
-        events.serverUpdate.fire();
-        _tickCallback();
-    }, void_t, {name: 'events.serverUpdate.fire'});
+    asmcode.updateEvTargetFire = makefunc.np(
+        () => {
+            events.serverUpdate.fire();
+            _tickCallback();
+        },
+        void_t,
+        { name: "events.serverUpdate.fire" },
+    );
 
-    procHacker.patching('update-hook',
-        '<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()', // caller of ServerInstance::_update
-        0x8cc, asmcode.updateWithSleep, Register.rax, true, [
+    procHacker.patching(
+        "update-hook",
+        "<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()", // caller of ServerInstance::_update
+        0x8cc,
+        asmcode.updateWithSleep,
+        Register.rax,
+        true,
+        // prettier-ignore
+        [
             0x48, 0x2B, 0xC8,                         // sub rcx,rax
             0x48, 0x81, 0xF9, 0x88, 0x13, 0x00, 0x00, // cmp rcx,1388
             0x7C, 0x0B,                               // jl bedrock_server.7FF743BA7B50
             0x48, 0x8D, 0x4C, 0x24, 0x20,             // lea rcx,qword ptr ss:[rsp+20]
             0xE8, null, null, null, null,             // call <bedrock_server.void __cdecl std::this_thread::sleep_until<struct std::chrono::steady_clock,class std::chrono::duration<__int64,struct std::ratio<1,1000000000> > >(class std::chrono::ti
             0x90,                                     // nop
-        ]);
+        ],
+    );
 
     // hook on script starting
-    procHacker.hookingRawWithCallOriginal('?sendServerThreadStarted@ServerInstanceEventCoordinator@@QEAAXAEAVServerInstance@@@Z',
-        makefunc.np(()=>{
-            try {
-                _tickCallback();
-                cgate.nodeLoopOnce();
+    procHacker.hookingRawWithCallOriginal(
+        "?sendServerThreadStarted@ServerInstanceEventCoordinator@@QEAAXAEAVServerInstance@@@Z",
+        makefunc.np(
+            () => {
+                try {
+                    _tickCallback();
+                    cgate.nodeLoopOnce();
 
-                const Minecraft$getLevel = procHacker.js("?getLevel@Minecraft@@QEBAPEAVLevel@@XZ", Level, null, bd_server.Minecraft);
-                const Minecraft$getCommands = procHacker.js("?getCommands@Minecraft@@QEAAAEAVMinecraftCommands@@XZ", MinecraftCommands, null, bd_server.Minecraft);
-                const MinecraftCommands$getRegistry = procHacker.js('?getRegistry@MinecraftCommands@@QEAAAEAVCommandRegistry@@XZ', CommandRegistry, null, MinecraftCommands);
-                const Level$getGameRules = procHacker.js("?getGameRules@Level@@UEAAAEAVGameRules@@XZ", GameRules, null, Level);
-                const RakNetInstance$getPeer = procHacker.js('?getPeer@RakNetInstance@@UEAAPEAVRakPeerInterface@RakNet@@XZ', RakNet.RakPeer, null, RakNetInstance);
+                    const Minecraft$getLevel = procHacker.js("?getLevel@Minecraft@@QEBAPEAVLevel@@XZ", Level, null, bd_server.Minecraft);
+                    const Minecraft$getCommands = procHacker.js(
+                        "?getCommands@Minecraft@@QEAAAEAVMinecraftCommands@@XZ",
+                        MinecraftCommands,
+                        null,
+                        bd_server.Minecraft,
+                    );
+                    const MinecraftCommands$getRegistry = procHacker.js(
+                        "?getRegistry@MinecraftCommands@@QEAAAEAVCommandRegistry@@XZ",
+                        CommandRegistry,
+                        null,
+                        MinecraftCommands,
+                    );
+                    const Level$getGameRules = procHacker.js("?getGameRules@Level@@UEAAAEAVGameRules@@XZ", GameRules, null, Level);
+                    const RakNetInstance$getPeer = procHacker.js(
+                        "?getPeer@RakNetInstance@@UEAAPEAVRakPeerInterface@RakNet@@XZ",
+                        RakNet.RakPeer,
+                        null,
+                        RakNetInstance,
+                    );
 
-                // All pointer is found from ServerInstance::startServerThread with debug breaking.
-                const serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
-                const serverInstancePtr = serverInstance as VoidPointer as StaticPointer;
-                const dedicatedServer = serverInstancePtr.getPointerAs(bd_server.DedicatedServer, 0xa0);
-                bdsxEqualsAssert(dedicatedServer.vftable, proc['??_7DedicatedServer@@6BIMinecraftApp@@@'], 'Invalid dedicatedServer instance');
-                const networkHandler = serverInstancePtr.getPointerAs(nimodule.NetworkHandler, 0xb0);
-                bdsxEqualsAssert(networkHandler.vftable, proc['??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@'], 'Invalid networkHandler instance');
-                const minecraft = serverInstancePtr.getPointerAs(bd_server.Minecraft, 0xa8);
-                bdsxEqualsAssert(minecraft.vftable, proc['??_7Minecraft@@6B@'], 'Invalid minecraft instance');
+                    // All pointer is found from ServerInstance::startServerThread with debug breaking.
+                    const serverInstance = asmcode.serverInstance.as(bd_server.ServerInstance);
+                    const serverInstancePtr = serverInstance as VoidPointer as StaticPointer;
+                    const dedicatedServer = serverInstancePtr.getPointerAs(bd_server.DedicatedServer, 0xa0);
+                    bdsxEqualsAssert(dedicatedServer.vftable, proc["??_7DedicatedServer@@6BIMinecraftApp@@@"], "Invalid dedicatedServer instance");
+                    const networkHandler = serverInstancePtr.getPointerAs(nimodule.NetworkHandler, 0xb0);
+                    bdsxEqualsAssert(networkHandler.vftable, proc["??_7NetworkHandler@@6BIGameConnectionInfoProvider@Social@@@"], "Invalid networkHandler instance");
+                    const minecraft = serverInstancePtr.getPointerAs(bd_server.Minecraft, 0xa8);
+                    bdsxEqualsAssert(minecraft.vftable, proc["??_7Minecraft@@6B@"], "Invalid minecraft instance");
 
-                const level = Minecraft$getLevel(minecraft);
-                const nonOwnerPointerServerNetworkHandler = minecraft.getNonOwnerPointerServerNetworkHandler();
-                const minecraftCommands = Minecraft$getCommands(minecraft);
-                bdsxEqualsAssert(minecraftCommands.vftable, proc['??_7MinecraftCommands@@6B@'], 'Invalid minecraftCommands instance');
+                    const level = Minecraft$getLevel(minecraft);
+                    const nonOwnerPointerServerNetworkHandler = minecraft.getNonOwnerPointerServerNetworkHandler();
+                    const minecraftCommands = Minecraft$getCommands(minecraft);
+                    bdsxEqualsAssert(minecraftCommands.vftable, proc["??_7MinecraftCommands@@6B@"], "Invalid minecraftCommands instance");
 
-                const commandRegistry = MinecraftCommands$getRegistry(minecraftCommands);
-                const gameRules = Level$getGameRules(level);
+                    const commandRegistry = MinecraftCommands$getRegistry(minecraftCommands);
+                    const gameRules = Level$getGameRules(level);
 
-                const raknetInstance = (networkHandler as any as StaticPointer).getPointer(0x50).getPointerAs(RakNetInstance, 8);
-                bdsxEqualsAssert(raknetInstance.vftable, proc["??_7RakNetInstance@@6BConnector@@@"], 'Invalid raknetInstance');
-                const rakPeer = RakNetInstance$getPeer(raknetInstance);
-                bdsxEqualsAssert(rakPeer.vftable, proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"], 'Invalid rakPeer');
-                const commandOutputSender = (minecraftCommands as any as StaticPointer).getPointerAs(CommandOutputSender, 0x8);
-                const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get()!.subAs(nimodule.ServerNetworkHandler, 0x10); // XXX: unknown state. cut corners.
-                bdsxEqualsAssert(serverNetworkHandler.vftable, proc['??_7ServerNetworkHandler@@6BEnableQueueForMainThread@Threading@Bedrock@@@'], 'Invalid serverNetworkHandler');
-                const Level$getStructureManager = procHacker.js("?getStructureManager@Level@@UEAA?AV?$not_null@V?$NonOwnerPointer@VStructureManager@@@Bedrock@@@gsl@@XZ", Bedrock.NonOwnerPointer.make(StructureManager), {this:Level, structureReturn:true});
-                nonOwnerPointerStructureManager = Level$getStructureManager.call(level);
-                const structureManager = nonOwnerPointerStructureManager!.get()!;
-                bdsxEqualsAssert(structureManager.vftable, proc['??_7StructureManager@@6B@'], 'level.getStructureManager()');
+                    const raknetInstance = (networkHandler as any as StaticPointer).getPointer(0x50).getPointerAs(RakNetInstance, 8);
+                    bdsxEqualsAssert(raknetInstance.vftable, proc["??_7RakNetInstance@@6BConnector@@@"], "Invalid raknetInstance");
+                    const rakPeer = RakNetInstance$getPeer(raknetInstance);
+                    bdsxEqualsAssert(rakPeer.vftable, proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"], "Invalid rakPeer");
+                    const commandOutputSender = (minecraftCommands as any as StaticPointer).getPointerAs(CommandOutputSender, 0x8);
+                    const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get()!.subAs(nimodule.ServerNetworkHandler, 0x10); // XXX: unknown state. cut corners.
+                    bdsxEqualsAssert(
+                        serverNetworkHandler.vftable,
+                        proc["??_7ServerNetworkHandler@@6BEnableQueueForMainThread@Threading@Bedrock@@@"],
+                        "Invalid serverNetworkHandler",
+                    );
+                    const Level$getStructureManager = procHacker.js(
+                        "?getStructureManager@Level@@UEAA?AV?$not_null@V?$NonOwnerPointer@VStructureManager@@@Bedrock@@@gsl@@XZ",
+                        Bedrock.NonOwnerPointer.make(StructureManager),
+                        { this: Level, structureReturn: true },
+                    );
+                    nonOwnerPointerStructureManager = Level$getStructureManager.call(level);
+                    const structureManager = nonOwnerPointerStructureManager!.get()!;
+                    bdsxEqualsAssert(structureManager.vftable, proc["??_7StructureManager@@6B@"], "level.getStructureManager()");
 
-                Object.defineProperties(bedrockServer, {
-                    serverInstance: {value: serverInstance},
-                    networkHandler: {value: networkHandler},
-                    minecraft: {value: minecraft},
-                    dedicatedServer: {value: dedicatedServer},
-                    level: {value: level},
-                    serverNetworkHandler: {value: serverNetworkHandler},
-                    nonOwnerPointerServerNetworkHandler: {value: nonOwnerPointerServerNetworkHandler},
-                    minecraftCommands: {value: minecraftCommands},
-                    commandRegistry: {value: commandRegistry},
-                    gameRules: {value: gameRules},
-                    raknetInstance: {value: raknetInstance},
-                    rakPeer: {value: rakPeer},
-                    commandOutputSender: {value: commandOutputSender},
-                    structureManager: {value: structureManager},
-                });
+                    Object.defineProperties(bedrockServer, {
+                        serverInstance: { value: serverInstance },
+                        networkHandler: { value: networkHandler },
+                        minecraft: { value: minecraft },
+                        dedicatedServer: { value: dedicatedServer },
+                        level: { value: level },
+                        serverNetworkHandler: { value: serverNetworkHandler },
+                        nonOwnerPointerServerNetworkHandler: {
+                            value: nonOwnerPointerServerNetworkHandler,
+                        },
+                        minecraftCommands: { value: minecraftCommands },
+                        commandRegistry: { value: commandRegistry },
+                        gameRules: { value: gameRules },
+                        raknetInstance: { value: raknetInstance },
+                        rakPeer: { value: rakPeer },
+                        commandOutputSender: { value: commandOutputSender },
+                        structureManager: { value: structureManager },
+                    });
 
-                Object.defineProperty(bd_server, 'serverInstance', { value:serverInstance });
-                Object.defineProperty(nimodule, 'networkHandler', { value:networkHandler });
+                    Object.defineProperty(bd_server, "serverInstance", {
+                        value: serverInstance,
+                    });
+                    Object.defineProperty(nimodule, "networkHandler", {
+                        value: networkHandler,
+                    });
 
-                openIsFired.resolve();
-                events.serverOpen.fire();
-                events.serverOpen.clear(); // it will never fire again, clear it
-                asyncResolve();
+                    openIsFired.resolve();
+                    events.serverOpen.fire();
+                    events.serverOpen.clear(); // it will never fire again, clear it
+                    asyncResolve();
 
-                _tickCallback();
-                cgate.nodeLoopOnce();
-            } catch (err) {
-                events.errorFire(err);
-            }
-        }, void_t, {name: 'hook of ScriptEngine::startScriptLoading'}, VoidPointer),
-        [Register.rcx, Register.rdx], []);
+                    _tickCallback();
+                    cgate.nodeLoopOnce();
+                } catch (err) {
+                    events.errorFire(err);
+                }
+            },
+            void_t,
+            { name: "hook of ScriptEngine::startScriptLoading" },
+            VoidPointer,
+        ),
+        [Register.rcx, Register.rdx],
+        [],
+    );
 
-    procHacker.hookingRawWithCallOriginal('?startLeaveGame@Minecraft@@QEAAX_N@Z',
-        makefunc.np((mc, b)=>{
-            events.serverLeave.fire();
-        }, void_t, {name: 'hook of Minecraft::startLeaveGame'}, bd_server.Minecraft, bool_t), [Register.rcx, Register.rdx], []);
-    procHacker.hooking('?sendEvent@ServerInstanceEventCoordinator@@QEAAXAEBV?$EventRef@U?$ServerInstanceGameplayEvent@X@@@@@Z',
-        void_t, {name: 'hook of shutdown'}, VoidPointer, EventRef$ServerInstanceGameplayEvent$Void)((_this, ev)=>{
+    procHacker.hookingRawWithCallOriginal(
+        "?startLeaveGame@Minecraft@@QEAAX_N@Z",
+        makefunc.np(
+            (mc, b) => {
+                events.serverLeave.fire();
+            },
+            void_t,
+            { name: "hook of Minecraft::startLeaveGame" },
+            bd_server.Minecraft,
+            bool_t,
+        ),
+        [Register.rcx, Register.rdx],
+        [],
+    );
+    procHacker.hooking(
+        "?sendEvent@ServerInstanceEventCoordinator@@QEAAXAEBV?$EventRef@U?$ServerInstanceGameplayEvent@X@@@@@Z",
+        void_t,
+        { name: "hook of shutdown" },
+        VoidPointer,
+        EventRef$ServerInstanceGameplayEvent$Void,
+    )((_this, ev) => {
         if (ev.type === GameplayEvent.Stop) {
             events.serverStop.fire();
             _tickCallback();
@@ -373,9 +472,9 @@ function _launch(asyncResolve:()=>void):void {
     // graceful kill for Network port occupied
     // BDS crashes at terminating on `Network port occupied`. it kills the crashing thread and keeps the node thread.
     // and BDSX finishes at the end of the node thread.
-    asmcode.terminate = dll.ucrtbase.module.getProcAddress('terminate');
-    asmcode.ExitThread = dll.kernel32.module.getProcAddress('ExitThread');
-    procHacker.hookingRawWithoutOriginal('?terminate@details@gsl@@YAXXZ', asmcode.terminateHook);
+    asmcode.terminate = dll.ucrtbase.module.getProcAddress("terminate");
+    asmcode.ExitThread = dll.kernel32.module.getProcAddress("ExitThread");
+    procHacker.hookingRawWithoutOriginal("?terminate@details@gsl@@YAXXZ", asmcode.terminateHook);
 
     /**
      * send stdin to bedrockServer.executeCommandOnConsole
@@ -384,11 +483,11 @@ function _launch(asyncResolve:()=>void):void {
     bedrockServer.DefaultStdInHandler.install();
 }
 
-const stopfunc = procHacker.js('?stop@DedicatedServer@@UEAA_NXZ', void_t, null, VoidPointer);
+const stopfunc = procHacker.js("?stop@DedicatedServer@@UEAA_NXZ", void_t, null, VoidPointer);
 
 function sessionIdGrabber(text: string): void {
     const tmp = text.match(/\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d:\d{3} INFO\] Session ID (.*)$/);
-    if(tmp) {
+    if (tmp) {
         bedrockServer.sessionId = tmp[1];
         events.serverLog.remove(sessionIdGrabber);
     }
@@ -398,43 +497,49 @@ events.serverLog.on(sessionIdGrabber);
 export namespace bedrockServer {
     export let sessionId: string;
 
-    const abstractobject = createAbstractObject('BDS is not loaded yet');
+    const abstractobject = createAbstractObject("BDS is not loaded yet");
     // eslint-disable-next-line prefer-const
-    export let serverInstance:bd_server.ServerInstance = abstractobject;
+    export let serverInstance: bd_server.ServerInstance = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let networkHandler:nimodule.NetworkHandler = abstractobject;
+    export let networkHandler: nimodule.NetworkHandler = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let minecraft:bd_server.Minecraft = abstractobject;
+    export let minecraft: bd_server.Minecraft = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let level:ServerLevel = abstractobject;
+    export let level: ServerLevel = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let serverNetworkHandler:nimodule.ServerNetworkHandler = abstractobject;
+    export let serverNetworkHandler: nimodule.ServerNetworkHandler = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let dedicatedServer:bd_server.DedicatedServer = abstractobject;
+    export let dedicatedServer: bd_server.DedicatedServer = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let minecraftCommands:MinecraftCommands = abstractobject;
+    export let minecraftCommands: MinecraftCommands = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let commandRegistry:CommandRegistry = abstractobject;
+    export let commandRegistry: CommandRegistry = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let gameRules:GameRules = abstractobject;
+    export let gameRules: GameRules = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let raknetInstance:RakNetInstance = abstractobject;
+    export let raknetInstance: RakNetInstance = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let rakPeer:RakNet.RakPeer = abstractobject;
+    export let rakPeer: RakNet.RakPeer = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let commandOutputSender:CommandOutputSender = abstractobject;
+    export let commandOutputSender: CommandOutputSender = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let nonOwnerPointerServerNetworkHandler:Bedrock.NonOwnerPointer<nimodule.ServerNetworkHandler> = abstractobject;
+    export let nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<nimodule.ServerNetworkHandler> = abstractobject;
     // eslint-disable-next-line prefer-const
-    export let structureManager:StructureManager = abstractobject;
+    export let structureManager: StructureManager = abstractobject;
 
-    Object.defineProperty(bd_server, 'serverInstance', {value: abstractobject, writable: true});
-    Object.defineProperty(nimodule, 'networkHandler', {value: abstractobject, writable: true});
+    Object.defineProperty(bd_server, "serverInstance", {
+        value: abstractobject,
+        writable: true,
+    });
+    Object.defineProperty(nimodule, "networkHandler", {
+        value: abstractobject,
+        writable: true,
+    });
 
-    export function withLoading():Promise<void> {
+    export function withLoading(): Promise<void> {
         return loadingIsFired;
     }
-    export function afterOpen():Promise<void> {
+    export function afterOpen(): Promise<void> {
         return openIsFired;
     }
 
@@ -442,11 +547,11 @@ export namespace bedrockServer {
      * @remark It does not check BDS is loaded fully. It only checks the launch is called.
      * @deprecated Not intuitive & Useless.
      */
-    export function isLaunched():boolean {
+    export function isLaunched(): boolean {
         return launched;
     }
 
-    export function isClosed():boolean {
+    export function isClosed(): boolean {
         return closed;
     }
 
@@ -454,24 +559,21 @@ export namespace bedrockServer {
      * stop the BDS
      * It will stop next tick
      */
-    export function stop():void {
+    export function stop(): void {
         stopfunc(bedrockServer.dedicatedServer.add(8));
     }
 
-    export function forceKill(exitCode:number):never {
+    export function forceKill(exitCode: number): never {
         bedrock_server_exe.forceKill(exitCode);
     }
 
-    export async function launch():Promise<void> {
+    export async function launch(): Promise<void> {
         if (launched) {
-            throw remapError(Error('Cannot launch BDS again'));
+            throw remapError(Error("Cannot launch BDS again"));
         }
         launched = true;
 
-        await Promise.all([
-            loadAllPlugins(),
-            installMinecraftAddons(),
-        ]);
+        await Promise.all([loadAllPlugins(), installMinecraftAddons()]);
 
         await new Promise<void>(_launch);
     }
@@ -479,32 +581,57 @@ export namespace bedrockServer {
     /**
      * pass to stdin
      */
-    export function executeCommandOnConsole(command:string):void {
+    export function executeCommandOnConsole(command: string): void {
         commandQueueBuffer.construct();
         commandQueueBuffer.value = command;
         commandQueue.enqueue(commandQueueBuffer); // assumes the string is moved, and does not have the buffer anymore.
     }
 
-    export declare function executeCommand(command:`testfor ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestFor>;
+    export declare function executeCommand(
+        command: `testfor ${string}`,
+        mute?: CommandResultType,
+        permissionLevel?: CommandPermissionLevel,
+        dimension?: Dimension | null,
+    ): CommandResult<CommandResult.TestFor>;
 
-    export declare function executeCommand(command:`testforblock ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlock>;
+    export declare function executeCommand(
+        command: `testforblock ${string}`,
+        mute?: CommandResultType,
+        permissionLevel?: CommandPermissionLevel,
+        dimension?: Dimension | null,
+    ): CommandResult<CommandResult.TestForBlock>;
 
-    export declare function executeCommand(command:`testforblocks ${string}`, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.TestForBlocks>;
+    export declare function executeCommand(
+        command: `testforblocks ${string}`,
+        mute?: CommandResultType,
+        permissionLevel?: CommandPermissionLevel,
+        dimension?: Dimension | null,
+    ): CommandResult<CommandResult.TestForBlocks>;
 
-    export declare function executeCommand(command:'list', mute?:CommandResultType, permissionLevel?:CommandPermissionLevel, dimension?:Dimension|null):CommandResult<CommandResult.List>;
+    export declare function executeCommand(
+        command: "list",
+        mute?: CommandResultType,
+        permissionLevel?: CommandPermissionLevel,
+        dimension?: Dimension | null,
+    ): CommandResult<CommandResult.List>;
 
     /**
      * it does the same thing with executeCommandOnConsole
      * but call the internal function directly
      * @param mute suppress outputs if true, returns data if null
      */
-    export declare function executeCommand(command:string, mute?:CommandResultType, permissionLevel?:CommandPermissionLevel|null, dimension?:Dimension|null):CommandResult<CommandResult.Any>;
+    export declare function executeCommand(
+        command: string,
+        mute?: CommandResultType,
+        permissionLevel?: CommandPermissionLevel | null,
+        dimension?: Dimension | null,
+    ): CommandResult<CommandResult.Any>;
 
-    let stdInHandler:DefaultStdInHandler|null = null;
+    let stdInHandler: DefaultStdInHandler | null = null;
 
     export abstract class DefaultStdInHandler {
-        protected online:(line:string)=>void = executeCommandOnConsole;
-        protected readonly onclose = ():void=>{
+        protected online: (line: string) => void = executeCommandOnConsole;
+        protected readonly onclose = (): void => {
             this.close();
         };
 
@@ -512,9 +639,9 @@ export namespace bedrockServer {
             // empty
         }
 
-        abstract close():void;
+        abstract close(): void;
 
-        static install():DefaultStdInHandler {
+        static install(): DefaultStdInHandler {
             if (Config.USE_NATIVE_STDIN_HANDLER) {
                 return NativeStdInHandler.install();
             } else {
@@ -535,11 +662,11 @@ export namespace bedrockServer {
         constructor() {
             super();
 
-            this.rl.on('line', line=>this.online(line));
+            this.rl.on("line", line => this.online(line));
             events.serverClose.on(this.onclose);
         }
 
-        close():void {
+        close(): void {
             if (stdInHandler === null) return;
             console.assert(stdInHandler !== null);
             stdInHandler = null;
@@ -548,29 +675,29 @@ export namespace bedrockServer {
             events.serverClose.remove(this.onclose);
         }
 
-        static install():NodeStdInHandler {
-            if (stdInHandler !== null) throw remapError(Error('Already opened'));
-            return stdInHandler = new NodeStdInHandler;
+        static install(): NodeStdInHandler {
+            if (stdInHandler !== null) throw remapError(Error("Already opened"));
+            return (stdInHandler = new NodeStdInHandler());
         }
     }
 
     export class NativeStdInHandler extends DefaultStdInHandler {
-        private readonly getline = new GetLine(line=>this.online(line));
+        private readonly getline = new GetLine(line => this.online(line));
         constructor() {
             super();
             events.serverClose.on(this.onclose);
         }
 
-        close():void {
+        close(): void {
             if (stdInHandler === null) return;
             console.assert(stdInHandler !== null);
             stdInHandler = null;
             this.getline.close();
         }
 
-        static install():NativeStdInHandler {
-            if (stdInHandler !== null) throw remapError(Error('Already opened'));
-            return stdInHandler = new NativeStdInHandler;
+        static install(): NativeStdInHandler {
+            if (stdInHandler !== null) throw remapError(Error("Already opened"));
+            return (stdInHandler = new NativeStdInHandler());
         }
     }
 }
@@ -589,5 +716,5 @@ enum GameplayEvent {
 @nativeClass()
 class EventRef$ServerInstanceGameplayEvent$Void extends AbstractClass {
     @nativeField(int32_t)
-    type:GameplayEvent;
+    type: GameplayEvent;
 }

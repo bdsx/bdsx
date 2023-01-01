@@ -1,5 +1,5 @@
-import * as colors from 'colors';
-import { VoidPointer } from './core';
+import * as colors from "colors";
+import { VoidPointer } from "./core";
 import { getCurrentStackLine } from "./source-map-support";
 
 const printed = new Set<string>();
@@ -7,14 +7,14 @@ const printed = new Set<string>();
 /**
  * print warning once even it multiple
  */
-export function bdsxWarningOnce(message:string):void {
+export function bdsxWarningOnce(message: string): void {
     const key = getCurrentStackLine(1);
     if (printed.has(key)) return;
     printed.add(key);
-    console.error(colors.yellow('[BDSX] '+message));
+    console.error(colors.yellow("[BDSX] " + message));
 }
 
-export function bdsxEqualsAssert(actual:unknown, expected:unknown, message:string):void {
+export function bdsxEqualsAssert(actual: unknown, expected: unknown, message: string): void {
     if (expected === actual) return;
     if (expected instanceof VoidPointer && actual instanceof VoidPointer) {
         if (expected.equalsptr(actual)) return;

@@ -22,12 +22,12 @@ export enum Difficulty {
 }
 
 export class Level extends NativeClass {
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     /** @deprecated Use `this.getPlayers()` instead */
-    get players():CxxVectorLike<ServerPlayer> {
+    get players(): CxxVectorLike<ServerPlayer> {
         const players = new CxxVectorLike(this.getPlayers());
-        Object.defineProperty(this, 'players', {
-            get(){
+        Object.defineProperty(this, "players", {
+            get() {
                 players.setFromArray(this.getPlayers());
                 return players;
             },
@@ -38,19 +38,19 @@ export class Level extends NativeClass {
     /**
      * Returns an array of all online players in the level
      */
-    getPlayers():ServerPlayer[] {
+    getPlayers(): ServerPlayer[] {
         abstract();
     }
-    getUsers():CxxVector<EntityRefTraits> {
+    getUsers(): CxxVector<EntityRefTraits> {
         abstract();
     }
-    getActiveUsers():CxxVector<WeakEntityRef> {
+    getActiveUsers(): CxxVector<WeakEntityRef> {
         abstract();
     }
-    protected _getEntities():CxxVector<EntityRefTraits> {
+    protected _getEntities(): CxxVector<EntityRefTraits> {
         abstract();
     }
-    getEntities():Actor[] {
+    getEntities(): Actor[] {
         abstract();
     }
     getRuntimeEntity(runtimeId: ActorRuntimeID, getRemoved: boolean = false): Actor | null {
@@ -59,10 +59,10 @@ export class Level extends NativeClass {
     getRuntimePlayer(runtimeId: ActorRuntimeID): Player | null {
         abstract();
     }
-    createDimension(id:DimensionId):Dimension {
+    createDimension(id: DimensionId): Dimension {
         abstract();
     }
-    getOrCreateDimension(id:DimensionId):WeakRefT<Dimension> {
+    getOrCreateDimension(id: DimensionId): WeakRefT<Dimension> {
         abstract();
     }
     /**
@@ -70,129 +70,129 @@ export class Level extends NativeClass {
      *
      * @returns {boolean} Whether the block was destroyed successfully
      */
-    destroyBlock(blockSource:BlockSource, blockPos:BlockPos, dropResources:boolean):boolean {
+    destroyBlock(blockSource: BlockSource, blockPos: BlockPos, dropResources: boolean): boolean {
         abstract();
     }
     /**
      * Gets an entity with the given unique id
      */
-    fetchEntity(actorUniqueId:ActorUniqueID, getRemoved:boolean):Actor | null {
+    fetchEntity(actorUniqueId: ActorUniqueID, getRemoved: boolean): Actor | null {
         abstract();
     }
     /**
      * Returns the number of current online players
      */
-    getActivePlayerCount():number {
+    getActivePlayerCount(): number {
         abstract();
     }
     /**
      * Returns the ActorFactory instance
      */
-    getActorFactory():ActorFactory {
+    getActorFactory(): ActorFactory {
         abstract();
     }
     /**
      * Returns the AdventureSettings instance
      */
-    getAdventureSettings():AdventureSettings {
+    getAdventureSettings(): AdventureSettings {
         abstract();
     }
     /**
      * Returns the BlockPalette instance
      */
-    getBlockPalette():BlockPalette {
+    getBlockPalette(): BlockPalette {
         abstract();
     }
     /**
      * Returns the Dimension instance
      */
-    getDimension(dimension:DimensionId):Dimension|null {
+    getDimension(dimension: DimensionId): Dimension | null {
         abstract();
     }
-    getDimensionWeakRef(dimension:DimensionId):WeakRefT<Dimension> {
+    getDimensionWeakRef(dimension: DimensionId): WeakRefT<Dimension> {
         abstract();
     }
     /**
      * Returns the LevelData instance
      */
-    getLevelData():LevelData {
+    getLevelData(): LevelData {
         abstract();
     }
     /**
      * Returns the GameRules instance
      * @deprecated use bedrockServer.gameRules
      */
-    getGameRules():GameRules {
+    getGameRules(): GameRules {
         abstract();
     }
     /**
      * Returns the Scoreboard instance
      */
-    getScoreboard():Scoreboard {
+    getScoreboard(): Scoreboard {
         abstract();
     }
     /**
      * Returns the level's random seed
      */
-    getSeed():number {
+    getSeed(): number {
         abstract();
     }
     /**
      * Constructs a StructureManager instance, you need to destruct it later
      * @deprecated use bedrockServer.structureManager
      */
-    getStructureManager():StructureManager {
+    getStructureManager(): StructureManager {
         abstract();
     }
     /**
      * Returns the Spawner instance
      */
-    getSpawner():Spawner {
+    getSpawner(): Spawner {
         abstract();
     }
     /**
      * Returns the TagRegistry instance
      */
-    getTagRegistry():TagRegistry {
+    getTagRegistry(): TagRegistry {
         abstract();
     }
     /**
      * Returns the level's time
      */
-    getTime():number {
+    getTime(): number {
         abstract();
     }
     /**
      * Returns the level's current tick
      */
-    getCurrentTick():number {
+    getCurrentTick(): number {
         abstract();
     }
     /**
      * Returns whether the level has allow-cheats turned on
      */
-    hasCommandsEnabled():boolean {
+    hasCommandsEnabled(): boolean {
         abstract();
     }
     /**
      * Changes the allow-cheats state of the level
      */
-    setCommandsEnabled(value:boolean):void {
+    setCommandsEnabled(value: boolean): void {
         abstract();
     }
-    setShouldSendSleepMessage(value:boolean):void {
+    setShouldSendSleepMessage(value: boolean): void {
         abstract();
     }
     /**
      * Changes the level's time
      */
-    setTime(time: number):void {
+    setTime(time: number): void {
         abstract();
     }
     /**
      * Syncs the level's game rules with all clients
      */
-    syncGameRules():void {
+    syncGameRules(): void {
         abstract();
     }
     /**
@@ -202,7 +202,7 @@ export class Level extends NativeClass {
      *
      * @see https://www.digminecraft.com/lists/particle_list_pe.php
      * */
-    spawnParticleEffect(effectName:string, spawnLocation:Vec3, dimension:Dimension):void {
+    spawnParticleEffect(effectName: string, spawnLocation: Vec3, dimension: Dimension): void {
         abstract();
     }
     /**
@@ -218,24 +218,33 @@ export class Level extends NativeClass {
         abstract();
     }
 
-    setDefaultSpawn(pos:BlockPos):void {
+    setDefaultSpawn(pos: BlockPos): void {
         abstract();
     }
 
-    getDefaultSpawn():BlockPos {
+    getDefaultSpawn(): BlockPos {
         abstract();
     }
 
-    explode(region: BlockSource, source: Actor | null, pos: Vec3, explosionRadius: number, fire: boolean, breaksBlocks: boolean, maxResistance: number, allowUnderwater: boolean): void {
+    explode(
+        region: BlockSource,
+        source: Actor | null,
+        pos: Vec3,
+        explosionRadius: number,
+        fire: boolean,
+        breaksBlocks: boolean,
+        maxResistance: number,
+        allowUnderwater: boolean,
+    ): void {
         abstract();
     }
-    getPlayerByXuid(xuid:string): Player | null {
+    getPlayerByXuid(xuid: string): Player | null {
         abstract();
     }
     getDifficulty(): Difficulty {
         abstract();
     }
-    setDifficulty(difficulty:Difficulty): void {
+    setDifficulty(difficulty: Difficulty): void {
         abstract();
     }
 
@@ -252,63 +261,59 @@ export class Level extends NativeClass {
     }
 }
 
-export class ServerLevel extends Level {
-}
+export class ServerLevel extends Level {}
 
 export class LevelData extends NativeClass {
-    getGameDifficulty():Difficulty {
+    getGameDifficulty(): Difficulty {
         abstract();
     }
-    setGameDifficulty(value:Difficulty):void {
+    setGameDifficulty(value: Difficulty): void {
         abstract();
     }
 }
 
-export class ActorFactory extends NativeClass {
-}
+export class ActorFactory extends NativeClass {}
 export class BlockPalette extends NativeClass {
     /** @param name only accepts format like "minecraft:wool" */
-    getBlockLegacy(name:BlockId):BlockLegacy;
-    getBlockLegacy(name:string):BlockLegacy;
-    getBlockLegacy(name:BlockId|string):BlockLegacy {
+    getBlockLegacy(name: BlockId): BlockLegacy;
+    getBlockLegacy(name: string): BlockLegacy;
+    getBlockLegacy(name: BlockId | string): BlockLegacy {
         abstract();
     }
 }
 
-export class AdventureSettings extends NativeClass {
-}
+export class AdventureSettings extends NativeClass {}
 
-export class TagRegistry extends NativeClass {
-}
+export class TagRegistry extends NativeClass {}
 
 export class Spawner extends NativeClass {
-    spawnItem(region:BlockSource, itemStack:ItemStack, pos:Vec3, throwTime:number):ItemActor {
+    spawnItem(region: BlockSource, itemStack: ItemStack, pos: Vec3, throwTime: number): ItemActor {
         abstract();
     }
-    spawnMob(region:BlockSource, id:ActorDefinitionIdentifier, pos:Vec3, naturalSpawn = false, surface = true, fromSpawner = false):Actor {
+    spawnMob(region: BlockSource, id: ActorDefinitionIdentifier, pos: Vec3, naturalSpawn = false, surface = true, fromSpawner = false): Actor {
         abstract();
     }
 }
 
 export enum LevelEvent {
-    SoundClick = 0x3E8,
-    SoundClickFail = 0x3E9,
-    SoundLaunch = 0x3EA,
-    SoundOpenDoor = 0x3EB,
-    SoundFizz = 0x3EC,
-    SoundFuse = 0x3ED,
-    SoundPlayRecording = 0x3EE,
-    SoundGhastWarning = 0x3EF,
-    SoundGhastFireball = 0x3F0,
-    SoundBlazeFireball = 0x3F1,
-    SoundZombieWoodenDoor = 0x3F2,
-    SoundZombieDoorCrash = 0x3F4,
-    SoundZombieInfected = 0x3F8,
-    SoundZombieConverted = 0x3F9,
-    SoundEndermanTeleport = 0x3FA,
-    SoundAnvilBroken = 0x3FC,
-    SoundAnvilUsed = 0x3FD,
-    SoundAnvilLand = 0x3FE,
+    SoundClick = 0x3e8,
+    SoundClickFail = 0x3e9,
+    SoundLaunch = 0x3ea,
+    SoundOpenDoor = 0x3eb,
+    SoundFizz = 0x3ec,
+    SoundFuse = 0x3ed,
+    SoundPlayRecording = 0x3ee,
+    SoundGhastWarning = 0x3ef,
+    SoundGhastFireball = 0x3f0,
+    SoundBlazeFireball = 0x3f1,
+    SoundZombieWoodenDoor = 0x3f2,
+    SoundZombieDoorCrash = 0x3f4,
+    SoundZombieInfected = 0x3f8,
+    SoundZombieConverted = 0x3f9,
+    SoundEndermanTeleport = 0x3fa,
+    SoundAnvilBroken = 0x3fc,
+    SoundAnvilUsed = 0x3fd,
+    SoundAnvilLand = 0x3fe,
     SoundInfinityArrowPickup = 0x406,
     SoundTeleportEnderPearl = 0x408,
     SoundAddItem = 0x410,
@@ -316,70 +321,70 @@ export enum LevelEvent {
     SoundItemFramePlace = 0x412,
     SoundItemFrameRemoveItem = 0x413,
     SoundItemFrameRotateItem = 0x414,
-    SoundExperienceOrbPickup = 0x41B,
-    SoundTotemUsed = 0x41C,
+    SoundExperienceOrbPickup = 0x41b,
+    SoundTotemUsed = 0x41c,
     SoundArmorStandBreak = 0x424,
     SoundArmorStandHit = 0x425,
     SoundArmorStandLand = 0x426,
     SoundArmorStandPlace = 0x427,
-    ParticlesShoot = 0x7D0,
-    ParticlesDestroyBlock = 0x7D1,
-    ParticlesPotionSplash = 0x7D2,
-    ParticlesEyeOfEnderDeath = 0x7D3,
-    ParticlesMobBlockSpawn = 0x7D4,
-    ParticleCropGrowth = 0x7D5,
-    ParticleSoundGuardianGhost = 0x7D6,
-    ParticleDeathSmoke = 0x7D7,
-    ParticleDenyBlock = 0x7D8,
-    ParticleGenericSpawn = 0x7D9,
-    ParticlesDragonEgg = 0x7DA,
-    ParticlesCropEaten = 0x7DB,
-    ParticlesCrit = 0x7DC,
-    ParticlesTeleport = 0x7DD,
-    ParticlesCrackBlock = 0x7DE,
-    ParticlesBubble = 0x7DF,
-    ParticlesEvaporate = 0x7E0,
-    ParticlesDestroyArmorStand = 0x7E1,
-    ParticlesBreakingEgg = 0x7E2,
-    ParticleDestroyEgg = 0x7E3,
-    ParticlesEvaporateWater = 0x7E4,
-    ParticlesDestroyBlockNoSound = 0x7E5,
-    ParticlesKnockbackRoar = 0x7E6,
-    ParticlesTeleportTrail = 0x7E7,
-    ParticlesPointCloud = 0x7E8,
-    ParticlesExplosion = 0x7E9,
-    ParticlesBlockExplosion = 0x7EA,
-    StartRaining = 0xB9,
-    StartThunderstorm = 0xBA,
-    StopRaining = 0xBB,
-    StopThunderstorm = 0xBC,
-    GlobalPause = 0xBD,
-    SimTimeStep = 0xBE,
-    SimTimeScale = 0xBF,
-    ActivateBlock = 0xDAC,
-    CauldronExplode = 0xDAD,
-    CauldronDyeArmor = 0xDAE,
-    CauldronCleanArmor = 0xDAF,
-    CauldronFillPotion = 0xDB0,
-    CauldronTakePotion = 0xDB1,
-    CauldronFillWater = 0xDB2,
-    CauldronTakeWater = 0xDB3,
-    CauldronAddDye = 0xDB4,
-    CauldronCleanBanner = 0xDB5,
-    CauldronFlush = 0xDB6,
-    AgentSpawnEffect = 0xDB7,
-    CauldronFillLava = 0xDB8,
-    CauldronTakeLava = 0xDB9,
-    StartBlockCracking = 0xE10,
-    StopBlockCracking = 0xE11,
-    UpdateBlockCracking = 0xE12,
+    ParticlesShoot = 0x7d0,
+    ParticlesDestroyBlock = 0x7d1,
+    ParticlesPotionSplash = 0x7d2,
+    ParticlesEyeOfEnderDeath = 0x7d3,
+    ParticlesMobBlockSpawn = 0x7d4,
+    ParticleCropGrowth = 0x7d5,
+    ParticleSoundGuardianGhost = 0x7d6,
+    ParticleDeathSmoke = 0x7d7,
+    ParticleDenyBlock = 0x7d8,
+    ParticleGenericSpawn = 0x7d9,
+    ParticlesDragonEgg = 0x7da,
+    ParticlesCropEaten = 0x7db,
+    ParticlesCrit = 0x7dc,
+    ParticlesTeleport = 0x7dd,
+    ParticlesCrackBlock = 0x7de,
+    ParticlesBubble = 0x7df,
+    ParticlesEvaporate = 0x7e0,
+    ParticlesDestroyArmorStand = 0x7e1,
+    ParticlesBreakingEgg = 0x7e2,
+    ParticleDestroyEgg = 0x7e3,
+    ParticlesEvaporateWater = 0x7e4,
+    ParticlesDestroyBlockNoSound = 0x7e5,
+    ParticlesKnockbackRoar = 0x7e6,
+    ParticlesTeleportTrail = 0x7e7,
+    ParticlesPointCloud = 0x7e8,
+    ParticlesExplosion = 0x7e9,
+    ParticlesBlockExplosion = 0x7ea,
+    StartRaining = 0xb9,
+    StartThunderstorm = 0xba,
+    StopRaining = 0xbb,
+    StopThunderstorm = 0xbc,
+    GlobalPause = 0xbd,
+    SimTimeStep = 0xbe,
+    SimTimeScale = 0xbf,
+    ActivateBlock = 0xdac,
+    CauldronExplode = 0xdad,
+    CauldronDyeArmor = 0xdae,
+    CauldronCleanArmor = 0xdaf,
+    CauldronFillPotion = 0xdb0,
+    CauldronTakePotion = 0xdb1,
+    CauldronFillWater = 0xdb2,
+    CauldronTakeWater = 0xdb3,
+    CauldronAddDye = 0xdb4,
+    CauldronCleanBanner = 0xdb5,
+    CauldronFlush = 0xdb6,
+    AgentSpawnEffect = 0xdb7,
+    CauldronFillLava = 0xdb8,
+    CauldronTakeLava = 0xdb9,
+    StartBlockCracking = 0xe10,
+    StopBlockCracking = 0xe11,
+    UpdateBlockCracking = 0xe12,
     AllPlayersSleeping = 0x2648,
     JumpPrevented = 0x2652,
     ParticleLegacyEvent = 0x4000,
 }
 
 export enum BedSleepingResult {
-    OK_2 = 0 ,
+    OK_2 = 0,
     NOT_POSSIBLE_HERE = 1,
     NOT_POSSIBLE_NOW = 2,
     TOO_FAR_AWAY = 3,

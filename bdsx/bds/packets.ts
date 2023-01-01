@@ -4,7 +4,21 @@ import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { AbstractClass, MantleClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, CxxStringWith8Bytes, float32_t, int16_t, int32_t, int64_as_float_t, int8_t, NativeType, uint16_t, uint32_t, uint8_t } from "../nativetype";
+import {
+    bin64_t,
+    bool_t,
+    CxxString,
+    CxxStringWith8Bytes,
+    float32_t,
+    int16_t,
+    int32_t,
+    int64_as_float_t,
+    int8_t,
+    NativeType,
+    uint16_t,
+    uint32_t,
+    uint8_t,
+} from "../nativetype";
 import { ActorDefinitionIdentifier, ActorLink, ActorRuntimeID, ActorUniqueID } from "./actor";
 import { AttributeInstanceHandle } from "./attribute";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
@@ -23,24 +37,24 @@ const CxxVector$string = CxxVector.make(CxxString);
 @nativeClass(null)
 export class LoginPacket extends Packet {
     @nativeField(int32_t)
-	protocol:int32_t;
+    protocol: int32_t;
     /**
      * it can be null if the wrong client version
      */
     @nativeField(ConnectionRequest.ref())
-	connreq:ConnectionRequest|null;
+    connreq: ConnectionRequest | null;
 }
 
 @nativeClass(null)
 export class PlayStatusPacket extends Packet {
     @nativeField(int32_t)
-    status:int32_t;
+    status: int32_t;
 }
 
 @nativeClass(null)
 export class ServerToClientHandshakePacket extends Packet {
     @nativeField(CxxString)
-    jwt:CxxString;
+    jwt: CxxString;
 }
 
 @nativeClass(null)
@@ -51,9 +65,9 @@ export class ClientToServerHandshakePacket extends Packet {
 @nativeClass(null)
 export class DisconnectPacket extends Packet {
     @nativeField(bool_t)
-    skipMessage:bool_t;
+    skipMessage: bool_t;
     @nativeField(CxxString, 0x38)
-    message:CxxString;
+    message: CxxString;
 }
 
 export enum PackType {
@@ -168,19 +182,19 @@ export class ResourcePackClientResponsePacket extends Packet {
 @nativeClass(null)
 export class TextPacket extends Packet {
     @nativeField(uint8_t)
-    type:TextPacket.Types;
+    type: TextPacket.Types;
     @nativeField(CxxString)
-    name:CxxString;
+    name: CxxString;
     @nativeField(CxxString)
-    message:CxxString;
+    message: CxxString;
     @nativeField(CxxVector$string)
-    params:CxxVector<CxxString>;
+    params: CxxVector<CxxString>;
     @nativeField(bool_t, 0x90)
-    needsTranslation:bool_t;
+    needsTranslation: bool_t;
     @nativeField(CxxString, 0x98)
-    xboxUserId:CxxString;
+    xboxUserId: CxxString;
     @nativeField(CxxString)
-    platformChatId:CxxString;
+    platformChatId: CxxString;
 }
 export namespace TextPacket {
     export enum Types {
@@ -207,19 +221,19 @@ export namespace TextPacket {
 @nativeClass(null)
 export class SetTimePacket extends Packet {
     @nativeField(int32_t)
-    time:int32_t;
+    time: int32_t;
 }
 
 @nativeClass(null)
 export class LevelSettings extends MantleClass {
     @nativeField(int64_as_float_t)
-    seed:int64_as_float_t;
+    seed: int64_as_float_t;
 }
 
 @nativeClass(null)
 export class StartGamePacket extends Packet {
     @nativeField(LevelSettings)
-    readonly settings:LevelSettings;
+    readonly settings: LevelSettings;
 }
 @nativeClass(null)
 export class AddPlayerPacket extends Packet {
@@ -229,27 +243,30 @@ export class AddPlayerPacket extends Packet {
 @nativeClass(null)
 export class AddActorPacket extends Packet {
     @nativeField(CxxVector.make(ActorLink))
-    readonly links:CxxVector<ActorLink>;
+    readonly links: CxxVector<ActorLink>;
     @nativeField(Vec3)
-    readonly pos:Vec3;
+    readonly pos: Vec3;
     @nativeField(Vec3)
-    readonly velocity:Vec3;
+    readonly velocity: Vec3;
     @nativeField(Vec2)
-    readonly rot:Vec2;
+    readonly rot: Vec2;
     @nativeField(float32_t)
-    headYaw:float32_t;
+    headYaw: float32_t;
     @nativeField(ActorUniqueID)
-    entityId:ActorUniqueID;
+    entityId: ActorUniqueID;
     @nativeField(ActorRuntimeID)
-    runtimeId:ActorRuntimeID;
+    runtimeId: ActorRuntimeID;
     // @nativeField(SynchedActorData.ref())
     // readonly entityData:SynchedActorData;
     // @nativeField(CxxVector.make(DataItem.ref()))
     // readonly data:CxxVector<DataItem>;
-    @nativeField(ActorDefinitionIdentifier, {offset:0x08 + 0x18, relative:true})
-    readonly type:ActorDefinitionIdentifier;
+    @nativeField(ActorDefinitionIdentifier, {
+        offset: 0x08 + 0x18,
+        relative: true,
+    })
+    readonly type: ActorDefinitionIdentifier;
     @nativeField(CxxVector.make(AttributeInstanceHandle))
-    readonly attributeHandles:CxxVector<AttributeInstanceHandle>;
+    readonly attributeHandles: CxxVector<AttributeInstanceHandle>;
 }
 
 @nativeClass(null)
@@ -361,21 +378,21 @@ export class LevelSoundEventPacketV1 extends Packet {
 @nativeClass(null)
 export class LevelEventPacket extends Packet {
     @nativeField(int32_t)
-    eventId:int32_t;
+    eventId: int32_t;
     @nativeField(Vec3)
-    readonly pos:Vec3;
+    readonly pos: Vec3;
     @nativeField(int32_t)
-    data:int32_t;
+    data: int32_t;
 }
 
 @nativeClass(null)
 export class BlockEventPacket extends Packet {
     @nativeField(BlockPos)
-    readonly pos:BlockPos;
+    readonly pos: BlockPos;
     @nativeField(int32_t)
-    type:int32_t;
+    type: int32_t;
     @nativeField(int32_t)
-    data:int32_t;
+    data: int32_t;
 }
 
 @nativeClass(null)
@@ -453,31 +470,29 @@ export class MobEffectPacket extends Packet {
 }
 
 @nativeClass(null)
-class AttributeModifier extends AbstractClass {
-
-}
+class AttributeModifier extends AbstractClass {}
 
 @nativeClass()
 export class AttributeData extends NativeClass {
     @nativeField(float32_t)
-    current:number;
+    current: number;
     @nativeField(float32_t)
-    min:number;
+    min: number;
     @nativeField(float32_t)
-    max:number;
+    max: number;
     @nativeField(float32_t)
-    default:number;
+    default: number;
     @nativeField(HashedString)
-    readonly name:HashedString;
+    readonly name: HashedString;
     // TODO: clarify dummy
     @nativeField(AttributeModifier.ref())
-    _dummy1:AttributeModifier|null;
+    _dummy1: AttributeModifier | null;
     @nativeField(AttributeModifier.ref())
-    _dummy2:AttributeModifier|null;
+    _dummy2: AttributeModifier | null;
     @nativeField(AttributeModifier.ref())
-    _dummy3:AttributeModifier|null;
+    _dummy3: AttributeModifier | null;
 
-    [NativeType.ctor]():void {
+    [NativeType.ctor](): void {
         this.min = 0;
         this.max = 0;
         this.current = 0;
@@ -491,9 +506,9 @@ export class AttributeData extends NativeClass {
 @nativeClass(null)
 export class UpdateAttributesPacket extends Packet {
     @nativeField(ActorRuntimeID)
-    actorId:ActorRuntimeID;
+    actorId: ActorRuntimeID;
     @nativeField(CxxVector.make<AttributeData>(AttributeData))
-    readonly attributes:CxxVector<AttributeData>;
+    readonly attributes: CxxVector<AttributeData>;
 }
 
 @nativeClass(null)
@@ -501,21 +516,21 @@ export class InventoryTransactionPacket extends Packet {
     @nativeField(uint32_t)
     legacyRequestId: uint32_t; // 0x30
     @nativeField(ComplexInventoryTransaction.ref(), 0x58)
-    transaction: ComplexInventoryTransaction|null;
+    transaction: ComplexInventoryTransaction | null;
 }
 
 @nativeClass(null)
 export class MobEquipmentPacket extends Packet {
     @nativeField(ActorRuntimeID)
-    runtimeId:ActorRuntimeID;
+    runtimeId: ActorRuntimeID;
     @nativeField(NetworkItemStackDescriptor)
-    readonly item:NetworkItemStackDescriptor;
+    readonly item: NetworkItemStackDescriptor;
     @nativeField(int32_t)
-    slot:int32_t;
+    slot: int32_t;
     @nativeField(int32_t)
-    selectedSlot:int32_t;
+    selectedSlot: int32_t;
     @nativeField(uint8_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
 }
 
 @nativeClass(null)
@@ -538,11 +553,11 @@ export class MobArmorEquipmentPacket extends Packet {
 @nativeClass(null)
 export class InteractPacket extends Packet {
     @nativeField(uint8_t)
-    action:uint8_t;
+    action: uint8_t;
     @nativeField(ActorRuntimeID)
-    actorId:ActorRuntimeID;
+    actorId: ActorRuntimeID;
     @nativeField(Vec3)
-    readonly pos:Vec3;
+    readonly pos: Vec3;
 }
 export namespace InteractPacket {
     export enum Actions {
@@ -645,43 +660,43 @@ export class SetActorDataPacket extends Packet {
 @nativeClass(null)
 export class SetActorMotionPacket extends Packet {
     @nativeField(ActorRuntimeID)
-    runtimeId:ActorRuntimeID;
+    runtimeId: ActorRuntimeID;
     @nativeField(Vec3)
-    motion:Vec3;
+    motion: Vec3;
 }
 
 @nativeClass(null)
 export class SetActorLinkPacket extends Packet {
     @nativeField(ActorLink)
-    link:ActorLink;
+    link: ActorLink;
 }
 
 @nativeClass(null)
 export class SetHealthPacket extends Packet {
     @nativeField(uint8_t)
-    health:uint8_t;
+    health: uint8_t;
 }
 
 @nativeClass(null)
 export class SetSpawnPositionPacket extends Packet {
     @nativeField(BlockPos)
-    pos:BlockPos;
+    pos: BlockPos;
     @nativeField(int32_t)
-    spawnType:int32_t;
+    spawnType: int32_t;
     @nativeField(int32_t)
-    dimension:int32_t;
+    dimension: int32_t;
     @nativeField(BlockPos)
-    causingBlockPos:BlockPos;
+    causingBlockPos: BlockPos;
 }
 
 @nativeClass(null)
 export class AnimatePacket extends Packet {
     @nativeField(ActorRuntimeID)
-    actorId:ActorRuntimeID;
+    actorId: ActorRuntimeID;
     @nativeField(int32_t)
-    action:int32_t;
+    action: int32_t;
     @nativeField(float32_t)
-    rowingTime:float32_t;
+    rowingTime: float32_t;
 }
 export namespace AnimatePacket {
     export enum Actions {
@@ -697,60 +712,60 @@ export namespace AnimatePacket {
 @nativeClass(null)
 export class RespawnPacket extends Packet {
     @nativeField(Vec3)
-    pos:Vec3;
+    pos: Vec3;
     @nativeField(uint8_t)
-    state:uint8_t;
+    state: uint8_t;
     @nativeField(ActorRuntimeID)
-    runtimeId:ActorRuntimeID|null;
+    runtimeId: ActorRuntimeID | null;
 }
 
 @nativeClass(null)
 export class ContainerOpenPacket extends Packet {
     /** @deprecated */
-    @nativeField(uint8_t, {ghost: true})
-    windowId:uint8_t;
+    @nativeField(uint8_t, { ghost: true })
+    windowId: uint8_t;
     @nativeField(uint8_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
     @nativeField(int8_t)
-    type:ContainerType;
+    type: ContainerType;
     @nativeField(BlockPos)
-    readonly pos:BlockPos;
-    @nativeField(int64_as_float_t, {ghost: true})
-    entityUniqueIdAsNumber:int64_as_float_t;
+    readonly pos: BlockPos;
+    @nativeField(int64_as_float_t, { ghost: true })
+    entityUniqueIdAsNumber: int64_as_float_t;
     @nativeField(bin64_t)
-    entityUniqueId:bin64_t;
+    entityUniqueId: bin64_t;
 }
 
 @nativeClass(null)
 export class ContainerClosePacket extends Packet {
     /** @deprecated */
-    @nativeField(uint8_t, {ghost: true})
-    windowId:uint8_t;
+    @nativeField(uint8_t, { ghost: true })
+    windowId: uint8_t;
     @nativeField(uint8_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
     @nativeField(bool_t)
-    server:bool_t;
+    server: bool_t;
 }
 
 @nativeClass(null)
 export class PlayerHotbarPacket extends Packet {
     @nativeField(uint32_t)
-    selectedSlot:uint32_t;
+    selectedSlot: uint32_t;
     @nativeField(bool_t)
-    selectHotbarSlot:bool_t;
+    selectHotbarSlot: bool_t;
     /** @deprecated */
-    @nativeField(uint8_t, {ghost: true})
-    windowId:uint8_t;
+    @nativeField(uint8_t, { ghost: true })
+    windowId: uint8_t;
     @nativeField(uint8_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
 }
 
 @nativeClass(null)
 export class InventoryContentPacket extends Packet {
     @nativeField(uint8_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
     @nativeField(CxxVector.make(NetworkItemStackDescriptor), 56)
-    readonly slots:CxxVector<NetworkItemStackDescriptor>;
+    readonly slots: CxxVector<NetworkItemStackDescriptor>;
 }
 
 @nativeClass()
@@ -776,15 +791,15 @@ export class CraftingDataPacket extends Packet {
 @nativeClass(null)
 export class CraftingEventPacket extends Packet {
     @nativeField(uint8_t)
-    containerId:ContainerId;
+    containerId: ContainerId;
     @nativeField(int32_t, 0x34)
-    containerType:ContainerType;
+    containerType: ContainerType;
     @nativeField(mce.UUID)
-    recipeId:mce.UUID;
+    recipeId: mce.UUID;
     @nativeField(CxxVector.make(NetworkItemStackDescriptor))
-    readonly inputItems:CxxVector<NetworkItemStackDescriptor>;
+    readonly inputItems: CxxVector<NetworkItemStackDescriptor>;
     @nativeField(CxxVector.make(NetworkItemStackDescriptor))
-    readonly outputItems:CxxVector<NetworkItemStackDescriptor>;
+    readonly outputItems: CxxVector<NetworkItemStackDescriptor>;
 }
 
 @nativeClass(null)
@@ -807,7 +822,7 @@ export class AdventureSettingsPacket extends Packet {
     playerPermission: uint32_t;
     @nativeField(ActorUniqueID)
     actorId: ActorUniqueID;
-    @nativeField(uint32_t, 0x4C)
+    @nativeField(uint32_t, 0x4c)
     customFlag: uint32_t;
 }
 
@@ -825,47 +840,48 @@ export class PlayerInputPacket extends Packet {
 }
 
 @nativeClass(null)
-export class LevelChunkPacket extends Packet { // accessed from LevelChunkPacket::write
+export class LevelChunkPacket extends Packet {
+    // accessed from LevelChunkPacket::write
     @nativeField(ChunkPos)
-    readonly pos:ChunkPos;
+    readonly pos: ChunkPos;
     @nativeField(bool_t)
-    cacheEnabled:bool_t;
+    cacheEnabled: bool_t;
     @nativeField(CxxString)
-    serializedChunk:CxxString;
+    serializedChunk: CxxString;
     @nativeField(uint32_t)
-    subChunksCount:uint32_t;
+    subChunksCount: uint32_t;
 }
 
 @nativeClass(null)
 export class SetCommandsEnabledPacket extends Packet {
     @nativeField(bool_t)
-    commandsEnabled:bool_t;
+    commandsEnabled: bool_t;
 }
 
 @nativeClass(null)
 export class SetDifficultyPacket extends Packet {
     @nativeField(uint32_t)
-    difficulty:uint32_t;
+    difficulty: uint32_t;
 }
 
 @nativeClass(null)
 export class ChangeDimensionPacket extends Packet {
     @nativeField(uint32_t)
-    dimensionId:uint32_t;
+    dimensionId: uint32_t;
     @nativeField(float32_t)
-    x:float32_t;
+    x: float32_t;
     @nativeField(float32_t)
-    y:float32_t;
+    y: float32_t;
     @nativeField(float32_t)
-    z:float32_t;
+    z: float32_t;
     @nativeField(bool_t)
-    respawn:bool_t;
+    respawn: bool_t;
 }
 
 @nativeClass(null)
 export class SetPlayerGameTypePacket extends Packet {
     @nativeField(int32_t)
-    playerGameType:GameType;
+    playerGameType: GameType;
 }
 
 @nativeClass(0x2f0)
@@ -897,15 +913,15 @@ export class PlayerListEntry extends AbstractClass {
 @nativeClass(null)
 export class PlayerListPacket extends Packet {
     @nativeField(CxxVector.make(PlayerListEntry))
-    readonly entries:CxxVector<PlayerListEntry>;
+    readonly entries: CxxVector<PlayerListEntry>;
     @nativeField(uint8_t)
-    action:uint8_t;
+    action: uint8_t;
 }
 
 @nativeClass(null)
 export class SimpleEventPacket extends Packet {
     @nativeField(uint16_t)
-    subtype:uint16_t;
+    subtype: uint16_t;
 }
 
 @nativeClass(null)
@@ -921,9 +937,9 @@ export type TelemetryEventPacket = EventPacket;
 @nativeClass(null)
 export class SpawnExperienceOrbPacket extends Packet {
     @nativeField(Vec3)
-    readonly pos:Vec3;
+    readonly pos: Vec3;
     @nativeField(int32_t)
-    amount:int32_t;
+    amount: int32_t;
 }
 
 @nativeClass(null)
@@ -969,33 +985,33 @@ export class CameraPacket extends Packet {
 @nativeClass(null)
 export class BossEventPacket extends Packet {
     /** @deprecated */
-    @nativeField(bin64_t, {ghost: true})
-    unknown:bin64_t;
+    @nativeField(bin64_t, { ghost: true })
+    unknown: bin64_t;
     /** Always 1 */
     @nativeField(int32_t)
-    flagDarken:int32_t;
+    flagDarken: int32_t;
     /** Always 2 */
     @nativeField(int32_t)
-    flagFog:int32_t;
+    flagFog: int32_t;
     /** Unique ID of the boss */
     @nativeField(bin64_t)
-    entityUniqueId:bin64_t;
+    entityUniqueId: bin64_t;
     @nativeField(bin64_t)
-    playerUniqueId:bin64_t;
+    playerUniqueId: bin64_t;
     @nativeField(uint32_t)
-    type:uint32_t;
+    type: uint32_t;
     @nativeField(CxxString, 0x50)
-    title:CxxString;
+    title: CxxString;
     @nativeField(float32_t)
-    healthPercent:float32_t;
+    healthPercent: float32_t;
     @nativeField(uint32_t)
-    color:BossEventPacket.Colors;
+    color: BossEventPacket.Colors;
     @nativeField(uint32_t)
-    overlay:BossEventPacket.Overlay;
+    overlay: BossEventPacket.Overlay;
     @nativeField(bool_t)
-    darkenScreen:bool_t;
+    darkenScreen: bool_t;
     @nativeField(bool_t)
-    createWorldFog:bool_t;
+    createWorldFog: bool_t;
 }
 export namespace BossEventPacket {
     export enum Types {
@@ -1036,54 +1052,55 @@ export class ShowCreditsPacket extends Packet {
 @nativeClass()
 class AvailableCommandsParamData extends NativeClass {
     @nativeField(CxxString)
-    paramName:CxxString;
+    paramName: CxxString;
     @nativeField(int32_t)
-    paramType:int32_t;
+    paramType: int32_t;
     @nativeField(bool_t)
-    isOptional:bool_t;
+    isOptional: bool_t;
     @nativeField(uint8_t)
-    flags:uint8_t;
+    flags: uint8_t;
 }
 
 @nativeClass()
 class AvailableCommandsOverloadData extends NativeClass {
     @nativeField(CxxVector.make(AvailableCommandsParamData))
-    readonly parameters:CxxVector<AvailableCommandsParamData>;
+    readonly parameters: CxxVector<AvailableCommandsParamData>;
 }
 
 @nativeClass(0x68)
 class AvailableCommandsCommandData extends NativeClass {
     @nativeField(CxxString)
-    name:CxxString;
+    name: CxxString;
     @nativeField(CxxString)
-    description:CxxString;
+    description: CxxString;
     @nativeField(uint16_t) // 40
-    flags:uint16_t;
+    flags: uint16_t;
     @nativeField(uint8_t) // 42
-    permission:uint8_t;
+    permission: uint8_t;
     /** @deprecated use overloads */
-    @nativeField(CxxVector.make(CxxVector.make(CxxStringWith8Bytes)), {ghost: true})
-    readonly parameters:CxxVector<CxxVector<CxxString>>;
+    @nativeField(CxxVector.make(CxxVector.make(CxxStringWith8Bytes)), {
+        ghost: true,
+    })
+    readonly parameters: CxxVector<CxxVector<CxxString>>;
     @nativeField(CxxVector.make(AvailableCommandsOverloadData))
-    readonly overloads:CxxVector<AvailableCommandsOverloadData>;
+    readonly overloads: CxxVector<AvailableCommandsOverloadData>;
     @nativeField(int32_t) // 60
-    aliases:int32_t;
+    aliases: int32_t;
 }
 
 @nativeClass(0x38)
-class AvailableCommandsEnumData extends AbstractClass{
-}
+class AvailableCommandsEnumData extends AbstractClass {}
 
 @nativeClass(null)
 export class AvailableCommandsPacket extends Packet {
     @nativeField(CxxVector$string)
-    readonly enumValues:CxxVector<CxxString>;
+    readonly enumValues: CxxVector<CxxString>;
     @nativeField(CxxVector$string)
-    readonly postfixes:CxxVector<CxxString>;
+    readonly postfixes: CxxVector<CxxString>;
     @nativeField(CxxVector.make(AvailableCommandsEnumData))
-    readonly enums:CxxVector<AvailableCommandsEnumData>;
+    readonly enums: CxxVector<AvailableCommandsEnumData>;
     @nativeField(CxxVector.make(AvailableCommandsCommandData))
-    readonly commands:CxxVector<AvailableCommandsCommandData>;
+    readonly commands: CxxVector<AvailableCommandsCommandData>;
 }
 export namespace AvailableCommandsPacket {
     export type CommandData = AvailableCommandsCommandData;
@@ -1095,7 +1112,7 @@ export namespace AvailableCommandsPacket {
 @nativeClass(null)
 export class CommandRequestPacket extends Packet {
     @nativeField(CxxString)
-    command:CxxString;
+    command: CxxString;
 }
 
 @nativeClass(null)
@@ -1117,7 +1134,7 @@ export class UpdateTradePacket extends Packet {
     @nativeField(CxxString)
     displayName: CxxString;
     @nativeField(uint8_t, 0x5c)
-    traderTier:uint8_t;
+    traderTier: uint8_t;
     @nativeField(ActorUniqueID, 0x60)
     entityId: ActorUniqueID;
     @nativeField(ActorUniqueID, 0x68)
@@ -1149,33 +1166,33 @@ export class ResourcePackChunkRequestPacket extends Packet {
 @nativeClass(null)
 export class TransferPacket extends Packet {
     @nativeField(CxxString)
-    address:CxxString;
+    address: CxxString;
     @nativeField(uint16_t)
-    port:uint16_t;
+    port: uint16_t;
 }
 
 @nativeClass(null)
 export class PlaySoundPacket extends Packet {
     @nativeField(CxxString)
-    soundName:CxxString;
+    soundName: CxxString;
     /**
      * coordinates that are 8 times larger.
      * packet.pos.x = pos.x * 8
      */
     @nativeField(BlockPos)
-    readonly pos:BlockPos;
+    readonly pos: BlockPos;
     @nativeField(float32_t)
-    volume:float32_t;
+    volume: float32_t;
     @nativeField(float32_t)
-    pitch:float32_t;
+    pitch: float32_t;
 }
 
 @nativeClass(null)
 export class StopSoundPacket extends Packet {
     @nativeField(CxxString)
-    soundName:CxxString;
+    soundName: CxxString;
     @nativeField(bool_t)
-    stopAll:bool_t;
+    stopAll: bool_t;
 }
 
 /**
@@ -1184,19 +1201,19 @@ export class StopSoundPacket extends Packet {
 @nativeClass(null)
 export class SetTitlePacket extends Packet {
     @nativeField(int32_t)
-    type:int32_t;
+    type: int32_t;
     @nativeField(CxxString)
-    text:CxxString;
+    text: CxxString;
     @nativeField(int32_t)
-    fadeInTime:int32_t;
+    fadeInTime: int32_t;
     @nativeField(int32_t)
-    stayTime:int32_t;
+    stayTime: int32_t;
     @nativeField(int32_t)
-    fadeOutTime:int32_t;
+    fadeOutTime: int32_t;
     @nativeField(CxxString)
-    xuid:CxxString;
+    xuid: CxxString;
     @nativeField(CxxString)
-    platformOnlineId:CxxString;
+    platformOnlineId: CxxString;
 }
 export namespace SetTitlePacket {
     export enum Types {
@@ -1232,13 +1249,13 @@ export class PurchaseReceiptPacket extends Packet {
 @nativeClass(null)
 export class PlayerSkinPacket extends Packet {
     @nativeField(mce.UUID)
-    uuid:mce.UUID;
+    uuid: mce.UUID;
     @nativeField(SerializedSkin)
-    readonly skin:SerializedSkin;
+    readonly skin: SerializedSkin;
     @nativeField(CxxString)
-    localizedNewSkinName:CxxString;
+    localizedNewSkinName: CxxString;
     @nativeField(CxxString)
-    localizedOldSkinName:CxxString;
+    localizedOldSkinName: CxxString;
 }
 
 @nativeClass(null)
@@ -1264,19 +1281,19 @@ export class SetLastHurtByPacket extends Packet {
 @nativeClass(null)
 export class BookEditPacket extends Packet {
     @nativeField(uint8_t)
-    type:uint8_t;
+    type: uint8_t;
     @nativeField(int32_t, 0x34) // It is int32 but is uint8 after serialization
-    inventorySlot:int32_t;
+    inventorySlot: int32_t;
     @nativeField(int32_t) // It is int32 but is uint8 after serialization
-    pageNumber:int32_t;
+    pageNumber: int32_t;
     @nativeField(int32_t)
-    secondaryPageNumber:int32_t; // It is int32 but is uint8 after serialization
+    secondaryPageNumber: int32_t; // It is int32 but is uint8 after serialization
     @nativeField(CxxString)
-    text:CxxString;
+    text: CxxString;
     @nativeField(CxxString)
-    author:CxxString;
+    author: CxxString;
     @nativeField(CxxString)
-    xuid:CxxString;
+    xuid: CxxString;
 }
 export namespace BookEditPacket {
     export enum Types {
@@ -1301,9 +1318,9 @@ export class PhotoTransferPacket extends Packet {
 @nativeClass(null)
 export class ModalFormRequestPacket extends Packet {
     @nativeField(uint32_t)
-    id:uint32_t;
+    id: uint32_t;
     @nativeField(CxxString)
-    content:CxxString;
+    content: CxxString;
 }
 
 /** @deprecated use ModalFormRequestPacket, follow the real class name */
@@ -1314,10 +1331,10 @@ export type ShowModalFormPacket = ModalFormRequestPacket;
 @nativeClass(null)
 export class ModalFormResponsePacket extends Packet {
     @nativeField(uint32_t)
-    id:uint32_t;
+    id: uint32_t;
 
     @nativeField(CxxOptional.make(JsonValue))
-    response:CxxOptional<JsonValue>;
+    response: CxxOptional<JsonValue>;
     // @nativeField(CxxOptional.make(uint8_t))
     // unknown:CxxOptional<uint8_t>;
 }
@@ -1330,9 +1347,9 @@ export class ServerSettingsRequestPacket extends Packet {
 @nativeClass(null)
 export class ServerSettingsResponsePacket extends Packet {
     @nativeField(uint32_t)
-    id:uint32_t;
+    id: uint32_t;
     @nativeField(CxxString)
-    content:CxxString;
+    content: CxxString;
 }
 
 @nativeClass(null)
@@ -1348,40 +1365,40 @@ export class SetDefaultGameTypePacket extends Packet {
 @nativeClass(null)
 export class RemoveObjectivePacket extends Packet {
     @nativeField(CxxString)
-    objectiveName:CxxString;
+    objectiveName: CxxString;
 }
 
 @nativeClass(null)
 export class SetDisplayObjectivePacket extends Packet {
     @nativeField(CxxString)
-    displaySlot:'list'|'sidebar'|'belowname'|''|DisplaySlot;
+    displaySlot: "list" | "sidebar" | "belowname" | "" | DisplaySlot;
     @nativeField(CxxString)
-    objectiveName:CxxString;
+    objectiveName: CxxString;
     @nativeField(CxxString)
-    displayName:CxxString;
+    displayName: CxxString;
     @nativeField(CxxString)
-    criteriaName:'dummy'|'';
+    criteriaName: "dummy" | "";
     @nativeField(uint8_t)
-    sortOrder:ObjectiveSortOrder;
+    sortOrder: ObjectiveSortOrder;
 }
 
 @nativeClass()
 export class ScorePacketInfo extends NativeClass {
     @nativeField(ScoreboardId)
-    scoreboardId:ScoreboardId;
+    scoreboardId: ScoreboardId;
     @nativeField(CxxString)
-    objectiveName:CxxString;
+    objectiveName: CxxString;
 
     @nativeField(int32_t)
-    score:int32_t;
+    score: int32_t;
     @nativeField(uint8_t)
-    type:ScorePacketInfo.Type;
+    type: ScorePacketInfo.Type;
     @nativeField(bin64_t)
-    playerEntityUniqueId:bin64_t;
+    playerEntityUniqueId: bin64_t;
     @nativeField(bin64_t)
-    entityUniqueId:bin64_t;
+    entityUniqueId: bin64_t;
     @nativeField(CxxString)
-    customName:CxxString;
+    customName: CxxString;
 }
 
 export namespace ScorePacketInfo {
@@ -1395,10 +1412,10 @@ export namespace ScorePacketInfo {
 @nativeClass(null)
 export class SetScorePacket extends Packet {
     @nativeField(uint8_t)
-    type:uint8_t;
+    type: uint8_t;
 
     @nativeField(CxxVector.make(ScorePacketInfo))
-    readonly entries:CxxVector<ScorePacketInfo>;
+    readonly entries: CxxVector<ScorePacketInfo>;
 }
 
 export namespace SetScorePacket {
@@ -1630,7 +1647,7 @@ export class PlayerAuthInputPacket extends Packet {
     moveZ: float32_t;
 
     /** @deprecated */
-    get heaYaw():float32_t {
+    get heaYaw(): float32_t {
         return this.headYaw;
     }
 
@@ -1694,11 +1711,11 @@ export class PlayerEnchantOptionsPacket extends Packet {
 @nativeClass(null)
 export class ItemStackRequestSlotInfo extends NativeStruct {
     @nativeField(uint8_t)
-    openContainerNetId:uint8_t;
+    openContainerNetId: uint8_t;
     @nativeField(uint8_t)
-    slot:uint8_t;
+    slot: uint8_t;
     @nativeField(ItemStackNetIdVariant)
-    readonly netIdVariant:ItemStackNetIdVariant;
+    readonly netIdVariant: ItemStackNetIdVariant;
 }
 
 export enum ItemStackRequestActionType {
@@ -1729,31 +1746,31 @@ export enum ItemStackRequestActionType {
 @nativeClass(null)
 export class ItemStackRequestAction extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(uint8_t)
-    type:ItemStackRequestActionType;
+    type: ItemStackRequestActionType;
 }
 
-ItemStackRequestAction.setResolver(ptr=>{
+ItemStackRequestAction.setResolver(ptr => {
     if (ptr === null) return null;
     const action = ptr.as(ItemStackRequestAction);
     switch (action.type) {
-    case ItemStackRequestActionType.Take:
-    case ItemStackRequestActionType.Place:
-    case ItemStackRequestActionType.Swap:
-    case ItemStackRequestActionType.Destroy:
-    case ItemStackRequestActionType.Consume:
-    case ItemStackRequestActionType.PlaceInItemContainer:
-    case ItemStackRequestActionType.TakeFromItemContainer:
-        return ptr.as(ItemStackRequestActionTransferBase);
-    default:
-        return action;
+        case ItemStackRequestActionType.Take:
+        case ItemStackRequestActionType.Place:
+        case ItemStackRequestActionType.Swap:
+        case ItemStackRequestActionType.Destroy:
+        case ItemStackRequestActionType.Consume:
+        case ItemStackRequestActionType.PlaceInItemContainer:
+        case ItemStackRequestActionType.TakeFromItemContainer:
+            return ptr.as(ItemStackRequestActionTransferBase);
+        default:
+            return action;
     }
 });
 
 @nativeClass(null)
 export class ItemStackRequestActionTransferBase extends ItemStackRequestAction {
-    getSrc():ItemStackRequestSlotInfo {
+    getSrc(): ItemStackRequestSlotInfo {
         abstract();
     }
 }
@@ -1761,18 +1778,18 @@ export class ItemStackRequestActionTransferBase extends ItemStackRequestAction {
 @nativeClass(null)
 export class ItemStackRequestData extends AbstractClass {
     @nativeField(int32_t, 0x08)
-    clientRequestId:int32_t;
-    get stringsToFilter():CxxVector<CxxString> {
+    clientRequestId: int32_t;
+    get stringsToFilter(): CxxVector<CxxString> {
         return this.getStringsToFilter();
     }
     /** @deprecated use getActions */
-    get actions():CxxVector<ItemStackRequestAction> {
+    get actions(): CxxVector<ItemStackRequestAction> {
         return this.getActions();
     }
-    getStringsToFilter():CxxVector<CxxString> {
+    getStringsToFilter(): CxxVector<CxxString> {
         abstract();
     }
-    getActions():CxxVector<ItemStackRequestAction> {
+    getActions(): CxxVector<ItemStackRequestAction> {
         abstract();
     }
 }
@@ -1780,12 +1797,12 @@ export class ItemStackRequestData extends AbstractClass {
 @nativeClass()
 export class ItemStackRequestBatch extends AbstractClass {
     @nativeField(CxxVector.make(ItemStackRequestData.ref()))
-    data:CxxVector<ItemStackRequestData>;
+    data: CxxVector<ItemStackRequestData>;
 }
 
 @nativeClass(null)
 export class ItemStackRequestPacket extends Packet {
-    getRequestBatch():ItemStackRequestBatch {
+    getRequestBatch(): ItemStackRequestBatch {
         abstract();
     }
 }
@@ -1889,13 +1906,13 @@ export class AnimateEntityPacket extends Packet {
 @nativeClass(null)
 export class CameraShakePacket extends Packet {
     @nativeField(float32_t)
-    intensity:float32_t;
+    intensity: float32_t;
     @nativeField(float32_t)
-    duration:float32_t;
+    duration: float32_t;
     @nativeField(uint8_t)
-    shakeType:uint8_t;
+    shakeType: uint8_t;
     @nativeField(uint8_t)
-    shakeAction:uint8_t;
+    shakeAction: uint8_t;
 }
 export namespace CameraShakePacket {
     export enum ShakeType {
@@ -1958,9 +1975,9 @@ export class SimulationTypePacket extends Packet {
 export class NpcDialoguePacket extends Packet {
     /** ActorUniqueID of the Npc */
     @nativeField(ActorUniqueID)
-    actorId:ActorUniqueID;
+    actorId: ActorUniqueID;
     @nativeField(int32_t)
-    action:NpcDialoguePacket.Actions;
+    action: NpcDialoguePacket.Actions;
     /** Always empty */
     // @nativeField(CxxString, 0x40)
     // dialogue:CxxString;
@@ -1972,7 +1989,7 @@ export class NpcDialoguePacket extends Packet {
     // actionJson:CxxString;
 
     @nativeField(int64_as_float_t, 0x30)
-    actorIdAsNumber:int64_as_float_t;
+    actorIdAsNumber: int64_as_float_t;
 }
 export namespace NpcDialoguePacket {
     export enum Actions {
@@ -2332,7 +2349,9 @@ export const PacketIdToType = {
     0xc3: GameTestResultsPacket,
     0xc4: UpdateClientInputLocksPacket,
 };
-export type PacketIdToType = {[key in keyof typeof PacketIdToType]:InstanceType<typeof PacketIdToType[key]>};
+export type PacketIdToType = {
+    [key in keyof typeof PacketIdToType]: InstanceType<typeof PacketIdToType[key]>;
+};
 
 for (const [packetId, type] of Object.entries(PacketIdToType)) {
     type.ID = +packetId;

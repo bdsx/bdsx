@@ -4,40 +4,40 @@ import { fsutil } from "./fsutil";
 
 throw new Error("The permissions system is currently on hold. Please wait to use it until it is finished.");
 
-const PERMISSIONS_FILE = 'bdsxpermissions.json';
+const PERMISSIONS_FILE = "bdsxpermissions.json";
 
 const permissionsPath = path.join(fsutil.projectPath, PERMISSIONS_FILE);
 
 export namespace Permissions {
-    let allPermissions = new Map<string, {[permission: string]: boolean | undefined}>();
+    let allPermissions = new Map<string, { [permission: string]: boolean | undefined }>();
 
     export class RootPermissionNode {
         children: Map<string, PermissionNode> = new Map();
         registerChild(...newChildren: PermissionNode[]): void {
             for (const child of newChildren) {
-                if(this.children.has(child.name)) throw new Error(`PermissionNode ${this.getFullName()} cannot register child ${child.name} twice`);
+                if (this.children.has(child.name)) throw new Error(`PermissionNode ${this.getFullName()} cannot register child ${child.name} twice`);
                 this.children.set(child.name, child);
                 child.parent = this;
             }
         }
         getFullName(): string {
-            return '';
+            return "";
         }
         getUser(_userXuid: string): boolean {
             return false;
         }
         hasChild(child: string): boolean {
-            const first = child.split('.')[0];
-            if(!first) return true;
-            if(this.children.has(first)) return this.children.get(first)!.hasChild(child.substr(first.length + 1));
+            const first = child.split(".")[0];
+            if (!first) return true;
+            if (this.children.has(first)) return this.children.get(first)!.hasChild(child.substr(first.length + 1));
             return false;
         }
         getChild(child: string): PermissionNode | null {
-            if(!this.hasChild(child)) return null;
-            const nodes = child.split('.');
+            if (!this.hasChild(child)) return null;
+            const nodes = child.split(".");
             const first = nodes.shift()!;
-            if(nodes.length === 0) return this.children.get(first)!;
-            return this.children.get(first)!.getChild(nodes.join('.'));
+            if (nodes.length === 0) return this.children.get(first)!;
+            return this.children.get(first)!.getChild(nodes.join("."));
         }
     }
 
@@ -46,7 +46,6 @@ export namespace Permissions {
     let dirty = false;
 
     export class PermissionNode extends RootPermissionNode {
-
         name: string;
         parent: RootPermissionNode;
         defaultValue: boolean;
@@ -96,7 +95,7 @@ export namespace Permissions {
         // }
         getFullName(): string {
             const ret = this.parent.getFullName() + "." + this.name;
-            if(ret.startsWith('.')) return ret.substr(1);
+            if (ret.startsWith(".")) return ret.substr(1);
             return ret;
         }
     }
@@ -114,7 +113,7 @@ export namespace Permissions {
     export function registerPermission(name: string, description: string, parent: RootPermissionNode | null, defaultValue: boolean): PermissionNode {
         const permission = new PermissionNode(name, description, defaultValue);
         permission.parent = parent ?? rootNode;
-        if(parent) parent.registerChild(permission);
+        if (parent) parent.registerChild(permission);
         else rootNode.registerChild(permission);
         return permission;
     }
@@ -135,10 +134,10 @@ export namespace Permissions {
     // }
 
     export async function saveData(): Promise<void> {
-        if(!dirty) return;
+        if (!dirty) return;
         dirty = false;
         const data: any = {};
-        for(const user of allPermissions) {
+        for (const user of allPermissions) {
             data[user[0]] = user[1];
         }
         await fsutil.writeJson(permissionsPath, data);
@@ -147,20 +146,27 @@ export namespace Permissions {
 
     type permissionData = {
         [xuid: string]: {
-            [permission: string]: boolean
-        }
+            [permission: string]: boolean;
+        };
     };
 
     export async function loadData(data?: permissionData): Promise<void> {
-        if(!data) data = JSON.parse(await fsutil.readFile(permissionsPath));
+        if (!data) data = JSON.parse(await fsutil.readFile(permissionsPath));
         const dataAsArray: [string, any][] = [];
-        for(const xuid in data) {
+        for (const xuid in data) {
             dataAsArray.push([xuid, data[xuid]]);
         }
         allPermissions = new Map(dataAsArray);
     }
 
-    export function registerPermissionBulk(data: {parent: string, name: string, default: boolean, description: string}[]): void {
+    export function registerPermissionBulk(
+        data: {
+            parent: string;
+            name: string;
+            default: boolean;
+            description: string;
+        }[],
+    ): void {
         for (const permission of data) {
             permissionNodeFromString(permission.parent)?.registerChild(new PermissionNode(permission.name, permission.description, permission.default));
         }
@@ -172,4 +178,3 @@ Permissions.loadData();
 events.serverClose.on(() => {
     Permissions.saveData();
 });
-

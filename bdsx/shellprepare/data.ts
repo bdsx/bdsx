@@ -1,34 +1,34 @@
-
-import * as fs from 'fs';
-import * as path from 'path';
-import { Config } from '../config';
+import * as fs from "fs";
+import * as path from "path";
+import { Config } from "../config";
 
 export const shellPrepareData = {
-    path:path.join(Config.BDS_PATH, 'bdsx_shell_data.ini'),
-    load():Record<string, string> {
-        const data:Record<string, string> = Object.create(null);
+    path: path.join(Config.BDS_PATH, "bdsx_shell_data.ini"),
+    load(): Record<string, string> {
+        const data: Record<string, string> = Object.create(null);
         try {
-            const lines = fs.readFileSync(shellPrepareData.path, 'utf8');
-            let matched:RegExpExecArray|null;
+            const lines = fs.readFileSync(shellPrepareData.path, "utf8");
+            let matched: RegExpExecArray | null;
             const matcher = /^[ \t]*([^\s=]+)[ \t]*=[ \t]*([^\s]+)[ \t]*$/gm;
             while ((matched = matcher.exec(lines)) !== null) {
                 data[matched[1]] = matched[2];
             }
-        } catch(err) {
-        }
+        } catch (err) {}
         return data;
     },
-    save(data:Record<string, string>):void{
-        let out = '';
+    save(data: Record<string, string>): void {
+        let out = "";
         for (const name in data) {
             out += name;
-            out += '=';
+            out += "=";
             out += data[name];
-            out += '\n';
+            out += "\n";
         }
-        fs.writeFileSync(shellPrepareData.path, out, 'utf8');
+        fs.writeFileSync(shellPrepareData.path, out, "utf8");
     },
-    clear():void {
-        try { fs.unlinkSync(shellPrepareData.path); } catch (err) {}
+    clear(): void {
+        try {
+            fs.unlinkSync(shellPrepareData.path);
+        } catch (err) {}
     },
 };

@@ -95,9 +95,9 @@ export type Enchantments = EnchantmentNames | Enchant.Type;
 @nativeClass()
 export class EnchantmentInstance extends NativeStruct {
     @nativeField(int32_t)
-    type:Enchantments;
+    type: Enchantments;
     @nativeField(int32_t)
-    level:int32_t;
+    level: int32_t;
 }
 
 @nativeClass()
@@ -116,17 +116,16 @@ export class ItemEnchants extends NativeClass {
 }
 
 export namespace EnchantUtils {
-    export function applyEnchant(itemStack:ItemStack, enchant:Enchantments, level:number, allowUnsafe:boolean):boolean{
+    export function applyEnchant(itemStack: ItemStack, enchant: Enchantments, level: number, allowUnsafe: boolean): boolean {
         abstract();
     }
-    export function getEnchantLevel(enchant:Enchantments, itemStack:ItemStack):number{
+    export function getEnchantLevel(enchant: Enchantments, itemStack: ItemStack): number {
         abstract();
     }
-    export function hasCurse(itemStack:ItemStack):boolean{
+    export function hasCurse(itemStack: ItemStack): boolean {
         abstract();
     }
-    export function hasEnchant(enchant:Enchantments, itemStack:ItemStack):boolean{
+    export function hasEnchant(enchant: Enchantments, itemStack: ItemStack): boolean {
         abstract();
     }
-
 }

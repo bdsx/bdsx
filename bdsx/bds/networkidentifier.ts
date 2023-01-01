@@ -1,4 +1,3 @@
-
 import { Register } from "../assembler";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
@@ -17,33 +16,32 @@ import type { ServerPlayer } from "./player";
 import { RakNet } from "./raknet";
 import { RakNetInstance } from "./raknetinstance";
 
-enum SubClientId {
-    // TODO: fill
-}
+// TODO: fill
+enum SubClientId {}
 
 export class NetworkHandler extends AbstractClass {
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     /** @deprecated use bedrockServer.raknetInstance */
-    instance:RakNetInstance;
+    instance: RakNetInstance;
 
-    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void;
-    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:SubClientId):void;
+    send(ni: NetworkIdentifier, packet: Packet, senderSubClientId: number): void;
+    send(ni: NetworkIdentifier, packet: Packet, senderSubClientId: SubClientId): void;
 
-    send(ni:NetworkIdentifier, packet:Packet, senderSubClientId:number):void {
+    send(ni: NetworkIdentifier, packet: Packet, senderSubClientId: number): void {
         abstract();
     }
 
-    sendInternal(ni:NetworkIdentifier, packet:Packet, data:CxxStringWrapper):void {
+    sendInternal(ni: NetworkIdentifier, packet: Packet, data: CxxStringWrapper): void {
         abstract();
     }
 
-    getConnectionFromId(ni:NetworkIdentifier):NetworkConnection|null {
+    getConnectionFromId(ni: NetworkIdentifier): NetworkConnection | null {
         abstract();
     }
 }
 
 export class NetworkConnection extends AbstractClass {
-    networkIdentifier:NetworkIdentifier;
+    networkIdentifier: NetworkIdentifier;
 }
 
 export namespace NetworkHandler {
@@ -54,49 +52,48 @@ export namespace NetworkHandler {
 }
 
 @nativeClass(null)
-class ServerNetworkHandler$Client extends AbstractClass {
-}
+class ServerNetworkHandler$Client extends AbstractClass {}
 
 @nativeClass(null)
 export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
     @nativeField(CxxString, 0x288) // accessed in ServerNetworkHandler::allowIncomingConnections
-    readonly motd:CxxString;
+    readonly motd: CxxString;
     @nativeField(int32_t, 0x300) // accessed in ServerNetworkHandler::setMaxNumPlayers
     readonly maxPlayers: int32_t;
 
-    disconnectClient(client:NetworkIdentifier, message:string="disconnectionScreen.disconnected", skipMessage:boolean=false):void {
+    disconnectClient(client: NetworkIdentifier, message: string = "disconnectionScreen.disconnected", skipMessage: boolean = false): void {
         abstract();
     }
     /**
      * @alias allowIncomingConnections
      */
-    setMotd(motd:string):void {
+    setMotd(motd: string): void {
         this.allowIncomingConnections(motd, true);
     }
     /**
      * @deprecated use setMaxNumPlayers
      */
-    setMaxPlayers(count:number):void {
+    setMaxPlayers(count: number): void {
         this.setMaxNumPlayers(count);
     }
-    allowIncomingConnections(motd:string, b:boolean):void {
+    allowIncomingConnections(motd: string, b: boolean): void {
         abstract();
     }
-    updateServerAnnouncement():void {
+    updateServerAnnouncement(): void {
         abstract();
     }
-    setMaxNumPlayers(n:number):void {
+    setMaxNumPlayers(n: number): void {
         abstract();
     }
     /**
      * it's the same with `client.getActor()`
      */
-    _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null;
-    _getServerPlayer(client:NetworkIdentifier, clientSubId:SubClientId):ServerPlayer|null;
+    _getServerPlayer(client: NetworkIdentifier, clientSubId: number): ServerPlayer | null;
+    _getServerPlayer(client: NetworkIdentifier, clientSubId: SubClientId): ServerPlayer | null;
 
-    _getServerPlayer(client:NetworkIdentifier, clientSubId:number):ServerPlayer|null {
+    _getServerPlayer(client: NetworkIdentifier, clientSubId: number): ServerPlayer | null {
         abstract();
     }
     fetchConnectionRequest(target: NetworkIdentifier): ConnectionRequest {
@@ -113,45 +110,45 @@ const identifiers = new HashSet<NetworkIdentifier>();
 @nativeClass()
 export class NetworkIdentifier extends NativeStruct implements Hashable {
     @nativeField(bin64_t)
-    unknown:bin64_t;
+    unknown: bin64_t;
     @nativeField(RakNet.AddressOrGUID)
-    address:RakNet.AddressOrGUID;
-    @nativeField(int32_t, {ghost:true, offset:0x98})
-    type:int32_t;
+    address: RakNet.AddressOrGUID;
+    @nativeField(int32_t, { ghost: true, offset: 0x98 })
+    type: int32_t;
 
-    assignTo(target:VoidPointer):void {
+    assignTo(target: VoidPointer): void {
         dll.vcruntime140.memcpy(target, this, networkIdentifierSize);
     }
 
-    equals(other:NetworkIdentifier):boolean {
+    equals(other: NetworkIdentifier): boolean {
         abstract();
     }
 
-    hash():number {
+    hash(): number {
         abstract();
     }
 
-    getActor():ServerPlayer|null {
+    getActor(): ServerPlayer | null {
         abstract();
     }
 
-    getAddress():string {
+    getAddress(): string {
         abstract();
     }
 
-    toString():string {
+    toString(): string {
         return this.getAddress();
     }
 
-    static fromPointer(ptr:StaticPointer):NetworkIdentifier {
+    static fromPointer(ptr: StaticPointer): NetworkIdentifier {
         return identifiers.get(ptr.as(NetworkIdentifier))!;
     }
-    static all():IterableIterator<NetworkIdentifier> {
+    static all(): IterableIterator<NetworkIdentifier> {
         return identifiers.values();
     }
 }
 const networkIdentifierSize = NetworkIdentifier[NativeClass.contentSize];
-NetworkIdentifier.setResolver(ptr=>{
+NetworkIdentifier.setResolver(ptr => {
     if (ptr === null) return null;
     let ni = identifiers.get(ptr.as(NetworkIdentifier));
     if (ni != null) return ni;
@@ -161,18 +158,29 @@ NetworkIdentifier.setResolver(ptr=>{
     return ni;
 });
 /** @deprecated use bedrockServer.networkHandler */
-export let networkHandler:NetworkHandler;
+export let networkHandler: NetworkHandler;
 
-procHacker.hookingRawWithCallOriginal('?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z', makefunc.np((handler, ni, msg)=>{
-    try {
-        events.networkDisconnected.fire(ni);
-    } catch (err) {
-        remapAndPrintError(err);
-    }
-    // ni is used after onConnectionClosed. on some message processings.
-    // timeout for avoiding the re-allocation
-    setTimeout(()=>{
-        identifiers.delete(ni);
-    }, 3000);
-}, void_t, {name: 'hook of NetworkIdentifier dtor'}, NetworkHandler, NetworkIdentifier, CxxStringWrapper),
-[Register.rcx, Register.rdx, Register.r8, Register.r9], []);
+procHacker.hookingRawWithCallOriginal(
+    "?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
+    makefunc.np(
+        (handler, ni, msg) => {
+            try {
+                events.networkDisconnected.fire(ni);
+            } catch (err) {
+                remapAndPrintError(err);
+            }
+            // ni is used after onConnectionClosed. on some message processings.
+            // timeout for avoiding the re-allocation
+            setTimeout(() => {
+                identifiers.delete(ni);
+            }, 3000);
+        },
+        void_t,
+        { name: "hook of NetworkIdentifier dtor" },
+        NetworkHandler,
+        NetworkIdentifier,
+        CxxStringWrapper,
+    ),
+    [Register.rcx, Register.rdx, Register.r8, Register.r9],
+    [],
+);

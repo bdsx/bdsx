@@ -1,6 +1,5 @@
-
-import * as colors from 'colors';
-import { bedrockServer } from './launcher';
+import * as colors from "colors";
+import { bedrockServer } from "./launcher";
 import { getCurrentStackLine, remapError } from "./source-map-support";
 import { timeout } from "./util";
 
@@ -9,20 +8,20 @@ let testcount = 0;
 let done = 0;
 let testIsDone = false;
 
-const total:number[] = [0,0,0,0];
+const total: number[] = [0, 0, 0, 0];
 
-function logError(message:string):void {
+function logError(message: string): void {
     console.error(colors.red(`[test] ${message}`));
 }
-function logMessage(message:string):void {
+function logMessage(message: string): void {
     console.log(colors.brightGreen(`[test] ${message}`));
 }
-function deepEquals(a:unknown, b:unknown):boolean {
-    if (typeof a === 'object') {
-        if (typeof b !== 'object') return false;
-        if ((a instanceof Array) && (b instanceof Array)) {
+function deepEquals(a: unknown, b: unknown): boolean {
+    if (typeof a === "object") {
+        if (typeof b !== "object") return false;
+        if (a instanceof Array && b instanceof Array) {
             if (a.length !== b.length) return false;
-            for (let i=0;i<a.length;i++) {
+            for (let i = 0; i < a.length; i++) {
                 if (!deepEquals(a[i], b[i])) return false;
             }
             return true;
@@ -38,29 +37,30 @@ function deepEquals(a:unknown, b:unknown):boolean {
     }
     return a === b;
 }
-type RemoveOptional<T> = {[key in keyof T]-?:T[key]};
+type RemoveOptional<T> = { [key in keyof T]-?: T[key] };
 type FilledOptions = RemoveOptional<Tester.Options>;
 const defaultOpts = {
-    stringify: (val:any)=>val+'',
+    stringify: (val: any) => val + "",
 };
-function resolveOpts(opts:Tester.Options|number|undefined|((value:any)=>string), additionalStackOffset:number, fullStackOffset:number):FilledOptions {
-    if (opts == null) return {
-        stackOffset: additionalStackOffset,
-        stringify: defaultOpts.stringify,
-    };
-    switch (typeof opts) {
-    case 'number': {
-        return {
-            stackOffset: opts + additionalStackOffset - fullStackOffset,
-            stringify: defaultOpts.stringify,
-        };
-    }
-    case 'function': {
+function resolveOpts(opts: Tester.Options | number | undefined | ((value: any) => string), additionalStackOffset: number, fullStackOffset: number): FilledOptions {
+    if (opts == null)
         return {
             stackOffset: additionalStackOffset,
-            stringify: opts,
+            stringify: defaultOpts.stringify,
         };
-    }
+    switch (typeof opts) {
+        case "number": {
+            return {
+                stackOffset: opts + additionalStackOffset - fullStackOffset,
+                stringify: defaultOpts.stringify,
+            };
+        }
+        case "function": {
+            return {
+                stackOffset: additionalStackOffset,
+                stringify: opts,
+            };
+        }
     }
     if (opts.stackOffset == null) {
         opts.stackOffset = additionalStackOffset;
@@ -76,18 +76,17 @@ function resolveOpts(opts:Tester.Options|number|undefined|((value:any)=>string),
 export class Tester {
     private state = Tester.State.Pending;
     private pending = 0;
-    private errors:string[] = [];
+    private errors: string[] = [];
     private firstFlush = false;
 
-    constructor(private readonly subject = '') {
-    }
+    constructor(private readonly subject = "") {}
 
     public static errored = false;
-    public static isPassed():boolean {
+    public static isPassed(): boolean {
         return testIsDone && !Tester.errored;
     }
 
-    private _done(state:Tester.State):void {
+    private _done(state: Tester.State): void {
         this._flush();
 
         if (state <= this.state) return;
@@ -107,17 +106,17 @@ export class Tester {
 
         if (done === testcount) {
             const error = total[Tester.State.Failed] !== 0;
-            const message = `TEST ${error ? 'FAILED' : 'PASSED'} (${total[Tester.State.Passed]}/${testcount - total[Tester.State.Skipped]})`;
+            const message = `TEST ${error ? "FAILED" : "PASSED"} (${total[Tester.State.Passed]}/${testcount - total[Tester.State.Skipped]})`;
 
             (error ? logError : logMessage)(message);
             testIsDone = true;
             if (error) {
-                logError('Unit tests can fail If other user scripts are running.');
+                logError("Unit tests can fail If other user scripts are running.");
             }
         }
     }
 
-    private _flush():void {
+    private _flush(): void {
         if (!this.firstFlush) {
             this.firstFlush = true;
             logMessage(`(${testnum++}/${testcount}) ${this.subject}`);
@@ -128,60 +127,60 @@ export class Tester {
         this.errors.length = 0;
     }
 
-    log(message:string, error?:boolean):void {
+    log(message: string, error?: boolean): void {
         const msg = `[test/${this.subject}] ${message}`;
         if (error) console.error(colors.red(msg));
         else console.log(colors.brightGreen(msg));
     }
 
-    private _error(message:string, errorpos:string):void {
+    private _error(message: string, errorpos: string): void {
         this.errors.push(`failed. ${message}`);
         this.errors.push(colors.red(errorpos));
         this._done(Tester.State.Failed);
     }
 
-    error(message:string, opts?:Tester.Options|number):void {
+    error(message: string, opts?: Tester.Options | number): void {
         const nopts = resolveOpts(opts, 1, 2);
         this._error(message, getCurrentStackLine(nopts.stackOffset));
     }
 
-    processError(err:Error):void {
-        const stack = (remapError(err).stack||'').split('\n');
+    processError(err: Error): void {
+        const stack = (remapError(err).stack || "").split("\n");
         this._error(err.message, stack[1]);
-        console.error(stack.slice(2).join('\n'));
+        console.error(stack.slice(2).join("\n"));
     }
 
-    fail(opts?:{stackOffset?:number}):void {
-        this.error('', resolveOpts(opts, 1, 3));
+    fail(opts?: { stackOffset?: number }): void {
+        this.error("", resolveOpts(opts, 1, 3));
     }
 
-    assert(cond:boolean, message:string, opts?:Tester.Options):void {
+    assert(cond: boolean, message: string, opts?: Tester.Options): void {
         if (!cond) {
             this.error(message, resolveOpts(opts, 1, 3));
         }
     }
 
-    equals<T>(actual:T, expected:T, message?:string, opts?:Tester.Options|((v:any)=>string)):void {
+    equals<T>(actual: T, expected: T, message?: string, opts?: Tester.Options | ((v: any) => string)): void {
         if (actual !== expected) {
-            if (message == null) message = '';
-            else message = ', ' + message;
+            if (message == null) message = "";
+            else message = ", " + message;
             const nopts = resolveOpts(opts, 1, 3);
             this.error(`Expected: ${nopts.stringify(expected)}, Actual: ${nopts.stringify(actual)}${message}`, nopts);
         }
     }
 
-    deepEquals<T>(actual:T, expected:T, message?:string, opts?:Tester.Options|((v:any)=>string)):void {
+    deepEquals<T>(actual: T, expected: T, message?: string, opts?: Tester.Options | ((v: any) => string)): void {
         if (!deepEquals(actual, expected)) {
-            if (message == null) message = '';
-            else message = ', ' + message;
+            if (message == null) message = "";
+            else message = ", " + message;
             const nopts = resolveOpts(opts, 1, 3);
             this.error(`Expected: ${nopts.stringify(expected)}, Actual: ${nopts.stringify(actual)}${message}`, nopts);
         }
     }
 
-    arrayEquals<T extends ArrayLike<any>>(actual:T, expected:T, message?:string, opts?:Tester.Options|((v:any)=>string)):void {
-        if (message == null) message = '';
-        else message = ', ' + message;
+    arrayEquals<T extends ArrayLike<any>>(actual: T, expected: T, message?: string, opts?: Tester.Options | ((v: any) => string)): void {
+        if (message == null) message = "";
+        else message = ", " + message;
 
         let n = actual.length;
         const expectedLen = expected.length;
@@ -192,7 +191,7 @@ export class Tester {
                 n = expectedLen;
             }
         }
-        for (let i=0;i<n;i++) {
+        for (let i = 0; i < n; i++) {
             const a = actual[i];
             const e = expected[i];
             if (a !== e) {
@@ -202,21 +201,21 @@ export class Tester {
         }
     }
 
-    skip(message:string):void {
+    skip(message: string): void {
         this.log(message);
         this._done(Tester.State.Skipped);
     }
 
-    wrap<ARGS extends any[]>(run:(...args:ARGS)=>(void|Promise<void>), count:number = 1):(...args:ARGS)=>Promise<void> {
-        if (count !== 0) this.pending ++;
-        return async(...args:ARGS)=>{
+    wrap<ARGS extends any[]>(run: (...args: ARGS) => void | Promise<void>, count: number = 1): (...args: ARGS) => Promise<void> {
+        if (count !== 0) this.pending++;
+        return async (...args: ARGS) => {
             try {
                 await run(...args);
             } catch (err) {
                 this.processError(err);
             }
             if (count !== 0) {
-                if ((--count) === 0) {
+                if (--count === 0) {
                     this.pending--;
                     if (this.pending === 0) {
                         this.log(`Pending done`);
@@ -227,7 +226,7 @@ export class Tester {
         };
     }
 
-    static async test(tests:Record<string, (this:Tester)=>Promise<void>|void>, waitOneTick?:boolean):Promise<void> {
+    static async test(tests: Record<string, (this: Tester) => Promise<void> | void>, waitOneTick?: boolean): Promise<void> {
         await timeout(100); // run after examples
 
         // pass one tick, wait until result of the list command example
@@ -254,7 +253,7 @@ export class Tester {
         }
     }
 
-    static async consecutive(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
+    static async consecutive(...tests: Record<string, (this: Tester) => Promise<void> | void>[]): Promise<void> {
         await timeout(100); // run after examples
 
         logMessage(`node version: ${process.versions.node}`);
@@ -262,7 +261,7 @@ export class Tester {
             logMessage(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
         }
 
-        const allTests = tests.map(test=>{
+        const allTests = tests.map(test => {
             const list = Object.entries(test);
             testcount += list.length;
             return list;
@@ -281,7 +280,7 @@ export class Tester {
         }
     }
 
-    static async concurrency(...tests:Record<string, (this:Tester)=>Promise<void>|void>[]):Promise<void> {
+    static async concurrency(...tests: Record<string, (this: Tester) => Promise<void> | void>[]): Promise<void> {
         await timeout(100); // run after examples
 
         logMessage(`node version: ${process.versions.node}`);
@@ -289,24 +288,26 @@ export class Tester {
             logMessage(`engine version: ${process.jsEngine}@${process.versions[process.jsEngine!]}`);
         }
 
-        const allTests = tests.map(test=>{
+        const allTests = tests.map(test => {
             const list = Object.entries(test);
             testcount += list.length;
             return list;
         });
 
         for (const testlist of allTests) {
-            const proms:Promise<void>[] = [];
+            const proms: Promise<void>[] = [];
             for (const [subject, test] of testlist) {
                 const tester = new Tester(subject);
-                proms.push((async()=>{
-                    try {
-                        await test.call(tester);
-                        tester._done(Tester.State.Passed);
-                    } catch (err) {
-                        tester.processError(err);
-                    }
-                })());
+                proms.push(
+                    (async () => {
+                        try {
+                            await test.call(tester);
+                            tester._done(Tester.State.Passed);
+                        } catch (err) {
+                            tester.processError(err);
+                        }
+                    })(),
+                );
             }
             await Promise.all(proms);
         }
@@ -315,8 +316,8 @@ export class Tester {
 
 export namespace Tester {
     export interface Options {
-        stackOffset?:number;
-        stringify?:(value:any)=>string;
+        stackOffset?: number;
+        stringify?: (value: any) => string;
     }
     export enum State {
         Pending,

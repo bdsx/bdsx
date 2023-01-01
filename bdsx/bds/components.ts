@@ -17,7 +17,6 @@ export class ProjectileComponent extends NativeClass {
     // readonly thrownPos: Vec3;
     // @nativeField(Vec3)
     // readonly apexPos: Vec3;
-
     /* TODO
         ProjectileComponent::getShooterAngle
         ProjectileComponent::getIsDangerous
@@ -42,16 +41,16 @@ export class OnHitSubcomponent extends NativeClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
 
-    readfromJSON(json:JsonValue):void_t {
+    readfromJSON(json: JsonValue): void_t {
         abstract();
     }
-    writetoJSON(json:JsonValue):void_t {
+    writetoJSON(json: JsonValue): void_t {
         abstract();
     }
-    protected _getName():StaticPointer {
+    protected _getName(): StaticPointer {
         abstract();
     }
-    getName():string {
+    getName(): string {
         return this._getName().getString();
     }
 }

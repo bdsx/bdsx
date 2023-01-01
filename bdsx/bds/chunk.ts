@@ -7,19 +7,19 @@ import type { BlockPos, ChunkBlockPos, ChunkPos } from "./blockpos";
 import type { Level } from "./level";
 
 export class LevelChunk extends NativeClass {
-    getBiome(pos:ChunkBlockPos):Biome {
+    getBiome(pos: ChunkBlockPos): Biome {
         abstract();
     }
-    getLevel():Level {
+    getLevel(): Level {
         abstract();
     }
-    getPosition():ChunkPos {
+    getPosition(): ChunkPos {
         abstract();
     }
-    getMin():BlockPos {
+    getMin(): BlockPos {
         abstract();
     }
-    getMax():BlockPos {
+    getMax(): BlockPos {
         abstract();
     }
     isFullyLoaded(): boolean {
@@ -28,7 +28,7 @@ export class LevelChunk extends NativeClass {
     /**
      * Converts a local ChunkBlockPos instance to a global BlockPos.
      */
-    toWorldPos(pos:ChunkBlockPos):BlockPos {
+    toWorldPos(pos: ChunkBlockPos): BlockPos {
         abstract();
     }
     getEntity(actorId: ActorUniqueID): Actor | null {
@@ -41,7 +41,7 @@ export class LevelChunk extends NativeClass {
 
 @nativeClass(null)
 export class ChunkSource extends NativeClass {
-    getLevel():Level {
+    getLevel(): Level {
         abstract();
     }
 
@@ -60,5 +60,4 @@ export class ChunkSource extends NativeClass {
     isShutdownDone(): bool_t {
         abstract();
     }
-
 }

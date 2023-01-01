@@ -12,10 +12,10 @@ export class ItemComponent extends NativeClass {
     static getIdentifier(): HashedString {
         abstract();
     }
-    buildNetworkTag():CompoundTag {
+    buildNetworkTag(): CompoundTag {
         abstract();
     }
-    initializeFromNetwork(tag:CompoundTag): void {
+    initializeFromNetwork(tag: CompoundTag): void {
         abstract();
     }
     isCooldown(): this is CooldownItemComponent {
@@ -83,31 +83,31 @@ export class ItemComponent extends NativeClass {
     }
 }
 
-export class CooldownItemComponent extends ItemComponent { }
+export class CooldownItemComponent extends ItemComponent {}
 
-export class ArmorItemComponent extends ItemComponent { }
+export class ArmorItemComponent extends ItemComponent {}
 
 export class DiggerItemComponent extends ItemComponent {
-    mineBlock(itemStack:ItemStack, block:Block, int1:number, int2:number, int3:number, actor:Actor): boolean {
+    mineBlock(itemStack: ItemStack, block: Block, int1: number, int2: number, int3: number, actor: Actor): boolean {
         abstract();
     }
 }
 
 export class DurabilityItemComponent extends ItemComponent {
-    getDamageChance(int:number): number {
+    getDamageChance(int: number): number {
         abstract();
     }
 }
 
-export class DisplayNameItemComponent extends ItemComponent { }
+export class DisplayNameItemComponent extends ItemComponent {}
 
-export class DyePowderItemComponent extends ItemComponent { }
+export class DyePowderItemComponent extends ItemComponent {}
 
 export class EntityPlacerItemComponent extends ItemComponent {
-    positionAndRotateActor(actor:Actor, vec3:Vec3, unsignedInt8:number, _vec3:Vec3, blockLegacy:BlockLegacy): void {
+    positionAndRotateActor(actor: Actor, vec3: Vec3, unsignedInt8: number, _vec3: Vec3, blockLegacy: BlockLegacy): void {
         abstract();
     }
-    setActorCustomName(actor:Actor, itemStack:ItemStack): void {
+    setActorCustomName(actor: Actor, itemStack: ItemStack): void {
         abstract();
     }
 }
@@ -121,9 +121,9 @@ export class FoodItemComponent extends ItemComponent {
     }
 }
 
-export class FuelItemComponent extends ItemComponent { }
+export class FuelItemComponent extends ItemComponent {}
 
-export class IconItemComponent extends ItemComponent { }
+export class IconItemComponent extends ItemComponent {}
 
 export class KnockbackResistanceItemComponent extends ItemComponent {
     getProtectionValue(): number {
@@ -131,15 +131,15 @@ export class KnockbackResistanceItemComponent extends ItemComponent {
     }
 }
 
-export class OnUseItemComponent extends ItemComponent { }
+export class OnUseItemComponent extends ItemComponent {}
 
-export class PlanterItemComponent extends ItemComponent { }
+export class PlanterItemComponent extends ItemComponent {}
 
 export class ProjectileItemComponent extends ItemComponent {
-    getShootDir(player:Player, float:number): Vec3 {
+    getShootDir(player: Player, float: number): Vec3 {
         abstract();
     }
-    shootProjectile(blockSource:BlockSource, vec3:Vec3, _vec3:Vec3, float:number, player:Player): Actor {
+    shootProjectile(blockSource: BlockSource, vec3: Vec3, _vec3: Vec3, float: number, player: Player): Actor {
         abstract();
     }
 }
@@ -150,15 +150,15 @@ export class RecordItemComponent extends ItemComponent {
     }
 }
 
-export class RenderOffsetsItemComponent extends ItemComponent { }
+export class RenderOffsetsItemComponent extends ItemComponent {}
 
 export class RepairableItemComponent extends ItemComponent {
-    handleItemRepair(itemStackBase:ItemStackBase, _itemStackBase:ItemStackBase): number {
+    handleItemRepair(itemStackBase: ItemStackBase, _itemStackBase: ItemStackBase): number {
         abstract();
     }
 }
 
-export class ShooterItemComponent extends ItemComponent { }
+export class ShooterItemComponent extends ItemComponent {}
 
 export class ThrowableItemComponent extends ItemComponent {
     getLaunchPower(int1: number, int2: number, int3: number): number {
@@ -166,6 +166,6 @@ export class ThrowableItemComponent extends ItemComponent {
     }
 }
 
-export class WeaponItemComponent extends ItemComponent { }
+export class WeaponItemComponent extends ItemComponent {}
 
-export class WearableItemComponent extends ItemComponent { }
+export class WearableItemComponent extends ItemComponent {}

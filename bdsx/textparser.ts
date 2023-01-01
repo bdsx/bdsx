@@ -1,20 +1,17 @@
-
-import * as colors from 'colors';
-import { str2set } from './util';
+import * as colors from "colors";
+import { str2set } from "./util";
 
 const SPACE_REG = /^([\s\uFEFF\xA0]*)(.*[^\s\uFEFF\xA0])[\s\uFEFF\xA0]*$/;
-const DEFAULT_SEPARATOR = str2set('!@#%^&*()+-=`~[]{};\':",./<>?');
+const DEFAULT_SEPARATOR = str2set("!@#%^&*()+-=`~[]{};':\",./<>?");
 
-const SPACES = str2set(' \t\r\n\uFEFF\xa0');
+const SPACES = str2set(" \t\r\n\uFEFF\xa0");
 
 export class TextParser {
     public i = 0;
-    constructor(
-        public context:string) {
-    }
+    constructor(public context: string) {}
 
-    readLine():string|null {
-        const idx = this.context.indexOf('\n', this.i);
+    readLine(): string | null {
+        const idx = this.context.indexOf("\n", this.i);
         if (idx === -1) {
             if (this.i === this.context.length) return null;
             const out = this.context.substr(this.i);
@@ -22,38 +19,39 @@ export class TextParser {
             return out;
         } else {
             let end = idx;
-            if (this.context.charCodeAt(idx-1) === 0x0d) { // \r
+            if (this.context.charCodeAt(idx - 1) === 0x0d) {
+                // \r
                 end--;
             }
             const out = this.context.substring(this.i, end);
-            this.i = idx+1;
+            this.i = idx + 1;
             return out;
         }
     }
 
-    getFrom(from:number):string {
+    getFrom(from: number): string {
         return this.context.substring(from, this.i);
     }
 
-    eof():boolean {
+    eof(): boolean {
         return this.i >= this.context.length;
     }
 
-    peek():string {
+    peek(): string {
         return this.context.charAt(this.i);
     }
 
-    endsWith(str:string):boolean {
+    endsWith(str: string): boolean {
         return this.context.endsWith(str, this.i);
     }
 
-    nextIf(str:string):boolean {
+    nextIf(str: string): boolean {
         if (!this.context.startsWith(str, this.i)) return false;
         this.i += str.length;
         return true;
     }
 
-    skipSpaces():void {
+    skipSpaces(): void {
         const nonspace = /[^\s\uFEFF\xA0]/g;
         nonspace.lastIndex = this.i;
         const res = nonspace.exec(this.context);
@@ -63,26 +61,22 @@ export class TextParser {
         }
         this.i = res.index;
     }
-
 }
 
 export class LanguageParser extends TextParser {
-
-    constructor(
-        context:string,
-        public readonly seperators:Set<number> = DEFAULT_SEPARATOR) {
+    constructor(context: string, public readonly seperators: Set<number> = DEFAULT_SEPARATOR) {
         super(context);
         for (const chr of SPACES) {
             this.seperators.add(chr);
         }
     }
 
-    unget(str:string):void {
-        this.i = this.context.lastIndexOf(str, this.i-1);
+    unget(str: string): void {
+        this.i = this.context.lastIndexOf(str, this.i - 1);
         if (this.i === -1) throw Error(`${str} not found in '${this.context}'`);
     }
 
-    readIdentifier():string|null {
+    readIdentifier(): string | null {
         this.skipSpaces();
         const from = this.i;
         for (;;) {
@@ -95,11 +89,11 @@ export class LanguageParser extends TextParser {
         return this.context.substring(from, this.i);
     }
 
-    readOperator(operators:{has(key:string):boolean}):string|null {
+    readOperator(operators: { has(key: string): boolean }): string | null {
         this.skipSpaces();
         const from = this.i;
         if (from >= this.context.length) return null;
-        let out = '';
+        let out = "";
         for (;;) {
             const code = this.context.charCodeAt(this.i);
             if (!this.seperators.has(code)) break;
@@ -110,7 +104,7 @@ export class LanguageParser extends TextParser {
         return this.context.substring(from, this.i);
     }
 
-    readTo(needle:string):string {
+    readTo(needle: string): string {
         const context = this.context;
         const idx = context.indexOf(needle, this.i);
         const matched = (idx === -1 ? context.substr(this.i) : context.substring(this.i, idx)).trim();
@@ -118,86 +112,82 @@ export class LanguageParser extends TextParser {
         return matched;
     }
 
-    readAll():string {
+    readAll(): string {
         return this.context.substr(this.i).trim();
     }
-
 }
 
 export class TextLineParser extends TextParser {
-    public matchedWidth:number;
+    public matchedWidth: number;
     public matchedIndex = 0;
 
-    constructor(
-        context:string,
-        public readonly lineNumber:number,
-        private offset = 0) {
+    constructor(context: string, public readonly lineNumber: number, private offset = 0) {
         super(context);
         this.matchedWidth = context.length;
     }
 
-    static prespace(text:string):number {
+    static prespace(text: string): number {
         return text.match(/^[\s\uFEFF\xA0]*/)![0].length;
     }
 
-    static trim(context:string):[string, number, number] {
+    static trim(context: string): [string, number, number] {
         const matched = SPACE_REG.exec(context);
-        if (matched === null) return ['', 0, context.length];
+        if (matched === null) return ["", 0, context.length];
         const res = matched[2];
         return [res, matched[1].length, res.length];
     }
 
-    readQuotedStringTo(chr:string):string|null {
-        let p = this.i+1;
+    readQuotedStringTo(chr: string): string | null {
+        let p = this.i + 1;
 
         for (;;) {
             const np = this.context.indexOf(chr, p);
             if (np === -1) {
                 this.matchedIndex = this.i + this.offset;
                 this.matchedWidth = 1;
-                throw this.error('qouted string does not end');
+                throw this.error("qouted string does not end");
             }
 
             let count = 0;
             p = np;
             for (;;) {
                 const chr = this.context.charAt(--p);
-                if (chr === '\\') {
-                    count ++;
+                if (chr === "\\") {
+                    count++;
                     continue;
                 }
                 break;
             }
-            if ((count&1) === 0) {
-                const out = this.context.substring(this.i-1, np+1);
+            if ((count & 1) === 0) {
+                const out = this.context.substring(this.i - 1, np + 1);
                 this.matchedIndex = this.i + this.offset;
                 this.matchedWidth = out.length;
-                this.i = np+1;
+                this.i = np + 1;
                 try {
                     return JSON.parse(out);
                 } catch (err) {
                     throw this.error(err.message);
                 }
             }
-            p = np+1;
+            p = np + 1;
         }
     }
 
-    readQuotedString():string|null {
+    readQuotedString(): string | null {
         this.skipSpaces();
         const chr = this.context.charAt(this.i);
         if (chr !== '"' && chr !== "'") return null;
         return this.readQuotedStringTo(chr);
     }
 
-    readToSpace():string {
+    readToSpace(): string {
         const context = this.context;
         const spaceMatch = /[\s\uFEFF\xA0]+/g;
         spaceMatch.lastIndex = this.i;
 
         for (;;) {
             const res = spaceMatch.exec(context);
-            let content:string;
+            let content: string;
             this.matchedIndex = this.i + this.offset;
             if (res === null) {
                 content = context.substr(this.i);
@@ -216,7 +206,7 @@ export class TextLineParser extends TextParser {
         }
     }
 
-    *splitWithSpaces():IterableIterator<string> {
+    *splitWithSpaces(): IterableIterator<string> {
         const context = this.context;
         if (this.i >= context.length) return;
         const oriindex = this.matchedIndex;
@@ -227,7 +217,7 @@ export class TextLineParser extends TextParser {
         for (;;) {
             const res = spaceMatch.exec(context);
 
-            let content:string;
+            let content: string;
             if (res === null) {
                 if (this.i === context.length) break;
                 content = context.substr(this.i);
@@ -241,7 +231,7 @@ export class TextLineParser extends TextParser {
             this.offset = this.matchedIndex = this.i + offset;
             this.matchedWidth = content.length;
             this.i = 0;
-            yield this.context = content;
+            yield (this.context = content);
             if (res === null) break;
             this.i = spaceMatch.lastIndex;
         }
@@ -253,7 +243,7 @@ export class TextLineParser extends TextParser {
         this.matchedIndex = oriindex;
     }
 
-    readTo(needle:string):string {
+    readTo(needle: string): string {
         const context = this.context;
         const idx = context.indexOf(needle, this.i);
         const [matched, prespace, width] = TextLineParser.trim(idx === -1 ? context.substr(this.i) : context.substring(this.i, idx));
@@ -263,7 +253,7 @@ export class TextLineParser extends TextParser {
         return matched;
     }
 
-    readAll():string {
+    readAll(): string {
         const [matched, prespace, width] = TextLineParser.trim(this.context.substr(this.i));
         this.matchedIndex = this.i + prespace;
         this.matchedWidth = width;
@@ -271,7 +261,7 @@ export class TextLineParser extends TextParser {
         return matched;
     }
 
-    *split(needle:string):IterableIterator<string> {
+    *split(needle: string): IterableIterator<string> {
         const context = this.context;
         if (this.i >= context.length) return;
         const oriindex = this.matchedIndex;
@@ -283,7 +273,7 @@ export class TextLineParser extends TextParser {
             this.offset = this.matchedIndex = this.i + prespace + offset;
             this.matchedWidth = width;
             this.i = 0;
-            yield this.context = matched;
+            yield (this.context = matched);
             if (idx === -1) break;
             this.i = idx + 1;
         }
@@ -295,7 +285,7 @@ export class TextLineParser extends TextParser {
         this.matchedIndex = oriindex;
     }
 
-    error(message:string):ParsingError {
+    error(message: string): ParsingError {
         return new ParsingError(message, {
             column: this.matchedIndex,
             width: this.matchedWidth,
@@ -303,7 +293,7 @@ export class TextLineParser extends TextParser {
         });
     }
 
-    getPosition():SourcePosition {
+    getPosition(): SourcePosition {
         return {
             line: this.lineNumber,
             column: this.matchedIndex,
@@ -313,57 +303,50 @@ export class TextLineParser extends TextParser {
 }
 
 export interface SourcePosition {
-    line:number;
-    column:number;
-    width:number;
+    line: number;
+    column: number;
+    width: number;
 }
 
 export class ErrorPosition {
+    constructor(public readonly message: string, public readonly severity: "error" | "warning" | "info", public readonly pos: SourcePosition | null) {}
 
-    constructor(
-        public readonly message:string,
-        public readonly severity:'error'|'warning'|'info',
-        public readonly pos:SourcePosition|null) {
-    }
-
-    report(sourcePath:string, lineText:string|null):void {
+    report(sourcePath: string, lineText: string | null): void {
         console.error();
         const pos = this.pos;
         if (pos !== null) {
-            console.error(`${colors.cyan(sourcePath)}:${colors.yellow(pos.line+'')}:${colors.yellow(pos.column+'')} - ${colors.red(this.severity)}: ${this.message}`);
+            console.error(
+                `${colors.cyan(sourcePath)}:${colors.yellow(pos.line + "")}:${colors.yellow(pos.column + "")} - ${colors.red(this.severity)}: ${this.message}`,
+            );
 
             if (lineText !== null) {
-                const linestr = pos.line+'';
+                const linestr = pos.line + "";
                 console.error(`${colors.black(colors.bgWhite(linestr))} ${lineText}`);
-                console.error(colors.bgWhite(' '.repeat(linestr.length))+' '.repeat(pos.column+1)+colors.red('~'.repeat(Math.max(pos.width, 1))));
+                console.error(colors.bgWhite(" ".repeat(linestr.length)) + " ".repeat(pos.column + 1) + colors.red("~".repeat(Math.max(pos.width, 1))));
             }
         } else {
             console.error(`${colors.cyan(sourcePath)} - ${colors.red(this.severity)}: ${this.message}`);
 
             if (lineText !== null) {
-                console.error(`${colors.bgWhite(' ')} ${lineText}`);
+                console.error(`${colors.bgWhite(" ")} ${lineText}`);
             }
         }
     }
-
 }
 
 export class ParsingError extends Error {
-    public readonly errors:ErrorPosition[] = [];
+    public readonly errors: ErrorPosition[] = [];
 
-    constructor(
-        message:string,
-        public readonly pos:SourcePosition|null,
-    ) {
+    constructor(message: string, public readonly pos: SourcePosition | null) {
         super(pos !== null ? `${message}, line:${pos.line}` : message);
-        this.errors.push(new ErrorPosition(message, 'error', pos));
+        this.errors.push(new ErrorPosition(message, "error", pos));
     }
 
-    report(sourcePath:string, lineText:string|null):void {
+    report(sourcePath: string, lineText: string | null): void {
         this.errors[0].report(sourcePath, lineText);
     }
 
-    reportAll(sourcePath:string, sourceText:string):void {
+    reportAll(sourcePath: string, sourceText: string): void {
         for (const err of this.errors) {
             err.report(sourcePath, sourceText);
         }
@@ -371,9 +354,9 @@ export class ParsingError extends Error {
 }
 
 export class ParsingErrorContainer {
-    public error:ParsingError|null = null;
+    public error: ParsingError | null = null;
 
-    add(error:ParsingError):void {
+    add(error: ParsingError): void {
         if (this.error !== null) {
             this.error.errors.push(...error.errors);
         } else {

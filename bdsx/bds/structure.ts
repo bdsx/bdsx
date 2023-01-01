@@ -24,102 +24,102 @@ export enum Mirror {
 
 @nativeClass(0x60)
 export class StructureSettings extends AbstractClass {
-    static constructWith(size:BlockPos, ignoreEntities:boolean = false, ignoreBlocks:boolean = false):StructureSettings {
+    static constructWith(size: BlockPos, ignoreEntities: boolean = false, ignoreBlocks: boolean = false): StructureSettings {
         abstract();
     }
 
-    getIgnoreBlocks():boolean {
+    getIgnoreBlocks(): boolean {
         abstract();
     }
-    getIgnoreEntities():boolean {
+    getIgnoreEntities(): boolean {
         abstract();
     }
-    getIgnoreJigsawBlocks():boolean {
+    getIgnoreJigsawBlocks(): boolean {
         return this.getBoolean(0x23);
     }
-    isAnimated():boolean {
+    isAnimated(): boolean {
         abstract();
     }
-    getStructureOffset():BlockPos {
+    getStructureOffset(): BlockPos {
         abstract();
     }
-    getStructureSize():BlockPos {
+    getStructureSize(): BlockPos {
         abstract();
     }
-    getPivot():Vec3 {
+    getPivot(): Vec3 {
         abstract();
     }
-    getPaletteName():string {
+    getPaletteName(): string {
         return this.getCxxString();
     }
-    getAnimationMode():number {
+    getAnimationMode(): number {
         abstract();
     }
-    getMirror():Mirror {
+    getMirror(): Mirror {
         abstract();
     }
-    getReloadActorEquipment():boolean {
+    getReloadActorEquipment(): boolean {
         return this.getBoolean(0x21);
     }
-    getRotation():Rotation {
+    getRotation(): Rotation {
         abstract();
     }
-    getAnimationSeconds():number {
+    getAnimationSeconds(): number {
         abstract();
     }
-    getIntegrityValue():number {
+    getIntegrityValue(): number {
         abstract();
     }
-    getAnimationTicks():number {
+    getAnimationTicks(): number {
         abstract();
     }
-    getIntegritySeed():number {
+    getIntegritySeed(): number {
         abstract();
     }
-    setAnimationMode(mode:number):void {
+    setAnimationMode(mode: number): void {
         abstract();
     }
-    setAnimationSeconds(seconds:number):void {
+    setAnimationSeconds(seconds: number): void {
         abstract();
     }
-    setIgnoreBlocks(ignoreBlocks:boolean):void {
+    setIgnoreBlocks(ignoreBlocks: boolean): void {
         abstract();
     }
-    setIgnoreEntities(ignoreEntities:boolean):void {
+    setIgnoreEntities(ignoreEntities: boolean): void {
         abstract();
     }
-    setIgnoreJigsawBlocks(ignoreJigsawBlocks:boolean):void {
+    setIgnoreJigsawBlocks(ignoreJigsawBlocks: boolean): void {
         abstract();
     }
-    setIntegritySeed(seed:number):void {
+    setIntegritySeed(seed: number): void {
         abstract();
     }
-    setIntegrityValue(value:number):void {
+    setIntegrityValue(value: number): void {
         abstract();
     }
-    setMirror(mirror:Mirror):void {
+    setMirror(mirror: Mirror): void {
         abstract();
     }
-    setPaletteName(name:string):void {
+    setPaletteName(name: string): void {
         abstract();
     }
-    setPivot(pivot:Vec3):void {
+    setPivot(pivot: Vec3): void {
         abstract();
     }
-    setReloadActorEquipment(reloadActorEquipment:boolean):void {
+    setReloadActorEquipment(reloadActorEquipment: boolean): void {
         abstract();
     }
-    setRotation(rotation:Rotation):void {
+    setRotation(rotation: Rotation): void {
         abstract();
     }
-    setStructureOffset(offset:BlockPos):void {
+    setStructureOffset(offset: BlockPos): void {
         abstract();
     }
-    setStructureSize(size:BlockPos):void {
+    setStructureSize(size: BlockPos): void {
         abstract();
     }
 
-    [nativeClassUtil.inspectFields](obj:Record<string, any>):void {
+    [nativeClassUtil.inspectFields](obj: Record<string, any>): void {
         obj.paletteName = this.getPaletteName();
         obj.ignoreEntities = this.getIgnoreEntities();
         obj.reloadActorEquipment = this.getReloadActorEquipment();
@@ -137,27 +137,27 @@ export class StructureSettings extends AbstractClass {
     }
 }
 
-@nativeClass(0xB8)
+@nativeClass(0xb8)
 export class StructureTemplateData extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(int32_t)
-    formatVersion:int32_t;
+    formatVersion: int32_t;
     @nativeField(BlockPos)
-    readonly size:BlockPos;
+    readonly size: BlockPos;
     @nativeField(BlockPos)
-    readonly structureWorldOrigin:BlockPos;
+    readonly structureWorldOrigin: BlockPos;
 
-    save():Record<string, any> {
+    save(): Record<string, any> {
         const tag = this.allocateAndSave();
         const out = tag.value();
         tag.dispose();
         return out;
     }
-    allocateAndSave():CompoundTag {
+    allocateAndSave(): CompoundTag {
         abstract();
     }
-    load(tag:CompoundTag|NBT.Compound):boolean {
+    load(tag: CompoundTag | NBT.Compound): boolean {
         abstract();
     }
 }
@@ -165,32 +165,32 @@ export class StructureTemplateData extends AbstractClass {
 @nativeClass()
 export class StructureTemplate extends AbstractClass {
     @nativeField(CxxString)
-    name:CxxString;
+    name: CxxString;
     @nativeField(StructureTemplateData)
-    data:StructureTemplateData;
+    data: StructureTemplateData;
 
-    fillFromWorld(region:BlockSource, pos:BlockPos, settings:StructureSettings):void {
+    fillFromWorld(region: BlockSource, pos: BlockPos, settings: StructureSettings): void {
         abstract();
     }
-    placeInWorld(region:BlockSource, palette:BlockPalette, pos:BlockPos, settings:StructureSettings):void {
+    placeInWorld(region: BlockSource, palette: BlockPalette, pos: BlockPos, settings: StructureSettings): void {
         abstract();
     }
-    getBlockAtPos(pos:BlockPos):Block {
+    getBlockAtPos(pos: BlockPos): Block {
         abstract();
     }
-    getSize():BlockPos {
+    getSize(): BlockPos {
         abstract();
     }
     allocateAndSave(): CompoundTag {
         abstract();
     }
-    save():Record<string, any> {
+    save(): Record<string, any> {
         const tag = this.allocateAndSave();
         const out = tag.value();
         tag.dispose();
         return out;
     }
-    load(tag:CompoundTag|NBT.Compound):boolean {
+    load(tag: CompoundTag | NBT.Compound): boolean {
         abstract();
     }
 }
@@ -198,9 +198,9 @@ export class StructureTemplate extends AbstractClass {
 @nativeClass(null) // Last few lines of Minecraft::Minecraft
 export class StructureManager extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
 
-    getOrCreate(name:string):StructureTemplate {
+    getOrCreate(name: string): StructureTemplate {
         abstract();
     }
 }

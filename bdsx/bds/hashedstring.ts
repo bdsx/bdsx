@@ -7,18 +7,18 @@ import { procHacker } from "../prochacker";
 @nativeClass()
 export class HashedString extends NativeClass {
     @nativeField(VoidPointer)
-    hash:VoidPointer|null;
+    hash: VoidPointer | null;
     @nativeField(CxxString)
-    str:CxxString;
+    str: CxxString;
     @nativeField(HashedString.ref())
-    recentCompared:HashedString|null;
+    recentCompared: HashedString | null;
 
-    [NativeType.ctor]():void {
+    [NativeType.ctor](): void {
         this.hash = null;
         this.recentCompared = null;
     }
 
-    set(str:string):void {
+    set(str: string): void {
         this.str = str;
         this.hash = computeHash(this.add(str_offset));
     }
@@ -28,15 +28,30 @@ export class HashedString extends NativeClass {
         return hStr;
     }
 }
-const HashedString$HashedString = procHacker.js("??0HashedString@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, null, HashedString, CxxString);
-const str_offset = HashedString.offsetOf('str');
-const computeHash = procHacker.js('?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z', VoidPointer, null, VoidPointer);
+const HashedString$HashedString = procHacker.js(
+    "??0HashedString@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+    void_t,
+    null,
+    HashedString,
+    CxxString,
+);
+const str_offset = HashedString.offsetOf("str");
+const computeHash = procHacker.js(
+    "?computeHash@HashedString@@SA_KAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+    VoidPointer,
+    null,
+    VoidPointer,
+);
 
-export const HashedStringToString = new NativeType<string>(HashedString.symbol, 'HashedStringToString',
-    HashedString[NativeType.size], HashedString[NativeType.align],
-    v=>typeof v === 'string', undefined,
-    (ptr, offset)=>ptr.addAs(HashedString, offset).str,
-    (ptr, value, offset)=>ptr.addAs(HashedString, offset).set(value),
+export const HashedStringToString = new NativeType<string>(
+    HashedString.symbol,
+    "HashedStringToString",
+    HashedString[NativeType.size],
+    HashedString[NativeType.align],
+    v => typeof v === "string",
+    undefined,
+    (ptr, offset) => ptr.addAs(HashedString, offset).str,
+    (ptr, value, offset) => ptr.addAs(HashedString, offset).set(value),
     undefined,
     undefined,
     HashedString[NativeType.ctor].bind(HashedString),

@@ -1,18 +1,17 @@
-
 import { Bufferable, Encoding, TypeFromEncoding } from "./common";
 
 export interface VoidPointerConstructor {
-    new():VoidPointer;
-    prototype:VoidPointer;
+    new (): VoidPointer;
+    prototype: VoidPointer;
 
-    fromAddress<T extends VoidPointer>(this:{new():T}, addressLow:number, addressHigh?:number):T;
-    fromAddressBin<T extends VoidPointer>(this:{new():T}, addressBin:string):T;
-    fromAddressBuffer<T extends VoidPointer>(this:{new():T}, buffer:Bufferable):T;
-    fromAddressString<T extends VoidPointer>(this:{new():T}, str:string):T;
-    fromAddressFloat<T extends VoidPointer>(this:{new():T}, value:number):T;
+    fromAddress<T extends VoidPointer>(this: { new (): T }, addressLow: number, addressHigh?: number): T;
+    fromAddressBin<T extends VoidPointer>(this: { new (): T }, addressBin: string): T;
+    fromAddressBuffer<T extends VoidPointer>(this: { new (): T }, buffer: Bufferable): T;
+    fromAddressString<T extends VoidPointer>(this: { new (): T }, str: string): T;
+    fromAddressFloat<T extends VoidPointer>(this: { new (): T }, value: number): T;
 }
 
-export declare const VoidPointer:VoidPointerConstructor;
+export declare const VoidPointer: VoidPointerConstructor;
 
 /**
  * the root of all pointer-based classes
@@ -21,12 +20,12 @@ export interface VoidPointer {
     /**
      * possible to deep comparison
      */
-    equals(ptr: VoidPointer|null): boolean;
+    equals(ptr: VoidPointer | null): boolean;
 
     /**
      * address comparison
      */
-    equalsptr(ptr: VoidPointer|null): boolean;
+    equalsptr(ptr: VoidPointer | null): boolean;
 
     /**
      * make cloned pointer with offset
@@ -55,13 +54,13 @@ export interface VoidPointer {
      * with radix, it returns like Number.toString.
      * or it returns 0x0000000000000000 format.
      */
-    toString(radix?:number):string;
+    toString(radix?: number): string;
 
-    as<T extends VoidPointer>(ctor:{new():T}): T;
-    addAs<T extends VoidPointer>(ctor:{new():T}, lowBits?: number, highBits?: number): T;
-    subAs<T extends VoidPointer>(ctor:{new():T}, lowBits?: number, highBits?: number): T;
-    addBinAs<T extends VoidPointer>(ctor:{new():T}, bin: string): T;
-    subBinAs<T extends VoidPointer>(ctor:{new():T}, bin: string): T;
+    as<T extends VoidPointer>(ctor: { new (): T }): T;
+    addAs<T extends VoidPointer>(ctor: { new (): T }, lowBits?: number, highBits?: number): T;
+    subAs<T extends VoidPointer>(ctor: { new (): T }, lowBits?: number, highBits?: number): T;
+    addBinAs<T extends VoidPointer>(ctor: { new (): T }, bin: string): T;
+    subBinAs<T extends VoidPointer>(ctor: { new (): T }, bin: string): T;
 
     /**
      * pointer of pointer
@@ -87,14 +86,14 @@ export declare class PrivatePointer extends VoidPointer {
     protected getInt64AsFloat(offset?: number): number;
     protected getFloat32(offset?: number): number;
     protected getFloat64(offset?: number): number;
-    protected getNullablePointer(offset?: number): NativePointer|null;
-    protected getNullablePointerAs<T extends VoidPointer>(ctor:{new():T}, offset?: number): T|null;
+    protected getNullablePointer(offset?: number): NativePointer | null;
+    protected getNullablePointerAs<T extends VoidPointer>(ctor: { new (): T }, offset?: number): T | null;
     protected getPointer(offset?: number): NativePointer;
-    protected getPointerAs<T extends VoidPointer>(ctor:{new():T}, offset?: number): T;
+    protected getPointerAs<T extends VoidPointer>(ctor: { new (): T }, offset?: number): T;
 
-    protected fill(bytevalue:number, bytes:number, offset?: number): void;
-    protected copyFrom(from: VoidPointer, bytes:number, this_offset?: number, from_offset?:number): void;
-    protected copyTo(dest:Bufferable|VoidPointer, bytes:number, offset?:number): void;
+    protected fill(bytevalue: number, bytes: number, offset?: number): void;
+    protected copyFrom(from: VoidPointer, bytes: number, this_offset?: number, from_offset?: number): void;
+    protected copyTo(dest: Bufferable | VoidPointer, bytes: number, offset?: number): void;
     protected setBoolean(value: boolean, offset?: number): void;
     protected setUint8(value: number, offset?: number): void;
     protected setUint16(value: number, offset?: number): void;
@@ -149,37 +148,37 @@ export declare class PrivatePointer extends VoidPointer {
      * It stores 2bytes per character
      * @param words 2bytes per word
      */
-    protected getBin(words: number, offset?:number): string;
+    protected getBin(words: number, offset?: number): string;
 
     /**
      * is same with getBin(4).
      * It stores 2bytes per character for 64bits.
      */
-    protected getBin64(offset?:number): string;
+    protected getBin64(offset?: number): string;
 
     /**
      * Write memory with binary string.
      * It reads 2bytes per character
      * @param words 2bytes per word
      */
-    protected setBin(v:string, offset?:number): void;
+    protected setBin(v: string, offset?: number): void;
 
     protected setInt32To64WithZero(value: number, offset?: number): void;
     protected setFloat32To64WithZero(value: number, offset?: number): void;
 
-    protected interlockedIncrement16(offset?:number):number;
-    protected interlockedIncrement32(offset?:number):number;
-    protected interlockedIncrement64(offset?:number):number;
-    protected interlockedDecrement16(offset?:number):number;
-    protected interlockedDecrement32(offset?:number):number;
-    protected interlockedDecrement64(offset?:number):number;
-    protected interlockedCompareExchange8(exchange:number, compare:number, offset?:number):number;
-    protected interlockedCompareExchange16(exchange:number, compare:number, offset?:number):number;
-    protected interlockedCompareExchange32(exchange:number, compare:number, offset?:number):number;
-    protected interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
+    protected interlockedIncrement16(offset?: number): number;
+    protected interlockedIncrement32(offset?: number): number;
+    protected interlockedIncrement64(offset?: number): number;
+    protected interlockedDecrement16(offset?: number): number;
+    protected interlockedDecrement32(offset?: number): number;
+    protected interlockedDecrement64(offset?: number): number;
+    protected interlockedCompareExchange8(exchange: number, compare: number, offset?: number): number;
+    protected interlockedCompareExchange16(exchange: number, compare: number, offset?: number): number;
+    protected interlockedCompareExchange32(exchange: number, compare: number, offset?: number): number;
+    protected interlockedCompareExchange64(exchange: string, compare: string, offset?: number): string;
 
-    protected getJsValueRef(offset?:number):any;
-    protected setJsValueRef(value:unknown, offset?:number):void;
+    protected getJsValueRef(offset?: number): any;
+    protected setJsValueRef(value: unknown, offset?: number): void;
 }
 
 /**
@@ -197,14 +196,14 @@ export declare class StaticPointer extends PrivatePointer {
     getInt64AsFloat(offset?: number): number;
     getFloat32(offset?: number): number;
     getFloat64(offset?: number): number;
-    getNullablePointer(offset?: number): NativePointer|null;
-    getNullablePointerAs<T extends VoidPointer>(ctor:{new():T}, offset?: number): T|null;
+    getNullablePointer(offset?: number): NativePointer | null;
+    getNullablePointerAs<T extends VoidPointer>(ctor: { new (): T }, offset?: number): T | null;
     getPointer(offset?: number): NativePointer;
-    getPointerAs<T extends VoidPointer>(ctor:{new():T}, offset?: number): T;
+    getPointerAs<T extends VoidPointer>(ctor: { new (): T }, offset?: number): T;
 
-    fill(bytevalue:number, bytes:number, offset?: number): void;
-    copyFrom(from: VoidPointer, bytes:number, this_offset?: number, from_offset?:number): void;
-    copyTo(dest:Bufferable|VoidPointer, bytes:number, offset?:number): void;
+    fill(bytevalue: number, bytes: number, offset?: number): void;
+    copyFrom(from: VoidPointer, bytes: number, this_offset?: number, from_offset?: number): void;
+    copyTo(dest: Bufferable | VoidPointer, bytes: number, offset?: number): void;
     setBoolean(value: boolean, offset?: number): void;
     setUint8(value: number, offset?: number): void;
     setUint16(value: number, offset?: number): void;
@@ -216,7 +215,7 @@ export declare class StaticPointer extends PrivatePointer {
     setInt64WithFloat(value: number, offset?: number): void;
     setFloat32(value: number, offset?: number): void;
     setFloat64(value: number, offset?: number): void;
-    setPointer(value: VoidPointer|null, offset?: number): void;
+    setPointer(value: VoidPointer | null, offset?: number): void;
 
     /**
      * get C++ std::string
@@ -239,7 +238,7 @@ export declare class StaticPointer extends PrivatePointer {
      * if encoding is Encoding.Buffer it will call getBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    getString<T extends Encoding = Encoding.Utf8>(bytes?: number|undefined, offset?: number, encoding?: T): TypeFromEncoding<T>;
+    getString<T extends Encoding = Encoding.Utf8>(bytes?: number | undefined, offset?: number, encoding?: T): TypeFromEncoding<T>;
 
     /**
      * set string with null character
@@ -259,63 +258,63 @@ export declare class StaticPointer extends PrivatePointer {
      * It stores 2bytes per character
      * @param words 2bytes per word
      */
-    getBin(words: number, offset?:number): string;
+    getBin(words: number, offset?: number): string;
 
     /**
      * is same with getBin(4).
      * It stores 2bytes per character for 64bits.
      */
-    getBin64(offset?:number): string;
+    getBin64(offset?: number): string;
 
     /**
      * Write memory with binary string.
      * It reads 2bytes per character
      * @param words 2bytes per word
      */
-    setBin(v:string, offset?:number): void;
+    setBin(v: string, offset?: number): void;
 
     setInt32To64WithZero(value: number, offset?: number): void;
     setFloat32To64WithZero(value: number, offset?: number): void;
 
-    interlockedIncrement16(offset?:number):number;
-    interlockedIncrement32(offset?:number):number;
-    interlockedIncrement64(offset?:number):number;
-    interlockedDecrement16(offset?:number):number;
-    interlockedDecrement32(offset?:number):number;
-    interlockedDecrement64(offset?:number):number;
-    interlockedCompareExchange8(exchange:number, compare:number, offset?:number):number;
-    interlockedCompareExchange16(exchange:number, compare:number, offset?:number):number;
-    interlockedCompareExchange32(exchange:number, compare:number, offset?:number):number;
-    interlockedCompareExchange64(exchange:string, compare:string, offset?:number):string;
+    interlockedIncrement16(offset?: number): number;
+    interlockedIncrement32(offset?: number): number;
+    interlockedIncrement64(offset?: number): number;
+    interlockedDecrement16(offset?: number): number;
+    interlockedDecrement32(offset?: number): number;
+    interlockedDecrement64(offset?: number): number;
+    interlockedCompareExchange8(exchange: number, compare: number, offset?: number): number;
+    interlockedCompareExchange16(exchange: number, compare: number, offset?: number): number;
+    interlockedCompareExchange32(exchange: number, compare: number, offset?: number): number;
+    interlockedCompareExchange64(exchange: string, compare: string, offset?: number): string;
 
-    getJsValueRef(offset?:number):any;
-    setJsValueRef(value:unknown, offset?:number):void;
+    getJsValueRef(offset?: number): any;
+    setJsValueRef(value: unknown, offset?: number): void;
 }
 
 /**
  * this pointer has the buffer itself
  */
 export declare class AllocatedPointer extends StaticPointer {
-    constructor(size:number);
+    constructor(size: number);
 
     /**
      * allocate a encoded string
      * include the null character
      */
-    static fromString(str:string, encoding?:Encoding):AllocatedPointer;
+    static fromString(str: string, encoding?: Encoding): AllocatedPointer;
 }
 
 export declare class StructurePointer extends PrivatePointer {
-    static readonly contentSize:unique symbol;
-    static readonly nativeCtor:unique symbol;
-    static readonly nativeDtor:unique symbol;
-    static [StructurePointer.contentSize]:number;
+    static readonly contentSize: unique symbol;
+    static readonly nativeCtor: unique symbol;
+    static readonly nativeDtor: unique symbol;
+    static [StructurePointer.contentSize]: number;
     /** @deprecated it makes the null pointer. Please use ClassName.create instead */
     constructor();
     /**
      * @param allocateItSelf null pointer if it's false. space is allocated if it's true
      */
-    constructor(allocateItSelf:boolean);
+    constructor(allocateItSelf: boolean);
 }
 
 /**
@@ -327,10 +326,10 @@ export declare class NativePointer extends StaticPointer {
     move(lowBits: number, highBits?: number): void;
     setAddressPointer(pointer: VoidPointer): void;
     setAddress(lowBits: number, highBits: number): void;
-    setAddressBin(bin:string):void;
-    setAddressFromBuffer(buffer:Bufferable):void;
-    setAddressFromString(str:string):void;
-    setAddressWithFloat(value:number):void;
+    setAddressBin(bin: string): void;
+    setAddressFromBuffer(buffer: Bufferable): void;
+    setAddressFromString(str: string): void;
+    setAddressWithFloat(value: number): void;
 
     readBoolean(): boolean;
     readUint8(): number;
@@ -356,7 +355,7 @@ export declare class NativePointer extends StaticPointer {
     writeInt64WithFloat(value: number): void;
     writeFloat32(value: number): void;
     writeFloat64(value: number): void;
-    writePointer(value: VoidPointer|null): void;
+    writePointer(value: VoidPointer | null): void;
 
     /**
      * read a C++ std::string
@@ -379,7 +378,7 @@ export declare class NativePointer extends StaticPointer {
      * if encoding is Encoding.Buffer it will call readBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
-    readString<T extends Encoding = Encoding.Utf8>(bytes?: number|null, encoding?: T): TypeFromEncoding<T>;
+    readString<T extends Encoding = Encoding.Utf8>(bytes?: number | null, encoding?: T): TypeFromEncoding<T>;
 
     /**
      * write string
@@ -461,107 +460,106 @@ export declare class NativePointer extends StaticPointer {
      * It reads 2bytes per character
      * @param words 2bytes per word
      */
-    writeBin(v:string, words: number): string;
+    writeBin(v: string, words: number): string;
 
-    readJsValueRef():any;
-    writeJsValueRef(value:unknown):void;
+    readJsValueRef(): any;
+    writeJsValueRef(value: unknown): void;
 }
 
 export interface RuntimeStack {
-    base:NativePointer|null;
-    address:NativePointer;
-    moduleName:string|null;
-    fileName:string|null;
-    functionName:string|null;
-    lineNumber:number;
+    base: NativePointer | null;
+    address: NativePointer;
+    moduleName: string | null;
+    fileName: string | null;
+    functionName: string | null;
+    lineNumber: number;
 }
 
 export declare class RuntimeError extends Error {
-    nativeStack?:RuntimeStack[];
-    code?:number;
-    exceptionInfos?:number[];
+    nativeStack?: RuntimeStack[];
+    code?: number;
+    exceptionInfos?: number[];
 }
 
 /**
  * queue for multi threading.
  */
 export declare class MultiThreadQueue extends VoidPointer {
-    constructor(size:number);
+    constructor(size: number);
 
-    enqueue(src:VoidPointer):void;
+    enqueue(src: VoidPointer): void;
 
     /**
      * blocking method
      */
-    dequeue(dest:VoidPointer):void;
+    dequeue(dest: VoidPointer): void;
 
     /**
      * non blocking method
      */
-    tryDequeue(dest:VoidPointer):void;
+    tryDequeue(dest: VoidPointer): void;
 
     /**
      * native function
      * void enqueue(MultiThreadQueue*, void*)
      */
-    static readonly enqueue:VoidPointer;
+    static readonly enqueue: VoidPointer;
     /**
      * native function
      * blocking method
      * void dequeue(MultiThreadQueue*, void*)
      */
-    static readonly dequeue:VoidPointer;
+    static readonly dequeue: VoidPointer;
     /**
      * native function
      * non blocking method
      * bool tryDequeue(MultiThreadQueue*, void*)
      */
-    static readonly tryDequeue:VoidPointer;
+    static readonly tryDequeue: VoidPointer;
 }
 
 /**
  * native debug information handlers
  */
 export declare namespace pdb {
-    export function getOptions():number;
+    export function getOptions(): number;
 
     /**
      * Wrapper of SymSetOptions
      * You can find more options from https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/symbol-options
      * @param dbghelpOptions
      */
-    export function setOptions(dbghelpOptions:number):number;
+    export function setOptions(dbghelpOptions: number): number;
 
     /**
      * undecorate the decorated symbol
      */
-    export function undecorate(decorated:string, flags:number):string;
-
+    export function undecorate(decorated: string, flags: number): string;
 }
 
 /**
  * native error handling
  */
 export declare namespace runtimeError {
-    export function codeToString(code:number):string;
-    export function setHandler(handler:(err:RuntimeError)=>void):void;
+    export function codeToString(code: number): string;
+    export function setHandler(handler: (err: RuntimeError) => void): void;
 
     /**
      * [[noreturn]] fire(JsValueRef error)
      */
-    export const fire:VoidPointer;
+    export const fire: VoidPointer;
 
     // int raise(EXCEPTION_POINTERS* exptr)
     export const raise: VoidPointer;
 
     // wrapper of RtlLookupFunctionEntry
-    export function lookUpFunctionEntry(address:VoidPointer):[VoidPointer]|[VoidPointer, number, number, number]|null;
+    export function lookUpFunctionEntry(address: VoidPointer): [VoidPointer] | [VoidPointer, number, number, number] | null;
     // wrapper of RtlAddFunctionTable
-	export function addFunctionTable(functionTable:VoidPointer, entryCount:number, baseAddress:VoidPointer):void;
+    export function addFunctionTable(functionTable: VoidPointer, entryCount: number, baseAddress: VoidPointer): void;
 }
 
 export declare namespace bedrock_server_exe {
-    export const md5:string;
+    export const md5: string;
 
     export const argc: number;
 
@@ -583,7 +581,7 @@ export declare namespace bedrock_server_exe {
     /**
      * kill this process without any termination process
      */
-    export function forceKill(exitcode:number):never;
+    export function forceKill(exitcode: number): never;
 }
 
 export declare namespace uv_async {
@@ -592,13 +590,13 @@ export declare namespace uv_async {
      * need to call before using uv_async.call.
      * if it's called multiple time, it increases a internal reference count.
      */
-    export function open():void;
+    export function open(): void;
 
     /**
      * close uv_async
      * if open is called multiple time. also it needs to call close multiple time.
      */
-    export function close():void;
+    export function close(): void;
 
     /**
      * native function
@@ -610,7 +608,7 @@ export declare namespace uv_async {
     /**
      * size of the task instance
      */
-    export const sizeOfTask:number;
+    export const sizeOfTask: number;
 
     /**
      * native function
@@ -629,7 +627,7 @@ export declare namespace uv_async {
 }
 
 export declare namespace cgate {
-    export const bdsxCoreVersion:string;
+    export const bdsxCoreVersion: string;
 
     /**
      * the native function in kernel32.dll
@@ -646,17 +644,17 @@ export declare namespace cgate {
     /**
      * get NativeModule
      */
-    export function GetModuleHandleW(name:string|null):VoidPointer;
+    export function GetModuleHandleW(name: string | null): VoidPointer;
 
     /**
      * get the function pointer from NativeModule
      */
-    export function GetProcAddress(nativeModule:VoidPointer, name:string):VoidPointer;
+    export function GetProcAddress(nativeModule: VoidPointer, name: string): VoidPointer;
 
     /**
      * get the function pointer from NativeModule
      */
-    export function GetProcAddressByOrdinal(nativeModule:VoidPointer, ordinal:number):VoidPointer;
+    export function GetProcAddressByOrdinal(nativeModule: VoidPointer, ordinal: number): VoidPointer;
 
     /**
      * native function
@@ -680,28 +678,28 @@ export declare namespace cgate {
     /**
      * it will allocate a executable memory by VirtualAlloc
      */
-    export function allocExecutableMemory(size:number, alignment?:number):StaticPointer;
+    export function allocExecutableMemory(size: number, alignment?: number): StaticPointer;
 
-    export function nodeLoopOnce():void;
+    export function nodeLoopOnce(): void;
 
     /**
      * check memory corruption
      * Only for the debug built core
      */
-    export const memcheck:(()=>void)|undefined;
+    export const memcheck: (() => void) | undefined;
 }
 
 export declare namespace chakraUtil {
     // void* pointer_js2np(JsValueRef value)
-    export const pointer_js2class:VoidPointer;
+    export const pointer_js2class: VoidPointer;
 
-    export function JsCreateFunction(funcptr:VoidPointer, state:VoidPointer|null):(...args:any[])=>any;
+    export function JsCreateFunction(funcptr: VoidPointer, state: VoidPointer | null): (...args: any[]) => any;
 
-    export function JsAddRef(value:unknown):number;
+    export function JsAddRef(value: unknown): number;
 
-    export function JsRelease(value:unknown):number;
+    export function JsRelease(value: unknown): number;
 
-    export function asJsValueRef(value:unknown):VoidPointer;
+    export function asJsValueRef(value: unknown): VoidPointer;
 }
 
 export declare namespace ipfilter {
@@ -712,7 +710,7 @@ export declare namespace ipfilter {
      *
      * it blocks packets on very early phase
      */
-    export function add(ip:string, periodSeconds?:number):void;
+    export function add(ip: string, periodSeconds?: number): void;
 
     /**
      * block ip
@@ -721,94 +719,94 @@ export declare namespace ipfilter {
      *
      * it blocks packets on very early phase
      */
-     export function addAt(ip:string, unixTimeStamp?:number):void;
+    export function addAt(ip: string, unixTimeStamp?: number): void;
 
     /**
      * un-block ip
      */
-    export function remove(ip:string):boolean;
+    export function remove(ip: string): boolean;
 
     /**
      * remove all registered filters
      */
-    export function clear():void;
+    export function clear(): void;
 
     /**
      * check the ip is blocked
      */
-    export function has(ip:string):boolean;
+    export function has(ip: string): boolean;
 
     /**
      * get the un-blocking time in unix time stamp
      * 0 : permanent
      * -1 : not found
      */
-    export function getTime(ip:string):number;
+    export function getTime(ip: string): number;
 
     /**
      * log traffics to the file
      */
-    export function logTraffic(path:string|null):void;
+    export function logTraffic(path: string | null): void;
 
     /**
      * set traffic limit with bytes
      * it will block IP when it exceeds
      */
-    export function setTrafficLimit(bytes:number):void;
+    export function setTrafficLimit(bytes: number): void;
 
     /**
      * blocking period for setTrafficLimit
      */
-    export function setTrafficLimitPeriod(seconds:number):void;
+    export function setTrafficLimitPeriod(seconds: number): void;
 
     /**
      * IP of the last sender
      */
-    export function getLastSender():string;
+    export function getLastSender(): string;
 
     /**
      * it's called in bedrockServer.launch
      * no need to call manually
      */
-    export function init(callbackOnExceeded:(ip:string)=>void):void;
+    export function init(callbackOnExceeded: (ip: string) => void): void;
 
     /**
      * all filtering IPs as Array with [IP, time] pairs.
      * time is for expiring in unix time stamp.
      * if time is 0, it's permanent.
      */
-    export function entries():[string, number][];
+    export function entries(): [string, number][];
 }
 
-type ErrorListener = (err:Error)=>void;
+type ErrorListener = (err: Error) => void;
 
 export declare namespace jshook {
-    export function setOnError(onError:ErrorListener):ErrorListener;
-    export function getOnError():ErrorListener;
-    export function fireError(err:Error):void;
-    export const fireErrorPointer:VoidPointer;
+    export function setOnError(onError: ErrorListener): ErrorListener;
+    export function getOnError(): ErrorListener;
+    export function fireError(err: Error): void;
+    export const fireErrorPointer: VoidPointer;
 }
 
 export declare namespace cxxException {
     /**
      * void trycatch(void* param, void(*try)(void* param), void(*catch)(void* param, const char* error));
      */
-    export const trycatch:VoidPointer;
+    export const trycatch: VoidPointer;
 
     /**
      * void cxxthrow();
      * will not pass catch
      */
-    export const cxxthrow:VoidPointer;
+    export const cxxthrow: VoidPointer;
 
     /**
      * void cxxthrowString(const char*);
      */
-    export const cxxthrowString:VoidPointer;
+    export const cxxthrowString: VoidPointer;
 }
 
 try {
-    const core = module.exports = (process as any)._linkedBinding('bdsx_core');
+    const core = (module.exports = (process as any)._linkedBinding("bdsx_core"));
     core.ipfilter.entires = core.ipfilter.entries;
     core.PrivatePointer = core.StaticPointer;
     core.pdb.setOptions(0);

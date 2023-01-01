@@ -14,7 +14,18 @@ import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import type { Packet } from "./packet";
-import { BossEventPacket, PlayerListEntry as _PlayerListEntry, PlaySoundPacket, ScorePacketInfo, SetDisplayObjectivePacket, SetScorePacket, SetTitlePacket, TextPacket, ToastRequestPacket, TransferPacket } from "./packets";
+import {
+    BossEventPacket,
+    PlayerListEntry as _PlayerListEntry,
+    PlaySoundPacket,
+    ScorePacketInfo,
+    SetDisplayObjectivePacket,
+    SetScorePacket,
+    SetTitlePacket,
+    TextPacket,
+    ToastRequestPacket,
+    TransferPacket,
+} from "./packets";
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
@@ -102,7 +113,7 @@ export class Player extends Mob {
     /**
      * Returns a tick. If you want seconds, divide by 20
      */
-    getItemCooldownLeft(cooldownType:HashedString): number {
+    getItemCooldownLeft(cooldownType: HashedString): number {
         abstract();
     }
     /**
@@ -158,7 +169,7 @@ export class Player extends Mob {
      * @param pos - Respawn position
      * @param dimension - Dimension
      */
-    setRespawnPosition(pos: BlockPos, dimension: DimensionId):void {
+    setRespawnPosition(pos: BlockPos, dimension: DimensionId): void {
         abstract();
     }
 
@@ -419,21 +430,21 @@ export class Player extends Mob {
      * Get block destroy progress
      * @param block
      */
-    getDestroyProgress(block: Block): number{
+    getDestroyProgress(block: Block): number {
         abstract();
     }
 
     /**
      * Respawn player
      */
-    respawn(): void{
+    respawn(): void {
         abstract();
     }
 
     /**
      * Returns whether the player is simulated
      */
-    isSimulated(): this is SimulatedPlayer{
+    isSimulated(): this is SimulatedPlayer {
         abstract();
     }
 
@@ -441,7 +452,7 @@ export class Player extends Mob {
      * Set player's respawn ready
      * @param vec3
      */
-    setRespawnReady(vec3: Vec3): void{
+    setRespawnReady(vec3: Vec3): void {
         abstract();
     }
 
@@ -450,7 +461,7 @@ export class Player extends Mob {
      * @param blockPos
      * @param dimensionId
      */
-    setSpawnBlockRespawnPosition(blockPos: BlockPos, dimensionId: DimensionId): void{
+    setSpawnBlockRespawnPosition(blockPos: BlockPos, dimensionId: DimensionId): void {
         abstract();
     }
 
@@ -507,9 +518,13 @@ interface RawTextObject {
 }
 
 export class ServerPlayer extends Player implements HasStorage {
-    static readonly [Storage.classId] = 'player';
-    [Storage.id]():string { return mce.UUID.toString(this.getUuid()); }
-    [Storage.aliasId]():string { return '_'+this.getNameTag(); }
+    static readonly [Storage.classId] = "player";
+    [Storage.id](): string {
+        return mce.UUID.toString(this.getUuid());
+    }
+    [Storage.aliasId](): string {
+        return "_" + this.getNameTag();
+    }
 
     /** @deprecated Use `this.getNetworkIdentifier()` instead */
     get networkIdentifier(): NetworkIdentifier {
@@ -518,7 +533,7 @@ export class ServerPlayer extends Player implements HasStorage {
     /**
      * Returns the player's NetworkIdentifier
      */
-    getNetworkIdentifier():NetworkIdentifier {
+    getNetworkIdentifier(): NetworkIdentifier {
         abstract();
     }
 
@@ -566,7 +581,7 @@ export class ServerPlayer extends Player implements HasStorage {
      * @param slot - Armor slot
      * @param itemStack - Armor item to set
      */
-    setArmor(slot: ArmorSlot, itemStack:ItemStack): void {
+    setArmor(slot: ArmorSlot, itemStack: ItemStack): void {
         abstract();
     }
 
@@ -609,7 +624,7 @@ export class ServerPlayer extends Player implements HasStorage {
      *
      * @param object JSON-Object to encode and send
      */
-    sendTextObject(object:RawTextObject): void {
+    sendTextObject(object: RawTextObject): void {
         const pk = TextPacket.allocate();
         pk.type = TextPacket.Types.TextObject;
         pk.message = JSON.stringify(object);
@@ -726,7 +741,7 @@ export class ServerPlayer extends Player implements HasStorage {
         pk.type = BossEventPacket.Types.Show;
         pk.title = title;
         pk.healthPercent = percent;
-        if(color) pk.color = color;
+        if (color) pk.color = color;
         this.sendNetworkPacket(pk);
         pk.dispose();
     }
@@ -931,19 +946,19 @@ export class ServerPlayer extends Player implements HasStorage {
         return super.die(damageSource);
     }
 
-    static tryGetFromEntity(entity:EntityContext, getRemoved?:boolean):ServerPlayer|null {
+    static tryGetFromEntity(entity: EntityContext, getRemoved?: boolean): ServerPlayer | null {
         abstract();
     }
 }
 
-export class SimulatedPlayer extends ServerPlayer{
+export class SimulatedPlayer extends ServerPlayer {
     /**
      * Create SimulatedPlayer
      * @param name
      * @param blockPos
      * @param dimensionId
      */
-    static create(name: string, blockPos: BlockPos|Vec3|VectorXYZ, dimensionId: DimensionId): SimulatedPlayer;
+    static create(name: string, blockPos: BlockPos | Vec3 | VectorXYZ, dimensionId: DimensionId): SimulatedPlayer;
 
     /**
      * Create SimulatedPlayer
@@ -953,43 +968,53 @@ export class SimulatedPlayer extends ServerPlayer{
      * @param nonOwnerPointerServerNetworkHandler Minecraft.getNonOwnerPointerServerNetworkHandler()
      * @deprecated no need to pass serverNetworkHandler
      */
-    static create(name: string, blockPos: BlockPos, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer;
+    static create(
+        name: string,
+        blockPos: BlockPos,
+        dimensionId: DimensionId,
+        nonOwnerPointerServerNetworkHandler: Bedrock.NonOwnerPointer<ServerNetworkHandler>,
+    ): SimulatedPlayer;
 
-    static create(name: string, blockPos: BlockPos|Vec3|VectorXYZ, dimensionId: DimensionId, nonOwnerPointerServerNetworkHandler?: Bedrock.NonOwnerPointer<ServerNetworkHandler>): SimulatedPlayer{
+    static create(
+        name: string,
+        blockPos: BlockPos | Vec3 | VectorXYZ,
+        dimensionId: DimensionId,
+        nonOwnerPointerServerNetworkHandler?: Bedrock.NonOwnerPointer<ServerNetworkHandler>,
+    ): SimulatedPlayer {
         abstract();
     }
 
     /**
      * Simulate disconnect
      */
-    simulateDisconnect(): void{
+    simulateDisconnect(): void {
         abstract();
     }
     simulateLookAt(target: Actor): void;
     simulateLookAt(target: Vec3): void;
     simulateLookAt(target: BlockPos): void;
-    simulateLookAt(target:BlockPos|Actor|Vec3):void{
+    simulateLookAt(target: BlockPos | Actor | Vec3): void {
         abstract();
     }
-    simulateJump():void{
+    simulateJump(): void {
         abstract();
     }
-    simulateSetBodyRotation(rotation:number):void{
+    simulateSetBodyRotation(rotation: number): void {
         abstract();
     }
-    simulateSetItem(item:ItemStack,selectSlot:boolean,slot:number):boolean{
+    simulateSetItem(item: ItemStack, selectSlot: boolean, slot: number): boolean {
         abstract();
     }
-    simulateDestroyBlock(pos:BlockPos,direction:number=1):boolean{
+    simulateDestroyBlock(pos: BlockPos, direction: number = 1): boolean {
         abstract();
     }
-    simulateStopDestroyingBlock():void{
+    simulateStopDestroyingBlock(): void {
         abstract();
     }
-    simulateLocalMove(pos:Vec3,speed:number):void{
+    simulateLocalMove(pos: Vec3, speed: number): void {
         abstract();
     }
-    simulateMoveToLocation(pos:Vec3,speed:number):void{
+    simulateMoveToLocation(pos: Vec3, speed: number): void {
         abstract();
     }
     /* move to target with navigation
@@ -1000,33 +1025,33 @@ export class SimulatedPlayer extends ServerPlayer{
     simulateNavigateToLocations(locations: Vec3[], speed: float32_t): void {
         abstract();
     }
-    simulateStopMoving():void{
+    simulateStopMoving(): void {
         abstract();
     }
     /** It attacks regardless of reach */
-    simulateAttack(target:Actor):boolean{
+    simulateAttack(target: Actor): boolean {
         abstract();
     }
-    simulateInteractWithActor(target:Actor):boolean{
+    simulateInteractWithActor(target: Actor): boolean {
         abstract();
     }
-    simulateInteractWithBlock(blockPos:BlockPos,direction:number=1):boolean{
+    simulateInteractWithBlock(blockPos: BlockPos, direction: number = 1): boolean {
         abstract();
     }
-    simulateUseItem(item:ItemStack):boolean{
+    simulateUseItem(item: ItemStack): boolean {
         abstract();
     }
-    simulateUseItemOnBlock(item:ItemStack,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)):boolean{
+    simulateUseItemOnBlock(item: ItemStack, pos: BlockPos, direction: number = 1, clickPos: Vec3 = Vec3.create(0, 0, 0)): boolean {
         abstract();
     }
-    simulateUseItemInSlot(slot:number):boolean{
+    simulateUseItemInSlot(slot: number): boolean {
         abstract();
     }
-    simulateUseItemInSlotOnBlock(slot:number,pos:BlockPos,direction:number=1,clickPos:Vec3 = Vec3.create(0,0,0)):boolean{
+    simulateUseItemInSlotOnBlock(slot: number, pos: BlockPos, direction: number = 1, clickPos: Vec3 = Vec3.create(0, 0, 0)): boolean {
         abstract();
     }
 
-    static tryGetFromEntity(entity:EntityContext, getRemoved?:boolean):SimulatedPlayer|null {
+    static tryGetFromEntity(entity: EntityContext, getRemoved?: boolean): SimulatedPlayer | null {
         abstract();
     }
 }

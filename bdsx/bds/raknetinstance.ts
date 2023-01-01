@@ -6,13 +6,13 @@ import { RakNet } from "./raknet";
 @nativeClass()
 export class RakNetInstance extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     /**
      * @deprecated use bedrockServer.rakPeer
      */
-    peer:RakNet.RakPeer;
+    peer: RakNet.RakPeer;
 
-    getPort():number {
+    getPort(): number {
         abstract();
     }
 }

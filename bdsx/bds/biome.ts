@@ -28,14 +28,14 @@ export enum VanillaBiomeTypes {
 @nativeClass(null)
 export class Biome extends AbstractClass {
     @nativeField(VoidPointer)
-    vftable:VoidPointer;
+    vftable: VoidPointer;
     @nativeField(CxxString)
-    name:CxxString;
+    name: CxxString;
 
     /**
      * Returns the type of the biome (not the name)
      */
-    getBiomeType():VanillaBiomeTypes {
+    getBiomeType(): VanillaBiomeTypes {
         abstract();
     }
 }

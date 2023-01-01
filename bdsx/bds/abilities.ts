@@ -6,111 +6,110 @@ import type { PlayerPermission } from "./player";
 
 @nativeClass(0x140)
 export class Abilities extends AbstractClass {
-    getAbility(abilityIndex:AbilitiesIndex):Ability {
+    getAbility(abilityIndex: AbilitiesIndex): Ability {
         abstract();
     }
-    setAbility(abilityIndex:AbilitiesIndex, value:boolean|number):void {
+    setAbility(abilityIndex: AbilitiesIndex, value: boolean | number): void {
         abstract();
     }
     isFlying(): boolean {
         abstract();
     }
 
-    getFloat(abilityIndex:AbilitiesIndex): number {
+    getFloat(abilityIndex: AbilitiesIndex): number {
         abstract();
     }
-    getBool(abilityIndex:AbilitiesIndex): boolean {
+    getBool(abilityIndex: AbilitiesIndex): boolean {
         abstract();
     }
-    static getAbilityName(abilityIndex:AbilitiesIndex):string {
+    static getAbilityName(abilityIndex: AbilitiesIndex): string {
         abstract();
     }
-    static nameToAbilityIndex(name:string):AbilitiesIndex {
+    static nameToAbilityIndex(name: string): AbilitiesIndex {
         abstract();
     }
 }
 
-export enum AbilitiesLayer {
-    // TODO: fill
-}
+export enum AbilitiesLayer {}
+// TODO: fill
 
 @nativeClass(null)
 export class LayeredAbilities extends AbstractClass {
-    getLayer(layer:AbilitiesLayer):Abilities {
+    getLayer(layer: AbilitiesLayer): Abilities {
         abstract();
     }
-    protected _setAbility(abilityIndex:AbilitiesIndex, value:boolean):void {
+    protected _setAbility(abilityIndex: AbilitiesIndex, value: boolean): void {
         abstract();
     }
     /**
      * Returns the command permission level of the ability owner
      */
-    getCommandPermissions():CommandPermissionLevel {
+    getCommandPermissions(): CommandPermissionLevel {
         abstract();
     }
     /**
      * Returns the player permission level of the ability owner
      */
-    getPlayerPermissions():PlayerPermission {
+    getPlayerPermissions(): PlayerPermission {
         abstract();
     }
     /**
      * Changes the command permission level of the ability owner
      */
-    setCommandPermissions(commandPermissionLevel:CommandPermissionLevel):void {
+    setCommandPermissions(commandPermissionLevel: CommandPermissionLevel): void {
         abstract();
     }
     /**
      * Changes the player permission level of the ability owner
      */
-    setPlayerPermissions(playerPermissionLevel:PlayerPermission):void {
+    setPlayerPermissions(playerPermissionLevel: PlayerPermission): void {
         abstract();
     }
     /**
      * Returns the command permission level of the ability owner
      * @deprecated use getCommandPermissions, use the native function name
      */
-    getCommandPermissionLevel():CommandPermissionLevel {
+    getCommandPermissionLevel(): CommandPermissionLevel {
         abstract();
     }
     /**
      * Returns the player permission level of the ability owner
      * @deprecated use getPlayerPermissions, use the native function name
      */
-    getPlayerPermissionLevel():PlayerPermission {
+    getPlayerPermissionLevel(): PlayerPermission {
         abstract();
     }
     /**
      * Changes the command permission level of the ability owner
      * @deprecated use setCommandPermissions, use the native function name
      */
-    setCommandPermissionLevel(commandPermissionLevel:CommandPermissionLevel):void {
+    setCommandPermissionLevel(commandPermissionLevel: CommandPermissionLevel): void {
         abstract();
     }
     /**
      * Changes the player permission level of the ability owner
      * @deprecated use setPlayerPermissions, use the native function name
      */
-    setPlayerPermissionLevel(playerPermissionLevel:PlayerPermission):void {
+    setPlayerPermissionLevel(playerPermissionLevel: PlayerPermission): void {
         abstract();
     }
-    getAbility(abilityIndex:AbilitiesIndex):Ability;
-    getAbility(abilityLayer:AbilitiesLayer, abilityIndex:AbilitiesIndex):Ability;
-    getAbility(abilityLayer:AbilitiesLayer|AbilitiesIndex, abilityIndex?:AbilitiesIndex):Ability {
+    getAbility(abilityIndex: AbilitiesIndex): Ability;
+    getAbility(abilityLayer: AbilitiesLayer, abilityIndex: AbilitiesIndex): Ability;
+    getAbility(abilityLayer: AbilitiesLayer | AbilitiesIndex, abilityIndex?: AbilitiesIndex): Ability {
         abstract();
     }
 
-    setAbility(abilityIndex:AbilitiesIndex, value:boolean|number):void {
+    setAbility(abilityIndex: AbilitiesIndex, value: boolean | number): void {
         abstract();
     }
 
     isFlying(): boolean {
         abstract();
     }
-    getFloat(abilityIndex:AbilitiesIndex): number {
+    getFloat(abilityIndex: AbilitiesIndex): number {
         abstract();
     }
-    getBool(abilityIndex:AbilitiesIndex): boolean {
+    getBool(abilityIndex: AbilitiesIndex): boolean {
         abstract();
     }
 }
@@ -141,42 +140,42 @@ export enum AbilitiesIndex {
 }
 
 export class Ability extends NativeClass {
-    type:Ability.Type;
-    value:Ability.Value;
-    options:Ability.Options;
+    type: Ability.Type;
+    value: Ability.Value;
+    options: Ability.Options;
 
-    getBool():boolean {
+    getBool(): boolean {
         abstract();
     }
-    getFloat():number {
+    getFloat(): number {
         abstract();
     }
-    setBool(value:boolean):void {
+    setBool(value: boolean): void {
         abstract();
     }
-    setFloat(value:number):void {
+    setFloat(value: number): void {
         this.type = Ability.Type.Float;
         this.setFloat32(value, 0x04);
     }
 
-    getValue():boolean|number|undefined {
+    getValue(): boolean | number | undefined {
         switch (this.type) {
-        case Ability.Type.Unset:
-            return undefined;
-        case Ability.Type.Bool:
-            return this.getBool();
-        case Ability.Type.Float:
-            return this.getFloat();
+            case Ability.Type.Unset:
+                return undefined;
+            case Ability.Type.Bool:
+                return this.getBool();
+            case Ability.Type.Float:
+                return this.getFloat();
         }
     }
-    setValue(value:boolean|number):void {
+    setValue(value: boolean | number): void {
         switch (typeof value) {
-        case "boolean":
-            this.setBool(value);
-            break;
-        case "number":
-            this.setFloat(value);
-            break;
+            case "boolean":
+                this.setBool(value);
+                break;
+            case "number":
+                this.setFloat(value);
+                break;
         }
     }
 }
@@ -211,9 +210,9 @@ export namespace Ability {
 
     @nativeClass()
     export class Value extends NativeStruct {
-        @nativeField(bool_t, {ghost:true})
-        boolVal:bool_t;
+        @nativeField(bool_t, { ghost: true })
+        boolVal: bool_t;
         @nativeField(float32_t)
-        floatVal:float32_t;
+        floatVal: float32_t;
     }
 }
