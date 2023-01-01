@@ -20,7 +20,7 @@ import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { getEnumKeys } from "../util";
 import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } from "./abilities";
-import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, WeakEntityRef } from "./actor";
+import { Actor, ActorDamageByActorSource, ActorDamageCause, ActorDamageSource, ActorDefinitionIdentifier, ActorRuntimeID, ActorType, ActorUniqueID, DimensionId, DistanceSortedActor, EntityContext, EntityContextBase, EntityRefTraits, ItemActor, Mob, OwnerStorageEntity, SynchedActorDataEntityWrapper, WeakEntityRef } from "./actor";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
@@ -41,7 +41,7 @@ import { EnchantUtils, ItemEnchants } from "./enchants";
 import { GameMode } from "./gamemode";
 import { GameRule, GameRuleId, GameRules } from "./gamerules";
 import { HashedString, HashedStringToString } from "./hashedstring";
-import { ComponentItem, Container, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, ItemStackBase, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer, PlayerUISlot, SimpleContainer } from "./inventory";
+import { ComponentItem, Container, FillingContainer, Inventory, InventoryAction, InventorySource, InventoryTransaction, InventoryTransactionItemGroup, Item, ItemDescriptor, ItemStack, ItemStackBase, NetworkItemStackDescriptor, PlayerInventory, PlayerUIContainer, PlayerUISlot, SimpleContainer } from "./inventory";
 import { ArmorItemComponent, CooldownItemComponent, DiggerItemComponent, DisplayNameItemComponent, DurabilityItemComponent, DyePowderItemComponent, EntityPlacerItemComponent, FoodItemComponent, FuelItemComponent, IconItemComponent, ItemComponent, KnockbackResistanceItemComponent, OnUseItemComponent, PlanterItemComponent, ProjectileItemComponent, RecordItemComponent, RenderOffsetsItemComponent, RepairableItemComponent, ShooterItemComponent, ThrowableItemComponent, WeaponItemComponent, WearableItemComponent } from "./item_component";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import { ByteArrayTag, ByteTag, CompoundTag, CompoundTagVariant, DoubleTag, EndTag, FloatTag, Int64Tag, IntArrayTag, IntTag, ListTag, NBT, ShortTag, StringTag, Tag, TagMemoryChunk, TagPointer } from "./nbt";
@@ -561,6 +561,8 @@ Actor.prototype.isInLove = procHacker.js("?isInLove@Actor@@QEBA_NXZ", bool_t, {t
 Actor.prototype.isInLava = procHacker.js("?isInLava@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isInContactWithWater = procHacker.js("?isInContactWithWater@Actor@@QEBA_NXZ", bool_t, {this:Actor});
 Actor.prototype.isInClouds = procHacker.js("?isInClouds@Actor@@QEBA_NXZ", bool_t, {this:Actor});
+Actor.prototype.isBaby = procHacker.js("?isBaby@Actor@@QEBA_NXZ", bool_t, {this:Actor});
+Actor.prototype.getEntityData = procHacker.js("?getEntityData@Actor@@QEBAAEBVSynchedActorDataEntityWrapper@@XZ", SynchedActorDataEntityWrapper, {this:Actor});
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, {this:Actor});
 Mob.prototype.knockback = procHacker.jsv('??_7Mob@@6B@', '?knockback@Mob@@UEAAXPEAVActor@@HMMMMM@Z', void_t, {this:Mob}, Actor, int32_t, float32_t, float32_t, float32_t, float32_t, float32_t);
@@ -578,6 +580,9 @@ Mob.prototype.isBlocking = procHacker.jsv("??_7Mob@@6B@", "?isBlocking@Mob@@UEBA
 
 OwnerStorageEntity.prototype._getStackRef = procHacker.js('?_getStackRef@OwnerStorageEntity@@IEBAAEAVEntityContext@@XZ', EntityContext, {this:OwnerStorageEntity});
 Actor.tryGetFromEntity = procHacker.js('?tryGetFromEntity@Actor@@SAPEAV1@AEAVEntityContext@@_N@Z', Actor, null, EntityContext, bool_t);
+
+SynchedActorDataEntityWrapper.prototype.getFloat = procHacker.js("?getFloat@SynchedActorDataEntityWrapper@@QEBAMG@Z", float32_t, {this:SynchedActorDataEntityWrapper}, uint16_t);
+SynchedActorDataEntityWrapper.prototype.setFloat = procHacker.js("??$set@M@SynchedActorDataEntityWrapper@@QEAAXGAEBM@Z", void_t, {this:SynchedActorDataEntityWrapper}, uint16_t, float32_t.ref() /** float const & */);
 
 @nativeClass(0x18)
 class StackResultStorageEntity extends NativeClass {
@@ -1245,6 +1250,8 @@ Container.prototype.removeAllItems = procHacker.js("?removeAllItems@Container@@U
 Container.prototype.removeItem = procHacker.js("?removeItem@Container@@UEAAXHH@Z", void_t, {this:Container}, int32_t, int32_t);
 Container.prototype.setCustomName = procHacker.js("?setCustomName@Container@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this:Container}, CxxString);
 
+FillingContainer.prototype.canAdd = procHacker.jsv("??_7FillingContainer@@6B@", "?canAdd@FillingContainer@@UEBA_NAEBVItemStack@@@Z", bool_t, {this:FillingContainer}, ItemStack);
+
 Inventory.prototype.dropSlot = procHacker.js("?dropSlot@Inventory@@QEAAXH_N00@Z", void_t, {this:Inventory}, int32_t, bool_t, bool_t, bool_t);
 
 PlayerInventory.prototype.getContainer = procHacker.js("?getContainer@PlayerInventory@@QEAAAEAVContainer@@XZ", Inventory, {this:PlayerInventory});
@@ -1263,8 +1270,9 @@ PlayerInventory.prototype.swapSlots = procHacker.js("?swapSlots@PlayerInventory@
 const PlayerInventory$removeResource = procHacker.js("?removeResource@PlayerInventory@@QEAAHAEBVItemStack@@_N1H@Z", int32_t, null, PlayerInventory, ItemStack, bool_t, bool_t, int32_t);
 PlayerInventory.prototype.removeResource = function (item: ItemStack, requireExactAux: boolean = true, requireExactData: boolean = false, maxCount?: int32_t) {
     maxCount ??= this.container.getItemCount(item);
-    return PlayerInventory$removeResource(this, item, requireExactAux, requireExactData, maxCount!);
+    return PlayerInventory$removeResource(this, item, requireExactAux, requireExactData, maxCount);
 };
+PlayerInventory.prototype.canAdd = procHacker.js("?canAdd@PlayerInventory@@QEBA_NAEBVItemStack@@@Z", bool_t, {this:PlayerInventory}, ItemStack);
 
 ItemDescriptor.prototype[NativeType.ctor] = procHacker.js('??0ItemDescriptor@@QEAA@XZ', void_t, {this:ItemDescriptor});
 ItemDescriptor.prototype[NativeType.dtor] = procHacker.js('??1ItemDescriptor@@UEAA@XZ', void_t, {this:ItemDescriptor});

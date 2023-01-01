@@ -529,6 +529,12 @@ export class Container extends AbstractClass {
 }
 
 export class FillingContainer extends Container {
+    /**
+     * It doesn't care item's amount
+     */
+    canAdd(itemStack: ItemStack): boolean {
+        abstract();
+    }
 }
 export class SimpleContainer extends Container {
 }
@@ -665,6 +671,13 @@ export class PlayerInventory extends AbstractClass {
      * @returns number of items not removed
      */
     removeResource(item: ItemStack, requireExactAux: boolean = true, requireExactData: boolean = false, maxCount?: int32_t): int32_t {
+        abstract();
+    }
+
+    /**
+     * It doesn't care item's amount
+     */
+    canAdd(itemStack: ItemStack): boolean {
         abstract();
     }
 }

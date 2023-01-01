@@ -5,10 +5,11 @@ import type { CommandResult, CommandResultType } from "../commandresult";
 import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { CxxVector } from "../cxxvector";
+import { decay } from '../decay';
 import { events } from '../event';
 import { mangle } from "../mangle";
 import { AbstractClass, nativeClass, NativeClass, nativeClassUtil, nativeField, NativeStruct } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
+import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint16_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import type { BlockSource } from "./block";
 import { BlockPos, Vec2, Vec3 } from "./blockpos";
@@ -1355,8 +1356,62 @@ export class Actor extends AbstractClass {
     isInClouds(): boolean {
         abstract();
     }
+
+    /**
+     * There is Actor::isRemoved in BDS
+     * but customized for bdsx instead of hooking it.
+     */
+    isRemoved(): boolean {
+        return decay.isDecayed(this);
+    }
+
+    isBaby(): boolean {
+        abstract();
+    }
+
+    getEntityData(): SynchedActorDataEntityWrapper {
+        abstract();
+    }
+
+    /**
+     * Scale: 1 is for adult (normal), 0.5 is for baby.
+     * It changes the size of Hitbox, and entity's size.
+     */
+    setScale(scale: float32_t): void {
+        const entityData = this.getEntityData();
+        entityData.setFloat(ActorDataIDs.Scale, scale);
+    }
+    /**
+     * Scale: 1 is for adult (normal), 0.5 is for baby.
+     */
+    getScale(): float32_t {
+        const entityData = this.getEntityData();
+        return entityData.getFloat(ActorDataIDs.Scale);
+    }
 }
 mangle.update(Actor);
+
+@nativeClass(null)
+export class SynchedActorDataEntityWrapper extends AbstractClass {
+    /**
+     * SynchedActorDataEntityWrapper::set<float>
+     */
+    setFloat(id: ActorDataIDs, value: float32_t): void {
+        abstract();
+    }
+    /**
+     * SynchedActorDataEntityWrapper::getFloat
+     */
+    getFloat(id: ActorDataIDs): float32_t {
+        abstract();
+    }
+}
+
+export enum ActorDataIDs  /** : unsigned short */ {
+    Scale = 0x26, // used as float, in Actor::setSize
+    Width = 0x35, // used as float, in Actor::setSize
+    Height = 0x36, // used as float, in Actor::setSize
+}
 
 @nativeClass()
 export class DistanceSortedActor extends NativeStruct {
