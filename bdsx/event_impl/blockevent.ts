@@ -1,12 +1,12 @@
 import { Actor } from "../bds/actor";
-import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor } from "../bds/block";
+import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor, PistonAction as PistonActorInBlockModule, PistonBlockActor } from "../bds/block";
 import { BlockPos } from "../bds/blockpos";
 import { GameMode } from "../bds/gamemode";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
 import { VanillaServerGameplayEventListener } from "../bds/server";
 import { CANCEL } from "../common";
-import { NativePointer, StaticPointer } from "../core";
+import { StaticPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { bool_t, float32_t, int32_t, uint8_t, void_t } from "../nativetype";
@@ -30,12 +30,19 @@ export class BlockPlaceEvent {
     constructor(public player: ServerPlayer, public block: Block, public blockSource: BlockSource, public blockPos: BlockPos) {}
 }
 
-export enum PistonAction {
-    Extend = 1,
-    Retract = 3,
-}
+/** @deprecated import it from bdsx/bds/block.ts */
+export const PistonAction = PistonActorInBlockModule;
+/** @deprecated import it from bdsx/bds/block.ts */
+export type PistonAction = PistonActorInBlockModule;
+
 export class PistonMoveEvent {
-    constructor(public blockPos: BlockPos, public blockSource: BlockSource, public action: PistonAction) {}
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public action: PistonActorInBlockModule,
+        public affectedBlocks: BlockPos[],
+        public facingDirection: BlockPos,
+    ) {}
 }
 
 export class FarmlandDecayEvent {
@@ -141,18 +148,19 @@ const _onBlockPlace = procHacker.hooking(
     bool_t,
 )(onBlockPlace);
 
-function onPistonMove(pistonBlockActor: NativePointer, blockSource: BlockSource): void_t {
-    const event = new PistonMoveEvent(
-        BlockPos.create(pistonBlockActor.getInt32(0x2c), pistonBlockActor.getUint32(0x30), pistonBlockActor.getInt32(0x34)),
-        blockSource,
-        pistonBlockActor.getInt8(0xe0),
-    );
+function onPistonMove(this: PistonBlockActor, blockSource: BlockSource): void_t {
+    const event = new PistonMoveEvent(this.getPosition(), blockSource, this.action, this.getAttachedBlocks(), this.getFacingDir(blockSource));
     events.pistonMove.fire(event);
-    decay(pistonBlockActor);
+    decay(this);
     decay(blockSource);
-    return _onPistonMove(pistonBlockActor, event.blockSource);
+    return _onPistonMove.call(this, event.blockSource);
 }
-const _onPistonMove = procHacker.hooking("?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z", void_t, null, NativePointer, BlockSource)(onPistonMove);
+const _onPistonMove = procHacker.hooking(
+    "?_spawnMovingBlocks@PistonBlockActor@@AEAAXAEAVBlockSource@@@Z",
+    void_t,
+    { this: PistonBlockActor },
+    BlockSource,
+)(onPistonMove);
 
 function onFarmlandDecay(block: Block, blockSource: BlockSource, blockPos: BlockPos, culprit: Actor, fallDistance: float32_t): void_t {
     const event = new FarmlandDecayEvent(block, blockPos, blockSource, culprit);

@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, uint16_t, uint8_t } from "../nativetype";
+import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, int8_t, uint16_t, uint8_t } from "../nativetype";
 import type { Actor, DimensionId, ItemActor } from "./actor";
 import type { ChunkPos } from "./blockpos";
 import { BlockPos } from "./blockpos";
@@ -423,6 +423,29 @@ export class ChestBlockActor extends BlockActor {
      * @remarks If the chest is not a double chest, BlockPos ZERO (0,0,0) is returned.
      */
     getPairedChestPosition(): BlockPos {
+        abstract();
+    }
+}
+
+export enum PistonAction {
+    Extend = 1,
+    Retract = 3,
+}
+
+@nativeClass(0xe0)
+export class PistonBlockActor extends NativeClass {
+    @nativeField(int8_t, 0xd7)
+    action: PistonAction;
+
+    getPosition(): BlockPos {
+        abstract();
+    }
+
+    getAttachedBlocks(): BlockPos[] {
+        abstract();
+    }
+
+    getFacingDir(region: BlockSource): BlockPos {
         abstract();
     }
 }
