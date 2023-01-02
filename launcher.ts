@@ -8,7 +8,6 @@ import { events } from "bdsx/event";
 import { bedrockServer } from "bdsx/launcher";
 import { remapAndPrintError } from "bdsx/source-map-support";
 
-// prettier-ignore
 console.log(
     "  _____      _____ \n".green +
     "  \\    \\    /    / \n".green +

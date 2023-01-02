@@ -1,3 +1,5 @@
 bdsx/asm/asmcode.d.ts
 bdsx/externs/generated.addons.d.ts
 **/*.js
+**/*.ts
+!bdsx/**/*.ts
