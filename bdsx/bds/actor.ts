@@ -1358,11 +1358,10 @@ export class Actor extends AbstractClass {
     }
 
     /**
-     * There is Actor::isRemoved in BDS
-     * but customized for bdsx instead of hooking it.
+     * @deprecated it's meaningless. Doesn't work for decayed objects.
      */
     isRemoved(): boolean {
-        return decay.isDecayed(this);
+        return false;
     }
 
     isBaby(): boolean {
