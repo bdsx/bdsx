@@ -25,8 +25,10 @@ e.g. A clear and concise description of what you expected to happen.
 e.g. If applicable, add logs to help explain your problem.
 
 **Environment**  
- - OS: [e.g. iOS]
- - Version [e.g. 22]
+ - OS: [e.g. Windows]
+ - node.js Version (if it's related)
+ - npm Version (if it's related)
+ - git Version (if it's related)
 
 **Additional context**  
 e.g. Add any other context about the problem here.

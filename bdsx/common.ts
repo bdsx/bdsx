@@ -102,6 +102,14 @@ export function emptyFunc(): void {
     // empty
 }
 
+export function returnTrue(): true {
+    return true;
+}
+
+export function returnFalse(): false {
+    return false;
+}
+
 export function abstract(): never {
     throw Error("abstract");
 }
