@@ -5,8 +5,8 @@
   "private": true,
   "main": "./launcher.js",
   "author": "YOU!",
-  "engines" : {
-    "npm" : "<9.0.0"
+  "engines": {
+    "npm": "<9.0.0"
   },
   "scripts": {
     "postinstall": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
@@ -47,11 +47,11 @@
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.3.13",
     "@types/unzipper": "^0.10.4",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-github": "~4.2.0",
-    "eslint-plugin-import": "^2.24.1",
+    "@typescript-eslint/eslint-plugin": "^5.48.1",
+    "@typescript-eslint/parser": "^5.48.1",
+    "eslint": "^8.31.0",
+    "eslint-plugin-github": "^4.6.0",
+    "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-unicorn": "^40.1.0",
     "jszip": "^3.10.1",
