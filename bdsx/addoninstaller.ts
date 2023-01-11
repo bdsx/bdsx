@@ -114,6 +114,7 @@ class PackDirectory {
         const packs = await fsutil.readdir(this.path);
         for (const packName of packs) {
             const packPath = path.join(this.path, packName);
+            if (!(await fsutil.isDirectory(packPath))) continue;
             try {
                 const pack = await PackInfo.createFrom(packPath, this.managedPath, packName);
                 if (pack === null) {
@@ -197,8 +198,13 @@ class ManagedPack {
     public uuid: string | null = null;
     public packName: string | null = null;
     public pack: PackInfo | null = null;
+    public packs: ManagedPack[] | null = null;
 
     constructor(public readonly managedName: string) {}
+
+    getPackDirectoryPath(): string {
+        return addonsPath + path.sep + this.managedName.replace(/\//g, path.sep);
+    }
 
     checkUpdated(targetTime: number): boolean {
         return this.installMTime === null || targetTime > this.installMTime;
@@ -255,8 +261,8 @@ class BdsxPackDirectory {
     }
 
     private _getManagedPack(stat: FileInfo, addonName?: string): ManagedPack | null {
-        let packName = stat.name;
-        if (addonName != null) packName += "/" + addonName;
+        let packName = stat.isDirectory ? stat.base : stat.name;
+        if (addonName != null) packName = addonName + "/" + packName;
 
         let newPack = false;
         let mpack = this.managedPacks.get(packName);
@@ -287,16 +293,11 @@ class BdsxPackDirectory {
                 mpack.zipType = zipType;
                 mpack.zip = stat;
             } else {
-                if (mpack.zipType !== zipType) {
-                    console.error(colors.red(`[MCAddons] Pack type conflict. (new=${stat.base}, old=${stat.name}.${ZipType[mpack.zipType]})`));
-                    console.error(colors.red(`Please rename it to make it sure`));
-                } else {
-                    mpack.zip = stat;
-                }
+                mpack.zip = stat;
             }
         }
         if (newPack) {
-            this.managedPacks.set(mpack.managedName, mpack);
+            this.managedPacks.set(packName, mpack);
         }
         return mpack;
     }
@@ -306,8 +307,8 @@ class BdsxPackDirectory {
             let files: FileInfo[] | null = null;
             if (mpack.zip !== null) {
                 if (mpack.directory === null || mpack.zip.mtime > mpack.directory.mtime) {
-                    console.error(`[MCAddons] ${mpack.managedName}.${ZipType[mpack.zipType!]}: unzip`);
-                    mpack.directory = await this._makeDirectory(mpack.zip);
+                    console.error(`[MCAddons] ${mpack.zip.getSimplePath()}: unzip`);
+                    mpack.directory = await mpack.zip.makeDirectory();
                     files = await unzip(mpack.managedName, mpack.zip, mpack.directory, true);
                 }
             } else if (mpack.directory === null) {
@@ -345,6 +346,7 @@ class BdsxPackDirectory {
                             packFiles.push(stat);
                         }
                     } else if (manifestNames.has(stat.base)) {
+                        // it has manifest. determine as mcpack
                         mpack.zipType = ZipType.mcpack;
                         await mpack.loadPack();
                         return;
@@ -355,6 +357,11 @@ class BdsxPackDirectory {
                 }
             }
 
+            if (packFiles.length === 0) {
+                // it does not have anything
+                console.error(colors.red(`[MCAddons] addons/${mpack.managedName}: empty`));
+                return;
+            }
             const mpacks = new Set<ManagedPack>();
             for (const unzipped of packFiles) {
                 const mpack = this._getManagedPack(unzipped, dirName);
@@ -362,26 +369,13 @@ class BdsxPackDirectory {
                 mpack.zipType = ZipType.mcpack;
                 mpacks.add(mpack);
             }
-
-            for (const mpack of mpacks) {
-                await this._addDirectory(mpack);
+            mpack.packs = [...mpacks];
+            for (const pack of mpack.packs) {
+                await this._addDirectory(pack);
             }
         } catch (err) {
             console.trace(colors.red(`[MCAddons] addons/${mpack.managedName}: ${(err && err.message) || err}`));
         }
-    }
-
-    private async _makeDirectory(zip: FileInfo): Promise<FileInfo> {
-        const dirPath = path.dirname(zip.path) + path.sep + zip.name;
-        await dirmaker.make(dirPath);
-        return {
-            base: zip.name,
-            path: dirPath,
-            isDirectory: true,
-            mtime: Date.now(),
-            name: zip.name,
-            size: 0,
-        };
     }
 
     protected async _load(): Promise<void> {
@@ -389,7 +383,16 @@ class BdsxPackDirectory {
         this.loaded = true;
         const managedInfos: BdsxAddonJson = await readObjectJson(this.bdsxAddonsJsonPath);
         for (const [name, info] of Object.entries(managedInfos)) {
+            const names = name.split("/");
             const mpack = ManagedPack.fromJson(name, info);
+            if (names.length >= 2) {
+                const addonName = names[0];
+                const addon = this.managedPacks.get(addonName);
+                if (addon !== undefined) {
+                    if (addon.packs === null) addon.packs = [];
+                    addon.packs.push(mpack);
+                }
+            }
             this.managedPacks.set(name, mpack);
         }
 
@@ -398,7 +401,22 @@ class BdsxPackDirectory {
             if (!stat.isDirectory && (stat.base.endsWith(".txt") || stat.base.endsWith(".md") || stat.base.endsWith(".html"))) {
                 continue; // Ignore READMEs or similar things.
             }
-            this._getManagedPack(stat); // make managed packs from zip or directory or both
+            const addon = this._getManagedPack(stat); // make managed packs from zip or directory or both
+            if (addon !== null && addon.packs !== null) {
+                for (const pack of addon.packs) {
+                    const packPath = pack.getPackDirectoryPath();
+                    let stat: fs.Stats;
+                    try {
+                        stat = await fsutil.stat(packPath);
+                    } catch (err) {
+                        if (err.code !== "ENOENT") throw err;
+                        // not found, removed
+                        continue;
+                    }
+                    pack.directory = FileInfo.fromStat(packPath, path.basename(packPath), stat);
+                    if (pack.state === ManagedPackState.Removed) pack.state = ManagedPackState.Already;
+                }
+            }
         }
         for (const pack of this.managedPacks.values()) {
             if (pack.state === ManagedPackState.Removed) continue;
@@ -573,13 +591,37 @@ async function readObjectJson(path: string): Promise<Record<string, any>> {
     }
 }
 
-interface FileInfo {
-    path: string;
-    name: string;
-    base: string;
-    isDirectory: boolean;
-    mtime: number;
-    size: number;
+class FileInfo {
+    constructor(
+        public readonly path: string,
+        /**
+         * name without extension
+         */
+        public readonly name: string,
+        /**
+         * name with extension
+         */
+        public readonly base: string,
+        public readonly isDirectory: boolean,
+        public readonly mtime: number,
+        public readonly size: number,
+    ) {}
+
+    getSimplePath(): string {
+        const rpath = path.relative(addonsPath, this.path);
+        return rpath.replace(path.sep, "/");
+    }
+
+    async makeDirectory(): Promise<FileInfo> {
+        const dirPath = path.dirname(this.path) + path.sep + this.name;
+        await dirmaker.make(dirPath);
+        return new FileInfo(dirPath, this.name, this.name, true, Date.now(), 0);
+    }
+
+    static fromStat(filePath: string, fileName: string, stat: fs.Stats): FileInfo {
+        const extidx = fileName.lastIndexOf(".");
+        return new FileInfo(filePath, extidx === -1 ? fileName : fileName.substr(0, extidx), fileName, stat.isDirectory(), stat.mtimeMs, stat.size);
+    }
 }
 
 async function readdirWithStats(dirPath: string): Promise<FileInfo[]> {
@@ -589,15 +631,7 @@ async function readdirWithStats(dirPath: string): Promise<FileInfo[]> {
         for (const fileName of files) {
             const filePath = dirPath + path.sep + fileName;
             const stat = await fsutil.stat(filePath);
-            const extidx = fileName.lastIndexOf(".");
-            out.push({
-                name: extidx === -1 ? fileName : fileName.substr(0, extidx),
-                path: filePath,
-                base: fileName,
-                isDirectory: stat.isDirectory(),
-                mtime: stat.mtimeMs,
-                size: stat.size,
-            });
+            out.push(FileInfo.fromStat(filePath, fileName, stat));
         }
         return out;
     } catch (err) {
@@ -620,14 +654,17 @@ async function unzip(name: string, zip: FileInfo, targetDir: FileInfo, getRootFi
                     const fileName = rootedFile[1];
                     if (!rootFiles.has(fileName)) {
                         const extidx = fileName.lastIndexOf(".");
-                        rootFiles.set(fileName, {
-                            name: extidx === -1 ? fileName : fileName.substr(0, extidx),
-                            path: targetDir.path + path.sep + fileName,
-                            base: fileName,
-                            isDirectory: rootedFile[2] !== "" || entry.type === "Directory",
-                            mtime: entry.vars.lastModifiedTime,
-                            size: entry.extra.uncompressedSize,
-                        });
+                        rootFiles.set(
+                            fileName,
+                            new FileInfo(
+                                targetDir.path + path.sep + fileName,
+                                extidx === -1 ? fileName : fileName.substr(0, extidx),
+                                fileName,
+                                rootedFile[2] !== "" || entry.type === "Directory",
+                                entry.vars.lastModifiedTime,
+                                entry.extra.uncompressedSize,
+                            ),
+                        );
                     }
                 }
             }
@@ -720,13 +757,15 @@ export async function installMinecraftAddons(): Promise<void> {
                 if (mpack.pack !== null) {
                     await getWorldPackManager(mpack.pack.directoryType).install(mpack);
                     await serverPacks.install(mpack);
-                    bdsxPacks.modified = true;
                     console.log(colors.green(`[MCAddons] addons/${mpack.managedName}: added`));
+                    bdsxPacks.modified = true;
                 }
                 break;
             }
             case ManagedPackState.Already:
-                console.log(`[MCAddons] addons/${mpack.managedName}`);
+                if (mpack.pack !== null) {
+                    console.log(`[MCAddons] addons/${mpack.managedName}`);
+                }
                 break;
         }
     }
