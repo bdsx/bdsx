@@ -7,7 +7,7 @@ import { dll } from "./dll";
 import { dllraw } from "./dllraw";
 import { fsutil } from "./fsutil";
 import { makefunc } from "./makefunc";
-import { nativeClass, NativeClass, nativeField, NativeStruct } from "./nativeclass";
+import { nativeClass, nativeField, NativeStruct } from "./nativeclass";
 import { bool_t, int32_t, NativeType, uint16_t } from "./nativetype";
 import { Wrapper } from "./pointer";
 

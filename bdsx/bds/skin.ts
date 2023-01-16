@@ -1,7 +1,7 @@
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, CxxStringWith8Bytes, float32_t, int32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
+import { bool_t, CxxString, float32_t, int32_t, NativeType, uint32_t, uint8_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import { JsonValue } from "./connreq";
 import { SemVersion } from "./server";

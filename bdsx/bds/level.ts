@@ -3,7 +3,6 @@ import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
 import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor, WeakEntityRef } from "./actor";
-import type { Bedrock } from "./bedrock";
 import type { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
