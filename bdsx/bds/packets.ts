@@ -1133,13 +1133,13 @@ export class UpdateTradePacket extends Packet {
     containerType: ContainerType;
     @nativeField(CxxString)
     displayName: CxxString;
-    @nativeField(uint8_t, 0x5c)
-    traderTier: uint8_t;
-    @nativeField(ActorUniqueID, 0x60)
+    @nativeField(int32_t, 0x5c)
+    traderTier: int32_t;
+    @nativeField(ActorUniqueID)
     entityId: ActorUniqueID;
-    @nativeField(ActorUniqueID, 0x68)
+    @nativeField(ActorUniqueID)
     lastTradingPlayer: ActorUniqueID;
-    @nativeField(CompoundTag, 0x70)
+    @nativeField(CompoundTag)
     data: CompoundTag;
 }
 
@@ -2350,7 +2350,7 @@ export const PacketIdToType = {
     0xc4: UpdateClientInputLocksPacket,
 };
 export type PacketIdToType = {
-    [key in keyof typeof PacketIdToType]: InstanceType<typeof PacketIdToType[key]>;
+    [key in keyof typeof PacketIdToType]: InstanceType<(typeof PacketIdToType)[key]>;
 };
 
 for (const [packetId, type] of Object.entries(PacketIdToType)) {
