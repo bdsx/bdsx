@@ -228,6 +228,8 @@ export class SetTimePacket extends Packet {
 export class LevelSettings extends MantleClass {
     @nativeField(int64_as_float_t)
     seed: int64_as_float_t;
+    @nativeField(bool_t, 0x88)
+    customSkinsDisabled: bool_t;
 }
 
 @nativeClass(null)
