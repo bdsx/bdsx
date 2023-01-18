@@ -5,9 +5,6 @@
   "private": true,
   "main": "./launcher.js",
   "author": "YOU!",
-  "engines": {
-    "npm": "<9.0.0"
-  },
   "scripts": {
     "postinstall": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
     "install_bds": "ts-node ./bdsx/checkgate ./installer/installer ./bedrock_server",
