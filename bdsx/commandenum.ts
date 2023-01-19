@@ -303,7 +303,7 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
         if (Array.isArray(first)) {
             values = first;
         }
-        if (this.enumIndex !== -1) {
+        if (this.enumIndex === -1) {
             const registry = bedrockServer.commandRegistry;
             registry.addSoftEnum(this.name, values as string[]);
             this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
