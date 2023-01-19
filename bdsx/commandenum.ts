@@ -253,7 +253,13 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
     private constructor(name: string) {
         super(CxxString, CxxString.symbol, name);
         if (CommandSoftEnum.all.has(name)) throw Error(`the enum parser already exists (name=${name})`);
-        this.enumIndex = bedrockServer.commandRegistry.softEnumLookup.get(this.name) ?? -1;
+        const registry = bedrockServer.commandRegistry;
+        this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
+        if (this.enumIndex === -1) {
+            registry.addSoftEnum(this.name, []);
+            registry.softEnumLookup.get(this.name);
+            this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
+        }
         // No type id should be registered, it is the type of string
     }
 
@@ -276,13 +282,7 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
         if (Array.isArray(first)) {
             values = first;
         }
-        if (this.enumIndex === -1) {
-            const registry = bedrockServer.commandRegistry;
-            registry.addSoftEnum(this.name, values as string[]);
-            this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
-        } else {
-            this.updateValues(SoftEnumUpdateType.Add, values as string[]);
-        }
+        this.updateValues(SoftEnumUpdateType.Add, values as string[]);
     }
 
     removeValues(...values: string[]): void;
@@ -290,10 +290,9 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
     removeValues(...values: (string | string[])[]): void {
         const first = values[0];
         if (Array.isArray(first)) {
-            this.updateValues(SoftEnumUpdateType.Remove, first);
-        } else {
-            this.updateValues(SoftEnumUpdateType.Remove, values as string[]);
+            values = first;
         }
+        this.updateValues(SoftEnumUpdateType.Remove, values as string[]);
     }
 
     setValues(...values: string[]): void;
@@ -303,13 +302,7 @@ export class CommandSoftEnum extends CommandEnumBase<CxxString, string> {
         if (Array.isArray(first)) {
             values = first;
         }
-        if (this.enumIndex === -1) {
-            const registry = bedrockServer.commandRegistry;
-            registry.addSoftEnum(this.name, values as string[]);
-            this.enumIndex = registry.softEnumLookup.get(this.name) ?? -1;
-        } else {
-            this.updateValues(SoftEnumUpdateType.Replace, values as string[]);
-        }
+        this.updateValues(SoftEnumUpdateType.Replace, values as string[]);
     }
 
     getValues(): string[] {
