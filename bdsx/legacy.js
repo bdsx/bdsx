@@ -86,12 +86,13 @@ sharedpointer.SharedPointer = SharedPointer;
 exports.SharedPointer = SharedPointer;
 
 // bds/packet
-//@ts-ignore
-packet.createPacket = function createPacket(packetId) {
+function createPacket(packetId) {
     const p = new packet.PacketSharedPtr(true);
     packet.createPacketRaw(p, packetId);
     return new SharedPointer(p);
-};
+}
+//@ts-ignore
+packet.createPacket = createPacket;
 //@ts-ignore
 packet.Packet.prototype.destructor = function destructor() {
     abstract();
@@ -137,19 +138,17 @@ function sendRaw(id) {
     return events.packetSendRaw(id);
 }
 
-require('./nethook').nethook = {
-    //@ts-ignore
-    readLoginPacket,
-    //@ts-ignore
-    createPacket: packet.createPacket,
-    sendPacket,
-    raw,
-    before,
-    after,
-    send,
-    sendRaw,
-    close: events.networkDisconnected
-};
+/** @type {?} */
+const nethook = require('./nethook').nethook;
+nethook.readLoginPacket = readLoginPacket;
+nethook.createPacket = createPacket;
+nethook.sendPacket = sendPacket;
+nethook.raw = raw;
+nethook.before = before;
+nethook.after = after;
+nethook.send = send;
+nethook.sendRaw = sendRaw;
+nethook.close = events.networkDisconnected;
 
 // deprecated common
 //@ts-ignore
@@ -184,6 +183,7 @@ class UserCommandEvents extends EventEx {
     constructor() {
         super();
 
+        /** @type {?} */
         this.listener = (ptr, networkIdentifier) => {
             const command = ptr.command;
             const ev = new CommandEventImpl(command, networkIdentifier);

@@ -1227,12 +1227,16 @@ Tester.concurrency(
 
                 this.assert(list.equals(list), "list.equals");
 
-                for (let j = 0; j < 10; j++) {
-                    map.set("barray", barray);
-                    map.set("iarray", iarray);
-                    map.set("str", str);
-                    map.set("list", list);
+                const mapLoop = 20;
+                const mapItemCount = 4;
+                for (let j = 0; j < mapLoop; j++) {
+                    map.set("barray"+j, barray);
+                    map.set("iarray"+j, iarray);
+                    map.set("str"+j, str);
+                    map.set("list"+j, list);
                 }
+                this.equals(map.size(), mapLoop * mapItemCount, "Compound key count check");
+
                 const cloned = iarray.allocateClone();
                 barray.dispose();
                 iarray.dispose();
@@ -1243,11 +1247,13 @@ Tester.concurrency(
                 cloned.dispose();
 
                 const mapvalue = map.value();
-                this.assert(mapvalue.barray instanceof Uint8Array && arrayEquals([1, 2, 3, 4, 5], mapvalue.barray), "ByteArrayTag check");
-                this.assert(mapvalue.iarray instanceof Int32Array && arrayEquals([1, 2, 3, 4], mapvalue.iarray), "IntArrayTag check");
-                this.equals(mapvalue.str, "12345678901234567890", "StringTag check");
-                this.assert(mapvalue.list instanceof Array && arrayEquals(["12345678901234567890"], mapvalue.list), "ListTag check");
-                this.equals(Object.keys(mapvalue).length, map.size(), "Compound key count check");
+                for (let j=0;j<mapLoop;j++) {
+                    this.assert(mapvalue['barray'+j] instanceof Uint8Array && arrayEquals([1, 2, 3, 4, 5], mapvalue['barray'+j]), "ByteArrayTag check");
+                    this.assert(mapvalue['iarray'+j] instanceof Int32Array && arrayEquals([1, 2, 3, 4], mapvalue['iarray'+j]), "IntArrayTag check");
+                    this.equals(mapvalue['str'+j], "12345678901234567890", "StringTag check");
+                    this.assert(mapvalue['list'+j] instanceof Array && arrayEquals(["12345678901234567890"], mapvalue['list'+j]), "ListTag check");
+                }
+                this.equals(Object.keys(mapvalue).length, mapLoop * mapItemCount, "Compound key count check");
                 map.dispose();
             }
 
