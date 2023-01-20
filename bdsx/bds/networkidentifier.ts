@@ -42,6 +42,10 @@ export class NetworkHandler extends AbstractClass {
 
 export class NetworkConnection extends AbstractClass {
     networkIdentifier: NetworkIdentifier;
+
+    disconnect(): void {
+        abstract();
+    }
 }
 
 export namespace NetworkHandler {
