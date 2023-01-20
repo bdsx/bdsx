@@ -191,14 +191,14 @@ bedrockServer.withLoading().then(() => {
     const packetHandleSymbol = "?handle@Packet@@QEAAXAEBVNetworkIdentifier@@AEAVNetEventCallback@@AEAV?$shared_ptr@VPacket@@@std@@@Z";
     const sendToMultipleSymbol =
         "?sendToMultiple@NetworkHandler@@QEAAXAEBV?$vector@UNetworkIdentifierWithSubId@@V?$allocator@UNetworkIdentifierWithSubId@@@std@@@std@@AEBVPacket@@@Z";
-    const packetlizeSymbol =
+    const packetizeSymbol =
         "?_sortAndPacketizeEvents@NetworkHandler@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkConnection);
     procHacker.patching(
         "hook-packet-raw",
-        packetlizeSymbol,
+        packetizeSymbol,
         0x216,
         asmcode.packetRawHook, // original code depended
         Register.rax,
@@ -252,7 +252,7 @@ bedrockServer.withLoading().then(() => {
     asmcode.handlePacket = proc[packetHandleSymbol];
     procHacker.patching(
         "hook-packet-after",
-        packetlizeSymbol,
+        packetizeSymbol,
         0x4fe,
         asmcode.packetAfterHook, // original code depended
         Register.rax,
