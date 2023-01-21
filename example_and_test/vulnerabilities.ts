@@ -22,6 +22,8 @@ events.packetBefore(MinecraftPacketIds.Disconnect).on((ptr, ni) => {
 });
 
 // https://github.com/LuckyDogDog/CVE-2022-23884
+
+const Warns: Record<string, number> = {};
 const receivePacket = procHacker.hooking(
     "?receivePacket@NetworkConnection@@QEAA?AW4DataStatus@NetworkPeer@@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVNetworkHandler@@AEBV?$shared_ptr@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@5@@Z",
     int32_t, // DataStatus
@@ -30,10 +32,18 @@ const receivePacket = procHacker.hooking(
     CxxStringWrapper,
     NetworkHandler,
     VoidPointer, // std::shared_ptr<std::chrono::time_point>
-)((conn, stream, networkHandler, time_point) => {
-    if (!stream.length) {
+)((conn, data, networkHandler, time_point) => {
+    const address = conn.networkIdentifier.getAddress();
+    const id = data.valueptr.getUint8();
+    if (Warns[address] > 1 || id === MinecraftPacketIds.PurchaseReceipt) {
         conn.disconnect();
         return 1;
     }
-    return receivePacket(conn, stream, networkHandler, time_point);
+    if (id === 0) {
+        Warns[address] = Warns[address] ? Warns[address] + 1 : 1;
+    }
+    return receivePacket(conn, data, networkHandler, time_point);
+});
+events.networkDisconnected.on(ni => {
+    Warns[ni.getAddress()] = 0;
 });
