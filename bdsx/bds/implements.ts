@@ -1598,6 +1598,8 @@ NetworkHandler.prototype.sendInternal = procHacker.js(
     CxxStringWrapper,
 );
 
+NetworkConnection.prototype.disconnect = procHacker.js("?disconnect@NetworkConnection@@QEAAXXZ", void_t, { this: NetworkConnection });
+
 const BatchedNetworkPeer$sendPacket = procHacker.js(
     "?sendPacket@BatchedNetworkPeer@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4Reliability@NetworkPeer@@W4Compressibility@@@Z",
     void_t,
