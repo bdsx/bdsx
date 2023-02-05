@@ -3,12 +3,10 @@ import { fsutil } from "./fsutil";
 
 let isBdsx = false;
 try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("./core");
     isBdsx = true;
 } catch (err) {}
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const isWine = isBdsx ? require("./dllraw").dllraw.ntdll.wine_get_version !== null : false;
 
 export namespace Config {

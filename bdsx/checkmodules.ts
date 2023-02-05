@@ -12,7 +12,6 @@ const requiredDeps = packagejson.dependencies;
 for (const [name, requiredVersion] of Object.entries<string>(requiredDeps)) {
     if (/^file:(?:\.[\\/])?plugins[\\/]/.test(requiredVersion)) continue;
     try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const installed = require(`${name}/package.json`);
         const installedVersion = installed.version;
         if (semver.validRange(requiredVersion)) {

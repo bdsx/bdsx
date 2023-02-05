@@ -53,9 +53,7 @@ const makefuncTypeMap: makefunc.Paramable[] = [];
 function remapType(type: ParamType): makefunc.Paramable {
     if (typeof type === "number") {
         if (makefuncTypeMap.length === 0) {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { RawTypeId } = require("./legacy");
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { bool_t, int32_t, int64_as_float_t, float64_t, float32_t, bin64_t, void_t } = require("./nativetype") as typeof import("./nativetype");
             makefuncTypeMap[RawTypeId.Boolean] = bool_t;
             makefuncTypeMap[RawTypeId.Int32] = int32_t;

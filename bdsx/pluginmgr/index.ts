@@ -1,7 +1,10 @@
 import * as blessed from "blessed";
 import * as child_process from "child_process";
+import { deprecatedPlugins } from "../deprecated_plugins";
 import { fsutil } from "../fsutil";
 import { timeout } from "../util";
+
+const deprecateds = new Map<string, string>(deprecatedPlugins);
 
 const SELECTABLE_ITEM_STYLE = {
     fg: "magenta",
@@ -66,6 +69,10 @@ function execWithoutError(command: string): Promise<string> {
     });
 }
 
+function ellipsis(str: string, len: number): string {
+    return str.length < len ? str : `${str.substr(0, len - 3)}...`;
+}
+
 class PackageInfo {
     public readonly name: string;
     public readonly desc: string;
@@ -78,7 +85,7 @@ class PackageInfo {
 
     constructor(info: PackageInfoJson, deps?: Record<string, { version: string | null }>) {
         this.name = info.name;
-        this.desc = info.description || "";
+        this.desc = info.description != null ? info.description : "";
         this.author = info.publisher.username;
         this.date = info.date;
         this.version = info.version;
@@ -105,9 +112,16 @@ class PackageInfo {
     }
 
     toMenuString(): string[] {
-        const author = this.author;
-        const MAX_LEN = 18;
-        return [this.installed || "No", this.name, this.desc, author.length > MAX_LEN ? `${author.substr(0, MAX_LEN - 3)}...` : author, this.date];
+        const installedVersion = this.installed || "No";
+        const author = ellipsis(this.author, 18);
+        let desc: string;
+        const deprecatedMessage = deprecateds.get(this.name + "@" + this.version);
+        if (deprecatedMessage !== undefined) {
+            desc = "(deprecated) " + deprecatedMessage;
+        } else {
+            desc = this.desc;
+        }
+        return [installedVersion, this.name, desc, author, this.date];
     }
 
     toString(): string {

@@ -327,12 +327,22 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
 /**
  * remap stack and print
  */
-export function remapAndPrintError(err: { stack?: string; [destack]?: number }): void {
+export function remapAndPrintError(err: { stack?: string; [destack]?: number }, color?: (str: string) => string): void {
+    let message: unknown;
     if (err && err.stack) {
-        console.error(remapStack(err.stack, err[destack]));
+        message = remapStack(err.stack, err[destack]);
+        if (color !== undefined) {
+            message = color(message as string);
+        } else {
+            message = colors.red(message as string);
+        }
     } else {
-        console.error(err);
+        message = err;
+        if (color !== undefined) {
+            message = color(message + "");
+        }
     }
+    console.error(message);
 }
 
 // Generate position and snippet of original source with pointer

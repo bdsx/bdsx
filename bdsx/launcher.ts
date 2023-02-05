@@ -291,9 +291,7 @@ function _launch(asyncResolve: () => void): void {
     // and bdsx will hijack the game thread and run it on the node thread.
     const threadHandle = dll.kernel32.CreateThread(null, 0, asmcode.wrapped_main, null, 0, asmcode.addressof_bdsMainThreadId);
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("./bds/implements");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("./event_impl");
 
     loadingIsFired.resolve();
