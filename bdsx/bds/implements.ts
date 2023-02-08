@@ -509,11 +509,13 @@ Dimension.prototype.getSpawnPos = procHacker.jsv("??_7OverworldDimension@@6BIDim
     structureReturn: true,
 });
 Dimension.prototype.getPlayers = function () {
+    const id = this.getDimensionId();
     const players: Player[] = [];
     const users = bedrockServer.level.getActiveUsers();
     for (const user of users) {
         const player = user.tryUnwrapPlayer();
         if (player === null) continue;
+        if (player.getDimensionId() !== id) continue;
         players.push(player);
     }
     return players;
