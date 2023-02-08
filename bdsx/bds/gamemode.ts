@@ -1,8 +1,8 @@
 import { NativeClass } from "../nativeclass";
-import { Actor } from "./actor";
+import { Player } from "./player";
 
 export class GameMode extends NativeClass {
-    actor: Actor;
+    actor: Player;
 }
 
 export class SurvivalMode extends GameMode {}

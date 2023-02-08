@@ -1,4 +1,4 @@
-import { abstract, BuildPlatform, VectorXYZ, Direction } from "../common";
+import { abstract, BuildPlatform, Direction, VectorXYZ } from "../common";
 import { mce } from "../mce";
 import { float32_t } from "../nativetype";
 import { HasStorage, Storage } from "../storage";
@@ -30,8 +30,8 @@ import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
 export class Player extends Mob {
-    abilities: LayeredAbilities;
     playerUIContainer: PlayerUIContainer;
+    deviceId: string;
 
     /** @deprecated Use `this.getSpawnDimension()` instead */
     get respawnDimension(): DimensionId {
@@ -41,7 +41,10 @@ export class Player extends Mob {
     get respawnPosition(): BlockPos {
         return this.getSpawnPosition();
     }
-    deviceId: string;
+    /** @deprecated use `this.getAbilities()` instead */
+    get abilities(): LayeredAbilities {
+        return this.getAbilities();
+    }
 
     protected _setName(name: string): void {
         abstract();
@@ -492,6 +495,14 @@ export class Player extends Mob {
     }
 
     isUsingItem(): boolean {
+        abstract();
+    }
+
+    hasDimension(): boolean {
+        abstract();
+    }
+
+    getAbilities(): LayeredAbilities {
         abstract();
     }
 }

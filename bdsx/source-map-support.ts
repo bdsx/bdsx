@@ -327,9 +327,9 @@ export function remapStackLine(stackLine: string, state: StackState = { nextPosi
 /**
  * remap stack and print
  */
-export function remapAndPrintError(err: { stack?: string; [destack]?: number }, color?: (str: string) => string): void {
+export function remapAndPrintError(err: any, color?: (str: string) => string): void {
     let message: unknown;
-    if (err && err.stack) {
+    if (err != null && typeof err.stack === "string") {
         message = remapStack(err.stack, err[destack]);
         if (color !== undefined) {
             message = color(message as string);
@@ -459,7 +459,7 @@ export function getCurrentStackLine(stackOffset: number = 0): string {
 }
 
 export function destackThrow(err: Error, removeStack: number): never {
-    (err as any)[destack] = removeStack + 1;
+    (err as any)[destack] = removeStack;
     throw err;
 }
 

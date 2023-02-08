@@ -11,7 +11,7 @@ import { GameRules } from "./bds/gamerules";
 import { Level, ServerLevel } from "./bds/level";
 import * as nimodule from "./bds/networkidentifier";
 import { RakNet } from "./bds/raknet";
-import { RakNetInstance } from "./bds/raknetinstance";
+import { RakNetConnector } from "./bds/raknetinstance";
 import * as bd_server from "./bds/server";
 import { StructureManager } from "./bds/structure";
 import { proc } from "./bds/symbols";
@@ -25,7 +25,7 @@ import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
 import { AbstractClass, nativeClass, nativeField } from "./nativeclass";
-import { bool_t, CxxString, int32_t, int64_as_float_t, NativeType, void_t } from "./nativetype";
+import { bool_t, CxxString, int32_t, int64_as_float_t, int8_t, NativeType, void_t } from "./nativetype";
 import { loadAllPlugins } from "./plugins";
 import { CxxStringWrapper } from "./pointer";
 import { procHacker } from "./prochacker";
@@ -232,7 +232,7 @@ function _launch(asyncResolve: () => void): void {
         decay(bedrockServer.minecraftCommands);
         decay(bedrockServer.commandRegistry);
         decay(bedrockServer.gameRules);
-        decay(bedrockServer.raknetInstance);
+        decay(bedrockServer.connector);
         decay(bedrockServer.rakPeer);
         decay(bedrockServer.commandOutputSender);
         bedrockServer.nonOwnerPointerServerNetworkHandler.dispose();
@@ -240,7 +240,7 @@ function _launch(asyncResolve: () => void): void {
         nonOwnerPointerStructureManager!.dispose();
         decay(bedrockServer.structureManager);
     }, void_t);
-    asmcode.gameThreadInner = proc["<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()"]; // caller of ServerInstance::_update
+    asmcode.gameThreadInner = proc["<lambda_eea4b55ce73e04688a1edc3fabfb52cb>::operator()"]; // caller of ServerInstance::_update
     asmcode.free = dll.ucrtbase.free.pointer;
 
     // hook game thread
@@ -248,7 +248,7 @@ function _launch(asyncResolve: () => void): void {
 
     procHacker.patching(
         "hook-game-thread",
-        "std::thread::_Invoke<std::tuple<<lambda_9c72527c89bc5df41fe482e4153a365f> >,0>", // caller of ServerInstance::_update
+        "std::thread::_Invoke<std::tuple<<lambda_eea4b55ce73e04688a1edc3fabfb52cb> >,0>", // caller of ServerInstance::_update
         6,
         asmcode.gameThreadHook, // original depended
         Register.rax,
@@ -311,8 +311,8 @@ function _launch(asyncResolve: () => void): void {
 
     procHacker.patching(
         "update-hook",
-        "<lambda_9c72527c89bc5df41fe482e4153a365f>::operator()", // caller of ServerInstance::_update
-        0x8cc,
+        "<lambda_eea4b55ce73e04688a1edc3fabfb52cb>::operator()", // caller of ServerInstance::_update
+        0x94e,
         asmcode.updateWithSleep,
         Register.rax,
         true,
@@ -350,11 +350,11 @@ function _launch(asyncResolve: () => void): void {
                         MinecraftCommands,
                     );
                     const Level$getGameRules = procHacker.js("?getGameRules@Level@@UEAAAEAVGameRules@@XZ", GameRules, null, Level);
-                    const RakNetInstance$getPeer = procHacker.js(
-                        "?getPeer@RakNetInstance@@UEAAPEAVRakPeerInterface@RakNet@@XZ",
+                    const RakNetConnector$getPeer = procHacker.js(
+                        "?getPeer@RakNetConnector@@UEAAPEAVRakPeerInterface@RakNet@@XZ",
                         RakNet.RakPeer,
                         null,
-                        RakNetInstance,
+                        RakNetConnector,
                     );
 
                     // All pointer is found from ServerInstance::startServerThread with debug breaking.
@@ -375,9 +375,15 @@ function _launch(asyncResolve: () => void): void {
                     const commandRegistry = MinecraftCommands$getRegistry(minecraftCommands);
                     const gameRules = Level$getGameRules(level);
 
-                    const raknetInstance = (networkHandler as any as StaticPointer).getPointer(0x50).getPointerAs(RakNetInstance, 8);
-                    bdsxEqualsAssert(raknetInstance.vftable, proc["??_7RakNetInstance@@6BConnector@@@"], "Invalid raknetInstance");
-                    const rakPeer = RakNetInstance$getPeer(raknetInstance);
+                    const NetworkHandler$getConnector = procHacker.js(
+                        "?getConnector@NetworkHandler@@QEAAAEAVConnector@@XZ",
+                        RakNetConnector,
+                        null,
+                        nimodule.NetworkHandler,
+                    );
+                    const connector = NetworkHandler$getConnector(networkHandler);
+                    bdsxEqualsAssert(connector.vftable, proc["??_7RakNetConnector@@6BConnector@@@"], "Invalid connector");
+                    const rakPeer = RakNetConnector$getPeer(connector);
                     bdsxEqualsAssert(rakPeer.vftable, proc["??_7RakPeer@RakNet@@6BRakPeerInterface@1@@"], "Invalid rakPeer");
                     const commandOutputSender = (minecraftCommands as any as StaticPointer).getPointerAs(CommandOutputSender, 0x8);
                     const serverNetworkHandler = nonOwnerPointerServerNetworkHandler.get()!.subAs(nimodule.ServerNetworkHandler, 0x10); // XXX: unknown state. cut corners.
@@ -408,7 +414,8 @@ function _launch(asyncResolve: () => void): void {
                         minecraftCommands: { value: minecraftCommands },
                         commandRegistry: { value: commandRegistry },
                         gameRules: { value: gameRules },
-                        raknetInstance: { value: raknetInstance },
+                        raknetInstance: { value: connector },
+                        connector: { value: connector },
                         rakPeer: { value: rakPeer },
                         commandOutputSender: { value: commandOutputSender },
                         structureManager: { value: structureManager },
@@ -461,7 +468,7 @@ function _launch(asyncResolve: () => void): void {
         VoidPointer,
         EventRef$ServerInstanceGameplayEvent$Void,
     )((_this, ev) => {
-        if (ev.type === GameplayEvent.Stop) {
+        if (!ev.restart) {
             events.serverStop.fire();
             _tickCallback();
         }
@@ -514,8 +521,13 @@ export namespace bedrockServer {
     export let commandRegistry: CommandRegistry = abstractobject;
     // eslint-disable-next-line prefer-const
     export let gameRules: GameRules = abstractobject;
+    /**
+     * @alias bedrockServer.connector
+     */
     // eslint-disable-next-line prefer-const
-    export let raknetInstance: RakNetInstance = abstractobject;
+    export let raknetInstance: RakNetConnector = abstractobject;
+    // eslint-disable-next-line prefer-const
+    export let connector: RakNetConnector = abstractobject;
     // eslint-disable-next-line prefer-const
     export let rakPeer: RakNet.RakPeer = abstractobject;
     // eslint-disable-next-line prefer-const
@@ -703,16 +715,8 @@ export namespace bedrockServer {
 /**
  * temporal name
  */
-enum GameplayEvent {
-    Stop,
-    Restart,
-}
-
-/**
- * temporal name
- */
 @nativeClass()
 class EventRef$ServerInstanceGameplayEvent$Void extends AbstractClass {
-    @nativeField(int32_t)
-    type: GameplayEvent;
+    @nativeField(int8_t, 0x18)
+    restart: int8_t; // assumed, inaccurate
 }

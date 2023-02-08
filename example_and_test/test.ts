@@ -1006,10 +1006,11 @@ Tester.concurrency(
                             this.assert(isDimensionClass(dim), "getDimension() is invalid");
                             this.equals(actor.getDimensionId(), dim.getDimensionId(), "getDimensionId() is invalid");
                             if (actor instanceof Player) {
-                                const cmdlevel = actor.abilities.getCommandPermissions();
+                                const abilities = actor.getAbilities();
+                                const cmdlevel = abilities.getCommandPermissions();
                                 this.assert(CommandPermissionLevel.Normal <= cmdlevel && cmdlevel <= CommandPermissionLevel.Internal, "invalid actor.abilities");
                                 this.equals(actor.getCommandPermissionLevel(), cmdlevel, "Invalid command permission level");
-                                const playerlevel = actor.abilities.getPlayerPermissions();
+                                const playerlevel = abilities.getPlayerPermissions();
                                 this.assert(PlayerPermission.VISITOR <= playerlevel && playerlevel <= PlayerPermission.CUSTOM, "invalid actor.abilities");
                                 this.equals(actor.getPermissionLevel(), playerlevel, "Invalid player permission level");
 
@@ -1040,7 +1041,6 @@ Tester.concurrency(
                                 // test for hasFamily
                                 this.assert(actor.hasFamily("player") === true, "the actor must be a Player");
                                 this.assert(actor.hasFamily("undead") === false, "the actor must be not a Undead Mob");
-                                const abilities = actor.abilities;
                                 const ROUND_UP_AXIS = 0x10000;
                                 const checkAbility = (index: AbilitiesIndex, expected: boolean | number): void => {
                                     const abil = abilities.getAbility(index);

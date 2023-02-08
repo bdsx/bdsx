@@ -2,8 +2,9 @@ import * as colors from "colors";
 import * as fs from "fs";
 import * as path from "path";
 import * as semver from "semver";
+import { fsutil } from "./fsutil";
 
-const packagejsonPath = path.resolve(process.cwd(), process.argv[1], "package.json");
+const packagejsonPath = path.join(fsutil.projectPath, "package.json");
 const packagejson = JSON.parse(fs.readFileSync(packagejsonPath, "utf-8"));
 
 let needUpdate = false;

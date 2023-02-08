@@ -175,7 +175,7 @@ import {
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
-import { RakNetInstance } from "./raknetinstance";
+import { RakNetConnector } from "./raknetinstance";
 import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
 import {
     DedicatedServer,
@@ -192,6 +192,7 @@ import { SerializedSkin } from "./skin";
 import { BinaryStream } from "./stream";
 import { StructureManager, StructureSettings, StructureTemplate, StructureTemplateData } from "./structure";
 import { proc } from "./symbols";
+import { TickingAreaList } from "./tickingarea";
 import { WeakRefT } from "./weakreft";
 
 // avoiding circular dependency
@@ -507,6 +508,16 @@ Dimension.prototype.getSpawnPos = procHacker.jsv("??_7OverworldDimension@@6BIDim
     this: Dimension,
     structureReturn: true,
 });
+Dimension.prototype.getPlayers = function () {
+    const players: Player[] = [];
+    const users = bedrockServer.level.getActiveUsers();
+    for (const user of users) {
+        const player = user.tryUnwrapPlayer();
+        if (player === null) continue;
+        players.push(player);
+    }
+    return players;
+};
 Dimension.prototype.fetchNearestPlayerToActor = function (actor, distance) {
     const actorPos = actor.getPosition();
     return this.fetchNearestPlayerToPosition(actorPos.x, actorPos.y, actorPos.z, distance, false);
@@ -530,12 +541,87 @@ Dimension.prototype.fetchNearestPlayerToPosition = function (x, y, z, distance, 
 };
 Dimension.prototype.getMoonBrightness = procHacker.js("?getMoonBrightness@Dimension@@QEBAMXZ", float32_t, { this: Dimension });
 Dimension.prototype.getHeight = procHacker.js("?getHeight@Dimension@@QEBAFXZ", int16_t, { this: Dimension });
-Dimension.prototype.tryGetClosestPublicRegion = procHacker.js(
-    "?tryGetClosestPublicRegion@Dimension@@QEBAPEAVBlockSource@@AEBVChunkPos@@@Z",
-    BlockSource,
-    { this: Dimension },
-    ChunkPos,
-);
+
+Dimension.prototype.tryGetClosestPublicRegion = function (chunkpos: ChunkPos) {
+    return this.getBlockSource();
+
+    /**
+     * @author rua.kr
+     * legacy polyfill.
+     * I'm not sure it should be implemented.
+     * Skipped for now.
+     */
+    // let blockSource: BlockSource | null = null; // rsp+80
+    // for (const player of this.getPlayers()) {
+    //     if (!player.hasDimension()) continue;
+    //     blockSource = player.getRegion();
+    //     if (blockSource.getChunk(chunkpos) === null) continue;
+    //     break;
+    // }
+    // if (blockSource !== null) return blockSource;
+    // const list = (this as VoidPointer as StaticPointer).getPointerAs(TickingAreaList, 0x2b8);
+
+    // for (const tickingAreaPtr of list.getAreas()) {
+    //     const tickingArea = tickingAreaPtr.p;
+    //     let bpl = 0;
+    //     let chunkFound = false;
+    //     let chunk: CxxSharedPtr<LevelChunk> | null = null; // qword ptr ss:[rsp+30]
+    //     if (tickingArea !== null) {
+    //         if (!tickingArea.isRemoved()) {
+    //             const view = tickingArea.getView();
+    //             // mov r8,chunkpos
+    //             // lea rdx,
+    //             chunk = view.getAvailableChunk(chunkpos);
+    //             chunkFound = true;
+    //             if (chunk.p !== null) {
+    //                 bpl = 1;
+    //             }
+    //         }
+    //     }
+    //     if (chunkFound) {
+    //         // mov rbx,qword ptr ss:[rsp+38]
+    //         // test rbx,rbx
+    //         // je bedrock_server.7FF694F649AD
+    //         // mov eax,FFFFFFFF
+    //         // lock xadd dword ptr ds:[rbx+8],eax
+    //         // cmp eax,1
+    //         // jne bedrock_server.7FF694F649AD
+    //         // mov rax,qword ptr ds:[rbx]
+    //         // mov rcx,rbx
+    //         // mov rax,qword ptr ds:[rax]
+    //         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
+    //         // mov eax,FFFFFFFF
+    //         // lock xadd dword ptr ds:[rbx+C],eax
+    //         // cmp eax,1
+    //         // jne bedrock_server.7FF694F649AD
+    //         // mov rax,qword ptr ds:[rbx]
+    //         // mov rcx,rbx
+    //         // mov rax,qword ptr ds:[rax+8]
+    //         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
+    //     }
+    //     // test bpl,bpl
+    //     // jne bedrock_server.7FF694F649E1
+
+    //     // rdi = tickingArea*
+    //     // add rdi,10
+    //     // cmp rdi,inst_end
+    //     // jne bedrock_server.7FF694F64905
+
+    //     // bedrock_server.7FF694F649E1
+    //     // rcx = tickingArea
+    //     // mov rax,qword ptr ds:[rcx]
+    //     // mov rax,qword ptr ds:[rax+28]
+    //     // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
+    //     // return;
+    // }
+    // const mainBlockSource = this.getBlockSource();
+    // if (mainBlockSource !== null) {
+    //     if (mainBlockSource.getChunk(chunkpos) !== null) {
+    //         return mainBlockSource;
+    //     }
+    // }
+    // return null as any;
+};
 Dimension.prototype.removeActorByID = procHacker.js("?removeActorByID@Dimension@@QEAAXAEBUActorUniqueID@@@Z", void_t, { this: Dimension }, ActorUniqueID);
 Dimension.prototype.getMinHeight = procHacker.js("?getMinHeight@Dimension@@QEBAFXZ", int16_t, { this: Dimension });
 Dimension.prototype.getDefaultBiomeString = procHacker.jsv(
@@ -690,12 +776,14 @@ Actor.prototype.setScoreTag = procHacker.js(
     { this: Actor },
     CxxString,
 );
-Actor.prototype.getRegion = procHacker.js("?getRegionConst@Actor@@QEBAAEBVBlockSource@@XZ", BlockSource, { this: Actor });
+Actor.prototype.getDimensionBlockSource = Actor.prototype.getRegion = procHacker.js("?getDimensionBlockSource@Actor@@QEBAAEAVBlockSource@@XZ", BlockSource, {
+    this: Actor,
+});
 Actor.prototype.getUniqueIdPointer = procHacker.js("?getUniqueID@Actor@@QEBAAEBUActorUniqueID@@XZ", StaticPointer, { this: Actor });
 Actor.prototype.getEntityTypeId = procHacker.jsv("??_7Actor@@6B@", "?getEntityTypeId@Actor@@UEBA?AW4ActorType@@XZ", int32_t, { this: Actor }); // ActorType getEntityTypeId()
 Actor.prototype.getRuntimeID = procHacker.js("?getRuntimeID@Actor@@QEBA?AVActorRuntimeID@@XZ", ActorRuntimeID, { this: Actor, structureReturn: true });
 Actor.prototype.getDimension = procHacker.js("?getDimension@Actor@@QEBAAEAVDimension@@XZ", Dimension, { this: Actor });
-Actor.prototype.getDimensionId = procHacker.js("?getDimensionId@Actor@@UEBA?AV?$AutomaticID@VDimension@@H@@XZ", int32_t, { this: Actor, structureReturn: true });
+Actor.prototype.getDimensionId = procHacker.js("?getDimensionId@Actor@@QEBA?AV?$AutomaticID@VDimension@@H@@XZ", int32_t, { this: Actor, structureReturn: true });
 Actor.prototype.getActorIdentifier = procHacker.js("?getActorIdentifier@Actor@@QEBAAEBUActorDefinitionIdentifier@@XZ", ActorDefinitionIdentifier, { this: Actor });
 Actor.prototype.getCommandPermissionLevel = procHacker.js("?getCommandPermissionLevel@Actor@@UEBA?AW4CommandPermissionLevel@@XZ", int32_t, { this: Actor });
 Actor.prototype.getCarriedItem = procHacker.js("?getCarriedItem@Actor@@UEBAAEBVItemStack@@XZ", ItemStack, { this: Actor });
@@ -758,11 +846,17 @@ Actor.prototype.save = function (tag?: CompoundTag): any {
     }
 };
 
-Actor.prototype.getTags = procHacker.js(
-    "?getTags@Actor@@QEBA?BV?$span@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$0?0@gsl@@XZ",
-    GslSpanToArray.make(CxxString),
+const Actor$getTags = procHacker.js(
+    "?getTags@Actor@@QEBA?BV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ",
+    CxxVector.make(CxxString),
     { this: Actor, structureReturn: true },
 );
+Actor.prototype.getTags = function () {
+    const tags: CxxVector<CxxString> = Actor$getTags.call(this);
+    const out = tags.toArray();
+    tags.destruct();
+    return out;
+};
 
 const VirtualCommandOrigin$VirtualCommandOrigin = procHacker.js(
     "??0VirtualCommandOrigin@@QEAA@AEBVCommandOrigin@@AEAVActor@@AEBVCommandPositionFloat@@H@Z",
@@ -1105,8 +1199,8 @@ ActorDamageSource.prototype.setCause = procHacker.js("?setCause@ActorDamageSourc
 
 ActorDamageByActorSource.prototype[NativeType.dtor] = procHacker.js("??1ActorDamageByActorSource@@UEAA@XZ", void_t, { this: ActorDamageByActorSource });
 const ActorDamageByActorSource$ActorDamageByActorSource = procHacker.js(
-    "??0ActorDamageByActorSource@@QEAA@AEAVActor@@W4ActorDamageCause@@@Z",
-    ActorDamageByActorSource,
+    "??0ActorDamageByActorSource@@QEAA@AEBVActor@@W4ActorDamageCause@@@Z",
+    void_t,
     null,
     ActorDamageByActorSource,
     Actor,
@@ -1119,7 +1213,7 @@ ActorDamageByActorSource.constructWith = function (damagingEntity, cause: ActorD
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x5b8], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x480], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str => AttributeName[str]);
@@ -1151,30 +1245,25 @@ function _removeActor(actorptr: VoidPointer): void {
     }
 }
 
-procHacker.hookingRawWithCallOriginal(
-    "?removeEntityReferences@Level@@UEAAXAEAVActor@@_N@Z",
-    makefunc.np(
-        (level, actor, b) => {
-            _removeActor(actor);
-        },
-        void_t,
-        { name: "hook of Level::removeEntityReferences" },
-        Level,
-        VoidPointer,
-        bool_t,
-    ),
-    [Register.rcx, Register.rdx, Register.r8],
-    [],
-);
+const Level$levelCleanupQueueEntityRemoval = procHacker.hooking(
+    "?levelCleanupQueueEntityRemoval@Level@@UEAAXV?$OwnerPtrT@UEntityRefTraits@@@@@Z",
+    void_t,
+    null,
+    Level,
+    EntityRefTraits,
+)((level, entity) => {
+    const actor = Actor.tryGetFromEntity(entity, true);
+    Level$levelCleanupQueueEntityRemoval(level, entity);
+    if (actor !== null) _removeActor(actor);
+});
 
 asmcode.removeActor = makefunc.np(_removeActor, void_t, null, VoidPointer);
 procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestructorHook, [Register.rcx], []);
 
 // player.ts
 Player.abstract({
-    abilities: [LayeredAbilities, 0x84c], // accessed in AbilityCommand::execute before calling LayeredAbilities::getLayer
-    playerUIContainer: [PlayerUIContainer, 0x1528], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x24c8], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    playerUIContainer: [PlayerUIContainer, 0xf88], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1f20], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
@@ -1209,7 +1298,7 @@ Player.prototype.setGameType = procHacker.js("?setPlayerGameType@ServerPlayer@@U
 Player.prototype.setPermissions = procHacker.js("?setPermissions@Player@@QEAAXW4CommandPermissionLevel@@@Z", void_t, { this: Player }, int32_t);
 Player.prototype.setSleeping = procHacker.js("?setSleeping@Player@@UEAAX_N@Z", void_t, { this: Player }, bool_t);
 Player.prototype.isSleeping = procHacker.js("?isSleeping@Player@@UEBA_NXZ", bool_t, { this: Player });
-Player.prototype.isJumping = procHacker.js("?isJumping@Player@@UEBA_NXZ", bool_t, { this: Player });
+Player.prototype.isJumping = procHacker.js("?isJumping@Actor@@QEBA_NXZ", bool_t, { this: Player });
 
 const UpdateAbilitiesPacket$UpdateAbilitiesPacket = procHacker.js(
     "??0UpdateAbilitiesPacket@@QEAA@UActorUniqueID@@AEBVLayeredAbilities@@@Z",
@@ -1221,7 +1310,7 @@ const UpdateAbilitiesPacket$UpdateAbilitiesPacket = procHacker.js(
 );
 Player.prototype.syncAbilities = function () {
     const pkt = new UpdateAbilitiesPacket(true);
-    UpdateAbilitiesPacket$UpdateAbilitiesPacket(pkt, this.getUniqueIdBin(), this.abilities);
+    UpdateAbilitiesPacket$UpdateAbilitiesPacket(pkt, this.getUniqueIdBin(), this.getAbilities());
     this.sendPacket(pkt);
     pkt.destruct();
 };
@@ -1341,6 +1430,9 @@ Player.prototype.isFlying = procHacker.js("?isFlying@Player@@QEBA_NXZ", bool_t, 
 Player.prototype.isHiddenFrom = procHacker.js("?isHiddenFrom@Player@@QEBA_NAEAVMob@@@Z", bool_t, { this: Player }, Mob);
 Player.prototype.isInRaid = procHacker.js("?isInRaid@Player@@QEBA_NXZ", bool_t, { this: Player });
 Player.prototype.isUsingItem = procHacker.js("?isUsingItem@Player@@QEBA_NXZ", bool_t, { this: Player });
+Player.prototype.hasDimension = procHacker.js("?hasDimension@Actor@@QEBA_NXZ", bool_t, { this: Player });
+Player.prototype.getAbilities = procHacker.js("?getAbilities@Player@@QEAAAEAVLayeredAbilities@@XZ", LayeredAbilities, { this: Player });
+
 Player.tryGetFromEntity = procHacker.js("?tryGetFromEntity@Player@@SAPEAV1@AEAVEntityContext@@_N@Z", Player, null, EntityContext, bool_t);
 
 ServerPlayer.abstract({});
@@ -1566,7 +1658,7 @@ NetworkHandler.abstract({
 Object.defineProperties(NetworkHandler.prototype, {
     instance: {
         get() {
-            return bedrockServer.raknetInstance;
+            return bedrockServer.connector;
         },
     },
 });
@@ -1616,14 +1708,14 @@ BatchedNetworkPeer.prototype.sendPacket = function (data: CxxString, reliability
     }
     BatchedNetworkPeer$sendPacket.call(this, data, reliability, compressibility);
 };
-Object.defineProperties(RakNetInstance.prototype, {
+Object.defineProperties(RakNetConnector.prototype, {
     peer: {
         get() {
             return bedrockServer.rakPeer;
         },
     },
 });
-RakNetInstance.prototype.getPort = procHacker.js("?getPort@RakNetInstance@@UEBAGXZ", uint16_t, { this: RakNetInstance });
+RakNetConnector.prototype.getPort = procHacker.js("?getPort@RakNetConnector@@UEBAGXZ", uint16_t, { this: RakNetConnector });
 
 RakNet.RakPeer.prototype.GetAveragePing = procHacker.js(
     "?GetAveragePing@RakPeer@RakNet@@UEAAHUAddressOrGUID@2@@Z",
@@ -1885,8 +1977,8 @@ Minecraft$Something.prototype.level = bedrockServer.level;
 Minecraft$Something.prototype.shandler = bedrockServer.serverNetworkHandler;
 
 // gamemode.ts
-GameMode.define({
-    actor: [Actor.ref(), 8],
+GameMode.abstract({
+    actor: [Player.ref(), 8],
 });
 
 // inventory.ts
@@ -2271,7 +2363,7 @@ BlockLegacy.prototype.use = procHacker.jsv(
     uint8_t,
 );
 BlockLegacy.prototype.getSilkTouchedItemInstance = procHacker.js(
-    "?getSilkTouchItemInstance@BlockLegacy@@UEBA?AVItemInstance@@AEBVBlock@@@Z",
+    "?getSilkTouchItemInstance@BlockLegacy@@MEBA?AVItemInstance@@AEBVBlock@@@Z",
     ItemStack,
     { this: BlockLegacy, structureReturn: true },
     Block,
@@ -2308,7 +2400,7 @@ Block.prototype.getDescriptionId = procHacker.js("?getDescriptionId@Block@@QEBA?
 Block.prototype.getRuntimeId = procHacker.js("?getRuntimeId@Block@@QEBAAEBIXZ", int32_t.ref(), { this: Block });
 Block.prototype.getBlockEntityType = procHacker.js("?getBlockEntityType@Block@@QEBA?AW4BlockActorType@@XZ", int32_t, { this: Block });
 Block.prototype.hasBlockEntity = procHacker.js("?hasBlockEntity@Block@@QEBA_NXZ", bool_t, { this: Block });
-Block.prototype.use = procHacker.js("?use@Block@@QEBA_NAEAVPlayer@@AEBVBlockPos@@E@Z", bool_t, { this: Block }, Player, BlockPos, uint8_t);
+Block.prototype.use = procHacker.js("?use@Block@@QEBA_NAEAVPlayer@@AEBVBlockPos@@EV?$optional@VVec3@@@std@@@Z", bool_t, { this: Block }, Player, BlockPos, uint8_t);
 Block.prototype.getVariant = procHacker.js("?getVariant@Block@@QEBAHXZ", int32_t, { this: Block });
 Block.prototype.getSerializationId = procHacker.js("?getSerializationId@Block@@QEBAAEBVCompoundTag@@XZ", CompoundTag.ref(), { this: Block });
 Block.prototype.getSilkTouchItemInstance = procHacker.jsv(
@@ -2335,7 +2427,7 @@ Block.prototype.canHurtAndBreakItem = procHacker.js("?canHurtAndBreakItem@Block@
 Block.prototype.getThickness = procHacker.js("?getThickness@Block@@QEBAMXZ", float32_t, { this: Block });
 Block.prototype.hasComparatorSignal = procHacker.js("?hasComparatorSignal@Block@@QEBA_NXZ", bool_t, { this: Block });
 Block.prototype.getTranslucency = procHacker.js("?getTranslucency@Block@@QEBAMXZ", float32_t, { this: Block });
-const Block$getExplosionResistance = procHacker.js("?getExplosionResistance@Block@@QEBAMPEAVActor@@@Z", float32_t, { this: Block }, Actor);
+const Block$getExplosionResistance = procHacker.js("?getExplosionResistance@Block@@QEBAMXZ", float32_t, { this: Block }, Actor);
 Block.prototype.getExplosionResistance = function (actor: Actor | null = null): number {
     return Block$getExplosionResistance.call(this, actor);
 };
@@ -2408,7 +2500,13 @@ BlockSource.prototype.getDimensionId = procHacker.js("?getDimensionId@BlockSourc
     this: BlockSource,
     structureReturn: true,
 });
-BlockSource.prototype.getBrightness = procHacker.js("?getBrightness@BlockSource@@QEBAMAEBVBlockPos@@@Z", float32_t, { this: BlockSource }, BlockPos);
+BlockSource.prototype.getBrightness = procHacker.jsv(
+    "??_7BlockSource@@6B@",
+    "?getBrightness@BlockSource@@UEBAMAEBVBlockPos@@@Z",
+    float32_t,
+    { this: BlockSource },
+    BlockPos,
+);
 
 const ChestBlockActor$vftable = proc["??_7ChestBlockActor@@6BRandomizableBlockActorContainerBase@@@"];
 BlockActor.setResolver(ptr => {
@@ -2638,10 +2736,10 @@ Abilities.nameToAbilityIndex = function (name: string): int16_t {
     return Abilities$nameToAbilityIndex(name.toLowerCase());
 };
 
-Ability.abstract({
-    type: int32_t,
+Ability.define({
+    type: uint8_t,
     value: Ability.Value,
-    options: int32_t,
+    options: uint8_t,
 });
 Ability.prototype.getBool = procHacker.js("?getBool@Ability@@QEBA_NXZ", bool_t, { this: Ability });
 Ability.prototype.getFloat = procHacker.js("?getFloat@Ability@@QEBAMXZ", float32_t, { this: Ability });

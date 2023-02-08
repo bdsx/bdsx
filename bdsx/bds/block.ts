@@ -180,7 +180,10 @@ export class Block extends NativeClass {
     getTranslucency(): number {
         abstract();
     }
-    getExplosionResistance(actor: Actor | null = null): number {
+    /** @deprecated */
+    getExplosionResistance(actor: Actor | null): number;
+    getExplosionResistance(): number;
+    getExplosionResistance(actor?: Actor | null): number {
         abstract();
     }
     getComparatorSignal(blockSource: BlockSource, blockPos: BlockPos, facing: uint8_t): number {

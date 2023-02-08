@@ -122,10 +122,11 @@ const _onBlockDestructionStart = procHacker.hooking(
     BlockPos,
 )(onBlockDestructionStart);
 
-function onBlockPlace(blockSource: BlockSource, block: Block, blockPos: BlockPos, facing: number, actor: Actor, ignoreEntities: boolean): boolean {
+function onBlockPlace(blockSource: BlockSource, block: Block, blockPos: BlockPos, facing: number, actor: Actor | null, ignoreEntities: boolean): boolean {
     const ret = _onBlockPlace(blockSource, block, blockPos, facing, actor, ignoreEntities);
+    if (!(actor instanceof ServerPlayer)) return ret; // some mobs can call it. ignore all except players.
     if (!ret) return false;
-    const event = new BlockPlaceEvent(actor as ServerPlayer, block, blockSource, blockPos);
+    const event = new BlockPlaceEvent(actor, block, blockSource, blockPos);
     const canceled = events.blockPlace.fire(event) === CANCEL;
     decay(blockSource);
     decay(block);

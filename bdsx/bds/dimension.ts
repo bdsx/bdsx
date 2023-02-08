@@ -54,6 +54,9 @@ export class Dimension extends NativeClass {
     getSpawnPos(): BlockPos {
         abstract();
     }
+    getPlayers(): Player[] {
+        abstract();
+    }
     fetchNearestPlayerToActor(actor: Actor, distance: number): Player | null {
         abstract();
     }

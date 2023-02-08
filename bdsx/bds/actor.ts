@@ -772,6 +772,12 @@ export class Actor extends AbstractClass {
     getRegion(): BlockSource {
         abstract();
     }
+    /**
+     * @alias getRegion
+     */
+    getDimensionBlockSource(): BlockSource {
+        abstract();
+    }
     getUniqueIdLow(): number {
         return this.getUniqueIdPointer().getInt32(0);
     }

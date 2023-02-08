@@ -166,6 +166,8 @@ export class Ability extends NativeClass {
                 return this.getBool();
             case Ability.Type.Float:
                 return this.getFloat();
+            default:
+                throw Error(`invalid Ability.type, ${this.type}`);
         }
     }
     setValue(value: boolean | number): void {

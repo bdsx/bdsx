@@ -58,7 +58,7 @@ import type {
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
-import { remapError } from "./source-map-support";
+import { remapAndPrintError, remapError } from "./source-map-support";
 
 const PACKET_ID_COUNT = 0x100;
 const PACKET_EVENT_COUNT = 0x500;
@@ -380,7 +380,7 @@ export namespace events {
             remapError(err);
         }
         if (events.error.fire(err) !== CANCEL) {
-            console.error(err && ((err as any).stack || err));
+            remapAndPrintError(err as any);
         }
     }
 

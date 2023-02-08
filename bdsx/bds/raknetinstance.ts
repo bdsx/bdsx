@@ -4,7 +4,7 @@ import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { RakNet } from "./raknet";
 
 @nativeClass()
-export class RakNetInstance extends AbstractClass {
+export class RakNetConnector extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
     /**
@@ -16,3 +16,8 @@ export class RakNetInstance extends AbstractClass {
         abstract();
     }
 }
+
+/** @alias RakNetConnector */
+export const RakNetInstance = RakNetConnector;
+/** @alias RakNetConnector */
+export type RakNetInstance = RakNetConnector;
