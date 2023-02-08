@@ -894,6 +894,17 @@ export namespace NBT {
         return null;
     }
 
+    export function isCompound(nbt: NBT): nbt is Compound {
+        if (typeof nbt !== "object") return false;
+        if (nbt === null) return false;
+        if (nbt instanceof Tag) throw TypeError("Tag instance is not allowed");
+        if (nbt instanceof Int32Array) return false;
+        if (nbt instanceof Uint8Array) return false;
+        if (nbt instanceof Array) return false;
+        if (nbt instanceof Primitive) return false;
+        return true;
+    }
+
     /**
      * it will allocate the native NBT from the JS NBT.
      * boolean -> ByteTag
