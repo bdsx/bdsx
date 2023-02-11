@@ -4,7 +4,6 @@ import { MinecraftPacketIds } from "./packetids";
 import { ModalFormRequestPacket, SetTitlePacket } from "./packets";
 
 const formMaps = new Map<number, SentForm>();
-const cancelationReasonsMap = new Map<NetworkIdentifier, Form.CancelationReason | undefined>();
 
 // rua.kr: I could not find the internal form id counter, It seems BDS does not use the form.
 //         But I set the minimum for the unexpected situation.
@@ -16,7 +15,11 @@ let formIdCounter = MINIMUM_FORM_ID;
 class SentForm {
     public readonly id: number;
 
-    constructor(public readonly networkIdentifier: NetworkIdentifier, public readonly resolve: (data: FormResponse<any>) => void) {
+    constructor(
+        public readonly networkIdentifier: NetworkIdentifier,
+        public readonly resolve: (data: FormResponse<any>) => void,
+        public readonly formOption: Form.Options,
+    ) {
         // allocate id without duplication
         for (;;) {
             const id = formIdCounter++;
@@ -212,7 +215,7 @@ export class Form<DATA extends FormData> {
 
     static sendTo<T extends FormData["type"]>(target: NetworkIdentifier, data: FormData & { type: T }, opts?: Form.Options): Promise<FormResponse<T>> {
         return new Promise((resolve: (res: FormResponse<T>) => void) => {
-            const submitted = new SentForm(target, resolve);
+            const submitted = new SentForm(target, resolve, opts || {});
             const pk = ModalFormRequestPacket.allocate();
             pk.id = submitted.id;
             if (opts != null) opts.id = pk.id;
@@ -275,6 +278,7 @@ export namespace Form {
          * this function will record the id to it
          */
         id?: number;
+        cancelationReason?: number;
     }
     /**
      * @reference https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-ui/formresponse#cancelationreason
@@ -282,9 +286,6 @@ export namespace Form {
     export enum CancelationReason {
         userClosed,
         userBusy,
-    }
-    export function getLastCancelationReason(target: NetworkIdentifier): CancelationReason | undefined {
-        return cancelationReasonsMap.get(target);
     }
 }
 
@@ -396,11 +397,7 @@ events.packetAfter(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     if (sent == null) return;
     if (sent.networkIdentifier !== ni) return; // other user is responding
     formMaps.delete(pk.id);
-    cancelationReasonsMap.set(ni, pk.cancelationReason.value());
+    sent.formOption.cancelationReason = pk.cancelationReason.value();
     const result = pk.response.value();
     sent.resolve(result == null ? null : result.value());
-});
-
-events.playerLeft.on(ev => {
-    cancelationReasonsMap.delete(ev.player.getNetworkIdentifier());
 });

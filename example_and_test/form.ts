@@ -77,12 +77,27 @@ command.register("form2", "form example").overload(async (param, origin, output)
         return;
     }
     const ni = actor.getNetworkIdentifier();
-    const idx = await Form.sendTo(ni, {
-        type: "form",
-        title: "title",
-        content: "content",
-        buttons: [{ text: "button1" }, { text: "button2" }, { text: "button3" }, { text: "button4" }],
-    });
+    const opt: Form.Options = {};
+    const idx = await Form.sendTo(
+        ni,
+        {
+            type: "form",
+            title: "title",
+            content: "content",
+            buttons: [{ text: "button1" }, { text: "button2" }, { text: "button3" }, { text: "button4" }],
+        },
+        {},
+    );
+    if (idx === null) {
+        switch (opt.cancelationReason) {
+            case Form.CancelationReason.userBusy:
+                console.log(`${actor.getNameTag()} is in another UI`);
+                break;
+            case Form.CancelationReason.userClosed:
+                console.log(`${actor.getNameTag()} pressed X`);
+                break;
+        }
+    }
     await Form.sendTo(ni, {
         type: "form",
         title: "",
