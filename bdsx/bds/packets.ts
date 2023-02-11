@@ -24,6 +24,7 @@ import { AttributeInstanceHandle } from "./attribute";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
 import { ConnectionRequest, JsonValue } from "./connreq";
 import { CxxOptional } from "./cxxoptional";
+import type { Form } from "./form";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStackNetIdVariant, NetworkItemStackDescriptor } from "./inventory";
 import { CompoundTag } from "./nbt";
@@ -1334,11 +1335,10 @@ export type ShowModalFormPacket = ModalFormRequestPacket;
 export class ModalFormResponsePacket extends Packet {
     @nativeField(uint32_t)
     id: uint32_t;
-
     @nativeField(CxxOptional.make(JsonValue))
     response: CxxOptional<JsonValue>;
-    // @nativeField(CxxOptional.make(uint8_t))
-    // unknown:CxxOptional<uint8_t>;
+    @nativeField(CxxOptional.make(uint8_t))
+    cancelationReason: CxxOptional<Form.CancelationReason>;
 }
 
 @nativeClass(null)

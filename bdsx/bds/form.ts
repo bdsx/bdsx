@@ -4,6 +4,7 @@ import { MinecraftPacketIds } from "./packetids";
 import { ModalFormRequestPacket, SetTitlePacket } from "./packets";
 
 const formMaps = new Map<number, SentForm>();
+const cancelationReasonsMap = new Map<NetworkIdentifier, Form.CancelationReason | undefined>();
 
 // rua.kr: I could not find the internal form id counter, It seems BDS does not use the form.
 //         But I set the minimum for the unexpected situation.
@@ -275,6 +276,16 @@ export namespace Form {
          */
         id?: number;
     }
+    /**
+     * @reference https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-ui/formresponse#cancelationreason
+     */
+    export enum CancelationReason {
+        userClosed,
+        userBusy,
+    }
+    export function getLastCancelationReason(target: NetworkIdentifier): CancelationReason | undefined {
+        return cancelationReasonsMap.get(target);
+    }
 }
 
 export class SimpleForm extends Form<FormDataSimple> {
@@ -385,6 +396,11 @@ events.packetAfter(MinecraftPacketIds.ModalFormResponse).on((pk, ni) => {
     if (sent == null) return;
     if (sent.networkIdentifier !== ni) return; // other user is responding
     formMaps.delete(pk.id);
+    cancelationReasonsMap.set(ni, pk.cancelationReason.value());
     const result = pk.response.value();
     sent.resolve(result == null ? null : result.value());
+});
+
+events.playerLeft.on(ev => {
+    cancelationReasonsMap.delete(ev.player.getNetworkIdentifier());
 });
