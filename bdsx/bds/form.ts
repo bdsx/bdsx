@@ -278,10 +278,7 @@ export namespace Form {
          * this function will record the id to it
          */
         id?: number;
-        /**
-         * a field for the output.
-         */
-        cancelationReason?: Form.CancelationReason;
+        cancelationReason?: number;
     }
     /**
      * @reference https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-ui/formresponse#cancelationreason

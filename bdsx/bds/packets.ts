@@ -1337,11 +1337,6 @@ export class ModalFormResponsePacket extends Packet {
     id: uint32_t;
     @nativeField(CxxOptional.make(JsonValue))
     response: CxxOptional<JsonValue>;
-    /**
-     * @deprecated use cancelationReason
-     */
-    @nativeField(CxxOptional.make(uint8_t), { ghost: true })
-    unknown: CxxOptional<Form.CancelationReason>;
     @nativeField(CxxOptional.make(uint8_t))
     cancelationReason: CxxOptional<Form.CancelationReason>;
 }
