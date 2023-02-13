@@ -1,6 +1,7 @@
 import * as colors from "colors";
 import { bin } from "../bin";
 import { capi } from "../capi";
+import type * as commandenum from "../commandenum";
 import { CommandParameterType } from "../commandparam";
 import * as commandparser from "../commandparser";
 import { abstract } from "../common";
@@ -39,10 +40,9 @@ import { JsonValue } from "./connreq";
 import { MobEffect } from "./effects";
 import { ItemStack } from "./inventory";
 import { AvailableCommandsPacket } from "./packets";
-import { Player } from "./player";
+import { ServerPlayer } from "./player";
 import { proc } from "./symbols";
 import { HasTypeId, typeid_t, type_id } from "./typeid";
-import type * as commandenum from "../commandenum";
 import commandParser = commandparser.commandParser;
 
 export enum CommandPermissionLevel {
@@ -141,11 +141,11 @@ export enum CommandSelectionType {
 }
 
 @nativeClass(0xc1, 8)
-export class CommandSelectorBase extends AbstractClass {
+export class CommandSelectorBase<TARGET extends Actor> extends AbstractClass {
     private _newResults(origin: CommandOrigin): CxxSharedPtr<CxxVector<Actor>> {
         abstract();
     }
-    newResults<T extends Actor>(origin: CommandOrigin, typeFilter?: new (...args: any[]) => T): T[] {
+    newResults<T extends TARGET>(origin: CommandOrigin, typeFilter?: new (...args: any[]) => T): T[] {
         const list = this._newResults(origin);
         if (typeFilter != null) {
             const out: T[] = [];
@@ -183,8 +183,8 @@ CommandSelectorBase.prototype.getName = procHacker.js(
 );
 
 @nativeClass()
-export class WildcardCommandSelector<T> extends CommandSelectorBase {
-    static make<T>(type: Type<T>): NativeClassType<WildcardCommandSelector<T>> {
+export class WildcardCommandSelector<TARGET extends Actor> extends CommandSelectorBase<TARGET> {
+    static make<T extends Actor>(type: Type<T>): NativeClassType<WildcardCommandSelector<T>> {
         return Singleton.newInstance(WildcardCommandSelector, type, () => {
             class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {}
             WildcardCommandSelectorImpl.define({});
@@ -199,23 +199,21 @@ export class WildcardCommandSelector<T> extends CommandSelectorBase {
         });
     }
 }
-interface WildcardCommandSelectorType<T> extends NativeClassType<WildcardCommandSelector<T>> {
+interface WildcardCommandSelectorType<T extends Actor> extends NativeClassType<WildcardCommandSelector<T>> {
     [CommandParameterType.symbol]: true;
 }
 export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor) as WildcardCommandSelectorType<Actor>;
 ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
-
-export class PlayerWildcardCommandSelector extends ActorWildcardCommandSelector {
-    [NativeType.ctor](): void {
-        CommandSelectorBaseCtor(this, true);
-    }
-}
+export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(ServerPlayer) as WildcardCommandSelectorType<ServerPlayer>;
+PlayerWildcardCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
 
 @nativeClass()
-export class CommandSelector<T> extends CommandSelectorBase {
-    static make<T>(type: Type<T>): NativeClassType<CommandSelector<T>> {
+export class CommandSelector<TARGET extends Actor> extends CommandSelectorBase<TARGET> {
+    static make<T extends Actor>(type: Type<T>): NativeClassType<CommandSelector<T>> {
         return Singleton.newInstance(CommandSelector, type, () => {
             class CommandSelectorImpl extends CommandSelector<T> {}
             CommandSelectorImpl.define({});
@@ -230,14 +228,14 @@ export class CommandSelector<T> extends CommandSelectorBase {
         });
     }
 }
-interface CommandSelectorType<T> extends NativeClassType<CommandSelector<T>> {
+interface CommandSelectorType<T extends Actor> extends NativeClassType<CommandSelector<T>> {
     [CommandParameterType.symbol]: true;
 }
 export const ActorCommandSelector = CommandSelector.make(Actor) as CommandSelectorType<Actor>;
 ActorCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, false);
 };
-export const PlayerCommandSelector = CommandSelector.make(Player) as CommandSelectorType<Player>;
+export const PlayerCommandSelector = CommandSelector.make(ServerPlayer) as CommandSelectorType<ServerPlayer>;
 PlayerCommandSelector.prototype[NativeType.ctor] = function () {
     CommandSelectorBaseCtor(this, true);
 };
@@ -1225,7 +1223,7 @@ export class Command extends NativeClass {
         return param;
     }
 
-    static isWildcard(selectorBase: CommandSelectorBase): boolean {
+    static isWildcard<T extends Actor>(selectorBase: CommandSelectorBase<T>): boolean {
         abstract();
     }
 }
