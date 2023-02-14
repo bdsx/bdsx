@@ -3,7 +3,6 @@ import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
 import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, PlayerCommandSelector } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
-import { ServerPlayer } from "bdsx/bds/player";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
 import { fsutil } from "bdsx/fsutil";
@@ -67,7 +66,7 @@ command.register("eee", "entity example").overload(
         }
         output.success(out);
         if (param.players) {
-            for (const player of param.players.newResults(origin, ServerPlayer)) {
+            for (const player of param.players.newResults(origin)) {
                 out += "\n" + "Player:" + player.getNameTag() + ", " + player.getIdentifier(); // must be minecraft:player
             }
             output.success(out);
