@@ -141,7 +141,7 @@ export enum CommandSelectionType {
 }
 
 @nativeClass(0xc1, 8)
-export class CommandSelectorBase<TARGET extends Actor> extends AbstractClass {
+export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractClass {
     private _newResults(origin: CommandOrigin): CxxSharedPtr<CxxVector<Actor>> {
         abstract();
     }
