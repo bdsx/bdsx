@@ -278,12 +278,12 @@ export class ActorDamageByActorSource extends ActorDamageSource {
 export class ActorDamageByChildActorSource extends ActorDamageByActorSource {
     static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(this: never, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
-    static constructWith(childEntity: Actor, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
+    static constructWith(childEntity: Actor, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByChildActorSource;
     static constructWith(
         childEntity: Actor | ActorDamageCause,
         damagingEntity?: Actor | ActorDamageCause,
         cause: ActorDamageCause = ActorDamageCause.Projectile,
-    ): ActorDamageByActorSource {
+    ): ActorDamageByChildActorSource {
         abstract();
     }
 
