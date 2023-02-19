@@ -1065,6 +1065,8 @@ Actor.prototype.isBaby = procHacker.js("?isBaby@Actor@@QEBA_NXZ", bool_t, {
     this: Actor,
 });
 Actor.prototype.getEntityData = procHacker.js("?getEntityData@Actor@@QEBAAEBVSynchedActorDataEntityWrapper@@XZ", SynchedActorDataEntityWrapper, { this: Actor });
+Actor.prototype.getOwner = procHacker.js("?getOwner@Actor@@QEBAPEAVMob@@XZ", Mob, { this: Actor });
+Actor.prototype.setOwner = procHacker.js("?setOwner@Actor@@UEAAXUActorUniqueID@@@Z", void_t, { this: Actor }, ActorUniqueID);
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, { this: Actor });
 Mob.prototype.knockback = procHacker.jsv(

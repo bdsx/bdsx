@@ -1430,6 +1430,14 @@ export class Actor extends AbstractClass {
         const entityData = this.getEntityData();
         return entityData.getFloat(ActorDataIDs.Scale);
     }
+
+    getOwner(): Mob | null {
+        abstract();
+    }
+
+    setOwner(entityId: ActorUniqueID): void {
+        abstract();
+    }
 }
 mangle.update(Actor);
 
