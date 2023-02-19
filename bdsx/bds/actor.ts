@@ -670,6 +670,9 @@ export class Actor extends AbstractClass {
     hasType(type: ActorType): boolean {
         abstract();
     }
+    isType(type: ActorType): boolean {
+        abstract();
+    }
     /**
      * Kills the entity (itself)
      */
