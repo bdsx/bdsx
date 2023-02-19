@@ -39,6 +39,8 @@ import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } 
 import {
     Actor,
     ActorDamageByActorSource,
+    ActorDamageByBlockSource,
+    ActorDamageByChildActorSource,
     ActorDamageCause,
     ActorDamageSource,
     ActorDefinitionIdentifier,
@@ -1189,6 +1191,36 @@ ActorDamageSource.create = function (cause): ActorDamageSource {
     ActorDamageSource$ActorDamageSource(source, cause);
     return source;
 };
+
+const ActorDamageByActorSource$vftable = proc["??_7ActorDamageByActorSource@@6B@"];
+const ActorDamageByChildActorSource$vftable = proc["??_7ActorDamageByChildActorSource@@6B@"];
+const ActorDamageByBlockSource$vftable = proc["??_7ActorDamageByBlockSource@@6B@"];
+
+ActorDamageSource.setResolver(ptr => {
+    if (ptr === null) return null;
+    const vftable = ptr.getPointer();
+    if (vftable.equalsptr(ActorDamageByActorSource$vftable)) {
+        return ptr.as(ActorDamageByActorSource);
+    }
+    if (vftable.equalsptr(ActorDamageByChildActorSource$vftable)) {
+        return ptr.as(ActorDamageByChildActorSource);
+    }
+    if (vftable.equalsptr(ActorDamageByBlockSource$vftable)) {
+        return ptr.as(ActorDamageByBlockSource);
+    }
+    return ptr.as(ActorDamageSource);
+});
+
+ActorDamageSource.prototype.isEntitySource = function () {
+    return this instanceof ActorDamageByActorSource;
+};
+ActorDamageSource.prototype.isChildEntitySource = function () {
+    return this instanceof ActorDamageByChildActorSource;
+};
+ActorDamageSource.prototype.isBlockSource = function () {
+    return this instanceof ActorDamageByBlockSource;
+};
+
 ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.jsv(
     "??_7ActorDamageSource@@6B@",
     "?getDamagingEntityUniqueID@ActorDamageSource@@UEBA?AUActorUniqueID@@XZ",
@@ -1209,6 +1241,28 @@ const ActorDamageByActorSource$ActorDamageByActorSource = procHacker.js(
 ActorDamageByActorSource.constructWith = function (damagingEntity, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
     const source = new ActorDamageByActorSource(true);
     ActorDamageByActorSource$ActorDamageByActorSource(source, damagingEntity as Actor, cause);
+    return source;
+};
+
+ActorDamageByChildActorSource.prototype[NativeType.dtor] = procHacker.js("??1ActorDamageByChildActorSource@@UEAA@XZ", void_t, {
+    this: ActorDamageByChildActorSource,
+});
+const ActorDamageByChildActorSource$Ctor = procHacker.js(
+    "??0ActorDamageByChildActorSource@@QEAA@AEBVActor@@0W4ActorDamageCause@@@Z",
+    ActorDamageByActorSource,
+    null,
+    ActorDamageByActorSource,
+    Actor,
+    Actor,
+    int32_t,
+);
+ActorDamageByChildActorSource.constructWith = function (
+    childEntity,
+    damagingEntity?: Actor | ActorDamageCause,
+    cause: ActorDamageCause = ActorDamageCause.Projectile,
+): ActorDamageByChildActorSource {
+    const source = new ActorDamageByChildActorSource(true);
+    ActorDamageByChildActorSource$Ctor(source, childEntity as Actor, damagingEntity as Actor, cause);
     return source;
 };
 
@@ -2101,7 +2155,7 @@ const ItemStackBase$getCustomLore = procHacker.js(
     { this: ItemStackBase, structureReturn: true },
 );
 ItemStackBase.prototype.getCustomLore = function () {
-    const lore:CxxVector<CxxString> = ItemStackBase$getCustomLore.call(this);
+    const lore: CxxVector<CxxString> = ItemStackBase$getCustomLore.call(this);
     const res = lore.toArray();
     lore.destruct();
     return res;

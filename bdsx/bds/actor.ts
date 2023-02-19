@@ -186,7 +186,7 @@ export enum ActorType {
 
     AbstractArrow = 0x800000,
     Trident = 0x0c00049,
-    Arrow,
+    Arrow = 0xc00050,
     VillagerBase = 0x1000300,
     Villager = 0x100030f,
     VillagerV2 = 0x1000373,
@@ -219,6 +219,8 @@ export class ActorDefinitionIdentifier extends NativeClass {
 
 @nativeClass(0x10)
 export class ActorDamageSource extends NativeClass {
+    @nativeField(VoidPointer)
+    vftable: VoidPointer;
     @nativeField(int32_t, 0x08)
     cause: int32_t;
 
@@ -246,14 +248,48 @@ export class ActorDamageSource extends NativeClass {
     getDamagingEntityUniqueID(): ActorUniqueID {
         abstract();
     }
+
+    isEntitySource(): this is ActorDamageByActorSource {
+        abstract();
+    }
+
+    isChildEntitySource(): this is ActorDamageByChildActorSource {
+        abstract();
+    }
+
+    isBlockSource(): this is ActorDamageByBlockSource {
+        abstract();
+    }
 }
 
-@nativeClass(0x50)
+@nativeClass(null)
+export class ActorDamageByBlockSource extends ActorDamageSource {}
+
+@nativeClass(null)
 export class ActorDamageByActorSource extends ActorDamageSource {
     static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
     static constructWith(damagingEntity: Actor | ActorDamageCause, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
         abstract();
+    }
+}
+
+@nativeClass(0x80)
+export class ActorDamageByChildActorSource extends ActorDamageByActorSource {
+    static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
+    static constructWith(this: never, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
+    static constructWith(childEntity: Actor, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
+    static constructWith(
+        childEntity: Actor | ActorDamageCause,
+        damagingEntity?: Actor | ActorDamageCause,
+        cause: ActorDamageCause = ActorDamageCause.Projectile,
+    ): ActorDamageByActorSource {
+        abstract();
+    }
+
+    getChildEntityUniqueId(): ActorUniqueID {
+        // not official name, there is not a method for child entity in BDS
+        return this.getBin64(0x58); // accessed in ActorDamageByChildActorSource::ActorDamageByChildActorSource
     }
 }
 
@@ -479,7 +515,7 @@ export class Actor extends AbstractClass {
 
     /**
      * Summon a new entity
-     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, -1, player)
+     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, bedrockServer.level.getNewUniqueId(), player)
      * */
     static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: ActorUniqueID, summoner?: Actor): Actor;
     static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: int64_as_float_t, summoner?: Actor): Actor;
