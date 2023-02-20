@@ -666,18 +666,12 @@ Actor.prototype.teleportTo = function (position: Vec3, shouldStopRiding: boolean
     Actor$teleportTo.call(this, position, shouldStopRiding, cause, sourceEntityType, unknown);
 };
 
-Actor.prototype.isMob = function () {
-    return this instanceof Mob;
-};
 // `includeSimulatedPlayer` is for deprecated overload
 Actor.prototype.isPlayer = function (includeSimulatedPlayer: boolean = false) {
     return this instanceof ServerPlayer;
 };
 Actor.prototype.isSimulatedPlayer = function () {
     return this instanceof SimulatedPlayer;
-};
-Actor.prototype.isItem = function () {
-    return this instanceof ItemActor;
 };
 
 Actor.setResolver(ptr => {
@@ -1213,16 +1207,6 @@ ActorDamageSource.setResolver(ptr => {
     return ptr.as(ActorDamageSource);
 });
 
-ActorDamageSource.prototype.isEntitySource = function () {
-    return this instanceof ActorDamageByActorSource;
-};
-ActorDamageSource.prototype.isChildEntitySource = function () {
-    return this instanceof ActorDamageByChildActorSource;
-};
-ActorDamageSource.prototype.isBlockSource = function () {
-    return this instanceof ActorDamageByBlockSource;
-};
-
 ActorDamageSource.prototype.getDamagingEntityUniqueID = procHacker.jsv(
     "??_7ActorDamageSource@@6B@",
     "?getDamagingEntityUniqueID@ActorDamageSource@@UEBA?AUActorUniqueID@@XZ",
@@ -1469,9 +1453,6 @@ Player.prototype.getDestroyProgress = procHacker.js("?getDestroyProgress@Player@
 Player.prototype.respawn = procHacker.js("?respawn@Player@@UEAAXXZ", void_t, {
     this: Player,
 });
-Player.prototype.isSimulated = function () {
-    return this instanceof SimulatedPlayer;
-};
 Player.prototype.setRespawnReady = procHacker.js("?setRespawnReady@Player@@QEAAXAEBVVec3@@@Z", void_t, { this: Player }, Vec3);
 Player.prototype.setSpawnBlockRespawnPosition = procHacker.js(
     "?setSpawnBlockRespawnPosition@Player@@QEAAXAEBVBlockPos@@V?$AutomaticID@VDimension@@H@@@Z",
@@ -2591,9 +2572,6 @@ const BlockActor$load = procHacker.jsv(
 );
 const BlockActor$save = procHacker.jsv("??_7BlockActor@@6B@", "?save@BlockActor@@UEBA_NAEAVCompoundTag@@@Z", bool_t, { this: BlockActor }, CompoundTag);
 
-BlockActor.prototype.isChestBlockActor = function () {
-    return this instanceof ChestBlockActor;
-};
 BlockActor.prototype.save = function (tag?: CompoundTag): any {
     if (tag != null) {
         return BlockActor$save.call(this, tag);
@@ -3433,70 +3411,6 @@ ItemComponent.setResolver(ptr => {
     const cls = itemComponents.get(vftable);
     return ptr.as(cls || ItemComponent);
 });
-
-ItemComponent.prototype.isCooldown = function () {
-    return this instanceof CooldownItemComponent;
-};
-ItemComponent.prototype.isArmor = function () {
-    return this instanceof ArmorItemComponent;
-};
-ItemComponent.prototype.isDurability = function () {
-    return this instanceof DurabilityItemComponent;
-};
-ItemComponent.prototype.isDigger = function () {
-    return this instanceof DiggerItemComponent;
-};
-ItemComponent.prototype.isDisplayName = function () {
-    return this instanceof DisplayNameItemComponent;
-};
-ItemComponent.prototype.isDyePowder = function () {
-    return this instanceof DyePowderItemComponent;
-};
-ItemComponent.prototype.isEntityPlacer = function () {
-    return this instanceof EntityPlacerItemComponent;
-};
-ItemComponent.prototype.isFood = function () {
-    return this instanceof FoodItemComponent;
-};
-ItemComponent.prototype.isFuel = function () {
-    return this instanceof FuelItemComponent;
-};
-ItemComponent.prototype.isIcon = function () {
-    return this instanceof IconItemComponent;
-};
-ItemComponent.prototype.isKnockbackResistance = function () {
-    return this instanceof KnockbackResistanceItemComponent;
-};
-ItemComponent.prototype.isOnUse = function () {
-    return this instanceof OnUseItemComponent;
-};
-ItemComponent.prototype.isPlanter = function () {
-    return this instanceof PlanterItemComponent;
-};
-ItemComponent.prototype.isProjectile = function () {
-    return this instanceof ProjectileItemComponent;
-};
-ItemComponent.prototype.isRecord = function () {
-    return this instanceof RecordItemComponent;
-};
-ItemComponent.prototype.isRenderOffsets = function () {
-    return this instanceof RenderOffsetsItemComponent;
-};
-ItemComponent.prototype.isRepairable = function () {
-    return this instanceof RepairableItemComponent;
-};
-ItemComponent.prototype.isShooter = function () {
-    return this instanceof ShooterItemComponent;
-};
-ItemComponent.prototype.isThrowable = function () {
-    return this instanceof ThrowableItemComponent;
-};
-ItemComponent.prototype.isWeapon = function () {
-    return this instanceof WeaponItemComponent;
-};
-ItemComponent.prototype.isWearable = function () {
-    return this instanceof WearableItemComponent;
-};
 
 ItemComponent.prototype.buildNetworkTag = procHacker.jsv(
     "??_7ItemComponent@@6B@",

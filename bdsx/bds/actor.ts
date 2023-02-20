@@ -250,15 +250,15 @@ export class ActorDamageSource extends NativeClass {
     }
 
     isEntitySource(): this is ActorDamageByActorSource {
-        abstract();
+        return this instanceof ActorDamageByActorSource;
     }
 
     isChildEntitySource(): this is ActorDamageByChildActorSource {
-        abstract();
+        return this instanceof ActorDamageByChildActorSource;
     }
 
     isBlockSource(): this is ActorDamageByBlockSource {
-        abstract();
+        return this instanceof ActorDamageByBlockSource;
     }
 }
 
@@ -690,7 +690,7 @@ export class Actor extends AbstractClass {
      * @alias instanceof Mob
      */
     isMob(): this is Mob {
-        abstract();
+        return this instanceof Mob;
     }
     /**
      * @alias instanceof ServerPlayer
@@ -713,7 +713,7 @@ export class Actor extends AbstractClass {
      * @alias instanceof ItemActor
      */
     isItem(): this is ItemActor {
-        abstract();
+        return this instanceof ItemActor;
     }
     isSneaking(): boolean {
         abstract();

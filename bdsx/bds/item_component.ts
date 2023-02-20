@@ -19,67 +19,67 @@ export class ItemComponent extends NativeClass {
         abstract();
     }
     isCooldown(): this is CooldownItemComponent {
-        abstract();
+        return this instanceof CooldownItemComponent;
     }
     isDurability(): this is DurabilityItemComponent {
-        abstract();
+        return this instanceof DurabilityItemComponent;
     }
     isDigger(): this is DiggerItemComponent {
-        abstract();
+        return this instanceof DiggerItemComponent;
     }
     isDisplayName(): this is DisplayNameItemComponent {
-        abstract();
+        return this instanceof DisplayNameItemComponent;
     }
     isDyePowder(): this is DyePowderItemComponent {
-        abstract();
+        return this instanceof DyePowderItemComponent;
     }
     isEntityPlacer(): this is EntityPlacerItemComponent {
-        abstract();
+        return this instanceof EntityPlacerItemComponent;
     }
     isFood(): this is FoodItemComponent {
-        abstract();
+        return this instanceof FoodItemComponent;
     }
     isFuel(): this is FuelItemComponent {
-        abstract();
+        return this instanceof FuelItemComponent;
     }
     isIcon(): this is IconItemComponent {
-        abstract();
+        return this instanceof IconItemComponent;
     }
     isKnockbackResistance(): this is KnockbackResistanceItemComponent {
-        abstract();
+        return this instanceof KnockbackResistanceItemComponent;
     }
     isOnUse(): this is OnUseItemComponent {
-        abstract();
+        return this instanceof OnUseItemComponent;
     }
     isPlanter(): this is PlanterItemComponent {
-        abstract();
+        return this instanceof PlanterItemComponent;
     }
     isProjectile(): this is ProjectileItemComponent {
-        abstract();
+        return this instanceof ProjectileItemComponent;
     }
     isRecord(): this is RecordItemComponent {
-        abstract();
+        return this instanceof RecordItemComponent;
     }
     isRenderOffsets(): this is RenderOffsetsItemComponent {
-        abstract();
+        return this instanceof RenderOffsetsItemComponent;
     }
     isRepairable(): this is RepairableItemComponent {
-        abstract();
+        return this instanceof RepairableItemComponent;
     }
     isShooter(): this is ShooterItemComponent {
-        abstract();
+        return this instanceof ShooterItemComponent;
     }
     isThrowable(): this is ThrowableItemComponent {
-        abstract();
+        return this instanceof ThrowableItemComponent;
     }
     isWeapon(): this is WeaponItemComponent {
-        abstract();
+        return this instanceof WeaponItemComponent;
     }
     isWearable(): this is WearableItemComponent {
-        abstract();
+        return this instanceof WearableItemComponent;
     }
     isArmor(): this is ArmorItemComponent {
-        abstract();
+        return this instanceof ArmorItemComponent;
     }
 }
 

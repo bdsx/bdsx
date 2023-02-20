@@ -272,7 +272,7 @@ export class BlockActor extends NativeClass {
     vftable: VoidPointer;
 
     isChestBlockActor(): this is ChestBlockActor {
-        abstract();
+        return this instanceof ChestBlockActor;
     }
     /**
      * @param tag this function stores nbt values to this parameter
