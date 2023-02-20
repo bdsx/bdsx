@@ -9,7 +9,7 @@ import { mangle } from "../mangle";
 import { AbstractClass, nativeClass, NativeClass, nativeClassUtil, nativeField, NativeStruct } from "../nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
-import type { BlockSource } from "./block";
+import { Block, BlockSource } from "./block";
 import { BlockPos, Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { CxxOptional } from "./cxxoptional";
@@ -262,13 +262,25 @@ export class ActorDamageSource extends NativeClass {
     }
 }
 
-@nativeClass(null)
-export class ActorDamageByBlockSource extends ActorDamageSource {}
+@nativeClass(0x30)
+export class ActorDamageByBlockSource extends ActorDamageSource {
+    /**
+     * Magma, Stalactite, and Stalagmite are confirmed as used in BDS
+     */
+    static create(block: Block, cause: ActorDamageCause): ActorDamageByBlockSource;
+    static create(this: never, cause: ActorDamageCause): ActorDamageSource;
+    static create(block: Block | ActorDamageCause, cause?: ActorDamageCause): ActorDamageByBlockSource {
+        abstract();
+    }
+
+    @nativeField(Block.ref())
+    block: Block;
+}
 
 @nativeClass(null)
 export class ActorDamageByActorSource extends ActorDamageSource {
-    static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
+    static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(damagingEntity: Actor | ActorDamageCause, cause: ActorDamageCause = ActorDamageCause.EntityAttack): ActorDamageByActorSource {
         abstract();
     }
@@ -276,9 +288,9 @@ export class ActorDamageByActorSource extends ActorDamageSource {
 
 @nativeClass(0x80)
 export class ActorDamageByChildActorSource extends ActorDamageByActorSource {
+    static constructWith(childEntity: Actor, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByChildActorSource;
     static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
     static constructWith(this: never, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
-    static constructWith(childEntity: Actor, damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByChildActorSource;
     static constructWith(
         childEntity: Actor | ActorDamageCause,
         damagingEntity?: Actor | ActorDamageCause,
@@ -325,7 +337,10 @@ export enum ActorDamageCause {
     Fireworks,
     Lightning,
     Charging,
-    Temperature = 0x1a,
+    Temperature,
+    Freeze,
+    Stalactite,
+    Stalagmite,
     All = 0x1f,
 }
 

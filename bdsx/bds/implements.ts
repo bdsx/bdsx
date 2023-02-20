@@ -1246,10 +1246,10 @@ ActorDamageByActorSource.constructWith = function (damagingEntity, cause: ActorD
     return source;
 };
 
-ActorDamageByChildActorSource.prototype[NativeType.dtor] = procHacker.js("??1ActorDamageByChildActorSource@@UEAA@XZ", void_t, {
+ActorDamageByChildActorSource.prototype[NativeType.dtor] = procHacker.js("??1ActorDamageByChildActorSource@@UEAA@XZ", VoidPointer, {
     this: ActorDamageByChildActorSource,
 });
-const ActorDamageByChildActorSource$Ctor = procHacker.js(
+const ActorDamageByChildActorSource$ActorDamageByChildActorSource = procHacker.js(
     "??0ActorDamageByChildActorSource@@QEAA@AEBVActor@@0W4ActorDamageCause@@@Z",
     ActorDamageByActorSource,
     null,
@@ -1264,7 +1264,7 @@ ActorDamageByChildActorSource.constructWith = function (
     cause: ActorDamageCause = ActorDamageCause.Projectile,
 ): ActorDamageByChildActorSource {
     const source = new ActorDamageByChildActorSource(true);
-    ActorDamageByChildActorSource$Ctor(source, childEntity as Actor, damagingEntity as Actor, cause);
+    ActorDamageByChildActorSource$ActorDamageByChildActorSource(source, childEntity as Actor, damagingEntity as Actor, cause);
     return source;
 };
 
