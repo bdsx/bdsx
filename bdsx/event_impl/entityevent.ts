@@ -77,7 +77,14 @@ export class PlayerLeftEvent {
 }
 
 export class PlayerPickupItemEvent {
-    constructor(public player: Player, public itemActor: ItemActor) {}
+    constructor(
+        public player: Player,
+        /**
+         * itemActor is not ItemActor always.
+         * it can be the arrow or trident.
+         */
+        public itemActor: Actor,
+    ) {}
 }
 export class PlayerCritEvent {
     constructor(public player: Player, public victim: Actor) {}
@@ -438,7 +445,7 @@ const setLocalPlayerAsInitialized = procHacker.hooking(
     return setLocalPlayerAsInitialized(player);
 });
 
-function onPlayerPickupItem(player: Player, itemActor: ItemActor, orgCount: number, favoredSlot: number): boolean {
+function onPlayerPickupItem(player: Player, itemActor: Actor, orgCount: number, favoredSlot: number): boolean {
     const event = new PlayerPickupItemEvent(player, itemActor);
     const canceled = events.playerPickupItem.fire(event) === CANCEL;
     if (canceled) {
@@ -446,7 +453,7 @@ function onPlayerPickupItem(player: Player, itemActor: ItemActor, orgCount: numb
     }
     return _onPlayerPickupItem(event.player, event.itemActor, orgCount, favoredSlot);
 }
-const _onPlayerPickupItem = procHacker.hooking("?take@Player@@QEAA_NAEAVActor@@HH@Z", bool_t, null, Player, ItemActor, int32_t, int32_t)(onPlayerPickupItem);
+const _onPlayerPickupItem = procHacker.hooking("?take@Player@@QEAA_NAEAVActor@@HH@Z", bool_t, null, Player, Actor, int32_t, int32_t)(onPlayerPickupItem);
 
 function onPlayerLeft(networkHandler: ServerNetworkHandler, player: ServerPlayer, skipMessage: boolean): void {
     const event = new PlayerLeftEvent(player, skipMessage);
