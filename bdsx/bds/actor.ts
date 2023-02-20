@@ -530,11 +530,20 @@ export class Actor extends AbstractClass {
 
     /**
      * Summon a new entity
-     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, bedrockServer.level.getNewUniqueId(), player)
+     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig)
+     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, player)
+     * @example Actor.summonAt(player.getRegion(), player.getPosition(), ActorType.Pig, -1, player)
      * */
-    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: ActorUniqueID, summoner?: Actor): Actor;
-    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: int64_as_float_t, summoner?: Actor): Actor;
-    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id: ActorUniqueID | int64_as_float_t, summoner?: Actor): Actor {
+    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, summoner?: Actor): Actor;
+    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id?: ActorUniqueID, summoner?: Actor): Actor;
+    static summonAt(region: BlockSource, pos: Vec3, type: ActorDefinitionIdentifier | ActorType, id?: int64_as_float_t, summoner?: Actor): Actor;
+    static summonAt(
+        region: BlockSource,
+        pos: Vec3,
+        type: ActorDefinitionIdentifier | ActorType,
+        id?: ActorUniqueID | int64_as_float_t | Actor,
+        summoner?: Actor,
+    ): Actor {
         abstract();
     }
 

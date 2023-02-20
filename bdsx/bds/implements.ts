@@ -702,7 +702,7 @@ Actor.summonAt = function (
     region: BlockSource,
     pos: Vec3,
     type: ActorDefinitionIdentifier | ActorType,
-    id: ActorUniqueID | int64_as_float_t,
+    id: ActorUniqueID | int64_as_float_t | Actor = -1,
     summoner: Actor | null = null,
 ): Actor {
     const ptr = new AllocatedPointer(8);
@@ -712,6 +712,10 @@ Actor.summonAt = function (
             break;
         case "string":
             ptr.setBin(id);
+            break;
+        case "object":
+            ptr.setInt64WithFloat(-1);
+            summoner = id;
             break;
     }
     if (!(type instanceof ActorDefinitionIdentifier)) {
