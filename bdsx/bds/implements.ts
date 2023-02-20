@@ -1251,9 +1251,9 @@ ActorDamageByChildActorSource.prototype[NativeType.dtor] = procHacker.js("??1Act
 });
 const ActorDamageByChildActorSource$ActorDamageByChildActorSource = procHacker.js(
     "??0ActorDamageByChildActorSource@@QEAA@AEBVActor@@0W4ActorDamageCause@@@Z",
-    ActorDamageByActorSource,
+    ActorDamageByChildActorSource,
     null,
-    ActorDamageByActorSource,
+    ActorDamageByChildActorSource,
     Actor,
     Actor,
     int32_t,
