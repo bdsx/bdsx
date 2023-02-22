@@ -103,6 +103,9 @@ export class Player extends Mob {
         abstract();
     }
 
+    /**
+     * Returns the player's real name
+     */
     getName(): string {
         abstract();
     }
