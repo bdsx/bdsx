@@ -42,6 +42,7 @@ import type {
     PlayerCritEvent,
     PlayerDimensionChangeEvent,
     PlayerDropItemEvent,
+    PlayerInteractEvent,
     PlayerInventoryChangeEvent,
     PlayerJoinEvent,
     PlayerJumpEvent,
@@ -170,6 +171,8 @@ export namespace events {
     export const entityCarriedItemChanged = new Event<(event: EntityCarriedItemChangedEvent) => void>();
     /** Cancellable */
     export const playerAttack = new Event<(event: PlayerAttackEvent) => void | CANCEL>();
+    /** Cancellable */
+    export const playerInteract = new Event<(event: PlayerInteractEvent) => void | CANCEL>();
     /** Cancellable */
     export const playerDropItem = new Event<(event: PlayerDropItemEvent) => void | CANCEL>();
     /** Not cancellable */
