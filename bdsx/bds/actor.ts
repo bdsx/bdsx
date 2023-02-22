@@ -1568,6 +1568,7 @@ export class Mob extends Actor {
         abstract();
     }
 }
+
 export class ItemActor extends Actor {
     itemStack: ItemStack;
 }
