@@ -10,7 +10,7 @@ import type { ChunkSource, LevelChunk } from "./chunk";
 import type { CommandName } from "./commandname";
 import type { Dimension } from "./dimension";
 import { HashedString } from "./hashedstring";
-import type { Container, ItemStack } from "./inventory";
+import type { Container, ItemStack, ItemStackBase } from "./inventory";
 import { CompoundTag, NBT } from "./nbt";
 import type { BlockActorDataPacket } from "./packets";
 import type { Player, ServerPlayer } from "./player";
@@ -262,6 +262,9 @@ export class BlockSource extends NativeClass {
         abstract();
     }
     getBrightness(blockPos: BlockPos): number {
+        abstract();
+    }
+    checkBlockDestroyPermission(actor: Actor, blockPos: BlockPos, item: ItemStackBase, b: bool_t): bool_t {
         abstract();
     }
 }

@@ -505,6 +505,10 @@ export class Player extends Mob {
     getAbilities(): LayeredAbilities {
         abstract();
     }
+
+    getSelectedItem(): ItemStack {
+        abstract();
+    }
 }
 
 namespace RawTextObject {

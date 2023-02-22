@@ -831,12 +831,13 @@ export class Actor extends AbstractClass {
     }
     /**
      * Returns the BlockSource instance which the entity is ticking
+     * @alias getDimensionBlockSource
      */
     getRegion(): BlockSource {
         abstract();
     }
     /**
-     * @alias getRegion
+     * Returns the BlockSource instance which the entity is ticking
      */
     getDimensionBlockSource(): BlockSource {
         abstract();

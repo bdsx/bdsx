@@ -18,6 +18,10 @@ export class BlockDestroyEvent {
         public blockPos: BlockPos,
         public blockSource: BlockSource,
         public itemStack: ItemStack,
+        /**
+         * controls whether the server sends a deny effect, and is always 0 in all cases with the destroyer being a player
+         * @deprecated not implemented
+         */
         public generateParticle: boolean,
     ) {}
 }
@@ -74,26 +78,26 @@ export class ChestPairEvent {
 
 function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): boolean {
     const player = gamemode.actor as ServerPlayer;
-    /*  The original function we hooked was `BlockSource::checkBlockDestroyPermissions(BlockSource *this, Actor *entity, const BlockPos *pos, const ItemStack *item, bool generateParticle)`,
-        but it will be fired multiple times if `server-authoritative-block-breaking` is enabled
+    /********************
+     *   History
+     * Old hooking point - BlockSource::checkBlockDestroyPermissions
+     * - fired multiple times if `server-authoritative-block-breaking` is enabled
+     * - It has three refs: AgentCommands::DestroyCommand::isDone, GameMode::_canDestroy, GameMode::destroyBlock
+     *
+     * Current hooking point - GameMode::destroyBlock
+     * - fired with the sword attack of the creative mode user if `server-authoritative-block-breaking` is enabled
+     */
 
-        It has three refs:
-        1. `AgentCommands::DestroyCommand::isDone(AgentCommands::DestroyCommand *this)`:
-            BlockSource::checkBlockDestroyPermissions(Actor::getRegion(this->mTarget), this->mCommander, &pos, &ItemStack::EMPTY_ITEM, 1);
-
-        2. `GameMode::_canDestroy(GameMode *this, const BlockPos *pos, FacingID face)`:
-            entity = this->mPlayer;
-            BlockSource::checkBlockDestroyPermissions(Actor::getRegion(this->mPlayer), entity, pos, PlayerInventory::getSelectedItem(Player::getSupplies(entity)), Item::mGenerateDenyParticleEffect);
-            Note: Item::mGenerateDenyParticleEffect is a bool const of 0
-
-        3. `GameMode::destroyBlock(GameMode *this, const BlockPos *pos, FacingID face)`:
-            entity = this->mPlayer;
-            BlockSource::checkBlockDestroyPermissions(Actor::getRegion(this->mPlayer), entity, pos, Player::getSelectedItem(entity), 0);
-
-        `generateParticle` controls whether the server sends a deny effect, and is always 0 in all cases with the destroyer being a player
-    */
     const blockSource = player.getRegion();
     const itemStack = player.getMainhandSlot();
+    if (player.isCreative()) {
+        // bypass the hooking point issue
+        const item = itemStack.getItem();
+        if (item !== null && !item.canDestroyInCreative()) {
+            return _onBlockDestroy(gamemode, blockPos, face);
+        }
+    }
+
     const event = new BlockDestroyEvent(player, blockPos, blockSource, itemStack, false);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
     decay(blockPos);

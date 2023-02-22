@@ -158,6 +158,9 @@ export class Item extends NativeClass {
     getCooldownType(): HashedString {
         abstract();
     }
+    canDestroyInCreative(): boolean {
+        abstract();
+    }
 }
 
 /**
