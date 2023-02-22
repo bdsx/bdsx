@@ -341,7 +341,9 @@ export enum ActorDamageCause {
     Freeze,
     Stalactite,
     Stalagmite,
-    All = 0x1f,
+    RamAttack,
+    SonicBoom,
+    All = 0x22,
 }
 
 export enum ActorFlags {
