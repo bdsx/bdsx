@@ -104,6 +104,13 @@ export class Player extends Mob {
     }
 
     /**
+     * Returns the player's real name
+     */
+    getName(): string {
+        abstract();
+    }
+
+    /**
      * Triggers an item cooldown (e.g: Ender pearl)
      * @remarks This function seems to crash the server. use ItemStack.startCoolDown() instead.
      *
