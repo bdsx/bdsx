@@ -341,7 +341,9 @@ export enum ActorDamageCause {
     Freeze,
     Stalactite,
     Stalagmite,
-    All = 0x1f,
+    RamAttack,
+    SonicBoom,
+    All = 0x22,
 }
 
 export enum ActorFlags {
@@ -831,12 +833,13 @@ export class Actor extends AbstractClass {
     }
     /**
      * Returns the BlockSource instance which the entity is ticking
+     * @alias getDimensionBlockSource
      */
     getRegion(): BlockSource {
         abstract();
     }
     /**
-     * @alias getRegion
+     * Returns the BlockSource instance which the entity is ticking
      */
     getDimensionBlockSource(): BlockSource {
         abstract();
