@@ -103,6 +103,10 @@ export class Player extends Mob {
         abstract();
     }
 
+    getName(): string {
+        abstract();
+    }
+
     /**
      * Triggers an item cooldown (e.g: Ender pearl)
      * @remarks This function seems to crash the server. use ItemStack.startCoolDown() instead.
