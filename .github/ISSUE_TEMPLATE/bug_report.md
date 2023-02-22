@@ -1,34 +1,35 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
-**Describe the bug (Required)**  
+**Describe the bug (Required)**\
 e.g. A clear and concise description of what the bug is.
 
-**To Reproduce (Required)**  
-Steps to reproduce the behavior:  
-e.g.   
+**To Reproduce (Required)**\
+Steps to reproduce the behavior:
+e.g.
+
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**  
+**Expected behavior**\
 e.g. A clear and concise description of what you expected to happen.
 
-**Error logs**  
+**Error logs**\
 e.g. If applicable, add logs to help explain your problem.
 
-**Environment**  
- - OS: [e.g. Windows]
- - node.js Version (if it's related)
- - npm Version (if it's related)
- - git Version (if it's related)
+**Environment**
 
-**Additional context**  
+-   OS: [e.g. Windows]
+-   node.js Version (if it's related)
+-   npm Version (if it's related)
+-   git Version (if it's related)
+
+**Additional context**
 e.g. Add any other context about the problem here.

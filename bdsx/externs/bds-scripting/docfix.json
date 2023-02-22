@@ -1,7 +1,7 @@
 {
     "$schema": "./docfix.schema.json",
     "IVanillaServerSystem": {
-        "method:log":null,
+        "method:log": null,
         "method:getBlock": {
             "return": "IBlock|null"
         },
@@ -32,11 +32,11 @@
         "method:destroyComponent": null,
         "method:executeCommand": null
     },
-    "IEntity":{
-        "field:__identifier__":"EntityId",
-        "field:__unique_id__":"Int64"
+    "IEntity": {
+        "field:__identifier__": "EntityId",
+        "field:__unique_id__": "Int64"
     },
-    "IItemStack":{
+    "IItemStack": {
         "field:count": "number",
         "field:__identifier__": "ItemId",
         "field:name": "ItemId"

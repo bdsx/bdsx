@@ -1,33 +1,38 @@
 name: CI
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    push:
+        branches: [master]
+    pull_request:
+        branches: [master]
 
-  workflow_dispatch:
+    workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    env:
-      BDSX_YES: skip
-      BDSX_SKIP_GIT_CHECK: yes
+        env:
+            BDSX_YES: skip
+            BDSX_SKIP_GIT_CHECK: yes
 
-    steps:
-      - uses: actions/checkout@v2
+        steps:
+            - uses: actions/checkout@v2
 
-      - name: NPM Install
-        run: npm i
+            - name: NPM Install
+              run: npm i
 
-      - name: TypeScript Check
-        run: |
-          npm list --depth=0 typescript
-          tsc --noEmit
+            - name: TypeScript Check
+              run: |
+                  npm list --depth=0 typescript
+                  tsc --noEmit
 
-      - name: ESLint
-        run: |
-          npm list --depth=0 eslint eslint-plugin-github eslint-plugin-import
-          npm run lint-bdsx
+            - name: ESLint
+              run: |
+                  npm list --depth=0 eslint eslint-plugin-github eslint-plugin-import
+                  npm run lint-bdsx
+
+            - name: Prettier
+              run: |
+                  npm list --depth=0 prettier
+                  npm run prettier-bdsx

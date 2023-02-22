@@ -1,5 +1,5 @@
 {
-    "type":"object",
+    "type": "object",
     "patternProperties": {
         "^.*$": {
             "$ref": "#/definitions/type"
@@ -9,10 +9,10 @@
     "definitions": {
         "type": {
             "properties": {
-                "optional":{"type":"boolean"},
-                "type":{"type":"string"},
-                "desc":{"type":"string"},
-                "wrapToArray":{ "anyOf":[{"type":"string"}, {"type":"boolean"}]}
+                "optional": { "type": "boolean" },
+                "type": { "type": "string" },
+                "desc": { "type": "string" },
+                "wrapToArray": { "anyOf": [{ "type": "string" }, { "type": "boolean" }] }
             },
             "patternProperties": {
                 "^field:": { "$ref": "#/definitions/type" },

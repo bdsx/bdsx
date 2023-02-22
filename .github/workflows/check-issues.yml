@@ -1,15 +1,15 @@
 name: Check Issues
 on:
-  issues:
-    types: [opened, edited, reopen]
+    issues:
+        types: [opened, edited, reopen]
 
 jobs:
-  autoclose:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout repo
-        uses: actions/checkout@v3
-      - name: check issue
-        uses: bdsx/issue-closer@HEAD
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+    autoclose:
+        runs-on: ubuntu-latest
+        steps:
+            - name: checkout repo
+              uses: actions/checkout@v3
+            - name: check issue
+              uses: bdsx/issue-closer@HEAD
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
