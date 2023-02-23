@@ -48,6 +48,10 @@ export class PlayerAttackEvent {
     constructor(public player: Player, public victim: Actor) {}
 }
 
+export class PlayerInteractEvent {
+    constructor(public player: Player, public victim: Actor, public interactPos: Vec3) {}
+}
+
 export class PlayerDropItemEvent {
     constructor(public player: Player, public itemStack: ItemStack, public inContainer: boolean, public hotbarSlot?: number) {}
 }
@@ -347,6 +351,16 @@ const _onPlayerAttack = procHacker.hooking(
     Actor,
     Wrapper.make(int32_t),
 )(onPlayerAttack);
+
+function onPlayerInteract(player: Player, victim: Actor, interactPos: Vec3): boolean {
+    const event = new PlayerInteractEvent(player, victim, interactPos);
+    const canceled = events.playerInteract.fire(event) === CANCEL;
+    if (canceled) {
+        return false;
+    }
+    return _onPlayerInteract(event.player, event.victim, event.interactPos);
+}
+const _onPlayerInteract = procHacker.hooking("?interact@Player@@QEAA_NAEAVActor@@AEBVVec3@@@Z", bool_t, null, Player, Actor, Vec3)(onPlayerInteract);
 
 events.packetBefore(MinecraftPacketIds.InventoryTransaction).on((pk, ni) => {
     const transaction = pk.transaction;
