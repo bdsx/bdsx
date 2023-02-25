@@ -44,10 +44,6 @@ const reSourceMap = /^data:application\/json[^,]+base64,/;
 const retrieveFileHandlers: ((path: string) => string)[] = [];
 const retrieveMapHandlers: ((path: string) => UrlAndMap | null)[] = [];
 
-function hasGlobalProcessEventEmitter(): boolean {
-    return typeof process === "object" && process !== null && typeof process.on === "function";
-}
-
 function handlerExec<T, R>(list: ((arg: T) => R)[]): (arg: T) => R | null {
     return function (arg) {
         for (let i = 0; i < list.length; i++) {
@@ -394,9 +390,11 @@ function printErrorAndExit(error: Error): void {
     process.exit(1);
 }
 
-function shimEmitUncaughtException(): void {
-    const origEmit = process.emit;
+export function install(): void {
+    if (uncaughtShimInstalled) return;
+    uncaughtShimInstalled = true;
 
+    const origEmit = process.emit;
     process.emit = function (type: string, ...args: any[]) {
         if (type === "uncaughtException") {
             const err = args[0];
@@ -414,22 +412,6 @@ function shimEmitUncaughtException(): void {
 
         return origEmit.apply(this, arguments);
     };
-}
-
-export function install(): void {
-    if (uncaughtShimInstalled) return;
-    let installHandler = true;
-    try {
-        const worker_threads = module.require("worker_threads");
-        if (worker_threads.isMainThread === false) {
-            installHandler = false;
-        }
-    } catch (e) {}
-
-    if (installHandler && hasGlobalProcessEventEmitter()) {
-        uncaughtShimInstalled = true;
-        shimEmitUncaughtException();
-    }
 
     console.trace = function (...messages: any[]): void {
         const err = remapStack(

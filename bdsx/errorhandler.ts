@@ -68,35 +68,18 @@ function getDllNameFromAddress(addr: VoidPointer): string | null {
 export function installErrorHandler(): void {
     jshook.setOnError(events.errorFire);
 
-    const oldSetInterval = setInterval;
-    global.setInterval = function (callback: (...args: any[]) => void, ms: number, ...args: any[]): NodeJS.Timeout {
-        return oldSetInterval(
-            (...args: any[]) => {
-                try {
-                    callback(...args);
-                } catch (err) {
-                    events.errorFire(err);
-                }
-            },
-            ms,
-            ...args,
-        );
-    } as any;
-    const oldSetTimeout = setTimeout;
-    global.setTimeout = function (callback: (...args: any[]) => void, ms: number, ...args: any[]): NodeJS.Timeout {
-        return oldSetTimeout(
-            (...args: any[]) => {
-                try {
-                    callback(...args);
-                } catch (err) {
-                    events.errorFire(err);
-                }
-            },
-            ms,
-            ...args,
-        );
-    } as any;
-    setTimeout.__promisify__ = oldSetTimeout.__promisify__;
+    const origEmit = process.emit;
+    process.emit = function (type: string, ...args: any[]) {
+        switch (type) {
+            case "uncaughtException":
+                events.errorFire(args[0]);
+                return true;
+            case "unhandledRejection":
+                events.errorFire(args[0]);
+                return true;
+        }
+        return origEmit.apply(this, arguments);
+    };
 
     // default runtime error handler
     runtimeError.setHandler(err => {
