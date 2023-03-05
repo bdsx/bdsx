@@ -271,7 +271,7 @@ export class AddActorPacket extends Packet {
     readonly type: ActorDefinitionIdentifier;
     @nativeField(CxxVector.make(AttributeInstanceHandle))
     readonly attributeHandles: CxxVector<AttributeInstanceHandle>;
-}   
+}
 
 @nativeClass(null)
 export class RemoveActorPacket extends Packet {
