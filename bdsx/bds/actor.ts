@@ -277,7 +277,7 @@ export class ActorDamageByBlockSource extends ActorDamageSource {
     block: Block;
 }
 
-@nativeClass(null)
+@nativeClass(0x50)
 export class ActorDamageByActorSource extends ActorDamageSource {
     static constructWith(damagingEntity: Actor, cause?: ActorDamageCause): ActorDamageByActorSource;
     static constructWith(this: never, cause: ActorDamageCause): ActorDamageSource;
