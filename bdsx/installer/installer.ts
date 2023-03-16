@@ -1,5 +1,6 @@
 import { gitCheck } from "./gitcheck";
-import { BDSInstaller, installBDS } from "./installerapi";
+import { installBDS } from "./installerapi";
+import { BDSInstaller } from "./installercls";
 
 const opts: BDSInstaller.Options = {};
 const argv = process.argv;

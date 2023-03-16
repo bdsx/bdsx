@@ -27,6 +27,7 @@ import { CxxOptional } from "./cxxoptional";
 import type { Form } from "./form";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStackNetIdVariant, NetworkItemStackDescriptor } from "./inventory";
+import { MolangVariableMap } from "./molangvariablemap";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
 import type { GameType, Player } from "./player";
@@ -1478,6 +1479,8 @@ export class SpawnParticleEffectPacket extends Packet {
     readonly pos: Vec3;
     @nativeField(CxxString)
     particleName: CxxString;
+    @nativeField(MolangVariableMap)
+    molangVariablesJson: MolangVariableMap;
 }
 
 /** @deprecated use SpawnParticleEffectPacket, follow real class name */

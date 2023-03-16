@@ -3,5 +3,6 @@
     "arrowParens": "avoid",
     "printWidth": 165,
     "trailingComma": "all",
-    "endOfLine": "auto"
+    "endOfLine": "auto",
+    "quoteProps": "preserve"
 }
