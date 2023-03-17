@@ -57,9 +57,6 @@ export namespace asmcode {
     export const logHookAsyncCb:NativePointer;
     export const logHook:NativePointer;
     export const runtime_error:NativePointer;
-    export let serverInstance:VoidPointer;
-    export const addressof_serverInstance:NativePointer;
-    export const ServerInstance_ctor_hook:NativePointer;
     export const debugBreak:NativePointer;
     export const returnRcx:NativePointer;
     export const returnZero:NativePointer;

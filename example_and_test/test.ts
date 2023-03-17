@@ -28,7 +28,7 @@ import {
     NBT,
     ShortTag,
     StringTag,
-    Tag,
+    Tag
 } from "bdsx/bds/nbt";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { Packet } from "bdsx/bds/packet";
@@ -73,7 +73,12 @@ const dimensionVFTables = new Set<string>(
 function isDimensionClass(dimension: Dimension): boolean {
     return dimensionVFTables.has(dimension.vftable.getAddressBin());
 }
-const dimensions = new Set<DimensionId>([DimensionId.Overworld, DimensionId.Nether, DimensionId.TheEnd]);
+enum PacketPhase {
+    Raw,
+    Before,
+    After
+}
+let nextPacketPhase = PacketPhase.Raw;
 
 type PromiseFunc = () => Promise<PromiseFunc>;
 
@@ -195,8 +200,8 @@ Tester.concurrency(
             const serverInstance = bedrockServer.serverInstance;
             this.assert(!!serverInstance && serverInstance.isNotNull(), "serverInstance not found");
             this.assert(serverInstance.vftable.equalsptr(proc["??_7ServerInstance@@6BEnableNonOwnerReferences@Bedrock@@@"]), "serverInstance is not ServerInstance");
-            const networkHandler = bedrockServer.networkHandler;
-            this.assert(!!networkHandler && networkHandler.isNotNull(), "networkHandler not found");
+            const networkSystem = bedrockServer.networkSystem;
+            this.assert(!!networkSystem && networkSystem.isNotNull(), "networkSystem not found");
             this.assert(bedrockServer.commandOutputSender.vftable.equalsptr(proc["??_7CommandOutputSender@@6B@"]), "sender is not CommandOutputSender");
 
             const shandle = bedrockServer.serverNetworkHandler;
@@ -897,6 +902,8 @@ Tester.concurrency(
                 if (tooHeavy.has(i)) continue;
                 events.packetRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
+                        this.equals(nextPacketPhase, PacketPhase.Raw, 'unexpected phase');
+                        nextPacketPhase = PacketPhase.Before;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetRaw, Invalid ni, id=" + packetId);
                         idcheck = packetId;
                         this.assert(size > 0, `packetRaw, packet is too small (size = ${size})`);
@@ -905,6 +912,8 @@ Tester.concurrency(
                 );
                 events.packetBefore<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
+                        this.equals(nextPacketPhase, PacketPhase.Before, 'unexpected phase');
+                        nextPacketPhase = PacketPhase.After;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetBefore, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
                         this.equals(ptr.getId(), idcheck, `packetBefore, different class.packetId on before. id=${packetId}`);
@@ -912,6 +921,8 @@ Tester.concurrency(
                 );
                 events.packetAfter<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
+                        this.equals(nextPacketPhase, PacketPhase.After, 'unexpected phase');
+                        nextPacketPhase = PacketPhase.Raw;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetAfter, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetAfter, different packetId on after. id=${packetId}`);
                         this.equals(ptr.getId(), idcheck, `packetAfter, different class.packetId on after. id=${packetId}`);
@@ -1142,6 +1153,7 @@ Tester.concurrency(
                         this.log("> tested and stopping...");
                         setTimeout(() => bedrockServer.stop(), 1000);
                     }
+                    nextPacketPhase = PacketPhase.Raw;
                     return CANCEL;
                 }
             });

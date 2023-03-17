@@ -643,6 +643,34 @@ export const GslStringSpan = new NativeType<string>(
 );
 export type GslStringSpan = string;
 
+export const CxxStringView = new NativeType<string>(
+    "V?$basic_string_view@DU?$char_traits@D@std@@@std@@",
+    "CxxStringView",
+    0x10,
+    8,
+    v => typeof v === "string",
+    undefined,
+    (ptr, offset) => {
+        const length = ptr.getInt64AsFloat((offset || 0) + 8);
+        return ptr.getPointer(offset).getString(length);
+    },
+    impossible,
+    (stackptr, offset) => {
+        const strptr = stackptr.getPointer(offset);
+        const length = strptr.getInt64AsFloat(8);
+        return strptr.getPointer(0).getString(length);
+    },
+    (stackptr, param, offset) => {
+        const str = Buffer.from(param, "utf8");
+        const buf = new AllocatedPointer(0x10);
+        buf.setPointer(VoidPointer.fromAddressBuffer(str), 0);
+        buf.setInt64WithFloat(str.length, 8);
+        makefunc.temporalKeeper.push(buf, str);
+        stackptr.setPointer(buf, offset);
+    },
+);
+export type CxxStringView = string;
+
 export const bin64_t = new NativeType<string>(
     "unsigned __int64",
     "bin64_t",

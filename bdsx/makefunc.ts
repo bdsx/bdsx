@@ -124,6 +124,13 @@ export interface MakeFuncOptions<THIS extends { new (): VoidPointer | void }> {
      * code chunk name, default: js function name
      */
     name?: string;
+
+    /**
+     * it's only called once.
+     * it will reduce references for memory optimization.
+     * but BDSX may crash if it's called twice.
+     */
+    onlyOnce?: boolean;
 }
 type GetThisFromOpts<OPTS extends MakeFuncOptions<any> | null> = OPTS extends MakeFuncOptions<infer THIS>
     ? THIS extends { new (): VoidPointer }
@@ -319,10 +326,14 @@ export namespace makefunc {
         if (typeof jsfunction !== "function") invalidParameterError("arg1", "function", jsfunction);
 
         const options: MakeFuncOptions<any> = opts! || {};
+        if (options.name == null) {
+            options.name = jsfunction.name;
+        }
+
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
 
-        const gen = new FunctionGen();
+        const gen = new FunctionGen(options.name, "stackptr");
         if (options.jsDebugBreak) gen.writeln("debugger;");
 
         gen.import("temporalKeeper", temporalKeeper);
@@ -402,11 +413,11 @@ export namespace makefunc {
         }
         gen.writeln("temporalKeeper.length = keepIdx;");
 
-        if (jsfunction.name) {
-            if (opts == null) opts = { name: jsfunction.name } as OPTS;
-            else if (opts.name == null) opts.name = jsfunction.name;
+        if (options.onlyOnce) {
+            gen.import("chakraRelease", chakraUtil.JsRelease);
+            gen.writeln(`chakraRelease(${gen.functionName});`);
         }
-        return npRaw(gen.generate("stackptr"), options.crossThread ? asmcode.jsend_crossthread : options.onError || asmcode.jsend_crash, opts);
+        return npRaw(gen.generate(), options.crossThread ? asmcode.jsend_crossthread : options.onError || asmcode.jsend_crash, options);
     }
 
     /**
@@ -422,6 +433,7 @@ export namespace makefunc {
         PARAMS extends ParamType[],
     >(functionPointer: PTR, returnType: RETURN, opts?: OPTS, ...params: PARAMS): FunctionFromTypes_js<PTR, OPTS, PARAMS, RETURN> {
         const options: MakeFuncOptions<any> = opts! || {};
+
         const returnTypeResolved = remapType(returnType);
         const paramsTypeResolved = params.map(remapType);
 
@@ -450,7 +462,11 @@ export namespace makefunc {
 
         const ncall = options.nativeDebugBreak ? breakBeforeCallNativeFunction : callNativeFunction;
 
-        const gen = new FunctionGen();
+        const args: string[] = [];
+        for (let i = 0; i < paramsTypeResolved.length; i++) {
+            args.push("arg" + i);
+        }
+        const gen = new FunctionGen(options.name, ...args);
 
         if (options.jsDebugBreak) gen.writeln("debugger;");
         if (functionPointer instanceof Array) {
@@ -588,11 +604,7 @@ export namespace makefunc {
         if (returnVar !== "") gen.writeln(`  return ${returnVar};`);
         gen.writeln("});");
 
-        const args: string[] = [];
-        for (let i = 0; i < paramsTypeResolved.length; i++) {
-            args.push("arg" + i);
-        }
-        const funcout = gen.generate(...args) as any;
+        const funcout = gen.generate() as any;
         funcout.pointer = functionPointer;
         return funcout;
     }

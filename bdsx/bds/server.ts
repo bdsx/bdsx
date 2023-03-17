@@ -10,7 +10,7 @@ import { Bedrock } from "./bedrock";
 import type { MinecraftCommands } from "./command";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
-import { NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
+import { NetworkSystem, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
 import type { ServerPlayer } from "./player";
 
 export class MinecraftEventing extends AbstractClass {}
@@ -32,7 +32,7 @@ export const VanilaServerGameplayEventListener = VanillaServerGameplayEventListe
  * unknown instance
  */
 export class Minecraft$Something {
-    network: NetworkHandler;
+    network: NetworkSystem;
     level: ServerLevel;
     shandler: ServerNetworkHandler;
 }
@@ -58,7 +58,7 @@ export class Minecraft extends AbstractClass {
         return new Minecraft$Something();
     }
     /** @deprecated Use `Minecraft::getNetworkHandler` instead */
-    get network(): NetworkHandler {
+    get network(): NetworkSystem {
         return this.getNetworkHandler();
     }
     /** @deprecated Unused */
@@ -73,9 +73,9 @@ export class Minecraft extends AbstractClass {
         abstract();
     }
     /**
-     * @deprecated use bedrockServer.networkHandler
+     * @deprecated use bedrockServer.networkSystem
      */
-    getNetworkHandler(): NetworkHandler {
+    getNetworkHandler(): NetworkSystem {
         abstract();
     }
     /**
@@ -137,8 +137,8 @@ export class ServerInstance extends AbstractClass {
     server: DedicatedServer;
     /** @deprecated use bedrockServer.minecraft */
     minecraft: Minecraft;
-    /** @deprecated use bedrockServer.networkHandler */
-    networkHandler: NetworkHandler;
+    /** @deprecated use bedrockServer.networkSystem */
+    networkSystem: NetworkSystem;
 
     protected _disconnectAllClients(message: CxxString): void {
         abstract();

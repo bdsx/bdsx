@@ -69,3 +69,7 @@ Email: (this IS public) # Enter Email
     Run plugin-manager.bat/sh.\
     Search and select the plugin.\
     Select `Remove`.
+
+## Remark
+
+I don't recommend using low-level APIs like hooking. it can be broken by updating BDS. if you need the low-level feature I hope you contribute the code to BDSX about it. I will maintain it as I as possible.

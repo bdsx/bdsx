@@ -402,12 +402,6 @@ export proc raise_runtime_error
     call runtimeErrorRaise
 endp
 
-export def serverInstance:qword
-
-export proc ServerInstance_ctor_hook
-    mov serverInstance, rcx
-endp
-
 export proc debugBreak
     int3
 endp
@@ -490,7 +484,12 @@ export proc updateWithSleep
     stack 28h
     call cgateNodeLoop ; void cgateNodeLoop(uint64_t time) ; time = count of high_resolution_clock::time_point::time_since_epoch()
     unwind
+    mov rax, updateEvTargetFire
+    test rax, rax
+    jz _ret
     jmp updateEvTargetFire
+_ret:
+    ret
 endp
 
 
@@ -512,37 +511,40 @@ export def createPacketRaw:qword
 export def enabledPacket:byte[256]
 
 export proc packetRawHook
-    ; r14 - packetId
+    ; r15 - packetId
     lea rax, enabledPacket
-    mov al, byte ptr[rax+r14]
+    mov al, byte ptr[rax+r15]
     unwind
     test al, al
     jz _skipEvent
     mov rcx, rbp ; rbp
-    mov edx, r14d ; packetId
+    mov edx, r15d ; packetId
     mov r8, r13 ; Connection
     jmp onPacketRaw
  _skipEvent:
-    mov edx, r14d
-    lea rcx, [rbp-0x10] ; packet
+    mov edx, r15d
+    lea rcx, [rbp-0x28] ; packet
     jmp createPacketRaw
 endp
 
 export def packetBeforeOriginal:qword
 export def onPacketBefore:qword
 export proc packetBeforeHook
-    ; r14 - packetId
-    stack 28h
+    ; r15 - packetId
+    stack 38h
+    mov qword ptr[rsp+0x28], rcx ; packet
+    mov qword ptr[rsp+0x20], r9 ; result
     call packetBeforeOriginal
     unwind
     test eax, eax
     jz _skipEvent
     lea rcx, enabledPacket
-    movzx ecx, byte ptr[rcx+r14]
+    movzx ecx, byte ptr[rcx+r15]
     test ecx, ecx
     jz _skipEvent
-    mov rcx, rbp ; rbp
-    mov rdx, r14 ; packetId
+    ; stack unwinded
+    mov rcx, qword ptr[rsp-0x10] ; packet
+    mov rdx, qword ptr[rsp-0x18] ; result
     jmp onPacketBefore
 _skipEvent:
     ret
@@ -571,20 +573,20 @@ endp
 export def onPacketAfter:qword
 export def handlePacket:qword
 export proc packetAfterHook
-    ; r14 - packetId
+    ; r15 - packetId
     stack 28h
 
     ; orignal codes
-    mov rdx, r13
-    mov rcx, [rbp-10h] ; packet
+    mov rdx, r13 ; networkIdentifier
+    mov rcx, [rbp-28h] ; packet
     call handlePacket
 
     lea r10, enabledPacket
-    mov al, byte ptr[r10+r14]
+    mov al, byte ptr[r10+r15]
     unwind
     test al, al
     jz _skipEvent
-    mov rcx, [rbp-10h] ; packet
+    mov rcx, [rbp-28h] ; packet
     mov rdx, r13 ; NetworkIdentifier
     jmp onPacketAfter
 _skipEvent:

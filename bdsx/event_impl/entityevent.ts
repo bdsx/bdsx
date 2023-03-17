@@ -166,12 +166,21 @@ export class EntityKnockbackEvent {
     ) {}
 }
 
-function onPlayerJump(player: Player): void {
-    const event = new PlayerJumpEvent(player);
-    events.playerJump.fire(event);
-    return _onPlayerJump(event.player);
+function onMobJump(mob: Mob, movementProxy: VoidPointer, blockSourceInterface: VoidPointer): void {
+    if (mob instanceof Player) {
+        const event = new PlayerJumpEvent(mob);
+        events.playerJump.fire(event);
+    }
+    return _onMobJump(mob, movementProxy, blockSourceInterface);
 }
-const _onPlayerJump = procHacker.hooking("?jumpFromGround@Player@@UEAAXXZ", void_t, null, Player)(onPlayerJump);
+const _onMobJump = procHacker.hooking(
+    "?_jumpFromGround@Mob@@KAXAEAUIMobMovementProxy@@AEBVIConstBlockSource@@@Z",
+    void_t,
+    null,
+    Mob,
+    VoidPointer,
+    VoidPointer,
+)(onMobJump);
 
 function onPlayerUseItem(player: Player, itemStack: ItemStack, useMethod: number, consumeItem: boolean): void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
@@ -469,10 +478,10 @@ function onPlayerPickupItem(player: Player, itemActor: Actor, orgCount: number, 
 }
 const _onPlayerPickupItem = procHacker.hooking("?take@Player@@QEAA_NAEAVActor@@HH@Z", bool_t, null, Player, Actor, int32_t, int32_t)(onPlayerPickupItem);
 
-function onPlayerLeft(networkHandler: ServerNetworkHandler, player: ServerPlayer, skipMessage: boolean): void {
+function onPlayerLeft(networkSystem: ServerNetworkHandler, player: ServerPlayer, skipMessage: boolean): void {
     const event = new PlayerLeftEvent(player, skipMessage);
     events.playerLeft.fire(event);
-    return _onPlayerLeft(networkHandler, event.player, event.skipMessage);
+    return _onPlayerLeft(networkSystem, event.player, event.skipMessage);
 }
 
 const _onPlayerLeft = procHacker.hooking(

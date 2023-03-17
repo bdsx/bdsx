@@ -69,6 +69,6 @@ export class RawPacket extends AbstractWriter {
 
     sendTo(target: NetworkIdentifier): void {
         if (this.packet === null) throw Error("packetId is not defined. Please set it on constructor");
-        bedrockServer.networkHandler.sendInternal(target, this.packet, this.data);
+        bedrockServer.networkSystem.sendInternal(target, this.packet, this.data);
     }
 }

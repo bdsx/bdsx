@@ -19,7 +19,7 @@ import { RakNetConnector } from "./raknetinstance";
 // TODO: fill
 enum SubClientId {}
 
-export class NetworkHandler extends AbstractClass {
+export class NetworkSystem extends AbstractClass {
     vftable: VoidPointer;
     /** @deprecated use bedrockServer.connector */
     instance: RakNetConnector;
@@ -39,6 +39,7 @@ export class NetworkHandler extends AbstractClass {
         abstract();
     }
 }
+export import NetworkHandler = NetworkSystem;
 
 export class NetworkConnection extends AbstractClass {
     networkIdentifier: NetworkIdentifier;
@@ -48,7 +49,7 @@ export class NetworkConnection extends AbstractClass {
     }
 }
 
-export namespace NetworkHandler {
+export namespace NetworkSystem {
     /** @deprecated renamed to NetworkConnection */
     export const Connection = NetworkConnection;
     /** @deprecated renamed to NetworkConnection */
@@ -161,11 +162,11 @@ NetworkIdentifier.setResolver(ptr => {
     identifiers.add(ni);
     return ni;
 });
-/** @deprecated use bedrockServer.networkHandler */
-export let networkHandler: NetworkHandler;
+/** @deprecated use bedrockServer.networkSystem */
+export let networkSystem: NetworkSystem;
 
 procHacker.hookingRawWithCallOriginal(
-    "?onConnectionClosed@NetworkHandler@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
+    "?onConnectionClosed@NetworkSystem@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
     makefunc.np(
         (handler, ni, msg) => {
             try {
@@ -181,7 +182,7 @@ procHacker.hookingRawWithCallOriginal(
         },
         void_t,
         { name: "hook of NetworkIdentifier dtor" },
-        NetworkHandler,
+        NetworkSystem,
         NetworkIdentifier,
         CxxStringWrapper,
     ),

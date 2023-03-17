@@ -1,6 +1,6 @@
 import { asmcode } from "../asm/asmcode";
 import { Register } from "../assembler";
-import { NetworkConnection, NetworkHandler, NetworkIdentifier } from "../bds/networkidentifier";
+import { NetworkConnection, NetworkSystem, NetworkIdentifier } from "../bds/networkidentifier";
 import { createPacketRaw, ExtendedStreamReadResult, Packet, PacketSharedPtr, StreamReadResult } from "../bds/packet";
 import { MinecraftPacketIds } from "../bds/packetids";
 import { PacketIdToType } from "../bds/packets";
@@ -40,13 +40,11 @@ ReadOnlyBinaryStream.prototype.read = procHacker.jsv(
 
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
-    // stack memories of NetworkHandler::_sortAndPacketizeEvents
-    @nativeField(CxxSharedPtr.make(Packet), -0x10)
-    packet: CxxSharedPtr<Packet>; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ExtendedStreamReadResult, 0x08)
-    result: ExtendedStreamReadResult; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
-    @nativeField(ReadOnlyBinaryStream, 0x70)
-    stream: ReadOnlyBinaryStream; // NetworkHandler::_sortAndPacketizeEvents before Packet::readNoHeader
+    // stack memories of NetworkSystem::_sortAndPacketizeEvents
+    @nativeField(CxxSharedPtr.make(Packet), -0x28)
+    packet: CxxSharedPtr<Packet>; // NetworkSystem::_sortAndPacketizeEvents before Packet::readNoHeader
+    @nativeField(ReadOnlyBinaryStream, 0x50)
+    stream: ReadOnlyBinaryStream; // NetworkSystem::_sortAndPacketizeEvents before Packet::readNoHeader
 }
 
 asmcode.createPacketRaw = proc["?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z"];
@@ -78,11 +76,10 @@ function onPacketRaw(rbp: OnPacketRBP, packetId: MinecraftPacketIds, conn: Netwo
     }
     return createPacketRaw(rbp.packet, packetId);
 }
-function onPacketBefore(rbp: OnPacketRBP, packetId: MinecraftPacketIds): bool_t {
+function onPacketBefore(packet: Packet, result: ExtendedStreamReadResult): bool_t {
     try {
-        const result = rbp.result;
         if (result.streamReadResult !== StreamReadResult.Pass) return false;
-        const packet = rbp.packet.p!;
+        const packetId = packet.getId();
         const target = events.packetBefore(packetId);
         if (target !== null && !target.isEmpty()) {
             const ni = nethook.lastSender;
@@ -159,7 +156,7 @@ function onPacketSend(_: void, ni: NetworkIdentifier, packet: Packet): number {
     }
     return 0;
 }
-function onPacketSendInternal(handler: NetworkHandler, ni: NetworkIdentifier, packet: Packet, data: CxxStringWrapper): number {
+function onPacketSendInternal(handler: NetworkSystem, ni: NetworkIdentifier, packet: Packet, data: CxxStringWrapper): number {
     try {
         const packetId = packet.getId();
         const target = events.packetSendRaw(packetId);
@@ -190,27 +187,27 @@ bedrockServer.withLoading().then(() => {
         "?_handleViolation@PacketViolationHandler@@AEAA?AW4PacketViolationResponse@@W4MinecraftPacketIds@@W4StreamReadResult@@AEBVNetworkIdentifier@@PEA_N@Z";
     const packetHandleSymbol = "?handle@Packet@@QEAAXAEBVNetworkIdentifier@@AEAVNetEventCallback@@AEAV?$shared_ptr@VPacket@@@std@@@Z";
     const sendToMultipleSymbol =
-        "?sendToMultiple@NetworkHandler@@QEAAXAEBV?$vector@UNetworkIdentifierWithSubId@@V?$allocator@UNetworkIdentifierWithSubId@@@std@@@std@@AEBVPacket@@@Z";
+        "?sendToMultiple@NetworkSystem@@QEAAXAEBV?$vector@UNetworkIdentifierWithSubId@@V?$allocator@UNetworkIdentifierWithSubId@@@std@@@std@@AEBVPacket@@@Z";
     const packetizeSymbol =
-        "?_sortAndPacketizeEvents@NetworkHandler@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
+        "?_sortAndPacketizeEvents@NetworkSystem@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, int32_t, NetworkConnection);
     procHacker.patching(
         "hook-packet-raw",
         packetizeSymbol,
-        0x216,
+        0x282,
         asmcode.packetRawHook, // original code depended
         Register.rax,
         true,
         [
             0x41,
             0x8b,
-            0xd6, // mov edx,r14d
+            0xd7, // mov edx,r15d
             0x48,
             0x8d,
             0x4d,
-            0xf0, // lea rcx,qword ptr ss:[rbp-10]
+            0xd8, // lea rcx,qword ptr ss:[rbp-28]
             0xe8,
             null,
             null,
@@ -221,7 +218,7 @@ bedrockServer.withLoading().then(() => {
     );
 
     // hook before
-    asmcode.onPacketBefore = makefunc.np(onPacketBefore, bool_t, { name: "onPacketBefore" }, OnPacketRBP, int32_t, ExtendedStreamReadResult);
+    asmcode.onPacketBefore = makefunc.np(onPacketBefore, bool_t, { name: "onPacketBefore" }, Packet, ExtendedStreamReadResult);
     asmcode.packetBeforeOriginal = procHacker.hookingRaw(
         "?readNoHeader@Packet@@QEAA_NAEAVReadOnlyBinaryStream@@AEBW4SubClientId@@AEAUExtendedStreamReadResult@@@Z",
         asmcode.packetBeforeHook,
@@ -253,7 +250,7 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-after",
         packetizeSymbol,
-        0x4fe,
+        0x53b,
         asmcode.packetAfterHook, // original code depended
         Register.rax,
         true,
@@ -264,18 +261,18 @@ bedrockServer.withLoading().then(() => {
             0x48,
             0x8b,
             0x4d,
-            0xf0, // mov rcx,qword ptr ss:[rbp-10]
+            0xd8, // mov rcx,qword ptr ss:[rbp-28]
             0xe8,
             null,
             null,
             null,
-            null, // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet> & __ptr64) __ptr64>
+            null, // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet>
         ],
     );
 
     // hook send
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, void_t, NetworkIdentifier, Packet);
-    asmcode.sendOriginal = procHacker.hookingRaw("?send@NetworkHandler@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z", asmcode.packetSendHook);
+    asmcode.sendOriginal = procHacker.hookingRaw("?send@NetworkSystem@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z", asmcode.packetSendHook);
 
     // hook send all
     const sendToMultiple = proc[sendToMultipleSymbol];
@@ -307,9 +304,9 @@ bedrockServer.withLoading().then(() => {
     );
 
     // hook send raw
-    asmcode.onPacketSendInternal = makefunc.np(onPacketSendInternal, int32_t, null, NetworkHandler, NetworkIdentifier, Packet, CxxStringWrapper);
+    asmcode.onPacketSendInternal = makefunc.np(onPacketSendInternal, int32_t, null, NetworkSystem, NetworkIdentifier, Packet, CxxStringWrapper);
     asmcode.sendInternalOriginal = procHacker.hookingRaw(
-        "?_sendInternal@NetworkHandler@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+        "?_sendInternal@NetworkSystem@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
         asmcode.packetSendInternalHook,
     );
 });

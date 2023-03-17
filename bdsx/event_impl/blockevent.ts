@@ -1,6 +1,6 @@
 import { Actor } from "../bds/actor";
 import { Block, BlockSource, ButtonBlock, ChestBlock, ChestBlockActor, PistonAction as PistonActorInBlockModule, PistonBlockActor } from "../bds/block";
-import { BlockPos } from "../bds/blockpos";
+import { BlockPos, Vec3 } from "../bds/blockpos";
 import { GameMode } from "../bds/gamemode";
 import { ItemStack } from "../bds/inventory";
 import { Player, ServerPlayer } from "../bds/player";
@@ -126,8 +126,16 @@ const _onBlockDestructionStart = procHacker.hooking(
     BlockPos,
 )(onBlockDestructionStart);
 
-function onBlockPlace(blockSource: BlockSource, block: Block, blockPos: BlockPos, facing: number, actor: Actor | null, ignoreEntities: boolean): boolean {
-    const ret = _onBlockPlace(blockSource, block, blockPos, facing, actor, ignoreEntities);
+function onBlockPlace(
+    blockSource: BlockSource,
+    block: Block,
+    blockPos: BlockPos,
+    facing: number,
+    actor: Actor | null,
+    ignoreEntities: boolean,
+    unknown: Vec3,
+): boolean {
+    const ret = _onBlockPlace(blockSource, block, blockPos, facing, actor, ignoreEntities, unknown);
     if (!(actor instanceof ServerPlayer)) return ret; // some mobs can call it. ignore all except players.
     if (!ret) return false;
     const event = new BlockPlaceEvent(actor, block, blockSource, blockPos);
@@ -142,7 +150,7 @@ function onBlockPlace(blockSource: BlockSource, block: Block, blockPos: BlockPos
     }
 }
 const _onBlockPlace = procHacker.hooking(
-    "?mayPlace@BlockSource@@QEAA_NAEBVBlock@@AEBVBlockPos@@EPEAVActor@@_N@Z",
+    "?mayPlace@BlockSource@@QEAA_NAEBVBlock@@AEBVBlockPos@@EPEAVActor@@_NVVec3@@@Z",
     bool_t,
     null,
     BlockSource,
@@ -151,6 +159,7 @@ const _onBlockPlace = procHacker.hooking(
     int32_t,
     Actor,
     bool_t,
+    Vec3,
 )(onBlockPlace);
 
 function onPistonMove(this: PistonBlockActor, blockSource: BlockSource): void_t {

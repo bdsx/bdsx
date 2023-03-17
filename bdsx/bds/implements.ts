@@ -17,9 +17,9 @@ import {
     bin64_t,
     bool_t,
     CxxString,
+    CxxStringView,
     CxxStringWith8Bytes,
     float32_t,
-    GslStringSpan,
     int16_t,
     int32_t,
     int64_as_float_t,
@@ -153,7 +153,7 @@ import {
     TagMemoryChunk,
     TagPointer,
 } from "./nbt";
-import { NetworkConnection, NetworkHandler, NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
+import { NetworkConnection, NetworkIdentifier, NetworkSystem, ServerNetworkHandler } from "./networkidentifier";
 import { ExtendedStreamReadResult, Packet } from "./packet";
 import {
     AttributeData,
@@ -240,7 +240,7 @@ namespace OnFireSystem {
 // assume all Level is always ServerLevel.
 const DimensionWeakRef = WeakRefT.make(Dimension);
 Level.prototype.getOrCreateDimension = procHacker.js(
-    "?getOrCreateDimension@ServerLevel@@UEAA?AV?$WeakRefT@U?$SharePtrRefTraits@VDimension@@@@@@V?$AutomaticID@VDimension@@H@@@Z",
+    "?getOrCreateDimension@Level@@UEAA?AV?$WeakRefT@U?$SharePtrRefTraits@VDimension@@@@@@V?$AutomaticID@VDimension@@H@@@Z",
     DimensionWeakRef,
     { this: Level, structureReturn: true },
     int32_t,
@@ -1257,7 +1257,7 @@ ActorDamageByChildActorSource.constructWith = function (
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x480], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x470], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str => AttributeName[str]);
@@ -1306,8 +1306,8 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    playerUIContainer: [PlayerUIContainer, 0xf88], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x1f20], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    playerUIContainer: [PlayerUIContainer, 0xf90], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1f28], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
@@ -1695,10 +1695,10 @@ NetworkIdentifier.prototype.hash = function () {
 NetworkConnection.abstract({
     networkIdentifier: [NetworkIdentifier, 0],
 });
-NetworkHandler.abstract({
+NetworkSystem.abstract({
     vftable: VoidPointer,
 });
-Object.defineProperties(NetworkHandler.prototype, {
+Object.defineProperties(NetworkSystem.prototype, {
     instance: {
         get() {
             return bedrockServer.connector;
@@ -1706,28 +1706,28 @@ Object.defineProperties(NetworkHandler.prototype, {
     },
 });
 
-// NetworkHandler::Connection* NetworkHandler::getConnectionFromId(const NetworkIdentifier& ni)
-NetworkHandler.prototype.getConnectionFromId = procHacker.js(
-    "?_getConnectionFromId@NetworkHandler@@AEBAPEAVNetworkConnection@@AEBVNetworkIdentifier@@@Z",
+// NetworkSystem::Connection* NetworkSystem::getConnectionFromId(const NetworkIdentifier& ni)
+NetworkSystem.prototype.getConnectionFromId = procHacker.js(
+    "?_getConnectionFromId@NetworkSystem@@AEBAPEAVNetworkConnection@@AEBVNetworkIdentifier@@@Z",
     NetworkConnection,
-    { this: NetworkHandler },
+    { this: NetworkSystem },
 );
 
-// void NetworkHandler::send(const NetworkIdentifier& ni, Packet* packet, unsigned char senderSubClientId)
-NetworkHandler.prototype.send = makefunc.js(
+// void NetworkSystem::send(const NetworkIdentifier& ni, Packet* packet, unsigned char senderSubClientId)
+NetworkSystem.prototype.send = makefunc.js(
     asmcode.packetSendHook, // pass hooked function directly, reduce overhead
     void_t,
-    { this: NetworkHandler },
+    { this: NetworkSystem },
     NetworkIdentifier,
     Packet,
     int32_t,
 );
 
-// void NetworkHandler::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
-NetworkHandler.prototype.sendInternal = procHacker.js(
-    "?_sendInternal@NetworkHandler@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+// void NetworkSystem::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
+NetworkSystem.prototype.sendInternal = procHacker.js(
+    "?_sendInternal@NetworkSystem@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
     void_t,
-    { this: NetworkHandler },
+    { this: NetworkSystem },
     NetworkIdentifier,
     Packet,
     CxxStringWrapper,
@@ -1782,7 +1782,7 @@ RakNet.RakPeer.prototype.GetLowestPing = procHacker.js(
 // packet.ts
 Packet.prototype[NativeType.dtor] = vectorDeletingDestructor;
 Packet.prototype.sendTo = function (target: NetworkIdentifier, senderSubClientId: number = 0): void {
-    bedrockServer.networkHandler.send(target, this, senderSubClientId);
+    bedrockServer.networkSystem.send(target, this, senderSubClientId);
 };
 Packet.prototype.getId = procHacker.jsv("??_7LoginPacket@@6B@", "?getId@LoginPacket@@UEBA?AW4MinecraftPacketIds@@XZ", int32_t, { this: Packet });
 Packet.prototype.getName = procHacker.jsv(
@@ -1929,7 +1929,7 @@ Minecraft.abstract({
 Minecraft.prototype.getLevel = function () {
     return bedrockServer.level;
 };
-Minecraft.prototype.getNetworkHandler = procHacker.js("?getNetworkHandler@Minecraft@@QEAAAEAVNetworkHandler@@XZ", NetworkHandler, { this: Minecraft });
+Minecraft.prototype.getNetworkHandler = procHacker.js("?getNetworkSystem@Minecraft@@QEAAAEAVNetworkSystem@@XZ", NetworkSystem, { this: Minecraft });
 Minecraft.prototype.getNonOwnerPointerServerNetworkHandler = procHacker.js(
     "?getServerNetworkHandler@Minecraft@@QEAA?AV?$NonOwnerPointer@VServerNetworkHandler@@@Bedrock@@XZ",
     Bedrock.NonOwnerPointer.make(ServerNetworkHandler),
@@ -1958,9 +1958,9 @@ Object.defineProperties(ServerInstance.prototype, {
             return bedrockServer.minecraft;
         },
     },
-    networkHandler: {
+    networkSystem: {
         get() {
-            return bedrockServer.networkHandler;
+            return bedrockServer.networkSystem;
         },
     },
 });
@@ -2015,7 +2015,7 @@ ServerInstance.prototype.getGameVersion = function (): SemVersion {
     return currentGameSemVersion;
 };
 
-Minecraft$Something.prototype.network = bedrockServer.networkHandler;
+Minecraft$Something.prototype.network = bedrockServer.networkSystem;
 Minecraft$Something.prototype.level = bedrockServer.level;
 Minecraft$Something.prototype.shandler = bedrockServer.serverNetworkHandler;
 
@@ -3164,7 +3164,12 @@ ListTag.prototype.size = procHacker.js("?size@ListTag@@QEBAHXZ", int64_as_float_
 CompoundTag.prototype[NativeType.ctor] = procHacker.js("??0CompoundTag@@QEAA@XZ", void_t, { this: CompoundTag });
 CompoundTag.prototype[NativeType.dtor] = procHacker.js("??1CompoundTag@@UEAA@XZ", void_t, { this: CompoundTag });
 CompoundTag.prototype[NativeType.ctor_move] = procHacker.js("??0CompoundTag@@QEAA@$$QEAV0@@Z", void_t, { this: CompoundTag }, CompoundTag);
-CompoundTag.prototype.get = procHacker.js("?get@CompoundTag@@QEAAPEAVTag@@V?$basic_string_span@$$CBD$0?0@gsl@@@Z", Tag, { this: CompoundTag }, GslStringSpan) as any;
+CompoundTag.prototype.get = procHacker.js(
+    "?get@CompoundTag@@QEAAPEAVTag@@V?$basic_string_view@DU?$char_traits@D@std@@@std@@@Z",
+    Tag,
+    { this: CompoundTag },
+    CxxStringView,
+) as any;
 const CompoundTag$put = procHacker.js(
     "?put@CompoundTag@@QEAAPEAVTag@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$unique_ptr@VTag@@U?$default_delete@VTag@@@std@@@4@@Z",
     void_t,
@@ -3176,8 +3181,18 @@ const CompoundTag$put = procHacker.js(
 CompoundTag.prototype.setAllocated = function (key, value) {
     CompoundTag$put(this, CxxStringWrapper.constructWith(key), TagPointer.create(value)); // `key` and `value` will be moved into the CompoundTag. no need to destruct them
 };
-CompoundTag.prototype.delete = procHacker.js("?remove@CompoundTag@@QEAA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z", bool_t, { this: CompoundTag }, GslStringSpan);
-CompoundTag.prototype.has = procHacker.js("?contains@CompoundTag@@QEBA_NV?$basic_string_span@$$CBD$0?0@gsl@@@Z", bool_t, { this: CompoundTag }, GslStringSpan);
+CompoundTag.prototype.delete = procHacker.js(
+    "?remove@CompoundTag@@QEAA_NV?$basic_string_view@DU?$char_traits@D@std@@@std@@@Z",
+    bool_t,
+    { this: CompoundTag },
+    CxxStringView,
+);
+CompoundTag.prototype.has = procHacker.js(
+    "?contains@CompoundTag@@QEBA_NV?$basic_string_view@DU?$char_traits@D@std@@@std@@@Z",
+    bool_t,
+    { this: CompoundTag },
+    CxxStringView,
+);
 CompoundTag.prototype.clear = procHacker.js("?clear@CompoundTag@@QEAAXXZ", void_t, { this: CompoundTag });
 IntArrayTag.prototype[NativeType.ctor] = procHacker.js("??0IntArrayTag@@QEAA@XZ", void_t, { this: IntArrayTag });
 

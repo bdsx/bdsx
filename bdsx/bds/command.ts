@@ -31,6 +31,7 @@ import { Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
+import { bdsxEqualsAssert } from "../warning";
 import { Actor, ActorDefinitionIdentifier } from "./actor";
 import { Block } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
@@ -837,7 +838,21 @@ export class CommandVFTable extends NativeStruct {
     @nativeField(VoidPointer)
     destructor: VoidPointer;
     @nativeField(VoidPointer)
+    collectOptionalArguments: VoidPointer;
+    @nativeField(VoidPointer)
     execute: VoidPointer | null;
+}
+
+{
+    // check command vftable
+    const HelpCommand$vftable = proc["??_7HelpCommand@@6B@"];
+    bdsxEqualsAssert(HelpCommand$vftable.getPointer(0x00), proc["??_GHelpCommand@@UEAAPEAXI@Z"], "unexpected Command::vftable structure");
+    bdsxEqualsAssert(HelpCommand$vftable.getPointer(0x08), proc["?collectOptionalArguments@Command@@MEAA_NXZ"], "unexpected Command::vftable structure");
+    bdsxEqualsAssert(
+        HelpCommand$vftable.getPointer(0x10),
+        proc["?execute@HelpCommand@@UEBAXAEBVCommandOrigin@@AEAVCommandOutput@@@Z"],
+        "unexpected Command::vftable structure",
+    );
 }
 
 export class CommandRegistry extends HasTypeId {
