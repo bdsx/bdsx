@@ -1478,7 +1478,6 @@ Player.prototype.getName = procHacker.js("?getName@Player@@QEBAAEBV?$basic_strin
 
 Player.tryGetFromEntity = procHacker.js("?tryGetFromEntity@Player@@SAPEAV1@AEAVEntityContext@@_N@Z", Player, null, EntityContext, bool_t);
 
-ServerPlayer.abstract({});
 ServerPlayer.prototype.nextContainerCounter = procHacker.js("?_nextContainerCounter@ServerPlayer@@AEAA?AW4ContainerID@@XZ", int8_t, { this: ServerPlayer });
 ServerPlayer.prototype.openInventory = procHacker.js("?openInventory@ServerPlayer@@UEAAXXZ", void_t, { this: ServerPlayer });
 ServerPlayer.prototype.resendAllChunks = procHacker.js("?resendAllChunks@Player@@UEAAXXZ", void_t, { this: ServerPlayer });

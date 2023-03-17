@@ -29,7 +29,28 @@ import {
 import { DisplaySlot } from "./scoreboard";
 import { SerializedSkin } from "./skin";
 
-export class Player extends Mob {
+namespace RawTextObject {
+    export interface Text {
+        text: string;
+    }
+    export interface Translate {
+        translate: string;
+        with?: string[];
+    }
+    export interface Score {
+        score: {
+            name: string;
+            objective: string;
+        };
+    }
+    export type Properties = Text | Translate | Score;
+}
+
+interface RawTextObject {
+    rawtext: RawTextObject.Properties[];
+}
+
+export class Player extends Mob implements HasStorage {
     playerUIContainer: PlayerUIContainer;
     deviceId: string;
 
@@ -516,30 +537,9 @@ export class Player extends Mob {
     getSelectedItem(): ItemStack {
         abstract();
     }
-}
 
-namespace RawTextObject {
-    export interface Text {
-        text: string;
-    }
-    export interface Translate {
-        translate: string;
-        with?: string[];
-    }
-    export interface Score {
-        score: {
-            name: string;
-            objective: string;
-        };
-    }
-    export type Properties = Text | Translate | Score;
-}
+    // ServerPlayer fields
 
-interface RawTextObject {
-    rawtext: RawTextObject.Properties[];
-}
-
-export class ServerPlayer extends Player implements HasStorage {
     static readonly [Storage.classId] = "player";
     [Storage.id](): string {
         return mce.UUID.toString(this.getUuid());
@@ -972,6 +972,9 @@ export class ServerPlayer extends Player implements HasStorage {
         abstract();
     }
 }
+
+export const ServerPlayer = Player; // Player is always ServerPlayer on the server software.
+export type ServerPlayer = Player;
 
 export class SimulatedPlayer extends ServerPlayer {
     /**
