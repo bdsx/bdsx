@@ -40,6 +40,7 @@ interface BlockIdMap {
     "minecraft:birch_trapdoor":void;
     "minecraft:birch_wall_sign":void;
     "minecraft:black_glazed_terracotta":void;
+    "minecraft:black_wool":void;
     "minecraft:blackstone":void;
     "minecraft:blackstone_double_slab":void;
     "minecraft:blackstone_slab":void;
@@ -48,6 +49,7 @@ interface BlockIdMap {
     "minecraft:blast_furnace":void;
     "minecraft:blue_glazed_terracotta":void;
     "minecraft:blue_ice":void;
+    "minecraft:blue_wool":void;
     "minecraft:bone_block":void;
     "minecraft:bookshelf":void;
     "minecraft:border_block":void;
@@ -57,6 +59,7 @@ interface BlockIdMap {
     "minecraft:brown_glazed_terracotta":void;
     "minecraft:brown_mushroom":void;
     "minecraft:brown_mushroom_block":void;
+    "minecraft:brown_wool":void;
     "minecraft:bubble_column":void;
     "minecraft:cactus":void;
     "minecraft:cake":void;
@@ -118,6 +121,7 @@ interface BlockIdMap {
     "minecraft:crimson_wall_sign":void;
     "minecraft:crying_obsidian":void;
     "minecraft:cyan_glazed_terracotta":void;
+    "minecraft:cyan_wool":void;
     "minecraft:dark_oak_button":void;
     "minecraft:dark_oak_door":void;
     "minecraft:dark_oak_fence_gate":void;
@@ -300,7 +304,9 @@ interface BlockIdMap {
     "minecraft:grass_path":void;
     "minecraft:gravel":void;
     "minecraft:gray_glazed_terracotta":void;
+    "minecraft:gray_wool":void;
     "minecraft:green_glazed_terracotta":void;
+    "minecraft:green_wool":void;
     "minecraft:grindstone":void;
     "minecraft:hard_glass":void;
     "minecraft:hard_glass_pane":void;
@@ -344,8 +350,11 @@ interface BlockIdMap {
     "minecraft:lever":void;
     "minecraft:light_block":void;
     "minecraft:light_blue_glazed_terracotta":void;
+    "minecraft:light_blue_wool":void;
+    "minecraft:light_gray_wool":void;
     "minecraft:light_weighted_pressure_plate":void;
     "minecraft:lime_glazed_terracotta":void;
+    "minecraft:lime_wool":void;
     "minecraft:lit_blast_furnace":void;
     "minecraft:lit_furnace":void;
     "minecraft:lit_pumpkin":void;
@@ -357,6 +366,7 @@ interface BlockIdMap {
     "minecraft:log2":void;
     "minecraft:loom":void;
     "minecraft:magenta_glazed_terracotta":void;
+    "minecraft:magenta_wool":void;
     "minecraft:magma":void;
     "minecraft:melon_block":void;
     "minecraft:melon_stem":void;
@@ -383,8 +393,10 @@ interface BlockIdMap {
     "minecraft:observer":void;
     "minecraft:obsidian":void;
     "minecraft:orange_glazed_terracotta":void;
+    "minecraft:orange_wool":void;
     "minecraft:packed_ice":void;
     "minecraft:pink_glazed_terracotta":void;
+    "minecraft:pink_wool":void;
     "minecraft:piston":void;
     "minecraft:pistonArmCollision":void;
     "minecraft:planks":void;
@@ -415,6 +427,7 @@ interface BlockIdMap {
     "minecraft:pumpkin":void;
     "minecraft:pumpkin_stem":void;
     "minecraft:purple_glazed_terracotta":void;
+    "minecraft:purple_wool":void;
     "minecraft:purpur_block":void;
     "minecraft:purpur_stairs":void;
     "minecraft:quartz_block":void;
@@ -430,6 +443,7 @@ interface BlockIdMap {
     "minecraft:red_nether_brick_stairs":void;
     "minecraft:red_sandstone":void;
     "minecraft:red_sandstone_stairs":void;
+    "minecraft:red_wool":void;
     "minecraft:redstone_block":void;
     "minecraft:redstone_lamp":void;
     "minecraft:redstone_ore":void;
@@ -550,15 +564,16 @@ interface BlockIdMap {
     "minecraft:weeping_vines":void;
     "minecraft:wheat":void;
     "minecraft:white_glazed_terracotta":void;
+    "minecraft:white_wool":void;
     "minecraft:wither_rose":void;
     "minecraft:wood":void;
     "minecraft:wooden_button":void;
     "minecraft:wooden_door":void;
     "minecraft:wooden_pressure_plate":void;
     "minecraft:wooden_slab":void;
-    "minecraft:wool":void;
     "minecraft:yellow_flower":void;
     "minecraft:yellow_glazed_terracotta":void;
+    "minecraft:yellow_wool":void;
 }
 type BlockId = keyof BlockIdMap;
 
@@ -772,6 +787,7 @@ interface ItemIdMap {
     "minecraft:birch_wall_sign":void;
     "minecraft:black_dye":void;
     "minecraft:black_glazed_terracotta":void;
+    "minecraft:black_wool":void;
     "minecraft:blackstone":void;
     "minecraft:blackstone_double_slab":void;
     "minecraft:blackstone_slab":void;
@@ -785,6 +801,7 @@ interface ItemIdMap {
     "minecraft:blue_dye":void;
     "minecraft:blue_glazed_terracotta":void;
     "minecraft:blue_ice":void;
+    "minecraft:blue_wool":void;
     "minecraft:boat":void;
     "minecraft:bone":void;
     "minecraft:bone_block":void;
@@ -805,6 +822,7 @@ interface ItemIdMap {
     "minecraft:brown_glazed_terracotta":void;
     "minecraft:brown_mushroom":void;
     "minecraft:brown_mushroom_block":void;
+    "minecraft:brown_wool":void;
     "minecraft:bubble_column":void;
     "minecraft:bucket":void;
     "minecraft:cactus":void;
@@ -905,6 +923,7 @@ interface ItemIdMap {
     "minecraft:crying_obsidian":void;
     "minecraft:cyan_dye":void;
     "minecraft:cyan_glazed_terracotta":void;
+    "minecraft:cyan_wool":void;
     "minecraft:dark_oak_boat":void;
     "minecraft:dark_oak_button":void;
     "minecraft:dark_oak_door":void;
@@ -1154,8 +1173,10 @@ interface ItemIdMap {
     "minecraft:gravel":void;
     "minecraft:gray_dye":void;
     "minecraft:gray_glazed_terracotta":void;
+    "minecraft:gray_wool":void;
     "minecraft:green_dye":void;
     "minecraft:green_glazed_terracotta":void;
+    "minecraft:green_wool":void;
     "minecraft:grindstone":void;
     "minecraft:guardian_spawn_egg":void;
     "minecraft:gunpowder":void;
@@ -1234,10 +1255,13 @@ interface ItemIdMap {
     "minecraft:light_block":void;
     "minecraft:light_blue_dye":void;
     "minecraft:light_blue_glazed_terracotta":void;
+    "minecraft:light_blue_wool":void;
     "minecraft:light_gray_dye":void;
+    "minecraft:light_gray_wool":void;
     "minecraft:light_weighted_pressure_plate":void;
     "minecraft:lime_dye":void;
     "minecraft:lime_glazed_terracotta":void;
+    "minecraft:lime_wool":void;
     "minecraft:lingering_potion":void;
     "minecraft:lit_blast_furnace":void;
     "minecraft:lit_furnace":void;
@@ -1253,6 +1277,7 @@ interface ItemIdMap {
     "minecraft:loom":void;
     "minecraft:magenta_dye":void;
     "minecraft:magenta_glazed_terracotta":void;
+    "minecraft:magenta_wool":void;
     "minecraft:magma":void;
     "minecraft:magma_cream":void;
     "minecraft:magma_cube_spawn_egg":void;
@@ -1324,6 +1349,7 @@ interface ItemIdMap {
     "minecraft:ocelot_spawn_egg":void;
     "minecraft:orange_dye":void;
     "minecraft:orange_glazed_terracotta":void;
+    "minecraft:orange_wool":void;
     "minecraft:packed_ice":void;
     "minecraft:painting":void;
     "minecraft:panda_spawn_egg":void;
@@ -1338,6 +1364,7 @@ interface ItemIdMap {
     "minecraft:pillager_spawn_egg":void;
     "minecraft:pink_dye":void;
     "minecraft:pink_glazed_terracotta":void;
+    "minecraft:pink_wool":void;
     "minecraft:piston":void;
     "minecraft:pistonarmcollision":void;
     "minecraft:planks":void;
@@ -1382,6 +1409,7 @@ interface ItemIdMap {
     "minecraft:pumpkin_stem":void;
     "minecraft:purple_dye":void;
     "minecraft:purple_glazed_terracotta":void;
+    "minecraft:purple_wool":void;
     "minecraft:purpur_block":void;
     "minecraft:purpur_stairs":void;
     "minecraft:quartz":void;
@@ -1410,6 +1438,7 @@ interface ItemIdMap {
     "minecraft:red_nether_brick_stairs":void;
     "minecraft:red_sandstone":void;
     "minecraft:red_sandstone_stairs":void;
+    "minecraft:red_wool":void;
     "minecraft:redstone":void;
     "minecraft:redstone_block":void;
     "minecraft:redstone_lamp":void;
@@ -1583,6 +1612,7 @@ interface ItemIdMap {
     "minecraft:wheat_seeds":void;
     "minecraft:white_dye":void;
     "minecraft:white_glazed_terracotta":void;
+    "minecraft:white_wool":void;
     "minecraft:witch_spawn_egg":void;
     "minecraft:wither_rose":void;
     "minecraft:wither_skeleton_spawn_egg":void;
@@ -1597,12 +1627,12 @@ interface ItemIdMap {
     "minecraft:wooden_shovel":void;
     "minecraft:wooden_slab":void;
     "minecraft:wooden_sword":void;
-    "minecraft:wool":void;
     "minecraft:writable_book":void;
     "minecraft:written_book":void;
     "minecraft:yellow_dye":void;
     "minecraft:yellow_flower":void;
     "minecraft:yellow_glazed_terracotta":void;
+    "minecraft:yellow_wool":void;
     "minecraft:zoglin_spawn_egg":void;
     "minecraft:zombie_horse_spawn_egg":void;
     "minecraft:zombie_pigman_spawn_egg":void;
