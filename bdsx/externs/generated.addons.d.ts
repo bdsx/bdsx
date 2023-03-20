@@ -1,9 +1,9 @@
 /**
- * Generated with bdsx/bds-scripting/parser.ts
+ * Generated based on https://bedrock.dev/docs/stable/Addons
+ * Please check bdsx/bds-scripting/parser.ts
  * Please DO NOT modify this directly.
  */
 declare global {
-
 interface BlockIdMap {
     "minecraft:acacia_button":void;
     "minecraft:acacia_door":void;

@@ -4,18 +4,43 @@
  */
 import * as path from "path";
 import { FileWriter } from "../../writer/filewriter";
-import * as docfixJson from "./docfix.json";
 import { HtmlSearcher, htmlutil } from "./htmlutil";
-import { DocFixItem, DocType } from "./type";
+
+async function writeTableKeyUnion(
+    name: string,
+    prefix: string,
+    rows: HtmlSearcher.TableRow[],
+    key: string,
+    value: (id: string) => string | null,
+    writer: FileWriter,
+): Promise<void> {
+    await writer.write(`interface ${name}Map {\n`);
+    const tabi = "    ";
+    for (const row of rows) {
+        const id = row[key].text;
+        if (!id.startsWith(prefix)) {
+            console.error(`   └ ${id}: Prefix is not ${prefix}`);
+            continue;
+        }
+        const v = value(id);
+        if (v === null) continue;
+        await writer.write(`${tabi}${JSON.stringify(v)}:void;\n`);
+    }
+    await writer.write(`}\n`);
+    await writer.write(`type ${name} = keyof ${name}Map;\n\n`);
+}
 
 const DOCURL_ADDONS = "https://bedrock.dev/docs/stable/Addons";
 
 const OUT_ADDONS = path.join(__dirname, "../generated.addons.d.ts");
 
-const docfix = new Map<string, DocType>();
-for (const [name, item] of Object.entries(docfixJson as any as Record<string, DocFixItem | string | null>)) {
-    docfix.set(name, DocType.fromDocFix(item));
-}
+const TOP_COMMENT = `/**
+ * Generated based on https://bedrock.dev/docs/stable/Addons
+ * Please check bdsx/bds-scripting/parser.ts
+ * Please DO NOT modify this directly.
+ */
+declare global {
+`;
 
 async function parseAddonsDoc(): Promise<void> {
     console.log("# Parse Addons Document");
@@ -28,29 +53,32 @@ async function parseAddonsDoc(): Promise<void> {
     let blockParsed = false;
 
     const writer = new FileWriter(OUT_ADDONS);
-    await writer.write(`/**\n * Generated with bdsx/bds-scripting/parser.ts\n * Please DO NOT modify this directly.\n */\n`);
-    await writer.write(`declare global {\n\n`);
+    await writer.write(TOP_COMMENT);
 
     try {
         for (;;) {
             const id = s.searchHead();
-            console.log(id);
             switch (id) {
-                case "Blocks":
+                case "Blocks": {
                     if (blockParsed) break;
                     blockParsed = true;
-                    await DocType.writeTableKeyUnion("BlockId", "minecraft:", s.searchTableAsObject(), "Name", v => v, writer);
+                    const table = s.searchTableAsObject();
+                    console.log(`${id} - ${table.length} items`);
+                    await writeTableKeyUnion("BlockId", "minecraft:", table, "Name", v => v, writer);
                     break;
+                }
                 case "Entities": {
                     const table = s.searchTableAsObject();
-                    await DocType.writeTableKeyUnion("EntityId", "", table, "Identifier", v => `minecraft:${v}`, writer);
-                    // await DocType.writeTableKeyUnion('EntityFullId', '', table, 'Identifier', row=>row.FullID.text, writer);
-                    // await DocType.writeTableKeyUnion('EntityShortId', '', table, 'Identifier', row=>row.ShortID.text, writer);
+                    console.log(`${id} - ${table.length} items`);
+                    await writeTableKeyUnion("EntityId", "", table, "Identifier", v => `minecraft:${v}`, writer);
+                    // await writeTableKeyUnion('EntityFullId', '', table, 'Identifier', row=>row.FullID.text, writer);
+                    // await writeTableKeyUnion('EntityShortId', '', table, 'Identifier', row=>row.ShortID.text, writer);
                     break;
                 }
                 case "Items": {
                     const table = s.searchTableAsObject();
-                    await DocType.writeTableKeyUnion(
+                    console.log(`${id} - ${table.length} items`);
+                    await writeTableKeyUnion(
                         "ItemId",
                         "",
                         table,
@@ -61,13 +89,18 @@ async function parseAddonsDoc(): Promise<void> {
                         },
                         writer,
                     );
-                    // await DocType.writeTableKeyUnion('ItemNumberId', '', table, 'Name', row=>row['ID'].text, writer);
+                    // await writeTableKeyUnion('ItemNumberId', '', table, 'Name', row=>row['ID'].text, writer);
                     break;
                 }
                 case "Entity Damage Source": {
-                    await DocType.writeTableKeyUnion("MinecraftDamageSource", "", s.searchTableAsObject(), "DamageSource", v => v, writer);
+                    const table = s.searchTableAsObject();
+                    console.log(`${id} - ${table.length} items`);
+                    await writeTableKeyUnion("MinecraftDamageSource", "", table, "DamageSource", v => v, writer);
                     break;
                 }
+                default:
+                    console.log(`${id} - ignored`);
+                    break;
             }
         }
     } catch (err) {
