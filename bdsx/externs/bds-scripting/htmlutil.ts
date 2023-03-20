@@ -1,5 +1,5 @@
 import * as https from "https";
-import { HTMLElement, NodeType, parse as parseHtml } from "node-html-parser";
+import { HTMLElement, Node, NodeType, parse as parseHtml, TextNode } from "node-html-parser";
 
 export class HtmlRule {
     constructor(public readonly filter: htmlutil.Filter) {}
@@ -7,34 +7,22 @@ export class HtmlRule {
 }
 
 export namespace htmlutil {
-    export type Filter = { tag?: string; id?: string; class?: string } | number | string | ((node: HTMLElement) => any) | Filter[];
+    export type Filter = { tag?: string; id?: string; class?: string; type?: NodeType } | number | string | ((node: HTMLElement) => any) | Filter[];
 
-    export function* children(node: HTMLElement): IterableIterator<HTMLElement> {
-        for (const child of node.childNodes) {
-            if (child.nodeType === NodeType.ELEMENT_NODE) {
-                yield child as HTMLElement;
-            }
-        }
-    }
-    export function firstChild(node: HTMLElement): HTMLElement | null {
-        for (const child of children(node)) {
-            return child;
-        }
-        return null;
-    }
-    export function* childrenFilter(node: HTMLElement, opts: Filter): IterableIterator<HTMLElement> {
+    export function* childrenFilter(node: Node, opts: Filter): IterableIterator<HTMLElement> {
         let i = 0;
-        for (const child of children(node)) {
+        for (const child of node.childNodes) {
+            if (!(child instanceof HTMLElement)) continue;
             if (check(child, opts, i)) {
                 yield child;
             }
             i++;
         }
     }
-    export function get(node: HTMLElement, opt: Filter): HTMLElement | null {
+    export function get(node: Node, opt: Filter): Node | null {
         switch (typeof opt) {
             case "number":
-                for (const child of children(node)) {
+                for (const child of node.childNodes) {
                     if (opt === 0) {
                         return child;
                     }
@@ -43,15 +31,15 @@ export namespace htmlutil {
                 break;
             case "string":
                 opt = opt.toUpperCase();
-                for (const child of children(node)) {
-                    if (child.tagName === opt) {
+                for (const child of node.childNodes) {
+                    if (child instanceof HTMLElement && child.tagName === opt) {
                         return child;
                     }
                 }
                 break;
             case "function":
-                for (const child of children(node)) {
-                    if (opt(child)) return child;
+                for (const child of node.childNodes) {
+                    if (child instanceof HTMLElement && opt(child)) return child;
                 }
                 break;
             default:
@@ -62,10 +50,15 @@ export namespace htmlutil {
                     }
                 } else {
                     if (opt.tag) opt.tag = opt.tag.toUpperCase();
-                    for (const child of children(node)) {
-                        if (opt.id && child.id !== opt.id) continue;
-                        if (opt.class && child.classNames.indexOf(opt.class!) === -1) continue;
-                        if (opt.tag && child.tagName !== opt.tag) continue;
+                    for (const child of node.childNodes) {
+                        if (opt.type !== undefined && child.nodeType !== opt.type) continue;
+                        if (child instanceof HTMLElement) {
+                            if (opt.id && child.id !== opt.id) continue;
+                            if (opt.class && child.classNames.indexOf(opt.class!) === -1) continue;
+                            if (opt.tag && child.tagName !== opt.tag) continue;
+                        } else {
+                            if (opt.id || opt.class || opt.tag) continue;
+                        }
                         return child;
                     }
                 }
@@ -73,7 +66,7 @@ export namespace htmlutil {
         }
         return null;
     }
-    export function follow(node: HTMLElement, ...opts: Filter[]): HTMLElement | null {
+    export function follow(node: Node, ...opts: Filter[]): Node | null {
         for (const opt of opts) {
             const child = get(node, opt);
             if (child === null) return null;
@@ -81,14 +74,14 @@ export namespace htmlutil {
         }
         return node;
     }
-    export function check(node: HTMLElement, opt: Filter, index?: number): boolean {
+    export function check(node: Node, opt: Filter, index?: number): boolean {
         switch (typeof opt) {
             case "number":
                 return index === opt;
             case "string":
-                return node.tagName === opt.toUpperCase();
+                return node.nodeType === NodeType.ELEMENT_NODE && (node as HTMLElement).tagName === opt.toUpperCase();
             case "function":
-                return !!opt(node);
+                return node.nodeType === NodeType.ELEMENT_NODE && !!opt(node as HTMLElement);
             default:
                 if (opt instanceof Array) {
                     for (const filter of opt) {
@@ -96,14 +89,19 @@ export namespace htmlutil {
                     }
                     return false;
                 } else {
-                    if (opt.id && node.id !== opt.id) return false;
-                    if (opt.class && node.classNames.indexOf(opt.class) === -1) return false;
-                    if (opt.tag && node.tagName !== opt.tag.toUpperCase()) return false;
+                    if (opt.type !== undefined && node.nodeType !== opt.type) return false;
+                    if (node instanceof HTMLElement) {
+                        if (opt.id && node.id !== opt.id) return false;
+                        if (opt.class && node.classNames.indexOf(opt.class) === -1) return false;
+                        if (opt.tag && node.tagName !== opt.tag.toUpperCase()) return false;
+                    } else {
+                        if (opt.id || opt.class || opt.tag) return false;
+                    }
                     return true;
                 }
         }
     }
-    export function checks(node: HTMLElement, opt: Filter, ...opts: Filter[]): HTMLElement | null {
+    export function checks(node: Node, opt: Filter, ...opts: Filter[]): Node | null {
         if (!check(node, opt)) return null;
         return follow(node, ...opts);
     }
@@ -160,7 +158,7 @@ export namespace htmlutil {
         });
     }
 
-    export async function wgetElement(url: string, ...followFilter: Filter[]): Promise<HTMLElement | null> {
+    export async function wgetElement(url: string, ...followFilter: Filter[]): Promise<Node | null> {
         const out = parseHtml(await wgetText(url));
         return follow(out, ...followFilter);
     }
@@ -169,9 +167,9 @@ export namespace htmlutil {
 export class HtmlSearcher {
     private index = -1;
     private readonly rules: HtmlRule[] = [];
-    private readonly queue: [HTMLElement, number][] = [];
+    private readonly queue: [Node, number][] = [];
 
-    constructor(public base: HTMLElement) {}
+    constructor(public base: Node) {}
 
     current(): HTMLElement {
         return this.base.childNodes[this.index] as HTMLElement;
@@ -208,48 +206,17 @@ export class HtmlSearcher {
     searchTableAsObject(): HtmlSearcher.TableRow[] {
         return htmlutil.tableToObject(this.search("table"));
     }
-    async each(name: string, filter: htmlutil.Filter, wrap: (node: HTMLElement) => Promise<void> | void): Promise<void> {
-        let count = 0;
-        for (;;) {
-            try {
-                this.search(filter);
-            } catch (err) {
-                if (count === 0) console.error(` └ no ${name}`);
-                throw err;
-            }
-            const rule = new HtmlRule(filter);
-            this.rules.push(rule);
-            for (;;) {
-                try {
-                    count++;
-                    await wrap(this.current());
-                    break;
-                } catch (err) {
-                    if (err instanceof HtmlRule) {
-                        if (rule === err) continue;
-                        this.rules.pop();
-                    }
-                    throw err;
-                } finally {
-                    for (const final of rule.finally) {
-                        await final();
-                    }
-                    rule.finally.length = 0;
-                }
-            }
-            this.rules.pop();
-        }
-    }
 
-    minecraftDocHeader(name: string, headerTag: string, inner: (node: HTMLElement, id: string) => void | Promise<void>): Promise<void> {
-        return this.each(
-            name,
-            node => htmlutil.checks(node, { tag: headerTag, class: "anchored-heading" }, { tag: "span" }),
-            async node => {
-                const id = htmlutil.follow(node, "span")!.id;
-                await inner(node, id);
-            },
-        );
+    searchHead(): string | null {
+        for (;;) {
+            const node = this.search(node => htmlutil.checks(node, { tag: "h1", class: "anchored-heading" }));
+            const textNode = htmlutil.get(node, { type: NodeType.TEXT_NODE });
+            if (textNode === null) {
+                console.error(`unexpected html: ${node.innerHTML}`);
+                continue;
+            }
+            return textNode.rawText;
+        }
     }
 
     async inside(target: HTMLElement, fn: () => Promise<void> | void): Promise<void> {
