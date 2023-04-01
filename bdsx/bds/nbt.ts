@@ -1043,12 +1043,16 @@ export namespace NBT {
                         if (exponential) break;
                         lastNumberIsDecimal = true;
                         p++;
-                        break;
                     } else if (chr === 0x45 || chr === 0x65) {
                         // E e
                         if (exponential) break;
                         exponential = true;
                         p++;
+                        const next = text.charCodeAt(p);
+                        if (next === 0x2b || next === 0x2d) {
+                            // +-
+                            p++;
+                        }
                     } else {
                         break _notNumber;
                     }

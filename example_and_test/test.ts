@@ -1309,6 +1309,9 @@ Tester.concurrency(
                 '{true:1b,false:0b,string:"string",longArray:[1l,2l,3l,4l]}',
                 "SNBT parse only feature",
             );
+
+            const nbt_ex = '[3.4028234663852886e+38]';
+            this.equals(NBT.stringify(NBT.parse(nbt_ex)), nbt_ex);
         },
 
         itemActor() {
