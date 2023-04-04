@@ -32,7 +32,7 @@ import { procHacker } from "./prochacker";
 import { remapError } from "./source-map-support";
 import { ThisGetter } from "./thisgetter";
 import { MemoryUnlocker } from "./unlocker";
-import { DeferPromise, _tickCallback } from "./util";
+import { _tickCallback, DeferPromise } from "./util";
 import { bdsxEqualsAssert } from "./warning";
 
 declare module "colors" {
@@ -321,7 +321,6 @@ function _launch(asyncResolve: () => void): void {
         asmcode.updateEvTargetFire = makefunc.np(
             () => {
                 events.serverUpdate.fire();
-                _tickCallback();
             },
             void_t,
             { name: "events.serverUpdate.fire" },

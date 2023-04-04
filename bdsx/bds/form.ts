@@ -1,8 +1,7 @@
 import { events } from "../event";
-import { ContainerId } from "./inventory";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
-import { ContainerClosePacket, ModalFormRequestPacket, SetTitlePacket } from "./packets";
+import { ModalFormRequestPacket, SetTitlePacket } from "./packets";
 
 const formMaps = new Map<number, SentForm>();
 

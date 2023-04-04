@@ -10,6 +10,7 @@ import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { bool_t, float32_t, int32_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
+import { _tickCallback } from "../util";
 
 export class LevelExplodeEvent {
     constructor(
@@ -97,6 +98,7 @@ const _onLevelSave = procHacker.hooking("?save@Level@@UEAAXXZ", void_t, null, Le
 function onLevelTick(): void {
     const event = new LevelTickEvent(bedrockServer.level);
     events.levelTick.fire(event);
+    _tickCallback();
 }
 procHacker.hookingRawWithCallOriginal("?tick@Level@@UEAAXXZ", makefunc.np(onLevelTick, void_t), [Register.rcx], []);
 
