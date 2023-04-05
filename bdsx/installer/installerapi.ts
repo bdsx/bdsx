@@ -7,8 +7,6 @@ import * as BDS_VERSION_DEFAULT from "../version-bds.json";
 import * as BDSX_CORE_VERSION_DEFAULT from "../version-bdsx.json";
 import { BDSInstaller, InstallItem } from "./installercls";
 
-const sep = path.sep;
-
 const BDS_LINK_DEFAULT = "https://minecraft.azureedge.net/bin-win/bedrock-server-%BDS_VERSION%.zip";
 const BDSX_CORE_LINK_DEFAULT = "https://github.com/bdsx/bdsx-core/releases/download/%BDSX_CORE_VERSION%/bdsx-core-%BDSX_CORE_VERSION%.zip";
 const PDBCACHE_LINK_DEFAULT = "https://github.com/bdsx/pdbcache/releases/download/%BDS_VERSION%/pdbcache.zip";
@@ -34,7 +32,7 @@ function replaceVariable(str: string): string {
     });
 }
 
-const KEEPS = new Set([`${sep}whitelist.json`, `${sep}allowlist.json`, `${sep}valid_known_packs.json`, `${sep}server.properties`, `${sep}permissions.json`]);
+const KEEPS = new Set([`whitelist.json`, `allowlist.json`, `valid_known_packs.json`, `server.properties`, `permissions.json`]);
 
 const pdbcache = new InstallItem({
     name: "pdbcache",
@@ -76,11 +74,16 @@ const bds = new InstallItem({
     },
     async preinstall(installer) {
         if (installer.info.files) {
-            await installer.removeInstalled(installer.bdsPath, installer.info.files!);
+            const files = installer.info.files.filter(file => !KEEPS.has(file));
+            // Removes KEEPS because they could have been stored before by bugs.
+
+            await installer.removeInstalled(installer.bdsPath, files);
         }
     },
     async postinstall(installer, writedFiles) {
         installer.info.files = writedFiles.filter(file => !KEEPS.has(file));
+        // `installer.info will` be saved to `bedrock_server/installinfo.json`.
+        // Removes KEEPS because they don't need to be remembered.
     },
     merge: [["server.properties", spropsUtil.merge]],
 });
