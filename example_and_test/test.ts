@@ -1311,7 +1311,7 @@ Tester.concurrency(
             );
 
             const nbt_ex = '[3.4028234663852886e+38]';
-            this.equals(NBT.stringify(NBT.parse(nbt_ex)), nbt_ex);
+            this.equals(NBT.stringify(NBT.parse(nbt_ex)), '[3.4028234663852886e+38d]');
         },
 
         itemActor() {
