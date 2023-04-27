@@ -163,6 +163,15 @@ export declare class PrivatePointer extends VoidPointer {
      */
     protected setBin(v: string, offset?: number): void;
 
+    isoVolatileLoad8(offset?: number): number;
+    isoVolatileLoad16(offset?: number): number;
+    isoVolatileLoad32(offset?: number): number;
+    isoVolatileLoad64(offset?: number): string;
+    isoVolatileStore8(value: number, offset?: number): void;
+    isoVolatileStore16(value: number, offset?: number): void;
+    isoVolatileStore32(value: number, offset?: number): void;
+    isoVolatileStore64(value: string, offset?: number): void;
+
     protected setInt32To64WithZero(value: number, offset?: number): void;
     protected setFloat32To64WithZero(value: number, offset?: number): void;
 

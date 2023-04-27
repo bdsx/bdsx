@@ -9,6 +9,7 @@ import { AbstractClass, nativeClass, NativeClass, NativeClassType, nativeField }
 import { bin64_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, NativeType, uint8_t, void_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { addSlashes, hexn, stripSlashes } from "../util";
+import { proc } from "./symbols";
 
 interface NBTStringifyable {
     stringify(indent?: number | string): string;
@@ -623,6 +624,10 @@ export class IntArrayTag extends Tag {
     @nativeField(TagMemoryChunk)
     data: TagMemoryChunk;
 
+    [NativeType.ctor](): void {
+        this.vftable = IntArrayTag.vftable;
+    }
+
     value(): Int32Array {
         return this.data.getAs(Int32Array);
     }
@@ -665,6 +670,8 @@ export class IntArrayTag extends Tag {
     [util.inspect.custom](depth: number, options: Record<string, any>): unknown {
         return `IntArrayTag ${util.inspect(this.data.getAs(Int32Array), options)}`;
     }
+
+    static readonly vftable = proc["??_7IntArrayTag@@6B@"];
 }
 
 export type NBT = Int32Array | Uint8Array | NBT.Compound | NBT[] | NBT.Primitive | NBT.Numeric | number | string | Tag | boolean | null;

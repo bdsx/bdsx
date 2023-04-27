@@ -2,6 +2,7 @@ import * as colors from "colors";
 import { bedrockServer } from "./launcher";
 import { getCurrentStackLine, remapError } from "./source-map-support";
 import { timeout } from "./util";
+import { VoidPointer } from "./core";
 
 let testnum = 1;
 let testcount = 0;
@@ -161,11 +162,32 @@ export class Tester {
     }
 
     equals<T>(actual: T, expected: T, message?: string, opts?: Tester.Options | ((v: any) => string)): void {
-        if (actual !== expected) {
+        let res: boolean;
+        if (actual instanceof VoidPointer) {
+            res = actual.equalsptr(expected as any);
+        } else {
+            res = actual === expected;
+        }
+        if (!res) {
             if (message == null) message = "";
             else message = ", " + message;
             const nopts = resolveOpts(opts, 1, 3);
             this.error(`Expected: ${nopts.stringify(expected)}, Actual: ${nopts.stringify(actual)}${message}`, nopts);
+        }
+    }
+
+    notEquals<T>(actual: T, expected: T, message?: string, opts?: Tester.Options | ((v: any) => string)): void {
+        let res: boolean;
+        if (actual instanceof VoidPointer) {
+            res = actual.equalsptr(expected as any);
+        } else {
+            res = actual === expected;
+        }
+        if (res) {
+            if (message == null) message = "";
+            else message = ", " + message;
+            const nopts = resolveOpts(opts, 1, 3);
+            this.error(`NotExpected: ${nopts.stringify(expected)}, Actual: ${nopts.stringify(actual)}${message}`, nopts);
         }
     }
 

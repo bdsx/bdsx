@@ -514,13 +514,18 @@ export class X64Assembler {
 
     private pos: SourcePosition | null = null;
 
-    private _polynominal(text: string, offset: number, lineNumber: number): polynominal.Operand {
+    private _polynominal(text: string, lineNumber: number, offset: number): polynominal.Operand {
         let res = polynominal.parse(text, lineNumber, offset);
         for (const [name, value] of this.ids) {
             if (!(value instanceof Constant)) continue;
             res = res.defineVariable(name, value.value);
         }
         return res;
+    }
+    private _polynominalConstant(text: string, lineNumber: number, offset: number): number | null {
+        const value = this._polynominal(text, lineNumber, offset);
+        if (!(value instanceof polynominal.Constant)) return null;
+        return value.value;
     }
     private _polynominalToAddress(
         text: string,
@@ -532,7 +537,7 @@ export class X64Assembler {
         multiply: number;
         offset: number;
     } {
-        const poly = this._polynominal(text, offset, lineNumber).asAdditive();
+        const poly = this._polynominal(text, lineNumber, offset).asAdditive();
         let varcount = 0;
 
         function error(message: string, column: number = 0, width: number = text.length): never {
@@ -2721,7 +2726,7 @@ export class X64Assembler {
             }
         }
 
-        function parseType(type: string): TypeInfo {
+        const parseType = (type: string): TypeInfo => {
             let arraySize: number | null = null;
             let brace = type.indexOf("[");
             let type_base = type;
@@ -2734,7 +2739,7 @@ export class X64Assembler {
                 const braceInner = type.substring(brace, braceEnd).trim();
                 const trails = type.substr(braceEnd + 1).trim();
                 if (trails !== "") throw parser.error(`Unexpected characters '${trails}'`);
-                const res = polynominal.parseToNumber(braceInner);
+                const res = this._polynominalConstant(braceInner, parser.lineNumber, parser.matchedIndex);
                 if (res === null) throw parser.error(`Unexpected array length '${braceInner}'`);
                 arraySize = res!;
             }
@@ -2745,7 +2750,7 @@ export class X64Assembler {
             let bytes = size.bytes;
             if (arraySize !== null) bytes *= arraySize;
             return { bytes, size: size.size, align: size.bytes, arraySize };
-        }
+        };
 
         const readConstString = (addressCommand: boolean, encoding: BufferEncoding): void => {
             const quotedString = parser.readQuotedStringTo('"');
@@ -2775,11 +2780,10 @@ export class X64Assembler {
                         if (size == null) throw parser.error(`Unexpected type syntax '${type}'`);
                     }
                     const text = parser.readAll();
-                    const value = this._polynominal(text, parser.lineNumber, parser.matchedIndex);
-                    if (!(value instanceof polynominal.Constant)) {
+                    let valueNum = this._polynominalConstant(text, parser.lineNumber, parser.matchedIndex);
+                    if (valueNum === null) {
                         throw parser.error(`polynominal is not constant '${text}'`);
                     }
-                    let valueNum = value.value;
                     if (size !== null) {
                         switch (size.size) {
                             case OperationSize.byte:
@@ -2879,7 +2883,12 @@ export class X64Assembler {
 
                 const param = parser.readTo(",");
 
-                const constval = polynominal.parseToNumber(param);
+                let constval: number | null;
+                try {
+                    constval = this._polynominalConstant(param, parser.lineNumber, parser.matchedIndex);
+                } catch (err) {
+                    constval = null;
+                }
                 if (constval !== null) {
                     // number
                     if (isNaN(constval)) {

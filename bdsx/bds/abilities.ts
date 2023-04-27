@@ -1,13 +1,18 @@
 import { abstract } from "../common";
+import { makefunc } from "../makefunc";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bool_t, float32_t } from "../nativetype";
 import type { CommandPermissionLevel } from "./command";
 import type { PlayerPermission } from "./player";
+import { proc } from "./symbols";
 
 @nativeClass(0x140)
 export class Abilities extends AbstractClass {
     getAbility(abilityIndex: AbilitiesIndex): Ability {
-        abstract();
+        if (abilityIndex >= AbilitiesIndex.AbilityCount) {
+            return Ability.INVALID_ABILITY;
+        }
+        return this.addAs(Ability, abilityIndex * Ability[makefunc.size]);
     }
     setAbility(abilityIndex: AbilitiesIndex, value: boolean | number): void {
         abstract();
@@ -136,7 +141,8 @@ export enum AbilitiesIndex {
     Muted,
     WorldBuilder,
     NoClip,
-    AbilityCount,
+    // unknown,
+    AbilityCount = 19,
 }
 
 export class Ability extends NativeClass {
@@ -180,6 +186,8 @@ export class Ability extends NativeClass {
                 break;
         }
     }
+
+    static readonly INVALID_ABILITY = proc["?INVALID_ABILITY@Abilities@@2VAbility@@A"].as(Ability);
 }
 
 export namespace Ability {

@@ -191,7 +191,7 @@ export class StructureTemplate extends AbstractClass {
         return out;
     }
     load(tag: CompoundTag | NBT.Compound): boolean {
-        abstract();
+        return this.data.load(tag);
     }
 }
 

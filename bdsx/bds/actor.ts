@@ -507,7 +507,9 @@ export class WeakEntityRef extends AbstractClass {
 
 @nativeClass(null)
 export class EntityContextBase extends AbstractClass {
-    @nativeField(int32_t, 0x8)
+    @nativeField(VoidPointer.ref())
+    enttRegistry: VoidPointer; // accessed on ServerNetworkHandler::_displayGameMessage
+    @nativeField(int32_t)
     entityId: int32_t;
 
     isValid(): boolean {
@@ -518,7 +520,7 @@ export class EntityContextBase extends AbstractClass {
         return this.isValid();
     }
     _enttRegistry(): VoidPointer {
-        abstract();
+        return this.enttRegistry;
     }
 }
 

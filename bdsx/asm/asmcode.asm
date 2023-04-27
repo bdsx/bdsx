@@ -508,7 +508,7 @@ endp
 
 export def onPacketRaw:qword
 export def createPacketRaw:qword
-export def enabledPacket:byte[256]
+export def enabledPacket:byte[PACKET_ID_COUNT]
 
 export proc packetRawHook
     ; r15 - packetId

@@ -1,8 +1,7 @@
 import { NativePointer } from "../core";
 import { makefunc } from "../makefunc";
-import { AbstractClass, nativeClass, nativeField, NativeStruct } from "../nativeclass";
+import { AbstractClass, NativeClass, nativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { Type, uint16_t } from "../nativetype";
-import { Wrapper } from "../pointer";
 import { CommandSymbols } from "./cmdsymbolloader";
 
 @nativeClass()
@@ -14,8 +13,19 @@ export class typeid_t<T> extends NativeStruct {
 const counterWrapper = Symbol("IdCounter");
 const typeidmap = Symbol("typeidmap");
 
-const IdCounter = Wrapper.make(uint16_t);
-type IdCounter = Wrapper<uint16_t>;
+@nativeClass()
+class IdCounter extends NativeClass {
+    getValue(): number {
+        return this.isoVolatileLoad16() & 0xffff;
+    }
+
+    /**
+     * @return incremented value
+     */
+    increase(): number {
+        return this.interlockedIncrement16() & 0xffff;
+    }
+}
 
 /**
  * dummy class for typeid
@@ -33,7 +43,7 @@ export function type_id<T, BASE extends HasTypeId>(base: typeof HasTypeId & { ne
     }
 
     const counter = base[counterWrapper];
-    if (counter.value === 0) throw Error("Cannot make type_id before launch");
+    if (counter.getValue() === 0) throw Error("Cannot make type_id before launch");
     if (typeid != null) {
         const newid = makefunc.js(typeid, typeid_t, {
             structureReturn: true,
@@ -42,7 +52,7 @@ export function type_id<T, BASE extends HasTypeId>(base: typeof HasTypeId & { ne
         return newid;
     } else {
         const newid = new typeid_t<BASE>(true);
-        newid.id = counter.value++;
+        newid.id = counter.increase() - 1;
         map.set(type, newid);
         return newid;
     }

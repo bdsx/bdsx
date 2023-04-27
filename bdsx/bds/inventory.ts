@@ -360,9 +360,10 @@ export class ItemStackBase extends NativeClass {
     isPattern(): boolean {
         abstract();
     }
-    isMusicDiscItem(): boolean {
-        abstract();
-    }
+    // TODO: removed method, need to implement
+    // isMusicDiscItem(): boolean {
+    //     abstract();
+    // }
     isLiquidClipItem(): boolean {
         abstract();
     }
@@ -427,9 +428,10 @@ export class ItemStackBase extends NativeClass {
     saveEnchantsToUserData(itemEnchants: ItemEnchants): void {
         abstract();
     }
-    getCategoryName(): string {
-        abstract();
-    }
+    // TODO: removed method, need to implement
+    // getCategoryName(): string {
+    //     abstract();
+    // }
     canDestroySpecial(block: Block): boolean {
         abstract();
     }
@@ -610,11 +612,11 @@ export enum PlayerUISlot {
 
 @nativeClass(null)
 export class PlayerInventory extends AbstractClass {
-    get container(): Inventory {
-        return this.getContainer();
-    }
+    @nativeField(Inventory.ref(), 0xc0) // accessed on PlayerInventory::add, first line
+    container: Inventory;
+
     getContainer(): Inventory {
-        abstract();
+        return this.container;
     }
 
     addItem(itemStack: ItemStack, linkEmptySlot: boolean): boolean {

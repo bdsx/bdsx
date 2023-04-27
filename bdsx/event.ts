@@ -60,9 +60,9 @@ import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherCha
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
 import type { nethook } from "./nethook";
 import { remapAndPrintError, remapError } from "./source-map-support";
+import { PACKET_ID_COUNT } from "./const";
 
-const PACKET_ID_COUNT = 0x100;
-const PACKET_EVENT_COUNT = 0x500;
+const PACKET_EVENT_COUNT = PACKET_ID_COUNT * 5;
 
 const enabledPacket = asmcode.addressof_enabledPacket;
 enabledPacket.fill(0, 256);

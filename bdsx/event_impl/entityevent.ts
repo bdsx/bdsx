@@ -8,7 +8,7 @@ import { MinecraftPacketIds } from "../bds/packetids";
 import { CompletedUsingItemPacket } from "../bds/packets";
 import { Player, ServerPlayer, SimulatedPlayer } from "../bds/player";
 import { CANCEL } from "../common";
-import { NativePointer, VoidPointer } from "../core";
+import { NativePointer, StaticPointer, VoidPointer } from "../core";
 import { decay } from "../decay";
 import { events } from "../event";
 import { makefunc } from "../makefunc";
@@ -210,23 +210,34 @@ function onItemUse(itemStack: ItemStack, player: Player): ItemStack {
 }
 const _onItemUse = procHacker.hooking("?use@ItemStack@@QEAAAEAV1@AEAVPlayer@@@Z", ItemStack, null, ItemStack, Player)(onItemUse);
 
-function onItemUseOnBlock(itemStack: ItemStack, actor: Actor, x: int32_t, y: int32_t, z: int32_t, face: uint8_t, clickPos: Vec3): bool_t {
+function onItemUseOnBlock(
+    itemStack: ItemStack,
+    interactionResult: StaticPointer,
+    actor: Actor,
+    x: int32_t,
+    y: int32_t,
+    z: int32_t,
+    face: uint8_t,
+    clickPos: Vec3,
+): StaticPointer {
     const event = new ItemUseOnBlockEvent(itemStack, actor, x, y, z, face, clickPos.x, clickPos.y, clickPos.z);
     const canceled = events.itemUseOnBlock.fire(event) === CANCEL;
     decay(itemStack);
     if (canceled) {
-        return false;
+        interactionResult.setInt32(0);
+        return interactionResult;
     }
     clickPos.x = event.clickX;
     clickPos.y = event.clickY;
     clickPos.z = event.clickZ;
-    return _onItemUseOnBlock(event.itemStack, event.actor, event.x, event.y, event.z, event.face, clickPos);
+    return _onItemUseOnBlock(event.itemStack, interactionResult, event.actor, event.x, event.y, event.z, event.face, clickPos);
 }
 const _onItemUseOnBlock = procHacker.hooking(
-    "?useOn@ItemStack@@QEAA_NAEAVActor@@HHHEAEBVVec3@@@Z",
-    bool_t,
+    "?useOn@ItemStack@@QEAA?AVInteractionResult@@AEAVActor@@HHHEAEBVVec3@@@Z",
+    StaticPointer,
     null,
     ItemStack,
+    StaticPointer,
     Actor,
     int32_t,
     int32_t,

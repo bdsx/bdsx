@@ -388,20 +388,21 @@ const SculkShriekerBlock$_shriek = procHacker.hooking(
 export class SculkSensorActivateEvent {
     constructor(public region: BlockSource, public pos: BlockPos, public entity: Actor | null) {}
 }
-function onSculkSensorActivate(region: BlockSource, pos: BlockPos, entity: Actor | null, unknown: int32_t): void {
+function onSculkSensorActivate(region: BlockSource, pos: BlockPos, entity: Actor | null, unknown: int32_t, unknown2: int32_t): void {
     const event = new SculkSensorActivateEvent(region, pos, entity);
     const canceled = events.sculkSensorActivate.fire(event) === CANCEL;
     decay(region);
     decay(pos);
     if (canceled) return;
-    return sculkSensor$Activate(region, pos, entity, unknown);
+    return sculkSensor$Activate(region, pos, entity, unknown, unknown2);
 }
 const sculkSensor$Activate = procHacker.hooking(
-    "?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@H@Z",
+    "?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@HH@Z",
     void_t,
     null,
     BlockSource,
     BlockPos,
     Actor,
+    int32_t,
     int32_t,
 )(onSculkSensorActivate);

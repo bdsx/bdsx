@@ -95,7 +95,11 @@ export class DiggerItemComponent extends ItemComponent {
 
 export class DurabilityItemComponent extends ItemComponent {
     getDamageChance(int: number): number {
-        abstract();
+        const damageChangeRange = this.getUint32(0x14);
+        let unk = this.getUint32(0x18);
+        unk -= damageChangeRange;
+        unk = (unk / int + 1) | 0;
+        return unk + damageChangeRange;
     }
 }
 
@@ -104,9 +108,10 @@ export class DisplayNameItemComponent extends ItemComponent {}
 export class DyePowderItemComponent extends ItemComponent {}
 
 export class EntityPlacerItemComponent extends ItemComponent {
-    positionAndRotateActor(actor: Actor, vec3: Vec3, unsignedInt8: number, _vec3: Vec3, blockLegacy: BlockLegacy): void {
-        abstract();
-    }
+    // TODO: removed method, need to implement
+    // positionAndRotateActor(actor: Actor, vec3: Vec3, unsignedInt8: number, _vec3: Vec3, blockLegacy: BlockLegacy): void {
+    //     abstract();
+    // }
     setActorCustomName(actor: Actor, itemStack: ItemStack): void {
         abstract();
     }

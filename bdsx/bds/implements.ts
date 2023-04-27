@@ -1306,8 +1306,8 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    playerUIContainer: [PlayerUIContainer, 0xf90], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x1f28], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    playerUIContainer: [PlayerUIContainer, 0xd78], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1d10], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
@@ -1393,11 +1393,6 @@ class UserEntityIdentifierComponent extends NativeClass {
 }
 
 EntityContextBase.prototype.isValid = procHacker.js("?isValid@EntityContextBase@@QEBA_NXZ", bool_t, { this: EntityContextBase });
-EntityContextBase.prototype._enttRegistry = procHacker.js(
-    "?_enttRegistry@EntityContextBase@@IEBAAEBV?$basic_registry@VEntityId@@V?$allocator@VEntityId@@@std@@@entt@@XZ",
-    VoidPointer,
-    { this: EntityContextBase },
-);
 
 const Registry_getEntityIdentifierComponent = procHacker.js(
     "??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@V?$allocator@VEntityId@@@std@@@entt@@QEBA?A_PVEntityId@@@Z",
@@ -1410,8 +1405,7 @@ const Registry_getEntityIdentifierComponent = procHacker.js(
 Player.prototype.getCertificate = function () {
     // part of ServerNetworkHandler::_displayGameMessage
     const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
-    const registry = base._enttRegistry();
+    const registry = base.enttRegistry;
     return Registry_getEntityIdentifierComponent(registry, base.entityId).certificate;
 };
 Player.prototype.getDestroySpeed = procHacker.js("?getDestroySpeed@Player@@QEBAMAEBVBlock@@@Z", float32_t, { this: Player }, Block.ref());
@@ -1783,7 +1777,7 @@ Packet.prototype[NativeType.dtor] = vectorDeletingDestructor;
 Packet.prototype.sendTo = function (target: NetworkIdentifier, senderSubClientId: number = 0): void {
     bedrockServer.networkSystem.send(target, this, senderSubClientId);
 };
-Packet.prototype.getId = procHacker.jsv("??_7LoginPacket@@6B@", "?getId@LoginPacket@@UEBA?AW4MinecraftPacketIds@@XZ", int32_t, { this: Packet });
+Packet.prototype.getId = procHacker.jsv("??_7SetTitlePacket@@6B@", "?getId@SetTitlePacket@@UEBA?AW4MinecraftPacketIds@@XZ", int32_t, { this: Packet });
 Packet.prototype.getName = procHacker.jsv(
     "??_7LoginPacket@@6B@",
     "?getName@LoginPacket@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
@@ -1876,7 +1870,7 @@ ConnectionRequest.prototype.getCertificate = procHacker.js("?getCertificate@Conn
 
 namespace ExtendedCertificate {
     export const getXuid = procHacker.js(
-        "?getXuid@ExtendedCertificate@@SA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBVCertificate@@@Z",
+        "?getXuid@ExtendedCertificate@@SA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVCertificate@@@Z",
         CxxString,
         { structureReturn: true },
         Certificate,
@@ -2024,7 +2018,11 @@ GameMode.abstract({
 });
 
 // inventory.ts
-Item.prototype.allowOffhand = procHacker.js("?allowOffhand@Item@@QEBA_NXZ", bool_t, { this: Item });
+Item.prototype.allowOffhand = function () {
+    // manual implement
+    // accessed on Item::setAllowOffhand
+    return (this as any).getInt8(0x13a) < 0;
+};
 Item.prototype.isDamageable = procHacker.js("?isDamageable@Item@@UEBA_NXZ", bool_t, { this: Item });
 Item.prototype.isFood = procHacker.js("?isFood@Item@@UEBA_NXZ", bool_t, {
     this: Item,
@@ -2110,7 +2108,7 @@ ItemStackBase.prototype.isStackedByData = procHacker.js("?isStackedByData@ItemSt
 ItemStackBase.prototype.isStackable = procHacker.js("?isStackable@ItemStackBase@@QEBA_NAEBV1@@Z", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isPotionItem = procHacker.js("?isPotionItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isPattern = procHacker.js("?isPattern@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
-ItemStackBase.prototype.isMusicDiscItem = procHacker.js("?isMusicDiscItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
+// ItemStackBase.prototype.isMusicDiscItem = procHacker.js("?isMusicDiscItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isLiquidClipItem = procHacker.js("?isLiquidClipItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isHorseArmorItem = procHacker.js("?isHorseArmorItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isGlint = procHacker.js("?isGlint@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
@@ -2161,11 +2159,11 @@ ItemStackBase.prototype.saveEnchantsToUserData = procHacker.js(
     { this: ItemStackBase },
     ItemEnchants,
 );
-ItemStackBase.prototype.getCategoryName = procHacker.js(
-    "?getCategoryName@ItemStackBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
-    CxxString,
-    { this: ItemStackBase, structureReturn: true },
-);
+// ItemStackBase.prototype.getCategoryName = procHacker.js(
+//     "?getCategoryName@ItemStackBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+//     CxxString,
+//     { this: ItemStackBase, structureReturn: true },
+// );
 ItemStackBase.prototype.canDestroySpecial = procHacker.js("?canDestroySpecial@ItemStackBase@@QEBA_NAEBVBlock@@@Z", bool_t, { this: ItemStackBase }, Block);
 const ItemStackBase$hurtAndBreak = procHacker.js("?hurtAndBreak@ItemStackBase@@QEAA_NHPEAVActor@@@Z", bool_t, { this: ItemStackBase }, int32_t, Actor);
 ItemStackBase.prototype.hurtAndBreak = function (count: number, actor: Actor | null = null): boolean {
@@ -2283,7 +2281,6 @@ FillingContainer.prototype.canAdd = procHacker.jsv(
 
 Inventory.prototype.dropSlot = procHacker.js("?dropSlot@Inventory@@QEAAXH_N00@Z", void_t, { this: Inventory }, int32_t, bool_t, bool_t, bool_t);
 
-PlayerInventory.prototype.getContainer = procHacker.js("?getContainer@PlayerInventory@@QEAAAEAVContainer@@XZ", Inventory, { this: PlayerInventory });
 PlayerInventory.prototype.getSlotWithItem = procHacker.js(
     "?getSlotWithItem@PlayerInventory@@QEBAHAEBVItemStack@@_N1@Z",
     int32_t,
@@ -2317,19 +2314,20 @@ PlayerInventory.prototype.setItem = procHacker.js(
 );
 PlayerInventory.prototype.setSelectedItem = procHacker.js("?setSelectedItem@PlayerInventory@@QEAAXAEBVItemStack@@@Z", void_t, { this: PlayerInventory }, ItemStack);
 PlayerInventory.prototype.swapSlots = procHacker.js("?swapSlots@PlayerInventory@@QEAAXHH@Z", void_t, { this: PlayerInventory }, int32_t, int32_t);
-const PlayerInventory$removeResource = procHacker.js(
-    "?removeResource@PlayerInventory@@QEAAHAEBVItemStack@@_N1H@Z",
+const FillingContainer$removeResource = procHacker.js(
+    "?removeResource@FillingContainer@@QEAAHAEBVItemStack@@_N1H@Z",
     int32_t,
     null,
-    PlayerInventory,
+    FillingContainer,
     ItemStack,
     bool_t,
     bool_t,
     int32_t,
 );
 PlayerInventory.prototype.removeResource = function (item: ItemStack, requireExactAux: boolean = true, requireExactData: boolean = false, maxCount?: int32_t) {
-    maxCount ??= this.container.getItemCount(item);
-    return PlayerInventory$removeResource(this, item, requireExactAux, requireExactData, maxCount);
+    const container = this.container;
+    maxCount ??= container.getItemCount(item);
+    return FillingContainer$removeResource(container, item, requireExactAux, requireExactData, maxCount);
 };
 PlayerInventory.prototype.canAdd = procHacker.js("?canAdd@PlayerInventory@@QEBA_NAEBVItemStack@@@Z", bool_t, { this: PlayerInventory }, ItemStack);
 
@@ -2397,10 +2395,11 @@ BlockLegacy.prototype.getStateFromLegacyData = procHacker.js(
 BlockLegacy.prototype.getRenderBlock = procHacker.js("?getRenderBlock@BlockLegacy@@UEBAAEBVBlock@@XZ", Block, { this: BlockLegacy });
 BlockLegacy.prototype.getDefaultState = procHacker.js("?getDefaultState@BlockLegacy@@QEBAAEBVBlock@@XZ", Block, { this: BlockLegacy });
 BlockLegacy.prototype.tryGetStateFromLegacyData = procHacker.js(
-    "?tryGetStateFromLegacyData@BlockLegacy@@QEBAPEBVBlock@@G@Z",
+    "?tryGetStateFromLegacyData@BlockLegacy@@QEBAPEBVBlock@@G_N@Z",
     Block,
     { this: BlockLegacy },
     uint16_t,
+    bool_t,
 );
 BlockLegacy.prototype.use = procHacker.jsv(
     "??_7JukeboxBlock@@6B@",
@@ -2417,7 +2416,6 @@ BlockLegacy.prototype.getSilkTouchedItemInstance = procHacker.js(
     { this: BlockLegacy, structureReturn: true },
     Block,
 );
-BlockLegacy.prototype.getDestroySpeed = procHacker.js("?getDestroySpeed@BlockLegacy@@IEBAMXZ", float32_t, { this: BlockLegacy });
 
 (Block.prototype as any)._getName = procHacker.js("?getName@Block@@QEBAAEBVHashedString@@XZ", HashedString, { this: Block });
 Block.create = function (blockName: string, data: number = 0): Block | null {
@@ -2676,8 +2674,6 @@ BlockUtils.getLiquidBlockHeight = procHacker.js("?getLiquidBlockHeight@BlockUtil
 BlockUtils.canGrowTreeWithBeehive = procHacker.js("?canGrowTreeWithBeehive@BlockUtils@@SA_NAEBVBlock@@@Z", bool_t, null, Block);
 
 // abilties.ts
-Abilities.prototype.getAbility = procHacker.js("?getAbility@Abilities@@QEAAAEAVAbility@@W4AbilitiesIndex@@@Z", Ability, { this: Abilities }, uint16_t);
-const Abilities$setAbilityFloat = procHacker.js("?setAbility@Abilities@@QEAAXW4AbilitiesIndex@@M@Z", void_t, { this: Abilities }, uint16_t, float32_t);
 const Abilities$setAbilityBool = procHacker.js("?setAbility@Abilities@@QEAAXW4AbilitiesIndex@@_N@Z", void_t, { this: Abilities }, uint16_t, bool_t);
 Abilities.prototype.setAbility = function (abilityIndex: AbilitiesIndex, value: boolean | number) {
     switch (typeof value) {
@@ -2685,7 +2681,7 @@ Abilities.prototype.setAbility = function (abilityIndex: AbilitiesIndex, value: 
             Abilities$setAbilityBool.call(abilityIndex, value);
             break;
         case "number":
-            Abilities$setAbilityFloat.call(this, abilityIndex, value);
+            this.getAbility(abilityIndex).setFloat(value);
             break;
     }
 };
@@ -3008,11 +3004,12 @@ ScoreboardIdentityRef.prototype.getEntityId = procHacker.js("?getEntityId@Scoreb
 ScoreboardIdentityRef.prototype.getPlayerId = procHacker.js("?getPlayerId@ScoreboardIdentityRef@@QEBAAEBUPlayerScoreboardId@@XZ", ActorUniqueID.ref(), {
     this: ScoreboardIdentityRef,
 });
-ScoreboardIdentityRef.prototype.getFakePlayerName = procHacker.js(
-    "?getFakePlayerName@ScoreboardIdentityRef@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
-    CxxString,
-    { this: ScoreboardIdentityRef },
-);
+// TODO: removed method, need to implement
+// ScoreboardIdentityRef.prototype.getFakePlayerName = procHacker.js(
+//     "?getFakePlayerName@ScoreboardIdentityRef@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+//     CxxString,
+//     { this: ScoreboardIdentityRef },
+// );
 ScoreboardIdentityRef.prototype.getScoreboardId = procHacker.js("?getScoreboardId@ScoreboardIdentityRef@@QEBAAEBUScoreboardId@@XZ", ScoreboardId, {
     this: ScoreboardIdentityRef,
 });
@@ -3193,7 +3190,6 @@ CompoundTag.prototype.has = procHacker.js(
     CxxStringView,
 );
 CompoundTag.prototype.clear = procHacker.js("?clear@CompoundTag@@QEAAXXZ", void_t, { this: CompoundTag });
-IntArrayTag.prototype[NativeType.ctor] = procHacker.js("??0IntArrayTag@@QEAA@XZ", void_t, { this: IntArrayTag });
 
 CompoundTagVariant.prototype[NativeType.ctor] = function (): void {
     // init as a EndTag
@@ -3318,17 +3314,6 @@ StructureTemplate.prototype.allocateAndSave = procHacker.js(
     CompoundTag.ref(),
     { this: StructureTemplate, structureReturn: true },
 );
-const StructureTemplate$load = procHacker.js("?load@StructureTemplate@@QEAA_NAEBVCompoundTag@@@Z", bool_t, { this: StructureTemplate }, CompoundTag);
-StructureTemplate.prototype.load = function (tag) {
-    if (tag instanceof Tag) {
-        return StructureTemplate$load.call(this, tag);
-    } else {
-        const allocated = NBT.allocate(tag);
-        const res = StructureTemplate$load.call(this, allocated as CompoundTag);
-        allocated.dispose();
-        return res;
-    }
-};
 StructureManager.prototype.getOrCreate = procHacker.js(
     "?getOrCreate@StructureManager@@QEAAAEAVStructureTemplate@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
     StructureTemplate,
@@ -3478,12 +3463,6 @@ ThrowableItemComponent.getIdentifier = procHacker.js("?getIdentifier@ThrowableIt
 WeaponItemComponent.getIdentifier = procHacker.js("?getIdentifier@WeaponItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 WearableItemComponent.getIdentifier = procHacker.js("?getIdentifier@WearableItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 
-DurabilityItemComponent.prototype.getDamageChance = procHacker.js(
-    "?getDamageChance@DurabilityItemComponent@@QEBAHH@Z",
-    int32_t,
-    { this: DurabilityItemComponent },
-    int32_t,
-);
 DiggerItemComponent.prototype.mineBlock = procHacker.js(
     "?mineBlock@DiggerItemComponent@@QEAA_NAEAVItemStack@@AEBVBlock@@HHHPEAVActor@@@Z",
     bool_t,
@@ -3495,16 +3474,17 @@ DiggerItemComponent.prototype.mineBlock = procHacker.js(
     int32_t,
     Actor,
 );
-EntityPlacerItemComponent.prototype.positionAndRotateActor = procHacker.js(
-    "?_positionAndRotateActor@EntityPlacerItemComponent@@AEBAXAEAVActor@@VVec3@@EAEBV3@PEBVBlockLegacy@@@Z",
-    void_t,
-    { this: EntityPlacerItemComponent },
-    Actor,
-    Vec3,
-    int8_t,
-    Vec3,
-    BlockLegacy,
-);
+// TODO: removed method, need to implement
+// EntityPlacerItemComponent.prototype.positionAndRotateActor = procHacker.js(
+//     "?_positionAndRotateActor@EntityPlacerItemComponent@@AEBAXAEAVActor@@VVec3@@EAEBV3@PEBVBlockLegacy@@@Z",
+//     void_t,
+//     { this: EntityPlacerItemComponent },
+//     Actor,
+//     Vec3,
+//     int8_t,
+//     Vec3,
+//     BlockLegacy,
+// );
 EntityPlacerItemComponent.prototype.setActorCustomName = procHacker.js(
     "?_setActorCustomName@EntityPlacerItemComponent@@AEBAXAEAVActor@@AEBVItemStack@@@Z",
     void_t,

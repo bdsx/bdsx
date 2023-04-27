@@ -250,7 +250,7 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-after",
         packetizeSymbol,
-        0x53b,
+        0x508,
         asmcode.packetAfterHook, // original code depended
         Register.rax,
         true,

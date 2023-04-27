@@ -81,14 +81,15 @@ export class BlockLegacy extends NativeClass {
     getDefaultState(): Block {
         abstract();
     }
-    tryGetStateFromLegacyData(data: uint16_t): Block {
+    tryGetStateFromLegacyData(data: uint16_t, u?: bool_t): Block {
         abstract();
     }
     getSilkTouchedItemInstance(block: Block): ItemStack {
         abstract();
     }
     getDestroySpeed(): number {
-        abstract();
+        // XXX: Polyfilled. but not sure it's a same feature.
+        return this.getDefaultState().getDestroySpeed();
     }
 }
 

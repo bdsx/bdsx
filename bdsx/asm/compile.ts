@@ -4,6 +4,7 @@ import { asm } from "../assembler";
 import { uv_async } from "../core";
 import { remapAndPrintError } from "../source-map-support";
 import { ParsingError } from "../textparser";
+import { PACKET_ID_COUNT } from "../const";
 
 try {
     console.log(`[bdsx-asm] start`);
@@ -12,6 +13,7 @@ try {
     const defines = {
         asyncSize: uv_async.sizeOfTask,
         sizeOfCxxString: 0x20,
+        PACKET_ID_COUNT,
     };
     code.compile(fs.readFileSync(asmpath, "utf8"), defines, asmpath);
     const { js, dts } = code.toScript("..", "asmcode");

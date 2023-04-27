@@ -10,6 +10,10 @@ interface TypeIdSymbols {
     ptrSymbols: { symbol: string; type: Type<any> }[];
 }
 
+function errorlog(message: string): void {
+    console.error(colors.red(message));
+}
+
 export class CommandSymbols {
     private readonly counterSymbols: string[] = [];
 
@@ -33,7 +37,7 @@ export class CommandSymbols {
 
     addCounterSymbol(base: Type<any>): void {
         this.counterBases.push(base);
-        this.counterSymbols.push(`?count@?$typeid_t@${base.symbol}@@2GA`);
+        this.counterSymbols.push(`?storage@?1??_getCounter@?$typeid_t@${base.symbol}@Bedrock@@CAAEAU?$atomic@G@std@@XZ@4U45@A`);
     }
 
     addTypeIdFnSymbols(base: Type<any>, typesWithFunction: Type<any>[]): void {
@@ -41,7 +45,7 @@ export class CommandSymbols {
 
         for (const v of typesWithFunction) {
             symbols.fnTypes.push(v);
-            symbols.fnSymbols.push(`??$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ`);
+            symbols.fnSymbols.push(`??$type_id@${base.symbol}${v.symbol}@Bedrock@@YA?AV?$typeid_t@${base.symbol}@0@XZ`);
         }
     }
 
@@ -51,7 +55,7 @@ export class CommandSymbols {
         for (const v of typesWithValuePtr) {
             symbols.ptrTypes.push(v);
             symbols.ptrSymbols.push({
-                symbol: `?id@?1???$type_id@${base.symbol}${v.symbol}@@YA?AV?$typeid_t@${base.symbol}@@XZ@4V1@A`,
+                symbol: `?id@?1???$type_id@${base.symbol}${v.symbol}@Bedrock@@YA?AV?$typeid_t@${base.symbol}@1@XZ@4V21@A`,
                 type: v,
             });
         }
@@ -76,7 +80,8 @@ export class CommandSymbols {
                 const addr = proc[symbol];
                 yield [symbols.fnTypes[i], addr];
             } catch (err) {
-                console.error(colors.red(`${symbol} not found (type_id<${base.name}, ${symbols.fnTypes[i].name}>())`));
+                errorlog(`type_id<${base.name}, ${symbols.fnTypes[i].name}>() function not found`);
+                errorlog(`symbol: ${symbol}`);
             }
         }
     }
@@ -90,7 +95,8 @@ export class CommandSymbols {
                 const addr = proc[symbol];
                 yield [symbols.ptrTypes[i], addr];
             } catch (err) {
-                throw Error(`type_id<${base.name}, ${type.name}> value pointer not found`);
+                errorlog(`type_id<${base.name}, ${type.name}> id pointer not found`);
+                errorlog(`symbol: ${symbol}`);
             }
         }
     }
