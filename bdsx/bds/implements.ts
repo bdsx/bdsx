@@ -2151,7 +2151,7 @@ ItemStackBase.prototype.allocateAndSave = procHacker.js(
     { this: ItemStackBase, structureReturn: true },
 );
 ItemStackBase.prototype.isMusicDiscItem = function () {
-    return this.getItem()?.isMusicDisk() ?? false;
+    return this.getItem()?.isMusicDisk() === true;
 };
 
 (ItemStackBase.prototype as any)._getItem = procHacker.js("?getItem@ItemStackBase@@QEBAPEBVItem@@XZ", Item, { this: ItemStackBase });
@@ -3029,12 +3029,6 @@ ScoreboardIdentityRef.prototype.getEntityId = procHacker.js("?getEntityId@Scoreb
 ScoreboardIdentityRef.prototype.getPlayerId = procHacker.js("?getPlayerId@ScoreboardIdentityRef@@QEBAAEBUPlayerScoreboardId@@XZ", ActorUniqueID.ref(), {
     this: ScoreboardIdentityRef,
 });
-// TODO: removed method, need to implement
-// ScoreboardIdentityRef.prototype.getFakePlayerName = procHacker.js(
-//     "?getFakePlayerName@ScoreboardIdentityRef@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
-//     CxxString,
-//     { this: ScoreboardIdentityRef },
-// );
 ScoreboardIdentityRef.prototype.getScoreboardId = procHacker.js("?getScoreboardId@ScoreboardIdentityRef@@QEBAAEBUScoreboardId@@XZ", ScoreboardId, {
     this: ScoreboardIdentityRef,
 });
