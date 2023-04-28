@@ -94,7 +94,13 @@ export enum CreativeItemCategory {
     Nature,
     Equipment,
     Items,
+    Commands,
+    /**
+     * @deprecated
+     * follow official name
+     */
     Uncategorized,
+    None = 6,
 }
 
 export enum HandSlot {
@@ -126,7 +132,7 @@ export class Item extends NativeClass {
     /**
      * Returns the category of the item in creative inventory
      */
-    getCreativeCategory(): number {
+    getCreativeCategory(): CreativeItemCategory {
         abstract();
     }
     getArmorValue(): number {
@@ -191,6 +197,18 @@ export class ComponentItem extends Item {
         abstract();
     }
 }
+
+const StringFromCreativeItemCategoryMap: Record<CreativeItemCategory, string> = {
+    [CreativeItemCategory.Construction]: "construction",
+    [CreativeItemCategory.Nature]: "nature",
+    [CreativeItemCategory.Equipment]: "equipment",
+    [CreativeItemCategory.Items]: "items",
+    [CreativeItemCategory.Commands]: "commands",
+
+    [CreativeItemCategory.All]: "none",
+    [CreativeItemCategory.Uncategorized]: "none",
+    [CreativeItemCategory.None]: "none",
+};
 
 @nativeClass(0x88)
 export class ItemStackBase extends NativeClass {
@@ -430,10 +448,9 @@ export class ItemStackBase extends NativeClass {
     saveEnchantsToUserData(itemEnchants: ItemEnchants): void {
         abstract();
     }
-    // TODO: removed method, need to implement
-    // getCategoryName(): string {
-    //     abstract();
-    // }
+    getCategoryName(): string {
+        return StringFromCreativeItemCategoryMap[this.getItem()?.getCreativeCategory() ?? 0];
+    }
     canDestroySpecial(block: Block): boolean {
         abstract();
     }
