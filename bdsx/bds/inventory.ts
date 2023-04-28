@@ -144,6 +144,9 @@ export class Item extends NativeClass {
     isArmor(): boolean {
         abstract();
     }
+    isMusicDisk(): boolean {
+        abstract();
+    }
     /**
      * Changes whether the item is allowed to be used in the offhand slot
      *
@@ -360,10 +363,9 @@ export class ItemStackBase extends NativeClass {
     isPattern(): boolean {
         abstract();
     }
-    // TODO: removed method, need to implement
-    // isMusicDiscItem(): boolean {
-    //     abstract();
-    // }
+    isMusicDiscItem(): boolean {
+        abstract();
+    }
     isLiquidClipItem(): boolean {
         abstract();
     }
