@@ -288,10 +288,9 @@ export class ScoreboardIdentityRef extends NativeClass {
         abstract();
     }
 
-    // TODO: removed method, need to implement
-    //getFakePlayerName(): string {
-    //    abstract();
-    //}
+    getFakePlayerName(): string {
+        return this.scoreboardId.identityDef.getFakePlayerName();
+    }
 
     getScoreboardId(): ScoreboardId {
         abstract();

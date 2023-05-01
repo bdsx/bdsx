@@ -2017,6 +2017,29 @@ GameMode.abstract({
     actor: [Player.ref(), 8],
 });
 
+@nativeClass(null)
+class RecordItem extends Item {
+    @nativeField(VoidPointer)
+    vftable: VoidPointer;
+}
+
+const RecordItem$vftable = proc["??_7RecordItem@@6B@"];
+Item.setResolver(ptr => {
+    if (ptr === null) {
+        return null;
+    }
+    const vftable = ptr.getPointer();
+    if (vftable.equalsptr(RecordItem$vftable)) {
+        return ptr.as(RecordItem);
+    } else {
+        return ptr.as(Item);
+    }
+});
+
+Item.prototype.isMusicDisk = function () {
+    return this instanceof RecordItem;
+};
+
 // inventory.ts
 Item.prototype.allowOffhand = function () {
     // manual implement
@@ -2108,7 +2131,6 @@ ItemStackBase.prototype.isStackedByData = procHacker.js("?isStackedByData@ItemSt
 ItemStackBase.prototype.isStackable = procHacker.js("?isStackable@ItemStackBase@@QEBA_NAEBV1@@Z", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isPotionItem = procHacker.js("?isPotionItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isPattern = procHacker.js("?isPattern@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
-// ItemStackBase.prototype.isMusicDiscItem = procHacker.js("?isMusicDiscItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isLiquidClipItem = procHacker.js("?isLiquidClipItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isHorseArmorItem = procHacker.js("?isHorseArmorItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.isGlint = procHacker.js("?isGlint@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
@@ -2128,6 +2150,9 @@ ItemStackBase.prototype.allocateAndSave = procHacker.js(
     CompoundTag.ref(),
     { this: ItemStackBase, structureReturn: true },
 );
+ItemStackBase.prototype.isMusicDiscItem = function () {
+    return this.getItem()?.isMusicDisk() === true;
+};
 
 (ItemStackBase.prototype as any)._getItem = procHacker.js("?getItem@ItemStackBase@@QEBAPEBVItem@@XZ", Item, { this: ItemStackBase });
 (ItemStackBase.prototype as any)._setCustomLore = procHacker.js(
@@ -3004,12 +3029,6 @@ ScoreboardIdentityRef.prototype.getEntityId = procHacker.js("?getEntityId@Scoreb
 ScoreboardIdentityRef.prototype.getPlayerId = procHacker.js("?getPlayerId@ScoreboardIdentityRef@@QEBAAEBUPlayerScoreboardId@@XZ", ActorUniqueID.ref(), {
     this: ScoreboardIdentityRef,
 });
-// TODO: removed method, need to implement
-// ScoreboardIdentityRef.prototype.getFakePlayerName = procHacker.js(
-//     "?getFakePlayerName@ScoreboardIdentityRef@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
-//     CxxString,
-//     { this: ScoreboardIdentityRef },
-// );
 ScoreboardIdentityRef.prototype.getScoreboardId = procHacker.js("?getScoreboardId@ScoreboardIdentityRef@@QEBAAEBUScoreboardId@@XZ", ScoreboardId, {
     this: ScoreboardIdentityRef,
 });

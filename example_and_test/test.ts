@@ -13,7 +13,7 @@ import { JsonValue } from "bdsx/bds/connreq";
 import { CxxOptionalToUndefUnion } from "bdsx/bds/cxxoptional";
 import { Dimension } from "bdsx/bds/dimension";
 import { HashedString } from "bdsx/bds/hashedstring";
-import { ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
+import { CreativeItemCategory, ItemStack, NetworkItemStackDescriptor } from "bdsx/bds/inventory";
 import {
     ByteArrayTag,
     ByteTag,
@@ -1207,6 +1207,14 @@ Tester.concurrency(
         etc() {
             const item = ItemStack.constructWith("minecraft:acacia_boat");
             item.destruct();
+
+            const CreativeItemCategoryFromString = procHacker.js("?CreativeItemCategoryFromString@@YA?AW4CreativeItemCategory@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", int32_t, null, CxxString);
+            this.equals(CreativeItemCategoryFromString("construction"), CreativeItemCategory.Construction);
+            this.equals(CreativeItemCategoryFromString("nature"), CreativeItemCategory.Nature);
+            this.equals(CreativeItemCategoryFromString("equipment"), CreativeItemCategory.Equipment);
+            this.equals(CreativeItemCategoryFromString("items"), CreativeItemCategory.Items);
+            this.equals(CreativeItemCategoryFromString("commands"), CreativeItemCategory.Commands);
+            this.equals(CreativeItemCategoryFromString("none"), CreativeItemCategory.None);
         },
 
         nbt() {
