@@ -84,8 +84,11 @@ function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): b
      * - fired multiple times if `server-authoritative-block-breaking` is enabled
      * - It has three refs: AgentCommands::DestroyCommand::isDone, GameMode::_canDestroy, GameMode::destroyBlock
      *
-     * Current hooking point - GameMode::destroyBlock
+     * old hooking point - GameMode::destroyBlock
      * - fired with the sword attack of the creative mode user if `server-authoritative-block-breaking` is enabled
+     * - broken on 1.19.80.02
+     *
+     * current hooking point - SurvivalMode::destroyBlock
      */
 
     const blockSource = player.getRegion();
@@ -109,7 +112,7 @@ function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): b
         return _onBlockDestroy(gamemode, event.blockPos, face);
     }
 }
-const _onBlockDestroy = procHacker.hooking("?destroyBlock@GameMode@@UEAA_NAEBVBlockPos@@E@Z", bool_t, null, GameMode, BlockPos, uint8_t)(onBlockDestroy);
+const _onBlockDestroy = procHacker.hooking("?destroyBlock@SurvivalMode@@UEAA_NAEBVBlockPos@@E@Z", bool_t, null, GameMode, BlockPos, uint8_t)(onBlockDestroy);
 
 function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos): void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);

@@ -15,23 +15,6 @@ import { Tester } from "bdsx/tester";
  */
 
 //////////////////////////
-// hook the block breaking
-let halfMiss = false;
-function onDestroyBlock(gameMode: SurvivalMode, blockPos: BlockPos, v: number): boolean {
-    halfMiss = !halfMiss;
-    const actor = gameMode.actor;
-    if (actor instanceof ServerPlayer) {
-        actor.sendMessage(`${halfMiss ? "missed" : "destroyed"}: ${blockPos.x} ${blockPos.y} ${blockPos.z} ${v}`);
-    }
-
-    if (halfMiss) return false;
-    return originalFunc(gameMode, blockPos, v);
-}
-
-// bool SurvivalMode::destroyBlock(BlockPos&,unsigned char); // it can be dug with the disassembler or the decompiler.
-const originalFunc = procHacker.hooking("?destroyBlock@SurvivalMode@@UEAA_NAEBVBlockPos@@E@Z", bool_t, null, SurvivalMode, BlockPos, int32_t)(onDestroyBlock);
-
-//////////////////////////
 // hook the item using on block
 const itemUseOn = procHacker.hooking(
     "?useItemOn@GameMode@@UEAA?AVInteractionResult@@AEAVItemStack@@AEBVBlockPos@@EAEBVVec3@@PEBVBlock@@@Z",
