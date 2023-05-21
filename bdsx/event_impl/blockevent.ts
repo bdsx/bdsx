@@ -80,7 +80,7 @@ function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): b
     const player = gamemode.actor as ServerPlayer;
     /********************
      *   History
-     * Old hooking point - BlockSource::checkBlockDestroyPermissions
+     * old hooking point - BlockSource::checkBlockDestroyPermissions
      * - fired multiple times if `server-authoritative-block-breaking` is enabled
      * - It has three refs: AgentCommands::DestroyCommand::isDone, GameMode::_canDestroy, GameMode::destroyBlock
      *
@@ -88,19 +88,15 @@ function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): b
      * - fired with the sword attack of the creative mode user if `server-authoritative-block-breaking` is enabled
      * - broken on 1.19.80.02
      *
-     * current hooking point - SurvivalMode::destroyBlock
+     * old hooking point - SurvivalMode::destroyBlock
+     * - it does not fire if the user changes the game mode to creative in game.
+     *
+     * current hooking point - SurvivalMode::destroyBlock & GameMode::_creativeDestroyBlock
+     * - on server-authoritative-block-breaking=true & creative mode, GameMode::destroyBlock is fired twice
      */
 
     const blockSource = player.getRegion();
     const itemStack = player.getMainhandSlot();
-    if (player.isCreative()) {
-        // bypass the hooking point issue
-        const item = itemStack.getItem();
-        if (item !== null && !item.canDestroyInCreative()) {
-            return _onBlockDestroy(gamemode, blockPos, face);
-        }
-    }
-
     const event = new BlockDestroyEvent(player, blockPos, blockSource, itemStack, false);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
     decay(blockPos);
@@ -113,6 +109,30 @@ function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): b
     }
 }
 const _onBlockDestroy = procHacker.hooking("?destroyBlock@SurvivalMode@@UEAA_NAEBVBlockPos@@E@Z", bool_t, null, GameMode, BlockPos, uint8_t)(onBlockDestroy);
+
+function onCreativeBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): boolean {
+    const player = gamemode.actor as ServerPlayer;
+    const blockSource = player.getRegion();
+    const itemStack = player.getMainhandSlot();
+    const event = new BlockDestroyEvent(player, blockPos, blockSource, itemStack, false);
+    const canceled = events.blockDestroy.fire(event) === CANCEL;
+    decay(blockPos);
+    decay(blockSource);
+    decay(itemStack);
+    if (canceled) {
+        return false;
+    } else {
+        return _onCreativeBlockDestroy(gamemode, event.blockPos, face);
+    }
+}
+const _onCreativeBlockDestroy = procHacker.hooking(
+    "?destroyBlock@GameMode@@UEAA_NAEBVBlockPos@@E@Z",
+    bool_t,
+    null,
+    GameMode,
+    BlockPos,
+    uint8_t,
+)(onCreativeBlockDestroy);
 
 function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos): void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
