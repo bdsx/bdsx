@@ -297,17 +297,17 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
         abstract();
     }
     // void __cdecl CommandSelectorBase::addNameFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
-    addNameFilter(filter: CommandName) {
+    addNameFilter(filter: CommandName): void {
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         this.nameFilters.push(filter);
     }
     // void __cdecl CommandSelectorBase::addTagFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
-    addTagFilter(filter: CommandName) {
+    addTagFilter(filter: CommandName): void {
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         this.tagFilters.push(filter);
     }
     // void __cdecl CommandSelectorBase::addTypeFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
-    addTypeFilter(filter: CommandName) {
+    addTypeFilter(filter: CommandName): void {
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         const type = filter.name.toLowerCase();
         const parsedType = ActorDefinitionIdentifier.constructWith(type);
@@ -325,21 +325,21 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
         abstract();
     }
     // std::string *__cdecl CommandSelectorBase::getExplicitPlayerName(std::string *retstr, const CommandSelectorBase *this)
-    getExplicitPlayerName(deltas: BlockPos) {
+    getExplicitPlayerName(deltas: BlockPos): string {
         if (this.type === CommandSelectionType.Players && this.hasName() && this.nameFilters.size() === 1) {
             return this.getName();
         }
         return "";
     }
     // void __fastcall CommandSelectorBase::setBox(CommandSelectorBase *this, BlockPos deltas)
-    setBox(deltas: BlockPos) {
+    setBox(deltas: BlockPos): void {
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         this.boxDeltas.set(deltas);
         this.isPositionBound = true;
         this.haveDeltas = true;
     }
     // CommandSelectorBase::setExplicitIdSelector(CommandSelectorBase *this, const std::string *playerName)
-    setExplicitIdSelector(playerName: string) {
+    setExplicitIdSelector(playerName: string): void {
         const filter = CommandName.construct();
         filter.name = playerName;
         filter.inverted = false;
@@ -362,13 +362,13 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         this.position = position;
     }
-    setRadiusMin(rm: number) {
+    setRadiusMin(rm: number): void {
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         this.radiusMaxSquared = rm * rm;
         this.isPositionBound = true;
         this.distanceFiltered = true;
     }
-    setRadiusMax(r: number) {
+    setRadiusMax(r: number): void {
         if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
         this.radiusMaxSquared = r * r;
         this.isPositionBound = true;
