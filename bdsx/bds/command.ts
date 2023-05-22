@@ -11,17 +11,17 @@ import { CxxPair } from "../cxxpair";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mangle } from "../mangle";
-import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField, NativeStruct, vectorDeletingDestructor } from "../nativeclass";
+import { AbstractClass, KeysFilter, NativeClass, NativeClassType, NativeStruct, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import {
-    bin64_t,
-    bool_t,
     CommandParameterNativeType,
     CxxString,
+    NativeType,
+    Type,
+    bin64_t,
+    bool_t,
     float32_t,
     int16_t,
     int32_t,
-    NativeType,
-    Type,
     uint32_t,
     uint64_as_float_t,
     uint8_t,
@@ -36,14 +36,17 @@ import { Actor, ActorDefinitionIdentifier } from "./actor";
 import { Block } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandSymbols } from "./cmdsymbolloader";
+import { CommandName } from "./commandname";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
 import { MobEffect } from "./effects";
+import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
+import { InvertableFilter } from "./invertablefilter";
 import { AvailableCommandsPacket } from "./packets";
 import { ServerPlayer } from "./player";
 import { proc } from "./symbols";
-import { HasTypeId, typeid_t, type_id } from "./typeid";
+import { HasTypeId, type_id, typeid_t } from "./typeid";
 import commandParser = commandparser.commandParser;
 
 export enum CommandPermissionLevel {
@@ -120,6 +123,83 @@ export class MCRESULT extends NativeStruct {
 MCRESULT.prototype.getFullCode = procHacker.js("?getFullCode@MCRESULT@@QEBAHXZ", int32_t, { this: MCRESULT });
 MCRESULT.prototype.isSuccess = procHacker.js("?isSuccess@MCRESULT@@QEBA_NXZ", bool_t, { this: MCRESULT });
 
+@nativeClass()
+export class CommandPosition extends NativeStruct {
+    static readonly [CommandParameterType.symbol]: true;
+    @nativeField(float32_t)
+    x: float32_t;
+    @nativeField(float32_t)
+    y: float32_t;
+    @nativeField(float32_t)
+    z: float32_t;
+    @nativeField(bool_t)
+    isXRelative: bool_t;
+    @nativeField(bool_t)
+    isYRelative: bool_t;
+    @nativeField(bool_t)
+    isZRelative: bool_t;
+    @nativeField(bool_t)
+    local: bool_t;
+
+    static create(x: number, isXRelative: boolean, y: number, isYRelative: boolean, z: number, isZRelative: boolean, local: boolean): CommandPosition {
+        const ret = new CommandPosition(true);
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        ret.isXRelative = isXRelative;
+        ret.isYRelative = isYRelative;
+        ret.isZRelative = isZRelative;
+        ret.local = local;
+        return ret;
+    }
+
+    protected _getPosition(unknown: number, origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
+        abstract();
+    }
+    getPosition(origin: CommandOrigin, offsetFromBase: Vec3 = Vec3.create(0, 0, 0)): Vec3 {
+        return this._getPosition(0, origin, offsetFromBase);
+    }
+    protected _getBlockPosition(unknown: number, origin: CommandOrigin, offsetFromBase: Vec3): BlockPos {
+        abstract();
+    }
+    getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3 = Vec3.create(0, 0, 0)): BlockPos {
+        return this._getBlockPosition(0, origin, offsetFromBase);
+    }
+}
+(CommandPosition.prototype as any)._getPosition = procHacker.js(
+    "?getPosition@CommandPosition@@QEBA?AVVec3@@HAEBVCommandOrigin@@AEBV2@@Z",
+    Vec3,
+    { this: CommandPosition, structureReturn: true },
+    int32_t,
+    CommandOrigin,
+    Vec3,
+);
+(CommandPosition.prototype as any)._getBlockPosition = procHacker.js(
+    "?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@HAEBVCommandOrigin@@AEBVVec3@@@Z",
+    BlockPos,
+    { this: CommandPosition, structureReturn: true },
+    int32_t,
+    CommandOrigin,
+    Vec3,
+);
+
+@nativeClass()
+export class CommandPositionFloat extends CommandPosition {
+    static readonly [CommandParameterType.symbol]: true;
+
+    static create(x: number, isXRelative: boolean, y: number, isYRelative: boolean, z: number, isZRelative: boolean, local: boolean): CommandPositionFloat {
+        const ret = CommandPosition.construct();
+        ret.x = x;
+        ret.y = y;
+        ret.z = z;
+        ret.isXRelative = isXRelative;
+        ret.isYRelative = isYRelative;
+        ret.isZRelative = isZRelative;
+        ret.local = local;
+        return ret;
+    }
+}
+
 export enum CommandSelectionOrder {
     Sorted,
     InvertSorted,
@@ -143,6 +223,53 @@ export enum CommandSelectionType {
 
 @nativeClass(0xc1, 8)
 export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractClass {
+    @nativeField(uint32_t)
+    version: number;
+    @nativeField(uint32_t)
+    type: CommandSelectionType;
+    @nativeField(uint32_t)
+    order: CommandSelectionOrder;
+    @nativeField(CxxVector.make(CommandName))
+    nameFilters: CxxVector<CommandName>;
+    @nativeField(CxxVector.make(InvertableFilter.make(ActorDefinitionIdentifier)))
+    typeFilters: CxxVector<InvertableFilter<ActorDefinitionIdentifier>>;
+    @nativeField(CxxVector.make(InvertableFilter.make(HashedString)))
+    familyFilters: CxxVector<InvertableFilter<HashedString>>;
+    @nativeField(CxxVector.make(CommandName))
+    tagFilters: CxxVector<CommandName>;
+    // std::vector<std::function<bool (const CommandOrigin &,const Actor &)>>
+    @nativeField(CxxVector.make(VoidPointer))
+    filterChain: CxxVector<VoidPointer>;
+    @nativeField(CommandPosition)
+    // @nativeField(CommandPosition, { offset: 0x18, relative: true })
+    position: CommandPosition;
+    @nativeField(Vec3)
+    boxDeltas: Vec3;
+    @nativeField(float32_t)
+    radiusMinSquared: number;
+    @nativeField(float32_t)
+    radiusMaxSquared: number;
+    @nativeField(uint64_as_float_t)
+    count: number;
+    @nativeField(bool_t)
+    includeDeadPlayers: boolean;
+    @nativeField(bool_t)
+    isPositionBound: boolean;
+    @nativeField(bool_t)
+    distanceFiltered: boolean;
+    @nativeField(bool_t)
+    positionFiltered: boolean;
+    @nativeField(bool_t)
+    countFiltered: boolean;
+    @nativeField(bool_t)
+    haveDeltas: boolean;
+    @nativeField(bool_t)
+    forcePlayer: boolean;
+    @nativeField(bool_t)
+    excludeAgents: boolean;
+    @nativeField(bool_t)
+    isExplicitIdSelector: boolean;
+
     private _newResults(origin: CommandOrigin): CxxSharedPtr<CxxVector<Actor>> {
         abstract();
     }
@@ -166,6 +293,95 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
     getName(): string {
         abstract();
     }
+    hasName(): boolean {
+        abstract();
+    }
+    // void __cdecl CommandSelectorBase::addNameFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
+    addNameFilter(filter: CommandName) {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.nameFilters.push(filter);
+    }
+    // void __cdecl CommandSelectorBase::addTagFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
+    addTagFilter(filter: CommandName) {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.tagFilters.push(filter);
+    }
+    // void __cdecl CommandSelectorBase::addTypeFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
+    addTypeFilter(filter: CommandName) {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        const type = filter.name.toLowerCase();
+        const parsedType = ActorDefinitionIdentifier.constructWith(type);
+
+        const typeFilter = InvertableFilter.make(ActorDefinitionIdentifier).construct();
+        typeFilter.setValue(parsedType);
+        typeFilter.inverted = filter.inverted;
+        this.typeFilters.push(typeFilter);
+
+        typeFilter.destruct();
+        parsedType.destruct();
+    }
+    // bool __cdecl CommandSelectorBase::filter(const CommandSelectorBase *this, const CommandOrigin *origin, Actor *entity)
+    filter(origin: CommandOrigin, entity: Actor): boolean {
+        abstract();
+    }
+    // std::string *__cdecl CommandSelectorBase::getExplicitPlayerName(std::string *retstr, const CommandSelectorBase *this)
+    getExplicitPlayerName(deltas: BlockPos) {
+        if (this.type === CommandSelectionType.Players && this.hasName() && this.nameFilters.size() === 1) {
+            return this.getName();
+        }
+        return "";
+    }
+    // void __fastcall CommandSelectorBase::setBox(CommandSelectorBase *this, BlockPos deltas)
+    setBox(deltas: BlockPos) {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.boxDeltas.set(deltas);
+        this.isPositionBound = true;
+        this.haveDeltas = true;
+    }
+    // CommandSelectorBase::setExplicitIdSelector(CommandSelectorBase *this, const std::string *playerName)
+    setExplicitIdSelector(playerName: string) {
+        const filter = CommandName.construct();
+        filter.name = playerName;
+        filter.inverted = false;
+        this.setType(CommandSelectionType.Players);
+        this.addNameFilter(filter);
+        filter.destruct();
+        this.count = 1;
+        this.isExplicitIdSelector = true;
+    }
+    setIncludeDeadPlayers(includeDead: boolean): void {
+        abstract();
+    }
+    // void __cdecl CommandSelectorBase::setOrder(CommandSelectorBase *this, CommandSelectionOrder order)
+    setOrder(order: CommandSelectionOrder): void {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.order = order;
+    }
+    // void __cdecl CommandSelectorBase::setPosition(CommandSelectorBase *this, CommandPosition position)
+    setPosition(position: CommandPosition): void {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.position = position;
+    }
+    setRadiusMin(rm: number) {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.radiusMaxSquared = rm * rm;
+        this.isPositionBound = true;
+        this.distanceFiltered = true;
+    }
+    setRadiusMax(r: number) {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.radiusMaxSquared = r * r;
+        this.isPositionBound = true;
+        this.distanceFiltered = true;
+    }
+    // void __cdecl CommandSelectorBase::setResultCount(CommandSelectorBase *this, size_t count)
+    setResultCount(count: number): void {
+        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.count = count;
+    }
+    setType(type: CommandSelectionType): void {
+        abstract();
+    }
 }
 
 /** @param args_1 forcePlayer */
@@ -177,10 +393,30 @@ CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js("??1CommandSelect
     { this: CommandSelectorBase, structureReturn: true },
     CommandOrigin,
 );
+CommandSelectorBase.prototype.filter = procHacker.js(
+    "?filter@CommandSelectorBase@@AEBA_NAEBVCommandOrigin@@AEAVActor@@@Z",
+    bool_t,
+    { this: CommandSelectorBase },
+    CommandOrigin,
+    Actor,
+);
 CommandSelectorBase.prototype.getName = procHacker.js(
     "?getName@CommandSelectorBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
     CxxString,
     { this: CommandSelectorBase, structureReturn: true },
+);
+CommandSelectorBase.prototype.hasName = procHacker.js("?hasName@CommandSelectorBase@@QEBA_NXZ", bool_t, { this: CommandSelectorBase });
+CommandSelectorBase.prototype.setIncludeDeadPlayers = procHacker.js(
+    "?setIncludeDeadPlayers@CommandSelectorBase@@QEAAX_N@Z",
+    void_t,
+    { this: CommandSelectorBase },
+    bool_t,
+);
+CommandSelectorBase.prototype.setType = procHacker.js(
+    "?setType@CommandSelectorBase@@QEAAXW4CommandSelectionType@@@Z",
+    void_t,
+    { this: CommandSelectorBase },
+    uint32_t,
 );
 
 @nativeClass()
@@ -314,83 +550,6 @@ CommandMessage.prototype.getMessage = procHacker.js(
     { this: CommandMessage, structureReturn: true },
     CommandOrigin,
 );
-
-@nativeClass()
-export class CommandPosition extends NativeStruct {
-    static readonly [CommandParameterType.symbol]: true;
-    @nativeField(float32_t)
-    x: float32_t;
-    @nativeField(float32_t)
-    y: float32_t;
-    @nativeField(float32_t)
-    z: float32_t;
-    @nativeField(bool_t)
-    isXRelative: bool_t;
-    @nativeField(bool_t)
-    isYRelative: bool_t;
-    @nativeField(bool_t)
-    isZRelative: bool_t;
-    @nativeField(bool_t)
-    local: bool_t;
-
-    static create(x: number, isXRelative: boolean, y: number, isYRelative: boolean, z: number, isZRelative: boolean, local: boolean): CommandPosition {
-        const ret = new CommandPosition(true);
-        ret.x = x;
-        ret.y = y;
-        ret.z = z;
-        ret.isXRelative = isXRelative;
-        ret.isYRelative = isYRelative;
-        ret.isZRelative = isZRelative;
-        ret.local = local;
-        return ret;
-    }
-
-    protected _getPosition(unknown: number, origin: CommandOrigin, offsetFromBase: Vec3): Vec3 {
-        abstract();
-    }
-    getPosition(origin: CommandOrigin, offsetFromBase: Vec3 = Vec3.create(0, 0, 0)): Vec3 {
-        return this._getPosition(0, origin, offsetFromBase);
-    }
-    protected _getBlockPosition(unknown: number, origin: CommandOrigin, offsetFromBase: Vec3): BlockPos {
-        abstract();
-    }
-    getBlockPosition(origin: CommandOrigin, offsetFromBase: Vec3 = Vec3.create(0, 0, 0)): BlockPos {
-        return this._getBlockPosition(0, origin, offsetFromBase);
-    }
-}
-(CommandPosition.prototype as any)._getPosition = procHacker.js(
-    "?getPosition@CommandPosition@@QEBA?AVVec3@@HAEBVCommandOrigin@@AEBV2@@Z",
-    Vec3,
-    { this: CommandPosition, structureReturn: true },
-    int32_t,
-    CommandOrigin,
-    Vec3,
-);
-(CommandPosition.prototype as any)._getBlockPosition = procHacker.js(
-    "?getBlockPos@CommandPosition@@QEBA?AVBlockPos@@HAEBVCommandOrigin@@AEBVVec3@@@Z",
-    BlockPos,
-    { this: CommandPosition, structureReturn: true },
-    int32_t,
-    CommandOrigin,
-    Vec3,
-);
-
-@nativeClass()
-export class CommandPositionFloat extends CommandPosition {
-    static readonly [CommandParameterType.symbol]: true;
-
-    static create(x: number, isXRelative: boolean, y: number, isYRelative: boolean, z: number, isZRelative: boolean, local: boolean): CommandPositionFloat {
-        const ret = CommandPosition.construct();
-        ret.x = x;
-        ret.y = y;
-        ret.z = z;
-        ret.isXRelative = isXRelative;
-        ret.isYRelative = isYRelative;
-        ret.isZRelative = isZRelative;
-        ret.local = local;
-        return ret;
-    }
-}
 
 @nativeClass()
 export class CommandRawText extends NativeClass {
