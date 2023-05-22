@@ -80,18 +80,15 @@ function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): b
     const player = gamemode.actor as ServerPlayer;
     /********************
      *   History
-     * old hooking point - BlockSource::checkBlockDestroyPermissions
+     * BlockSource::checkBlockDestroyPermissions
      * - fired multiple times if `server-authoritative-block-breaking` is enabled
      * - It has three refs: AgentCommands::DestroyCommand::isDone, GameMode::_canDestroy, GameMode::destroyBlock
      *
-     * old hooking point - GameMode::destroyBlock
-     * - fired with the sword attack of the creative mode user if `server-authoritative-block-breaking` is enabled
-     * - broken on 1.19.80.02
+     * GameMode::destroyBlock - does not fired on the survival mode.
+     * SurvivalMode::destroyBlock - it does not fire if the user changes the game mode to creative in game.
      *
-     * old hooking point - SurvivalMode::destroyBlock
-     * - it does not fire if the user changes the game mode to creative in game.
-     *
-     * current hooking point - SurvivalMode::destroyBlock & GameMode::_creativeDestroyBlock
+     * GameMode::_creativeDestroyBlock - it did not work on server-authoritative-block-breaking=false
+     * current hooking point - SurvivalMode::destroyBlock & GameMode::destroyBlock
      * - on server-authoritative-block-breaking=true & creative mode, GameMode::destroyBlock is fired twice
      */
 
