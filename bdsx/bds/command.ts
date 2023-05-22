@@ -237,11 +237,11 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
     familyFilters: CxxVector<InvertableFilter<HashedString>>;
     @nativeField(CxxVector.make(CommandName))
     tagFilters: CxxVector<CommandName>;
-    // std::vector<std::function<bool (const CommandOrigin &,const Actor &)>>
-    @nativeField(CxxVector.make(VoidPointer))
-    filterChain: CxxVector<VoidPointer>;
-    @nativeField(CommandPosition)
-    // @nativeField(CommandPosition, { offset: 0x18, relative: true })
+    /** std::vector<std::function<bool (const CommandOrigin &,const Actor &)>> */
+    /** component size is 0x40 */
+    // @nativeField(CxxVector.make(VoidPointer))
+    // filterChain: CxxVector<VoidPointer>;
+    @nativeField(CommandPosition, { offset: 0x18, relative: true })
     position: CommandPosition;
     @nativeField(Vec3)
     boxDeltas: Vec3;
@@ -296,19 +296,9 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
     hasName(): boolean {
         abstract();
     }
-    // void __cdecl CommandSelectorBase::addNameFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
-    addNameFilter(filter: CommandName): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
-        this.nameFilters.push(filter);
-    }
-    // void __cdecl CommandSelectorBase::addTagFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
-    addTagFilter(filter: CommandName): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
-        this.tagFilters.push(filter);
-    }
     // void __cdecl CommandSelectorBase::addTypeFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
     addTypeFilter(filter: CommandName): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.isExplicitIdSelector = false;
         const type = filter.name.toLowerCase();
         const parsedType = ActorDefinitionIdentifier.constructWith(type);
 
@@ -325,7 +315,7 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
         abstract();
     }
     // std::string *__cdecl CommandSelectorBase::getExplicitPlayerName(std::string *retstr, const CommandSelectorBase *this)
-    getExplicitPlayerName(deltas: BlockPos): string {
+    getExplicitPlayerName(): string {
         if (this.type === CommandSelectionType.Players && this.hasName() && this.nameFilters.size() === 1) {
             return this.getName();
         }
@@ -333,52 +323,45 @@ export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractC
     }
     // void __fastcall CommandSelectorBase::setBox(CommandSelectorBase *this, BlockPos deltas)
     setBox(deltas: BlockPos): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.isExplicitIdSelector = false;
         this.boxDeltas.set(deltas);
         this.isPositionBound = true;
         this.haveDeltas = true;
     }
-    // CommandSelectorBase::setExplicitIdSelector(CommandSelectorBase *this, const std::string *playerName)
-    setExplicitIdSelector(playerName: string): void {
-        const filter = CommandName.construct();
-        filter.name = playerName;
-        filter.inverted = false;
-        this.setType(CommandSelectionType.Players);
-        this.addNameFilter(filter);
-        filter.destruct();
-        this.count = 1;
-        this.isExplicitIdSelector = true;
-    }
+    // void __cdecl CommandSelectorBase::setIncludeDeadPlayers(CommandSelectorBase *this, bool includeDead)
     setIncludeDeadPlayers(includeDead: boolean): void {
         abstract();
     }
     // void __cdecl CommandSelectorBase::setOrder(CommandSelectorBase *this, CommandSelectionOrder order)
     setOrder(order: CommandSelectionOrder): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.isExplicitIdSelector = false;
         this.order = order;
     }
     // void __cdecl CommandSelectorBase::setPosition(CommandSelectorBase *this, CommandPosition position)
     setPosition(position: CommandPosition): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
-        this.position = position;
+        this.isExplicitIdSelector = false;
+        this.position.construct(position);
     }
+    // void __cdecl CommandSelectorBase::setRadiusMin(CommandSelectorBase *this, float rm)
     setRadiusMin(rm: number): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.isExplicitIdSelector = false;
         this.radiusMaxSquared = rm * rm;
         this.isPositionBound = true;
         this.distanceFiltered = true;
     }
+    // void __cdecl CommandSelectorBase::setRadiusMax(CommandSelectorBase *this, float r)
     setRadiusMax(r: number): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.isExplicitIdSelector = false;
         this.radiusMaxSquared = r * r;
         this.isPositionBound = true;
         this.distanceFiltered = true;
     }
     // void __cdecl CommandSelectorBase::setResultCount(CommandSelectorBase *this, size_t count)
     setResultCount(count: number): void {
-        if (this.isExplicitIdSelector) this.isExplicitIdSelector = false;
+        this.isExplicitIdSelector = false;
         this.count = count;
     }
+    // void __cdecl CommandSelectorBase::setType(CommandSelectorBase *this, CommandSelectionType type)
     setType(type: CommandSelectionType): void {
         abstract();
     }

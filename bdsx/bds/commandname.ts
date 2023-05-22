@@ -6,9 +6,11 @@ import { CxxString, bool_t, uint8_t } from "../nativetype";
 export class CommandName extends NativeClass {
     @nativeField(CxxString)
     name: string;
-    @nativeField(bool_t)
-    inverted: boolean;
+
     /** @deprecated */
     @nativeField(uint8_t, { ghost: true })
     unknown: uint8_t;
+
+    @nativeField(bool_t)
+    inverted: boolean;
 }
