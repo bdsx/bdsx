@@ -2522,6 +2522,7 @@ Block.prototype.getDirectSignal = procHacker.js(
 Block.prototype.isSignalSource = procHacker.js("?isSignalSource@Block@@QEBA_NXZ", bool_t, { this: Block });
 Block.prototype.getDestroySpeed = procHacker.js("?getDestroySpeed@Block@@QEBAMXZ", float32_t, { this: Block });
 
+// BDS calls BlockSource::setBlock (this, exactly same overload) when player moves to TheEnd Dimension, to secure the obsidian platform.
 (BlockSource.prototype as any)._setBlock = procHacker.js(
     "?setBlock@BlockSource@@QEAA_NHHHAEBVBlock@@HPEAVActor@@@Z",
     bool_t,
@@ -2533,28 +2534,12 @@ Block.prototype.getDestroySpeed = procHacker.js("?getDestroySpeed@Block@@QEBAMXZ
     int32_t,
     Actor,
 );
-BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, { this: BlockSource }, BlockPos);
-const UpdateBlockPacket$UpdateBlockPacket = procHacker.js(
-    "??0UpdateBlockPacket@@QEAA@AEBVBlockPos@@IIE@Z",
-    void_t,
-    null,
-    UpdateBlockPacket,
-    BlockPos,
-    uint32_t,
-    uint32_t,
-    uint8_t,
-);
 BlockSource.prototype.setBlock = function (blockPos: BlockPos, block: Block): boolean {
     if (block == null) throw Error("Block is null");
-    const retval = (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 0, null);
-    const pk = UpdateBlockPacket.allocate();
-    UpdateBlockPacket$UpdateBlockPacket(pk, blockPos, 0, block.getRuntimeId(), 3);
-    for (const player of bedrockServer.serverInstance.getPlayers()) {
-        player.sendNetworkPacket(pk);
-    }
-    pk.dispose();
-    return retval;
+    return (this as any)._setBlock(blockPos.x, blockPos.y, blockPos.z, block, 3, null);
 };
+
+BlockSource.prototype.getBlock = procHacker.js("?getBlock@BlockSource@@UEBAAEBVBlock@@AEBVBlockPos@@@Z", Block, { this: BlockSource }, BlockPos);
 BlockSource.prototype.getBlockEntity = procHacker.js(
     "?getBlockEntity@BlockSource@@QEAAPEAVBlockActor@@AEBVBlockPos@@@Z",
     BlockActor,
