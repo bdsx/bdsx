@@ -1,13 +1,13 @@
 // Custom Command
 import { DimensionId } from "bdsx/bds/actor";
 import { RelativeFloat, Vec3 } from "bdsx/bds/blockpos";
-import { ActorCommandSelector, Command, CommandPermissionLevel, CommandPosition, CommandRawText, PlayerCommandSelector } from "bdsx/bds/command";
+import { ActorCommandSelector, Command, CommandIntegerRange, CommandPermissionLevel, CommandPosition, CommandRawText, PlayerCommandSelector } from "bdsx/bds/command";
 import { JsonValue } from "bdsx/bds/connreq";
 import { command } from "bdsx/command";
 import { events } from "bdsx/event";
 import { fsutil } from "bdsx/fsutil";
 import { bedrockServer } from "bdsx/launcher";
-import { bool_t, CxxString, int32_t } from "bdsx/nativetype";
+import { CxxString, bool_t, int32_t } from "bdsx/nativetype";
 import { shellPrepareData } from "bdsx/shellprepare/data";
 import * as fs from "fs";
 import * as path from "path";
@@ -199,6 +199,16 @@ command
             list: softEnumExample,
         },
     );
+
+// integer range example, usage: `1..2` or `1..` or `..2`
+command.register("nnn", "integer range example").overload(
+    (param, origin, output) => {
+        output.success(`integer range example> origin=${origin.getName()}\n` + `min: ${param.range.min}\n` + `max: ${param.range.max}\n` + `inverted: ${param.range.inverted}`);
+    },
+    {
+        range: CommandIntegerRange,
+    },
+);
 
 // disable examples
 command.register("disable_example", "disable examples").overload((param, origin, output) => {

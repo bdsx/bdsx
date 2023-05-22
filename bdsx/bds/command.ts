@@ -486,8 +486,7 @@ export class CommandFilePath extends NativeClass {
 }
 
 @nativeClass()
-class CommandIntegerRange extends NativeStruct {
-    // Not exporting yet, not supported
+export class CommandIntegerRange extends NativeClass {
     static readonly [CommandParameterType.symbol]: true;
 
     @nativeField(int32_t)
@@ -496,7 +495,18 @@ class CommandIntegerRange extends NativeStruct {
     max: int32_t;
     @nativeField(bool_t)
     inverted: bool_t;
+
+    isWithinRange(value: number): boolean {
+        abstract();
+    }
 }
+
+// If using NativeStruct then all the fields will be garbage, and especially the `inverted` field will mostly become true, unless the garbage is exactly 0 by chance
+// BDS only sets it to true when the input starts with `!`, but does not do anything otherwise
+// BDS does not change it to false actively, because it assumed default is false
+// Calling ??0CommandIntegerRange@@QEAA@XZ sets all values to default
+CommandIntegerRange.prototype[NativeType.ctor] = procHacker.js("??0CommandIntegerRange@@QEAA@XZ", CommandIntegerRange, { this: CommandIntegerRange });
+CommandIntegerRange.prototype.isWithinRange = procHacker.js("?isWithinRange@CommandIntegerRange@@QEBA_NH@Z", bool_t, { this: CommandIntegerRange }, int32_t);
 
 @nativeClass()
 export class CommandItem extends NativeStruct {
@@ -1608,7 +1618,6 @@ const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js(
 
 // list for not implemented
 ("CommandRegistry::parse<AutomaticID<Dimension,int> >"); // CommandRegistry::parse<DimensionId>
-("CommandRegistry::parse<CommandIntegerRange>"); // Not supported yet(?) there is no type id for it
 ("CommandRegistry::parse<std::unique_ptr<Command,struct std::default_delete<Command> > >");
 ("CommandRegistry::parse<AgentCommand::Mode>");
 ("CommandRegistry::parse<AgentCommands::CollectCommand::CollectionSpecification>");
