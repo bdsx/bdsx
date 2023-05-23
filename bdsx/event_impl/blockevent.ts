@@ -111,6 +111,15 @@ function onCreativeBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: nu
     const player = gamemode.actor as ServerPlayer;
     const blockSource = player.getRegion();
     const itemStack = player.getMainhandSlot();
+
+    if (player.isCreative()) {
+        // bypass the sword destroy issue
+        const item = itemStack.getItem();
+        if (item !== null && !item.canDestroyInCreative()) {
+            return _onCreativeBlockDestroy(gamemode, blockPos, face);
+        }
+    }
+
     const event = new BlockDestroyEvent(player, blockPos, blockSource, itemStack, false);
     const canceled = events.blockDestroy.fire(event) === CANCEL;
     decay(blockPos);
