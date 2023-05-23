@@ -8,6 +8,7 @@ import {
     ActorWildcardCommandSelector,
     Command,
     CommandFilePath,
+    CommandIntegerRange,
     CommandItem,
     CommandMessage,
     CommandPosition,
@@ -33,7 +34,6 @@ const types = [
     PlayerCommandSelector,
     RelativeFloat,
     CommandFilePath,
-    // CommandIntegerRange,
     CommandMessage,
     CommandPosition,
     CommandPositionFloat,
@@ -45,6 +45,7 @@ const types = [
 ];
 const typesWithTypeIdPtr = [
     bool_t,
+    CommandIntegerRange,
     CommandItem,
     // Command.Block,
     Command.ActorDefinitionIdentifier,

@@ -11,17 +11,17 @@ import { CxxPair } from "../cxxpair";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { makefunc } from "../makefunc";
 import { mangle } from "../mangle";
-import { AbstractClass, KeysFilter, nativeClass, NativeClass, NativeClassType, nativeField, NativeStruct, vectorDeletingDestructor } from "../nativeclass";
+import { AbstractClass, KeysFilter, NativeClass, NativeClassType, NativeStruct, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import {
-    bin64_t,
-    bool_t,
     CommandParameterNativeType,
     CxxString,
+    NativeType,
+    Type,
+    bin64_t,
+    bool_t,
     float32_t,
     int16_t,
     int32_t,
-    NativeType,
-    Type,
     uint32_t,
     uint64_as_float_t,
     uint8_t,
@@ -36,14 +36,17 @@ import { Actor, ActorDefinitionIdentifier } from "./actor";
 import { Block } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import { CommandSymbols } from "./cmdsymbolloader";
+import { CommandName } from "./commandname";
 import { CommandOrigin } from "./commandorigin";
 import { JsonValue } from "./connreq";
 import { MobEffect } from "./effects";
+import { HashedString } from "./hashedstring";
 import { ItemStack } from "./inventory";
+import { InvertableFilter } from "./invertablefilter";
 import { AvailableCommandsPacket } from "./packets";
 import { ServerPlayer } from "./player";
 import { proc } from "./symbols";
-import { HasTypeId, typeid_t, type_id } from "./typeid";
+import { HasTypeId, type_id, typeid_t } from "./typeid";
 import commandParser = commandparser.commandParser;
 
 export enum CommandPermissionLevel {
@@ -119,201 +122,6 @@ export class MCRESULT extends NativeStruct {
 }
 MCRESULT.prototype.getFullCode = procHacker.js("?getFullCode@MCRESULT@@QEBAHXZ", int32_t, { this: MCRESULT });
 MCRESULT.prototype.isSuccess = procHacker.js("?isSuccess@MCRESULT@@QEBA_NXZ", bool_t, { this: MCRESULT });
-
-export enum CommandSelectionOrder {
-    Sorted,
-    InvertSorted,
-    Random,
-}
-
-export enum CommandSelectionType {
-    /** Used in @s */
-    Self,
-    /** Used in @e */
-    Entities,
-    /** Used in @a */
-    Players,
-    /** Used in @r */
-    DefaultPlayers,
-    /** Used in @c */
-    OwnedAgent,
-    /** Used in @v */
-    Agents,
-}
-
-@nativeClass(0xc1, 8)
-export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractClass {
-    private _newResults(origin: CommandOrigin): CxxSharedPtr<CxxVector<Actor>> {
-        abstract();
-    }
-    newResults<T extends TARGET>(origin: CommandOrigin, typeFilter?: new (...args: any[]) => T): T[] {
-        const list = this._newResults(origin);
-        if (typeFilter != null) {
-            const out: T[] = [];
-            for (const actor of list.p!) {
-                if (actor instanceof typeFilter) {
-                    out.push(actor as T);
-                }
-            }
-            list.dispose();
-            return out;
-        } else {
-            const actors = list.p!.toArray();
-            list.dispose();
-            return actors as T[];
-        }
-    }
-    getName(): string {
-        abstract();
-    }
-}
-
-/** @param args_1 forcePlayer */
-const CommandSelectorBaseCtor = procHacker.js("??0CommandSelectorBase@@IEAA@_N@Z", void_t, null, CommandSelectorBase, bool_t);
-CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js("??1CommandSelectorBase@@QEAA@XZ", void_t, { this: CommandSelectorBase });
-(CommandSelectorBase.prototype as any)._newResults = procHacker.js(
-    "?newResults@CommandSelectorBase@@IEBA?AV?$shared_ptr@V?$vector@PEAVActor@@V?$allocator@PEAVActor@@@std@@@std@@@std@@AEBVCommandOrigin@@@Z",
-    CxxSharedPtr.make(CxxVector.make(Actor.ref())),
-    { this: CommandSelectorBase, structureReturn: true },
-    CommandOrigin,
-);
-CommandSelectorBase.prototype.getName = procHacker.js(
-    "?getName@CommandSelectorBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
-    CxxString,
-    { this: CommandSelectorBase, structureReturn: true },
-);
-
-@nativeClass()
-export class WildcardCommandSelector<TARGET extends Actor> extends CommandSelectorBase<TARGET> {
-    static make<T extends Actor>(type: Type<T>): NativeClassType<WildcardCommandSelector<T>> {
-        return Singleton.newInstance(WildcardCommandSelector, type, () => {
-            class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {}
-            WildcardCommandSelectorImpl.define({});
-            Object.defineProperties(WildcardCommandSelectorImpl, {
-                name: { value: `WildcardCommandSelector<${type.name}>` },
-                symbol: {
-                    value: mangle.templateClass("WildcardCommandSelector", type),
-                },
-            });
-
-            return WildcardCommandSelectorImpl;
-        });
-    }
-}
-interface WildcardCommandSelectorType<T extends Actor> extends NativeClassType<WildcardCommandSelector<T>> {
-    [CommandParameterType.symbol]: true;
-}
-export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor) as WildcardCommandSelectorType<Actor>;
-ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
-    CommandSelectorBaseCtor(this, false);
-};
-export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(ServerPlayer) as WildcardCommandSelectorType<ServerPlayer>;
-PlayerWildcardCommandSelector.prototype[NativeType.ctor] = function () {
-    CommandSelectorBaseCtor(this, false);
-};
-
-@nativeClass()
-export class CommandSelector<TARGET extends Actor> extends CommandSelectorBase<TARGET> {
-    static make<T extends Actor>(type: Type<T>): NativeClassType<CommandSelector<T>> {
-        return Singleton.newInstance(CommandSelector, type, () => {
-            class CommandSelectorImpl extends CommandSelector<T> {}
-            CommandSelectorImpl.define({});
-            Object.defineProperties(CommandSelectorImpl, {
-                name: { value: `CommandSelector<${type.name}>` },
-                symbol: {
-                    value: mangle.templateClass("CommandSelector", type),
-                },
-            });
-
-            return CommandSelectorImpl;
-        });
-    }
-}
-interface CommandSelectorType<T extends Actor> extends NativeClassType<CommandSelector<T>> {
-    [CommandParameterType.symbol]: true;
-}
-export const ActorCommandSelector = CommandSelector.make(Actor) as CommandSelectorType<Actor>;
-ActorCommandSelector.prototype[NativeType.ctor] = function () {
-    CommandSelectorBaseCtor(this, false);
-};
-export const PlayerCommandSelector = CommandSelector.make(ServerPlayer) as CommandSelectorType<ServerPlayer>;
-PlayerCommandSelector.prototype[NativeType.ctor] = function () {
-    CommandSelectorBaseCtor(this, true);
-};
-
-@nativeClass()
-export class CommandFilePath extends NativeClass {
-    static readonly [CommandParameterType.symbol]: true;
-
-    @nativeField(CxxString)
-    text: CxxString;
-}
-
-@nativeClass()
-class CommandIntegerRange extends NativeStruct {
-    // Not exporting yet, not supported
-    static readonly [CommandParameterType.symbol]: true;
-
-    @nativeField(int32_t)
-    min: int32_t;
-    @nativeField(int32_t)
-    max: int32_t;
-    @nativeField(bool_t)
-    inverted: bool_t;
-}
-
-@nativeClass()
-export class CommandItem extends NativeStruct {
-    static readonly [CommandParameterType.symbol]: true;
-
-    @nativeField(int32_t)
-    version: int32_t;
-    @nativeField(int32_t)
-    id: int32_t;
-
-    createInstance(count: number): ItemStack {
-        abstract();
-    }
-}
-
-CommandItem.prototype.createInstance = procHacker.js(
-    "?createInstance@CommandItem@@QEBA?AV?$optional@VItemInstance@@@std@@HHPEAVCommandOutput@@_N@Z",
-    ItemStack,
-    { this: CommandItem, structureReturn: true },
-    int32_t,
-);
-
-export class CommandMessage extends NativeClass {
-    static readonly [CommandParameterType.symbol]: true;
-    data: CxxVector<CommandMessage.MessageComponent>;
-
-    getMessage(origin: CommandOrigin): string {
-        abstract();
-    }
-}
-
-export namespace CommandMessage {
-    @nativeClass(0x28)
-    export class MessageComponent extends NativeClass {
-        @nativeField(CxxString)
-        string: CxxString;
-        @nativeField(ActorCommandSelector.ref())
-        selection: WildcardCommandSelector<Actor>;
-    }
-}
-
-CommandMessage.abstract(
-    {
-        data: CxxVector.make(CommandMessage.MessageComponent),
-    },
-    0x18,
-);
-CommandMessage.prototype.getMessage = procHacker.js(
-    "?getMessage@CommandMessage@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVCommandOrigin@@@Z",
-    CxxString,
-    { this: CommandMessage, structureReturn: true },
-    CommandOrigin,
-);
 
 @nativeClass()
 export class CommandPosition extends NativeStruct {
@@ -391,6 +199,350 @@ export class CommandPositionFloat extends CommandPosition {
         return ret;
     }
 }
+
+export enum CommandSelectionOrder {
+    Sorted,
+    InvertSorted,
+    Random,
+}
+
+export enum CommandSelectionType {
+    /** Used in @s */
+    Self,
+    /** Used in @e */
+    Entities,
+    /** Used in @a */
+    Players,
+    /** Used in @r */
+    DefaultPlayers,
+    /** Used in @c */
+    OwnedAgent,
+    /** Used in @v */
+    Agents,
+}
+
+@nativeClass(0xc1, 8)
+export class CommandSelectorBase<TARGET extends Actor = Actor> extends AbstractClass {
+    @nativeField(uint32_t)
+    version: number;
+    @nativeField(uint32_t)
+    type: CommandSelectionType;
+    @nativeField(uint32_t)
+    order: CommandSelectionOrder;
+    @nativeField(CxxVector.make(CommandName))
+    nameFilters: CxxVector<CommandName>;
+    @nativeField(CxxVector.make(InvertableFilter.make(ActorDefinitionIdentifier)))
+    typeFilters: CxxVector<InvertableFilter<ActorDefinitionIdentifier>>;
+    @nativeField(CxxVector.make(InvertableFilter.make(HashedString)))
+    familyFilters: CxxVector<InvertableFilter<HashedString>>;
+    @nativeField(CxxVector.make(CommandName))
+    tagFilters: CxxVector<CommandName>;
+    /** std::vector<std::function<bool (const CommandOrigin &,const Actor &)>> */
+    /** component size is 0x40 */
+    // @nativeField(CxxVector.make(VoidPointer))
+    // filterChain: CxxVector<VoidPointer>;
+    @nativeField(CommandPosition, { offset: 0x18, relative: true })
+    position: CommandPosition;
+    @nativeField(Vec3)
+    boxDeltas: Vec3;
+    @nativeField(float32_t)
+    radiusMinSquared: number;
+    @nativeField(float32_t)
+    radiusMaxSquared: number;
+    @nativeField(uint64_as_float_t)
+    count: number;
+    @nativeField(bool_t)
+    includeDeadPlayers: boolean;
+    @nativeField(bool_t)
+    isPositionBound: boolean;
+    @nativeField(bool_t)
+    distanceFiltered: boolean;
+    @nativeField(bool_t)
+    positionFiltered: boolean;
+    @nativeField(bool_t)
+    countFiltered: boolean;
+    @nativeField(bool_t)
+    haveDeltas: boolean;
+    @nativeField(bool_t)
+    forcePlayer: boolean;
+    @nativeField(bool_t)
+    excludeAgents: boolean;
+    @nativeField(bool_t)
+    isExplicitIdSelector: boolean;
+
+    private _newResults(origin: CommandOrigin): CxxSharedPtr<CxxVector<Actor>> {
+        abstract();
+    }
+    newResults<T extends TARGET>(origin: CommandOrigin, typeFilter?: new (...args: any[]) => T): T[] {
+        const list = this._newResults(origin);
+        if (typeFilter != null) {
+            const out: T[] = [];
+            for (const actor of list.p!) {
+                if (actor instanceof typeFilter) {
+                    out.push(actor as T);
+                }
+            }
+            list.dispose();
+            return out;
+        } else {
+            const actors = list.p!.toArray();
+            list.dispose();
+            return actors as T[];
+        }
+    }
+    getName(): string {
+        abstract();
+    }
+    hasName(): boolean {
+        abstract();
+    }
+    // void __cdecl CommandSelectorBase::addTypeFilter(CommandSelectorBase *this, const InvertableFilter<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > *filter)
+    addTypeFilter(filter: CommandName): void {
+        this.isExplicitIdSelector = false;
+        const type = filter.name.toLowerCase();
+        const parsedType = ActorDefinitionIdentifier.constructWith(type);
+
+        const typeFilter = InvertableFilter.make(ActorDefinitionIdentifier).construct();
+        typeFilter.setValue(parsedType);
+        typeFilter.inverted = filter.inverted;
+        this.typeFilters.push(typeFilter);
+
+        typeFilter.destruct();
+        parsedType.destruct();
+    }
+    // bool __cdecl CommandSelectorBase::filter(const CommandSelectorBase *this, const CommandOrigin *origin, Actor *entity)
+    filter(origin: CommandOrigin, entity: Actor): boolean {
+        abstract();
+    }
+    // std::string *__cdecl CommandSelectorBase::getExplicitPlayerName(std::string *retstr, const CommandSelectorBase *this)
+    getExplicitPlayerName(): string {
+        if (this.type === CommandSelectionType.Players && this.hasName() && this.nameFilters.size() === 1) {
+            return this.getName();
+        }
+        return "";
+    }
+    // void __fastcall CommandSelectorBase::setBox(CommandSelectorBase *this, BlockPos deltas)
+    setBox(deltas: BlockPos): void {
+        this.isExplicitIdSelector = false;
+        this.boxDeltas.set(deltas);
+        this.isPositionBound = true;
+        this.haveDeltas = true;
+    }
+    // void __cdecl CommandSelectorBase::setIncludeDeadPlayers(CommandSelectorBase *this, bool includeDead)
+    setIncludeDeadPlayers(includeDead: boolean): void {
+        abstract();
+    }
+    // void __cdecl CommandSelectorBase::setOrder(CommandSelectorBase *this, CommandSelectionOrder order)
+    setOrder(order: CommandSelectionOrder): void {
+        this.isExplicitIdSelector = false;
+        this.order = order;
+    }
+    // void __cdecl CommandSelectorBase::setPosition(CommandSelectorBase *this, CommandPosition position)
+    setPosition(position: CommandPosition): void {
+        this.isExplicitIdSelector = false;
+        this.position.construct(position);
+    }
+    // void __cdecl CommandSelectorBase::setRadiusMin(CommandSelectorBase *this, float rm)
+    setRadiusMin(rm: number): void {
+        this.isExplicitIdSelector = false;
+        this.radiusMaxSquared = rm * rm;
+        this.isPositionBound = true;
+        this.distanceFiltered = true;
+    }
+    // void __cdecl CommandSelectorBase::setRadiusMax(CommandSelectorBase *this, float r)
+    setRadiusMax(r: number): void {
+        this.isExplicitIdSelector = false;
+        this.radiusMaxSquared = r * r;
+        this.isPositionBound = true;
+        this.distanceFiltered = true;
+    }
+    // void __cdecl CommandSelectorBase::setResultCount(CommandSelectorBase *this, size_t count)
+    setResultCount(count: number): void {
+        this.isExplicitIdSelector = false;
+        this.count = count;
+    }
+    // void __cdecl CommandSelectorBase::setType(CommandSelectorBase *this, CommandSelectionType type)
+    setType(type: CommandSelectionType): void {
+        abstract();
+    }
+}
+
+/** @param args_1 forcePlayer */
+const CommandSelectorBaseCtor = procHacker.js("??0CommandSelectorBase@@IEAA@_N@Z", void_t, null, CommandSelectorBase, bool_t);
+CommandSelectorBase.prototype[NativeType.dtor] = procHacker.js("??1CommandSelectorBase@@QEAA@XZ", void_t, { this: CommandSelectorBase });
+(CommandSelectorBase.prototype as any)._newResults = procHacker.js(
+    "?newResults@CommandSelectorBase@@IEBA?AV?$shared_ptr@V?$vector@PEAVActor@@V?$allocator@PEAVActor@@@std@@@std@@@std@@AEBVCommandOrigin@@@Z",
+    CxxSharedPtr.make(CxxVector.make(Actor.ref())),
+    { this: CommandSelectorBase, structureReturn: true },
+    CommandOrigin,
+);
+CommandSelectorBase.prototype.filter = procHacker.js(
+    "?filter@CommandSelectorBase@@AEBA_NAEBVCommandOrigin@@AEAVActor@@@Z",
+    bool_t,
+    { this: CommandSelectorBase },
+    CommandOrigin,
+    Actor,
+);
+CommandSelectorBase.prototype.getName = procHacker.js(
+    "?getName@CommandSelectorBase@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+    CxxString,
+    { this: CommandSelectorBase, structureReturn: true },
+);
+CommandSelectorBase.prototype.hasName = procHacker.js("?hasName@CommandSelectorBase@@QEBA_NXZ", bool_t, { this: CommandSelectorBase });
+CommandSelectorBase.prototype.setIncludeDeadPlayers = procHacker.js(
+    "?setIncludeDeadPlayers@CommandSelectorBase@@QEAAX_N@Z",
+    void_t,
+    { this: CommandSelectorBase },
+    bool_t,
+);
+CommandSelectorBase.prototype.setType = procHacker.js(
+    "?setType@CommandSelectorBase@@QEAAXW4CommandSelectionType@@@Z",
+    void_t,
+    { this: CommandSelectorBase },
+    uint32_t,
+);
+
+@nativeClass()
+export class WildcardCommandSelector<TARGET extends Actor> extends CommandSelectorBase<TARGET> {
+    static make<T extends Actor>(type: Type<T>): NativeClassType<WildcardCommandSelector<T>> {
+        return Singleton.newInstance(WildcardCommandSelector, type, () => {
+            class WildcardCommandSelectorImpl extends WildcardCommandSelector<T> {}
+            WildcardCommandSelectorImpl.define({});
+            Object.defineProperties(WildcardCommandSelectorImpl, {
+                name: { value: `WildcardCommandSelector<${type.name}>` },
+                symbol: {
+                    value: mangle.templateClass("WildcardCommandSelector", type),
+                },
+            });
+
+            return WildcardCommandSelectorImpl;
+        });
+    }
+}
+interface WildcardCommandSelectorType<T extends Actor> extends NativeClassType<WildcardCommandSelector<T>> {
+    [CommandParameterType.symbol]: true;
+}
+export const ActorWildcardCommandSelector = WildcardCommandSelector.make(Actor) as WildcardCommandSelectorType<Actor>;
+ActorWildcardCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
+export const PlayerWildcardCommandSelector = WildcardCommandSelector.make(ServerPlayer) as WildcardCommandSelectorType<ServerPlayer>;
+PlayerWildcardCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
+
+@nativeClass()
+export class CommandSelector<TARGET extends Actor> extends CommandSelectorBase<TARGET> {
+    static make<T extends Actor>(type: Type<T>): NativeClassType<CommandSelector<T>> {
+        return Singleton.newInstance(CommandSelector, type, () => {
+            class CommandSelectorImpl extends CommandSelector<T> {}
+            CommandSelectorImpl.define({});
+            Object.defineProperties(CommandSelectorImpl, {
+                name: { value: `CommandSelector<${type.name}>` },
+                symbol: {
+                    value: mangle.templateClass("CommandSelector", type),
+                },
+            });
+
+            return CommandSelectorImpl;
+        });
+    }
+}
+interface CommandSelectorType<T extends Actor> extends NativeClassType<CommandSelector<T>> {
+    [CommandParameterType.symbol]: true;
+}
+export const ActorCommandSelector = CommandSelector.make(Actor) as CommandSelectorType<Actor>;
+ActorCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, false);
+};
+export const PlayerCommandSelector = CommandSelector.make(ServerPlayer) as CommandSelectorType<ServerPlayer>;
+PlayerCommandSelector.prototype[NativeType.ctor] = function () {
+    CommandSelectorBaseCtor(this, true);
+};
+
+@nativeClass()
+export class CommandFilePath extends NativeClass {
+    static readonly [CommandParameterType.symbol]: true;
+
+    @nativeField(CxxString)
+    text: CxxString;
+}
+
+@nativeClass()
+export class CommandIntegerRange extends NativeClass {
+    static readonly [CommandParameterType.symbol]: true;
+
+    @nativeField(int32_t)
+    min: int32_t;
+    @nativeField(int32_t)
+    max: int32_t;
+    @nativeField(bool_t)
+    inverted: bool_t;
+
+    isWithinRange(value: number): boolean {
+        abstract();
+    }
+}
+
+// If using NativeStruct then all the fields will be garbage, and especially the `inverted` field will mostly become true, unless the garbage is exactly 0 by chance
+// BDS only sets it to true when the input starts with `!`, but does not do anything otherwise
+// BDS does not change it to false actively, because it assumed default is false
+// Calling ??0CommandIntegerRange@@QEAA@XZ sets all values to default
+CommandIntegerRange.prototype[NativeType.ctor] = procHacker.js("??0CommandIntegerRange@@QEAA@XZ", CommandIntegerRange, { this: CommandIntegerRange });
+CommandIntegerRange.prototype.isWithinRange = procHacker.js("?isWithinRange@CommandIntegerRange@@QEBA_NH@Z", bool_t, { this: CommandIntegerRange }, int32_t);
+
+@nativeClass()
+export class CommandItem extends NativeStruct {
+    static readonly [CommandParameterType.symbol]: true;
+
+    @nativeField(int32_t)
+    version: int32_t;
+    @nativeField(int32_t)
+    id: int32_t;
+
+    createInstance(count: number): ItemStack {
+        abstract();
+    }
+}
+
+CommandItem.prototype.createInstance = procHacker.js(
+    "?createInstance@CommandItem@@QEBA?AV?$optional@VItemInstance@@@std@@HHPEAVCommandOutput@@_N@Z",
+    ItemStack,
+    { this: CommandItem, structureReturn: true },
+    int32_t,
+);
+
+export class CommandMessage extends NativeClass {
+    static readonly [CommandParameterType.symbol]: true;
+    data: CxxVector<CommandMessage.MessageComponent>;
+
+    getMessage(origin: CommandOrigin): string {
+        abstract();
+    }
+}
+
+export namespace CommandMessage {
+    @nativeClass(0x28)
+    export class MessageComponent extends NativeClass {
+        @nativeField(CxxString)
+        string: CxxString;
+        @nativeField(ActorCommandSelector.ref())
+        selection: WildcardCommandSelector<Actor>;
+    }
+}
+
+CommandMessage.abstract(
+    {
+        data: CxxVector.make(CommandMessage.MessageComponent),
+    },
+    0x18,
+);
+CommandMessage.prototype.getMessage = procHacker.js(
+    "?getMessage@CommandMessage@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVCommandOrigin@@@Z",
+    CxxString,
+    { this: CommandMessage, structureReturn: true },
+    CommandOrigin,
+);
 
 @nativeClass()
 export class CommandRawText extends NativeClass {
@@ -1449,7 +1601,6 @@ const CommandSoftEnumRegistry$updateSoftEnum = procHacker.js(
 
 // list for not implemented
 ("CommandRegistry::parse<AutomaticID<Dimension,int> >"); // CommandRegistry::parse<DimensionId>
-("CommandRegistry::parse<CommandIntegerRange>"); // Not supported yet(?) there is no type id for it
 ("CommandRegistry::parse<std::unique_ptr<Command,struct std::default_delete<Command> > >");
 ("CommandRegistry::parse<AgentCommand::Mode>");
 ("CommandRegistry::parse<AgentCommands::CollectCommand::CollectionSpecification>");
