@@ -571,6 +571,8 @@ export class Inventory extends FillingContainer {
     }
 }
 
+export class EnderChestContainer extends FillingContainer {}
+
 export class PlayerUIContainer extends SimpleContainer {}
 
 export enum PlayerUISlot {

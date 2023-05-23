@@ -4,7 +4,7 @@ import { bin } from "../bin";
 import { capi } from "../capi";
 import { commandParser } from "../commandparser";
 import { CommandResult, CommandResultType } from "../commandresult";
-import { abstract, AttributeName, VectorXYZ } from "../common";
+import { AttributeName, VectorXYZ, abstract } from "../common";
 import { AllocatedPointer, StaticPointer, VoidPointer } from "../core";
 import { CxxVector, CxxVectorToArray } from "../cxxvector";
 import { decay } from "../decay";
@@ -12,20 +12,20 @@ import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { mce } from "../mce";
-import { NativeClass, nativeClass, NativeClassType, nativeField, vectorDeletingDestructor } from "../nativeclass";
+import { NativeClass, NativeClassType, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
 import {
-    bin64_t,
-    bool_t,
     CxxString,
     CxxStringView,
     CxxStringWith8Bytes,
+    NativeType,
+    Type,
+    bin64_t,
+    bool_t,
     float32_t,
     int16_t,
     int32_t,
     int64_as_float_t,
     int8_t,
-    NativeType,
-    Type,
     uint16_t,
     uint32_t,
     uint8_t,
@@ -93,6 +93,7 @@ import { HashedString, HashedStringToString } from "./hashedstring";
 import {
     ComponentItem,
     Container,
+    EnderChestContainer,
     FillingContainer,
     Inventory,
     InventoryAction,
@@ -171,13 +172,12 @@ import {
     SetTimePacket,
     UpdateAbilitiesPacket,
     UpdateAttributesPacket,
-    UpdateBlockPacket,
 } from "./packets";
 import { BatchedNetworkPeer } from "./peer";
 import { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { RakNet } from "./raknet";
 import { RakNetConnector } from "./raknetinstance";
-import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, Scoreboard, ScoreboardId, ScoreboardIdentityRef, ScoreInfo } from "./scoreboard";
+import { DisplayObjective, IdentityDefinition, Objective, ObjectiveCriteria, ScoreInfo, Scoreboard, ScoreboardId, ScoreboardIdentityRef } from "./scoreboard";
 import {
     DedicatedServer,
     Minecraft,
@@ -1306,7 +1306,9 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
+    enderChestContainer: [EnderChestContainer.ref(), 0xcc0], // accessed in Player::Player (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
     playerUIContainer: [PlayerUIContainer, 0xd78], // accessed in Player::readAdditionalSaveData when calling PlayerUIContainer::load
+    gameMode: [GameMode.ref(), 0xea8], // accessed in ServerNetworkHandler::handle(NetworkIdentifier const &,PlayerActionPacket const &) when calling GameMode::getDestroyRate
     deviceId: [CxxString, 0x1d10], // accessed in AddPlayerPacket::AddPlayerPacket (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
