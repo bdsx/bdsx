@@ -10,7 +10,7 @@ import { Block } from "./block";
 import { BlockPos, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
 import { Certificate } from "./connreq";
-import { GameMode } from "./gamemode";
+import type { GameMode } from "./gamemode";
 import { HashedString } from "./hashedstring";
 import { ArmorSlot, ContainerId, EnderChestContainer, Item, ItemStack, PlayerInventory, PlayerUIContainer, PlayerUISlot } from "./inventory";
 import type { NetworkIdentifier, ServerNetworkHandler } from "./networkidentifier";
