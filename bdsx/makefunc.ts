@@ -369,17 +369,16 @@ export namespace makefunc {
         }
 
         const args: string[] = [];
+        let needThis: boolean;
+        if ((needThis = options.this != null)) {
+            param(`thisVar`, options.this);
+        }
         if (options.structureReturn) {
             if (isBaseOf(returnTypeResolved, StructurePointer)) {
                 nativeParam(`retVar`, returnTypeResolved);
             } else {
                 nativeParam(`retVar`, StaticPointer);
             }
-        }
-
-        let needThis: boolean;
-        if ((needThis = options.this != null)) {
-            param(`thisVar`, options.this);
         }
         for (let i = 0; i < paramsTypeResolved.length; i++) {
             const type = paramsTypeResolved[i];
