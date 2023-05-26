@@ -2,8 +2,8 @@ import { bin } from "../bin";
 import { abstract } from "../common";
 import { AllocatedPointer, StaticPointer } from "../core";
 import { CxxVector } from "../cxxvector";
-import { AbstractClass, nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
+import { AbstractClass, NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { CxxString, bin64_t, bool_t, int32_t, int64_as_float_t, uint32_t, uint8_t } from "../nativetype";
 import { Actor, ActorUniqueID } from "./actor";
 import type { Player } from "./player";
 import { proc } from "./symbols";
@@ -269,8 +269,7 @@ export class ScoreboardIdentityRef extends NativeClass {
     modifyScoreInObjective(objective: Objective, score: number, action: PlayerScoreSetFunction): number {
         const result = new AllocatedPointer(4);
         this._modifyScoreInObjective(result, objective, score, action);
-        const retval = result.getInt32();
-        return retval;
+        return result.getInt32();
     }
 
     getIdentityType(): IdentityDefinition.Type {
