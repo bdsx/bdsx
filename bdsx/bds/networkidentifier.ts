@@ -3,10 +3,10 @@ import { abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { dll } from "../dll";
 import { events } from "../event";
-import { Hashable, HashSet } from "../hashset";
+import { HashSet, Hashable } from "../hashset";
 import { makefunc } from "../makefunc";
-import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
-import { bin64_t, CxxString, int32_t, NativeType, void_t } from "../nativetype";
+import { AbstractClass, NativeClass, NativeStruct, nativeClass, nativeField } from "../nativeclass";
+import { CxxString, NativeType, bin64_t, int32_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { remapAndPrintError } from "../source-map-support";
@@ -63,7 +63,7 @@ class ServerNetworkHandler$Client extends AbstractClass {}
 export class ServerNetworkHandler extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
-    @nativeField(CxxString, 0x288) // accessed in ServerNetworkHandler::allowIncomingConnections
+    @nativeField(CxxString, 0x288) // serverName, accessed in ServerNetworkHandler::allowIncomingConnections
     readonly motd: CxxString;
     @nativeField(int32_t, 0x300) // accessed in ServerNetworkHandler::setMaxNumPlayers
     readonly maxPlayers: int32_t;
@@ -83,7 +83,7 @@ export class ServerNetworkHandler extends AbstractClass {
     setMaxPlayers(count: number): void {
         this.setMaxNumPlayers(count);
     }
-    allowIncomingConnections(motd: string, b: boolean): void {
+    allowIncomingConnections(motd: string, shouldAnnounce: boolean): void {
         abstract();
     }
     updateServerAnnouncement(): void {
