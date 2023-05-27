@@ -94,7 +94,7 @@ export type Enchantments = EnchantmentNames | Enchant.Type;
 
 @nativeClass()
 export class EnchantmentInstance extends NativeStruct {
-    @nativeField(int32_t)
+    @nativeField(uint8_t)
     type: Enchantments;
     @nativeField(int32_t)
     level: int32_t;
