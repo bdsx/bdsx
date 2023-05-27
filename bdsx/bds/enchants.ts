@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { CxxVector } from "../cxxvector";
 import { NativeClass, nativeClass, nativeField, NativeStruct } from "../nativeclass";
-import { int32_t, uint32_t } from "../nativetype";
+import { int32_t, uint32_t, uint8_t } from "../nativetype";
 import { ItemStack } from "./inventory";
 
 export namespace Enchant {
@@ -105,12 +105,12 @@ export class ItemEnchants extends NativeClass {
     @nativeField(uint32_t)
     slot: uint32_t;
     @nativeField(CxxVector.make(EnchantmentInstance), 0x08)
-    /** 1-8 */
+    /** 0-8, 25, 36-37 */
     enchants1: CxxVector<EnchantmentInstance>;
-    /** 9-18 */
+    /** 9-18, 21, 23, 29 */
     @nativeField(CxxVector.make(EnchantmentInstance))
     enchants2: CxxVector<EnchantmentInstance>;
-    /** >19 */
+    /** 12, 15, 19-20, 22, 24, 26, 27-28, 30-35 */
     @nativeField(CxxVector.make(EnchantmentInstance))
     enchants3: CxxVector<EnchantmentInstance>;
 }
