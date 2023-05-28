@@ -15,6 +15,8 @@ import { CompoundTag, NBT } from "./nbt";
 import type { ServerPlayer } from "./player";
 import { proc } from "./symbols";
 
+const CxxVectorString = CxxVector.make(CxxString);
+
 /**
  * Values from 1 to 100 are for a player's container counter.
  */
@@ -338,7 +340,6 @@ export class ItemStackBase extends NativeClass {
         abstract();
     }
     setCustomLore(lores: string[] | string): void {
-        const CxxVectorString = CxxVector.make(CxxString);
         const cxxvector = CxxVectorString.construct();
         if (typeof lores === "string") {
             cxxvector.push(lores);
