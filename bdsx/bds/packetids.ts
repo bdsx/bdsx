@@ -222,5 +222,12 @@ export enum MinecraftPacketIds { // int32_t
     GameTestRequest = 0xc2,
     GameTestResults = 0xc3,
     UpdateClientInputLocks = 0xc4,
+    ClientCheatAbilityPacket = 0xc5,
+    CameraPresetsPacket = 0xc6,
+    UnlockedRecipesPacket = 0xc7,
+    CameraInstructionPacket = 0x12c,
+    CompressedBiomeDefinitionListPacket = 0x12d,
+    TrimDataPacket = 0x12e,
+    OpenSignPacket = 0x12f,
 }
 (MinecraftPacketIds as any).__proto__ = null;
