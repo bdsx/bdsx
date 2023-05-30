@@ -232,6 +232,7 @@ Tester.concurrency(
                 if (!nonsamehex) this.equals(hex(opers.asm().buffer()), hexcode.toUpperCase());
             };
 
+            assert("0f 57 c1", "xorps xmm0, xmm1");
             assert("83 39 00", "cmp dword ptr [rcx], 0x0");
             assert("8b 0c 31", "mov ecx, dword ptr [rcx+rsi]");
             assert("f3 0f 11 89 a4 03 00 00", "movss dword ptr [rcx+0x3a4], xmm1");

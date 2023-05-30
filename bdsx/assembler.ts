@@ -58,11 +58,24 @@ enum MovOper {
 }
 
 enum FloatOper {
-    None,
-    Convert_f2i,
-    Convert_i2f,
-    ConvertTruncated_f2i,
-    ConvertPrecision,
+    None = 0,
+    Convert_f2i = 0x2d,
+    Convert_i2f = 0x2a,
+    ConvertTruncated_f2i = 0x2c,
+    ConvertPrecision = 0x5a,
+    Sqrt = 0x51,
+    Rsqrt = 0x52,
+    Rcp = 0x53,
+    And = 0x54,
+    Andn = 0x55,
+    Or = 0x56,
+    Xor = 0x57,
+    Add = 0x58,
+    Mul = 0x59,
+    Sub = 0x5c,
+    Min = 0x5d,
+    Div = 0x5e,
+    Max = 0x5f,
 }
 
 enum FloatOperSize {
@@ -1982,23 +1995,11 @@ export class X64Assembler {
         }
         this._rex(r1, r2, null, size);
         this.put(0x0f);
-        switch (foper) {
-            case FloatOper.ConvertPrecision:
-                this.put(0x5a);
-                break;
-            case FloatOper.ConvertTruncated_f2i:
-                this.put(0x2c);
-                break;
-            case FloatOper.Convert_f2i:
-                this.put(0x2d);
-                break;
-            case FloatOper.Convert_i2f:
-                this.put(0x2a);
-                break;
-            default:
-                if (oper === MovOper.Write) this.put(0x11);
-                else this.put(0x10);
-                break;
+        if (foper !== FloatOper.None) {
+            this.put(foper);
+        } else {
+            if (oper === MovOper.Write) this.put(0x11);
+            else this.put(0x10);
         }
         return this._target(0, r1, r2, r3, r1, multiply, offset, oper);
     }
@@ -2113,6 +2114,46 @@ export class X64Assembler {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.Convert_f2i, size);
     }
 
+
+    sqrtps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Sqrt, OperationSize.dword);
+    }
+    rsqrtps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Rsqrt, OperationSize.dword);
+    }
+    rcpps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Rcp, OperationSize.dword);
+    }
+    andps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.And, OperationSize.dword);
+    }
+    andnps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Andn, OperationSize.dword);
+    }
+    orps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Or, OperationSize.dword);
+    }
+    xorps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Xor, OperationSize.dword);
+    }
+    addps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Add, OperationSize.dword);
+    }
+    mulps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Mul, OperationSize.dword);
+    }
+    subps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Sub, OperationSize.dword);
+    }
+    minps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Min, OperationSize.dword);
+    }
+    divps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Div, OperationSize.dword);
+    }
+    maxps_f_f(dest: FloatRegister, src: FloatRegister): this {
+        return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Max, OperationSize.dword);
+    }
     cvtsd2ss_f_f(dest: FloatRegister, src: FloatRegister): this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.doublePrecision, MovOper.Register, FloatOper.ConvertPrecision, OperationSize.dword);
     }

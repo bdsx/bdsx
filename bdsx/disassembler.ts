@@ -481,60 +481,100 @@ function walk_raw(ptr: NativePointer): asm.Operation | null {
                                         // packed
                                         return walk_addr_binary_oper("movups", 1, readbit, info, OperationSize.xmmword, ptr, true);
                                     }
+                                    break;
                                 }
                                 default:
-                                    if (v2 === 0x5a) {
-                                        // convert precision
-                                        if (foperSize === OperationSize.qword) {
-                                            return walk_addr_binary_oper("cvtsd2ss", 1, 1, info, OperationSize.qword, ptr, true);
-                                        } else if (foperSize === OperationSize.dword) {
-                                            return walk_addr_binary_oper("cvtsd2ss", 1, 1, info, OperationSize.dword, ptr, true);
-                                        } else {
-                                            if (wordoper) {
-                                                return walk_addr_binary_oper("cvtpd2ps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                    switch (v2) {
+                                        case 0x50:
+                                            // movmskps eax, xmm0
+                                            // unimplemented
+                                            break;
+                                        case 0x51:
+                                            return walk_addr_binary_oper("sqrtps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x52:
+                                            return walk_addr_binary_oper("rsqrtps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x53:
+                                            return walk_addr_binary_oper("rcpps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x54:
+                                            return walk_addr_binary_oper("andps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x55:
+                                            return walk_addr_binary_oper("andnps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x56:
+                                            return walk_addr_binary_oper("orps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x57:
+                                            return walk_addr_binary_oper("xorps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x58:
+                                            return walk_addr_binary_oper("addps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x59:
+                                            return walk_addr_binary_oper("mulps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x5a:
+                                            // convert precision
+                                            if (foperSize === OperationSize.qword) {
+                                                return walk_addr_binary_oper("cvtsd2ss", 1, 1, info, OperationSize.qword, ptr, true);
+                                            } else if (foperSize === OperationSize.dword) {
+                                                return walk_addr_binary_oper("cvtsd2ss", 1, 1, info, OperationSize.dword, ptr, true);
                                             } else {
-                                                return walk_addr_binary_oper("cvtps2pd", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                if (wordoper) {
+                                                    return walk_addr_binary_oper("cvtpd2ps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                } else {
+                                                    return walk_addr_binary_oper("cvtps2pd", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                }
                                             }
-                                        }
-                                    } else if (v2 === 0x2c) {
-                                        // truncated f2i
-                                        if (foperSize === OperationSize.qword) {
-                                            return walk_addr_binary_oper("cvttsd2si", 1, 1, info, OperationSize.qword, ptr, true);
-                                        } else if (foperSize === OperationSize.dword) {
-                                            return walk_addr_binary_oper("cvttss2si", 1, 1, info, OperationSize.qword, ptr, true);
-                                        } else {
-                                            if (wordoper) {
-                                                return walk_addr_binary_oper("cvttpd2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                            break;
+                                        case 0x5b:
+                                            // cvtdq2ps xmm0, xmm0
+                                            // unimplemented
+                                            break;
+                                        case 0x5c:
+                                            return walk_addr_binary_oper("subps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x5d:
+                                            return walk_addr_binary_oper("minps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x5e:
+                                            return walk_addr_binary_oper("divps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x5f:
+                                            return walk_addr_binary_oper("maxps", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                        case 0x2c:
+                                            // truncated f2i
+                                            if (foperSize === OperationSize.qword) {
+                                                return walk_addr_binary_oper("cvttsd2si", 1, 1, info, OperationSize.qword, ptr, true);
+                                            } else if (foperSize === OperationSize.dword) {
+                                                return walk_addr_binary_oper("cvttss2si", 1, 1, info, OperationSize.qword, ptr, true);
                                             } else {
-                                                return walk_addr_binary_oper("cvttps2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                if (wordoper) {
+                                                    return walk_addr_binary_oper("cvttpd2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                } else {
+                                                    return walk_addr_binary_oper("cvttps2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                }
                                             }
-                                        }
-                                    } else if (v2 === 0x2d) {
-                                        // f2i
-                                        if (foperSize === OperationSize.qword) {
-                                            return walk_addr_binary_oper("cvtsd2si", 1, 1, info, OperationSize.qword, ptr, true);
-                                        } else if (foperSize === OperationSize.dword) {
-                                            return walk_addr_binary_oper("cvtss2si", 1, 1, info, OperationSize.dword, ptr, true);
-                                        } else {
-                                            if (wordoper) {
-                                                return walk_addr_binary_oper("cvtpd2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                            break;
+                                        case 0x2d:
+                                            // f2i
+                                            if (foperSize === OperationSize.qword) {
+                                                return walk_addr_binary_oper("cvtsd2si", 1, 1, info, OperationSize.qword, ptr, true);
+                                            } else if (foperSize === OperationSize.dword) {
+                                                return walk_addr_binary_oper("cvtss2si", 1, 1, info, OperationSize.dword, ptr, true);
                                             } else {
-                                                return walk_addr_binary_oper("cvtps2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                if (wordoper) {
+                                                    return walk_addr_binary_oper("cvtpd2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                } else {
+                                                    return walk_addr_binary_oper("cvtps2pi", 1, 1, info, OperationSize.xmmword, ptr, true);
+                                                }
                                             }
-                                        }
-                                    } else if (v2 === 0x2a) {
-                                        // i2f
-                                        if (foperSize === OperationSize.qword) {
-                                            return walk_addr_binary_oper("cvtsi2sd", 1, 1, info, size, ptr, true);
-                                        } else if (foperSize === OperationSize.dword) {
-                                            return walk_addr_binary_oper("cvtsi2ss", 1, 1, info, size, ptr, true);
-                                        } else {
-                                            if (wordoper) {
-                                                return walk_addr_binary_oper("cvtpi2pd", 1, 1, info, OperationSize.mmword, ptr, true);
+                                            break;
+                                        case 0x2a:
+                                            // i2f
+                                            if (foperSize === OperationSize.qword) {
+                                                return walk_addr_binary_oper("cvtsi2sd", 1, 1, info, size, ptr, true);
+                                            } else if (foperSize === OperationSize.dword) {
+                                                return walk_addr_binary_oper("cvtsi2ss", 1, 1, info, size, ptr, true);
                                             } else {
-                                                return walk_addr_binary_oper("cvtpi2ps", 1, 1, info, OperationSize.mmword, ptr, true);
+                                                if (wordoper) {
+                                                    return walk_addr_binary_oper("cvtpi2pd", 1, 1, info, OperationSize.mmword, ptr, true);
+                                                } else {
+                                                    return walk_addr_binary_oper("cvtpi2ps", 1, 1, info, OperationSize.mmword, ptr, true);
+                                                }
                                             }
-                                        }
+                                            break;
                                     }
                                     break;
                             }
