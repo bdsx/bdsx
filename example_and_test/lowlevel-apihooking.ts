@@ -1,7 +1,7 @@
 // Low Level - API Hooking
 import { Block } from "bdsx/bds/block";
 import { BlockPos, Vec3 } from "bdsx/bds/blockpos";
-import { GameMode, SurvivalMode } from "bdsx/bds/gamemode";
+import { GameMode } from "bdsx/bds/gamemode";
 import { ItemStack } from "bdsx/bds/inventory";
 import { ServerPlayer } from "bdsx/bds/player";
 import { StaticPointer } from "bdsx/core";
@@ -27,12 +27,12 @@ const itemUseOn = procHacker.hooking(
     int8_t,
     Vec3,
     Block,
-)((gameMode, interactionResult, item, blockpos, n, pos, block) => {
+)((gameMode, interactionResult, item, blockpos, face, clickPos, block) => {
     const actor = gameMode.actor;
     if (actor instanceof ServerPlayer) {
         actor.sendMessage(`${item.getName()} using at ${blockpos.x} ${blockpos.y} ${blockpos.z}`);
     }
-    return itemUseOn(gameMode, interactionResult, item, blockpos, n, pos, block);
+    return itemUseOn(gameMode, interactionResult, item, blockpos, face, clickPos, block);
 });
 
 //////////////////////////

@@ -206,7 +206,7 @@ export namespace events {
     export const itemUse = new Event<(event: ItemUseEvent) => void | CANCEL>();
     /** Cancellable.
      * Triggered when a player uses an item on a block. Cancelling this event will prevent the item from being used
-     * (e.g : flint and steel won't ignite block, seeds won't be planted, etc...)
+     * (e.g : flint and steel won't ignite block, seeds won't be planted, buckets won't be filled or poured, etc...)
      * To note : this event is triggered with every item, even if they are not usable on blocks.
      */
     export const itemUseOnBlock = new Event<(event: ItemUseOnBlockEvent) => void | CANCEL>();
