@@ -2,7 +2,7 @@ import { Actor, ActorDefinitionIdentifier } from "bdsx/bds/actor";
 import { command } from "bdsx/command";
 
 /**
- * Entity for spawning an entity
+ * Command for spawning an entity
  */
 command.register("summon-entity", "summon an entity on current position").overload(
     (params, origin, output) => {
