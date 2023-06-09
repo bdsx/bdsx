@@ -127,22 +127,22 @@ function patchForStdio(): void {
         },
         CxxString,
     );
+
     procHacker.patching(
+        // it's hard to replace with the normal hooking method because of it has the lambda call inside.
         "hook-command-output",
         "?send@CommandOutputSender@@UEAAXAEBVCommandOrigin@@AEBVCommandOutput@@@Z",
-        0x62,
+        0xb8,
         asmcode.CommandOutputSenderHook,
         Register.rdx,
         true,
         // prettier-ignore
         [
-            0x4C, 0x8B, 0x40, 0x10,       // mov r8,qword ptr ds:[rax+10]
-            0x48, 0x83, 0x78, 0x18, 0x10, // cmp qword ptr ds:[rax+18],10
-            0x72, 0x03,                   // jb bedrock_server.7FF7440A79A6
-            0x48, 0x8B, 0x00,             // mov rax,qword ptr ds:[rax]
-            0x48, 0x8B, 0xD0,             // mov rdx,rax
-            0x48, 0x8B, 0xCB,             // mov rcx,rbx
-            0xE8, null, null, null, null, // call <bedrock_server.class std::basic_ostream<char,struct std::char_traits<char> > & __ptr64 __cdecl std::_Insert_string<char,struct std::char_traits<char>,unsigned __int64>(class std::basic
+            0x41, 0xB9, 0x0C, 0x00, 0x00, 0x00, // mov r9d,C
+            0x45, 0x33, 0xC0,                   // xor r8d,r8d
+            0x41, 0x8D, 0x51, 0xF5,             // lea edx,qword ptr ds:[r9-B]
+            0x33, 0xC9,                         // xor ecx,ecx
+            0xE8, 0xC4, 0x4C, 0x42, 0x01,       // call <bedrock_server.void __cdecl BedrockLog::log(enum BedrockLog::LogCat
         ],
     );
 
@@ -241,7 +241,7 @@ function _launch(asyncResolve: () => void): void {
         nonOwnerPointerStructureManager!.dispose();
         decay(bedrockServer.structureManager);
     }, void_t);
-    asmcode.gameThreadInner = proc["<lambda_e08e95073f8c869cb657a939a37c69c4>::operator()"]; // caller of ServerInstance::_update
+    asmcode.gameThreadInner = proc["<lambda_2dd098141575a59f3c03b28740c54f52>::operator()"]; // caller of ServerInstance::_update
     asmcode.free = dll.ucrtbase.free.pointer;
 
     // hook game thread
@@ -249,7 +249,7 @@ function _launch(asyncResolve: () => void): void {
 
     procHacker.patching(
         "hook-game-thread",
-        "std::thread::_Invoke<std::tuple<<lambda_e08e95073f8c869cb657a939a37c69c4> >,0>", // caller of ServerInstance::_update
+        "std::thread::_Invoke<std::tuple<<lambda_2dd098141575a59f3c03b28740c54f52> >,0>", // caller of ServerInstance::_update
         6,
         asmcode.gameThreadHook, // original depended
         Register.rax,
@@ -257,7 +257,7 @@ function _launch(asyncResolve: () => void): void {
         // prettier-ignore
         [
             0x48, 0x8B, 0xD9, // mov rbx,rcx
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server.<lambda_e08e95073f8c869cb657a939a37c69c4>::operator()>
+            0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server.<lambda_2dd098141575a59f3c03b28740c54f52>::operator()>
             0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
         ],
         [4, 8, 9, 13],
@@ -277,7 +277,7 @@ function _launch(asyncResolve: () => void): void {
     );
     thisGetter.register(
         nimodule.NetworkSystem,
-        "??0ServerNetworkSystem@@QEAA@AEAVScheduler@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@AEBUNetworkSystemToggles@@AEBV?$NonOwnerPointer@VNetworkDebugManager@@@Bedrock@@V?$ServiceReference@VServicesManager@@@@@Z",
+        "??0ServerNetworkSystem@@QEAA@AEAVScheduler@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@AEBUNetworkSystemToggles@@AEBV?$NonOwnerPointer@VNetworkDebugManager@@@Bedrock@@V?$ServiceReference@VServicesManager@@@@V?$not_null@V?$NonOwnerPointer@VNetworkSession@@@Bedrock@@@gsl@@@Z",
         "networkSystem",
     );
     thisGetter.register(bd_server.DedicatedServer, "??0DedicatedServer@@QEAA@XZ", "dedicatedServer");
@@ -329,8 +329,8 @@ function _launch(asyncResolve: () => void): void {
 
     procHacker.patching(
         "update-hook",
-        "<lambda_e08e95073f8c869cb657a939a37c69c4>::operator()", // caller of ServerInstance::_update
-        0x8d9,
+        "<lambda_2dd098141575a59f3c03b28740c54f52>::operator()", // caller of ServerInstance::_update
+        0x8e0,
         asmcode.updateWithSleep,
         Register.rax,
         true,
@@ -390,7 +390,7 @@ function _launch(asyncResolve: () => void): void {
                     const gameRules = Level$getGameRules(level);
 
                     const NetworkSystem$getConnector = procHacker.js(
-                        "?getRemoteConnector@NetworkSystem@@QEBA?AV?$NonOwnerPointer@VRemoteConnector@@@Bedrock@@XZ",
+                        "?getRemoteConnector@NetworkSystem@@QEAA?AV?$not_null@V?$NonOwnerPointer@VRemoteConnector@@@Bedrock@@@gsl@@XZ",
                         Bedrock.NonOwnerPointer.make(RakNetConnector),
                         { structureReturn: true, this: nimodule.NetworkSystem },
                     );

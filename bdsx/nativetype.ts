@@ -584,7 +584,7 @@ export type float64_t = number;
 float64_t[makefunc.useXmmRegister] = true;
 
 const string_ctor = makefunc.js(proc["??0?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ"], void_t, null, VoidPointer);
-const string_dtor = makefunc.js(proc["?_Tidy_deallocate@?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAAXXZ"], void_t, null, VoidPointer);
+const string_dtor = makefunc.js(proc["??1?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAA@XZ"], void_t, null, VoidPointer);
 
 export const CxxString = new CommandParameterNativeType<string>(
     "V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@",

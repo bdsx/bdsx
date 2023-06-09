@@ -423,10 +423,10 @@ function onSculkSensorActivate(region: BlockSource, pos: BlockPos, entity: Actor
     decay(region);
     decay(pos);
     if (canceled) return;
-    return sculkSensor$Activate(region, pos, entity, unknown, unknown2);
+    return sculkSensor$setActivePhase(region, pos, entity, unknown, unknown2);
 }
-const sculkSensor$Activate = procHacker.hooking(
-    "?activate@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@HH@Z",
+const sculkSensor$setActivePhase = procHacker.hooking(
+    "?setActivePhase@SculkSensorBlock@@SAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@HH@Z",
     void_t,
     null,
     BlockSource,

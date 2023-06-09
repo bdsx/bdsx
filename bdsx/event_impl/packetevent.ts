@@ -41,7 +41,7 @@ ReadOnlyBinaryStream.prototype.read = procHacker.jsv(
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
     // stack memories of NetworkSystem::_sortAndPacketizeEvents
-    @nativeField(CxxSharedPtr.make(Packet), -0x28)
+    @nativeField(CxxSharedPtr.make(Packet), -0x20)
     packet: CxxSharedPtr<Packet>; // NetworkSystem::_sortAndPacketizeEvents before Packet::readNoHeader
     @nativeField(ReadOnlyBinaryStream, 0x50)
     stream: ReadOnlyBinaryStream; // NetworkSystem::_sortAndPacketizeEvents before Packet::readNoHeader
@@ -196,24 +196,16 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-raw",
         packetizeSymbol,
-        0x282,
+        0x266,
         asmcode.packetRawHook, // original code depended
         Register.rax,
         true,
+        // prettier-ignore
         [
-            0x41,
-            0x8b,
-            0xd7, // mov edx,r15d
-            0x48,
-            0x8d,
-            0x4d,
-            0xd8, // lea rcx,qword ptr ss:[rbp-28]
-            0xe8,
-            null,
-            null,
-            null,
-            null, // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
-            0x90, // nop
+            0x41, 0x8B, 0xD6,             // mov edx,r14d
+            0x48, 0x8D, 0x4D, 0xE0,       // lea rcx,qword ptr ss:[rbp-20]
+            0xE8, null, null, null, null, // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::createPacket(enum MinecraftPacketIds)>
+            0x90,                         // nop
         ],
     );
 
@@ -225,21 +217,15 @@ bedrockServer.withLoading().then(() => {
     );
 
     // skip packet when result code is 0x7f
+    // prettier-ignore
     const packetViolationOriginalCode = [
-        0x48,
-        0x89,
-        0x5c,
-        0x24,
-        0x10, // mov qword ptr ss:[rsp+10],rbx
+        0x48, 0x89, 0x5c, 0x24, 0x10, // mov qword ptr ss:[rsp+10],rbx
         0x55, // push rbp
         0x56, // push rsi
         0x57, // push rdi
-        0x41,
-        0x54, // push r12
-        0x41,
-        0x55, // push r13
-        0x41,
-        0x56, // push r14
+        0x41, 0x54, // push r12
+        0x41, 0x55, // push r13
+        0x41, 0x56, // push r14
     ];
     asmcode.PacketViolationHandlerHandleViolationAfter = proc[handleViolationSymbol].add(packetViolationOriginalCode.length);
     procHacker.patching("hook-packet-before-skip", handleViolationSymbol, 0, asmcode.packetBeforeCancelHandling, Register.rax, false, packetViolationOriginalCode);
@@ -250,23 +236,16 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-after",
         packetizeSymbol,
-        0x508,
+        0x4e9,
         asmcode.packetAfterHook, // original code depended
         Register.rax,
         true,
+        // prettier-ignore
         [
-            0x49,
-            0x8b,
-            0xd5, // mov rdx,r13
-            0x48,
-            0x8b,
-            0x4d,
-            0xd8, // mov rcx,qword ptr ss:[rbp-28]
-            0xe8,
-            null,
-            null,
-            null,
-            null, // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet>
+            0x4D, 0x8B, 0xC7,              // mov r8,r15
+            0x49, 0x8B, 0xD5,              // mov rdx,r13
+            0x48, 0x8B, 0x4D, 0xE0,        // mov rcx,qword ptr ss:[rbp-20]
+            0xE8, null, null, null, null,  // call <bedrock_server.public: void __cdecl Packet::handle(class NetworkIdentifier const & __ptr64,class NetEventCallback & __ptr64,class std::shared_ptr<class Packet> & __ptr64) __ptr64>
         ],
     );
 
@@ -285,21 +264,13 @@ bedrockServer.withLoading().then(() => {
         asmcode.packetSendAllHook, // original code depended
         Register.rax,
         true,
+        // prettier-ignore
         [
             // loop begin point
-            0x4d,
-            0x85,
-            0xf6, // test r14,r14
-            0x74,
-            0x10, // je bedrock_server.7FF79D03C94C
-            0x41,
-            0x0f,
-            0xb6,
-            0x86,
-            0xa0,
-            0x00,
-            0x00,
-            0x00, // movzx eax,byte ptr ds:[r14+A0]
+            0x4d, 0x85, 0xf6, // test r14,r14
+            0x74, 0x10, // je bedrock_server.7FF79D03C94C
+            0x41, 0x0f, 0xb6,
+            0x86, 0xa0, 0x00, 0x00, 0x00, // movzx eax,byte ptr ds:[r14+A0]
         ],
     );
 

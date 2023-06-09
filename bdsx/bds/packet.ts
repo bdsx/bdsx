@@ -55,9 +55,11 @@ export class Packet extends AbstractMantleClass {
     read(stream: BinaryStream): PacketReadResult {
         abstract();
     }
-    readExtended(read: ExtendedStreamReadResult, stream: BinaryStream): ExtendedStreamReadResult {
-        abstract();
-    }
+
+    // removed
+    // readExtended(read: ExtendedStreamReadResult, stream: BinaryStream): ExtendedStreamReadResult {
+    //     abstract();
+    // }
 
     /**
      * same with target.send
