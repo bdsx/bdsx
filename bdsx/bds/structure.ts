@@ -164,6 +164,8 @@ export class StructureTemplateData extends AbstractClass {
 
 @nativeClass()
 export class StructureTemplate extends AbstractClass {
+    @nativeField(VoidPointer)
+    vftable: VoidPointer;
     @nativeField(CxxString)
     name: CxxString;
     @nativeField(StructureTemplateData)
