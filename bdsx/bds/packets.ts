@@ -1873,7 +1873,7 @@ export class ItemStackRequestData extends AbstractClass {
     getActions(): CxxVector<ItemStackRequestAction> {
         abstract();
     }
-    tryFindAction(action: ItemStackRequestActionType): ItemStackRequestAction {
+    tryFindAction(action: ItemStackRequestActionType): ItemStackRequestAction | null {
         abstract();
     }
 }

@@ -1863,9 +1863,11 @@ Packet.prototype.read = procHacker.jsv(
 );
 
 ItemStackRequestData.prototype.getStringsToFilter = function () {
+    // assuming it is put before the actions vector, it can be tested by renaming an item with an anvil.
     return this.addAs(CxxVector$string, 0x10);
 };
 ItemStackRequestData.prototype.getActions = function () {
+    // accessed in tryFindAction, to check if the vector is empty
     return this.addAs(CxxVector$ItemStackRequestActionRef, 0x30);
 };
 ItemStackRequestData.prototype.tryFindAction = procHacker.js(
