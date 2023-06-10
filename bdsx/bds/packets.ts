@@ -1824,7 +1824,7 @@ export enum ItemStackRequestActionType {
     CraftResults_DEPRECATEDASKTYLAING,
 }
 
-@nativeClass(null)
+@nativeClass()
 export class ItemStackRequestAction extends AbstractClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
@@ -1871,6 +1871,9 @@ export class ItemStackRequestData extends AbstractClass {
         abstract();
     }
     getActions(): CxxVector<ItemStackRequestAction> {
+        abstract();
+    }
+    tryFindAction(action: ItemStackRequestActionType): ItemStackRequestAction {
         abstract();
     }
 }
