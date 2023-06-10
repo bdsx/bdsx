@@ -2114,7 +2114,6 @@ export class X64Assembler {
         return this._movsf(src, dest, null, multiply, offset, FloatOperSize.singlePrecision, MovOper.Read, FloatOper.Convert_f2i, size);
     }
 
-
     sqrtps_f_f(dest: FloatRegister, src: FloatRegister): this {
         return this._movsf(src, dest, null, 1, 0, FloatOperSize.xmmword, MovOper.Register, FloatOper.Sqrt, OperationSize.dword);
     }
