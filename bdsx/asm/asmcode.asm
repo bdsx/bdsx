@@ -418,7 +418,7 @@ endp
 export def CommandOutputSenderHookCallback:qword
 export proc CommandOutputSenderHook
     stack 28h
-    mov rcx,[rsp+48]
+    lea rcx,[rbp+7]
     call CommandOutputSenderHookCallback
 endp
 
