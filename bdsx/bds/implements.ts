@@ -396,7 +396,7 @@ GamePlayUserManager.prototype.getActiveGameplayUsers = procHacker.js(
 );
 
 Level.prototype.getRandomPlayer = function () {
-    const mgr = this.addAs(GamePlayUserManager, 0x2b70);
+    const mgr = this.addAs(GamePlayUserManager, 0x2e30);
     const activePlayers = mgr.getActiveGameplayUsers();
     if (activePlayers.empty()) return null;
     const list = CxxVector.make(Player.ref()).construct(); // rsp+28
