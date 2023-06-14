@@ -875,7 +875,7 @@ export class SetCommandsEnabledPacket extends Packet {
 @nativeClass(null)
 export class SetDifficultyPacket extends Packet {
     @nativeField(uint32_t)
-    difficulty: uint32_t;
+    difficulty: Difficulty;
 }
 
 @nativeClass(null)
