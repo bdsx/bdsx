@@ -28,6 +28,7 @@ import { CxxOptional } from "./cxxoptional";
 import type { Form } from "./form";
 import { HashedString } from "./hashedstring";
 import { ComplexInventoryTransaction, ContainerId, ContainerType, ItemStackNetIdVariant, NetworkItemStackDescriptor } from "./inventory";
+import { Difficulty } from "./level";
 import { MolangVariableMap } from "./molangvariablemap";
 import { CompoundTag } from "./nbt";
 import { Packet } from "./packet";
@@ -231,7 +232,15 @@ export class SetTimePacket extends Packet {
 export class LevelSettings extends MantleClass {
     @nativeField(int64_as_float_t)
     seed: int64_as_float_t;
-    @nativeField(bool_t, 0x88)
+    @nativeField(int32_t, 0x8)
+    gameType: GameType;
+    @nativeField(int32_t, 0xc)
+    difficulty: Difficulty;
+    @nativeField(bool_t, 0x78)
+    commandsEnabled: bool_t;
+    @nativeField(bool_t)
+    texturePacksRequired: bool_t;
+    @nativeField(bool_t, 0x8c)
     customSkinsDisabled: bool_t;
 }
 
