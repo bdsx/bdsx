@@ -1,4 +1,4 @@
-import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, ItemActor, Mob } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, Mob } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, InventorySourceType, ItemStack, ItemStackBase } from "../bds/inventory";
@@ -17,7 +17,7 @@ import { Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 
 export class EntityHurtEvent {
-    constructor(public entity: Actor, public damage: number, public damageSource: ActorDamageSource, public knock: boolean, public ignite: boolean) {}
+    constructor(public entity: Mob, public damage: number, public damageSource: ActorDamageSource, public knock: boolean, public ignite: boolean) {}
 }
 
 export class EntityHeathChangeEvent {
@@ -253,7 +253,7 @@ function onPlayerCrit(player: Player, victim: Actor): void {
 }
 const _onPlayerCrit = procHacker.hooking("?_crit@Player@@UEAAXAEAVActor@@@Z", void_t, null, Player, Actor)(onPlayerCrit);
 
-function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean {
+function onEntityHurt(entity: Mob, actorDamageSource: ActorDamageSource, damage: number, knock: boolean, ignite: boolean): boolean {
     const event = new EntityHurtEvent(entity, damage, actorDamageSource, knock, ignite);
     const canceled = events.entityHurt.fire(event) === CANCEL;
     decay(actorDamageSource);
@@ -263,10 +263,10 @@ function onEntityHurt(entity: Actor, actorDamageSource: ActorDamageSource, damag
     return _onEntityHurt(event.entity, event.damageSource, event.damage, event.knock, event.ignite);
 }
 const _onEntityHurt = procHacker.hooking(
-    "?hurt@Actor@@QEAA_NAEBVActorDamageSource@@M_N1@Z",
+    "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z",
     bool_t,
     null,
-    Actor,
+    Mob,
     ActorDamageSource,
     float32_t,
     bool_t,
