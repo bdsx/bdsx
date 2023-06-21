@@ -42,7 +42,7 @@ import { command, CommandFieldOptions } from "bdsx/command";
 import { CommandParameterType } from "bdsx/commandparam";
 import { CommandResultType } from "bdsx/commandresult";
 import { AttributeName, CANCEL } from "bdsx/common";
-import { NativePointer } from "bdsx/core";
+import { NativePointer, StaticPointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
 import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
@@ -701,6 +701,15 @@ Tester.concurrency(
             this.equals(v.get("test2").value(), "a", "json string");
             this.equals(v.get("test3").value(), true, "json boolean");
             v.destruct();
+        },
+
+        async commandregistery() {
+            const sig = bedrockServer.commandRegistry.findCommand('give')!;
+            this.equals(sig.command, 'give');
+            this.equals(sig.description, 'commands.give.description');
+            console.log(hex(sig.as(StaticPointer).getBuffer(8*16, 8*8), 8));
+            console.log(sig.overloads.join(','));
+            this.equals(sig.permissionLevel, CommandPermissionLevel.Operator);
         },
 
         async command() {

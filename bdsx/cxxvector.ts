@@ -398,6 +398,20 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         }
     }
 
+    join(glue:string):string {
+        const iter = this.values();
+
+        const res = iter.next();
+        if (res.done) return '';
+        let out = String(res.value);
+        for (;;) {
+            const res = iter.next();
+            if (res.done) return out;
+            out += glue;
+            out += String(res.value);
+        }
+    }
+
     /**
      * extends one component and returns it without constructing it.
      * it's does not work with the primitive type
@@ -526,11 +540,14 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         if (n < size) this.resize(n);
     }
 
-    *[Symbol.iterator](): IterableIterator<T> {
+    * values(): IterableIterator<T>  {
         const n = this.size();
         for (let i = 0; i !== n; i = (i + 1) | 0) {
             yield this.get(i)!;
         }
+    }
+    [Symbol.iterator](): IterableIterator<T> {
+        return this.values();
     }
 
     static make<T>(type: Type<T>): CxxVectorType<T> {

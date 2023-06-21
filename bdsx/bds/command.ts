@@ -22,6 +22,7 @@ import {
     float32_t,
     int16_t,
     int32_t,
+    uint16_t,
     uint32_t,
     uint64_as_float_t,
     uint8_t,
@@ -1199,19 +1200,24 @@ export namespace CommandRegistry {
     @nativeClass(null)
     export class Signature extends NativeClass {
         @nativeField(CxxString)
-        command: CxxString;
+        command: CxxString; // 0~20
         @nativeField(CxxString)
-        description: CxxString;
+        description: CxxString; // 20~40
         @nativeField(CxxVector.make<CommandRegistry.Overload>(CommandRegistry.Overload))
-        overloads: CxxVector<Overload>;
-        @nativeField(int32_t)
-        permissionLevel: CommandPermissionLevel;
+        overloads: CxxVector<Overload>; // 40~58
+        @nativeField(uint8_t)
+        permissionLevel: CommandPermissionLevel; // 58~59
         @nativeField(CommandRegistry.Symbol)
-        commandSymbol: CommandRegistry.Symbol;
+        commandSymbol: CommandRegistry.Symbol; // 5c~60
         @nativeField(CommandRegistry.Symbol)
-        commandAliasEnum: CommandRegistry.Symbol;
-        @nativeField(int32_t)
-        flags: CommandCheatFlag | CommandExecuteFlag | CommandSyncFlag | CommandTypeFlag | CommandUsageFlag | CommandVisibilityFlag;
+        commandAliasEnum: CommandRegistry.Symbol; // 60~64
+        @nativeField(uint16_t)
+        flags: CommandCheatFlag | CommandExecuteFlag | CommandSyncFlag | CommandTypeFlag | CommandUsageFlag | CommandVisibilityFlag; // 64~68
+        // int32_t 68~6c
+        // int32_t 6c~70
+        // int32_t 70~74
+        // uint8_t 74~75
+        // uint64_t or pointer 78~80
     }
 
     @nativeClass(null)
