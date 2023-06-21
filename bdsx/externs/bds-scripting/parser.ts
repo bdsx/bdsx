@@ -30,12 +30,12 @@ async function writeTableKeyUnion(
     await writer.write(`type ${name} = keyof ${name}Map;\n\n`);
 }
 
-const DOCURL_ADDONS = "https://bedrock.dev/docs/stable/Addons";
+const DOCURL_ADDONS = "https://bedrock.dev/docs/1.20.0.0/1.20.0.1/Addons";
 
 const OUT_ADDONS = path.join(__dirname, "../generated.addons.d.ts");
 
 const TOP_COMMENT = `/**
- * Generated based on https://bedrock.dev/docs/stable/Addons
+ * Generated based on ${DOCURL_ADDONS}
  * Please check bdsx/bds-scripting/parser.ts
  * Please DO NOT modify this directly.
  */
@@ -56,6 +56,8 @@ async function parseAddonsDoc(): Promise<void> {
     await writer.write(TOP_COMMENT);
 
     try {
+        s.searchHead(); // skip first Blocks
+
         for (;;) {
             const id = s.searchHead();
             switch (id) {

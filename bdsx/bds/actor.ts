@@ -68,6 +68,7 @@ export enum ActorType {
     Bee = 0x17a,
     Piglin,
     PiglinBrute = 0x17f,
+    Allay = 0x186,
 
     PathfinderMob = 0x300,
     IronGolem = 0x314,
@@ -92,6 +93,7 @@ export enum ActorType {
     Vex,
     Pillager = 0xb72,
     ElderGuardianGhost = 0xb78,
+    Warden = 0xb83,
 
     Animal = 0x1300,
     Chicken = 0x130a,
@@ -109,6 +111,8 @@ export enum ActorType {
     Strider,
     Goat = 0x1380,
     Axolotl = 0x1382,
+    Frog = 0x1384,
+    Sniffer = 0x138b,
 
     WaterAnimal = 0x2300,
     Squid = 0x2311,
@@ -118,6 +122,7 @@ export enum ActorType {
     Tropicalfish = 0x236f,
     Fish,
     GlowSquid = 0x2381,
+    Tadpole = 0x2385,
 
     TameableAnimal = 0x5300,
     Wolf = 0x530e,
