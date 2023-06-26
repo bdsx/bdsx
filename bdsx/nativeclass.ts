@@ -1,7 +1,7 @@
 import * as util from "util";
 import { capi } from "./capi";
 import { CircularDetector } from "./circulardetector";
-import { Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
+import { abstract, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
 import { mangle } from "./mangle";
@@ -575,7 +575,9 @@ export class NativeClass extends StructurePointer {
         return obj;
     }
 
-    [nativeClassUtil.inspectFields](obj: Record<string, any>): void;
+    [nativeClassUtil.inspectFields](obj: Record<string, any>): void {
+        abstract();
+    }
 
     [util.inspect.custom](depth: number, options: Record<string, any>): unknown {
         try {
