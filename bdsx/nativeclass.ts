@@ -34,6 +34,24 @@ function accessor(key: string | number): string {
     return `[${JSON.stringify(key)}]`;
 }
 
+export namespace nativeClassUtil {
+    export function bindump(object: NativeClass): void {
+        const size = object[NativeType.size];
+        const ptr = object.as(NativePointer);
+        for (let i = 0; i < size; i += 8) {
+            const remaining = Math.min(size - i, 8);
+            let str = "";
+            for (let i = 0; i < remaining; i++) {
+                let b = ptr.readUint8().toString(16);
+                if (b.length === 1) b = "0" + b;
+                str = b + str;
+            }
+            console.log(str);
+        }
+    }
+    export const inspectFields = Symbol("inspect-fields");
+}
+
 export interface NativeClassType<T extends NativeClass> extends Type<T> {
     new (alloc?: boolean): T;
     prototype: T;
@@ -975,24 +993,6 @@ function makeReference<T extends NativeClass>(type: { new (): T }): NativeType<T
         (stackptr, offset) => clazz[makefunc.getFromParam](stackptr, offset),
         (stackptr, v, offset) => stackptr.setPointer(v, offset),
     );
-}
-
-export namespace nativeClassUtil {
-    export function bindump(object: NativeClass): void {
-        const size = object[NativeType.size];
-        const ptr = object.as(NativePointer);
-        for (let i = 0; i < size; i += 8) {
-            const remaining = Math.min(size - i, 8);
-            let str = "";
-            for (let i = 0; i < remaining; i++) {
-                let b = ptr.readUint8().toString(16);
-                if (b.length === 1) b = "0" + b;
-                str = b + str;
-            }
-            console.log(str);
-        }
-    }
-    export const inspectFields = Symbol("inspect-fields");
 }
 
 NativeClass.prototype[nativeClassUtil.inspectFields] = inspectNativeFields;

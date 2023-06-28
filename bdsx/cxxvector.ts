@@ -398,11 +398,11 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         }
     }
 
-    join(glue:string):string {
+    join(glue: string): string {
         const iter = this.values();
 
         const res = iter.next();
-        if (res.done) return '';
+        if (res.done) return "";
         let out = String(res.value);
         for (;;) {
             const res = iter.next();
@@ -540,7 +540,7 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         if (n < size) this.resize(n);
     }
 
-    * values(): IterableIterator<T>  {
+    *values(): IterableIterator<T> {
         const n = this.size();
         for (let i = 0; i !== n; i = (i + 1) | 0) {
             yield this.get(i)!;
