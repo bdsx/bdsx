@@ -40,16 +40,16 @@ class SentForm {
             formMaps.delete(this.id);
             this.reject(Error("form timeout"));
         }, FORM_TIMEOUT);
-        
-        /*By Extantsteve58*/
-        /**/events.serverStop.on(() => {
-        /**/formMaps.delete(this.id);
-        /**/this.reject('\r')
-        /**/clearTimeout(this.timeout)/**if this is not applied then it will go to 'node.js is processing...' */
-        })
-        /*End*/
     }
 }
+
+events.serverStop.on(() => {
+    for (const form of formMaps.values()) {
+        form.reject(Error("server closed"));
+        clearTimeout(form.timeout);
+    }
+    formMaps.clear();
+});
 
 export interface FormItemButton {
     text: string;
