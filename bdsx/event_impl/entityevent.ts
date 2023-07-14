@@ -175,13 +175,7 @@ function onMobJump(movementProxy: VoidPointer, blockSourceInterface: VoidPointer
     }
     return _onMobJump(movementProxy, blockSourceInterface);
 }
-const _onMobJump = procHacker.hooking(
-    "?_jumpFromGround@Mob@@KAXAEAUIMobMovementProxy@@AEBVIConstBlockSource@@@Z",
-    void_t,
-    null,
-    VoidPointer,
-    VoidPointer,
-)(onMobJump);
+const _onMobJump = procHacker.hooking("?jumpFromGround@Mob@@IEAAXAEBVIConstBlockSource@@@Z", void_t, null, VoidPointer, VoidPointer)(onMobJump);
 
 function onPlayerUseItem(player: Player, itemStack: ItemStack, useMethod: number, consumeItem: boolean): void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
@@ -333,7 +327,7 @@ function onEntityStopRiding(entity: Actor, exitFromRider: boolean, actorIsBeingD
     }
     return _onEntityStopRiding(event.entity, event.exitFromRider, event.actorIsBeingDestroyed, event.switchingRides);
 }
-const _onEntityStopRiding = procHacker.hooking("?stopRiding@Actor@@UEAAX_N00@Z", void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
+const _onEntityStopRiding = procHacker.hooking("?stopRiding@Actor@@QEAAX_N00@Z", void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
 function onEntitySneak(actorEventCoordinator: VoidPointer, entity: Actor, isSneaking: boolean): void {
     const event = new EntitySneakEvent(entity, isSneaking);

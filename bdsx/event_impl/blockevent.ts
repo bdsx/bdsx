@@ -147,7 +147,7 @@ function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: P
     return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
 }
 const _onBlockDestructionStart = procHacker.hooking(
-    "?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@@Z",
+    "?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@E@Z",
     void_t,
     null,
     StaticPointer,

@@ -166,7 +166,7 @@ NetworkIdentifier.setResolver(ptr => {
 export let networkSystem: NetworkSystem;
 
 procHacker.hookingRawWithCallOriginal(
-    "?onConnectionClosed@NetworkSystem@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
+    "?onConnectionClosed@NetworkSystem@@EEAAXAEBVNetworkIdentifier@@W4DisconnectFailReason@Connection@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
     makefunc.np(
         (handler, ni, msg) => {
             try {
