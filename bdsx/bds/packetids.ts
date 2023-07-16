@@ -138,7 +138,7 @@ export enum MinecraftPacketIds { // int32_t
     UpdateSoftEnum = 0x72,
     NetworkStackLatency = 0x73,
     // BlockPalette = 0x74, // DEPRECATED
-    ScriptCustomEvent = 0x75,
+    // ScriptCustomEvent = 0x75, // removed
     SpawnParticleEffect = 0x76,
     AvailableActorIdentifiers = 0x77,
     LevelSoundEventV2 = 0x78,
@@ -223,8 +223,8 @@ export enum MinecraftPacketIds { // int32_t
     GameTestResults = 0xc3,
     UpdateClientInputLocks = 0xc4,
     /** @deprecated skip Packet ends */
-    ClientCheatAbilityPacket = 0xc5,
-    ClientCheatAbility = 0xc5,
+    // ClientCheatAbilityPacket = 0xc5, // removed
+    // ClientCheatAbility = 0xc5, // removed
     /** @deprecated skip Packet ends */
     CameraPresetsPacket = 0xc6,
     CameraPresets = 0xc6,

@@ -4,6 +4,7 @@ import { AbstractClass, AbstractMantleClass, nativeClass, nativeField } from "..
 import { CxxString, int32_t, uint32_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
+import { Bedrock } from "./bedrock";
 import { NetworkIdentifier } from "./networkidentifier";
 import { MinecraftPacketIds } from "./packetids";
 import { BinaryStream } from "./stream";
@@ -23,18 +24,8 @@ export const StreamReadResult = int32_t.extends({
     Disconnect: 0,
     Pass: 1,
     Warning: 2, // disconnect at 3 times
-    Ignore: 0x7f,
 });
 export type StreamReadResult = int32_t;
-
-@nativeClass(null)
-export class ExtendedStreamReadResult extends AbstractClass {
-    @nativeField(StreamReadResult)
-    streamReadResult: StreamReadResult;
-    @nativeField(int32_t)
-    dummy: int32_t;
-    // array?
-}
 
 const sharedptr_of_packet = Symbol("sharedptr");
 
@@ -52,14 +43,9 @@ export class Packet extends AbstractMantleClass {
     write(stream: BinaryStream): void {
         abstract();
     }
-    read(stream: BinaryStream): PacketReadResult {
+    read(stream: BinaryStream): Bedrock.VoidErrorCodeResult {
         abstract();
     }
-
-    // removed
-    // readExtended(read: ExtendedStreamReadResult, stream: BinaryStream): ExtendedStreamReadResult {
-    //     abstract();
-    // }
 
     /**
      * same with target.send

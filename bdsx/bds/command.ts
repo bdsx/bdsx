@@ -965,25 +965,30 @@ export class CommandParameterData extends NativeClass {
     enumNameOrPostfix: VoidPointer | null; // 0x30, char*
 
     /** @deprecated Use {@link enumOrPostfixSymbol} instead */
-    @nativeField(int32_t, { ghost: true })
+    @nativeField(int32_t, { ghost: true, offset: 0x48 })
     unk56: int32_t; // 0x38
     @nativeField(int32_t)
     enumOrPostfixSymbol: int32_t; // 0x38
 
+    @nativeField(VoidPointer)
+    unk40_string: VoidPointer | null; // 0x40, char*
     @nativeField(int32_t)
-    type: CommandParameterDataType; // 0x3c
+    unk48_offset: int32_t; // 0x48
+
     @nativeField(int32_t)
-    offset: int32_t; // 0x40
+    type: CommandParameterDataType; // 0x4c
     @nativeField(int32_t)
-    flag_offset: int32_t; // 0x44
+    offset: int32_t; // 0x50
+    @nativeField(int32_t)
+    flag_offset: int32_t; // 0x54
     @nativeField(bool_t)
-    optional: bool_t; // 0x48
+    optional: bool_t; // 0x58
 
     /** @deprecated Use {@link options} instead */
     @nativeField(bool_t, { ghost: true })
     pad73: bool_t;
     @nativeField(uint8_t)
-    options: CommandParameterOption; // 0x49
+    options: CommandParameterOption; // 0x59
 }
 
 @nativeClass()
@@ -1013,7 +1018,7 @@ export class CommandRegistry extends HasTypeId {
     enums: CxxVector<CommandRegistry.Enum>;
     enumLookup: CxxMap<CxxString, uint32_t>;
     enumValueLookup: CxxMap<CxxString, uint64_as_float_t>;
-    commandSymbols: CxxVector<CommandRegistry.Symbol>;
+    // commandSymbols: CxxVector<CommandRegistry.Symbol>; // no address hint
     signatures: CxxMap<CxxString, CommandRegistry.Signature>;
     softEnums: CxxVector<CommandRegistry.SoftEnum>;
     softEnumLookup: CxxMap<CxxString, uint32_t>;
@@ -1060,6 +1065,7 @@ export class CommandRegistry extends HasTypeId {
         overload.allocator = allocator;
         overload.parameters.setFromArray(params);
         overload.commandVersionOffset = -1;
+        overload.u7 = 0;
         this.registerOverloadInternal(sig, overload);
 
         for (const param of params) {
@@ -1180,7 +1186,7 @@ export namespace CommandRegistry {
         value: int32_t;
     }
 
-    @nativeClass(0x48)
+    @nativeClass()
     export class Overload extends NativeClass {
         @nativeField(bin64_t)
         commandVersion: bin64_t;
@@ -1193,6 +1199,8 @@ export namespace CommandRegistry {
         /** @deprecated */
         @nativeField(int32_t, 0x28)
         u6: int32_t;
+        @nativeField(uint8_t)
+        u7: uint8_t;
         @nativeField(CxxVector.make(CommandRegistry.Symbol))
         symbols: CxxVector<CommandRegistry.Symbol>;
     }
@@ -1205,14 +1213,17 @@ export namespace CommandRegistry {
         description: CxxString; // 20~40
         @nativeField(CxxVector.make<CommandRegistry.Overload>(CommandRegistry.Overload))
         overloads: CxxVector<Overload>; // 40~58
-        @nativeField(uint8_t)
-        permissionLevel: CommandPermissionLevel; // 58~59
+
+        // unknown:CxxVector<unknown>; // 58~70
+
+        @nativeField(uint8_t, 0x70)
+        permissionLevel: CommandPermissionLevel; // 70~71
         @nativeField(CommandRegistry.Symbol)
-        commandSymbol: CommandRegistry.Symbol; // 5c~60
+        commandSymbol: CommandRegistry.Symbol; // 74~78
         @nativeField(CommandRegistry.Symbol)
-        commandAliasEnum: CommandRegistry.Symbol; // 60~64
+        commandAliasEnum: CommandRegistry.Symbol; // 78~7c
         @nativeField(uint16_t)
-        flags: CommandCheatFlag | CommandExecuteFlag | CommandSyncFlag | CommandTypeFlag | CommandUsageFlag | CommandVisibilityFlag; // 64~68
+        flags: CommandCheatFlag | CommandExecuteFlag | CommandSyncFlag | CommandTypeFlag | CommandUsageFlag | CommandVisibilityFlag; // 7c~80
         // int32_t 68~6c
         // int32_t 6c~70
         // int32_t 70~74
@@ -1388,6 +1399,9 @@ export class Command extends NativeClass {
         param.name = name;
         param.type = type;
 
+        param.unk40_string = null;
+        param.unk48_offset = -1;
+
         param.enumOrPostfixSymbol = -1;
         param.offset = offset;
         param.flag_offset = flag_offset;
@@ -1494,13 +1508,13 @@ MinecraftCommands.getOutputType = procHacker.js("?getOutputType@MinecraftCommand
 
 CommandRegistry.abstract({
     enumValues: [CxxVector.make(CxxString), 192],
-    enums: [CxxVector.make(CommandRegistry.Enum), 216], // accessed in CommandRegistry::addEnumValuesToExisting
-    enumLookup: [CxxMap.make(CxxString, uint32_t), 288], // 0x120
-    enumValueLookup: [CxxMap.make(CxxString, uint64_as_float_t), 304], // accessed in CommandRegistry::findEnumValue
-    commandSymbols: [CxxVector.make(CommandRegistry.Symbol), 320], // accessed in CommandRegistry::findEnumValue
-    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 344], // accessed in CommandRegistry::findCommand
-    softEnums: [CxxVector.make(CommandRegistry.SoftEnum), 488],
-    softEnumLookup: [CxxMap.make(CxxString, uint32_t), 512],
+    enums: [CxxVector.make(CommandRegistry.Enum), 0xd8], // accessed in CommandRegistry::addEnumValuesToExisting
+    enumLookup: [CxxMap.make(CxxString, uint32_t), 0x150], // assumed, enumValueLookup-0x10
+    enumValueLookup: [CxxMap.make(CxxString, uint64_as_float_t), 0x160], // accessed in CommandRegistry::findEnumValue
+    // commandSymbols: [CxxVector.make(CommandRegistry.Symbol), 0x170],
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 0x1a8], // accessed in CommandRegistry::findCommand
+    softEnums: [CxxVector.make(CommandRegistry.SoftEnum), 0x228], // accessed in CommandRegistry::addSoftEnum after `call CommandRegistry::addSoftEnumValues`
+    softEnumLookup: [CxxMap.make(CxxString, uint32_t), 0x240], // accessed in CommandRegistry::addSoftEnum early part
 });
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js(
     "?registerOverloadInternal@CommandRegistry@@AEAAXAEAUSignature@1@AEAUOverload@1@@Z",

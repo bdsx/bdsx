@@ -1091,8 +1091,8 @@ class AvailableCommandsOverloadData extends NativeClass {
     readonly parameters: CxxVector<AvailableCommandsParamData>;
 }
 
-@nativeClass(0x68)
-class AvailableCommandsCommandData extends NativeClass {
+@nativeClass(0x80)
+class AvailableCommandsCommandData extends AbstractClass {
     @nativeField(CxxString)
     name: CxxString;
     @nativeField(CxxString)
@@ -1107,8 +1107,12 @@ class AvailableCommandsCommandData extends NativeClass {
     })
     readonly parameters: CxxVector<CxxVector<CxxString>>;
     @nativeField(CxxVector.make(AvailableCommandsOverloadData))
-    readonly overloads: CxxVector<AvailableCommandsOverloadData>;
-    @nativeField(int32_t) // 60
+    readonly overloads: CxxVector<AvailableCommandsOverloadData>; // 48
+
+    // @nativeField(CxxVector.make(unknown))
+    // readonly unknown vector: CxxVector<unknown>; // 60
+
+    @nativeField(int32_t, 0x78) // 78
     aliases: int32_t;
 }
 
@@ -1123,7 +1127,10 @@ export class AvailableCommandsPacket extends Packet {
     readonly postfixes: CxxVector<CxxString>;
     @nativeField(CxxVector.make(AvailableCommandsEnumData))
     readonly enums: CxxVector<AvailableCommandsEnumData>;
-    @nativeField(CxxVector.make(AvailableCommandsCommandData))
+
+    // unknown vectors
+
+    @nativeField(CxxVector.make(AvailableCommandsCommandData), 0xa8)
     readonly commands: CxxVector<AvailableCommandsCommandData>;
 }
 export namespace AvailableCommandsPacket {
@@ -1519,6 +1526,7 @@ export class NetworkStackLatencyPacket extends Packet {
     // unknown
 }
 
+/** @deprecated removed */
 @nativeClass(null)
 export class ScriptCustomEventPacket extends Packet {
     // unknown
@@ -2246,6 +2254,7 @@ export class UpdateClientInputLocksPacket extends Packet {
     // unknown
 }
 
+/** @deprecated removed */
 @nativeClass(null)
 export class ClientCheatAbilityPacket extends Packet {
     // unknown
@@ -2398,7 +2407,7 @@ export const PacketIdToType = {
     0x72: UpdateSoftEnumPacket,
     0x73: NetworkStackLatencyPacket,
     // 0x74: BlockPalette, // DEPRECATED
-    0x75: ScriptCustomEventPacket,
+    // 0x75: ScriptCustomEventPacket, // removed
     0x76: SpawnParticleEffectPacket,
     0x77: AvailableActorIdentifiersPacket,
     0x78: LevelSoundEventPacketV2,
@@ -2476,7 +2485,7 @@ export const PacketIdToType = {
     0xc2: GameTestRequestPacket,
     0xc3: GameTestResultsPacket,
     0xc4: UpdateClientInputLocksPacket,
-    0xc5: ClientCheatAbilityPacket,
+    // 0xc5: ClientCheatAbilityPacket, // removed
     0xc6: CameraPresetsPacket,
     0xc7: UnlockedRecipesPacket,
     0x12c: CameraInstructionPacket,

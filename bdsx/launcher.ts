@@ -142,7 +142,7 @@ function patchForStdio(): void {
             0x45, 0x33, 0xC0,                   // xor r8d,r8d
             0x41, 0x8D, 0x51, 0xF5,             // lea edx,qword ptr ds:[r9-B]
             0x33, 0xC9,                         // xor ecx,ecx
-            0xE8, 0xC4, 0x4C, 0x42, 0x01,       // call <bedrock_server.void __cdecl BedrockLog::log(enum BedrockLog::LogCat
+            0xE8, null, null, null, null,       // call <bedrock_server.void __cdecl BedrockLog::log(enum BedrockLog::LogCat
         ],
     );
 
@@ -277,7 +277,7 @@ function _launch(asyncResolve: () => void): void {
     );
     thisGetter.register(
         nimodule.NetworkSystem,
-        "??0ServerNetworkSystem@@QEAA@AEAVScheduler@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@AEBUNetworkSystemToggles@@AEBV?$NonOwnerPointer@VNetworkDebugManager@@@Bedrock@@V?$ServiceReference@VServicesManager@@@@V?$not_null@V?$NonOwnerPointer@VNetworkSession@@@Bedrock@@@gsl@@@Z",
+        "??0ServerNetworkSystem@@QEAA@AEAVScheduler@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@AEBUNetworkSystemToggles@@AEBV?$NonOwnerPointer@VNetworkDebugManager@@@Bedrock@@V?$ServiceReference@VServicesManager@@@@V?$not_null@V?$NonOwnerPointer@VNetworkSessionOwner@@@Bedrock@@@gsl@@@Z",
         "networkSystem",
     );
     thisGetter.register(bd_server.DedicatedServer, "??0DedicatedServer@@QEAA@XZ", "dedicatedServer");

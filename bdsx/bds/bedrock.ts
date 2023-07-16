@@ -1,5 +1,6 @@
 import { mangle } from "../mangle";
-import { nativeClass, NativeClass, NativeClassType } from "../nativeclass";
+import { AbstractClass, nativeClass, NativeClass, NativeClassType, nativeField } from "../nativeclass";
+import { uint8_t } from "../nativetype";
 import { Wrapper } from "../pointer";
 import { CxxSharedPtr } from "../sharedpointer";
 import { Singleton } from "../singleton";
@@ -47,4 +48,10 @@ export namespace Bedrock {
             });
         }
     }
+
+    /**
+     * stub implement of Bedrock::Result<void, std::error_code>
+     */
+    @nativeClass(0x48, 8)
+    export class VoidErrorCodeResult extends AbstractClass {}
 }

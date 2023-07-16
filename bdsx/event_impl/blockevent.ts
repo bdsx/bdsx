@@ -140,19 +140,20 @@ const _onCreativeBlockDestroy = procHacker.hooking(
     uint8_t,
 )(onCreativeBlockDestroy);
 
-function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos): void {
+function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos, v: uint8_t): void {
     const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
     events.blockDestructionStart.fire(event);
     decay(blockPos);
-    return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos);
+    return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos, v);
 }
 const _onBlockDestructionStart = procHacker.hooking(
-    "?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@@Z",
+    "?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@E@Z",
     void_t,
     null,
     StaticPointer,
     Player,
     BlockPos,
+    uint8_t,
 )(onBlockDestructionStart);
 
 function onBlockPlace(

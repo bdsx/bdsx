@@ -6,7 +6,7 @@ import { events } from "../event";
 import { HashSet, Hashable } from "../hashset";
 import { makefunc } from "../makefunc";
 import { AbstractClass, NativeClass, NativeStruct, nativeClass, nativeField } from "../nativeclass";
-import { CxxString, NativeType, bin64_t, int32_t, void_t } from "../nativetype";
+import { CxxString, NativeType, bin64_t, bool_t, int32_t, void_t } from "../nativetype";
 import { CxxStringWrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { remapAndPrintError } from "../source-map-support";
@@ -166,9 +166,9 @@ NetworkIdentifier.setResolver(ptr => {
 export let networkSystem: NetworkSystem;
 
 procHacker.hookingRawWithCallOriginal(
-    "?onConnectionClosed@NetworkSystem@@EEAAXAEBVNetworkIdentifier@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
+    "?onConnectionClosed@NetworkSystem@@EEAAXAEBVNetworkIdentifier@@W4DisconnectFailReason@Connection@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
     makefunc.np(
-        (handler, ni, msg) => {
+        (handler, ni, reason, msg, b) => {
             try {
                 events.networkDisconnected.fire(ni);
             } catch (err) {
@@ -184,7 +184,9 @@ procHacker.hookingRawWithCallOriginal(
         { name: "hook of NetworkIdentifier dtor" },
         NetworkSystem,
         NetworkIdentifier,
+        int32_t,
         CxxStringWrapper,
+        bool_t,
     ),
     [Register.rcx, Register.rdx, Register.r8, Register.r9],
     [],

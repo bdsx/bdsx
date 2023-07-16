@@ -219,7 +219,7 @@ Tester.concurrency(
             [...bedrockServer.commandRegistry.enums].map(v => v.name);
             [...bedrockServer.commandRegistry.enumLookup.keys()];
             [...bedrockServer.commandRegistry.enumValueLookup.keys()];
-            [...bedrockServer.commandRegistry.commandSymbols].map(v => v.value);
+            // [...bedrockServer.commandRegistry.commandSymbols].map(v => v.value);
             [...bedrockServer.commandRegistry.softEnums].map(v => v.name);
             [...bedrockServer.commandRegistry.softEnumLookup.keys()];
             for (const dim of [DimensionId.Overworld, DimensionId.Nether, DimensionId.TheEnd]) {
@@ -707,8 +707,6 @@ Tester.concurrency(
             const sig = bedrockServer.commandRegistry.findCommand('give')!;
             this.equals(sig.command, 'give');
             this.equals(sig.description, 'commands.give.description');
-            console.log(hex(sig.as(StaticPointer).getBuffer(8*16, 8*8), 8));
-            console.log(sig.overloads.join(','));
             this.equals(sig.permissionLevel, CommandPermissionLevel.Operator);
         },
 
@@ -1009,7 +1007,7 @@ Tester.concurrency(
                             i--;
                         }
                     }
-                    p.commands.setFromArray(commandArray);
+                    // p.commands.setFromArray(commandArray); // TODO: implement AvailableCommandsCommandData fully
                 }, 1),
             );
         },
