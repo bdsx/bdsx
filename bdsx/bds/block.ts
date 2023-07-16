@@ -99,7 +99,7 @@ export class Block extends NativeClass {
     vftable: VoidPointer;
     @nativeField(uint16_t)
     data: uint16_t;
-    @nativeField(BlockLegacy.ref(), 0x10)
+    @nativeField(BlockLegacy.ref(), 0x30)
     blockLegacy: BlockLegacy;
 
     /**
