@@ -206,7 +206,7 @@ bedrockServer.withLoading().then(() => {
         [
             0x8B, 0x95, 0xD0, 0x00, 0x00, 0x00,        // mov edx,dword ptr ss:[rbp+D0]
             0x48, 0x8D, 0x8D, 0xE0, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+E0]
-            0xE8, 0xD7, 0xB4, 0xFD, 0xFF,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::cr
+            0xE8, 0x97, 0xB5, 0xFD, 0xFF,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::cr
             0x90,                                      // nop
         ],
     );
@@ -214,7 +214,7 @@ bedrockServer.withLoading().then(() => {
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer);
 
-    asmcode.packetBeforeOriginal = proc["<lambda_c15bf25ee5ff1dc1c1657f66572990a4>::operator()"];
+    asmcode.packetBeforeOriginal = proc["<lambda_c83367d0c95377dd35c344f9645f0e54>::operator()"];
     procHacker.patching(
         "hook-packet-before",
         packetizeSymbol,
@@ -226,7 +226,7 @@ bedrockServer.withLoading().then(() => {
         [
             0x48, 0x8D, 0x95, 0x90, 0x01, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+190]
             0x48, 0x8D, 0x4D, 0xE8,                    // lea rcx,qword ptr ss:[rbp-18]
-            0xE8, 0x19, 0xF0, 0xFF, 0xFF,              // call <bedrock_server.<lambda_c15bf25ee5ff1dc1c1657f66572990a4>::operator()>
+            0xE8, 0x19, 0xF0, 0xFF, 0xFF,              // call <bedrock_server.<lambda_c83367d0c95377dd35c344f9645f0e54>::operator()>
             0x90,                                      // nop
         ],
     );
