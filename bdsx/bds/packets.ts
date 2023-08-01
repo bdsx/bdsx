@@ -283,9 +283,10 @@ export class AddActorPacket extends Packet {
     readonly attributeHandles: CxxVector<AttributeInstanceHandle>;
 }
 
-@nativeClass(null)
+@nativeClass(0x38)
 export class RemoveActorPacket extends Packet {
-    // unknown
+    @nativeField(ActorUniqueID)
+    actorId: ActorUniqueID;
 }
 
 @nativeClass(null)

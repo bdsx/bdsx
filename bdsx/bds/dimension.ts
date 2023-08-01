@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { int32_t, void_t } from "../nativetype";
+import { float32_t, int16_t, int32_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import type { Actor, ActorUniqueID, DimensionId } from "./actor";
 import { BlockSource } from "./block";
@@ -63,19 +63,16 @@ export class Dimension extends NativeClass {
     fetchNearestPlayerToPosition(x: number, y: number, z: number, distance: number, findAnyNearPlayer: boolean): Player | null {
         abstract();
     }
-    getMoonBrightness(): number {
+    getMoonBrightness(): float32_t {
         abstract();
     }
-    getHeight(): number {
+    getHeight(): int16_t {
         abstract();
     }
-    getMinHeight(): number {
+    getMinHeight(): int16_t {
         abstract();
     }
     tryGetClosestPublicRegion(chunkPos: ChunkPos): BlockSource {
-        abstract();
-    }
-    unregisterEntity(actorUniqueId: ActorUniqueID): void {
         abstract();
     }
     removeActorByID(actorUniqueId: ActorUniqueID): void {
