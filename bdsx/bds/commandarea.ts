@@ -7,11 +7,8 @@ import { BlockSource } from "./block";
 import { BlockPos } from "./blockpos";
 import { Dimension } from "./dimension";
 
-@nativeClass()
+@nativeClass(null)
 export class CommandArea extends AbstractClass {
-    @nativeField(BlockSource.ref(), 0x8)
-    blockSource: BlockSource;
-
     [NativeType.dtor](): void {
         abstract();
     }
@@ -19,6 +16,14 @@ export class CommandArea extends AbstractClass {
     dispose(): void {
         this.destruct();
         capi.free(this);
+    }
+
+    getDimensionBlockSource(): BlockSource {
+        abstract();
+    }
+    /**@deprecated use getDimensionBlockSource method */
+    get blockSource(): BlockSource {
+        return this.getDimensionBlockSource();
     }
 }
 
@@ -42,6 +47,7 @@ export class CommandAreaFactory extends NativeClass {
 }
 
 CommandArea.prototype[NativeType.dtor] = procHacker.js("??1CommandArea@@QEAA@XZ", void_t, { this: CommandArea });
+CommandArea.prototype.getDimensionBlockSource = procHacker.js("?getDimensionBlockSource@CommandArea@@QEAAAEAVBlockSource@@XZ", BlockSource, { this: CommandArea });
 CommandAreaFactory.prototype.findArea = procHacker.js(
     "?findArea@CommandAreaFactory@@QEBA?AV?$unique_ptr@VCommandArea@@U?$default_delete@VCommandArea@@@std@@@std@@AEBVBlockPos@@0_N11@Z",
     CommandArea.ref(),

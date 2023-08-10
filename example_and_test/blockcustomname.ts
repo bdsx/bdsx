@@ -29,7 +29,7 @@ command.register("furnace", "generate named furnace").overload((params, origin, 
                 // cannot access the furnace area
                 return;
             }
-            const region = area.blockSource;
+            const region = area.getDimensionBlockSource();
             const blockActor = region.getBlockEntity(blockpos);
             if (blockActor === null) {
                 // no block actor, it seems it's destroyed
