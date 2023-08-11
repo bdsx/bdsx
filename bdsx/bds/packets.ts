@@ -1934,7 +1934,7 @@ export class CodeBuilderPacket extends Packet {
     // unknown
 }
 
-@nativeClass(null)
+@nativeClass()
 export class UpdatePlayerGameTypePacket extends Packet {
     @nativeField(int32_t)
     gameType: GameType;
