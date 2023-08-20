@@ -97,10 +97,15 @@ export class BlockLegacy extends NativeClass {
 export class Block extends NativeClass {
     @nativeField(VoidPointer)
     vftable: VoidPointer;
-    @nativeField(uint16_t)
-    data: uint16_t;
-    @nativeField(BlockLegacy.ref(), 0x30)
+    @nativeField(BlockLegacy.ref(), 0x30) // accessed in Block::getVariant
     blockLegacy: BlockLegacy;
+
+    /**
+     * @removed use getVariant instead.
+     */
+    get data(): uint16_t {
+        return this.getVariant();
+    }
 
     /**
      * @deprecated no need to destruct. use `Block.create`
