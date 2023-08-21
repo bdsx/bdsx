@@ -19,6 +19,7 @@ import type {
     FallOnBlockEvent,
     FarmlandDecayEvent,
     LightningHitBlockEvent,
+    PistonCheckEvent,
     PistonMoveEvent,
     ProjectileHitBlockEvent,
     SculkSensorActivateEvent,
@@ -108,6 +109,11 @@ export namespace events {
     export const blockDestructionStart = new Event<(event: BlockDestructionStartEvent) => void>();
     /** Cancellable */
     export const blockPlace = new Event<(event: BlockPlaceEvent) => void | CANCEL>();
+    /** Cancellable
+     * Triggers when a piston checks a block. Cancelling this event will prevent blocks from being pushed by the piston.
+     * This event will fire constantly if the piston is activated even if the event is cancelled.
+     */
+    export const pistonCheck = new Event<(event: PistonCheckEvent) => void | CANCEL>();
     /** Not cancellable */
     export const pistonMove = new Event<(event: PistonMoveEvent) => void>();
     /** Cancellable */

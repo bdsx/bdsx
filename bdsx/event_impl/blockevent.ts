@@ -34,6 +34,16 @@ export class BlockPlaceEvent {
     constructor(public player: ServerPlayer, public block: Block, public blockSource: BlockSource, public blockPos: BlockPos) {}
 }
 
+export class PistonCheckEvent {
+    constructor(
+        public blockPos: BlockPos,
+        public blockSource: BlockSource,
+        public action: PistonActorInBlockModule,
+        public affectedBlocks: BlockPos[],
+        public facingDirection: BlockPos,
+    ) {}
+}
+
 /** @deprecated import it from bdsx/bds/block.ts */
 export const PistonAction = PistonActorInBlockModule;
 /** @deprecated import it from bdsx/bds/block.ts */
@@ -191,6 +201,25 @@ const _onBlockPlace = procHacker.hooking(
     bool_t,
     Vec3,
 )(onBlockPlace);
+
+function onPistonCheck(this: PistonBlockActor, blockSource: BlockSource, blockPos: BlockPos, uNum1: uint8_t, uNum2: uint8_t): bool_t {
+    const event = new PistonCheckEvent(blockPos, blockSource, this.action, this.getAttachedBlocks(), this.getFacingDir(blockSource));
+    const canceled = events.pistonCheck.fire(event) === CANCEL;
+    decay(this);
+    decay(blockPos);
+    decay(blockSource);
+    if (canceled) return false;
+    else return _onPistonCheck.call(this, event.blockSource, event.blockPos, uNum1, uNum2);
+}
+const _onPistonCheck = procHacker.hooking(
+    "?_attachedBlockWalker@PistonBlockActor@@AEAA_NAEAVBlockSource@@AEBVBlockPos@@EE@Z",
+    bool_t,
+    { this: PistonBlockActor },
+    BlockSource,
+    BlockPos,
+    uint8_t,
+    uint8_t,
+)(onPistonCheck);
 
 function onPistonMove(this: PistonBlockActor, blockSource: BlockSource): void_t {
     const event = new PistonMoveEvent(this.getPosition(), blockSource, this.action, this.getAttachedBlocks(), this.getFacingDir(blockSource));
