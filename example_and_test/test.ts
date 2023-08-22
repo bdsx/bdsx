@@ -28,7 +28,7 @@ import {
     NBT,
     ShortTag,
     StringTag,
-    Tag
+    Tag,
 } from "bdsx/bds/nbt";
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { Packet } from "bdsx/bds/packet";
@@ -76,7 +76,7 @@ function isDimensionClass(dimension: Dimension): boolean {
 enum PacketPhase {
     Raw,
     Before,
-    After
+    After,
 }
 let nextPacketPhase = PacketPhase.Raw;
 
@@ -141,7 +141,7 @@ function checkCommandRegister(
             };
             events.commandOutput.on(outputcb);
 
-            const timeout = setTimeout(()=>{
+            const timeout = setTimeout(() => {
                 reject(Error(`${cmdname} does not callback`));
             }, 3000);
 
@@ -704,9 +704,9 @@ Tester.concurrency(
         },
 
         async commandregistery() {
-            const sig = bedrockServer.commandRegistry.findCommand('give')!;
-            this.equals(sig.command, 'give');
-            this.equals(sig.description, 'commands.give.description');
+            const sig = bedrockServer.commandRegistry.findCommand("give")!;
+            this.equals(sig.command, "give");
+            this.equals(sig.description, "commands.give.description");
             this.equals(sig.permissionLevel, CommandPermissionLevel.Operator);
         },
 
@@ -916,7 +916,7 @@ Tester.concurrency(
                 if (tooHeavy.has(i)) continue;
                 events.packetRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
-                        this.equals(nextPacketPhase, PacketPhase.Raw, 'unexpected phase');
+                        this.equals(nextPacketPhase, PacketPhase.Raw, "unexpected phase");
                         nextPacketPhase = PacketPhase.Before;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetRaw, Invalid ni, id=" + packetId);
                         idcheck = packetId;
@@ -926,7 +926,7 @@ Tester.concurrency(
                 );
                 events.packetBefore<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.equals(nextPacketPhase, PacketPhase.Before, 'unexpected phase');
+                        this.equals(nextPacketPhase, PacketPhase.Before, "unexpected phase");
                         nextPacketPhase = PacketPhase.After;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetBefore, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
@@ -935,7 +935,7 @@ Tester.concurrency(
                 );
                 events.packetAfter<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.equals(nextPacketPhase, PacketPhase.After, 'unexpected phase');
+                        this.equals(nextPacketPhase, PacketPhase.After, "unexpected phase");
                         nextPacketPhase = PacketPhase.Raw;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetAfter, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetAfter, different packetId on after. id=${packetId}`);
@@ -1222,7 +1222,12 @@ Tester.concurrency(
             const item = ItemStack.constructWith("minecraft:acacia_boat");
             item.destruct();
 
-            const CreativeItemCategoryFromString = procHacker.js("?CreativeItemCategoryFromString@@YA?AW4CreativeItemCategory@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", int32_t, null, CxxString);
+            const CreativeItemCategoryFromString = procHacker.js(
+                "?CreativeItemCategoryFromString@@YA?AW4CreativeItemCategory@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+                int32_t,
+                null,
+                CxxString,
+            );
             this.equals(CreativeItemCategoryFromString("construction"), CreativeItemCategory.Construction);
             this.equals(CreativeItemCategoryFromString("nature"), CreativeItemCategory.Nature);
             this.equals(CreativeItemCategoryFromString("equipment"), CreativeItemCategory.Equipment);
@@ -1232,7 +1237,7 @@ Tester.concurrency(
         },
 
         nbt() {
-            const tagTypes: typeof Tag[] = [
+            const tagTypes: (typeof Tag)[] = [
                 EndTag,
                 ByteTag,
                 ShortTag,
@@ -1265,10 +1270,10 @@ Tester.concurrency(
                 const mapLoop = 20;
                 const mapItemCount = 4;
                 for (let j = 0; j < mapLoop; j++) {
-                    map.set("barray"+j, barray);
-                    map.set("iarray"+j, iarray);
-                    map.set("str"+j, str);
-                    map.set("list"+j, list);
+                    map.set("barray" + j, barray);
+                    map.set("iarray" + j, iarray);
+                    map.set("str" + j, str);
+                    map.set("list" + j, list);
                 }
                 this.equals(map.size(), mapLoop * mapItemCount, "Compound key count check");
 
@@ -1282,11 +1287,11 @@ Tester.concurrency(
                 cloned.dispose();
 
                 const mapvalue = map.value();
-                for (let j=0;j<mapLoop;j++) {
-                    this.assert(mapvalue['barray'+j] instanceof Uint8Array && arrayEquals([1, 2, 3, 4, 5], mapvalue['barray'+j]), "ByteArrayTag check");
-                    this.assert(mapvalue['iarray'+j] instanceof Int32Array && arrayEquals([1, 2, 3, 4], mapvalue['iarray'+j]), "IntArrayTag check");
-                    this.equals(mapvalue['str'+j], "12345678901234567890", "StringTag check");
-                    this.assert(mapvalue['list'+j] instanceof Array && arrayEquals(["12345678901234567890"], mapvalue['list'+j]), "ListTag check");
+                for (let j = 0; j < mapLoop; j++) {
+                    this.assert(mapvalue["barray" + j] instanceof Uint8Array && arrayEquals([1, 2, 3, 4, 5], mapvalue["barray" + j]), "ByteArrayTag check");
+                    this.assert(mapvalue["iarray" + j] instanceof Int32Array && arrayEquals([1, 2, 3, 4], mapvalue["iarray" + j]), "IntArrayTag check");
+                    this.equals(mapvalue["str" + j], "12345678901234567890", "StringTag check");
+                    this.assert(mapvalue["list" + j] instanceof Array && arrayEquals(["12345678901234567890"], mapvalue["list" + j]), "ListTag check");
                 }
                 this.equals(Object.keys(mapvalue).length, mapLoop * mapItemCount, "Compound key count check");
                 map.dispose();
@@ -1333,8 +1338,8 @@ Tester.concurrency(
                 "SNBT parse only feature",
             );
 
-            const nbt_ex = '[3.4028234663852886e+38]';
-            this.equals(NBT.stringify(NBT.parse(nbt_ex)), '[3.4028234663852886e+38d]');
+            const nbt_ex = "[3.4028234663852886e+38]";
+            this.equals(NBT.stringify(NBT.parse(nbt_ex)), "[3.4028234663852886e+38d]");
         },
 
         itemActor() {
