@@ -1124,6 +1124,8 @@ Actor.prototype.isBaby = procHacker.js("?isBaby@Actor@@QEBA_NXZ", bool_t, {
 Actor.prototype.getEntityData = procHacker.js("?getEntityData@Actor@@QEBAAEBVSynchedActorDataEntityWrapper@@XZ", SynchedActorDataEntityWrapper, { this: Actor });
 Actor.prototype.getOwner = procHacker.js("?getOwner@Actor@@QEBAPEAVMob@@XZ", Mob, { this: Actor });
 Actor.prototype.setOwner = procHacker.js("?setOwner@Actor@@UEAAXUActorUniqueID@@@Z", void_t, { this: Actor }, ActorUniqueID);
+Actor.prototype.getVariant = procHacker.js("?getVariant@Actor@@QEBAHXZ", int32_t, { this: Actor });
+Actor.prototype.setVariant = procHacker.js("?setVariant@Actor@@QEAAXH@Z", void_t, { this: Actor }, int32_t);
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, { this: Actor });
 Mob.prototype.knockback = procHacker.jsv(
@@ -1181,6 +1183,19 @@ SynchedActorDataEntityWrapper.prototype.setFloat = procHacker.js(
     { this: SynchedActorDataEntityWrapper },
     uint16_t,
     float32_t.ref() /** float const & */,
+);
+SynchedActorDataEntityWrapper.prototype.getInt = procHacker.js(
+    "?getInt@SynchedActorDataEntityWrapper@@QEBAHG@Z",
+    int32_t,
+    { this: SynchedActorDataEntityWrapper },
+    uint16_t,
+);
+SynchedActorDataEntityWrapper.prototype.setInt = procHacker.js(
+    "??$set@H@SynchedActorDataEntityWrapper@@QEAAXGAEBH@Z",
+    void_t,
+    { this: SynchedActorDataEntityWrapper },
+    uint16_t,
+    int32_t.ref() /** int const & */,
 );
 
 @nativeClass(0x18)
