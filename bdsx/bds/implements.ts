@@ -1182,6 +1182,19 @@ SynchedActorDataEntityWrapper.prototype.setFloat = procHacker.js(
     uint16_t,
     float32_t.ref() /** float const & */,
 );
+SynchedActorDataEntityWrapper.prototype.getInt = procHacker.js(
+    "?getInt@SynchedActorDataEntityWrapper@@QEBAHG@Z",
+    int32_t,
+    { this: SynchedActorDataEntityWrapper },
+    uint16_t,
+);
+SynchedActorDataEntityWrapper.prototype.setInt = procHacker.js(
+    "??$set@H@SynchedActorDataEntityWrapper@@QEAAXGAEBH@Z",
+    void_t,
+    { this: SynchedActorDataEntityWrapper },
+    uint16_t,
+    int32_t.ref() /** int const & */,
+);
 
 @nativeClass(0x18)
 class StackResultStorageEntity extends NativeClass {
