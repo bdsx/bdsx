@@ -1,4 +1,5 @@
 **/*.js
+**/*.ts
 
 !bdsx/**/*.ts
 bdsx/asm/asmcode.d.ts
