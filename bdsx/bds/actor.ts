@@ -1511,7 +1511,7 @@ export class SynchedActorDataEntityWrapper extends AbstractClass {
 }
 
 export enum ActorDataIDs /** : unsigned short */ {
-    Variant = 0x02, // used as int
+    Variant = 0x02, // used as int, in Actor::setVariant
     Scale = 0x26, // used as float, in Actor::setSize
     Width = 0x35, // used as float, in Actor::setSize
     Height = 0x36, // used as float, in Actor::setSize
