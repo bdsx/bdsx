@@ -1470,14 +1470,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
 
-    setVariant(variant: int32_t): void {
-        const entityData = this.getEntityData();
-        entityData.setInt(ActorDataIDs.Variant, variant);
+    getVariant(): int32_t {
+        abstract();
     }
 
-    getVariant(): int32_t {
-        const entityData = this.getEntityData();
-        return entityData.getInt(ActorDataIDs.Variant);
+    setVariant(variant: int32_t): void {
+        abstract();
     }
 }
 mangle.update(Actor);
@@ -1513,7 +1511,7 @@ export class SynchedActorDataEntityWrapper extends AbstractClass {
 }
 
 export enum ActorDataIDs /** : unsigned short */ {
-    Variant = 0x02, // used as int, in Actor::setVariant
+    Variant = 0x02, // used as int
     Scale = 0x26, // used as float, in Actor::setSize
     Width = 0x35, // used as float, in Actor::setSize
     Height = 0x36, // used as float, in Actor::setSize
