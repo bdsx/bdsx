@@ -263,7 +263,7 @@ export async function loadAllPlugins(): Promise<void> {
                         name: pkg.name,
                         loaded: pkg.errorMessage === null,
                         jsonpath: pkg.getJsonPath(),
-                        json
+                        json,
                     });
                 } catch (err) {
                     console.error(colors.red(`[BDSX-Plugins] Failed to load ${pkg.name}`));
