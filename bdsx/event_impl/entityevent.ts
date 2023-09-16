@@ -166,16 +166,16 @@ export class EntityKnockbackEvent {
     ) {}
 }
 
-const MovMovementProxy$_getMob = procHacker.js("?_getMob@?$DirectMobMovementProxyImpl@UIPlayerMovementProxy@@@@UEAAPEAVMob@@XZ", Mob, null, VoidPointer);
-function onMobJump(movementProxy: VoidPointer, blockSourceInterface: VoidPointer): void {
-    const mob = MovMovementProxy$_getMob(movementProxy);
+const MobMovementProxy$_getMob = procHacker.js("?_getMob@?$DirectMobMovementProxyImpl@UIPlayerMovementProxy@@@@UEAAPEAVMob@@XZ", Mob, null, VoidPointer);
+function onMobJump(movementProxy: VoidPointer): void {
+    const mob = MobMovementProxy$_getMob(movementProxy);
     if (mob instanceof Player) {
         const event = new PlayerJumpEvent(mob);
         events.playerJump.fire(event);
     }
-    return _onMobJump(movementProxy, blockSourceInterface);
+    return _onMobJump(movementProxy);
 }
-const _onMobJump = procHacker.hooking("?jumpFromGround@Mob@@IEAAXAEBVIConstBlockSource@@@Z", void_t, null, VoidPointer, VoidPointer)(onMobJump);
+const _onMobJump = procHacker.hooking("?handleJumpEffects@Player@@SAXAEAUIPlayerMovementProxy@@@Z", void_t, null, VoidPointer)(onMobJump);
 
 function onPlayerUseItem(player: Player, itemStack: ItemStack, useMethod: number, consumeItem: boolean): void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);

@@ -4,7 +4,7 @@ import type { CommandContext } from "./bds/command";
 import type { NetworkIdentifier } from "./bds/networkidentifier";
 import { MinecraftPacketIds } from "./bds/packetids";
 import { CANCEL } from "./common";
-import { Event } from "./eventtarget";
+import { PACKET_ID_COUNT } from "./const";
 import type {
     BlockAttackEvent,
     BlockDestroyEvent,
@@ -59,16 +59,16 @@ import type {
 } from "./event_impl/entityevent";
 import type { LevelExplodeEvent, LevelSaveEvent, LevelTickEvent, LevelWeatherChangeEvent } from "./event_impl/levelevent";
 import type { ObjectiveCreateEvent, QueryRegenerateEvent, ScoreAddEvent, ScoreRemoveEvent, ScoreResetEvent, ScoreSetEvent } from "./event_impl/miscevent";
+import { Event } from "./eventtarget";
 import type { nethook } from "./nethook";
 import { remapAndPrintError, remapError } from "./source-map-support";
-import { PACKET_ID_COUNT } from "./const";
 
 const PACKET_EVENT_COUNT = PACKET_ID_COUNT * 5;
 
 const enabledPacket = asmcode.addressof_enabledPacket;
 enabledPacket.fill(0, 256);
 
-class PacketEvent extends Event<(...args: any[]) => CANCEL | void> {
+class PacketEvent extends Event<(...args: any[]) => void | CANCEL> {
     constructor(public readonly id: number) {
         super();
     }
@@ -228,7 +228,7 @@ export namespace events {
      */
     export const playerSleepInBed = new Event<(event: PlayerSleepInBedEvent) => void | CANCEL>();
     /** Not cancellable */
-    export const playerJump = new Event<(event: PlayerJumpEvent) => void | CANCEL>();
+    export const playerJump = new Event<(event: PlayerJumpEvent) => void>();
     /** Not cancellable */
     export const entityConsumeTotem = new Event<(event: EntityConsumeTotemEvent) => void>();
     /** Cancellable
@@ -297,7 +297,7 @@ export namespace events {
     /**
      * server console outputs
      */
-    export const serverLog = new Event<(log: string, color: Color) => CANCEL | void>();
+    export const serverLog = new Event<(log: string, color: Color) => void | CANCEL>();
 
     ////////////////////////////////////////////////////////
     // Packet events
@@ -310,7 +310,7 @@ export namespace events {
         SendRaw,
     }
 
-    export function packetEvent(type: PacketEventType, packetId: MinecraftPacketIds): Event<(...args: any[]) => CANCEL | void> | null {
+    export function packetEvent(type: PacketEventType, packetId: MinecraftPacketIds): Event<(...args: any[]) => void | CANCEL> | null {
         if (packetId >>> 0 >= PACKET_ID_COUNT) {
             console.error(`Out of range: packetId < 0x100 (type=${PacketEventType[type]}, packetId=${packetId})`);
             return null;
@@ -396,7 +396,7 @@ export namespace events {
     /**
      * command console outputs
      */
-    export const commandOutput = new Event<(log: string) => CANCEL | void>();
+    export const commandOutput = new Event<(log: string) => void | CANCEL>();
 
     /**
      * command input
