@@ -507,7 +507,7 @@ export class CommandItem extends NativeStruct {
 }
 
 CommandItem.prototype.createInstance = procHacker.js(
-    "?createInstance@CommandItem@@QEBA?AV?$optional@VItemInstance@@@std@@HHPEAVCommandOutput@@_N@Z",
+    "?createInstance@CommandItem@@QEBA?AV?$optional@VItemInstance@@@std@@HHAEAVCommandOutput@@_N@Z",
     ItemStack,
     { this: CommandItem, structureReturn: true },
     int32_t,
@@ -1430,7 +1430,11 @@ function constptr<T extends NativeClass>(cls: new () => T): CommandParameterNati
 CommandOutput.prototype.getSuccessCount = procHacker.js("?getSuccessCount@CommandOutput@@QEBAHXZ", int32_t, { this: CommandOutput });
 CommandOutput.prototype.getType = procHacker.js("?getType@CommandOutput@@QEBA?AW4CommandOutputType@@XZ", int32_t, { this: CommandOutput });
 CommandOutput.prototype.constructWith = procHacker.js("??0CommandOutput@@QEAA@W4CommandOutputType@@@Z", void_t, { this: CommandOutput }, int32_t);
-CommandOutput.prototype.empty = procHacker.js("?empty@CommandOutput@@QEBA_NXZ", bool_t, { this: CommandOutput });
+CommandOutput.prototype.empty = function () {
+    if (this.getType() === CommandOutputType.DataSet) return false;
+    const ptr = this as any as StaticPointer;
+    return ptr.getPointer(0x10).equalsptr(ptr.getPointer(0x18));
+};
 CommandOutput.prototype.set_string = procHacker.js(
     "??$set@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@CommandOutput@@QEAAXPEBDV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
     void_t,
