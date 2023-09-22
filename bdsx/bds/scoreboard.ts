@@ -110,7 +110,7 @@ export class Scoreboard extends AbstractClass {
         return null;
     }
 
-    resetPlayerScore(id: ScoreboardId, objective: Objective): void {
+    resetPlayerScore(id: ScoreboardId, objective: Objective): boolean {
         abstract();
     }
 
@@ -194,6 +194,10 @@ export class IdentityDefinition extends AbstractClass {
         abstract();
     }
 
+    isPlayerType(): boolean {
+        abstract();
+    }
+
     getName(): string | null {
         switch (this.getIdentityType()) {
             case IdentityDefinition.Type.Entity: {
@@ -226,6 +230,7 @@ export namespace IdentityDefinition {
         Entity,
         FakePlayer,
     }
+    export const Invalid = proc["?Invalid@IdentityDefinition@@2V1@B"].as(IdentityDefinition);
 }
 
 @nativeClass()

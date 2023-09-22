@@ -131,6 +131,7 @@ import {
     ThrowableItemComponent,
     WeaponItemComponent,
     WearableItemComponent,
+    cereal,
 } from "./item_component";
 import { ActorFactory, AdventureSettings, BlockPalette, Level, LevelData, ServerLevel, Spawner, TagRegistry } from "./level";
 import {
@@ -1810,7 +1811,10 @@ NetworkSystem.prototype.sendInternal = procHacker.js(
     CxxStringWrapper,
 );
 
-NetworkConnection.prototype.disconnect = procHacker.js("?disconnect@NetworkConnection@@QEAAXXZ", void_t, { this: NetworkConnection });
+NetworkConnection.prototype.disconnect = function () {
+    // NetworkSystem::onConnectionClosed, [rbx] = NetworkSystem*
+    (this as any as StaticPointer).setUint8(1, 0x168);
+};
 
 const BatchedNetworkPeer$sendPacket = procHacker.js(
     "?sendPacket@BatchedNetworkPeer@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4Reliability@NetworkPeer@@W4Compressibility@@@Z",
@@ -2514,11 +2518,10 @@ BlockLegacy.prototype.getStateFromLegacyData = procHacker.js(
 BlockLegacy.prototype.getRenderBlock = procHacker.js("?getRenderBlock@BlockLegacy@@UEBAAEBVBlock@@XZ", Block, { this: BlockLegacy });
 BlockLegacy.prototype.getDefaultState = procHacker.js("?getDefaultState@BlockLegacy@@QEBAAEBVBlock@@XZ", Block, { this: BlockLegacy });
 BlockLegacy.prototype.tryGetStateFromLegacyData = procHacker.js(
-    "?tryGetStateFromLegacyData@BlockLegacy@@QEBAPEBVBlock@@G_N@Z",
+    "?tryGetStateFromLegacyData@BlockLegacy@@QEBAPEBVBlock@@G@Z",
     Block,
     { this: BlockLegacy },
     uint16_t,
-    bool_t,
 );
 BlockLegacy.prototype.use = procHacker.jsv(
     "??_7JukeboxBlock@@6B@",
@@ -3037,8 +3040,8 @@ Scoreboard.prototype.getScoreboardIdentityRef = procHacker.js(
 );
 Scoreboard.prototype.removeObjective = procHacker.js("?removeObjective@Scoreboard@@QEAA_NPEAVObjective@@@Z", bool_t, { this: Scoreboard }, Objective);
 Scoreboard.prototype.resetPlayerScore = procHacker.js(
-    "?resetPlayerScore@Scoreboard@@QEAAXAEBUScoreboardId@@AEAVObjective@@@Z",
-    void_t,
+    "?resetPlayerScore@Scoreboard@@QEAA_NAEBUScoreboardId@@AEAVObjective@@@Z",
+    bool_t,
     { this: Scoreboard },
     ScoreboardId,
     Objective,
@@ -3075,6 +3078,9 @@ Objective.prototype.getDisplayName = procHacker.js("?getDisplayName@Objective@@Q
     this: Objective,
 });
 
+IdentityDefinition.prototype.isPlayerType = procHacker.js("?getScoreboardId@ScoreboardIdentityRef@@QEBAAEBUScoreboardId@@XZ", bool_t, {
+    this: IdentityDefinition,
+});
 IdentityDefinition.prototype.getEntityId = procHacker.js("?getEntityId@IdentityDefinition@@QEBAAEBUActorUniqueID@@XZ", ActorUniqueID.ref(), {
     this: IdentityDefinition,
 });
@@ -3111,7 +3117,11 @@ ScoreboardIdentityRef.prototype.getPlayerId = procHacker.js("?getPlayerId@Scoreb
 ScoreboardIdentityRef.prototype.getScoreboardId = procHacker.js("?getScoreboardId@ScoreboardIdentityRef@@QEBAAEBUScoreboardId@@XZ", ScoreboardId, {
     this: ScoreboardIdentityRef,
 });
-ScoreboardIdentityRef.prototype.isPlayerType = procHacker.js("?isPlayerType@ScoreboardIdentityRef@@QEBA_NXZ", bool_t, { this: ScoreboardIdentityRef });
+ScoreboardIdentityRef.prototype.isPlayerType = function () {
+    let iddef = (this as any as StaticPointer).getPointerAs(IdentityDefinition, 0x10);
+    if (iddef === null) iddef = IdentityDefinition.Invalid;
+    return iddef.isPlayerType();
+};
 
 // effects.ts
 MobEffect.create = procHacker.js("?getById@MobEffect@@SAPEAV1@I@Z", MobEffect, null, int32_t);
@@ -3236,11 +3246,10 @@ ByteArrayTag.prototype[NativeType.ctor] = function () {
     this.vftable = ByteArrayTag$vftable;
     this.data.construct();
 };
-const ByteArrayTag$ByteArrayTag = procHacker.js("??0ByteArrayTag@@QEAA@UTagMemoryChunk@@@Z", void_t, null, ByteArrayTag, TagMemoryChunk);
 ByteArrayTag.prototype.constructWith = function (data: Uint8Array): void {
-    const chunk = TagMemoryChunk.construct();
-    chunk.set(data);
-    ByteArrayTag$ByteArrayTag(this, chunk); // it will destruct the chunk.
+    this.vftable = ByteArrayTag$vftable;
+    this.data.construct();
+    this.data.set(data);
 };
 const StringTagDataOffset = StringTag.offsetOf("data");
 StringTag.prototype[NativeType.ctor] = function () {
@@ -3527,19 +3536,25 @@ ItemComponent.setResolver(ptr => {
     return ptr.as(cls || ItemComponent);
 });
 
-ItemComponent.prototype.buildNetworkTag = procHacker.jsv(
+const ItemComponent$buildNetworkTag = procHacker.jsv(
     "??_7ItemComponent@@6B@",
-    "?buildNetworkTag@ItemComponent@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ",
+    "?buildNetworkTag@ItemComponent@@UEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@AEAUReflectionCtx@cereal@@@Z",
     CompoundTag.ref(),
     { this: ItemComponent, structureReturn: true },
 );
-ItemComponent.prototype.initializeFromNetwork = procHacker.jsv(
+ItemComponent.prototype.buildNetworkTag = function (u = new cereal.ReflectionCtx(true)) {
+    return ItemComponent$buildNetworkTag.call(this, u);
+};
+const ItemComponent$initializeFromNetwork = procHacker.jsv(
     "??_7ChargeableItemComponent@@6B@",
     "?initializeFromNetwork@ChargeableItemComponent@@UEAA_NAEBVCompoundTag@@@Z",
     void_t,
     { this: ItemComponent },
     CompoundTag,
 );
+ItemComponent.prototype.initializeFromNetwork = function (tag, u = new cereal.ReflectionCtx(true)) {
+    return ItemComponent$initializeFromNetwork.call(this, tag, u);
+};
 
 CooldownItemComponent.getIdentifier = procHacker.js("?getIdentifier@CooldownItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 ArmorItemComponent.getIdentifier = procHacker.js("?getIdentifier@ArmorItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);

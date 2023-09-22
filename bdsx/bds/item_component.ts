@@ -1,21 +1,30 @@
 import { abstract } from "../common";
-import { NativeClass } from "../nativeclass";
+import { NativeClass, nativeClass, nativeField } from "../nativeclass";
+import { int64_as_float_t } from "../nativetype";
 import { Actor } from "./actor";
-import { Block, BlockLegacy, BlockSource } from "./block";
+import { Block, BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
 import { HashedString } from "./hashedstring";
 import type { ItemDescriptor, ItemStack, ItemStackBase } from "./inventory";
 import { CompoundTag } from "./nbt";
 import type { Player } from "./player";
 
+export namespace cereal {
+    @nativeClass()
+    export class ReflectionCtx extends NativeClass {
+        @nativeField(int64_as_float_t)
+        u: int64_as_float_t;
+    }
+}
+
 export class ItemComponent extends NativeClass {
     static getIdentifier(): HashedString {
         abstract();
     }
-    buildNetworkTag(): CompoundTag {
+    buildNetworkTag(u?: cereal.ReflectionCtx): CompoundTag {
         abstract();
     }
-    initializeFromNetwork(tag: CompoundTag): void {
+    initializeFromNetwork(tag: CompoundTag, u?: cereal.ReflectionCtx): void {
         abstract();
     }
     isCooldown(): this is CooldownItemComponent {

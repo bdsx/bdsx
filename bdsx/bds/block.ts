@@ -81,6 +81,12 @@ export class BlockLegacy extends NativeClass {
     getDefaultState(): Block {
         abstract();
     }
+
+    /**
+     * @deprecated parameter removed
+     */
+    tryGetStateFromLegacyData(data: uint16_t, u: bool_t): Block;
+    tryGetStateFromLegacyData(data: uint16_t): Block;
     tryGetStateFromLegacyData(data: uint16_t, u?: bool_t): Block {
         abstract();
     }
