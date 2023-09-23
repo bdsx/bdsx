@@ -589,83 +589,6 @@ Dimension.prototype.getHeight = procHacker.js("?getHeight@Dimension@@QEBAFXZ", i
 
 Dimension.prototype.tryGetClosestPublicRegion = function (chunkpos: ChunkPos) {
     return this.getBlockSource();
-
-    /**
-     * @author rua.kr
-     * legacy polyfill.
-     * I'm not sure it should be implemented.
-     * Skipped for now.
-     */
-    // let blockSource: BlockSource | null = null; // rsp+80
-    // for (const player of this.getPlayers()) {
-    //     if (!player.hasDimension()) continue;
-    //     blockSource = player.getRegion();
-    //     if (blockSource.getChunk(chunkpos) === null) continue;
-    //     break;
-    // }
-    // if (blockSource !== null) return blockSource;
-    // const list = (this as VoidPointer as StaticPointer).getPointerAs(TickingAreaList, 0x2b8);
-
-    // for (const tickingAreaPtr of list.getAreas()) {
-    //     const tickingArea = tickingAreaPtr.p;
-    //     let bpl = 0;
-    //     let chunkFound = false;
-    //     let chunk: CxxSharedPtr<LevelChunk> | null = null; // rsp_30
-    //     if (tickingArea !== null) {
-    //         if (!tickingArea.isRemoved()) {
-    //             const view = tickingArea.getView();
-    //             // mov r8,chunkpos
-    //             // lea rdx,
-    //             chunk = view.getAvailableChunk(chunkpos);
-    //             chunkFound = true;
-    //             if (chunk.p !== null) {
-    //                 bpl = 1;
-    //             }
-    //         }
-    //     }
-    //     if (chunkFound) {
-    //         // mov rbx,qword ptr ss:[rsp+38]
-    //         // test rbx,rbx
-    //         // je bedrock_server.7FF694F649AD
-    //         // mov eax,FFFFFFFF
-    //         // lock xadd dword ptr ds:[rbx+8],eax
-    //         // cmp eax,1
-    //         // jne bedrock_server.7FF694F649AD
-    //         // mov rax,qword ptr ds:[rbx]
-    //         // mov rcx,rbx
-    //         // mov rax,qword ptr ds:[rax]
-    //         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
-    //         // mov eax,FFFFFFFF
-    //         // lock xadd dword ptr ds:[rbx+C],eax
-    //         // cmp eax,1
-    //         // jne bedrock_server.7FF694F649AD
-    //         // mov rax,qword ptr ds:[rbx]
-    //         // mov rcx,rbx
-    //         // mov rax,qword ptr ds:[rax+8]
-    //         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
-    //     }
-    //     // test bpl,bpl
-    //     // jne bedrock_server.7FF694F649E1
-
-    //     // rdi = tickingArea*
-    //     // add rdi,10
-    //     // cmp rdi,inst_end
-    //     // jne bedrock_server.7FF694F64905
-
-    //     // bedrock_server.7FF694F649E1
-    //     // rcx = tickingArea
-    //     // mov rax,qword ptr ds:[rcx]
-    //     // mov rax,qword ptr ds:[rax+28]
-    //     // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
-    //     // return;
-    // }
-    // const mainBlockSource = this.getBlockSource();
-    // if (mainBlockSource !== null) {
-    //     if (mainBlockSource.getChunk(chunkpos) !== null) {
-    //         return mainBlockSource;
-    //     }
-    // }
-    // return null as any;
 };
 Dimension.prototype.removeActorByID = procHacker.js("?removeActorByID@Dimension@@QEAAXAEBUActorUniqueID@@@Z", void_t, { this: Dimension }, ActorUniqueID);
 Dimension.prototype.getMinHeight = procHacker.js("?getMinHeight@Dimension@@QEBAFXZ", int16_t, { this: Dimension });
@@ -3547,7 +3470,7 @@ ItemComponent.prototype.buildNetworkTag = function (u = new cereal.ReflectionCtx
 };
 const ItemComponent$initializeFromNetwork = procHacker.jsv(
     "??_7ChargeableItemComponent@@6B@",
-    "?initializeFromNetwork@ChargeableItemComponent@@UEAA_NAEBVCompoundTag@@@Z",
+    "?initializeFromNetwork@ChargeableItemComponent@@UEAA_NAEBVCompoundTag@@AEAUReflectionCtx@cereal@@@Z",
     void_t,
     { this: ItemComponent },
     CompoundTag,
@@ -3580,17 +3503,18 @@ ThrowableItemComponent.getIdentifier = procHacker.js("?getIdentifier@ThrowableIt
 WeaponItemComponent.getIdentifier = procHacker.js("?getIdentifier@WeaponItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 WearableItemComponent.getIdentifier = procHacker.js("?getIdentifier@WearableItemComponent@@SAAEBVHashedString@@XZ", HashedString, null);
 
-DiggerItemComponent.prototype.mineBlock = procHacker.js(
-    "?mineBlock@DiggerItemComponent@@QEAA_NAEAVItemStack@@AEBVBlock@@HHHPEAVActor@@@Z",
-    bool_t,
-    { this: DiggerItemComponent },
-    ItemStack,
-    Block,
-    int32_t,
-    int32_t,
-    int32_t,
-    Actor,
-);
+// XXX: removed
+// DiggerItemComponent.prototype.mineBlock = procHacker.js(
+//     "?mineBlock@DiggerItemComponent@@QEAA_NAEAVItemStack@@AEBVBlock@@HHHPEAVActor@@@Z",
+//     bool_t,
+//     { this: DiggerItemComponent },
+//     ItemStack,
+//     Block,
+//     int32_t,
+//     int32_t,
+//     int32_t,
+//     Actor,
+// );
 // TODO: removed method, need to implement
 // EntityPlacerItemComponent.prototype.positionAndRotateActor = procHacker.js(
 //     "?_positionAndRotateActor@EntityPlacerItemComponent@@AEBAXAEAVActor@@VVec3@@EAEBV3@PEBVBlockLegacy@@@Z",

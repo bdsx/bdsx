@@ -26,6 +26,7 @@ export namespace Direction {
 }
 
 export enum AttributeName {
+    /** @deprecated deleted */
     ZombieSpawnReinforcementsChange = "minecraft:zombie.spawn.reinforcements",
     PlayerHunger = "minecraft:player.hunger",
     PlayerSaturation = "minecraft:player.saturation",

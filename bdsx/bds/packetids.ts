@@ -76,9 +76,11 @@ export enum MinecraftPacketIds { // int32_t
     SetPlayerGameType = 0x3e,
     PlayerList = 0x3f,
     SimpleEvent = 0x40,
-    /** @deprecated use Event instead, to follow the real class name */
+    /** @deprecated use LegacyTelemetryEvent instead, to follow the real class name */
     TelemetryEvent = 0x41,
+    /** @deprecated use LegacyTelemetryEvent instead, to follow the real class name */
     Event = 0x41,
+    LegacyTelemetryEvent = 0x41,
     SpawnExperienceOrb = 0x42,
     /** @deprecated Use ClientboundMapItemData instead, to match to official class name*/
     MapItemData = 0x43,

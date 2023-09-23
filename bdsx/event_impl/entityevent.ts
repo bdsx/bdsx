@@ -166,16 +166,12 @@ export class EntityKnockbackEvent {
     ) {}
 }
 
-const MobMovementProxy$_getMob = procHacker.js("?_getMob@?$DirectMobMovementProxyImpl@UIPlayerMovementProxy@@@@UEAAPEAVMob@@XZ", Mob, null, VoidPointer);
-function onMobJump(movementProxy: VoidPointer): void {
-    const mob = MobMovementProxy$_getMob(movementProxy);
-    if (mob instanceof Player) {
-        const event = new PlayerJumpEvent(mob);
-        events.playerJump.fire(event);
-    }
-    return _onMobJump(movementProxy);
+function onMobJump(player: Player): void {
+    const event = new PlayerJumpEvent(player);
+    events.playerJump.fire(event);
+    return _onMobJump(player);
 }
-const _onMobJump = procHacker.hooking("?handleJumpEffects@Player@@SAXAEAUIPlayerMovementProxy@@@Z", void_t, null, VoidPointer)(onMobJump);
+const _onMobJump = procHacker.hooking("?handleJumpEffects@Player@@QEAAXXZ", void_t, null, Player)(onMobJump);
 
 function onPlayerUseItem(player: Player, itemStack: ItemStack, useMethod: number, consumeItem: boolean): void {
     const event = new PlayerUseItemEvent(player, useMethod, consumeItem, itemStack);
@@ -343,12 +339,22 @@ const _onEntitySneak = procHacker.hooking(
     bool_t,
 )(onEntitySneak);
 
-function onEntityCreated(actorEventCoordinator: VoidPointer, entity: Actor): void {
+// stub code, need to implement and reposition.
+enum InitializationMethod {}
+
+function onEntityCreated(actorEventCoordinator: VoidPointer, entity: Actor, method: InitializationMethod): void {
     const event = new EntityCreatedEvent(entity);
-    _onEntityCreated(actorEventCoordinator, event.entity);
+    _onEntityCreated(actorEventCoordinator, event.entity, method);
     events.entityCreated.fire(event);
 }
-const _onEntityCreated = procHacker.hooking("?sendActorCreated@ActorEventCoordinator@@QEAAXAEAVActor@@@Z", void_t, null, VoidPointer, Actor)(onEntityCreated);
+const _onEntityCreated = procHacker.hooking(
+    "?sendActorCreated@ActorEventCoordinator@@QEAAXAEAVActor@@W4InitializationMethod@@@Z",
+    void_t,
+    null,
+    VoidPointer,
+    Actor,
+    int32_t,
+)(onEntityCreated);
 
 function onPlayerAttack(player: Player, victim: Actor, cause: Wrapper<ActorDamageCause>): boolean {
     const event = new PlayerAttackEvent(player, victim);

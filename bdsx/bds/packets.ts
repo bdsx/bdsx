@@ -940,10 +940,14 @@ export class SimpleEventPacket extends Packet {
 }
 
 @nativeClass(null)
-export class EventPacket extends Packet {
+export class LegacyTelemetryEventPacket extends Packet {
     // unknown
 }
 
+/** @deprecated Use LegacyTelemetryEventPacket instead, to match to official class name*/
+export const EventPacket = LegacyTelemetryEventPacket;
+/** @deprecated Use LegacyTelemetryEventPacket instead, to match to official class name*/
+export type EventPacket = LegacyTelemetryEventPacket;
 /** @deprecated Use EventPacket instead, to match to official class name*/
 export const TelemetryEventPacket = EventPacket;
 /** @deprecated Use EventPacket instead, to match to official class name*/
@@ -958,14 +962,18 @@ export class SpawnExperienceOrbPacket extends Packet {
 }
 
 @nativeClass(null)
-export class ClientboundMapItemData extends Packet {
+export class ClientboundMapItemDataPacket extends Packet {
     // unknown
 }
 
-/** @deprecated Use ClientboundMapItemData instead, to match to official class name*/
-export const MapItemDataPacket = ClientboundMapItemData;
-/** @deprecated Use ClientboundMapItemData instead, to match to official class name*/
-export type MapItemDataPacket = ClientboundMapItemData;
+/** @deprecated Use ClientboundMapItemDataPacket instead, to match to official class name*/
+export const MapItemDataPacket = ClientboundMapItemDataPacket;
+/** @deprecated Use ClientboundMapItemDataPacket instead, to match to official class name*/
+export type MapItemDataPacket = ClientboundMapItemDataPacket;
+/** @deprecated Use ClientboundMapItemDataPacket instead, to match to official class name*/
+export const ClientboundMapItemData = ClientboundMapItemDataPacket;
+/** @deprecated Use ClientboundMapItemDataPacket instead, to match to official class name*/
+export type ClientboundMapItemData = ClientboundMapItemDataPacket;
 
 @nativeClass(null)
 export class MapInfoRequestPacket extends Packet {
@@ -1497,9 +1505,13 @@ export class LabTablePacket extends Packet {
 }
 
 @nativeClass(null)
-export class UpdateBlockPacketSynced extends Packet {
+export class UpdateBlockSyncedPacket extends Packet {
     // unknown
 }
+/** @deprecated Use UpdateBlockSyncedPacket instead, to match to official class name*/
+export const UpdateBlockPacketSynced = UpdateBlockSyncedPacket;
+/** @deprecated Use UpdateBlockSyncedPacket instead, to match to official class name*/
+export type UpdateBlockPacketSynced = UpdateBlockSyncedPacket;
 
 @nativeClass(null)
 export class MoveActorDeltaPacket extends Packet {
@@ -1573,10 +1585,14 @@ export class NetworkChunkPublisherUpdatePacket extends Packet {
 }
 
 @nativeClass(null)
-export class BiomeDefinitionList extends Packet {
+export class BiomeDefinitionListPacket extends Packet {
     @nativeField(CompoundTag)
     nbt: CompoundTag;
 }
+/** @deprecated Use BiomeDefinitionListPacket instead, to match to official class name*/
+export const BiomeDefinitionList = BiomeDefinitionListPacket;
+/** @deprecated Use BiomeDefinitionListPacket instead, to match to official class name*/
+export type BiomeDefinitionList = BiomeDefinitionListPacket;
 
 @nativeClass(null)
 export class LevelSoundEventPacket extends Packet {
@@ -1629,12 +1645,16 @@ export class OnScreenTextureAnimationPacket extends Packet {
 }
 
 @nativeClass(null)
-export class MapCreateLockedCopy extends Packet {
+export class MapCreateLockedCopyPacket extends Packet {
     @nativeField(uint64_as_float_t)
     original: uint64_as_float_t;
     @nativeField(uint64_as_float_t)
     new: uint64_as_float_t;
 }
+/** @deprecated Use MapCreateLockedCopyPacket instead, to match to official class name*/
+export const MapCreateLockedCopy = MapCreateLockedCopyPacket;
+/** @deprecated Use MapCreateLockedCopyPacket instead, to match to official class name*/
+export type MapCreateLockedCopy = MapCreateLockedCopyPacket;
 
 @nativeClass(null)
 export class StructureTemplateDataRequestPacket extends Packet {
@@ -2117,9 +2137,13 @@ export class VideoStreamConnect_DEPRECATED extends Packet {
     // unknown
 }
 
-export class AddEntity extends Packet {
+export class AddEntityPacket extends Packet {
     // unknown
 }
+/** @deprecated Use AddEntityPacket instead, to match to official class name*/
+export const AddEntity = AddEntityPacket;
+/** @deprecated Use AddEntityPacket instead, to match to official class name*/
+export type AddEntity = AddEntityPacket;
 
 // export class UpdateBlockProperties extends Packet {
 //     // unknown

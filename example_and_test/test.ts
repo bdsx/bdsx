@@ -42,11 +42,12 @@ import { command, CommandFieldOptions } from "bdsx/command";
 import { CommandParameterType } from "bdsx/commandparam";
 import { CommandResultType } from "bdsx/commandresult";
 import { AttributeName, CANCEL } from "bdsx/common";
-import { NativePointer, StaticPointer } from "bdsx/core";
+import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
 import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
 import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
+import { dllraw } from "bdsx/dllraw";
 import { events } from "bdsx/event";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
@@ -54,6 +55,7 @@ import { makefunc } from "bdsx/makefunc";
 import { mce } from "bdsx/mce";
 import { AbstractClass, nativeClass, NativeClass, nativeField } from "bdsx/nativeclass";
 import { bin64_t, bool_t, CxxString, float32_t, float64_t, int16_t, int32_t, int64_as_float_t, int8_t, uint16_t } from "bdsx/nativetype";
+import { pdbcache } from "bdsx/pdbcache";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { procHacker } from "bdsx/prochacker";
 import { PseudoRandom } from "bdsx/pseudorandom";
@@ -79,6 +81,7 @@ enum PacketPhase {
     After,
 }
 let nextPacketPhase = PacketPhase.Raw;
+let nextEventTimeout:NodeJS.Timeout|null = null;
 
 type PromiseFunc = () => Promise<PromiseFunc>;
 
@@ -819,53 +822,33 @@ Tester.concurrency(
         },
 
         async checkPacketNames() {
-            const wrongNames = new Map<string, string | null>([
-                ["UpdateTradePacket", ""],
-                ["UpdateEquipPacket", ""],
-                ["ModalFormRequestPacket", "ShowModalFormPacket"],
-                ["SpawnParticleEffectPacket", "SpawnParticleEffect"],
-                ["ResourcePackStackPacket", "ResourcePacksStackPacket"],
-                ["PositionTrackingDBServerBroadcastPacket", "PositionTrackingDBServerBroadcast"],
-                ["PositionTrackingDBClientRequestPacket", "PositionTrackingDBClientRequest"],
-                ["NpcDialoguePacket", "NPCDialoguePacket"],
-                ["AddEntity", "AddEntityPacket"],
-                ["ItemStackRequestPacket", "ItemStackRequest"],
-                ["ItemStackResponsePacket", "ItemStackResponse"],
-                ["ClientboundMapItemData", "MapItemDataPacket"],
-                ["AdventureSettingsPacket", null],
-                ["EventPacket", "TelemetryEventPacket"],
-                ["AutomationClientConnectPacket", "WSConnectPacket"],
-                ["StructureTemplateDataResponsePacket", "StructureTemplateDataExportPacket"],
-                ["CompressedBiomeDefinitionListPacket", "CompressedBiomeDefinitionList"],
-            ]);
-
+            const deletePackets = new Set([MinecraftPacketIds.AdventureSettings]);
             for (const id in PacketIdToType) {
                 try {
                     const Packet = PacketIdToType[+id as keyof PacketIdToType];
-                    let expected = wrongNames.get(Packet.name);
-
                     let packet: Packet;
                     try {
                         packet = Packet.allocate();
                     } catch (err) {
                         if (err.message.endsWith(" is not created")) {
-                            this.equals(expected, null, err.message);
+                            this.assert(deletePackets.has(+id), err.message);
                             continue;
                         } else {
                             throw err;
                         }
                     }
 
-                    let getNameResult = packet.getName();
-                    if (expected === undefined) expected = Packet.name;
-
-                    this.equals(getNameResult, expected);
+                    const rva = pdbcache.search(`?getId@${Packet.name}@@UEBA?AW4MinecraftPacketIds@@XZ`);
+                    this.assert(rva !== -1, `${Packet.name}: class name not found, getName()=${packet.getName()}`);
                     this.equals(packet.getId(), Packet.ID);
+                    if (rva !== -1) {
+                        this.equals(makefunc.js(dllraw.current.add(rva), int32_t)(), Packet.ID, `${Packet.name}, class name mismatched`);
+                    }
 
                     let name = Packet.name;
                     const idx = name.lastIndexOf("Packet");
                     if (idx !== -1) name = name.substr(0, idx) + name.substr(idx + 6);
-                    this.equals(MinecraftPacketIds[Packet.ID], name);
+                    this.equals(MinecraftPacketIds[Packet.ID], name, "packet ID name mismatch");
 
                     packet.dispose();
                 } catch (err) {
@@ -912,12 +895,17 @@ Tester.concurrency(
             let idcheck = 0;
             let sendpacket = 0;
             let ignoreEndingPacketsAfter = 0; // ignore ni check of send for the avoiding disconnected ni.
+
             for (let i = 0; i < 255; i++) {
                 if (tooHeavy.has(i)) continue;
                 events.packetRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
                         this.equals(nextPacketPhase, PacketPhase.Raw, "unexpected phase");
                         nextPacketPhase = PacketPhase.Before;
+                        this.assert(nextEventTimeout === null, "timeout exists");
+                        nextEventTimeout = setTimeout(()=>{
+                            this.error("packet before did not fire, id="+packetId);
+                        }, 3000);
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetRaw, Invalid ni, id=" + packetId);
                         idcheck = packetId;
                         this.assert(size > 0, `packetRaw, packet is too small (size = ${size})`);
@@ -928,6 +916,11 @@ Tester.concurrency(
                     this.wrap((ptr, ni, packetId) => {
                         this.equals(nextPacketPhase, PacketPhase.Before, "unexpected phase");
                         nextPacketPhase = PacketPhase.After;
+                        this.assert(nextEventTimeout !== null, "no timeout");
+                        clearTimeout(nextEventTimeout!);
+                        nextEventTimeout = setTimeout(()=>{
+                            this.error("packet after did not fire, id="+packetId);
+                        }, 3000);
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetBefore, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
                         this.equals(ptr.getId(), idcheck, `packetBefore, different class.packetId on before. id=${packetId}`);
@@ -937,6 +930,9 @@ Tester.concurrency(
                     this.wrap((ptr, ni, packetId) => {
                         this.equals(nextPacketPhase, PacketPhase.After, "unexpected phase");
                         nextPacketPhase = PacketPhase.Raw;
+                        this.assert(nextEventTimeout !== null, "no timeout");
+                        clearTimeout(nextEventTimeout!);
+                        nextEventTimeout = null;
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetAfter, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetAfter, different packetId on after. id=${packetId}`);
                         this.equals(ptr.getId(), idcheck, `packetAfter, different class.packetId on after. id=${packetId}`);
@@ -1169,6 +1165,10 @@ Tester.concurrency(
                         setTimeout(() => bedrockServer.stop(), 1000);
                     }
                     nextPacketPhase = PacketPhase.Raw;
+                    if (nextEventTimeout !== null) {
+                        clearTimeout(nextEventTimeout);
+                        nextEventTimeout = null;
+                    }
                     return CANCEL;
                 }
             });
@@ -1187,6 +1187,7 @@ Tester.concurrency(
             const getByName = procHacker.js("?getByName@Attribute@@SAAEAV1@AEBVHashedString@@@Z", Attribute, null, HashedString);
             for (const key of getEnumKeys(AttributeId)) {
                 const name = AttributeName[key];
+                if (key === "ZombieSpawnReinforcementsChange") continue; // deleted
                 const hashname = HashedString.construct();
                 hashname.set(name);
                 const attr = getByName(hashname);

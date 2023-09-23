@@ -276,7 +276,7 @@ export function printOnProgress(message: string): void {
 }
 
 export function getEnumKeys<T extends Record<string, number | string>>(enumType: T): (keyof T)[] {
-    const NUMERIC = /^[1-9]\d*$/;
+    const NUMERIC = /^-?[1-9]\d*$/;
     return Object.keys(enumType).filter(v => typeof v === "string" && v !== "0" && !NUMERIC.test(v));
 }
 

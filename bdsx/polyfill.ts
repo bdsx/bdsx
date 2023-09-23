@@ -2,6 +2,15 @@ declare global {
     interface Blob {
         __dummy?: void;
     }
+
+    interface SymbolConstructor {
+        readonly dispose: unique symbol;
+        readonly asyncDispose: unique symbol;
+    }
+
+    interface Disposable {
+        [Symbol.dispose](): void;
+    }
 }
 
 if (!Promise.prototype.finally) {
@@ -14,5 +23,7 @@ if (!Promise.prototype.finally) {
         return this.then(voiding, voiding);
     };
 }
+(Symbol as any).dispose ??= Symbol("Symbol.dispose");
+(Symbol as any).asyncDispose ??= Symbol("Symbol.asyncDispose");
 
 export {};

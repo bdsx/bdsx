@@ -327,10 +327,13 @@ function _launch(asyncResolve: () => void): void {
         );
     });
 
+    /**
+     * it hooks the sleep part of the server and inject the node message loop.
+     */
     procHacker.patching(
         "update-hook",
         "<lambda_bad1ae3ebb6f5574a4da91bc00ae0aaf>::operator()", // caller of ServerInstance::_update
-        0x8e0,
+        0x912,
         asmcode.updateWithSleep,
         Register.rax,
         true,

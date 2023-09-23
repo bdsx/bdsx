@@ -510,36 +510,33 @@ export def createPacketRaw:qword
 export def enabledPacket:byte[PACKET_ID_COUNT]
 
 export proc packetRawHook
-    ; dword ptr[rbp+0xd0] - packetId
-    mov edx, dword ptr[rbp+0xd0]
+    ; dword ptr[rbp+0xb8] - packetId
+    mov edx, dword ptr[rbp+0xb8]
     lea rax, enabledPacket
     mov al, byte ptr[rax+rdx]
     unwind
     test al, al
     jz _skipEvent
     mov rcx, rbp ; rbp
-    mov rdx, r13 ; Connection
+    mov rdx, r15 ; NetworkConnection
     jmp onPacketRaw
  _skipEvent:
     ; rdx - packetId
-    lea rcx, [rbp+0xe0] ; packet
+    lea rcx, [rbp+0xc8] ; packet
     jmp createPacketRaw
 endp
 
 export def packetBeforeOriginal:qword
 export def onPacketBefore:qword
 export proc packetBeforeHook
-    ; dword ptr[rbp+0xd0] - packetId
+    ; dword ptr[rbp+0xb8] - packetId
     stack 28h
-    lea rdx,qword ptr[rbp+0x190] ; original code
-    lea rcx,qword ptr[rbp-0x18] ; original code
+    lea rdx,qword ptr[rbp+0x160] ; original code
+    lea rcx,qword ptr[rbp-0x8] ; original code
     call packetBeforeOriginal ; original code
     unwind
-    movzx eax,byte ptr [rbp+0x1D0] ; original code
-    test al, al
-    jz _skipEvent
     lea rcx, enabledPacket
-    mov edx, dword ptr[rbp+0xd0]
+    mov edx, dword ptr[rbp+0xb8] ; packetId
     movzx ecx, byte ptr[rcx+rdx]
     test ecx, ecx
     jz _skipEvent
@@ -572,24 +569,26 @@ endp
 
 export def onPacketAfter:qword
 export def handlePacket:qword
+export def __guard_dispatch_icall_fptr:qword
+
 export proc packetAfterHook
-    ; dword ptr[rbp+0xd0] - packetId
+    ; dword ptr[rbp+0xb8] - packetId
     stack 28h
 
     ; orignal codes
-    mov r8,r14 ; callback
-    mov rdx,r13 ; ni
-    mov rcx,[rbp+0xE0] ; packet
-    call handlePacket
+    mov r8, r14 ; callback
+    mov rdx, r15 ; NetworkConnection
+    mov rax, [rax+8]
+    call __guard_dispatch_icall_fptr
 
     lea r10, enabledPacket
-    mov edx, dword ptr[rbp+0xd0]
+    mov edx, dword ptr[rbp+0xb8] ; packetId
     mov al, byte ptr[r10+rdx]
     unwind
     test al, al
     jz _skipEvent
-    mov rcx,[rbp+0xE0] ; packet
-    mov rdx, r13 ; networkIdentifier
+    mov rcx,[rbp+0xc8] ; packet
+    mov rdx, r15 ; ni
     jmp onPacketAfter
 _skipEvent:
     ret
@@ -627,12 +626,11 @@ _skipSend:
     ret
 endp
 
-export def packetSendAllCancelPoint:qword
-export def packetSendAllJumpPoint:qword
+export def sendInternalOriginal:qword
 export proc packetSendAllHook
     stack 28h
     ; r15 - packet
-    ; rbx - NetworkIdentifier
+    ; rbx - ni
 
     mov rax, [r15] ; packet.vftable
     call [rax+8] ; packet.getId(), just constant return
@@ -643,29 +641,31 @@ export proc packetSendAllHook
     jz _pass
 
     mov r8, r15 ; packet
-    mov rdx, rbx ; NetworkIdentifier
+    mov rdx, rbx ; ni
     call onPacketSend
 
     test eax, eax
     jz _pass
     unwind
-    pop rcx
-    jmp packetSendAllCancelPoint
+    ret
 _pass:
-    unwind
 
     ; original codes
-    test r14,r14
-    jne _nojmp
-    pop rcx
-    jmp packetSendAllJumpPoint
-_nojmp:
-    movzx eax,byte ptr[r14+A0h]
-    ret
+    mov rax, [r15]
+    lea rdx, [r14+0x208]
+    mov rcx, r15
+    mov rax, [rax+0x18]
+    call __guard_dispatch_icall_fptr
+    mov r9, [r14+0x240]
+    mov r8, r15
+    mov rdx, rbx
+    mov rcx, r14
+
+    unwind
+    jmp sendInternalOriginal
 endp
 
 export def onPacketSendInternal:qword
-export def sendInternalOriginal:qword
 export proc packetSendInternalHook
     stack 48h
 

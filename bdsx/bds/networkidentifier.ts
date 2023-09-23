@@ -65,7 +65,7 @@ export class ServerNetworkHandler extends AbstractClass {
     vftable: VoidPointer;
     @nativeField(CxxString, 0x288) // serverName, accessed in ServerNetworkHandler::allowIncomingConnections
     readonly motd: CxxString;
-    @nativeField(int32_t, 0x300) // accessed in ServerNetworkHandler::setMaxNumPlayers
+    @nativeField(int32_t, 0x2e0) // accessed in ServerNetworkHandler::setMaxNumPlayers
     readonly maxPlayers: int32_t;
 
     disconnectClient(client: NetworkIdentifier, message: string = "disconnectionScreen.disconnected", skipMessage: boolean = false): void {
