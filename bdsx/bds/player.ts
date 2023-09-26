@@ -645,7 +645,7 @@ export class Player extends Mob implements HasStorage {
     /**
      * Sends a JSON-Object to the player
      * For the format for that object, reference:
-     * @see https://minecraft.fandom.com/wiki/Commands/tellraw
+     * @see https://minecraft.wiki/w/Commands/tellraw
      *
      * @param object JSON-Object to encode and send
      */
@@ -943,7 +943,7 @@ export class Player extends Mob implements HasStorage {
     /**
      * Plays a sound to the player
      *
-     * @param soundName - Sound name, like "random.burp". See {@link https://minecraft.fandom.com/wiki/Sounds.json/Bedrock_Edition_values}
+     * @param soundName - Sound name, like "random.burp". See {@link https://minecraft.wiki/w/Sounds.json/Bedrock_Edition_values}
      * @param pos - Position where the sound is played (defaults to player position)
      * @param volume - Volume of the sound (defaults to 1)
      * @param pitch - Pitch of the sound (defaults to 1)

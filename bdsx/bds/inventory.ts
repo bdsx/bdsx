@@ -331,7 +331,7 @@ export class ItemStackBase extends NativeClass {
     /**
      * Returns the item's enchantability
      *
-     * @see https://minecraft.fandom.com/wiki/Enchanting_mechanics
+     * @see https://minecraft.wiki/w/Enchanting_mechanics
      */
     getEnchantValue(): number {
         abstract();
