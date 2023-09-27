@@ -256,28 +256,28 @@ bedrockServer.withLoading().then(() => {
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, void_t, NetworkIdentifier, Packet);
     asmcode.sendOriginal = procHacker.hookingRaw("?send@NetworkSystem@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z", asmcode.packetSendHook);
 
-    // hook send all
-    procHacker.patching(
-        "hook-packet-send-all",
-        sendToClientsSymbol,
-        0x97,
-        asmcode.packetSendAllHook, // original code depended
-        Register.rax,
-        true,
-        // prettier-ignore
-        [
-            0x49, 0x8B, 0x07,                           // mov rax,qword ptr ds:[r15]
-            0x49, 0x8D, 0x96, 0x08, 0x02, 0x00, 0x00,   // lea rdx,qword ptr ds:[r14+208]
-            0x49, 0x8B, 0xCF,                           // mov rcx,r15
-            0x48, 0x8B, 0x40, 0x18,                     // mov rax,qword ptr ds:[rax+18]
-            0xFF, 0x15, 0x62, 0x58, 0xB9, 0x01,         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
-            0x4D, 0x8B, 0x8E, 0x40, 0x02, 0x00, 0x00,   // mov r9,qword ptr ds:[r14+240]
-            0x4D, 0x8B, 0xC7,                           // mov r8,r15
-            0x48, 0x8B, 0xD3,                           // mov rdx,rbx
-            0x49, 0x8B, 0xCE,                           // mov rcx,r14
-            0xE8, 0x7D, 0x61, 0xFE, 0xFF,               // call <bedrock_server.private: void __cdecl NetworkSystem::_sendInternal(class NetworkIdentifier const &, c
-        ],
-    );
+    // // hook send all
+    // procHacker.patching(
+    //     "hook-packet-send-all",
+    //     sendToClientsSymbol,
+    //     0x97,
+    //     asmcode.packetSendAllHook, // original code depended
+    //     Register.rax,
+    //     true,
+    //     // prettier-ignore
+    //     [
+    //         0x49, 0x8B, 0x07,                           // mov rax,qword ptr ds:[r15]
+    //         0x49, 0x8D, 0x96, 0x08, 0x02, 0x00, 0x00,   // lea rdx,qword ptr ds:[r14+208]
+    //         0x49, 0x8B, 0xCF,                           // mov rcx,r15
+    //         0x48, 0x8B, 0x40, 0x18,                     // mov rax,qword ptr ds:[rax+18]
+    //         0xFF, 0x15, 0x62, 0x58, 0xB9, 0x01,         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
+    //         0x4D, 0x8B, 0x8E, 0x40, 0x02, 0x00, 0x00,   // mov r9,qword ptr ds:[r14+240]
+    //         0x4D, 0x8B, 0xC7,                           // mov r8,r15
+    //         0x48, 0x8B, 0xD3,                           // mov rdx,rbx
+    //         0x49, 0x8B, 0xCE,                           // mov rcx,r14
+    //         0xE8, 0x7D, 0x61, 0xFE, 0xFF,               // call <bedrock_server.private: void __cdecl NetworkSystem::_sendInternal(class NetworkIdentifier const &, c
+    //     ],
+    // );
 
     // hook send raw
     asmcode.onPacketSendInternal = makefunc.np(onPacketSendInternal, int32_t, null, NetworkSystem, NetworkIdentifier, Packet, CxxStringWrapper);
