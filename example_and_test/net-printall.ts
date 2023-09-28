@@ -19,6 +19,7 @@ const tooLoudFilter = new Set([
     MinecraftPacketIds.UpdateSoftEnum,
     MinecraftPacketIds.PlayerAuthInput,
     MinecraftPacketIds.UpdateAttributes,
+    MinecraftPacketIds.LevelSoundEvent,
     0xae,
     0xaf,
 ]);

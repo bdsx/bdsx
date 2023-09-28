@@ -1671,6 +1671,31 @@ export class X64Assembler {
         return this._test(r1, r2, 1, 0, size, MovOper.Register);
     }
 
+    test_r_c(r1: Register, chr: number, size: OperationSize = OperationSize.qword): this {
+        if (chr !== (chr | 0)) throw Error("need 32bits integer");
+
+        this._rex(r1, null, null, size);
+        if (size === OperationSize.byte) {
+            if (chr < INT8_MIN || chr > INT8_MAX) throw Error("need 8bits integer");
+            if (r1 !== Register.rax) {
+                this.put(0xf6);
+                this.put(0xc0 | (r1 & 0x7));
+            } else {
+                this.put(0xa8);
+            }
+            this.put(chr);
+        } else {
+            if (r1 !== Register.rax) {
+                this.put(0xf7);
+                this.put(0xc0 | (r1 & 0x7));
+            } else {
+                this.put(0xa9);
+            }
+            this.writeInt32(chr);
+        }
+        return this;
+    }
+
     test_r_rp(r1: Register, r2: Register, multiply: AsmMultiplyConstant, offset: number, size: OperationSize = OperationSize.qword): this {
         return this._test(r1, r2, multiply, offset, size, MovOper.Read);
     }

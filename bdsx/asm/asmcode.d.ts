@@ -111,9 +111,6 @@ export namespace asmcode {
     export let onPacketBefore:VoidPointer;
     export const addressof_onPacketBefore:NativePointer;
     export const packetBeforeHook:NativePointer;
-    export let PacketViolationHandlerHandleViolationAfter:VoidPointer;
-    export const addressof_PacketViolationHandlerHandleViolationAfter:NativePointer;
-    export const packetBeforeCancelHandling:NativePointer;
     export let onPacketAfter:VoidPointer;
     export const addressof_onPacketAfter:NativePointer;
     export let handlePacket:VoidPointer;
@@ -128,6 +125,8 @@ export namespace asmcode {
     export const packetSendHook:NativePointer;
     export let sendInternalOriginal:VoidPointer;
     export const addressof_sendInternalOriginal:NativePointer;
+    export let packetSendAllCancelPoint:VoidPointer;
+    export const addressof_packetSendAllCancelPoint:NativePointer;
     export const packetSendAllHook:NativePointer;
     export let onPacketSendInternal:VoidPointer;
     export const addressof_onPacketSendInternal:NativePointer;

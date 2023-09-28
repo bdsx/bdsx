@@ -82,6 +82,7 @@ enum PacketPhase {
 }
 let nextPacketPhase = PacketPhase.Raw;
 let nextEventTimeout:NodeJS.Timeout|null = null;
+let nextPacketSendPhase = PacketPhase.Before;
 
 type PromiseFunc = () => Promise<PromiseFunc>;
 
@@ -900,7 +901,7 @@ Tester.concurrency(
                 if (tooHeavy.has(i)) continue;
                 events.packetRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
-                        this.equals(nextPacketPhase, PacketPhase.Raw, "unexpected phase");
+                        this.equals(nextPacketPhase, PacketPhase.Raw, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.Before;
                         this.assert(nextEventTimeout === null, "timeout exists");
                         nextEventTimeout = setTimeout(()=>{
@@ -914,7 +915,7 @@ Tester.concurrency(
                 );
                 events.packetBefore<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.equals(nextPacketPhase, PacketPhase.Before, "unexpected phase");
+                        this.equals(nextPacketPhase, PacketPhase.Before, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.After;
                         this.assert(nextEventTimeout !== null, "no timeout");
                         clearTimeout(nextEventTimeout!);
@@ -928,7 +929,7 @@ Tester.concurrency(
                 );
                 events.packetAfter<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.equals(nextPacketPhase, PacketPhase.After, "unexpected phase");
+                        this.equals(nextPacketPhase, PacketPhase.After, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.Raw;
                         this.assert(nextEventTimeout !== null, "no timeout");
                         clearTimeout(nextEventTimeout!);
@@ -940,6 +941,8 @@ Tester.concurrency(
                 );
                 events.packetSend<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
+                        this.equals(nextPacketSendPhase, PacketPhase.Before, `unexpected phase, id=${packetId}`);
+                        nextPacketSendPhase = PacketPhase.Raw;
                         if (Date.now() < ignoreEndingPacketsAfter) {
                             this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetSend, Invalid ni, id=" + packetId);
                         }
@@ -951,6 +954,12 @@ Tester.concurrency(
                 events.packetSendRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
                         const recentSent = getRecentSentPacketId();
+                        if (recentSent !== null) {
+                            // example raw packet
+                            nextPacketSendPhase = PacketPhase.Raw;
+                        }
+                        this.equals(nextPacketSendPhase, PacketPhase.Raw, `unexpected phase, id=${packetId}`);
+                        nextPacketSendPhase = PacketPhase.Before;
                         if (recentSent !== null) {
                             sendidcheck = recentSent;
                         }
@@ -1145,12 +1154,19 @@ Tester.concurrency(
 
         chat() {
             const MAX_CHAT = 6;
-            events.packetSend(MinecraftPacketIds.Text).on(ev => {
+            events.packetSend(MinecraftPacketIds.Text).on((ev, ni) => {
                 if (chatCancelCounter >= 2) return;
                 if (ev.message === "TEST YEY!") {
                     chatCancelCounter++;
                     this.log(`test (${chatCancelCounter}/${MAX_CHAT})`);
-                    if (chatCancelCounter === 2) return CANCEL; // canceling
+                    if (chatCancelCounter === 2) {
+                        nextPacketSendPhase = PacketPhase.Before;
+                        ni.getActor()!.sendMessage(`test (2/${MAX_CHAT})`);
+                        return CANCEL; // canceling
+                    }
+                    if (chatCancelCounter === 1) {
+                        ev.message = `test (1/${MAX_CHAT})`;
+                    }
                 }
             });
 
@@ -1169,6 +1185,7 @@ Tester.concurrency(
                         clearTimeout(nextEventTimeout);
                         nextEventTimeout = null;
                     }
+                    ni.getActor()!.sendMessage(`test (${chatCancelCounter}/${MAX_CHAT})`);
                     return CANCEL;
                 }
             });
