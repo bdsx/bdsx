@@ -208,7 +208,6 @@ const StringFromCreativeItemCategoryMap: Record<CreativeItemCategory, string> = 
     [CreativeItemCategory.Commands]: "commands",
 
     [CreativeItemCategory.All]: "none",
-    [CreativeItemCategory.Uncategorized]: "none",
     [CreativeItemCategory.None]: "none",
 };
 

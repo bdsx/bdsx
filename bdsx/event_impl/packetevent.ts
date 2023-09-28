@@ -9,7 +9,6 @@ import { proc } from "../bds/symbols";
 import { CANCEL, abstract } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { decay } from "../decay";
-import { dllraw } from "../dllraw";
 import { events } from "../event";
 import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
@@ -208,7 +207,7 @@ bedrockServer.withLoading().then(() => {
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t);
 
-    asmcode.packetBeforeOriginal = proc["<lambda_9ee371f3d5058cafcd585ab3d88075ae>::operator()"];
+    asmcode.packetBeforeOriginal = proc["<lambda_812547cccbd5299596c99e3086ed20b0>::operator()"];
     procHacker.patching(
         "hook-packet-before",
         packetizeSymbol,
@@ -220,7 +219,7 @@ bedrockServer.withLoading().then(() => {
         [
             0x48, 0x8D, 0x95, 0x60, 0x01, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+160]
             0x48, 0x8D, 0x4D, 0xf8,                    // lea rcx,qword ptr ss:[rbp-8]
-            0xE8, null, null, null, null,              // call <bedrock_server.<lambda_9ee371f3d5058cafcd585ab3d88075ae>::operator()>
+            0xE8, null, null, null, null,              // call <bedrock_server.<lambda_812547cccbd5299596c99e3086ed20b0>::operator()
             0x90,                                      // nop
         ],
     );
@@ -277,4 +276,5 @@ bedrockServer.withLoading().then(() => {
         "?_sendInternal@NetworkSystem@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
         asmcode.packetSendInternalHook,
     );
+    console.log(asmcode.sendInternalOriginal);
 });

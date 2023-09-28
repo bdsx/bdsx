@@ -150,7 +150,6 @@ import {
     ShortTag,
     StringTag,
     Tag,
-    TagMemoryChunk,
     TagPointer,
 } from "./nbt";
 import { NetworkConnection, NetworkIdentifier, NetworkSystem, ServerNetworkHandler } from "./networkidentifier";
@@ -1714,14 +1713,14 @@ NetworkSystem.prototype.getConnectionFromId = procHacker.js(
     { this: NetworkSystem },
 );
 
-// void NetworkSystem::send(const NetworkIdentifier& ni, Packet* packet, unsigned char senderSubClientId)
+// void NetworkSystem::send(const NetworkIdentifier& ni, Packet& packet, unsigned char senderSubClientId)
 NetworkSystem.prototype.send = makefunc.js(
     asmcode.packetSendHook, // pass hooked function directly, reduce overhead
     void_t,
     { this: NetworkSystem },
     NetworkIdentifier,
     Packet,
-    int32_t,
+    uint8_t,
 );
 
 // void NetworkSystem::_sendInternal(const NetworkIdentifier& ni, Packet* packet, std::string& data)
@@ -1825,7 +1824,7 @@ ServerNetworkHandler.prototype._getServerPlayer = procHacker.js(
     ServerPlayer,
     { this: ServerNetworkHandler },
     NetworkIdentifier,
-    int32_t,
+    uint8_t,
 );
 const ServerNetworkHandler$disconnectClient = procHacker.js(
     "?disconnectClient@ServerNetworkHandler@@QEAAXAEBVNetworkIdentifier@@W4SubClientId@@W4DisconnectFailReason@Connection@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@_N@Z",
@@ -1833,7 +1832,7 @@ const ServerNetworkHandler$disconnectClient = procHacker.js(
     null,
     ServerNetworkHandler,
     NetworkIdentifier,
-    int32_t,
+    uint8_t,
     int32_t,
     CxxString,
     bool_t,
