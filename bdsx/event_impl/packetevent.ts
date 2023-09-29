@@ -14,7 +14,6 @@ import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { int32_t, int64_as_float_t, void_t } from "../nativetype";
-import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
@@ -58,7 +57,6 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
         const target = events.packetRaw(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketRaw fired.");
         const ni = conn.networkIdentifier;
-        nethook.lastSender = ni;
         const s = rbp.stream;
         const data = s.data;
         const rawpacketptr = data.valueptr;
@@ -83,12 +81,12 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
 const packetizeSymbol =
     "?_sortAndPacketizeEvents@NetworkSystem@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
 const packetBeforeSkipAddress = proc[packetizeSymbol].add(0xd17);
-function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, packetId: MinecraftPacketIds): void {
+function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, packetId: MinecraftPacketIds, conn: NetworkConnection): void {
     try {
         const target = events.packetBefore(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketBefore fired.");
 
-        const ni = nethook.lastSender;
+        const ni = conn.networkIdentifier;
         const TypedPacket = PacketIdToType[packetId] || Packet;
         const packet = rbp.packet.p!;
         const typedPacket = packet.as(TypedPacket);
@@ -205,7 +203,7 @@ bedrockServer.withLoading().then(() => {
     );
 
     // hook before
-    asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t);
+    asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t, NetworkConnection);
 
     asmcode.packetBeforeOriginal = proc["<lambda_812547cccbd5299596c99e3086ed20b0>::operator()"];
     procHacker.patching(

@@ -543,6 +543,7 @@ export proc packetBeforeHook
     mov rcx, rbp
     mov rdx, rsp
     ; r8 - packetId
+    mov r9, r15 ; NetworkConnection
     jmp onPacketBefore
 _skipEvent:
     ret
