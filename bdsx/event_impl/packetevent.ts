@@ -274,5 +274,4 @@ bedrockServer.withLoading().then(() => {
         "?_sendInternal@NetworkSystem@@AEAAXAEBVNetworkIdentifier@@AEBVPacket@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
         asmcode.packetSendInternalHook,
     );
-    console.log(asmcode.sendInternalOriginal);
 });
