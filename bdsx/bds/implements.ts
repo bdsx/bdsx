@@ -1491,6 +1491,7 @@ ServerPlayer.prototype.getNetworkIdentifier = function () {
     return res.networkIdentifier;
 };
 ServerPlayer.prototype.setArmor = procHacker.js("?setArmor@ServerPlayer@@UEAAXW4ArmorSlot@@AEBVItemStack@@@Z", void_t, { this: ServerPlayer }, uint32_t, ItemStack);
+ServerPlayer.prototype.sendArmor = procHacker.js("?sendArmor@ServerPlayer@@UEAAXV?$bitset@$03@std@@@Z", void_t, { this: ServerPlayer }, int32_t);
 ServerPlayer.prototype.getInputMode = function () {
     return PlayerMovement.getInputMode(this.ctxbase);
 };
