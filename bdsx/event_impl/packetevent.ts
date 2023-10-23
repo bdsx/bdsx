@@ -205,7 +205,7 @@ bedrockServer.withLoading().then(() => {
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t, NetworkConnection);
 
-    asmcode.packetBeforeOriginal = proc["<lambda_812547cccbd5299596c99e3086ed20b0>::operator()"];
+    asmcode.packetBeforeOriginal = proc["<lambda_315eafe07936fcf7f07b5e311e2c86a5>::operator()"];
     procHacker.patching(
         "hook-packet-before",
         packetizeSymbol,
