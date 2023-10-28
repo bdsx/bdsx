@@ -632,6 +632,7 @@ export namespace disasm {
          */
         fallback?(ptr: NativePointer): asm.Operation | number | null | void;
         quiet?: boolean;
+        stackIndex?: number;
     }
     export function walk(ptr: NativePointer, opts?: Options | null): asm.Operation | null {
         const low = ptr.getAddressLow();

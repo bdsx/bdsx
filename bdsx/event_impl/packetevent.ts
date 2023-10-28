@@ -14,6 +14,7 @@ import { bedrockServer } from "../launcher";
 import { makefunc } from "../makefunc";
 import { AbstractClass, nativeClass, nativeField } from "../nativeclass";
 import { int32_t, int64_as_float_t, void_t } from "../nativetype";
+import { nethook } from "../nethook";
 import { CxxStringWrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
@@ -41,12 +42,12 @@ ReadOnlyBinaryStream.prototype.read = procHacker.jsv(
 @nativeClass(null)
 class OnPacketRBP extends AbstractClass {
     // NetworkSystem::_sortAndPacketizeEvents before MinecraftPackets::createPacket
-    @nativeField(int32_t, 0xb8)
+    @nativeField(int32_t, 0xb0)
     packetId: MinecraftPacketIds;
     // NetworkSystem::_sortAndPacketizeEvents before MinecraftPackets::createPacket
-    @nativeField(CxxSharedPtr.make(Packet), 0xc8)
+    @nativeField(CxxSharedPtr.make(Packet), 0xc0)
     packet: CxxSharedPtr<Packet>; // NetworkSystem::_sortAndPacketizeEvents before MinecraftPackets::createPacket
-    @nativeField(ReadOnlyBinaryStream, 0xf0)
+    @nativeField(ReadOnlyBinaryStream, 0x110)
     stream: ReadOnlyBinaryStream; // after NetworkConnection::receivePacket
 }
 
@@ -57,6 +58,7 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
         const target = events.packetRaw(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketRaw fired.");
         const ni = conn.networkIdentifier;
+        nethook.lastSender = ni;
         const s = rbp.stream;
         const data = s.data;
         const rawpacketptr = data.valueptr;
@@ -80,7 +82,7 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
 }
 const packetizeSymbol =
     "?_sortAndPacketizeEvents@NetworkSystem@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
-const packetBeforeSkipAddress = proc[packetizeSymbol].add(0xd17);
+const packetBeforeSkipAddress = proc[packetizeSymbol].add(0x7bc); // after of packetAfter
 function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, packetId: MinecraftPacketIds, conn: NetworkConnection): void {
     try {
         const target = events.packetBefore(packetId);
@@ -189,14 +191,14 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-raw",
         packetizeSymbol,
-        0x2f8,
+        0x2e2,
         asmcode.packetRawHook, // original code depended
         Register.rax,
         true,
         // prettier-ignore
         [
-            0x8B, 0x95, 0xb8, 0x00, 0x00, 0x00,        // mov edx,dword ptr ss:[rbp+b8]
-            0x48, 0x8D, 0x8D, 0xc8, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+c8]
+            0x8B, 0x95, 0xb0, 0x00, 0x00, 0x00,        // mov edx,dword ptr ss:[rbp+b0]
+            0x48, 0x8D, 0x8D, 0xc0, 0x00, 0x00, 0x00,  // lea rcx,qword ptr ss:[rbp+c0]
             0xE8, null, null, null, null,              // call <bedrock_server.public: static class std::shared_ptr<class Packet> __cdecl MinecraftPackets::cr
             0x90,                                      // nop
         ],
@@ -205,18 +207,18 @@ bedrockServer.withLoading().then(() => {
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t, NetworkConnection);
 
-    asmcode.packetBeforeOriginal = proc["<lambda_812547cccbd5299596c99e3086ed20b0>::operator()"];
+    asmcode.packetBeforeOriginal = proc["<lambda_35c95e1d2d3b9388a0d305b5d0811405>::operator()"];
     procHacker.patching(
         "hook-packet-before",
         packetizeSymbol,
-        0x398,
+        0x382,
         asmcode.packetBeforeHook, // original code depended
         Register.rax,
         true,
         // prettier-ignore
         [
-            0x48, 0x8D, 0x95, 0x60, 0x01, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+160]
-            0x48, 0x8D, 0x4D, 0xf8,                    // lea rcx,qword ptr ss:[rbp-8]
+            0x48, 0x8D, 0x95, 0x50, 0x01, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+150]
+            0x48, 0x8D, 0x4D, 0xf0,                    // lea rcx,qword ptr ss:[rbp-10]
             0xE8, null, null, null, null,              // call <bedrock_server.<lambda_812547cccbd5299596c99e3086ed20b0>::operator()
             0x90,                                      // nop
         ],
@@ -230,7 +232,7 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-after",
         packetizeSymbol,
-        0x77f,
+        0x760,
         asmcode.packetAfterHook, // original code depended
         Register.rdx,
         true,
@@ -247,20 +249,20 @@ bedrockServer.withLoading().then(() => {
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, int32_t, NetworkIdentifier, Packet);
     asmcode.sendOriginal = procHacker.hookingRaw("?send@NetworkSystem@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z", asmcode.packetSendHook);
 
-    asmcode.packetSendAllCancelPoint = proc[sendToClientsSymbol].add(0xc3);
+    asmcode.packetSendAllCancelPoint = proc[sendToClientsSymbol].add(0xd6); // jump to after NetworkSystem::_sendInternal
 
     // hook send all
     procHacker.patching(
         "hook-packet-send-all",
         sendToClientsSymbol,
-        0x97,
+        0xa9,
         asmcode.packetSendAllHook, // original code depended
         Register.rax,
         true,
         // prettier-ignore
         [
             0x49, 0x8B, 0x07,                           // mov rax,qword ptr ds:[r15]
-            0x49, 0x8D, 0x96, 0x08, 0x02, 0x00, 0x00,   // lea rdx,qword ptr ds:[r14+208]
+            0x48, 0x8D, 0x95, 0x00, 0x02, 0x00, 0x00,   // lea rdx,qword ptr ds:[rbp+200]
             0x49, 0x8B, 0xCF,                           // mov rcx,r15
             0x48, 0x8B, 0x40, 0x18,                     // mov rax,qword ptr ds:[rax+18]
             0xFF, 0x15, null, null, null, null,         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]

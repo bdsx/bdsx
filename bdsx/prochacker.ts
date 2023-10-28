@@ -1,4 +1,5 @@
 import * as colors from "colors";
+import { asmcode } from "./asm/asmcode";
 import { asm, FloatRegister, Register, X64Assembler } from "./assembler";
 import { proc } from "./bds/symbols";
 import { CANCEL } from "./common";
@@ -160,11 +161,39 @@ class SavedCode {
     }
 }
 
+function makeNotFoundFunc(key: string): any {
+    const line = getCurrentStackLine(2);
+    console.error(colors.red(`Symbol not found: ${key}`));
+    console.error(colors.red(line));
+    const errfn = (): never => {
+        throw Error(`Symbol not found: ${key}`);
+    };
+    return errfn;
+}
+function notFoundNp(key: string, stackIndex: number = 0): any {
+    const line = getCurrentStackLine(stackIndex + 2);
+    console.error(colors.red(`Symbol not found: ${key}`));
+    console.error(colors.red(line));
+    return asmcode.returnZero;
+}
+function addStackIndex<T extends disasm.Options | null | undefined>(opts: T, n: number): T & object {
+    if (opts == null) {
+        opts = {
+            stackIndex: n,
+        } as T;
+    } else if (opts.stackIndex === undefined) {
+        opts.stackIndex = n;
+    } else {
+        opts.stackIndex += n;
+    }
+    return opts as T & object;
+}
+
 /**
  * Procedure hacker
  */
 export class ProcHacker<T extends Record<string, NativePointer>> {
-    constructor(public readonly map: T) {}
+    constructor(private readonly map: T) {}
 
     private _get(subject: string, key: Extract<keyof T, string>, offset: number): NativePointer | null {
         try {
@@ -241,8 +270,12 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param to call address
      */
     hookingRaw(key: Extract<keyof T, string>, to: VoidPointer | ((original: VoidPointer) => VoidPointer), opts?: disasm.Options | null): VoidPointer {
-        const origin = this.map[key];
-        if (origin == null) throw Error(`Symbol ${String(key)} not found`);
+        let origin: StaticPointer;
+        try {
+            origin = this.map[key];
+        } catch (err) {
+            return notFoundNp(key, opts?.stackIndex);
+        }
 
         const REQUIRE_SIZE = 12;
         const codes = disasm.process(origin, REQUIRE_SIZE, opts);
@@ -290,6 +323,8 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         key: Extract<keyof T, string>,
         opts?: disasm.Options | null,
     ): (callback: (asm: X64Assembler, original: VoidPointer) => void) => VoidPointer {
+        opts = addStackIndex(opts, 4);
+
         return callback =>
             this.hookingRaw(
                 key,
@@ -340,6 +375,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         opts?: OPTS,
         ...params: PARAMS
     ): (callback: FunctionFromTypes_np<OPTS, PARAMS, RETURN>) => FunctionFromTypes_js<VoidPointer, OPTS, PARAMS, RETURN> {
+        opts = addStackIndex(opts, 1);
         return callback => {
             if (opts == null) {
                 opts = { name: `hook of ${key}` } as OPTS;
@@ -381,10 +417,6 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     ): void {
         const ptr = this._get(subject, key, offset);
         if (ptr === null) return;
-        if (!ptr) {
-            console.error(colors.red(`${subject}: skip`));
-            return;
-        }
         const size = originalCode.length;
         const unlock = new MemoryUnlocker(ptr, size);
         if (this.check(subject, key, offset, ptr, originalCode, increaseStack(ignoreAreaOrOpts))) {
@@ -475,7 +507,13 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
         opts?: OPTS,
         ...params: PARAMS
     ): FunctionFromTypes_js<NativePointer, OPTS, PARAMS, RETURN> {
-        return makefunc.js(this.map[key], returnType, opts, ...params);
+        let ptr: NativePointer;
+        try {
+            ptr = this.map[key];
+        } catch (err) {
+            return makeNotFoundFunc(key);
+        }
+        return makefunc.js(ptr, returnType, opts, ...params);
     }
 
     /**
@@ -489,15 +527,20 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param params *_t or *Pointer
      */
     jsv<OPTS extends MakeFuncOptions<any> | null, RETURN extends ParamType, PARAMS extends ParamType[]>(
-        this: ProcHacker<typeof proc>,
         vftable: Extract<keyof T, string>,
         key: Extract<keyof T, string>,
         returnType: RETURN,
         opts?: OPTS,
         ...params: PARAMS
     ): FunctionFromTypes_js<[number, number?], OPTS, PARAMS, RETURN> {
-        const map = this.map.vftable[vftable + "\\" + key];
-        return makefunc.js(map, returnType, opts, ...params);
+        let ptr: [number, number?];
+        const vkey = vftable + "\\" + key;
+        try {
+            ptr = proc.vftable[vkey];
+        } catch (err) {
+            return makeNotFoundFunc(vkey);
+        }
+        return makefunc.js(ptr, returnType, opts, ...params);
     }
 
     /**

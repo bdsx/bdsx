@@ -59,7 +59,7 @@ export class JsonValue extends NativeClass {
                 } else {
                     Json$Value$CtorWithType(this, JsonValueType.Object);
                     for (const [key, kv] of Object.entries(value)) {
-                        const child = Json$Value$ResolveReference(this, key, false);
+                        const child = Json$Value$_resolveReference(this, key);
                         child.setValue(kv);
                     }
                 }
@@ -193,8 +193,11 @@ export class JsonValue extends NativeClass {
             case JsonValueType.Float64:
                 return this.getFloat64();
             case JsonValueType.String: {
-                const ptr = this.getNullablePointer();
-                return ptr === null ? "" : ptr.getString();
+                let ptr = this.getNullablePointer();
+                if (ptr === null) return "";
+                ptr = ptr.getNullablePointer();
+                if (ptr === null) return "";
+                return ptr.getString();
             }
             case JsonValueType.Boolean:
                 return this.getBoolean();
@@ -240,7 +243,7 @@ const Json$Value$GetMemberNames = makefunc.js(
     CxxVector.make(CxxString),
     { this: JsonValue, structureReturn: true },
 );
-const Json$Value$ResolveReference = makefunc.js(proc["?resolveReference@Value@Json@@AEAAAEAV12@PEBD_N@Z"], JsonValue, null, JsonValue, makefunc.Utf8, bool_t);
+const Json$Value$_resolveReference = makefunc.js(proc["?_resolveReference@Value@Json@@AEAAAEAV12@PEBD@Z"], JsonValue, null, JsonValue, makefunc.Utf8);
 JsonValue.prototype.isMember = makefunc.js(
     proc["?isMember@Value@Json@@QEBA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z"],
     bool_t,
@@ -255,7 +258,7 @@ export class Certificate extends AbstractClass {
     @nativeField(JsonValue, 0x50)
     json: JsonValue;
 
-    getXuid(): string {
+    getXuid(b?: boolean): string {
         abstract();
     }
     /**

@@ -700,10 +700,15 @@ Tester.concurrency(
 
         json() {
             const v = new JsonValue(true);
-            v.constructWith({ test: 0, test2: "a", test3: true });
-            this.equals(v.get("test").value(), 0, "json int");
+            v.constructWith({ test: 3, test2: "a", test3: true });
+            this.equals(v.get("test").value(), 3, "json int");
             this.equals(v.get("test2").value(), "a", "json string");
             this.equals(v.get("test3").value(), true, "json boolean");
+            const proxy = v.proxy();
+            this.equals(proxy.test, 3, "json int");
+            this.equals(proxy.test2, "a", "json string");
+            this.equals(proxy.test3, true, "json boolean");
+
             v.destruct();
         },
 

@@ -18,9 +18,6 @@ export namespace nethook {
     export type SendListener<ID extends MinecraftPacketIds> = PacketListener<ID>;
     export type SendRawListener = (ptr: NativePointer, size: number, networkIdentifier: NetworkIdentifier, packetId: number) => CANCEL | void | Promise<void>;
 
-    /**
-     * @deprecated not used
-     */
     export let lastSender: NetworkIdentifier;
 
     /**

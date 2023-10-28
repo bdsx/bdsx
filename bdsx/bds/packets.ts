@@ -499,7 +499,7 @@ export class AttributeData extends NativeClass {
     default: number;
     @nativeField(HashedString)
     readonly name: HashedString;
-    // TODO: clarify dummy
+    // TODO: clarify dummy, it seems CxxVector
     @nativeField(AttributeModifier.ref())
     _dummy1: AttributeModifier | null;
     @nativeField(AttributeModifier.ref())

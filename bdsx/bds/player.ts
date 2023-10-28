@@ -54,8 +54,14 @@ interface RawTextObject {
 export class Player extends Mob implements HasStorage {
     enderChestContainer: EnderChestContainer;
     playerUIContainer: PlayerUIContainer;
-    gameMode: GameMode;
     deviceId: string;
+
+    /**
+     * @deprecated use {@link getGameMode} method
+     */
+    get gameMode(): GameMode {
+        return this.getGameMode();
+    }
 
     /** @deprecated Use `this.getSpawnDimension()` instead */
     get respawnDimension(): DimensionId {
@@ -87,6 +93,10 @@ export class Player extends Mob implements HasStorage {
      * Updates the player list to all players
      */
     updatePlayerList(): void {
+        abstract();
+    }
+
+    getGameMode(): GameMode {
         abstract();
     }
 

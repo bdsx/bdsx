@@ -436,7 +436,7 @@ function onPlayerInventoryChange(player: Player, container: VoidPointer, slot: n
     return _onPlayerInventoryChange(event.player, container, event.slot, event.oldItemStack, event.newItemStack, unknown);
 }
 const _onPlayerInventoryChange = procHacker.hooking(
-    "?inventoryChanged@Player@@UEAAXAEAVContainer@@HAEBVItemStack@@1_N@Z",
+    "?inventoryChanged@Player@@QEAAXAEAVContainer@@HAEBVItemStack@@1_N@Z",
     void_t,
     null,
     Player,
