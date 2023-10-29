@@ -741,8 +741,8 @@ const SynchedActorDataEntityWrapper$getString = procHacker.js(
     uint16_t,
 );
 Actor.prototype.getScoreTag = function () {
-    const dataEntityWrapper = this.add(0x54); // accessed from Actor::setScoreTag
-    return SynchedActorDataEntityWrapper$getString(dataEntityWrapper, 0x54);
+    // accessed from Actor::setScoreTag
+    return SynchedActorDataEntityWrapper$getString(this.getEntityData(), 0x54);
 };
 Actor.prototype.setScoreTag = procHacker.js(
     "?setScoreTag@Actor@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
