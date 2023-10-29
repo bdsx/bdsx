@@ -164,6 +164,7 @@ import {
     ItemStackRequestData,
     ItemStackRequestPacket,
     ItemStackRequestSlotInfo,
+    PlayerAuthInputPacket,
     PlayerListEntry,
     PlayerListPacket,
     SetDifficultyPacket,
@@ -1831,6 +1832,13 @@ ItemStackRequestData.prototype.tryFindAction = procHacker.js(
     ItemStackRequestAction,
     { this: ItemStackRequestData },
     uint8_t,
+);
+
+PlayerAuthInputPacket.prototype.getInput = procHacker.js(
+    "?getInput@PlayerAuthInputPacket@@QEBA_NW4InputData@1@@Z",
+    bool_t,
+    { this: PlayerAuthInputPacket },
+    int32_t,
 );
 
 // networkidentifier.ts
