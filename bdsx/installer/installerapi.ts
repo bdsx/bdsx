@@ -80,8 +80,8 @@ const bds = new InstallItem({
             await installer.removeInstalled(installer.bdsPath, files);
         }
     },
-    async postinstall(installer, writedFiles) {
-        installer.info.files = writedFiles.filter(file => !KEEPS.has(file));
+    async postinstall(installer, writtenFiles) {
+        installer.info.files = writtenFiles.filter(file => !KEEPS.has(file));
         // `installer.info will` be saved to `bedrock_server/installinfo.json`.
         // Removes KEEPS because they don't need to be remembered.
     },

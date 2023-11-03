@@ -932,7 +932,7 @@ export declare class MantleClass extends NativeClass {
     /**
      * set string with null character
      * @param encoding default = Encoding.Utf8
-     * @return writed bytes without null character
+     * @return written bytes without null character
      * if encoding is Encoding.Buffer it will call setBuffer
      * if encoding is Encoding.Utf16, bytes will be twice
      */
