@@ -207,7 +207,7 @@ bedrockServer.withLoading().then(() => {
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t, NetworkConnection);
 
-    asmcode.packetBeforeOriginal = proc["<lambda_35c95e1d2d3b9388a0d305b5d0811405>::operator()"];
+    asmcode.packetBeforeOriginal = proc["<lambda_41073b6dae650857de18b10278b5571c>::operator()"];
     procHacker.patching(
         "hook-packet-before",
         packetizeSymbol,
@@ -219,7 +219,7 @@ bedrockServer.withLoading().then(() => {
         [
             0x48, 0x8D, 0x95, 0x50, 0x01, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+150]
             0x48, 0x8D, 0x4D, 0xf0,                    // lea rcx,qword ptr ss:[rbp-10]
-            0xE8, null, null, null, null,              // call <bedrock_server.<lambda_812547cccbd5299596c99e3086ed20b0>::operator()
+            0xE8, null, null, null, null,              // call <bedrock_server.<lambda_41073b6dae650857de18b10278b5571c>::operator()>
             0x90,                                      // nop
         ],
     );
