@@ -32,7 +32,16 @@ function replaceVariable(str: string): string {
     });
 }
 
-const KEEPS = new Set([`whitelist.json`, `allowlist.json`, `valid_known_packs.json`, `server.properties`, `permissions.json`]);
+const KEEPS = new Set([
+    `whitelist.json`,
+    `allowlist.json`,
+    `valid_known_packs.json`,
+    `server.properties`,
+    `permissions.json`,
+    `config\\default\\`,
+    `config\\`,
+    `config\\default\\permissions.json`,
+]);
 
 const pdbcache = new InstallItem({
     name: "pdbcache",
