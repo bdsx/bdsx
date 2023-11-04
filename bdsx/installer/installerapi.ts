@@ -32,7 +32,7 @@ function replaceVariable(str: string): string {
     });
 }
 
-const KEEPS_FILES = new Set([`whitelist.json`, `allowlist.json`, `valid_known_packs.json`, `server.properties`]);
+const KEEPS_FILES = new Set([`whitelist.json`, `allowlist.json`, `valid_known_packs.json`, `server.properties`, `permissions.json`]);
 const KEEPS_REGEXP = new Set([new RegExp(`config${path.sep}.*`)]);
 function filterFiles(files: string[]): string[] {
     return files
