@@ -168,7 +168,7 @@ export class InstallItem {
     private async _downloadAndUnzip(installer: BDSInstaller): Promise<string[]> {
         const dest = installer.target;
         const url = this.opts.url;
-        const writedFiles: string[] = [];
+        const writtenFiles: string[] = [];
         let writingProm = Promise.resolve();
 
         progressBar.start(`${this.opts.name}: Install`, {
@@ -209,7 +209,7 @@ export class InstallItem {
                         if (filepath.startsWith(sep)) {
                             filepath = filepath.substr(1);
                         }
-                        writedFiles.push(filepath);
+                        writtenFiles.push(filepath);
 
                         const extractPath = path.join(dest, filepath);
                         if (entry.type === "Directory") {
@@ -258,7 +258,7 @@ export class InstallItem {
                 .on("error", reject);
         });
 
-        return writedFiles;
+        return writtenFiles;
     }
 
     private async _install(installer: BDSInstaller): Promise<void> {
@@ -273,13 +273,13 @@ export class InstallItem {
         await fsutil.mkdir(installer.target);
         const preinstall = this.opts.preinstall;
         if (preinstall) await preinstall(installer);
-        const writedFiles = await this._downloadAndUnzip(installer);
+        const writtenFiles = await this._downloadAndUnzip(installer);
         if (this.opts.key != null) {
             installer.info[this.opts.key] = this.opts.version as any;
         }
 
         const postinstall = this.opts.postinstall;
-        if (postinstall) await postinstall(installer, writedFiles);
+        if (postinstall) await postinstall(installer, writtenFiles);
     }
 
     private async _confirmAndInstall(installer: BDSInstaller): Promise<void> {
@@ -341,7 +341,7 @@ export namespace InstallItem {
         keyFile?: string;
         confirm?: (installer: BDSInstaller) => Promise<void> | void;
         preinstall?: (installer: BDSInstaller) => Promise<void> | void;
-        postinstall?: (installer: BDSInstaller, writedFiles: string[]) => Promise<void> | void;
+        postinstall?: (installer: BDSInstaller, writtenFiles: string[]) => Promise<void> | void;
         fallback?: (installer: BDSInstaller, statusCode: number) => Promise<boolean | void> | boolean | void;
         skipExists?: boolean;
         oldFiles?: string[];
