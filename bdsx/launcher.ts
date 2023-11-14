@@ -24,7 +24,7 @@ import { dll } from "./dll";
 import { events } from "./event";
 import { GetLine } from "./getline";
 import { makefunc } from "./makefunc";
-import { AbstractClass, nativeClass, nativeField } from "./nativeclass";
+import { AbstractClass, NativeClass, nativeClass, nativeField } from "./nativeclass";
 import { bool_t, CxxString, int32_t, int64_as_float_t, int8_t, NativeType, void_t } from "./nativetype";
 import { loadAllPlugins } from "./plugins";
 import { CxxStringWrapper } from "./pointer";
@@ -170,6 +170,12 @@ function patchForStdio(): void {
     procHacker.write("?unblockReading@ConsoleInputReader@@QEAAXXZ", 0, justReturn);
 }
 
+@nativeClass()
+class ServerNetworkSystem extends NativeClass {
+    @nativeField(nimodule.NetworkSystem, 0x18)
+    networkSystem: nimodule.NetworkSystem;
+}
+
 function _launch(asyncResolve: () => void): void {
     // check memory corruption for debug core
     if (cgate.memcheck != null) {
@@ -265,7 +271,7 @@ function _launch(asyncResolve: () => void): void {
 
     const instances = {} as {
         serverInstance: bd_server.ServerInstance;
-        networkSystem: nimodule.NetworkSystem;
+        serverNetworkSystem: ServerNetworkSystem;
         dedicatedServer: bd_server.DedicatedServer;
         minecraft: bd_server.Minecraft;
     };
@@ -276,14 +282,14 @@ function _launch(asyncResolve: () => void): void {
         "serverInstance",
     );
     thisGetter.register(
-        nimodule.NetworkSystem,
+        ServerNetworkSystem,
         "??0ServerNetworkSystem@@QEAA@AEAVScheduler@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@AEBUNetworkSystemToggles@@AEBV?$NonOwnerPointer@VNetworkDebugManager@@@Bedrock@@V?$ServiceReference@VServicesManager@@@@V?$not_null@V?$NonOwnerPointer@VNetworkSessionOwner@@@Bedrock@@@gsl@@@Z",
-        "networkSystem",
+        "serverNetworkSystem",
     );
     thisGetter.register(bd_server.DedicatedServer, "??0DedicatedServer@@QEAA@XZ", "dedicatedServer");
     thisGetter.register(
         bd_server.Minecraft,
-        "??0Minecraft@@QEAA@AEAVIMinecraftApp@@AEAVGameCallbacks@@AEAVAllowList@@PEAVPermissionsFile@@AEBV?$not_null@V?$NonOwnerPointer@VFilePathManager@Core@@@Bedrock@@@gsl@@V?$duration@_JU?$ratio@$00$00@std@@@chrono@std@@AEAVIMinecraftEventing@@AEAVNetworkSystem@@AEAVPacketSender@@W4SubClientId@@AEAVTimer@@AEAVTimer@@AEBV?$not_null@V?$NonOwnerPointer@$$CBVIContentTierManager@@@Bedrock@@@6@PEAVServerMetrics@@@Z",
+        "??0Minecraft@@QEAA@AEAVIMinecraftApp@@AEAVGameCallbacks@@AEAVAllowList@@PEAVPermissionsFile@@AEBV?$not_null@V?$NonOwnerPointer@VFilePathManager@Core@@@Bedrock@@@gsl@@V?$duration@_JU?$ratio@$00$00@std@@@chrono@std@@AEAVIMinecraftEventing@@VClientOrServerNetworkSystemRef@@AEAVPacketSender@@W4SubClientId@@AEAVTimer@@AEAVTimer@@AEBV?$not_null@V?$NonOwnerPointer@$$CBVIContentTierManager@@@Bedrock@@@6@PEAVServerMetrics@@@Z",
         "minecraft",
     );
 
@@ -333,7 +339,7 @@ function _launch(asyncResolve: () => void): void {
     procHacker.patching(
         "update-hook",
         "<lambda_bad1ae3ebb6f5574a4da91bc00ae0aaf>::operator()", // caller of ServerInstance::_update
-        0x912,
+        0x93e,
         asmcode.updateWithSleep,
         Register.rax,
         true,
@@ -380,7 +386,8 @@ function _launch(asyncResolve: () => void): void {
 
                     // All pointer is found from ServerInstance::startServerThread with debug breaking.
                     thisGetter.finish();
-                    const { serverInstance, dedicatedServer, networkSystem, minecraft } = instances;
+                    const { serverInstance, dedicatedServer, serverNetworkSystem, minecraft } = instances;
+                    const networkSystem = serverNetworkSystem.networkSystem;
 
                     // TODO: delete after check
 

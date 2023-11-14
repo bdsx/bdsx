@@ -1196,7 +1196,7 @@ export class Actor extends AbstractClass {
     }
     /**
      * Returns whether the entity has the family type.
-     * Ref: https://minecraft.fandom.com/wiki/Family
+     * Ref: https://minecraft.wiki/w/Family
      */
     hasFamily(familyType: HashedString | string): boolean {
         if (familyType instanceof HashedString) {

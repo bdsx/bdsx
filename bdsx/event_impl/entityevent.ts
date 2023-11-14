@@ -5,7 +5,7 @@ import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, In
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";
 import { MinecraftPacketIds } from "../bds/packetids";
-import { CompletedUsingItemPacket } from "../bds/packets";
+import { CompletedUsingItemPacket, PlayerAuthInputPacket } from "../bds/packets";
 import { Player, ServerPlayer, SimulatedPlayer } from "../bds/player";
 import { CANCEL } from "../common";
 import { NativePointer, StaticPointer, VoidPointer } from "../core";
@@ -325,19 +325,14 @@ function onEntityStopRiding(entity: Actor, exitFromRider: boolean, actorIsBeingD
 }
 const _onEntityStopRiding = procHacker.hooking("?stopRiding@Actor@@QEAAX_N00@Z", void_t, null, Actor, bool_t, bool_t, bool_t)(onEntityStopRiding);
 
-function onEntitySneak(actorEventCoordinator: VoidPointer, entity: Actor, isSneaking: boolean): void {
-    const event = new EntitySneakEvent(entity, isSneaking);
-    events.entitySneak.fire(event);
-    return _onEntitySneak(actorEventCoordinator, entity, event.isSneaking);
-}
-const _onEntitySneak = procHacker.hooking(
-    "?sendActorSneakChanged@ActorEventCoordinator@@QEAAXAEAVActor@@_N@Z",
-    void_t,
-    null,
-    VoidPointer,
-    Actor,
-    bool_t,
-)(onEntitySneak);
+events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
+    const player = ni.getActor()!;
+    if (pkt.getInput(PlayerAuthInputPacket.InputData.StartSneaking)) {
+        events.entitySneak.fire(new EntitySneakEvent(player, true));
+    } else if (pkt.getInput(PlayerAuthInputPacket.InputData.StopSneaking)) {
+        events.entitySneak.fire(new EntitySneakEvent(player, false));
+    }
+});
 
 // stub code, need to implement and reposition.
 enum InitializationMethod {}
@@ -436,7 +431,7 @@ function onPlayerInventoryChange(player: Player, container: VoidPointer, slot: n
     return _onPlayerInventoryChange(event.player, container, event.slot, event.oldItemStack, event.newItemStack, unknown);
 }
 const _onPlayerInventoryChange = procHacker.hooking(
-    "?inventoryChanged@Player@@UEAAXAEAVContainer@@HAEBVItemStack@@1_N@Z",
+    "?inventoryChanged@Player@@QEAAXAEAVContainer@@HAEBVItemStack@@1_N@Z",
     void_t,
     null,
     Player,

@@ -98,6 +98,7 @@ class PackageInfo {
         if (this.versions !== null) return this.versions;
         const versions = await exec(`npm view "${this.name}" versions --json`);
         const vs = JSON.parse(versions.replace(/'/g, '"'));
+        if (typeof vs === "string") return [vs];
         return (this.versions = vs);
     }
 

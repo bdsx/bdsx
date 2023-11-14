@@ -19,7 +19,9 @@ import { RakNetConnector } from "./raknetinstance";
 // TODO: fill
 enum SubClientId {}
 
+@nativeClass()
 export class NetworkSystem extends AbstractClass {
+    @nativeField(VoidPointer)
     vftable: VoidPointer;
     /** @deprecated use bedrockServer.connector */
     instance: RakNetConnector;

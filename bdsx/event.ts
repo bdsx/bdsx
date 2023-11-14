@@ -82,14 +82,15 @@ function getNetEventTarget(type: events.PacketEventType, packetId: MinecraftPack
     let target = packetAllTargets[idx];
     if (target !== null) return target;
     packetAllTargets[idx] = target = new PacketEvent(packetId);
+    const bit = 1 << type;
     target.setInstaller(
         () => {
             const packetId = target!.id;
-            enabledPacket.setUint8(enabledPacket.getUint8(packetId) + 1, packetId);
+            enabledPacket.setUint8(enabledPacket.getUint8(packetId) | bit, packetId);
         },
         () => {
             const packetId = target!.id;
-            enabledPacket.setUint8(enabledPacket.getUint8(packetId) - 1, packetId);
+            enabledPacket.setUint8(enabledPacket.getUint8(packetId) & ~bit, packetId);
         },
     );
     return target;

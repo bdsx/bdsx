@@ -32,7 +32,20 @@ function replaceVariable(str: string): string {
     });
 }
 
-const KEEPS = new Set([`whitelist.json`, `allowlist.json`, `valid_known_packs.json`, `server.properties`, `permissions.json`]);
+const KEEPS_FILES = new Set([`whitelist.json`, `allowlist.json`, `valid_known_packs.json`, `server.properties`, `permissions.json`]);
+const KEEPS_REGEXP = new Set([new RegExp(`config${path.sep}.*`)]);
+function filterFiles(files: string[]): string[] {
+    return files
+        .filter(file => !KEEPS_FILES.has(file))
+        .filter(v => {
+            for (const reg of KEEPS_REGEXP) {
+                if (reg.test(v)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+}
 
 const pdbcache = new InstallItem({
     name: "pdbcache",
@@ -74,14 +87,14 @@ const bds = new InstallItem({
     },
     async preinstall(installer) {
         if (installer.info.files) {
-            const files = installer.info.files.filter(file => !KEEPS.has(file));
+            const files = filterFiles(installer.info.files);
             // Removes KEEPS because they could have been stored before by bugs.
 
             await installer.removeInstalled(installer.bdsPath, files);
         }
     },
-    async postinstall(installer, writedFiles) {
-        installer.info.files = writedFiles.filter(file => !KEEPS.has(file));
+    async postinstall(installer, writtenFiles) {
+        installer.info.files = filterFiles(writtenFiles);
         // `installer.info will` be saved to `bedrock_server/installinfo.json`.
         // Removes KEEPS because they don't need to be remembered.
     },

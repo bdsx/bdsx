@@ -1,6 +1,6 @@
 import { capi } from "../capi";
 import { abstract } from "../common";
-import { AbstractClass, AbstractMantleClass, nativeClass, nativeField } from "../nativeclass";
+import { AbstractMantleClass, nativeClass } from "../nativeclass";
 import { CxxString, int32_t, uint32_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";

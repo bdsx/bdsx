@@ -28,60 +28,61 @@ export class StructureSettings extends AbstractClass {
         abstract();
     }
 
-    getIgnoreBlocks(): boolean {
-        abstract();
-    }
-    getIgnoreEntities(): boolean {
-        abstract();
-    }
+    // deleted
+    // getIgnoreBlocks(): boolean {
+    //     abstract();
+    // }
+    // getIgnoreEntities(): boolean {
+    //     abstract();
+    // }
     getIgnoreJigsawBlocks(): boolean {
         return this.getBoolean(0x23);
     }
     isAnimated(): boolean {
         abstract();
     }
-    getStructureOffset(): BlockPos {
-        abstract();
-    }
-    getStructureSize(): BlockPos {
-        abstract();
-    }
-    getPivot(): Vec3 {
-        abstract();
-    }
+    // getStructureOffset(): BlockPos {
+    //     abstract();
+    // }
+    // getStructureSize(): BlockPos {
+    //     abstract();
+    // }
+    // getPivot(): Vec3 {
+    //     abstract();
+    // }
     getPaletteName(): string {
         return this.getCxxString();
     }
-    getAnimationMode(): number {
-        abstract();
-    }
-    getMirror(): Mirror {
-        abstract();
-    }
+    // getAnimationMode(): number {
+    //     abstract();
+    // }
+    // getMirror(): Mirror {
+    //     abstract();
+    // }
     getReloadActorEquipment(): boolean {
         return this.getBoolean(0x21);
     }
-    getRotation(): Rotation {
-        abstract();
-    }
-    getAnimationSeconds(): number {
-        abstract();
-    }
-    getIntegrityValue(): number {
-        abstract();
-    }
+    // getRotation(): Rotation {
+    //     abstract();
+    // }
+    // getAnimationSeconds(): number {
+    //     abstract();
+    // }
+    // getIntegrityValue(): number {
+    //     abstract();
+    // }
     getAnimationTicks(): number {
         abstract();
     }
-    getIntegritySeed(): number {
-        abstract();
-    }
-    setAnimationMode(mode: number): void {
-        abstract();
-    }
-    setAnimationSeconds(seconds: number): void {
-        abstract();
-    }
+    // getIntegritySeed(): number {
+    //     abstract();
+    // }
+    // setAnimationMode(mode: number): void {
+    //     abstract();
+    // }
+    // setAnimationSeconds(seconds: number): void {
+    //     abstract();
+    // }
     setIgnoreBlocks(ignoreBlocks: boolean): void {
         abstract();
     }
@@ -121,19 +122,19 @@ export class StructureSettings extends AbstractClass {
 
     [nativeClassUtil.inspectFields](obj: Record<string, any>): void {
         obj.paletteName = this.getPaletteName();
-        obj.ignoreEntities = this.getIgnoreEntities();
+        // obj.ignoreEntities = this.getIgnoreEntities();
         obj.reloadActorEquipment = this.getReloadActorEquipment();
-        obj.ignoreBlocks = this.getIgnoreBlocks();
+        // obj.ignoreBlocks = this.getIgnoreBlocks();
         obj.ignoreJigsawBlocks = this.getIgnoreJigsawBlocks();
-        obj.structureSize = this.getStructureSize();
-        obj.structureOffset = this.getStructureOffset();
-        obj.pivot = this.getPivot();
-        obj.rotation = this.getRotation();
-        obj.mirror = this.getMirror();
-        obj.animationMode = this.getAnimationMode();
+        // obj.structureSize = this.getStructureSize();
+        // obj.structureOffset = this.getStructureOffset();
+        // obj.pivot = this.getPivot();
+        // obj.rotation = this.getRotation();
+        // obj.mirror = this.getMirror();
+        // obj.animationMode = this.getAnimationMode();
         obj.animationTicks = this.getAnimationTicks();
-        obj.integrityValue = this.getIntegrityValue();
-        obj.integritySeed = this.getIntegritySeed();
+        // obj.integrityValue = this.getIntegrityValue();
+        // obj.integritySeed = this.getIntegritySeed();
     }
 }
 

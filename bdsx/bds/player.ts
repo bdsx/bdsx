@@ -54,8 +54,14 @@ interface RawTextObject {
 export class Player extends Mob implements HasStorage {
     enderChestContainer: EnderChestContainer;
     playerUIContainer: PlayerUIContainer;
-    gameMode: GameMode;
     deviceId: string;
+
+    /**
+     * @deprecated use {@link getGameMode} method
+     */
+    get gameMode(): GameMode {
+        return this.getGameMode();
+    }
 
     /** @deprecated Use `this.getSpawnDimension()` instead */
     get respawnDimension(): DimensionId {
@@ -87,6 +93,10 @@ export class Player extends Mob implements HasStorage {
      * Updates the player list to all players
      */
     updatePlayerList(): void {
+        abstract();
+    }
+
+    getGameMode(): GameMode {
         abstract();
     }
 
@@ -645,7 +655,7 @@ export class Player extends Mob implements HasStorage {
     /**
      * Sends a JSON-Object to the player
      * For the format for that object, reference:
-     * @see https://minecraft.fandom.com/wiki/Commands/tellraw
+     * @see https://minecraft.wiki/w/Commands/tellraw
      *
      * @param object JSON-Object to encode and send
      */
@@ -943,7 +953,7 @@ export class Player extends Mob implements HasStorage {
     /**
      * Plays a sound to the player
      *
-     * @param soundName - Sound name, like "random.burp". See {@link https://minecraft.fandom.com/wiki/Sounds.json/Bedrock_Edition_values}
+     * @param soundName - Sound name, like "random.burp". See {@link https://minecraft.wiki/w/Sounds.json/Bedrock_Edition_values}
      * @param pos - Position where the sound is played (defaults to player position)
      * @param volume - Volume of the sound (defaults to 1)
      * @param pitch - Pitch of the sound (defaults to 1)

@@ -499,7 +499,7 @@ export class AttributeData extends NativeClass {
     default: number;
     @nativeField(HashedString)
     readonly name: HashedString;
-    // TODO: clarify dummy
+    // TODO: clarify dummy, it seems CxxVector
     @nativeField(AttributeModifier.ref())
     _dummy1: AttributeModifier | null;
     @nativeField(AttributeModifier.ref())
@@ -1754,6 +1754,10 @@ export class NetworkSettingsPacket extends Packet {
 
 @nativeClass(null)
 export class PlayerAuthInputPacket extends Packet {
+    getInput(inputData: PlayerAuthInputPacket.InputData): boolean {
+        abstract();
+    }
+
     @nativeField(float32_t)
     pitch: float32_t;
     @nativeField(float32_t)
@@ -1761,29 +1765,33 @@ export class PlayerAuthInputPacket extends Packet {
     @nativeField(Vec3)
     readonly pos: Vec3;
     @nativeField(float32_t)
-    moveX: float32_t;
-    @nativeField(float32_t)
-    moveZ: float32_t;
-
+    headYaw: float32_t;
     /** @deprecated */
     get heaYaw(): float32_t {
         return this.headYaw;
     }
 
-    @nativeField(float32_t)
-    headYaw: float32_t;
-    @nativeField(bin64_t)
-    inputFlags: bin64_t;
-    @nativeField(uint32_t)
-    inputMode: uint32_t;
-    @nativeField(uint32_t)
-    playMode: uint32_t;
-    @nativeField(Vec3)
-    readonly vrGazeDirection: Vec3;
-    @nativeField(bin64_t)
-    tick: bin64_t;
     @nativeField(Vec3)
     readonly delta: Vec3;
+    /** @deprecated use delta */
+    @nativeField(float32_t, { ghost: true })
+    moveX: float32_t;
+    /** @deprecated use delta */
+    @nativeField(float32_t, { ghost: true })
+    moveY: float32_t;
+    /** @deprecated use delta */
+    @nativeField(float32_t, { ghost: true })
+    moveZ: float32_t;
+    @nativeField(Vec3)
+    readonly vrGazeDirection: Vec3;
+    @nativeField(uint64_as_float_t, 0x70)
+    inputFlags: uint64_as_float_t; // bitset, InputData
+    @nativeField(int32_t)
+    inputMode: int32_t;
+    @nativeField(uint32_t)
+    playMode: uint32_t;
+    @nativeField(uint64_as_float_t, { offset: 0x4, relative: true })
+    tick: uint64_as_float_t;
 }
 
 export namespace PlayerAuthInputPacket {
@@ -1813,7 +1821,27 @@ export namespace PlayerAuthInputPacket {
         DescendScaffolding,
         SneakToggleDown,
         PersistSneak,
-        // These are all from IDA, PlayerAuthInputPacket::InputData in 1.14.60.5, 25-36 were not implemented
+        // 0-24: These are all from IDA, PlayerAuthInputPacket::InputData in 1.14.60.5
+        StartSprinting,
+        StopSprinting,
+        StartSneaking,
+        StopSneaking,
+        StartSwimming,
+        StopSwimming,
+        StartJumping,
+        StartGliding,
+        StopGliding,
+        PerformItemInteraction,
+        PerformBlockActions,
+        PerformItemStackRequest,
+        HandledTeleport,
+        Emoting,
+        MissedSwing,
+        StartCrawling,
+        StopCrawling,
+        StartFlying,
+        StopFlying,
+        AckActorData,
     }
 }
 
