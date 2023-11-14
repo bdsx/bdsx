@@ -47,14 +47,19 @@ import {
     ActorRuntimeID,
     ActorType,
     ActorUniqueID,
+    DamageSensorComponent,
     DimensionId,
     DistanceSortedActor,
     EntityContext,
     EntityContextBase,
     EntityRefTraits,
+    HitResult,
     ItemActor,
     Mob,
+    OnHitSubcomponent,
     OwnerStorageEntity,
+    PhysicsComponent,
+    ProjectileComponent,
     SynchedActorDataEntityWrapper,
     WeakEntityRef,
 } from "./actor";
@@ -81,7 +86,6 @@ import {
 import { CommandName } from "./commandname";
 import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import "./commandparsertypes";
-import { HitResult, OnHitSubcomponent } from "./components";
 import { Certificate, ConnectionRequest, JsonValue } from "./connreq";
 import { CxxOptional, CxxOptionalToUndefUnion } from "./cxxoptional";
 import { Dimension } from "./dimension";
@@ -1059,6 +1063,30 @@ Actor.prototype.getOwner = procHacker.js("?getOwner@Actor@@QEBAPEAVMob@@XZ", Mob
 Actor.prototype.setOwner = procHacker.js("?setOwner@Actor@@UEAAXUActorUniqueID@@@Z", void_t, { this: Actor }, ActorUniqueID);
 Actor.prototype.getVariant = procHacker.js("?getVariant@Actor@@QEBAHXZ", int32_t, { this: Actor });
 Actor.prototype.setVariant = procHacker.js("?setVariant@Actor@@QEAAXH@Z", void_t, { this: Actor }, int32_t);
+
+const getProjectileComponent = procHacker.js("??$tryGetComponent@VProjectileComponent@@@Actor@@QEAAPEAVProjectileComponent@@XZ", ProjectileComponent, null, Actor);
+const getPhysicsComponent = procHacker.js("??$tryGetComponent@VPhysicsComponent@@@Actor@@QEAAPEAVPhysicsComponent@@XZ", PhysicsComponent, null, Actor);
+const getDamageSensorComponent = procHacker.js("??$tryGetComponent@VDamageSensorComponent@@@Actor@@QEBAPEBVDamageSensorComponent@@XZ", DamageSensorComponent, null, Actor);
+(Actor.prototype as any)._getComponent = (actor: Actor, comp: string) => {
+    switch(comp) {
+        case "minecraft:projectile":
+            return getProjectileComponent(actor);
+        case "minecraft:physics":
+            return getPhysicsComponent(actor);
+        case "minecraft:damage_sensor":
+            return getDamageSensorComponent(actor);
+        default:
+            return null;
+    }
+};
+
+PhysicsComponent.prototype.setHasCollision = procHacker.js("?setHasCollision@PhysicsComponent@@QEAAXAEAVActor@@_N@Z", void_t, {this: PhysicsComponent}, Actor, bool_t);
+
+ProjectileComponent.prototype.shoot = procHacker.js("?shoot@ProjectileComponent@@QEAAXAEAVActor@@0@Z", void_t, {this: ProjectileComponent}, Actor, Actor);
+ProjectileComponent.prototype.setOwnerId = procHacker.js("?setOwnerId@ProjectileComponent@@QEAAXUActorUniqueID@@@Z", void_t, {this: ProjectileComponent}, ActorUniqueID);
+
+DamageSensorComponent.prototype.isFatal = procHacker.js("?isFatal@DamageSensorComponent@@QEBA_NXZ", bool_t, {this: DamageSensorComponent});
+DamageSensorComponent.prototype.getDamageModifier = procHacker.js("?getDamageModifier@DamageSensorComponent@@QEAAMXZ", float32_t, {this: DamageSensorComponent});
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, { this: Actor });
 Mob.prototype.knockback = procHacker.jsv(
