@@ -1178,6 +1178,7 @@ const containerComponent$$addItem$$ItemStack$$count = procHacker.js("?addItem@Co
         return containerComponent$$addItem$$ItemStack(component, item);
     }
 };
+
 ContainerComponent.prototype.getEmptySlotsCount = procHacker.js("?getEmptySlotsCount@ContainerComponent@@QEBAHXZ", int64_as_float_t, {this: ContainerComponent});
 ContainerComponent.prototype.getSlots = procHacker.js(
     "?getSlots@ContainerComponent@@QEBA?BV?$vector@PEBVItemStack@@V?$allocator@PEBVItemStack@@@std@@@std@@XZ",
