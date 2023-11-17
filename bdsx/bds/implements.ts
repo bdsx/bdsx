@@ -1077,8 +1077,18 @@ Actor.prototype.setVariant = procHacker.js("?setVariant@Actor@@QEAAXH@Z", void_t
 
 const getProjectileComponent = procHacker.js("??$tryGetComponent@VProjectileComponent@@@Actor@@QEAAPEAVProjectileComponent@@XZ", ProjectileComponent, null, Actor);
 const getPhysicsComponent = procHacker.js("??$tryGetComponent@VPhysicsComponent@@@Actor@@QEAAPEAVPhysicsComponent@@XZ", PhysicsComponent, null, Actor);
-const getDamageSensorComponent = procHacker.js("??$tryGetComponent@VDamageSensorComponent@@@Actor@@QEBAPEBVDamageSensorComponent@@XZ", DamageSensorComponent, null, Actor);
-const getCommandBlockComponent = procHacker.js("??$tryGetComponent@VCommandBlockComponent@@@Actor@@QEAAPEAVCommandBlockComponent@@XZ", CommandBlockComponent, null, Actor);
+const getDamageSensorComponent = procHacker.js(
+    "??$tryGetComponent@VDamageSensorComponent@@@Actor@@QEBAPEBVDamageSensorComponent@@XZ",
+    DamageSensorComponent,
+    null,
+    Actor,
+);
+const getCommandBlockComponent = procHacker.js(
+    "??$tryGetComponent@VCommandBlockComponent@@@Actor@@QEAAPEAVCommandBlockComponent@@XZ",
+    CommandBlockComponent,
+    null,
+    Actor,
+);
 const getNameableComponent = procHacker.js("??$tryGetComponent@VNameableComponent@@@Actor@@QEAAPEAVNameableComponent@@XZ", NameableComponent, null, Actor);
 const getNavigationComponent = procHacker.js("??$tryGetComponent@VNavigationComponent@@@Actor@@QEBAPEBVNavigationComponent@@XZ", NavigationComponent, null, Actor);
 const getNpcComponent = procHacker.js("??$tryGetComponent@VNpcComponent@@@Actor@@QEAAPEAVNpcComponent@@XZ", NpcComponent, null, Actor);
@@ -1086,10 +1096,15 @@ const getRideableComponent = procHacker.js("??$tryGetComponent@VRideableComponen
 const getContainerComponent = procHacker.js("??$tryGetComponent@VContainerComponent@@@Actor@@QEAAPEAVContainerComponent@@XZ", ContainerComponent, null, Actor);
 const getPushableComponent = procHacker.js("??$tryGetComponent@VPushableComponent@@@Actor@@QEAAPEAVPushableComponent@@XZ", PushableComponent, null, Actor);
 const getShooterComponent = procHacker.js("??$tryGetComponent@VShooterComponent@@@Actor@@QEAAPEAVShooterComponent@@XZ", ShooterComponent, null, Actor);
-const getConditionalBandwidthComponent = procHacker.js("??$tryGetComponent@VConditionalBandwidthOptimizationComponent@@@Actor@@QEAAPEAVConditionalBandwidthOptimizationComponent@@XZ", ConditionalBandwidthOptimizationComponent, null, Actor);
+const getConditionalBandwidthComponent = procHacker.js(
+    "??$tryGetComponent@VConditionalBandwidthOptimizationComponent@@@Actor@@QEAAPEAVConditionalBandwidthOptimizationComponent@@XZ",
+    ConditionalBandwidthOptimizationComponent,
+    null,
+    Actor,
+);
 
 (Actor.prototype as any)._getComponent = (actor: Actor, comp: string) => {
-    switch(comp) {
+    switch (comp) {
         case "minecraft:projectile":
             return getProjectileComponent(actor);
         case "minecraft:physics":
@@ -1119,55 +1134,134 @@ const getConditionalBandwidthComponent = procHacker.js("??$tryGetComponent@VCond
     }
 };
 
-PhysicsComponent.prototype.setHasCollision = procHacker.js("?setHasCollision@PhysicsComponent@@QEAAXAEAVActor@@_N@Z", void_t, {this: PhysicsComponent}, Actor, bool_t);
-PhysicsComponent.prototype.setAffectedByGravity = procHacker.js("?setAffectedByGravity@PhysicsComponent@@QEBAXAEAUSynchedActorDataComponent@@_N@Z", void_t, {this: PhysicsComponent}, SyncedActorDataComponent, bool_t);
+PhysicsComponent.prototype.setHasCollision = procHacker.js(
+    "?setHasCollision@PhysicsComponent@@QEAAXAEAVActor@@_N@Z",
+    void_t,
+    { this: PhysicsComponent },
+    Actor,
+    bool_t,
+);
+PhysicsComponent.prototype.setAffectedByGravity = procHacker.js(
+    "?setAffectedByGravity@PhysicsComponent@@QEBAXAEAUSynchedActorDataComponent@@_N@Z",
+    void_t,
+    { this: PhysicsComponent },
+    SyncedActorDataComponent,
+    bool_t,
+);
 
-ProjectileComponent.prototype.shoot = procHacker.js("?shoot@ProjectileComponent@@QEAAXAEAVActor@@0@Z", void_t, {this: ProjectileComponent}, Actor, Actor);
-ProjectileComponent.prototype.setOwnerId = procHacker.js("?setOwnerId@ProjectileComponent@@QEAAXUActorUniqueID@@@Z", void_t, {this: ProjectileComponent}, ActorUniqueID);
+ProjectileComponent.prototype.shoot = procHacker.js("?shoot@ProjectileComponent@@QEAAXAEAVActor@@0@Z", void_t, { this: ProjectileComponent }, Actor, Actor);
+ProjectileComponent.prototype.setOwnerId = procHacker.js(
+    "?setOwnerId@ProjectileComponent@@QEAAXUActorUniqueID@@@Z",
+    void_t,
+    { this: ProjectileComponent },
+    ActorUniqueID,
+);
 
-DamageSensorComponent.prototype.isFatal = procHacker.js("?isFatal@DamageSensorComponent@@QEBA_NXZ", bool_t, {this: DamageSensorComponent});
-DamageSensorComponent.prototype.getDamageModifier = procHacker.js("?getDamageModifier@DamageSensorComponent@@QEAAMXZ", float32_t, {this: DamageSensorComponent});
-DamageSensorComponent.prototype.recordDamage = procHacker.js("?getDamageModifier@DamageSensorComponent@@QEAAMXZ", int64_as_float_t, {this: DamageSensorComponent}, int64_as_float_t, Actor, Actor, int32_t, int32_t, int32_t, int64_as_float_t);
+DamageSensorComponent.prototype.isFatal = procHacker.js("?isFatal@DamageSensorComponent@@QEBA_NXZ", bool_t, { this: DamageSensorComponent });
+DamageSensorComponent.prototype.getDamageModifier = procHacker.js("?getDamageModifier@DamageSensorComponent@@QEAAMXZ", float32_t, { this: DamageSensorComponent });
+DamageSensorComponent.prototype.recordDamage = procHacker.js(
+    "?getDamageModifier@DamageSensorComponent@@QEAAMXZ",
+    int64_as_float_t,
+    { this: DamageSensorComponent },
+    int64_as_float_t,
+    Actor,
+    Actor,
+    int32_t,
+    int32_t,
+    int32_t,
+    int64_as_float_t,
+);
 
-CommandBlockComponent.prototype.addAdditionalSaveData = procHacker.js("?addAdditionalSaveData@CommandBlockComponent@@QEBAXAEAVCompoundTag@@@Z", void_t, {this: CommandBlockComponent}, CompoundTag);
-CommandBlockComponent.prototype.getTicking = procHacker.js("?getTicking@CommandBlockComponent@@QEBA_NXZ", bool_t, {this: CommandBlockComponent});
-CommandBlockComponent.prototype.setTicking = procHacker.js("?setTicking@CommandBlockComponent@@QEAAX_N@Z", void_t, {this: CommandBlockComponent}, bool_t);
-CommandBlockComponent.prototype.resetCurrentTicking = procHacker.js("?resetCurrentTick@CommandBlockComponent@@QEAAXXZ", void_t, {this: CommandBlockComponent});
+CommandBlockComponent.prototype.addAdditionalSaveData = procHacker.js(
+    "?addAdditionalSaveData@CommandBlockComponent@@QEBAXAEAVCompoundTag@@@Z",
+    void_t,
+    { this: CommandBlockComponent },
+    CompoundTag,
+);
+CommandBlockComponent.prototype.getTicking = procHacker.js("?getTicking@CommandBlockComponent@@QEBA_NXZ", bool_t, { this: CommandBlockComponent });
+CommandBlockComponent.prototype.setTicking = procHacker.js("?setTicking@CommandBlockComponent@@QEAAX_N@Z", void_t, { this: CommandBlockComponent }, bool_t);
+CommandBlockComponent.prototype.resetCurrentTicking = procHacker.js("?resetCurrentTick@CommandBlockComponent@@QEAAXXZ", void_t, { this: CommandBlockComponent });
 
-NameableComponent.prototype.nameEntity = procHacker.js("?nameEntity@NameableComponent@@QEAAXAEAVActor@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z", void_t, {this: NameableComponent}, Actor, CxxString);
+NameableComponent.prototype.nameEntity = procHacker.js(
+    "?nameEntity@NameableComponent@@QEAAXAEAVActor@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+    void_t,
+    { this: NameableComponent },
+    Actor,
+    CxxString,
+);
 
-const NavigationComponent$$createPath$$Actor = procHacker.js("?createPath@NavigationComponent@@QEAA?AV?$unique_ptr@VPath@@U?$default_delete@VPath@@@std@@@std@@AEAVMob@@AEAVActor@@@Z", Path.ref(), null, NavigationComponent, Actor, Actor);
-const NavigationComponent$$createPath$$Vec3 = procHacker.js("?createPath@NavigationComponent@@QEAA?AV?$unique_ptr@VPath@@U?$default_delete@VPath@@@std@@@std@@AEAVMob@@AEBVVec3@@@Z", Path.ref(), null, NavigationComponent, Actor, Vec3);
-(NavigationComponent.prototype as any)._createPath = function(component: NavigationComponent, actor: Actor, target: Actor | Vec3): Path {
+const NavigationComponent$$createPath$$Actor = procHacker.js(
+    "?createPath@NavigationComponent@@QEAA?AV?$unique_ptr@VPath@@U?$default_delete@VPath@@@std@@@std@@AEAVMob@@AEAVActor@@@Z",
+    Path.ref(),
+    null,
+    NavigationComponent,
+    Actor,
+    Actor,
+);
+const NavigationComponent$$createPath$$Vec3 = procHacker.js(
+    "?createPath@NavigationComponent@@QEAA?AV?$unique_ptr@VPath@@U?$default_delete@VPath@@@std@@@std@@AEAVMob@@AEBVVec3@@@Z",
+    Path.ref(),
+    null,
+    NavigationComponent,
+    Actor,
+    Vec3,
+);
+(NavigationComponent.prototype as any)._createPath = function (component: NavigationComponent, actor: Actor, target: Actor | Vec3): Path {
     if (target instanceof Actor) {
         return NavigationComponent$$createPath$$Actor(component, actor, target);
     } else {
         return NavigationComponent$$createPath$$Vec3(component, actor, target);
     }
 };
-NavigationComponent.prototype.setPath = procHacker.js("?setPath@NavigationComponent@@QEAAXV?$unique_ptr@VPath@@U?$default_delete@VPath@@@std@@@std@@@Z", void_t, {this: NavigationComponent}, Path.ref());
-NavigationComponent.prototype.stop = procHacker.js("?stop@NavigationComponent@@QEAAXAEAVMob@@@Z", void_t, {this: NavigationComponent}, Mob);
-NavigationComponent.prototype.getMaxDistance = procHacker.js("?getMaxDistance@NavigationComponent@@QEBAMAEBVActor@@@Z", float32_t, {this: NavigationComponent}, Actor);
-NavigationComponent.prototype.isDone = procHacker.js("?isDone@NavigationComponent@@QEBA_NXZ", bool_t, {this: NavigationComponent});
-NavigationComponent.prototype.getSpeed = procHacker.js("?getSpeed@NavigationComponent@@QEBAMXZ", float32_t, {this: NavigationComponent});
-NavigationComponent.prototype.getAvoidSun = procHacker.js("?getAvoidSun@NavigationComponent@@QEBA_NXZ", bool_t, {this: NavigationComponent});
-NavigationComponent.prototype.getCanFloat = procHacker.js("?getCanFloat@NavigationComponent@@QEBA_NXZ", bool_t, {this: NavigationComponent});
-NavigationComponent.prototype.getCanPathOverLava = procHacker.js("?getCanPathOverLava@NavigationComponent@@QEBA_NXZ", bool_t, {this: NavigationComponent});
-NavigationComponent.prototype.getLastStuckCheckPosition = procHacker.js("?getLastStuckCheckPosition@NavigationComponent@@QEBA?AVVec3@@XZ", Vec3, {this: NavigationComponent});
-NavigationComponent.prototype.isStuck = procHacker.js("?isStuck@NavigationComponent@@QEBA_NH@Z", bool_t, {this: NavigationComponent}, int32_t);
-NavigationComponent.prototype.setCanFloat = procHacker.js("?setCanFloat@NavigationComponent@@QEAAX_N@Z", void_t, {this: NavigationComponent}, bool_t);
-NavigationComponent.prototype.setAvoidWater = procHacker.js("?setAvoidWater@NavigationComponent@@QEAAX_N@Z", void_t, {this: NavigationComponent}, bool_t);
-NavigationComponent.prototype.setAvoidSun = procHacker.js("?setAvoidSun@NavigationComponent@@QEAAX_N@Z", void_t, {this: NavigationComponent}, bool_t);
-NavigationComponent.prototype.setSpeed = procHacker.js("?setSpeed@NavigationComponent@@QEAAXM@Z", void_t, {this: NavigationComponent}, float32_t);
+NavigationComponent.prototype.setPath = procHacker.js(
+    "?setPath@NavigationComponent@@QEAAXV?$unique_ptr@VPath@@U?$default_delete@VPath@@@std@@@std@@@Z",
+    void_t,
+    { this: NavigationComponent },
+    Path.ref(),
+);
+NavigationComponent.prototype.stop = procHacker.js("?stop@NavigationComponent@@QEAAXAEAVMob@@@Z", void_t, { this: NavigationComponent }, Mob);
+NavigationComponent.prototype.getMaxDistance = procHacker.js(
+    "?getMaxDistance@NavigationComponent@@QEBAMAEBVActor@@@Z",
+    float32_t,
+    { this: NavigationComponent },
+    Actor,
+);
+NavigationComponent.prototype.isDone = procHacker.js("?isDone@NavigationComponent@@QEBA_NXZ", bool_t, { this: NavigationComponent });
+NavigationComponent.prototype.getSpeed = procHacker.js("?getSpeed@NavigationComponent@@QEBAMXZ", float32_t, { this: NavigationComponent });
+NavigationComponent.prototype.getAvoidSun = procHacker.js("?getAvoidSun@NavigationComponent@@QEBA_NXZ", bool_t, { this: NavigationComponent });
+NavigationComponent.prototype.getCanFloat = procHacker.js("?getCanFloat@NavigationComponent@@QEBA_NXZ", bool_t, { this: NavigationComponent });
+NavigationComponent.prototype.getCanPathOverLava = procHacker.js("?getCanPathOverLava@NavigationComponent@@QEBA_NXZ", bool_t, { this: NavigationComponent });
+NavigationComponent.prototype.getLastStuckCheckPosition = procHacker.js("?getLastStuckCheckPosition@NavigationComponent@@QEBA?AVVec3@@XZ", Vec3, {
+    this: NavigationComponent,
+});
+NavigationComponent.prototype.isStuck = procHacker.js("?isStuck@NavigationComponent@@QEBA_NH@Z", bool_t, { this: NavigationComponent }, int32_t);
+NavigationComponent.prototype.setCanFloat = procHacker.js("?setCanFloat@NavigationComponent@@QEAAX_N@Z", void_t, { this: NavigationComponent }, bool_t);
+NavigationComponent.prototype.setAvoidWater = procHacker.js("?setAvoidWater@NavigationComponent@@QEAAX_N@Z", void_t, { this: NavigationComponent }, bool_t);
+NavigationComponent.prototype.setAvoidSun = procHacker.js("?setAvoidSun@NavigationComponent@@QEAAX_N@Z", void_t, { this: NavigationComponent }, bool_t);
+NavigationComponent.prototype.setSpeed = procHacker.js("?setSpeed@NavigationComponent@@QEAAXM@Z", void_t, { this: NavigationComponent }, float32_t);
 
-RideableComponent.prototype.areSeatsFull = procHacker.js("?areSeatsFull@RideableComponent@@QEBA_NAEBVActor@@@Z", bool_t, {this: RideableComponent}, Actor);
-RideableComponent.prototype.canAddPassenger = procHacker.js("?canAddPassenger@RideableComponent@@QEBA_NAEBVActor@@AEAV2@@Z", bool_t, {this: RideableComponent}, Actor, Actor);
-RideableComponent.prototype.pullInEntity = procHacker.js("?pullInEntity@RideableComponent@@QEBA_NAEAVActor@@0@Z", bool_t, {this: RideableComponent}, Actor, Actor);
+RideableComponent.prototype.areSeatsFull = procHacker.js("?areSeatsFull@RideableComponent@@QEBA_NAEBVActor@@@Z", bool_t, { this: RideableComponent }, Actor);
+RideableComponent.prototype.canAddPassenger = procHacker.js(
+    "?canAddPassenger@RideableComponent@@QEBA_NAEBVActor@@AEAV2@@Z",
+    bool_t,
+    { this: RideableComponent },
+    Actor,
+    Actor,
+);
+RideableComponent.prototype.pullInEntity = procHacker.js("?pullInEntity@RideableComponent@@QEBA_NAEAVActor@@0@Z", bool_t, { this: RideableComponent }, Actor, Actor);
 
 const containerComponent$$addItem$$ItemActor = procHacker.js("?addItem@ContainerComponent@@QEAA_NAEAVItemActor@@@Z", bool_t, null, ContainerComponent, ItemActor);
 const containerComponent$$addItem$$ItemStack = procHacker.js("?addItem@ContainerComponent@@QEAA_NAEAVItemStack@@@Z", bool_t, null, ContainerComponent, ItemStack);
-const containerComponent$$addItem$$ItemStack$$count = procHacker.js("?addItem@ContainerComponent@@QEAA_NAEAVItemStack@@HH@Z", bool_t, null, ContainerComponent, ItemStack, int32_t, int32_t);
-(ContainerComponent.prototype as any)._addItem = function(component: ContainerComponent, item: ItemStack | ItemActor, count?: number, data: number = 0): boolean {
+const containerComponent$$addItem$$ItemStack$$count = procHacker.js(
+    "?addItem@ContainerComponent@@QEAA_NAEAVItemStack@@HH@Z",
+    bool_t,
+    null,
+    ContainerComponent,
+    ItemStack,
+    int32_t,
+    int32_t,
+);
+(ContainerComponent.prototype as any)._addItem = function (component: ContainerComponent, item: ItemStack | ItemActor, count?: number, data: number = 0): boolean {
     if (item instanceof ItemActor) {
         return containerComponent$$addItem$$ItemActor(component, item);
     } else {
@@ -1179,17 +1273,24 @@ const containerComponent$$addItem$$ItemStack$$count = procHacker.js("?addItem@Co
     }
 };
 
-ContainerComponent.prototype.getEmptySlotsCount = procHacker.js("?getEmptySlotsCount@ContainerComponent@@QEBAHXZ", int64_as_float_t, {this: ContainerComponent});
+ContainerComponent.prototype.getEmptySlotsCount = procHacker.js("?getEmptySlotsCount@ContainerComponent@@QEBAHXZ", int64_as_float_t, { this: ContainerComponent });
 ContainerComponent.prototype.getSlots = procHacker.js(
     "?getSlots@ContainerComponent@@QEBA?BV?$vector@PEBVItemStack@@V?$allocator@PEBVItemStack@@@std@@@std@@XZ",
     CxxVector.make(ItemStack.ref()),
     { this: Container, structureReturn: true },
 );
 
-PushableComponent.prototype.pushByActor = procHacker.js("?push@PushableComponent@@QEAAXAEAVActor@@0_N@Z", void_t, {this: PushableComponent}, Actor, Actor, bool_t);
-PushableComponent.prototype.pushByPos = procHacker.js("?push@PushableComponent@@QEAAXAEAVActor@@0_N@Z", void_t, {this: PushableComponent}, Actor, Vec3);
+PushableComponent.prototype.pushByActor = procHacker.js("?push@PushableComponent@@QEAAXAEAVActor@@0_N@Z", void_t, { this: PushableComponent }, Actor, Actor, bool_t);
+PushableComponent.prototype.pushByPos = procHacker.js("?push@PushableComponent@@QEAAXAEAVActor@@0_N@Z", void_t, { this: PushableComponent }, Actor, Vec3);
 
-ShooterComponent.prototype.shootProjectile = procHacker.js("?_shootProjectile@ShooterComponent@@AEAAXAEAVActor@@AEBUActorDefinitionIdentifier@@H@Z", void_t, {this: ShooterComponent}, Actor, ActorDefinitionIdentifier, int32_t);
+ShooterComponent.prototype.shootProjectile = procHacker.js(
+    "?_shootProjectile@ShooterComponent@@AEAAXAEAVActor@@AEBUActorDefinitionIdentifier@@H@Z",
+    void_t,
+    { this: ShooterComponent },
+    Actor,
+    ActorDefinitionIdentifier,
+    int32_t,
+);
 
 Mob.prototype.getArmorValue = procHacker.jsv("??_7Mob@@6B@", "?getArmorValue@Mob@@UEBAHXZ", int32_t, { this: Actor });
 Mob.prototype.knockback = procHacker.jsv(

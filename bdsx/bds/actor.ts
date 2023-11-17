@@ -1481,18 +1481,18 @@ export class Actor extends AbstractClass {
     protected _getComponent(actor: Actor, comp: string): any | null {
         abstract();
     }
-    getComponent(comp:"minecraft:physics"): PhysicsComponent | null
-    getComponent(comp: "minecraft:projectile"): ProjectileComponent | null
-    getComponent(comp: "minecraft:damage_sensor"): DamageSensorComponent | null
-    getComponent(comp: "minecraft:command_block"): CommandBlockComponent | null
-    getComponent(comp: "minecraft:nameable"): NameableComponent | null
-    getComponent(comp: "minecraft:navigation"): NavigationComponent | null
-    getComponent(comp: "minecraft:npc"): NpcComponent | null
-    getComponent(comp: "minecraft:rideable"): RideableComponent | null
-    getComponent(comp: "minecraft:container"): ContainerComponent | null
-    getComponent(comp: "minecraft:pushable"): PushableComponent | null
-    getComponent(comp: "minecraft:shooter"): ShooterComponent | null
-    getComponent(comp: "minecraft:conditional_bandwidth_optimization"): ConditionalBandwidthOptimizationComponent | null
+    getComponent(comp: "minecraft:physics"): PhysicsComponent | null;
+    getComponent(comp: "minecraft:projectile"): ProjectileComponent | null;
+    getComponent(comp: "minecraft:damage_sensor"): DamageSensorComponent | null;
+    getComponent(comp: "minecraft:command_block"): CommandBlockComponent | null;
+    getComponent(comp: "minecraft:nameable"): NameableComponent | null;
+    getComponent(comp: "minecraft:navigation"): NavigationComponent | null;
+    getComponent(comp: "minecraft:npc"): NpcComponent | null;
+    getComponent(comp: "minecraft:rideable"): RideableComponent | null;
+    getComponent(comp: "minecraft:container"): ContainerComponent | null;
+    getComponent(comp: "minecraft:pushable"): PushableComponent | null;
+    getComponent(comp: "minecraft:shooter"): ShooterComponent | null;
+    getComponent(comp: "minecraft:conditional_bandwidth_optimization"): ConditionalBandwidthOptimizationComponent | null;
     getComponent(comp: string): null {
         return this._getComponent(this, comp);
     }
@@ -1631,8 +1631,7 @@ export class PhysicsComponent extends NativeClass {
 }
 
 @nativeClass(null)
-export class SyncedActorDataComponent extends NativeClass {
-}
+export class SyncedActorDataComponent extends NativeClass {}
 /**
  * allows the entity to be a thrown entity.
  */
@@ -1755,16 +1754,14 @@ export class NameableComponent extends NativeClass {
  */
 @nativeClass(null)
 export class NavigationComponent extends NativeClass {
-    createPath(actor: Actor, target: Actor): Path
-    createPath(actor: Actor, target: Vec3): Path
-    createPath(actor: Actor, target: Actor | Vec3): Path {
-        return this._createPath(this, actor, target);
-    }
-
     protected _createPath(component: NavigationComponent, actor: Actor, target: Actor | Vec3): Path {
         abstract();
     }
-
+    createPath(actor: Actor, target: Actor): Path;
+    createPath(actor: Actor, target: Vec3): Path;
+    createPath(actor: Actor, target: Actor | Vec3): Path {
+        return this._createPath(this, actor, target);
+    }
     setPath(path: Path): void {
         abstract();
     }
@@ -1835,8 +1832,8 @@ export class RideableComponent extends NativeClass {
  */
 @nativeClass(null)
 export class ContainerComponent extends NativeClass {
-    addItem(item: ItemActor): boolean
-    addItem(item: ItemStack, count?: number, data?: number): boolean
+    addItem(item: ItemActor): boolean;
+    addItem(item: ItemStack, count?: number, data?: number): boolean;
     addItem(item: ItemStack | ItemActor, count?: number, data?: number): boolean {
         return this._addItem(this, item, count, data);
     }
@@ -1878,7 +1875,6 @@ export class ShooterComponent extends NativeClass {
  * defines the Conditional Spatial Update Bandwidth Optimizations of this entity.
  */
 @nativeClass(null)
-export class ConditionalBandwidthOptimizationComponent extends NativeClass {
-    //; struct ConditionalBandwidthOptimization __stdcall __high ConditionalBandwidthOptimizationComponent::getCurrentOptimizationValues(struct Actor *)
-    //; void __fastcall ConditionalBandwidthOptimizationComponent::initFromDefinition(ConditionalBandwidthOptimizationComponent *__hidden this, struct Actor *, const struct ConditionalBandwidthOptimizationDefinition *)
-}
+export class ConditionalBandwidthOptimizationComponent extends NativeClass {}
+//; struct ConditionalBandwidthOptimization __stdcall __high ConditionalBandwidthOptimizationComponent::getCurrentOptimizationValues(struct Actor *)
+//; void __fastcall ConditionalBandwidthOptimizationComponent::initFromDefinition(ConditionalBandwidthOptimizationComponent *__hidden this, struct Actor *, const struct ConditionalBandwidthOptimizationDefinition *)
