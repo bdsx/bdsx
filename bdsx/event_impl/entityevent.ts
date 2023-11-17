@@ -1,5 +1,6 @@
-import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, HitResult, Mob, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, Mob } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
+import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, InventorySourceType, ItemStack, ItemStackBase } from "../bds/inventory";
 import { BedSleepingResult } from "../bds/level";
 import { ServerNetworkHandler } from "../bds/networkidentifier";

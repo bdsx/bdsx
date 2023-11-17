@@ -7,11 +7,25 @@ import { CxxVector } from "../cxxvector";
 import { events } from "../event";
 import { mangle } from "../mangle";
 import { AbstractClass, NativeClass, NativeStruct, nativeClass, nativeClassUtil, nativeField } from "../nativeclass";
-import { CxxString, bin64_t, bool_t, float32_t, int32_t, int64_as_float_t, uint8_t, void_t } from "../nativetype";
+import { CxxString, bin64_t, bool_t, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec2, Vec3 } from "./blockpos";
 import type { CommandPermissionLevel } from "./command";
+import type {
+    CommandBlockComponent,
+    ConditionalBandwidthOptimizationComponent,
+    ContainerComponent,
+    DamageSensorComponent,
+    NameableComponent,
+    NavigationComponent,
+    NpcComponent,
+    PhysicsComponent,
+    ProjectileComponent,
+    PushableComponent,
+    RideableComponent,
+    ShooterComponent,
+} from "./components";
 import { CxxOptional } from "./cxxoptional";
 import type { Dimension } from "./dimension";
 import { MobEffect, MobEffectIds, MobEffectInstance } from "./effects";
@@ -23,7 +37,6 @@ import type { NetworkIdentifier } from "./networkidentifier";
 import { Packet } from "./packet";
 import type { Player, ServerPlayer, SimulatedPlayer } from "./player";
 import { proc } from "./symbols";
-import { JsonValue } from "./connreq";
 
 export const ActorUniqueID = bin64_t.extends({
     INVALID_ID: proc["?INVALID_ID@ActorUniqueID@@2U1@B"].getBin64(),
@@ -1478,26 +1491,29 @@ export class Actor extends AbstractClass {
     setVariant(variant: int32_t): void {
         abstract();
     }
-    protected _getComponent(actor: Actor, comp: string): any | null {
+    protected _tryGetComponent(actor: Actor, comp: string): any | null {
         abstract();
     }
-    getComponent(comp: "minecraft:physics"): PhysicsComponent | null;
-    getComponent(comp: "minecraft:projectile"): ProjectileComponent | null;
-    getComponent(comp: "minecraft:damage_sensor"): DamageSensorComponent | null;
-    getComponent(comp: "minecraft:command_block"): CommandBlockComponent | null;
-    getComponent(comp: "minecraft:nameable"): NameableComponent | null;
-    getComponent(comp: "minecraft:navigation"): NavigationComponent | null;
-    getComponent(comp: "minecraft:npc"): NpcComponent | null;
-    getComponent(comp: "minecraft:rideable"): RideableComponent | null;
-    getComponent(comp: "minecraft:container"): ContainerComponent | null;
-    getComponent(comp: "minecraft:pushable"): PushableComponent | null;
-    getComponent(comp: "minecraft:shooter"): ShooterComponent | null;
-    getComponent(comp: "minecraft:conditional_bandwidth_optimization"): ConditionalBandwidthOptimizationComponent | null;
-    getComponent(comp: string): null {
-        return this._getComponent(this, comp);
+    tryGetComponent<K extends keyof ComponentsClassMap, T extends ComponentsClassMap[K]>(comp: K): T | null {
+        return this._tryGetComponent(this, comp);
     }
 }
 mangle.update(Actor);
+
+interface ComponentsClassMap {
+    "minecraft:physics": PhysicsComponent;
+    "minecraft:projectile": ProjectileComponent;
+    "minecraft:damage_sensor": DamageSensorComponent;
+    "minecraft:command_block": CommandBlockComponent;
+    "minecraft:nameable": NameableComponent;
+    "minecraft:navigation": NavigationComponent;
+    "minecraft:npc": NpcComponent;
+    "minecraft:rideable": RideableComponent;
+    "minecraft:container": ContainerComponent;
+    "minecraft:pushable": PushableComponent;
+    "minecraft:shooter": ShooterComponent;
+    "minecraft:conditional_bandwidth_optimization": ConditionalBandwidthOptimizationComponent;
+}
 
 @nativeClass(null)
 export class SynchedActorDataEntityWrapper extends AbstractClass {
@@ -1617,264 +1633,3 @@ export class Mob extends Actor {
 export class ItemActor extends Actor {
     itemStack: ItemStack;
 }
-/**
- * defines physics properties of an entity, including if it is affected by gravity or if it collides with objects.
- */
-@nativeClass(null)
-export class PhysicsComponent extends NativeClass {
-    setHasCollision(actor: Actor, bool: boolean): void {
-        abstract();
-    }
-    setAffectedByGravity(actorData: SyncedActorDataComponent, bool: boolean): void {
-        abstract();
-    }
-}
-
-@nativeClass(null)
-export class SyncedActorDataComponent extends NativeClass {}
-/**
- * allows the entity to be a thrown entity.
- */
-@nativeClass(null)
-export class ProjectileComponent extends NativeClass {
-    public static identifier = "minecraft:projectile";
-    shoot(projectile: Actor, shooter: Actor): void {
-        abstract();
-    }
-    setOwnerId(uniqueId: ActorUniqueID): void {
-        abstract();
-    }
-    // @nativeField(bool_t)
-    // wasOnGround: bool_t;
-    // @nativeField(bool_t)
-    // noPhysics: bool_t;
-    // @nativeField(ActorUniqueID, 0x08)
-    // ownerId: ActorUniqueID;
-    // @nativeField(Vec3)
-    // readonly thrownPos: Vec3;
-    // @nativeField(Vec3)
-    // readonly apexPos: Vec3;
-    /* TODO
-        ProjectileComponent::getShooterAngle
-        ProjectileComponent::getIsDangerous
-        ProjectileComponent::getUncertaintyMultiplier
-        ProjectileComponent::getAnchor
-        ProjectileComponent::getShootTarget
-        ProjectileComponent::getUncertainty
-        ProjectileComponent::getGravity
-        ProjectileComponent::getShootSound
-        ProjectileComponent::getThrowPower
-        ProjectileComponent::getUncertaintyBase
-        ProjectileComponent::getCatchFire
-        ProjectileComponent::getKnockbackForce
-        ProjectileComponent::getOffset
-        ProjectileComponent::getNoPhysics
-        ProjectileComponent::getEnchantChanneling
-    */
-}
-
-@nativeClass(0x08)
-export class OnHitSubcomponent extends NativeClass {
-    @nativeField(VoidPointer)
-    vftable: VoidPointer;
-
-    readfromJSON(json: JsonValue): void_t {
-        abstract();
-    }
-    writetoJSON(json: JsonValue): void_t {
-        abstract();
-    }
-    protected _getName(): StaticPointer {
-        abstract();
-    }
-    getName(): string {
-        return this._getName().getString();
-    }
-}
-
-@nativeClass(null)
-export class SplashPotionEffectSubcomponent extends OnHitSubcomponent {
-    @nativeField(int32_t)
-    potionEffect: int32_t;
-}
-
-@nativeClass(null)
-export class HitResult extends AbstractClass {
-    getEntity(): Actor | null {
-        abstract();
-    }
-}
-/**
- * defines what events to initiate when the entity is damaged by specific entities or items.
- */
-@nativeClass(null)
-export class DamageSensorComponent extends NativeClass {
-    isFatal(): boolean {
-        abstract();
-    }
-    getDamageModifier(): number {
-        abstract();
-    }
-    /**
-     * IDK it's working
-     */
-    recordDamage(int64: int64_as_float_t, actor: Actor, actor2: Actor, num1: number, num2: number, char: number, int64_: int64_as_float_t): number {
-        abstract();
-    }
-}
-/**
- * maybe used for command block minecart.
- */
-@nativeClass(null)
-export class CommandBlockComponent extends NativeClass {
-    addAdditionalSaveData(tag: CompoundTag): void {
-        abstract();
-    }
-    getTicking(): boolean {
-        abstract();
-    }
-    setTicking(bool: boolean): void {
-        abstract();
-    }
-    resetCurrentTicking(): void {
-        abstract();
-    }
-}
-/**
- * allows the entity to be named (e.g. using a name tag).
- */
-@nativeClass(null)
-export class NameableComponent extends NativeClass {
-    nameEntity(actor: Actor, name: string): void {
-        abstract();
-    }
-}
-/**
- * minecraft:navigation.climb, minecraft:navigation.float, minecraft:navigation.fly, minecraft:navigation.generic, minecraft:navigation.hover, minecraft:navigation.swim, and minecraft:navigation.walk belong.
- */
-@nativeClass(null)
-export class NavigationComponent extends NativeClass {
-    protected _createPath(component: NavigationComponent, actor: Actor, target: Actor | Vec3): Path {
-        abstract();
-    }
-    createPath(actor: Actor, target: Actor): Path;
-    createPath(actor: Actor, target: Vec3): Path;
-    createPath(actor: Actor, target: Actor | Vec3): Path {
-        return this._createPath(this, actor, target);
-    }
-    setPath(path: Path): void {
-        abstract();
-    }
-    stop(mob: Mob): void {
-        abstract();
-    }
-    getMaxDistance(actor: Actor): number {
-        abstract();
-    }
-    getSpeed(): number {
-        abstract();
-    }
-    getAvoidSun(): boolean {
-        abstract();
-    }
-    getCanFloat(): boolean {
-        abstract();
-    }
-    getCanPathOverLava(): boolean {
-        abstract();
-    }
-    getLastStuckCheckPosition(): Vec3 {
-        abstract();
-    }
-    isDone(): boolean {
-        abstract();
-    }
-    isStuck(int: number): boolean {
-        abstract();
-    }
-    setAvoidWater(bool: boolean): void {
-        abstract();
-    }
-    setAvoidSun(bool: boolean): void {
-        abstract();
-    }
-    setCanFloat(bool: boolean): void {
-        abstract();
-    }
-    setSpeed(speed: number): void {
-        abstract();
-    }
-}
-@nativeClass(null)
-export class Path extends NativeClass {}
-/**
- * Allows the NPC to use the POI
- */
-@nativeClass(null)
-export class NpcComponent extends NativeClass {}
-/**
- * determines whether the entity can be ridden.
- */
-@nativeClass(null)
-export class RideableComponent extends NativeClass {
-    areSeatsFull(ride: Actor): boolean {
-        abstract();
-    }
-    canAddPassenger(ride: Actor, rider: Actor): boolean {
-        abstract();
-    }
-    pullInEntity(ride: Actor, rider: Actor): boolean {
-        abstract();
-    }
-}
-/**
- * Defines this entity's inventory properties.
- */
-@nativeClass(null)
-export class ContainerComponent extends NativeClass {
-    addItem(item: ItemActor): boolean;
-    addItem(item: ItemStack, count?: number, data?: number): boolean;
-    addItem(item: ItemStack | ItemActor, count?: number, data?: number): boolean {
-        return this._addItem(this, item, count, data);
-    }
-
-    protected _addItem(component: ContainerComponent, item: ItemStack | ItemActor, count?: number, data: number = 0): boolean {
-        abstract();
-    }
-
-    getEmptySlotsCount(): number {
-        abstract();
-    }
-
-    getSlots(): CxxVector<ItemStack> {
-        abstract();
-    }
-}
-/**
- * defines what can push an entity between other entities and pistons.
- */
-@nativeClass(null)
-export class PushableComponent extends NativeClass {
-    pushByActor(actor: Actor, actor2: Actor, bool: boolean): void {
-        abstract();
-    }
-    pushByPos(actor: Actor, pos: Vec3): void {
-        abstract();
-    }
-}
-/**
- * defines the entity's ranged attack behavior.
- */
-@nativeClass(null)
-export class ShooterComponent extends NativeClass {
-    shootProjectile(projectile: Actor, defi: ActorDefinitionIdentifier, power: number): void {
-        abstract();
-    }
-}
-/**
- * defines the Conditional Spatial Update Bandwidth Optimizations of this entity.
- */
-@nativeClass(null)
-export class ConditionalBandwidthOptimizationComponent extends NativeClass {}
-//; struct ConditionalBandwidthOptimization __stdcall __high ConditionalBandwidthOptimizationComponent::getCurrentOptimizationValues(struct Actor *)
-//; void __fastcall ConditionalBandwidthOptimizationComponent::initFromDefinition(ConditionalBandwidthOptimizationComponent *__hidden this, struct Actor *, const struct ConditionalBandwidthOptimizationDefinition *)
