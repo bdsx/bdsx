@@ -1105,32 +1105,32 @@ const getConditionalBandwidthComponent = procHacker.js(
     Actor,
 );
 
-(Actor.prototype as any)._tryGetComponent = (actor: Actor, comp: string) => {
+(Actor.prototype as any)._tryGetComponent = (comp: string) => {
     switch (comp) {
         case "minecraft:projectile":
-            return getProjectileComponent(actor);
+            return getProjectileComponent(this);
         case "minecraft:physics":
-            return getPhysicsComponent(actor);
+            return getPhysicsComponent(this);
         case "minecraft:damage_sensor":
-            return getDamageSensorComponent(actor);
+            return getDamageSensorComponent(this);
         case "minecraft:command_block":
-            return getCommandBlockComponent(actor);
+            return getCommandBlockComponent(this);
         case "minecraft:nameable":
-            return getNameableComponent(actor);
+            return getNameableComponent(this);
         case "minecraft:navigation":
-            return getNavigationComponent(actor);
+            return getNavigationComponent(this);
         case "minecraft:npc":
-            return getNpcComponent(actor);
+            return getNpcComponent(this);
         case "minecraft:rideable":
-            return getRideableComponent(actor);
+            return getRideableComponent(this);
         case "minecraft:container":
-            return getContainerComponent(actor);
+            return getContainerComponent(this);
         case "minecraft:pushable":
-            return getPushableComponent(actor);
+            return getPushableComponent(this);
         case "minecraft:shooter":
-            return getShooterComponent(actor);
+            return getShooterComponent(this);
         case "minecraft:conditional_bandwidth_optimization":
-            return getConditionalBandwidthComponent(actor);
+            return getConditionalBandwidthComponent(this);
         default:
             return null;
     }

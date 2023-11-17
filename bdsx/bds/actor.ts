@@ -1491,11 +1491,11 @@ export class Actor extends AbstractClass {
     setVariant(variant: int32_t): void {
         abstract();
     }
-    protected _tryGetComponent(actor: Actor, comp: string): any | null {
+    protected _tryGetComponent(comp: string): any | null {
         abstract();
     }
     tryGetComponent<K extends keyof ComponentsClassMap, T extends ComponentsClassMap[K]>(comp: K): T | null {
-        return this._tryGetComponent(this, comp);
+        return this._tryGetComponent(comp);
     }
 }
 mangle.update(Actor);
