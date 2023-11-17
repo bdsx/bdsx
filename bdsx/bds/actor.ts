@@ -1617,7 +1617,6 @@ export class Mob extends Actor {
 export class ItemActor extends Actor {
     itemStack: ItemStack;
 }
-
 /**
  * defines physics properties of an entity, including if it is affected by gravity or if it collides with objects.
  */
@@ -1634,7 +1633,6 @@ export class PhysicsComponent extends NativeClass {
 @nativeClass(null)
 export class SyncedActorDataComponent extends NativeClass {
 }
-
 /**
  * allows the entity to be a thrown entity.
  */
@@ -1707,7 +1705,6 @@ export class HitResult extends AbstractClass {
         abstract();
     }
 }
-
 /**
  * defines what events to initiate when the entity is damaged by specific entities or items.
  */
@@ -1726,7 +1723,6 @@ export class DamageSensorComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * maybe used for command block minecart.
  */
@@ -1745,7 +1741,6 @@ export class CommandBlockComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * allows the entity to be named (e.g. using a name tag).
  */
@@ -1755,7 +1750,6 @@ export class NameableComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * minecraft:navigation.climb, minecraft:navigation.float, minecraft:navigation.fly, minecraft:navigation.generic, minecraft:navigation.hover, minecraft:navigation.swim, and minecraft:navigation.walk belong.
  */
@@ -1814,18 +1808,13 @@ export class NavigationComponent extends NativeClass {
         abstract();
     }
 }
-
 @nativeClass(null)
-export class Path extends NativeClass {
-}
-
+export class Path extends NativeClass {}
 /**
  * Allows the NPC to use the POI
  */
 @nativeClass(null)
-export class NpcComponent extends NativeClass {
-}
-
+export class NpcComponent extends NativeClass {}
 /**
  * determines whether the entity can be ridden.
  */
@@ -1841,7 +1830,6 @@ export class RideableComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * Defines this entity's inventory properties.
  */
@@ -1865,7 +1853,6 @@ export class ContainerComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * defines what can push an entity between other entities and pistons.
  */
@@ -1878,7 +1865,6 @@ export class PushableComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * defines the entity's ranged attack behavior.
  */
@@ -1888,7 +1874,6 @@ export class ShooterComponent extends NativeClass {
         abstract();
     }
 }
-
 /**
  * defines the Conditional Spatial Update Bandwidth Optimizations of this entity.
  */
