@@ -385,6 +385,7 @@ export class TickSyncPacket extends Packet {
     // unknown
 }
 
+/** @deprecated Removed packet, use LevelSoundEventPacket instead. */
 @nativeClass(null)
 export class LevelSoundEventPacketV1 extends Packet {
     // unknown
@@ -803,6 +804,7 @@ export class CraftingDataPacket extends Packet {
     // unknown
 }
 
+/** @deprecated removed */
 @nativeClass(null)
 export class CraftingEventPacket extends Packet {
     @nativeField(uint8_t)
@@ -1569,7 +1571,7 @@ export class AvailableActorIdentifiersPacket extends Packet {
     // unknown
 }
 
-/** @deprecated Unused packet, use LevelSoundEventPacket instead. */
+/** @deprecated Removed packet, use LevelSoundEventPacket instead. */
 @nativeClass(null)
 export class LevelSoundEventPacketV2 extends Packet {
     // unknown
@@ -2342,10 +2344,27 @@ export class TrimDataPacket extends Packet {
 }
 
 @nativeClass(null)
+export class AgentAnimationPacket extends Packet {
+    // unknown
+}
+
+@nativeClass(null)
 export class OpenSignPacket extends Packet {
     // unknown
 }
 
+@nativeClass(null)
+export class RefreshEntitlementsPacket extends Packet {
+    // unknown
+}
+@nativeClass(null)
+export class PlayerToggleCrafterSlotRequestPacket extends Packet {
+    // unknown
+}
+@nativeClass(null)
+export class SetPlayerInventoryOptionsPacket extends Packet {
+    // unknown
+}
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2548,6 +2567,10 @@ export const PacketIdToType = {
     0x12d: CompressedBiomeDefinitionListPacket,
     0x12e: TrimDataPacket,
     0x12f: OpenSignPacket,
+    0x130: AgentAnimationPacket,
+    0x131: RefreshEntitlementsPacket,
+    0x132: PlayerToggleCrafterSlotRequestPacket,
+    0x133: SetPlayerInventoryOptionsPacket,
 };
 export type PacketIdToType = {
     [key in keyof typeof PacketIdToType]: InstanceType<(typeof PacketIdToType)[key]>;
