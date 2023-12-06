@@ -36,5 +36,5 @@ import "./simulatedplayer";
 import "./storage";
 import "./test";
 import "./vulnerabilities";
-import "./shoot-projectile"
+import "./shoot-projectile";
 // import './permissions';

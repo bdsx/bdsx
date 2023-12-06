@@ -81,7 +81,7 @@ enum PacketPhase {
     After,
 }
 let nextPacketPhase = PacketPhase.Raw;
-let nextEventTimeout:NodeJS.Timeout|null = null;
+let nextEventTimeout: NodeJS.Timeout | null = null;
 let nextPacketSendPhase = PacketPhase.Before;
 
 type PromiseFunc = () => Promise<PromiseFunc>;
@@ -828,7 +828,7 @@ Tester.concurrency(
         },
 
         async checkPacketNames() {
-            const deletePackets = new Set([MinecraftPacketIds.AdventureSettings]);
+            const deletePackets = new Set([MinecraftPacketIds.AdventureSettings, MinecraftPacketIds.CraftingEvent]);
             for (const id in PacketIdToType) {
                 try {
                     const Packet = PacketIdToType[+id as keyof PacketIdToType];
@@ -909,8 +909,8 @@ Tester.concurrency(
                         this.equals(nextPacketPhase, PacketPhase.Raw, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.Before;
                         this.assert(nextEventTimeout === null, "timeout exists");
-                        nextEventTimeout = setTimeout(()=>{
-                            this.error("packet before did not fire, id="+packetId);
+                        nextEventTimeout = setTimeout(() => {
+                            this.error("packet before did not fire, id=" + packetId);
                         }, 3000);
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetRaw, Invalid ni, id=" + packetId);
                         idcheck = packetId;
@@ -924,8 +924,8 @@ Tester.concurrency(
                         nextPacketPhase = PacketPhase.After;
                         this.assert(nextEventTimeout !== null, "no timeout");
                         clearTimeout(nextEventTimeout!);
-                        nextEventTimeout = setTimeout(()=>{
-                            this.error("packet after did not fire, id="+packetId);
+                        nextEventTimeout = setTimeout(() => {
+                            this.error("packet after did not fire, id=" + packetId);
                         }, 3000);
                         this.assert(ni.getAddress() !== "UNASSIGNED_SYSTEM_ADDRESS", "packetBefore, Invalid ni, id=" + packetId);
                         this.equals(packetId, idcheck, `packetBefore, different packetId on before. id=${packetId}`);
