@@ -277,6 +277,3 @@ bedrockServer.withLoading().then(() => {
         asmcode.packetSendInternalHook,
     );
 });
-console.log(asmcode.packetSendAllHook);
-console.log(asmcode.onPacketSend);
-console.log(asmcode.addressof_onPacketSend);

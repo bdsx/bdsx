@@ -2344,12 +2344,12 @@ export class TrimDataPacket extends Packet {
 }
 
 @nativeClass(null)
-export class AgentAnimationPacket extends Packet {
+export class OpenSignPacket extends Packet {
     // unknown
 }
 
 @nativeClass(null)
-export class OpenSignPacket extends Packet {
+export class AgentAnimationPacket extends Packet {
     // unknown
 }
 
