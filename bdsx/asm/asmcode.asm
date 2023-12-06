@@ -518,7 +518,7 @@ export proc packetRawHook
     test al, 0x01
     jz _skipEvent
     mov rcx, rbp ; rbp
-    mov rdx, r15 ; NetworkConnection
+    mov rdx, r14 ; NetworkConnection
     jmp onPacketRaw
  _skipEvent:
     ; rdx - packetId
@@ -543,7 +543,7 @@ export proc packetBeforeHook
     mov rcx, rbp
     mov rdx, rsp
     ; r8 - packetId
-    mov r9, r15 ; NetworkConnection
+    mov r9, r14 ; NetworkConnection
     jmp onPacketBefore
 _skipEvent:
     ret
@@ -619,8 +619,8 @@ export proc packetSendAllHook
     ; r12 - packet
     ; rbx - ni
 
-    mov r15, r12 ; mdisprgm: temp solution, assembler can't deal with `mov rax, [r12]`
-    mov rax, [r15] ; packet.vftable
+    mov rax, r12 ; [r12]: packet.vftable
+    mov rax, [rax] ; temp solution, assembler can't deal with `mov rax, [r12]`
     call [rax+8] ; packet.getId(), just constant return
 
     lea r10, enabledPacket
@@ -643,9 +643,10 @@ _pass:
 
     unwind
     ; original codes
-    mov rax, [r15]
+    mov rax, r12 ; [r12]: packet.vftable
+    mov rax, [rax] ; temp solution, assembler can't deal with `mov rax, [r12]`
     lea rdx, [r14+0x200]
-    mov rcx, r15
+    mov rcx, r12
     mov rax, [rax+0x18]
     jmp __guard_dispatch_icall_fptr
 endp
