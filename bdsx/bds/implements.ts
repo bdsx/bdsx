@@ -1367,7 +1367,7 @@ SynchedActorDataEntityWrapper.prototype.setInt = procHacker.js(
     int32_t.ref() /** int const & */,
 );
 
-@nativeClass(0x18)
+@nativeClass(0x20)
 class StackResultStorageEntity extends NativeClass {
     constructWith(weakEntityRef: WeakEntityRef): void {
         abstract();
