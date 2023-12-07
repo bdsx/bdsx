@@ -629,7 +629,7 @@ export proc packetSendAllHook
     test al, 0x08
     jz _pass
 
-    mov r8, r15 ; packet
+    mov r8, r12 ; packet
     mov rdx, rbx ; ni
     ; rcx = packetId
     call onPacketSend
