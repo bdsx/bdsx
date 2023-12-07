@@ -48,7 +48,7 @@ export enum PersonaPieceType {
     ClassicSkin,
 }
 
-@nativeClass(0x38)
+@nativeClass(0x40)
 export class AnimatedImageData extends NativeClass {
     @nativeField(uint32_t)
     type: PersonaAnimatedTextureType;

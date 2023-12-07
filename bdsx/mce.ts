@@ -129,7 +129,7 @@ export namespace mce {
         height: uint32_t;
         @nativeField(uint8_t)
         usage: ImageUsage;
-        @nativeField(mce.Blob, 0x10)
+        @nativeField(mce.Blob, 0x18)
         blob: mce.Blob;
     }
 }
