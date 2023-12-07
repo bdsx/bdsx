@@ -510,40 +510,40 @@ export def createPacketRaw:qword
 export def enabledPacket:byte[PACKET_ID_COUNT]
 
 export proc packetRawHook
-    ; dword ptr[rbp+0xb0] - packetId
-    mov edx, dword ptr[rbp+0xb0]
+    ; dword ptr[rbp+0x180] - packetId
+    mov edx, dword ptr[rbp+0x180]
     lea rax, enabledPacket
     mov al, byte ptr[rax+rdx]
     unwind
     test al, 0x01
     jz _skipEvent
     mov rcx, rbp ; rbp
-    mov rdx, r15 ; NetworkConnection
+    mov rdx, r14 ; NetworkConnection
     jmp onPacketRaw
  _skipEvent:
     ; rdx - packetId
-    lea rcx, [rbp+0xc0] ; packet
+    lea rcx, [rbp+0x190] ; packet
     jmp createPacketRaw
 endp
 
 export def packetBeforeOriginal:qword
 export def onPacketBefore:qword
 export proc packetBeforeHook
-    ; dword ptr[rbp+0xb0] - packetId
+    ; dword ptr[rbp+0x180] - packetId
     stack 28h
-    lea rdx,qword ptr[rbp+0x150] ; original code
-    lea rcx,qword ptr[rbp-0x10] ; original code
+    lea rdx,qword ptr[rbp+0x1E0] ; original code
+    lea rcx,qword ptr[rbp+0x10] ; original code
     call packetBeforeOriginal ; original code
     unwind
     lea rcx, enabledPacket
-    mov r8d, dword ptr[rbp+0xb0] ; packetId
+    mov r8d, dword ptr[rbp+0x180] ; packetId
     movzx ecx, byte ptr[rcx+r8]
     test cl, 0x02
     jz _skipEvent
     mov rcx, rbp
     mov rdx, rsp
     ; r8 - packetId
-    mov r9, r15 ; NetworkConnection
+    mov r9, r14 ; NetworkConnection
     jmp onPacketBefore
 _skipEvent:
     ret
@@ -554,23 +554,23 @@ export def handlePacket:qword
 export def __guard_dispatch_icall_fptr:qword
 
 export proc packetAfterHook
-    ; dword ptr[rbp+0xb0] - packetId
+    ; dword ptr[rbp+0x180] - packetId
     stack 28h
 
     ; orignal codes
-    mov r8, r14 ; callback
-    mov rdx, r15 ; NetworkConnection
+    mov r8, rsi ; callback
+    mov rdx, r14 ; NetworkConnection
     mov rax, [rax+8]
     call __guard_dispatch_icall_fptr ; ServerNetworkHandler::handle()
 
     lea r10, enabledPacket
-    mov r8d, dword ptr[rbp+0xb0] ; packetId
+    mov r8d, dword ptr[rbp+0x180] ; packetId
     movzx eax, byte ptr[r10+r8]
     unwind
     test al, 0x04
     jz _skipEvent
-    mov rcx,[rbp+0xc0] ; packet
-    mov rdx, r15 ; ni
+    mov rcx,[rbp+0x190] ; packet
+    mov rdx, r14 ; ni
     ; r8 - packetId
     jmp onPacketAfter
 _skipEvent:
@@ -616,10 +616,11 @@ export def packetSendAllCancelPoint:qword
 
 export proc packetSendAllHook
     stack 28h
-    ; r15 - packet
+    ; r12 - packet
     ; rbx - ni
 
-    mov rax, [r15] ; packet.vftable
+    mov rax, r12 ; [r12]: packet.vftable
+    mov rax, [rax] ; temp solution, assembler can't deal with `mov rax, [r12]`
     call [rax+8] ; packet.getId(), just constant return
 
     lea r10, enabledPacket
@@ -628,7 +629,7 @@ export proc packetSendAllHook
     test al, 0x08
     jz _pass
 
-    mov r8, r15 ; packet
+    mov r8, r12 ; packet
     mov rdx, rbx ; ni
     ; rcx = packetId
     call onPacketSend
@@ -642,9 +643,10 @@ _pass:
 
     unwind
     ; original codes
-    mov rax, [r15]
-    lea rdx, [rbp+0x200]
-    mov rcx, r15
+    mov rax, r12 ; [r12]: packet.vftable
+    mov rax, [rax] ; temp solution, assembler can't deal with `mov rax, [r12]`
+    lea rdx, [r14+0x200]
+    mov rcx, r12
     mov rax, [rax+0x18]
     jmp __guard_dispatch_icall_fptr
 endp

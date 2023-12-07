@@ -6,6 +6,7 @@ import type { Biome } from "./biome";
 import type { BlockPos, ChunkBlockPos, ChunkPos } from "./blockpos";
 import type { Level } from "./level";
 
+@nativeClass(null)
 export class LevelChunk extends NativeClass {
     getBiome(pos: ChunkBlockPos): Biome {
         abstract();

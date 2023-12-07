@@ -29,6 +29,7 @@ export enum MinecraftPacketIds { // int32_t
     UpdateBlock = 0x15,
     AddPainting = 0x16,
     TickSync = 0x17,
+    /** @deprecated removed */
     LevelSoundEventV1 = 0x18,
     LevelEvent = 0x19,
     BlockEvent = 0x1a,
@@ -64,8 +65,10 @@ export enum MinecraftPacketIds { // int32_t
     InventorySlot = 0x32,
     ContainerSetData = 0x33,
     CraftingData = 0x34,
+    /** @deprecated removed */
     CraftingEvent = 0x35,
     GuiDataPickItem = 0x36,
+    /** @deprecated removed */
     AdventureSettings = 0x37,
     BlockActorData = 0x38,
     PlayerInput = 0x39,
@@ -143,6 +146,7 @@ export enum MinecraftPacketIds { // int32_t
     // ScriptCustomEvent = 0x75, // removed
     SpawnParticleEffect = 0x76,
     AvailableActorIdentifiers = 0x77,
+    /** @deprecated removed */
     LevelSoundEventV2 = 0x78,
     NetworkChunkPublisherUpdate = 0x79,
     BiomeDefinitionList = 0x7a,
@@ -225,7 +229,6 @@ export enum MinecraftPacketIds { // int32_t
     GameTestResults = 0xc3,
     UpdateClientInputLocks = 0xc4,
     /** @deprecated skip Packet ends */
-    // ClientCheatAbilityPacket = 0xc5, // removed
     // ClientCheatAbility = 0xc5, // removed
     /** @deprecated skip Packet ends */
     CameraPresetsPacket = 0xc6,
@@ -245,5 +248,9 @@ export enum MinecraftPacketIds { // int32_t
     /** @deprecated skip Packet ends */
     OpenSignPacket = 0x12f,
     OpenSign = 0x12f,
+    AgentAnimation = 0x130,
+    RefreshEntitlements = 0x131,
+    PlayerToggleCrafterSlotRequest = 0x132,
+    SetPlayerInventoryOptions = 0x133,
 }
 (MinecraftPacketIds as any).__proto__ = null;

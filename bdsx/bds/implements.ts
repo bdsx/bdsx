@@ -43,6 +43,7 @@ import {
     ActorDamageByChildActorSource,
     ActorDamageCause,
     ActorDamageSource,
+    ActorDataIDs,
     ActorDefinitionIdentifier,
     ActorRuntimeID,
     ActorType,
@@ -50,7 +51,6 @@ import {
     DimensionId,
     DistanceSortedActor,
     EntityContext,
-    EntityContextBase,
     EntityRefTraits,
     ItemActor,
     Mob,
@@ -533,14 +533,14 @@ Spawner.prototype.spawnMob = function (
 
 // dimension.ts
 const fetchNearestAttackablePlayer$nonBlockPos = procHacker.js(
-    "?fetchNearestAttackablePlayer@Dimension@@QEAAPEAVPlayer@@AEAVActor@@M@Z",
+    "?fetchNearestAttackablePlayer@Dimension@@QEBAPEAVPlayer@@AEAVActor@@M@Z",
     Player,
     { this: Dimension },
     Actor,
     float32_t,
 );
 const fetchNearestAttackablePlayer$withBlockPos = procHacker.js(
-    "?fetchNearestAttackablePlayer@Dimension@@QEAAPEAVPlayer@@VBlockPos@@MPEAVActor@@@Z",
+    "?fetchNearestAttackablePlayer@Dimension@@QEBAPEAVPlayer@@VBlockPos@@MPEAVActor@@@Z",
     Player,
     { this: Dimension },
     BlockPos,
@@ -772,7 +772,7 @@ Actor.prototype.getDimensionBlockSource = Actor.prototype.getRegion = procHacker
     this: Actor,
 });
 Actor.prototype.getUniqueIdPointer = procHacker.js("?getOrCreateUniqueID@Actor@@QEBAAEBUActorUniqueID@@XZ", StaticPointer, { this: Actor });
-Actor.prototype.getEntityTypeId = procHacker.jsv("??_7Actor@@6B@", "?getEntityTypeId@Actor@@UEBA?AW4ActorType@@XZ", int32_t, { this: Actor }); // ActorType getEntityTypeId()
+Actor.prototype.getEntityTypeId = procHacker.js("?getEntityTypeId@Actor@@QEBA?AW4ActorType@@XZ", int32_t, { this: Actor }); // ActorType getEntityTypeId()
 Actor.prototype.getRuntimeID = procHacker.js("?getRuntimeID@Actor@@QEBA?AVActorRuntimeID@@XZ", ActorRuntimeID, { this: Actor, structureReturn: true });
 Actor.prototype.getDimension = procHacker.js("?getDimension@Actor@@QEBAAEAVDimension@@XZ", Dimension, { this: Actor });
 Actor.prototype.getDimensionId = procHacker.js("?getDimensionId@Actor@@QEBA?AV?$AutomaticID@VDimension@@H@@XZ", int32_t, { this: Actor, structureReturn: true });
@@ -1031,7 +1031,11 @@ Actor.prototype.getLastDeathDimension = procHacker.jsv(
 (Actor.prototype as any)._getViewVector = procHacker.js("?getViewVector@Actor@@QEBA?AVVec3@@M@Z", Vec3, { this: Actor, structureReturn: true }, float32_t);
 Actor.prototype.isImmobile = procHacker.jsv("??_7Actor@@6B@", "?isImmobile@Actor@@UEBA_NXZ", bool_t, { this: Actor });
 Actor.prototype.isSwimming = procHacker.js("?isSwimming@Actor@@QEBA_NXZ", bool_t, { this: Actor });
-Actor.prototype.setSize = procHacker.js("?setSize@Actor@@UEAAXMM@Z", void_t, { this: Player }, float32_t, float32_t);
+Actor.prototype.setSize = function (width, height) {
+    const entityData = this.getEntityData();
+    entityData.setFloat(ActorDataIDs.Width, width);
+    entityData.setFloat(ActorDataIDs.Height, height);
+};
 Actor.prototype.isInsidePortal = procHacker.js("?isInsidePortal@Actor@@QEBA_NXZ", bool_t, { this: Actor });
 Actor.prototype.isInWorld = procHacker.js("?isInWorld@Actor@@QEBA_NXZ", bool_t, { this: Actor });
 Actor.prototype.isInWaterOrRain = procHacker.js("?isInWaterOrRain@Actor@@QEBA_NXZ", bool_t, { this: Actor });
@@ -1363,7 +1367,7 @@ SynchedActorDataEntityWrapper.prototype.setInt = procHacker.js(
     int32_t.ref() /** int const & */,
 );
 
-@nativeClass(0x18)
+@nativeClass(0x20)
 class StackResultStorageEntity extends NativeClass {
     constructWith(weakEntityRef: WeakEntityRef): void {
         abstract();
@@ -1552,9 +1556,9 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    enderChestContainer: [EnderChestContainer.ref(), 0xc88], // accessed in Player::Player+1222 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
-    playerUIContainer: [PlayerUIContainer, 0xd40], // accessed in Player::readAdditionalSaveData+1256 when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x1d08], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+193 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    enderChestContainer: [EnderChestContainer.ref(), 0xcd8], // accessed in Player::Player+1222 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
+    playerUIContainer: [PlayerUIContainer, 0xda0], // accessed in Player::readAdditionalSaveData+1256 when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1d78], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+193 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
@@ -1640,21 +1644,31 @@ class UserEntityIdentifierComponent extends NativeClass {
     certificate: Certificate; // it's ExtendedCertificate actually
 }
 
-EntityContextBase.prototype.isValid = procHacker.js("?isValid@EntityContextBase@@QEBA_NXZ", bool_t, { this: EntityContextBase });
+EntityContext.prototype.isValid = procHacker.js("?isValid@EntityContext@@QEBA_NXZ", bool_t, {
+    this: EntityContext,
+});
+EntityContext.prototype._enttRegistry = procHacker.js("?_registry@EntityContext@@QEBAAEAVEntityRegistry@@XZ", VoidPointer, {
+    this: EntityContext,
+});
+EntityContext.prototype._getEntityId = procHacker.js("?_getEntityId@EntityContext@@IEBA?AVEntityId@@XZ", VoidPointer, {
+    this: EntityContext,
+    structureReturn: true,
+});
 
-const Registry_getEntityIdentifierComponent = procHacker.js(
-    "??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@V?$allocator@VEntityId@@@std@@@entt@@QEAA?A_PVEntityId@@@Z",
+const TryGetUserEntityIdComponent = procHacker.js(
+    "??$tryGetComponent@VUserEntityIdentifierComponent@@@Actor@@QEAAPEAVUserEntityIdentifierComponent@@XZ",
     UserEntityIdentifierComponent,
     null,
-    VoidPointer,
-    int32_t.ref(),
+    Actor,
 );
 
+/**
+ * ~1.20.50 implementing part of ServerNetworkHandler::_displayGameMessage
+ * 1.20.50~ aspiring from existing, get components manually
+ */
 Player.prototype.getCertificate = function () {
     // part of ServerNetworkHandler::_displayGameMessage
-    const base = this.ctxbase;
-    const registry = base.enttRegistry;
-    return Registry_getEntityIdentifierComponent(registry, base.entityId).certificate;
+    return TryGetUserEntityIdComponent(this).certificate;
 };
 Player.prototype.getDestroySpeed = procHacker.js("?getDestroySpeed@Player@@QEBAMAEBVBlock@@@Z", float32_t, { this: Player }, Block.ref());
 Player.prototype.canDestroy = procHacker.js("?canDestroy@Player@@QEBA_NAEBVBlock@@@Z", bool_t, { this: Player }, Block.ref());
@@ -1680,10 +1694,7 @@ Player.prototype.getXuid = procHacker.js("?getXuid@Player@@UEBA?AV?$basic_string
     structureReturn: true,
 });
 Player.prototype.getUuid = function () {
-    const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
-    const registry = base._enttRegistry();
-    return Registry_getEntityIdentifierComponent(registry, base.entityId).uuid;
+    return TryGetUserEntityIdComponent(this).uuid;
 };
 Player.prototype.forceAllowEating = procHacker.js("?forceAllowEating@Player@@QEBA_NXZ", bool_t, { this: Player });
 Player.prototype.getSpeed = procHacker.js("?getSpeed@Player@@UEBAMXZ", float32_t, { this: Player });
@@ -1724,13 +1735,12 @@ ServerPlayer.prototype.nextContainerCounter = procHacker.js("?_nextContainerCoun
 ServerPlayer.prototype.openInventory = procHacker.js("?openInventory@ServerPlayer@@UEAAXXZ", void_t, { this: ServerPlayer });
 ServerPlayer.prototype.resendAllChunks = procHacker.js("?resendAllChunks@Player@@QEAAXXZ", void_t, { this: ServerPlayer });
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("?sendNetworkPacket@ServerPlayer@@UEBAXAEAVPacket@@@Z", void_t, { this: ServerPlayer }, Packet);
+/**
+ * ~1.20.50 implementing part of ServerPlayer::sendNetworkPacket
+ * 1.20.50~ aspiring from existing, get components manually
+ */
 ServerPlayer.prototype.getNetworkIdentifier = function () {
-    // part of ServerPlayer::sendNetworkPacket
-    const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
-    const registry = base._enttRegistry();
-    const res = Registry_getEntityIdentifierComponent(registry, base.entityId);
-    return res.networkIdentifier;
+    return TryGetUserEntityIdComponent(this).networkIdentifier;
 };
 ServerPlayer.prototype.setArmor = procHacker.js("?setArmor@ServerPlayer@@UEAAXW4ArmorSlot@@AEBVItemStack@@@Z", void_t, { this: ServerPlayer }, uint32_t, ItemStack);
 ServerPlayer.prototype.getInputMode = function () {
@@ -2379,7 +2389,7 @@ ItemStackBase.prototype.setNull = procHacker.js(
 ItemStackBase.prototype.getEnchantValue = procHacker.js("?getEnchantValue@ItemStackBase@@QEBAHXZ", int32_t, { this: ItemStackBase });
 ItemStackBase.prototype.isEnchanted = procHacker.js("?isEnchanted@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.setDamageValue = procHacker.js("?setDamageValue@ItemStackBase@@QEAAXF@Z", void_t, { this: ItemStackBase }, int16_t);
-ItemStackBase.prototype.setItem = procHacker.js("?_setItem@ItemStackBase@@IEAA_NH_N@Z", bool_t, { this: ItemStackBase }, int32_t);
+ItemStackBase.prototype.setItem = procHacker.js("?_setItem@ItemStackBase@@AEAA_NH_N@Z", bool_t, { this: ItemStackBase }, int32_t);
 ItemStackBase.prototype.startCoolDown = procHacker.js("?startCoolDown@ItemStackBase@@QEBAXPEAVPlayer@@@Z", void_t, { this: ItemStackBase }, ServerPlayer);
 @nativeClass()
 class ComparisonOptions extends NativeClass {
@@ -2680,7 +2690,7 @@ BlockLegacy.prototype.setDestroyTime = procHacker.js("?setDestroyTime@BlockLegac
 BlockLegacy.prototype.getBlockEntityType = procHacker.js("?getBlockEntityType@BlockLegacy@@QEBA?AW4BlockActorType@@XZ", int32_t, { this: BlockLegacy });
 BlockLegacy.prototype.getBlockItemId = procHacker.js("?getBlockItemId@BlockLegacy@@QEBAFXZ", int16_t, { this: BlockLegacy });
 BlockLegacy.prototype.getStateFromLegacyData = procHacker.js(
-    "?getStateFromLegacyData@BlockLegacy@@UEBAAEBVBlock@@G@Z",
+    "?getStateFromLegacyData@BlockLegacy@@QEBAAEBVBlock@@G@Z",
     Block.ref(),
     { this: BlockLegacy },
     uint16_t,

@@ -335,15 +335,15 @@ events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
 });
 
 // stub code, need to implement and reposition.
-enum InitializationMethod {}
+enum ActorInitializationMethod {}
 
-function onEntityCreated(actorEventCoordinator: VoidPointer, entity: Actor, method: InitializationMethod): void {
+function onEntityCreated(actorEventCoordinator: VoidPointer, entity: Actor, method: ActorInitializationMethod): void {
     const event = new EntityCreatedEvent(entity);
     _onEntityCreated(actorEventCoordinator, event.entity, method);
     events.entityCreated.fire(event);
 }
 const _onEntityCreated = procHacker.hooking(
-    "?sendActorCreated@ActorEventCoordinator@@QEAAXAEAVActor@@W4InitializationMethod@@@Z",
+    "?sendActorCreated@ActorEventCoordinator@@QEAAXAEAVActor@@W4ActorInitializationMethod@@@Z",
     void_t,
     null,
     VoidPointer,
