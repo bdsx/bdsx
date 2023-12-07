@@ -4,7 +4,7 @@ import { makefunc } from "bdsx/makefunc";
 import { int16_t, int32_t, void_t } from "bdsx/nativetype";
 
 // https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-160
-// According to the calling convension
+// According to the calling convention
 // rax = return value
 // rcx = 1st parameter
 // rdx = 2nd parameter

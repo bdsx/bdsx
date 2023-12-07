@@ -87,7 +87,7 @@ export class ChestPairEvent {
 }
 
 function onBlockDestroy(gamemode: GameMode, blockPos: BlockPos, face: number): boolean {
-    const player = gamemode.actor as ServerPlayer;
+    const player = gamemode.actor;
     /********************
      *   History
      * BlockSource::checkBlockDestroyPermissions
@@ -151,7 +151,7 @@ const _onCreativeBlockDestroy = procHacker.hooking(
 )(onCreativeBlockDestroy);
 
 function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos, v: uint8_t): void {
-    const event = new BlockDestructionStartEvent(player as ServerPlayer, blockPos);
+    const event = new BlockDestructionStartEvent(player, blockPos);
     events.blockDestructionStart.fire(event);
     decay(blockPos);
     return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos, v);
