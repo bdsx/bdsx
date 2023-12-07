@@ -6,15 +6,15 @@ function unexpected(): never {
 
 type Constructor<T> = { new (...args: any[]): T };
 
-function method<A extends polynominal.Operand, B extends polynominal.Operand>(
+function method<A extends polynomial.Operand, B extends polynomial.Operand>(
     a: Constructor<A>,
     b: Constructor<B>,
-    method: (a: A, b: B) => polynominal.Operand | null,
-): [Constructor<A>, Constructor<B>, (a: A, b: B) => polynominal.Operand | null] {
+    method: (a: A, b: B) => polynomial.Operand | null,
+): [Constructor<A>, Constructor<B>, (a: A, b: B) => polynomial.Operand | null] {
     return [a, b, method];
 }
 
-export namespace polynominal {
+export namespace polynomial {
     export class Operand {
         protected _constantOperating(oper: Operator, other: Operand): Constant | null {
             return null;
@@ -68,7 +68,7 @@ export namespace polynominal {
         exponent(other: Operand): Operand {
             const res = this._constantOperating(operation.binaryExponent, other);
             if (res !== null) return res;
-            return new polynominal.Variable(this, other);
+            return new polynomial.Variable(this, other);
         }
         asAdditive(): Additive {
             const out = new Additive();
@@ -465,88 +465,88 @@ export namespace polynominal {
 
 namespace operation {
     export const add: [
-        Constructor<polynominal.Operand>,
-        Constructor<polynominal.Operand>,
-        (a: polynominal.Operand, b: polynominal.Operand) => polynominal.Operand | null,
+        Constructor<polynomial.Operand>,
+        Constructor<polynomial.Operand>,
+        (a: polynomial.Operand, b: polynomial.Operand) => polynomial.Operand | null,
     ][] = [
-        method(polynominal.Additive, polynominal.Constant, (a, b) => {
+        method(polynomial.Additive, polynomial.Constant, (a, b) => {
             a.constant += b.value;
             return a.normalize();
         }),
-        method(polynominal.Additive, polynominal.Variable, (a, b) => {
+        method(polynomial.Additive, polynomial.Variable, (a, b) => {
             a.pushVariable(b);
             return a.normalize();
         }),
-        method(polynominal.Additive, polynominal.Multiplicative, (a, b) => {
+        method(polynomial.Additive, polynomial.Multiplicative, (a, b) => {
             a.pushTerm(b);
             return a.normalize();
         }),
-        method(polynominal.Additive, polynominal.Additive, (a, b) => {
+        method(polynomial.Additive, polynomial.Additive, (a, b) => {
             a.pushAddtive(b);
             return a.normalize();
         }),
-        method(polynominal.Additive, polynominal.Name, (a, b) => {
-            a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
+        method(polynomial.Additive, polynomial.Name, (a, b) => {
+            a.pushVariable(new polynomial.Variable(b, new polynomial.Constant(1)));
             return a.normalize();
         }),
-        method(polynominal.Additive, polynominal.Operand, (a, b) => {
-            a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
+        method(polynomial.Additive, polynomial.Operand, (a, b) => {
+            a.pushVariable(new polynomial.Variable(b, new polynomial.Constant(1)));
             return a.normalize();
         }),
     ];
     export const multiply: [
-        Constructor<polynominal.Operand>,
-        Constructor<polynominal.Operand>,
-        (a: polynominal.Operand, b: polynominal.Operand) => polynominal.Operand | null,
+        Constructor<polynomial.Operand>,
+        Constructor<polynomial.Operand>,
+        (a: polynomial.Operand, b: polynomial.Operand) => polynomial.Operand | null,
     ][] = [
-        method(polynominal.Multiplicative, polynominal.Multiplicative, (a, b) => {
+        method(polynomial.Multiplicative, polynomial.Multiplicative, (a, b) => {
             a.pushMultiplicative(b);
             return a.normalize();
         }),
-        method(polynominal.Multiplicative, polynominal.Variable, (a, b) => {
+        method(polynomial.Multiplicative, polynomial.Variable, (a, b) => {
             a.pushVariable(b);
             return a.normalize();
         }),
-        method(polynominal.Multiplicative, polynominal.Constant, (a, b) => {
+        method(polynomial.Multiplicative, polynomial.Constant, (a, b) => {
             a.constant *= b.value;
             return a.normalize();
         }),
-        method(polynominal.Multiplicative, polynominal.Name, (a, b) => {
-            a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
+        method(polynomial.Multiplicative, polynomial.Name, (a, b) => {
+            a.pushVariable(new polynomial.Variable(b, new polynomial.Constant(1)));
             return a.normalize();
         }),
-        method(polynominal.Variable, polynominal.Operand, (a, b) => {
+        method(polynomial.Variable, polynomial.Operand, (a, b) => {
             if (a.term.equals(b)) {
-                a.degree = a.degree.add(new polynominal.Constant(1));
+                a.degree = a.degree.add(new polynomial.Constant(1));
                 return a.normalize();
             }
             return null;
         }),
-        method(polynominal.Additive, polynominal.Operand, (a, b) => {
-            const out = new polynominal.Additive();
+        method(polynomial.Additive, polynomial.Operand, (a, b) => {
+            const out = new polynomial.Additive();
             for (const term of a.terms) {
                 out.add(term.multiply(b));
             }
-            out.add(new polynominal.Constant(a.constant).multiply(b));
+            out.add(new polynomial.Constant(a.constant).multiply(b));
             return out.normalize();
         }),
-        method(polynominal.Multiplicative, polynominal.Operand, (a, b) => {
-            a.pushVariable(new polynominal.Variable(b, new polynominal.Constant(1)));
+        method(polynomial.Multiplicative, polynomial.Operand, (a, b) => {
+            a.pushVariable(new polynomial.Variable(b, new polynomial.Constant(1)));
             return a.normalize();
         }),
     ];
 
-    export const binaryPlus = new polynominal.Operator(
+    export const binaryPlus = new polynomial.Operator(
         14,
         (a, b) => a + b,
         (a, b) => a.add(b),
     );
-    export const binaryMultiply = new polynominal.Operator(
+    export const binaryMultiply = new polynomial.Operator(
         15,
         (a, b) => a * b,
         (a, b) => a.multiply(b),
     );
-    export const binaryExponent = new polynominal.Operator(
+    export const binaryExponent = new polynomial.Operator(
         16,
         (a, b) => a ** b,
         (a, b) => a.exponent(b),
@@ -554,9 +554,9 @@ namespace operation {
 }
 
 interface OperatorSet {
-    unaryPrefix?: polynominal.Operator;
-    unarySuffix?: polynominal.Operator;
-    binary?: polynominal.Operator;
+    unaryPrefix?: polynomial.Operator;
+    unarySuffix?: polynomial.Operator;
+    binary?: polynomial.Operator;
 }
 const OPERATORS = new Map<string, OperatorSet>();
 
@@ -568,15 +568,15 @@ OPERATORS.set("*", {
     binary: operation.binaryMultiply,
 });
 OPERATORS.set("/", {
-    binary: new polynominal.Operator(
+    binary: new polynomial.Operator(
         15,
         (a, b) => a / b,
-        (a, b) => a.multiply(b.exponent(new polynominal.Constant(-1))),
+        (a, b) => a.multiply(b.exponent(new polynomial.Constant(-1))),
     ),
 });
 
 OPERATORS.set("+", {
-    unaryPrefix: new polynominal.Operator(
+    unaryPrefix: new polynomial.Operator(
         17,
         v => v,
         v => v,
@@ -584,37 +584,37 @@ OPERATORS.set("+", {
     binary: operation.binaryPlus,
 });
 OPERATORS.set("-", {
-    unaryPrefix: new polynominal.Operator(
+    unaryPrefix: new polynomial.Operator(
         17,
         v => -v,
-        v => v.multiply(new polynominal.Constant(-1)),
+        v => v.multiply(new polynomial.Constant(-1)),
     ),
-    binary: new polynominal.Operator(
+    binary: new polynomial.Operator(
         14,
         (a, b) => a - b,
-        (a, b) => a.add(b.multiply(new polynominal.Constant(-1))),
+        (a, b) => a.add(b.multiply(new polynomial.Constant(-1))),
     ),
 });
-OPERATORS.set("~", { unaryPrefix: new polynominal.Operator(17, v => ~v) });
+OPERATORS.set("~", { unaryPrefix: new polynomial.Operator(17, v => ~v) });
 
-OPERATORS.set("<<", { binary: new polynominal.Operator(13, (a, b) => a << b) });
-OPERATORS.set(">>", { binary: new polynominal.Operator(13, (a, b) => a >> b) });
+OPERATORS.set("<<", { binary: new polynomial.Operator(13, (a, b) => a << b) });
+OPERATORS.set(">>", { binary: new polynomial.Operator(13, (a, b) => a >> b) });
 OPERATORS.set(">>>", {
-    binary: new polynominal.Operator(13, (a, b) => a >>> b),
+    binary: new polynomial.Operator(13, (a, b) => a >>> b),
 });
 
-OPERATORS.set("&", { binary: new polynominal.Operator(10, (a, b) => a & b) });
-OPERATORS.set("^", { binary: new polynominal.Operator(9, (a, b) => a ^ b) });
-OPERATORS.set("|", { binary: new polynominal.Operator(8, (a, b) => a | b) });
+OPERATORS.set("&", { binary: new polynomial.Operator(10, (a, b) => a & b) });
+OPERATORS.set("^", { binary: new polynomial.Operator(9, (a, b) => a ^ b) });
+OPERATORS.set("|", { binary: new polynomial.Operator(8, (a, b) => a | b) });
 
 OPERATORS.set("(", {
-    unaryPrefix: new polynominal.Operator(0, unexpected, unexpected),
+    unaryPrefix: new polynomial.Operator(0, unexpected, unexpected),
 });
 OPERATORS.set(")", {
-    unarySuffix: new polynominal.Operator(0, unexpected, unexpected),
+    unarySuffix: new polynomial.Operator(0, unexpected, unexpected),
 });
 OPERATORS.set(";", {
-    unarySuffix: new polynominal.Operator(0, unexpected, unexpected),
+    unarySuffix: new polynomial.Operator(0, unexpected, unexpected),
 });
 
 for (const [name, oper] of OPERATORS.entries()) {
@@ -632,5 +632,5 @@ for (const [name, oper] of OPERATORS.entries()) {
     }
 }
 
-const OPER_EOF = new polynominal.Operator(-1, unexpected);
+const OPER_EOF = new polynomial.Operator(-1, unexpected);
 const OPER_CLOSE = OPERATORS.get(")")!.unarySuffix!;

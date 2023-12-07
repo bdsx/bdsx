@@ -1,7 +1,7 @@
 import * as colors from "colors";
 import { bin } from "./bin";
 import { fsutil } from "./fsutil";
-import { polynominal } from "./polynominal";
+import { polynomial } from "./polynominal";
 import { remapAndPrintError } from "./source-map-support";
 import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } from "./textparser";
 import { checkPowOf2, getLineAt } from "./util";
@@ -229,14 +229,14 @@ function is32Bits(value: Value64): boolean {
     }
 }
 
-class SplitedJump {
+class SplittedJump {
     constructor(public info: JumpInfo, public label: Label, public args: any[], public pos: SourcePosition | null) {}
 }
 
 class AsmChunk extends BufferWriter {
     public prev: AsmChunk | null = null;
     public next: AsmChunk | null = null;
-    public jump: SplitedJump | null = null;
+    public jump: SplittedJump | null = null;
     public readonly ids: AddressIdentifier[] = [];
     public readonly unresolved: UnresolvedConstant[] = [];
 
@@ -435,7 +435,7 @@ class Label extends AddressIdentifier {
     }
 }
 
-class Defination extends AddressIdentifier {
+class Definition extends AddressIdentifier {
     constructor(name: string, chunk: AsmChunk | null, offset: number, public arraySize: number | null, public size: OperationSize | null) {
         super(name, chunk, offset);
     }
@@ -527,20 +527,20 @@ export class X64Assembler {
 
     private pos: SourcePosition | null = null;
 
-    private _polynominal(text: string, lineNumber: number, offset: number): polynominal.Operand {
-        let res = polynominal.parse(text, lineNumber, offset);
+    private _polynomial(text: string, lineNumber: number, offset: number): polynomial.Operand {
+        let res = polynomial.parse(text, lineNumber, offset);
         for (const [name, value] of this.ids) {
             if (!(value instanceof Constant)) continue;
             res = res.defineVariable(name, value.value);
         }
         return res;
     }
-    private _polynominalConstant(text: string, lineNumber: number, offset: number): number | null {
-        const value = this._polynominal(text, lineNumber, offset);
-        if (!(value instanceof polynominal.Constant)) return null;
+    private _polynomialConstant(text: string, lineNumber: number, offset: number): number | null {
+        const value = this._polynomial(text, lineNumber, offset);
+        if (!(value instanceof polynomial.Constant)) return null;
         return value.value;
     }
-    private _polynominalToAddress(
+    private _polynomialToAddress(
         text: string,
         offset: number,
         lineNumber: number,
@@ -550,7 +550,7 @@ export class X64Assembler {
         multiply: number;
         offset: number;
     } {
-        const poly = this._polynominal(text, lineNumber, offset).asAdditive();
+        const poly = this._polynomial(text, lineNumber, offset).asAdditive();
         let varcount = 0;
 
         function error(message: string, column: number = 0, width: number = text.length): never {
@@ -566,11 +566,11 @@ export class X64Assembler {
 
         for (const term of poly.terms) {
             if (term.variables.length > 1) {
-                error(`polynominal is too complex, variables are multiplying`);
+                error(`polynomial is too complex, variables are multiplying`);
             }
             const v = term.variables[0];
-            if (!v.degree.equalsConstant(1)) error(`polynominal is too complex, degree is not 1`);
-            if (!(v.term instanceof polynominal.Name)) error("polynominal is too complex, complex term");
+            if (!v.degree.equalsConstant(1)) error(`polynomial is too complex, degree is not 1`);
+            if (!(v.term instanceof polynomial.Name)) error("polynomial is too complex, complex term");
             switch (term.constant) {
                 case 1:
                 case 2:
@@ -587,7 +587,7 @@ export class X64Assembler {
                 if (size !== OperationSize.qword) error(`unexpected register: ${v.term.name}`);
 
                 varcount++;
-                if (varcount >= 3) error(`polynominal has too many variables`);
+                if (varcount >= 3) error(`polynomial has too many variables`);
 
                 if (term.constant !== 1) {
                     if (mult !== 1) error("too many multiplying.");
@@ -736,7 +736,7 @@ export class X64Assembler {
         if (!this.normalized) throw Error(`asm is not built, need to call build()`);
         const labels: Record<string, asm.Def> = Object.create(null);
         for (const [name, label] of this.ids) {
-            if (label instanceof Defination) {
+            if (label instanceof Definition) {
                 labels[name] = label;
             }
         }
@@ -1043,7 +1043,7 @@ export class X64Assembler {
         this.memoryChunkSize = offset + bytes;
         if (name === "") return this;
         if (this.ids.has(name)) throw Error(`${name} is already defined`);
-        this.ids.set(name, new Defination(name, MEMORY_INDICATE_CHUNK, offset, arraySize, size));
+        this.ids.set(name, new Definition(name, MEMORY_INDICATE_CHUNK, offset, arraySize, size));
         if (!exportDef) this.scope.add(name);
         return this;
     }
@@ -2210,7 +2210,7 @@ export class X64Assembler {
         if (labelName !== null) {
             const exists = this.ids.get(labelName);
             if (exists != null) {
-                if (exists instanceof Defination) {
+                if (exists instanceof Definition) {
                     throw Error(`${labelName} is already defined`);
                 }
                 if (!(exists instanceof Label)) throw Error(`${labelName} is not label`);
@@ -2277,11 +2277,11 @@ export class X64Assembler {
         return this;
     }
 
-    private _getJumpTarget(labelName: string | null): Label | Defination {
+    private _getJumpTarget(labelName: string | null): Label | Definition {
         if (labelName !== null) {
             const id = this.ids.get(labelName);
             if (id) {
-                if (id instanceof Defination) {
+                if (id instanceof Definition) {
                     if (id.size !== OperationSize.qword) throw Error(`${labelName} size unmatched`);
                     return id;
                 }
@@ -2298,7 +2298,7 @@ export class X64Assembler {
 
     jmp_label(labelName: string): this {
         const label = this._getJumpTarget(labelName);
-        if (label instanceof Defination) {
+        if (label instanceof Definition) {
             this.jmp_rp(Register.rip, 1, 0);
             this._registerUnresolvedConstant(label, 4);
             return this;
@@ -2306,12 +2306,12 @@ export class X64Assembler {
         if (label.chunk === null) {
             return this._genChunk(X64Assembler.jmp_c_info, label, []);
         }
-        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.jmp_c_info, label, [], this.pos));
+        this._resolveLabelSizeBackward(this.chunk, new SplittedJump(X64Assembler.jmp_c_info, label, [], this.pos));
         return this;
     }
     call_label(labelName: string): this {
         const label = this._getJumpTarget(labelName);
-        if (label instanceof Defination) {
+        if (label instanceof Definition) {
             this.call_rp(Register.rip, 1, 0);
             this._registerUnresolvedConstant(label, 4);
             return this;
@@ -2321,7 +2321,7 @@ export class X64Assembler {
             this._registerUnresolvedConstant(label, 4);
             return this;
         }
-        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.call_c_info, label, [], this.pos), true);
+        this._resolveLabelSizeBackward(this.chunk, new SplittedJump(X64Assembler.call_c_info, label, [], this.pos), true);
         return this;
     }
     private _jmp_o_label(oper: JumpOperation, labelName: string): this {
@@ -2330,7 +2330,7 @@ export class X64Assembler {
         if (label.chunk === null) {
             return this._genChunk(X64Assembler.jmp_o_info, label, [oper]);
         }
-        this._resolveLabelSizeBackward(this.chunk, new SplitedJump(X64Assembler.jmp_o_info, label, [oper], this.pos));
+        this._resolveLabelSizeBackward(this.chunk, new SplittedJump(X64Assembler.jmp_o_info, label, [oper], this.pos));
         return this;
     }
 
@@ -2339,7 +2339,7 @@ export class X64Assembler {
         this.pos = null;
     }
 
-    private _resolveLabelSize(chunk: AsmChunk, jump: SplitedJump, dwordSize: boolean): void {
+    private _resolveLabelSize(chunk: AsmChunk, jump: SplittedJump, dwordSize: boolean): void {
         const orichunk = this.chunk;
         this.chunk = chunk;
         if (dwordSize) {
@@ -2354,7 +2354,7 @@ export class X64Assembler {
         else this.chunk = orichunk;
     }
 
-    private _resolveLabelSizeBackward(jumpChunk: AsmChunk, jump: SplitedJump, dwordSize: boolean | null = null): void {
+    private _resolveLabelSizeBackward(jumpChunk: AsmChunk, jump: SplittedJump, dwordSize: boolean | null = null): void {
         if (jump.label.chunk === jumpChunk) {
             let offset = jump.label.offset - jumpChunk.size;
             offset -= jump.info.byteSize;
@@ -2388,7 +2388,7 @@ export class X64Assembler {
         this._resolveLabelSize(jumpChunk, jump, dwordSize);
     }
 
-    private _resolveLabelSizeForward(jumpChunk: AsmChunk, jump: SplitedJump, dwordSize: boolean | null = null): void {
+    private _resolveLabelSizeForward(jumpChunk: AsmChunk, jump: SplittedJump, dwordSize: boolean | null = null): void {
         if (jump.label.chunk === jumpChunk) throw Error(`cannot forward to self chunk`);
 
         if (dwordSize === null) {
@@ -2432,7 +2432,7 @@ export class X64Assembler {
             }
         }
         chunk = this.chunk;
-        chunk.jump = new SplitedJump(info, label, args, this.pos);
+        chunk.jump = new SplittedJump(info, label, args, this.pos);
         this.pos = null;
         const nbuf = new AsmChunk(new Uint8Array(64), 0, 1);
         chunk.next = nbuf;
@@ -2804,7 +2804,7 @@ export class X64Assembler {
                 const braceInner = type.substring(brace, braceEnd).trim();
                 const trails = type.substr(braceEnd + 1).trim();
                 if (trails !== "") throw parser.error(`Unexpected characters '${trails}'`);
-                const res = this._polynominalConstant(braceInner, parser.lineNumber, parser.matchedIndex);
+                const res = this._polynomialConstant(braceInner, parser.lineNumber, parser.matchedIndex);
                 if (res === null) throw parser.error(`Unexpected array length '${braceInner}'`);
                 arraySize = res!;
             }
@@ -2821,7 +2821,7 @@ export class X64Assembler {
             const quotedString = parser.readQuotedStringTo('"');
             if (quotedString === null) throw parser.error("Invalid quoted string");
             if (this.constChunk === null) this.constChunk = new AsmChunk(new Uint8Array(64), 0, 1);
-            const id = new Defination("[const]", this.constChunk, this.constChunk.size, null, OperationSize.void);
+            const id = new Definition("[const]", this.constChunk, this.constChunk.size, null, OperationSize.void);
             this.constChunk.write(Buffer.from(quotedString + "\0", encoding));
             this.constChunk.ids.push(id);
             command += "_rp";
@@ -2845,9 +2845,9 @@ export class X64Assembler {
                         if (size == null) throw parser.error(`Unexpected type syntax '${type}'`);
                     }
                     const text = parser.readAll();
-                    let valueNum = this._polynominalConstant(text, parser.lineNumber, parser.matchedIndex);
+                    let valueNum = this._polynomialConstant(text, parser.lineNumber, parser.matchedIndex);
                     if (valueNum === null) {
-                        throw parser.error(`polynominal is not constant '${text}'`);
+                        throw parser.error(`polynomial is not constant '${text}'`);
                     }
                     if (size !== null) {
                         switch (size.size) {
@@ -2914,7 +2914,7 @@ export class X64Assembler {
                     }
                     return;
                 case "buildtrace": {
-                    const value = this._polynominal(parser.readAll(), parser.lineNumber, parser.matchedIndex);
+                    const value = this._polynomial(parser.readAll(), parser.lineNumber, parser.matchedIndex);
                     console.log(`buildtrace> ${value}`);
                     return;
                 }
@@ -2950,7 +2950,7 @@ export class X64Assembler {
 
                 let constval: number | null;
                 try {
-                    constval = this._polynominalConstant(param, parser.lineNumber, parser.matchedIndex);
+                    constval = this._polynomialConstant(param, parser.lineNumber, parser.matchedIndex);
                 } catch (err) {
                     constval = null;
                 }
@@ -3013,7 +3013,7 @@ export class X64Assembler {
                     }
 
                     const inner = param.substring(end, param.length - 1);
-                    const { r1, r2, multiply, offset } = this._polynominalToAddress(inner, bracketInnerStart, lineNumber);
+                    const { r1, r2, multiply, offset } = this._polynomialToAddress(inner, bracketInnerStart, lineNumber);
                     if (r1 === null) {
                         args.push(Register.absolute);
                         callinfo.push("(constant pointer)");
@@ -3045,7 +3045,7 @@ export class X64Assembler {
                             command += "_c";
                             callinfo.push("(constant)");
                             args.push(id.value);
-                        } else if (id instanceof Defination) {
+                        } else if (id instanceof Definition) {
                             command += "_rp";
                             callinfo.push("(register pointer)");
                             if (id.size === OperationSize.void) throw parser.error(`Invalid operand type`);
@@ -3180,12 +3180,12 @@ export class X64Assembler {
 
         const out = new BufferWriter(new Uint8Array(64), 0);
         const labels: Label[] = [];
-        const defs: Defination[] = [];
+        const defs: Definition[] = [];
         for (const id of this.ids.values()) {
             if (this.scope.has(id.name!)) continue;
             if (id instanceof Label) {
                 labels.push(id);
-            } else if (id instanceof Defination) {
+            } else if (id instanceof Definition) {
                 defs.push(id);
             }
         }
@@ -3274,7 +3274,7 @@ export class X64Assembler {
                 js.writeln(`    return buffer.add(${id.offset});`);
                 js.writeln(`},`);
                 dts.writeln(`export const ${name}:NativePointer;`);
-            } else if (id instanceof Defination) {
+            } else if (id instanceof Definition) {
                 const off = buffer.length + id.offset;
                 if (id.size != null) {
                     const info = sizeInfo.get(id.size);
@@ -3369,7 +3369,7 @@ export class X64Assembler {
         }
         for (const [name, offset] of defs) {
             if (out.ids.has(name)) throw Error(`${name} is already defined`);
-            const def = new Defination(name, MEMORY_INDICATE_CHUNK, offset, null, null);
+            const def = new Definition(name, MEMORY_INDICATE_CHUNK, offset, null, null);
             out.ids.set(name, def);
         }
         return out;
